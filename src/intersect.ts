@@ -135,6 +135,41 @@ export function lineCircle(
         ];
     }
 
+    // circle: (x - h)^2 + (y - k)^2 = r^2
+    // line: y = m * x + b
+    // y = sqrt(r^2 - (x - cx)^2) + k
+    // m * x + b = sqrt(r^2 - (x - cx)^2) + cy
+    // (mx + b - cy)^2 = r^2 - (x - cx)^2
+    //
+    // (a + b)(a + b)
+    // a^2 + 2ab + b^2
+    // (a - b)(a - b)
+    // a^2 + 2a(-b) + b^2
+    //
+    // (mx)^2 + 2mx(b - cy) + (b - cy)^2 = r^2 - (x^2 - 2x(cx) + cx^2)
+    // m^2x^2 + 2mx(b - cy) + (b - cy)^2 = r^2 - x^2 + 2x(cx) - cx^2
+
+    // + m^2x^2
+    // + x^2
+    // + 2mx(b - cy)
+    // - 2x(cx)
+    // + (b - cy)^2
+    // - r^2
+    // + cx^2
+    // = 0
+
+    // (m^2 + 1) x^2
+    // (2m(b - cy) - 2cx) x
+    // (b - cy)^2 - r^2 + cx^2
+
+    // (m^2 + 1) x^2
+    // (2mb - 2mcy - 2cx) x
+    // (b - cy)^2 - r^2 + cx^2
+
+    // m^2x^2 + x^2 + 2mx(b - cy) - 2x(cx) + (b - cy)^2 - r^2 + cx^2 = 0
+
+    // (m^2 + 1)x^2
+
     // get a, b, c values
     var a = 1 + sq(slope);
     var b = -cx * 2 + slope * (intercept - cy) * 2;
@@ -145,9 +180,9 @@ export function lineCircle(
     if (d >= 0) {
         // insert into quadratic formula
         var intersections = [
-            (-b + Math.sqrt(sq(b) - 4 * a * c)) / (2 * a),
-            (-b - Math.sqrt(sq(b) - 4 * a * c)) / (2 * a),
-        ].map((x) => ({ x, y: slope * x + b }));
+            (-b + Math.sqrt(d)) / (2 * a),
+            (-b - Math.sqrt(d)) / (2 * a),
+        ].map((x) => ({ x, y: slope * x + intercept }));
         if (d == 0) {
             // only 1 intersection
             return [intersections[0]];

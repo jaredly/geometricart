@@ -181,7 +181,7 @@ export const initialState: State = {
             id: 'base',
             geom: {
                 type: 'Circle',
-                center: { x: 1, y: 1 },
+                center: { x: 0, y: 0 },
                 radius: { x: 1, y: 0 },
                 half: true,
                 multiples: 5,
@@ -202,7 +202,7 @@ export const initialState: State = {
             parent: null,
             point: { x: 0, y: 1 },
             reflect: false,
-            rotational: [true, true], // 6-fold
+            rotational: [true, true, true, true, true], // 6-fold
         },
     },
     activeMirror: 'baseMirror',
