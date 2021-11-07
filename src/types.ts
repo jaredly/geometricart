@@ -1,21 +1,14 @@
 // Should I do polar coords?
 export type Coord = { x: number; y: number };
 
-export type Point = { type: 'Point'; coord: Coord };
-// Is this the right representation?
-// What does svg want?
-export type Arc = { type: 'Arc'; center: Coord; t1: number; t2: number };
-
-export type ShapeGeom = Line | Arc | Point;
-
 export type Id = string;
 
-export type Shape = {
-    id: Id;
-    geom: ShapeGeom;
-    basedOn: Array<Id>;
-    mirrors: Array<Id>;
-};
+// export type Shape = {
+//     id: Id;
+//     geom: ShapeGeom;
+//     basedOn: Array<Id>;
+//     mirrors: Array<Id>;
+// };
 
 // Hmmmmmm
 /*
@@ -93,12 +86,12 @@ export type Guide = {
     active: boolean;
     geom: GuideGeom;
     basedOn: Array<Id>;
-    mirrors: Array<Id>;
+    mirror: Id | null;
 };
 
 export type Mirror = {
     id: Id;
-    enabled: boolean;
+    // enabled: boolean;
     origin: Coord;
     point: Coord;
     // false = "disabled".
@@ -107,6 +100,7 @@ export type Mirror = {
     // line between origin and point.
     rotational: Array<boolean>;
     reflect: boolean;
+    parent: Id | null;
 };
 
 export type Style = {
@@ -140,7 +134,7 @@ export type Path = {
 
 export type Segment =
     | { type: 'Line'; to: Coord }
-    | { type: 'Arc'; center: Coord; to: Coord };
+    | { type: 'Arc'; center: Coord; to: Coord; long: boolean }; // long = "the long way round"
 
 export type PathGroup = {
     id: Id;
@@ -161,4 +155,60 @@ export type State = {
     // maybe not? idk.
     // guideGroups: {[key: Id]: GuideGroup},
     mirrors: { [key: Id]: Mirror };
+    activeMirror: Id | null;
+    view: View;
+};
+
+export type View = {
+    center: Coord;
+    zoom: number;
+};
+
+// export const pointForView = (coord: Coord, view: View) => {
+// 	return {
+// 		x: (coord.x - view.center.x) * view.zoom + view.center.x,
+// 		y: (coord.y - view.center.y) * view.zoom + view.center.y
+// 	}
+// }
+
+// Should I use hashes to persist the realized whatsits for all the things?
+// idk let's just do it slow for now.
+export const initialState: State = {
+    paths: {},
+    pathGroups: {},
+    guides: {
+        base: {
+            id: 'base',
+            geom: {
+                type: 'Circle',
+                center: { x: 1, y: 1 },
+                radius: { x: 1, y: 0 },
+                half: true,
+                multiples: 5,
+            },
+            active: true,
+            basedOn: [],
+            mirror: 'baseMirror',
+        },
+    },
+    mirrors: {
+        // second: {
+        // 	id: 'second',
+        // 	reflect: true,
+        // },
+        baseMirror: {
+            id: 'baseMirror',
+            origin: { x: 0, y: 0 },
+            parent: null,
+            point: { x: 0, y: 1 },
+            reflect: false,
+            rotational: [true, true], // 6-fold
+        },
+    },
+    activeMirror: 'baseMirror',
+    view: {
+        center: { x: 0, y: 0 },
+        // This can't be implemented with svg zoom, because that would muck with line widths of guides and mirrors.
+        zoom: 100,
+    },
 };
