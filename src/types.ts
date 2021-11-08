@@ -66,6 +66,7 @@ export type Circle = {
     type: 'Circle';
     center: Coord;
     radius: Coord;
+    line?: boolean;
     half: boolean;
     multiples: number;
 };
@@ -390,6 +391,7 @@ export const initialState: State = {
                 type: 'Circle',
                 center: { x: 0, y: 0 },
                 radius: { x: 1, y: 0 },
+                line: true,
                 half: true,
                 multiples: 5,
             },

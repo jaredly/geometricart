@@ -17,23 +17,26 @@ export const geomToPrimitives = (geom: GuideGeom): Array<Primitive> => {
         case 'Line':
             return [lineToSlope(geom.p1, geom.p2)];
         case 'Circle': {
-            const circles: Array<Primitive> = [];
+            const result: Array<Primitive> = [];
             const radius = dist(geom.center, geom.radius);
             if (geom.half) {
-                circles.push({
+                result.push({
                     type: 'circle',
                     center: geom.center,
                     radius: radius / 2,
                 });
             }
             for (let i = 1; i <= geom.multiples + 1; i++) {
-                circles.push({
+                result.push({
                     type: 'circle',
                     center: geom.center,
                     radius: radius * i,
                 });
             }
-            return [lineToSlope(geom.center, geom.radius), ...circles];
+            if (geom.line) {
+                result.push(lineToSlope(geom.center, geom.radius));
+            }
+            return result;
         }
         case 'AngleBisector': {
             const t1 = angleTo(geom.p2, geom.p1);

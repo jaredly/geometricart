@@ -441,6 +441,10 @@ export const Canvas = ({ state, width, height, dispatch, innerRef }: Props) => {
                     ) : null}
                 </g>
             </svg>
+            <div>
+                Guides: {guideElements.length}, Points:{' '}
+                {allIntersections.length}
+            </div>
         </div>
     );
 };
@@ -526,12 +530,12 @@ export const Pending = ({
     zoom: number;
 }) => {
     let offsets = [
-        { x: 3, y: 2 },
-        { x: 1, y: 3 },
+        { x: -1, y: 1 },
+        { x: 2, y: 1 },
     ];
 
     const points = guide.points.concat([pos]);
-    offsets.forEach((off) => {
+    offsets.slice(guide.points.length).forEach((off) => {
         points.push({ x: pos.x + off.x, y: pos.y + off.y });
     });
 
