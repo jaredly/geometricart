@@ -23,6 +23,9 @@ export const App = () => {
             if (evt.target !== document.body) {
                 return;
             }
+            if (evt.key === 'Escape') {
+                return dispatch({ type: 'pending:type', kind: null });
+            }
             if (evt.key === 'z' && (evt.ctrlKey || evt.metaKey)) {
                 return dispatch({ type: evt.shiftKey ? 'redo' : 'undo' });
             }

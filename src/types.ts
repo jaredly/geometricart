@@ -264,8 +264,7 @@ export type UndoPendingType = {
 };
 export type PendingType = {
     type: 'pending:type';
-    kind: GuideGeom['type'];
-    // prev: Pending | null;
+    kind: GuideGeom['type'] | null;
 };
 
 export type UndoGuideToggle = {

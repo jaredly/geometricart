@@ -131,7 +131,9 @@ export const reduceWithoutUndo = (
             return [
                 {
                     ...state,
-                    pendingGuide: { type: action.kind, points: [] },
+                    pendingGuide: action.kind
+                        ? { type: action.kind, points: [] }
+                        : null,
                 },
                 { type: action.type, action, prev: state.pendingGuide },
             ];
