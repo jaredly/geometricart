@@ -378,24 +378,16 @@ export const Canvas = ({ state, width, height, dispatch, innerRef }: Props) => {
                                     }}
                                 />
                             ) : null}
-                            {/* {nextSegments ? (
-                                <RenderPendingPath
-                                    next={nextSegments}
-                                    path={state.pending as PendingPath}
+                            {Object.keys(state.mirrors).map((m) => (
+                                <RenderMirror
+                                    key={m}
+                                    mirror={state.mirrors[m]}
+                                    transforms={mirrorTransforms[m]}
                                     zoom={state.view.zoom}
-                                    onAdd={onAdd}
                                 />
-                            ) : null} */}
+                            ))}
                         </>
                     ) : null}
-                    {Object.keys(state.mirrors).map((m) => (
-                        <RenderMirror
-                            key={m}
-                            mirror={state.mirrors[m]}
-                            transforms={mirrorTransforms[m]}
-                            zoom={state.view.zoom}
-                        />
-                    ))}
                 </g>
             </svg>
             <div>
@@ -459,7 +451,7 @@ export const RenderMirror = ({
         })),
     );
     return (
-        <>
+        <g style={{ pointerEvents: 'none', opacity: 0.3 }}>
             {lines.map(({ p1, p2 }) => (
                 <line
                     x1={p1.x * zoom}
@@ -477,7 +469,7 @@ export const RenderMirror = ({
                 fill="none"
                 stroke="#fa0"
             />
-        </>
+        </g>
     );
 };
 

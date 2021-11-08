@@ -38,7 +38,7 @@ export const Color = ({
     color: string | undefined;
     onChange: (color: string | undefined) => void;
 }) => {
-    const options = ['red', 'green', 'blue', 'orange', 'white'];
+    const options = ['red', 'green', 'blue', 'orange', 'white', 'transparent'];
     return (
         <div>
             {options.map((name, i) => (
@@ -161,7 +161,7 @@ export const PathGroupForm = ({
     onChange: (group: PathGroup) => unknown;
 }) => {
     return (
-        <div css={{ padding: 4 }}>
+        <div css={{ padding: 4, border: '1px solid #aaa', margin: 4 }}>
             <div>Path Group</div>
             <StyleForm
                 style={group.style}

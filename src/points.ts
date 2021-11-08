@@ -25,10 +25,11 @@ export const transformSegment = (
     // const to = applyMatrices(segment.to, matrices)
     switch (segment.type) {
         case 'Arc':
+            const flips = matrices.some((m) => m[0][0] === 1 && m[1][1] === -1);
             return {
                 type: 'Arc',
                 center: applyMatrices(segment.center, matrices),
-                clockwise: segment.clockwise,
+                clockwise: flips ? !segment.clockwise : segment.clockwise,
                 to: applyMatrices(segment.to, matrices),
                 // to,
             };
