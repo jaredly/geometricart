@@ -1,3 +1,5 @@
+import { Primitive } from './intersect';
+
 // Should I do polar coords?
 export type Coord = { x: number; y: number };
 
@@ -43,6 +45,22 @@ the normal stuff folks.
 export type Line = { type: 'Line'; p1: Coord; p2: Coord };
 
 export type GuideGeom = Line | Circle | AngleBisector | PerpendicularBisector;
+
+export const guideTypes: Array<GuideGeom['type']> = [
+    'Line',
+    'AngleBisector',
+    'Circle',
+    'PerpendicularBisector',
+];
+
+export const guidePoints: {
+    [x in GuideGeom['type']]: number;
+} = {
+    AngleBisector: 3,
+    Circle: 2,
+    Line: 2,
+    PerpendicularBisector: 2,
+};
 
 export type Circle = {
     type: 'Circle';
@@ -142,7 +160,37 @@ export type PathGroup = {
     group: Id | null;
 };
 
+export type GuideElement = {
+    id: Id;
+    geom: GuideGeom;
+    active: boolean;
+    original: boolean;
+};
+
+export type Idd<T> = {
+    items: { [key: number]: T };
+    next: number;
+};
+
+export type Cache = {
+    guides: Idd<GuideElement>;
+    // is it fine to dedup these primitives?
+    // or do I need to keep them?
+    // yeah let's dedup, and then each prim might point back to multiple guides.
+    primitives: Idd<{ prim: Primitive; guide: Array<number> }>;
+    // Do we just say "link back to the guide" always?
+    // is there a need to link back to the specific primitive?
+    // yes there is.
+    // for determining adjacent segments when drawing paths.
+    // and in fact, an intersection will have 2+ primitives to hark back to.
+    intersections: Idd<{ coord: Coord; prims: Array<number> }>;
+};
+
 export type State = {
+    pendingGuide: {
+        points: Array<Coord>;
+        type: GuideGeom['type'];
+    } | null;
     paths: { [key: Id]: Path };
     // Pathgroups automatically happen when, for example, a path is created when a mirror is active.
     // SO: Paths are automatically /realized/, that is, when completing a path, the mirrored paths are also
@@ -174,6 +222,7 @@ export type View = {
 // Should I use hashes to persist the realized whatsits for all the things?
 // idk let's just do it slow for now.
 export const initialState: State = {
+    pendingGuide: { type: 'Line', points: [] },
     paths: {},
     pathGroups: {},
     guides: {

@@ -47,6 +47,34 @@ export const transformGuideGeom = (
     }
 };
 
+export const geomsForGiude = (
+    guide: Guide,
+    mirror: Array<Array<Matrix>> | null,
+) => {
+    const elements: Array<GuideElement> = [];
+
+    if (mirror) {
+        mirror.forEach((matrices) => {
+            elements.push({
+                id: guide.id,
+                active: guide.active,
+                geom: transformGuideGeom(guide.geom, (pos) =>
+                    applyMatrices(pos, matrices),
+                ),
+                original: false,
+            });
+        });
+    }
+    elements.push({
+        id: guide.id,
+        geom: guide.geom,
+        active: guide.active,
+        original: true,
+    });
+
+    return elements;
+};
+
 // These are NOT in /view/ coordinates!
 export const calculateGuideElements = (
     guides: { [key: Id]: Guide },
@@ -54,25 +82,32 @@ export const calculateGuideElements = (
 ) => {
     const elements: Array<GuideElement> = [];
     Object.keys(guides).forEach((k) => {
-        const g = guides[k];
-        if (g.mirror) {
-            mirrorTransforms[g.mirror].forEach((matrices) => {
-                elements.push({
-                    id: g.id,
-                    active: g.active,
-                    geom: transformGuideGeom(g.geom, (pos) =>
-                        applyMatrices(pos, matrices),
-                    ),
-                    original: false,
-                });
-            });
-        }
-        elements.push({
-            id: g.id,
-            geom: g.geom,
-            active: g.active,
-            original: true,
-        });
+        elements.push(
+            ...geomsForGiude(
+                guides[k],
+                guides[k].mirror ? mirrorTransforms[guides[k].mirror!] : null,
+            ),
+        );
+
+        // const g = guides[k];
+        // if (g.mirror) {
+        //     mirrorTransforms[g.mirror].forEach((matrices) => {
+        //         elements.push({
+        //             id: g.id,
+        //             active: g.active,
+        //             geom: transformGuideGeom(g.geom, (pos) =>
+        //                 applyMatrices(pos, matrices),
+        //             ),
+        //             original: false,
+        //         });
+        //     });
+        // }
+        // elements.push({
+        //     id: g.id,
+        //     geom: g.geom,
+        //     active: g.active,
+        //     original: true,
+        // });
     });
     return elements;
 };
@@ -94,7 +129,57 @@ export const GuideElement = ({
     original: boolean;
 }) => {
     switch (geom.type) {
-        case 'Line':
+        case 'Line': {
+            const t1 = angleTo(geom.p1, geom.p2);
+            const d = dist(geom.p1, geom.p2);
+            const left = push(geom.p1, t1, -10);
+            const right = push(geom.p2, t1, 10);
+            return (
+                <>
+                    <line
+                        x1={left.x * zoom}
+                        y1={left.y * zoom}
+                        x2={right.x * zoom}
+                        y2={right.y * zoom}
+                        stroke="#fff"
+                        strokeWidth={1}
+                    />
+                </>
+            );
+        }
+        case 'PerpendicularBisector': {
+            const t1 = angleTo(geom.p1, geom.p2);
+            const d = dist(geom.p1, geom.p2);
+            const mid = push(geom.p1, t1, d / 2);
+            const left = push(mid, t1 + Math.PI / 2, 10);
+            const right = push(mid, t1 + Math.PI / 2, -10);
+            return (
+                <>
+                    <line
+                        x1={left.x * zoom}
+                        y1={left.y * zoom}
+                        x2={right.x * zoom}
+                        y2={right.y * zoom}
+                        stroke="#fff"
+                        strokeWidth={1}
+                    />
+                    <line
+                        x1={geom.p1.x * zoom}
+                        y1={geom.p1.y * zoom}
+                        x2={geom.p2.x * zoom}
+                        y2={geom.p2.y * zoom}
+                        strokeDasharray="5 5"
+                        stroke="#666"
+                        strokeWidth={1}
+                    />
+                </>
+            );
+        }
+        case 'AngleBisector': {
+            const t1 = angleTo(geom.p2, geom.p1);
+            const t2 = angleTo(geom.p2, geom.p3);
+            const left = push(geom.p2, (t1 + t2) / 2, 10);
+            const right = push(geom.p2, (t1 + t2) / 2, -10);
             return (
                 <>
                     <line
@@ -102,9 +187,30 @@ export const GuideElement = ({
                         y1={geom.p1.y * zoom}
                         x2={geom.p2.x * zoom}
                         y2={geom.p2.y * zoom}
+                        stroke="#666"
+                        strokeDasharray="5 5"
+                        strokeWidth={1}
+                    />
+                    <line
+                        x1={geom.p3.x * zoom}
+                        y1={geom.p3.y * zoom}
+                        x2={geom.p2.x * zoom}
+                        y2={geom.p2.y * zoom}
+                        stroke="#666"
+                        strokeDasharray="5 5"
+                        strokeWidth={1}
+                    />
+                    <line
+                        x1={left.x * zoom}
+                        y1={left.y * zoom}
+                        x2={right.x * zoom}
+                        y2={right.y * zoom}
+                        stroke="#fff"
+                        strokeWidth={1}
                     />
                 </>
             );
+        }
         case 'Circle':
             const r = dist(geom.radius, geom.center);
             const m = [];
@@ -166,7 +272,6 @@ export const GuideElement = ({
                 </>
             );
     }
-    return <div>hlloe</div>;
 };
 
 const precision = 4;
@@ -231,18 +336,31 @@ export const Canvas = ({ state, width, height, dispatch }: Props) => {
         [guidePrimitives],
     );
 
-    //
+    const [pos, setPos] = React.useState({ x: 0, y: 0 });
 
     return (
         <div
-            css={{
-                border: '1px solid magenta',
-            }}
-            style={{ width, height }}
+            css={{}}
+            // style={{ width, height }}
         >
-            Yes
-            {allIntersections.length}
-            <svg width={width} height={height}>
+            <svg
+                width={width}
+                height={height}
+                css={{
+                    outline: '1px solid magenta',
+                }}
+                onMouseMove={(evt) => {
+                    const rect = evt.currentTarget.getBoundingClientRect();
+                    setPos({
+                        x:
+                            (evt.clientX - rect.left - height / 2) /
+                            state.view.zoom,
+                        y:
+                            (evt.clientY - rect.top - width / 2) /
+                            state.view.zoom,
+                    });
+                }}
+            >
                 <g transform={`translate(${width / 2} ${height / 2})`}>
                     {/* {guideElements.map((element) => (
                         <GuideElement
@@ -251,55 +369,152 @@ export const Canvas = ({ state, width, height, dispatch }: Props) => {
                             original={element.original}
                         />
                     ))} */}
-                    {guidePrimitives.map((prim, i) =>
-                        prim.type === 'line' ? (
-                            prim.m === Infinity ? (
-                                <line
-                                    x1={prim.b + state.view.zoom}
-                                    y1={-height}
-                                    y2={height}
-                                    x2={prim.b + state.view.zoom}
-                                    stroke="green"
-                                    strokeWidth="1"
-                                />
-                            ) : (
-                                <line
-                                    x1={-width}
-                                    y1={
-                                        -width * prim.m +
-                                        prim.b * state.view.zoom
-                                    }
-                                    x2={width}
-                                    y2={
-                                        prim.m * width +
-                                        prim.b * state.view.zoom
-                                    }
-                                    stroke="green"
-                                    strokeWidth="1"
-                                />
-                            )
-                        ) : (
-                            <circle
-                                cx={prim.center.x * state.view.zoom}
-                                cy={prim.center.y * state.view.zoom}
-                                r={prim.radius * state.view.zoom}
-                                stroke="#666"
-                                strokeWidth="1"
-                                fill="none"
-                            />
-                        ),
-                    )}
+                    {guidePrimitives.map((prim, i) => (
+                        <RenderPrimitive
+                            prim={prim}
+                            state={state}
+                            height={height}
+                            width={width}
+                            key={i}
+                        />
+                    ))}
                     {allIntersections.map((coord, i) => (
                         <circle
                             key={i}
                             cx={coord.x * state.view.zoom}
                             cy={coord.y * state.view.zoom}
+                            onClick={() => {
+                                dispatch({ type: 'pending:point', coord });
+                            }}
                             r={5}
-                            fill={'rgba(255,255,255,0.1)'}
+                            // fill={'rgba(255,255,255,0.1)'}
+                            css={{
+                                fill: 'rgba(255,255,255,0.1)',
+                                cursor: 'pointer',
+                                ':hover': {
+                                    fill: 'white',
+                                },
+                            }}
                         />
                     ))}
+                    {state.pendingGuide ? (
+                        <Pending
+                            guide={state.pendingGuide}
+                            pos={pos}
+                            zoom={state.view.zoom}
+                        />
+                    ) : null}
                 </g>
             </svg>
         </div>
     );
 };
+
+export const pendingGuide = (
+    type: GuideGeom['type'],
+    points: Array<Coord>,
+): GuideGeom => {
+    switch (type) {
+        case 'Line':
+            return {
+                type,
+                p1: points[0],
+                p2: points[1],
+            };
+        case 'Circle':
+            return {
+                type,
+                center: points[0],
+                radius: points[1],
+                half: false,
+                multiples: 1,
+            };
+        case 'AngleBisector':
+            return {
+                type,
+                p1: points[0],
+                p2: points[1],
+                p3: points[2],
+            };
+        case 'PerpendicularBisector':
+            return {
+                type,
+                p1: points[0],
+                p2: points[1],
+            };
+    }
+};
+
+export const Pending = ({
+    guide,
+    pos,
+    zoom,
+}: {
+    pos: Coord;
+    guide: { type: GuideGeom['type']; points: Array<Coord> };
+    zoom: number;
+}) => {
+    let offsets = [
+        { x: 3, y: 2 },
+        { x: 1, y: 3 },
+    ];
+
+    const points = guide.points.concat([pos]);
+    offsets.forEach((off) => {
+        points.push({ x: pos.x + off.x, y: pos.y + off.y });
+    });
+
+    const prims = geomToPrimitives(pendingGuide(guide.type, points));
+
+    return (
+        <g style={{ pointerEvents: 'none' }}>
+            <GuideElement
+                zoom={zoom}
+                original={true}
+                geom={pendingGuide(guide.type, points)}
+            />
+        </g>
+    );
+};
+function RenderPrimitive({
+    prim,
+    state,
+    height,
+    width,
+}: {
+    prim: Primitive;
+    state: State;
+    height: number;
+    width: number;
+}): jsx.JSX.Element {
+    return prim.type === 'line' ? (
+        prim.m === Infinity ? (
+            <line
+                x1={prim.b + state.view.zoom}
+                y1={-height}
+                y2={height}
+                x2={prim.b + state.view.zoom}
+                stroke="green"
+                strokeWidth="1"
+            />
+        ) : (
+            <line
+                x1={-width}
+                y1={-width * prim.m + prim.b * state.view.zoom}
+                x2={width}
+                y2={prim.m * width + prim.b * state.view.zoom}
+                stroke="green"
+                strokeWidth="1"
+            />
+        )
+    ) : (
+        <circle
+            cx={prim.center.x * state.view.zoom}
+            cy={prim.center.y * state.view.zoom}
+            r={prim.radius * state.view.zoom}
+            stroke="#666"
+            strokeWidth="1"
+            fill="none"
+        />
+    );
+}
