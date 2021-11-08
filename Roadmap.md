@@ -2,7 +2,23 @@
 UP NEXT:
 
 - [x] Looks like lineCircle intersection is wonky -- see example.
-- [ ] vertical lines are wrongg
+- [x] vertical lines are wrongg
+- [x] make a way to export
+	- The SVG, with the json embedded you fools.
+	- Have the guides and junk be part of one layer, so it's easy to remove.
+
+sooo
+for "mirrored paths"
+...
+...
+i think my current concept of groups is probably weird.
+anyway,
+1st pass = just create separate things, you can shift+select I guess to format them at the same time.
+- oooh ok so you can like double-click a path, and it will select the other paths that are its siblings.
+- oh and I had a "select all things with this fill", which I could do again. so lets go on this path (heh) for a while.
+
+2nd pass = maybe have just one instance, with nested configurations according to the mirrors at play? idk.
+
 
 THEN
 

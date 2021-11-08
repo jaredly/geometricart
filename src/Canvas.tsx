@@ -116,6 +116,7 @@ export type Props = {
     state: State;
     width: number;
     height: number;
+    innerRef: (node: SVGSVGElement) => unknown;
     dispatch: (action: Action) => unknown;
 };
 
@@ -340,7 +341,7 @@ export const Primitives = React.memo(
     },
 );
 
-export const Canvas = ({ state, width, height, dispatch }: Props) => {
+export const Canvas = ({ state, width, height, dispatch, innerRef }: Props) => {
     const mirrorTransforms = React.useMemo(
         () => getMirrorTransforms(state.mirrors),
         [state.mirrors],
@@ -375,6 +376,8 @@ export const Canvas = ({ state, width, height, dispatch }: Props) => {
             <svg
                 width={width}
                 height={height}
+                xmlns="http://www.w3.org/2000/svg"
+                ref={innerRef}
                 css={{
                     outline: '1px solid magenta',
                 }}
@@ -413,7 +416,7 @@ export const Canvas = ({ state, width, height, dispatch }: Props) => {
                                 dispatch({ type: 'pending:point', coord });
                             }}
                             r={5}
-                            // fill={'rgba(255,255,255,0.1)'}
+                            fill={'rgba(255,255,255,0.1)'}
                             css={{
                                 fill: 'rgba(255,255,255,0.1)',
                                 cursor: 'pointer',

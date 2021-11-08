@@ -115,6 +115,9 @@ export const App = () => {
         return () => document.removeEventListener('keydown', fn);
     }, []);
 
+    const ref = React.useRef(null as null | SVGSVGElement);
+    const [url, setUrl] = React.useState(null as null | string);
+
     return (
         <div
             css={{
@@ -145,9 +148,52 @@ export const App = () => {
                         }
                     />
                 ))}
+                <button
+                    onClick={() => {
+                        const text =
+                            ref.current!.outerHTML +
+                            `\n\n<!-- STATE: ${JSON.stringify(state)} --> `;
+                        const blob = new Blob([text], {
+                            type: 'image/svg+xml',
+                        });
+                        setUrl(URL.createObjectURL(blob));
+                    }}
+                >
+                    Export
+                </button>
+                {url
+                    ? (() => {
+                          const name = `image-${Date.now()}.svg`;
+                          return (
+                              <div css={{}}>
+                                  <div>
+                                      <a
+                                          href={url}
+                                          download={name}
+                                          css={{
+                                              color: 'white',
+                                              background: '#666',
+                                              borderRadius: 6,
+                                              padding: '4px 8px',
+                                              textDecoration: 'none',
+                                              cursor: 'pointer',
+                                          }}
+                                      >
+                                          Download {name}
+                                      </a>
+                                      <button onClick={() => setUrl(null)}>
+                                          Close
+                                      </button>
+                                  </div>
+                                  <img src={url} css={{ maxHeight: 400 }} />
+                              </div>
+                          );
+                      })()
+                    : null}
             </div>
             <Canvas
                 state={state}
+                innerRef={(node) => (ref.current = node)}
                 dispatch={dispatch}
                 width={1000}
                 height={1000}
