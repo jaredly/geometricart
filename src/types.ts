@@ -276,6 +276,17 @@ export type GuideUpdate = {
     // prev: Guide;
 };
 
+export type UndoGroupUpdate = {
+    type: GroupUpdate['type'];
+    action: GroupUpdate;
+    prev: PathGroup;
+};
+export type GroupUpdate = {
+    type: 'group:update';
+    id: Id;
+    group: PathGroup;
+};
+
 export type UndoGuideAdd = { action: GuideAdd; type: GuideAdd['type'] };
 export type GuideAdd = {
     type: 'guide:add';
@@ -299,6 +310,18 @@ export type UndoPendingPoint = {
 export type PendingPoint = {
     type: 'pending:point';
     coord: Coord;
+};
+
+export type PathCreate = {
+    type: 'path:create';
+    origin: Coord;
+    segments: Array<Segment>;
+};
+
+export type UndoPathCreate = {
+    type: PathCreate['type'];
+    action: PathCreate;
+    added: [Array<Id>, Id | null, number];
 };
 
 export type PathAdd = {
@@ -374,16 +397,20 @@ export type UndoableAction =
     | PathPoint
     | MirrorActive
     | ViewUpdate
+    | GroupUpdate
+    | PathCreate
     | GuideToggle;
 
 export type UndoAction =
     | UndoGuideAdd
+    | UndoGroupUpdate
     | UndoGuideUpdate
     | UndoViewUpdate
     | UndoMirrorAdd
     | UndoPendingPoint
     | UndoPathPoint
     | UndoPathAdd
+    | UndoPathCreate
     | UndoPendingType
     | UndoGuideToggle
     | UndoMirrorActive
@@ -504,8 +531,8 @@ export const initialState: State = {
             origin: { x: 0, y: 0 },
             parent: null,
             point: { x: 0, y: -1 },
-            reflect: false,
-            rotational: [true, true, true, true, true], // 6-fold
+            reflect: true,
+            rotational: [true, true], // , true, true, true], // 6-fold
         },
     },
     activeMirror: 'baseMirror',

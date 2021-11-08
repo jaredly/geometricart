@@ -31,6 +31,64 @@ export const Label = ({ text }: { text: string }) => (
     </div>
 );
 
+export const Color = ({
+    color,
+    onChange,
+}: {
+    color: string | undefined;
+    onChange: (color: string | undefined) => void;
+}) => {
+    const options = ['red', 'green', 'blue', 'orange', 'white'];
+    return (
+        <div>
+            {options.map((name, i) => (
+                <button
+                    onClick={() => onChange(name)}
+                    css={{
+                        background: name,
+                        border: `2px solid ${
+                            color === name ? 'white' : 'transparent'
+                        }`,
+                        width: 20,
+                        height: 20,
+                        cursor: 'pointer',
+                    }}
+                ></button>
+            ))}
+        </div>
+    );
+};
+
+export const Toggle = ({
+    label,
+    onChange,
+    value,
+}: {
+    value: boolean;
+    onChange: (v: boolean) => unknown;
+    label: string;
+}) => {
+    return (
+        <div
+            css={{ cursor: 'pointer', padding: 4 }}
+            onClick={() => onChange(!value)}
+        >
+            {label}
+            <input
+                style={{
+                    marginLeft: 4,
+                }}
+                onClick={(evt) => evt.stopPropagation()}
+                onChange={() => {
+                    onChange(!value);
+                }}
+                type="checkbox"
+                checked={value}
+            />
+        </div>
+    );
+};
+
 export const StyleForm = ({
     style,
     onChange,
@@ -40,9 +98,53 @@ export const StyleForm = ({
 }) => {
     return (
         <div>
+            Fills:
             {style.fills.map((fill, i) =>
                 fill ? (
-                    <div key={i}>{fill.color}</div>
+                    <div key={i}>
+                        <Color
+                            color={fill.color}
+                            onChange={(color) => {
+                                const fills = style.fills.slice();
+                                fills[i] = { ...fill, color };
+                                onChange({
+                                    ...style,
+                                    fills,
+                                });
+                            }}
+                        />
+                    </div>
+                ) : (
+                    <div key={i}>Fill disabled</div>
+                ),
+            )}
+            Lines:
+            {style.lines.map((line, i) =>
+                line ? (
+                    <div key={i}>
+                        <Int
+                            value={line.width || 1}
+                            onChange={(width) => {
+                                const lines = style.lines.slice();
+                                lines[i] = { ...line, width };
+                                onChange({
+                                    ...style,
+                                    lines,
+                                });
+                            }}
+                        />
+                        <Color
+                            color={line.color}
+                            onChange={(color) => {
+                                const lines = style.lines.slice();
+                                lines[i] = { ...line, color };
+                                onChange({
+                                    ...style,
+                                    lines,
+                                });
+                            }}
+                        />
+                    </div>
                 ) : (
                     <div key={i}>Fill disabled</div>
                 ),
@@ -61,7 +163,10 @@ export const PathGroupForm = ({
     return (
         <div css={{ padding: 4 }}>
             <div>Path Group</div>
-            {group.style.fills}
+            <StyleForm
+                style={group.style}
+                onChange={(style) => onChange({ ...group, style })}
+            />
         </div>
     );
 };
@@ -146,6 +251,11 @@ export const MirrorForm = ({
             >
                 Mirror {isActive ? '(active)' : null}
             </div>
+            <Toggle
+                label="Mirror?"
+                value={mirror.reflect}
+                onChange={(reflect) => onChange({ ...mirror, reflect })}
+            />
             <div>
                 <Label text="rotations" />
                 <Int

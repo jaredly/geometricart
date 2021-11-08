@@ -2,12 +2,15 @@
 /* @jsxFrag React.Fragment */
 import { jsx } from '@emotion/react';
 import React from 'react';
+import { DrawPath } from './DrawPath';
 import { findNextSegments } from './findNextSegments';
 import {
+    angleTo,
     applyMatrices,
     dist,
     getMirrorTransforms,
     Matrix,
+    push,
 } from './getMirrorTransforms';
 import { GuideElement } from './GuideElement';
 import { Primitive } from './intersect';
@@ -20,14 +23,17 @@ import {
     GuideGeom,
     Id,
     Intersect,
+    Line,
     Mirror,
     Path,
+    PathGroup,
     Pending,
     PendingGuide,
     PendingPath,
     PendingSegment,
     Segment,
     State,
+    Style,
     View,
 } from './types';
 
@@ -242,10 +248,29 @@ export const Canvas = ({ state, width, height, dispatch, innerRef }: Props) => {
     const currentState = React.useRef(state);
     currentState.current = state;
 
+    const [pathOrigin, setPathOrigin] = React.useState(
+        null as null | Intersect,
+    );
+
+    React.useEffect(() => {
+        if (!pathOrigin) {
+            return;
+        }
+        const fn = (evt: KeyboardEvent) => {
+            if (evt.key === 'Escape') {
+                setPathOrigin(null);
+                evt.stopPropagation();
+            }
+        };
+        document.addEventListener('keydown', fn);
+        return () => document.removeEventListener('keydown', fn);
+    }, [!!pathOrigin]);
+
     const onClickIntersection = React.useCallback((coord: Intersect) => {
         const state = currentState.current;
         if (!state.pending) {
-            dispatch({ type: 'path:point', coord });
+            setPathOrigin(coord);
+            // dispatch({ type: 'path:point', coord });
         }
         if (state.pending && state.pending.type === 'Guide') {
             dispatch({
@@ -255,23 +280,23 @@ export const Canvas = ({ state, width, height, dispatch, innerRef }: Props) => {
         }
     }, []);
 
-    const nextSegments = React.useMemo(() => {
-        if (state.pending && state.pending.type === 'Path') {
-            return findNextSegments(
-                state.pending as PendingPath,
-                guidePrimitives,
-                allIntersections,
-            );
-        }
-        return null;
-    }, [
-        state.pending && state.pending.type === 'Path' ? state.pending : null,
-        allIntersections,
-        guidePrimitives,
-    ]);
-    const onAdd = React.useCallback((segment: PendingSegment) => {
-        dispatch({ type: 'path:add', segment });
-    }, []);
+    // const nextSegments = React.useMemo(() => {
+    //     if (state.pending && state.pending.type === 'Path') {
+    //         return findNextSegments(
+    //             state.pending as PendingPath,
+    //             guidePrimitives,
+    //             allIntersections,
+    //         );
+    //     }
+    //     return null;
+    // }, [
+    //     state.pending && state.pending.type === 'Path' ? state.pending : null,
+    //     allIntersections,
+    //     guidePrimitives,
+    // ]);
+    // const onAdd = React.useCallback((segment: PendingSegment) => {
+    //     dispatch({ type: 'path:add', segment });
+    // }, []);
 
     return (
         <div
@@ -309,6 +334,7 @@ export const Canvas = ({ state, width, height, dispatch, innerRef }: Props) => {
                     {Object.keys(state.paths).map((k) => (
                         <RenderPath
                             key={k}
+                            groups={state.pathGroups}
                             path={state.paths[k]}
                             zoom={state.view.zoom}
                         />
@@ -333,16 +359,43 @@ export const Canvas = ({ state, width, height, dispatch, innerRef }: Props) => {
                                     zoom={state.view.zoom}
                                 />
                             ) : null}
-                            {nextSegments ? (
+                            {pathOrigin ? (
+                                <DrawPath
+                                    zoom={state.view.zoom}
+                                    origin={pathOrigin}
+                                    primitives={guidePrimitives}
+                                    intersections={allIntersections}
+                                    onComplete={(parts) => {
+                                        // TODO:
+                                        dispatch({
+                                            type: 'path:create',
+                                            segments: parts.map(
+                                                (s) => s.segment,
+                                            ),
+                                            origin: pathOrigin.coord,
+                                        });
+                                        setPathOrigin(null);
+                                    }}
+                                />
+                            ) : null}
+                            {/* {nextSegments ? (
                                 <RenderPendingPath
                                     next={nextSegments}
                                     path={state.pending as PendingPath}
                                     zoom={state.view.zoom}
                                     onAdd={onAdd}
                                 />
-                            ) : null}
+                            ) : null} */}
                         </>
                     ) : null}
+                    {Object.keys(state.mirrors).map((m) => (
+                        <RenderMirror
+                            key={m}
+                            mirror={state.mirrors[m]}
+                            transforms={mirrorTransforms[m]}
+                            zoom={state.view.zoom}
+                        />
+                    ))}
                 </g>
             </svg>
             <div>
@@ -353,7 +406,92 @@ export const Canvas = ({ state, width, height, dispatch, innerRef }: Props) => {
     );
 };
 
-export const RenderPath = ({ path, zoom }: { path: Path; zoom: number }) => {
+export const combineStyles = (styles: Array<Style>): Style => {
+    const result: Style = {
+        fills: [],
+        lines: [],
+    };
+    styles.forEach((style) => {
+        style.fills.forEach((fill, i) => {
+            if (fill != null) {
+                result.fills[i] =
+                    fill === false
+                        ? fill
+                        : {
+                              ...result.fills[i],
+                              ...fill,
+                          };
+            }
+        });
+        style.lines.forEach((line, i) => {
+            if (line != null) {
+                result.lines[i] =
+                    line === false
+                        ? line
+                        : {
+                              ...result.lines[i],
+                              ...line,
+                          };
+            }
+        });
+    });
+
+    return result;
+};
+
+export const RenderMirror = ({
+    mirror,
+    transforms,
+    zoom,
+}: {
+    mirror: Mirror;
+    transforms: Array<Array<Matrix>>;
+    zoom: number;
+}) => {
+    const d = angleTo(mirror.origin, mirror.point);
+    const off = push(mirror.origin, d + Math.PI / 2, 0.2);
+    const top = push(mirror.origin, d, 0.4);
+    const line = { p1: off, p2: top };
+    const lines = [line].concat(
+        transforms.map((tr) => ({
+            p1: applyMatrices(line.p1, tr),
+            p2: applyMatrices(line.p2, tr),
+        })),
+    );
+    return (
+        <>
+            {lines.map(({ p1, p2 }) => (
+                <line
+                    x1={p1.x * zoom}
+                    y1={p1.y * zoom}
+                    x2={p2.x * zoom}
+                    y2={p2.y * zoom}
+                    stroke={'#fa0'}
+                    strokeWidth={'4'}
+                />
+            ))}
+            <circle
+                r={10}
+                cx={mirror.point.x * zoom}
+                cy={mirror.point.y * zoom}
+                fill="none"
+                stroke="#fa0"
+            />
+        </>
+    );
+};
+
+export const RenderPath = ({
+    path,
+    zoom,
+    groups,
+    onClick,
+}: {
+    path: Path;
+    zoom: number;
+    groups: { [key: string]: PathGroup };
+    onClick?: () => void;
+}) => {
     let d = `M ${path.origin.x * zoom} ${path.origin.y * zoom}`;
     path.segments.forEach((seg) => {
         if (seg.type === 'Line') {
@@ -362,7 +500,60 @@ export const RenderPath = ({ path, zoom }: { path: Path; zoom: number }) => {
             d += arcPath(seg, zoom);
         }
     });
-    return <path d={d + ' Z'} fill={'green'} stroke="white" strokeWidth="3" />;
+    const styles = [path.style];
+    if (path.group) {
+        let group = groups[path.group];
+        styles.unshift(group.style);
+        while (group.group) {
+            group = groups[group.group];
+            styles.unshift(group.style);
+        }
+    }
+    const style = combineStyles(styles);
+    const fills = style.fills.map((fill, i) => {
+        if (!fill) {
+            return null;
+        }
+        return (
+            <path
+                key={i}
+                css={
+                    onClick
+                        ? {
+                              cursor: 'pointer',
+                              transition: '-moz-initial.2s ease opacity',
+                              ':hover': {
+                                  opacity: 0.8,
+                              },
+                          }
+                        : {}
+                }
+                d={d + ' Z'}
+                fill={fill.color}
+                onClick={onClick}
+            />
+        );
+    });
+    const lines = style.lines.map((line, i) => {
+        if (!line) {
+            return null;
+        }
+        return (
+            <path
+                key={i}
+                d={d + ' Z'}
+                stroke={line.color}
+                fill="none"
+                strokeWidth={line.width}
+            />
+        );
+    });
+    return (
+        <>
+            {fills}
+            {lines}
+        </>
+    );
 };
 
 export const RenderPendingPath = React.memo(
@@ -416,11 +607,15 @@ export const RenderSegment = ({
     prev,
     zoom,
     onClick,
+    onMouseOver,
+    color,
 }: {
     segment: Segment;
     prev: Coord;
     zoom: number;
     onClick?: () => unknown;
+    onMouseOver?: () => unknown;
+    color?: string;
 }) => {
     if (segment.type === 'Line') {
         return (
@@ -429,11 +624,12 @@ export const RenderSegment = ({
                 y1={prev.y * zoom}
                 x2={segment.to.x * zoom}
                 y2={segment.to.y * zoom}
-                stroke={onClick ? 'red' : 'green'}
+                stroke={color || (onClick ? 'red' : 'green')}
                 strokeWidth={'4'}
                 onClick={onClick}
+                onMouseOver={onMouseOver}
                 css={{
-                    cursor: onClick ? 'pointer' : 'default',
+                    cursor: onClick || onMouseOver ? 'pointer' : 'default',
                     ':hover': onClick
                         ? {
                               strokeWidth: '10',
@@ -446,7 +642,8 @@ export const RenderSegment = ({
         return (
             <path
                 onClick={onClick}
-                stroke={onClick ? 'red' : 'green'}
+                onMouseOver={onMouseOver}
+                stroke={color || (onClick ? 'red' : 'green')}
                 strokeWidth={'4'}
                 fill="none"
                 d={
@@ -454,7 +651,7 @@ export const RenderSegment = ({
                     arcPath(segment, zoom)
                 }
                 css={{
-                    cursor: onClick ? 'pointer' : 'default',
+                    cursor: onClick || onMouseOver ? 'pointer' : 'default',
                     ':hover': onClick
                         ? {
                               strokeWidth: '10',

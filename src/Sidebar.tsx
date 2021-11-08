@@ -1,7 +1,7 @@
 /* @jsx jsx */
 import { jsx } from '@emotion/react';
 import React from 'react';
-import { GuideForm, MirrorForm } from './Forms';
+import { GuideForm, MirrorForm, PathGroupForm } from './Forms';
 import { guideTypes, State, Action } from './types';
 
 const PREFIX = `<!-- STATE:`;
@@ -127,6 +127,7 @@ export function Sidebar({
                     }
                 />
             ))}
+            Guides
             {Object.keys(state.guides).map((k) => (
                 <GuideForm
                     key={k}
@@ -136,6 +137,20 @@ export function Sidebar({
                             type: 'guide:update',
                             id: k,
                             guide,
+                        })
+                    }
+                />
+            ))}
+            Groups
+            {Object.keys(state.pathGroups).map((k) => (
+                <PathGroupForm
+                    key={k}
+                    group={state.pathGroups[k]}
+                    onChange={(group) =>
+                        dispatch({
+                            type: 'group:update',
+                            id: k,
+                            group,
                         })
                     }
                 />

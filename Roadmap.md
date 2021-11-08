@@ -9,11 +9,15 @@ UP NEXT:
 - [ ] HOVERRRR to add. and then 'enter' to commit.
 - [x] Some intersections (where there are multiple intersections) aren't working.
 - [x] Mirrors for paths my folks! Need to update the Undo to remove a bunch of ids. But should be fine.
-- [ ] Style! Got to have style!
-- [ ] profit? like this is so gooood.
+- [x] Style! Got to have style!
+- [x] profit? like this is so gooood.
 - [x] hide guides
 - [x] almost-tangent circles should report connection.
-- [ ] color things my folks.
+- [x] color things my folks.
+
+- [ ] track down those bugs
+	- [ ] I was getting something from the wrong circle
+	- [ ] an intersection didn't have all offshoots
 
 FUTURE TOOLS:
 

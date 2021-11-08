@@ -122,7 +122,7 @@ export const rotationMatrix = (theta: number): Matrix => [
 ];
 export const scaleMatrix = (sx: number, sy: number) => [
     [sx, 0, 0],
-    [sy, 0, 0],
+    [0, sy, 0],
 ];
 
 export const transformToMatrices = (t: Transform) => {
