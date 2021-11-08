@@ -1,7 +1,8 @@
 /* @jsx jsx */
+/* @jsxFrag React.Fragment */
 import { jsx } from '@emotion/react';
 import * as React from 'react';
-import { Mirror } from './types';
+import { Circle, Guide, Mirror } from './types';
 
 export const Int = ({
     value,
@@ -29,6 +30,55 @@ export const Label = ({ text }: { text: string }) => (
         {text}
     </div>
 );
+
+export const GuideForm = ({
+    guide,
+    onChange,
+}: {
+    guide: Guide;
+    onChange: (guide: Guide) => unknown;
+}) => {
+    return (
+        <div
+            css={{
+                padding: 4,
+            }}
+        >
+            <div
+                css={{
+                    cursor: 'pointer',
+                    background: guide.active
+                        ? 'rgba(100,100,100,0.4)'
+                        : 'rgba(100,100,100,0.1)',
+                    ':hover': {
+                        background: 'rgba(100,100,100,0.2)',
+                    },
+                }}
+                onClick={() => onChange({ ...guide, active: !guide.active })}
+            >
+                {guide.geom.type} Guide {guide.active ? '(active)' : null}
+            </div>
+            {guide.geom.type === 'Circle' ? (
+                <>
+                    <Int
+                        value={guide.geom.multiples}
+                        onChange={(multiples) =>
+                            multiples >= 0
+                                ? onChange({
+                                      ...guide,
+                                      geom: {
+                                          ...(guide.geom as Circle),
+                                          multiples,
+                                      },
+                                  })
+                                : null
+                        }
+                    />
+                </>
+            ) : null}
+        </div>
+    );
+};
 
 export const MirrorForm = ({
     mirror,

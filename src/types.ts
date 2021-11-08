@@ -227,7 +227,11 @@ so, this is a strict tree
 
 */
 
-export type Action = UndoableAction | { type: 'undo' } | { type: 'redo' };
+export type Action =
+    | UndoableAction
+    | { type: 'undo' }
+    | { type: 'redo' }
+    | { type: 'reset'; state: State };
 
 export type ViewUpdate = { type: 'view:update'; view: View };
 export type UndoViewUpdate = {
@@ -280,7 +284,7 @@ export type PathAdd = {
 export type UndoPathAdd = {
     type: PathAdd['type'];
     action: PathAdd;
-    added: [Id, number, PendingPath] | null;
+    added: [Array<Id>, Id | null, number, PendingPath] | null;
 };
 
 export type UndoMirrorAdd = {

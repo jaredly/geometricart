@@ -1,5 +1,7 @@
 import { coordKey, pendingGuide } from './Canvas';
+import { applyMatrices, getTransformsForMirror } from './getMirrorTransforms';
 import { addAction, redoAction, undoAction } from './history';
+import { transformSegment } from './points';
 import {
     Action,
     UndoableAction,
@@ -13,6 +15,7 @@ import {
     PendingPath,
     State,
     UndoAction,
+    Path,
 } from './types';
 
 export const undo = (state: State, action: UndoAction): State => {
@@ -30,10 +33,16 @@ export const undo = (state: State, action: UndoAction): State => {
                     paths: {
                         ...state.paths,
                     },
-                    nextId: action.added[1],
-                    pending: action.added[2],
+                    nextId: action.added[2],
+                    pending: action.added[3],
                 };
-                delete state.paths[action.added[0]];
+                action.added[0].forEach((id) => {
+                    delete state.paths[id];
+                });
+                if (action.added[1]) {
+                    state.pathGroups = { ...state.pathGroups };
+                    delete state.pathGroups[action.added[1]];
+                }
                 return state;
             }
             return {
@@ -116,6 +125,9 @@ export const reducer = (state: State, action: Action): State => {
             console.log('NOTHING TO REDO');
             return state;
         }
+    }
+    if (action.type === 'reset') {
+        return action.state;
     }
 
     const [newState, newAction] = reduceWithoutUndo(
@@ -265,35 +277,75 @@ export const reduceWithoutUndo = (
                 coordKey(action.segment.to.coord) ===
                 coordKey(state.pending.origin.coord)
             ) {
-                console.log(`EQQQ`);
-                const id = `id-${state.nextId}`;
+                let nextId = state.nextId;
+                const id = `id-${nextId++}`;
+                const ids = [id];
+                let groupId: string | null = null;
+                let pending = state.pending;
+                state = { ...state, paths: { ...state.paths } };
+                const main: Path = {
+                    id,
+                    created: 0,
+                    group: null,
+                    ordering: 0,
+                    origin: pending.origin.coord,
+                    segments: pending.parts
+                        .map((p) => p.segment)
+                        .concat([action.segment.segment]),
+                    style: {
+                        fills: [],
+                        lines: [],
+                    },
+                };
+                if (state.activeMirror) {
+                    groupId = `id-${nextId++}`;
+                    main.group = groupId;
+                    const transforms = getTransformsForMirror(
+                        state.activeMirror,
+                        state.mirrors,
+                    );
+                    transforms.forEach((matrices) => {
+                        let nid = `id-${nextId++}`;
+                        state.paths[nid] = {
+                            id: nid,
+                            group: groupId,
+                            ordering: 0,
+                            created: 0,
+                            origin: applyMatrices(main.origin, matrices),
+                            segments: main.segments.map((seg) =>
+                                transformSegment(seg, matrices),
+                            ),
+                            style: main.style,
+                        };
+                        ids.push(nid);
+                    });
+                    state.pathGroups = {
+                        ...state.pathGroups,
+                        [groupId]: {
+                            group: null,
+                            id,
+                            // TODO:
+                            style: { lines: [], fills: [] },
+                        },
+                    };
+                    // here we gooooo
+                }
+                state.paths[id] = main;
+
                 return [
                     {
                         ...state,
-                        nextId: state.nextId + 1,
+                        nextId,
                         paths: {
                             ...state.paths,
-                            [id]: {
-                                id,
-                                created: Date.now(),
-                                group: null,
-                                ordering: 0,
-                                origin: state.pending.origin.coord,
-                                segments: state.pending.parts
-                                    .map((p) => p.segment)
-                                    .concat([action.segment.segment]),
-                                style: {
-                                    fills: [],
-                                    lines: [],
-                                },
-                            },
+                            [id]: main,
                         },
                         pending: null,
                     },
                     {
                         type: action.type,
                         action,
-                        added: [id, state.nextId, state.pending],
+                        added: [ids, groupId, state.nextId, pending],
                     },
                 ];
             }

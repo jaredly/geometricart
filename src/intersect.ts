@@ -1,4 +1,4 @@
-import { dist } from './getMirrorTransforms';
+import { angleTo, dist, push } from './getMirrorTransforms';
 import { Coord } from './types';
 
 export const lineLine_ = (
@@ -80,6 +80,8 @@ export type SlopeIntercept = { type: 'line'; m: number; b: number };
 export type Circle = { type: 'circle'; radius: number; center: Coord };
 export type Primitive = SlopeIntercept | Circle;
 
+const close = (a: number, b: number) => Math.abs(a - b) < epsilon;
+
 export const circleCircle = (one: Circle, two: Circle): Array<Coord> => {
     // (x - h)^2 + (y - k)^2 = r^2
     // we've got two of these.
@@ -91,13 +93,25 @@ export const circleCircle = (one: Circle, two: Circle): Array<Coord> => {
     let d = Math.sqrt(dx * dx + dy * dy);
 
     // tangent (or nearly)
-    if (Math.abs(one.radius + two.radius - d) < epsilon) {
+    if (close(one.radius + two.radius, d)) {
         return [
             {
                 x: one.center.x + dx / 2,
                 y: one.center.y + dy / 2,
             },
         ];
+    }
+    const larger = one.radius > two.radius ? one : two;
+    const smaller = one.radius > two.radius ? two : one;
+    if (
+        close(
+            // difference between the two
+            larger.radius - smaller.radius,
+            d,
+        )
+    ) {
+        const t = angleTo(larger.center, smaller.center);
+        return [push(larger.center, t, larger.radius)];
     }
 
     let R = one.radius;

@@ -97,6 +97,9 @@ export const calculateGuideElements = (
 ) => {
     const elements: Array<GuideElement> = [];
     Object.keys(guides).forEach((k) => {
+        if (!guides[k].active) {
+            return;
+        }
         elements.push(
             ...geomsForGiude(
                 guides[k],
@@ -591,7 +594,7 @@ function RenderPrimitive({
                 y1={-height}
                 y2={height}
                 x2={prim.b * zoom}
-                stroke="green"
+                stroke="#666"
                 strokeWidth="1"
             />
         ) : (
@@ -600,7 +603,7 @@ function RenderPrimitive({
                 y1={-width * prim.m + prim.b * zoom}
                 x2={width}
                 y2={prim.m * width + prim.b * zoom}
-                stroke="green"
+                stroke="#666"
                 strokeWidth="1"
             />
         )

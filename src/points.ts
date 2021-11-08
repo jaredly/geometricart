@@ -1,4 +1,10 @@
-import { angleTo, dist, push } from './getMirrorTransforms';
+import {
+    angleTo,
+    applyMatrices,
+    dist,
+    Matrix,
+    push,
+} from './getMirrorTransforms';
 import {
     Circle,
     circleCircle,
@@ -8,9 +14,31 @@ import {
     Primitive,
     SlopeIntercept,
 } from './intersect';
-import { Coord, GuideGeom } from './types';
+import { Coord, GuideGeom, Segment } from './types';
 
 // export type Primitive = {type: 'line', data: SlopeIntercept} | {type: 'circle', center: Coord, radius: number}
+
+export const transformSegment = (
+    segment: Segment,
+    matrices: Array<Matrix>,
+): Segment => {
+    // const to = applyMatrices(segment.to, matrices)
+    switch (segment.type) {
+        case 'Arc':
+            return {
+                type: 'Arc',
+                center: applyMatrices(segment.center, matrices),
+                clockwise: segment.clockwise,
+                to: applyMatrices(segment.to, matrices),
+                // to,
+            };
+        case 'Line':
+            return {
+                type: 'Line',
+                to: applyMatrices(segment.to, matrices),
+            };
+    }
+};
 
 export const geomToPrimitives = (geom: GuideGeom): Array<Primitive> => {
     switch (geom.type) {

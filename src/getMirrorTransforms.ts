@@ -42,13 +42,15 @@ export const getMirrorTransforms = (mirrors: { [key: Id]: Mirror }) => {
 export const getTransformsForMirror = (
     mirror: Id,
     mirrors: { [key: Id]: Mirror },
-) => {
-    let transforms = mirrorTransforms(mirrors[mirror]);
+): Array<Array<Matrix>> => {
+    let transforms = mirrorTransforms(mirrors[mirror]).map(
+        transformsToMatrices,
+    );
     let current = mirrors[mirror];
     while (current.parent) {
         current = mirrors[current.parent];
-        const outer = mirrorTransforms(current);
-        let next: Array<Array<Transform>> = [];
+        const outer = mirrorTransforms(current).map(transformsToMatrices);
+        let next: Array<Array<Matrix>> = [];
         outer.forEach((steps) => {
             transforms.forEach((inner) => {
                 next.push(inner.concat(steps));
