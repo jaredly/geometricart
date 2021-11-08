@@ -151,9 +151,14 @@ export type Path = {
     segments: Array<Segment>;
 };
 
-export type Segment =
-    | { type: 'Line'; to: Coord }
-    | { type: 'Arc'; center: Coord; to: Coord; long: boolean }; // long = "the long way round"
+export type ArcSegment = {
+    type: 'Arc';
+    center: Coord;
+    to: Coord;
+    clockwise: boolean;
+};
+
+export type Segment = { type: 'Line'; to: Coord } | ArcSegment; // long = "the long way round"
 
 export type PathGroup = {
     id: Id;
@@ -200,13 +205,15 @@ export type Intersect = {
     primitives: Array<[number, number]>;
 };
 
+export type PendingSegment = {
+    to: Intersect;
+    segment: Segment;
+};
+
 export type PendingPath = {
     type: 'Path';
     origin: Intersect;
-    parts: Array<{
-        to: Intersect;
-        segment: Segment;
-    }>;
+    parts: Array<PendingSegment>;
 };
 
 /*
@@ -239,6 +246,13 @@ export type GuideAdd = {
     type: 'guide:add';
     id: Id;
     guide: Guide;
+};
+
+export type PathPoint = { type: 'path:point'; coord: Intersect };
+export type UndoPathPoint = {
+    type: PathPoint['type'];
+    action: PathPoint;
+    prev: Pending | null;
 };
 
 export type UndoPendingPoint = {
@@ -301,6 +315,7 @@ export type ActionWithoutUndo =
     | MirrorUpdate
     | PendingPoint
     | PendingType
+    | PathPoint
     | GuideToggle;
 
 export type UndoAction =
@@ -308,6 +323,7 @@ export type UndoAction =
     | UndoGuideUpdate
     | UndoMirrorAdd
     | UndoPendingPoint
+    | UndoPathPoint
     | UndoPendingType
     | UndoGuideToggle
     | UndoMirrorUpdate;

@@ -16,6 +16,8 @@ import {
 
 export const undo = (state: State, action: UndoAction): State => {
     switch (action.type) {
+        case 'path:point':
+            return { ...state, pending: action.prev };
         case 'pending:type':
             return { ...state, pending: action.prev };
         case 'pending:point': {
@@ -218,7 +220,20 @@ export const reduceWithoutUndo = (
                     prev: state.guides[action.id].active,
                 },
             ];
+        case 'path:point':
+            return [
+                {
+                    ...state,
+                    pending: {
+                        type: 'Path',
+                        origin: action.coord,
+                        parts: [],
+                    },
+                },
+                { type: action.type, action, prev: state.pending },
+            ];
         default:
+            let _x: never = action;
             console.log(`SKIPPING ${(action as any).type}`);
     }
     return [state, null];

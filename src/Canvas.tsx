@@ -2,19 +2,19 @@
 /* @jsxFrag React.Fragment */
 import { jsx } from '@emotion/react';
 import React from 'react';
+import { findNextSegments } from './findNextSegments';
 import {
-    angleTo,
     applyMatrices,
     dist,
     getMirrorTransforms,
     Matrix,
-    push,
-    scale,
 } from './getMirrorTransforms';
+import { GuideElement } from './GuideElement';
 import { Primitive } from './intersect';
 import { calculateIntersections, geomToPrimitives } from './points';
 import {
     Action,
+    ArcSegment,
     Coord,
     Guide,
     GuideGeom,
@@ -23,6 +23,8 @@ import {
     Mirror,
     Pending,
     PendingGuide,
+    PendingPath,
+    PendingSegment,
     State,
     View,
 } from './types';
@@ -131,161 +133,6 @@ export type Props = {
     dispatch: (action: Action) => unknown;
 };
 
-export const GuideElement = ({
-    geom,
-    zoom,
-    original,
-}: {
-    geom: GuideGeom;
-    zoom: number;
-    original: boolean;
-}) => {
-    switch (geom.type) {
-        case 'Line': {
-            const t1 = angleTo(geom.p1, geom.p2);
-            const d = dist(geom.p1, geom.p2);
-            const left = push(geom.p1, t1, -10);
-            const right = push(geom.p2, t1, 10);
-            return (
-                <>
-                    <line
-                        x1={left.x * zoom}
-                        y1={left.y * zoom}
-                        x2={right.x * zoom}
-                        y2={right.y * zoom}
-                        stroke="#fff"
-                        strokeWidth={1}
-                    />
-                </>
-            );
-        }
-        case 'PerpendicularBisector': {
-            const t1 = angleTo(geom.p1, geom.p2);
-            const d = dist(geom.p1, geom.p2);
-            const mid = push(geom.p1, t1, d / 2);
-            const left = push(mid, t1 + Math.PI / 2, 10);
-            const right = push(mid, t1 + Math.PI / 2, -10);
-            return (
-                <>
-                    <line
-                        x1={left.x * zoom}
-                        y1={left.y * zoom}
-                        x2={right.x * zoom}
-                        y2={right.y * zoom}
-                        stroke="#fff"
-                        strokeWidth={1}
-                    />
-                    <line
-                        x1={geom.p1.x * zoom}
-                        y1={geom.p1.y * zoom}
-                        x2={geom.p2.x * zoom}
-                        y2={geom.p2.y * zoom}
-                        strokeDasharray="5 5"
-                        stroke="#666"
-                        strokeWidth={1}
-                    />
-                </>
-            );
-        }
-        case 'AngleBisector': {
-            const t1 = angleTo(geom.p2, geom.p1);
-            const t2 = angleTo(geom.p2, geom.p3);
-            const left = push(geom.p2, (t1 + t2) / 2, 10);
-            const right = push(geom.p2, (t1 + t2) / 2, -10);
-            return (
-                <>
-                    <line
-                        x1={geom.p1.x * zoom}
-                        y1={geom.p1.y * zoom}
-                        x2={geom.p2.x * zoom}
-                        y2={geom.p2.y * zoom}
-                        stroke="#666"
-                        strokeDasharray="5 5"
-                        strokeWidth={1}
-                    />
-                    <line
-                        x1={geom.p3.x * zoom}
-                        y1={geom.p3.y * zoom}
-                        x2={geom.p2.x * zoom}
-                        y2={geom.p2.y * zoom}
-                        stroke="#666"
-                        strokeDasharray="5 5"
-                        strokeWidth={1}
-                    />
-                    <line
-                        x1={left.x * zoom}
-                        y1={left.y * zoom}
-                        x2={right.x * zoom}
-                        y2={right.y * zoom}
-                        stroke="#fff"
-                        strokeWidth={1}
-                    />
-                </>
-            );
-        }
-        case 'Circle':
-            const r = dist(geom.radius, geom.center);
-            const m = [];
-            for (let i = 1; i <= geom.multiples + 1; i++) {
-                m.push(
-                    <circle
-                        key={i}
-                        cx={geom.center.x * zoom}
-                        cy={geom.center.y * zoom}
-                        r={r * i * zoom}
-                        fill="none"
-                        strokeDasharray={i === 1 ? '' : '5 5'}
-                        stroke="#666"
-                        strokeWidth={1}
-                    />,
-                );
-            }
-            const a = angleTo(geom.center, geom.radius);
-            const p1 = push(scale(geom.center, zoom), a, 2000);
-            const p2 = push(scale(geom.center, zoom), a, -2000);
-            return (
-                <>
-                    <line
-                        x1={p1.x}
-                        y1={p1.y}
-                        x2={p2.x}
-                        y2={p2.y}
-                        stroke="green"
-                        strokeWidth={0.5}
-                    />
-                    {m}
-                    {geom.half ? (
-                        <circle
-                            cx={geom.center.x * zoom}
-                            cy={geom.center.y * zoom}
-                            r={r * 0.5 * zoom}
-                            strokeDasharray="5 5"
-                            fill="none"
-                            stroke="#666"
-                            strokeWidth={1}
-                        />
-                    ) : null}
-                    {/* {original ? (
-                        <circle
-                            cx={geom.center.x * zoom}
-                            cy={geom.center.y * zoom}
-                            r={5}
-                            fill="white"
-                        />
-                    ) : null}
-                    {original ? (
-                        <circle
-                            cx={geom.radius.x * zoom}
-                            cy={geom.radius.y * zoom}
-                            r={5}
-                            fill="white"
-                        />
-                    ) : null} */}
-                </>
-            );
-    }
-};
-
 const precision = 4;
 export const primitiveKey = (p: Primitive) =>
     p.type === 'line'
@@ -353,8 +200,6 @@ export const Canvas = ({ state, width, height, dispatch, innerRef }: Props) => {
         () => getMirrorTransforms(state.mirrors),
         [state.mirrors],
     );
-    // NEED TO - dedup circles. HOW: make a key, that is rounded center.
-    // This includes points I think....
     const guideElements = React.useMemo(
         () => calculateGuideElements(state.guides, mirrorTransforms),
         [state.guides, mirrorTransforms],
@@ -380,17 +225,36 @@ export const Canvas = ({ state, width, height, dispatch, innerRef }: Props) => {
 
     const [pos, setPos] = React.useState({ x: 0, y: 0 });
 
-    const onClickIntersection = React.useCallback(
-        (coord: Intersect) => {
-            if (state.pending && state.pending.type === 'Guide') {
-                dispatch({
-                    type: 'pending:point',
-                    coord: coord.coord,
-                });
-            }
-        },
-        [!!state.pending],
-    );
+    const currentState = React.useRef(state);
+    currentState.current = state;
+
+    const onClickIntersection = React.useCallback((coord: Intersect) => {
+        const state = currentState.current;
+        if (!state.pending) {
+            dispatch({ type: 'path:point', coord });
+        }
+        if (state.pending && state.pending.type === 'Guide') {
+            dispatch({
+                type: 'pending:point',
+                coord: coord.coord,
+            });
+        }
+    }, []);
+
+    const nextSegments = React.useMemo(() => {
+        if (state.pending && state.pending.type === 'Path') {
+            return findNextSegments(
+                state.pending as PendingPath,
+                guidePrimitives,
+                allIntersections,
+            );
+        }
+        return null;
+    }, [
+        state.pending && state.pending.type === 'Path' ? state.pending : null,
+        allIntersections,
+        guidePrimitives,
+    ]);
 
     return (
         <div
@@ -437,9 +301,16 @@ export const Canvas = ({ state, width, height, dispatch, innerRef }: Props) => {
                         onClick={onClickIntersection}
                     />
                     {state.pending && state.pending.type === 'Guide' ? (
-                        <RenderPending
+                        <RenderPendingGuide
                             guide={state.pending}
                             pos={pos}
+                            zoom={state.view.zoom}
+                        />
+                    ) : null}
+                    {nextSegments ? (
+                        <RenderPendingPath
+                            next={nextSegments}
+                            path={state.pending as PendingPath}
                             zoom={state.view.zoom}
                         />
                     ) : null}
@@ -451,6 +322,60 @@ export const Canvas = ({ state, width, height, dispatch, innerRef }: Props) => {
             </div>
         </div>
     );
+};
+
+export const RenderPendingPath = React.memo(
+    ({
+        next,
+        path,
+        zoom,
+    }: {
+        next: Array<PendingSegment>;
+        path: PendingPath;
+        zoom: number;
+    }) => {
+        const current = path.parts.length
+            ? path.parts[path.parts.length - 1].to
+            : path.origin;
+
+        return (
+            <>
+                {next.map((seg, i) => {
+                    if (seg.segment.type === 'Line') {
+                        return (
+                            <line
+                                key={i}
+                                x1={current.coord.x * zoom}
+                                y1={current.coord.y * zoom}
+                                x2={seg.segment.to.x * zoom}
+                                y2={seg.segment.to.y * zoom}
+                                stroke="red"
+                                strokeWidth="1"
+                            />
+                        );
+                    } else {
+                        return (
+                            <path
+                                stroke="red"
+                                strokeWidth="1"
+                                fill="none"
+                                d={arcPath(current.coord, seg.segment, zoom)}
+                            />
+                        );
+                    }
+                })}
+            </>
+        );
+    },
+);
+
+export const arcPath = (coord: Coord, segment: ArcSegment, zoom: number) => {
+    const r = dist(coord, segment.center);
+    return `M ${coord.x * zoom} ${coord.y * zoom} A ${r * zoom} ${
+        r * zoom
+    } 0 0 ${segment.clockwise ? 1 : 0} ${segment.to.x * zoom} ${
+        segment.to.y * zoom
+    }`;
 };
 
 export const Intersections = React.memo(
@@ -526,7 +451,7 @@ export const pendingGuide = (
     }
 };
 
-export const RenderPending = ({
+export const RenderPendingGuide = ({
     guide,
     pos,
     zoom,
