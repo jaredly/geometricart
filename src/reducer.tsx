@@ -1,4 +1,4 @@
-import { pendingGuide } from './Canvas';
+import { coordKey, pendingGuide } from './Canvas';
 import { addAction, redoAction, undoAction } from './history';
 import {
     Action,
@@ -10,6 +10,7 @@ import {
     Id,
     Mirror,
     Pending,
+    PendingPath,
     State,
     UndoAction,
 } from './types';
@@ -18,6 +19,26 @@ export const undo = (state: State, action: UndoAction): State => {
     switch (action.type) {
         case 'path:point':
             return { ...state, pending: action.prev };
+        case 'path:add':
+            if (action.added) {
+                state = {
+                    ...state,
+                    paths: {
+                        ...state.paths,
+                    },
+                    nextId: action.added[1],
+                    pending: action.added[2],
+                };
+                delete state.paths[action.added[0]];
+                return state;
+            }
+            return {
+                ...state,
+                pending: {
+                    ...(state.pending as PendingPath),
+                    parts: (state.pending as PendingPath).parts.slice(0, -1),
+                },
+            };
         case 'pending:type':
             return { ...state, pending: action.prev };
         case 'pending:point': {
@@ -231,6 +252,56 @@ export const reduceWithoutUndo = (
                     },
                 },
                 { type: action.type, action, prev: state.pending },
+            ];
+        case 'path:add':
+            if (state.pending?.type !== 'Path') {
+                return [state, null];
+            }
+            if (
+                coordKey(action.segment.to.coord) ===
+                coordKey(state.pending.origin.coord)
+            ) {
+                console.log(`EQQQ`);
+                const id = `id-${state.nextId}`;
+                return [
+                    {
+                        ...state,
+                        nextId: state.nextId + 1,
+                        paths: {
+                            ...state.paths,
+                            [id]: {
+                                id,
+                                created: Date.now(),
+                                group: null,
+                                ordering: 0,
+                                origin: state.pending.origin.coord,
+                                segments: state.pending.parts
+                                    .map((p) => p.segment)
+                                    .concat([action.segment.segment]),
+                                style: {
+                                    fills: [],
+                                    lines: [],
+                                },
+                            },
+                        },
+                        pending: null,
+                    },
+                    {
+                        type: action.type,
+                        action,
+                        added: [id, state.nextId, state.pending],
+                    },
+                ];
+            }
+            return [
+                {
+                    ...state,
+                    pending: {
+                        ...state.pending,
+                        parts: state.pending.parts.concat([action.segment]),
+                    },
+                },
+                { type: action.type, action, added: null },
             ];
         default:
             let _x: never = action;

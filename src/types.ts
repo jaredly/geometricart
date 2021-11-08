@@ -266,6 +266,16 @@ export type PendingPoint = {
     coord: Coord;
 };
 
+export type PathAdd = {
+    type: 'path:add';
+    segment: PendingSegment;
+};
+export type UndoPathAdd = {
+    type: PathAdd['type'];
+    action: PathAdd;
+    added: [Id, number, PendingPath] | null;
+};
+
 export type UndoMirrorAdd = {
     type: MirrorAdd['type'];
     action: MirrorAdd;
@@ -314,6 +324,7 @@ export type ActionWithoutUndo =
     | MirrorAdd
     | MirrorUpdate
     | PendingPoint
+    | PathAdd
     | PendingType
     | PathPoint
     | GuideToggle;
@@ -324,6 +335,7 @@ export type UndoAction =
     | UndoMirrorAdd
     | UndoPendingPoint
     | UndoPathPoint
+    | UndoPathAdd
     | UndoPendingType
     | UndoGuideToggle
     | UndoMirrorUpdate;

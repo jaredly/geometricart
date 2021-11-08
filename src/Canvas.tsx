@@ -21,10 +21,12 @@ import {
     Id,
     Intersect,
     Mirror,
+    Path,
     Pending,
     PendingGuide,
     PendingPath,
     PendingSegment,
+    Segment,
     State,
     View,
 } from './types';
@@ -255,6 +257,9 @@ export const Canvas = ({ state, width, height, dispatch, innerRef }: Props) => {
         allIntersections,
         guidePrimitives,
     ]);
+    const onAdd = React.useCallback((segment: PendingSegment) => {
+        dispatch({ type: 'path:add', segment });
+    }, []);
 
     return (
         <div
@@ -289,6 +294,13 @@ export const Canvas = ({ state, width, height, dispatch, innerRef }: Props) => {
                             original={element.original}
                         />
                     ))} */}
+                    {Object.keys(state.paths).map((k) => (
+                        <RenderPath
+                            key={k}
+                            path={state.paths[k]}
+                            zoom={state.view.zoom}
+                        />
+                    ))}
                     <Primitives
                         primitives={guidePrimitives}
                         zoom={state.view.zoom}
@@ -312,6 +324,7 @@ export const Canvas = ({ state, width, height, dispatch, innerRef }: Props) => {
                             next={nextSegments}
                             path={state.pending as PendingPath}
                             zoom={state.view.zoom}
+                            onAdd={onAdd}
                         />
                     ) : null}
                 </g>
@@ -324,15 +337,29 @@ export const Canvas = ({ state, width, height, dispatch, innerRef }: Props) => {
     );
 };
 
+export const RenderPath = ({ path, zoom }: { path: Path; zoom: number }) => {
+    let d = `M ${path.origin.x * zoom} ${path.origin.y * zoom}`;
+    path.segments.forEach((seg) => {
+        if (seg.type === 'Line') {
+            d += ` L ${seg.to.x * zoom} ${seg.to.y * zoom}`;
+        } else {
+            d += arcPath(seg, zoom);
+        }
+    });
+    return <path d={d} fill={'green'} />;
+};
+
 export const RenderPendingPath = React.memo(
     ({
         next,
         path,
         zoom,
+        onAdd,
     }: {
         next: Array<PendingSegment>;
         path: PendingPath;
         zoom: number;
+        onAdd: (next: PendingSegment) => unknown;
     }) => {
         const current = path.parts.length
             ? path.parts[path.parts.length - 1].to
@@ -340,42 +367,94 @@ export const RenderPendingPath = React.memo(
 
         return (
             <>
+                {path.parts.map((part, i) => (
+                    <RenderSegment
+                        key={i}
+                        segment={part.segment}
+                        zoom={zoom}
+                        prev={
+                            i === 0
+                                ? path.origin.coord
+                                : path.parts[i - 1].to.coord
+                        }
+                    />
+                ))}
                 {next.map((seg, i) => {
-                    if (seg.segment.type === 'Line') {
-                        return (
-                            <line
-                                key={i}
-                                x1={current.coord.x * zoom}
-                                y1={current.coord.y * zoom}
-                                x2={seg.segment.to.x * zoom}
-                                y2={seg.segment.to.y * zoom}
-                                stroke="red"
-                                strokeWidth="1"
-                            />
-                        );
-                    } else {
-                        return (
-                            <path
-                                stroke="red"
-                                strokeWidth="1"
-                                fill="none"
-                                d={arcPath(current.coord, seg.segment, zoom)}
-                            />
-                        );
-                    }
+                    return (
+                        <RenderSegment
+                            key={i}
+                            segment={seg.segment}
+                            zoom={zoom}
+                            prev={current.coord}
+                            onClick={() => onAdd(seg)}
+                        />
+                    );
                 })}
             </>
         );
     },
 );
 
-export const arcPath = (coord: Coord, segment: ArcSegment, zoom: number) => {
-    const r = dist(coord, segment.center);
-    return `M ${coord.x * zoom} ${coord.y * zoom} A ${r * zoom} ${
-        r * zoom
-    } 0 0 ${segment.clockwise ? 1 : 0} ${segment.to.x * zoom} ${
-        segment.to.y * zoom
-    }`;
+export const RenderSegment = ({
+    segment,
+    prev,
+    zoom,
+    onClick,
+}: {
+    segment: Segment;
+    prev: Coord;
+    zoom: number;
+    onClick?: () => unknown;
+}) => {
+    if (segment.type === 'Line') {
+        return (
+            <line
+                x1={prev.x * zoom}
+                y1={prev.y * zoom}
+                x2={segment.to.x * zoom}
+                y2={segment.to.y * zoom}
+                stroke="red"
+                strokeWidth="4"
+                onClick={onClick}
+                css={{
+                    cursor: 'pointer',
+                    ':hover': onClick
+                        ? {
+                              strokeWidth: '10',
+                          }
+                        : {},
+                }}
+            />
+        );
+    } else {
+        return (
+            <path
+                onClick={onClick}
+                stroke="red"
+                strokeWidth="4"
+                fill="none"
+                d={
+                    `M ${prev.x * zoom} ${prev.y * zoom} ` +
+                    arcPath(segment, zoom)
+                }
+                css={{
+                    cursor: 'pointer',
+                    ':hover': onClick
+                        ? {
+                              strokeWidth: '10',
+                          }
+                        : {},
+                }}
+            />
+        );
+    }
+};
+
+export const arcPath = (segment: ArcSegment, zoom: number) => {
+    const r = dist(segment.to, segment.center);
+    return `A ${r * zoom} ${r * zoom} 0 0 ${segment.clockwise ? 1 : 0} ${
+        segment.to.x * zoom
+    } ${segment.to.y * zoom}`;
 };
 
 export const Intersections = React.memo(
