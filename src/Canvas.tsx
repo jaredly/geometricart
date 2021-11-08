@@ -253,7 +253,7 @@ export const GuideElement = ({
                             strokeWidth={1}
                         />
                     ) : null}
-                    {original ? (
+                    {/* {original ? (
                         <circle
                             cx={geom.center.x * zoom}
                             cy={geom.center.y * zoom}
@@ -268,7 +268,7 @@ export const GuideElement = ({
                             r={5}
                             fill="white"
                         />
-                    ) : null}
+                    ) : null} */}
                 </>
             );
     }
@@ -310,6 +310,35 @@ export const calcAllIntersections = (primitives: Array<Primitive>) => {
     }
     return coords;
 };
+
+export const Primitives = React.memo(
+    ({
+        primitives,
+        zoom,
+        height,
+        width,
+    }: {
+        zoom: number;
+        height: number;
+        width: number;
+        primitives: Array<Primitive>;
+    }) => {
+        console.log(primitives);
+        return (
+            <>
+                {primitives.map((prim, i) => (
+                    <RenderPrimitive
+                        prim={prim}
+                        zoom={zoom}
+                        height={height}
+                        width={width}
+                        key={i}
+                    />
+                ))}
+            </>
+        );
+    },
+);
 
 export const Canvas = ({ state, width, height, dispatch }: Props) => {
     const mirrorTransforms = React.useMemo(
@@ -369,15 +398,12 @@ export const Canvas = ({ state, width, height, dispatch }: Props) => {
                             original={element.original}
                         />
                     ))} */}
-                    {guidePrimitives.map((prim, i) => (
-                        <RenderPrimitive
-                            prim={prim}
-                            state={state}
-                            height={height}
-                            width={width}
-                            key={i}
-                        />
-                    ))}
+                    <Primitives
+                        primitives={guidePrimitives}
+                        zoom={state.view.zoom}
+                        width={width}
+                        height={height}
+                    />
                     {allIntersections.map((coord, i) => (
                         <circle
                             key={i}
@@ -476,42 +502,43 @@ export const Pending = ({
         </g>
     );
 };
+
 function RenderPrimitive({
     prim,
-    state,
+    zoom,
     height,
     width,
 }: {
     prim: Primitive;
-    state: State;
+    zoom: number;
     height: number;
     width: number;
 }): jsx.JSX.Element {
     return prim.type === 'line' ? (
         prim.m === Infinity ? (
             <line
-                x1={prim.b + state.view.zoom}
+                x1={prim.b * zoom}
                 y1={-height}
                 y2={height}
-                x2={prim.b + state.view.zoom}
+                x2={prim.b * zoom}
                 stroke="green"
                 strokeWidth="1"
             />
         ) : (
             <line
                 x1={-width}
-                y1={-width * prim.m + prim.b * state.view.zoom}
+                y1={-width * prim.m + prim.b * zoom}
                 x2={width}
-                y2={prim.m * width + prim.b * state.view.zoom}
+                y2={prim.m * width + prim.b * zoom}
                 stroke="green"
                 strokeWidth="1"
             />
         )
     ) : (
         <circle
-            cx={prim.center.x * state.view.zoom}
-            cy={prim.center.y * state.view.zoom}
-            r={prim.radius * state.view.zoom}
+            cx={prim.center.x * zoom}
+            cy={prim.center.y * zoom}
+            r={prim.radius * zoom}
             stroke="#666"
             strokeWidth="1"
             fill="none"

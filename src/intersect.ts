@@ -60,12 +60,14 @@ export const convertCircle = (p1: Coord, p2: Coord): Circle => ({
     radius: dist(p1, p2),
 });
 
+export const epsilon = 0.000001;
+
 // NOTE: if these two points are the same, we pretend it's a horizontal line.
 export const lineToSlope = (p1: Coord, p2: Coord): SlopeIntercept => {
-    if (p1.y === p2.y) {
+    if (Math.abs(p1.y - p2.y) < epsilon) {
         return { type: 'line', m: 0, b: p1.y };
     }
-    if (p1.x === p2.x) {
+    if (Math.abs(p1.x - p2.x) < epsilon) {
         // b is now the X intercept, not the Y intercept
         return { type: 'line', m: Infinity, b: p1.x };
     }
