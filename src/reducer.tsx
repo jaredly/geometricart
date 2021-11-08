@@ -17,7 +17,7 @@ import {
 export const undo = (state: State, action: UndoAction): State => {
     switch (action.type) {
         case 'pending:type':
-            return { ...state, pendingGuide: action.prev };
+            return { ...state, pending: action.prev };
         case 'pending:point': {
             if (action.added) {
                 state = {
@@ -31,7 +31,7 @@ export const undo = (state: State, action: UndoAction): State => {
             }
             return {
                 ...state,
-                pendingGuide: action.pending,
+                pending: action.pending,
             };
         }
         case 'mirror:change':
@@ -131,34 +131,31 @@ export const reduceWithoutUndo = (
             return [
                 {
                     ...state,
-                    pendingGuide: action.kind
-                        ? { type: action.kind, points: [] }
+                    pending: action.kind
+                        ? { type: 'Guide', kind: action.kind, points: [] }
                         : null,
                 },
-                { type: action.type, action, prev: state.pendingGuide },
+                { type: action.type, action, prev: state.pending },
             ];
         case 'pending:point': {
-            if (!state.pendingGuide) {
+            if (!state.pending || state.pending.type !== 'Guide') {
                 return [state, null];
             }
-            const points = state.pendingGuide.points.concat([action.coord]);
-            if (points.length >= guidePoints[state.pendingGuide.type]) {
+            const points = state.pending.points.concat([action.coord]);
+            if (points.length >= guidePoints[state.pending.kind]) {
                 const id = 'id-' + state.nextId;
                 return [
                     {
                         ...state,
                         nextId: state.nextId + 1,
-                        pendingGuide: null,
+                        pending: null,
                         guides: {
                             ...state.guides,
                             [id]: {
                                 id,
                                 active: true,
                                 basedOn: [],
-                                geom: pendingGuide(
-                                    state.pendingGuide.type,
-                                    points,
-                                ),
+                                geom: pendingGuide(state.pending.kind, points),
                                 mirror: state.activeMirror,
                             },
                         },
@@ -167,22 +164,22 @@ export const reduceWithoutUndo = (
                         type: action.type,
                         action,
                         added: [id, state.nextId],
-                        pending: state.pendingGuide,
+                        pending: state.pending,
                     },
                 ];
             }
             return [
                 {
                     ...state,
-                    pendingGuide: {
-                        ...state.pendingGuide,
+                    pending: {
+                        ...state.pending,
                         points,
                     },
                 },
                 {
                     type: action.type,
                     action,
-                    pending: state.pendingGuide,
+                    pending: state.pending,
                     added: null,
                 },
             ];

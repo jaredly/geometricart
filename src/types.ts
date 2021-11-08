@@ -187,9 +187,26 @@ export type Cache = {
     intersections: Idd<{ coord: Coord; prims: Array<number> }>;
 };
 
-export type Pending = {
+export type Pending = PendingGuide | PendingPath;
+
+export type PendingGuide = {
+    type: 'Guide';
     points: Array<Coord>;
-    type: GuideGeom['type'];
+    kind: GuideGeom['type'];
+};
+
+export type Intersect = {
+    coord: Coord;
+    primitives: Array<[number, number]>;
+};
+
+export type PendingPath = {
+    type: 'Path';
+    origin: Intersect;
+    parts: Array<{
+        to: Intersect;
+        segment: Segment;
+    }>;
 };
 
 /*
@@ -233,7 +250,6 @@ export type UndoPendingPoint = {
 export type PendingPoint = {
     type: 'pending:point';
     coord: Coord;
-    // pending: Pending;
 };
 
 export type UndoMirrorAdd = {
@@ -347,7 +363,7 @@ export type History = {
 export type State = {
     nextId: number;
     history: History;
-    pendingGuide: Pending | null;
+    pending: Pending | null;
     paths: { [key: Id]: Path };
     // Pathgroups automatically happen when, for example, a path is created when a mirror is active.
     // SO: Paths are automatically /realized/, that is, when completing a path, the mirrored paths are also
@@ -379,7 +395,7 @@ export type View = {
 // Should I use hashes to persist the realized whatsits for all the things?
 // idk let's just do it slow for now.
 export const initialState: State = {
-    pendingGuide: { type: 'Line', points: [] },
+    pending: { type: 'Guide', kind: 'Line', points: [] },
     nextId: 0,
     paths: {},
     history: initialHistory,

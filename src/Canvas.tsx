@@ -19,7 +19,10 @@ import {
     Guide,
     GuideGeom,
     Id,
+    Intersect,
     Mirror,
+    Pending,
+    PendingGuide,
     State,
     View,
 } from './types';
@@ -291,29 +294,25 @@ export const primitiveKey = (p: Primitive) =>
 export const coordKey = (coord: Coord) =>
     `${coord.x.toFixed(precision)},${coord.y.toFixed(precision)}`;
 
-export const calcAllIntersections = (primitives: Array<Primitive>) => {
-    const seen: { [k: string]: true } = {};
-    const deduped = primitives.filter((p) => {
-        const k = primitiveKey(p);
-        if (seen[k]) {
-            return false;
-        }
-        return (seen[k] = true);
-    });
-    const seenCoords: { [k: string]: true } = {};
-    const coords: Array<Coord> = [];
-    for (let i = 0; i < deduped.length; i++) {
-        for (let j = i + 1; j < deduped.length; j++) {
+export const calcAllIntersections = (
+    primitives: Array<Primitive>,
+): Array<Intersect> => {
+    const seenCoords: { [k: string]: Intersect } = {};
+    const coords: Array<Intersect> = [];
+    for (let i = 0; i < primitives.length; i++) {
+        for (let j = i + 1; j < primitives.length; j++) {
+            const pair: [number, number] = [i, j];
             coords.push(
-                ...calculateIntersections(deduped[i], deduped[j]).filter(
-                    (coord) => {
+                ...(calculateIntersections(primitives[i], primitives[j])
+                    .map((coord) => {
                         const k = coordKey(coord);
                         if (seenCoords[k]) {
-                            return false;
+                            seenCoords[k].primitives.push(pair);
+                            return null;
                         }
-                        return (seenCoords[k] = true);
-                    },
-                ),
+                        return (seenCoords[k] = { coord, primitives: [pair] });
+                    })
+                    .filter(Boolean) as Array<Intersect>),
             );
         }
     }
@@ -361,13 +360,18 @@ export const Canvas = ({ state, width, height, dispatch, innerRef }: Props) => {
         [state.guides, mirrorTransforms],
     );
 
-    const guidePrimitives = React.useMemo(
-        () =>
-            ([] as Array<Primitive>).concat(
-                ...guideElements.map((el) => geomToPrimitives(el.geom)),
-            ),
-        [guideElements],
-    );
+    const guidePrimitives = React.useMemo(() => {
+        const seen: { [key: string]: true } = {};
+        return ([] as Array<Primitive>)
+            .concat(...guideElements.map((el) => geomToPrimitives(el.geom)))
+            .filter((prim) => {
+                const k = primitiveKey(prim);
+                if (seen[k]) {
+                    return false;
+                }
+                return (seen[k] = true);
+            });
+    }, [guideElements]);
 
     const allIntersections = React.useMemo(
         () => calcAllIntersections(guidePrimitives),
@@ -377,15 +381,15 @@ export const Canvas = ({ state, width, height, dispatch, innerRef }: Props) => {
     const [pos, setPos] = React.useState({ x: 0, y: 0 });
 
     const onClickIntersection = React.useCallback(
-        (coord) => {
-            if (state.pendingGuide) {
+        (coord: Intersect) => {
+            if (state.pending && state.pending.type === 'Guide') {
                 dispatch({
                     type: 'pending:point',
-                    coord,
+                    coord: coord.coord,
                 });
             }
         },
-        [!!state.pendingGuide],
+        [!!state.pending],
     );
 
     return (
@@ -432,9 +436,9 @@ export const Canvas = ({ state, width, height, dispatch, innerRef }: Props) => {
                         intersections={allIntersections}
                         onClick={onClickIntersection}
                     />
-                    {state.pendingGuide ? (
-                        <Pending
-                            guide={state.pendingGuide}
+                    {state.pending && state.pending.type === 'Guide' ? (
+                        <RenderPending
+                            guide={state.pending}
                             pos={pos}
                             zoom={state.view.zoom}
                         />
@@ -456,18 +460,18 @@ export const Intersections = React.memo(
         onClick,
     }: {
         zoom: number;
-        intersections: Array<Coord>;
-        onClick: (coord: Coord) => unknown;
+        intersections: Array<Intersect>;
+        onClick: (item: Intersect) => unknown;
     }) => {
         return (
             <>
-                {intersections.map((coord, i) => (
+                {intersections.map((intersection, i) => (
                     <circle
                         key={i}
-                        cx={coord.x * zoom}
-                        cy={coord.y * zoom}
+                        cx={intersection.coord.x * zoom}
+                        cy={intersection.coord.y * zoom}
                         onClick={() => {
-                            onClick(coord);
+                            onClick(intersection);
                         }}
                         r={5}
                         fill={'rgba(255,255,255,0.1)'}
@@ -522,13 +526,13 @@ export const pendingGuide = (
     }
 };
 
-export const Pending = ({
+export const RenderPending = ({
     guide,
     pos,
     zoom,
 }: {
     pos: Coord;
-    guide: { type: GuideGeom['type']; points: Array<Coord> };
+    guide: PendingGuide;
     zoom: number;
 }) => {
     let offsets = [
@@ -541,14 +545,14 @@ export const Pending = ({
         points.push({ x: pos.x + off.x, y: pos.y + off.y });
     });
 
-    const prims = geomToPrimitives(pendingGuide(guide.type, points));
+    const prims = geomToPrimitives(pendingGuide(guide.kind, points));
 
     return (
         <g style={{ pointerEvents: 'none' }}>
             <GuideElement
                 zoom={zoom}
                 original={true}
-                geom={pendingGuide(guide.type, points)}
+                geom={pendingGuide(guide.kind, points)}
             />
         </g>
     );

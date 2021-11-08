@@ -1,6 +1,20 @@
 
 UP NEXT:
 
+- [ ] PATHSSSS
+- [ ] how to add? ~simpler one is: point, segment, point.
+	- have a `pendingPath`
+	- need to be able to find segments adjacent to a point
+		should be quite doable.
+
+
+FUTURE TOOLS:
+
+- [ ] click 2 points, get the incircle
+- [ ] 3 points, get the circumcircle
+
+---
+
 - [x] Looks like lineCircle intersection is wonky -- see example.
 - [x] vertical lines are wrongg
 - [x] make a way to export
@@ -8,7 +22,9 @@ UP NEXT:
 	- Have the guides and junk be part of one layer, so it's easy to remove.
 - [x] lets bake in really good undo/redo. should we do the whole tree?
 	- but it doesn't get downloaded, right? or does it? could get a little big.
-- [ ] OH! undo across branches is broked.
+- [x] OH! undo across branches is broked.
+
+
 
 sooo
 for "mirrored paths"
