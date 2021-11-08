@@ -85,13 +85,25 @@ export const circleCircle = (one: Circle, two: Circle): Array<Coord> => {
     // we've got two of these.
     // 0, 1, 2, or all intersections.
     // sounds quadratic.
-    let R = one.radius,
-        R2 = R * R,
-        r = two.radius,
-        dx = two.center.x - one.center.x,
-        dy = two.center.y - one.center.y,
-        d = Math.sqrt(dx * dx + dy * dy),
-        x = (d * d - r * r + R2) / (2 * d);
+
+    let dx = two.center.x - one.center.x;
+    let dy = two.center.y - one.center.y;
+    let d = Math.sqrt(dx * dx + dy * dy);
+
+    // tangent (or nearly)
+    if (Math.abs(one.radius + two.radius - d) < epsilon) {
+        return [
+            {
+                x: one.center.x + dx / 2,
+                y: one.center.y + dy / 2,
+            },
+        ];
+    }
+
+    let R = one.radius;
+    let R2 = R * R;
+    let r = two.radius;
+    let x = (d * d - r * r + R2) / (2 * d);
     if (R2 < x * x) {
         return [];
     }

@@ -7,7 +7,12 @@ UP NEXT:
 	- need to be able to find segments adjacent to a point
 		should be quite doable.
 - [ ] HOVERRRR to add. and then 'enter' to commit.
-- [ ] Some intersections (where there are multiple intersections) aren't working.
+- [x] Some intersections (where there are multiple intersections) aren't working.
+- [ ] Mirrors for paths my folks! Need to update the Undo to remove a bunch of ids. But should be fine.
+- [ ] Style! Got to have style!
+- [ ] profit? like this is so gooood.
+- [x] hide guides
+- [ ] almost-tangent circles should report connection.
 
 
 FUTURE TOOLS:

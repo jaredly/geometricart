@@ -1,10 +1,10 @@
-import { ActionWithoutUndo, History, UndoAction } from './types';
+import { UndoableAction, History, UndoAction } from './types';
 
 /** Returns the things to undo to get to a common parent, and then the things to do to get up to the new branch. */
 export const switchBranches = (
     history: History,
     newBranch: number,
-): { undo: Array<ActionWithoutUndo>; do: Array<ActionWithoutUndo> } => {
+): { undo: Array<UndoableAction>; do: Array<UndoableAction> } => {
     // - get array ofancestor ids for current and new branches
     // - find the longest shared prefix
     // - undo to the smaller idx of that shared parent
@@ -49,7 +49,7 @@ export const undoAction = (history: History): [History, UndoAction | null] => {
 
 export const redoAction = (
     history: History,
-): [History, ActionWithoutUndo | null] => {
+): [History, UndoableAction | null] => {
     if (history.undo === 0) {
         return [history, null];
     }

@@ -33,13 +33,34 @@ export const Label = ({ text }: { text: string }) => (
 export const MirrorForm = ({
     mirror,
     onChange,
+    onSelect,
+    isActive,
 }: {
     mirror: Mirror;
+    isActive: boolean;
     onChange: (m: Mirror) => unknown;
+    onSelect: () => void;
 }) => {
     return (
-        <div>
-            Mirror
+        <div
+            css={{
+                padding: 8,
+            }}
+        >
+            <div
+                css={{
+                    cursor: 'pointer',
+                    background: isActive
+                        ? 'rgba(100,100,100,0.4)'
+                        : 'rgba(100,100,100,0.1)',
+                    ':hover': {
+                        background: 'rgba(100,100,100,0.2)',
+                    },
+                }}
+                onClick={onSelect}
+            >
+                Mirror {isActive ? '(active)' : null}
+            </div>
             <div>
                 <Label text="rotations" />
                 <Int

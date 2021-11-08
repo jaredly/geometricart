@@ -2,7 +2,7 @@ import { coordKey, pendingGuide } from './Canvas';
 import { addAction, redoAction, undoAction } from './history';
 import {
     Action,
-    ActionWithoutUndo,
+    UndoableAction,
     Coord,
     Guide,
     GuideGeom,
@@ -17,6 +17,10 @@ import {
 
 export const undo = (state: State, action: UndoAction): State => {
     switch (action.type) {
+        case 'mirror:active':
+            return { ...state, activeMirror: action.prev };
+        case 'view:update':
+            return { ...state, view: action.prev };
         case 'path:point':
             return { ...state, pending: action.prev };
         case 'path:add':
@@ -131,7 +135,7 @@ export const reducer = (state: State, action: Action): State => {
 // import * as React from 'react';
 export const reduceWithoutUndo = (
     state: State,
-    action: ActionWithoutUndo,
+    action: UndoableAction,
 ): [State, UndoAction | null] => {
     switch (action.type) {
         case 'mirror:add':
@@ -302,6 +306,24 @@ export const reduceWithoutUndo = (
                     },
                 },
                 { type: action.type, action, added: null },
+            ];
+        case 'view:update':
+            return [
+                { ...state, view: action.view },
+                {
+                    type: action.type,
+                    action,
+                    prev: state.view,
+                },
+            ];
+        case 'mirror:active':
+            return [
+                { ...state, activeMirror: action.id },
+                {
+                    type: action.type,
+                    action,
+                    prev: state.activeMirror,
+                },
             ];
         default:
             let _x: never = action;

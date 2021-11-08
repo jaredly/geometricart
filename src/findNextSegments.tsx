@@ -38,18 +38,28 @@ export const findNextSegments = (
             });
         });
     });
-    return ([] as Array<PendingSegment>).concat(
-        ...touchingPrimitives.map((id) => {
-            // Each primitive should give me 2 segments. Right?
-            return calcPendingSegments(
-                primitives[id],
-                next,
-                Object.keys(coordsForPrimitive[id]).map(
-                    (k) => coordsForPrimitive[id][k],
-                ),
-            );
-        }),
-    );
+    const prev =
+        pending.parts.length === 0
+            ? null
+            : pending.parts.length === 1
+            ? pending.origin.coord
+            : pending.parts[pending.parts.length - 2].to.coord;
+    const res = ([] as Array<PendingSegment>)
+        .concat(
+            ...touchingPrimitives.map((id) => {
+                // Each primitive should give me 2 segments. Right?
+                return calcPendingSegments(
+                    primitives[id],
+                    next,
+                    Object.keys(coordsForPrimitive[id]).map(
+                        (k) => coordsForPrimitive[id][k],
+                    ),
+                );
+            }),
+        )
+        .filter((p) => !prev || coordKey(p.to.coord) !== coordKey(prev));
+    console.log(res, prev);
+    return res;
 };
 
 export const calcPendingSegments = (

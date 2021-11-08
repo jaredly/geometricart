@@ -308,31 +308,35 @@ export const Canvas = ({ state, width, height, dispatch, innerRef }: Props) => {
                             zoom={state.view.zoom}
                         />
                     ))}
-                    <Primitives
-                        primitives={guidePrimitives}
-                        zoom={state.view.zoom}
-                        width={width}
-                        height={height}
-                    />
-                    <Intersections
-                        zoom={state.view.zoom}
-                        intersections={allIntersections}
-                        onClick={onClickIntersection}
-                    />
-                    {state.pending && state.pending.type === 'Guide' ? (
-                        <RenderPendingGuide
-                            guide={state.pending}
-                            pos={pos}
-                            zoom={state.view.zoom}
-                        />
-                    ) : null}
-                    {nextSegments ? (
-                        <RenderPendingPath
-                            next={nextSegments}
-                            path={state.pending as PendingPath}
-                            zoom={state.view.zoom}
-                            onAdd={onAdd}
-                        />
+                    {state.view.guides ? (
+                        <>
+                            <Primitives
+                                primitives={guidePrimitives}
+                                zoom={state.view.zoom}
+                                width={width}
+                                height={height}
+                            />
+                            <Intersections
+                                zoom={state.view.zoom}
+                                intersections={allIntersections}
+                                onClick={onClickIntersection}
+                            />
+                            {state.pending && state.pending.type === 'Guide' ? (
+                                <RenderPendingGuide
+                                    guide={state.pending}
+                                    pos={pos}
+                                    zoom={state.view.zoom}
+                                />
+                            ) : null}
+                            {nextSegments ? (
+                                <RenderPendingPath
+                                    next={nextSegments}
+                                    path={state.pending as PendingPath}
+                                    zoom={state.view.zoom}
+                                    onAdd={onAdd}
+                                />
+                            ) : null}
+                        </>
                     ) : null}
                 </g>
             </svg>
@@ -353,7 +357,7 @@ export const RenderPath = ({ path, zoom }: { path: Path; zoom: number }) => {
             d += arcPath(seg, zoom);
         }
     });
-    return <path d={d} fill={'green'} />;
+    return <path d={d + ' Z'} fill={'green'} stroke="white" strokeWidth="3" />;
 };
 
 export const RenderPendingPath = React.memo(
@@ -420,11 +424,11 @@ export const RenderSegment = ({
                 y1={prev.y * zoom}
                 x2={segment.to.x * zoom}
                 y2={segment.to.y * zoom}
-                stroke="red"
-                strokeWidth="4"
+                stroke={onClick ? 'red' : 'green'}
+                strokeWidth={'4'}
                 onClick={onClick}
                 css={{
-                    cursor: 'pointer',
+                    cursor: onClick ? 'pointer' : 'default',
                     ':hover': onClick
                         ? {
                               strokeWidth: '10',
@@ -437,15 +441,15 @@ export const RenderSegment = ({
         return (
             <path
                 onClick={onClick}
-                stroke="red"
-                strokeWidth="4"
+                stroke={onClick ? 'red' : 'green'}
+                strokeWidth={'4'}
                 fill="none"
                 d={
                     `M ${prev.x * zoom} ${prev.y * zoom} ` +
                     arcPath(segment, zoom)
                 }
                 css={{
-                    cursor: 'pointer',
+                    cursor: onClick ? 'pointer' : 'default',
                     ':hover': onClick
                         ? {
                               strokeWidth: '10',

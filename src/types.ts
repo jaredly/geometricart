@@ -227,7 +227,14 @@ so, this is a strict tree
 
 */
 
-export type Action = ActionWithoutUndo | { type: 'undo' } | { type: 'redo' };
+export type Action = UndoableAction | { type: 'undo' } | { type: 'redo' };
+
+export type ViewUpdate = { type: 'view:update'; view: View };
+export type UndoViewUpdate = {
+    type: ViewUpdate['type'];
+    action: ViewUpdate;
+    prev: View;
+};
 
 export type UndoGuideUpdate = {
     type: GuideUpdate['type'];
@@ -286,6 +293,16 @@ export type MirrorAdd = {
     mirror: Mirror;
 };
 
+export type UndoMirrorActive = {
+    type: MirrorActive['type'];
+    action: MirrorActive;
+    prev: Id | null;
+};
+export type MirrorActive = {
+    type: 'mirror:active';
+    id: Id | null;
+};
+
 export type UndoMirrorUpdate = {
     type: MirrorUpdate['type'];
     action: MirrorUpdate;
@@ -318,7 +335,7 @@ export type GuideToggle = {
     id: Id;
 };
 
-export type ActionWithoutUndo =
+export type UndoableAction =
     | GuideAdd
     | GuideUpdate
     | MirrorAdd
@@ -327,29 +344,33 @@ export type ActionWithoutUndo =
     | PathAdd
     | PendingType
     | PathPoint
+    | MirrorActive
+    | ViewUpdate
     | GuideToggle;
 
 export type UndoAction =
     | UndoGuideAdd
     | UndoGuideUpdate
+    | UndoViewUpdate
     | UndoMirrorAdd
     | UndoPendingPoint
     | UndoPathPoint
     | UndoPathAdd
     | UndoPendingType
     | UndoGuideToggle
+    | UndoMirrorActive
     | UndoMirrorUpdate;
 
 // Ensure that every ActionWithoutUndo
 // has a corresponding UndoAction
-(x: UndoAction['type'], y: ActionWithoutUndo['type']) => {
-    const a: ActionWithoutUndo['type'] = x;
+(x: UndoAction['type'], y: UndoableAction['type']) => {
+    const a: UndoableAction['type'] = x;
     const b: UndoAction['type'] = y;
     const c: UndoAction['action']['type'] = y;
 };
 
 export type HistoryItem = {
-    action: ActionWithoutUndo;
+    action: UndoableAction;
     id: number;
     // parent: number;
 };
@@ -411,6 +432,7 @@ export type State = {
 export type View = {
     center: Coord;
     zoom: number;
+    guides: boolean;
 };
 
 // export const pointForView = (coord: Coord, view: View) => {
@@ -463,5 +485,6 @@ export const initialState: State = {
         center: { x: 0, y: 0 },
         // This can't be implemented with svg zoom, because that would muck with line widths of guides and mirrors.
         zoom: 100,
+        guides: true,
     },
 };

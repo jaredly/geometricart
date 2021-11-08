@@ -17,6 +17,34 @@ export function Sidebar({
     return (
         <div>
             Hello folks
+            <div
+                css={{ cursor: 'pointer', padding: 4 }}
+                onClick={() =>
+                    dispatch({
+                        type: 'view:update',
+                        view: {
+                            ...state.view,
+                            guides: !state.view.guides,
+                        },
+                    })
+                }
+            >
+                Show guides
+                <input
+                    onClick={(evt) => evt.stopPropagation()}
+                    onChange={() => {
+                        dispatch({
+                            type: 'view:update',
+                            view: {
+                                ...state.view,
+                                guides: !state.view.guides,
+                            },
+                        });
+                    }}
+                    type="checkbox"
+                    checked={state.view.guides}
+                />
+            </div>
             {guideTypes.map((kind) => (
                 <button
                     onClick={() => {
@@ -33,6 +61,13 @@ export function Sidebar({
             {Object.keys(state.mirrors).map((k) => (
                 <MirrorForm
                     key={k}
+                    isActive={state.activeMirror === k}
+                    onSelect={() => {
+                        dispatch({
+                            type: 'mirror:active',
+                            id: state.activeMirror === k ? null : k,
+                        });
+                    }}
                     mirror={state.mirrors[k]}
                     onChange={(mirror) =>
                         dispatch({
