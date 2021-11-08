@@ -4,6 +4,8 @@ import * as React from 'react';
 import { jsx } from '@emotion/react';
 import { angleTo, dist, push, scale } from './getMirrorTransforms';
 import { GuideGeom } from './types';
+import { lineLine, lineToSlope } from './intersect';
+import { getCircumCircle, getInCircle } from './points';
 
 export const GuideElement = ({
     geom,
@@ -15,6 +17,108 @@ export const GuideElement = ({
     original: boolean;
 }) => {
     switch (geom.type) {
+        case 'CircumCircle': {
+            const got = getCircumCircle(geom.p1, geom.p2, geom.p3);
+            if (!got) {
+                return null;
+            }
+
+            return (
+                <>
+                    <line
+                        x1={geom.p1.x * zoom}
+                        y1={geom.p1.y * zoom}
+                        x2={geom.p2.x * zoom}
+                        y2={geom.p2.y * zoom}
+                        stroke="#fff"
+                        strokeWidth={1}
+                    />
+                    <line
+                        x1={geom.p2.x * zoom}
+                        y1={geom.p2.y * zoom}
+                        x2={geom.p3.x * zoom}
+                        y2={geom.p3.y * zoom}
+                        stroke="#fff"
+                        strokeWidth={1}
+                    />
+                    <line
+                        x1={geom.p1.x * zoom}
+                        y1={geom.p1.y * zoom}
+                        x2={geom.p3.x * zoom}
+                        y2={geom.p3.y * zoom}
+                        stroke="#fff"
+                        strokeWidth={1}
+                    />
+                    <circle
+                        cx={got.center.x * zoom}
+                        cy={got.center.y * zoom}
+                        r={got.r * zoom}
+                        fill="none"
+                        stroke="#fff"
+                        strokeWidth={1}
+                    />
+                    <circle
+                        cx={got.m1.x * zoom}
+                        cy={got.m1.y * zoom}
+                        r={10}
+                        fill="none"
+                        stroke="#fff"
+                        strokeWidth={1}
+                    />
+                    <circle
+                        cx={got.m2.x * zoom}
+                        cy={got.m2.y * zoom}
+                        r={10}
+                        fill="none"
+                        stroke="#fff"
+                        strokeWidth={1}
+                    />
+                </>
+            );
+        }
+        case 'InCircle': {
+            const got = getInCircle(geom.p1, geom.p2, geom.p3);
+            if (!got) {
+                return null;
+            }
+
+            return (
+                <>
+                    <line
+                        x1={geom.p1.x * zoom}
+                        y1={geom.p1.y * zoom}
+                        x2={geom.p2.x * zoom}
+                        y2={geom.p2.y * zoom}
+                        stroke="#fff"
+                        strokeWidth={1}
+                    />
+                    <line
+                        x1={geom.p2.x * zoom}
+                        y1={geom.p2.y * zoom}
+                        x2={geom.p3.x * zoom}
+                        y2={geom.p3.y * zoom}
+                        stroke="#fff"
+                        strokeWidth={1}
+                    />
+                    <line
+                        x1={geom.p1.x * zoom}
+                        y1={geom.p1.y * zoom}
+                        x2={geom.p3.x * zoom}
+                        y2={geom.p3.y * zoom}
+                        stroke="#fff"
+                        strokeWidth={1}
+                    />
+                    <circle
+                        cx={got.center.x * zoom}
+                        cy={got.center.y * zoom}
+                        r={got.r * zoom}
+                        fill="none"
+                        stroke="#fff"
+                        strokeWidth={1}
+                    />
+                </>
+            );
+        }
         case 'Line': {
             const t1 = angleTo(geom.p1, geom.p2);
             const d = dist(geom.p1, geom.p2);

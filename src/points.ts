@@ -40,8 +40,76 @@ export const transformSegment = (
     }
 };
 
+export const getCircumCircle = (p1: Coord, p2: Coord, p3: Coord) => {
+    const t1 = angleTo(p1, p2);
+    const d1 = dist(p1, p2);
+
+    const t2 = angleTo(p1, p3);
+    const d2 = dist(p1, p3);
+
+    const m1 = push(p1, t1, d1 / 2);
+    const m2 = push(p1, t2, d2 / 2);
+
+    const mid = lineLine(
+        lineToSlope(m1, push(m1, t1 + Math.PI / 2, 1)),
+        lineToSlope(m2, push(m2, t2 + Math.PI / 2, 1)),
+    );
+
+    if (!mid) {
+        return null;
+    }
+
+    return { center: mid, r: dist(p1, mid), m1, m2 };
+
+    // const ta = (t1 + t2) / 2;
+    // const t3 = angleTo(p2, p1);
+    // const t4 = angleTo(p2, p3);
+    // const tb = (t3 + t4) / 2;
+
+    // if (!mid) {
+    //     return null;
+    // }
+    // const da = dist(p1, mid);
+    // const r = Math.abs(Math.sin(ta - t1) * da);
+    // return { center: mid, r };
+};
+
+export const getInCircle = (p1: Coord, p2: Coord, p3: Coord) => {
+    const t1 = angleTo(p1, p2);
+    const t2 = angleTo(p1, p3);
+    const ta = (t1 + t2) / 2;
+    const t3 = angleTo(p2, p1);
+    const t4 = angleTo(p2, p3);
+    const tb = (t3 + t4) / 2;
+
+    const mid = lineLine(
+        lineToSlope(p1, push(p1, ta, 1)),
+        lineToSlope(p2, push(p2, tb, 1)),
+    );
+    if (!mid) {
+        return null;
+    }
+    const da = dist(p1, mid);
+    const r = Math.abs(Math.sin(ta - t1) * da);
+    return { center: mid, r };
+};
+
 export const geomToPrimitives = (geom: GuideGeom): Array<Primitive> => {
     switch (geom.type) {
+        case 'CircumCircle': {
+            const got = getCircumCircle(geom.p1, geom.p2, geom.p3);
+            if (!got) {
+                return [];
+            }
+            return [{ type: 'circle', center: got.center, radius: got.r }];
+        }
+        case 'InCircle': {
+            const got = getInCircle(geom.p1, geom.p2, geom.p3);
+            if (!got) {
+                return [];
+            }
+            return [{ type: 'circle', center: got.center, radius: got.r }];
+        }
         case 'Line':
             return [lineToSlope(geom.p1, geom.p2)];
         case 'Circle': {

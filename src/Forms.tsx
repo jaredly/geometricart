@@ -2,7 +2,7 @@
 /* @jsxFrag React.Fragment */
 import { jsx } from '@emotion/react';
 import * as React from 'react';
-import { Circle, Guide, Mirror } from './types';
+import { Circle, Guide, Mirror, PathGroup, Style } from './types';
 
 export const Int = ({
     value,
@@ -30,6 +30,41 @@ export const Label = ({ text }: { text: string }) => (
         {text}
     </div>
 );
+
+export const StyleForm = ({
+    style,
+    onChange,
+}: {
+    style: Style;
+    onChange: (s: Style) => unknown;
+}) => {
+    return (
+        <div>
+            {style.fills.map((fill, i) =>
+                fill ? (
+                    <div key={i}>{fill.color}</div>
+                ) : (
+                    <div key={i}>Fill disabled</div>
+                ),
+            )}
+        </div>
+    );
+};
+
+export const PathGroupForm = ({
+    group,
+    onChange,
+}: {
+    group: PathGroup;
+    onChange: (group: PathGroup) => unknown;
+}) => {
+    return (
+        <div css={{ padding: 4 }}>
+            <div>Path Group</div>
+            {group.style.fills}
+        </div>
+    );
+};
 
 export const GuideForm = ({
     guide,

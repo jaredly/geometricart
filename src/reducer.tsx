@@ -16,6 +16,7 @@ import {
     State,
     UndoAction,
     Path,
+    Style,
 } from './types';
 
 export const undo = (state: State, action: UndoAction): State => {
@@ -283,6 +284,12 @@ export const reduceWithoutUndo = (
                 let groupId: string | null = null;
                 let pending = state.pending;
                 state = { ...state, paths: { ...state.paths } };
+
+                const style: Style = {
+                    fills: [{ color: 'green' }],
+                    lines: [],
+                };
+
                 const main: Path = {
                     id,
                     created: 0,
@@ -315,7 +322,7 @@ export const reduceWithoutUndo = (
                             segments: main.segments.map((seg) =>
                                 transformSegment(seg, matrices),
                             ),
-                            style: main.style,
+                            style,
                         };
                         ids.push(nid);
                     });
@@ -329,6 +336,8 @@ export const reduceWithoutUndo = (
                         },
                     };
                     // here we gooooo
+                } else {
+                    main.style = style;
                 }
                 state.paths[id] = main;
 

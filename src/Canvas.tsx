@@ -43,7 +43,9 @@ export const transformGuideGeom = (
     transform: (pos: Coord) => Coord,
 ): GuideGeom => {
     switch (geom.type) {
+        case 'InCircle':
         case 'AngleBisector':
+        case 'CircumCircle':
             return {
                 ...geom,
                 p1: transform(geom.p1),
@@ -528,6 +530,8 @@ export const pendingGuide = (
                 half: false,
                 multiples: 1,
             };
+        case 'InCircle':
+        case 'CircumCircle':
         case 'AngleBisector':
             return {
                 type,

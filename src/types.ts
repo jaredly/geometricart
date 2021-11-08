@@ -44,19 +44,43 @@ the normal stuff folks.
 */
 export type Line = { type: 'Line'; p1: Coord; p2: Coord };
 
-export type GuideGeom = Line | Circle | AngleBisector | PerpendicularBisector;
+export type GuideGeom =
+    | Line
+    | Circle
+    | AngleBisector
+    | PerpendicularBisector
+    | InCicle
+    | CircumCircle;
+
+export type InCicle = {
+    type: 'InCircle';
+    p1: Coord;
+    p2: Coord;
+    p3: Coord;
+};
+
+export type CircumCircle = {
+    type: 'CircumCircle';
+    p1: Coord;
+    p2: Coord;
+    p3: Coord;
+};
 
 export const guideTypes: Array<GuideGeom['type']> = [
     'Line',
     'AngleBisector',
     'Circle',
     'PerpendicularBisector',
+    'InCircle',
+    'CircumCircle',
 ];
 
 export const guidePoints: {
     [x in GuideGeom['type']]: number;
 } = {
     AngleBisector: 3,
+    InCircle: 3,
+    CircumCircle: 3,
     Circle: 2,
     Line: 2,
     PerpendicularBisector: 2,
@@ -460,7 +484,7 @@ export const initialState: State = {
             geom: {
                 type: 'Circle',
                 center: { x: 0, y: 0 },
-                radius: { x: 1, y: 0 },
+                radius: { x: 0, y: -1 },
                 line: true,
                 half: true,
                 multiples: 5,
@@ -479,7 +503,7 @@ export const initialState: State = {
             id: 'baseMirror',
             origin: { x: 0, y: 0 },
             parent: null,
-            point: { x: 0, y: 1 },
+            point: { x: 0, y: -1 },
             reflect: false,
             rotational: [true, true, true, true, true], // 6-fold
         },
