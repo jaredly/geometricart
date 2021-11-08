@@ -2,7 +2,6 @@
 /* @jsxFrag React.Fragment */
 import { jsx } from '@emotion/react';
 import React from 'react';
-import { Action } from './App';
 import {
     angleTo,
     applyMatrices,
@@ -14,7 +13,16 @@ import {
 } from './getMirrorTransforms';
 import { Primitive } from './intersect';
 import { calculateIntersections, geomToPrimitives } from './points';
-import { Coord, Guide, GuideGeom, Id, Mirror, State, View } from './types';
+import {
+    Action,
+    Coord,
+    Guide,
+    GuideGeom,
+    Id,
+    Mirror,
+    State,
+    View,
+} from './types';
 
 export type GuideElement = {
     id: Id;
@@ -324,7 +332,7 @@ export const Primitives = React.memo(
         width: number;
         primitives: Array<Primitive>;
     }) => {
-        console.log(primitives);
+        // console.log(primitives);
         return (
             <>
                 {primitives.map((prim, i) => (
@@ -368,6 +376,18 @@ export const Canvas = ({ state, width, height, dispatch, innerRef }: Props) => {
 
     const [pos, setPos] = React.useState({ x: 0, y: 0 });
 
+    const onClickIntersection = React.useCallback(
+        (coord) => {
+            if (state.pendingGuide) {
+                dispatch({
+                    type: 'pending:point',
+                    coord,
+                });
+            }
+        },
+        [!!state.pendingGuide],
+    );
+
     return (
         <div
             css={{}}
@@ -407,25 +427,11 @@ export const Canvas = ({ state, width, height, dispatch, innerRef }: Props) => {
                         width={width}
                         height={height}
                     />
-                    {allIntersections.map((coord, i) => (
-                        <circle
-                            key={i}
-                            cx={coord.x * state.view.zoom}
-                            cy={coord.y * state.view.zoom}
-                            onClick={() => {
-                                dispatch({ type: 'pending:point', coord });
-                            }}
-                            r={5}
-                            fill={'rgba(255,255,255,0.1)'}
-                            css={{
-                                fill: 'rgba(255,255,255,0.1)',
-                                cursor: 'pointer',
-                                ':hover': {
-                                    fill: 'white',
-                                },
-                            }}
-                        />
-                    ))}
+                    <Intersections
+                        zoom={state.view.zoom}
+                        intersections={allIntersections}
+                        onClick={onClickIntersection}
+                    />
                     {state.pendingGuide ? (
                         <Pending
                             guide={state.pendingGuide}
@@ -438,6 +444,42 @@ export const Canvas = ({ state, width, height, dispatch, innerRef }: Props) => {
         </div>
     );
 };
+
+export const Intersections = React.memo(
+    ({
+        zoom,
+        intersections,
+        onClick,
+    }: {
+        zoom: number;
+        intersections: Array<Coord>;
+        onClick: (coord: Coord) => unknown;
+    }) => {
+        return (
+            <>
+                {intersections.map((coord, i) => (
+                    <circle
+                        key={i}
+                        cx={coord.x * zoom}
+                        cy={coord.y * zoom}
+                        onClick={() => {
+                            onClick(coord);
+                        }}
+                        r={5}
+                        fill={'rgba(255,255,255,0.1)'}
+                        css={{
+                            fill: 'rgba(255,255,255,0.1)',
+                            cursor: 'pointer',
+                            ':hover': {
+                                fill: 'white',
+                            },
+                        }}
+                    />
+                ))}
+            </>
+        );
+    },
+);
 
 export const pendingGuide = (
     type: GuideGeom['type'],

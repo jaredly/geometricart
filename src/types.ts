@@ -186,11 +186,168 @@ export type Cache = {
     intersections: Idd<{ coord: Coord; prims: Array<number> }>;
 };
 
+export type Pending = {
+    points: Array<Coord>;
+    type: GuideGeom['type'];
+};
+
+/*
+
+ooooh
+ok, having a full branching mechanism actually sounds incredibly compelling.
+
+so, this is a strict tree
+
+
+
+*/
+
+export type Action = ActionWithoutUndo | { type: 'undo' } | { type: 'redo' };
+
+export type UndoGuideUpdate = {
+    type: GuideUpdate['type'];
+    action: GuideUpdate;
+    prev: Guide;
+};
+export type GuideUpdate = {
+    type: 'guide:update';
+    id: Id;
+    guide: Guide;
+    // prev: Guide;
+};
+
+export type UndoGuideAdd = { action: GuideAdd; type: GuideAdd['type'] };
+export type GuideAdd = {
+    type: 'guide:add';
+    id: Id;
+    guide: Guide;
+};
+
+export type UndoPendingPoint = {
+    type: PendingPoint['type'];
+    action: PendingPoint;
+    added: [Id, number] | null;
+    pending: Pending;
+};
+export type PendingPoint = {
+    type: 'pending:point';
+    coord: Coord;
+    // pending: Pending;
+};
+
+export type UndoMirrorAdd = {
+    type: MirrorAdd['type'];
+    action: MirrorAdd;
+};
+export type MirrorAdd = {
+    type: 'mirror:add';
+    id: Id;
+    mirror: Mirror;
+};
+
+export type UndoMirrorUpdate = {
+    type: MirrorUpdate['type'];
+    action: MirrorUpdate;
+    prev: Mirror;
+};
+export type MirrorUpdate = {
+    type: 'mirror:change';
+    id: Id;
+    mirror: Mirror;
+    // prev: Mirror;
+};
+
+export type UndoPendingType = {
+    type: PendingType['type'];
+    action: PendingType;
+    prev: Pending | null;
+};
+export type PendingType = {
+    type: 'pending:type';
+    kind: GuideGeom['type'];
+    // prev: Pending | null;
+};
+
+export type UndoGuideToggle = {
+    type: GuideToggle['type'];
+    action: GuideToggle;
+    prev: boolean;
+};
+export type GuideToggle = {
+    type: 'guide:toggle';
+    id: Id;
+};
+
+export type ActionWithoutUndo =
+    | GuideAdd
+    | GuideUpdate
+    | MirrorAdd
+    | MirrorUpdate
+    | PendingPoint
+    | PendingType
+    | GuideToggle;
+
+export type UndoAction =
+    | UndoGuideAdd
+    | UndoGuideUpdate
+    | UndoMirrorAdd
+    | UndoPendingPoint
+    | UndoPendingType
+    | UndoGuideToggle
+    | UndoMirrorUpdate;
+
+// Ensure that every ActionWithoutUndo
+// has a corresponding UndoAction
+(x: UndoAction['type'], y: ActionWithoutUndo['type']) => {
+    const a: ActionWithoutUndo['type'] = x;
+    const b: UndoAction['type'] = y;
+    const c: UndoAction['action']['type'] = y;
+};
+
+export type HistoryItem = {
+    action: ActionWithoutUndo;
+    id: number;
+    // parent: number;
+};
+
+export const initialHistory: History = {
+    nextId: 1,
+    undo: 0,
+    currentBranch: 0,
+    branches: {
+        [0]: {
+            id: 0,
+            items: [],
+            snapshot: null,
+            parent: null,
+        },
+    },
+};
+
+export type History = {
+    nextId: number;
+    // current: Array<HistoryItem>;
+    // How far back we've undone from current.
+    undo: number;
+    // the id of the current branch
+    currentBranch: number;
+    branches: {
+        [key: number]: {
+            id: number;
+            items: Array<UndoAction>;
+            snapshot: string | null;
+            parent: { branch: number; idx: number } | null;
+        };
+    };
+
+    // actions: Array<Action>;
+    // idx: number;
+};
+
 export type State = {
-    pendingGuide: {
-        points: Array<Coord>;
-        type: GuideGeom['type'];
-    } | null;
+    nextId: number;
+    history: History;
+    pendingGuide: Pending | null;
     paths: { [key: Id]: Path };
     // Pathgroups automatically happen when, for example, a path is created when a mirror is active.
     // SO: Paths are automatically /realized/, that is, when completing a path, the mirrored paths are also
@@ -223,7 +380,9 @@ export type View = {
 // idk let's just do it slow for now.
 export const initialState: State = {
     pendingGuide: { type: 'Line', points: [] },
+    nextId: 0,
     paths: {},
+    history: initialHistory,
     pathGroups: {},
     guides: {
         base: {

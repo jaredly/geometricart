@@ -2,11 +2,15 @@
 import { jsx } from '@emotion/react';
 import React from 'react';
 import { Canvas } from './Canvas';
-import { MirrorForm } from './Forms';
 import { reducer } from './reducer';
-import { GuideGeom, guideTypes, initialState } from './types';
+import { Sidebar } from './Sidebar';
+import { GuideGeom, initialState } from './types';
+
 export const App = () => {
     const [state, dispatch] = React.useReducer(reducer, initialState);
+
+    // const currentState = React.useRef(state);
+    // currentState.current = state;
 
     React.useEffect(() => {
         const toType: { [key: string]: GuideGeom['type'] } = {
@@ -19,8 +23,17 @@ export const App = () => {
             if (evt.target !== document.body) {
                 return;
             }
+            if (evt.key === 'z' && (evt.ctrlKey || evt.metaKey)) {
+                return dispatch({ type: evt.shiftKey ? 'redo' : 'undo' });
+            }
+            if (evt.key === 'y' && (evt.ctrlKey || evt.metaKey)) {
+                return dispatch({ type: 'redo' });
+            }
             if (toType[evt.key]) {
-                dispatch({ type: 'pending:type', kind: toType[evt.key] });
+                dispatch({
+                    type: 'pending:type',
+                    kind: toType[evt.key],
+                });
             }
         };
         document.addEventListener('keydown', fn);
@@ -28,7 +41,6 @@ export const App = () => {
     }, []);
 
     const ref = React.useRef(null as null | SVGSVGElement);
-    const [url, setUrl] = React.useState(null as null | string);
 
     return (
         <div
@@ -39,70 +51,7 @@ export const App = () => {
                 alignItems: 'flex-start',
             }}
         >
-            <div>
-                Hello folks
-                {guideTypes.map((kind) => (
-                    <button
-                        onClick={() => {
-                            dispatch({ type: 'pending:type', kind });
-                        }}
-                        key={kind}
-                    >
-                        {kind}
-                    </button>
-                ))}
-                {Object.keys(state.mirrors).map((k) => (
-                    <MirrorForm
-                        key={k}
-                        mirror={state.mirrors[k]}
-                        onChange={(mirror) =>
-                            dispatch({ type: 'mirror:change', mirror, id: k })
-                        }
-                    />
-                ))}
-                <button
-                    onClick={() => {
-                        const text =
-                            ref.current!.outerHTML +
-                            `\n\n<!-- STATE: ${JSON.stringify(state)} --> `;
-                        const blob = new Blob([text], {
-                            type: 'image/svg+xml',
-                        });
-                        setUrl(URL.createObjectURL(blob));
-                    }}
-                >
-                    Export
-                </button>
-                {url
-                    ? (() => {
-                          const name = `image-${Date.now()}.svg`;
-                          return (
-                              <div css={{}}>
-                                  <div>
-                                      <a
-                                          href={url}
-                                          download={name}
-                                          css={{
-                                              color: 'white',
-                                              background: '#666',
-                                              borderRadius: 6,
-                                              padding: '4px 8px',
-                                              textDecoration: 'none',
-                                              cursor: 'pointer',
-                                          }}
-                                      >
-                                          Download {name}
-                                      </a>
-                                      <button onClick={() => setUrl(null)}>
-                                          Close
-                                      </button>
-                                  </div>
-                                  <img src={url} css={{ maxHeight: 400 }} />
-                              </div>
-                          );
-                      })()
-                    : null}
-            </div>
+            <Sidebar dispatch={dispatch} state={state} canvasRef={ref} />
             <Canvas
                 state={state}
                 innerRef={(node) => (ref.current = node)}
