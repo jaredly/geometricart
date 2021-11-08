@@ -29,6 +29,9 @@ export const getHistoricalAction = (
         if (!branch.parent) {
             return null;
         }
+        let idx = branch.parent.idx;
+        branch = history.branches[branch.parent.branch];
+        at += branch.items.length - idx;
     }
 
     const idx = branch.items.length - at;

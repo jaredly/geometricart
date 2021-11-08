@@ -6,6 +6,9 @@ UP NEXT:
 - [x] make a way to export
 	- The SVG, with the json embedded you fools.
 	- Have the guides and junk be part of one layer, so it's easy to remove.
+- [x] lets bake in really good undo/redo. should we do the whole tree?
+	- but it doesn't get downloaded, right? or does it? could get a little big.
+- [ ] OH! undo across branches is broked.
 
 sooo
 for "mirrored paths"
