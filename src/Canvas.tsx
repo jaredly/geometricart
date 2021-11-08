@@ -474,7 +474,9 @@ export const Intersections = React.memo(
                         css={{
                             fill: 'rgba(255,255,255,0.1)',
                             cursor: 'pointer',
+                            transition: '.3s ease r',
                             ':hover': {
+                                r: 10,
                                 fill: 'white',
                             },
                         }}
