@@ -1,11 +1,13 @@
 
 UP NEXT:
 
-- [ ] PATHSSSS
-- [ ] how to add? ~simpler one is: point, segment, point.
+- [x] PATHSSSS
+- [x] how to add? ~simpler one is: point, segment, point.
 	- have a `pendingPath`
 	- need to be able to find segments adjacent to a point
 		should be quite doable.
+- [ ] HOVERRRR to add. and then 'enter' to commit.
+- [ ] Some intersections (where there are multiple intersections) aren't working.
 
 
 FUTURE TOOLS:

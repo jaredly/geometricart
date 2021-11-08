@@ -135,13 +135,20 @@ export type Props = {
     dispatch: (action: Action) => unknown;
 };
 
-const precision = 4;
+export const numKey = (num: number) => {
+    const res = num.toFixed(precision);
+    if (res === '-0.000') {
+        return '0.000';
+    }
+    return res;
+};
+const precision = 3;
 export const primitiveKey = (p: Primitive) =>
     p.type === 'line'
-        ? `${p.m.toFixed(precision)}:${p.b.toFixed(precision)}`
-        : `${coordKey(p.center)}:${p.radius.toFixed(precision)}`;
+        ? `${numKey(p.m)}:${numKey(p.b)}`
+        : `${coordKey(p.center)}:${numKey(p.radius)}`;
 export const coordKey = (coord: Coord) =>
-    `${coord.x.toFixed(precision)},${coord.y.toFixed(precision)}`;
+    `${numKey(coord.x)},${numKey(coord.y)}`;
 
 export const calcAllIntersections = (
     primitives: Array<Primitive>,

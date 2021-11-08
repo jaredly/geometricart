@@ -423,7 +423,7 @@ export type View = {
 // Should I use hashes to persist the realized whatsits for all the things?
 // idk let's just do it slow for now.
 export const initialState: State = {
-    pending: { type: 'Guide', kind: 'Line', points: [] },
+    pending: null, // { type: 'Guide', kind: 'Line', points: [] },
     nextId: 0,
     paths: {},
     history: initialHistory,

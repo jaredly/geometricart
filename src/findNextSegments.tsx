@@ -1,3 +1,4 @@
+import { coordKey } from './Canvas';
 import { angleTo } from './getMirrorTransforms';
 import { Primitive } from './intersect';
 import {
@@ -25,13 +26,14 @@ export const findNextSegments = (
     const touchingPrimitives = dedup(
         ([] as Array<number>).concat(...intersections),
     );
-    const coordsForPrimitive: { [key: number]: Array<Intersect> } = {};
-    touchingPrimitives.forEach((id) => (coordsForPrimitive[id] = []));
+    const coordsForPrimitive: { [key: number]: { [key: string]: Intersect } } =
+        {};
+    touchingPrimitives.forEach((id) => (coordsForPrimitive[id] = {}));
     coords.forEach((int) => {
         int.primitives.forEach((pair) => {
             pair.forEach((id) => {
                 if (touchingPrimitives.includes(id)) {
-                    coordsForPrimitive[id].push(int);
+                    coordsForPrimitive[id][coordKey(int.coord)] = int;
                 }
             });
         });
@@ -42,7 +44,9 @@ export const findNextSegments = (
             return calcPendingSegments(
                 primitives[id],
                 next,
-                coordsForPrimitive[id],
+                Object.keys(coordsForPrimitive[id]).map(
+                    (k) => coordsForPrimitive[id][k],
+                ),
             );
         }),
     );
