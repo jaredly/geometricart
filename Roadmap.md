@@ -16,12 +16,13 @@ UP NEXT:
 - [x] color things my folks.
 
 - [x] hover so good
-- [ ] let's go ahead and show the Mirrors! So we know where they are pointed and such.
+- [x] let's go ahead and show the Mirrors! So we know where they are pointed and such.
 - [ ] ok I actually have to deal with the sweep flag folks.
 - [x] CIRCLE IS TANGENT, need to fix.
 - [ ] click  guide to hide it. undo brings it back of course.
 - [ ] add option to NOT extend a line. can keep things a lot cleaner.
 	- maybe like 'capital L' is for line that doesn't extend? idk
+	- orr hold shift while placing the second point?
 - [x] flip? does it work?
 
 # WHAT does hover-to-add look like?

@@ -223,7 +223,11 @@ export const reduceWithoutUndo = (
                                 id,
                                 active: true,
                                 basedOn: [],
-                                geom: pendingGuide(state.pending.kind, points),
+                                geom: pendingGuide(
+                                    state.pending.kind,
+                                    points,
+                                    action.shiftKey,
+                                ),
                                 mirror: state.activeMirror,
                             },
                         },

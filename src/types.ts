@@ -42,7 +42,7 @@ the normal stuff folks.
 
 
 */
-export type Line = { type: 'Line'; p1: Coord; p2: Coord };
+export type Line = { type: 'Line'; p1: Coord; p2: Coord; limit: boolean };
 
 export type GuideGeom =
     | Line
@@ -310,6 +310,7 @@ export type UndoPendingPoint = {
 export type PendingPoint = {
     type: 'pending:point';
     coord: Coord;
+    shiftKey: boolean;
 };
 
 export type PathCreate = {

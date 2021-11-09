@@ -252,33 +252,51 @@ export const Canvas = ({ state, width, height, dispatch, innerRef }: Props) => {
         null as null | Intersect,
     );
 
+    const [shiftKey, setShiftKey] = React.useState(false);
+
     React.useEffect(() => {
-        if (!pathOrigin) {
-            return;
-        }
+        // if (!pathOrigin) {
+        //     return;
+        // }
         const fn = (evt: KeyboardEvent) => {
-            if (evt.key === 'Escape') {
+            if (evt.key === 'Shift') {
+                setShiftKey(true);
+            }
+            if (pathOrigin && evt.key === 'Escape') {
                 setPathOrigin(null);
                 evt.stopPropagation();
             }
         };
+        const up = (evt: KeyboardEvent) => {
+            if (evt.key === 'Shift') {
+                setShiftKey(false);
+            }
+        };
         document.addEventListener('keydown', fn);
-        return () => document.removeEventListener('keydown', fn);
+        document.addEventListener('keyup', up);
+        return () => {
+            document.removeEventListener('keydown', fn);
+            document.removeEventListener('keyup', up);
+        };
     }, [!!pathOrigin]);
 
-    const onClickIntersection = React.useCallback((coord: Intersect) => {
-        const state = currentState.current;
-        if (!state.pending) {
-            setPathOrigin(coord);
-            // dispatch({ type: 'path:point', coord });
-        }
-        if (state.pending && state.pending.type === 'Guide') {
-            dispatch({
-                type: 'pending:point',
-                coord: coord.coord,
-            });
-        }
-    }, []);
+    const onClickIntersection = React.useCallback(
+        (coord: Intersect, shiftKey: boolean) => {
+            const state = currentState.current;
+            if (!state.pending) {
+                setPathOrigin(coord);
+                // dispatch({ type: 'path:point', coord });
+            }
+            if (state.pending && state.pending.type === 'Guide') {
+                dispatch({
+                    type: 'pending:point',
+                    coord: coord.coord,
+                    shiftKey,
+                });
+            }
+        },
+        [],
+    );
 
     // const nextSegments = React.useMemo(() => {
     //     if (state.pending && state.pending.type === 'Path') {
@@ -357,6 +375,7 @@ export const Canvas = ({ state, width, height, dispatch, innerRef }: Props) => {
                                     guide={state.pending}
                                     pos={pos}
                                     zoom={state.view.zoom}
+                                    shiftKey={shiftKey}
                                 />
                             ) : null}
                             {pathOrigin ? (
@@ -670,7 +689,7 @@ export const Intersections = React.memo(
     }: {
         zoom: number;
         intersections: Array<Intersect>;
-        onClick: (item: Intersect) => unknown;
+        onClick: (item: Intersect, shiftKey: boolean) => unknown;
     }) => {
         return (
             <>
@@ -679,8 +698,8 @@ export const Intersections = React.memo(
                         key={i}
                         cx={intersection.coord.x * zoom}
                         cy={intersection.coord.y * zoom}
-                        onClick={() => {
-                            onClick(intersection);
+                        onClick={(evt) => {
+                            onClick(intersection, evt.shiftKey);
                         }}
                         r={5}
                         fill={'rgba(255,255,255,0.1)'}
@@ -703,6 +722,7 @@ export const Intersections = React.memo(
 export const pendingGuide = (
     type: GuideGeom['type'],
     points: Array<Coord>,
+    shiftKey: boolean,
 ): GuideGeom => {
     switch (type) {
         case 'Line':
@@ -710,6 +730,7 @@ export const pendingGuide = (
                 type,
                 p1: points[0],
                 p2: points[1],
+                limit: shiftKey,
             };
         case 'Circle':
             return {
@@ -741,10 +762,12 @@ export const RenderPendingGuide = ({
     guide,
     pos,
     zoom,
+    shiftKey,
 }: {
     pos: Coord;
     guide: PendingGuide;
     zoom: number;
+    shiftKey: boolean;
 }) => {
     let offsets = [
         { x: -1, y: 1 },
@@ -756,14 +779,14 @@ export const RenderPendingGuide = ({
         points.push({ x: pos.x + off.x, y: pos.y + off.y });
     });
 
-    const prims = geomToPrimitives(pendingGuide(guide.kind, points));
+    // const prims = geomToPrimitives(pendingGuide(guide.kind, points, shiftKey));
 
     return (
         <g style={{ pointerEvents: 'none' }}>
             <GuideElement
                 zoom={zoom}
                 original={true}
-                geom={pendingGuide(guide.kind, points)}
+                geom={pendingGuide(guide.kind, points, shiftKey)}
             />
         </g>
     );
@@ -780,17 +803,45 @@ function RenderPrimitive({
     height: number;
     width: number;
 }): jsx.JSX.Element {
-    return prim.type === 'line' ? (
-        prim.m === Infinity ? (
-            <line
-                x1={prim.b * zoom}
-                y1={-height}
-                y2={height}
-                x2={prim.b * zoom}
-                stroke="#666"
-                strokeWidth="1"
-            />
-        ) : (
+    if (prim.type === 'line') {
+        if (prim.m === Infinity) {
+            if (prim.limit) {
+                return (
+                    <line
+                        x1={prim.b * zoom}
+                        y1={prim.limit[0] * zoom}
+                        y2={prim.limit[1] * zoom}
+                        x2={prim.b * zoom}
+                        stroke="#666"
+                        strokeWidth="1"
+                    />
+                );
+            }
+            return (
+                <line
+                    x1={prim.b * zoom}
+                    y1={-height}
+                    y2={height}
+                    x2={prim.b * zoom}
+                    stroke="#666"
+                    strokeWidth="1"
+                />
+            );
+        }
+        if (prim.limit) {
+            return (
+                <line
+                    x1={prim.limit[0] * zoom}
+                    y1={prim.limit[0] * zoom * prim.m + prim.b * zoom}
+                    x2={prim.limit[1] * zoom}
+                    y2={prim.limit[1] * zoom * prim.m + prim.b * zoom}
+                    stroke="#666"
+                    strokeWidth="1"
+                />
+            );
+        }
+
+        return (
             <line
                 x1={-width}
                 y1={-width * prim.m + prim.b * zoom}
@@ -799,8 +850,9 @@ function RenderPrimitive({
                 stroke="#666"
                 strokeWidth="1"
             />
-        )
-    ) : (
+        );
+    }
+    return (
         <circle
             cx={prim.center.x * zoom}
             cy={prim.center.y * zoom}

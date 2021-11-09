@@ -63,20 +63,39 @@ export const convertCircle = (p1: Coord, p2: Coord): Circle => ({
 export const epsilon = 0.000001;
 
 // NOTE: if these two points are the same, we pretend it's a horizontal line.
-export const lineToSlope = (p1: Coord, p2: Coord): SlopeIntercept => {
+export const lineToSlope = (
+    p1: Coord,
+    p2: Coord,
+    limit?: boolean,
+): SlopeIntercept => {
     if (Math.abs(p1.y - p2.y) < epsilon) {
         return { type: 'line', m: 0, b: p1.y };
     }
     if (Math.abs(p1.x - p2.x) < epsilon) {
         // b is now the X intercept, not the Y intercept
-        return { type: 'line', m: Infinity, b: p1.x };
+        return {
+            type: 'line',
+            m: Infinity,
+            b: p1.x,
+            limit: limit ? [Math.min(p1.y, p2.y), Math.max(p1.y, p2.y)] : null,
+        };
     }
     const m = (p2.y - p1.y) / (p2.x - p1.x);
     const b = p2.y - p2.x * m;
-    return { type: 'line', m, b };
+    return {
+        type: 'line',
+        m,
+        b,
+        limit: limit ? [Math.min(p1.x, p2.x), Math.max(p1.x, p2.x)] : null,
+    };
 };
 
-export type SlopeIntercept = { type: 'line'; m: number; b: number };
+export type SlopeIntercept = {
+    type: 'line';
+    m: number;
+    b: number;
+    limit?: null | [number, number];
+};
 export type Circle = { type: 'circle'; radius: number; center: Coord };
 export type Primitive = SlopeIntercept | Circle;
 
