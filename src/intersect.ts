@@ -152,6 +152,12 @@ export function lineCircle(
     if (slope === Infinity) {
         // (y - k)^2 = r^2 - (x - h)^2
         // y = sqrt(r^2 - (x - h)^2) + k
+
+        // Tangent folx
+        if (close(Math.abs(intercept - cx), radius)) {
+            return [{ x: intercept, y: cy }];
+        }
+
         // Outside the radius
         if (Math.abs(intercept - cx) > radius) {
             return [];
@@ -197,6 +203,40 @@ export function lineCircle(
     // m^2x^2 + x^2 + 2mx(b - cy) - 2x(cx) + (b - cy)^2 - r^2 + cx^2 = 0
 
     // (m^2 + 1)x^2
+
+    // Dist to line, for tangent check
+    if (Math.abs(slope) < epsilon) {
+        const d = Math.abs(cy - intercept);
+        if (close(d, radius)) {
+            return [{ x: cx, y: intercept }];
+        }
+    } else {
+        // passing through origin of circle, perpendicular to line
+        const fromCircle = lineToSlope(
+            { x: cx, y: cy },
+            { x: cx + 1, y: cy - 1 / slope },
+        );
+
+        const intersection = lineLine(fromCircle, {
+            type: 'line',
+            m: slope,
+            b: intercept,
+        });
+
+        if (
+            intersection &&
+            close(dist({ x: cx, y: cy }, intersection), radius)
+        ) {
+            // We're tangent!
+            return [intersection];
+        }
+
+        // const x = (two.b - one.b) / (one.m - two.m);
+        // return {
+        // 	x,
+        // 	y: one.m * x + one.b,
+        // };
+    }
 
     // get a, b, c values
     var a = 1 + sq(slope);

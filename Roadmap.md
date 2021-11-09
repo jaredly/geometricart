@@ -6,7 +6,7 @@ UP NEXT:
 	- have a `pendingPath`
 	- need to be able to find segments adjacent to a point
 		should be quite doable.
-- [ ] HOVERRRR to add. and then 'enter' to commit.
+- [x] HOVERRRR to add. and then 'enter' to commit.
 - [x] Some intersections (where there are multiple intersections) aren't working.
 - [x] Mirrors for paths my folks! Need to update the Undo to remove a bunch of ids. But should be fine.
 - [x] Style! Got to have style!
@@ -14,6 +14,25 @@ UP NEXT:
 - [x] hide guides
 - [x] almost-tangent circles should report connection.
 - [x] color things my folks.
+
+- [x] hover so good
+- [ ] let's go ahead and show the Mirrors! So we know where they are pointed and such.
+- [ ] ok I actually have to deal with the sweep flag folks.
+- [x] CIRCLE IS TANGENT, need to fix.
+- [ ] click  guide to hide it. undo brings it back of course.
+- [ ] add option to NOT extend a line. can keep things a lot cleaner.
+	- maybe like 'capital L' is for line that doesn't extend? idk
+- [x] flip? does it work?
+
+# WHAT does hover-to-add look like?
+- first off, not through actions. don't need to save that nonsense.
+- at p = 0
+	- show offshoots of p0
+- at p > 0
+	- show offshoots of the prev, and offshoots of the current.
+- hovering an already-chosen line rolls back to that one.
+
+
 
 - [ ] track down those bugs
 	- [ ] I was getting something from the wrong circle
