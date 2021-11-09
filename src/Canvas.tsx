@@ -9,6 +9,7 @@ import { findNextSegments } from './findNextSegments';
 import { getMirrorTransforms } from './getMirrorTransforms';
 import { Primitive } from './intersect';
 import { geomToPrimitives } from './points';
+import { RenderIntersections } from './RenderIntersections';
 import { RenderMirror } from './RenderMirror';
 import { RenderPath } from './RenderPath';
 import { RenderPendingGuide } from './RenderPendingGuide';
@@ -174,7 +175,7 @@ export const Canvas = ({ state, width, height, dispatch, innerRef }: Props) => {
                                 width={width}
                                 height={height}
                             />
-                            <Intersections
+                            <RenderIntersections
                                 zoom={state.view.zoom}
                                 intersections={allIntersections}
                                 onClick={onClickIntersection}
@@ -225,44 +226,6 @@ export const Canvas = ({ state, width, height, dispatch, innerRef }: Props) => {
         </div>
     );
 };
-
-export const Intersections = React.memo(
-    ({
-        zoom,
-        intersections,
-        onClick,
-    }: {
-        zoom: number;
-        intersections: Array<Intersect>;
-        onClick: (item: Intersect, shiftKey: boolean) => unknown;
-    }) => {
-        return (
-            <>
-                {intersections.map((intersection, i) => (
-                    <circle
-                        key={i}
-                        cx={intersection.coord.x * zoom}
-                        cy={intersection.coord.y * zoom}
-                        onClick={(evt) => {
-                            onClick(intersection, evt.shiftKey);
-                        }}
-                        r={5}
-                        fill={'rgba(255,255,255,0.1)'}
-                        css={{
-                            fill: 'rgba(255,255,255,0.1)',
-                            cursor: 'pointer',
-                            transition: '.2s ease r',
-                            ':hover': {
-                                r: 7,
-                                fill: 'white',
-                            },
-                        }}
-                    />
-                ))}
-            </>
-        );
-    },
-);
 
 export const combineStyles = (styles: Array<Style>): Style => {
     const result: Style = {
