@@ -1,4 +1,4 @@
-import { coordKey } from './Canvas';
+import { coordKey } from './calcAllIntersections';
 import { angleTo } from './getMirrorTransforms';
 import { Primitive } from './intersect';
 import {

@@ -2,142 +2,18 @@
 /* @jsxFrag React.Fragment */
 import { jsx } from '@emotion/react';
 import React from 'react';
+import { primitiveKey, calcAllIntersections } from './calcAllIntersections';
+import { calculateGuideElements } from './calculateGuideElements';
 import { DrawPath } from './DrawPath';
 import { findNextSegments } from './findNextSegments';
-import {
-    angleTo,
-    applyMatrices,
-    dist,
-    getMirrorTransforms,
-    Matrix,
-    push,
-} from './getMirrorTransforms';
-import { GuideElement } from './GuideElement';
+import { getMirrorTransforms } from './getMirrorTransforms';
 import { Primitive } from './intersect';
-import { calculateIntersections, geomToPrimitives } from './points';
-import {
-    Action,
-    ArcSegment,
-    Coord,
-    Guide,
-    GuideGeom,
-    Id,
-    Intersect,
-    Line,
-    Mirror,
-    Path,
-    PathGroup,
-    Pending,
-    PendingGuide,
-    PendingPath,
-    PendingSegment,
-    Segment,
-    State,
-    Style,
-    View,
-} from './types';
-
-export type GuideElement = {
-    id: Id;
-    geom: GuideGeom;
-    active: boolean;
-    original: boolean;
-};
-
-export const transformGuideGeom = (
-    geom: GuideGeom,
-    transform: (pos: Coord) => Coord,
-): GuideGeom => {
-    switch (geom.type) {
-        case 'InCircle':
-        case 'AngleBisector':
-        case 'CircumCircle':
-            return {
-                ...geom,
-                p1: transform(geom.p1),
-                p2: transform(geom.p2),
-                p3: transform(geom.p3),
-            };
-        case 'Line':
-        case 'PerpendicularBisector':
-            return { ...geom, p1: transform(geom.p1), p2: transform(geom.p2) };
-        case 'Circle':
-            return {
-                ...geom,
-                center: transform(geom.center),
-                radius: transform(geom.radius),
-            };
-    }
-};
-
-export const geomsForGiude = (
-    guide: Guide,
-    mirror: Array<Array<Matrix>> | null,
-) => {
-    const elements: Array<GuideElement> = [];
-
-    if (mirror) {
-        mirror.forEach((matrices) => {
-            elements.push({
-                id: guide.id,
-                active: guide.active,
-                geom: transformGuideGeom(guide.geom, (pos) =>
-                    applyMatrices(pos, matrices),
-                ),
-                original: false,
-            });
-        });
-    }
-    elements.push({
-        id: guide.id,
-        geom: guide.geom,
-        active: guide.active,
-        original: true,
-    });
-
-    return elements;
-};
-
-// These are NOT in /view/ coordinates!
-export const calculateGuideElements = (
-    guides: { [key: Id]: Guide },
-    mirrorTransforms: { [key: Id]: Array<Array<Matrix>> },
-) => {
-    const elements: Array<GuideElement> = [];
-    Object.keys(guides).forEach((k) => {
-        if (!guides[k].active) {
-            return;
-        }
-        elements.push(
-            ...geomsForGiude(
-                guides[k],
-                guides[k].mirror ? mirrorTransforms[guides[k].mirror!] : null,
-            ),
-        );
-
-        // const g = guides[k];
-        // if (g.mirror) {
-        //     mirrorTransforms[g.mirror].forEach((matrices) => {
-        //         elements.push({
-        //             id: g.id,
-        //             active: g.active,
-        //             geom: transformGuideGeom(g.geom, (pos) =>
-        //                 applyMatrices(pos, matrices),
-        //             ),
-        //             original: false,
-        //         });
-        //     });
-        // }
-        // elements.push({
-        //     id: g.id,
-        //     geom: g.geom,
-        //     active: g.active,
-        //     original: true,
-        // });
-    });
-    console.log(elements);
-    return elements;
-};
+import { geomToPrimitives } from './points';
+import { RenderMirror } from './RenderMirror';
+import { RenderPath } from './RenderPath';
+import { RenderPendingGuide } from './RenderPendingGuide';
+import { RenderPrimitive } from './RenderPrimitive';
+import { Action, Intersect, Line, Pending, State, Style, View } from './types';
 
 export type Props = {
     state: State;
@@ -146,77 +22,6 @@ export type Props = {
     innerRef: (node: SVGSVGElement) => unknown;
     dispatch: (action: Action) => unknown;
 };
-
-export const numKey = (num: number) => {
-    const res = num.toFixed(precision);
-    if (res === '-0.000') {
-        return '0.000';
-    }
-    return res;
-};
-const precision = 3;
-export const primitiveKey = (p: Primitive) =>
-    p.type === 'line'
-        ? `${numKey(p.m)}:${numKey(p.b)}${
-              p.limit ? `${numKey(p.limit[0])}:${numKey(p.limit[1])}` : ''
-          }`
-        : `${coordKey(p.center)}:${numKey(p.radius)}`;
-export const coordKey = (coord: Coord) =>
-    `${numKey(coord.x)},${numKey(coord.y)}`;
-
-export const calcAllIntersections = (
-    primitives: Array<Primitive>,
-): Array<Intersect> => {
-    const seenCoords: { [k: string]: Intersect } = {};
-    const coords: Array<Intersect> = [];
-    for (let i = 0; i < primitives.length; i++) {
-        for (let j = i + 1; j < primitives.length; j++) {
-            const pair: [number, number] = [i, j];
-            coords.push(
-                ...(calculateIntersections(primitives[i], primitives[j])
-                    .map((coord) => {
-                        const k = coordKey(coord);
-                        if (seenCoords[k]) {
-                            seenCoords[k].primitives.push(pair);
-                            return null;
-                        }
-                        return (seenCoords[k] = { coord, primitives: [pair] });
-                    })
-                    .filter(Boolean) as Array<Intersect>),
-            );
-        }
-    }
-    return coords;
-};
-
-export const Primitives = React.memo(
-    ({
-        primitives,
-        zoom,
-        height,
-        width,
-    }: {
-        zoom: number;
-        height: number;
-        width: number;
-        primitives: Array<Primitive>;
-    }) => {
-        // console.log(primitives);
-        return (
-            <>
-                {primitives.map((prim, i) => (
-                    <RenderPrimitive
-                        prim={prim}
-                        zoom={zoom}
-                        height={height}
-                        width={width}
-                        key={i}
-                    />
-                ))}
-            </>
-        );
-    },
-);
 
 export const Canvas = ({ state, width, height, dispatch, innerRef }: Props) => {
     const mirrorTransforms = React.useMemo(
@@ -363,7 +168,7 @@ export const Canvas = ({ state, width, height, dispatch, innerRef }: Props) => {
                     ))}
                     {state.view.guides ? (
                         <>
-                            <Primitives
+                            <RenderPrimitives
                                 primitives={guidePrimitives}
                                 zoom={state.view.zoom}
                                 width={width}
@@ -421,271 +226,6 @@ export const Canvas = ({ state, width, height, dispatch, innerRef }: Props) => {
     );
 };
 
-export const combineStyles = (styles: Array<Style>): Style => {
-    const result: Style = {
-        fills: [],
-        lines: [],
-    };
-    styles.forEach((style) => {
-        style.fills.forEach((fill, i) => {
-            if (fill != null) {
-                result.fills[i] =
-                    fill === false
-                        ? fill
-                        : {
-                              ...result.fills[i],
-                              ...fill,
-                          };
-            }
-        });
-        style.lines.forEach((line, i) => {
-            if (line != null) {
-                result.lines[i] =
-                    line === false
-                        ? line
-                        : {
-                              ...result.lines[i],
-                              ...line,
-                          };
-            }
-        });
-    });
-
-    return result;
-};
-
-export const RenderMirror = ({
-    mirror,
-    transforms,
-    zoom,
-}: {
-    mirror: Mirror;
-    transforms: Array<Array<Matrix>>;
-    zoom: number;
-}) => {
-    const d = angleTo(mirror.origin, mirror.point);
-    const off = push(mirror.origin, d + Math.PI / 2, 0.2);
-    const top = push(mirror.origin, d, 0.4);
-    const line = { p1: off, p2: top };
-    const lines = [line].concat(
-        transforms.map((tr) => ({
-            p1: applyMatrices(line.p1, tr),
-            p2: applyMatrices(line.p2, tr),
-        })),
-    );
-    return (
-        <g style={{ pointerEvents: 'none', opacity: 0.3 }}>
-            {lines.map(({ p1, p2 }, i) => (
-                <line
-                    key={i}
-                    x1={p1.x * zoom}
-                    y1={p1.y * zoom}
-                    x2={p2.x * zoom}
-                    y2={p2.y * zoom}
-                    stroke={'#fa0'}
-                    strokeWidth={'4'}
-                />
-            ))}
-            <circle
-                r={10}
-                cx={mirror.point.x * zoom}
-                cy={mirror.point.y * zoom}
-                fill="none"
-                stroke="#fa0"
-            />
-        </g>
-    );
-};
-
-export const RenderPath = ({
-    path,
-    zoom,
-    groups,
-    onClick,
-}: {
-    path: Path;
-    zoom: number;
-    groups: { [key: string]: PathGroup };
-    onClick?: () => void;
-}) => {
-    let d = `M ${path.origin.x * zoom} ${path.origin.y * zoom}`;
-    path.segments.forEach((seg) => {
-        if (seg.type === 'Line') {
-            d += ` L ${seg.to.x * zoom} ${seg.to.y * zoom}`;
-        } else {
-            d += arcPath(seg, zoom);
-        }
-    });
-    const styles = [path.style];
-    if (path.group) {
-        let group = groups[path.group];
-        styles.unshift(group.style);
-        while (group.group) {
-            group = groups[group.group];
-            styles.unshift(group.style);
-        }
-    }
-    const style = combineStyles(styles);
-    const fills = style.fills.map((fill, i) => {
-        if (!fill) {
-            return null;
-        }
-        return (
-            <path
-                key={i}
-                css={
-                    onClick
-                        ? {
-                              cursor: 'pointer',
-                              transition: '-moz-initial.2s ease opacity',
-                              ':hover': {
-                                  opacity: 0.8,
-                              },
-                          }
-                        : {}
-                }
-                d={d + ' Z'}
-                fill={fill.color}
-                onClick={onClick}
-            />
-        );
-    });
-    const lines = style.lines.map((line, i) => {
-        if (!line) {
-            return null;
-        }
-        return (
-            <path
-                key={i}
-                d={d + ' Z'}
-                stroke={line.color}
-                fill="none"
-                strokeWidth={line.width}
-            />
-        );
-    });
-    return (
-        <>
-            {fills}
-            {lines}
-        </>
-    );
-};
-
-export const RenderPendingPath = React.memo(
-    ({
-        next,
-        path,
-        zoom,
-        onAdd,
-    }: {
-        next: Array<PendingSegment>;
-        path: PendingPath;
-        zoom: number;
-        onAdd: (next: PendingSegment) => unknown;
-    }) => {
-        const current = path.parts.length
-            ? path.parts[path.parts.length - 1].to
-            : path.origin;
-
-        return (
-            <>
-                {path.parts.map((part, i) => (
-                    <RenderSegment
-                        key={i}
-                        segment={part.segment}
-                        zoom={zoom}
-                        prev={
-                            i === 0
-                                ? path.origin.coord
-                                : path.parts[i - 1].to.coord
-                        }
-                    />
-                ))}
-                {next.map((seg, i) => {
-                    return (
-                        <RenderSegment
-                            key={i}
-                            segment={seg.segment}
-                            zoom={zoom}
-                            prev={current.coord}
-                            onClick={() => onAdd(seg)}
-                        />
-                    );
-                })}
-            </>
-        );
-    },
-);
-
-export const RenderSegment = ({
-    segment,
-    prev,
-    zoom,
-    onClick,
-    onMouseOver,
-    color,
-}: {
-    segment: Segment;
-    prev: Coord;
-    zoom: number;
-    onClick?: () => unknown;
-    onMouseOver?: () => unknown;
-    color?: string;
-}) => {
-    if (segment.type === 'Line') {
-        return (
-            <line
-                x1={prev.x * zoom}
-                y1={prev.y * zoom}
-                x2={segment.to.x * zoom}
-                y2={segment.to.y * zoom}
-                stroke={color || (onClick ? 'red' : 'green')}
-                strokeWidth={'4'}
-                onClick={onClick}
-                onMouseOver={onMouseOver}
-                css={{
-                    cursor: onClick || onMouseOver ? 'pointer' : 'default',
-                    ':hover': onClick
-                        ? {
-                              strokeWidth: '10',
-                          }
-                        : {},
-                }}
-            />
-        );
-    } else {
-        return (
-            <path
-                onClick={onClick}
-                onMouseOver={onMouseOver}
-                stroke={color || (onClick ? 'red' : 'green')}
-                strokeWidth={'4'}
-                fill="none"
-                d={
-                    `M ${prev.x * zoom} ${prev.y * zoom} ` +
-                    arcPath(segment, zoom)
-                }
-                css={{
-                    cursor: onClick || onMouseOver ? 'pointer' : 'default',
-                    ':hover': onClick
-                        ? {
-                              strokeWidth: '10',
-                          }
-                        : {},
-                }}
-            />
-        );
-    }
-};
-
-export const arcPath = (segment: ArcSegment, zoom: number) => {
-    const r = dist(segment.to, segment.center);
-    return `A ${r * zoom} ${r * zoom} 0 0 ${segment.clockwise ? 1 : 0} ${
-        segment.to.x * zoom
-    } ${segment.to.y * zoom}`;
-};
-
 export const Intersections = React.memo(
     ({
         zoom,
@@ -724,147 +264,64 @@ export const Intersections = React.memo(
     },
 );
 
-export const pendingGuide = (
-    type: GuideGeom['type'],
-    points: Array<Coord>,
-    shiftKey: boolean,
-): GuideGeom => {
-    switch (type) {
-        case 'Line':
-            return {
-                type,
-                p1: points[0],
-                p2: points[1],
-                limit: shiftKey,
-            };
-        case 'Circle':
-            return {
-                type,
-                center: points[0],
-                radius: points[1],
-                half: false,
-                multiples: 1,
-            };
-        case 'InCircle':
-        case 'CircumCircle':
-        case 'AngleBisector':
-            return {
-                type,
-                p1: points[0],
-                p2: points[1],
-                p3: points[2],
-            };
-        case 'PerpendicularBisector':
-            return {
-                type,
-                p1: points[0],
-                p2: points[1],
-            };
-    }
-};
-
-export const RenderPendingGuide = ({
-    guide,
-    pos,
-    zoom,
-    shiftKey,
-}: {
-    pos: Coord;
-    guide: PendingGuide;
-    zoom: number;
-    shiftKey: boolean;
-}) => {
-    let offsets = [
-        { x: -1, y: 1 },
-        { x: 2, y: 1 },
-    ];
-
-    const points = guide.points.concat([pos]);
-    offsets.slice(guide.points.length).forEach((off) => {
-        points.push({ x: pos.x + off.x, y: pos.y + off.y });
+export const combineStyles = (styles: Array<Style>): Style => {
+    const result: Style = {
+        fills: [],
+        lines: [],
+    };
+    styles.forEach((style) => {
+        style.fills.forEach((fill, i) => {
+            if (fill != null) {
+                result.fills[i] =
+                    fill === false
+                        ? fill
+                        : {
+                              ...result.fills[i],
+                              ...fill,
+                          };
+            }
+        });
+        style.lines.forEach((line, i) => {
+            if (line != null) {
+                result.lines[i] =
+                    line === false
+                        ? line
+                        : {
+                              ...result.lines[i],
+                              ...line,
+                          };
+            }
+        });
     });
 
-    // const prims = geomToPrimitives(pendingGuide(guide.kind, points, shiftKey));
-
-    return (
-        <g style={{ pointerEvents: 'none' }}>
-            <GuideElement
-                zoom={zoom}
-                original={true}
-                geom={pendingGuide(guide.kind, points, shiftKey)}
-            />
-        </g>
-    );
+    return result;
 };
 
-function RenderPrimitive({
-    prim,
-    zoom,
-    height,
-    width,
-}: {
-    prim: Primitive;
-    zoom: number;
-    height: number;
-    width: number;
-}): jsx.JSX.Element {
-    if (prim.type === 'line') {
-        if (prim.m === Infinity) {
-            if (prim.limit) {
-                return (
-                    <line
-                        x1={prim.b * zoom}
-                        y1={prim.limit[0] * zoom}
-                        y2={prim.limit[1] * zoom}
-                        x2={prim.b * zoom}
-                        stroke="#666"
-                        strokeWidth="1"
-                    />
-                );
-            }
-            return (
-                <line
-                    x1={prim.b * zoom}
-                    y1={-height}
-                    y2={height}
-                    x2={prim.b * zoom}
-                    stroke="#666"
-                    strokeWidth="1"
-                />
-            );
-        }
-        if (prim.limit) {
-            return (
-                <line
-                    x1={prim.limit[0] * zoom}
-                    y1={prim.limit[0] * zoom * prim.m + prim.b * zoom}
-                    x2={prim.limit[1] * zoom}
-                    y2={prim.limit[1] * zoom * prim.m + prim.b * zoom}
-                    stroke="#666"
-                    strokeWidth="1"
-                />
-            );
-        }
-
+export const RenderPrimitives = React.memo(
+    ({
+        primitives,
+        zoom,
+        height,
+        width,
+    }: {
+        zoom: number;
+        height: number;
+        width: number;
+        primitives: Array<Primitive>;
+    }) => {
+        // console.log(primitives);
         return (
-            <line
-                x1={-width}
-                y1={-width * prim.m + prim.b * zoom}
-                x2={width}
-                y2={prim.m * width + prim.b * zoom}
-                stroke="#666"
-                strokeWidth="1"
-            />
+            <>
+                {primitives.map((prim, i) => (
+                    <RenderPrimitive
+                        prim={prim}
+                        zoom={zoom}
+                        height={height}
+                        width={width}
+                        key={i}
+                    />
+                ))}
+            </>
         );
-    }
-    return (
-        <circle
-            cx={prim.center.x * zoom}
-            cy={prim.center.y * zoom}
-            r={prim.radius * zoom}
-            stroke="#666"
-            strokeWidth="1"
-            fill="none"
-        />
-    );
-}
+    },
+);

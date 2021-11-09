@@ -1,4 +1,5 @@
-import { coordKey, pendingGuide } from './Canvas';
+import { pendingGuide } from './RenderPendingGuide';
+import { coordKey } from './calcAllIntersections';
 import { applyMatrices, getTransformsForMirror } from './getMirrorTransforms';
 import { addAction, redoAction, undoAction } from './history';
 import { transformSegment } from './points';

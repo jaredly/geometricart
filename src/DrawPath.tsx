@@ -1,6 +1,8 @@
 import { jsx } from '@emotion/react';
 import React from 'react';
-import { coordKey, primitiveKey, RenderPath, RenderSegment } from './Canvas';
+import { RenderPath } from './RenderPath';
+import { coordKey, primitiveKey } from './calcAllIntersections';
+import { RenderSegment } from './RenderSegment';
 import { findNextSegments } from './findNextSegments';
 import { Primitive } from './intersect';
 import { Intersect, PendingSegment } from './types';
@@ -88,7 +90,7 @@ export const DrawPath = ({
             {prev
                 ? prev.map((seg, i) => (
                       <RenderSegment
-                          color="#777"
+                          color="rgba(100, 100, 100, 0.1)"
                           key={i}
                           segment={seg.segment}
                           zoom={zoom}
@@ -99,18 +101,20 @@ export const DrawPath = ({
                       />
                   ))
                 : null}
-            {next.map((seg, i) => (
-                <RenderSegment
-                    key={i}
-                    color="yellow"
-                    segment={seg.segment}
-                    zoom={zoom}
-                    prev={current.coord}
-                    onMouseOver={() => {
-                        setParts(parts.concat([seg]));
-                    }}
-                />
-            ))}
+            {completed
+                ? null
+                : next.map((seg, i) => (
+                      <RenderSegment
+                          key={i}
+                          color="rgba(255,255,0,0.1)"
+                          segment={seg.segment}
+                          zoom={zoom}
+                          prev={current.coord}
+                          onMouseOver={() => {
+                              setParts(parts.concat([seg]));
+                          }}
+                      />
+                  ))}
         </>
     );
 };
