@@ -58,7 +58,6 @@ export const findNextSegments = (
             }),
         )
         .filter((p) => !prev || coordKey(p.to.coord) !== coordKey(prev));
-    console.log(res, prev);
     return res;
 };
 

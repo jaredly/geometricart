@@ -9,6 +9,7 @@ import { GuideGeom, initialState } from './types';
 export const App = () => {
     const [state, dispatch] = React.useReducer(reducer, initialState);
 
+    window.state = state;
     // const currentState = React.useRef(state);
     // currentState.current = state;
 

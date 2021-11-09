@@ -33,10 +33,24 @@ export const lineLine = (one: SlopeIntercept, two: SlopeIntercept) => {
         return null;
     }
     if (one.m === Infinity) {
-        return { x: one.b, y: two.m * one.b + two.b };
+        const y = two.m * one.b + two.b;
+        if (one.limit && !(one.limit[0] <= y && y <= one.limit[1])) {
+            return null;
+        }
+        if (two.limit && !(two.limit[0] <= one.b && one.b <= two.limit[1])) {
+            return null;
+        }
+        return { x: one.b, y: y };
     }
     if (two.m === Infinity) {
-        return { x: two.b, y: one.m * two.b + one.b };
+        const y = one.m * two.b + one.b;
+        if (two.limit && !(two.limit[0] <= y && y <= two.limit[1])) {
+            return null;
+        }
+        if (one.limit && !(one.limit[0] <= two.b && two.b <= one.limit[1])) {
+            return null;
+        }
+        return { x: two.b, y: y };
     }
     // y = m1x + b1
     // y = m2x + b2
@@ -46,6 +60,12 @@ export const lineLine = (one: SlopeIntercept, two: SlopeIntercept) => {
     // x = (b2 - b1) / (m1 - m2)
     // y = mx + b
     const x = (two.b - one.b) / (one.m - two.m);
+    if (one.limit && !(one.limit[0] <= x && x <= one.limit[1])) {
+        return null;
+    }
+    if (two.limit && !(two.limit[0] <= x && x <= two.limit[1])) {
+        return null;
+    }
     return {
         x,
         y: one.m * x + one.b,
@@ -69,7 +89,12 @@ export const lineToSlope = (
     limit?: boolean,
 ): SlopeIntercept => {
     if (Math.abs(p1.y - p2.y) < epsilon) {
-        return { type: 'line', m: 0, b: p1.y };
+        return {
+            type: 'line',
+            m: 0,
+            b: p1.y,
+            limit: limit ? [Math.min(p1.x, p2.x), Math.max(p1.x, p2.x)] : null,
+        };
     }
     if (Math.abs(p1.x - p2.x) < epsilon) {
         // b is now the X intercept, not the Y intercept
@@ -159,7 +184,7 @@ export const circleCircle = (one: Circle, two: Circle): Array<Coord> => {
 // TODO: what to do about inf slope, no y intercept
 export function lineCircle(
     { center: { x: cx, y: cy }, radius }: Circle,
-    { m: slope, b: intercept }: SlopeIntercept,
+    { m: slope, b: intercept, limit }: SlopeIntercept,
 ): Array<Coord> {
     // circle: (x - h)^2 + (y - k)^2 = r^2
     // line: y = m * x + n
@@ -174,7 +199,10 @@ export function lineCircle(
 
         // Tangent folx
         if (close(Math.abs(intercept - cx), radius)) {
-            return [{ x: intercept, y: cy }];
+            if (!limit || (limit[0] <= cy && cy <= limit[1])) {
+                return [{ x: intercept, y: cy }];
+            }
+            return [];
         }
 
         // Outside the radius
@@ -185,7 +213,7 @@ export function lineCircle(
         return [
             { x: intercept, y: cy + y },
             { x: intercept, y: cy - y },
-        ];
+        ].filter((p) => (limit ? limit[0] <= p.y && p.y <= limit[1] : true));
     }
 
     // circle: (x - h)^2 + (y - k)^2 = r^2
@@ -227,6 +255,9 @@ export function lineCircle(
     if (Math.abs(slope) < epsilon) {
         const d = Math.abs(cy - intercept);
         if (close(d, radius)) {
+            if (limit && !(limit[0] <= cx && cx <= limit[1])) {
+                return [];
+            }
             return [{ x: cx, y: intercept }];
         }
     } else {
@@ -244,9 +275,15 @@ export function lineCircle(
 
         if (
             intersection &&
+            // We're tangent!
             close(dist({ x: cx, y: cy }, intersection), radius)
         ) {
-            // We're tangent!
+            if (
+                limit &&
+                !(limit[0] <= intersection.x && intersection.x <= limit[1])
+            ) {
+                return [];
+            }
             return [intersection];
         }
 
@@ -271,10 +308,21 @@ export function lineCircle(
             (-b - Math.sqrt(d)) / (2 * a),
         ].map((x) => ({ x, y: slope * x + intercept }));
         if (d == 0) {
+            if (
+                limit &&
+                !(
+                    limit[0] <= intersections[0].x &&
+                    intersections[0].x <= limit[1]
+                )
+            ) {
+                return [];
+            }
             // only 1 intersection
             return [intersections[0]];
         }
-        return intersections;
+        return intersections.filter(
+            (pos) => !limit || (limit[0] <= pos.x && pos.x <= limit[1]),
+        );
     }
     // no intersection
     return [];

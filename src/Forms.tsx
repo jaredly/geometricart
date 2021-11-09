@@ -43,6 +43,7 @@ export const Color = ({
         <div>
             {options.map((name, i) => (
                 <button
+                    key={name}
                     onClick={() => onChange(name)}
                     css={{
                         background: name,

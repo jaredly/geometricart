@@ -135,6 +135,7 @@ export const calculateGuideElements = (
         //     original: true,
         // });
     });
+    console.log(elements);
     return elements;
 };
 
@@ -156,7 +157,9 @@ export const numKey = (num: number) => {
 const precision = 3;
 export const primitiveKey = (p: Primitive) =>
     p.type === 'line'
-        ? `${numKey(p.m)}:${numKey(p.b)}`
+        ? `${numKey(p.m)}:${numKey(p.b)}${
+              p.limit ? `${numKey(p.limit[0])}:${numKey(p.limit[1])}` : ''
+          }`
         : `${coordKey(p.center)}:${numKey(p.radius)}`;
 export const coordKey = (coord: Coord) =>
     `${numKey(coord.x)},${numKey(coord.y)}`;
@@ -224,6 +227,7 @@ export const Canvas = ({ state, width, height, dispatch, innerRef }: Props) => {
         () => calculateGuideElements(state.guides, mirrorTransforms),
         [state.guides, mirrorTransforms],
     );
+    // console.log(guideElements);
 
     const guidePrimitives = React.useMemo(() => {
         const seen: { [key: string]: true } = {};
@@ -471,8 +475,9 @@ export const RenderMirror = ({
     );
     return (
         <g style={{ pointerEvents: 'none', opacity: 0.3 }}>
-            {lines.map(({ p1, p2 }) => (
+            {lines.map(({ p1, p2 }, i) => (
                 <line
+                    key={i}
                     x1={p1.x * zoom}
                     y1={p1.y * zoom}
                     x2={p2.x * zoom}
