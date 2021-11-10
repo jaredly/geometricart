@@ -12,6 +12,7 @@ import { guideTypes, State, Action } from './types';
 import { initialHistory, initialState } from './initialState';
 import { Export } from './Export';
 import { toTypeRev } from './App';
+import { useDropTarget } from './useDropTarget';
 
 export const PREFIX = `<!-- STATE:`;
 export const SUFFIX = '-->';
@@ -43,40 +44,22 @@ export function Sidebar({
     state: State;
     canvasRef: React.MutableRefObject<SVGSVGElement | null>;
 }) {
-    const [dragging, setDragging] = React.useState(false);
+    const [dragging, callbacks] = useDropTarget((state) =>
+        dispatch({ type: 'reset', state }),
+    );
     return (
         <div
             style={{
                 overflow: 'auto',
                 padding: 8,
-                background: dragging ? 'white' : '',
+                // background: dragging ? 'white' : '',
                 display: 'flex',
                 flexDirection: 'column',
                 flex: 1,
+                background: dragging ? 'rgba(255,255,255,0.1)' : '',
+                transition: '.3s ease background',
             }}
-            // onDragStart={evt => {
-            // 	evt.preventDefault()
-            // }}
-            onDragOver={(evt) => {
-                setDragging(true);
-                evt.preventDefault();
-            }}
-            onDragLeave={(evt) => {
-                if (evt.target === evt.currentTarget) {
-                    setDragging(false);
-                    evt.preventDefault();
-                }
-            }}
-            onDrop={(evt) => {
-                console.log(evt.dataTransfer.files[0]);
-                getStateFromFile(evt.dataTransfer.files[0], (state) => {
-                    if (state) {
-                        dispatch({ type: 'reset', state });
-                    }
-                });
-                evt.preventDefault();
-                setDragging(false);
-            }}
+            {...callbacks}
         >
             <div>
                 <button

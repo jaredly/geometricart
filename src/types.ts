@@ -1,3 +1,4 @@
+import { initialState } from './initialState';
 import { Primitive } from './intersect';
 
 // Should I do polar coords?
@@ -255,7 +256,12 @@ export type Action =
     | UndoableAction
     | { type: 'undo' }
     | { type: 'redo' }
-    | { type: 'reset'; state: State };
+    | { type: 'reset'; state: State }
+    | { type: 'selection:set'; selection: Selection | null }
+    | { type: 'tab:set'; tab: Tab }
+    | { type: 'attachment:add'; id: string; attachment: Attachment }
+    | { type: 'palette:rename'; old: string; new: string }
+    | { type: 'palette:update'; name: string; colors: Array<string> };
 
 export type ViewUpdate = { type: 'view:update'; view: View };
 export type UndoViewUpdate = {
@@ -470,6 +476,25 @@ export type View = {
     guides: boolean;
 };
 
+export type Selection = {
+    type: 'Guide' | 'Mirror' | 'Path' | 'PathGroup';
+    ids: Array<string>;
+};
+
+export type Tab =
+    | 'Guides'
+    | 'Mirrors'
+    | 'Paths'
+    | 'PathGroups'
+    | 'Palette'
+    | 'Export';
+
+export type Attachment = {
+    contents: string; // base64 dontcha know
+    width: number;
+    height: number;
+};
+
 export type State = {
     nextId: number;
     history: History;
@@ -492,20 +517,31 @@ export type State = {
     underlays: { [key: Id]: Underlay };
 
     // Non historied, my folks
-    selection: {
-        type: 'Guide' | 'Mirror' | 'Path' | 'PathGroup';
-        ids: Array<string>;
-    } | null;
-    tab: 'Guides' | 'Mirrors' | 'Paths' | 'PathGroups' | 'Palette' | 'Export';
+    selection: Selection | null;
+    tab: Tab;
 
     palettes: { [name: string]: Array<string> };
+    activePalette: string;
     attachments: {
-        [key: Id]: {
-            contents: string; // base64 dontcha know
-            width: number;
-            height: number;
-        };
+        [key: Id]: Attachment;
     };
+};
+
+export const migrateState = (state: State) => {
+    if (!state.underlays) {
+        state.underlays = {};
+        state.attachments = {};
+    }
+    if (!state.tab) {
+        state.palettes = {};
+        state.tab = 'Guides';
+        state.selection = null;
+    }
+    if (!state.activePalette) {
+        state.palettes['default'] = initialState.palettes['default'];
+        state.activePalette = 'default';
+    }
+    return state;
 };
 
 export type Underlay = {

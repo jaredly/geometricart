@@ -138,6 +138,33 @@ export const reducer = (state: State, action: Action): State => {
     if (action.type === 'reset') {
         return action.state;
     }
+    if (action.type === 'selection:set') {
+        return { ...state, selection: action.selection };
+    }
+    if (action.type === 'tab:set') {
+        return { ...state, tab: action.tab };
+    }
+    if (action.type === 'attachment:add') {
+        return {
+            ...state,
+            attachments: {
+                ...state.attachments,
+                [action.id]: action.attachment,
+            },
+        };
+    }
+    if (action.type === 'palette:rename') {
+        const palettes = { ...state.palettes };
+        palettes[action.new] = palettes[action.old];
+        delete palettes[action.old];
+        return { ...state, palettes };
+    }
+    if (action.type === 'palette:update') {
+        return {
+            ...state,
+            palettes: { ...state.palettes, [action.name]: action.colors },
+        };
+    }
 
     const [newState, newAction] = reduceWithoutUndo(
         state,

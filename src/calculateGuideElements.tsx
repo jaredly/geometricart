@@ -18,28 +18,7 @@ export const calculateGuideElements = (
                 guides[k].mirror ? mirrorTransforms[guides[k].mirror!] : null,
             ),
         );
-
-        // const g = guides[k];
-        // if (g.mirror) {
-        //     mirrorTransforms[g.mirror].forEach((matrices) => {
-        //         elements.push({
-        //             id: g.id,
-        //             active: g.active,
-        //             geom: transformGuideGeom(g.geom, (pos) =>
-        //                 applyMatrices(pos, matrices),
-        //             ),
-        //             original: false,
-        //         });
-        //     });
-        // }
-        // elements.push({
-        //     id: g.id,
-        //     geom: g.geom,
-        //     active: g.active,
-        //     original: true,
-        // });
     });
-    console.log(elements);
     return elements;
 };
 

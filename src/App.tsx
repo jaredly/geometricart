@@ -7,6 +7,7 @@ import { reducer } from './reducer';
 import { Sidebar } from './Sidebar';
 import { GuideGeom, State } from './types';
 import { initialState } from './initialState';
+import { useDropTarget } from './useDropTarget';
 
 export const key = `geometric-art`;
 

@@ -3,7 +3,14 @@ import { jsx } from '@emotion/react';
 import React from 'react';
 import { State } from './types';
 import { PREFIX, SUFFIX } from './Sidebar';
-import { extractChunks, insertMetadata, encodeChunks } from 'png-metadata';
+import {
+    extractChunks,
+    insertMetadata,
+    encodeChunks,
+    readMetadata,
+} from 'png-metadata';
+import { initialHistory } from './initialState';
+import { Toggle } from './Forms';
 
 export const Export = ({
     canvasRef,
@@ -19,6 +26,7 @@ export const Export = ({
     const [png, setPng] = React.useState(null as null | string);
 
     const [size, setSize] = React.useState(400);
+    const [embed, setEmbed] = React.useState(true);
 
     return (
         <div
@@ -30,9 +38,12 @@ export const Export = ({
                 <button
                     css={{ marginRight: 16 }}
                     onClick={() => {
-                        const text =
-                            canvasRef.current!.outerHTML +
-                            `\n\n${PREFIX}${JSON.stringify(state)}${SUFFIX}`;
+                        let text = canvasRef.current!.outerHTML;
+                        if (embed) {
+                            text += `\n\n${PREFIX}${JSON.stringify(
+                                state,
+                            )}${SUFFIX}`;
+                        }
                         const blob = new Blob([text], {
                             type: 'image/svg+xml',
                         });
@@ -46,6 +57,11 @@ export const Export = ({
                     type="number"
                     value={size}
                     onChange={(evt) => setSize(+evt.target.value)}
+                />
+                <Toggle
+                    label="Embed editor state"
+                    value={embed}
+                    onChange={setEmbed}
                 />
             </div>
             {url ? (
@@ -77,7 +93,6 @@ export const Export = ({
                             src={url}
                             css={{ maxHeight: 400 }}
                             onLoad={(evt) => {
-                                console.log('LAODED');
                                 const canvas = document.createElement('canvas');
                                 canvas.width = canvas.height = size;
                                 const ctx = canvas.getContext('2d')!;
@@ -89,40 +104,10 @@ export const Export = ({
                                     size,
                                 );
                                 canvas.toBlob(async (blob) => {
-                                    const buffer = await blob!.arrayBuffer();
-                                    const uint8Array = new Uint8Array(buffer);
-                                    const meta = {
-                                        tEXt: {
-                                            Title: 'My title',
-                                            Author: 'Geometric Art',
-                                            Description: 'An art',
-                                            Source: 'this stuff',
-                                            Random: JSON.stringify({
-                                                name: 'hello',
-                                                ages: [1, 2, 3, 4],
-                                            }),
-                                        },
-                                    };
-
-                                    const chunks = extractChunks(uint8Array);
-                                    insertMetadata(chunks, meta);
-                                    console.log(chunks);
-                                    const newBuffer = new Uint8Array(
-                                        encodeChunks(chunks),
-                                    );
-
-                                    // const newBuffer = writeMetadata(
-                                    //     uint8Array,
-                                    //     meta,
-                                    // );
-                                    const newBlob = new Blob([newBuffer], {
-                                        type: blob!.type,
-                                    });
-                                    // console.log('ok');
-                                    // blob = await writeMetadataB(blob, );
-                                    // console.log('got it');
-                                    // console.log(blob, newb);
-                                    setPng(URL.createObjectURL(newBlob));
+                                    if (embed) {
+                                        blob = await addMetadata(blob, state);
+                                    }
+                                    setPng(URL.createObjectURL(blob));
                                 }, 'image/png');
                             }}
                         />
@@ -133,3 +118,26 @@ export const Export = ({
         </div>
     );
 };
+
+async function addMetadata(blob: Blob | null, state: State) {
+    const buffer = await blob!.arrayBuffer();
+    const uint8Array = new Uint8Array(buffer);
+    const meta = {
+        tEXt: {
+            Source: 'Geometric Art',
+            GeometricArt: JSON.stringify({
+                ...state,
+                history: initialHistory,
+            }),
+        },
+    };
+
+    const chunks = extractChunks(uint8Array);
+    insertMetadata(chunks, meta);
+    const newBuffer = new Uint8Array(encodeChunks(chunks));
+
+    const newBlob = new Blob([newBuffer], {
+        type: blob!.type,
+    });
+    return newBlob;
+}
