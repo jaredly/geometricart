@@ -14,7 +14,7 @@ import { Primitive } from './intersect';
 import { geomToPrimitives } from './points';
 import { RenderIntersections } from './RenderIntersections';
 import { RenderMirror } from './RenderMirror';
-import { RenderPath } from './RenderPath';
+import { RenderPath, UnderlinePath } from './RenderPath';
 import { RenderPendingGuide } from './RenderPendingGuide';
 import { RenderPrimitive } from './RenderPrimitive';
 import { Hover } from './Sidebar';
@@ -171,6 +171,37 @@ export const Canvas = ({
                             path={state.paths[k]}
                             zoom={state.view.zoom}
                             palette={state.palettes[state.activePalette]}
+                            onClick={() => {
+                                const path = state.paths[k];
+                                if (
+                                    path.group &&
+                                    !(
+                                        state.selection?.type === 'PathGroup' &&
+                                        state.selection.ids.includes(path.group)
+                                    )
+                                ) {
+                                    dispatch({
+                                        type: 'tab:set',
+                                        tab: 'PathGroups',
+                                    });
+                                    dispatch({
+                                        type: 'selection:set',
+                                        selection: {
+                                            type: 'PathGroup',
+                                            ids: [path.group],
+                                        },
+                                    });
+                                } else {
+                                    dispatch({ type: 'tab:set', tab: 'Paths' });
+                                    dispatch({
+                                        type: 'selection:set',
+                                        selection: {
+                                            type: 'Path',
+                                            ids: [k],
+                                        },
+                                    });
+                                }
+                            }}
                         />
                     ))}
                     {state.view.guides ? (
@@ -228,13 +259,16 @@ export const Canvas = ({
                     ) : null}
                     {hover ? (
                         <>
-                            <rect
-                                x={-width}
-                                y={-height}
-                                width={width * 2}
-                                height={height * 2}
-                                fill="rgba(0,0,0,0.4)"
-                            />
+                            {hover.kind !== 'Path' &&
+                            hover.kind !== 'PathGroup' ? (
+                                <rect
+                                    x={-width}
+                                    y={-height}
+                                    width={width * 2}
+                                    height={height * 2}
+                                    fill="rgba(0,0,0,0.4)"
+                                />
+                            ) : null}
                             {showHover(
                                 hover,
                                 state,
@@ -265,17 +299,31 @@ export const showHover = (
 ) => {
     switch (hover.kind) {
         case 'PathGroup': {
-            return Object.keys(state.paths)
-                .filter((k) => state.paths[k].group === hover.id)
-                .map((k) => (
-                    <RenderPath
-                        key={k}
-                        groups={state.pathGroups}
-                        path={state.paths[k]}
-                        zoom={state.view.zoom}
-                        palette={palette}
-                    />
-                ));
+            return (
+                <>
+                    {Object.keys(state.paths)
+                        .filter((k) => state.paths[k].group === hover.id)
+                        .map((k) => (
+                            <UnderlinePath
+                                key={k}
+                                path={state.paths[k]}
+                                zoom={state.view.zoom}
+                                color="rgba(255,255,255,0.5)"
+                            />
+                        ))}
+                    {Object.keys(state.paths)
+                        .filter((k) => state.paths[k].group === hover.id)
+                        .map((k) => (
+                            <RenderPath
+                                key={k}
+                                groups={state.pathGroups}
+                                path={state.paths[k]}
+                                zoom={state.view.zoom}
+                                palette={palette}
+                            />
+                        ))}
+                </>
+            );
         }
         case 'Guide': {
             return geomsForGiude(

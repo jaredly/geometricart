@@ -6,6 +6,42 @@ import { Path, PathGroup } from './types';
 import { combineStyles } from './Canvas';
 import { arcPath } from './RenderPendingPath';
 
+export const UnderlinePath = ({
+    path,
+    zoom,
+    color,
+}: {
+    path: Path;
+    zoom: number;
+    color: string;
+}) => {
+    const d = calcPathD(path, zoom);
+
+    return (
+        <path
+            d={d}
+            strokeWidth={20}
+            stroke={color}
+            fill={color}
+            strokeLinecap="square"
+            strokeLinejoin="round"
+        />
+    );
+};
+
+export const calcPathD = (path: Path, zoom: number) => {
+    let d = `M ${path.origin.x * zoom} ${path.origin.y * zoom}`;
+    path.segments.forEach((seg) => {
+        if (seg.type === 'Line') {
+            d += ` L ${seg.to.x * zoom} ${seg.to.y * zoom}`;
+        } else {
+            d += arcPath(seg, zoom);
+        }
+    });
+
+    return d + ' Z';
+};
+
 export const RenderPath = ({
     path,
     zoom,
@@ -19,14 +55,7 @@ export const RenderPath = ({
     onClick?: () => void;
     palette: Array<string>;
 }) => {
-    let d = `M ${path.origin.x * zoom} ${path.origin.y * zoom}`;
-    path.segments.forEach((seg) => {
-        if (seg.type === 'Line') {
-            d += ` L ${seg.to.x * zoom} ${seg.to.y * zoom}`;
-        } else {
-            d += arcPath(seg, zoom);
-        }
-    });
+    const d = calcPathD(path, zoom);
     const styles = [path.style];
     if (path.group) {
         let group = groups[path.group];
@@ -55,7 +84,7 @@ export const RenderPath = ({
                           }
                         : {}
                 }
-                d={d + ' Z'}
+                d={d}
                 fill={paletteColor(palette, fill.color)}
                 onClick={onClick}
             />
@@ -68,7 +97,7 @@ export const RenderPath = ({
         return (
             <path
                 key={i}
-                d={d + ' Z'}
+                d={d}
                 stroke={paletteColor(palette, line.color)}
                 fill="none"
                 strokeWidth={line.width}

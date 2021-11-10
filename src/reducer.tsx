@@ -165,6 +165,9 @@ export const reducer = (state: State, action: Action): State => {
             palettes: { ...state.palettes, [action.name]: action.colors },
         };
     }
+    if (action.type === 'palette:select') {
+        return { ...state, activePalette: action.name };
+    }
 
     const [newState, newAction] = reduceWithoutUndo(
         state,
@@ -305,7 +308,7 @@ export const reduceWithoutUndo = (
             state = { ...state, paths: { ...state.paths } };
 
             const style: Style = {
-                fills: [{ color: 'green' }],
+                fills: [{ color: 0 }],
                 lines: [{ color: 'white', width: 3 }],
             };
 

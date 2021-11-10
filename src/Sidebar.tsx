@@ -13,6 +13,7 @@ import { initialHistory, initialState } from './initialState';
 import { Export } from './Export';
 import { toTypeRev } from './App';
 import { useDropTarget } from './useDropTarget';
+import { ExportPalettes, ImportPalettes } from './ExportPalettes';
 
 export const PREFIX = `<!-- STATE:`;
 export const SUFFIX = '-->';
@@ -219,7 +220,16 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactNode } = {
     Palette: ({ state, dispatch }) => (
         <div>
             {Object.keys(state.palettes).map((name) => (
-                <div key={name}>
+                <div
+                    key={name}
+                    style={{
+                        border:
+                            state.activePalette === name
+                                ? `1px solid white`
+                                : `1px solid transparent`,
+                    }}
+                    onClick={() => dispatch({ type: 'palette:select', name })}
+                >
                     {name}
                     <div css={{ display: 'flex', flexDirection: 'row' }}>
                         {state.palettes[name].map((color, i) => (
@@ -235,6 +245,34 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactNode } = {
                     </div>
                 </div>
             ))}
+            <input
+                onPaste={(evt) => {
+                    const data = evt.clipboardData.getData('text/plain');
+                    const parts = data
+                        .split(',')
+                        .map((m) =>
+                            m.trim().match(/^[0-9a-f]{6}$/)
+                                ? '#' + m.trim()
+                                : m.trim(),
+                        );
+                    console.log(parts);
+                    let num = Object.keys(state.palettes).length;
+                    while (state.palettes[`palette${num}`]) {
+                        num += 1;
+                    }
+                    let newName = `palette${num}`;
+                    dispatch({
+                        type: 'palette:update',
+                        name: newName,
+                        colors: parts,
+                    });
+                }}
+                value=""
+                onChange={() => {}}
+                placeholder="Paste comma-separated colors"
+            />
+            <ExportPalettes palettes={state.palettes} />
+            <ImportPalettes dispatch={dispatch} palettes={state.palettes} />
         </div>
     ),
 };
