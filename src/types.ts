@@ -276,6 +276,17 @@ export type GuideUpdate = {
     // prev: Guide;
 };
 
+export type UndoPathUpdate = {
+    type: PathUpdate['type'];
+    action: PathUpdate;
+    prev: Path;
+};
+export type PathUpdate = {
+    type: 'path:update';
+    id: Id;
+    path: Path;
+};
+
 export type UndoGroupUpdate = {
     type: GroupUpdate['type'];
     action: GroupUpdate;
@@ -294,12 +305,12 @@ export type GuideAdd = {
     guide: Guide;
 };
 
-export type PathPoint = { type: 'path:point'; coord: Intersect };
-export type UndoPathPoint = {
-    type: PathPoint['type'];
-    action: PathPoint;
-    prev: Pending | null;
-};
+// export type PathPoint = { type: 'path:point'; coord: Intersect };
+// export type UndoPathPoint = {
+//     type: PathPoint['type'];
+//     action: PathPoint;
+//     prev: Pending | null;
+// };
 
 export type UndoPendingPoint = {
     type: PendingPoint['type'];
@@ -325,15 +336,15 @@ export type UndoPathCreate = {
     added: [Array<Id>, Id | null, number];
 };
 
-export type PathAdd = {
-    type: 'path:add';
-    segment: PendingSegment;
-};
-export type UndoPathAdd = {
-    type: PathAdd['type'];
-    action: PathAdd;
-    added: [Array<Id>, Id | null, number, PendingPath] | null;
-};
+// export type PathAdd = {
+//     type: 'path:add';
+//     segment: PendingSegment;
+// };
+// export type UndoPathAdd = {
+//     type: PathAdd['type'];
+//     action: PathAdd;
+//     added: [Array<Id>, Id | null, number, PendingPath] | null;
+// };
 
 export type UndoMirrorAdd = {
     type: MirrorAdd['type'];
@@ -393,9 +404,10 @@ export type UndoableAction =
     | MirrorAdd
     | MirrorUpdate
     | PendingPoint
-    | PathAdd
+    // | PathAdd
+    | PathUpdate
     | PendingType
-    | PathPoint
+    // | PathPoint
     | MirrorActive
     | ViewUpdate
     | GroupUpdate
@@ -405,12 +417,13 @@ export type UndoableAction =
 export type UndoAction =
     | UndoGuideAdd
     | UndoGroupUpdate
+    | UndoPathUpdate
     | UndoGuideUpdate
     | UndoViewUpdate
     | UndoMirrorAdd
     | UndoPendingPoint
-    | UndoPathPoint
-    | UndoPathAdd
+    // | UndoPathPoint
+    // | UndoPathAdd
     | UndoPathCreate
     | UndoPendingType
     | UndoGuideToggle
@@ -429,20 +442,6 @@ export type HistoryItem = {
     action: UndoableAction;
     id: number;
     // parent: number;
-};
-
-export const initialHistory: History = {
-    nextId: 1,
-    undo: 0,
-    currentBranch: 0,
-    branches: {
-        [0]: {
-            id: 0,
-            items: [],
-            snapshot: null,
-            parent: null,
-        },
-    },
 };
 
 export type History = {
@@ -465,6 +464,12 @@ export type History = {
     // idx: number;
 };
 
+export type View = {
+    center: Coord;
+    zoom: number;
+    guides: boolean;
+};
+
 export type State = {
     nextId: number;
     history: History;
@@ -483,64 +488,29 @@ export type State = {
     mirrors: { [key: Id]: Mirror };
     activeMirror: Id | null;
     view: View;
+
+    underlays: { [key: Id]: Underlay };
+
+    // Non historied, my folks
+    selection: {
+        type: 'Guide' | 'Mirror' | 'Path' | 'PathGroup';
+        ids: Array<string>;
+    } | null;
+    tab: 'Guides' | 'Mirrors' | 'Paths' | 'PathGroups' | 'Palette' | 'Export';
+
+    palettes: { [name: string]: Array<string> };
+    attachments: {
+        [key: Id]: {
+            contents: string; // base64 dontcha know
+            width: number;
+            height: number;
+        };
+    };
 };
 
-export type View = {
+export type Underlay = {
+    id: Id;
+    source: Id;
+    scale: Coord;
     center: Coord;
-    zoom: number;
-    guides: boolean;
-};
-
-// export const pointForView = (coord: Coord, view: View) => {
-// 	return {
-// 		x: (coord.x - view.center.x) * view.zoom + view.center.x,
-// 		y: (coord.y - view.center.y) * view.zoom + view.center.y
-// 	}
-// }
-
-// Should I use hashes to persist the realized whatsits for all the things?
-// idk let's just do it slow for now.
-export const initialState: State = {
-    pending: null, // { type: 'Guide', kind: 'Line', points: [] },
-    nextId: 0,
-    paths: {},
-    history: initialHistory,
-    pathGroups: {},
-    guides: {
-        base: {
-            id: 'base',
-            geom: {
-                type: 'Circle',
-                center: { x: 0, y: 0 },
-                radius: { x: 0, y: -1 },
-                line: true,
-                half: true,
-                multiples: 5,
-            },
-            active: true,
-            basedOn: [],
-            mirror: 'baseMirror',
-        },
-    },
-    mirrors: {
-        // second: {
-        // 	id: 'second',
-        // 	reflect: true,
-        // },
-        baseMirror: {
-            id: 'baseMirror',
-            origin: { x: 0, y: 0 },
-            parent: null,
-            point: { x: 0, y: -1 },
-            reflect: true,
-            rotational: [true, true], // , true, true, true], // 6-fold
-        },
-    },
-    activeMirror: 'baseMirror',
-    view: {
-        center: { x: 0, y: 0 },
-        // This can't be implemented with svg zoom, because that would muck with line widths of guides and mirrors.
-        zoom: 100,
-        guides: true,
-    },
 };

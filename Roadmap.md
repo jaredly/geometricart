@@ -1,6 +1,45 @@
 
 UP NEXT:
 
+## Palettes, right?
+
+So, it would be nice to be able to try out different colorings of a pattern
+and like, to switch between them.
+
+So, basic level: path's "fill" is a number, which indexes into the current palette array.
+When you change the current palette array, all the fills change.
+
+But what if the new palette has /fewer/ items? How do we indicate what the fallback should be?
+
+Maybe we just show those as empty, it's fine, and you can add more items if you want, or change the group, yeah.
+
+OK so fill could /either/ be a custom css string, or an index into a palette.
+
+
+## Plop an image in there!
+
+2 goals:
+- [ ] sample colors! Love it tons
+- [ ] copy existing dealios! will need zooms and such for that. how to do it, idk.
+	- I think that images won't be part of history. They're big.
+	- instead, I will have an 'attachments' dict, that doesn't get historied.
+	- but the visible whatsit of the thing can be history, that's fine.
+
+
+- [x] exporting an image... let's allow png export folks.
+
+
+- [ ] ok I actually have to deal with the sweep flag folks.
+- [ ] click  guide to hide it. undo brings it back of course.
+- [ ] hoveing a guide on the side should preview it on the screen.
+
+- [ ] track down those bugs
+	- [ ] I was getting something from the wrong circle
+	- [ ] an intersection didn't have all offshoots
+
+
+
+
 - [x] PATHSSSS
 - [x] how to add? ~simpler one is: point, segment, point.
 	- have a `pendingPath`
@@ -14,13 +53,10 @@ UP NEXT:
 - [x] hide guides
 - [x] almost-tangent circles should report connection.
 - [x] color things my folks.
-
 - [x] hover so good
 - [x] let's go ahead and show the Mirrors! So we know where they are pointed and such.
-- [ ] ok I actually have to deal with the sweep flag folks.
 - [x] CIRCLE IS TANGENT, need to fix.
-- [ ] click  guide to hide it. undo brings it back of course.
-- [ ] add option to NOT extend a line. can keep things a lot cleaner.
+- [x] add option to NOT extend a line. can keep things a lot cleaner.
 	- maybe like 'capital L' is for line that doesn't extend? idk
 	- orr hold shift while placing the second point?
 - [x] flip? does it work?
@@ -35,14 +71,10 @@ UP NEXT:
 
 
 
-- [ ] track down those bugs
-	- [ ] I was getting something from the wrong circle
-	- [ ] an intersection didn't have all offshoots
-
 FUTURE TOOLS:
 
 - [x] click 3 points, get the incircle
-- [ ] 3 points, get the circumcircle
+- [x] 3 points, get the circumcircle
 
 ---
 

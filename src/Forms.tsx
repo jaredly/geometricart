@@ -2,7 +2,24 @@
 /* @jsxFrag React.Fragment */
 import { jsx } from '@emotion/react';
 import * as React from 'react';
-import { Circle, Guide, Mirror, PathGroup, Style } from './types';
+import { Circle, Guide, Mirror, Path, PathGroup, Style, View } from './types';
+
+export const Float = ({
+    value,
+    onChange,
+}: {
+    value: number;
+    onChange: (v: number) => unknown;
+}) => {
+    return (
+        <input
+            value={value}
+            onChange={(evt) => onChange(+evt.target.value)}
+            step="0.1"
+            type="number"
+        />
+    );
+};
 
 export const Int = ({
     value,
@@ -71,7 +88,13 @@ export const Toggle = ({
 }) => {
     return (
         <div
-            css={{ cursor: 'pointer', padding: 4 }}
+            css={{
+                cursor: 'pointer',
+                padding: 4,
+                ':hover': {
+                    background: 'rgba(100,100,100,0.1)',
+                },
+            }}
             onClick={() => onChange(!value)}
         >
             {label}
@@ -162,12 +185,31 @@ export const PathGroupForm = ({
     onChange: (group: PathGroup) => unknown;
 }) => {
     return (
-        <div css={{ padding: 4, border: '1px solid #aaa', margin: 4 }}>
-            <div>Path Group</div>
+        <div css={{ padding: 4, borderBottom: '1px solid #aaa', margin: 4 }}>
+            <div>Path Group {group.id}</div>
             <StyleForm
                 style={group.style}
                 onChange={(style) => onChange({ ...group, style })}
             />
+        </div>
+    );
+};
+
+export const PathForm = ({
+    path,
+    onChange,
+}: {
+    path: Path;
+    onChange: (path: Path) => unknown;
+}) => {
+    return (
+        <div css={{ padding: 4, borderBottom: '1px solid #aaa', margin: 4 }}>
+            <div>Path! {path.id}</div>
+            <StyleForm
+                style={path.style}
+                onChange={(style) => onChange({ ...path, style })}
+            />
+            {path.group ? `Group: ${path.group}` : `No group...`}
         </div>
     );
 };
@@ -217,6 +259,40 @@ export const GuideForm = ({
                     />
                 </>
             ) : null}
+        </div>
+    );
+};
+
+export const ViewForm = ({
+    view,
+    onChange,
+}: {
+    view: View;
+    onChange: (view: View) => unknown;
+}) => {
+    return (
+        <div
+            css={{
+                padding: 8,
+                border: '1px solid #ccc',
+                margin: '4px 0',
+            }}
+        >
+            <div>View</div>
+
+            <Toggle
+                label="Show guides"
+                value={view.guides}
+                onChange={(guides) => onChange({ ...view, guides })}
+            />
+
+            <div>
+                Zoom
+                <Float
+                    value={view.zoom}
+                    onChange={(zoom) => onChange({ ...view, zoom })}
+                />
+            </div>
         </div>
     );
 };

@@ -1,11 +1,20 @@
 /* @jsx jsx */
 import { jsx } from '@emotion/react';
 import React from 'react';
-import { GuideForm, MirrorForm, PathGroupForm } from './Forms';
+import {
+    GuideForm,
+    MirrorForm,
+    PathForm,
+    PathGroupForm,
+    ViewForm,
+} from './Forms';
 import { guideTypes, State, Action } from './types';
+import { initialHistory, initialState } from './initialState';
+import { Export } from './Export';
+import { toTypeRev } from './App';
 
-const PREFIX = `<!-- STATE:`;
-const SUFFIX = '-->';
+export const PREFIX = `<!-- STATE:`;
+export const SUFFIX = '-->';
 
 export const getStateFromFile = (
     file: File,
@@ -35,11 +44,15 @@ export function Sidebar({
     canvasRef: React.MutableRefObject<SVGSVGElement | null>;
 }) {
     const [dragging, setDragging] = React.useState(false);
-    const [url, setUrl] = React.useState(null as null | string);
     return (
         <div
             style={{
+                overflow: 'auto',
+                padding: 8,
                 background: dragging ? 'white' : '',
+                display: 'flex',
+                flexDirection: 'column',
+                flex: 1,
             }}
             // onDragStart={evt => {
             // 	evt.preventDefault()
@@ -65,48 +78,41 @@ export function Sidebar({
                 setDragging(false);
             }}
         >
-            Hello folks
-            <div
-                css={{ cursor: 'pointer', padding: 4 }}
-                onClick={() =>
-                    dispatch({
-                        type: 'view:update',
-                        view: {
-                            ...state.view,
-                            guides: !state.view.guides,
-                        },
-                    })
-                }
-            >
-                Show guides
-                <input
-                    onClick={(evt) => evt.stopPropagation()}
-                    onChange={() => {
-                        dispatch({
-                            type: 'view:update',
-                            view: {
-                                ...state.view,
-                                guides: !state.view.guides,
-                            },
-                        });
-                    }}
-                    type="checkbox"
-                    checked={state.view.guides}
-                />
-            </div>
-            {guideTypes.map((kind) => (
+            <div>
                 <button
                     onClick={() => {
+                        dispatch({ type: 'reset', state: initialState });
+                    }}
+                >
+                    Clear All
+                </button>
+                Hello folks
+                <ViewForm
+                    view={state.view}
+                    onChange={(view) => {
                         dispatch({
-                            type: 'pending:type',
-                            kind,
+                            type: 'view:update',
+                            view,
                         });
                     }}
-                    key={kind}
-                >
-                    {kind}
-                </button>
-            ))}
+                />
+            </div>
+            <div>
+                {guideTypes.map((kind) => (
+                    <button
+                        onClick={() => {
+                            dispatch({
+                                type: 'pending:type',
+                                kind,
+                            });
+                        }}
+                        key={kind}
+                    >
+                        {kind}
+                        {toTypeRev[kind] ? ` (${toTypeRev[kind]})` : ''}
+                    </button>
+                ))}
+            </div>
             {Object.keys(state.mirrors).map((k) => (
                 <MirrorForm
                     key={k}
@@ -128,81 +134,75 @@ export function Sidebar({
                 />
             ))}
             Guides
-            {Object.keys(state.guides).map((k) => (
-                <GuideForm
-                    key={k}
-                    guide={state.guides[k]}
-                    onChange={(guide) =>
-                        dispatch({
-                            type: 'guide:update',
-                            id: k,
-                            guide,
-                        })
-                    }
-                />
-            ))}
-            Groups
-            {Object.keys(state.pathGroups).map((k) => (
-                <PathGroupForm
-                    key={k}
-                    group={state.pathGroups[k]}
-                    onChange={(group) =>
-                        dispatch({
-                            type: 'group:update',
-                            id: k,
-                            group,
-                        })
-                    }
-                />
-            ))}
             <div
                 css={{
-                    marginTop: 16,
+                    maxHeight: 400,
+                    overflow: 'auto',
+                    flexShrink: 1,
+                    minHeight: 100,
                 }}
             >
-                <button
-                    onClick={() => {
-                        const text =
-                            canvasRef.current!.outerHTML +
-                            `\n\n${PREFIX}${JSON.stringify(state)}${SUFFIX}`;
-                        const blob = new Blob([text], {
-                            type: 'image/svg+xml',
-                        });
-                        setUrl(URL.createObjectURL(blob));
-                    }}
-                >
-                    Export
-                </button>
-                {url
-                    ? (() => {
-                          const name = `image-${Date.now()}.svg`;
-                          return (
-                              <div css={{}}>
-                                  <div>
-                                      <a
-                                          href={url}
-                                          download={name}
-                                          css={{
-                                              color: 'white',
-                                              background: '#666',
-                                              borderRadius: 6,
-                                              padding: '4px 8px',
-                                              textDecoration: 'none',
-                                              cursor: 'pointer',
-                                          }}
-                                      >
-                                          Download {name}
-                                      </a>
-                                      <button onClick={() => setUrl(null)}>
-                                          Close
-                                      </button>
-                                  </div>
-                                  <img src={url} css={{ maxHeight: 400 }} />
-                              </div>
-                          );
-                      })()
-                    : null}
+                {Object.keys(state.guides).map((k) => (
+                    <GuideForm
+                        key={k}
+                        guide={state.guides[k]}
+                        onChange={(guide) =>
+                            dispatch({
+                                type: 'guide:update',
+                                id: k,
+                                guide,
+                            })
+                        }
+                    />
+                ))}
             </div>
+            Groups
+            <div
+                css={{
+                    maxHeight: 400,
+                    overflow: 'auto',
+                    flexShrink: 1,
+                    minHeight: 100,
+                }}
+            >
+                {Object.keys(state.pathGroups).map((k) => (
+                    <PathGroupForm
+                        key={k}
+                        group={state.pathGroups[k]}
+                        onChange={(group) =>
+                            dispatch({
+                                type: 'group:update',
+                                id: k,
+                                group,
+                            })
+                        }
+                    />
+                ))}
+            </div>
+            Individual Paths
+            <div
+                css={{
+                    maxHeight: 400,
+                    overflow: 'auto',
+                    flexShrink: 1,
+                    minHeight: 100,
+                }}
+            >
+                {Object.keys(state.paths).map((k) => (
+                    <PathForm
+                        key={k}
+                        path={state.paths[k]}
+                        onChange={(path) =>
+                            dispatch({
+                                type: 'path:update',
+                                id: k,
+                                path,
+                            })
+                        }
+                    />
+                ))}
+            </div>
+            <Export state={state} canvasRef={canvasRef} />
         </div>
     );
 }

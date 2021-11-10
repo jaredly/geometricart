@@ -22,6 +22,14 @@ import {
 
 export const undo = (state: State, action: UndoAction): State => {
     switch (action.type) {
+        case 'path:update':
+            return {
+                ...state,
+                paths: {
+                    ...state.paths,
+                    [action.action.id]: action.prev,
+                },
+            };
         case 'group:update':
             return {
                 ...state,
@@ -34,8 +42,6 @@ export const undo = (state: State, action: UndoAction): State => {
             return { ...state, activeMirror: action.prev };
         case 'view:update':
             return { ...state, view: action.prev };
-        case 'path:point':
-            return { ...state, pending: action.prev };
 
         case 'path:create': {
             state = {
@@ -54,33 +60,6 @@ export const undo = (state: State, action: UndoAction): State => {
             }
             return state;
         }
-
-        case 'path:add':
-            if (action.added) {
-                state = {
-                    ...state,
-                    paths: {
-                        ...state.paths,
-                    },
-                    nextId: action.added[2],
-                    pending: action.added[3],
-                };
-                action.added[0].forEach((id) => {
-                    delete state.paths[id];
-                });
-                if (action.added[1]) {
-                    state.pathGroups = { ...state.pathGroups };
-                    delete state.pathGroups[action.added[1]];
-                }
-                return state;
-            }
-            return {
-                ...state,
-                pending: {
-                    ...(state.pending as PendingPath),
-                    parts: (state.pending as PendingPath).parts.slice(0, -1),
-                },
-            };
 
         case 'pending:type':
             return { ...state, pending: action.prev };
@@ -291,18 +270,6 @@ export const reduceWithoutUndo = (
                     prev: state.guides[action.id].active,
                 },
             ];
-        case 'path:point':
-            return [
-                {
-                    ...state,
-                    pending: {
-                        type: 'Path',
-                        origin: action.coord,
-                        parts: [],
-                    },
-                },
-                { type: action.type, action, prev: state.pending },
-            ];
         case 'path:create': {
             let nextId = state.nextId;
             const id = `id-${nextId++}`;
@@ -383,106 +350,6 @@ export const reduceWithoutUndo = (
                 },
             ];
         }
-        case 'path:add':
-            if (state.pending?.type !== 'Path') {
-                return [state, null];
-            }
-            if (
-                coordKey(action.segment.to.coord) ===
-                coordKey(state.pending.origin.coord)
-            ) {
-                let nextId = state.nextId;
-                const id = `id-${nextId++}`;
-                const ids = [id];
-                let groupId: string | null = null;
-                let pending = state.pending;
-                state = { ...state, paths: { ...state.paths } };
-
-                const style: Style = {
-                    fills: [{ color: 'green' }],
-                    lines: [{ color: 'white', width: 3 }],
-                };
-
-                const main: Path = {
-                    id,
-                    created: 0,
-                    group: null,
-                    ordering: 0,
-                    origin: pending.origin.coord,
-                    segments: pending.parts
-                        .map((p) => p.segment)
-                        .concat([action.segment.segment]),
-                    style: {
-                        fills: [],
-                        lines: [],
-                    },
-                };
-                if (state.activeMirror) {
-                    groupId = `id-${nextId++}`;
-                    main.group = groupId;
-                    const transforms = getTransformsForMirror(
-                        state.activeMirror,
-                        state.mirrors,
-                    );
-                    transforms.forEach((matrices) => {
-                        let nid = `id-${nextId++}`;
-                        state.paths[nid] = {
-                            id: nid,
-                            group: groupId,
-                            ordering: 0,
-                            created: 0,
-                            origin: applyMatrices(main.origin, matrices),
-                            segments: main.segments.map((seg) =>
-                                transformSegment(seg, matrices),
-                            ),
-                            style: {
-                                lines: [],
-                                fills: [],
-                            },
-                        };
-                        ids.push(nid);
-                    });
-                    state.pathGroups = {
-                        ...state.pathGroups,
-                        [groupId]: {
-                            group: null,
-                            id,
-                            style,
-                        },
-                    };
-                    // here we gooooo
-                } else {
-                    main.style = style;
-                }
-                state.paths[id] = main;
-
-                return [
-                    {
-                        ...state,
-                        nextId,
-                        paths: {
-                            ...state.paths,
-                            [id]: main,
-                        },
-                        pending: null,
-                    },
-                    {
-                        type: action.type,
-                        action,
-                        added: [ids, groupId, state.nextId, pending],
-                    },
-                ];
-            }
-            return [
-                {
-                    ...state,
-                    pending: {
-                        ...state.pending,
-                        parts: state.pending.parts.concat([action.segment]),
-                    },
-                },
-                { type: action.type, action, added: null },
-            ];
         case 'view:update':
             return [
                 { ...state, view: action.view },
@@ -514,6 +381,21 @@ export const reduceWithoutUndo = (
                     type: action.type,
                     action,
                     prev: state.pathGroups[action.id],
+                },
+            ];
+        case 'path:update':
+            return [
+                {
+                    ...state,
+                    paths: {
+                        ...state.paths,
+                        [action.id]: action.path,
+                    },
+                },
+                {
+                    type: action.type,
+                    action,
+                    prev: state.paths[action.id],
                 },
             ];
         default:
