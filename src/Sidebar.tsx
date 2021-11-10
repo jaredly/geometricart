@@ -138,6 +138,7 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactNode } = {
             >
                 {Object.keys(state.pathGroups).map((k) => (
                     <PathGroupForm
+                        palette={state.palettes[state.activePalette]}
                         key={k}
                         group={state.pathGroups[k]}
                         onMouseOver={() => {
@@ -167,6 +168,7 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactNode } = {
             {Object.keys(state.paths).map((k) => (
                 <PathForm
                     key={k}
+                    palette={state.palettes[state.activePalette]}
                     path={state.paths[k]}
                     onChange={(path) =>
                         dispatch({

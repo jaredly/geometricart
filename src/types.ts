@@ -152,14 +152,14 @@ export type Style = {
     // I don't see why not.
     fills: Array<{
         inset?: number;
-        color?: string;
+        color?: string | number;
         // pattern?: string,
     } | null>;
     // Why might it be null? If we're
     // inheriting from higher up.
     lines: Array<{
         inset?: number;
-        color?: string;
+        color?: string | number;
         width?: number;
         dash?: Array<number>;
         joinStyle?: string;

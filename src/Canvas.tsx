@@ -170,6 +170,7 @@ export const Canvas = ({
                             groups={state.pathGroups}
                             path={state.paths[k]}
                             zoom={state.view.zoom}
+                            palette={state.palettes[state.activePalette]}
                         />
                     ))}
                     {state.view.guides ? (
@@ -195,6 +196,9 @@ export const Canvas = ({
                             ) : null}
                             {pathOrigin ? (
                                 <DrawPath
+                                    palette={
+                                        state.palettes[state.activePalette]
+                                    }
                                     zoom={state.view.zoom}
                                     origin={pathOrigin}
                                     primitives={guidePrimitives}
@@ -237,6 +241,7 @@ export const Canvas = ({
                                 mirrorTransforms,
                                 width,
                                 height,
+                                state.palettes[state.activePalette],
                             )}
                         </>
                     ) : null}
@@ -256,6 +261,7 @@ export const showHover = (
     mirrorTransforms: { [key: string]: Array<Array<Matrix>> },
     height: number,
     width: number,
+    palette: Array<string>,
 ) => {
     switch (hover.kind) {
         case 'PathGroup': {
@@ -267,6 +273,7 @@ export const showHover = (
                         groups={state.pathGroups}
                         path={state.paths[k]}
                         zoom={state.view.zoom}
+                        palette={palette}
                     />
                 ));
         }

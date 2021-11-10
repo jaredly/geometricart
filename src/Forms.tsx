@@ -51,13 +51,30 @@ export const Label = ({ text }: { text: string }) => (
 export const Color = ({
     color,
     onChange,
+    palette,
 }: {
-    color: string | undefined;
-    onChange: (color: string | undefined) => void;
+    color: string | undefined | number;
+    onChange: (color: string | undefined | number) => void;
+    palette: Array<string>;
 }) => {
-    const options = ['red', 'green', 'blue', 'orange', 'white', 'transparent'];
+    const options = ['black', 'white', 'transparent'];
     return (
         <div>
+            {palette.map((item, i) => (
+                <button
+                    key={i}
+                    onClick={() => onChange(i)}
+                    style={{
+                        border: `2px solid ${color === i ? 'white' : '#444'}`,
+                    }}
+                    css={{
+                        background: item,
+                        width: 20,
+                        height: 20,
+                        cursor: 'pointer',
+                    }}
+                />
+            ))}
             {options.map((name, i) => (
                 <button
                     key={name}
@@ -65,7 +82,7 @@ export const Color = ({
                     css={{
                         background: name,
                         border: `2px solid ${
-                            color === name ? 'white' : 'transparent'
+                            color === name ? 'white' : '#444'
                         }`,
                         width: 20,
                         height: 20,
@@ -115,10 +132,12 @@ export const Toggle = ({
 
 export const StyleForm = ({
     style,
+    palette,
     onChange,
 }: {
     style: Style;
     onChange: (s: Style) => unknown;
+    palette: Array<string>;
 }) => {
     return (
         <div>
@@ -127,6 +146,7 @@ export const StyleForm = ({
                 fill ? (
                     <div key={i}>
                         <Color
+                            palette={palette}
                             color={fill.color}
                             onChange={(color) => {
                                 const fills = style.fills.slice();
@@ -159,6 +179,7 @@ export const StyleForm = ({
                         />
                         <Color
                             color={line.color}
+                            palette={palette}
                             onChange={(color) => {
                                 const lines = style.lines.slice();
                                 lines[i] = { ...line, color };
@@ -179,11 +200,13 @@ export const StyleForm = ({
 
 export const PathGroupForm = ({
     group,
+    palette,
     onChange,
     onMouseOver,
     onMouseOut,
 }: {
     group: PathGroup;
+    palette: Array<string>;
     onChange: (group: PathGroup) => unknown;
     onMouseOver: () => void;
     onMouseOut: () => void;
@@ -196,6 +219,7 @@ export const PathGroupForm = ({
         >
             <div>Path Group {group.id}</div>
             <StyleForm
+                palette={palette}
                 style={group.style}
                 onChange={(style) => onChange({ ...group, style })}
             />
@@ -205,15 +229,18 @@ export const PathGroupForm = ({
 
 export const PathForm = ({
     path,
+    palette,
     onChange,
 }: {
     path: Path;
+    palette: Array<string>;
     onChange: (path: Path) => unknown;
 }) => {
     return (
         <div css={{ padding: 4, borderBottom: '1px solid #aaa', margin: 4 }}>
             <div>Path! {path.id}</div>
             <StyleForm
+                palette={palette}
                 style={path.style}
                 onChange={(style) => onChange({ ...path, style })}
             />

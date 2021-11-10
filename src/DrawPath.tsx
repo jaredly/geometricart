@@ -13,11 +13,13 @@ export const DrawPath = ({
     origin,
     zoom,
     onComplete,
+    palette,
 }: {
     primitives: Array<Primitive>;
     origin: Intersect;
     zoom: number;
     intersections: Array<Intersect>;
+    palette: Array<string>;
     onComplete: (segments: Array<PendingSegment>) => unknown;
 }) => {
     const [parts, setParts] = React.useState([] as Array<PendingSegment>);
@@ -65,12 +67,13 @@ export const DrawPath = ({
                         ordering: 0,
                         origin: origin.coord,
                         segments: parts.map((p) => p.segment),
-                        style: { lines: [], fills: [{ color: 'green' }] },
+                        style: { lines: [], fills: [{ color: 0 }] },
                     }}
                     onClick={() => {
                         onComplete(parts);
                     }}
                     groups={{}}
+                    palette={palette}
                 />
             ) : null}
             {parts.map((seg, i) => (

@@ -11,11 +11,13 @@ export const RenderPath = ({
     zoom,
     groups,
     onClick,
+    palette,
 }: {
     path: Path;
     zoom: number;
     groups: { [key: string]: PathGroup };
     onClick?: () => void;
+    palette: Array<string>;
 }) => {
     let d = `M ${path.origin.x * zoom} ${path.origin.y * zoom}`;
     path.segments.forEach((seg) => {
@@ -54,7 +56,7 @@ export const RenderPath = ({
                         : {}
                 }
                 d={d + ' Z'}
-                fill={fill.color}
+                fill={paletteColor(palette, fill.color)}
                 onClick={onClick}
             />
         );
@@ -67,7 +69,7 @@ export const RenderPath = ({
             <path
                 key={i}
                 d={d + ' Z'}
-                stroke={line.color}
+                stroke={paletteColor(palette, line.color)}
                 fill="none"
                 strokeWidth={line.width}
             />
@@ -80,3 +82,13 @@ export const RenderPath = ({
         </>
     );
 };
+
+export const paletteColor = (
+    palette: Array<string>,
+    color: string | number | undefined,
+) =>
+    color == null
+        ? undefined
+        : typeof color === 'string'
+        ? color
+        : palette[color];
