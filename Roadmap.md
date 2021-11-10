@@ -1,7 +1,39 @@
 
+THe most FUN:
+
+## It would be super cool
+to generate a pseudo-timelapse of creating one of the designs.
+given that I have the full history, it should be doable?
+like for starters, I could just advance the UNDO and snapshot 🤔
+
+or just, have screenrecord going, and make a "demo mode".
+Yeah that could be fun.
+
+Make a little animated cursor that goes around, doind the things...
+
+
 UP NEXT:
 
+
+HOW to share maximally twitter
+I assume twitter will re-encode the .png, and lose the metadata.
+
+- maybe a cloudflare worker, which ... produces the html on-demand?
+	how do I twitter card it up, is the real question.
+
+## Basic usability stuff
+
+- [ ] need to allow paths that are just lines
+- [ ] multi-select paths please
+- [ ] "hiding" a guide, should be cmd-click or something, and normal click should just select it.
+
+
 ## Palettes, right?
+
+- [x] paste in a palette, love it
+- [x] export palettes
+- [ ] drag & drop palettes, please
+	- I don't know what this was supposed to mean
 
 So, it would be nice to be able to try out different colorings of a pattern
 and like, to switch between them.
@@ -27,15 +59,17 @@ OK so fill could /either/ be a custom css string, or an index into a palette.
 
 
 - [x] exporting an image... let's allow png export folks.
+	- Sooo stretch goal that would be fun, apparently you can embed whatever you want into png metadata. We could stuff the json in there
 
 
 - [ ] ok I actually have to deal with the sweep flag folks.
 - [ ] click  guide to hide it. undo brings it back of course.
-- [ ] hoveing a guide on the side should preview it on the screen.
+- [x] hoveing a guide on the side should preview it on the screen.
 
 - [ ] track down those bugs
 	- [ ] I was getting something from the wrong circle
 	- [ ] an intersection didn't have all offshoots
+
 
 
 

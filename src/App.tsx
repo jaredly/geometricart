@@ -93,6 +93,11 @@ export const App = ({ initialState }: { initialState: State }) => {
                 height: '100vh',
                 width: '100vw',
                 overflow: 'hidden',
+                '@media (max-width: 1400px)': {
+                    flexDirection: 'column-reverse',
+                    overflow: 'visible',
+                    height: 'unset',
+                },
             }}
         >
             <Sidebar

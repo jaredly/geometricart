@@ -1,4 +1,5 @@
 /* @jsx jsx */
+/* @jsxFrag React.Fragment */
 import { jsx } from '@emotion/react';
 import React from 'react';
 import {
@@ -9,7 +10,7 @@ import {
     ViewForm,
 } from './Forms';
 import { guideTypes, State, Action, Tab, Id } from './types';
-import { initialHistory, initialState } from './initialState';
+import { initialState } from './initialState';
 import { Export } from './Export';
 import { toTypeRev } from './App';
 import { useDropTarget } from './useDropTarget';
@@ -17,24 +18,6 @@ import { ExportPalettes, ImportPalettes } from './ExportPalettes';
 
 export const PREFIX = `<!-- STATE:`;
 export const SUFFIX = '-->';
-
-export const getStateFromFile = (
-    file: File,
-    done: (s: State | null) => void,
-) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-        const last = (reader.result as string).split('\n').slice(-1)[0].trim();
-        if (last.startsWith(PREFIX) && last.endsWith(SUFFIX)) {
-            done(JSON.parse(last.slice(PREFIX.length, -SUFFIX.length)));
-        } else {
-            console.log('not last, bad news');
-            console.log(last);
-            done(null);
-        }
-    };
-    reader.readAsText(file);
-};
 
 export const Tabs = ({
     current,
@@ -144,6 +127,10 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactNode } = {
                 {Object.keys(state.pathGroups).map((k) => (
                     <PathGroupForm
                         palette={state.palettes[state.activePalette]}
+                        selected={
+                            state.selection?.type === 'PathGroup' &&
+                            state.selection.ids.includes(k)
+                        }
                         key={k}
                         group={state.pathGroups[k]}
                         onMouseOver={() => {
@@ -291,6 +278,35 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactNode } = {
     ),
 };
 
+export const ReallyButton = ({
+    label,
+    onClick,
+    className,
+}: {
+    label: string;
+    onClick: () => void;
+    className?: string;
+}) => {
+    const [really, setReally] = React.useState(false);
+    if (really) {
+        return (
+            <>
+                <button className={className} onClick={() => setReally(false)}>
+                    Nope
+                </button>
+                <button className={className} onClick={() => onClick()}>
+                    Really {label}
+                </button>
+            </>
+        );
+    }
+    return (
+        <button className={className} onClick={() => setReally(true)}>
+            {label}
+        </button>
+    );
+};
+
 export function Sidebar({
     dispatch,
     state,
@@ -322,14 +338,29 @@ export function Sidebar({
             {...callbacks}
         >
             <div>
-                <button
+                <ReallyButton
+                    label="Clear all"
+                    css={{ margin: 8 }}
                     onClick={() => {
                         dispatch({ type: 'reset', state: initialState });
                     }}
+                />
+                <button
+                    css={{ margin: 8 }}
+                    onClick={() => {
+                        dispatch({ type: 'undo' });
+                    }}
                 >
-                    Clear All
+                    Undo
                 </button>
-                Hello folks
+                <button
+                    css={{ margin: 8 }}
+                    onClick={() => {
+                        dispatch({ type: 'redo' });
+                    }}
+                >
+                    Redo
+                </button>
                 <ViewForm
                     view={state.view}
                     onChange={(view) => {

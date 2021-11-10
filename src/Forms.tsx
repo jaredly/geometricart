@@ -210,20 +210,32 @@ export const StyleForm = ({
 export const PathGroupForm = ({
     group,
     palette,
+    selected,
     onChange,
     onMouseOver,
     onMouseOut,
 }: {
     group: PathGroup;
     palette: Array<string>;
+    selected: boolean;
     onChange: (group: PathGroup) => unknown;
     onMouseOver: () => void;
     onMouseOut: () => void;
 }) => {
+    const ref = React.useRef(null as null | HTMLDivElement);
+    React.useEffect(() => {
+        if (selected) {
+            ref.current?.scrollIntoView(false);
+        }
+    }, [selected]);
     return (
         <div
+            ref={(node) => (ref.current = node)}
             css={{ padding: 4, borderBottom: '1px solid #aaa', margin: 4 }}
             onMouseOut={onMouseOut}
+            style={{
+                backgroundColor: selected ? 'rgba(255,255,255,0.1)' : undefined,
+            }}
             onMouseOver={onMouseOver}
         >
             <div>Path Group {group.id}</div>
