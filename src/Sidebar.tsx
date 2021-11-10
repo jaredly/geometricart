@@ -112,6 +112,10 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactNode } = {
             >
                 {Object.keys(state.guides).map((k) => (
                     <GuideForm
+                        selected={
+                            state.selection?.type === 'Guide' &&
+                            state.selection.ids.includes(k)
+                        }
                         onMouseOut={() => setHover(null)}
                         onMouseOver={() => setHover({ kind: 'Guide', id: k })}
                         key={k}
@@ -169,6 +173,10 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactNode } = {
             {Object.keys(state.paths).map((k) => (
                 <PathForm
                     key={k}
+                    selected={
+                        state.selection?.type === 'Path' &&
+                        state.selection.ids.includes(k)
+                    }
                     palette={state.palettes[state.activePalette]}
                     path={state.paths[k]}
                     onChange={(path) =>
@@ -195,6 +203,12 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactNode } = {
                     <MirrorForm
                         key={k}
                         isActive={state.activeMirror === k}
+                        onDuplicate={() => {
+                            dispatch({
+                                type: 'mirror:add',
+                                mirror: state.mirrors[k],
+                            });
+                        }}
                         onSelect={() => {
                             dispatch({
                                 type: 'mirror:active',
@@ -251,7 +265,7 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactNode } = {
                     const parts = data
                         .split(',')
                         .map((m) =>
-                            m.trim().match(/^[0-9a-f]{6}$/)
+                            m.trim().match(/^[0-9a-fA-F]{6}$/)
                                 ? '#' + m.trim()
                                 : m.trim(),
                         );

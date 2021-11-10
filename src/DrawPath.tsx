@@ -5,7 +5,7 @@ import { coordKey, primitiveKey } from './calcAllIntersections';
 import { RenderSegment } from './RenderSegment';
 import { findNextSegments } from './findNextSegments';
 import { Primitive } from './intersect';
-import { Intersect, PendingSegment } from './types';
+import { Id, Intersect, PendingSegment } from './types';
 
 export const DrawPath = ({
     primitives,
@@ -15,7 +15,7 @@ export const DrawPath = ({
     onComplete,
     palette,
 }: {
-    primitives: Array<Primitive>;
+    primitives: Array<{ prim: Primitive; guides: Array<Id> }>;
     origin: Intersect;
     zoom: number;
     intersections: Array<Intersect>;
@@ -26,7 +26,7 @@ export const DrawPath = ({
 
     const next = findNextSegments(
         { type: 'Path', origin, parts },
-        primitives,
+        primitives.map((prim) => prim.prim),
         intersections,
     );
     const current = parts.length == 0 ? origin : parts[parts.length - 1].to;
@@ -34,7 +34,7 @@ export const DrawPath = ({
         parts.length > 0
             ? findNextSegments(
                   { type: 'Path', origin, parts: parts.slice(0, -1) },
-                  primitives,
+                  primitives.map((prim) => prim.prim),
                   intersections,
               ).filter(
                   (seg) => coordKey(seg.to.coord) !== coordKey(current.coord),
@@ -65,6 +65,7 @@ export const DrawPath = ({
                         id: '',
                         created: 0,
                         ordering: 0,
+                        hidden: false,
                         origin: origin.coord,
                         segments: parts.map((p) => p.segment),
                         style: { lines: [], fills: [{ color: 0 }] },

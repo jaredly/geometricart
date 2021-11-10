@@ -56,7 +56,7 @@ export const pendingGuide = (
                 center: points[0],
                 radius: points[1],
                 half: false,
-                multiples: 1,
+                multiples: 0,
             };
         case 'InCircle':
         case 'CircumCircle':

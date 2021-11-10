@@ -86,8 +86,8 @@ export const undo = (state: State, action: UndoAction): State => {
             };
         case 'mirror:add': {
             const mirrors = { ...state.mirrors };
-            delete mirrors[action.action.id];
-            return { ...state, mirrors };
+            delete mirrors[action.added[0]];
+            return { ...state, mirrors, nextId: action.added[1] };
         }
         case 'guide:update':
             return {
@@ -189,14 +189,6 @@ export const reduceWithoutUndo = (
     action: UndoableAction,
 ): [State, UndoAction | null] => {
     switch (action.type) {
-        case 'mirror:add':
-            return [
-                {
-                    ...state,
-                    mirrors: { ...state.mirrors, [action.id]: action.mirror },
-                },
-                { type: action.type, action },
-            ];
         case 'mirror:change':
             return [
                 {
@@ -300,6 +292,27 @@ export const reduceWithoutUndo = (
                     prev: state.guides[action.id].active,
                 },
             ];
+
+        case 'mirror:add': {
+            let nextId = state.nextId + 1;
+            const id = `id-${state.nextId}`;
+            return [
+                {
+                    ...state,
+                    mirrors: {
+                        ...state.mirrors,
+                        [id]: { ...action.mirror, id },
+                    },
+                    nextId,
+                },
+                {
+                    type: action.type,
+                    action,
+                    added: [id, state.nextId],
+                },
+            ];
+        }
+
         case 'path:create': {
             let nextId = state.nextId;
             const id = `id-${nextId++}`;
@@ -317,6 +330,7 @@ export const reduceWithoutUndo = (
                 created: 0,
                 group: null,
                 ordering: 0,
+                hidden: false,
                 origin: action.origin,
                 segments: action.segments,
                 style: {
@@ -337,6 +351,7 @@ export const reduceWithoutUndo = (
                         id: nid,
                         group: groupId,
                         ordering: 0,
+                        hidden: false,
                         created: 0,
                         origin: applyMatrices(main.origin, matrices),
                         segments: main.segments.map((seg) =>

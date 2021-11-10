@@ -9,8 +9,13 @@ import {
     Segment,
 } from './types';
 
-const dedup = (numbers: Array<number>) => {
+export const dedup = (numbers: Array<number>) => {
     const seen: { [k: number]: true } = {};
+    return numbers.filter((n) => (seen[n] ? false : (seen[n] = true)));
+};
+
+export const dedupString = (numbers: Array<string>) => {
+    const seen: { [k: string]: true } = {};
     return numbers.filter((n) => (seen[n] ? false : (seen[n] = true)));
 };
 

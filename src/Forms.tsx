@@ -2,7 +2,16 @@
 /* @jsxFrag React.Fragment */
 import { jsx } from '@emotion/react';
 import * as React from 'react';
-import { Circle, Guide, Mirror, Path, PathGroup, Style, View } from './types';
+import {
+    Circle,
+    Guide,
+    Line,
+    Mirror,
+    Path,
+    PathGroup,
+    Style,
+    View,
+} from './types';
 
 export const Float = ({
     value,
@@ -231,14 +240,33 @@ export const PathForm = ({
     path,
     palette,
     onChange,
+    selected,
 }: {
     path: Path;
+    selected: boolean;
     palette: Array<string>;
     onChange: (path: Path) => unknown;
 }) => {
+    const ref = React.useRef(null as null | HTMLDivElement);
+    React.useEffect(() => {
+        if (selected) {
+            ref.current?.scrollIntoView(false);
+        }
+    }, [selected]);
     return (
-        <div css={{ padding: 4, borderBottom: '1px solid #aaa', margin: 4 }}>
+        <div
+            ref={(node) => (ref.current = node)}
+            css={{ padding: 4, borderBottom: '1px solid #aaa', margin: 4 }}
+            style={{
+                backgroundColor: selected ? 'rgba(255,255,255,0.1)' : undefined,
+            }}
+        >
             <div>Path! {path.id}</div>
+            <Toggle
+                label="Hide"
+                value={path.hidden}
+                onChange={(hidden) => onChange({ ...path, hidden })}
+            />
             <StyleForm
                 palette={palette}
                 style={path.style}
@@ -251,17 +279,26 @@ export const PathForm = ({
 
 export const GuideForm = ({
     guide,
+    selected,
     onChange,
     onMouseOver,
     onMouseOut,
 }: {
     guide: Guide;
+    selected: boolean;
     onChange: (guide: Guide) => unknown;
     onMouseOver: () => void;
     onMouseOut: () => void;
 }) => {
+    const ref = React.useRef(null as null | HTMLDivElement);
+    React.useEffect(() => {
+        if (selected) {
+            ref.current?.scrollIntoView(false);
+        }
+    }, [selected]);
     return (
         <div
+            ref={(node) => (ref.current = node)}
             onMouseOut={onMouseOut}
             onMouseOver={onMouseOver}
             css={{
@@ -271,7 +308,7 @@ export const GuideForm = ({
             <div
                 css={{
                     cursor: 'pointer',
-                    background: guide.active
+                    background: selected
                         ? 'rgba(100,100,100,0.4)'
                         : 'rgba(100,100,100,0.1)',
                     ':hover': {
@@ -299,6 +336,18 @@ export const GuideForm = ({
                         }
                     />
                 </>
+            ) : null}
+            {guide.geom.type === 'Line' ? (
+                <Toggle
+                    value={guide.geom.limit}
+                    onChange={(limit) => {
+                        onChange({
+                            ...guide,
+                            geom: { ...(guide.geom as Line), limit },
+                        });
+                    }}
+                    label="Restrict to segment"
+                />
             ) : null}
         </div>
     );
@@ -343,11 +392,13 @@ export const MirrorForm = ({
     onChange,
     onSelect,
     isActive,
+    onDuplicate,
 }: {
     mirror: Mirror;
     isActive: boolean;
     onChange: (m: Mirror) => unknown;
     onSelect: () => void;
+    onDuplicate: () => void;
 }) => {
     return (
         <div
@@ -392,6 +443,26 @@ export const MirrorForm = ({
                     }}
                 />
             </div>
+            <div css={{ display: 'flex' }}>
+                {mirror.rotational.map((enabled, i) => (
+                    <Toggle
+                        label={'' + i}
+                        value={enabled}
+                        onChange={(enabled) => {
+                            const rotational = mirror.rotational.slice();
+                            rotational[i] = enabled;
+                            onChange({ ...mirror, rotational });
+                        }}
+                    />
+                ))}
+            </div>
+            <button
+                onClick={() => {
+                    onDuplicate();
+                }}
+            >
+                Duplicate
+            </button>
         </div>
     );
 };

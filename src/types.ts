@@ -174,6 +174,7 @@ export type Path = {
     group: Id | null;
     origin: Coord;
     segments: Array<Segment>;
+    hidden: boolean;
 };
 
 export type ArcSegment = {
@@ -356,10 +357,10 @@ export type UndoPathCreate = {
 export type UndoMirrorAdd = {
     type: MirrorAdd['type'];
     action: MirrorAdd;
+    added: [Id, number];
 };
 export type MirrorAdd = {
     type: 'mirror:add';
-    id: Id;
     mirror: Mirror;
 };
 
