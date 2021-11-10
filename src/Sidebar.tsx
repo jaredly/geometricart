@@ -8,7 +8,7 @@ import {
     PathGroupForm,
     ViewForm,
 } from './Forms';
-import { guideTypes, State, Action } from './types';
+import { guideTypes, State, Action, Tab, Id } from './types';
 import { initialHistory, initialState } from './initialState';
 import { Export } from './Export';
 import { toTypeRev } from './App';
@@ -35,24 +35,230 @@ export const getStateFromFile = (
     reader.readAsText(file);
 };
 
+export const Tabs = ({
+    current,
+    tabs,
+    onSelect,
+    props,
+}: {
+    props: TabProps;
+    onSelect: (name: string) => void;
+    current: string;
+    tabs: { [key: string]: (props: TabProps) => React.ReactNode };
+}) => {
+    return (
+        <div css={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+            <div
+                css={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    flexWrap: 'wrap',
+                }}
+            >
+                {Object.keys(tabs).map((name) => (
+                    <div
+                        css={{
+                            cursor: 'pointer',
+                            backgroundColor: '#444',
+                            margin: 4,
+                            padding: '4px 8px',
+                            ':hover': {
+                                backgroundColor: 'white',
+                                color: 'black',
+                            },
+                        }}
+                        style={
+                            name === current
+                                ? {
+                                      backgroundColor: 'white',
+                                      color: 'black',
+                                  }
+                                : {}
+                        }
+                        key={name}
+                        onClick={() => onSelect(name)}
+                    >
+                        {name}
+                    </div>
+                ))}
+            </div>
+            {tabs[current](props)}
+        </div>
+    );
+};
+
+export type Hover = {
+    kind: 'Path' | 'PathGroup' | 'Mirror' | 'Guide';
+    id: Id;
+};
+
+export type TabProps = {
+    state: State;
+    dispatch: (action: Action) => unknown;
+    canvasRef: { current: SVGSVGElement | null };
+    hover: Hover | null;
+    setHover: (hover: Hover | null) => void;
+};
+const tabs: { [key in Tab]: (props: TabProps) => React.ReactNode } = {
+    Guides: ({ state, dispatch, hover, setHover }) => {
+        return (
+            <div
+                css={{
+                    overflow: 'auto',
+                    flexShrink: 1,
+                    minHeight: 100,
+                }}
+            >
+                {Object.keys(state.guides).map((k) => (
+                    <GuideForm
+                        onMouseOut={() => setHover(null)}
+                        onMouseOver={() => setHover({ kind: 'Guide', id: k })}
+                        key={k}
+                        guide={state.guides[k]}
+                        onChange={(guide) =>
+                            dispatch({
+                                type: 'guide:update',
+                                id: k,
+                                guide,
+                            })
+                        }
+                    />
+                ))}
+            </div>
+        );
+    },
+    PathGroups: ({ state, dispatch, hover, setHover }) => {
+        return (
+            <div
+                css={{
+                    overflow: 'auto',
+                    flexShrink: 1,
+                    minHeight: 100,
+                }}
+            >
+                {Object.keys(state.pathGroups).map((k) => (
+                    <PathGroupForm
+                        key={k}
+                        group={state.pathGroups[k]}
+                        onMouseOver={() => {
+                            setHover({ kind: 'PathGroup', id: k });
+                        }}
+                        onMouseOut={() => setHover(null)}
+                        onChange={(group) =>
+                            dispatch({
+                                type: 'group:update',
+                                id: k,
+                                group,
+                            })
+                        }
+                    />
+                ))}
+            </div>
+        );
+    },
+    Paths: ({ state, dispatch }) => (
+        <div
+            css={{
+                overflow: 'auto',
+                flex: 1,
+                minHeight: 100,
+            }}
+        >
+            {Object.keys(state.paths).map((k) => (
+                <PathForm
+                    key={k}
+                    path={state.paths[k]}
+                    onChange={(path) =>
+                        dispatch({
+                            type: 'path:update',
+                            id: k,
+                            path,
+                        })
+                    }
+                />
+            ))}
+        </div>
+    ),
+    Mirrors: ({ state, dispatch }) => {
+        return (
+            <div
+                css={{
+                    overflow: 'auto',
+                    flexShrink: 1,
+                    minHeight: 100,
+                }}
+            >
+                {Object.keys(state.mirrors).map((k) => (
+                    <MirrorForm
+                        key={k}
+                        isActive={state.activeMirror === k}
+                        onSelect={() => {
+                            dispatch({
+                                type: 'mirror:active',
+                                id: state.activeMirror === k ? null : k,
+                            });
+                        }}
+                        mirror={state.mirrors[k]}
+                        onChange={(mirror) =>
+                            dispatch({
+                                type: 'mirror:change',
+                                mirror,
+                                id: k,
+                            })
+                        }
+                    />
+                ))}
+            </div>
+        );
+    },
+    Export: ({ state, canvasRef }) => (
+        <Export state={state} canvasRef={canvasRef} />
+    ),
+    Palette: ({ state, dispatch }) => (
+        <div>
+            {Object.keys(state.palettes).map((name) => (
+                <div key={name}>
+                    {name}
+                    <div css={{ display: 'flex', flexDirection: 'row' }}>
+                        {state.palettes[name].map((color, i) => (
+                            <div
+                                key={i}
+                                style={{
+                                    backgroundColor: color,
+                                    width: 20,
+                                    height: 20,
+                                }}
+                            ></div>
+                        ))}
+                    </div>
+                </div>
+            ))}
+        </div>
+    ),
+};
+
 export function Sidebar({
     dispatch,
     state,
     canvasRef,
+    hover,
+    setHover,
 }: {
     dispatch: (action: Action) => void;
+    hover: Hover | null;
+    setHover: (hover: Hover | null) => void;
     state: State;
     canvasRef: React.MutableRefObject<SVGSVGElement | null>;
 }) {
     const [dragging, callbacks] = useDropTarget((state) =>
         dispatch({ type: 'reset', state }),
     );
+
     return (
         <div
             style={{
                 overflow: 'auto',
                 padding: 8,
-                // background: dragging ? 'white' : '',
                 display: 'flex',
                 flexDirection: 'column',
                 flex: 1,
@@ -96,96 +302,21 @@ export function Sidebar({
                     </button>
                 ))}
             </div>
-            {Object.keys(state.mirrors).map((k) => (
-                <MirrorForm
-                    key={k}
-                    isActive={state.activeMirror === k}
-                    onSelect={() => {
-                        dispatch({
-                            type: 'mirror:active',
-                            id: state.activeMirror === k ? null : k,
-                        });
-                    }}
-                    mirror={state.mirrors[k]}
-                    onChange={(mirror) =>
-                        dispatch({
-                            type: 'mirror:change',
-                            mirror,
-                            id: k,
-                        })
-                    }
-                />
-            ))}
-            Guides
             <div
-                css={{
-                    maxHeight: 400,
-                    overflow: 'auto',
-                    flexShrink: 1,
-                    minHeight: 100,
+                style={{
+                    height: 4,
+                    backgroundColor: '#444',
+                    margin: '24px 4px',
                 }}
-            >
-                {Object.keys(state.guides).map((k) => (
-                    <GuideForm
-                        key={k}
-                        guide={state.guides[k]}
-                        onChange={(guide) =>
-                            dispatch({
-                                type: 'guide:update',
-                                id: k,
-                                guide,
-                            })
-                        }
-                    />
-                ))}
-            </div>
-            Groups
-            <div
-                css={{
-                    maxHeight: 400,
-                    overflow: 'auto',
-                    flexShrink: 1,
-                    minHeight: 100,
-                }}
-            >
-                {Object.keys(state.pathGroups).map((k) => (
-                    <PathGroupForm
-                        key={k}
-                        group={state.pathGroups[k]}
-                        onChange={(group) =>
-                            dispatch({
-                                type: 'group:update',
-                                id: k,
-                                group,
-                            })
-                        }
-                    />
-                ))}
-            </div>
-            Individual Paths
-            <div
-                css={{
-                    maxHeight: 400,
-                    overflow: 'auto',
-                    flexShrink: 1,
-                    minHeight: 100,
-                }}
-            >
-                {Object.keys(state.paths).map((k) => (
-                    <PathForm
-                        key={k}
-                        path={state.paths[k]}
-                        onChange={(path) =>
-                            dispatch({
-                                type: 'path:update',
-                                id: k,
-                                path,
-                            })
-                        }
-                    />
-                ))}
-            </div>
-            <Export state={state} canvasRef={canvasRef} />
+            />
+            <Tabs
+                current={state.tab}
+                props={{ state, dispatch, canvasRef, hover, setHover }}
+                tabs={tabs}
+                onSelect={(tab) =>
+                    dispatch({ type: 'tab:set', tab: tab as Tab })
+                }
+            />
         </div>
     );
 }

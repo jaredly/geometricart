@@ -3,10 +3,13 @@
 import { jsx } from '@emotion/react';
 import React from 'react';
 import { primitiveKey, calcAllIntersections } from './calcAllIntersections';
-import { calculateGuideElements } from './calculateGuideElements';
+import {
+    calculateGuideElements,
+    geomsForGiude,
+} from './calculateGuideElements';
 import { DrawPath } from './DrawPath';
 import { findNextSegments } from './findNextSegments';
-import { getMirrorTransforms } from './getMirrorTransforms';
+import { getMirrorTransforms, Matrix } from './getMirrorTransforms';
 import { Primitive } from './intersect';
 import { geomToPrimitives } from './points';
 import { RenderIntersections } from './RenderIntersections';
@@ -14,6 +17,7 @@ import { RenderMirror } from './RenderMirror';
 import { RenderPath } from './RenderPath';
 import { RenderPendingGuide } from './RenderPendingGuide';
 import { RenderPrimitive } from './RenderPrimitive';
+import { Hover } from './Sidebar';
 import { Action, Intersect, Line, Pending, State, Style, View } from './types';
 
 export type Props = {
@@ -22,9 +26,17 @@ export type Props = {
     height: number;
     innerRef: (node: SVGSVGElement) => unknown;
     dispatch: (action: Action) => unknown;
+    hover: Hover | null;
 };
 
-export const Canvas = ({ state, width, height, dispatch, innerRef }: Props) => {
+export const Canvas = ({
+    state,
+    width,
+    height,
+    dispatch,
+    innerRef,
+    hover,
+}: Props) => {
     const mirrorTransforms = React.useMemo(
         () => getMirrorTransforms(state.mirrors),
         [state.mirrors],
@@ -152,13 +164,6 @@ export const Canvas = ({ state, width, height, dispatch, innerRef }: Props) => {
                 }}
             >
                 <g transform={`translate(${width / 2} ${height / 2})`}>
-                    {/* {guideElements.map((element) => (
-                        <GuideElement
-                            geom={element.geom}
-                            zoom={state.view.zoom}
-                            original={element.original}
-                        />
-                    ))} */}
                     {Object.keys(state.paths).map((k) => (
                         <RenderPath
                             key={k}
@@ -217,6 +222,24 @@ export const Canvas = ({ state, width, height, dispatch, innerRef }: Props) => {
                             ))}
                         </>
                     ) : null}
+                    {hover ? (
+                        <>
+                            <rect
+                                x={-width}
+                                y={-height}
+                                width={width * 2}
+                                height={height * 2}
+                                fill="rgba(0,0,0,0.4)"
+                            />
+                            {showHover(
+                                hover,
+                                state,
+                                mirrorTransforms,
+                                width,
+                                height,
+                            )}
+                        </>
+                    ) : null}
                 </g>
             </svg>
             <div>
@@ -225,6 +248,47 @@ export const Canvas = ({ state, width, height, dispatch, innerRef }: Props) => {
             </div>
         </div>
     );
+};
+
+export const showHover = (
+    hover: Hover,
+    state: State,
+    mirrorTransforms: { [key: string]: Array<Array<Matrix>> },
+    height: number,
+    width: number,
+) => {
+    switch (hover.kind) {
+        case 'PathGroup': {
+            return Object.keys(state.paths)
+                .filter((k) => state.paths[k].group === hover.id)
+                .map((k) => (
+                    <RenderPath
+                        key={k}
+                        groups={state.pathGroups}
+                        path={state.paths[k]}
+                        zoom={state.view.zoom}
+                    />
+                ));
+        }
+        case 'Guide': {
+            return geomsForGiude(
+                state.guides[hover.id],
+                state.guides[hover.id].mirror
+                    ? mirrorTransforms[state.guides[hover.id].mirror!]
+                    : null,
+            ).map((geom, j) =>
+                geomToPrimitives(geom.geom).map((prim, i) => (
+                    <RenderPrimitive
+                        prim={prim}
+                        zoom={state.view.zoom}
+                        height={height}
+                        width={width}
+                        key={`${j}:${i}`}
+                    />
+                )),
+            );
+        }
+    }
 };
 
 export const combineStyles = (styles: Array<Style>): Style => {

@@ -4,8 +4,8 @@ import localforage from 'localforage';
 import React from 'react';
 import { Canvas } from './Canvas';
 import { reducer } from './reducer';
-import { Sidebar } from './Sidebar';
-import { GuideGeom, State } from './types';
+import { Hover, Sidebar } from './Sidebar';
+import { GuideGeom, Id, State } from './types';
 import { initialState } from './initialState';
 import { useDropTarget } from './useDropTarget';
 
@@ -81,6 +81,8 @@ export const App = ({ initialState }: { initialState: State }) => {
 
     const ref = React.useRef(null as null | SVGSVGElement);
 
+    const [hover, setHover] = React.useState(null as null | Hover);
+
     return (
         <div
             css={{
@@ -93,9 +95,16 @@ export const App = ({ initialState }: { initialState: State }) => {
                 overflow: 'hidden',
             }}
         >
-            <Sidebar dispatch={dispatch} state={state} canvasRef={ref} />
+            <Sidebar
+                hover={hover}
+                setHover={setHover}
+                dispatch={dispatch}
+                state={state}
+                canvasRef={ref}
+            />
             <Canvas
                 state={state}
+                hover={hover}
                 innerRef={(node) => (ref.current = node)}
                 dispatch={dispatch}
                 width={1000}

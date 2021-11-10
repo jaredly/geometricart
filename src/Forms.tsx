@@ -180,12 +180,20 @@ export const StyleForm = ({
 export const PathGroupForm = ({
     group,
     onChange,
+    onMouseOver,
+    onMouseOut,
 }: {
     group: PathGroup;
     onChange: (group: PathGroup) => unknown;
+    onMouseOver: () => void;
+    onMouseOut: () => void;
 }) => {
     return (
-        <div css={{ padding: 4, borderBottom: '1px solid #aaa', margin: 4 }}>
+        <div
+            css={{ padding: 4, borderBottom: '1px solid #aaa', margin: 4 }}
+            onMouseOut={onMouseOut}
+            onMouseOver={onMouseOver}
+        >
             <div>Path Group {group.id}</div>
             <StyleForm
                 style={group.style}
@@ -217,12 +225,18 @@ export const PathForm = ({
 export const GuideForm = ({
     guide,
     onChange,
+    onMouseOver,
+    onMouseOut,
 }: {
     guide: Guide;
     onChange: (guide: Guide) => unknown;
+    onMouseOver: () => void;
+    onMouseOut: () => void;
 }) => {
     return (
         <div
+            onMouseOut={onMouseOut}
+            onMouseOver={onMouseOver}
             css={{
                 padding: 4,
             }}
