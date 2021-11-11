@@ -5,6 +5,7 @@ import React from 'react';
 import { primitiveKey, calcAllIntersections } from './calcAllIntersections';
 import {
     calculateGuideElements,
+    calculateInactiveGuideElements,
     geomsForGiude,
 } from './calculateGuideElements';
 import { DrawPath } from './DrawPath';
@@ -55,30 +56,19 @@ export const Canvas = ({
         () => calculateGuideElements(state.guides, mirrorTransforms),
         [state.guides, mirrorTransforms],
     );
+    const inativeGuideElements = React.useMemo(
+        () => calculateInactiveGuideElements(state.guides, mirrorTransforms),
+        [state.guides, mirrorTransforms],
+    );
     // console.log(guideElements);
 
     const guidePrimitives = React.useMemo(() => {
-        const seen: { [key: string]: Array<Id> } = {};
-        return ([] as Array<{ prim: Primitive; guide: Id }>)
-            .concat(
-                ...guideElements.map((el: GuideElement) =>
-                    geomToPrimitives(el.geom).map((prim) => ({
-                        prim,
-                        guide: el.id,
-                    })),
-                ),
-            )
-            .map((prim) => {
-                const k = primitiveKey(prim.prim);
-                if (seen[k]) {
-                    seen[k].push(prim.guide);
-                    return null;
-                }
-                seen[k] = [prim.guide];
-                return { prim: prim.prim, guides: seen[k] };
-            })
-            .filter(Boolean) as Array<{ prim: Primitive; guides: Array<Id> }>;
+        return primitivesForElements(guideElements);
     }, [guideElements]);
+
+    const inativeGuidePrimitives = React.useMemo(() => {
+        return primitivesForElements(inativeGuideElements);
+    }, [inativeGuideElements]);
 
     const allIntersections = React.useMemo(
         () => calcAllIntersections(guidePrimitives.map((p) => p.prim)),
@@ -192,87 +182,145 @@ export const Canvas = ({
                                 path={state.paths[k]}
                                 zoom={state.view.zoom}
                                 palette={state.palettes[state.activePalette]}
-                                onClick={() => {
-                                    const path = state.paths[k];
-                                    if (
-                                        path.group &&
-                                        !(
-                                            state.selection?.type ===
-                                                'PathGroup' &&
-                                            state.selection.ids.includes(
-                                                path.group,
-                                            )
-                                        )
-                                    ) {
-                                        dispatch({
-                                            type: 'tab:set',
-                                            tab: 'PathGroups',
-                                        });
-                                        dispatch({
-                                            type: 'selection:set',
-                                            selection: {
-                                                type: 'PathGroup',
-                                                ids: [path.group],
-                                            },
-                                        });
-                                    } else {
-                                        dispatch({
-                                            type: 'tab:set',
-                                            tab: 'Paths',
-                                        });
-                                        dispatch({
-                                            type: 'selection:set',
-                                            selection: {
-                                                type: 'Path',
-                                                ids: [k],
-                                            },
-                                        });
-                                    }
-                                }}
+                                onClick={
+                                    pathOrigin
+                                        ? undefined
+                                        : () => {
+                                              const path = state.paths[k];
+                                              if (
+                                                  path.group &&
+                                                  !(
+                                                      state.selection?.type ===
+                                                          'PathGroup' &&
+                                                      state.selection.ids.includes(
+                                                          path.group,
+                                                      )
+                                                  )
+                                              ) {
+                                                  dispatch({
+                                                      type: 'tab:set',
+                                                      tab: 'PathGroups',
+                                                  });
+                                                  dispatch({
+                                                      type: 'selection:set',
+                                                      selection: {
+                                                          type: 'PathGroup',
+                                                          ids: [path.group],
+                                                      },
+                                                  });
+                                              } else {
+                                                  dispatch({
+                                                      type: 'tab:set',
+                                                      tab: 'Paths',
+                                                  });
+                                                  dispatch({
+                                                      type: 'selection:set',
+                                                      selection: {
+                                                          type: 'Path',
+                                                          ids: [k],
+                                                      },
+                                                  });
+                                              }
+                                          }
+                                }
                             />
                         ))}
                     {state.view.guides ? (
                         <>
                             <RenderPrimitives
+                                primitives={inativeGuidePrimitives}
+                                zoom={state.view.zoom}
+                                width={width}
+                                height={height}
+                                inactive
+                                onClick={
+                                    pathOrigin
+                                        ? undefined
+                                        : (guides, shift) => {
+                                              if (shift) {
+                                                  dispatch({
+                                                      type: 'tab:set',
+                                                      tab: 'Guides',
+                                                  });
+                                                  dispatch({
+                                                      type: 'selection:set',
+                                                      selection: {
+                                                          type: 'Guide',
+                                                          ids: dedupString(
+                                                              guides,
+                                                          ),
+                                                      },
+                                                  });
+                                                  return;
+                                              }
+                                              console.log(guides, 'click');
+                                              const seen: {
+                                                  [key: string]: true;
+                                              } = {};
+                                              // ok
+                                              guides.forEach((guide) => {
+                                                  if (seen[guide]) {
+                                                      return;
+                                                  }
+                                                  seen[guide] = true;
+                                                  dispatch({
+                                                      type: 'guide:toggle',
+                                                      id: guide,
+                                                  });
+                                              });
+                                          }
+                                }
+                            />
+                            <RenderPrimitives
                                 primitives={guidePrimitives}
                                 zoom={state.view.zoom}
                                 width={width}
                                 height={height}
-                                onClick={(guides, shift) => {
-                                    if (shift) {
-                                        dispatch({
-                                            type: 'tab:set',
-                                            tab: 'Guides',
-                                        });
-                                        dispatch({
-                                            type: 'selection:set',
-                                            selection: {
-                                                type: 'Guide',
-                                                ids: dedupString(guides),
-                                            },
-                                        });
-                                        return;
-                                    }
-                                    console.log(guides, 'click');
-                                    const seen: { [key: string]: true } = {};
-                                    // ok
-                                    guides.forEach((guide) => {
-                                        if (seen[guide]) {
-                                            return;
-                                        }
-                                        seen[guide] = true;
-                                        dispatch({
-                                            type: 'guide:toggle',
-                                            id: guide,
-                                        });
-                                    });
-                                }}
+                                onClick={
+                                    pathOrigin
+                                        ? undefined
+                                        : (guides, shift) => {
+                                              if (shift) {
+                                                  dispatch({
+                                                      type: 'tab:set',
+                                                      tab: 'Guides',
+                                                  });
+                                                  dispatch({
+                                                      type: 'selection:set',
+                                                      selection: {
+                                                          type: 'Guide',
+                                                          ids: dedupString(
+                                                              guides,
+                                                          ),
+                                                      },
+                                                  });
+                                                  return;
+                                              }
+                                              console.log(guides, 'click');
+                                              const seen: {
+                                                  [key: string]: true;
+                                              } = {};
+                                              // ok
+                                              guides.forEach((guide) => {
+                                                  if (seen[guide]) {
+                                                      return;
+                                                  }
+                                                  seen[guide] = true;
+                                                  dispatch({
+                                                      type: 'guide:toggle',
+                                                      id: guide,
+                                                  });
+                                              });
+                                          }
+                                }
                             />
-                            <RenderIntersections
-                                zoom={state.view.zoom}
-                                intersections={allIntersections}
-                                onClick={onClickIntersection}
-                            />
+                            {!pathOrigin ? (
+                                <RenderIntersections
+                                    zoom={state.view.zoom}
+                                    intersections={allIntersections}
+                                    onClick={onClickIntersection}
+                                />
+                            ) : null}
                             {state.pending && state.pending.type === 'Guide' ? (
                                 <RenderPendingGuide
                                     guide={state.pending}
@@ -444,12 +492,14 @@ export const RenderPrimitives = React.memo(
         height,
         width,
         onClick,
+        inactive,
     }: {
         zoom: number;
         height: number;
         width: number;
         primitives: Array<{ prim: Primitive; guides: Array<Id> }>;
         onClick?: (guides: Array<Id>, shift: boolean) => unknown;
+        inactive?: boolean;
     }) => {
         // console.log(primitives);
         return (
@@ -460,6 +510,7 @@ export const RenderPrimitives = React.memo(
                         zoom={zoom}
                         height={height}
                         width={width}
+                        inactive={inactive}
                         onClick={
                             onClick
                                 ? (evt: React.MouseEvent) => {
@@ -474,3 +525,27 @@ export const RenderPrimitives = React.memo(
         );
     },
 );
+function primitivesForElements(
+    guideElements: import('/Users/jared/clone/art/geometricart/src/calculateGuideElements').GuideElement[],
+) {
+    const seen: { [key: string]: Array<Id> } = {};
+    return ([] as Array<{ prim: Primitive; guide: Id }>)
+        .concat(
+            ...guideElements.map((el: GuideElement) =>
+                geomToPrimitives(el.geom).map((prim) => ({
+                    prim,
+                    guide: el.id,
+                })),
+            ),
+        )
+        .map((prim) => {
+            const k = primitiveKey(prim.prim);
+            if (seen[k]) {
+                seen[k].push(prim.guide);
+                return null;
+            }
+            seen[k] = [prim.guide];
+            return { prim: prim.prim, guides: seen[k] };
+        })
+        .filter(Boolean) as Array<{ prim: Primitive; guides: Array<Id> }>;
+}

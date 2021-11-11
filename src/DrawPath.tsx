@@ -24,11 +24,14 @@ export const DrawPath = ({
 }) => {
     const [parts, setParts] = React.useState([] as Array<PendingSegment>);
 
+    const covered = parts.map((part) => coordKey(part.to.coord));
+    // .concat([coordKey(origin.coord)]);
+
     const next = findNextSegments(
         { type: 'Path', origin, parts },
         primitives.map((prim) => prim.prim),
         intersections,
-    );
+    ).filter((seg) => !covered.includes(coordKey(seg.to.coord)));
     const current = parts.length == 0 ? origin : parts[parts.length - 1].to;
     const prev =
         parts.length > 0
@@ -37,7 +40,8 @@ export const DrawPath = ({
                   primitives.map((prim) => prim.prim),
                   intersections,
               ).filter(
-                  (seg) => coordKey(seg.to.coord) !== coordKey(current.coord),
+                  (seg) => !covered.includes(coordKey(seg.to.coord)),
+                  //   (seg) => coordKey(seg.to.coord) !== coordKey(current.coord),
               )
             : null;
 

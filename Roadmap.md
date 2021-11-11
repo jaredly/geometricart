@@ -14,8 +14,8 @@ Make a little animated cursor that goes around, doind the things...
 
 UP NEXT:
 
-- [ ] when making a path, hide intersections.
-- [ ] disabled guides should still show up, but faint
+- [x] when making a path, hide intersections.
+- [x] disabled guides should still show up, but faint
 - [ ] create mirrors! be able to define them.
 - [ ] maybe have a way to re-jigger a path around a new mirror?
 

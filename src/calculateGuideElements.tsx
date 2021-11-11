@@ -3,6 +3,25 @@ import { Coord, Guide, GuideGeom, Id } from './types';
 
 // These are NOT in /view/ coordinates!
 
+export const calculateInactiveGuideElements = (
+    guides: { [key: Id]: Guide },
+    mirrorTransforms: { [key: Id]: Array<Array<Matrix>> },
+) => {
+    const elements: Array<GuideElement> = [];
+    Object.keys(guides).forEach((k) => {
+        if (guides[k].active) {
+            return;
+        }
+        elements.push(
+            ...geomsForGiude(
+                guides[k],
+                guides[k].mirror ? mirrorTransforms[guides[k].mirror!] : null,
+            ),
+        );
+    });
+    return elements;
+};
+
 export const calculateGuideElements = (
     guides: { [key: Id]: Guide },
     mirrorTransforms: { [key: Id]: Array<Array<Matrix>> },
