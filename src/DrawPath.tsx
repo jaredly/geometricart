@@ -87,7 +87,7 @@ export const DrawPath = React.memo(
         const prev =
             parts.length > 0
                 ? findNextSegments(
-                      { type: 'Path', origin, parts: [] }, // parts.slice(0, -1) },
+                      { type: 'Path', origin, parts: parts.slice(0, -1) },
                       primitives.map((prim) => prim.prim),
                       intersections,
                   ).filter(
@@ -108,7 +108,7 @@ export const DrawPath = React.memo(
         //     );
         // }, [parts, intersections, primitives]);
 
-        console.log(next, prev, parts, used);
+        // console.log(next, prev, parts, used);
 
         const completed =
             parts.length &&
@@ -147,7 +147,7 @@ export const DrawPath = React.memo(
                         color="rgba(0, 0, 255, 1.0)"
                         onMouseOver={() => {
                             if (parts.length > i + 1) {
-                                setParts(parts.slice(0, i));
+                                setParts(parts.slice(0, i + 1));
                             }
                         }}
                     />
