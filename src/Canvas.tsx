@@ -26,6 +26,7 @@ import {
     Intersect,
     Line,
     Pending,
+    PendingSegment,
     State,
     Style,
     View,
@@ -150,6 +151,22 @@ export const Canvas = ({
 
     const x = state.view.center.x * state.view.zoom + width / 2;
     const y = state.view.center.y * state.view.zoom + height / 2;
+
+    const onCompletePath = React.useCallback(
+        (parts: Array<PendingSegment>) => {
+            if (!pathOrigin) {
+                return;
+            }
+            // TODO:
+            dispatch({
+                type: 'path:create',
+                segments: parts.map((s) => s.segment),
+                origin: pathOrigin.coord,
+            });
+            setPathOrigin(null);
+        },
+        [pathOrigin],
+    );
 
     return (
         <div
@@ -348,17 +365,7 @@ export const Canvas = ({
                                     origin={pathOrigin}
                                     primitives={guidePrimitives}
                                     intersections={allIntersections}
-                                    onComplete={(parts) => {
-                                        // TODO:
-                                        dispatch({
-                                            type: 'path:create',
-                                            segments: parts.map(
-                                                (s) => s.segment,
-                                            ),
-                                            origin: pathOrigin.coord,
-                                        });
-                                        setPathOrigin(null);
-                                    }}
+                                    onComplete={onCompletePath}
                                 />
                             ) : null}
                             {Object.keys(state.mirrors).map((m) =>

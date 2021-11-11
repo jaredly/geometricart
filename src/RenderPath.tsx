@@ -31,11 +31,12 @@ export const UnderlinePath = ({
 
 export const calcPathD = (path: Path, zoom: number) => {
     let d = `M ${path.origin.x * zoom} ${path.origin.y * zoom}`;
-    path.segments.forEach((seg) => {
+    path.segments.forEach((seg, i) => {
         if (seg.type === 'Line') {
             d += ` L ${seg.to.x * zoom} ${seg.to.y * zoom}`;
         } else {
-            d += arcPath(seg, zoom);
+            const prev = i === 0 ? path.origin : path.segments[i - 1].to;
+            d += arcPath(seg, prev, zoom);
         }
     });
 

@@ -550,6 +550,7 @@ export const MirrorForm = ({
             <div css={{ display: 'flex' }}>
                 {mirror.rotational.map((enabled, i) => (
                     <Toggle
+                        key={i}
                         label={'' + i}
                         value={enabled}
                         onChange={(enabled) => {

@@ -50,7 +50,7 @@ export const RenderSegment = ({
                 fill="none"
                 d={
                     `M ${prev.x * zoom} ${prev.y * zoom} ` +
-                    arcPath(segment, zoom)
+                    arcPath(segment, prev, zoom)
                 }
                 css={{
                     cursor: onClick || onMouseOver ? 'pointer' : 'default',

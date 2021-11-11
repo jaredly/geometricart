@@ -182,6 +182,7 @@ export type ArcSegment = {
     center: Coord;
     to: Coord;
     clockwise: boolean;
+    // large
 };
 
 export type Segment = { type: 'Line'; to: Coord } | ArcSegment; // long = "the long way round"

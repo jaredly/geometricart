@@ -117,3 +117,19 @@ export const calcPendingSegments = (
         }));
     }
 };
+
+// left & right are assumed to be between -PI and PI
+// The result will always be positive, and between 0 and 2PI
+export const angleBetween = (
+    left: number,
+    right: number,
+    clockwise: boolean,
+) => {
+    if (!clockwise) {
+        [left, right] = [right, left];
+    }
+    if (right >= left) {
+        return right - left;
+    }
+    return right + Math.PI * 2 - left;
+};

@@ -1,8 +1,9 @@
 import { jsx } from '@emotion/react';
 import React from 'react';
-import { dist } from './getMirrorTransforms';
+import { angleBetween } from './findNextSegments';
+import { angleTo, dist } from './getMirrorTransforms';
 import { RenderSegment } from './RenderSegment';
-import { ArcSegment, PendingPath, PendingSegment } from './types';
+import { ArcSegment, Coord, PendingPath, PendingSegment } from './types';
 
 export const RenderPendingPath = React.memo(
     ({
@@ -50,9 +51,41 @@ export const RenderPendingPath = React.memo(
     },
 );
 
-export const arcPath = (segment: ArcSegment, zoom: number) => {
+export const angleDiff = (angle: number, base: number) => {
+    const res = angle - base;
+    if (res < -Math.PI) {
+        return res + Math.PI * 2;
+    }
+    if (res > Math.PI) {
+        return res - Math.PI * 2;
+    }
+    return res;
+};
+
+export const arcPath = (segment: ArcSegment, prev: Coord, zoom: number) => {
     const r = dist(segment.to, segment.center);
-    return `A ${r * zoom} ${r * zoom} 0 0 ${segment.clockwise ? 1 : 0} ${
+
+    const ve = angleTo(segment.center, segment.to);
+    const vs = angleTo(segment.center, prev);
+    const sve = angleDiff(ve, vs);
+    // const esv = angleDiff(
+    //     angleTo(prev, segment.center),
+    //     angleTo(prev, segment.to),
+    // );
+
+    // const largeArc = false; // sve > 0; // Math.abs(sve) < Math.PI ? 0 : 1;
+    const largeArc =
+        angleBetween(
+            vs,
+            ve,
+            segment.clockwise,
+            // angleTo(segment.center, prev),
+            // angleTo(segment.center, segment.to)
+        ) > Math.PI;
+    // const sweep = esv > 0;
+    const sweep = segment.clockwise;
+
+    return `A ${r * zoom} ${r * zoom} 0 ${largeArc ? 1 : 0} ${sweep ? 1 : 0} ${
         segment.to.x * zoom
     } ${segment.to.y * zoom}`;
 };
