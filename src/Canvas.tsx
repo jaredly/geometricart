@@ -172,6 +172,16 @@ export const Canvas = ({
                     });
                 }}
             >
+                {state.view.background ? (
+                    <rect
+                        width={width}
+                        height={height}
+                        x={0}
+                        y={0}
+                        stroke="none"
+                        fill={state.view.background}
+                    />
+                ) : null}
                 <g transform={`translate(${x} ${y})`}>
                     {Object.keys(state.paths)
                         .filter((k) => !state.paths[k].hidden)

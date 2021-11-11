@@ -488,6 +488,7 @@ export type View = {
     center: Coord;
     zoom: number;
     guides: boolean;
+    background?: string;
 };
 
 export type Selection = {

@@ -411,6 +411,7 @@ export const ViewForm = ({
     view: View;
     onChange: (view: View) => unknown;
 }) => {
+    const backgrounds = ['#1e1e1e', 'white', 'black', 'transparent'];
     return (
         <div
             css={{
@@ -448,6 +449,43 @@ export const ViewForm = ({
                         onChange({ ...view, center: { ...view.center, y } })
                     }
                 />
+            </div>
+            <div
+                css={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    marginTop: 8,
+                }}
+            >
+                <div css={{ marginRight: 8 }}>Background</div>
+                {backgrounds.map((color, i) => (
+                    <div
+                        key={color}
+                        css={{
+                            width: 20,
+                            height: 20,
+                            margin: 4,
+                        }}
+                        style={{
+                            backgroundColor: color,
+                            border: (
+                                color === 'transparent'
+                                    ? !view.background
+                                    : color === view.background
+                            )
+                                ? `2px solid white`
+                                : '2px solid #888',
+                        }}
+                        onClick={() => {
+                            onChange({
+                                ...view,
+                                background:
+                                    color === 'transparent' ? undefined : color,
+                            });
+                        }}
+                    ></div>
+                ))}
             </div>
         </div>
     );

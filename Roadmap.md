@@ -20,6 +20,7 @@ UP NEXT:
 - [ ] maybe have a way to re-jigger a path around a new mirror?
 
 
+- [ ] background
 
 
 
