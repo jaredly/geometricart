@@ -332,6 +332,16 @@ export type PendingPoint = {
     shiftKey: boolean;
 };
 
+export type MetaUpdate = {
+    type: 'meta:update';
+    meta: Meta;
+};
+export type UndoMetaUpdate = {
+    type: MetaUpdate['type'];
+    action: MetaUpdate;
+    prev: Meta;
+};
+
 export type PathCreate = {
     type: 'path:create';
     origin: Coord;
@@ -412,6 +422,7 @@ export type UndoableAction =
     | MirrorAdd
     | MirrorUpdate
     | PendingPoint
+    | MetaUpdate
     // | PathAdd
     | PathUpdate
     | PendingType
@@ -426,6 +437,7 @@ export type UndoAction =
     | UndoGuideAdd
     | UndoGroupUpdate
     | UndoPathUpdate
+    | UndoMetaUpdate
     | UndoGuideUpdate
     | UndoViewUpdate
     | UndoMirrorAdd
@@ -497,9 +509,16 @@ export type Attachment = {
     height: number;
 };
 
+export type Meta = {
+    title: string;
+    description: string;
+    created: number;
+};
+
 export type State = {
     nextId: number;
     history: History;
+    meta: Meta;
     pending: Pending | null;
     paths: { [key: Id]: Path };
     // Pathgroups automatically happen when, for example, a path is created when a mirror is active.
@@ -542,6 +561,13 @@ export const migrateState = (state: State) => {
     if (!state.activePalette) {
         state.palettes['default'] = initialState.palettes['default'];
         state.activePalette = 'default';
+    }
+    if (!state.meta) {
+        state.meta = {
+            created: Date.now(),
+            title: '',
+            description: '',
+        };
     }
     return state;
 };

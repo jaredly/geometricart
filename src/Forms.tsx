@@ -13,6 +13,35 @@ import {
     View,
 } from './types';
 
+export const Text = ({
+    value,
+    onChange,
+    multiline,
+}: {
+    value: string;
+    onChange: (v: string) => void;
+    multiline?: boolean;
+}) => {
+    const [text, setText] = React.useState(null as null | string);
+    const shared = {
+        value: text ?? value,
+        onChange: (
+            evt: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+        ) => setText(evt.target.value),
+        onBlur: () => {
+            if (text != null) {
+                onChange(text);
+                setText(null);
+            }
+        },
+    };
+    return multiline ? (
+        <textarea {...shared} />
+    ) : (
+        <input type="text" {...shared} />
+    );
+};
+
 export const Float = ({
     value,
     onChange,
@@ -347,6 +376,16 @@ export const GuideForm = ({
                                 : null
                         }
                     />
+                    <Toggle
+                        label="Half circle"
+                        value={guide.geom.half}
+                        onChange={(half) =>
+                            onChange({
+                                ...guide,
+                                geom: { ...(guide.geom as Circle), half },
+                            })
+                        }
+                    />
                 </>
             ) : null}
             {guide.geom.type === 'Line' ? (
@@ -393,6 +432,21 @@ export const ViewForm = ({
                 <Float
                     value={view.zoom}
                     onChange={(zoom) => onChange({ ...view, zoom })}
+                />
+            </div>
+            <div>
+                Offset
+                <Float
+                    value={view.center.x}
+                    onChange={(x) =>
+                        onChange({ ...view, center: { ...view.center, x } })
+                    }
+                />
+                <Float
+                    value={view.center.y}
+                    onChange={(y) =>
+                        onChange({ ...view, center: { ...view.center, y } })
+                    }
                 />
             </div>
         </div>

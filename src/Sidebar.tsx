@@ -215,8 +215,8 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactNode } = {
             </div>
         );
     },
-    Export: ({ state, canvasRef }) => (
-        <Export state={state} canvasRef={canvasRef} />
+    Export: ({ state, canvasRef, dispatch }) => (
+        <Export state={state} canvasRef={canvasRef} dispatch={dispatch} />
     ),
     Palette: ({ state, dispatch }) => (
         <div>

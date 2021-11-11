@@ -158,6 +158,9 @@ export const Canvas = ({
     //     dispatch({ type: 'path:add', segment });
     // }, []);
 
+    const x = state.view.center.x * state.view.zoom + width / 2;
+    const y = state.view.center.y * state.view.zoom + height / 2;
+
     return (
         <div
             css={{}}
@@ -174,16 +177,12 @@ export const Canvas = ({
                 onMouseMove={(evt) => {
                     const rect = evt.currentTarget.getBoundingClientRect();
                     setPos({
-                        x:
-                            (evt.clientX - rect.left - height / 2) /
-                            state.view.zoom,
-                        y:
-                            (evt.clientY - rect.top - width / 2) /
-                            state.view.zoom,
+                        x: (evt.clientX - rect.left - x) / state.view.zoom,
+                        y: (evt.clientY - rect.top - y) / state.view.zoom,
                     });
                 }}
             >
-                <g transform={`translate(${width / 2} ${height / 2})`}>
+                <g transform={`translate(${x} ${y})`}>
                     {Object.keys(state.paths)
                         .filter((k) => !state.paths[k].hidden)
                         .map((k) => (

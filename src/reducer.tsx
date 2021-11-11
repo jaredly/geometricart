@@ -22,6 +22,8 @@ import {
 
 export const undo = (state: State, action: UndoAction): State => {
     switch (action.type) {
+        case 'meta:update':
+            return { ...state, meta: action.prev };
         case 'path:update':
             return {
                 ...state,
@@ -443,6 +445,12 @@ export const reduceWithoutUndo = (
                     prev: state.paths[action.id],
                 },
             ];
+        case 'meta:update': {
+            return [
+                { ...state, meta: action.meta },
+                { type: action.type, action, prev: state.meta },
+            ];
+        }
         default:
             let _x: never = action;
             console.log(`SKIPPING ${(action as any).type}`);

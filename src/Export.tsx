@@ -1,7 +1,8 @@
 /* @jsx jsx */
+/* @jsxFrag React.Fragment */
 import { jsx } from '@emotion/react';
 import React from 'react';
-import { State } from './types';
+import { Action, State } from './types';
 import { PREFIX, SUFFIX } from './Sidebar';
 import {
     extractChunks,
@@ -10,14 +11,16 @@ import {
     readMetadata,
 } from 'png-metadata';
 import { initialHistory } from './initialState';
-import { Toggle } from './Forms';
+import { Toggle, Text } from './Forms';
 
 export const Export = ({
     canvasRef,
     state,
+    dispatch,
 }: {
     state: State;
     canvasRef: { current: null | SVGSVGElement };
+    dispatch: (action: Action) => void;
 }) => {
     // const [name, setName] = React.useState()
     const name = `image-${Date.now()}.svg`;
@@ -25,7 +28,7 @@ export const Export = ({
 
     const [png, setPng] = React.useState(null as null | string);
 
-    const [size, setSize] = React.useState(400);
+    const [size, setSize] = React.useState(1000);
     const [embed, setEmbed] = React.useState(true);
 
     return (
@@ -34,6 +37,44 @@ export const Export = ({
                 marginTop: 16,
             }}
         >
+            <div
+                css={{
+                    padding: 4,
+                    marginBottom: 16,
+                }}
+            >
+                <div
+                    css={{
+                        fontSize: '80%',
+                        fontWeight: 'bold',
+                        marginBottom: 8,
+                    }}
+                >
+                    Metadata
+                </div>
+                Title:{' '}
+                <Text
+                    value={state.meta.title}
+                    onChange={(title) =>
+                        dispatch({
+                            type: 'meta:update',
+                            meta: { ...state.meta, title },
+                        })
+                    }
+                />
+                <br />
+                <div>Description:</div>
+                <Text
+                    value={state.meta.description}
+                    multiline
+                    onChange={(description) =>
+                        dispatch({
+                            type: 'meta:update',
+                            meta: { ...state.meta, description },
+                        })
+                    }
+                />
+            </div>
             <div>
                 <button
                     css={{ marginRight: 16 }}
@@ -63,6 +104,9 @@ export const Export = ({
                     value={embed}
                     onChange={setEmbed}
                 />
+                {url ? (
+                    <button onClick={() => setUrl(null)}>Close</button>
+                ) : null}
             </div>
             {url ? (
                 <div
@@ -87,7 +131,6 @@ export const Export = ({
                             >
                                 Download {name}
                             </a>
-                            <button onClick={() => setUrl(null)}>Close</button>
                         </div>
                         <img
                             src={url}
@@ -112,7 +155,28 @@ export const Export = ({
                             }}
                         />
                     </div>
-                    <div>{png ? <img src={png} /> : null}</div>
+                    <div>
+                        {png ? (
+                            <>
+                                <a
+                                    href={png}
+                                    download={name.replace('.svg', '.png')}
+                                    css={{
+                                        display: 'block',
+                                        color: 'white',
+                                        background: '#666',
+                                        borderRadius: 6,
+                                        padding: '4px 8px',
+                                        textDecoration: 'none',
+                                        cursor: 'pointer',
+                                    }}
+                                >
+                                    Download {name.replace('.svg', '.png')}
+                                </a>
+                                <img css={{ maxHeight: 400 }} src={png} />
+                            </>
+                        ) : null}
+                    </div>
                 </div>
             ) : null}
         </div>

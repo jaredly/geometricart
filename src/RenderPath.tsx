@@ -85,6 +85,7 @@ export const RenderPath = ({
                         : {}
                 }
                 d={d}
+                strokeLinejoin="round"
                 fill={paletteColor(palette, fill.color)}
                 onClick={onClick}
             />
@@ -100,6 +101,7 @@ export const RenderPath = ({
                 d={d}
                 stroke={paletteColor(palette, line.color)}
                 fill="none"
+                strokeLinejoin="round"
                 strokeWidth={line.width}
             />
         );
