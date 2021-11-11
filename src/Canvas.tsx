@@ -368,7 +368,7 @@ export const Canvas = ({
                                     onComplete={onCompletePath}
                                 />
                             ) : null}
-                            {Object.keys(state.mirrors).map((m) =>
+                            {/* {Object.keys(state.mirrors).map((m) =>
                                 m === state.activeMirror ? (
                                     <RenderMirror
                                         key={m}
@@ -377,7 +377,7 @@ export const Canvas = ({
                                         zoom={state.view.zoom}
                                     />
                                 ) : null,
-                            )}
+                            )} */}
                         </>
                     ) : null}
                     {hover ? (

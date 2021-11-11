@@ -294,7 +294,13 @@ export const ReallyButton = ({
                 <button className={className} onClick={() => setReally(false)}>
                     Nope
                 </button>
-                <button className={className} onClick={() => onClick()}>
+                <button
+                    className={className}
+                    onClick={() => {
+                        onClick();
+                        setReally(false);
+                    }}
+                >
                     Really {label}
                 </button>
             </>

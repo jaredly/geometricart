@@ -140,7 +140,6 @@ export const DrawPath = React.memo(
                 {parts.map((seg, i) => (
                     <RenderSegment
                         key={i}
-                        width={10}
                         segment={seg.segment}
                         zoom={zoom}
                         prev={i === 0 ? origin.coord : parts[i - 1].to.coord}

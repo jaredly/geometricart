@@ -24,6 +24,13 @@ export function RenderPrimitive({
         strokeWidth: '1',
         onClick: onClick,
         style: onClick ? { cursor: 'pointer' } : {},
+        css: onClick
+            ? {
+                  ':hover': {
+                      stroke: '#fff',
+                  },
+              }
+            : {},
     };
     if (prim.type === 'line') {
         if (prim.m === Infinity) {
