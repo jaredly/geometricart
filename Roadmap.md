@@ -14,13 +14,35 @@ Make a little animated cursor that goes around, doind the things...
 
 UP NEXT:
 
+- [ ] delete a path my folks
 - [x] when making a path, hide intersections.
 - [x] disabled guides should still show up, but faint
 - [ ] create mirrors! be able to define them.
 - [ ] maybe have a way to re-jigger a path around a new mirror?
+- [ ] make a background to indicate transparency
+- [ ] definitely do the "palette for sizes" thing.
+
+- [ ] when you click a path, it should bring up a hover menu right where your
+	mouse is, to edit the path. That would be so much better.
+
+I think.... maybe .... that 
 
 
-- [ ] background
+
+- [ ] ooooh ok, so when you're drawing a path,
+	have a shortcut you can hit that will zoom in on the current mouse
+	position, until you release the key.
+	like "shift". That would be so rad.
+
+- [ ] some of my intersections aren't as precise as I would like. What can I do about this?
+
+
+- [x] background
+
+
+Should I do a similar palette thing for line widths?
+Like, sizes "small", "medium", "large", and "largest"
+and everything defaults to "small"
 
 
 

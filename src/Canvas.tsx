@@ -2,6 +2,7 @@
 /* @jsxFrag React.Fragment */
 import { jsx } from '@emotion/react';
 import React from 'react';
+import { useCurrent } from './App';
 import { primitiveKey, calcAllIntersections } from './calcAllIntersections';
 import {
     calculateGuideElements,
@@ -21,6 +22,7 @@ import { RenderPrimitive } from './RenderPrimitive';
 import { Hover } from './Sidebar';
 import {
     Action,
+    Coord,
     GuideElement,
     Id,
     Intersect,
@@ -81,19 +83,27 @@ export const Canvas = ({
     const currentState = React.useRef(state);
     currentState.current = state;
 
+    const currentPos = useCurrent(pos);
+
     const [pathOrigin, setPathOrigin] = React.useState(
         null as null | Intersect,
     );
 
-    const [shiftKey, setShiftKey] = React.useState(false);
+    const [shiftKey, setShiftKey] = React.useState(false as false | Coord);
+
+    // const [altKey, setAltKey] = React.useState(false)
 
     React.useEffect(() => {
         // if (!pathOrigin) {
         //     return;
         // }
         const fn = (evt: KeyboardEvent) => {
+            // if (evt.key === 'Alt') {
+            //     setAltKey(true)
+            // }
+            // console.l;
             if (evt.key === 'Shift') {
-                setShiftKey(true);
+                setShiftKey(currentPos.current);
             }
             if (pathOrigin && evt.key === 'Escape') {
                 setPathOrigin(null);
@@ -101,6 +111,9 @@ export const Canvas = ({
             }
         };
         const up = (evt: KeyboardEvent) => {
+            // if (evt.key === 'Alt') {
+            //     setAltKey(false)
+            // }
             if (evt.key === 'Shift') {
                 setShiftKey(false);
             }
@@ -148,9 +161,55 @@ export const Canvas = ({
     // const onAdd = React.useCallback((segment: PendingSegment) => {
     //     dispatch({ type: 'path:add', segment });
     // }, []);
+    let view = state.view;
+    if (shiftKey && pathOrigin) {
+        const worldToScreen = (pos: Coord, view: View) => ({
+            x: width / 2 + (pos.x - view.center.x) * view.zoom,
+            y: height / 2 + (pos.y - view.center.y) * view.zoom,
+        });
+        const screenToWorld = (pos: Coord, view: View) => ({
+            x: (pos.x - width / 2) / view.zoom + view.center.x,
+            y: (pos.y - height / 2) / view.zoom + view.center.y,
+        });
 
-    const x = state.view.center.x * state.view.zoom + width / 2;
-    const y = state.view.center.y * state.view.zoom + height / 2;
+        const screenPos = worldToScreen(shiftKey, view);
+        const newZoom = view.zoom * 4;
+        const newPos = screenToWorld(screenPos, { ...view, zoom: newZoom });
+        view = {
+            ...view,
+            zoom: newZoom,
+            center: {
+                x: view.center.x + (newPos.x - shiftKey.x),
+                y: view.center.y + (newPos.y - shiftKey.y),
+            },
+        };
+        /*
+
+
+|        c         m
+
+
+worldToScreen ->
+screenToWorld
+
+
+
+
+
+        */
+        // pos.x, pos.y are in world coordinates.
+        //
+        // const dx = (pos.x - view.center.x) * view.zoom
+        // const dy = (pos.y - view.center.y) * view.zoom
+        // const nx = pos.x - dx / newZoom
+
+        // view = { ...view, zoom: view.zoom * 4,
+        //     center:
+        //  };
+    }
+
+    const x = view.center.x * view.zoom + width / 2;
+    const y = view.center.y * view.zoom + height / 2;
 
     const onCompletePath = React.useCallback(
         (parts: Array<PendingSegment>) => {
@@ -184,30 +243,36 @@ export const Canvas = ({
                 onMouseMove={(evt) => {
                     const rect = evt.currentTarget.getBoundingClientRect();
                     setPos({
-                        x: (evt.clientX - rect.left - x) / state.view.zoom,
-                        y: (evt.clientY - rect.top - y) / state.view.zoom,
+                        x: (evt.clientX - rect.left - x) / view.zoom,
+                        y: (evt.clientY - rect.top - y) / view.zoom,
                     });
                 }}
             >
-                {state.view.background ? (
+                {view.background ? (
                     <rect
                         width={width}
                         height={height}
                         x={0}
                         y={0}
                         stroke="none"
-                        fill={state.view.background}
+                        fill={view.background}
                     />
                 ) : null}
                 <g transform={`translate(${x} ${y})`}>
                     {Object.keys(state.paths)
-                        .filter((k) => !state.paths[k].hidden)
+                        .filter(
+                            (k) =>
+                                !state.paths[k].hidden &&
+                                (!state.paths[k].group ||
+                                    !state.pathGroups[state.paths[k].group!]
+                                        .hide),
+                        )
                         .map((k) => (
                             <RenderPath
                                 key={k}
                                 groups={state.pathGroups}
                                 path={state.paths[k]}
-                                zoom={state.view.zoom}
+                                zoom={view.zoom}
                                 palette={state.palettes[state.activePalette]}
                                 onClick={
                                     pathOrigin
@@ -252,11 +317,11 @@ export const Canvas = ({
                                 }
                             />
                         ))}
-                    {state.view.guides ? (
+                    {view.guides ? (
                         <>
                             <RenderPrimitives
                                 primitives={inativeGuidePrimitives}
-                                zoom={state.view.zoom}
+                                zoom={view.zoom}
                                 width={width}
                                 height={height}
                                 inactive
@@ -300,7 +365,7 @@ export const Canvas = ({
                             />
                             <RenderPrimitives
                                 primitives={guidePrimitives}
-                                zoom={state.view.zoom}
+                                zoom={view.zoom}
                                 width={width}
                                 height={height}
                                 onClick={
@@ -343,7 +408,7 @@ export const Canvas = ({
                             />
                             {!pathOrigin ? (
                                 <RenderIntersections
-                                    zoom={state.view.zoom}
+                                    zoom={view.zoom}
                                     intersections={allIntersections}
                                     onClick={onClickIntersection}
                                 />
@@ -352,8 +417,8 @@ export const Canvas = ({
                                 <RenderPendingGuide
                                     guide={state.pending}
                                     pos={pos}
-                                    zoom={state.view.zoom}
-                                    shiftKey={shiftKey}
+                                    zoom={view.zoom}
+                                    shiftKey={!!shiftKey}
                                 />
                             ) : null}
                             {pathOrigin ? (
@@ -361,7 +426,7 @@ export const Canvas = ({
                                     palette={
                                         state.palettes[state.activePalette]
                                     }
-                                    zoom={state.view.zoom}
+                                    zoom={view.zoom}
                                     origin={pathOrigin}
                                     primitives={guidePrimitives}
                                     intersections={allIntersections}
@@ -374,7 +439,7 @@ export const Canvas = ({
                                         key={m}
                                         mirror={state.mirrors[m]}
                                         transforms={mirrorTransforms[m]}
-                                        zoom={state.view.zoom}
+                                        zoom={view.zoom}
                                     />
                                 ) : null,
                             )} */}

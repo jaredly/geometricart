@@ -191,6 +191,7 @@ export type PathGroup = {
     id: Id;
     style: Style;
     group: Id | null;
+    hide?: boolean;
 };
 
 export type GuideElement = {

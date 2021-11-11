@@ -267,7 +267,15 @@ export const PathGroupForm = ({
             }}
             onMouseOver={onMouseOver}
         >
-            <div>Path Group {group.id}</div>
+            <div css={{ display: 'flex', alignItems: 'center' }}>
+                Path Group {group.id}
+                <div style={{ flexBasis: 10 }} />
+                <Toggle
+                    value={!!group.hide}
+                    onChange={(hide) => onChange({ ...group, hide })}
+                    label="Hide"
+                />
+            </div>
             <StyleForm
                 palette={palette}
                 style={group.style}
