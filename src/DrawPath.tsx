@@ -5,7 +5,41 @@ import { coordKey, primitiveKey } from './calcAllIntersections';
 import { RenderSegment } from './RenderSegment';
 import { findNextSegments } from './findNextSegments';
 import { Primitive } from './intersect';
-import { Id, Intersect, PendingSegment } from './types';
+import { Coord, Id, Intersect, PendingSegment, Segment } from './types';
+
+/*
+
+Ok, let's get serious here.
+
+NOT ALLOWED:
+- BACKTRACKING. What does that mean?
+    Going backwards over the same path.
+    How do we tell, with arcs?
+- going TO a point that we've already covered, if it's not the origin.
+
+
+    btw I can probably ditch pendingsegment...
+
+*/
+
+export const segmentKeyReverse = (prev: Coord, segment: Segment) =>
+    segment.type === 'Line'
+        ? segmentKey(segment.to, { type: 'Line', to: prev })
+        : segmentKey(segment.to, {
+              type: 'Arc',
+              center: segment.center,
+              clockwise: !segment.clockwise,
+              to: prev,
+          });
+
+export const segmentKey = (prev: Coord, segment: Segment) =>
+    coordKey(prev) +
+    ` ${segment.type} ` +
+    (segment.type === 'Line'
+        ? ''
+        : `via ${coordKey(segment.center)}${segment.clockwise ? 'C' : 'A'}`) +
+    ' to ' +
+    coordKey(segment.to);
 
 export const DrawPath = React.memo(
     ({
@@ -29,25 +63,42 @@ export const DrawPath = React.memo(
         const butLast = covered.slice(0, -1);
         // .concat([coordKey(origin.coord)]);
 
+        const used = parts
+            .map((part, i) => {
+                const prev = i === 0 ? origin.coord : parts[i - 1].to.coord;
+                return [
+                    segmentKey(prev, part.segment),
+                    segmentKeyReverse(prev, part.segment),
+                ];
+            })
+            .flat();
+
+        const current = parts.length == 0 ? origin : parts[parts.length - 1].to;
         const next = findNextSegments(
             { type: 'Path', origin, parts },
             primitives.map((prim) => prim.prim),
             intersections,
-        ); //.filter((seg) => !covered.includes(coordKey(seg.to.coord)));
-        const current = parts.length == 0 ? origin : parts[parts.length - 1].to;
+        ).filter(
+            (seg, i) =>
+                !covered.includes(coordKey(seg.to.coord)) &&
+                !used.includes(segmentKey(current.coord, seg.segment)),
+        );
+        const prevBase = parts.length < 2 ? origin : parts[parts.length - 2].to;
         const prev =
-            parts.length > 10
+            parts.length > 0
                 ? findNextSegments(
                       { type: 'Path', origin, parts: [] }, // parts.slice(0, -1) },
                       primitives.map((prim) => prim.prim),
                       intersections,
-                      //   ).filter(
-                      //       (seg) => !covered.includes(coordKey(seg.to.coord)),
+                  ).filter(
+                      (seg) =>
+                          !butLast.includes(coordKey(seg.to.coord)) &&
+                          !used.includes(
+                              segmentKey(prevBase.coord, seg.segment),
+                          ),
                       //   (seg) => coordKey(seg.to.coord) !== coordKey(current.coord),
                   )
                 : null;
-
-        const prevBase = origin; // parts.length < 2 ? origin : parts[parts.length - 2].to;
 
         // const nextSegments = React.useMemo(() => {
         //     return findNextSegments(
@@ -57,7 +108,7 @@ export const DrawPath = React.memo(
         //     );
         // }, [parts, intersections, primitives]);
 
-        console.log(next, prev);
+        console.log(next, prev, parts, used);
 
         const completed =
             parts.length &&
@@ -89,10 +140,11 @@ export const DrawPath = React.memo(
                 {parts.map((seg, i) => (
                     <RenderSegment
                         key={i}
+                        width={10}
                         segment={seg.segment}
                         zoom={zoom}
                         prev={i === 0 ? origin.coord : parts[i - 1].to.coord}
-                        color="rgba(0, 0, 255, 0.5)"
+                        color="rgba(0, 0, 255, 1.0)"
                         onMouseOver={() => {
                             if (parts.length > i + 1) {
                                 setParts(parts.slice(0, i));

@@ -11,6 +11,7 @@ export const RenderSegment = ({
     onClick,
     onMouseOver,
     color,
+    width = 4,
 }: {
     segment: Segment;
     prev: Coord;
@@ -18,6 +19,7 @@ export const RenderSegment = ({
     onClick?: () => unknown;
     onMouseOver?: () => unknown;
     color?: string;
+    width?: number;
 }) => {
     if (segment.type === 'Line') {
         return (
@@ -27,7 +29,7 @@ export const RenderSegment = ({
                 x2={segment.to.x * zoom}
                 y2={segment.to.y * zoom}
                 stroke={color || (onClick ? 'red' : 'green')}
-                strokeWidth={'4'}
+                strokeWidth={width}
                 onClick={onClick}
                 onMouseOver={onMouseOver}
                 css={{
@@ -46,7 +48,7 @@ export const RenderSegment = ({
                 onClick={onClick}
                 onMouseOver={onMouseOver}
                 stroke={color || (onClick ? 'red' : 'green')}
-                strokeWidth={'4'}
+                strokeWidth={width}
                 fill="none"
                 d={
                     `M ${prev.x * zoom} ${prev.y * zoom} ` +
