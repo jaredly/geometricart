@@ -98,7 +98,7 @@ export const Canvas = ({
         //     return;
         // }
         const fn = (evt: KeyboardEvent) => {
-            if (evt.target !== document.body) {
+            if (evt.target !== document.body || evt.metaKey || evt.ctrlKey) {
                 return;
             }
             if (evt.key === 'Alt') {

@@ -254,6 +254,7 @@ export const PathGroupForm = ({
     onChange,
     onMouseOver,
     onMouseOut,
+    onDelete,
 }: {
     group: PathGroup;
     palette: Array<string>;
@@ -261,6 +262,7 @@ export const PathGroupForm = ({
     onChange: (group: PathGroup) => unknown;
     onMouseOver: () => void;
     onMouseOut: () => void;
+    onDelete: () => void;
 }) => {
     const ref = React.useRef(null as null | HTMLDivElement);
     React.useEffect(() => {
@@ -291,6 +293,14 @@ export const PathGroupForm = ({
                     value={group.ordering}
                     onChange={(ordering) => onChange({ ...group, ordering })}
                 />
+                <div style={{ flex: 1 }} />
+                <button
+                    onClick={() => {
+                        onDelete();
+                    }}
+                >
+                    Delete
+                </button>
             </div>
             <StyleForm
                 palette={palette}
@@ -305,12 +315,14 @@ export const PathForm = ({
     path,
     palette,
     onChange,
+    onDelete,
     selected,
 }: {
     path: Path;
     selected: boolean;
     palette: Array<string>;
     onChange: (path: Path) => unknown;
+    onDelete: () => void;
 }) => {
     const ref = React.useRef(null as null | HTMLDivElement);
     React.useEffect(() => {
@@ -326,7 +338,17 @@ export const PathForm = ({
                 backgroundColor: selected ? 'rgba(255,255,255,0.1)' : undefined,
             }}
         >
-            <div>Path! {path.id}</div>
+            <div
+                css={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                }}
+            >
+                Path! {path.id}
+                <div style={{ flex: 1 }} />
+                <button onClick={onDelete}>Delete</button>
+            </div>
             <Toggle
                 label="Hide"
                 value={path.hidden}

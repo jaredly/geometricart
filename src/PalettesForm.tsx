@@ -145,7 +145,7 @@ export const ColorEditor = ({
                     if (evt.key === 'Escape') {
                         setText(null);
                         setTimeout(() => {
-                            evt.target.blur();
+                            (evt.target as HTMLInputElement).blur();
                         }, 10);
                     }
                 }}

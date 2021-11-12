@@ -126,6 +126,9 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactNode } = {
             >
                 {Object.keys(state.pathGroups).map((k) => (
                     <PathGroupForm
+                        onDelete={() => {
+                            dispatch({ type: 'group:delete', id: k });
+                        }}
                         palette={state.palettes[state.activePalette]}
                         selected={
                             state.selection?.type === 'PathGroup' &&
@@ -160,6 +163,7 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactNode } = {
             {Object.keys(state.paths).map((k) => (
                 <PathForm
                     key={k}
+                    onDelete={() => dispatch({ type: 'path:delete', id: k })}
                     selected={
                         state.selection?.type === 'Path' &&
                         state.selection.ids.includes(k)

@@ -22,6 +22,23 @@ import {
 
 export const undo = (state: State, action: UndoAction): State => {
     switch (action.type) {
+        case 'group:delete':
+            return {
+                ...state,
+                pathGroups: {
+                    ...state.pathGroups,
+                    [action.action.id]: action.group,
+                },
+                paths: {
+                    ...state.paths,
+                    ...action.paths,
+                },
+            };
+        case 'path:delete':
+            return {
+                ...state,
+                paths: { ...state.paths, [action.action.id]: action.path },
+            };
         case 'meta:update':
             return { ...state, meta: action.prev };
         case 'path:update':
@@ -449,6 +466,35 @@ export const reduceWithoutUndo = (
             return [
                 { ...state, meta: action.meta },
                 { type: action.type, action, prev: state.meta },
+            ];
+        }
+        case 'path:delete': {
+            const paths = { ...state.paths };
+            delete paths[action.id];
+            return [
+                { ...state, paths },
+                { type: action.type, action, path: state.paths[action.id] },
+            ];
+        }
+        case 'group:delete': {
+            const paths = { ...state.paths };
+            const dpaths: { [key: Id]: Path } = {};
+            Object.keys(paths).forEach((k) => {
+                if (paths[k].group === action.id) {
+                    dpaths[k] = paths[k];
+                    delete paths[k];
+                }
+            });
+            const pathGroups = { ...state.pathGroups };
+            delete pathGroups[action.id];
+            return [
+                { ...state, pathGroups, paths },
+                {
+                    type: action.type,
+                    action,
+                    paths: dpaths,
+                    group: state.pathGroups[action.id],
+                },
             ];
         }
         default:

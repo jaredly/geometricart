@@ -309,6 +309,27 @@ export type GroupUpdate = {
     group: PathGroup;
 };
 
+export type PathDelete = {
+    type: 'path:delete';
+    id: Id;
+};
+export type UndoPathDelete = {
+    type: PathDelete['type'];
+    action: PathDelete;
+    path: Path;
+};
+
+export type GroupDelete = {
+    type: 'group:delete';
+    id: Id;
+};
+export type UndoGroupDelete = {
+    type: GroupDelete['type'];
+    action: GroupDelete;
+    group: PathGroup;
+    paths: { [key: Id]: Path };
+};
+
 export type UndoGuideAdd = { action: GuideAdd; type: GuideAdd['type'] };
 export type GuideAdd = {
     type: 'guide:add';
@@ -433,6 +454,8 @@ export type UndoableAction =
     | MirrorActive
     | ViewUpdate
     | GroupUpdate
+    | GroupDelete
+    | PathDelete
     | PathCreate
     | GuideToggle;
 
@@ -444,7 +467,9 @@ export type UndoAction =
     | UndoGuideUpdate
     | UndoViewUpdate
     | UndoMirrorAdd
+    | UndoGroupDelete
     | UndoPendingPoint
+    | UndoPathDelete
     // | UndoPathPoint
     // | UndoPathAdd
     | UndoPathCreate
