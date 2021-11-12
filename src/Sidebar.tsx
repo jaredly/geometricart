@@ -14,7 +14,7 @@ import { initialState } from './initialState';
 import { Export } from './Export';
 import { toTypeRev } from './App';
 import { useDropTarget } from './useDropTarget';
-import { ExportPalettes, ImportPalettes } from './ExportPalettes';
+import { PalettesForm } from './PalettesForm';
 
 export const PREFIX = `<!-- STATE:`;
 export const SUFFIX = '-->';
@@ -240,62 +240,7 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactNode } = {
         <Export state={state} canvasRef={canvasRef} dispatch={dispatch} />
     ),
     Palette: ({ state, dispatch }) => (
-        <div>
-            {Object.keys(state.palettes).map((name) => (
-                <div
-                    key={name}
-                    style={{
-                        border:
-                            state.activePalette === name
-                                ? `1px solid white`
-                                : `1px solid transparent`,
-                    }}
-                    onClick={() => dispatch({ type: 'palette:select', name })}
-                >
-                    {name}
-                    <div css={{ display: 'flex', flexDirection: 'row' }}>
-                        {state.palettes[name].map((color, i) => (
-                            <div
-                                key={i}
-                                style={{
-                                    backgroundColor: color,
-                                    width: 20,
-                                    height: 20,
-                                }}
-                            ></div>
-                        ))}
-                    </div>
-                </div>
-            ))}
-            <input
-                onPaste={(evt) => {
-                    const data = evt.clipboardData.getData('text/plain');
-                    const parts = data
-                        .split(',')
-                        .map((m) =>
-                            m.trim().match(/^[0-9a-fA-F]{6}$/)
-                                ? '#' + m.trim()
-                                : m.trim(),
-                        );
-                    console.log(parts);
-                    let num = Object.keys(state.palettes).length;
-                    while (state.palettes[`palette${num}`]) {
-                        num += 1;
-                    }
-                    let newName = `palette${num}`;
-                    dispatch({
-                        type: 'palette:update',
-                        name: newName,
-                        colors: parts,
-                    });
-                }}
-                value=""
-                onChange={() => {}}
-                placeholder="Paste comma-separated colors"
-            />
-            <ExportPalettes palettes={state.palettes} />
-            <ImportPalettes dispatch={dispatch} palettes={state.palettes} />
-        </div>
+        <PalettesForm state={state} dispatch={dispatch} />
     ),
     Help: () => (
         <div>
@@ -328,6 +273,10 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactNode } = {
                     Click on a guide to toggle it. When disabled, it will not
                     produce intersections. This can make defining paths easier
                     (fewer segments to mess with).
+                </li>
+                <li>
+                    I recorded a quick &amp; dirty video walkthrough,{' '}
+                    <a href="https://youtu.be/OfHB5STp0pM">enjoy.</a>
                 </li>
             </ul>
             <p>Keyboard shortcuts:</p>

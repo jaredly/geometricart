@@ -45,7 +45,11 @@ export const App = ({ initialState }: { initialState: State }) => {
 
     React.useEffect(() => {
         const fn = (evt: KeyboardEvent) => {
-            if (evt.target !== document.body) {
+            if (
+                evt.target !== document.body &&
+                (evt.target instanceof HTMLInputElement ||
+                    evt.target instanceof HTMLTextAreaElement)
+            ) {
                 return;
             }
             if (evt.key === 'g') {
@@ -62,9 +66,11 @@ export const App = ({ initialState }: { initialState: State }) => {
             }
             if (evt.key === 'z' && (evt.ctrlKey || evt.metaKey)) {
                 evt.preventDefault();
+                evt.stopPropagation();
                 return dispatch({ type: evt.shiftKey ? 'redo' : 'undo' });
             }
             if (evt.key === 'y' && (evt.ctrlKey || evt.metaKey)) {
+                evt.stopPropagation();
                 evt.preventDefault();
                 return dispatch({ type: 'redo' });
             }

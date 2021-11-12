@@ -98,6 +98,9 @@ export const Canvas = ({
         //     return;
         // }
         const fn = (evt: KeyboardEvent) => {
+            if (evt.target !== document.body) {
+                return;
+            }
             if (evt.key === 'Alt') {
                 setAltKey(true);
             }

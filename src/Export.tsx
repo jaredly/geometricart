@@ -10,7 +10,6 @@ import {
     encodeChunks,
     readMetadata,
 } from 'png-metadata';
-import { initialHistory } from './initialState';
 import { Toggle, Text } from './Forms';
 
 export const Export = ({
@@ -189,10 +188,8 @@ async function addMetadata(blob: Blob | null, state: State) {
     const meta = {
         tEXt: {
             Source: 'Geometric Art',
-            GeometricArt: JSON.stringify({
-                ...state,
-                history: initialHistory,
-            }),
+            // TODO: Add an option to scrub history, for smaller file size
+            GeometricArt: JSON.stringify(state),
         },
     };
 
