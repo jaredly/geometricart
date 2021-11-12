@@ -91,16 +91,16 @@ export const Canvas = ({
 
     const [shiftKey, setShiftKey] = React.useState(false as false | Coord);
 
-    // const [altKey, setAltKey] = React.useState(false)
+    const [altKey, setAltKey] = React.useState(false);
 
     React.useEffect(() => {
         // if (!pathOrigin) {
         //     return;
         // }
         const fn = (evt: KeyboardEvent) => {
-            // if (evt.key === 'Alt') {
-            //     setAltKey(true)
-            // }
+            if (evt.key === 'Alt') {
+                setAltKey(true);
+            }
             // console.l;
             if (evt.key === 'Shift') {
                 setShiftKey(currentPos.current);
@@ -111,9 +111,9 @@ export const Canvas = ({
             }
         };
         const up = (evt: KeyboardEvent) => {
-            // if (evt.key === 'Alt') {
-            //     setAltKey(false)
-            // }
+            if (evt.key === 'Alt') {
+                setAltKey(false);
+            }
             if (evt.key === 'Shift') {
                 setShiftKey(false);
             }
@@ -162,7 +162,7 @@ export const Canvas = ({
     //     dispatch({ type: 'path:add', segment });
     // }, []);
     let view = state.view;
-    if (shiftKey && pathOrigin) {
+    if (shiftKey) {
         const worldToScreen = (pos: Coord, view: View) => ({
             x: width / 2 + (pos.x - view.center.x) * view.zoom,
             y: height / 2 + (pos.y - view.center.y) * view.zoom,
@@ -173,7 +173,8 @@ export const Canvas = ({
         });
 
         const screenPos = worldToScreen(shiftKey, view);
-        const newZoom = view.zoom * 4;
+        const amount = altKey ? 12 : 4;
+        const newZoom = view.zoom * amount;
         const newPos = screenToWorld(screenPos, { ...view, zoom: newZoom });
         view = {
             ...view,
@@ -267,6 +268,26 @@ screenToWorld
                                     !state.pathGroups[state.paths[k].group!]
                                         .hide),
                         )
+                        .sort((a, b) => {
+                            const oa = state.paths[a].group
+                                ? state.pathGroups[state.paths[a].group!]
+                                      .ordering
+                                : state.paths[a].ordering;
+                            const ob = state.paths[b].group
+                                ? state.pathGroups[state.paths[b].group!]
+                                      .ordering
+                                : state.paths[b].ordering;
+                            if (oa === ob) {
+                                return 0;
+                            }
+                            if (oa == null) {
+                                return 1;
+                            }
+                            if (ob == null) {
+                                return -1;
+                            }
+                            return ob - oa;
+                        })
                         .map((k) => (
                             <RenderPath
                                 key={k}
@@ -433,8 +454,9 @@ screenToWorld
                                     onComplete={onCompletePath}
                                 />
                             ) : null}
-                            {/* {Object.keys(state.mirrors).map((m) =>
-                                m === state.activeMirror ? (
+                            {Object.keys(state.mirrors).map((m) =>
+                                state.selection?.type === 'Mirror' &&
+                                state.selection.ids.includes(m) ? (
                                     <RenderMirror
                                         key={m}
                                         mirror={state.mirrors[m]}
@@ -442,7 +464,7 @@ screenToWorld
                                         zoom={view.zoom}
                                     />
                                 ) : null,
-                            )} */}
+                            )}
                         </>
                     ) : null}
                     {hover ? (

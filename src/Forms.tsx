@@ -2,6 +2,7 @@
 /* @jsxFrag React.Fragment */
 import { jsx } from '@emotion/react';
 import * as React from 'react';
+import { transparent } from './Icons';
 import {
     Circle,
     Guide,
@@ -63,13 +64,20 @@ export const Int = ({
     value,
     onChange,
 }: {
-    value: number;
-    onChange: (v: number) => unknown;
+    value: number | undefined;
+    onChange: (v: number | undefined) => unknown;
 }) => {
     return (
         <input
             value={value}
-            onChange={(evt) => onChange(+evt.target.value)}
+            onChange={(evt) => {
+                const res = +evt.target.value;
+                if (isNaN(res) || !evt.target.value.trim()) {
+                    onChange(undefined);
+                } else {
+                    onChange(res);
+                }
+            }}
             step="1"
             type="number"
         />
@@ -118,7 +126,10 @@ export const Color = ({
                     key={name}
                     onClick={() => onChange(name)}
                     css={{
-                        background: name,
+                        background:
+                            name === 'transparent'
+                                ? `url("${transparent}")`
+                                : name,
                         border: `2px solid ${
                             color === name ? 'white' : '#444'
                         }`,
@@ -275,6 +286,11 @@ export const PathGroupForm = ({
                     onChange={(hide) => onChange({ ...group, hide })}
                     label="Hide"
                 />
+                Ordering:
+                <Int
+                    value={group.ordering}
+                    onChange={(ordering) => onChange({ ...group, ordering })}
+                />
             </div>
             <StyleForm
                 palette={palette}
@@ -373,7 +389,7 @@ export const GuideForm = ({
                     <Int
                         value={guide.geom.multiples}
                         onChange={(multiples) =>
-                            multiples >= 0
+                            multiples != null && multiples >= 0
                                 ? onChange({
                                       ...guide,
                                       geom: {
@@ -476,7 +492,10 @@ export const ViewForm = ({
                             margin: 4,
                         }}
                         style={{
-                            backgroundColor: color,
+                            background:
+                                color === 'transparent'
+                                    ? `url("${transparent}")`
+                                    : color,
                             border: (
                                 color === 'transparent'
                                     ? !view.background
@@ -504,10 +523,14 @@ export const MirrorForm = ({
     onChange,
     onSelect,
     isActive,
+    selected,
+    setSelected,
     onDuplicate,
 }: {
     mirror: Mirror;
     isActive: boolean;
+    selected: boolean;
+    setSelected: (sel: boolean) => void;
     onChange: (m: Mirror) => unknown;
     onSelect: () => void;
     onDuplicate: () => void;
@@ -516,6 +539,11 @@ export const MirrorForm = ({
         <div
             css={{
                 padding: 8,
+            }}
+            style={selected ? { border: '1px solid white' } : {}}
+            onClick={(evt) => {
+                evt.stopPropagation();
+                setSelected(true);
             }}
         >
             <div
@@ -540,8 +568,12 @@ export const MirrorForm = ({
             <div>
                 <Label text="rotations" />
                 <Int
-                    value={mirror.rotational.length}
+                    value={mirror.rotational.length + 1}
                     onChange={(number) => {
+                        if (number == null || number < 1) {
+                            return;
+                        }
+                        number -= 1;
                         let rotational = mirror.rotational;
                         if (number < mirror.rotational.length) {
                             rotational = rotational.slice(0, number);

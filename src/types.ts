@@ -192,6 +192,7 @@ export type PathGroup = {
     style: Style;
     group: Id | null;
     hide?: boolean;
+    ordering?: number;
 };
 
 export type GuideElement = {
@@ -504,7 +505,8 @@ export type Tab =
     | 'Paths'
     | 'PathGroups'
     | 'Palette'
-    | 'Export';
+    | 'Export'
+    | 'Help';
 
 export type Attachment = {
     contents: string; // base64 dontcha know

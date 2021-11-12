@@ -183,12 +183,33 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactNode } = {
                 css={{
                     overflow: 'auto',
                     flexShrink: 1,
+                    flex: 1,
                     minHeight: 100,
+                }}
+                onClick={() => {
+                    dispatch({ type: 'selection:set', selection: null });
                 }}
             >
                 {Object.keys(state.mirrors).map((k) => (
                     <MirrorForm
                         key={k}
+                        selected={
+                            state.selection?.type === 'Mirror' &&
+                            state.selection.ids.includes(k)
+                        }
+                        setSelected={(sel) => {
+                            if (sel) {
+                                dispatch({
+                                    type: 'selection:set',
+                                    selection: { type: 'Mirror', ids: [k] },
+                                });
+                            } else {
+                                dispatch({
+                                    type: 'selection:set',
+                                    selection: null,
+                                });
+                            }
+                        }}
                         isActive={state.activeMirror === k}
                         onDuplicate={() => {
                             dispatch({
@@ -274,6 +295,65 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactNode } = {
             />
             <ExportPalettes palettes={state.palettes} />
             <ImportPalettes dispatch={dispatch} palettes={state.palettes} />
+        </div>
+    ),
+    Help: () => (
+        <div>
+            <p>
+                A sure sign this is a very usable piece of software is that I
+                feel the need to prominantly display this help section.
+            </p>
+            <p>Basic strategy:</p>
+            <ol>
+                <li>
+                    Make some guides (lines, circles). Click a guide button,
+                    then click some points to define the guide.
+                </li>
+                <li>
+                    Make some paths! With no guide active, click a starting
+                    point for your path. Then mouse over green / red path
+                    segments to define your path. Make it around to the starting
+                    point to complete the path.
+                </li>
+                <li>Color the paths! Click a path group, click a color</li>
+                <li>
+                    Export! Both the SVG export and the PNG export can be later
+                    re-imported (drag &amp; drop onto the sidebar) for further
+                    editing.
+                </li>
+            </ol>
+            <p>Misc:</p>
+            <ul>
+                <li>
+                    Click on a guide to toggle it. When disabled, it will not
+                    produce intersections. This can make defining paths easier
+                    (fewer segments to mess with).
+                </li>
+            </ul>
+            <p>Keyboard shortcuts:</p>
+            <table>
+                <tbody>
+                    {Object.entries({
+                        g: 'Toggle guides on/off',
+                        l: 'New [L]ine guide',
+                        c: 'New [C]ircle guide',
+                        p: 'New [P]erpendicular bisector guide',
+                        i: 'New [I]ncircle guide',
+                        m: 'New Circu[m]circle guide',
+                        a: 'New [A]ngle bisector guide',
+                        Escape: 'Cancel whatever is happening',
+                        'cmd+z': 'Undo (infinite)',
+                        'cmd+shift+z': 'Redo',
+                        Shift: 'Zoom in at mouse position 4x (handy for drawing paths with tight edges)',
+                        'Shift + Alt': 'Zoom in at mouse position 12x',
+                    }).map(([k, v]) => (
+                        <tr key={k}>
+                            <td>{k}</td>
+                            <td>{v}</td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
         </div>
     ),
 };
