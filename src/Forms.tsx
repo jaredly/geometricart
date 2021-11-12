@@ -542,6 +542,8 @@ export const ViewForm = ({
 
 export const MirrorForm = ({
     mirror,
+    onMouseOver,
+    onMouseOut,
     onChange,
     onSelect,
     isActive,
@@ -552,6 +554,8 @@ export const MirrorForm = ({
     mirror: Mirror;
     isActive: boolean;
     selected: boolean;
+    onMouseOver: () => void;
+    onMouseOut: () => void;
     setSelected: (sel: boolean) => void;
     onChange: (m: Mirror) => unknown;
     onSelect: () => void;
@@ -567,6 +571,8 @@ export const MirrorForm = ({
                 evt.stopPropagation();
                 setSelected(true);
             }}
+            onMouseOver={onMouseOver}
+            onMouseOut={onMouseOut}
         >
             <div
                 css={{

@@ -458,8 +458,7 @@ screenToWorld
                                 />
                             ) : null}
                             {Object.keys(state.mirrors).map((m) =>
-                                state.selection?.type === 'Mirror' &&
-                                state.selection.ids.includes(m) ? (
+                                hover?.kind === 'Mirror' && hover.id === m ? (
                                     <RenderMirror
                                         key={m}
                                         mirror={state.mirrors[m]}
@@ -472,7 +471,8 @@ screenToWorld
                     ) : null}
                     {hover ? (
                         <>
-                            {hover.kind !== 'Path' &&
+                            {/* {hover.kind !== 'Path' &&
+                            hover.kind !== 'Guide'
                             hover.kind !== 'PathGroup' ? (
                                 <rect
                                     x={-width}
@@ -481,7 +481,7 @@ screenToWorld
                                     height={height * 2}
                                     fill="rgba(0,0,0,0.4)"
                                 />
-                            ) : null}
+                            ) : null} */}
                             {showHover(
                                 hover,
                                 state,
@@ -548,6 +548,7 @@ export const showHover = (
                 geomToPrimitives(geom.geom).map((prim, i) => (
                     <RenderPrimitive
                         prim={prim}
+                        strokeWidth={4}
                         zoom={state.view.zoom}
                         height={height}
                         width={width}

@@ -11,17 +11,19 @@ export function RenderPrimitive({
     width,
     onClick,
     inactive,
+    strokeWidth = 1,
 }: {
     prim: Primitive;
     zoom: number;
     height: number;
     width: number;
     inactive?: boolean;
+    strokeWidth?: number;
     onClick?: (evt: React.MouseEvent) => unknown;
 }): jsx.JSX.Element {
     const common = {
         stroke: inactive ? 'rgba(102, 102, 102, 0.3)' : '#666',
-        strokeWidth: '1',
+        strokeWidth,
         onClick: onClick,
         style: onClick ? { cursor: 'pointer' } : {},
         css: onClick

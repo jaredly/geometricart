@@ -181,7 +181,7 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactNode } = {
             ))}
         </div>
     ),
-    Mirrors: ({ state, dispatch }) => {
+    Mirrors: ({ state, dispatch, setHover }) => {
         return (
             <div
                 css={{
@@ -214,6 +214,8 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactNode } = {
                                 });
                             }
                         }}
+                        onMouseOut={() => setHover(null)}
+                        onMouseOver={() => setHover({ kind: 'Mirror', id: k })}
                         isActive={state.activeMirror === k}
                         onDuplicate={() => {
                             dispatch({
