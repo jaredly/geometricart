@@ -6,6 +6,8 @@ import { RenderSegment } from './RenderSegment';
 import { findNextSegments } from './findNextSegments';
 import { Primitive } from './intersect';
 import { Coord, Id, Intersect, PendingSegment, Segment } from './types';
+import { applyMatrices, Matrix } from './getMirrorTransforms';
+import { transformSegment } from './points';
 
 /*
 
@@ -45,11 +47,13 @@ export const DrawPath = React.memo(
     ({
         primitives,
         intersections,
+        mirror,
         origin,
         zoom,
         onComplete,
         palette,
     }: {
+        mirror: null | Array<Array<Matrix>>;
         primitives: Array<{ prim: Primitive; guides: Array<Id> }>;
         origin: Intersect;
         zoom: number;
@@ -115,28 +119,95 @@ export const DrawPath = React.memo(
             coordKey(parts[parts.length - 1].to.coord) ===
                 coordKey(origin.coord);
 
+        const transformedParts = mirror
+            ? mirror.map((transform) => ({
+                  origin: applyMatrices(origin.coord, transform),
+                  segments: parts.map((seg) =>
+                      transformSegment(seg.segment, transform),
+                  ),
+              }))
+            : null;
+
         return (
             <>
                 {completed ? (
-                    <RenderPath
-                        zoom={zoom}
-                        path={{
-                            group: null,
-                            id: '',
-                            created: 0,
-                            ordering: 0,
-                            hidden: false,
-                            origin: origin.coord,
-                            segments: parts.map((p) => p.segment),
-                            style: { lines: [], fills: [{ color: 0 }] },
-                        }}
-                        onClick={() => {
-                            onComplete(parts);
-                        }}
-                        groups={{}}
-                        palette={palette}
-                    />
+                    <>
+                        {transformedParts
+                            ? transformedParts.map(
+                                  (path) => (
+                                      <RenderPath
+                                          zoom={zoom}
+                                          path={{
+                                              group: null,
+                                              id: '',
+                                              created: 0,
+                                              ordering: 0,
+                                              hidden: false,
+                                              origin: path.origin,
+                                              segments: path.segments,
+                                              style: {
+                                                  lines: [],
+                                                  fills: [{ color: 0 }],
+                                              },
+                                          }}
+                                          groups={{}}
+                                          palette={palette}
+                                      />
+                                  ),
+                                  //   path.segments.map((seg, i) => (
+                                  //       <RenderSegment
+                                  //           key={i}
+                                  //           segment={seg}
+                                  //           zoom={zoom}
+                                  //           prev={
+                                  //               i === 0
+                                  //                   ? path.origin
+                                  //                   : path.segments[i - 1].to
+                                  //           }
+                                  //           color="rgba(0, 0, 255, 0.1)"
+                                  //       />
+                                  //   )),
+                              )
+                            : null}
+
+                        <RenderPath
+                            zoom={zoom}
+                            path={{
+                                group: null,
+                                id: '',
+                                created: 0,
+                                ordering: 0,
+                                hidden: false,
+                                origin: origin.coord,
+                                segments: parts.map((p) => p.segment),
+                                style: { lines: [], fills: [{ color: 0 }] },
+                            }}
+                            onClick={() => {
+                                onComplete(parts);
+                            }}
+                            groups={{}}
+                            palette={palette}
+                        />
+                    </>
                 ) : null}
+                {transformedParts
+                    ? transformedParts.map((path) =>
+                          path.segments.map((seg, i) => (
+                              <RenderSegment
+                                  key={i}
+                                  segment={seg}
+                                  zoom={zoom}
+                                  prev={
+                                      i === 0
+                                          ? path.origin
+                                          : path.segments[i - 1].to
+                                  }
+                                  color="rgba(0, 0, 255, 0.6)"
+                              />
+                          )),
+                      )
+                    : null}
+
                 {parts.map((seg, i) => (
                     <RenderSegment
                         key={i}

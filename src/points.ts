@@ -111,6 +111,11 @@ export const geomToPrimitives = (geom: GuideGeom): Array<Primitive> => {
             }
             return [{ type: 'circle', center: got.center, radius: got.r }];
         }
+        case 'Perpendicular': {
+            const t1 = angleTo(geom.p1, geom.p2) + Math.PI / 2;
+            const p2 = push(geom.p1, t1, 1);
+            return [lineToSlope(geom.p1, p2, false)];
+        }
         case 'Line':
             return [lineToSlope(geom.p1, geom.p2, geom.limit)];
         case 'Circle': {

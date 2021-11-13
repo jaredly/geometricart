@@ -23,7 +23,8 @@ export const toType: { [key: string]: GuideGeom['type'] } = {
     l: 'Line',
     c: 'Circle',
     a: 'AngleBisector',
-    p: 'PerpendicularBisector',
+    b: 'PerpendicularBisector',
+    p: 'Perpendicular',
     i: 'InCircle',
     m: 'CircumCircle',
 };

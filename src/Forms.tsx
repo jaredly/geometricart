@@ -278,10 +278,10 @@ export const PathGroupForm = ({
         <div
             ref={(node) => (ref.current = node)}
             css={{ padding: 4, borderBottom: '1px solid #aaa', margin: 4 }}
-            onMouseOut={onMouseOut}
             style={{
                 backgroundColor: selected ? 'rgba(255,255,255,0.1)' : undefined,
             }}
+            onMouseOut={onMouseOut}
             onMouseOver={onMouseOver}
         >
             <div
@@ -326,8 +326,12 @@ export const PathForm = ({
     palette,
     onChange,
     onDelete,
+    onMouseOver,
+    onMouseOut,
     selected,
 }: {
+    onMouseOver: () => void;
+    onMouseOut: () => void;
     path: Path;
     selected: boolean;
     palette: Array<string>;
@@ -347,6 +351,8 @@ export const PathForm = ({
             style={{
                 backgroundColor: selected ? 'rgba(255,255,255,0.1)' : undefined,
             }}
+            onMouseOut={onMouseOut}
+            onMouseOver={onMouseOver}
         >
             <div
                 css={{

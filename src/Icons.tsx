@@ -2,8 +2,8 @@ export const transparent =
     `data:image/svg+xml;base64,` +
     btoa(`
             <svg
-                width='20'
-                height='20'
+                width='16'
+                height='16'
                 xmlns='http://www.w3.org/2000/svg'
             >
 			<rect fill='#ccc' x='0' y='0' width='8' height='8' />

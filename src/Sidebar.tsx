@@ -152,7 +152,7 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactNode } = {
             </div>
         );
     },
-    Paths: ({ state, dispatch }) => (
+    Paths: ({ state, dispatch, setHover }) => (
         <div
             css={{
                 overflow: 'auto',
@@ -170,6 +170,10 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactNode } = {
                     }
                     palette={state.palettes[state.activePalette]}
                     path={state.paths[k]}
+                    onMouseOver={() => {
+                        setHover({ kind: 'Path', id: k });
+                    }}
+                    onMouseOut={() => setHover(null)}
                     onChange={(path) =>
                         dispatch({
                             type: 'path:update',

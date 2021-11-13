@@ -75,6 +75,7 @@ export const RenderPath = ({
         return (
             <path
                 key={i}
+                data-id={path.id}
                 css={
                     onClick
                         ? {
@@ -101,6 +102,7 @@ export const RenderPath = ({
             <path
                 key={i}
                 d={d}
+                data-id={path.id}
                 stroke={paletteColor(palette, line.color)}
                 fill="none"
                 strokeLinejoin="round"

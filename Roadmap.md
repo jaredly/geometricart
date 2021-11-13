@@ -2,7 +2,7 @@
 
 Basic Plan:
 
-- NEED to dedup mirrored paths. Nobody likes having multiple paths in the same place. It's just bad.
+- [ ] NEED to dedup mirrored paths. Nobody likes having multiple paths in the same place. It's just bad.
 
 - better coloring
 	- try not having a tab ... for paths or groups ... just selections, and a style dialog.

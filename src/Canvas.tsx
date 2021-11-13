@@ -472,6 +472,13 @@ screenToWorld
                                     palette={
                                         state.palettes[state.activePalette]
                                     }
+                                    mirror={
+                                        state.activeMirror
+                                            ? mirrorTransforms[
+                                                  state.activeMirror
+                                              ]
+                                            : null
+                                    }
                                     zoom={view.zoom}
                                     origin={pathOrigin}
                                     primitives={guidePrimitives}
@@ -533,6 +540,15 @@ export const showHover = (
     palette: Array<string>,
 ) => {
     switch (hover.kind) {
+        case 'Path': {
+            return (
+                <UnderlinePath
+                    path={state.paths[hover.id]}
+                    zoom={state.view.zoom}
+                    color={'magenta'}
+                />
+            );
+        }
         case 'PathGroup': {
             return (
                 <>
@@ -543,7 +559,7 @@ export const showHover = (
                                 key={k}
                                 path={state.paths[k]}
                                 zoom={state.view.zoom}
-                                color={i % 2 == 0 ? 'magenta' : 'black'}
+                                color={'magenta'}
                             />
                         ))}
                     {/* {Object.keys(state.paths)

@@ -11,6 +11,7 @@ import {
     readMetadata,
 } from 'png-metadata';
 import { Toggle, Text } from './Forms';
+import { transparent } from './Icons';
 
 export const Export = ({
     canvasRef,
@@ -114,45 +115,57 @@ export const Export = ({
                         flexDirection: 'row',
                     }}
                 >
-                    <div>
-                        <div>
-                            <a
-                                href={url}
-                                download={name}
-                                css={{
-                                    color: 'white',
-                                    background: '#666',
-                                    borderRadius: 6,
-                                    padding: '4px 8px',
-                                    textDecoration: 'none',
-                                    cursor: 'pointer',
-                                }}
-                            >
-                                Download {name}
-                            </a>
-                        </div>
-                        <img
-                            src={url}
-                            css={{ maxHeight: 400 }}
-                            onLoad={(evt) => {
-                                const canvas = document.createElement('canvas');
-                                canvas.width = canvas.height = size;
-                                const ctx = canvas.getContext('2d')!;
-                                ctx.drawImage(
-                                    evt.target as HTMLImageElement,
-                                    0,
-                                    0,
-                                    size,
-                                    size,
-                                );
-                                canvas.toBlob(async (blob) => {
-                                    if (embed) {
-                                        blob = await addMetadata(blob, state);
-                                    }
-                                    setPng(URL.createObjectURL(blob));
-                                }, 'image/png');
+                    <div css={{ marginRight: 16 }}>
+                        <a
+                            href={url}
+                            download={name}
+                            css={{
+                                color: 'white',
+                                background: '#666',
+                                borderRadius: 6,
+                                padding: '4px 8px',
+                                display: 'block',
+                                textDecoration: 'none',
+                                cursor: 'pointer',
+                                marginBottom: 16,
                             }}
-                        />
+                        >
+                            Download {name}
+                        </a>
+                        <div
+                            style={{
+                                backgroundImage: `url("${transparent}")`,
+                                backgroundRepeat: 'repeat',
+                                backgroundSize: 40,
+                            }}
+                        >
+                            <img
+                                src={url}
+                                css={{ maxHeight: 400 }}
+                                onLoad={(evt) => {
+                                    const canvas =
+                                        document.createElement('canvas');
+                                    canvas.width = canvas.height = size;
+                                    const ctx = canvas.getContext('2d')!;
+                                    ctx.drawImage(
+                                        evt.target as HTMLImageElement,
+                                        0,
+                                        0,
+                                        size,
+                                        size,
+                                    );
+                                    canvas.toBlob(async (blob) => {
+                                        if (embed) {
+                                            blob = await addMetadata(
+                                                blob,
+                                                state,
+                                            );
+                                        }
+                                        setPng(URL.createObjectURL(blob));
+                                    }, 'image/png');
+                                }}
+                            />
+                        </div>
                     </div>
                     <div>
                         {png ? (
@@ -165,6 +178,7 @@ export const Export = ({
                                         color: 'white',
                                         background: '#666',
                                         borderRadius: 6,
+                                        marginBottom: 16,
                                         padding: '4px 8px',
                                         textDecoration: 'none',
                                         cursor: 'pointer',
@@ -172,7 +186,15 @@ export const Export = ({
                                 >
                                     Download {name.replace('.svg', '.png')}
                                 </a>
-                                <img css={{ maxHeight: 400 }} src={png} />
+                                <div
+                                    style={{
+                                        backgroundImage: `url("${transparent}")`,
+                                        backgroundRepeat: 'repeat',
+                                        backgroundSize: 40,
+                                    }}
+                                >
+                                    <img css={{ maxHeight: 400 }} src={png} />
+                                </div>
                             </>
                         ) : null}
                     </div>
