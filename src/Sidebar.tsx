@@ -250,6 +250,16 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactNode } = {
     ),
     Help: () => (
         <div>
+            <div>
+                <h3>Recent Changes</h3>
+                <ul>
+                    <li>"z" and "shift+z" are now the zoom keys</li>
+                    <li>
+                        clicking a guide now selects it; shift+click to
+                        enable/disable
+                    </li>
+                </ul>
+            </div>
             <p>
                 A sure sign this is a very usable piece of software is that I
                 feel the need to prominantly display this help section.
@@ -276,9 +286,9 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactNode } = {
             <p>Misc:</p>
             <ul>
                 <li>
-                    Click on a guide to toggle it. When disabled, it will not
-                    produce intersections. This can make defining paths easier
-                    (fewer segments to mess with).
+                    Shift+Click on a guide to toggle it. When disabled, it will
+                    not produce intersections. This can make defining paths
+                    easier (fewer segments to mess with).
                 </li>
                 <li>
                     I recorded a quick &amp; dirty video walkthrough,{' '}
@@ -297,10 +307,9 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactNode } = {
                         m: 'New Circu[m]circle guide',
                         a: 'New [A]ngle bisector guide',
                         Escape: 'Cancel whatever is happening',
+                        z: 'Zoom (shift to zoom more) (handy for drawing paths with tight edges)',
                         'cmd+z': 'Undo (infinite)',
                         'cmd+shift+z': 'Redo',
-                        Shift: 'Zoom in at mouse position 4x (handy for drawing paths with tight edges)',
-                        'Shift + Alt': 'Zoom in at mouse position 12x',
                     }).map(([k, v]) => (
                         <tr key={k}>
                             <td>{k}</td>
