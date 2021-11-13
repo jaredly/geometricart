@@ -89,9 +89,15 @@ export const Canvas = ({
         null as null | Intersect,
     );
 
+    const [zoomKey, setZoomKey] = React.useState(
+        null as null | { pos: Coord; level: number },
+    );
+
     const [shiftKey, setShiftKey] = React.useState(false as false | Coord);
 
     const [altKey, setAltKey] = React.useState(false);
+
+    const currentZoom = useCurrent(zoomKey);
 
     React.useEffect(() => {
         // if (!pathOrigin) {
@@ -104,8 +110,17 @@ export const Canvas = ({
             if (evt.key === 'Alt') {
                 setAltKey(true);
             }
+            if (evt.key === 'z' && currentZoom.current == null) {
+                setZoomKey({ level: 1, pos: currentPos.current });
+            }
+            if (evt.key === 'Z' && currentZoom.current == null) {
+                setZoomKey({ level: 2, pos: currentPos.current });
+            }
             // console.l;
             if (evt.key === 'Shift') {
+                if (currentZoom.current != null) {
+                    setZoomKey({ level: 2, pos: currentZoom.current.pos });
+                }
                 setShiftKey(currentPos.current);
             }
             if (pathOrigin && evt.key === 'Escape') {
@@ -118,7 +133,14 @@ export const Canvas = ({
                 setAltKey(false);
             }
             if (evt.key === 'Shift') {
+                if (currentZoom.current != null) {
+                    setZoomKey({ level: 1, pos: currentZoom.current.pos });
+                }
                 setShiftKey(false);
+                // TODO folks
+            }
+            if (evt.key === 'z' || evt.key === 'Z') {
+                setZoomKey(null);
             }
         };
         document.addEventListener('keydown', fn);
@@ -165,7 +187,7 @@ export const Canvas = ({
     //     dispatch({ type: 'path:add', segment });
     // }, []);
     let view = state.view;
-    if (shiftKey) {
+    if (zoomKey) {
         const worldToScreen = (pos: Coord, view: View) => ({
             x: width / 2 + (pos.x - view.center.x) * view.zoom,
             y: height / 2 + (pos.y - view.center.y) * view.zoom,
@@ -175,16 +197,16 @@ export const Canvas = ({
             y: (pos.y - height / 2) / view.zoom + view.center.y,
         });
 
-        const screenPos = worldToScreen(shiftKey, view);
-        const amount = altKey ? 12 : 4;
+        const screenPos = worldToScreen(zoomKey.pos, view);
+        const amount = zoomKey.level === 2 ? 12 : 4;
         const newZoom = view.zoom * amount;
         const newPos = screenToWorld(screenPos, { ...view, zoom: newZoom });
         view = {
             ...view,
             zoom: newZoom,
             center: {
-                x: view.center.x + (newPos.x - shiftKey.x),
-                y: view.center.y + (newPos.y - shiftKey.y),
+                x: view.center.x + (newPos.x - zoomKey.pos.x),
+                y: view.center.y + (newPos.y - zoomKey.pos.y),
             },
         };
         /*
@@ -353,7 +375,7 @@ screenToWorld
                                     pathOrigin
                                         ? undefined
                                         : (guides, shift) => {
-                                              if (shift) {
+                                              if (!shift) {
                                                   dispatch({
                                                       type: 'tab:set',
                                                       tab: 'Guides',
@@ -396,7 +418,7 @@ screenToWorld
                                     pathOrigin
                                         ? undefined
                                         : (guides, shift) => {
-                                              if (shift) {
+                                              if (!shift) {
                                                   dispatch({
                                                       type: 'tab:set',
                                                       tab: 'Guides',
