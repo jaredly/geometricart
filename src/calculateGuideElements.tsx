@@ -64,6 +64,7 @@ export const transformGuideGeom = (
             };
         case 'Line':
         case 'PerpendicularBisector':
+        case 'Perpendicular':
             return { ...geom, p1: transform(geom.p1), p2: transform(geom.p2) };
         case 'Circle':
             return {

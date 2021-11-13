@@ -268,6 +268,7 @@ export const PathGroupForm = ({
     onDelete: () => void;
 }) => {
     const ref = React.useRef(null as null | HTMLDivElement);
+    const [expanded, setExpanded] = React.useState(false);
     React.useEffect(() => {
         if (selected) {
             ref.current?.scrollIntoView(false);
@@ -277,13 +278,17 @@ export const PathGroupForm = ({
         <div
             ref={(node) => (ref.current = node)}
             css={{ padding: 4, borderBottom: '1px solid #aaa', margin: 4 }}
-            onMouseOut={onMouseOut}
             style={{
                 backgroundColor: selected ? 'rgba(255,255,255,0.1)' : undefined,
             }}
+            onMouseOut={onMouseOut}
             onMouseOver={onMouseOver}
         >
-            <div css={{ display: 'flex', alignItems: 'center' }}>
+            <div
+                css={{ display: 'flex', alignItems: 'center' }}
+                onClick={() => setExpanded(!expanded)}
+            >
+                {expanded ? '🔻' : '▶️'}
                 Path Group {group.id}
                 <div style={{ flexBasis: 10 }} />
                 <Toggle
@@ -305,11 +310,13 @@ export const PathGroupForm = ({
                     Delete
                 </button>
             </div>
-            <StyleForm
-                palette={palette}
-                style={group.style}
-                onChange={(style) => onChange({ ...group, style })}
-            />
+            {expanded ? (
+                <StyleForm
+                    palette={palette}
+                    style={group.style}
+                    onChange={(style) => onChange({ ...group, style })}
+                />
+            ) : null}
         </div>
     );
 };
@@ -319,8 +326,12 @@ export const PathForm = ({
     palette,
     onChange,
     onDelete,
+    onMouseOver,
+    onMouseOut,
     selected,
 }: {
+    onMouseOver: () => void;
+    onMouseOut: () => void;
     path: Path;
     selected: boolean;
     palette: Array<string>;
@@ -340,6 +351,8 @@ export const PathForm = ({
             style={{
                 backgroundColor: selected ? 'rgba(255,255,255,0.1)' : undefined,
             }}
+            onMouseOut={onMouseOut}
+            onMouseOver={onMouseOver}
         >
             <div
                 css={{

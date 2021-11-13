@@ -121,9 +121,25 @@ export const GuideElement = ({
         }
         case 'Line': {
             const t1 = angleTo(geom.p1, geom.p2);
-            const d = dist(geom.p1, geom.p2);
             const left = geom.limit ? geom.p1 : push(geom.p1, t1, -10);
             const right = geom.limit ? geom.p2 : push(geom.p2, t1, 10);
+            return (
+                <>
+                    <line
+                        x1={left.x * zoom}
+                        y1={left.y * zoom}
+                        x2={right.x * zoom}
+                        y2={right.y * zoom}
+                        stroke="#ff0"
+                        strokeWidth={1}
+                    />
+                </>
+            );
+        }
+        case 'Perpendicular': {
+            const t1 = angleTo(geom.p1, geom.p2) + Math.PI / 2;
+            const left = push(geom.p1, t1, -10);
+            const right = push(geom.p1, t1, 10);
             return (
                 <>
                     <line

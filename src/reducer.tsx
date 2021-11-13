@@ -6,7 +6,6 @@ import { transformSegment } from './points';
 import {
     Action,
     UndoableAction,
-    Coord,
     Guide,
     GuideGeom,
     guidePoints,
@@ -19,6 +18,11 @@ import {
     Path,
     Style,
 } from './types';
+import {
+    pathsAreIdentical,
+    pathToReversedSegmentKeys,
+    pathToSegmentKeys,
+} from './pathsAreIdentical';
 
 export const undo = (state: State, action: UndoAction): State => {
     switch (action.type) {
@@ -364,7 +368,34 @@ export const reduceWithoutUndo = (
                     state.activeMirror,
                     state.mirrors,
                 );
+
+                const usedPaths = [
+                    pathToSegmentKeys(action.origin, action.segments),
+                ];
+
                 transforms.forEach((matrices) => {
+                    const origin = applyMatrices(main.origin, matrices);
+                    const segments = main.segments.map((seg) =>
+                        transformSegment(seg, matrices),
+                    );
+                    // TOOD: should I check each prev against my forward & backward,
+                    // or put both forward & backward into the list?
+                    // Are they equivalent?
+                    const forward = pathToSegmentKeys(origin, segments);
+                    const backward = pathToReversedSegmentKeys(
+                        origin,
+                        segments,
+                    );
+                    if (
+                        usedPaths.some(
+                            (path) =>
+                                pathsAreIdentical(path, backward) ||
+                                pathsAreIdentical(path, forward),
+                        )
+                    ) {
+                        return;
+                    }
+                    usedPaths.push(forward);
                     let nid = `id-${nextId++}`;
                     state.paths[nid] = {
                         id: nid,
@@ -372,10 +403,8 @@ export const reduceWithoutUndo = (
                         ordering: 0,
                         hidden: false,
                         created: 0,
-                        origin: applyMatrices(main.origin, matrices),
-                        segments: main.segments.map((seg) =>
-                            transformSegment(seg, matrices),
-                        ),
+                        origin,
+                        segments,
                         style: {
                             lines: [],
                             fills: [],
@@ -387,7 +416,7 @@ export const reduceWithoutUndo = (
                     ...state.pathGroups,
                     [groupId]: {
                         group: null,
-                        id,
+                        id: groupId,
                         style,
                     },
                 };
@@ -503,5 +532,3 @@ export const reduceWithoutUndo = (
     }
     return [state, null];
 };
-
-// export const genId = () => Math.random().toString(36).slice(2);

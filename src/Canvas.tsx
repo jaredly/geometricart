@@ -472,6 +472,13 @@ screenToWorld
                                     palette={
                                         state.palettes[state.activePalette]
                                     }
+                                    mirror={
+                                        state.activeMirror
+                                            ? mirrorTransforms[
+                                                  state.activeMirror
+                                              ]
+                                            : null
+                                    }
                                     zoom={view.zoom}
                                     origin={pathOrigin}
                                     primitives={guidePrimitives}
@@ -533,20 +540,29 @@ export const showHover = (
     palette: Array<string>,
 ) => {
     switch (hover.kind) {
+        case 'Path': {
+            return (
+                <UnderlinePath
+                    path={state.paths[hover.id]}
+                    zoom={state.view.zoom}
+                    color={'magenta'}
+                />
+            );
+        }
         case 'PathGroup': {
             return (
                 <>
                     {Object.keys(state.paths)
                         .filter((k) => state.paths[k].group === hover.id)
-                        .map((k) => (
+                        .map((k, i) => (
                             <UnderlinePath
                                 key={k}
                                 path={state.paths[k]}
                                 zoom={state.view.zoom}
-                                color="rgba(255,255,255,0.5)"
+                                color={'magenta'}
                             />
                         ))}
-                    {Object.keys(state.paths)
+                    {/* {Object.keys(state.paths)
                         .filter((k) => state.paths[k].group === hover.id)
                         .map((k) => (
                             <RenderPath
@@ -556,7 +572,7 @@ export const showHover = (
                                 zoom={state.view.zoom}
                                 palette={palette}
                             />
-                        ))}
+                        ))} */}
                 </>
             );
         }

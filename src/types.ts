@@ -50,8 +50,15 @@ export type GuideGeom =
     | Circle
     | AngleBisector
     | PerpendicularBisector
+    | Perpendicular
     | InCicle
     | CircumCircle;
+
+export type Perpendicular = {
+    type: 'Perpendicular';
+    p1: Coord;
+    p2: Coord;
+};
 
 export type InCicle = {
     type: 'InCircle';
@@ -72,6 +79,7 @@ export const guideTypes: Array<GuideGeom['type']> = [
     'AngleBisector',
     'Circle',
     'PerpendicularBisector',
+    'Perpendicular',
     'InCircle',
     'CircumCircle',
 ];
@@ -82,6 +90,7 @@ export const guidePoints: {
     AngleBisector: 3,
     InCircle: 3,
     CircumCircle: 3,
+    Perpendicular: 2,
     Circle: 2,
     Line: 2,
     PerpendicularBisector: 2,

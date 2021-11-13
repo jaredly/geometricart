@@ -68,6 +68,7 @@ export const pendingGuide = (
                 p3: points[2],
             };
         case 'PerpendicularBisector':
+        case 'Perpendicular':
             return {
                 type,
                 p1: points[0],
