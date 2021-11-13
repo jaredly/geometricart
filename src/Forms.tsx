@@ -268,6 +268,7 @@ export const PathGroupForm = ({
     onDelete: () => void;
 }) => {
     const ref = React.useRef(null as null | HTMLDivElement);
+    const [expanded, setExpanded] = React.useState(false);
     React.useEffect(() => {
         if (selected) {
             ref.current?.scrollIntoView(false);
@@ -283,7 +284,11 @@ export const PathGroupForm = ({
             }}
             onMouseOver={onMouseOver}
         >
-            <div css={{ display: 'flex', alignItems: 'center' }}>
+            <div
+                css={{ display: 'flex', alignItems: 'center' }}
+                onClick={() => setExpanded(!expanded)}
+            >
+                {expanded ? '🔻' : '▶️'}
                 Path Group {group.id}
                 <div style={{ flexBasis: 10 }} />
                 <Toggle
@@ -305,11 +310,13 @@ export const PathGroupForm = ({
                     Delete
                 </button>
             </div>
-            <StyleForm
-                palette={palette}
-                style={group.style}
-                onChange={(style) => onChange({ ...group, style })}
-            />
+            {expanded ? (
+                <StyleForm
+                    palette={palette}
+                    style={group.style}
+                    onChange={(style) => onChange({ ...group, style })}
+                />
+            ) : null}
         </div>
     );
 };

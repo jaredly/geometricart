@@ -20,9 +20,10 @@ export const UnderlinePath = ({
     return (
         <path
             d={d}
-            strokeWidth={20}
+            strokeWidth={4}
             stroke={color}
-            fill={color}
+            fill="none"
+            strokeDasharray="5 10"
             strokeLinecap="square"
             strokeLinejoin="round"
         />
