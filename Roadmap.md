@@ -1,5 +1,31 @@
 
 
+Basic Plan:
+
+- better coloring
+	- try not having a tab ... for paths or groups ... just selections, and a style dialog.
+- multi-select (not sure how to do this well with groups)
+- guides are mirror-independent
+- have a selection of paths, and say "duplicate these around
+
+
+
+
+
+
+
+
+
+
+
+
+- [ ] make coloring make more sense folks.
+	- a hover dealio would be very nice
+	- also collapsing sidebar things probably
+
+
+- make path generation make more sense.
+	Have "click" be the default mode, with mousehover just for superusers.
 
 
 

@@ -10,9 +10,11 @@ export function RenderPrimitive({
     height,
     width,
     onClick,
+    color,
     inactive,
     strokeWidth = 1,
 }: {
+    color?: string;
     prim: Primitive;
     zoom: number;
     height: number;
@@ -22,7 +24,7 @@ export function RenderPrimitive({
     onClick?: (evt: React.MouseEvent) => unknown;
 }): jsx.JSX.Element {
     const common = {
-        stroke: inactive ? 'rgba(102, 102, 102, 0.3)' : '#666',
+        stroke: color ?? (inactive ? 'rgba(102, 102, 102, 0.3)' : '#666'),
         strokeWidth,
         onClick: onClick,
         style: onClick ? { cursor: 'pointer' } : {},

@@ -549,6 +549,11 @@ export const showHover = (
                     <RenderPrimitive
                         prim={prim}
                         strokeWidth={4}
+                        color={
+                            state.guides[hover.id].active
+                                ? '#ccc'
+                                : 'rgba(102,102,102,0.5)'
+                        }
                         zoom={state.view.zoom}
                         height={height}
                         width={width}

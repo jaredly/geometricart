@@ -161,7 +161,10 @@ export const Toggle = ({
                     background: 'rgba(100,100,100,0.1)',
                 },
             }}
-            onClick={() => onChange(!value)}
+            onClick={(evt) => {
+                evt.stopPropagation();
+                onChange(!value);
+            }}
         >
             {label}
             <input
@@ -377,6 +380,7 @@ export const GuideForm = ({
     onMouseOver: () => void;
     onMouseOut: () => void;
 }) => {
+    const [expanded, setExpanded] = React.useState(false);
     const ref = React.useRef(null as null | HTMLDivElement);
     React.useEffect(() => {
         if (selected) {
@@ -395,6 +399,8 @@ export const GuideForm = ({
             <div
                 css={{
                     cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
                     background: selected
                         ? 'rgba(100,100,100,0.4)'
                         : 'rgba(100,100,100,0.1)',
@@ -402,49 +408,63 @@ export const GuideForm = ({
                         background: 'rgba(100,100,100,0.2)',
                     },
                 }}
-                onClick={() => onChange({ ...guide, active: !guide.active })}
+                onClick={() => setExpanded(!expanded)}
+                // onClick={() => onChange({ ...guide, active: !guide.active })}
             >
-                {guide.geom.type} Guide {guide.active ? '(active)' : null}
-            </div>
-            {guide.geom.type === 'Circle' ? (
-                <>
-                    <Int
-                        value={guide.geom.multiples}
-                        onChange={(multiples) =>
-                            multiples != null && multiples >= 0
-                                ? onChange({
-                                      ...guide,
-                                      geom: {
-                                          ...(guide.geom as Circle),
-                                          multiples,
-                                      },
-                                  })
-                                : null
-                        }
-                    />
-                    <Toggle
-                        label="Half circle"
-                        value={guide.geom.half}
-                        onChange={(half) =>
-                            onChange({
-                                ...guide,
-                                geom: { ...(guide.geom as Circle), half },
-                            })
-                        }
-                    />
-                </>
-            ) : null}
-            {guide.geom.type === 'Line' ? (
+                {expanded ? '🔻' : '▶️'}
+                {guide.geom.type} Guide
                 <Toggle
-                    value={guide.geom.limit}
-                    onChange={(limit) => {
-                        onChange({
-                            ...guide,
-                            geom: { ...(guide.geom as Line), limit },
-                        });
-                    }}
-                    label="Restrict to segment"
+                    label="Active"
+                    value={guide.active}
+                    onChange={(active) => onChange({ ...guide, active })}
                 />
+            </div>
+            {expanded ? (
+                <>
+                    {guide.geom.type === 'Circle' ? (
+                        <>
+                            <Int
+                                value={guide.geom.multiples}
+                                onChange={(multiples) =>
+                                    multiples != null && multiples >= 0
+                                        ? onChange({
+                                              ...guide,
+                                              geom: {
+                                                  ...(guide.geom as Circle),
+                                                  multiples,
+                                              },
+                                          })
+                                        : null
+                                }
+                            />
+                            <Toggle
+                                label="Half circle"
+                                value={guide.geom.half}
+                                onChange={(half) =>
+                                    onChange({
+                                        ...guide,
+                                        geom: {
+                                            ...(guide.geom as Circle),
+                                            half,
+                                        },
+                                    })
+                                }
+                            />
+                        </>
+                    ) : null}
+                    {guide.geom.type === 'Line' ? (
+                        <Toggle
+                            value={guide.geom.limit}
+                            onChange={(limit) => {
+                                onChange({
+                                    ...guide,
+                                    geom: { ...(guide.geom as Line), limit },
+                                });
+                            }}
+                            label="Restrict to segment"
+                        />
+                    ) : null}
+                </>
             ) : null}
         </div>
     );

@@ -24,6 +24,7 @@ export const initialHistory: History = {
 };
 
 export const initialState: State = {
+    version: 1,
     meta: {
         title: '',
         description: '',

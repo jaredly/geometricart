@@ -546,6 +546,7 @@ export type Meta = {
 };
 
 export type State = {
+    version: number;
     nextId: number;
     history: History;
     meta: Meta;
