@@ -2,11 +2,12 @@
 
 Basic Plan:
 
-- [ ] NEED to dedup mirrored paths. Nobody likes having multiple paths in the same place. It's just bad.
+- [x] NEED to dedup mirrored paths. Nobody likes having multiple paths in the same place. It's just bad.
 
 - better coloring
 	- try not having a tab ... for paths or groups ... just selections, and a style dialog.
 - multi-select (not sure how to do this well with groups)
+	- ok, so First click = group,
 - guides are mirror-independent
 - have a selection of paths, and say "duplicate these around
 

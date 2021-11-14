@@ -338,15 +338,16 @@ export const PathForm = ({
     onChange: (path: Path) => unknown;
     onDelete: () => void;
 }) => {
-    const ref = React.useRef(null as null | HTMLDivElement);
-    React.useEffect(() => {
-        if (selected) {
-            ref.current?.scrollIntoView(false);
-        }
-    }, [selected]);
+    const [expanded, setExpanded] = React.useState(false);
+    // const ref = React.useRef(null as null | HTMLDivElement);
+    // React.useEffect(() => {
+    //     if (selected) {
+    //         ref.current?.scrollIntoView(false);
+    //     }
+    // }, [selected]);
     return (
         <div
-            ref={(node) => (ref.current = node)}
+            // ref={(node) => (ref.current = node)}
             css={{ padding: 4, borderBottom: '1px solid #aaa', margin: 4 }}
             style={{
                 backgroundColor: selected ? 'rgba(255,255,255,0.1)' : undefined,
@@ -360,22 +361,28 @@ export const PathForm = ({
                     flexDirection: 'row',
                     alignItems: 'center',
                 }}
+                onClick={() => setExpanded(!expanded)}
             >
+                {expanded ? '🔻' : '▶️'}
                 Path! {path.id}
                 <div style={{ flex: 1 }} />
                 <button onClick={onDelete}>Delete</button>
             </div>
-            <Toggle
-                label="Hide"
-                value={path.hidden}
-                onChange={(hidden) => onChange({ ...path, hidden })}
-            />
-            <StyleForm
-                palette={palette}
-                style={path.style}
-                onChange={(style) => onChange({ ...path, style })}
-            />
-            {path.group ? `Group: ${path.group}` : `No group...`}
+            {expanded ? (
+                <>
+                    <Toggle
+                        label="Hide"
+                        value={path.hidden}
+                        onChange={(hidden) => onChange({ ...path, hidden })}
+                    />
+                    <StyleForm
+                        palette={palette}
+                        style={path.style}
+                        onChange={(style) => onChange({ ...path, style })}
+                    />
+                    {path.group ? `Group: ${path.group}` : `No group...`}
+                </>
+            ) : null}
         </div>
     );
 };

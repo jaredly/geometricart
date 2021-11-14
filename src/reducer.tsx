@@ -26,6 +26,8 @@ import {
 
 export const undo = (state: State, action: UndoAction): State => {
     switch (action.type) {
+        case 'path:update:many':
+            return { ...state, paths: { ...state.paths, ...action.prev } };
         case 'group:delete':
             return {
                 ...state,
@@ -162,6 +164,9 @@ export const reducer = (state: State, action: Action): State => {
         return action.state;
     }
     if (action.type === 'selection:set') {
+        if (action.selection?.ids.length == 0) {
+            return { ...state, selection: null };
+        }
         return { ...state, selection: action.selection };
     }
     if (action.type === 'tab:set') {
@@ -491,6 +496,20 @@ export const reduceWithoutUndo = (
                     prev: state.paths[action.id],
                 },
             ];
+        case 'path:update:many': {
+            const prev: { [key: string]: Path } = {};
+            Object.keys(action.changed).forEach((id) => {
+                prev[id] = state.paths[id];
+            });
+            return [
+                { ...state, paths: { ...state.paths, ...action.changed } },
+                {
+                    type: action.type,
+                    action,
+                    prev,
+                },
+            ];
+        }
         case 'meta:update': {
             return [
                 { ...state, meta: action.meta },

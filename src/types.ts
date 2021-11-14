@@ -156,23 +156,26 @@ export type Mirror = {
     parent: Id | null;
 };
 
+export type Fill = {
+    inset?: number;
+    color?: string | number;
+};
+
+export type StyleLine = {
+    inset?: number;
+    color?: string | number;
+    width?: number;
+    dash?: Array<number>;
+    joinStyle?: string;
+};
+
 export type Style = {
     // hmm should it be "fills" instead?
     // I don't see why not.
-    fills: Array<{
-        inset?: number;
-        color?: string | number;
-        // pattern?: string,
-    } | null>;
+    fills: Array<Fill | null>;
     // Why might it be null? If we're
     // inheriting from higher up.
-    lines: Array<{
-        inset?: number;
-        color?: string | number;
-        width?: number;
-        dash?: Array<number>;
-        joinStyle?: string;
-    } | null>;
+    lines: Array<StyleLine | null>;
 };
 
 export type Path = {
@@ -294,6 +297,16 @@ export type GuideUpdate = {
     id: Id;
     guide: Guide;
     // prev: Guide;
+};
+
+export type UndoPathUpdateMany = {
+    type: PathUpdateMany['type'];
+    action: PathUpdateMany;
+    prev: { [key: string]: Path };
+};
+export type PathUpdateMany = {
+    type: 'path:update:many';
+    changed: { [key: string]: Path };
 };
 
 export type UndoPathUpdate = {
@@ -462,6 +475,7 @@ export type UndoableAction =
     // | PathPoint
     | MirrorActive
     | ViewUpdate
+    | PathUpdateMany
     | GroupUpdate
     | GroupDelete
     | PathDelete
@@ -472,6 +486,7 @@ export type UndoAction =
     | UndoGuideAdd
     | UndoGroupUpdate
     | UndoPathUpdate
+    | UndoPathUpdateMany
     | UndoMetaUpdate
     | UndoGuideUpdate
     | UndoViewUpdate
