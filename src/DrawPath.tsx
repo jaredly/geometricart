@@ -8,6 +8,7 @@ import { Primitive } from './intersect';
 import { Coord, Id, Intersect, PendingSegment, Segment } from './types';
 import { applyMatrices, Matrix } from './getMirrorTransforms';
 import { transformSegment } from './points';
+import { useCurrent } from './App';
 
 /*
 
@@ -43,6 +44,28 @@ export const segmentKey = (prev: Coord, segment: Segment) =>
     ' to ' +
     coordKey(segment.to);
 
+export type State = {
+    parts: Array<PendingSegment>;
+    next: Array<PendingSegment>;
+    selection: number;
+};
+
+export const initialState = (
+    origin: Intersect,
+    primitives: Array<Primitive>,
+    intersections: Array<Intersect>,
+): State => {
+    return {
+        parts: [],
+        selection: 0,
+        next: findNextSegments(
+            { type: 'Path', origin, parts: [] },
+            primitives,
+            intersections,
+        ),
+    };
+};
+
 export const DrawPath = React.memo(
     ({
         primitives,
@@ -61,48 +84,60 @@ export const DrawPath = React.memo(
         palette: Array<string>;
         onComplete: (segments: Array<PendingSegment>) => unknown;
     }) => {
-        const [parts, setParts] = React.useState([] as Array<PendingSegment>);
+        const [state, setState] = React.useState(() =>
+            initialState(
+                origin,
+                primitives.map((p) => p.prim),
+                intersections,
+            ),
+        );
 
-        const covered = parts.map((part) => coordKey(part.to.coord));
-        const butLast = covered.slice(0, -1);
+        // let parts = parts.concat([])
+
+        // const covered = state.parts.map((part) => coordKey(part.to.coord));
+        // const butLast = covered.slice(0, -1);
         // .concat([coordKey(origin.coord)]);
 
-        const used = parts
-            .map((part, i) => {
-                const prev = i === 0 ? origin.coord : parts[i - 1].to.coord;
-                return [
-                    segmentKey(prev, part.segment),
-                    segmentKeyReverse(prev, part.segment),
-                ];
-            })
-            .flat();
+        // const used = state.parts
+        //     .map((part, i) => {
+        //         const prev =
+        //             i === 0 ? origin.coord : state.parts[i - 1].to.coord;
+        //         return [
+        //             segmentKey(prev, part.segment),
+        //             segmentKeyReverse(prev, part.segment),
+        //         ];
+        //     })
+        //     .flat();
 
-        const current = parts.length == 0 ? origin : parts[parts.length - 1].to;
-        const next = findNextSegments(
-            { type: 'Path', origin, parts },
-            primitives.map((prim) => prim.prim),
-            intersections,
-        ).filter(
-            (seg, i) =>
-                !covered.includes(coordKey(seg.to.coord)) &&
-                !used.includes(segmentKey(current.coord, seg.segment)),
-        );
-        const prevBase = parts.length < 2 ? origin : parts[parts.length - 2].to;
-        const prev =
-            parts.length > 0
-                ? findNextSegments(
-                      { type: 'Path', origin, parts: parts.slice(0, -1) },
-                      primitives.map((prim) => prim.prim),
-                      intersections,
-                  ).filter(
-                      (seg) =>
-                          !butLast.includes(coordKey(seg.to.coord)) &&
-                          !used.includes(
-                              segmentKey(prevBase.coord, seg.segment),
-                          ),
-                      //   (seg) => coordKey(seg.to.coord) !== coordKey(current.coord),
-                  )
-                : null;
+        const current =
+            state.parts.length == 0
+                ? origin
+                : state.parts[state.parts.length - 1].to;
+        // const next = findNextSegments(
+        //     { type: 'Path', origin, parts: state.parts },
+        //     primitives.map((prim) => prim.prim),
+        //     intersections,
+        // ).filter(
+        //     (seg, i) =>
+        //         !covered.includes(coordKey(seg.to.coord)) &&
+        //         !used.includes(segmentKey(current.coord, seg.segment)),
+        // );
+        // const prevBase = parts.length < 2 ? origin : parts[parts.length - 2].to;
+        // const prev =
+        //     parts.length > 0
+        //         ? findNextSegments(
+        //               { type: 'Path', origin, parts: parts.slice(0, -1) },
+        //               primitives.map((prim) => prim.prim),
+        //               intersections,
+        //           ).filter(
+        //               (seg) =>
+        //                   !butLast.includes(coordKey(seg.to.coord)) &&
+        //                   !used.includes(
+        //                       segmentKey(prevBase.coord, seg.segment),
+        //                   ),
+        //               //   (seg) => coordKey(seg.to.coord) !== coordKey(current.coord),
+        //           )
+        //         : null;
 
         // const nextSegments = React.useMemo(() => {
         //     return findNextSegments(
@@ -115,18 +150,100 @@ export const DrawPath = React.memo(
         // console.log(next, prev, parts, used);
 
         const completed =
-            parts.length &&
-            coordKey(parts[parts.length - 1].to.coord) ===
+            state.parts.length &&
+            coordKey(state.parts[state.parts.length - 1].to.coord) ===
                 coordKey(origin.coord);
 
         const transformedParts = mirror
             ? mirror.map((transform) => ({
                   origin: applyMatrices(origin.coord, transform),
-                  segments: parts.map((seg) =>
+                  segments: state.parts.map((seg) =>
                       transformSegment(seg.segment, transform),
                   ),
               }))
             : null;
+
+        const latest = useCurrent(state);
+
+        React.useEffect(() => {
+            const fn = (evt: KeyboardEvent) => {
+                if (evt.key === 'ArrowUp' || evt.key === 'k') {
+                    evt.preventDefault();
+                    evt.stopPropagation();
+                    // Go to the next one
+                    setState((state) => {
+                        if (state.selection >= state.next.length) {
+                            return state;
+                        }
+
+                        const parts = state.parts.concat([
+                            state.next[state.selection],
+                        ]);
+                        state = { ...state, parts };
+
+                        const covered = state.parts.map((part) =>
+                            coordKey(part.to.coord),
+                        );
+                        const butLast = covered.slice(0, -1);
+
+                        const used = state.parts
+                            .map((part, i) => {
+                                const prev =
+                                    i === 0
+                                        ? origin.coord
+                                        : state.parts[i - 1].to.coord;
+                                return [
+                                    segmentKey(prev, part.segment),
+                                    segmentKeyReverse(prev, part.segment),
+                                ];
+                            })
+                            .flat();
+
+                        const next = findNextSegments(
+                            { type: 'Path', origin, parts: state.parts },
+                            primitives.map((prim) => prim.prim),
+                            intersections,
+                        ).filter(
+                            (seg, i) =>
+                                !covered.includes(coordKey(seg.to.coord)) &&
+                                !used.includes(
+                                    segmentKey(current.coord, seg.segment),
+                                ),
+                        );
+
+                        return {
+                            ...state,
+                            next,
+                            selection: 0,
+                        };
+                    });
+                }
+                if (evt.key === 'ArrowLeft' || evt.key === 'h') {
+                    evt.preventDefault();
+                    evt.stopPropagation();
+                    // go to the left
+                    setState((state) => ({
+                        ...state,
+                        selection: (state.selection + 1) % state.next.length,
+                    }));
+                }
+                if (evt.key === 'ArrowRight' || evt.key === 'l') {
+                    evt.preventDefault();
+                    evt.stopPropagation();
+                    evt.stopImmediatePropagation();
+                    setState((state) => ({
+                        ...state,
+                        selection:
+                            state.selection === 0
+                                ? state.next.length - 1
+                                : state.selection - 1,
+                    }));
+                    // go right, yes folks
+                }
+            };
+            document.addEventListener('keydown', fn, true);
+            return () => document.removeEventListener('keydown', fn, true);
+        });
 
         return (
             <>
@@ -179,11 +296,11 @@ export const DrawPath = React.memo(
                                 ordering: 0,
                                 hidden: false,
                                 origin: origin.coord,
-                                segments: parts.map((p) => p.segment),
+                                segments: state.parts.map((p) => p.segment),
                                 style: { lines: [], fills: [{ color: 0 }] },
                             }}
                             onClick={() => {
-                                onComplete(parts);
+                                onComplete(state.parts);
                             }}
                             groups={{}}
                             palette={palette}
@@ -197,6 +314,8 @@ export const DrawPath = React.memo(
                                   key={i}
                                   segment={seg}
                                   zoom={zoom}
+                                  width={2}
+                                  strokeDasharray="10 10"
                                   prev={
                                       i === 0
                                           ? path.origin
@@ -208,21 +327,23 @@ export const DrawPath = React.memo(
                       )
                     : null}
 
-                {parts.map((seg, i) => (
+                {state.parts.map((seg, i) => (
                     <RenderSegment
                         key={i}
                         segment={seg.segment}
                         zoom={zoom}
-                        prev={i === 0 ? origin.coord : parts[i - 1].to.coord}
-                        color="rgba(0, 0, 255, 1.0)"
-                        onMouseOver={() => {
-                            if (parts.length > i + 1) {
-                                setParts(parts.slice(0, i + 1));
-                            }
-                        }}
+                        prev={
+                            i === 0 ? origin.coord : state.parts[i - 1].to.coord
+                        }
+                        color={'rgba(0, 0, 255, 1.0)'}
+                        // onMouseOver={() => {
+                        //     if (parts.length > i + 1) {
+                        //         setParts(parts.slice(0, i + 1));
+                        //     }
+                        // }}
                     />
                 ))}
-                {prev
+                {/* {prev
                     ? prev.map((seg, i) => (
                           <RenderSegment
                               color="rgba(255, 0, 0, 0.5)"
@@ -230,24 +351,28 @@ export const DrawPath = React.memo(
                               segment={seg.segment}
                               zoom={zoom}
                               prev={prevBase.coord}
-                              onMouseOver={() => {
-                                  setParts(parts.slice(0, -1).concat([seg]));
-                              }}
+                              //   onMouseOver={() => {
+                              //       setParts(parts.slice(0, -1).concat([seg]));
+                              //   }}
                           />
                       ))
-                    : null}
+                    : null} */}
                 {completed
                     ? null
-                    : next.map((seg, i) => (
+                    : state.next.map((seg, i) => (
                           <RenderSegment
                               key={i}
-                              color="rgba(0,255,0,0.5)"
+                              color={
+                                  i === state.selection
+                                      ? 'green'
+                                      : 'rgba(25,255,0,0.2)'
+                              }
                               segment={seg.segment}
                               zoom={zoom}
                               prev={current.coord}
-                              onMouseOver={() => {
-                                  setParts(parts.concat([seg]));
-                              }}
+                              //   onMouseOver={() => {
+                              //       setParts(parts.concat([seg]));
+                              //   }}
                           />
                       ))}
             </>
