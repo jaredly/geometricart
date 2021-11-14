@@ -17,6 +17,7 @@ import {
     UndoAction,
     Path,
     Style,
+    PathGroup,
 } from './types';
 import {
     pathsAreIdentical,
@@ -28,6 +29,11 @@ export const undo = (state: State, action: UndoAction): State => {
     switch (action.type) {
         case 'path:update:many':
             return { ...state, paths: { ...state.paths, ...action.prev } };
+        case 'pathGroup:update:many':
+            return {
+                ...state,
+                pathGroups: { ...state.pathGroups, ...action.prev },
+            };
         case 'group:delete':
             return {
                 ...state,
@@ -496,6 +502,23 @@ export const reduceWithoutUndo = (
                     prev: state.paths[action.id],
                 },
             ];
+        case 'pathGroup:update:many': {
+            const prev: { [key: string]: PathGroup } = {};
+            Object.keys(action.changed).forEach((id) => {
+                prev[id] = state.pathGroups[id];
+            });
+            return [
+                {
+                    ...state,
+                    pathGroups: { ...state.pathGroups, ...action.changed },
+                },
+                {
+                    type: action.type,
+                    action,
+                    prev,
+                },
+            ];
+        }
         case 'path:update:many': {
             const prev: { [key: string]: Path } = {};
             Object.keys(action.changed).forEach((id) => {

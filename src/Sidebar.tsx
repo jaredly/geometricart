@@ -9,7 +9,7 @@ import {
     PathGroupForm,
     ViewForm,
 } from './Forms';
-import { guideTypes, State, Action, Tab, Id, Path } from './types';
+import { guideTypes, State, Action, Tab, Id, Path, PathGroup } from './types';
 import { initialState } from './initialState';
 import { Export } from './Export';
 import { toTypeRev } from './App';
@@ -125,6 +125,30 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactNode } = {
                     minHeight: 100,
                 }}
             >
+                {state.selection?.type === 'PathGroup' ? (
+                    <MultiStyleForm
+                        palette={state.palettes[state.activePalette]}
+                        styles={state.selection.ids.map(
+                            (id) => state.pathGroups[id].style,
+                        )}
+                        onChange={(styles) => {
+                            const changed: { [key: string]: PathGroup } = {};
+                            styles.forEach((style, i) => {
+                                if (style != null) {
+                                    const id = state.selection!.ids[i];
+                                    changed[id] = {
+                                        ...state.pathGroups[id],
+                                        style,
+                                    };
+                                }
+                            });
+                            dispatch({
+                                type: 'pathGroup:update:many',
+                                changed,
+                            });
+                        }}
+                    />
+                ) : null}
                 {Object.keys(state.pathGroups).map((k) => (
                     <PathGroupForm
                         onDelete={() => {
