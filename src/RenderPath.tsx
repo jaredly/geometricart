@@ -54,7 +54,7 @@ export const RenderPath = ({
     path: Path;
     zoom: number;
     groups: { [key: string]: PathGroup };
-    onClick?: () => void;
+    onClick?: (evt: React.MouseEvent) => void;
     palette: Array<string>;
 }) => {
     const d = calcPathD(path, zoom);

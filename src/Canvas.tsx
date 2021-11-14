@@ -257,6 +257,16 @@ screenToWorld
         <div
             css={{}}
             // style={{ width, height }}
+            onClick={(evt) => {
+                // if (evt.target === evt.currentTarget) {
+                if (state.selection) {
+                    dispatch({
+                        type: 'selection:set',
+                        selection: null,
+                    });
+                }
+                // }
+            }}
         >
             <svg
                 width={width}
@@ -323,7 +333,8 @@ screenToWorld
                                 onClick={
                                     pathOrigin
                                         ? undefined
-                                        : () => {
+                                        : (evt) => {
+                                              evt.stopPropagation();
                                               const path = state.paths[k];
                                               if (
                                                   path.group &&
@@ -498,6 +509,20 @@ screenToWorld
                             )}
                         </>
                     ) : null}
+                    {state.selection
+                        ? state.selection.ids.map((id) =>
+                              showHover(
+                                  { kind: state.selection!.type, id },
+                                  state,
+                                  mirrorTransforms,
+                                  width,
+                                  height,
+                                  state.palettes[state.activePalette],
+                                  view.zoom,
+                                  true,
+                              ),
+                          )
+                        : null}
                     {hover ? (
                         <>
                             {/* {hover.kind !== 'Path' &&
@@ -518,6 +543,8 @@ screenToWorld
                                 width,
                                 height,
                                 state.palettes[state.activePalette],
+                                view.zoom,
+                                false,
                             )}
                         </>
                     ) : null}
@@ -538,14 +565,17 @@ export const showHover = (
     height: number,
     width: number,
     palette: Array<string>,
+    zoom: number,
+    selection: boolean,
 ) => {
+    const color = selection ? 'blue' : 'magenta';
     switch (hover.kind) {
         case 'Path': {
             return (
                 <UnderlinePath
                     path={state.paths[hover.id]}
-                    zoom={state.view.zoom}
-                    color={'magenta'}
+                    zoom={zoom}
+                    color={color}
                 />
             );
         }
@@ -558,8 +588,8 @@ export const showHover = (
                             <UnderlinePath
                                 key={k}
                                 path={state.paths[k]}
-                                zoom={state.view.zoom}
-                                color={'magenta'}
+                                zoom={zoom}
+                                color={color}
                             />
                         ))}
                     {/* {Object.keys(state.paths)
@@ -592,7 +622,7 @@ export const showHover = (
                                 ? '#ccc'
                                 : 'rgba(102,102,102,0.5)'
                         }
-                        zoom={state.view.zoom}
+                        zoom={zoom}
                         height={height}
                         width={width}
                         key={`${j}:${i}`}
@@ -665,6 +695,7 @@ export const RenderPrimitives = React.memo(
                         onClick={
                             onClick
                                 ? (evt: React.MouseEvent) => {
+                                      evt.stopPropagation();
                                       onClick(prim.guides, evt.shiftKey);
                                   }
                                 : undefined
