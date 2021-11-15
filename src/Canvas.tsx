@@ -65,7 +65,7 @@ export const screenToWorld = (
 });
 
 // base64
-const imageCache: { [href: string]: string | false } = {};
+export const imageCache: { [href: string]: string | false } = {};
 
 export const Canvas = ({
     state,
@@ -427,57 +427,29 @@ export const Canvas = ({
                     />
                 ) : null}
                 <g transform={`translate(${x} ${y})`}>
-                    {Object.keys(state.paths)
-                        .filter(
-                            (k) =>
-                                !state.paths[k].hidden &&
-                                (!state.paths[k].group ||
-                                    !state.pathGroups[state.paths[k].group!]
-                                        .hide),
-                        )
-                        .sort((a, b) => {
-                            const oa = state.paths[a].group
-                                ? state.pathGroups[state.paths[a].group!]
-                                      .ordering
-                                : state.paths[a].ordering;
-                            const ob = state.paths[b].group
-                                ? state.pathGroups[state.paths[b].group!]
-                                      .ordering
-                                : state.paths[b].ordering;
-                            if (oa === ob) {
-                                return 0;
+                    {sortedVisiblePaths(state).map((k) => (
+                        <RenderPath
+                            key={k}
+                            groups={state.pathGroups}
+                            path={state.paths[k]}
+                            zoom={view.zoom}
+                            palette={state.palettes[state.activePalette]}
+                            onClick={
+                                pathOrigin
+                                    ? undefined
+                                    : (evt) => {
+                                          evt.stopPropagation();
+                                          const path = state.paths[k];
+                                          handleSelection(
+                                              path,
+                                              state,
+                                              dispatch,
+                                              evt.shiftKey,
+                                          );
+                                      }
                             }
-                            if (oa == null) {
-                                return 1;
-                            }
-                            if (ob == null) {
-                                return -1;
-                            }
-                            return ob - oa;
-                        })
-                        .map((k) => (
-                            <RenderPath
-                                key={k}
-                                groups={state.pathGroups}
-                                path={state.paths[k]}
-                                zoom={view.zoom}
-                                palette={state.palettes[state.activePalette]}
-                                onClick={
-                                    pathOrigin
-                                        ? undefined
-                                        : (evt) => {
-                                              evt.stopPropagation();
-                                              const path = state.paths[k];
-                                              handleSelection(
-                                                  path,
-                                                  state,
-                                                  dispatch,
-                                                  evt.shiftKey,
-                                              );
-                                          }
-                                }
-                            />
-                        ))}
+                        />
+                    ))}
                     {view.guides ? (
                         <>
                             <RenderPrimitives
@@ -866,7 +838,35 @@ const dragView = (
     return res;
 };
 
-function primitivesForElements(guideElements: GuideElement[]) {
+export function sortedVisiblePaths(state: State) {
+    return Object.keys(state.paths)
+        .filter(
+            (k) =>
+                !state.paths[k].hidden &&
+                (!state.paths[k].group ||
+                    !state.pathGroups[state.paths[k].group!].hide),
+        )
+        .sort((a, b) => {
+            const oa = state.paths[a].group
+                ? state.pathGroups[state.paths[a].group!].ordering
+                : state.paths[a].ordering;
+            const ob = state.paths[b].group
+                ? state.pathGroups[state.paths[b].group!].ordering
+                : state.paths[b].ordering;
+            if (oa === ob) {
+                return 0;
+            }
+            if (oa == null) {
+                return 1;
+            }
+            if (ob == null) {
+                return -1;
+            }
+            return ob - oa;
+        });
+}
+
+export function primitivesForElements(guideElements: GuideElement[]) {
     const seen: { [key: string]: Array<Id> } = {};
     return ([] as Array<{ prim: Primitive; guide: Id }>)
         .concat(

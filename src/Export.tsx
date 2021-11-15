@@ -12,7 +12,7 @@ import {
 } from 'png-metadata';
 import { Toggle, Text } from './Forms';
 import { transparent } from './Icons';
-import Canvg from 'canvg';
+import { canvasRender } from './CanvasRender';
 
 export const Export = ({
     canvasRef,
@@ -146,39 +146,26 @@ export const Export = ({
                                 onLoad={async (evt) => {
                                     const canvas =
                                         document.createElement('canvas');
-                                    document.body.append(canvas);
                                     canvas.width = canvas.height = size;
                                     const ctx = canvas.getContext('2d')!;
 
-                                    const v = await Canvg.fromString(
-                                        ctx,
-                                        canvasRef.current!.outerHTML,
-                                        {
-                                            // scaleHeight: size / 1000,
-                                            // scaleWidth: size / 1000,
-                                        },
-                                    );
-                                    v.start();
-                                    setTimeout(() => {
-                                        v.stop();
-
-                                        // ctx.drawImage(
-                                        //     evt.target as HTMLImageElement,
-                                        //     0,
-                                        //     0,
-                                        //     size,
-                                        //     size,
-                                        // );
-                                        canvas.toBlob(async (blob) => {
-                                            if (embed) {
-                                                blob = await addMetadata(
-                                                    blob,
-                                                    state,
-                                                );
-                                            }
-                                            setPng(URL.createObjectURL(blob));
-                                        }, 'image/png');
-                                    }, 100);
+                                    await canvasRender(ctx, state);
+                                    // ctx.drawImage(
+                                    //     evt.target as HTMLImageElement,
+                                    //     0,
+                                    //     0,
+                                    //     size,
+                                    //     size,
+                                    // );
+                                    canvas.toBlob(async (blob) => {
+                                        if (embed) {
+                                            blob = await addMetadata(
+                                                blob,
+                                                state,
+                                            );
+                                        }
+                                        setPng(URL.createObjectURL(blob));
+                                    }, 'image/png');
                                 }}
                             />
                         </div>
