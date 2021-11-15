@@ -17,7 +17,10 @@ Better path creation
 - now I need to make little arrows, to make it clearer what's happening.
 
 
-
+- [ ] setup temporary zoom. when you go to export, I clear it out, folks.
+	- scroll / pinch to zoom it up folks
+- [ ] mobileeeeeee frieeendly
+	- DrawPath should show a virtual "keyboard" for up/down/left/right, as well as "cancel"
 
 
 

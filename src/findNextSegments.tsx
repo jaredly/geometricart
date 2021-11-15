@@ -47,7 +47,7 @@ export const findNextSegments = (
         pending.parts.length === 0
             ? null
             : pending.parts.length === 1
-            ? pending.origin.coord
+            ? null
             : pending.parts[pending.parts.length - 2].to.coord;
     const res = ([] as Array<PendingSegment>)
         .concat(

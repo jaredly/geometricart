@@ -267,16 +267,16 @@ export const PathGroupForm = ({
     onMouseOut: () => void;
     onDelete: () => void;
 }) => {
-    const ref = React.useRef(null as null | HTMLDivElement);
+    // const ref = React.useRef(null as null | HTMLDivElement);
     const [expanded, setExpanded] = React.useState(false);
-    React.useEffect(() => {
-        if (selected) {
-            ref.current?.scrollIntoView(false);
-        }
-    }, [selected]);
+    // React.useEffect(() => {
+    //     if (selected) {
+    //         ref.current?.scrollIntoView(false);
+    //     }
+    // }, [selected]);
     return (
         <div
-            ref={(node) => (ref.current = node)}
+            // ref={(node) => (ref.current = node)}
             css={{ padding: 4, borderBottom: '1px solid #aaa', margin: 4 }}
             style={{
                 backgroundColor: selected ? 'rgba(255,255,255,0.1)' : undefined,
@@ -401,15 +401,15 @@ export const GuideForm = ({
     onMouseOut: () => void;
 }) => {
     const [expanded, setExpanded] = React.useState(false);
-    const ref = React.useRef(null as null | HTMLDivElement);
-    React.useEffect(() => {
-        if (selected) {
-            ref.current?.scrollIntoView(false);
-        }
-    }, [selected]);
+    // const ref = React.useRef(null as null | HTMLDivElement);
+    // React.useEffect(() => {
+    //     if (selected) {
+    //         ref.current?.scrollIntoView(false);
+    //     }
+    // }, [selected]);
     return (
         <div
-            ref={(node) => (ref.current = node)}
+            // ref={(node) => (ref.current = node)}
             onMouseOut={onMouseOut}
             onMouseOver={onMouseOver}
             css={{

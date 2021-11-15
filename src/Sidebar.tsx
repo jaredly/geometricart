@@ -484,11 +484,30 @@ export function Sidebar({
                             });
                         }}
                         key={kind}
+                        css={{
+                            margin: 8,
+                            padding: 8,
+                            fontSize: '120%',
+                        }}
                     >
                         {kind}
                         {toTypeRev[kind] ? ` (${toTypeRev[kind]})` : ''}
                     </button>
                 ))}
+                {state.pending ? (
+                    <button
+                        onClick={() =>
+                            dispatch({ type: 'pending:type', kind: null })
+                        }
+                        css={{
+                            margin: 8,
+                            padding: 8,
+                            fontSize: '120%',
+                        }}
+                    >
+                        Cancel pending
+                    </button>
+                ) : null}
             </div>
             <div
                 style={{
