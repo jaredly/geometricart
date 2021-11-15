@@ -17,11 +17,14 @@ Better path creation
 - now I need to make little arrows, to make it clearer what's happening.
 
 
-- [ ] setup temporary zoom. when you go to export, I clear it out, folks.
-	- scroll / pinch to zoom it up folks
+- [x] setup temprary zoom. when you go to export, I clear it out, folks.
+	- [x] scroll
+	- [ ] pinch to zoom pleeeease
 - [ ] mobileeeeeee frieeendly
 	- DrawPath should show a virtual "keyboard" for up/down/left/right, as well as "cancel"
 
+
+- [ ] for palettes, it would be nice to be able to paste in a 4- or 5-color one, and have it produce "1 shade lighter / darker", right?
 
 
 

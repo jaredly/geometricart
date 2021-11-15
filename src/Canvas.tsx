@@ -190,6 +190,7 @@ export const Canvas = ({
     const [tmpView, setTmpView] = React.useState(null as null | View);
 
     let view = tmpView ?? state.view;
+    view = { ...state.view, center: view.center, zoom: view.zoom };
 
     // if (zoomKey) {
 
@@ -277,6 +278,10 @@ export const Canvas = ({
         return () => ref.current!.removeEventListener('wheel', fn);
     }, []);
 
+    const [dragPos, setDragPos] = React.useState(
+        null as null | { view: View; coord: Coord },
+    );
+
     return (
         <div
             css={{
@@ -293,7 +298,6 @@ export const Canvas = ({
                 }
                 // }
             }}
-            onWheelCapture={(evt) => {}}
         >
             <svg
                 width={width}
@@ -307,13 +311,77 @@ export const Canvas = ({
                     outline: '1px solid magenta',
                 }}
                 onMouseMove={(evt) => {
+                    if (dragPos) {
+                        const rect = evt.currentTarget.getBoundingClientRect();
+                        const clientX = evt.clientX;
+                        const clientY = evt.clientY;
+                        evt.preventDefault();
+
+                        setTmpView(() => {
+                            return dragView(
+                                dragPos,
+                                clientX,
+                                rect,
+                                clientY,
+                                width,
+                                height,
+                            );
+                        });
+                    } else {
+                        const rect = evt.currentTarget.getBoundingClientRect();
+                        const pos = {
+                            x: (evt.clientX - rect.left - x) / view.zoom,
+                            y: (evt.clientY - rect.top - y) / view.zoom,
+                        };
+                        setPos(pos);
+                    }
+                }}
+                onMouseUpCapture={(evt) => {
+                    if (dragPos) {
+                        setDragPos(null);
+                        evt.preventDefault();
+                    }
+                }}
+                onMouseDown={(evt) => {
                     const rect = evt.currentTarget.getBoundingClientRect();
-                    setPos({
-                        x: (evt.clientX - rect.left - x) / view.zoom,
-                        y: (evt.clientY - rect.top - y) / view.zoom,
+                    const coord = screenToWorld(
+                        width,
+                        height,
+                        {
+                            x: evt.clientX - rect.left,
+                            y: evt.clientY - rect.top,
+                        },
+                        view,
+                    );
+                    setDragPos({
+                        coord: coord,
+                        view,
                     });
                 }}
             >
+                <defs>
+                    {state.palettes[state.activePalette].map((color, i) =>
+                        color.startsWith('http') ? (
+                            <pattern
+                                id={`palette-${i}`}
+                                x={-x}
+                                y={-y}
+                                width={width}
+                                height={height}
+                                // viewBox="0 0 1000 1000"
+                                patternUnits="userSpaceOnUse"
+                                preserveAspectRatio="xMidYMid slice"
+                            >
+                                <image
+                                    width={width}
+                                    height={height}
+                                    preserveAspectRatio="xMidYMid slice"
+                                    xlinkHref={color}
+                                />
+                            </pattern>
+                        ) : null,
+                    )}
+                </defs>
                 {view.background ? (
                     <rect
                         width={width}
@@ -322,6 +390,7 @@ export const Canvas = ({
                         y={0}
                         stroke="none"
                         fill={view.background}
+                        // fill="url(#leaves)"
                     />
                 ) : null}
                 <g transform={`translate(${x} ${y})`}>
@@ -724,9 +793,34 @@ export const RenderPrimitives = React.memo(
         );
     },
 );
-function primitivesForElements(
-    guideElements: import('/Users/jared/clone/art/geometricart/src/calculateGuideElements').GuideElement[],
-) {
+
+const dragView = (
+    dragPos: { view: View; coord: Coord },
+    clientX: number,
+    rect: DOMRect,
+    clientY: number,
+    width: number,
+    height: number,
+) => {
+    let view = dragPos.view;
+
+    const screenPos = {
+        x: clientX - rect.left,
+        y: clientY - rect.top,
+    };
+
+    const newPos = screenToWorld(width, height, screenPos, view);
+    const res = {
+        ...view,
+        center: {
+            x: view.center.x + (newPos.x - dragPos.coord.x),
+            y: view.center.y + (newPos.y - dragPos.coord.y),
+        },
+    };
+    return res;
+};
+
+function primitivesForElements(guideElements: GuideElement[]) {
     const seen: { [key: string]: Array<Id> } = {};
     return ([] as Array<{ prim: Primitive; guide: Id }>)
         .concat(

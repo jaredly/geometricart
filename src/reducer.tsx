@@ -543,7 +543,19 @@ export const reduceWithoutUndo = (
             const paths = { ...state.paths };
             delete paths[action.id];
             return [
-                { ...state, paths },
+                {
+                    ...state,
+                    paths,
+                    selection:
+                        state.selection?.type === 'Path'
+                            ? {
+                                  type: 'Path',
+                                  ids: state.selection.ids.filter(
+                                      (id) => id !== action.id,
+                                  ),
+                              }
+                            : state.selection,
+                },
                 { type: action.type, action, path: state.paths[action.id] },
             ];
         }
@@ -559,7 +571,20 @@ export const reduceWithoutUndo = (
             const pathGroups = { ...state.pathGroups };
             delete pathGroups[action.id];
             return [
-                { ...state, pathGroups, paths },
+                {
+                    ...state,
+                    pathGroups,
+                    paths,
+                    selection:
+                        state.selection?.type === 'PathGroup'
+                            ? {
+                                  type: 'PathGroup',
+                                  ids: state.selection.ids.filter(
+                                      (id) => id !== action.id,
+                                  ),
+                              }
+                            : state.selection,
+                },
                 {
                     type: action.type,
                     action,

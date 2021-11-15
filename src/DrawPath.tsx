@@ -215,6 +215,16 @@ export const DrawPath = React.memo(
                         if (state.selection >= state.next.length) {
                             return state;
                         }
+
+                        const completed =
+                            state.parts.length &&
+                            coordKey(
+                                state.parts[state.parts.length - 1].to.coord,
+                            ) === coordKey(origin.coord);
+                        if (completed) {
+                            return state;
+                        }
+
                         const parts = state.parts.concat([
                             state.next[state.selection],
                         ]);

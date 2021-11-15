@@ -127,4 +127,6 @@ export const paletteColor = (
         ? undefined
         : typeof color === 'string'
         ? color
-        : palette[color];
+        : palette[color]?.startsWith('http')
+        ? `url(#palette-${color})`
+        : palette[color] ?? '#aaa';
