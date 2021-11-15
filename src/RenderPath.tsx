@@ -104,6 +104,7 @@ export const RenderPath = ({
                 d={d}
                 data-id={path.id}
                 stroke={paletteColor(palette, line.color)}
+                strokeDasharray={line.dash ? line.dash.join(' ') : undefined}
                 fill="none"
                 strokeLinejoin="round"
                 strokeWidth={line.width}

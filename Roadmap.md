@@ -12,6 +12,10 @@ Basic Plan:
 - have a selection of paths, and say "duplicate these around
 
 
+Better path creation
+- Ok, I think I like this! the arrow keys are making sense to me, and I think it'll make for a great mobile experience.
+- now I need to make little arrows, to make it clearer what's happening.
+
 
 
 
