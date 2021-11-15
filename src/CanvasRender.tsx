@@ -8,6 +8,7 @@ import {
     primitivesForElements,
     sortedVisiblePaths,
 } from './Canvas';
+import { angleBetween } from './findNextSegments';
 import {
     angleTo,
     dist,
@@ -15,8 +16,9 @@ import {
     push,
 } from './getMirrorTransforms';
 import { Primitive } from './intersect';
+import { reverseSegment } from './pathsAreIdentical';
 import { combinedPathStyles } from './RenderPath';
-import { Coord, Path, State } from './types';
+import { Coord, Path, Segment, State } from './types';
 
 export const makeImage = (href: string): Promise<HTMLImageElement> => {
     return new Promise((res, rej) => {
@@ -87,23 +89,7 @@ export const canvasRender = async (
                 ctx.save();
                 ctx.clip();
 
-                const widthSmaller = img.naturalWidth < img.naturalHeight;
-                const ratio = img.naturalWidth / img.naturalHeight;
-                const targetWidth = widthSmaller
-                    ? sourceWidth
-                    : sourceHeight * ratio;
-                const targetHeight = widthSmaller
-                    ? sourceWidth / ratio
-                    : sourceHeight;
-                // img.naturalHeight
-                // img.naturalWidth
-                ctx.drawImage(
-                    img,
-                    -(sourceWidth / 2) - (targetWidth - sourceWidth) / 2,
-                    -(sourceHeight / 2) - (targetHeight - sourceHeight) / 2,
-                    targetWidth,
-                    targetHeight,
-                );
+                drawCenteredImage(img, sourceWidth, sourceHeight, ctx);
                 ctx.restore();
             } else {
                 ctx.fillStyle = color;
@@ -117,6 +103,7 @@ export const canvasRender = async (
                 return;
             }
 
+            // TODO line opacity probably
             // if (line.opacity != null) {
             //     ctx.globalAlpha = line.opacity;
             // }
@@ -128,18 +115,25 @@ export const canvasRender = async (
                     ? palette[line.color]
                     : line.color;
             if (color.startsWith('http')) {
+                const img = images[line.color as number];
+                if (!img) {
+                    return;
+                }
                 ctx.save();
                 ctx.beginPath();
                 tracePathLine(ctx, path, zoom, line.width / 100);
                 ctx.clip();
-                ctx.drawImage(
-                    images[line.color as number]!,
-                    -500,
-                    -500,
-                    ctx.canvas.width,
-                    ctx.canvas.height,
-                );
+                drawCenteredImage(img, sourceWidth, sourceHeight, ctx);
+                // ctx.drawImage(
+                //     images[line.color as number]!,
+                //     -500,
+                //     -500,
+                //     ctx.canvas.width,
+                //     ctx.canvas.height,
+                // );
                 ctx.restore();
+
+                // debugPath(path, ctx, zoom);
             } else {
                 ctx.beginPath();
                 tracePath(ctx, path, zoom);
@@ -197,6 +191,56 @@ export const canvasRender = async (
     ctx.globalAlpha = 1;
 };
 
+function drawCenteredImage(
+    img: HTMLImageElement,
+    sourceWidth: number,
+    sourceHeight: number,
+    ctx: CanvasRenderingContext2D,
+) {
+    const widthSmaller = img.naturalWidth < img.naturalHeight;
+    const ratio = img.naturalWidth / img.naturalHeight;
+    const targetWidth = widthSmaller ? sourceWidth : sourceHeight * ratio;
+    const targetHeight = widthSmaller ? sourceWidth / ratio : sourceHeight;
+    ctx.drawImage(
+        img,
+        -(sourceWidth / 2) - (targetWidth - sourceWidth) / 2,
+        -(sourceHeight / 2) - (targetHeight - sourceHeight) / 2,
+        targetWidth,
+        targetHeight,
+    );
+}
+
+function debugPath(path: Path, ctx: CanvasRenderingContext2D, zoom: number) {
+    pathToPoints(path).forEach((point) => {
+        ctx.beginPath();
+        ctx.ellipse(point.x * zoom, point.y * zoom, 10, 10, 0, Math.PI * 2, 0);
+        ctx.fillStyle = 'blue';
+        ctx.fill();
+    });
+
+    ctx.beginPath();
+    ctx.ellipse(
+        path.origin.x * zoom,
+        path.origin.y * zoom,
+        20,
+        20,
+        0,
+        Math.PI * 2,
+        0,
+    );
+    ctx.strokeStyle = isClockwise(path) ? 'purple' : 'yellow';
+    ctx.lineWidth = 4;
+    ctx.stroke();
+
+    const last = path.segments[path.segments.length - 2].to;
+
+    ctx.beginPath();
+    ctx.ellipse(last.x * zoom, last.y * zoom, 20, 20, 0, Math.PI * 2, 0);
+    ctx.strokeStyle = 'black';
+    ctx.lineWidth = 4;
+    ctx.stroke();
+}
+
 function renderPrimitive(
     ctx: CanvasRenderingContext2D,
     prim: Primitive,
@@ -253,12 +297,88 @@ export function tracePath(
     });
 }
 
+export const pathToPoints = (path: Path) => {
+    const points: Array<Coord> = [];
+    let prev = path.origin;
+    path.segments.forEach((seg) => {
+        if (seg.type === 'Arc') {
+            const t1 = angleTo(seg.center, prev);
+            const t2 = angleTo(seg.center, seg.to);
+            const bt = angleBetween(t1, t2, seg.clockwise);
+            const tm = t1 + (bt / 2) * (seg.clockwise ? 1 : -1); // (t1 + t2) / 2;
+            const d = dist(seg.center, seg.to);
+            const midp = push(seg.center, tm, d);
+            points.push(midp);
+        }
+        points.push(seg.to);
+
+        prev = seg.to;
+    });
+    return points;
+};
+
+export const isClockwise = (path: Path) => {
+    const points = pathToPoints(path);
+    const angles = points.map((point, i) => {
+        const prev = i === 0 ? points[points.length - 1] : points[i - 1];
+        return angleTo(prev, point);
+    });
+    const betweens = angles.map((angle, i) => {
+        const prev = i === 0 ? angles[angles.length - 1] : angles[i - 1];
+        return angleBetween(prev, angle, true);
+    });
+    const relatives = betweens.map((between) =>
+        between > Math.PI ? between - Math.PI * 2 : between,
+    );
+    let total = relatives.reduce((a, b) => a + b);
+    // betweens.forEach((between) => {
+    //     if (between > Math.PI) {
+    //         total -= Math.PI * 2 - between;
+    //     } else {
+    //         total += between;
+    //     }
+    // });
+    // points.forEach((point, i) => {
+    // 	if (i == 0) {
+    // 		return
+    // 	}
+    // 	const prev = i === 0 ? points[i - 1]
+    // })
+    // console.log(`Total`, [
+    //     toDegrees(total),
+    //     angles.map(toDegrees),
+    //     betweens.map(toDegrees),
+    //     relatives.map(toDegrees),
+    //     points,
+    //     toDegrees(angles.reduce((x, m) => x + m)),
+    //     toDegrees(betweens.reduce((x, m) => x + m)),
+    // ]);
+    // really, it'll be -2pi or 2pi
+    return total > 0;
+};
+
+export const toDegrees = (x: number) => Math.floor((x / Math.PI) * 180);
+
+export const reversePath = (path: Path) => {
+    const segments: Array<Segment> = [];
+    for (let i = path.segments.length - 1; i >= 0; i--) {
+        const seg = path.segments[i];
+        const prev = i === 0 ? path.origin : path.segments[i - 1].to;
+        segments.push(reverseSegment(prev, seg));
+    }
+    return { ...path, segments };
+};
+
 export function tracePathLine(
     ctx: CanvasRenderingContext2D,
     path: Path,
     zoom: number,
     strokeWidth: number,
 ) {
+    if (!isClockwise(path)) {
+        path = reversePath(path);
+    }
+
     ctx.moveTo(path.origin.x * zoom, path.origin.y * zoom);
     ctx.ellipse(
         path.origin.x * zoom,
@@ -268,6 +388,7 @@ export function tracePathLine(
         0,
         0,
         Math.PI * 2,
+        // true,
     );
 
     path.segments.forEach((seg, i) => {
@@ -292,19 +413,22 @@ export function tracePathLine(
             const p3 = push(seg.center, t1, radius + strokeWidth / 2);
             const p4 = push(seg.center, t1, radius - strokeWidth / 2);
             ctx.moveTo(p1.x * zoom, p1.y * zoom);
+            ctx.lineTo(p2.x * zoom, p2.y * zoom);
             ctx.arc(
                 seg.center.x * zoom,
                 seg.center.y * zoom,
-                (radius - strokeWidth / 2) * zoom,
+                (radius + strokeWidth / 2) * zoom,
                 t0,
                 t1,
                 !seg.clockwise,
             );
             ctx.lineTo(p3.x * zoom, p3.y * zoom);
+            ctx.lineTo(p4.x * zoom, p4.y * zoom);
+
             ctx.arc(
                 seg.center.x * zoom,
                 seg.center.y * zoom,
-                (radius + strokeWidth / 2) * zoom,
+                (radius - strokeWidth / 2) * zoom,
                 t1,
                 t0,
                 seg.clockwise,
@@ -320,6 +444,7 @@ export function tracePathLine(
             0,
             0,
             Math.PI * 2,
+            // true,
         );
     });
 }
