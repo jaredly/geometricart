@@ -64,6 +64,9 @@ export const screenToWorld = (
     y: (pos.y - height / 2) / view.zoom + view.center.y,
 });
 
+// base64
+const imageCache: { [href: string]: string | false } = {};
+
 export const Canvas = ({
     state,
     width,
@@ -109,6 +112,34 @@ export const Canvas = ({
     const [pathOrigin, setPathOrigin] = React.useState(
         null as null | Intersect,
     );
+
+    const [, setTick] = React.useState(0);
+
+    React.useEffect(() => {
+        state.palettes[state.activePalette].forEach((color) => {
+            if (color.startsWith('http')) {
+                if (imageCache[color] != null) {
+                    return;
+                }
+                imageCache[color] = false;
+                fetch(
+                    `https://get-page.jaredly.workers.dev/?url=${encodeURIComponent(
+                        color,
+                    )}`,
+                )
+                    .then((data) => data.blob())
+                    .then((blob) => {
+                        var reader = new FileReader();
+                        reader.readAsDataURL(blob);
+                        reader.onloadend = function () {
+                            var base64data = reader.result;
+                            imageCache[color] = base64data as string;
+                            setTick((t) => t + 1);
+                        };
+                    });
+            }
+        });
+    }, [state.palettes[state.activePalette]]);
 
     // const [zoomKey, setZoomKey] = React.useState(
     //     null as null | { pos: Coord; level: number },
@@ -362,8 +393,9 @@ export const Canvas = ({
             >
                 <defs>
                     {state.palettes[state.activePalette].map((color, i) =>
-                        color.startsWith('http') ? (
+                        color.startsWith('http') && imageCache[color] ? (
                             <pattern
+                                key={`palette-${i}`}
                                 id={`palette-${i}`}
                                 x={-x}
                                 y={-y}
@@ -377,7 +409,7 @@ export const Canvas = ({
                                     width={width}
                                     height={height}
                                     preserveAspectRatio="xMidYMid slice"
-                                    xlinkHref={color}
+                                    href={imageCache[color] as string}
                                 />
                             </pattern>
                         ) : null,
@@ -584,6 +616,7 @@ export const Canvas = ({
                     {state.selection
                         ? state.selection.ids.map((id) =>
                               showHover(
+                                  id,
                                   { kind: state.selection!.type, id },
                                   state,
                                   mirrorTransforms,
@@ -609,6 +642,7 @@ export const Canvas = ({
                                 />
                             ) : null} */}
                             {showHover(
+                                `hover`,
                                 hover,
                                 state,
                                 mirrorTransforms,
@@ -646,6 +680,7 @@ export const Canvas = ({
 };
 
 export const showHover = (
+    key: string,
     hover: Hover,
     state: State,
     mirrorTransforms: { [key: string]: Array<Array<Matrix>> },
@@ -663,6 +698,7 @@ export const showHover = (
                     path={state.paths[hover.id]}
                     zoom={zoom}
                     color={color}
+                    key={key}
                 />
             );
         }
@@ -673,7 +709,7 @@ export const showHover = (
                         .filter((k) => state.paths[k].group === hover.id)
                         .map((k, i) => (
                             <UnderlinePath
-                                key={k}
+                                key={key + ':' + k}
                                 path={state.paths[k]}
                                 zoom={zoom}
                                 color={color}
@@ -712,7 +748,7 @@ export const showHover = (
                         zoom={zoom}
                         height={height}
                         width={width}
-                        key={`${j}:${i}`}
+                        key={`${key}:${j}:${i}`}
                     />
                 )),
             );

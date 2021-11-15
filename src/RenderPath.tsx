@@ -76,7 +76,9 @@ export const RenderPath = ({
             <path
                 key={`fill-${i}`}
                 data-id={path.id}
-                opacity={fill.opacity}
+                // opacity={fill.opacity}
+                // style={{ opacity: 0.5 }}
+                fillOpacity={fill.opacity}
                 css={
                     onClick
                         ? {
