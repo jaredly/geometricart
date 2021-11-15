@@ -9,6 +9,7 @@ import { Coord, Id, Intersect, PendingSegment, Segment } from './types';
 import { applyMatrices, Matrix } from './getMirrorTransforms';
 import { transformSegment } from './points';
 import { useCurrent } from './App';
+import { segmentsEqual } from './pathsAreIdentical';
 
 /*
 
@@ -109,10 +110,6 @@ export const DrawPath = React.memo(
         //     })
         //     .flat();
 
-        const current =
-            state.parts.length == 0
-                ? origin
-                : state.parts[state.parts.length - 1].to;
         // const next = findNextSegments(
         //     { type: 'Path', origin, parts: state.parts },
         //     primitives.map((prim) => prim.prim),
@@ -167,6 +164,55 @@ export const DrawPath = React.memo(
 
         React.useEffect(() => {
             const fn = (evt: KeyboardEvent) => {
+                if (evt.key === 'Enter') {
+                    const state = latest.current;
+
+                    const completed =
+                        state.parts.length &&
+                        coordKey(
+                            state.parts[state.parts.length - 1].to.coord,
+                        ) === coordKey(origin.coord);
+
+                    if (completed) {
+                        onComplete(state.parts);
+                        evt.stopPropagation();
+                        evt.preventDefault();
+                        return;
+                    }
+                }
+                if (evt.key === 'ArrowDown' || evt.key === 'j') {
+                    evt.preventDefault();
+                    evt.stopPropagation();
+                    setState((state) => {
+                        if (!state.parts.length) {
+                            return state;
+                        }
+                        const last = state.parts[state.parts.length - 1];
+                        const parts = state.parts.slice(0, -1);
+                        const next = nextForState(
+                            parts,
+                            origin,
+                            primitives,
+                            intersections,
+                        );
+                        let idx = next.findIndex((seg) =>
+                            segmentsEqual(
+                                origin.coord,
+                                last.segment,
+                                seg.segment,
+                            ),
+                        );
+                        if (idx == -1) {
+                            idx = 0;
+                            console.warn(
+                                `Unable to find last one!!`,
+                                next,
+                                last.segment,
+                            );
+                        }
+                        return { ...state, parts, next, selection: idx };
+                    });
+                }
                 if (evt.key === 'ArrowUp' || evt.key === 'k') {
                     evt.preventDefault();
                     evt.stopPropagation();
@@ -175,41 +221,18 @@ export const DrawPath = React.memo(
                         if (state.selection >= state.next.length) {
                             return state;
                         }
-
                         const parts = state.parts.concat([
                             state.next[state.selection],
                         ]);
                         state = { ...state, parts };
 
-                        const covered = state.parts.map((part) =>
-                            coordKey(part.to.coord),
-                        );
-                        const butLast = covered.slice(0, -1);
-
-                        const used = state.parts
-                            .map((part, i) => {
-                                const prev =
-                                    i === 0
-                                        ? origin.coord
-                                        : state.parts[i - 1].to.coord;
-                                return [
-                                    segmentKey(prev, part.segment),
-                                    segmentKeyReverse(prev, part.segment),
-                                ];
-                            })
-                            .flat();
-
-                        const next = findNextSegments(
-                            { type: 'Path', origin, parts: state.parts },
-                            primitives.map((prim) => prim.prim),
+                        const next = nextForState(
+                            state.parts,
+                            origin,
+                            primitives,
                             intersections,
-                        ).filter(
-                            (seg, i) =>
-                                !covered.includes(coordKey(seg.to.coord)) &&
-                                !used.includes(
-                                    segmentKey(current.coord, seg.segment),
-                                ),
                         );
+                        // console.log('GOT', next);
 
                         return {
                             ...state,
@@ -244,6 +267,11 @@ export const DrawPath = React.memo(
             document.addEventListener('keydown', fn, true);
             return () => document.removeEventListener('keydown', fn, true);
         });
+
+        const current =
+            state.parts.length == 0
+                ? origin
+                : state.parts[state.parts.length - 1].to;
 
         return (
             <>
@@ -379,3 +407,42 @@ export const DrawPath = React.memo(
         );
     },
 );
+
+function nextForState(
+    parts: Array<PendingSegment>,
+    origin: Intersect,
+    primitives: { prim: Primitive; guides: Array<Id> }[],
+    intersections: Intersect[],
+) {
+    const covered = parts.map((part) => coordKey(part.to.coord));
+    // const butLast = covered.slice(0, -1);
+    const used = parts
+        .map((part, i) => {
+            const prev = i === 0 ? origin.coord : parts[i - 1].to.coord;
+            return [
+                segmentKey(prev, part.segment),
+                segmentKeyReverse(prev, part.segment),
+            ];
+        })
+        .flat();
+    const current = parts.length == 0 ? origin : parts[parts.length - 1].to;
+
+    let next = findNextSegments(
+        { type: 'Path', origin, parts: parts },
+        primitives.map((prim) => prim.prim),
+        intersections,
+    );
+
+    // console.log(`GOT`, origin.coord, state.parts);
+    // console.log(`NEXT`, next, next.map(p => segmentKey()))
+    // console.log( covered, used);
+    return next
+        .filter(
+            (seg, i) =>
+                !covered.includes(coordKey(seg.to.coord)) &&
+                !used.includes(segmentKey(current.coord, seg.segment)),
+        )
+        .sort((a, b) => {
+            return -1;
+        });
+}
