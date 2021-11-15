@@ -76,14 +76,11 @@ export const RenderPath = ({
             <path
                 key={`fill-${i}`}
                 data-id={path.id}
+                opacity={fill.opacity}
                 css={
                     onClick
                         ? {
                               cursor: 'pointer',
-                              transition: '-moz-initial.2s ease opacity',
-                              ':hover': {
-                                  opacity: 0.8,
-                              },
                           }
                         : {}
                 }
@@ -107,7 +104,7 @@ export const RenderPath = ({
                 strokeDasharray={line.dash ? line.dash.join(' ') : undefined}
                 fill="none"
                 strokeLinejoin="round"
-                strokeWidth={line.width}
+                strokeWidth={line.width ? (line.width / 100) * zoom : 0}
             />
         );
     });

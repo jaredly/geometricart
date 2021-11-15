@@ -1,5 +1,6 @@
 /* @jsx jsx */
 /* @jsxFrag React.Fragment */
+import * as React from 'react';
 import { jsx } from '@emotion/react';
 import { transparent } from './Icons';
 import { Style, Fill, StyleLine } from './types';
@@ -24,56 +25,176 @@ export const MultiStyleForm = ({
     palette: Array<string>;
 }) => {
     const fills: Array<MultiFill> = [];
+    const lines: Array<MultiLine> = [];
+    const maxLines = styles.reduce(
+        (num, style) => Math.max(num, style.lines.length),
+        0,
+    );
     const maxFills = styles.reduce(
         (num, style) => Math.max(num, style.fills.length),
         0,
     );
     for (let i = 0; i < maxFills; i++) {
-        fills.push({ color: [], inset: [] });
+        fills.push({ color: [], inset: [], opacity: [] });
+    }
+    for (let i = 0; i < maxLines; i++) {
+        lines.push({
+            color: [],
+            inset: [],
+            dash: [],
+            joinStyle: [],
+            width: [],
+        });
     }
     styles.forEach((style) => {
         style.fills.forEach((fill, i) => {
             addIfNew(fills[i].color, fill?.color ?? null);
             addIfNew(fills[i].inset, fill?.inset ?? null);
+            addIfNew(fills[i].opacity, fill?.opacity ?? null);
+        });
+        style.lines.forEach((line, i) => {
+            addIfNew(lines[i].color, line?.color ?? null);
+            addIfNew(lines[i].inset, line?.inset ?? null);
         });
     });
     return (
         <div>
             Change {styles.length} styles.
-            {JSON.stringify(fills)}
+            <div>Fills</div>
             {fills.map((fill, i) => (
-                <MultiColor
-                    color={fill.color}
-                    onChange={(color) => {
-                        onChange(
-                            styles.map((style) => {
-                                if (
-                                    style.fills[i] != null &&
-                                    style.fills[i]!.color == color
-                                ) {
-                                    return null;
-                                }
-                                const fills = style.fills.slice();
-                                if (!fills[i]) {
-                                    fills[i] = { color };
-                                } else {
-                                    fills[i] = { ...fills[i], color };
-                                }
-                                return { ...style, fills };
-                            }),
-                        );
-                        // ok
-                    }}
-                    palette={palette}
-                    key={i}
-                />
+                <>
+                    <MultiColor
+                        color={fill.color}
+                        onChange={(color) => {
+                            onChange(
+                                styles.map((style) => {
+                                    if (
+                                        style.fills[i] != null &&
+                                        style.fills[i]!.color == color
+                                    ) {
+                                        return null;
+                                    }
+                                    const fills = style.fills.slice();
+                                    if (!fills[i]) {
+                                        fills[i] = { color };
+                                    } else {
+                                        fills[i] = { ...fills[i], color };
+                                    }
+                                    return { ...style, fills };
+                                }),
+                            );
+                            // ok
+                        }}
+                        palette={palette}
+                        key={i}
+                    />
+                    <div key={`opacity-${i}`}>
+                        opacity:
+                        <MultiNumber
+                            value={fill.opacity}
+                            onChange={(opacity) => {
+                                onChange(
+                                    styles.map((style) => {
+                                        if (
+                                            style.fills[i] != null &&
+                                            style.fills[i]!.opacity == opacity
+                                        ) {
+                                            return null;
+                                        }
+                                        const fills = style.fills.slice();
+                                        if (!fills[i]) {
+                                            fills[i] = {
+                                                opacity: opacity ?? undefined,
+                                            };
+                                        } else {
+                                            fills[i] = {
+                                                ...fills[i],
+                                                opacity: opacity ?? undefined,
+                                            };
+                                        }
+                                        return { ...style, fills };
+                                    }),
+                                );
+                            }}
+                        />
+                    </div>
+                </>
+            ))}
+            <div>Lines</div>
+            {lines.map((line, i) => (
+                <>
+                    <MultiColor
+                        color={line.color}
+                        onChange={(color) => {
+                            onChange(
+                                styles.map((style) => {
+                                    if (
+                                        style.lines[i] != null &&
+                                        style.lines[i]!.color == color
+                                    ) {
+                                        return null;
+                                    }
+                                    const lines = style.lines.slice();
+                                    if (!lines[i]) {
+                                        lines[i] = { color };
+                                    } else {
+                                        lines[i] = { ...lines[i], color };
+                                    }
+                                    return { ...style, lines };
+                                }),
+                            );
+                            // ok
+                        }}
+                        palette={palette}
+                        key={i}
+                    />
+                    <div key={`stroke-${i}`}>
+                        width:
+                        <MultiNumber
+                            value={line.width}
+                            onChange={(width) => {
+                                onChange(
+                                    styles.map((style) => {
+                                        if (
+                                            style.lines[i] != null &&
+                                            style.lines[i]!.width == width
+                                        ) {
+                                            return null;
+                                        }
+                                        const lines = style.lines.slice();
+                                        if (!lines[i]) {
+                                            lines[i] = {
+                                                width: width ?? undefined,
+                                            };
+                                        } else {
+                                            lines[i] = {
+                                                ...lines[i],
+                                                width: width ?? undefined,
+                                            };
+                                        }
+                                        return { ...style, lines };
+                                    }),
+                                );
+                            }}
+                        />
+                    </div>
+                </>
             ))}
         </div>
     );
 };
 
+export type MultiLine = {
+    inset: Array<number | null>;
+    color: Array<null | string | number>;
+    width: Array<null | number>;
+    dash: Array<null | Array<number>>;
+    joinStyle: Array<null | string>;
+};
+
 export type MultiFill = {
     color: Array<string | number | null>;
+    opacity: Array<number | null>;
     inset: Array<number | null>;
 };
 
@@ -90,6 +211,7 @@ export const mergeFills = (one: Fill, two: Fill | null): Fill =>
               color: two.color ?? one.color,
               inset: two.inset ?? one.inset,
           };
+
 export const mergeStyleLines = (
     one: StyleLine,
     two: null | StyleLine,
@@ -125,6 +247,42 @@ export const mergeStyles = (one: Style, two: Style) => {
     return result;
 };
 
+export const MultiNumber = ({
+    value,
+    onChange,
+}: {
+    value: Array<number | null>;
+    onChange: (value: number | null) => void;
+}) => {
+    const [text, setText] = React.useState(null as null | string);
+    return (
+        <input
+            value={text ?? (value.length === 1 ? value[0] ?? '' : 'mixed')}
+            onChange={(evt) => setText(evt.target.value)}
+            onBlur={() => {
+                if (text != null) {
+                    const num = parseFloat(text);
+                    if (value.length === 1) {
+                        if (value[0] == null && text.trim() == '') {
+                            return;
+                        }
+                        if (num == value[0]) {
+                            return;
+                        }
+                    }
+                    if (text.trim() == '') {
+                        return onChange(null);
+                    }
+                    if (!isNaN(num)) {
+                        onChange(num);
+                    }
+                }
+                setText(null);
+            }}
+        />
+    );
+};
+
 export const MultiColor = ({
     color,
     onChange,
@@ -148,7 +306,7 @@ export const MultiColor = ({
                         }`,
                     }}
                     css={{
-                        background: item,
+                        background: maybeUrlColor(item),
                         width: 20,
                         height: 20,
                         cursor: 'pointer',
@@ -163,7 +321,7 @@ export const MultiColor = ({
                         background:
                             name === 'transparent'
                                 ? `url("${transparent}")`
-                                : name,
+                                : maybeUrlColor(name),
                         border: `2px solid ${
                             color.includes(name) ? highlight : '#444'
                         }`,
@@ -176,3 +334,6 @@ export const MultiColor = ({
         </div>
     );
 };
+
+export const maybeUrlColor = (color: string) =>
+    color.startsWith('http') ? `url("${color}")` : color;

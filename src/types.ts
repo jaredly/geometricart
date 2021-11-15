@@ -158,6 +158,7 @@ export type Mirror = {
 
 export type Fill = {
     inset?: number;
+    opacity?: number;
     color?: string | number;
 };
 

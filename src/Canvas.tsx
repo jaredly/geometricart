@@ -317,8 +317,9 @@ export const Canvas = ({
                         const clientY = evt.clientY;
                         evt.preventDefault();
 
-                        setTmpView(() => {
+                        setTmpView((prev) => {
                             return dragView(
+                                prev,
                                 dragPos,
                                 clientX,
                                 rect,
@@ -795,6 +796,7 @@ export const RenderPrimitives = React.memo(
 );
 
 const dragView = (
+    prev: View | null,
     dragPos: { view: View; coord: Coord },
     clientX: number,
     rect: DOMRect,
@@ -810,6 +812,14 @@ const dragView = (
     };
 
     const newPos = screenToWorld(width, height, screenPos, view);
+    const offset = Math.max(
+        Math.abs(newPos.x - dragPos.coord.x),
+        Math.abs(newPos.y - dragPos.coord.y),
+    );
+    if (!prev && offset * view.zoom < 10) {
+        return null;
+    }
+
     const res = {
         ...view,
         center: {
