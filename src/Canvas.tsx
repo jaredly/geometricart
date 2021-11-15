@@ -40,10 +40,29 @@ export type Props = {
     state: State;
     width: number;
     height: number;
-    innerRef: (node: SVGSVGElement) => unknown;
+    innerRef: (node: SVGSVGElement | null) => unknown;
     dispatch: (action: Action) => unknown;
     hover: Hover | null;
 };
+
+export const worldToScreen = (
+    width: number,
+    height: number,
+    pos: Coord,
+    view: View,
+) => ({
+    x: width / 2 + (pos.x - view.center.x) * view.zoom,
+    y: height / 2 + (pos.y - view.center.y) * view.zoom,
+});
+export const screenToWorld = (
+    width: number,
+    height: number,
+    pos: Coord,
+    view: View,
+) => ({
+    x: (pos.x - width / 2) / view.zoom + view.center.x,
+    y: (pos.y - height / 2) / view.zoom + view.center.y,
+});
 
 export const Canvas = ({
     state,
@@ -91,15 +110,15 @@ export const Canvas = ({
         null as null | Intersect,
     );
 
-    const [zoomKey, setZoomKey] = React.useState(
-        null as null | { pos: Coord; level: number },
-    );
+    // const [zoomKey, setZoomKey] = React.useState(
+    //     null as null | { pos: Coord; level: number },
+    // );
 
     const [shiftKey, setShiftKey] = React.useState(false as false | Coord);
 
     const [altKey, setAltKey] = React.useState(false);
 
-    const currentZoom = useCurrent(zoomKey);
+    // const currentZoom = useCurrent(zoomKey);
 
     React.useEffect(() => {
         const fn = (evt: KeyboardEvent) => {
@@ -109,17 +128,17 @@ export const Canvas = ({
             if (evt.key === 'Alt') {
                 setAltKey(true);
             }
-            if (evt.key === 'z' && currentZoom.current == null) {
-                setZoomKey({ level: 1, pos: currentPos.current });
-            }
-            if (evt.key === 'Z' && currentZoom.current == null) {
-                setZoomKey({ level: 2, pos: currentPos.current });
-            }
+            // if (evt.key === 'z' && currentZoom.current == null) {
+            //     setZoomKey({ level: 1, pos: currentPos.current });
+            // }
+            // if (evt.key === 'Z' && currentZoom.current == null) {
+            //     setZoomKey({ level: 2, pos: currentPos.current });
+            // }
             // console.l;
             if (evt.key === 'Shift') {
-                if (currentZoom.current != null) {
-                    setZoomKey({ level: 2, pos: currentZoom.current.pos });
-                }
+                // if (currentZoom.current != null) {
+                //     setZoomKey({ level: 2, pos: currentZoom.current.pos });
+                // }
                 setShiftKey(currentPos.current);
             }
             if (pathOrigin && evt.key === 'Escape') {
@@ -132,15 +151,15 @@ export const Canvas = ({
                 setAltKey(false);
             }
             if (evt.key === 'Shift') {
-                if (currentZoom.current != null) {
-                    setZoomKey({ level: 1, pos: currentZoom.current.pos });
-                }
+                // if (currentZoom.current != null) {
+                //     setZoomKey({ level: 1, pos: currentZoom.current.pos });
+                // }
                 setShiftKey(false);
                 // TODO folks
             }
-            if (evt.key === 'z' || evt.key === 'Z') {
-                setZoomKey(null);
-            }
+            // if (evt.key === 'z' || evt.key === 'Z') {
+            //     setZoomKey(null);
+            // }
         };
         document.addEventListener('keydown', fn);
         document.addEventListener('keyup', up);
@@ -168,30 +187,25 @@ export const Canvas = ({
         [],
     );
 
-    let view = state.view;
-    if (zoomKey) {
-        const worldToScreen = (pos: Coord, view: View) => ({
-            x: width / 2 + (pos.x - view.center.x) * view.zoom,
-            y: height / 2 + (pos.y - view.center.y) * view.zoom,
-        });
-        const screenToWorld = (pos: Coord, view: View) => ({
-            x: (pos.x - width / 2) / view.zoom + view.center.x,
-            y: (pos.y - height / 2) / view.zoom + view.center.y,
-        });
+    const [tmpView, setTmpView] = React.useState(null as null | View);
 
-        const screenPos = worldToScreen(zoomKey.pos, view);
-        const amount = zoomKey.level === 2 ? 12 : 4;
-        const newZoom = view.zoom * amount;
-        const newPos = screenToWorld(screenPos, { ...view, zoom: newZoom });
-        view = {
-            ...view,
-            zoom: newZoom,
-            center: {
-                x: view.center.x + (newPos.x - zoomKey.pos.x),
-                y: view.center.y + (newPos.y - zoomKey.pos.y),
-            },
-        };
-    }
+    let view = tmpView ?? state.view;
+
+    // if (zoomKey) {
+
+    //     const screenPos = worldToScreen(width, height, zoomKey.pos, view);
+    //     const amount = zoomKey.level === 2 ? 12 : 4;
+    //     const newZoom = view.zoom * amount;
+    //     const newPos = screenToWorld(width, height, screenPos, { ...view, zoom: newZoom });
+    //     view = {
+    //         ...view,
+    //         zoom: newZoom,
+    //         center: {
+    //             x: view.center.x + (newPos.x - zoomKey.pos.x),
+    //             y: view.center.y + (newPos.y - zoomKey.pos.y),
+    //         },
+    //     };
+    // }
 
     const x = view.center.x * view.zoom + width / 2;
     const y = view.center.y * view.zoom + height / 2;
@@ -217,9 +231,54 @@ export const Canvas = ({
         setPathOrigin(null);
     }, [allIntersections]);
 
+    const ref = React.useRef(null as null | SVGSVGElement);
+
+    React.useEffect(() => {
+        if (!ref.current) {
+            return console.warn('NO REF');
+        }
+        const fn = (evt: WheelEvent) => {
+            const rect = ref.current!.getBoundingClientRect();
+            const clientX = evt.clientX;
+            const clientY = evt.clientY;
+            const dy = -evt.deltaY;
+            evt.preventDefault();
+
+            setTmpView((past) => {
+                let view = past || state.view;
+
+                const screenPos = {
+                    x: clientX - rect.left,
+                    y: clientY - rect.top,
+                };
+
+                const pos = screenToWorld(width, height, screenPos, view);
+
+                const amount = dy / 100 + 1.0;
+                const newZoom = view.zoom * amount;
+                const newPos = screenToWorld(width, height, screenPos, {
+                    ...view,
+                    zoom: newZoom,
+                });
+                return {
+                    ...view,
+                    zoom: newZoom,
+                    center: {
+                        x: view.center.x + (newPos.x - pos.x),
+                        y: view.center.y + (newPos.y - pos.y),
+                    },
+                };
+            });
+        };
+        ref.current!.addEventListener('wheel', fn, { passive: false });
+        return () => ref.current!.removeEventListener('wheel', fn);
+    }, []);
+
     return (
         <div
-            css={{}}
+            css={{
+                position: 'relative',
+            }}
             // style={{ width, height }}
             onClick={(evt) => {
                 // if (evt.target === evt.currentTarget) {
@@ -231,12 +290,16 @@ export const Canvas = ({
                 }
                 // }
             }}
+            onWheelCapture={(evt) => {}}
         >
             <svg
                 width={width}
                 height={height}
                 xmlns="http://www.w3.org/2000/svg"
-                ref={innerRef}
+                ref={(node) => {
+                    innerRef(node);
+                    ref.current = node;
+                }}
                 css={{
                     outline: '1px solid magenta',
                 }}
@@ -490,6 +553,21 @@ export const Canvas = ({
                 Guides: {guideElements.length}, Points:{' '}
                 {allIntersections.length}
             </div>
+            {tmpView ? (
+                <div
+                    css={{
+                        position: 'absolute',
+                        padding: 20,
+                        backgroundColor: 'rgba(255,255,255,0.3)',
+                        color: 'black',
+                        top: 0,
+                        left: 0,
+                    }}
+                    onClick={() => setTmpView(null)}
+                >
+                    Reset zoom
+                </div>
+            ) : null}
         </div>
     );
 };
