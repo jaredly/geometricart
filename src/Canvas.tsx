@@ -101,9 +101,6 @@ export const Canvas = ({
     const currentZoom = useCurrent(zoomKey);
 
     React.useEffect(() => {
-        // if (!pathOrigin) {
-        //     return;
-        // }
         const fn = (evt: KeyboardEvent) => {
             if (evt.target !== document.body || evt.metaKey || evt.ctrlKey) {
                 return;
@@ -170,23 +167,6 @@ export const Canvas = ({
         [],
     );
 
-    // const nextSegments = React.useMemo(() => {
-    //     if (state.pending && state.pending.type === 'Path') {
-    //         return findNextSegments(
-    //             state.pending as PendingPath,
-    //             guidePrimitives,
-    //             allIntersections,
-    //         );
-    //     }
-    //     return null;
-    // }, [
-    //     state.pending && state.pending.type === 'Path' ? state.pending : null,
-    //     allIntersections,
-    //     guidePrimitives,
-    // ]);
-    // const onAdd = React.useCallback((segment: PendingSegment) => {
-    //     dispatch({ type: 'path:add', segment });
-    // }, []);
     let view = state.view;
     if (zoomKey) {
         const worldToScreen = (pos: Coord, view: View) => ({
@@ -210,29 +190,6 @@ export const Canvas = ({
                 y: view.center.y + (newPos.y - zoomKey.pos.y),
             },
         };
-        /*
-
-
-|        c         m
-
-
-worldToScreen ->
-screenToWorld
-
-
-
-
-
-        */
-        // pos.x, pos.y are in world coordinates.
-        //
-        // const dx = (pos.x - view.center.x) * view.zoom
-        // const dy = (pos.y - view.center.y) * view.zoom
-        // const nx = pos.x - dx / newZoom
-
-        // view = { ...view, zoom: view.zoom * 4,
-        //     center:
-        //  };
     }
 
     const x = view.center.x * view.zoom + width / 2;
@@ -253,6 +210,11 @@ screenToWorld
         },
         [pathOrigin],
     );
+
+    // When intersections change, cancel pending stuffs
+    React.useEffect(() => {
+        setPathOrigin(null);
+    }, [allIntersections]);
 
     return (
         <div

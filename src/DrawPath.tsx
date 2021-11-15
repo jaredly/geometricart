@@ -3,13 +3,26 @@ import React from 'react';
 import { RenderPath } from './RenderPath';
 import { coordKey, primitiveKey } from './calcAllIntersections';
 import { RenderSegment } from './RenderSegment';
-import { findNextSegments } from './findNextSegments';
-import { Primitive } from './intersect';
-import { Coord, Id, Intersect, PendingSegment, Segment } from './types';
-import { applyMatrices, Matrix } from './getMirrorTransforms';
+import { angleBetween, findNextSegments } from './findNextSegments';
+import { epsilon, Primitive } from './intersect';
+import {
+    ArcSegment,
+    Coord,
+    Id,
+    Intersect,
+    PendingSegment,
+    Segment,
+} from './types';
+import {
+    angleTo,
+    applyMatrices,
+    dist,
+    Matrix,
+    push,
+} from './getMirrorTransforms';
 import { transformSegment } from './points';
 import { useCurrent } from './App';
-import { segmentsEqual } from './pathsAreIdentical';
+import { coordsEqual, segmentsEqual } from './pathsAreIdentical';
 
 /*
 
@@ -53,17 +66,18 @@ export type State = {
 
 export const initialState = (
     origin: Intersect,
-    primitives: Array<Primitive>,
+    primitives: Array<{ prim: Primitive; guides: Array<Id> }>,
     intersections: Array<Intersect>,
 ): State => {
     return {
         parts: [],
         selection: 0,
-        next: findNextSegments(
-            { type: 'Path', origin, parts: [] },
-            primitives,
-            intersections,
-        ),
+        next: nextForState([], origin, primitives, intersections),
+        // findNextSegments(
+        //     { type: 'Path', origin, parts: [] },
+        //     primitives,
+        //     intersections,
+        // ),
     };
 };
 
@@ -86,11 +100,7 @@ export const DrawPath = React.memo(
         onComplete: (segments: Array<PendingSegment>) => unknown;
     }) => {
         const [state, setState] = React.useState(() =>
-            initialState(
-                origin,
-                primitives.map((p) => p.prim),
-                intersections,
-            ),
+            initialState(origin, primitives, intersections),
         );
 
         // let parts = parts.concat([])
@@ -244,15 +254,6 @@ export const DrawPath = React.memo(
                 if (evt.key === 'ArrowLeft' || evt.key === 'h') {
                     evt.preventDefault();
                     evt.stopPropagation();
-                    // go to the left
-                    setState((state) => ({
-                        ...state,
-                        selection: (state.selection + 1) % state.next.length,
-                    }));
-                }
-                if (evt.key === 'ArrowRight' || evt.key === 'l') {
-                    evt.preventDefault();
-                    evt.stopPropagation();
                     evt.stopImmediatePropagation();
                     setState((state) => ({
                         ...state,
@@ -260,6 +261,15 @@ export const DrawPath = React.memo(
                             state.selection === 0
                                 ? state.next.length - 1
                                 : state.selection - 1,
+                    }));
+                }
+                if (evt.key === 'ArrowRight' || evt.key === 'l') {
+                    evt.preventDefault();
+                    evt.stopPropagation();
+                    // go to the left
+                    setState((state) => ({
+                        ...state,
+                        selection: (state.selection + 1) % state.next.length,
                     }));
                     // go right, yes folks
                 }
@@ -408,6 +418,38 @@ export const DrawPath = React.memo(
     },
 );
 
+export const segmentAngle = (
+    prev: Coord,
+    segment: Segment,
+    initial: boolean = true,
+) => {
+    if (segment.type === 'Line') {
+        return angleTo(prev, segment.to);
+    }
+    if (initial) {
+        const t1 = angleTo(segment.center, prev);
+        const t2 = angleTo(segment.center, segment.to);
+        const bt = angleBetween(t1, t2, segment.clockwise);
+        const tm = t1 + (bt / 2) * (segment.clockwise ? 1 : -1); // (t1 + t2) / 2;
+        const d = dist(segment.center, segment.to);
+        const midp = push(segment.center, tm, d);
+        console.log(segment, t1, t2, bt, tm);
+        // const midp =
+        // tangent at prev,
+        return angleTo(prev, midp);
+        // return (
+        //     angleTo(segment.center, prev) +
+        //     (Math.PI / 2) * (segment.clockwise ? 1 : -1)
+        // );
+    } else {
+        // tangent at land
+        return (
+            angleTo(segment.center, segment.to) +
+            (Math.PI / 2) * (segment.clockwise ? 1 : -1)
+        );
+    }
+};
+
 function nextForState(
     parts: Array<PendingSegment>,
     origin: Intersect,
@@ -433,16 +475,74 @@ function nextForState(
         intersections,
     );
 
+    let prevAngle = parts.length
+        ? segmentAngle(
+              parts.length > 1
+                  ? parts[parts.length - 2].to.coord
+                  : origin.coord,
+              parts[parts.length - 1].segment,
+              false,
+          )
+        : 0;
+    const prevArc =
+        parts.length && parts[parts.length - 1].segment.type === 'Arc'
+            ? (parts[parts.length - 1].segment as ArcSegment)
+            : null;
+
     // console.log(`GOT`, origin.coord, state.parts);
     // console.log(`NEXT`, next, next.map(p => segmentKey()))
     // console.log( covered, used);
-    return next
-        .filter(
-            (seg, i) =>
-                !covered.includes(coordKey(seg.to.coord)) &&
-                !used.includes(segmentKey(current.coord, seg.segment)),
-        )
+    next = next.filter(
+        (seg, i) =>
+            !covered.includes(coordKey(seg.to.coord)) &&
+            !used.includes(segmentKey(current.coord, seg.segment)),
+    );
+
+    if (prevArc) {
+        // prevAngle = segmentAngle(parts.length > 1 ? parts[parts.length - 2].to.coord, origin.coord
+        const nextArc = next.find(
+            (seg) =>
+                seg.segment.type === 'Arc' &&
+                coordsEqual(seg.segment.center, prevArc.center),
+        );
+        if (nextArc) {
+            prevAngle = segmentAngle(current.coord, nextArc.segment, true);
+        }
+    }
+
+    const angled = next.map((seg) => ({
+        seg,
+        angle: roundAlmostPi(
+            angleBetween(
+                prevAngle,
+                segmentAngle(current.coord, seg.segment, true),
+                true,
+            ),
+        ),
+    }));
+
+    console.log(prevAngle);
+    console.log(angled);
+    return angled
         .sort((a, b) => {
-            return -1;
-        });
+            if (
+                prevArc &&
+                a.seg.segment.type === 'Arc' &&
+                coordsEqual(prevArc.center, a.seg.segment.center)
+            ) {
+                return -1;
+            }
+            if (
+                prevArc &&
+                b.seg.segment.type === 'Arc' &&
+                coordsEqual(prevArc.center, b.seg.segment.center)
+            ) {
+                return 1;
+            }
+            return a.angle - b.angle;
+        })
+        .map((a) => a.seg);
 }
+
+export const roundAlmostPi = (angle: number) =>
+    Math.abs(angle - Math.PI * 2) < epsilon ? 0 : angle;
