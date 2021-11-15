@@ -245,7 +245,7 @@ export const Canvas = ({
             evt.preventDefault();
 
             setTmpView((past) => {
-                let view = past || state.view;
+                let view = past || currentState.current.view;
 
                 const screenPos = {
                     x: clientX - rect.left,
@@ -255,7 +255,10 @@ export const Canvas = ({
                 const pos = screenToWorld(width, height, screenPos, view);
 
                 const amount = dy / 100 + 1.0;
-                const newZoom = view.zoom * amount;
+                const newZoom = Math.min(
+                    Math.max(view.zoom * amount, 10),
+                    10000,
+                );
                 const newPos = screenToWorld(width, height, screenPos, {
                     ...view,
                     zoom: newZoom,
