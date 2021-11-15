@@ -142,10 +142,11 @@ export const circleCircle = (one: Circle, two: Circle): Array<Coord> => {
 
     // tangent (or nearly)
     if (close(one.radius + two.radius, d)) {
+        const ratio = (one.radius + two.radius) / one.radius;
         return [
             {
-                x: one.center.x + dx / 2,
-                y: one.center.y + dy / 2,
+                x: one.center.x + dx / ratio,
+                y: one.center.y + dy / ratio,
             },
         ];
     }

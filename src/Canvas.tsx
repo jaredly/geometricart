@@ -9,9 +9,9 @@ import {
     calculateInactiveGuideElements,
     geomsForGiude,
 } from './calculateGuideElements';
-// import { DrawPath } from './DrawPath';
-import { DrawPath } from './DrawPathOld';
-import { dedupString, findNextSegments } from './findNextSegments';
+import { DrawPath } from './DrawPath';
+// import { DrawPath } from './DrawPathOld';
+import { dedupString } from './findNextSegments';
 import { getMirrorTransforms, Matrix } from './getMirrorTransforms';
 import { Primitive } from './intersect';
 import { geomToPrimitives } from './points';
