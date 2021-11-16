@@ -118,6 +118,17 @@ export const calcPendingSegments = (
     }
 };
 
+export const angleDiff = (one: number, two: number) => {
+    const diff = one - two;
+    if (diff < -Math.PI) {
+        return diff + Math.PI * 2;
+    }
+    if (diff > Math.PI) {
+        return diff - Math.PI * 2;
+    }
+    return diff;
+};
+
 // left & right are assumed to be between -PI and PI
 // The result will always be positive, and between 0 and 2PI
 export const angleBetween = (

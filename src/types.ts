@@ -195,6 +195,7 @@ export type Path = {
     origin: Coord;
     segments: Array<Segment>;
     hidden: boolean;
+    debug?: boolean;
 };
 
 export type ArcSegment = {

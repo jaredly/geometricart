@@ -365,15 +365,21 @@ export const PathForm = ({
             >
                 {expanded ? '🔻' : '▶️'}
                 Path! {path.id}
+                <div style={{ flexBasis: 8 }} />
+                <Toggle
+                    label="Hide"
+                    value={path.hidden}
+                    onChange={(hidden) => onChange({ ...path, hidden })}
+                />
                 <div style={{ flex: 1 }} />
                 <button onClick={onDelete}>Delete</button>
             </div>
             {expanded ? (
                 <>
                     <Toggle
-                        label="Hide"
-                        value={path.hidden}
-                        onChange={(hidden) => onChange({ ...path, hidden })}
+                        label="Debug"
+                        value={!!path.debug}
+                        onChange={(debug) => onChange({ ...path, debug })}
                     />
                     <StyleForm
                         palette={palette}
