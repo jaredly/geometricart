@@ -2,7 +2,13 @@
 import * as React from 'react';
 import { jsx } from '@emotion/react';
 import { State, Action } from './types';
-import { ExportPalettes, ImportPalettes } from './ExportPalettes';
+import {
+    ExportPalettes,
+    getPalettesFromFile,
+    importPalettes,
+    ImportPalettes,
+} from './ExportPalettes';
+import { useDropTarget } from './useDropTarget';
 
 export function PalettesForm({
     state,
@@ -11,8 +17,25 @@ export function PalettesForm({
     state: State;
     dispatch: (action: Action) => unknown;
 }) {
+    const [dragging, callbacks] = useDropTarget((file) => {
+        getPalettesFromFile(file, (data) => {
+            console.log(data);
+            importPalettes(state.palettes, data, dispatch);
+        });
+    });
     return (
-        <div>
+        <div
+            {...callbacks}
+            style={{
+                // overflow: 'auto',
+                padding: 8,
+                // display: 'flex',
+                // flexDirection: 'column',
+                // flex: 1,
+                background: dragging ? 'rgba(255,255,255,0.1)' : '',
+                transition: '.3s ease background',
+            }}
+        >
             {Object.keys(state.palettes).map((name) => (
                 <PaletteForm
                     name={name}
@@ -121,6 +144,7 @@ function PaletteForm({
                                 background: color.startsWith('http')
                                     ? `url("${color}")`
                                     : color,
+                                backgroundSize: '20px 20px',
                                 width: 20,
                                 height: 20,
                             }}
@@ -149,6 +173,22 @@ function PaletteForm({
                 >
                     {editing ? 'Done' : 'Edit'}
                 </button>
+                <button
+                    onClick={() => {
+                        let num = Object.keys(state.palettes).length;
+                        while (state.palettes[`palette${num}`]) {
+                            num += 1;
+                        }
+                        let newName = `palette${num}`;
+                        dispatch({
+                            type: 'palette:update',
+                            name: newName,
+                            colors: state.palettes[name],
+                        });
+                    }}
+                >
+                    Duplicate
+                </button>
             </div>
         </div>
     );
@@ -169,6 +209,7 @@ export const ColorEditor = ({
                     background: (text ?? color).startsWith('http')
                         ? `url("${text ?? color}")`
                         : text ?? color,
+                    backgroundSize: '20px 20px',
                     // backgroundColor: text ?? color,
                     width: 20,
                     height: 20,

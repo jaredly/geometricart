@@ -3,13 +3,14 @@ import { State, migrateState } from './types';
 import { readMetadata } from 'png-metadata';
 import { PREFIX, SUFFIX } from './Sidebar';
 
-export const useDropTarget = (onDrop: (state: State) => void) => {
+export const useDropTarget = (onDrop: (file: File) => void) => {
     const [dragging, setDragging] = React.useState(false);
 
     const tid = React.useRef(null as null | NodeJS.Timeout);
 
     const callbacks = {
         onDragOver: (evt: React.DragEvent) => {
+            evt.stopPropagation();
             setDragging(true);
             evt.preventDefault();
             if (tid.current) {
@@ -21,17 +22,23 @@ export const useDropTarget = (onDrop: (state: State) => void) => {
             }, 300);
         },
         onDrop: (evt: React.DragEvent) => {
-            console.log(evt.dataTransfer.files[0]);
-            getStateFromFile(evt.dataTransfer.files[0], (state) => {
-                if (state) {
-                    onDrop(migrateState(state));
-                }
-            });
+            evt.stopPropagation();
             evt.preventDefault();
             setDragging(false);
+            onDrop(evt.dataTransfer.files[0]);
         },
     };
     return [dragging, callbacks];
+};
+
+export const useDropStateTarget = (onDrop: (state: State) => void) => {
+    return useDropTarget((file) => {
+        getStateFromFile(file, (state) => {
+            if (state) {
+                onDrop(migrateState(state));
+            }
+        });
+    });
 };
 
 export const getStateFromFile = (

@@ -59,46 +59,10 @@ export const ImportPalettes = ({
                     if (!file) {
                         return;
                     }
-                    const reader = new FileReader();
-                    reader.onload = () => {
-                        const text = reader.result as string;
-                        if (typeof text !== 'string') {
-                            return;
-                        }
-                        const last = text.trim().split('\n').slice(-1)[0];
-                        if (
-                            !last.startsWith(`<!-- PALETTES:`) ||
-                            !last.endsWith(`-->`)
-                        ) {
-                            return;
-                        }
-                        const data = JSON.parse(
-                            last.slice(`<!-- PALETTES:`.length, -'-->'.length),
-                        );
+                    getPalettesFromFile(file, (data) => {
                         console.log(data);
-                        const have = Object.keys(palettes).map((k) =>
-                            palettes[k].join(';;'),
-                        );
-                        Object.keys(data).forEach((name) => {
-                            if (have.includes(data[name].join(';;'))) {
-                                // already have it
-                                return;
-                            }
-                            if (palettes[name]) {
-                                let num = 1;
-                                while (palettes[`${name}${num}`]) {
-                                    num += 1;
-                                }
-                                name = name + num;
-                            }
-                            dispatch({
-                                type: 'palette:update',
-                                name,
-                                colors: data[name],
-                            });
-                        });
-                    };
-                    reader.readAsText(file);
+                        importPalettes(palettes, data, dispatch);
+                    });
                     console.log(evt.target.files![0]);
                 }}
             />
@@ -142,3 +106,53 @@ export const ExportPalettes = ({
     }
     return null;
 };
+
+export function importPalettes(
+    palettes: { [key: string]: string[] },
+    data: { [key: string]: string[] },
+    dispatch: (action: Action) => void,
+) {
+    const have = Object.keys(palettes).map((k) => palettes[k].join(';;'));
+    Object.keys(data).forEach((name) => {
+        if (have.includes(data[name].join(';;'))) {
+            // already have it
+            return;
+        }
+        if (palettes[name]) {
+            let num = 1;
+            while (palettes[`${name}${num}`]) {
+                num += 1;
+            }
+            name = name + num;
+        }
+        dispatch({
+            type: 'palette:update',
+            name,
+            colors: data[name],
+        });
+    });
+}
+
+export function getPalettesFromFile(
+    // palettes: { [key: string]: string[] },
+    // dispatch: (action: Action) => void,
+    file: File,
+    done: (palettes: { [key: string]: Array<string> }) => void,
+) {
+    const reader = new FileReader();
+    reader.onload = () => {
+        const text = reader.result as string;
+        if (typeof text !== 'string') {
+            return;
+        }
+        const last = text.trim().split('\n').slice(-1)[0];
+        if (!last.startsWith(`<!-- PALETTES:`) || !last.endsWith(`-->`)) {
+            return;
+        }
+        const data = JSON.parse(
+            last.slice(`<!-- PALETTES:`.length, -'-->'.length),
+        );
+        done(data);
+    };
+    reader.readAsText(file);
+}

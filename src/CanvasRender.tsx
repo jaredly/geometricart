@@ -274,6 +274,8 @@ export function tracePath(
     path: Path,
     zoom: number,
 ) {
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
     ctx.moveTo(path.origin.x * zoom, path.origin.y * zoom);
     path.segments.forEach((seg, i) => {
         if (seg.type === 'Line') {
@@ -295,6 +297,7 @@ export function tracePath(
             );
         }
     });
+    ctx.closePath();
 }
 
 export const pathToPoints = (path: Path) => {

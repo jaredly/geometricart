@@ -79,17 +79,29 @@ export const Export = ({
             <div>
                 <button
                     css={{ marginRight: 16 }}
-                    onClick={() => {
-                        let text = canvasRef.current!.outerHTML;
-                        if (embed) {
-                            text += `\n\n${PREFIX}${JSON.stringify(
-                                state,
-                            )}${SUFFIX}`;
-                        }
-                        const blob = new Blob([text], {
-                            type: 'image/svg+xml',
-                        });
-                        setUrl(URL.createObjectURL(blob));
+                    onClick={async () => {
+                        // let text = canvasRef.current!.outerHTML;
+                        // if (embed) {
+                        //     text += `\n\n${PREFIX}${JSON.stringify(
+                        //         state,
+                        //     )}${SUFFIX}`;
+                        // }
+                        // const blob = new Blob([text], {
+                        //     type: 'image/svg+xml',
+                        // });
+                        // setUrl(URL.createObjectURL(blob));
+
+                        const canvas = document.createElement('canvas');
+                        canvas.width = canvas.height = size;
+                        const ctx = canvas.getContext('2d')!;
+
+                        await canvasRender(ctx, state);
+                        canvas.toBlob(async (blob) => {
+                            if (embed) {
+                                blob = await addMetadata(blob, state);
+                            }
+                            setPng(URL.createObjectURL(blob));
+                        }, 'image/png');
                     }}
                 >
                     Export
@@ -109,13 +121,13 @@ export const Export = ({
                     <button onClick={() => setUrl(null)}>Close</button>
                 ) : null}
             </div>
-            {url ? (
-                <div
-                    css={{
-                        display: 'flex',
-                        flexDirection: 'row',
-                    }}
-                >
+            <div
+                css={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                }}
+            >
+                {url ? (
                     <div css={{ marginRight: 16 }}>
                         <a
                             href={url}
@@ -140,69 +152,42 @@ export const Export = ({
                                 backgroundSize: 40,
                             }}
                         >
-                            <img
-                                src={url}
-                                css={{ maxHeight: 400 }}
-                                onLoad={async (evt) => {
-                                    const canvas =
-                                        document.createElement('canvas');
-                                    canvas.width = canvas.height = size;
-                                    const ctx = canvas.getContext('2d')!;
-
-                                    await canvasRender(ctx, state);
-                                    // ctx.drawImage(
-                                    //     evt.target as HTMLImageElement,
-                                    //     0,
-                                    //     0,
-                                    //     size,
-                                    //     size,
-                                    // );
-                                    canvas.toBlob(async (blob) => {
-                                        if (embed) {
-                                            blob = await addMetadata(
-                                                blob,
-                                                state,
-                                            );
-                                        }
-                                        setPng(URL.createObjectURL(blob));
-                                    }, 'image/png');
-                                }}
-                            />
+                            <img src={url} css={{ maxHeight: 400 }} />
                         </div>
                     </div>
-                    <div>
-                        {png ? (
-                            <>
-                                <a
-                                    href={png}
-                                    download={name.replace('.svg', '.png')}
-                                    css={{
-                                        display: 'block',
-                                        color: 'white',
-                                        background: '#666',
-                                        borderRadius: 6,
-                                        marginBottom: 16,
-                                        padding: '4px 8px',
-                                        textDecoration: 'none',
-                                        cursor: 'pointer',
-                                    }}
-                                >
-                                    Download {name.replace('.svg', '.png')}
-                                </a>
-                                <div
-                                    style={{
-                                        backgroundImage: `url("${transparent}")`,
-                                        backgroundRepeat: 'repeat',
-                                        backgroundSize: 40,
-                                    }}
-                                >
-                                    <img css={{ maxHeight: 400 }} src={png} />
-                                </div>
-                            </>
-                        ) : null}
-                    </div>
+                ) : null}
+                <div>
+                    {png ? (
+                        <>
+                            <a
+                                href={png}
+                                download={name.replace('.svg', '.png')}
+                                css={{
+                                    display: 'block',
+                                    color: 'white',
+                                    background: '#666',
+                                    borderRadius: 6,
+                                    marginBottom: 16,
+                                    padding: '4px 8px',
+                                    textDecoration: 'none',
+                                    cursor: 'pointer',
+                                }}
+                            >
+                                Download {name.replace('.svg', '.png')}
+                            </a>
+                            <div
+                                style={{
+                                    backgroundImage: `url("${transparent}")`,
+                                    backgroundRepeat: 'repeat',
+                                    backgroundSize: 40,
+                                }}
+                            >
+                                <img css={{ maxHeight: 400 }} src={png} />
+                            </div>
+                        </>
+                    ) : null}
                 </div>
-            ) : null}
+            </div>
         </div>
     );
 };

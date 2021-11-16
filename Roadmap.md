@@ -27,6 +27,9 @@ Better path creation
 - [ ] for palettes, it would be nice to be able to paste in a 4- or 5-color one, and have it produce "1 shade lighter / darker", right?
 
 
+- [x] so, I guess I've got image fills now! Which is very cool
+- [x] also, made my own canvas renderer, because svg->canvas was buggy 🤷‍♂️. 
+
 
 
 

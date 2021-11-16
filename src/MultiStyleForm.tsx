@@ -55,6 +55,7 @@ export const MultiStyleForm = ({
         style.lines.forEach((line, i) => {
             addIfNew(lines[i].color, line?.color ?? null);
             addIfNew(lines[i].inset, line?.inset ?? null);
+            addIfNew(lines[i].width, line?.width ?? null);
         });
     });
     return (
@@ -62,7 +63,7 @@ export const MultiStyleForm = ({
             Change {styles.length} styles.
             <div>Fills</div>
             {fills.map((fill, i) => (
-                <>
+                <div css={{ display: 'flex', alignItems: 'center' }}>
                     <MultiColor
                         color={fill.color}
                         onChange={(color) => {
@@ -88,6 +89,7 @@ export const MultiStyleForm = ({
                         palette={palette}
                         key={i}
                     />
+                    <div style={{ flexBasis: 16 }} />
                     <div key={`opacity-${i}`}>
                         opacity:
                         <MultiNumber
@@ -118,11 +120,11 @@ export const MultiStyleForm = ({
                             }}
                         />
                     </div>
-                </>
+                </div>
             ))}
             <div>Lines</div>
             {lines.map((line, i) => (
-                <>
+                <div css={{ display: 'flex', alignItems: 'center' }}>
                     <MultiColor
                         color={line.color}
                         onChange={(color) => {
@@ -148,6 +150,7 @@ export const MultiStyleForm = ({
                         palette={palette}
                         key={i}
                     />
+                    <div style={{ flexBasis: 16 }} />
                     <div key={`stroke-${i}`}>
                         width:
                         <MultiNumber
@@ -178,7 +181,7 @@ export const MultiStyleForm = ({
                             }}
                         />
                     </div>
-                </>
+                </div>
             ))}
         </div>
     );

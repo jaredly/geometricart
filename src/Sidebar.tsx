@@ -13,7 +13,7 @@ import { guideTypes, State, Action, Tab, Id, Path, PathGroup } from './types';
 import { initialState } from './initialState';
 import { Export } from './Export';
 import { toTypeRev } from './App';
-import { useDropTarget } from './useDropTarget';
+import { useDropStateTarget, useDropTarget } from './useDropTarget';
 import { PalettesForm } from './PalettesForm';
 import { MultiStyleForm, mergeStyles } from './MultiStyleForm';
 
@@ -423,7 +423,7 @@ export function Sidebar({
     state: State;
     canvasRef: React.MutableRefObject<SVGSVGElement | null>;
 }) {
-    const [dragging, callbacks] = useDropTarget((state) =>
+    const [dragging, callbacks] = useDropStateTarget((state) =>
         dispatch({ type: 'reset', state }),
     );
 
