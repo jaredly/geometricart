@@ -393,12 +393,14 @@ export const GuideForm = ({
     onChange,
     onMouseOver,
     onMouseOut,
+    onDelete,
 }: {
     guide: Guide;
     selected: boolean;
     onChange: (guide: Guide) => unknown;
     onMouseOver: () => void;
     onMouseOut: () => void;
+    onDelete: () => void;
 }) => {
     const [expanded, setExpanded] = React.useState(false);
     // const ref = React.useRef(null as null | HTMLDivElement);
@@ -438,6 +440,14 @@ export const GuideForm = ({
                     value={guide.active}
                     onChange={(active) => onChange({ ...guide, active })}
                 />
+                <div style={{ flex: 1 }} />
+                <button
+                    onClick={() => {
+                        onDelete();
+                    }}
+                >
+                    Delete
+                </button>
             </div>
             {expanded ? (
                 <>

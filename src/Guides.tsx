@@ -179,12 +179,30 @@ export const Guides = ({
     const onClickIntersection = React.useCallback(
         (coord: Intersect, shiftKey: boolean) => {
             if (currentPendingMirror.current) {
-                if (currentPendingMirror.current.center) {
+                const mirror = currentPendingMirror.current;
+                if (mirror.center) {
+                    const nextId = `id-${currentState.current.nextId}`;
+                    const rotational: Array<boolean> = [];
+                    for (let i = 0; i < mirror.rotations - 1; i++) {
+                        rotational.push(true);
+                    }
                     // we're done folks
+                    dispatch({
+                        type: 'mirror:add',
+                        mirror: {
+                            id: '',
+                            origin: mirror.center,
+                            parent: mirror.parent,
+                            point: coord.coord,
+                            reflect: mirror.reflect,
+                            rotational,
+                        },
+                    });
+                    dispatch({ type: 'mirror:active', id: nextId });
                     return; // TODO
                 } else {
                     return setPendingMirror({
-                        ...currentPendingMirror.current,
+                        ...mirror,
                         center: coord.coord,
                     });
                 }

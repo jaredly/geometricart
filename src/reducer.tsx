@@ -420,6 +420,26 @@ export const reduceWithoutUndo = (
                 { type: action.type, action, prev: state.meta },
             ];
         }
+        case 'guide:delete': {
+            const guides = { ...state.guides };
+            delete guides[action.id];
+            return [
+                {
+                    ...state,
+                    guides,
+                    selection:
+                        state.selection?.type === 'Guide'
+                            ? {
+                                  type: 'Guide',
+                                  ids: state.selection.ids.filter(
+                                      (id) => id !== action.id,
+                                  ),
+                              }
+                            : state.selection,
+                },
+                { type: action.type, action, prev: state.guides[action.id] },
+            ];
+        }
         case 'path:delete': {
             const paths = { ...state.paths };
             delete paths[action.id];
@@ -564,6 +584,11 @@ export const undo = (state: State, action: UndoAction): State => {
                     ...state.paths,
                     ...action.paths,
                 },
+            };
+        case 'guide:delete':
+            return {
+                ...state,
+                guides: { ...state.guides, [action.action.id]: action.prev },
             };
         case 'path:delete':
             return {

@@ -442,6 +442,7 @@ export type UndoMirrorAdd = {
     type: MirrorAdd['type'];
     action: MirrorAdd;
     added: [Id, number];
+    // prevActive: Id | null;
 };
 export type MirrorAdd = {
     type: 'mirror:add';
@@ -480,6 +481,16 @@ export type PendingType = {
     kind: GuideGeom['type'] | null;
 };
 
+export type UndoGuideDelete = {
+    type: GuideDelete['type'];
+    action: GuideDelete;
+    prev: Guide;
+};
+export type GuideDelete = {
+    type: 'guide:delete';
+    id: Id;
+};
+
 export type UndoGuideToggle = {
     type: GuideToggle['type'];
     action: GuideToggle;
@@ -506,6 +517,7 @@ export type UndoableAction =
     | ViewUpdate
     | PathUpdateMany
     | GroupUpdate
+    | GuideDelete
     | GroupDelete
     | PathDelete
     | OverlayUpdate
@@ -526,6 +538,7 @@ export type UndoAction =
     | UndoViewUpdate
     | UndoMirrorAdd
     | UndoGroupDelete
+    | UndoGuideDelete
     | UndoPendingPoint
     | UndoPathDelete
     // | UndoPathPoint

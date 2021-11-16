@@ -24,6 +24,9 @@ export const showHover = (
     const color = selection ? 'blue' : 'magenta';
     switch (hover.kind) {
         case 'Path': {
+            if (!state.paths[hover.id]) {
+                return;
+            }
             return (
                 <UnderlinePath
                     path={state.paths[hover.id]}
@@ -61,6 +64,9 @@ export const showHover = (
             );
         }
         case 'Guide': {
+            if (!state.guides[hover.id]) {
+                return;
+            }
             return geomsForGiude(
                 state.guides[hover.id],
                 state.guides[hover.id].mirror

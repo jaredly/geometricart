@@ -99,6 +99,9 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactElement } = {
             >
                 {Object.keys(state.guides).map((k) => (
                     <GuideForm
+                        onDelete={() => {
+                            dispatch({ type: 'guide:delete', id: k });
+                        }}
                         selected={
                             state.selection?.type === 'Guide' &&
                             state.selection.ids.includes(k)
@@ -303,6 +306,18 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactElement } = {
                         }
                     />
                 ))}
+                <button
+                    onClick={() => {
+                        setPendingMirror({
+                            parent: null,
+                            rotations: 3,
+                            reflect: true,
+                            center: null,
+                        });
+                    }}
+                >
+                    Create new mirror
+                </button>
             </div>
         );
     },

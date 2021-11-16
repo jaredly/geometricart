@@ -25,8 +25,9 @@ export const getMirrorTransforms = (mirrors: { [key: Id]: Mirror }) => {
 
                 let transforms = mirrorTransforms(m).map(transformsToMatrices);
                 const parent = got[m.parent!];
-                const res: Array<Array<Matrix>> = [];
+                const res: Array<Array<Matrix>> = transforms.slice();
                 parent.forEach((outer) => {
+                    res.push(outer);
                     transforms.forEach((inner) => {
                         res.push(inner.concat(outer));
                     });
@@ -50,8 +51,10 @@ export const getTransformsForMirror = (
     while (current.parent) {
         current = mirrors[current.parent];
         const outer = mirrorTransforms(current).map(transformsToMatrices);
-        let next: Array<Array<Matrix>> = [];
+        // TODO: I think `next` should be `transforms.slice()`???
+        let next: Array<Array<Matrix>> = transforms.slice();
         outer.forEach((steps) => {
+            next.push(steps);
             transforms.forEach((inner) => {
                 next.push(inner.concat(steps));
             });
