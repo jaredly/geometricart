@@ -12,6 +12,7 @@ import { getMirrorTransforms } from './getMirrorTransforms';
 import { Guides } from './Guides';
 import { handleSelection } from './handleSelection';
 import { Primitive } from './intersect';
+import { Overlay } from './Overlay';
 import { geomToPrimitives } from './points';
 import { RenderPath } from './RenderPath';
 import { showHover } from './showHover';
@@ -35,8 +36,8 @@ export const worldToScreen = (
     pos: Coord,
     view: View,
 ) => ({
-    x: width / 2 + (pos.x - view.center.x) * view.zoom,
-    y: height / 2 + (pos.y - view.center.y) * view.zoom,
+    x: width / 2 + (pos.x + view.center.x) * view.zoom,
+    y: height / 2 + (pos.y + view.center.y) * view.zoom,
 });
 export const screenToWorld = (
     width: number,
@@ -44,8 +45,8 @@ export const screenToWorld = (
     pos: Coord,
     view: View,
 ) => ({
-    x: (pos.x - width / 2) / view.zoom + view.center.x,
-    y: (pos.y - height / 2) / view.zoom + view.center.y,
+    x: (pos.x - width / 2) / view.zoom - view.center.x,
+    y: (pos.y - height / 2) / view.zoom - view.center.y,
 });
 
 // base64
@@ -162,6 +163,31 @@ export const Canvas = ({
                     />
                 ) : null}
                 <g transform={`translate(${x} ${y})`}>
+                    {Object.keys(state.overlays)
+                        .filter(
+                            (id) =>
+                                !state.overlays[id].hide &&
+                                !state.overlays[id].over,
+                        )
+                        .map((id) => {
+                            return (
+                                <Overlay
+                                    state={state}
+                                    id={id}
+                                    view={view}
+                                    key={id}
+                                    width={width}
+                                    height={height}
+                                    onUpdate={(overlay) =>
+                                        dispatch({
+                                            type: 'overlay:update',
+                                            overlay,
+                                        })
+                                    }
+                                />
+                            );
+                        })}
+
                     {sortedVisiblePaths(state).map((k) => (
                         <RenderPath
                             key={k}
@@ -186,6 +212,32 @@ export const Canvas = ({
                             }
                         />
                     ))}
+
+                    {Object.keys(state.overlays)
+                        .filter(
+                            (id) =>
+                                !state.overlays[id].hide &&
+                                state.overlays[id].over,
+                        )
+                        .map((id) => {
+                            return (
+                                <Overlay
+                                    state={state}
+                                    id={id}
+                                    view={view}
+                                    key={id}
+                                    width={width}
+                                    height={height}
+                                    onUpdate={(overlay) =>
+                                        dispatch({
+                                            type: 'overlay:update',
+                                            overlay,
+                                        })
+                                    }
+                                />
+                            );
+                        })}
+
                     {view.guides ? (
                         <Guides
                             state={state}

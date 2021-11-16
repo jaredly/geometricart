@@ -486,7 +486,8 @@ export const reduceWithoutUndo = (
                             id,
                             center: { x: 0, y: 0 },
                             opacity: 0.5,
-                            over: true,
+                            over: false,
+                            hide: false,
                             scale: { x: 1, y: 1 },
                             source: action.attachment,
                         },
@@ -500,6 +501,22 @@ export const reduceWithoutUndo = (
                 },
             ];
         }
+        case 'overlay:update': {
+            return [
+                {
+                    ...state,
+                    overlays: {
+                        ...state.overlays,
+                        [action.overlay.id]: action.overlay,
+                    },
+                },
+                {
+                    type: action.type,
+                    action,
+                    prev: state.overlays[action.overlay.id],
+                },
+            ];
+        }
         default:
             let _x: never = action;
             console.log(`SKIPPING ${(action as any).type}`);
@@ -509,6 +526,15 @@ export const reduceWithoutUndo = (
 
 export const undo = (state: State, action: UndoAction): State => {
     switch (action.type) {
+        case 'overlay:update': {
+            return {
+                ...state,
+                overlays: {
+                    ...state.overlays,
+                    [action.prev.id]: action.prev,
+                },
+            };
+        }
         case 'overlay:add': {
             state = {
                 ...state,

@@ -295,6 +295,16 @@ export type UndoOverlayAdd = {
     added: [string, number];
 };
 
+export type UndoOverlayUpdate = {
+    type: OverlayUpdate['type'];
+    action: OverlayUpdate;
+    prev: Overlay;
+};
+export type OverlayUpdate = {
+    type: 'overlay:update';
+    overlay: Overlay;
+};
+
 export type UndoGuideUpdate = {
     type: GuideUpdate['type'];
     action: GuideUpdate;
@@ -498,6 +508,7 @@ export type UndoableAction =
     | GroupUpdate
     | GroupDelete
     | PathDelete
+    | OverlayUpdate
     | PathGroupUpdateMany
     | PathCreate
     | GuideToggle;
@@ -511,6 +522,7 @@ export type UndoAction =
     | UndoPathGroupUpdateMany
     | UndoMetaUpdate
     | UndoGuideUpdate
+    | UndoOverlayUpdate
     | UndoViewUpdate
     | UndoMirrorAdd
     | UndoGroupDelete
@@ -668,6 +680,7 @@ export type Overlay = {
     source: Id;
     scale: Coord;
     center: Coord;
+    hide: boolean;
     over: boolean;
     opacity: number;
 };

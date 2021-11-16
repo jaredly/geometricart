@@ -4,6 +4,7 @@ import * as React from 'react';
 import { jsx } from '@emotion/react';
 import { State, Action } from './types';
 import { useDropTarget } from './useDropTarget';
+import { Toggle } from './Forms';
 
 export const OverlaysForm = ({
     state,
@@ -27,7 +28,7 @@ export const OverlaysForm = ({
                         id,
                         contents: base64data,
                         height: image.naturalHeight,
-                        width: image.naturalHeight,
+                        width: image.naturalWidth,
                         name: file.name,
                     },
                     id,
@@ -56,6 +57,9 @@ export const OverlaysForm = ({
                         css={{
                             margin: 8,
                             padding: 8,
+                            display: 'flex',
+                            flexDirection: 'row',
+                            alignItems: 'flex-start',
                         }}
                         style={
                             state.selection?.type === 'Overlay' &&
@@ -79,6 +83,34 @@ export const OverlaysForm = ({
                             }
                             style={{ maxWidth: 200, maxHeight: 200 }}
                         />
+                        <div>
+                            <Toggle
+                                value={!!state.overlays[id].hide}
+                                onChange={(hide) =>
+                                    dispatch({
+                                        type: 'overlay:update',
+                                        overlay: {
+                                            ...state.overlays[id],
+                                            hide,
+                                        },
+                                    })
+                                }
+                                label="Hide?"
+                            />
+                            <Toggle
+                                value={!!state.overlays[id].over}
+                                onChange={(over) =>
+                                    dispatch({
+                                        type: 'overlay:update',
+                                        overlay: {
+                                            ...state.overlays[id],
+                                            over,
+                                        },
+                                    })
+                                }
+                                label="Over?"
+                            />
+                        </div>
                     </div>
                 ))}
             </div>

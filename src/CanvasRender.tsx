@@ -18,7 +18,7 @@ import {
 import { Primitive } from './intersect';
 import { reverseSegment } from './pathsAreIdentical';
 import { combinedPathStyles } from './RenderPath';
-import { Coord, Path, Segment, State } from './types';
+import { Coord, Overlay, Path, Segment, State } from './types';
 
 export const makeImage = (href: string): Promise<HTMLImageElement> => {
     return new Promise((res, rej) => {
@@ -59,6 +59,14 @@ export const canvasRender = async (
                 : null,
         ),
     );
+
+    const uids = Object.keys(state.overlays).filter(
+        (id) => !state.overlays[id].hide && !state.overlays[id].over,
+    );
+    for (let id of uids) {
+        const overlay = state.overlays[id];
+        await renderOverlay(state, overlay, ctx);
+    }
 
     sortedVisiblePaths(state).forEach((k) => {
         const path = state.paths[k];
@@ -144,6 +152,14 @@ export const canvasRender = async (
         });
     });
 
+    const oids = Object.keys(state.overlays).filter(
+        (id) => !state.overlays[id].hide && state.overlays[id].over,
+    );
+    for (let id of oids) {
+        const overlay = state.overlays[id];
+        await renderOverlay(state, overlay, ctx);
+    }
+
     if (!state.view.guides) {
         return;
     }
@@ -190,6 +206,29 @@ export const canvasRender = async (
     });
     ctx.globalAlpha = 1;
 };
+
+async function renderOverlay(
+    state: State,
+    overlay: Overlay,
+    ctx: CanvasRenderingContext2D,
+) {
+    const attachment = state.attachments[overlay.source];
+
+    const scale = Math.min(overlay.scale.x, overlay.scale.y);
+
+    let iwidth = ((attachment.width * state.view.zoom) / 100) * scale;
+    let iheight = ((attachment.height * state.view.zoom) / 100) * scale;
+
+    const x = overlay.center.x * state.view.zoom;
+
+    const y = overlay.center.y * state.view.zoom;
+
+    const img = await makeImage(attachment.contents);
+
+    ctx.globalAlpha = overlay.opacity;
+    ctx.drawImage(img, -iwidth / 2 + x, -iheight / 2 + y, iwidth, iheight);
+    ctx.globalAlpha = 1;
+}
 
 function drawCenteredImage(
     img: HTMLImageElement,
