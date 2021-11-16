@@ -2,11 +2,19 @@
 /* @jsxFrag React.Fragment */
 import { jsx } from '@emotion/react';
 import React from 'react';
-import { useCurrent } from './App';
+import { PendingMirror, useCurrent } from './App';
 import { calcAllIntersections } from './calcAllIntersections';
 import { DrawPath } from './DrawPath';
 import { dedupString } from './findNextSegments';
-import { Matrix } from './getMirrorTransforms';
+import {
+    angleTo,
+    applyMatrices,
+    dist,
+    Matrix,
+    mirrorTransforms,
+    push,
+    transformsToMatrices,
+} from './getMirrorTransforms';
 import { Primitive } from './intersect';
 import { RenderIntersections } from './RenderIntersections';
 import { RenderMirror } from './RenderMirror';
@@ -37,6 +45,8 @@ export const Guides = ({
     pos,
     mirrorTransforms,
     hover,
+    pendingMirror,
+    setPendingMirror,
 }: {
     state: State;
     dispatch: (action: Action) => void;
@@ -46,6 +56,12 @@ export const Guides = ({
     hover: Hover | null;
     pos: Coord;
     mirrorTransforms: { [key: string]: Array<Array<Matrix>> };
+    pendingMirror: PendingMirror | null;
+    setPendingMirror: (
+        mirror:
+            | (PendingMirror | null)
+            | ((mirror: PendingMirror | null) => PendingMirror | null),
+    ) => void;
 }) => {
     const guideElements = React.useMemo(
         () => calculateGuideElements(state.guides, mirrorTransforms),
@@ -77,9 +93,50 @@ export const Guides = ({
         null as null | Intersect,
     );
 
+    const currentPendingMirror = useCurrent(pendingMirror);
+
     React.useEffect(() => {
         const fn = (evt: KeyboardEvent) => {
             if (evt.target !== document.body || evt.metaKey || evt.ctrlKey) {
+                return;
+            }
+            if (evt.key === 'ArrowUp' && currentPendingMirror.current) {
+                setPendingMirror((mirror) =>
+                    mirror
+                        ? {
+                              ...mirror,
+                              rotations: mirror.rotations + 1,
+                          }
+                        : null,
+                );
+                evt.preventDefault();
+                evt.stopPropagation();
+                return;
+            }
+            if (evt.key === 'ArrowDown' && currentPendingMirror.current) {
+                setPendingMirror((mirror) =>
+                    mirror
+                        ? {
+                              ...mirror,
+                              rotations: Math.max(1, mirror.rotations - 1),
+                          }
+                        : null,
+                );
+                evt.preventDefault();
+                evt.stopPropagation();
+                return;
+            }
+            if (evt.key === 'r' && currentPendingMirror.current) {
+                setPendingMirror((mirror) =>
+                    mirror
+                        ? {
+                              ...mirror,
+                              reflect: !mirror.reflect,
+                          }
+                        : null,
+                );
+                evt.preventDefault();
+                evt.stopPropagation();
                 return;
             }
             if (evt.key === 'Shift') {
@@ -121,6 +178,17 @@ export const Guides = ({
 
     const onClickIntersection = React.useCallback(
         (coord: Intersect, shiftKey: boolean) => {
+            if (currentPendingMirror.current) {
+                if (currentPendingMirror.current.center) {
+                    // we're done folks
+                    return; // TODO
+                } else {
+                    return setPendingMirror({
+                        ...currentPendingMirror.current,
+                        center: coord.coord,
+                    });
+                }
+            }
             const state = currentState.current;
             if (!state.pending) {
                 setPathOrigin(coord);
@@ -262,6 +330,18 @@ export const Guides = ({
                     onComplete={onCompletePath}
                 />
             ) : null}
+            {pendingMirror ? (
+                <RenderPendingMirror
+                    mirror={pendingMirror}
+                    zoom={view.zoom}
+                    mouse={pos}
+                    transforms={
+                        pendingMirror.parent
+                            ? mirrorTransforms[pendingMirror.parent]
+                            : null
+                    }
+                />
+            ) : null}
             {Object.keys(state.mirrors).map((m) =>
                 hover?.kind === 'Mirror' && hover.id === m ? (
                     <RenderMirror
@@ -272,6 +352,78 @@ export const Guides = ({
                     />
                 ) : null,
             )}
+        </>
+    );
+};
+
+export const RenderPendingMirror = ({
+    mirror,
+    zoom,
+    transforms,
+    mouse,
+}: {
+    mirror: PendingMirror;
+    zoom: number;
+    transforms: null | Array<Array<Matrix>>;
+    mouse: Coord;
+}) => {
+    let center = mirror.center ?? mouse;
+    let radial = mirror.center ? mouse : push(center, 0, 100 / zoom);
+    let line = {
+        p1: radial,
+        p2: push(
+            radial,
+            angleTo(radial, center) + (mirror.reflect ? Math.PI / 8 : 0),
+            dist(center, radial) / 2,
+        ),
+    };
+    const rotational: Array<boolean> = [];
+    for (let i = 0; i < mirror.rotations - 1; i++) {
+        rotational.push(true);
+    }
+    const mine = mirrorTransforms({
+        id: '',
+        origin: center,
+        point: radial,
+        rotational,
+        reflect: mirror.reflect,
+        parent: mirror.parent,
+    }).map(transformsToMatrices);
+    const alls: Array<Array<Matrix>> = mine.slice();
+    transforms?.forEach((outer) => {
+        alls.push(outer);
+        mine.forEach((inner) => {
+            alls.push(inner.concat(outer));
+        });
+    });
+    // let transformed =
+    return (
+        <>
+            <line
+                x1={line.p1.x * zoom}
+                y1={line.p1.y * zoom}
+                x2={line.p2.x * zoom}
+                y2={line.p2.y * zoom}
+                stroke="blue"
+                strokeWidth="2"
+                pointerEvents="none"
+            />
+            {alls.map((transforms, i) => {
+                const p1 = applyMatrices(line.p1, transforms);
+                const p2 = applyMatrices(line.p2, transforms);
+                return (
+                    <line
+                        pointerEvents="none"
+                        key={i}
+                        x1={p1.x * zoom}
+                        y1={p1.y * zoom}
+                        x2={p2.x * zoom}
+                        y2={p2.y * zoom}
+                        stroke="red"
+                        strokeWidth="2"
+                    />
+                );
+            })}
         </>
     );
 };

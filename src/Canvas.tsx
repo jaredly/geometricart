@@ -2,6 +2,7 @@
 /* @jsxFrag React.Fragment */
 import { jsx } from '@emotion/react';
 import React from 'react';
+import { PendingMirror } from './App';
 import { primitiveKey } from './calcAllIntersections';
 import {
     calculateGuideElements,
@@ -26,6 +27,12 @@ export type Props = {
     width: number;
     height: number;
     innerRef: (node: SVGSVGElement | null) => unknown;
+    pendingMirror: PendingMirror | null;
+    setPendingMirror: (
+        mirror:
+            | (PendingMirror | null)
+            | ((mirror: PendingMirror | null) => PendingMirror | null),
+    ) => void;
     dispatch: (action: Action) => unknown;
     hover: Hover | null;
 };
@@ -59,6 +66,8 @@ export const Canvas = ({
     dispatch,
     innerRef,
     hover,
+    pendingMirror,
+    setPendingMirror,
 }: Props) => {
     const mirrorTransforms = React.useMemo(
         () => getMirrorTransforms(state.mirrors),
@@ -247,6 +256,8 @@ export const Canvas = ({
                             view={view}
                             pos={pos}
                             mirrorTransforms={mirrorTransforms}
+                            pendingMirror={pendingMirror}
+                            setPendingMirror={setPendingMirror}
                             hover={hover}
                         />
                     ) : null}

@@ -590,6 +590,7 @@ export const MirrorForm = ({
     selected,
     setSelected,
     onDuplicate,
+    onChild,
 }: {
     mirror: Mirror;
     isActive: boolean;
@@ -600,6 +601,7 @@ export const MirrorForm = ({
     onChange: (m: Mirror) => unknown;
     onSelect: () => void;
     onDuplicate: () => void;
+    onChild: () => void;
 }) => {
     return (
         <div
@@ -675,6 +677,13 @@ export const MirrorForm = ({
                 }}
             >
                 Duplicate
+            </button>
+            <button
+                onClick={() => {
+                    onChild();
+                }}
+            >
+                Create child mirror
             </button>
         </div>
     );

@@ -5,7 +5,7 @@ import React from 'react';
 import { Canvas } from './Canvas';
 import { reducer } from './reducer';
 import { Hover, Sidebar } from './Sidebar';
-import { GuideGeom, Id, State } from './types';
+import { Coord, GuideGeom, Id, State } from './types';
 import { initialState } from './initialState';
 import { useDropTarget } from './useDropTarget';
 
@@ -31,6 +31,13 @@ export const toType: { [key: string]: GuideGeom['type'] } = {
 
 export const toTypeRev: { [key: string]: string } = {};
 Object.keys(toType).forEach((k) => (toTypeRev[toType[k]] = k));
+
+export type PendingMirror = {
+    rotations: number;
+    center: Coord | null;
+    reflect: boolean;
+    parent: Id | null;
+};
 
 export const App = ({ initialState }: { initialState: State }) => {
     const [state, dispatch] = React.useReducer(reducer, initialState);
@@ -90,6 +97,15 @@ export const App = ({ initialState }: { initialState: State }) => {
 
     const [hover, setHover] = React.useState(null as null | Hover);
 
+    const [pendingMirror, setPendingMirror] = React.useState(
+        null as null | PendingMirror,
+    );
+
+    // Reset when state changes
+    React.useEffect(() => {
+        setPendingMirror(null);
+    }, [state.mirrors, state.guides]);
+
     return (
         <div
             css={{
@@ -113,12 +129,15 @@ export const App = ({ initialState }: { initialState: State }) => {
                 dispatch={dispatch}
                 state={state}
                 canvasRef={ref}
+                setPendingMirror={setPendingMirror}
             />
             <Canvas
                 state={state}
                 hover={hover}
                 innerRef={(node) => (ref.current = node)}
                 dispatch={dispatch}
+                pendingMirror={pendingMirror}
+                setPendingMirror={setPendingMirror}
                 width={1000}
                 height={1000}
             />

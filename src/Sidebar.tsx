@@ -12,7 +12,7 @@ import {
 import { guideTypes, State, Action, Tab, Id, Path, PathGroup } from './types';
 import { initialState } from './initialState';
 import { Export } from './Export';
-import { toTypeRev } from './App';
+import { PendingMirror, toTypeRev } from './App';
 import { useDropStateTarget } from './useDropTarget';
 import { PalettesForm } from './PalettesForm';
 import { MultiStyleForm, mergeStyles } from './MultiStyleForm';
@@ -85,6 +85,7 @@ export type TabProps = {
     canvasRef: { current: SVGSVGElement | null };
     hover: Hover | null;
     setHover: (hover: Hover | null) => void;
+    setPendingMirror: (mirror: PendingMirror | null) => void;
 };
 const tabs: { [key in Tab]: (props: TabProps) => React.ReactElement } = {
     Guides: ({ state, dispatch, hover, setHover }) => {
@@ -236,7 +237,7 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactElement } = {
             ))}
         </div>
     ),
-    Mirrors: ({ state, dispatch, setHover }) => {
+    Mirrors: ({ state, dispatch, setHover, setPendingMirror }) => {
         return (
             <div
                 css={{
@@ -276,6 +277,14 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactElement } = {
                             dispatch({
                                 type: 'mirror:add',
                                 mirror: state.mirrors[k],
+                            });
+                        }}
+                        onChild={() => {
+                            setPendingMirror({
+                                parent: k,
+                                rotations: 3,
+                                reflect: true,
+                                center: null,
                             });
                         }}
                         onSelect={() => {
@@ -419,12 +428,14 @@ export function Sidebar({
     canvasRef,
     hover,
     setHover,
+    setPendingMirror,
 }: {
     dispatch: (action: Action) => void;
     hover: Hover | null;
     setHover: (hover: Hover | null) => void;
     state: State;
     canvasRef: React.MutableRefObject<SVGSVGElement | null>;
+    setPendingMirror: (mirror: PendingMirror | null) => void;
 }) {
     const [dragging, callbacks] = useDropStateTarget((state) =>
         dispatch({ type: 'reset', state }),
@@ -521,7 +532,14 @@ export function Sidebar({
             />
             <Tabs
                 current={state.tab}
-                props={{ state, dispatch, canvasRef, hover, setHover }}
+                props={{
+                    state,
+                    dispatch,
+                    canvasRef,
+                    hover,
+                    setHover,
+                    setPendingMirror,
+                }}
                 tabs={tabs}
                 onSelect={(tab) =>
                     dispatch({ type: 'tab:set', tab: tab as Tab })
