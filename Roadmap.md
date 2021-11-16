@@ -23,7 +23,7 @@ Better path creation
 - [ ] mobileeeeeee frieeendly
 	- DrawPath should show a virtual "keyboard" for up/down/left/right, as well as "cancel"
 
-- [ ] pending guides should show the mirror versions folks
+- [x] pending guides should show the mirror versions folks
 - [ ] add in all points for all visible paths. maybe all line segments, if they're not covered? like that would be really good.
 - [ ] might be nice to be able to re-define the "bounds" for a line, if you want to keep things tidy.
 
@@ -36,7 +36,15 @@ Better path creation
 
 ## [ ] INTERSECTONS FOR ALL PATHS, if they don't already exist. AND SEGMENTS FOR ALL PATHS
 
-## [ ] INSET, gotta have it.
+## [ ] MULTI FILL
+
+## [x] INSET, gotta have it.
+
+- [ ] OK, so once we do `borders`, then we can have a flag for `don't inset from the border`. Which would make it
+	make more sense to have only a couple things inset, and the rest not.
+- [ ] it would be nice to have the option to "dedup outlines ... so we only get one"
+
+- [ ] FIX MULTIFILL - first, allow me to "remove the custom", but also allow me to just nix the custom color, or inset, or whatever.
 
 ## [ ] CLIP PLease, would be very nice. How to define? 
 	- I could just use normal DrawPath ... would that make clipping very complex? I would definitely want to do path simpliciation yes very much.

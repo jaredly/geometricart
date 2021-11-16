@@ -333,6 +333,11 @@ export const Guides = ({
             ) : null}
             {state.pending && state.pending.type === 'Guide' ? (
                 <RenderPendingGuide
+                    mirror={
+                        state.activeMirror
+                            ? mirrorTransforms[state.activeMirror]
+                            : null
+                    }
                     guide={state.pending}
                     pos={pos}
                     zoom={view.zoom}

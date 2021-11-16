@@ -17,7 +17,7 @@ import {
 } from './getMirrorTransforms';
 import { Primitive } from './intersect';
 import { reverseSegment } from './pathsAreIdentical';
-import { combinedPathStyles } from './RenderPath';
+import { combinedPathStyles, insetPath } from './RenderPath';
 import { Coord, Overlay, Path, Segment, State } from './types';
 
 export const makeImage = (href: string): Promise<HTMLImageElement> => {
@@ -77,8 +77,13 @@ export const canvasRender = async (
                 return;
             }
 
+            let myPath = path;
+            if (fill.inset) {
+                myPath = insetPath(path, fill.inset / 100);
+            }
+
             ctx.beginPath();
-            tracePath(ctx, path, zoom);
+            tracePath(ctx, myPath, zoom);
 
             if (fill.opacity != null) {
                 ctx.globalAlpha = fill.opacity;

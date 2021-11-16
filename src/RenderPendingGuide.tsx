@@ -1,6 +1,8 @@
 /* @jsx jsx */
 /* @jsxFrag React.Fragment */
 import { jsx } from '@emotion/react';
+import { transformGuideGeom } from './calculateGuideElements';
+import { applyMatrices, Matrix } from './getMirrorTransforms';
 import { GuideElement } from './GuideElement';
 import { Coord, GuideGeom, PendingGuide } from './types';
 
@@ -9,11 +11,13 @@ export const RenderPendingGuide = ({
     pos,
     zoom,
     shiftKey,
+    mirror,
 }: {
     pos: Coord;
     guide: PendingGuide;
     zoom: number;
     shiftKey: boolean;
+    mirror: null | Array<Array<Matrix>>;
 }) => {
     let offsets = [
         { x: -1, y: 1 },
@@ -28,6 +32,18 @@ export const RenderPendingGuide = ({
     // const prims = geomToPrimitives(pendingGuide(guide.kind, points, shiftKey));
     return (
         <g style={{ pointerEvents: 'none' }}>
+            {mirror
+                ? mirror.map((transform) => (
+                      <GuideElement
+                          zoom={zoom}
+                          original={false}
+                          geom={transformGuideGeom(
+                              pendingGuide(guide.kind, points, shiftKey),
+                              (pos) => applyMatrices(pos, transform),
+                          )}
+                      />
+                  ))
+                : null}
             <GuideElement
                 zoom={zoom}
                 original={true}
