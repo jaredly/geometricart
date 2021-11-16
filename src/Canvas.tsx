@@ -210,6 +210,7 @@ export const Canvas = ({
                                 //     ? undefined :
                                 (evt) => {
                                     evt.stopPropagation();
+                                    evt.preventDefault();
                                     const path = state.paths[k];
                                     handleSelection(
                                         path,

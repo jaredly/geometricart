@@ -460,6 +460,30 @@ export const reduceWithoutUndo = (
                 { type: action.type, action, path: state.paths[action.id] },
             ];
         }
+        case 'path:delete:many': {
+            const paths = { ...state.paths };
+            const prev: { [key: Id]: Path } = {};
+            action.ids.forEach((id) => {
+                prev[id] = paths[id];
+                delete paths[id];
+            });
+            return [
+                {
+                    ...state,
+                    paths,
+                    selection:
+                        state.selection?.type === 'Path'
+                            ? {
+                                  type: 'Path',
+                                  ids: state.selection.ids.filter(
+                                      (id) => !action.ids.includes(id),
+                                  ),
+                              }
+                            : state.selection,
+                },
+                { type: action.type, action, prev },
+            ];
+        }
         case 'group:delete': {
             const paths = { ...state.paths };
             const dpaths: { [key: Id]: Path } = {};
@@ -566,6 +590,8 @@ export const undo = (state: State, action: UndoAction): State => {
             delete state.overlays[action.added[0]];
             return state;
         }
+        case 'path:delete:many':
+            return { ...state, paths: { ...state.paths, ...action.prev } };
         case 'path:update:many':
             return { ...state, paths: { ...state.paths, ...action.prev } };
         case 'pathGroup:update:many':

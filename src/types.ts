@@ -327,6 +327,16 @@ export type PathGroupUpdateMany = {
     changed: { [key: string]: PathGroup };
 };
 
+export type UndoPathDeleteMany = {
+    type: PathDeleteMany['type'];
+    action: PathDeleteMany;
+    prev: { [key: string]: Path };
+};
+export type PathDeleteMany = {
+    type: 'path:delete:many';
+    ids: Array<Id>;
+};
+
 export type UndoPathUpdateMany = {
     type: PathUpdateMany['type'];
     action: PathUpdateMany;
@@ -520,6 +530,7 @@ export type UndoableAction =
     | GuideDelete
     | GroupDelete
     | PathDelete
+    | PathDeleteMany
     | OverlayUpdate
     | PathGroupUpdateMany
     | PathCreate
@@ -531,6 +542,7 @@ export type UndoAction =
     | UndoGroupUpdate
     | UndoPathUpdate
     | UndoPathUpdateMany
+    | UndoPathDeleteMany
     | UndoPathGroupUpdateMany
     | UndoMetaUpdate
     | UndoGuideUpdate

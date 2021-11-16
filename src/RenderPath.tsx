@@ -78,6 +78,9 @@ export const RenderPath = ({
                         : {}
                 }
                 d={d}
+                onMouseDown={
+                    onClick ? (evt) => evt.preventDefault() : undefined
+                }
                 strokeLinejoin="round"
                 fill={paletteColor(palette, fill.color)}
                 onClick={onClick}
@@ -97,7 +100,18 @@ export const RenderPath = ({
                 strokeDasharray={line.dash ? line.dash.join(' ') : undefined}
                 fill="none"
                 strokeLinejoin="round"
+                onClick={onClick}
+                css={
+                    onClick
+                        ? {
+                              cursor: 'pointer',
+                          }
+                        : {}
+                }
                 strokeWidth={line.width ? (line.width / 100) * zoom : 0}
+                onMouseDown={
+                    onClick ? (evt) => evt.preventDefault() : undefined
+                }
             />
         );
     });

@@ -60,6 +60,25 @@ export const App = ({ initialState }: { initialState: State }) => {
             ) {
                 return;
             }
+            if (evt.key === 'a' && (evt.ctrlKey || evt.metaKey)) {
+                evt.preventDefault();
+                evt.stopPropagation();
+                return dispatch({
+                    type: 'selection:set',
+                    selection: {
+                        type: 'PathGroup',
+                        ids: Object.keys(latestState.current.pathGroups),
+                    },
+                });
+            }
+            if (evt.key === 'Delete' || evt.key === 'Backspace') {
+                if (latestState.current.selection?.type === 'Path') {
+                    return dispatch({
+                        type: 'path:delete:many',
+                        ids: latestState.current.selection.ids,
+                    });
+                }
+            }
             if (evt.key === 'g') {
                 return dispatch({
                     type: 'view:update',
@@ -70,7 +89,12 @@ export const App = ({ initialState }: { initialState: State }) => {
                 });
             }
             if (evt.key === 'Escape') {
-                return dispatch({ type: 'pending:type', kind: null });
+                if (latestState.current.pending) {
+                    return dispatch({ type: 'pending:type', kind: null });
+                }
+                if (latestState.current.selection) {
+                    return dispatch({ type: 'selection:set', selection: null });
+                }
             }
             if (evt.key === 'z' && (evt.ctrlKey || evt.metaKey)) {
                 evt.preventDefault();

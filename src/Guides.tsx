@@ -139,6 +139,12 @@ export const Guides = ({
                 evt.stopPropagation();
                 return;
             }
+            if (evt.key === 'Escape' && currentPendingMirror.current) {
+                setPendingMirror(null);
+                evt.preventDefault();
+                evt.stopPropagation();
+                return;
+            }
             if (evt.key === 'Shift') {
                 setShiftKey(currentPos.current);
             }
