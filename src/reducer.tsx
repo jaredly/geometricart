@@ -25,125 +25,6 @@ import {
     pathToSegmentKeys,
 } from './pathsAreIdentical';
 
-export const undo = (state: State, action: UndoAction): State => {
-    switch (action.type) {
-        case 'path:update:many':
-            return { ...state, paths: { ...state.paths, ...action.prev } };
-        case 'pathGroup:update:many':
-            return {
-                ...state,
-                pathGroups: { ...state.pathGroups, ...action.prev },
-            };
-        case 'group:delete':
-            return {
-                ...state,
-                pathGroups: {
-                    ...state.pathGroups,
-                    [action.action.id]: action.group,
-                },
-                paths: {
-                    ...state.paths,
-                    ...action.paths,
-                },
-            };
-        case 'path:delete':
-            return {
-                ...state,
-                paths: { ...state.paths, [action.action.id]: action.path },
-            };
-        case 'meta:update':
-            return { ...state, meta: action.prev };
-        case 'path:update':
-            return {
-                ...state,
-                paths: {
-                    ...state.paths,
-                    [action.action.id]: action.prev,
-                },
-            };
-        case 'group:update':
-            return {
-                ...state,
-                pathGroups: {
-                    ...state.pathGroups,
-                    [action.action.id]: action.prev,
-                },
-            };
-        case 'mirror:active':
-            return { ...state, activeMirror: action.prev };
-        case 'view:update':
-            return { ...state, view: action.prev };
-
-        case 'path:create': {
-            state = {
-                ...state,
-                paths: {
-                    ...state.paths,
-                },
-                nextId: action.added[2],
-            };
-            action.added[0].forEach((id) => {
-                delete state.paths[id];
-            });
-            if (action.added[1]) {
-                state.pathGroups = { ...state.pathGroups };
-                delete state.pathGroups[action.added[1]];
-            }
-            return state;
-        }
-
-        case 'pending:type':
-            return { ...state, pending: action.prev };
-        case 'pending:point': {
-            if (action.added) {
-                state = {
-                    ...state,
-                    guides: {
-                        ...state.guides,
-                    },
-                    nextId: action.added[1],
-                };
-                delete state.guides[action.added[0]];
-            }
-            return {
-                ...state,
-                pending: action.pending,
-            };
-        }
-        case 'mirror:change':
-            return {
-                ...state,
-                mirrors: { ...state.mirrors, [action.action.id]: action.prev },
-            };
-        case 'mirror:add': {
-            const mirrors = { ...state.mirrors };
-            delete mirrors[action.added[0]];
-            return { ...state, mirrors, nextId: action.added[1] };
-        }
-        case 'guide:update':
-            return {
-                ...state,
-                guides: { ...state.guides, [action.action.id]: action.prev },
-            };
-        case 'guide:add': {
-            const guides = { ...state.guides };
-            delete guides[action.action.id];
-            return { ...state, guides };
-        }
-        case 'guide:toggle':
-            return {
-                ...state,
-                guides: {
-                    ...state.guides,
-                    [action.action.id]: {
-                        ...state.guides[action.action.id],
-                        active: !state.guides[action.action.id].active,
-                    },
-                },
-            };
-    }
-};
-
 export const reducer = (state: State, action: Action): State => {
     if (action.type === 'undo') {
         console.log(state.history);
@@ -593,9 +474,165 @@ export const reduceWithoutUndo = (
                 },
             ];
         }
+        case 'overlay:add': {
+            let nextId = state.nextId + 1;
+            const id = `id-${state.nextId}`;
+            return [
+                {
+                    ...state,
+                    overlays: {
+                        ...state.overlays,
+                        [id]: {
+                            id,
+                            center: { x: 0, y: 0 },
+                            opacity: 0.5,
+                            over: true,
+                            scale: { x: 1, y: 1 },
+                            source: action.attachment,
+                        },
+                    },
+                    nextId,
+                },
+                {
+                    type: action.type,
+                    action,
+                    added: [id, state.nextId],
+                },
+            ];
+        }
         default:
             let _x: never = action;
             console.log(`SKIPPING ${(action as any).type}`);
     }
     return [state, null];
+};
+
+export const undo = (state: State, action: UndoAction): State => {
+    switch (action.type) {
+        case 'overlay:add': {
+            state = {
+                ...state,
+                overlays: {
+                    ...state.overlays,
+                },
+                nextId: action.added[1],
+            };
+            delete state.overlays[action.added[0]];
+            return state;
+        }
+        case 'path:update:many':
+            return { ...state, paths: { ...state.paths, ...action.prev } };
+        case 'pathGroup:update:many':
+            return {
+                ...state,
+                pathGroups: { ...state.pathGroups, ...action.prev },
+            };
+        case 'group:delete':
+            return {
+                ...state,
+                pathGroups: {
+                    ...state.pathGroups,
+                    [action.action.id]: action.group,
+                },
+                paths: {
+                    ...state.paths,
+                    ...action.paths,
+                },
+            };
+        case 'path:delete':
+            return {
+                ...state,
+                paths: { ...state.paths, [action.action.id]: action.path },
+            };
+        case 'meta:update':
+            return { ...state, meta: action.prev };
+        case 'path:update':
+            return {
+                ...state,
+                paths: {
+                    ...state.paths,
+                    [action.action.id]: action.prev,
+                },
+            };
+        case 'group:update':
+            return {
+                ...state,
+                pathGroups: {
+                    ...state.pathGroups,
+                    [action.action.id]: action.prev,
+                },
+            };
+        case 'mirror:active':
+            return { ...state, activeMirror: action.prev };
+        case 'view:update':
+            return { ...state, view: action.prev };
+
+        case 'path:create': {
+            state = {
+                ...state,
+                paths: {
+                    ...state.paths,
+                },
+                nextId: action.added[2],
+            };
+            action.added[0].forEach((id) => {
+                delete state.paths[id];
+            });
+            if (action.added[1]) {
+                state.pathGroups = { ...state.pathGroups };
+                delete state.pathGroups[action.added[1]];
+            }
+            return state;
+        }
+
+        case 'pending:type':
+            return { ...state, pending: action.prev };
+        case 'pending:point': {
+            if (action.added) {
+                state = {
+                    ...state,
+                    guides: {
+                        ...state.guides,
+                    },
+                    nextId: action.added[1],
+                };
+                delete state.guides[action.added[0]];
+            }
+            return {
+                ...state,
+                pending: action.pending,
+            };
+        }
+        case 'mirror:change':
+            return {
+                ...state,
+                mirrors: { ...state.mirrors, [action.action.id]: action.prev },
+            };
+        case 'mirror:add': {
+            const mirrors = { ...state.mirrors };
+            delete mirrors[action.added[0]];
+            return { ...state, mirrors, nextId: action.added[1] };
+        }
+        case 'guide:update':
+            return {
+                ...state,
+                guides: { ...state.guides, [action.action.id]: action.prev },
+            };
+        case 'guide:add': {
+            const guides = { ...state.guides };
+            delete guides[action.action.id];
+            return { ...state, guides };
+        }
+        case 'guide:toggle':
+            return {
+                ...state,
+                guides: {
+                    ...state.guides,
+                    [action.action.id]: {
+                        ...state.guides[action.action.id],
+                        active: !state.guides[action.action.id].active,
+                    },
+                },
+            };
+    }
 };

@@ -426,7 +426,7 @@ export const segmentAngle = (
         const tm = t1 + (bt / 2) * (segment.clockwise ? 1 : -1); // (t1 + t2) / 2;
         const d = dist(segment.center, segment.to);
         const midp = push(segment.center, tm, d);
-        console.log(segment, t1, t2, bt, tm);
+        // console.log(segment, t1, t2, bt, tm);
         // const midp =
         // tangent at prev,
         return angleTo(prev, midp);

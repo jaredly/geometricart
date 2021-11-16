@@ -2,39 +2,21 @@
 /* @jsxFrag React.Fragment */
 import { jsx } from '@emotion/react';
 import React from 'react';
-import { useCurrent } from './App';
-import { primitiveKey, calcAllIntersections } from './calcAllIntersections';
+import { primitiveKey } from './calcAllIntersections';
 import {
     calculateGuideElements,
     calculateInactiveGuideElements,
-    geomsForGiude,
 } from './calculateGuideElements';
-import { DrawPath } from './DrawPath';
 // import { DrawPath } from './DrawPathOld';
-import { dedupString } from './findNextSegments';
-import { getMirrorTransforms, Matrix } from './getMirrorTransforms';
+import { getMirrorTransforms } from './getMirrorTransforms';
+import { Guides } from './Guides';
+import { handleSelection } from './handleSelection';
 import { Primitive } from './intersect';
 import { geomToPrimitives } from './points';
-import { RenderIntersections } from './RenderIntersections';
-import { RenderMirror } from './RenderMirror';
-import { RenderPath, UnderlinePath } from './RenderPath';
-import { RenderPendingGuide } from './RenderPendingGuide';
-import { RenderPrimitive } from './RenderPrimitive';
+import { RenderPath } from './RenderPath';
+import { showHover } from './showHover';
 import { Hover } from './Sidebar';
-import {
-    Action,
-    Coord,
-    GuideElement,
-    Id,
-    Intersect,
-    Line,
-    Path,
-    Pending,
-    PendingSegment,
-    State,
-    Style,
-    View,
-} from './types';
+import { Action, Coord, GuideElement, Id, State, Style, View } from './types';
 
 export type Props = {
     state: State;
@@ -97,21 +79,10 @@ export const Canvas = ({
         return primitivesForElements(inativeGuideElements);
     }, [inativeGuideElements]);
 
-    const allIntersections = React.useMemo(
-        () => calcAllIntersections(guidePrimitives.map((p) => p.prim)),
-        [guidePrimitives],
-    );
-
     const [pos, setPos] = React.useState({ x: 0, y: 0 });
 
     const currentState = React.useRef(state);
     currentState.current = state;
-
-    const currentPos = useCurrent(pos);
-
-    const [pathOrigin, setPathOrigin] = React.useState(
-        null as null | Intersect,
-    );
 
     const [, setTick] = React.useState(0);
 
@@ -145,78 +116,7 @@ export const Canvas = ({
     //     null as null | { pos: Coord; level: number },
     // );
 
-    const [shiftKey, setShiftKey] = React.useState(false as false | Coord);
-
-    const [altKey, setAltKey] = React.useState(false);
-
     // const currentZoom = useCurrent(zoomKey);
-
-    React.useEffect(() => {
-        const fn = (evt: KeyboardEvent) => {
-            if (evt.target !== document.body || evt.metaKey || evt.ctrlKey) {
-                return;
-            }
-            if (evt.key === 'Alt') {
-                setAltKey(true);
-            }
-            // if (evt.key === 'z' && currentZoom.current == null) {
-            //     setZoomKey({ level: 1, pos: currentPos.current });
-            // }
-            // if (evt.key === 'Z' && currentZoom.current == null) {
-            //     setZoomKey({ level: 2, pos: currentPos.current });
-            // }
-            // console.l;
-            if (evt.key === 'Shift') {
-                // if (currentZoom.current != null) {
-                //     setZoomKey({ level: 2, pos: currentZoom.current.pos });
-                // }
-                setShiftKey(currentPos.current);
-            }
-            if (pathOrigin && evt.key === 'Escape') {
-                setPathOrigin(null);
-                evt.stopPropagation();
-            }
-        };
-        const up = (evt: KeyboardEvent) => {
-            if (evt.key === 'Alt') {
-                setAltKey(false);
-            }
-            if (evt.key === 'Shift') {
-                // if (currentZoom.current != null) {
-                //     setZoomKey({ level: 1, pos: currentZoom.current.pos });
-                // }
-                setShiftKey(false);
-                // TODO folks
-            }
-            // if (evt.key === 'z' || evt.key === 'Z') {
-            //     setZoomKey(null);
-            // }
-        };
-        document.addEventListener('keydown', fn);
-        document.addEventListener('keyup', up);
-        return () => {
-            document.removeEventListener('keydown', fn);
-            document.removeEventListener('keyup', up);
-        };
-    }, [!!pathOrigin]);
-
-    const onClickIntersection = React.useCallback(
-        (coord: Intersect, shiftKey: boolean) => {
-            const state = currentState.current;
-            if (!state.pending) {
-                setPathOrigin(coord);
-                // dispatch({ type: 'path:point', coord });
-            }
-            if (state.pending && state.pending.type === 'Guide') {
-                dispatch({
-                    type: 'pending:point',
-                    coord: coord.coord,
-                    shiftKey,
-                });
-            }
-        },
-        [],
-    );
 
     const [tmpView, setTmpView] = React.useState(null as null | View);
 
@@ -241,27 +141,6 @@ export const Canvas = ({
 
     const x = view.center.x * view.zoom + width / 2;
     const y = view.center.y * view.zoom + height / 2;
-
-    const onCompletePath = React.useCallback(
-        (parts: Array<PendingSegment>) => {
-            if (!pathOrigin) {
-                return;
-            }
-            // TODO:
-            dispatch({
-                type: 'path:create',
-                segments: parts.map((s) => s.segment),
-                origin: pathOrigin.coord,
-            });
-            setPathOrigin(null);
-        },
-        [pathOrigin],
-    );
-
-    // When intersections change, cancel pending stuffs
-    React.useEffect(() => {
-        setPathOrigin(null);
-    }, [allIntersections]);
 
     const ref = React.useRef(null as null | SVGSVGElement);
 
@@ -312,6 +191,8 @@ export const Canvas = ({
     const [dragPos, setDragPos] = React.useState(
         null as null | { view: View; coord: Coord },
     );
+
+    // const [altKey, setAltKey] = React.useState(false);
 
     return (
         <div
@@ -435,155 +316,35 @@ export const Canvas = ({
                             zoom={view.zoom}
                             palette={state.palettes[state.activePalette]}
                             onClick={
-                                pathOrigin
-                                    ? undefined
-                                    : (evt) => {
-                                          evt.stopPropagation();
-                                          const path = state.paths[k];
-                                          handleSelection(
-                                              path,
-                                              state,
-                                              dispatch,
-                                              evt.shiftKey,
-                                          );
-                                      }
+                                // TODO: Disable path clickies if we're doing guides, folks.
+                                // pathOrigin
+                                //     ? undefined :
+                                (evt) => {
+                                    evt.stopPropagation();
+                                    const path = state.paths[k];
+                                    handleSelection(
+                                        path,
+                                        state,
+                                        dispatch,
+                                        evt.shiftKey,
+                                    );
+                                }
                             }
                         />
                     ))}
                     {view.guides ? (
-                        <>
-                            <RenderPrimitives
-                                primitives={inativeGuidePrimitives}
-                                zoom={view.zoom}
-                                width={width}
-                                height={height}
-                                inactive
-                                onClick={
-                                    pathOrigin
-                                        ? undefined
-                                        : (guides, shift) => {
-                                              if (!shift) {
-                                                  dispatch({
-                                                      type: 'tab:set',
-                                                      tab: 'Guides',
-                                                  });
-                                                  dispatch({
-                                                      type: 'selection:set',
-                                                      selection: {
-                                                          type: 'Guide',
-                                                          ids: dedupString(
-                                                              guides,
-                                                          ),
-                                                      },
-                                                  });
-                                                  return;
-                                              }
-                                              console.log(guides, 'click');
-                                              const seen: {
-                                                  [key: string]: true;
-                                              } = {};
-                                              // ok
-                                              guides.forEach((guide) => {
-                                                  if (seen[guide]) {
-                                                      return;
-                                                  }
-                                                  seen[guide] = true;
-                                                  dispatch({
-                                                      type: 'guide:toggle',
-                                                      id: guide,
-                                                  });
-                                              });
-                                          }
-                                }
-                            />
-                            <RenderPrimitives
-                                primitives={guidePrimitives}
-                                zoom={view.zoom}
-                                width={width}
-                                height={height}
-                                onClick={
-                                    pathOrigin
-                                        ? undefined
-                                        : (guides, shift) => {
-                                              if (!shift) {
-                                                  dispatch({
-                                                      type: 'tab:set',
-                                                      tab: 'Guides',
-                                                  });
-                                                  dispatch({
-                                                      type: 'selection:set',
-                                                      selection: {
-                                                          type: 'Guide',
-                                                          ids: dedupString(
-                                                              guides,
-                                                          ),
-                                                      },
-                                                  });
-                                                  return;
-                                              }
-                                              console.log(guides, 'click');
-                                              const seen: {
-                                                  [key: string]: true;
-                                              } = {};
-                                              // ok
-                                              guides.forEach((guide) => {
-                                                  if (seen[guide]) {
-                                                      return;
-                                                  }
-                                                  seen[guide] = true;
-                                                  dispatch({
-                                                      type: 'guide:toggle',
-                                                      id: guide,
-                                                  });
-                                              });
-                                          }
-                                }
-                            />
-                            {!pathOrigin ? (
-                                <RenderIntersections
-                                    zoom={view.zoom}
-                                    intersections={allIntersections}
-                                    onClick={onClickIntersection}
-                                />
-                            ) : null}
-                            {state.pending && state.pending.type === 'Guide' ? (
-                                <RenderPendingGuide
-                                    guide={state.pending}
-                                    pos={pos}
-                                    zoom={view.zoom}
-                                    shiftKey={!!shiftKey}
-                                />
-                            ) : null}
-                            {pathOrigin ? (
-                                <DrawPath
-                                    palette={
-                                        state.palettes[state.activePalette]
-                                    }
-                                    mirror={
-                                        state.activeMirror
-                                            ? mirrorTransforms[
-                                                  state.activeMirror
-                                              ]
-                                            : null
-                                    }
-                                    zoom={view.zoom}
-                                    origin={pathOrigin}
-                                    primitives={guidePrimitives}
-                                    intersections={allIntersections}
-                                    onComplete={onCompletePath}
-                                />
-                            ) : null}
-                            {Object.keys(state.mirrors).map((m) =>
-                                hover?.kind === 'Mirror' && hover.id === m ? (
-                                    <RenderMirror
-                                        key={m}
-                                        mirror={state.mirrors[m]}
-                                        transforms={mirrorTransforms[m]}
-                                        zoom={view.zoom}
-                                    />
-                                ) : null,
-                            )}
-                        </>
+                        <Guides
+                            state={state}
+                            dispatch={dispatch}
+                            width={width}
+                            height={height}
+                            view={view}
+                            inativeGuidePrimitives={inativeGuidePrimitives}
+                            guidePrimitives={guidePrimitives}
+                            pos={pos}
+                            mirrorTransforms={mirrorTransforms}
+                            hover={hover}
+                        />
                     ) : null}
                     {state.selection
                         ? state.selection.ids.map((id) =>
@@ -602,17 +363,6 @@ export const Canvas = ({
                         : null}
                     {hover ? (
                         <>
-                            {/* {hover.kind !== 'Path' &&
-                            hover.kind !== 'Guide'
-                            hover.kind !== 'PathGroup' ? (
-                                <rect
-                                    x={-width}
-                                    y={-height}
-                                    width={width * 2}
-                                    height={height * 2}
-                                    fill="rgba(0,0,0,0.4)"
-                                />
-                            ) : null} */}
                             {showHover(
                                 `hover`,
                                 hover,
@@ -628,10 +378,10 @@ export const Canvas = ({
                     ) : null}
                 </g>
             </svg>
-            <div>
+            {/* <div>
                 Guides: {guideElements.length}, Points:{' '}
                 {allIntersections.length}
-            </div>
+            </div> */}
             {tmpView ? (
                 <div
                     css={{
@@ -649,83 +399,6 @@ export const Canvas = ({
             ) : null}
         </div>
     );
-};
-
-export const showHover = (
-    key: string,
-    hover: Hover,
-    state: State,
-    mirrorTransforms: { [key: string]: Array<Array<Matrix>> },
-    height: number,
-    width: number,
-    palette: Array<string>,
-    zoom: number,
-    selection: boolean,
-) => {
-    const color = selection ? 'blue' : 'magenta';
-    switch (hover.kind) {
-        case 'Path': {
-            return (
-                <UnderlinePath
-                    path={state.paths[hover.id]}
-                    zoom={zoom}
-                    color={color}
-                    key={key}
-                />
-            );
-        }
-        case 'PathGroup': {
-            return (
-                <>
-                    {Object.keys(state.paths)
-                        .filter((k) => state.paths[k].group === hover.id)
-                        .map((k, i) => (
-                            <UnderlinePath
-                                key={key + ':' + k}
-                                path={state.paths[k]}
-                                zoom={zoom}
-                                color={color}
-                            />
-                        ))}
-                    {/* {Object.keys(state.paths)
-                        .filter((k) => state.paths[k].group === hover.id)
-                        .map((k) => (
-                            <RenderPath
-                                key={k}
-                                groups={state.pathGroups}
-                                path={state.paths[k]}
-                                zoom={state.view.zoom}
-                                palette={palette}
-                            />
-                        ))} */}
-                </>
-            );
-        }
-        case 'Guide': {
-            return geomsForGiude(
-                state.guides[hover.id],
-                state.guides[hover.id].mirror
-                    ? mirrorTransforms[state.guides[hover.id].mirror!]
-                    : null,
-            ).map((geom, j) =>
-                geomToPrimitives(geom.geom).map((prim, i) => (
-                    <RenderPrimitive
-                        prim={prim}
-                        strokeWidth={4}
-                        color={
-                            state.guides[hover.id].active
-                                ? '#ccc'
-                                : 'rgba(102,102,102,0.5)'
-                        }
-                        zoom={zoom}
-                        height={height}
-                        width={width}
-                        key={`${key}:${j}:${i}`}
-                    />
-                )),
-            );
-        }
-    }
 };
 
 export const combineStyles = (styles: Array<Style>): Style => {
@@ -761,49 +434,7 @@ export const combineStyles = (styles: Array<Style>): Style => {
     return result;
 };
 
-export const RenderPrimitives = React.memo(
-    ({
-        primitives,
-        zoom,
-        height,
-        width,
-        onClick,
-        inactive,
-    }: {
-        zoom: number;
-        height: number;
-        width: number;
-        primitives: Array<{ prim: Primitive; guides: Array<Id> }>;
-        onClick?: (guides: Array<Id>, shift: boolean) => unknown;
-        inactive?: boolean;
-    }) => {
-        // console.log(primitives);
-        return (
-            <>
-                {primitives.map((prim, i) => (
-                    <RenderPrimitive
-                        prim={prim.prim}
-                        zoom={zoom}
-                        height={height}
-                        width={width}
-                        inactive={inactive}
-                        onClick={
-                            onClick
-                                ? (evt: React.MouseEvent) => {
-                                      evt.stopPropagation();
-                                      onClick(prim.guides, evt.shiftKey);
-                                  }
-                                : undefined
-                        }
-                        key={i}
-                    />
-                ))}
-            </>
-        );
-    },
-);
-
-const dragView = (
+export const dragView = (
     prev: View | null,
     dragPos: { view: View; coord: Coord },
     clientX: number,
@@ -888,93 +519,3 @@ export function primitivesForElements(guideElements: GuideElement[]) {
         })
         .filter(Boolean) as Array<{ prim: Primitive; guides: Array<Id> }>;
 }
-
-export const handleSelection = (
-    path: Path,
-    state: State,
-    dispatch: (a: Action) => void,
-    shiftKey: boolean,
-) => {
-    if (shiftKey && state.selection) {
-        // ugh
-        // I'll want to be able to select both paths
-        // and pathgroups.
-        // because what if this thing doesn't have a group
-        // we're out of luck
-        if (state.selection.type === 'PathGroup') {
-            if (!path.group) {
-                return; // ugh
-            }
-            if (state.selection.ids.includes(path.group)) {
-                dispatch({
-                    type: 'selection:set',
-                    selection: {
-                        type: 'PathGroup',
-                        ids: state.selection.ids.filter(
-                            (id) => id !== path.group,
-                        ),
-                    },
-                });
-            } else {
-                dispatch({
-                    type: 'selection:set',
-                    selection: {
-                        type: 'PathGroup',
-                        ids: state.selection.ids.concat([path.group]),
-                    },
-                });
-            }
-        }
-        if (state.selection.type === 'Path') {
-            if (state.selection.ids.includes(path.id)) {
-                dispatch({
-                    type: 'selection:set',
-                    selection: {
-                        type: 'Path',
-                        ids: state.selection.ids.filter((id) => id !== path.id),
-                    },
-                });
-            } else {
-                dispatch({
-                    type: 'selection:set',
-                    selection: {
-                        type: 'Path',
-                        ids: state.selection.ids.concat([path.id]),
-                    },
-                });
-            }
-        }
-        return;
-    }
-    if (
-        path.group &&
-        !(
-            state.selection?.type === 'PathGroup' &&
-            state.selection.ids.includes(path.group)
-        )
-    ) {
-        dispatch({
-            type: 'tab:set',
-            tab: 'PathGroups',
-        });
-        dispatch({
-            type: 'selection:set',
-            selection: {
-                type: 'PathGroup',
-                ids: [path.group],
-            },
-        });
-    } else {
-        dispatch({
-            type: 'tab:set',
-            tab: 'Paths',
-        });
-        dispatch({
-            type: 'selection:set',
-            selection: {
-                type: 'Path',
-                ids: [path.id],
-            },
-        });
-    }
-};

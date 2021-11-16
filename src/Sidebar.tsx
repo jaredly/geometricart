@@ -13,9 +13,10 @@ import { guideTypes, State, Action, Tab, Id, Path, PathGroup } from './types';
 import { initialState } from './initialState';
 import { Export } from './Export';
 import { toTypeRev } from './App';
-import { useDropStateTarget, useDropTarget } from './useDropTarget';
+import { useDropStateTarget } from './useDropTarget';
 import { PalettesForm } from './PalettesForm';
 import { MultiStyleForm, mergeStyles } from './MultiStyleForm';
+import { OverlaysForm } from './OverlaysForm';
 
 export const PREFIX = `<!-- STATE:`;
 export const SUFFIX = '-->';
@@ -29,8 +30,9 @@ export const Tabs = ({
     props: TabProps;
     onSelect: (name: string) => void;
     current: string;
-    tabs: { [key: string]: (props: TabProps) => React.ReactNode };
+    tabs: { [key: string]: (props: TabProps) => React.ReactElement };
 }) => {
+    const Comp = tabs[current];
     return (
         <div css={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
             <div
@@ -67,13 +69,13 @@ export const Tabs = ({
                     </div>
                 ))}
             </div>
-            {tabs[current](props)}
+            <Comp {...props} />
         </div>
     );
 };
 
 export type Hover = {
-    kind: 'Path' | 'PathGroup' | 'Mirror' | 'Guide';
+    kind: Selection['type'];
     id: Id;
 };
 
@@ -84,7 +86,7 @@ export type TabProps = {
     hover: Hover | null;
     setHover: (hover: Hover | null) => void;
 };
-const tabs: { [key in Tab]: (props: TabProps) => React.ReactNode } = {
+const tabs: { [key in Tab]: (props: TabProps) => React.ReactElement } = {
     Guides: ({ state, dispatch, hover, setHover }) => {
         return (
             <div
@@ -301,6 +303,7 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactNode } = {
     Palette: ({ state, dispatch }) => (
         <PalettesForm state={state} dispatch={dispatch} />
     ),
+    Overlays: OverlaysForm,
     Help: () => (
         <div>
             <div>

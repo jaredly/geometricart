@@ -288,6 +288,13 @@ export type UndoViewUpdate = {
     prev: View;
 };
 
+export type OverlyAdd = { type: 'overlay:add'; attachment: Id };
+export type UndoOverlayAdd = {
+    type: OverlyAdd['type'];
+    action: OverlyAdd;
+    added: [string, number];
+};
+
 export type UndoGuideUpdate = {
     type: GuideUpdate['type'];
     action: GuideUpdate;
@@ -480,6 +487,7 @@ export type UndoableAction =
     | MirrorUpdate
     | PendingPoint
     | MetaUpdate
+    | OverlyAdd
     // | PathAdd
     | PathUpdate
     | PendingType
@@ -496,6 +504,7 @@ export type UndoableAction =
 
 export type UndoAction =
     | UndoGuideAdd
+    | UndoOverlayAdd
     | UndoGroupUpdate
     | UndoPathUpdate
     | UndoPathUpdateMany
@@ -557,7 +566,7 @@ export type View = {
 };
 
 export type Selection = {
-    type: 'Guide' | 'Mirror' | 'Path' | 'PathGroup';
+    type: 'Guide' | 'Mirror' | 'Path' | 'PathGroup' | 'Overlay';
     ids: Array<string>;
 };
 
@@ -568,10 +577,13 @@ export type Tab =
     | 'PathGroups'
     | 'Palette'
     | 'Export'
+    | 'Overlays'
     | 'Help';
 
 export type Attachment = {
+    id: Id;
     contents: string; // base64 dontcha know
+    name: string;
     width: number;
     height: number;
 };
@@ -603,7 +615,7 @@ export type State = {
     activeMirror: Id | null;
     view: View;
 
-    underlays: { [key: Id]: Underlay };
+    overlays: { [key: Id]: Overlay };
 
     // Non historied, my folks
     selection: Selection | null;
@@ -617,32 +629,45 @@ export type State = {
 };
 
 export const migrateState = (state: State) => {
-    if (!state.underlays) {
-        state.underlays = {};
-        state.attachments = {};
+    if (!state.version) {
+        state.version = 1;
+        if (!state.overlays) {
+            state.overlays = {};
+            state.attachments = {};
+        }
+        if (!state.palettes) {
+            state.palettes = {};
+            state.tab = 'Guides';
+            state.selection = null;
+        }
+        if (!state.activePalette) {
+            state.palettes['default'] = initialState.palettes['default'];
+            state.activePalette = 'default';
+        }
+        if (!state.meta) {
+            state.meta = {
+                created: Date.now(),
+                title: '',
+                description: '',
+            };
+        }
     }
-    if (!state.tab) {
-        state.palettes = {};
-        state.tab = 'Guides';
-        state.selection = null;
+    if (!state.overlays) {
+        state.overlays = {};
+        // @ts-ignore
+        delete state.underlays;
     }
-    if (!state.activePalette) {
-        state.palettes['default'] = initialState.palettes['default'];
-        state.activePalette = 'default';
-    }
-    if (!state.meta) {
-        state.meta = {
-            created: Date.now(),
-            title: '',
-            description: '',
-        };
-    }
+    // if (state.version < 2) {
+    //     delete state.tab
+    // }
     return state;
 };
 
-export type Underlay = {
+export type Overlay = {
     id: Id;
     source: Id;
     scale: Coord;
     center: Coord;
+    over: boolean;
+    opacity: number;
 };

@@ -125,5 +125,5 @@ export const initialState: State = {
     },
     activePalette: 'default',
     attachments: {},
-    underlays: {},
+    overlays: {},
 };
