@@ -22,6 +22,11 @@ import {
     View,
 } from './types';
 import { RenderPrimitive } from './RenderPrimitive';
+import { primitivesForElements } from './Canvas';
+import {
+    calculateGuideElements,
+    calculateInactiveGuideElements,
+} from './calculateGuideElements';
 
 export const Guides = ({
     state,
@@ -29,8 +34,6 @@ export const Guides = ({
     width,
     height,
     view,
-    inativeGuidePrimitives,
-    guidePrimitives,
     pos,
     mirrorTransforms,
     hover,
@@ -41,13 +44,28 @@ export const Guides = ({
     height: number;
     view: View;
     hover: Hover | null;
-    inativeGuidePrimitives: Array<{ prim: Primitive; guides: Array<Id> }>;
-    guidePrimitives: Array<{ prim: Primitive; guides: Array<Id> }>;
-    // pathOrigin: null | Intersect ,
-    // setPathOrigin: (coord: null | Intersect) => void,
     pos: Coord;
     mirrorTransforms: { [key: string]: Array<Array<Matrix>> };
 }) => {
+    const guideElements = React.useMemo(
+        () => calculateGuideElements(state.guides, mirrorTransforms),
+        [state.guides, mirrorTransforms],
+    );
+    // console.log(guideElements);
+
+    const guidePrimitives = React.useMemo(() => {
+        return primitivesForElements(guideElements);
+    }, [guideElements]);
+
+    const inativeGuideElements = React.useMemo(
+        () => calculateInactiveGuideElements(state.guides, mirrorTransforms),
+        [state.guides, mirrorTransforms],
+    );
+
+    const inativeGuidePrimitives = React.useMemo(() => {
+        return primitivesForElements(inativeGuideElements);
+    }, [inativeGuideElements]);
+
     const currentState = React.useRef(state);
     currentState.current = state;
 

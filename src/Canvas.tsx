@@ -17,6 +17,8 @@ import { RenderPath } from './RenderPath';
 import { showHover } from './showHover';
 import { Hover } from './Sidebar';
 import { Action, Coord, GuideElement, Id, State, Style, View } from './types';
+import { useMouseDrag } from './useMouseDrag';
+import { useScrollWheel } from './useScrollWheel';
 
 export type Props = {
     state: State;
@@ -61,138 +63,38 @@ export const Canvas = ({
         () => getMirrorTransforms(state.mirrors),
         [state.mirrors],
     );
-    const guideElements = React.useMemo(
-        () => calculateGuideElements(state.guides, mirrorTransforms),
-        [state.guides, mirrorTransforms],
-    );
-    const inativeGuideElements = React.useMemo(
-        () => calculateInactiveGuideElements(state.guides, mirrorTransforms),
-        [state.guides, mirrorTransforms],
-    );
-    // console.log(guideElements);
-
-    const guidePrimitives = React.useMemo(() => {
-        return primitivesForElements(guideElements);
-    }, [guideElements]);
-
-    const inativeGuidePrimitives = React.useMemo(() => {
-        return primitivesForElements(inativeGuideElements);
-    }, [inativeGuideElements]);
 
     const [pos, setPos] = React.useState({ x: 0, y: 0 });
 
     const currentState = React.useRef(state);
     currentState.current = state;
 
-    const [, setTick] = React.useState(0);
-
-    React.useEffect(() => {
-        state.palettes[state.activePalette].forEach((color) => {
-            if (color.startsWith('http')) {
-                if (imageCache[color] != null) {
-                    return;
-                }
-                imageCache[color] = false;
-                fetch(
-                    `https://get-page.jaredly.workers.dev/?url=${encodeURIComponent(
-                        color,
-                    )}`,
-                )
-                    .then((data) => data.blob())
-                    .then((blob) => {
-                        var reader = new FileReader();
-                        reader.readAsDataURL(blob);
-                        reader.onloadend = function () {
-                            var base64data = reader.result;
-                            imageCache[color] = base64data as string;
-                            setTick((t) => t + 1);
-                        };
-                    });
-            }
-        });
-    }, [state.palettes[state.activePalette]]);
-
-    // const [zoomKey, setZoomKey] = React.useState(
-    //     null as null | { pos: Coord; level: number },
-    // );
-
-    // const currentZoom = useCurrent(zoomKey);
+    usePalettePreload(state);
 
     const [tmpView, setTmpView] = React.useState(null as null | View);
 
     let view = tmpView ?? state.view;
     view = { ...state.view, center: view.center, zoom: view.zoom };
 
-    // if (zoomKey) {
-
-    //     const screenPos = worldToScreen(width, height, zoomKey.pos, view);
-    //     const amount = zoomKey.level === 2 ? 12 : 4;
-    //     const newZoom = view.zoom * amount;
-    //     const newPos = screenToWorld(width, height, screenPos, { ...view, zoom: newZoom });
-    //     view = {
-    //         ...view,
-    //         zoom: newZoom,
-    //         center: {
-    //             x: view.center.x + (newPos.x - zoomKey.pos.x),
-    //             y: view.center.y + (newPos.y - zoomKey.pos.y),
-    //         },
-    //     };
-    // }
-
-    const x = view.center.x * view.zoom + width / 2;
-    const y = view.center.y * view.zoom + height / 2;
+    const { x, y } = viewPos(view, width, height);
 
     const ref = React.useRef(null as null | SVGSVGElement);
 
-    React.useEffect(() => {
-        if (!ref.current) {
-            return console.warn('NO REF');
-        }
-        const fn = (evt: WheelEvent) => {
-            const rect = ref.current!.getBoundingClientRect();
-            const clientX = evt.clientX;
-            const clientY = evt.clientY;
-            const dy = -evt.deltaY;
-            evt.preventDefault();
-
-            setTmpView((past) => {
-                let view = past || currentState.current.view;
-
-                const screenPos = {
-                    x: clientX - rect.left,
-                    y: clientY - rect.top,
-                };
-
-                const pos = screenToWorld(width, height, screenPos, view);
-
-                const amount = dy / 100 + 1.0;
-                const newZoom = Math.min(
-                    Math.max(view.zoom * amount, 10),
-                    10000,
-                );
-                const newPos = screenToWorld(width, height, screenPos, {
-                    ...view,
-                    zoom: newZoom,
-                });
-                return {
-                    ...view,
-                    zoom: newZoom,
-                    center: {
-                        x: view.center.x + (newPos.x - pos.x),
-                        y: view.center.y + (newPos.y - pos.y),
-                    },
-                };
-            });
-        };
-        ref.current!.addEventListener('wheel', fn, { passive: false });
-        return () => ref.current!.removeEventListener('wheel', fn);
-    }, []);
+    useScrollWheel(ref, setTmpView, currentState, width, height);
 
     const [dragPos, setDragPos] = React.useState(
         null as null | { view: View; coord: Coord },
     );
 
-    // const [altKey, setAltKey] = React.useState(false);
+    const mouseHandlers = useMouseDrag(
+        dragPos,
+        setTmpView,
+        width,
+        height,
+        view,
+        setPos,
+        setDragPos,
+    );
 
     return (
         <div
@@ -222,55 +124,7 @@ export const Canvas = ({
                 css={{
                     outline: '1px solid magenta',
                 }}
-                onMouseMove={(evt) => {
-                    if (dragPos) {
-                        const rect = evt.currentTarget.getBoundingClientRect();
-                        const clientX = evt.clientX;
-                        const clientY = evt.clientY;
-                        evt.preventDefault();
-
-                        setTmpView((prev) => {
-                            return dragView(
-                                prev,
-                                dragPos,
-                                clientX,
-                                rect,
-                                clientY,
-                                width,
-                                height,
-                            );
-                        });
-                    } else {
-                        const rect = evt.currentTarget.getBoundingClientRect();
-                        const pos = {
-                            x: (evt.clientX - rect.left - x) / view.zoom,
-                            y: (evt.clientY - rect.top - y) / view.zoom,
-                        };
-                        setPos(pos);
-                    }
-                }}
-                onMouseUpCapture={(evt) => {
-                    if (dragPos) {
-                        setDragPos(null);
-                        evt.preventDefault();
-                    }
-                }}
-                onMouseDown={(evt) => {
-                    const rect = evt.currentTarget.getBoundingClientRect();
-                    const coord = screenToWorld(
-                        width,
-                        height,
-                        {
-                            x: evt.clientX - rect.left,
-                            y: evt.clientY - rect.top,
-                        },
-                        view,
-                    );
-                    setDragPos({
-                        coord: coord,
-                        view,
-                    });
-                }}
+                {...mouseHandlers}
             >
                 <defs>
                     {state.palettes[state.activePalette].map((color, i) =>
@@ -339,8 +193,6 @@ export const Canvas = ({
                             width={width}
                             height={height}
                             view={view}
-                            inativeGuidePrimitives={inativeGuidePrimitives}
-                            guidePrimitives={guidePrimitives}
                             pos={pos}
                             mirrorTransforms={mirrorTransforms}
                             hover={hover}
@@ -468,6 +320,42 @@ export const dragView = (
     };
     return res;
 };
+
+export function viewPos(view: View, width: number, height: number) {
+    const x = view.center.x * view.zoom + width / 2;
+    const y = view.center.y * view.zoom + height / 2;
+    return { x, y };
+}
+
+export function usePalettePreload(state: State) {
+    const [, setTick] = React.useState(0);
+
+    React.useEffect(() => {
+        state.palettes[state.activePalette].forEach((color) => {
+            if (color.startsWith('http')) {
+                if (imageCache[color] != null) {
+                    return;
+                }
+                imageCache[color] = false;
+                fetch(
+                    `https://get-page.jaredly.workers.dev/?url=${encodeURIComponent(
+                        color,
+                    )}`,
+                )
+                    .then((data) => data.blob())
+                    .then((blob) => {
+                        var reader = new FileReader();
+                        reader.readAsDataURL(blob);
+                        reader.onloadend = function () {
+                            var base64data = reader.result;
+                            imageCache[color] = base64data as string;
+                            setTick((t) => t + 1);
+                        };
+                    });
+            }
+        });
+    }, [state.palettes[state.activePalette]]);
+}
 
 export function sortedVisiblePaths(state: State) {
     return Object.keys(state.paths)
