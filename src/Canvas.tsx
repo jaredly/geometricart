@@ -59,6 +59,24 @@ export const screenToWorld = (
 // base64
 export const imageCache: { [href: string]: string | false } = {};
 
+/*
+
+Kinds of state:
+
+- transient state (tmpZoom, hover, )
+- project state (guides, paths, mirrors)
+- editor settings (palettes, shaders)
+    - I /do/ want undo/redo for this, but ... it needs to live in a separate ... history list. and not be persisted along with the project.
+        - although changes would get synced over? hmmm I don't know what I want here.
+        - ok yes, changed do get synced over, but not in an undoable way, on the project side.
+    - ermmmmmm
+        - ok what about this plan
+        - All fills have their colors denormalized.
+        - when you switch palettes, the `palette:switch` includes the whole new palette, and the whole old palette.
+        - it just goes through all paths, and swaps things out where it sees them.
+
+*/
+
 export const Canvas = ({
     state,
     width,
@@ -105,6 +123,13 @@ export const Canvas = ({
         setPos,
         setDragPos,
     );
+
+    const clickPath = React.useCallback((evt, id) => {
+        evt.stopPropagation();
+        evt.preventDefault();
+        const path = currentState.current.paths[id];
+        handleSelection(path, currentState.current, dispatch, evt.shiftKey);
+    }, []);
 
     return (
         <div
@@ -208,17 +233,7 @@ export const Canvas = ({
                                 // TODO: Disable path clickies if we're doing guides, folks.
                                 // pathOrigin
                                 //     ? undefined :
-                                (evt) => {
-                                    evt.stopPropagation();
-                                    evt.preventDefault();
-                                    const path = state.paths[k];
-                                    handleSelection(
-                                        path,
-                                        state,
-                                        dispatch,
-                                        evt.shiftKey,
-                                    );
-                                }
+                                clickPath
                             }
                         />
                     ))}

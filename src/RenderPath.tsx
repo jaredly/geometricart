@@ -44,84 +44,92 @@ export const calcPathD = (path: Path, zoom: number) => {
     return d + ' Z';
 };
 
-export const RenderPath = ({
-    path,
-    zoom,
-    groups,
-    onClick,
-    palette,
-}: {
-    path: Path;
-    zoom: number;
-    groups: { [key: string]: PathGroup };
-    onClick?: (evt: React.MouseEvent) => void;
-    palette: Array<string>;
-}) => {
-    const d = calcPathD(path, zoom);
-    const style = combinedPathStyles(path, groups);
-    const fills = style.fills.map((fill, i) => {
-        if (!fill) {
-            return null;
-        }
+export const RenderPath = React.memo(
+    ({
+        path,
+        zoom,
+        groups,
+        onClick,
+        palette,
+    }: {
+        path: Path;
+        zoom: number;
+        groups: { [key: string]: PathGroup };
+        onClick?: (evt: React.MouseEvent, id: string) => void;
+        palette: Array<string>;
+    }) => {
+        const d = calcPathD(path, zoom);
+        const style = combinedPathStyles(path, groups);
+        const fills = style.fills.map((fill, i) => {
+            if (!fill) {
+                return null;
+            }
+            return (
+                <path
+                    key={`fill-${i}`}
+                    data-id={path.id}
+                    // opacity={fill.opacity}
+                    // style={{ opacity: 0.5 }}
+                    fillOpacity={fill.opacity}
+                    css={
+                        onClick
+                            ? {
+                                  cursor: 'pointer',
+                              }
+                            : {}
+                    }
+                    d={d}
+                    onMouseDown={
+                        onClick ? (evt) => evt.preventDefault() : undefined
+                    }
+                    strokeLinejoin="round"
+                    fill={paletteColor(palette, fill.color)}
+                    onClick={
+                        onClick ? (evt) => onClick(evt, path.id) : undefined
+                    }
+                />
+            );
+        });
+        const lines = style.lines.map((line, i) => {
+            if (!line) {
+                return null;
+            }
+            return (
+                <path
+                    key={`line-${i}`}
+                    d={d}
+                    data-id={path.id}
+                    stroke={paletteColor(palette, line.color)}
+                    strokeDasharray={
+                        line.dash ? line.dash.join(' ') : undefined
+                    }
+                    fill="none"
+                    strokeLinejoin="round"
+                    onClick={
+                        onClick ? (evt) => onClick(evt, path.id) : undefined
+                    }
+                    css={
+                        onClick
+                            ? {
+                                  cursor: 'pointer',
+                              }
+                            : {}
+                    }
+                    strokeWidth={line.width ? (line.width / 100) * zoom : 0}
+                    onMouseDown={
+                        onClick ? (evt) => evt.preventDefault() : undefined
+                    }
+                />
+            );
+        });
         return (
-            <path
-                key={`fill-${i}`}
-                data-id={path.id}
-                // opacity={fill.opacity}
-                // style={{ opacity: 0.5 }}
-                fillOpacity={fill.opacity}
-                css={
-                    onClick
-                        ? {
-                              cursor: 'pointer',
-                          }
-                        : {}
-                }
-                d={d}
-                onMouseDown={
-                    onClick ? (evt) => evt.preventDefault() : undefined
-                }
-                strokeLinejoin="round"
-                fill={paletteColor(palette, fill.color)}
-                onClick={onClick}
-            />
+            <>
+                {fills}
+                {lines}
+            </>
         );
-    });
-    const lines = style.lines.map((line, i) => {
-        if (!line) {
-            return null;
-        }
-        return (
-            <path
-                key={`line-${i}`}
-                d={d}
-                data-id={path.id}
-                stroke={paletteColor(palette, line.color)}
-                strokeDasharray={line.dash ? line.dash.join(' ') : undefined}
-                fill="none"
-                strokeLinejoin="round"
-                onClick={onClick}
-                css={
-                    onClick
-                        ? {
-                              cursor: 'pointer',
-                          }
-                        : {}
-                }
-                strokeWidth={line.width ? (line.width / 100) * zoom : 0}
-                onMouseDown={
-                    onClick ? (evt) => evt.preventDefault() : undefined
-                }
-            />
-        );
-    });
-    return (
-        <>
-            {fills}
-            {lines}
-        </>
-    );
-};
+    },
+);
 
 export const paletteColor = (
     palette: Array<string>,

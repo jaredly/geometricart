@@ -49,17 +49,6 @@ export const showHover = (
                                 color={color}
                             />
                         ))}
-                    {/* {Object.keys(state.paths)
-                        .filter((k) => state.paths[k].group === hover.id)
-                        .map((k) => (
-                            <RenderPath
-                                key={k}
-                                groups={state.pathGroups}
-                                path={state.paths[k]}
-                                zoom={state.view.zoom}
-                                palette={palette}
-                            />
-                        ))} */}
                 </>
             );
         }

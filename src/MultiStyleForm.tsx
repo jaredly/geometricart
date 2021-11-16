@@ -67,23 +67,7 @@ export const MultiStyleForm = ({
                     <MultiColor
                         color={fill.color}
                         onChange={(color) => {
-                            onChange(
-                                styles.map((style) => {
-                                    if (
-                                        style.fills[i] != null &&
-                                        style.fills[i]!.color == color
-                                    ) {
-                                        return null;
-                                    }
-                                    const fills = style.fills.slice();
-                                    if (!fills[i]) {
-                                        fills[i] = { color };
-                                    } else {
-                                        fills[i] = { ...fills[i], color };
-                                    }
-                                    return { ...style, fills };
-                                }),
-                            );
+                            onChange(updateFill(styles, i, color, 'color'));
                             // ok
                         }}
                         palette={palette}
@@ -96,26 +80,29 @@ export const MultiStyleForm = ({
                             value={fill.opacity}
                             onChange={(opacity) => {
                                 onChange(
-                                    styles.map((style) => {
-                                        if (
-                                            style.fills[i] != null &&
-                                            style.fills[i]!.opacity == opacity
-                                        ) {
-                                            return null;
-                                        }
-                                        const fills = style.fills.slice();
-                                        if (!fills[i]) {
-                                            fills[i] = {
-                                                opacity: opacity ?? undefined,
-                                            };
-                                        } else {
-                                            fills[i] = {
-                                                ...fills[i],
-                                                opacity: opacity ?? undefined,
-                                            };
-                                        }
-                                        return { ...style, fills };
-                                    }),
+                                    updateFill(
+                                        styles,
+                                        i,
+                                        opacity ?? undefined,
+                                        'opacity',
+                                    ),
+                                );
+                            }}
+                        />
+                    </div>
+                    <div style={{ flexBasis: 16 }} />
+                    <div key={`inset-${i}`}>
+                        inset:
+                        <MultiNumber
+                            value={fill.inset}
+                            onChange={(inset) => {
+                                onChange(
+                                    updateFill(
+                                        styles,
+                                        i,
+                                        inset ?? undefined,
+                                        'inset',
+                                    ),
                                 );
                             }}
                         />
@@ -128,23 +115,7 @@ export const MultiStyleForm = ({
                     <MultiColor
                         color={line.color}
                         onChange={(color) => {
-                            onChange(
-                                styles.map((style) => {
-                                    if (
-                                        style.lines[i] != null &&
-                                        style.lines[i]!.color == color
-                                    ) {
-                                        return null;
-                                    }
-                                    const lines = style.lines.slice();
-                                    if (!lines[i]) {
-                                        lines[i] = { color };
-                                    } else {
-                                        lines[i] = { ...lines[i], color };
-                                    }
-                                    return { ...style, lines };
-                                }),
-                            );
+                            onChange(updateLine(styles, i, color, 'color'));
                             // ok
                         }}
                         palette={palette}
@@ -157,26 +128,12 @@ export const MultiStyleForm = ({
                             value={line.width}
                             onChange={(width) => {
                                 onChange(
-                                    styles.map((style) => {
-                                        if (
-                                            style.lines[i] != null &&
-                                            style.lines[i]!.width == width
-                                        ) {
-                                            return null;
-                                        }
-                                        const lines = style.lines.slice();
-                                        if (!lines[i]) {
-                                            lines[i] = {
-                                                width: width ?? undefined,
-                                            };
-                                        } else {
-                                            lines[i] = {
-                                                ...lines[i],
-                                                width: width ?? undefined,
-                                            };
-                                        }
-                                        return { ...style, lines };
-                                    }),
+                                    updateLine(
+                                        styles,
+                                        i,
+                                        width ?? undefined,
+                                        'width',
+                                    ),
                                 );
                             }}
                         />
@@ -340,3 +297,43 @@ export const MultiColor = ({
 
 export const maybeUrlColor = (color: string) =>
     color.startsWith('http') ? `url("${color}")` : color;
+
+export function updateLine(
+    styles: Style[],
+    i: number,
+    value: string | number | undefined,
+    key: keyof StyleLine,
+): (Style | null)[] {
+    return styles.map((style) => {
+        if (style.lines[i] != null && style.lines[i]![key] == value) {
+            return null;
+        }
+        const lines = style.lines.slice();
+        if (!lines[i]) {
+            lines[i] = { [key]: value };
+        } else {
+            lines[i] = { ...lines[i], [key]: value };
+        }
+        return { ...style, lines };
+    });
+}
+
+export function updateFill(
+    styles: Style[],
+    i: number,
+    value: string | number | undefined,
+    key: keyof Fill,
+): (Style | null)[] {
+    return styles.map((style) => {
+        if (style.fills[i] != null && style.fills[i]![key] == value) {
+            return null;
+        }
+        const fills = style.fills.slice();
+        if (!fills[i]) {
+            fills[i] = { [key]: value };
+        } else {
+            fills[i] = { ...fills[i], [key]: value };
+        }
+        return { ...style, fills };
+    });
+}

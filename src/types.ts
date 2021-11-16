@@ -43,7 +43,14 @@ the normal stuff folks.
 
 
 */
-export type Line = { type: 'Line'; p1: Coord; p2: Coord; limit: boolean };
+export type Line = {
+    type: 'Line';
+    p1: Coord;
+    p2: Coord;
+    /** @deprecated */
+    limit: boolean;
+    extent?: number;
+};
 
 export type GuideGeom =
     | Line

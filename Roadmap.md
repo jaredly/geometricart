@@ -34,10 +34,24 @@ Better path creation
 - [x] so, I guess I've got image fills now! Which is very cool
 - [x] also, made my own canvas renderer, because svg->canvas was buggy 🤷‍♂️. 
 
+## [ ] INTERSECTONS FOR ALL PATHS, if they don't already exist. AND SEGMENTS FOR ALL PATHS
+
+## [ ] INSET, gotta have it.
+
+## [ ] CLIP PLease, would be very nice. How to define? 
+	- I could just use normal DrawPath ... would that make clipping very complex? I would definitely want to do path simpliciation yes very much.
+
+- [ ] SOOO waht about having the default "extent" for lines be something like 2x or 3x? And then have a toggle for "go forever"?
+	- because ... it would make things much cleaner, and more localized ... which is often what you want. But only 1x is often a little short.
 
 
+- [ ] visuallll display of mirrors! Like draw me a picture, thank you.
 
+- [ ] have a fill setting that is "randomize darker/lighter pleaseeee"
 
+- [ ] make it easy/clear how to remove specific styling for a path. "unset"
+
+- [ ] would be verry nice to be able to regroup paths.
 
 - [ ] make coloring make more sense folks.
 	- a hover dealio would be very nice
