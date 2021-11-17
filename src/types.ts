@@ -607,7 +607,7 @@ export type View = {
     center: Coord;
     zoom: number;
     guides: boolean;
-    background?: string;
+    background?: string | number;
 };
 
 export type Selection = {

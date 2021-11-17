@@ -15,7 +15,7 @@ import { handleSelection } from './handleSelection';
 import { Primitive } from './intersect';
 import { Overlay } from './Overlay';
 import { geomToPrimitives } from './points';
-import { RenderPath } from './RenderPath';
+import { paletteColor, RenderPath } from './RenderPath';
 import { showHover } from './showHover';
 import { Hover } from './Sidebar';
 import { Action, Coord, GuideElement, Id, State, Style, View } from './types';
@@ -192,8 +192,10 @@ export const Canvas = ({
                         x={0}
                         y={0}
                         stroke="none"
-                        fill={view.background}
-                        // fill="url(#leaves)"
+                        fill={paletteColor(
+                            state.palettes[state.activePalette],
+                            view.background,
+                        )}
                     />
                 ) : null}
                 <g transform={`translate(${x} ${y})`}>

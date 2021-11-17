@@ -4,7 +4,7 @@ import * as React from 'react';
 import { jsx } from '@emotion/react';
 import { State, Action } from './types';
 import { useDropTarget } from './useDropTarget';
-import { Toggle } from './Forms';
+import { Float, Int, Toggle } from './Forms';
 
 export const OverlaysForm = ({
     state,
@@ -110,6 +110,21 @@ export const OverlaysForm = ({
                                 }
                                 label="Over?"
                             />
+                            <div>
+                                Opacity:{' '}
+                                <Float
+                                    value={state.overlays[id].opacity}
+                                    onChange={(opacity) =>
+                                        dispatch({
+                                            type: 'overlay:update',
+                                            overlay: {
+                                                ...state.overlays[id],
+                                                opacity,
+                                            },
+                                        })
+                                    }
+                                />
+                            </div>
                         </div>
                     </div>
                 ))}

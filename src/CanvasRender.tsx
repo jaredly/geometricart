@@ -41,23 +41,33 @@ export const canvasRender = async (
     const sourceWidth = 1000;
     const sourceHeight = 1000;
 
-    const zoom = state.view.zoom;
-    if (state.view.background) {
-        ctx.fillStyle = state.view.background;
-        ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-    }
-    ctx.translate(
-        sourceWidth / 2 + state.view.center.x * zoom,
-        sourceHeight / 2 + state.view.center.y * zoom,
-    );
-    // ctx.translate(100, 100);
-
     const images = await Promise.all(
         palette.map((c) =>
             c.startsWith('http') && imageCache[c]
                 ? makeImage(imageCache[c] as string)
                 : null,
         ),
+    );
+
+    const zoom = state.view.zoom;
+    if (state.view.background) {
+        const color =
+            typeof state.view.background === 'number'
+                ? palette[state.view.background]
+                : state.view.background;
+        if (color.startsWith('http')) {
+            const img = images[state.view.background as number];
+            if (img) {
+                drawCenteredImage(img, sourceWidth, sourceHeight, ctx);
+            }
+        } else {
+            ctx.fillStyle = color;
+            ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        }
+    }
+    ctx.translate(
+        sourceWidth / 2 + state.view.center.x * zoom,
+        sourceHeight / 2 + state.view.center.y * zoom,
     );
 
     const uids = Object.keys(state.overlays).filter(

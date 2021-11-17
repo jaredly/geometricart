@@ -78,6 +78,14 @@ export const App = ({ initialState }: { initialState: State }) => {
                         ids: latestState.current.selection.ids,
                     });
                 }
+                if (latestState.current.selection?.type === 'PathGroup') {
+                    return latestState.current.selection.ids.forEach((id) =>
+                        dispatch({
+                            type: 'group:delete',
+                            id,
+                        }),
+                    );
+                }
             }
             if (evt.key === 'g') {
                 return dispatch({

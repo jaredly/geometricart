@@ -34,17 +34,23 @@ Better path creation
 - [x] so, I guess I've got image fills now! Which is very cool
 - [x] also, made my own canvas renderer, because svg->canvas was buggy 🤷‍♂️. 
 
+- [x] get colors from an overlay!! maybe I should do an average? At any rate, I reeally want to be rendering more fancily...
+
+- [ ] background from palette pleeeease
+
 ## [ ] INTERSECTONS FOR ALL PATHS, if they don't already exist. AND SEGMENTS FOR ALL PATHS
 
-## [ ] MULTI FILL
+## [x] MULTI FILL
 
 ## [x] INSET, gotta have it.
+
+- [ ] all paths should be auto-simplified.
 
 - [ ] OK, so once we do `borders`, then we can have a flag for `don't inset from the border`. Which would make it
 	make more sense to have only a couple things inset, and the rest not.
 - [ ] it would be nice to have the option to "dedup outlines ... so we only get one"
 
-- [ ] FIX MULTIFILL - first, allow me to "remove the custom", but also allow me to just nix the custom color, or inset, or whatever.
+- [ ] FIX MULTIFILL/merge - first, allow me to "remove the custom", but also allow me to just nix the custom color, or inset, or whatever.
 
 ## [ ] CLIP PLease, would be very nice. How to define? 
 	- I could just use normal DrawPath ... would that make clipping very complex? I would definitely want to do path simpliciation yes very much.

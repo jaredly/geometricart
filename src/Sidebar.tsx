@@ -495,6 +495,7 @@ export function Sidebar({
                 </button>
                 <ViewForm
                     view={state.view}
+                    palette={state.palettes[state.activePalette]}
                     onChange={(view) => {
                         dispatch({
                             type: 'view:update',

@@ -509,9 +509,11 @@ export const GuideForm = ({
 export const ViewForm = ({
     view,
     onChange,
+    palette,
 }: {
     view: View;
     onChange: (view: View) => unknown;
+    palette: Array<string>;
 }) => {
     const backgrounds = ['#1e1e1e', 'white', 'black', 'transparent'];
     return (
@@ -561,7 +563,20 @@ export const ViewForm = ({
                 }}
             >
                 <div css={{ marginRight: 8 }}>Background</div>
-                {backgrounds.map((color, i) => (
+                <Color
+                    color={view.background}
+                    onChange={(background) => {
+                        onChange({
+                            ...view,
+                            background:
+                                background === 'transparent'
+                                    ? undefined
+                                    : background,
+                        });
+                    }}
+                    palette={palette}
+                />
+                {/* {backgrounds.map((color, i) => (
                     <div
                         key={color}
                         css={{
@@ -590,7 +605,7 @@ export const ViewForm = ({
                             });
                         }}
                     ></div>
-                ))}
+                ))} */}
             </div>
         </div>
     );
