@@ -200,8 +200,8 @@ export const mergeFills = (one: Fill, two: Fill | null): Fill =>
     !two
         ? one
         : {
-              color: two.color ?? one.color,
-              inset: two.inset ?? one.inset,
+              color: two.color != null ? two.color : one.color,
+              inset: two.inset != null ? two.inset : one.inset,
           };
 
 export const mergeStyleLines = (

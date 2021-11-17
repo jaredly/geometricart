@@ -50,6 +50,11 @@ export const canvasRender = async (
     );
 
     const zoom = state.view.zoom;
+
+    const xoff = sourceWidth / 2 + state.view.center.x * zoom;
+    const yoff = sourceHeight / 2 + state.view.center.y * zoom;
+    ctx.translate(xoff, yoff);
+
     if (state.view.background) {
         const color =
             typeof state.view.background === 'number'
@@ -62,13 +67,9 @@ export const canvasRender = async (
             }
         } else {
             ctx.fillStyle = color;
-            ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+            ctx.fillRect(-xoff, -yoff, ctx.canvas.width, ctx.canvas.height);
         }
     }
-    ctx.translate(
-        sourceWidth / 2 + state.view.center.x * zoom,
-        sourceHeight / 2 + state.view.center.y * zoom,
-    );
 
     const uids = Object.keys(state.overlays).filter(
         (id) => !state.overlays[id].hide && !state.overlays[id].over,

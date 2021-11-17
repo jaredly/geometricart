@@ -98,12 +98,13 @@ export const Color = ({
     color,
     onChange,
     palette,
+    extra = ['black', 'white', 'transparent'],
 }: {
     color: string | undefined | number;
     onChange: (color: string | undefined | number) => void;
     palette: Array<string>;
+    extra?: Array<string>;
 }) => {
-    const options = ['black', 'white', 'transparent'];
     return (
         <div>
             {palette.map((item, i) => (
@@ -112,24 +113,28 @@ export const Color = ({
                     onClick={() => onChange(i)}
                     style={{
                         border: `2px solid ${color === i ? 'white' : '#444'}`,
+                        background: item.startsWith('http')
+                            ? `url("${item}")`
+                            : item,
                     }}
                     css={{
-                        background: item,
                         width: 20,
                         height: 20,
                         cursor: 'pointer',
                     }}
                 />
             ))}
-            {options.map((name, i) => (
+            {extra.map((name, i) => (
                 <button
                     key={name}
                     onClick={() => onChange(name)}
-                    css={{
+                    style={{
                         background:
                             name === 'transparent'
                                 ? `url("${transparent}")`
                                 : name,
+                    }}
+                    css={{
                         border: `2px solid ${
                             color === name ? 'white' : '#444'
                         }`,
@@ -575,6 +580,7 @@ export const ViewForm = ({
                         });
                     }}
                     palette={palette}
+                    extra={backgrounds}
                 />
                 {/* {backgrounds.map((color, i) => (
                     <div

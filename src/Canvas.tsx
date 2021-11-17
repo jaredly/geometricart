@@ -13,6 +13,7 @@ import { getMirrorTransforms } from './getMirrorTransforms';
 import { Guides } from './Guides';
 import { handleSelection } from './handleSelection';
 import { Primitive } from './intersect';
+import { mergeFills, mergeStyleLines } from './MultiStyleForm';
 import { Overlay } from './Overlay';
 import { geomToPrimitives } from './points';
 import { paletteColor, RenderPath } from './RenderPath';
@@ -185,20 +186,20 @@ export const Canvas = ({
                         ) : null,
                     )}
                 </defs>
-                {view.background ? (
-                    <rect
-                        width={width}
-                        height={height}
-                        x={0}
-                        y={0}
-                        stroke="none"
-                        fill={paletteColor(
-                            state.palettes[state.activePalette],
-                            view.background,
-                        )}
-                    />
-                ) : null}
                 <g transform={`translate(${x} ${y})`}>
+                    {view.background ? (
+                        <rect
+                            width={width}
+                            height={height}
+                            x={-x}
+                            y={-y}
+                            stroke="none"
+                            fill={paletteColor(
+                                state.palettes[state.activePalette],
+                                view.background,
+                            )}
+                        />
+                    ) : null}
                     {Object.keys(state.overlays)
                         .filter(
                             (id) =>
@@ -342,24 +343,16 @@ export const combineStyles = (styles: Array<Style>): Style => {
     styles.forEach((style) => {
         style.fills.forEach((fill, i) => {
             if (fill != null) {
-                result.fills[i] =
-                    fill === false
-                        ? fill
-                        : {
-                              ...result.fills[i],
-                              ...fill,
-                          };
+                result.fills[i] = result.fills[i]
+                    ? mergeFills(result.fills[i]!, fill)
+                    : fill;
             }
         });
         style.lines.forEach((line, i) => {
             if (line != null) {
-                result.lines[i] =
-                    line === false
-                        ? line
-                        : {
-                              ...result.lines[i],
-                              ...line,
-                          };
+                result.lines[i] = result.lines[i]
+                    ? mergeStyleLines(result.lines[i]!, line)
+                    : line;
             }
         });
     });
