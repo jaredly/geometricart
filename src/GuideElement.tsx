@@ -134,7 +134,7 @@ export const GuideElement = ({
                         y1={left.y * zoom}
                         x2={right.x * zoom}
                         y2={right.y * zoom}
-                        stroke={original ? '#ff0' : '#880'}
+                        stroke={original ? '#ff0' : 'rgba(255,255,0,0.1)'}
                         strokeWidth={1}
                     />
                 </>
