@@ -1,7 +1,9 @@
 
 
 - [x] extent!
-	- ok this is getting a little weird though. I'm not deduping segments correctly.
+	- [x] ok this is getting a little weird though. I'm not deduping segments correctly.
+	- [ ] hmm not just verticals. if there are two guides, I'm not deduping the paths.
+		- probably because I assumed that you couldn't have two guides in the same spot.
 - [ ] all visible paths have intersections at points, and guides.
 	- [ ] need to honor limits on circle primitives
 
