@@ -2,12 +2,13 @@
 /* @jsxFrag React.Fragment */
 import { jsx } from '@emotion/react';
 import React from 'react';
-import { PendingMirror } from './App';
+import { PendingMirror, useCurrent } from './App';
 import { primitiveKey } from './calcAllIntersections';
 import {
     calculateGuideElements,
     calculateInactiveGuideElements,
 } from './calculateGuideElements';
+import { findSelection } from './findSelection';
 // import { DrawPath } from './DrawPathOld';
 import { getMirrorTransforms } from './getMirrorTransforms';
 import { Guides } from './Guides';
@@ -20,11 +21,13 @@ import { paletteColor, RenderPath } from './RenderPath';
 import { showHover } from './showHover';
 import { Hover } from './Sidebar';
 import { Action, Coord, GuideElement, Id, State, Style, View } from './types';
-import { useMouseDrag } from './useMouseDrag';
+import { useDragSelect, useMouseDrag } from './useMouseDrag';
 import { useScrollWheel } from './useScrollWheel';
 
 export type Props = {
     state: State;
+    dragSelect: boolean;
+    cancelDragSelect: () => void;
     width: number;
     height: number;
     innerRef: (node: SVGSVGElement | null) => unknown;
@@ -87,6 +90,8 @@ export const Canvas = ({
     hover,
     pendingMirror,
     setPendingMirror,
+    dragSelect,
+    cancelDragSelect,
 }: Props) => {
     const mirrorTransforms = React.useMemo(
         () => getMirrorTransforms(state.mirrors),
@@ -115,15 +120,60 @@ export const Canvas = ({
         null as null | { view: View; coord: Coord },
     );
 
-    const mouseHandlers = useMouseDrag(
-        dragPos,
-        setTmpView,
-        width,
-        height,
-        view,
-        setPos,
-        setDragPos,
-    );
+    const [dragSelectPos, setDragSelect] = React.useState(null as null | Coord);
+
+    const currentDrag = useCurrent({ pos, drag: dragSelectPos });
+
+    const finishDrag = React.useCallback((shiftKey: boolean) => {
+        cancelDragSelect();
+        const { pos, drag } = currentDrag.current;
+        if (!drag) {
+            return;
+        }
+        console.log(pos, drag);
+        const rect = {
+            x1: Math.min(pos.x, drag.x),
+            y1: Math.min(pos.y, drag.y),
+            x2: Math.max(pos.x, drag.x),
+            y2: Math.max(pos.y, drag.y),
+        };
+        const selected = findSelection(
+            currentState.current.paths,
+            currentState.current.pathGroups,
+            rect,
+        );
+        if (shiftKey && currentState.current.selection?.type === 'Path') {
+            selected.push(
+                ...currentState.current.selection.ids.filter(
+                    (id) => !selected.includes(id),
+                ),
+            );
+        }
+        dispatch({
+            type: 'selection:set',
+            selection: { type: 'Path', ids: selected },
+        });
+    }, []);
+
+    const mouseHandlers = dragSelect
+        ? useDragSelect(
+              dragSelectPos,
+              width,
+              height,
+              view,
+              setPos,
+              setDragSelect,
+              finishDrag,
+          )
+        : useMouseDrag(
+              dragPos,
+              setTmpView,
+              width,
+              height,
+              view,
+              setPos,
+              setDragPos,
+          );
 
     const clickPath = React.useCallback((evt, id) => {
         evt.stopPropagation();
@@ -309,6 +359,21 @@ export const Canvas = ({
                                 false,
                             )}
                         </>
+                    ) : null}
+                    {dragSelectPos ? (
+                        <rect
+                            x={Math.min(dragSelectPos.x, pos.x) * view.zoom}
+                            y={Math.min(dragSelectPos.y, pos.y) * view.zoom}
+                            width={
+                                Math.abs(dragSelectPos.x - pos.x) * view.zoom
+                            }
+                            height={
+                                Math.abs(dragSelectPos.y - pos.y) * view.zoom
+                            }
+                            fill="rgba(255,255,255,0.2)"
+                            stroke="red"
+                            strokeWidth="2"
+                        />
                     ) : null}
                 </g>
             </svg>

@@ -444,6 +444,8 @@ export function Sidebar({
     hover,
     setHover,
     setPendingMirror,
+    setDragSelect,
+    dragSelect,
 }: {
     dispatch: (action: Action) => void;
     hover: Hover | null;
@@ -451,6 +453,8 @@ export function Sidebar({
     state: State;
     canvasRef: React.MutableRefObject<SVGSVGElement | null>;
     setPendingMirror: (mirror: PendingMirror | null) => void;
+    setDragSelect: (fn: (select: boolean) => boolean) => void;
+    dragSelect: boolean;
 }) {
     const [dragging, callbacks] = useDropStateTarget((state) =>
         dispatch({ type: 'reset', state }),
@@ -538,6 +542,16 @@ export function Sidebar({
                         Cancel pending
                     </button>
                 ) : null}
+                <button
+                    onClick={() => setDragSelect((current) => !current)}
+                    css={{
+                        margin: 8,
+                        padding: 8,
+                        fontSize: '120%',
+                    }}
+                >
+                    {dragSelect ? 'Cancel drag select' : 'Drag select'}
+                </button>
             </div>
             <div
                 style={{

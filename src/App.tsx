@@ -133,6 +133,8 @@ export const App = ({ initialState }: { initialState: State }) => {
         null as null | PendingMirror,
     );
 
+    const [dragSelect, setDragSelect] = React.useState(false);
+
     // Reset when state changes
     React.useEffect(() => {
         setPendingMirror(null);
@@ -159,6 +161,8 @@ export const App = ({ initialState }: { initialState: State }) => {
                 hover={hover}
                 setHover={setHover}
                 dispatch={dispatch}
+                setDragSelect={setDragSelect}
+                dragSelect={dragSelect}
                 state={state}
                 canvasRef={ref}
                 setPendingMirror={setPendingMirror}
@@ -166,6 +170,8 @@ export const App = ({ initialState }: { initialState: State }) => {
             <Canvas
                 state={state}
                 hover={hover}
+                dragSelect={dragSelect}
+                cancelDragSelect={() => setDragSelect(false)}
                 innerRef={(node) => (ref.current = node)}
                 dispatch={dispatch}
                 pendingMirror={pendingMirror}

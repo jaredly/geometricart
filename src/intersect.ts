@@ -125,7 +125,13 @@ export type SlopeIntercept = {
     b: number;
     limit?: null | [number, number];
 };
-export type Circle = { type: 'circle'; radius: number; center: Coord };
+// the limit is two thetas, in clockwise direction.
+export type Circle = {
+    type: 'circle';
+    radius: number;
+    center: Coord;
+    limit?: null | [number, number];
+};
 export type Primitive = SlopeIntercept | Circle;
 
 const close = (a: number, b: number) => Math.abs(a - b) < epsilon;
