@@ -131,17 +131,16 @@ export const Canvas = ({
             return;
         }
         console.log(pos, drag);
-        const rect = {
-            x1: Math.min(pos.x, drag.x),
-            y1: Math.min(pos.y, drag.y),
-            x2: Math.max(pos.x, drag.x),
-            y2: Math.max(pos.y, drag.y),
-        };
+        const rect = rectForCorners(pos, drag);
         const selected = findSelection(
             currentState.current.paths,
             currentState.current.pathGroups,
             rect,
         );
+        // console.log(
+        //     selected.map((id) => state.paths[id].segments),
+        //     rect,
+        // );
         if (shiftKey && currentState.current.selection?.type === 'Path') {
             selected.push(
                 ...currentState.current.selection.ids.filter(
@@ -181,6 +180,14 @@ export const Canvas = ({
         const path = currentState.current.paths[id];
         handleSelection(path, currentState.current, dispatch, evt.shiftKey);
     }, []);
+
+    const dragged = dragSelectPos
+        ? findSelection(
+              currentState.current.paths,
+              currentState.current.pathGroups,
+              rectForCorners(pos, dragSelectPos),
+          )
+        : null;
 
     return (
         <div
@@ -339,9 +346,22 @@ export const Canvas = ({
                                   mirrorTransforms,
                                   width,
                                   height,
-                                  state.palettes[state.activePalette],
                                   view.zoom,
                                   true,
+                              ),
+                          )
+                        : null}
+                    {dragged
+                        ? dragged.map((id) =>
+                              showHover(
+                                  id,
+                                  { kind: 'Path', id },
+                                  state,
+                                  mirrorTransforms,
+                                  width,
+                                  height,
+                                  view.zoom,
+                                  false,
                               ),
                           )
                         : null}
@@ -354,7 +374,6 @@ export const Canvas = ({
                                 mirrorTransforms,
                                 width,
                                 height,
-                                state.palettes[state.activePalette],
                                 view.zoom,
                                 false,
                             )}
@@ -459,6 +478,15 @@ export const dragView = (
     };
     return res;
 };
+
+function rectForCorners(pos: { x: number; y: number }, drag: Coord) {
+    return {
+        x1: Math.min(pos.x, drag.x),
+        y1: Math.min(pos.y, drag.y),
+        x2: Math.max(pos.x, drag.x),
+        y2: Math.max(pos.y, drag.y),
+    };
+}
 
 export function viewPos(view: View, width: number, height: number) {
     const x = view.center.x * view.zoom + width / 2;

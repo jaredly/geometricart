@@ -1,11 +1,12 @@
 import { angleTo, dist } from './getMirrorTransforms';
-import { lineLine, lineToSlope, Primitive } from './intersect';
+import { lineCircle, lineLine, lineToSlope, Primitive } from './intersect';
 import { Coord, Id, Path, PathGroup } from './types';
 
 export const findSelection = (
     paths: { [key: string]: Path },
     groups: { [key: string]: PathGroup },
     rect: Rect,
+    debug?: boolean,
 ): Array<Id> => {
     return Object.keys(paths).filter((k) => {
         const path = paths[k];
@@ -15,12 +16,12 @@ export const findSelection = (
         if (path.group && groups[path.group].hide) {
             return false;
         }
-        return intersectsRect(path, rect);
+        return intersectsRect(path, rect, debug);
     });
 };
 type Rect = { x1: number; y1: number; x2: number; y2: number };
 
-export const intersectsRect = (path: Path, rect: Rect) => {
+export const intersectsRect = (path: Path, rect: Rect, debug?: boolean) => {
     // Options include:
     // - at least one point on the path is inside the rect
     // or
@@ -34,6 +35,9 @@ export const intersectsRect = (path: Path, rect: Rect) => {
     // which I think is fine to skip.
     for (let seg of path.segments) {
         if (pointInRect(seg.to, rect)) {
+            if (debug) {
+                console.log(`point`, seg.to, 'inside rect thanks');
+            }
             return true;
         }
     }
@@ -81,9 +85,23 @@ export const intersectsRect = (path: Path, rect: Rect) => {
         for (let seg of pathAsPrimitives) {
             if (seg.type === 'line') {
                 if (lineLine(line, seg) != null) {
+                    if (debug) {
+                        console.log(`lineline`, line, seg, lineLine(line, seg));
+                    }
                     return true;
                 }
             } else {
+                if (lineCircle(seg, line).length) {
+                    if (debug) {
+                        console.log(
+                            `lineCircle`,
+                            seg,
+                            line,
+                            lineCircle(seg, line),
+                        );
+                    }
+                    return true;
+                }
                 // Not supported yet!!
                 continue;
             }

@@ -3,7 +3,7 @@
 import { jsx } from '@emotion/react';
 import React from 'react';
 import { PendingMirror, useCurrent } from './App';
-import { calcAllIntersections } from './calcAllIntersections';
+import { calcAllIntersections, coordKey } from './calcAllIntersections';
 import { DrawPath } from './DrawPath';
 import { dedupString } from './findNextSegments';
 import {
@@ -78,7 +78,7 @@ export const Guides = ({
         [state.guides, mirrorTransforms],
     );
 
-    const inativeGuidePrimitives = React.useMemo(() => {
+    const inactiveGuidePrimitives = React.useMemo(() => {
         return primitivesForElements(inativeGuideElements);
     }, [inativeGuideElements]);
 
@@ -247,10 +247,31 @@ export const Guides = ({
         [],
     );
 
-    const allIntersections = React.useMemo(
-        () => calcAllIntersections(guidePrimitives.map((p) => p.prim)),
-        [guidePrimitives],
-    );
+    const allIntersections = React.useMemo(() => {
+        // hmm yeah that's not actually gonna be the best.
+        // because if you have a point that's on another guide, you'd
+        // expect it to be able to intersect that guide.
+        const { coords: fromGuides, seenCoords } = calcAllIntersections(
+            guidePrimitives.map((p) => p.prim),
+        );
+        Object.keys(state.paths).forEach((key) => {
+            const path = state.paths[key];
+            if (
+                path.hidden ||
+                (path.group && state.pathGroups[path.group].hide)
+            ) {
+                return;
+            }
+            path.segments.forEach((seg) => {
+                const k = coordKey(seg.to);
+                if (!seenCoords[k]) {
+                    seenCoords[k] = { coord: seg.to, primitives: [] };
+                    fromGuides.push(seenCoords[k]);
+                }
+            });
+        });
+        return fromGuides;
+    }, [guidePrimitives, state.paths, state.pathGroups]);
 
     // When intersections change, cancel pending stuffs
     React.useEffect(() => {
@@ -260,7 +281,7 @@ export const Guides = ({
     return (
         <>
             <RenderPrimitives
-                primitives={inativeGuidePrimitives}
+                primitives={inactiveGuidePrimitives}
                 zoom={view.zoom}
                 width={width}
                 height={height}

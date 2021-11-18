@@ -114,6 +114,9 @@ export const App = ({ initialState }: { initialState: State }) => {
                 evt.preventDefault();
                 return dispatch({ type: 'redo' });
             }
+            if (evt.key === 'd') {
+                setDragSelect(true);
+            }
             if (toType[evt.key]) {
                 dispatch({
                     type: 'pending:type',

@@ -17,7 +17,6 @@ export const showHover = (
     mirrorTransforms: { [key: string]: Array<Array<Matrix>> },
     height: number,
     width: number,
-    palette: Array<string>,
     zoom: number,
     selection: boolean,
 ) => {

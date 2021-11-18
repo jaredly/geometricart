@@ -196,7 +196,7 @@ export const canvasRender = async (
     const inativeGuidePrimitives = primitivesForElements(inativeGuideElements);
     const allIntersections = calcAllIntersections(
         guidePrimitives.map((p) => p.prim),
-    );
+    ).coords;
 
     ctx.strokeStyle = '#666';
     ctx.lineWidth = 1;
