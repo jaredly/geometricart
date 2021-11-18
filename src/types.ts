@@ -248,6 +248,7 @@ export type PendingGuide = {
     type: 'Guide';
     points: Array<Coord>;
     kind: GuideGeom['type'];
+    extent?: number;
 };
 
 export type Intersect = {
@@ -446,6 +447,16 @@ export type UndoPathCreate = {
     added: [Array<Id>, Id | null, number];
 };
 
+export type PendingExtent = {
+    type: 'pending:extent';
+    delta: number;
+};
+
+export type UndoPendingExtent = {
+    type: PendingExtent['type'];
+    action: PendingExtent;
+};
+
 // export type PathAdd = {
 //     type: 'path:add';
 //     segment: PendingSegment;
@@ -537,6 +548,7 @@ export type UndoableAction =
     | GroupUpdate
     | GuideDelete
     | GroupDelete
+    | PendingExtent
     | PathDelete
     | PathDeleteMany
     | OverlayUpdate
@@ -564,6 +576,7 @@ export type UndoAction =
     // | UndoPathPoint
     // | UndoPathAdd
     | UndoPathCreate
+    | UndoPendingExtent
     | UndoPendingType
     | UndoGuideToggle
     | UndoMirrorActive

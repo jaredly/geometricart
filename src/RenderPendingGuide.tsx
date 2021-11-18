@@ -38,7 +38,12 @@ export const RenderPendingGuide = ({
                           zoom={zoom}
                           original={false}
                           geom={transformGuideGeom(
-                              pendingGuide(guide.kind, points, shiftKey),
+                              pendingGuide(
+                                  guide.kind,
+                                  points,
+                                  shiftKey,
+                                  guide.extent,
+                              ),
                               (pos) => applyMatrices(pos, transform),
                           )}
                       />
@@ -47,7 +52,7 @@ export const RenderPendingGuide = ({
             <GuideElement
                 zoom={zoom}
                 original={true}
-                geom={pendingGuide(guide.kind, points, shiftKey)}
+                geom={pendingGuide(guide.kind, points, shiftKey, guide.extent)}
             />
         </g>
     );
@@ -57,6 +62,7 @@ export const pendingGuide = (
     type: GuideGeom['type'],
     points: Array<Coord>,
     shiftKey: boolean,
+    extent?: number,
 ): GuideGeom => {
     switch (type) {
         case 'Line':
@@ -65,6 +71,7 @@ export const pendingGuide = (
                 p1: points[0],
                 p2: points[1],
                 limit: shiftKey,
+                extent,
             };
         case 'Circle':
             return {
@@ -82,6 +89,7 @@ export const pendingGuide = (
                 p1: points[0],
                 p2: points[1],
                 p3: points[2],
+                extent,
             };
         case 'PerpendicularBisector':
         case 'Perpendicular':
@@ -89,6 +97,7 @@ export const pendingGuide = (
                 type,
                 p1: points[0],
                 p2: points[1],
+                extent,
             };
     }
 };

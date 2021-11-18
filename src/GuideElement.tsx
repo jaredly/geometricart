@@ -125,8 +125,25 @@ export const GuideElement = ({
         }
         case 'Line': {
             const t1 = angleTo(geom.p1, geom.p2);
-            const left = geom.limit ? geom.p1 : push(geom.p1, t1, -10);
-            const right = geom.limit ? geom.p2 : push(geom.p2, t1, 10);
+            const d = dist(geom.p1, geom.p2);
+            const mid = {
+                x: (geom.p1.x + geom.p2.x) / 2,
+                y: (geom.p1.y + geom.p2.y) / 2,
+            };
+            const left = push(
+                mid,
+                t1,
+                -(geom.extent
+                    ? (geom.extent * d) / 2
+                    : geom.limit
+                    ? d * 0.5
+                    : 10),
+            );
+            const right = push(
+                mid,
+                t1,
+                geom.extent ? (geom.extent * d) / 2 : geom.limit ? d * 0.5 : 10,
+            );
             return (
                 <>
                     <line

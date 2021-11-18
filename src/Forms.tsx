@@ -494,16 +494,36 @@ export const GuideForm = ({
                         </>
                     ) : null}
                     {guide.geom.type === 'Line' ? (
-                        <Toggle
-                            value={guide.geom.limit}
-                            onChange={(limit) => {
-                                onChange({
-                                    ...guide,
-                                    geom: { ...(guide.geom as Line), limit },
-                                });
-                            }}
-                            label="Restrict to segment"
-                        />
+                        <>
+                            <Toggle
+                                value={guide.geom.limit}
+                                onChange={(limit) => {
+                                    onChange({
+                                        ...guide,
+                                        geom: {
+                                            ...(guide.geom as Line),
+                                            limit,
+                                        },
+                                    });
+                                }}
+                                label="Restrict to segment"
+                            />
+                            <div>
+                                Extent:{' '}
+                                <Int
+                                    value={guide.geom.extent}
+                                    onChange={(extent) => {
+                                        onChange({
+                                            ...guide,
+                                            geom: {
+                                                ...(guide.geom as Line),
+                                                extent,
+                                            },
+                                        });
+                                    }}
+                                />
+                            </div>
+                        </>
                     ) : null}
                 </>
             ) : null}

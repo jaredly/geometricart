@@ -100,6 +100,24 @@ export const Guides = ({
             if (evt.target !== document.body || evt.metaKey || evt.ctrlKey) {
                 return;
             }
+            if (
+                currentState.current.pending?.type === 'Guide' &&
+                (evt.key === 'ArrowUp' || evt.key === 'k')
+            ) {
+                dispatch({
+                    type: 'pending:extent',
+                    delta: 1,
+                });
+            }
+            if (
+                currentState.current.pending?.type === 'Guide' &&
+                (evt.key === 'ArrowDown' || evt.key === 'j')
+            ) {
+                dispatch({
+                    type: 'pending:extent',
+                    delta: -1,
+                });
+            }
             if (evt.key === 'ArrowUp' && currentPendingMirror.current) {
                 setPendingMirror((mirror) =>
                     mirror

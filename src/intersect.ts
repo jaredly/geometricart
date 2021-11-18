@@ -56,6 +56,9 @@ export const lineLine = (one: SlopeIntercept, two: SlopeIntercept) => {
         }
         return { x: two.b, y: y };
     }
+    if (Math.abs(one.m - two.m) < epsilon) {
+        return null;
+    }
     // y = m1x + b1
     // y = m2x + b2
     // m1x + b1 = m2x + b2

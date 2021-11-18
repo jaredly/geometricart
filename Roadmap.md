@@ -1,5 +1,11 @@
 
 
+- [x] extent!
+	- ok this is getting a little weird though. I'm not deduping segments correctly.
+- [ ] all visible paths have intersections at points, and guides.
+	- [ ] need to honor limits on circle primitives
+
+
 Basic Plan:
 
 - [x] NEED to dedup mirrored paths. Nobody likes having multiple paths in the same place. It's just bad.

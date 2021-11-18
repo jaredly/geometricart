@@ -18,6 +18,7 @@ import {
     Path,
     Style,
     PathGroup,
+    PendingGuide,
 } from './types';
 import {
     pathsAreIdentical,
@@ -98,7 +99,6 @@ export const reducer = (state: State, action: Action): State => {
     return { ...newState, history: addAction(newState.history, newAction) };
 };
 
-// import * as React from 'react';
 export const reduceWithoutUndo = (
     state: State,
     action: UndoableAction,
@@ -117,7 +117,12 @@ export const reduceWithoutUndo = (
                 {
                     ...state,
                     pending: action.kind
-                        ? { type: 'Guide', kind: action.kind, points: [] }
+                        ? {
+                              type: 'Guide',
+                              kind: action.kind,
+                              points: [],
+                              extent: 5,
+                          }
                         : null,
                 },
                 { type: action.type, action, prev: state.pending },
@@ -144,6 +149,7 @@ export const reduceWithoutUndo = (
                                     state.pending.kind,
                                     points,
                                     action.shiftKey,
+                                    state.pending.extent,
                                 ),
                                 mirror: state.activeMirror,
                             },
@@ -561,6 +567,24 @@ export const reduceWithoutUndo = (
                 },
             ];
         }
+        case 'pending:extent': {
+            if (
+                state.pending?.type !== 'Guide' ||
+                state.pending.extent == null
+            ) {
+                return [state, null];
+            }
+            return [
+                {
+                    ...state,
+                    pending: {
+                        ...state.pending,
+                        extent: state.pending.extent + action.delta,
+                    },
+                },
+                { type: action.type, action },
+            ];
+        }
         default:
             let _x: never = action;
             console.log(`SKIPPING ${(action as any).type}`);
@@ -570,6 +594,16 @@ export const reduceWithoutUndo = (
 
 export const undo = (state: State, action: UndoAction): State => {
     switch (action.type) {
+        case 'pending:extent': {
+            const pending = state.pending as PendingGuide;
+            return {
+                ...state,
+                pending: {
+                    ...pending,
+                    extent: pending.extent! - action.action.delta,
+                },
+            };
+        }
         case 'overlay:update': {
             return {
                 ...state,

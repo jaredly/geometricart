@@ -116,8 +116,24 @@ export const geomToPrimitives = (geom: GuideGeom): Array<Primitive> => {
             const p2 = push(geom.p1, t1, 1);
             return [lineToSlope(geom.p1, p2, false)];
         }
-        case 'Line':
+        case 'Line': {
+            if (geom.extent) {
+                const mid = {
+                    x: (geom.p1.x + geom.p2.x) / 2,
+                    y: (geom.p1.y + geom.p2.y) / 2,
+                };
+                const t = angleTo(geom.p1, geom.p2);
+                const d = dist(geom.p1, geom.p2);
+                return [
+                    lineToSlope(
+                        push(mid, t, (d * geom.extent) / 2),
+                        push(mid, t + Math.PI, (d * geom.extent) / 2),
+                        true,
+                    ),
+                ];
+            }
             return [lineToSlope(geom.p1, geom.p2, geom.limit)];
+        }
         case 'Circle': {
             const result: Array<Primitive> = [];
             const radius = dist(geom.center, geom.radius);
