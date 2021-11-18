@@ -35,7 +35,7 @@ export const MultiStyleForm = ({
         0,
     );
     for (let i = 0; i < maxFills; i++) {
-        fills.push({ color: [], inset: [], opacity: [] });
+        fills.push({ color: [], inset: [], opacity: [], lighten: [] });
     }
     for (let i = 0; i < maxLines; i++) {
         lines.push({
@@ -51,6 +51,7 @@ export const MultiStyleForm = ({
             addIfNew(fills[i].color, fill?.color ?? null);
             addIfNew(fills[i].inset, fill?.inset ?? null);
             addIfNew(fills[i].opacity, fill?.opacity ?? null);
+            addIfNew(fills[i].lighten, fill?.lighten ?? null);
         });
         style.lines.forEach((line, i) => {
             addIfNew(lines[i].color, line?.color ?? null);
@@ -102,6 +103,23 @@ export const MultiStyleForm = ({
                                         i,
                                         inset ?? undefined,
                                         'inset',
+                                    ),
+                                );
+                            }}
+                        />
+                    </div>
+                    <div style={{ flexBasis: 16 }} />
+                    <div key={`lighten-${i}`}>
+                        lighten/darken:
+                        <MultiNumber
+                            value={fill.lighten}
+                            onChange={(lighten) => {
+                                onChange(
+                                    updateFill(
+                                        styles,
+                                        i,
+                                        lighten ?? undefined,
+                                        'lighten',
                                     ),
                                 );
                             }}
@@ -188,6 +206,7 @@ export type MultiFill = {
     color: Array<string | number | null>;
     opacity: Array<number | null>;
     inset: Array<number | null>;
+    lighten: Array<number | null>;
 };
 
 export const addIfNew = <T,>(items: Array<T>, value: T) => {
@@ -202,6 +221,8 @@ export const mergeFills = (one: Fill, two: Fill | null): Fill =>
         : {
               color: two.color != null ? two.color : one.color,
               inset: two.inset != null ? two.inset : one.inset,
+              opacity: two.opacity != null ? two.opacity : one.opacity,
+              lighten: two.lighten != null ? two.lighten : one.lighten,
           };
 
 export const mergeStyleLines = (

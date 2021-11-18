@@ -5,7 +5,7 @@ import { jsx } from '@emotion/react';
 import { Coord, Path, PathGroup, Segment } from './types';
 import { combineStyles } from './Canvas';
 import { arcPath } from './RenderPendingPath';
-import { isClockwise, reversePath } from './CanvasRender';
+import { ensureClockwise, isClockwise, reversePath } from './CanvasRender';
 import { angleTo, dist, push } from './getMirrorTransforms';
 import {
     circleCircle,
@@ -15,6 +15,8 @@ import {
     lineToSlope,
 } from './intersect';
 import { angleBetween, angleDiff } from './findNextSegments';
+import { rgbToHsl } from './colorConvert';
+import { coordsEqual } from './pathsAreIdentical';
 
 export const UnderlinePath = ({
     path,
@@ -155,6 +157,12 @@ export const areContiguous = (prev: Coord, one: Segment, two: Segment) => {
             Math.abs(angleTo(prev, one.to) - angleTo(one.to, two.to)) < epsilon
         );
     }
+    if (one.type === 'Arc' && two.type === 'Arc') {
+        return (
+            one.clockwise === two.clockwise &&
+            coordsEqual(one.center, two.center)
+        );
+    }
     return false;
 };
 
@@ -176,13 +184,20 @@ export const simplifyPath = (segments: Array<Segment>): Array<Segment> => {
             result.push(segment);
         }
     });
+    // Ok so the edge case is, what if the first & last are contiguous?
+    // we can't muck with the origin, so we're stuck with it. Which is a little weird.
+    // should I just drop the separate keeping of an `origin`? Like once we have segments,
+    // do we need it at all?
+    // I guess we just need to know whether the path is "closed"?
+    // oh yeah, if it's not closed, then we do need an origin.
+    // ok.
     return result;
 };
 
 export const insetPath = (path: Path, inset: number) => {
     // All paths are clockwise, it just makes this easier
-    if (!isClockwise(path)) {
-        path = reversePath(path);
+    if (!isClockwise(path.segments)) {
+        path = { ...path, segments: reversePath(path.segments) };
     }
     // console.log('yes', path)
 
@@ -244,29 +259,18 @@ export const RenderPath = React.memo(
                         onMouseDown={
                             onClick ? (evt) => evt.preventDefault() : undefined
                         }
-                        fill={paletteColor(palette, fill.color)}
+                        fill={paletteColor(palette, fill.color, fill.lighten)}
                         onClick={
                             onClick ? (evt) => onClick(evt, path.id) : undefined
                         }
                     />
-                    {path.debug
-                        ? path.segments.map((seg, i) => (
-                              <circle
-                                  key={i}
-                                  cx={seg.to.x * zoom}
-                                  cy={seg.to.y * zoom}
-                                  r={5}
-                                  fill="blue"
-                              />
-                          ))
-                        : null}
                     {path.debug
                         ? newPath.segments.map((seg, i) => (
                               <circle
                                   key={i}
                                   cx={seg.to.x * zoom}
                                   cy={seg.to.y * zoom}
-                                  r={5}
+                                  r={(3 / 100) * zoom}
                                   fill="red"
                               />
                           ))
@@ -310,6 +314,17 @@ export const RenderPath = React.memo(
             <>
                 {fills}
                 {lines}
+                {path.debug
+                    ? path.segments.map((seg, i) => (
+                          <circle
+                              key={i}
+                              cx={seg.to.x * zoom}
+                              cy={seg.to.y * zoom}
+                              r={(3 / 100) * zoom}
+                              fill="blue"
+                          />
+                      ))
+                    : null}
             </>
         );
     },
@@ -318,14 +333,30 @@ export const RenderPath = React.memo(
 export const paletteColor = (
     palette: Array<string>,
     color: string | number | undefined,
-) =>
-    color == null
-        ? undefined
-        : typeof color === 'string'
-        ? color
-        : palette[color]?.startsWith('http')
-        ? `url(#palette-${color})`
-        : palette[color] ?? '#aaa';
+    lighten?: number,
+) => {
+    if (color == null) {
+        return undefined;
+    }
+    const raw = typeof color === 'number' ? palette[color] : color;
+    if (raw?.startsWith('http')) {
+        return `url(#palette-${raw})`;
+    }
+    if (raw && lighten != null && lighten !== 0) {
+        if (raw.startsWith('#')) {
+            if (raw.length === 7) {
+                const r = parseInt(raw.slice(1, 3), 16);
+                const g = parseInt(raw.slice(3, 5), 16);
+                const b = parseInt(raw.slice(5), 16);
+                let [h, s, l] = rgbToHsl(r, g, b);
+                return `hsl(${h * 360}, ${s * 100}%, ${
+                    (l + lighten * 0.1) * 100
+                }%)`;
+            }
+        }
+    }
+    return raw ?? '#aaa';
+};
 
 export function combinedPathStyles(
     path: Path,

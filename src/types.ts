@@ -1,5 +1,7 @@
+import { ensureClockwise } from './CanvasRender';
 import { initialState } from './initialState';
 import { Primitive } from './intersect';
+import { simplifyPath } from './RenderPath';
 
 // Should I do polar coords?
 export type Coord = { x: number; y: number };
@@ -167,6 +169,7 @@ export type Fill = {
     inset?: number;
     opacity?: number;
     color?: string | number;
+    lighten?: number; // negatives for darken. units somewhat arbitrary.
 };
 
 export type StyleLine = {
@@ -715,11 +718,27 @@ export const migrateState = (state: State) => {
         // @ts-ignore
         delete state.underlays;
     }
-    // if (state.version < 2) {
-    //     delete state.tab
-    // }
+    if (state.version < 2) {
+        Object.keys(state.paths).forEach((k) => {
+            state.paths[k] = {
+                ...state.paths[k],
+                segments: simplifyPath(
+                    ensureClockwise(state.paths[k].segments),
+                ),
+            };
+        });
+    }
     return state;
 };
+
+/*
+CHANGELOG:
+
+version 2:
+- simplifying all paths
+
+
+*/
 
 export type Overlay = {
     id: Id;

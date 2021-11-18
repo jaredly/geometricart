@@ -2,10 +2,16 @@
 
 - [x] extent!
 	- [x] ok this is getting a little weird though. I'm not deduping segments correctly.
-	- [ ] hmm not just verticals. if there are two guides, I'm not deduping the paths.
+	- [x] hmm not just verticals. if there are two guides, I'm not deduping the paths.
 		- probably because I assumed that you couldn't have two guides in the same spot.
 - [ ] all visible paths have intersections at points, and guides.
+	- [ ] FIRST step is to simplify all paths tyvm
+	- [ ] oh wait not guides actually, just "next segments" would be enough I think?
 	- [ ] need to honor limits on circle primitives
+
+- [x] lighten/darken palette colors!
+	- maybe want to muck with saturation as well?
+	- [ ] PREVIEWWWWW PLEASE
 
 
 Basic Plan:

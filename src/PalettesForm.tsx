@@ -216,14 +216,29 @@ export function PalettesForm({
                 css={{ display: 'block' }}
                 onPaste={(evt) => {
                     const data = evt.clipboardData.getData('text/plain');
-                    const parts = data
-                        .split(',')
-                        .map((m) =>
-                            m.trim().match(/^[0-9a-fA-F]{6}$/)
-                                ? '#' + m.trim()
-                                : m.trim(),
-                        );
-                    console.log(parts);
+                    let parts;
+                    if (data.startsWith(`https://coolors.co/`)) {
+                        parts = data
+                            .slice(`https://coolors.co/`.length)
+                            .split('-')
+                            .map((m) => `#` + m);
+                    } else {
+                        parts = data
+                            .split(',')
+                            .map((m) =>
+                                m.trim().match(/^[0-9a-fA-F]{6}$/)
+                                    ? '#' + m.trim()
+                                    : m.trim(),
+                            );
+                    }
+                    if (
+                        !parts.every((value) =>
+                            value.match(/^#[0-9a-fA-F]{3,6}$/),
+                        )
+                    ) {
+                        console.log(`not hex`, parts);
+                        return;
+                    }
                     let num = Object.keys(state.palettes).length;
                     while (state.palettes[`palette${num}`]) {
                         num += 1;

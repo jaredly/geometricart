@@ -19,12 +19,15 @@ import {
     Style,
     PathGroup,
     PendingGuide,
+    PathCreate,
 } from './types';
 import {
     pathsAreIdentical,
     pathToReversedSegmentKeys,
     pathToSegmentKeys,
 } from './pathsAreIdentical';
+import { simplifyPath } from './RenderPath';
+import { ensureClockwise } from './CanvasRender';
 
 export const reducer = (state: State, action: Action): State => {
     if (action.type === 'undo') {
@@ -235,111 +238,7 @@ export const reduceWithoutUndo = (
         }
 
         case 'path:create': {
-            let nextId = state.nextId;
-            const id = `id-${nextId++}`;
-            const ids = [id];
-            let groupId: string | null = null;
-            state = { ...state, paths: { ...state.paths } };
-
-            const style: Style = {
-                fills: [{ color: 0 }],
-                lines: [{ color: 'white', width: 3 }],
-            };
-
-            const main: Path = {
-                id,
-                created: 0,
-                group: null,
-                ordering: 0,
-                hidden: false,
-                origin: action.origin,
-                segments: action.segments,
-                style: {
-                    fills: [],
-                    lines: [],
-                },
-            };
-            if (state.activeMirror) {
-                groupId = `id-${nextId++}`;
-                main.group = groupId;
-                const transforms = getTransformsForMirror(
-                    state.activeMirror,
-                    state.mirrors,
-                );
-
-                const usedPaths = [
-                    pathToSegmentKeys(action.origin, action.segments),
-                ];
-
-                transforms.forEach((matrices) => {
-                    const origin = applyMatrices(main.origin, matrices);
-                    const segments = main.segments.map((seg) =>
-                        transformSegment(seg, matrices),
-                    );
-                    // TOOD: should I check each prev against my forward & backward,
-                    // or put both forward & backward into the list?
-                    // Are they equivalent?
-                    const forward = pathToSegmentKeys(origin, segments);
-                    const backward = pathToReversedSegmentKeys(
-                        origin,
-                        segments,
-                    );
-                    if (
-                        usedPaths.some(
-                            (path) =>
-                                pathsAreIdentical(path, backward) ||
-                                pathsAreIdentical(path, forward),
-                        )
-                    ) {
-                        return;
-                    }
-                    usedPaths.push(forward);
-                    let nid = `id-${nextId++}`;
-                    state.paths[nid] = {
-                        id: nid,
-                        group: groupId,
-                        ordering: 0,
-                        hidden: false,
-                        created: 0,
-                        origin,
-                        segments,
-                        style: {
-                            lines: [],
-                            fills: [],
-                        },
-                    };
-                    ids.push(nid);
-                });
-                state.pathGroups = {
-                    ...state.pathGroups,
-                    [groupId]: {
-                        group: null,
-                        id: groupId,
-                        style,
-                    },
-                };
-                // here we gooooo
-            } else {
-                main.style = style;
-            }
-            state.paths[id] = main;
-
-            return [
-                {
-                    ...state,
-                    nextId,
-                    paths: {
-                        ...state.paths,
-                        [id]: main,
-                    },
-                    pending: null,
-                },
-                {
-                    type: action.type,
-                    action,
-                    added: [ids, groupId, state.nextId],
-                },
-            ];
+            return handlePathCreate(state, action);
         }
         case 'view:update':
             return [
@@ -747,3 +646,110 @@ export const undo = (state: State, action: UndoAction): State => {
             };
     }
 };
+
+export function handlePathCreate(
+    state: State,
+    action: PathCreate,
+): [State, UndoAction | null] {
+    let nextId = state.nextId;
+    const id = `id-${nextId++}`;
+    const ids = [id];
+    let groupId: string | null = null;
+    state = { ...state, paths: { ...state.paths } };
+
+    const style: Style = {
+        fills: [{ color: 0 }],
+        lines: [{ color: 'white', width: 3 }],
+    };
+
+    let main: Path = {
+        id,
+        created: 0,
+        group: null,
+        ordering: 0,
+        hidden: false,
+        origin: action.origin,
+        // simplify it up y'all
+        segments: simplifyPath(ensureClockwise(action.segments)),
+        style: {
+            fills: [],
+            lines: [],
+        },
+    };
+
+    if (state.activeMirror) {
+        groupId = `id-${nextId++}`;
+        main.group = groupId;
+        const transforms = getTransformsForMirror(
+            state.activeMirror,
+            state.mirrors,
+        );
+
+        const usedPaths = [pathToSegmentKeys(main.origin, main.segments)];
+
+        transforms.forEach((matrices) => {
+            const origin = applyMatrices(main.origin, matrices);
+            const segments = main.segments.map((seg) =>
+                transformSegment(seg, matrices),
+            );
+            // TOOD: should I check each prev against my forward & backward,
+            // or put both forward & backward into the list?
+            // Are they equivalent?
+            const forward = pathToSegmentKeys(origin, segments);
+            const backward = pathToReversedSegmentKeys(origin, segments);
+            if (
+                usedPaths.some(
+                    (path) =>
+                        pathsAreIdentical(path, backward) ||
+                        pathsAreIdentical(path, forward),
+                )
+            ) {
+                return;
+            }
+            usedPaths.push(forward);
+            let nid = `id-${nextId++}`;
+            state.paths[nid] = {
+                id: nid,
+                group: groupId,
+                ordering: 0,
+                hidden: false,
+                created: 0,
+                origin,
+                segments,
+                style: {
+                    lines: [],
+                    fills: [],
+                },
+            };
+            ids.push(nid);
+        });
+        state.pathGroups = {
+            ...state.pathGroups,
+            [groupId]: {
+                group: null,
+                id: groupId,
+                style,
+            },
+        };
+        // here we gooooo
+    } else {
+        main.style = style;
+    }
+    state.paths[id] = main;
+    return [
+        {
+            ...state,
+            nextId,
+            paths: {
+                ...state.paths,
+                [id]: main,
+            },
+            pending: null,
+        },
+        {
+            type: action.type,
+            action,
+            added: [ids, groupId, state.nextId],
+        },
+    ];
+}

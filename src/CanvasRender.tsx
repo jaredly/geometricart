@@ -8,6 +8,7 @@ import {
     primitivesForElements,
     sortedVisiblePaths,
 } from './Canvas';
+import { segmentKey } from './DrawPath';
 import { angleBetween } from './findNextSegments';
 import {
     angleTo,
@@ -266,7 +267,7 @@ function drawCenteredImage(
 }
 
 function debugPath(path: Path, ctx: CanvasRenderingContext2D, zoom: number) {
-    pathToPoints(path).forEach((point) => {
+    pathToPoints(path.segments).forEach((point) => {
         ctx.beginPath();
         ctx.ellipse(point.x * zoom, point.y * zoom, 10, 10, 0, Math.PI * 2, 0);
         ctx.fillStyle = 'blue';
@@ -283,7 +284,7 @@ function debugPath(path: Path, ctx: CanvasRenderingContext2D, zoom: number) {
         Math.PI * 2,
         0,
     );
-    ctx.strokeStyle = isClockwise(path) ? 'purple' : 'yellow';
+    ctx.strokeStyle = isClockwise(path.segments) ? 'purple' : 'yellow';
     ctx.lineWidth = 4;
     ctx.stroke();
 
@@ -355,10 +356,10 @@ export function tracePath(
     ctx.closePath();
 }
 
-export const pathToPoints = (path: Path) => {
+export const pathToPoints = (segments: Array<Segment>) => {
     const points: Array<Coord> = [];
-    let prev = path.origin;
-    path.segments.forEach((seg) => {
+    let prev = segments[segments.length - 1].to;
+    segments.forEach((seg) => {
         if (seg.type === 'Arc') {
             const t1 = angleTo(seg.center, prev);
             const t2 = angleTo(seg.center, seg.to);
@@ -375,8 +376,8 @@ export const pathToPoints = (path: Path) => {
     return points;
 };
 
-export const isClockwise = (path: Path) => {
-    const points = pathToPoints(path);
+export const isClockwise = (segments: Array<Segment>) => {
+    const points = pathToPoints(segments);
     const angles = points.map((point, i) => {
         const prev = i === 0 ? points[points.length - 1] : points[i - 1];
         return angleTo(prev, point);
@@ -417,14 +418,21 @@ export const isClockwise = (path: Path) => {
 
 export const toDegrees = (x: number) => Math.floor((x / Math.PI) * 180);
 
-export const reversePath = (path: Path) => {
+export const ensureClockwise = (segments: Array<Segment>) => {
+    if (isClockwise(segments)) {
+        return segments;
+    }
+    return reversePath(segments);
+};
+
+export const reversePath = (source: Array<Segment>): Array<Segment> => {
     const segments: Array<Segment> = [];
-    for (let i = path.segments.length - 1; i >= 0; i--) {
-        const seg = path.segments[i];
-        const prev = i === 0 ? path.origin : path.segments[i - 1].to;
+    for (let i = source.length - 1; i >= 0; i--) {
+        const seg = source[i];
+        const prev = i === 0 ? source[source.length - 1].to : source[i - 1].to;
         segments.push(reverseSegment(prev, seg));
     }
-    return { ...path, segments };
+    return segments;
 };
 
 export function tracePathLine(
@@ -433,8 +441,8 @@ export function tracePathLine(
     zoom: number,
     strokeWidth: number,
 ) {
-    if (!isClockwise(path)) {
-        path = reversePath(path);
+    if (!isClockwise(path.segments)) {
+        path = { ...path, segments: reversePath(path.segments) };
     }
 
     ctx.moveTo(path.origin.x * zoom, path.origin.y * zoom);
