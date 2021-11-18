@@ -111,8 +111,10 @@ export const MultiStyleForm = ({
                     <div style={{ flexBasis: 16 }} />
                     <div key={`lighten-${i}`}>
                         lighten/darken:
-                        <MultiNumber
-                            value={fill.lighten}
+                        <LightDark
+                            lighten={fill.lighten}
+                            palette={palette}
+                            color={fill.color}
                             onChange={(lighten) => {
                                 onChange(
                                     updateFill(
@@ -194,6 +196,20 @@ export const MultiStyleForm = ({
     );
 };
 
+export const LightDark = ({
+    lighten,
+    palette,
+    color,
+    onChange,
+}: {
+    lighten: Array<number | null>;
+    palette: Array<string>;
+    color: string | number;
+    onChange: (value: number) => void;
+}) => {
+    return <div>ok</div>;
+};
+
 export type MultiLine = {
     inset: Array<number | null>;
     color: Array<null | string | number>;
@@ -272,6 +288,9 @@ export const MultiNumber = ({
         <input
             value={text ?? (value.length === 1 ? value[0] ?? '' : 'mixed')}
             onChange={(evt) => setText(evt.target.value)}
+            css={{
+                width: 50,
+            }}
             onBlur={() => {
                 if (text != null) {
                     const num = parseFloat(text);

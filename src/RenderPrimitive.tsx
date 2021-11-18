@@ -10,11 +10,13 @@ export function RenderPrimitive({
     height,
     width,
     onClick,
+    isImplied,
     color,
     inactive,
     strokeWidth = 1,
 }: {
     color?: string;
+    isImplied: boolean;
     prim: Primitive;
     zoom: number;
     height: number;
@@ -28,6 +30,8 @@ export function RenderPrimitive({
         strokeWidth,
         onClick: onClick,
         style: onClick ? { cursor: 'pointer' } : {},
+        strokeDasharray: isImplied ? '3 3' : '',
+
         css: onClick
             ? {
                   ':hover': {

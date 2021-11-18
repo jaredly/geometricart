@@ -3,11 +3,7 @@ import {
     calculateGuideElements,
     calculateInactiveGuideElements,
 } from './calculateGuideElements';
-import {
-    imageCache,
-    primitivesForElements,
-    sortedVisiblePaths,
-} from './Canvas';
+import { imageCache, sortedVisiblePaths } from './Canvas';
 import { segmentKey } from './DrawPath';
 import { angleBetween } from './findNextSegments';
 import {
@@ -16,6 +12,7 @@ import {
     getMirrorTransforms,
     push,
 } from './getMirrorTransforms';
+import { primitivesForElementsAndPaths } from './Guides';
 import { Primitive } from './intersect';
 import { reverseSegment } from './pathsAreIdentical';
 import { combinedPathStyles, insetPath } from './RenderPath';
@@ -192,8 +189,11 @@ export const canvasRender = async (
     );
     // console.log(guideElements);
 
-    const guidePrimitives = primitivesForElements(guideElements);
-    const inativeGuidePrimitives = primitivesForElements(inativeGuideElements);
+    const guidePrimitives = primitivesForElementsAndPaths(guideElements, []);
+    const inativeGuidePrimitives = primitivesForElementsAndPaths(
+        inativeGuideElements,
+        [],
+    );
     const allIntersections = calcAllIntersections(
         guidePrimitives.map((p) => p.prim),
     ).coords;

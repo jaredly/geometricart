@@ -3,7 +3,11 @@
 import { jsx } from '@emotion/react';
 import React from 'react';
 import { PendingMirror, useCurrent } from './App';
-import { calcAllIntersections, coordKey } from './calcAllIntersections';
+import {
+    calcAllIntersections,
+    coordKey,
+    primitiveKey,
+} from './calcAllIntersections';
 import { DrawPath } from './DrawPath';
 import { dedupString } from './findNextSegments';
 import {
@@ -15,7 +19,7 @@ import {
     push,
     transformsToMatrices,
 } from './getMirrorTransforms';
-import { Primitive } from './intersect';
+import { lineToSlope, Primitive } from './intersect';
 import { RenderIntersections } from './RenderIntersections';
 import { RenderMirror } from './RenderMirror';
 import { RenderPendingGuide } from './RenderPendingGuide';
@@ -23,18 +27,118 @@ import { Hover } from './Sidebar';
 import {
     Action,
     Coord,
+    GuideElement,
     Id,
     Intersect,
+    Path,
+    PathGroup,
     PendingSegment,
     State,
     View,
 } from './types';
 import { RenderPrimitive } from './RenderPrimitive';
-import { primitivesForElements } from './Canvas';
 import {
     calculateGuideElements,
     calculateInactiveGuideElements,
 } from './calculateGuideElements';
+import { geomToPrimitives } from './points';
+
+// This /will/ contain duplicates!
+// export const calculatePathElements = (
+//     paths: { [key: string]: Path },
+//     groups: { [key: string]: PathGroup },
+// ): Array<GuideElement> => {
+// 	const result: Array<GuideElement> = [];
+// 	Object.keys(paths).forEach(key => {
+// 		const path = paths[key]
+// 		if (path.hidden || (path.group && groups[path.group].hide)) {
+// 			return
+// 		}
+// 		path.segments.forEach((seg, i) => {
+// 			const prev = i === 0 ? path.origin : path.segments[i - 1].to
+// 			if (seg.type === 'Line') {
+// 				result.push({
+// 					geom: {
+// 						type: 'Line',
+// 						p1: prev,
+// 						p2: seg.to,
+// 						limit: true,
+// 						extent: 1,
+// 					},
+// 					active: true,
+// 					id: null,
+// 					original: false,
+// 				})
+// 			} else {
+// 				result.push({
+// 					geom: {
+// 						type: 'Circle',
+// 					}
+// 				})
+// 			}
+// 		})
+// 	})
+// };
+
+export function primitivesForElementsAndPaths(
+    guideElements: GuideElement[],
+    paths: Array<Path>,
+): Array<{ prim: Primitive; guides: Array<Id> }> {
+    const seen: { [key: string]: Array<Id> } = {};
+    return ([] as Array<{ prim: Primitive; guide: Id }>)
+        .concat(
+            ...guideElements.map((el: GuideElement) =>
+                geomToPrimitives(el.geom).map((prim) => ({
+                    prim,
+                    guide: el.id,
+                })),
+            ),
+        )
+        .map((prim) => {
+            const k = primitiveKey(prim.prim);
+            if (seen[k]) {
+                seen[k].push(prim.guide);
+                return null;
+            }
+            seen[k] = [prim.guide];
+            return { prim: prim.prim, guides: seen[k] };
+        })
+        .concat(
+            paths
+                .map((path) => {
+                    return path.segments.map(
+                        (
+                            seg,
+                            i,
+                        ): null | { prim: Primitive; guides: Array<Id> } => {
+                            const prev =
+                                i === 0 ? path.origin : path.segments[i - 1].to;
+                            let prim: Primitive;
+                            if (seg.type === 'Line') {
+                                prim = lineToSlope(prev, seg.to, true);
+                            } else {
+                                const t0 = angleTo(seg.center, prev);
+                                const t1 = angleTo(seg.center, seg.to);
+                                prim = {
+                                    type: 'circle',
+                                    center: seg.center,
+                                    radius: dist(seg.center, seg.to),
+                                    limit: seg.clockwise ? [t0, t1] : [t1, t0],
+                                };
+                            }
+                            const k = primitiveKey(prim);
+                            if (seen[k]) {
+                                return null;
+                            }
+                            seen[k] = [];
+                            return { prim, guides: seen[k] };
+                        },
+                    );
+                })
+                .flat(),
+        )
+        .filter(Boolean) as Array<{ prim: Primitive; guides: Array<Id> }>;
+}
 
 export const Guides = ({
     state,
@@ -63,24 +167,26 @@ export const Guides = ({
             | ((mirror: PendingMirror | null) => PendingMirror | null),
     ) => void;
 }) => {
-    const guideElements = React.useMemo(
-        () => calculateGuideElements(state.guides, mirrorTransforms),
-        [state.guides, mirrorTransforms],
-    );
-    // console.log(guideElements);
-
     const guidePrimitives = React.useMemo(() => {
-        return primitivesForElements(guideElements);
-    }, [guideElements]);
-
-    const inativeGuideElements = React.useMemo(
-        () => calculateInactiveGuideElements(state.guides, mirrorTransforms),
-        [state.guides, mirrorTransforms],
-    );
+        return primitivesForElementsAndPaths(
+            calculateGuideElements(state.guides, mirrorTransforms),
+            Object.keys(state.paths)
+                .filter(
+                    (k) =>
+                        !state.paths[k].hidden &&
+                        (!state.paths[k].group ||
+                            !state.pathGroups[state.paths[k].group!].hide),
+                )
+                .map((k) => state.paths[k]),
+        );
+    }, [state.guides, state.paths, state.pathGroups, mirrorTransforms]);
 
     const inactiveGuidePrimitives = React.useMemo(() => {
-        return primitivesForElements(inativeGuideElements);
-    }, [inativeGuideElements]);
+        return primitivesForElementsAndPaths(
+            calculateInactiveGuideElements(state.guides, mirrorTransforms),
+            [],
+        );
+    }, [state.guides, mirrorTransforms]);
 
     const currentState = React.useRef(state);
     currentState.current = state;
@@ -254,22 +360,26 @@ export const Guides = ({
         const { coords: fromGuides, seenCoords } = calcAllIntersections(
             guidePrimitives.map((p) => p.prim),
         );
-        Object.keys(state.paths).forEach((key) => {
-            const path = state.paths[key];
-            if (
-                path.hidden ||
-                (path.group && state.pathGroups[path.group].hide)
-            ) {
-                return;
-            }
-            path.segments.forEach((seg) => {
-                const k = coordKey(seg.to);
-                if (!seenCoords[k]) {
-                    seenCoords[k] = { coord: seg.to, primitives: [] };
-                    fromGuides.push(seenCoords[k]);
-                }
-            });
-        });
+        // hmmm
+        // will it be obnoxiously much
+        // to just generate new primitives for all paths?
+        // seems like a bit muchc
+        // Object.keys(state.paths).forEach((key) => {
+        //     const path = state.paths[key];
+        //     if (
+        //         path.hidden ||
+        //         (path.group && state.pathGroups[path.group].hide)
+        //     ) {
+        //         return;
+        //     }
+        //     path.segments.forEach((seg) => {
+        //         const k = coordKey(seg.to);
+        //         if (!seenCoords[k]) {
+        //             seenCoords[k] = { coord: seg.to, primitives: [] };
+        //             fromGuides.push(seenCoords[k]);
+        //         }
+        //     });
+        // });
         return fromGuides;
     }, [guidePrimitives, state.paths, state.pathGroups]);
 
@@ -522,8 +632,9 @@ export const RenderPrimitives = React.memo(
                         height={height}
                         width={width}
                         inactive={inactive}
+                        isImplied={!prim.guides.length}
                         onClick={
-                            onClick
+                            onClick && prim.guides.length
                                 ? (evt: React.MouseEvent) => {
                                       evt.stopPropagation();
                                       onClick(prim.guides, evt.shiftKey);

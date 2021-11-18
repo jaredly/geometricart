@@ -55,6 +55,9 @@ export const Float = ({
             value={value}
             onChange={(evt) => onChange(+evt.target.value)}
             step="0.1"
+            css={{
+                width: 50,
+            }}
             type="number"
         />
     );
@@ -77,6 +80,9 @@ export const Int = ({
                 } else {
                     onChange(res);
                 }
+            }}
+            css={{
+                width: 50,
             }}
             step="1"
             type="number"

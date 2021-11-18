@@ -4,10 +4,6 @@ import { jsx } from '@emotion/react';
 import React from 'react';
 import { PendingMirror, useCurrent } from './App';
 import { primitiveKey } from './calcAllIntersections';
-import {
-    calculateGuideElements,
-    calculateInactiveGuideElements,
-} from './calculateGuideElements';
 import { findSelection } from './findSelection';
 // import { DrawPath } from './DrawPathOld';
 import { getMirrorTransforms } from './getMirrorTransforms';
@@ -20,7 +16,16 @@ import { geomToPrimitives } from './points';
 import { paletteColor, RenderPath } from './RenderPath';
 import { showHover } from './showHover';
 import { Hover } from './Sidebar';
-import { Action, Coord, GuideElement, Id, State, Style, View } from './types';
+import {
+    Action,
+    Coord,
+    GuideElement,
+    Id,
+    Path,
+    State,
+    Style,
+    View,
+} from './types';
 import { useDragSelect, useMouseDrag } from './useMouseDrag';
 import { useScrollWheel } from './useScrollWheel';
 
@@ -550,27 +555,4 @@ export function sortedVisiblePaths(state: State) {
             }
             return ob - oa;
         });
-}
-
-export function primitivesForElements(guideElements: GuideElement[]) {
-    const seen: { [key: string]: Array<Id> } = {};
-    return ([] as Array<{ prim: Primitive; guide: Id }>)
-        .concat(
-            ...guideElements.map((el: GuideElement) =>
-                geomToPrimitives(el.geom).map((prim) => ({
-                    prim,
-                    guide: el.id,
-                })),
-            ),
-        )
-        .map((prim) => {
-            const k = primitiveKey(prim.prim);
-            if (seen[k]) {
-                seen[k].push(prim.guide);
-                return null;
-            }
-            seen[k] = [prim.guide];
-            return { prim: prim.prim, guides: seen[k] };
-        })
-        .filter(Boolean) as Array<{ prim: Primitive; guides: Array<Id> }>;
 }
