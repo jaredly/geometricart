@@ -550,7 +550,7 @@ export function Sidebar({
                         fontSize: '120%',
                     }}
                 >
-                    {dragSelect ? 'Cancel drag select' : 'Drag select'}
+                    {dragSelect ? 'Cancel drag select' : '(D)rag select'}
                 </button>
             </div>
             <div

@@ -15,7 +15,7 @@ import {
 import { primitivesForElementsAndPaths } from './Guides';
 import { Primitive } from './intersect';
 import { reverseSegment } from './pathsAreIdentical';
-import { combinedPathStyles, insetPath } from './RenderPath';
+import { combinedPathStyles, insetPath, lightenedColor } from './RenderPath';
 import { Coord, Overlay, Path, Segment, State } from './types';
 
 export const makeImage = (href: string): Promise<HTMLImageElement> => {
@@ -98,10 +98,7 @@ export const canvasRender = async (
                 ctx.globalAlpha = fill.opacity;
             }
 
-            const color =
-                typeof fill.color === 'number'
-                    ? palette[fill.color]
-                    : fill.color;
+            const color = lightenedColor(palette, fill.color, fill.lighten)!;
             if (color.startsWith('http')) {
                 const img = images[fill.color as number];
                 if (!img) {
@@ -132,10 +129,7 @@ export const canvasRender = async (
 
             ctx.lineWidth = (line.width / 100) * zoom;
 
-            const color =
-                typeof line.color === 'number'
-                    ? palette[line.color]
-                    : line.color;
+            const color = lightenedColor(palette, line.color, undefined)!;
             if (color.startsWith('http')) {
                 const img = images[line.color as number];
                 if (!img) {

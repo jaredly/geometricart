@@ -289,7 +289,11 @@ export const RenderPath = React.memo(
                     data-id={path.id}
                     stroke={paletteColor(palette, line.color)}
                     strokeDasharray={
-                        line.dash ? line.dash.join(' ') : undefined
+                        line.dash
+                            ? line.dash
+                                  .map((d) => ((d / 100) * zoom).toFixed(2))
+                                  .join(' ')
+                            : undefined
                     }
                     fill="none"
                     strokeLinejoin="round"
@@ -330,7 +334,7 @@ export const RenderPath = React.memo(
     },
 );
 
-export const paletteColor = (
+export const lightenedColor = (
     palette: Array<string>,
     color: string | number | undefined,
     lighten?: number,
@@ -340,7 +344,7 @@ export const paletteColor = (
     }
     const raw = typeof color === 'number' ? palette[color] : color;
     if (raw?.startsWith('http')) {
-        return `url(#palette-${raw})`;
+        return raw;
     }
     if (raw && lighten != null && lighten !== 0) {
         if (raw.startsWith('#')) {
@@ -356,6 +360,18 @@ export const paletteColor = (
         }
     }
     return raw ?? '#aaa';
+};
+
+export const paletteColor = (
+    palette: Array<string>,
+    color: string | number | undefined,
+    lighten?: number,
+) => {
+    if (color == null) {
+        return undefined;
+    }
+    const raw = lightenedColor(palette, color, lighten);
+    return raw?.startsWith('http') ? `url(#palette-${raw})` : raw;
 };
 
 export function combinedPathStyles(

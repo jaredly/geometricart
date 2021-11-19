@@ -727,6 +727,7 @@ export const migrateState = (state: State) => {
                 ),
             };
         });
+        state.version = 2;
     }
     return state;
 };

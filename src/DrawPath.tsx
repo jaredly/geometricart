@@ -88,9 +88,11 @@ export const DrawPath = React.memo(
         mirror,
         origin,
         zoom,
+        isClip,
         onComplete,
         palette,
     }: {
+        isClip: boolean;
         mirror: null | Array<Array<Matrix>>;
         primitives: Array<{ prim: Primitive; guides: Array<Id> }>;
         origin: Intersect;
@@ -293,7 +295,11 @@ export const DrawPath = React.memo(
                                       segments: path.segments,
                                       style: {
                                           lines: [
-                                              { color: '#ccc', dash: [10, 10] },
+                                              {
+                                                  color: '#ccc',
+                                                  dash: [10, 10],
+                                                  width: 5,
+                                              },
                                           ],
                                           fills: [{ color: 0 }],
                                       },
@@ -315,8 +321,13 @@ export const DrawPath = React.memo(
                             origin: origin.coord,
                             segments: state.parts.map((p) => p.segment),
                             style: {
-                                lines: [{ color: 'white' }],
-                                fills: [{ color: 0 }],
+                                lines: [
+                                    {
+                                        color: isClip ? 'magenta' : '#fff',
+                                        width: 5,
+                                    },
+                                ],
+                                fills: isClip ? [] : [{ color: 0 }],
                             },
                         }}
                         onClick={() => {
@@ -359,7 +370,7 @@ export const DrawPath = React.memo(
                         prev={
                             i === 0 ? origin.coord : state.parts[i - 1].to.coord
                         }
-                        color={'rgba(0, 0, 255, 1.0)'}
+                        color={isClip ? 'magenta' : 'rgba(0, 0, 255, 1.0)'}
                         onClick={() => {
                             setState((state) =>
                                 backUpToIndex(

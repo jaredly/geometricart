@@ -16,7 +16,7 @@ export function RenderPrimitive({
     strokeWidth = 1,
 }: {
     color?: string;
-    isImplied: boolean;
+    isImplied?: boolean;
     prim: Primitive;
     zoom: number;
     height: number;

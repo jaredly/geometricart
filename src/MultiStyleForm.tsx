@@ -4,6 +4,7 @@ import * as React from 'react';
 import { jsx } from '@emotion/react';
 import { transparent } from './Icons';
 import { Style, Fill, StyleLine } from './types';
+import { lightenedColor, paletteColor } from './RenderPath';
 
 // I want to be able to communicate:
 // - all have same (one thing selected)
@@ -204,10 +205,43 @@ export const LightDark = ({
 }: {
     lighten: Array<number | null>;
     palette: Array<string>;
-    color: string | number;
-    onChange: (value: number) => void;
+    color: Array<string | number | null>;
+    onChange: (value: number | null) => void;
 }) => {
-    return <div>ok</div>;
+    const options = [-3, -2, -1.5, -1, -0.5, 0, 0.5, 1, 1.5, 2, 3];
+    const allSame = lighten.length === 1 ? lighten[0] : null;
+    return (
+        <div css={{ display: 'flex' }}>
+            {options.map((value, i) => (
+                <div key={i}>
+                    {color.filter(Boolean).map((color) => (
+                        <div
+                            onClick={() =>
+                                onChange(allSame === value ? null : value)
+                            }
+                            style={{
+                                borderColor:
+                                    allSame === value ||
+                                    (allSame == null && value === 0)
+                                        ? 'white'
+                                        : 'transparent',
+                                background: paletteColor(
+                                    palette,
+                                    color!,
+                                    value,
+                                ),
+                            }}
+                            css={{
+                                border: '2px solid transparent',
+                                width: 20,
+                                height: 20,
+                            }}
+                        />
+                    ))}
+                </div>
+            ))}
+        </div>
+    );
 };
 
 export type MultiLine = {

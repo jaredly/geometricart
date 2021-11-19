@@ -4,15 +4,18 @@
 	- [x] ok this is getting a little weird though. I'm not deduping segments correctly.
 	- [x] hmm not just verticals. if there are two guides, I'm not deduping the paths.
 		- probably because I assumed that you couldn't have two guides in the same spot.
-- [ ] all visible paths have intersections at points, and guides.
-	- [ ] FIRST step is to simplify all paths tyvm
-	- [ ] oh wait not guides actually, just "next segments" would be enough I think?
-	- [ ] need to honor limits on circle primitives
+- [x] all visible paths have intersections at points, and guides.
+	- [x] FIRST step is to simplify all paths tyvm
+	- [x] oh wait not guides actually, just "next segments" would be enough I think?
+	- [x] need to honor limits on circle primitives
 
 - [x] lighten/darken palette colors!
 	- maybe want to muck with saturation as well?
-	- [ ] PREVIEWWWWW PLEASE
+	- [x] PREVIEWWWWW PLEASE
 
+- [ ] 'm' should toggle the current mirror. I think. And maybe a key to rotate through them? idk.
+	- maybe shift-m rotates through them. when changing the mirror status, I should briefly show the mirror
+		dealio, dontchaknow.
 
 Basic Plan:
 
@@ -38,10 +41,10 @@ Better path creation
 	- DrawPath should show a virtual "keyboard" for up/down/left/right, as well as "cancel"
 
 - [x] pending guides should show the mirror versions folks
-- [ ] add in all points for all visible paths. maybe all line segments, if they're not covered? like that would be really good.
-- [ ] might be nice to be able to re-define the "bounds" for a line, if you want to keep things tidy.
+- [x] add in all points for all visible paths. maybe all line segments, if they're not covered? like that would be really good.
+- [x] might be nice to be able to re-define the "bounds" for a line, if you want to keep things tidy.
 
-- [ ] for palettes, it would be nice to be able to paste in a 4- or 5-color one, and have it produce "1 shade lighter / darker", right?
+- [x] for palettes, it would be nice to be able to paste in a 4- or 5-color one, and have it produce "1 shade lighter / darker", right?
 		- or even better(?), just have a fill option that is darken/lighten? idk
 
 
@@ -50,15 +53,15 @@ Better path creation
 
 - [x] get colors from an overlay!! maybe I should do an average? At any rate, I reeally want to be rendering more fancily...
 
-- [ ] background from palette pleeeease
+- [x] background from palette pleeeease
 
-## [ ] INTERSECTONS FOR ALL PATHS, if they don't already exist. AND SEGMENTS FOR ALL PATHS
+## [x] INTERSECTONS FOR ALL PATHS, if they don't already exist. AND SEGMENTS FOR ALL PATHS
 
 ## [x] MULTI FILL
 
 ## [x] INSET, gotta have it.
 
-- [ ] all paths should be auto-simplified.
+- [x] all paths should be auto-simplified.
 
 - [ ] OK, so once we do `borders`, then we can have a flag for `don't inset from the border`. Which would make it
 	make more sense to have only a couple things inset, and the rest not.
@@ -69,7 +72,7 @@ Better path creation
 ## [ ] CLIP PLease, would be very nice. How to define? 
 	- I could just use normal DrawPath ... would that make clipping very complex? I would definitely want to do path simpliciation yes very much.
 
-- [ ] SOOO waht about having the default "extent" for lines be something like 2x or 3x? And then have a toggle for "go forever"?
+- [x] SOOO waht about having the default "extent" for lines be something like 2x or 3x? And then have a toggle for "go forever"?
 	- because ... it would make things much cleaner, and more localized ... which is often what you want. But only 1x is often a little short.
 
 
