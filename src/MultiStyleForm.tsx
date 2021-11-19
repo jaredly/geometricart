@@ -214,30 +214,32 @@ export const LightDark = ({
         <div css={{ display: 'flex' }}>
             {options.map((value, i) => (
                 <div key={i}>
-                    {color.filter(Boolean).map((color) => (
-                        <div
-                            onClick={() =>
-                                onChange(allSame === value ? null : value)
-                            }
-                            style={{
-                                borderColor:
-                                    allSame === value ||
-                                    (allSame == null && value === 0)
-                                        ? 'white'
-                                        : 'transparent',
-                                background: paletteColor(
-                                    palette,
-                                    color!,
-                                    value,
-                                ),
-                            }}
-                            css={{
-                                border: '2px solid transparent',
-                                width: 20,
-                                height: 20,
-                            }}
-                        />
-                    ))}
+                    {color
+                        .filter((x) => x != null)
+                        .map((color) => (
+                            <div
+                                onClick={() =>
+                                    onChange(allSame === value ? null : value)
+                                }
+                                style={{
+                                    borderColor:
+                                        allSame === value ||
+                                        (allSame == null && value === 0)
+                                            ? 'white'
+                                            : 'transparent',
+                                    background: paletteColor(
+                                        palette,
+                                        color!,
+                                        value,
+                                    ),
+                                }}
+                                css={{
+                                    border: '2px solid transparent',
+                                    width: 20,
+                                    height: 20,
+                                }}
+                            />
+                        ))}
                 </div>
             ))}
         </div>

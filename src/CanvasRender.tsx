@@ -77,88 +77,93 @@ export const canvasRender = async (
         await renderOverlay(state, overlay, ctx);
     }
 
-    sortedVisiblePaths(state).forEach((k) => {
-        const path = state.paths[k];
-        const style = combinedPathStyles(path, state.pathGroups);
+    sortedVisiblePaths(state.paths, state.pathGroups, state.view.clip).forEach(
+        (path) => {
+            const style = combinedPathStyles(path, state.pathGroups);
 
-        style.fills.forEach((fill, i) => {
-            if (!fill || fill.color == null) {
-                return;
-            }
-
-            let myPath = path;
-            if (fill.inset) {
-                myPath = insetPath(path, fill.inset / 100);
-            }
-
-            ctx.beginPath();
-            tracePath(ctx, myPath, zoom);
-
-            if (fill.opacity != null) {
-                ctx.globalAlpha = fill.opacity;
-            }
-
-            const color = lightenedColor(palette, fill.color, fill.lighten)!;
-            if (color.startsWith('http')) {
-                const img = images[fill.color as number];
-                if (!img) {
-                    ctx.closePath();
+            style.fills.forEach((fill, i) => {
+                if (!fill || fill.color == null) {
                     return;
                 }
-                ctx.save();
-                ctx.clip();
 
-                drawCenteredImage(img, sourceWidth, sourceHeight, ctx);
-                ctx.restore();
-            } else {
-                ctx.fillStyle = color;
-                ctx.fill();
-            }
-            ctx.globalAlpha = 1;
-        });
+                let myPath = path;
+                if (fill.inset) {
+                    myPath = insetPath(path, fill.inset / 100);
+                }
 
-        style.lines.forEach((line, i) => {
-            if (!line || line.color == null || !line.width) {
-                return;
-            }
+                ctx.beginPath();
+                tracePath(ctx, myPath, zoom);
 
-            // TODO line opacity probably
-            // if (line.opacity != null) {
-            //     ctx.globalAlpha = line.opacity;
-            // }
+                if (fill.opacity != null) {
+                    ctx.globalAlpha = fill.opacity;
+                }
 
-            ctx.lineWidth = (line.width / 100) * zoom;
+                const color = lightenedColor(
+                    palette,
+                    fill.color,
+                    fill.lighten,
+                )!;
+                if (color.startsWith('http')) {
+                    const img = images[fill.color as number];
+                    if (!img) {
+                        ctx.closePath();
+                        return;
+                    }
+                    ctx.save();
+                    ctx.clip();
 
-            const color = lightenedColor(palette, line.color, undefined)!;
-            if (color.startsWith('http')) {
-                const img = images[line.color as number];
-                if (!img) {
+                    drawCenteredImage(img, sourceWidth, sourceHeight, ctx);
+                    ctx.restore();
+                } else {
+                    ctx.fillStyle = color;
+                    ctx.fill();
+                }
+                ctx.globalAlpha = 1;
+            });
+
+            style.lines.forEach((line, i) => {
+                if (!line || line.color == null || !line.width) {
                     return;
                 }
-                ctx.save();
-                ctx.beginPath();
-                tracePathLine(ctx, path, zoom, line.width / 100);
-                ctx.clip();
-                drawCenteredImage(img, sourceWidth, sourceHeight, ctx);
-                // ctx.drawImage(
-                //     images[line.color as number]!,
-                //     -500,
-                //     -500,
-                //     ctx.canvas.width,
-                //     ctx.canvas.height,
-                // );
-                ctx.restore();
 
-                // debugPath(path, ctx, zoom);
-            } else {
-                ctx.beginPath();
-                tracePath(ctx, path, zoom);
-                ctx.strokeStyle = color;
-                ctx.stroke();
-            }
-            ctx.globalAlpha = 1;
-        });
-    });
+                // TODO line opacity probably
+                // if (line.opacity != null) {
+                //     ctx.globalAlpha = line.opacity;
+                // }
+
+                ctx.lineWidth = (line.width / 100) * zoom;
+
+                const color = lightenedColor(palette, line.color, undefined)!;
+                if (color.startsWith('http')) {
+                    const img = images[line.color as number];
+                    if (!img) {
+                        return;
+                    }
+                    ctx.save();
+                    ctx.beginPath();
+                    tracePathLine(ctx, path, zoom, line.width / 100);
+                    ctx.clip();
+                    drawCenteredImage(img, sourceWidth, sourceHeight, ctx);
+                    // ctx.drawImage(
+                    //     images[line.color as number]!,
+                    //     -500,
+                    //     -500,
+                    //     ctx.canvas.width,
+                    //     ctx.canvas.height,
+                    // );
+                    ctx.restore();
+
+                    // debugPath(path, ctx, zoom);
+                } else {
+                    ctx.beginPath();
+                    tracePath(ctx, path, zoom);
+                    ctx.strokeStyle = color;
+                    ctx.stroke();
+                }
+                ctx.globalAlpha = 1;
+            });
+        },
+    );
 
     const oids = Object.keys(state.overlays).filter(
         (id) => !state.overlays[id].hide && state.overlays[id].over,
@@ -384,29 +389,6 @@ export const isClockwise = (segments: Array<Segment>) => {
         between > Math.PI ? between - Math.PI * 2 : between,
     );
     let total = relatives.reduce((a, b) => a + b);
-    // betweens.forEach((between) => {
-    //     if (between > Math.PI) {
-    //         total -= Math.PI * 2 - between;
-    //     } else {
-    //         total += between;
-    //     }
-    // });
-    // points.forEach((point, i) => {
-    // 	if (i == 0) {
-    // 		return
-    // 	}
-    // 	const prev = i === 0 ? points[i - 1]
-    // })
-    // console.log(`Total`, [
-    //     toDegrees(total),
-    //     angles.map(toDegrees),
-    //     betweens.map(toDegrees),
-    //     relatives.map(toDegrees),
-    //     points,
-    //     toDegrees(angles.reduce((x, m) => x + m)),
-    //     toDegrees(betweens.reduce((x, m) => x + m)),
-    // ]);
-    // really, it'll be -2pi or 2pi
     return total > 0;
 };
 

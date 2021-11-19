@@ -140,6 +140,20 @@ export type Primitive = SlopeIntercept | Circle;
 
 const close = (a: number, b: number) => Math.abs(a - b) < epsilon;
 
+export const intersections = (one: Primitive, two: Primitive): Array<Coord> => {
+    if (one.type === 'line') {
+        if (two.type === 'line') {
+            const res = lineLine(one, two);
+            return res ? [res] : [];
+        }
+        return lineCircle(two, one);
+    }
+    if (two.type === 'line') {
+        return lineCircle(one, two);
+    }
+    return circleCircle(one, two);
+};
+
 export const circleCircle = (one: Circle, two: Circle): Array<Coord> => {
     // (x - h)^2 + (y - k)^2 = r^2
     // we've got two of these.

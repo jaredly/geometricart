@@ -42,6 +42,8 @@ import {
     calculateInactiveGuideElements,
 } from './calculateGuideElements';
 import { geomToPrimitives } from './points';
+import { simplifyPath } from './RenderPath';
+import { ensureClockwise } from './CanvasRender';
 
 // This /will/ contain duplicates!
 // export const calculatePathElements = (
@@ -348,12 +350,23 @@ export const Guides = ({
             if (!pathOrigin) {
                 return;
             }
-            // TODO:
-            dispatch({
-                type: 'path:create',
-                segments: parts.map((s) => s.segment),
-                origin: pathOrigin.coord.coord,
-            });
+            if (pathOrigin.clip) {
+                dispatch({
+                    type: 'view:update',
+                    view: {
+                        ...currentState.current.view,
+                        clip: simplifyPath(
+                            ensureClockwise(parts.map((p) => p.segment)),
+                        ),
+                    },
+                });
+            } else {
+                dispatch({
+                    type: 'path:create',
+                    segments: parts.map((s) => s.segment),
+                    origin: pathOrigin.coord.coord,
+                });
+            }
             setPathOrigin(null);
         },
         [pathOrigin],

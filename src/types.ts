@@ -623,6 +623,7 @@ export type View = {
     center: Coord;
     zoom: number;
     guides: boolean;
+    clip?: Array<Segment>;
     background?: string | number;
 };
 

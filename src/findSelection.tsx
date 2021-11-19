@@ -1,6 +1,6 @@
 import { angleTo, dist } from './getMirrorTransforms';
 import { lineCircle, lineLine, lineToSlope, Primitive } from './intersect';
-import { Coord, Id, Path, PathGroup } from './types';
+import { Coord, Id, Path, PathGroup, Segment } from './types';
 
 export const findSelection = (
     paths: { [key: string]: Path },
@@ -65,21 +65,7 @@ export const intersectsRect = (path: Path, rect: Rect, debug?: boolean) => {
         ),
     ];
 
-    const pathAsPrimitives = path.segments.map((seg, i): Primitive => {
-        const prev = i === 0 ? path.origin : path.segments[i - 1].to;
-        if (seg.type === 'Line') {
-            return lineToSlope(prev, seg.to, true);
-        }
-        // TODO: need to define the limit!
-        const t0 = angleTo(seg.center, prev);
-        const t1 = angleTo(seg.center, seg.to);
-        return {
-            type: 'circle',
-            center: seg.center,
-            radius: dist(seg.center, seg.to),
-            limit: seg.clockwise ? [t0, t1] : [t1, t0],
-        };
-    });
+    const pathAsPrimitives = pathToPrimitives(path.origin, path.segments);
 
     for (let line of rectLines) {
         for (let seg of pathAsPrimitives) {
@@ -115,3 +101,25 @@ export const pointInRect = (pos: Coord, rect: Rect) =>
     pos.x <= rect.x2 &&
     rect.y1 <= pos.y &&
     pos.y <= rect.y2;
+
+export function pathToPrimitives(origin: Coord, segments: Array<Segment>) {
+    return segments.map((seg, i): Primitive => {
+        const prev = i === 0 ? origin : segments[i - 1].to;
+        return segmentToPrimitive(prev, seg);
+    });
+}
+
+export const segmentToPrimitive = (prev: Coord, seg: Segment): Primitive => {
+    if (seg.type === 'Line') {
+        return lineToSlope(prev, seg.to, true);
+    }
+    // TODO: need to define the limit!
+    const t0 = angleTo(seg.center, prev);
+    const t1 = angleTo(seg.center, seg.to);
+    return {
+        type: 'circle',
+        center: seg.center,
+        radius: dist(seg.center, seg.to),
+        limit: seg.clockwise ? [t0, t1] : [t1, t0],
+    };
+};
