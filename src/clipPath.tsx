@@ -401,20 +401,164 @@ If both are, we're on a shared edge.
 */
 
 // let's return `clipInformation` along with it, I think. like `{path, clipped: Array<segment index>}`
+export const findHit = (
+    clip: Clippable,
+    hit: Hit,
+    idx: number,
+): HitLocation => {
+    return { segment: idx, intersection: clip.hits[idx].indexOf(hit) };
+};
+
+export const prevPos = (segments: Array<Segment>, idx: number) =>
+    idx === 0 ? segments[segments.length - 1].to : segments[idx - 1].to;
 
 export const clipTwo = (clip: Clippable, path: Clippable, idx: number) => {
-    const allIntersections: { [i: number]: { [j: number]: Array<Coord> } } = {};
+    // ok, we start off on the path.
+
+    const first =
+        idx === 0
+            ? path.segments[path.segments.length - 1].to
+            : path.segments[idx - 1].to;
+
+    // ifff the starting segment is also an intersection ... we have some explaining to do
+    while (
+        idx < path.hits.length &&
+        path.hits[idx].length > 0 &&
+        coordsEqual(path.hits[idx][0].coord, prevPos(path.segments, idx)) &&
+        isGoingInside(
+            path,
+            { segment: idx, intersection: 0 },
+            clip,
+            findHit(clip, path.hits[idx][0], path.hits[idx][0].j),
+        )
+    ) {
+        idx++;
+    }
+    // Nope, can't do it folks. No idx works.
+    if (idx >= path.hits.length) {
+        return null;
+    }
+
+    // while (!isGoingInside)
+
+    const result: Array<Segment> = [];
+
+    let state: { clipSide: boolean; loc: HitLocation } = {
+        clipSide: false,
+        loc: { segment: idx, intersection: -1 },
+    };
+
+    let x = 0;
+    while (
+        (!result.length || !coordsEqual(first, result[result.length - 1].to)) &&
+        x++ < 100
+    ) {
+        if (!state.clipSide) {
+            const next = state.loc.intersection + 1;
+            if (next >= path.hits[state.loc.segment].length) {
+                result.push(path.segments[state.loc.segment]);
+                // move on to the next
+                state.loc = {
+                    segment: (state.loc.segment + 1) % path.hits.length,
+                    intersection: -1,
+                };
+                continue;
+            }
+
+            const hit = path.hits[state.loc.segment][next];
+
+            const clipLoc = findHit(clip, hit, hit.j);
+            const pathLoc = { segment: state.loc.segment, intersection: next };
+
+            // Is clip going into path?
+            if (isGoingInside(path, pathLoc, clip, clipLoc)) {
+                result.push({
+                    ...path.segments[state.loc.segment],
+                    to: hit.coord,
+                });
+                // clip is going into path, we need to switch
+                state = { clipSide: true, loc: clipLoc };
+            } else {
+                // must have been tangent, nothing to see here
+                result.push(path.segments[state.loc.segment]);
+                // move on to the next
+                state.loc = pathLoc;
+            }
+        } else {
+            const next = state.loc.intersection + 1;
+            if (next >= clip.hits[state.loc.segment].length) {
+                result.push(clip.segments[state.loc.segment]);
+                // move on to the next
+                state.loc = {
+                    segment: (state.loc.segment + 1) % clip.hits.length,
+                    intersection: -1,
+                };
+                continue;
+            }
+
+            const hit = clip.hits[state.loc.segment][next];
+
+            const clipLoc = findHit(path, hit, hit.i);
+            const pathLoc = { segment: state.loc.segment, intersection: next };
+
+            // Is path going into clip?
+            if (isGoingInside(clip, pathLoc, path, clipLoc)) {
+                result.push({
+                    ...clip.segments[state.loc.segment],
+                    to: hit.coord,
+                });
+                // path is going into clip, we need to switch
+                state = { clipSide: false, loc: clipLoc };
+            } else {
+                // must have been tangent, nothing to see here
+                result.push(clip.segments[state.loc.segment]);
+                // move on to the next
+                state.loc = pathLoc;
+            }
+        }
+    }
+    return result;
+};
+
+export const clipPath = (
+    path: Path,
+    clip: Array<Segment>,
+    clipPrimitives: Array<Primitive>,
+): Path | null => {
+    // start somewhere.
+    // if it's inside the clip, a ray will intersect an odd number of times. right?
+    // OHHHK ALSO we need to do the edge test.
+    // STOPSHIP here folks
+    // sooo this requires that a path must have at least one point inside the clip
+    // in order to be rendered.
+    // this is not a guarentee.
+    // but here we are.
+    const idx = findInsideStart(path, clipPrimitives);
+    if (idx == null) {
+        console.log(`nothing inside`);
+        // path is not inside, nothing to show
+        return null;
+    }
+
+    const pathPrims = pathToPrimitives(path.origin, path.segments);
+
     // Intersections from the perspective of the clip.
     let clipPerspective: Array<Array<{ i: number; j: number; coord: Coord }>> =
-        clip.primitives.map(() => []);
+        clipPrimitives.map(() => []);
 
-    const hitsPerSegment = path.primitives.map((prim, i) => {
+    const hitsPerSegment = pathPrims.map((prim, i) => {
         let all: Array<{ i: number; j: number; coord: Coord }> = [];
-        allIntersections[i] = {};
-        clip.primitives.forEach((clip, j) => {
-            const got = intersections(prim, clip);
-            allIntersections[i][j] = got;
+        clipPrimitives.forEach((clipPrim, j) => {
+            const got = intersections(prim, clipPrim);
             got.forEach((coord) => {
+                // Nope on matching the end of things
+                if (coordsEqual(coord, path.segments[i].to)) {
+                    return;
+                }
+                // Nope on matching the end of things
+                if (coordsEqual(coord, clip[j].to)) {
+                    return;
+                }
                 const hit = { i, j, coord };
                 all.push(hit);
                 clipPerspective[j].push(hit);
@@ -427,138 +571,20 @@ export const clipTwo = (clip: Clippable, path: Clippable, idx: number) => {
     });
 
     clipPerspective = clipPerspective.map((hits, j) => {
-        return sortHitsForPrimitive(hits, clip.primitives[j], clip.segments[j]);
+        return sortHitsForPrimitive(hits, clipPrimitives[j], clip[j]);
     });
 
-    const hitLists = { clip: clipPerspective, path: hitsPerSegment };
-
-    const first =
-        idx === 0
-            ? path.segments[path.segments.length - 1].to
-            : path.segments[idx - 1].to;
-
-    // const finishedPath: { origin: Coord; segments: Array<Segment> } = {
-    //     origin: first,
-    //     segments: [],
-    // };
-
-    const result: Array<Segment> = [];
-
-    let state: { clipSide: boolean; i: number; startingAt: number } = {
-        clipSide: false,
-        i: idx,
-        startingAt: -1,
-    };
-    let x = 0;
-    while (
-        result.length === 0 ||
-        !coordsEqual(first, result[result.length - 1].to)
-    ) {
-        if (x++ > 30) {
-            console.log(`FAIL`, state, result);
-            break;
-        }
-        const prev = result.length === 0 ? first : result[result.length - 1].to;
-
-        if (!state.clipSide) {
-            const at = state.i % path.segments.length;
-
-            if (hitLists.path[at].length <= state.startingAt + 1) {
-                result.push(path.segments[at]);
-                state.i += 1;
-                continue;
-            }
-
-            let first = hitLists.path[at][state.startingAt + 1];
-            if (coordsEqual(first.coord, prev)) {
-                // false start, advance!
-                first = hitLists.path[at][state.startingAt + 2];
-                if (!first) {
-                    // we're done here folks, forge ahead
-                    result.push(path.segments[at]);
-                    state.i += 1;
-                    continue;
-                }
-            }
-
-            if (coordsEqual(first.coord, path.segments[at].to)) {
-                result.push(path.segments[at]);
-            } else {
-                result.push({
-                    ...path.segments[at],
-                    to: first.coord,
-                });
-            }
-
-            state = {
-                clipSide: true,
-                i: first.j,
-                startingAt: hitLists.clip[first.j].indexOf(first),
-            };
-            continue;
-        } else {
-            const at = state.i % clip.segments.length;
-
-            if (hitLists.clip[at].length <= state.startingAt + 1) {
-                result.push(clip.segments[at]);
-                state.i += 1;
-                continue;
-            }
-
-            let first = hitLists.clip[at][state.startingAt + 1];
-            if (coordsEqual(first.coord, prev)) {
-                // false start, advance!
-                first = hitLists.clip[at][state.startingAt + 2];
-                if (!first) {
-                    // we're done here folks, forge ahead
-                    result.push(clip.segments[at]);
-                    state.i += 1;
-                    continue;
-                }
-            }
-
-            if (coordsEqual(first.coord, clip.segments[at].to)) {
-                result.push(clip.segments[at]);
-            } else {
-                result.push({ ...clip.segments[at], to: first.coord });
-            }
-
-            state = {
-                clipSide: false,
-                i: first.i,
-                startingAt: hitLists.path[first.i].indexOf(first),
-            };
-            continue;
-        }
-    }
-    console.log(`done`, result, state);
-
-    return result;
-};
-
-export const clipPath = (
-    path: Path,
-    clip: Array<Segment>,
-    primitives: Array<Primitive>,
-): Path | null => {
-    // start somewhere.
-    // if it's inside the clip, a ray will intersect an odd number of times. right?
-    const idx = findInsideStart(path, primitives);
-    if (idx == null) {
-        console.log(`nothing inside`);
-        // path is not inside, nothing to show
-        return null;
-    }
-
-    const pathPrims = pathToPrimitives(path.origin, path.segments);
-
     const result = clipTwo(
-        { primitives, segments: clip, hits },
-        { segments: path.segments, prims: pathPrims },
+        { primitives: clipPrimitives, segments: clip, hits: clipPerspective },
+        {
+            segments: path.segments,
+            primitives: pathPrims,
+            hits: hitsPerSegment,
+        },
         idx,
     );
 
-    if (!result.length) {
+    if (!result) {
         return null;
     }
 
@@ -585,8 +611,15 @@ export const insidePath = (coord: Coord, segs: Array<Primitive>) => {
     return Object.keys(hits).length % 2 == 1;
 };
 
-export const findInsideStart = (path: Path, clip: Array<Primitive>) => {
-    for (let i = 0; i < path.segments.length; i++) {
+/**
+ * Finds the {index} of the {Segment} whose /start/ position (not to) is inside the clip.
+ */
+export const findInsideStart = (
+    path: Path,
+    clip: Array<Primitive>,
+    after: number = 0,
+) => {
+    for (let i = after; i < path.segments.length; i++) {
         const prev = i === 0 ? path.origin : path.segments[i - 1].to;
         if (insidePath(prev, clip)) {
             return i;
@@ -613,6 +646,7 @@ export const sortHitsForPrimitive = <T extends { coord: Coord }>(
         const circle = segment as ArcSegment;
         const t1 = angleTo(circle.center, segment.to);
         // TODO: DEDUP! If we have an intersection with two clip segments, take the /later/ one.
+        // the only way this could happen is if they're contiguous.
         return hits
             .map((coord) => ({
                 coord,
