@@ -120,6 +120,6 @@ export const segmentToPrimitive = (prev: Coord, seg: Segment): Primitive => {
         type: 'circle',
         center: seg.center,
         radius: dist(seg.center, seg.to),
-        limit: seg.clockwise ? [t0, t1] : [t1, t0],
+        limit: t0 !== t1 ? (seg.clockwise ? [t0, t1] : [t1, t0]) : undefined,
     };
 };

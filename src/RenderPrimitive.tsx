@@ -87,7 +87,7 @@ export function RenderPrimitive({
             />
         );
     }
-    if (prim.limit) {
+    if (prim.limit && prim.limit[0] !== prim.limit[1]) {
         const [t0, t1] = prim.limit;
         const p0 = push(prim.center, t0, prim.radius);
         return (
