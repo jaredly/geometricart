@@ -1,4 +1,12 @@
 
+## CLIPPSSSS
+
+Ok, so one thing: we got issues when we have a starting point in the middle of an arc. apparently.
+
+- [x] also, clip + inset is /not/ working! Maybe the resulting path is abnormal somehow? needs to be simplified?
+	- yay fixed
+
+
 
 - [x] extent!
 	- [x] ok this is getting a little weird though. I'm not deduping segments correctly.

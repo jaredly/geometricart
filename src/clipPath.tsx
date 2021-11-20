@@ -607,10 +607,18 @@ export const clipPath = (
         return null;
     }
 
+    const filtered = [result[0]];
+    for (let i = 1; i < result.length; i++) {
+        if (coordsEqual(result[i].to, filtered[filtered.length - 1].to)) {
+            continue;
+        }
+        filtered.push(result[i]);
+    }
+
     return {
         ...path,
-        origin: result[result.length - 1].to,
-        segments: result,
+        origin: filtered[filtered.length - 1].to,
+        segments: filtered,
     };
 };
 
