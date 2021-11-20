@@ -44,6 +44,7 @@ import {
 import { geomToPrimitives } from './points';
 import { simplifyPath } from './RenderPath';
 import { ensureClockwise } from './CanvasRender';
+import { pathToPrimitives } from './findSelection';
 
 // This /will/ contain duplicates!
 // export const calculatePathElements = (
@@ -559,6 +560,23 @@ export const Guides = ({
                     shiftKey={!!shiftKey}
                 />
             ) : null}
+            {state.view.clip
+                ? pathToPrimitives(
+                      state.view.clip[state.view.clip.length - 1].to,
+                      state.view.clip,
+                  ).map((prim, i) => (
+                      <RenderPrimitive
+                          isImplied
+                          prim={prim}
+                          zoom={state.view.zoom}
+                          width={width}
+                          height={height}
+                          color={'magenta'}
+                          strokeWidth={4}
+                          key={i}
+                      />
+                  ))
+                : null}
             {pathOrigin ? (
                 <DrawPath
                     palette={state.palettes[state.activePalette]}

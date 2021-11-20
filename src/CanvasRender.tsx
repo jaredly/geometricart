@@ -6,6 +6,7 @@ import {
 import { imageCache, sortedVisiblePaths } from './Canvas';
 import { segmentKey } from './DrawPath';
 import { angleBetween } from './findNextSegments';
+import { pathToPrimitives } from './findSelection';
 import {
     angleTo,
     dist,
@@ -88,7 +89,11 @@ export const canvasRender = async (
 
                 let myPath = path;
                 if (fill.inset) {
-                    myPath = insetPath(path, fill.inset / 100);
+                    const inset = insetPath(path, fill.inset / 100);
+                    if (!inset) {
+                        return;
+                    }
+                    myPath = inset;
                 }
 
                 ctx.beginPath();
@@ -220,7 +225,20 @@ export const canvasRender = async (
         );
         ctx.fill();
     });
+
     ctx.globalAlpha = 1;
+
+    if (state.view.clip) {
+        ctx.strokeStyle = 'magenta';
+        ctx.setLineDash([5, 15]);
+        ctx.lineWidth = 10;
+        pathToPrimitives(
+            state.view.clip[state.view.clip.length - 1].to,
+            state.view.clip,
+        ).forEach((prim) => {
+            renderPrimitive(ctx, prim, zoom, sourceHeight, sourceWidth);
+        });
+    }
 };
 
 async function renderOverlay(
@@ -306,19 +324,36 @@ function renderPrimitive(
     ctx.beginPath();
     if (prim.type === 'line') {
         if (prim.m === Infinity) {
-            ctx.moveTo(prim.b * zoom, -sourceHeight);
-            ctx.lineTo(prim.b * zoom, sourceHeight);
+            if (prim.limit) {
+                ctx.moveTo(prim.b * zoom, prim.limit[0] * zoom);
+                ctx.lineTo(prim.b * zoom, prim.limit[1] * zoom);
+            } else {
+                ctx.moveTo(prim.b * zoom, -sourceHeight);
+                ctx.lineTo(prim.b * zoom, sourceHeight);
+            }
         } else {
-            ctx.moveTo(-sourceWidth, prim.b * zoom - prim.m * sourceWidth);
-            ctx.lineTo(sourceWidth, prim.m * sourceWidth + prim.b * zoom);
+            if (prim.limit) {
+                ctx.moveTo(
+                    prim.limit[0] * zoom,
+                    prim.b * zoom + prim.m * (prim.limit[0] * zoom),
+                );
+                ctx.lineTo(
+                    prim.limit[1] * zoom,
+                    prim.m * (prim.limit[1] * zoom) + prim.b * zoom,
+                );
+            } else {
+                ctx.moveTo(-sourceWidth, prim.b * zoom - prim.m * sourceWidth);
+                ctx.lineTo(sourceWidth, prim.m * sourceWidth + prim.b * zoom);
+            }
         }
     } else {
+        const [t0, t1] = prim.limit || [0, Math.PI * 2];
         ctx.arc(
             prim.center.x * zoom,
             prim.center.y * zoom,
             prim.radius * zoom,
-            0,
-            Math.PI * 2,
+            t0,
+            t1,
         );
     }
     ctx.stroke();

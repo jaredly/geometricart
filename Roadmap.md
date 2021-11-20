@@ -6,8 +6,15 @@ Ok, so one thing: we got issues when we have a starting point in the middle of a
 - [x] also, clip + inset is /not/ working! Maybe the resulting path is abnormal somehow? needs to be simplified?
 	- yay fixed
 
+## [ ] CLIP BUGS
 
-- [ ] pure circle clip, has some bugs.
+- [ ] if we inset too far, it turns inside out. I tried running an `isClockwise` test, and it lied.
+
+- [ ] it looks like backtracking directly breaks.
+
+
+- [x] pure circle clip, has some bugs.
+	- START HERE PLEEEASE
 
 
 - [x] extent!

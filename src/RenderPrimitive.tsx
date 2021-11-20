@@ -16,7 +16,8 @@ export function RenderPrimitive({
     color,
     inactive,
     strokeWidth = 1,
-}: {
+}: // strokeDasharray,
+{
     color?: string;
     isImplied?: boolean;
     prim: Primitive;
@@ -26,6 +27,7 @@ export function RenderPrimitive({
     inactive?: boolean;
     strokeWidth?: number;
     onClick?: (evt: React.MouseEvent) => unknown;
+    // strokeDasharray?: Array<number>
 }): jsx.JSX.Element {
     const common = {
         stroke: color ?? (inactive ? 'rgba(102, 102, 102, 0.3)' : '#666'),

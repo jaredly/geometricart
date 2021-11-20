@@ -209,6 +209,11 @@ export const insetPath = (path: Path, inset: number) => {
         return insetSegment(prev, seg, next, inset);
     });
 
+    // we've gone inside out!
+    if (!isClockwise(segments)) {
+        return null;
+    }
+
     return { ...path, segments, origin: segments[segments.length - 1].to };
 };
 
@@ -240,7 +245,11 @@ export const RenderPath = React.memo(
             let raw = d;
             let newPath = path;
             if (fill.inset) {
-                newPath = insetPath(path, fill.inset / 100);
+                const inset = insetPath(path, fill.inset / 100);
+                if (!inset) {
+                    return null;
+                }
+                newPath = inset;
                 raw = calcPathD(newPath, zoom);
             }
             return (
