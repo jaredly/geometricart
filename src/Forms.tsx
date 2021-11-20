@@ -55,6 +55,9 @@ export const Float = ({
             value={value}
             onChange={(evt) => onChange(+evt.target.value)}
             step="0.1"
+            css={{
+                width: 50,
+            }}
             type="number"
         />
     );
@@ -78,6 +81,9 @@ export const Int = ({
                     onChange(res);
                 }
             }}
+            css={{
+                width: 50,
+            }}
             step="1"
             type="number"
         />
@@ -98,12 +104,13 @@ export const Color = ({
     color,
     onChange,
     palette,
+    extra = ['black', 'white', 'transparent'],
 }: {
     color: string | undefined | number;
     onChange: (color: string | undefined | number) => void;
     palette: Array<string>;
+    extra?: Array<string>;
 }) => {
-    const options = ['black', 'white', 'transparent'];
     return (
         <div>
             {palette.map((item, i) => (
@@ -112,24 +119,28 @@ export const Color = ({
                     onClick={() => onChange(i)}
                     style={{
                         border: `2px solid ${color === i ? 'white' : '#444'}`,
+                        background: item.startsWith('http')
+                            ? `url("${item}")`
+                            : item,
                     }}
                     css={{
-                        background: item,
                         width: 20,
                         height: 20,
                         cursor: 'pointer',
                     }}
                 />
             ))}
-            {options.map((name, i) => (
+            {extra.map((name, i) => (
                 <button
                     key={name}
                     onClick={() => onChange(name)}
-                    css={{
+                    style={{
                         background:
                             name === 'transparent'
                                 ? `url("${transparent}")`
                                 : name,
+                    }}
+                    css={{
                         border: `2px solid ${
                             color === name ? 'white' : '#444'
                         }`,
@@ -267,16 +278,16 @@ export const PathGroupForm = ({
     onMouseOut: () => void;
     onDelete: () => void;
 }) => {
-    const ref = React.useRef(null as null | HTMLDivElement);
+    // const ref = React.useRef(null as null | HTMLDivElement);
     const [expanded, setExpanded] = React.useState(false);
-    React.useEffect(() => {
-        if (selected) {
-            ref.current?.scrollIntoView(false);
-        }
-    }, [selected]);
+    // React.useEffect(() => {
+    //     if (selected) {
+    //         ref.current?.scrollIntoView(false);
+    //     }
+    // }, [selected]);
     return (
         <div
-            ref={(node) => (ref.current = node)}
+            // ref={(node) => (ref.current = node)}
             css={{ padding: 4, borderBottom: '1px solid #aaa', margin: 4 }}
             style={{
                 backgroundColor: selected ? 'rgba(255,255,255,0.1)' : undefined,
@@ -365,15 +376,21 @@ export const PathForm = ({
             >
                 {expanded ? '🔻' : '▶️'}
                 Path! {path.id}
+                <div style={{ flexBasis: 8 }} />
+                <Toggle
+                    label="Hide"
+                    value={path.hidden}
+                    onChange={(hidden) => onChange({ ...path, hidden })}
+                />
                 <div style={{ flex: 1 }} />
                 <button onClick={onDelete}>Delete</button>
             </div>
             {expanded ? (
                 <>
                     <Toggle
-                        label="Hide"
-                        value={path.hidden}
-                        onChange={(hidden) => onChange({ ...path, hidden })}
+                        label="Debug"
+                        value={!!path.debug}
+                        onChange={(debug) => onChange({ ...path, debug })}
                     />
                     <StyleForm
                         palette={palette}
@@ -393,23 +410,25 @@ export const GuideForm = ({
     onChange,
     onMouseOver,
     onMouseOut,
+    onDelete,
 }: {
     guide: Guide;
     selected: boolean;
     onChange: (guide: Guide) => unknown;
     onMouseOver: () => void;
     onMouseOut: () => void;
+    onDelete: () => void;
 }) => {
     const [expanded, setExpanded] = React.useState(false);
-    const ref = React.useRef(null as null | HTMLDivElement);
-    React.useEffect(() => {
-        if (selected) {
-            ref.current?.scrollIntoView(false);
-        }
-    }, [selected]);
+    // const ref = React.useRef(null as null | HTMLDivElement);
+    // React.useEffect(() => {
+    //     if (selected) {
+    //         ref.current?.scrollIntoView(false);
+    //     }
+    // }, [selected]);
     return (
         <div
-            ref={(node) => (ref.current = node)}
+            // ref={(node) => (ref.current = node)}
             onMouseOut={onMouseOut}
             onMouseOver={onMouseOver}
             css={{
@@ -438,6 +457,14 @@ export const GuideForm = ({
                     value={guide.active}
                     onChange={(active) => onChange({ ...guide, active })}
                 />
+                <div style={{ flex: 1 }} />
+                <button
+                    onClick={() => {
+                        onDelete();
+                    }}
+                >
+                    Delete
+                </button>
             </div>
             {expanded ? (
                 <>
@@ -473,16 +500,36 @@ export const GuideForm = ({
                         </>
                     ) : null}
                     {guide.geom.type === 'Line' ? (
-                        <Toggle
-                            value={guide.geom.limit}
-                            onChange={(limit) => {
-                                onChange({
-                                    ...guide,
-                                    geom: { ...(guide.geom as Line), limit },
-                                });
-                            }}
-                            label="Restrict to segment"
-                        />
+                        <>
+                            <Toggle
+                                value={guide.geom.limit}
+                                onChange={(limit) => {
+                                    onChange({
+                                        ...guide,
+                                        geom: {
+                                            ...(guide.geom as Line),
+                                            limit,
+                                        },
+                                    });
+                                }}
+                                label="Restrict to segment"
+                            />
+                            <div>
+                                Extent:{' '}
+                                <Int
+                                    value={guide.geom.extent}
+                                    onChange={(extent) => {
+                                        onChange({
+                                            ...guide,
+                                            geom: {
+                                                ...(guide.geom as Line),
+                                                extent,
+                                            },
+                                        });
+                                    }}
+                                />
+                            </div>
+                        </>
                     ) : null}
                 </>
             ) : null}
@@ -493,9 +540,13 @@ export const GuideForm = ({
 export const ViewForm = ({
     view,
     onChange,
+    palette,
+    onHoverClip,
 }: {
     view: View;
     onChange: (view: View) => unknown;
+    onHoverClip: (hover: boolean) => void;
+    palette: Array<string>;
 }) => {
     const backgrounds = ['#1e1e1e', 'white', 'black', 'transparent'];
     return (
@@ -545,37 +596,30 @@ export const ViewForm = ({
                 }}
             >
                 <div css={{ marginRight: 8 }}>Background</div>
-                {backgrounds.map((color, i) => (
-                    <div
-                        key={color}
-                        css={{
-                            width: 20,
-                            height: 20,
-                            margin: 4,
-                        }}
-                        style={{
+                <Color
+                    color={view.background}
+                    onChange={(background) => {
+                        onChange({
+                            ...view,
                             background:
-                                color === 'transparent'
-                                    ? `url("${transparent}")`
-                                    : color,
-                            border: (
-                                color === 'transparent'
-                                    ? !view.background
-                                    : color === view.background
-                            )
-                                ? `2px solid white`
-                                : '2px solid #888',
-                        }}
-                        onClick={() => {
-                            onChange({
-                                ...view,
-                                background:
-                                    color === 'transparent' ? undefined : color,
-                            });
-                        }}
-                    ></div>
-                ))}
+                                background === 'transparent'
+                                    ? undefined
+                                    : background,
+                        });
+                    }}
+                    palette={palette}
+                    extra={backgrounds}
+                />
             </div>
+            {view.clip ? (
+                <button
+                    onClick={() => onChange({ ...view, clip: undefined })}
+                    onMouseOver={() => onHoverClip(true)}
+                    onMouseOut={() => onHoverClip(false)}
+                >
+                    Clear clip
+                </button>
+            ) : null}
         </div>
     );
 };
@@ -590,6 +634,7 @@ export const MirrorForm = ({
     selected,
     setSelected,
     onDuplicate,
+    onChild,
 }: {
     mirror: Mirror;
     isActive: boolean;
@@ -600,6 +645,7 @@ export const MirrorForm = ({
     onChange: (m: Mirror) => unknown;
     onSelect: () => void;
     onDuplicate: () => void;
+    onChild: () => void;
 }) => {
     return (
         <div
@@ -675,6 +721,13 @@ export const MirrorForm = ({
                 }}
             >
                 Duplicate
+            </button>
+            <button
+                onClick={() => {
+                    onChild();
+                }}
+            >
+                Create child mirror
             </button>
         </div>
     );

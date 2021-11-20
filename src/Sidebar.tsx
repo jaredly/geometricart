@@ -12,10 +12,11 @@ import {
 import { guideTypes, State, Action, Tab, Id, Path, PathGroup } from './types';
 import { initialState } from './initialState';
 import { Export } from './Export';
-import { toTypeRev } from './App';
-import { useDropTarget } from './useDropTarget';
+import { PendingMirror, toTypeRev } from './App';
+import { useDropStateTarget } from './useDropTarget';
 import { PalettesForm } from './PalettesForm';
 import { MultiStyleForm, mergeStyles } from './MultiStyleForm';
+import { OverlaysForm } from './OverlaysForm';
 
 export const PREFIX = `<!-- STATE:`;
 export const SUFFIX = '-->';
@@ -29,8 +30,9 @@ export const Tabs = ({
     props: TabProps;
     onSelect: (name: string) => void;
     current: string;
-    tabs: { [key: string]: (props: TabProps) => React.ReactNode };
+    tabs: { [key: string]: (props: TabProps) => React.ReactElement };
 }) => {
+    const Comp = tabs[current];
     return (
         <div css={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
             <div
@@ -67,13 +69,13 @@ export const Tabs = ({
                     </div>
                 ))}
             </div>
-            {tabs[current](props)}
+            <Comp {...props} />
         </div>
     );
 };
 
 export type Hover = {
-    kind: 'Path' | 'PathGroup' | 'Mirror' | 'Guide';
+    kind: Selection['type'] | 'Clip';
     id: Id;
 };
 
@@ -83,8 +85,9 @@ export type TabProps = {
     canvasRef: { current: SVGSVGElement | null };
     hover: Hover | null;
     setHover: (hover: Hover | null) => void;
+    setPendingMirror: (mirror: PendingMirror | null) => void;
 };
-const tabs: { [key in Tab]: (props: TabProps) => React.ReactNode } = {
+const tabs: { [key in Tab]: (props: TabProps) => React.ReactElement } = {
     Guides: ({ state, dispatch, hover, setHover }) => {
         return (
             <div
@@ -96,6 +99,9 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactNode } = {
             >
                 {Object.keys(state.guides).map((k) => (
                     <GuideForm
+                        onDelete={() => {
+                            dispatch({ type: 'guide:delete', id: k });
+                        }}
                         selected={
                             state.selection?.type === 'Guide' &&
                             state.selection.ids.includes(k)
@@ -234,7 +240,7 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactNode } = {
             ))}
         </div>
     ),
-    Mirrors: ({ state, dispatch, setHover }) => {
+    Mirrors: ({ state, dispatch, setHover, setPendingMirror }) => {
         return (
             <div
                 css={{
@@ -276,6 +282,14 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactNode } = {
                                 mirror: state.mirrors[k],
                             });
                         }}
+                        onChild={() => {
+                            setPendingMirror({
+                                parent: k,
+                                rotations: 3,
+                                reflect: true,
+                                center: null,
+                            });
+                        }}
                         onSelect={() => {
                             dispatch({
                                 type: 'mirror:active',
@@ -292,6 +306,18 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactNode } = {
                         }
                     />
                 ))}
+                <button
+                    onClick={() => {
+                        setPendingMirror({
+                            parent: null,
+                            rotations: 3,
+                            reflect: true,
+                            center: null,
+                        });
+                    }}
+                >
+                    Create new mirror
+                </button>
             </div>
         );
     },
@@ -301,6 +327,7 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactNode } = {
     Palette: ({ state, dispatch }) => (
         <PalettesForm state={state} dispatch={dispatch} />
     ),
+    Overlays: OverlaysForm,
     Help: () => (
         <div>
             <div>
@@ -416,14 +443,20 @@ export function Sidebar({
     canvasRef,
     hover,
     setHover,
+    setPendingMirror,
+    setDragSelect,
+    dragSelect,
 }: {
     dispatch: (action: Action) => void;
     hover: Hover | null;
     setHover: (hover: Hover | null) => void;
     state: State;
     canvasRef: React.MutableRefObject<SVGSVGElement | null>;
+    setPendingMirror: (mirror: PendingMirror | null) => void;
+    setDragSelect: (fn: (select: boolean) => boolean) => void;
+    dragSelect: boolean;
 }) {
-    const [dragging, callbacks] = useDropTarget((state) =>
+    const [dragging, callbacks] = useDropStateTarget((state) =>
         dispatch({ type: 'reset', state }),
     );
 
@@ -466,6 +499,10 @@ export function Sidebar({
                 </button>
                 <ViewForm
                     view={state.view}
+                    palette={state.palettes[state.activePalette]}
+                    onHoverClip={(hover) =>
+                        setHover(hover ? { kind: 'Clip', id: '' } : null)
+                    }
                     onChange={(view) => {
                         dispatch({
                             type: 'view:update',
@@ -484,11 +521,40 @@ export function Sidebar({
                             });
                         }}
                         key={kind}
+                        css={{
+                            margin: 8,
+                            padding: 8,
+                            fontSize: '120%',
+                        }}
                     >
                         {kind}
                         {toTypeRev[kind] ? ` (${toTypeRev[kind]})` : ''}
                     </button>
                 ))}
+                {state.pending ? (
+                    <button
+                        onClick={() =>
+                            dispatch({ type: 'pending:type', kind: null })
+                        }
+                        css={{
+                            margin: 8,
+                            padding: 8,
+                            fontSize: '120%',
+                        }}
+                    >
+                        Cancel pending
+                    </button>
+                ) : null}
+                <button
+                    onClick={() => setDragSelect((current) => !current)}
+                    css={{
+                        margin: 8,
+                        padding: 8,
+                        fontSize: '120%',
+                    }}
+                >
+                    {dragSelect ? 'Cancel drag select' : '(D)rag select'}
+                </button>
             </div>
             <div
                 style={{
@@ -499,7 +565,14 @@ export function Sidebar({
             />
             <Tabs
                 current={state.tab}
-                props={{ state, dispatch, canvasRef, hover, setHover }}
+                props={{
+                    state,
+                    dispatch,
+                    canvasRef,
+                    hover,
+                    setHover,
+                    setPendingMirror,
+                }}
                 tabs={tabs}
                 onSelect={(tab) =>
                     dispatch({ type: 'tab:set', tab: tab as Tab })

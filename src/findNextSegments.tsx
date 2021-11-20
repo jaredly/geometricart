@@ -1,4 +1,5 @@
 import { coordKey } from './calcAllIntersections';
+import { segmentKey } from './DrawPath';
 import { angleTo } from './getMirrorTransforms';
 import { Primitive } from './intersect';
 import {
@@ -47,8 +48,9 @@ export const findNextSegments = (
         pending.parts.length === 0
             ? null
             : pending.parts.length === 1
-            ? pending.origin.coord
+            ? null
             : pending.parts[pending.parts.length - 2].to.coord;
+    const seen: { [key: string]: true } = {};
     const res = ([] as Array<PendingSegment>)
         .concat(
             ...touchingPrimitives.map((id) => {
@@ -62,7 +64,16 @@ export const findNextSegments = (
                 );
             }),
         )
-        .filter((p) => !prev || coordKey(p.to.coord) !== coordKey(prev));
+        .filter((p) => {
+            if (prev && coordKey(p.to.coord) === coordKey(prev)) {
+                return false;
+            }
+            const k = segmentKey(next.coord, p.segment);
+            if (seen[k]) {
+                return false;
+            }
+            return (seen[k] = true);
+        });
     return res;
 };
 
@@ -116,6 +127,17 @@ export const calcPendingSegments = (
             },
         }));
     }
+};
+
+export const angleDiff = (one: number, two: number) => {
+    const diff = one - two;
+    if (diff < -Math.PI) {
+        return diff + Math.PI * 2;
+    }
+    if (diff > Math.PI) {
+        return diff - Math.PI * 2;
+    }
+    return diff;
 };
 
 // left & right are assumed to be between -PI and PI

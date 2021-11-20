@@ -1,5 +1,7 @@
+import { ensureClockwise } from './CanvasRender';
 import { initialState } from './initialState';
 import { Primitive } from './intersect';
+import { simplifyPath } from './RenderPath';
 
 // Should I do polar coords?
 export type Coord = { x: number; y: number };
@@ -43,7 +45,14 @@ the normal stuff folks.
 
 
 */
-export type Line = { type: 'Line'; p1: Coord; p2: Coord; limit: boolean };
+export type Line = {
+    type: 'Line';
+    p1: Coord;
+    p2: Coord;
+    /** @deprecated */
+    limit: boolean;
+    extent?: number;
+};
 
 export type GuideGeom =
     | Line
@@ -158,7 +167,9 @@ export type Mirror = {
 
 export type Fill = {
     inset?: number;
+    opacity?: number;
     color?: string | number;
+    lighten?: number; // negatives for darken. units somewhat arbitrary.
 };
 
 export type StyleLine = {
@@ -187,6 +198,7 @@ export type Path = {
     origin: Coord;
     segments: Array<Segment>;
     hidden: boolean;
+    debug?: boolean;
 };
 
 export type ArcSegment = {
@@ -239,6 +251,7 @@ export type PendingGuide = {
     type: 'Guide';
     points: Array<Coord>;
     kind: GuideGeom['type'];
+    extent?: number;
 };
 
 export type Intersect = {
@@ -287,6 +300,23 @@ export type UndoViewUpdate = {
     prev: View;
 };
 
+export type OverlyAdd = { type: 'overlay:add'; attachment: Id };
+export type UndoOverlayAdd = {
+    type: OverlyAdd['type'];
+    action: OverlyAdd;
+    added: [string, number];
+};
+
+export type UndoOverlayUpdate = {
+    type: OverlayUpdate['type'];
+    action: OverlayUpdate;
+    prev: Overlay;
+};
+export type OverlayUpdate = {
+    type: 'overlay:update';
+    overlay: Overlay;
+};
+
 export type UndoGuideUpdate = {
     type: GuideUpdate['type'];
     action: GuideUpdate;
@@ -307,6 +337,16 @@ export type UndoPathGroupUpdateMany = {
 export type PathGroupUpdateMany = {
     type: 'pathGroup:update:many';
     changed: { [key: string]: PathGroup };
+};
+
+export type UndoPathDeleteMany = {
+    type: PathDeleteMany['type'];
+    action: PathDeleteMany;
+    prev: { [key: string]: Path };
+};
+export type PathDeleteMany = {
+    type: 'path:delete:many';
+    ids: Array<Id>;
 };
 
 export type UndoPathUpdateMany = {
@@ -410,6 +450,16 @@ export type UndoPathCreate = {
     added: [Array<Id>, Id | null, number];
 };
 
+export type PendingExtent = {
+    type: 'pending:extent';
+    delta: number;
+};
+
+export type UndoPendingExtent = {
+    type: PendingExtent['type'];
+    action: PendingExtent;
+};
+
 // export type PathAdd = {
 //     type: 'path:add';
 //     segment: PendingSegment;
@@ -424,6 +474,7 @@ export type UndoMirrorAdd = {
     type: MirrorAdd['type'];
     action: MirrorAdd;
     added: [Id, number];
+    // prevActive: Id | null;
 };
 export type MirrorAdd = {
     type: 'mirror:add';
@@ -462,6 +513,16 @@ export type PendingType = {
     kind: GuideGeom['type'] | null;
 };
 
+export type UndoGuideDelete = {
+    type: GuideDelete['type'];
+    action: GuideDelete;
+    prev: Guide;
+};
+export type GuideDelete = {
+    type: 'guide:delete';
+    id: Id;
+};
+
 export type UndoGuideToggle = {
     type: GuideToggle['type'];
     action: GuideToggle;
@@ -479,6 +540,7 @@ export type UndoableAction =
     | MirrorUpdate
     | PendingPoint
     | MetaUpdate
+    | OverlyAdd
     // | PathAdd
     | PathUpdate
     | PendingType
@@ -487,28 +549,37 @@ export type UndoableAction =
     | ViewUpdate
     | PathUpdateMany
     | GroupUpdate
+    | GuideDelete
     | GroupDelete
+    | PendingExtent
     | PathDelete
+    | PathDeleteMany
+    | OverlayUpdate
     | PathGroupUpdateMany
     | PathCreate
     | GuideToggle;
 
 export type UndoAction =
     | UndoGuideAdd
+    | UndoOverlayAdd
     | UndoGroupUpdate
     | UndoPathUpdate
     | UndoPathUpdateMany
+    | UndoPathDeleteMany
     | UndoPathGroupUpdateMany
     | UndoMetaUpdate
     | UndoGuideUpdate
+    | UndoOverlayUpdate
     | UndoViewUpdate
     | UndoMirrorAdd
     | UndoGroupDelete
+    | UndoGuideDelete
     | UndoPendingPoint
     | UndoPathDelete
     // | UndoPathPoint
     // | UndoPathAdd
     | UndoPathCreate
+    | UndoPendingExtent
     | UndoPendingType
     | UndoGuideToggle
     | UndoMirrorActive
@@ -552,11 +623,12 @@ export type View = {
     center: Coord;
     zoom: number;
     guides: boolean;
-    background?: string;
+    clip?: Array<Segment>;
+    background?: string | number;
 };
 
 export type Selection = {
-    type: 'Guide' | 'Mirror' | 'Path' | 'PathGroup';
+    type: 'Guide' | 'Mirror' | 'Path' | 'PathGroup' | 'Overlay';
     ids: Array<string>;
 };
 
@@ -567,10 +639,13 @@ export type Tab =
     | 'PathGroups'
     | 'Palette'
     | 'Export'
+    | 'Overlays'
     | 'Help';
 
 export type Attachment = {
+    id: Id;
     contents: string; // base64 dontcha know
+    name: string;
     width: number;
     height: number;
 };
@@ -602,7 +677,7 @@ export type State = {
     activeMirror: Id | null;
     view: View;
 
-    underlays: { [key: Id]: Underlay };
+    overlays: { [key: Id]: Overlay };
 
     // Non historied, my folks
     selection: Selection | null;
@@ -616,32 +691,63 @@ export type State = {
 };
 
 export const migrateState = (state: State) => {
-    if (!state.underlays) {
-        state.underlays = {};
-        state.attachments = {};
+    if (!state.version) {
+        state.version = 1;
+        if (!state.overlays) {
+            state.overlays = {};
+            state.attachments = {};
+        }
+        if (!state.palettes) {
+            state.palettes = {};
+            state.tab = 'Guides';
+            state.selection = null;
+        }
+        if (!state.activePalette) {
+            state.palettes['default'] = initialState.palettes['default'];
+            state.activePalette = 'default';
+        }
+        if (!state.meta) {
+            state.meta = {
+                created: Date.now(),
+                title: '',
+                description: '',
+            };
+        }
     }
-    if (!state.tab) {
-        state.palettes = {};
-        state.tab = 'Guides';
-        state.selection = null;
+    if (!state.overlays) {
+        state.overlays = {};
+        // @ts-ignore
+        delete state.underlays;
     }
-    if (!state.activePalette) {
-        state.palettes['default'] = initialState.palettes['default'];
-        state.activePalette = 'default';
-    }
-    if (!state.meta) {
-        state.meta = {
-            created: Date.now(),
-            title: '',
-            description: '',
-        };
+    if (state.version < 2) {
+        Object.keys(state.paths).forEach((k) => {
+            state.paths[k] = {
+                ...state.paths[k],
+                segments: simplifyPath(
+                    ensureClockwise(state.paths[k].segments),
+                ),
+            };
+        });
+        state.version = 2;
     }
     return state;
 };
 
-export type Underlay = {
+/*
+CHANGELOG:
+
+version 2:
+- simplifying all paths
+
+
+*/
+
+export type Overlay = {
     id: Id;
     source: Id;
     scale: Coord;
     center: Coord;
+    hide: boolean;
+    over: boolean;
+    opacity: number;
 };

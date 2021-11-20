@@ -4,7 +4,7 @@ import { Coord, Intersect } from './types';
 
 export const calcAllIntersections = (
     primitives: Array<Primitive>,
-): Array<Intersect> => {
+): { coords: Array<Intersect>; seenCoords: { [key: string]: Intersect } } => {
     const seenCoords: { [k: string]: Intersect } = {};
     const coords: Array<Intersect> = [];
     for (let i = 0; i < primitives.length; i++) {
@@ -24,7 +24,7 @@ export const calcAllIntersections = (
             );
         }
     }
-    return coords;
+    return { coords, seenCoords };
 };
 
 export const numKey = (num: number) => {

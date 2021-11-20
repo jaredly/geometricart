@@ -5,7 +5,7 @@ import React from 'react';
 import { Canvas } from './Canvas';
 import { reducer } from './reducer';
 import { Hover, Sidebar } from './Sidebar';
-import { GuideGeom, Id, State } from './types';
+import { Coord, GuideGeom, Id, State } from './types';
 import { initialState } from './initialState';
 import { useDropTarget } from './useDropTarget';
 
@@ -32,6 +32,13 @@ export const toType: { [key: string]: GuideGeom['type'] } = {
 export const toTypeRev: { [key: string]: string } = {};
 Object.keys(toType).forEach((k) => (toTypeRev[toType[k]] = k));
 
+export type PendingMirror = {
+    rotations: number;
+    center: Coord | null;
+    reflect: boolean;
+    parent: Id | null;
+};
+
 export const App = ({ initialState }: { initialState: State }) => {
     const [state, dispatch] = React.useReducer(reducer, initialState);
 
@@ -53,6 +60,33 @@ export const App = ({ initialState }: { initialState: State }) => {
             ) {
                 return;
             }
+            if (evt.key === 'a' && (evt.ctrlKey || evt.metaKey)) {
+                evt.preventDefault();
+                evt.stopPropagation();
+                return dispatch({
+                    type: 'selection:set',
+                    selection: {
+                        type: 'PathGroup',
+                        ids: Object.keys(latestState.current.pathGroups),
+                    },
+                });
+            }
+            if (evt.key === 'Delete' || evt.key === 'Backspace') {
+                if (latestState.current.selection?.type === 'Path') {
+                    return dispatch({
+                        type: 'path:delete:many',
+                        ids: latestState.current.selection.ids,
+                    });
+                }
+                if (latestState.current.selection?.type === 'PathGroup') {
+                    return latestState.current.selection.ids.forEach((id) =>
+                        dispatch({
+                            type: 'group:delete',
+                            id,
+                        }),
+                    );
+                }
+            }
             if (evt.key === 'g') {
                 return dispatch({
                     type: 'view:update',
@@ -63,7 +97,12 @@ export const App = ({ initialState }: { initialState: State }) => {
                 });
             }
             if (evt.key === 'Escape') {
-                return dispatch({ type: 'pending:type', kind: null });
+                if (latestState.current.pending) {
+                    return dispatch({ type: 'pending:type', kind: null });
+                }
+                if (latestState.current.selection) {
+                    return dispatch({ type: 'selection:set', selection: null });
+                }
             }
             if (evt.key === 'z' && (evt.ctrlKey || evt.metaKey)) {
                 evt.preventDefault();
@@ -74,6 +113,9 @@ export const App = ({ initialState }: { initialState: State }) => {
                 evt.stopPropagation();
                 evt.preventDefault();
                 return dispatch({ type: 'redo' });
+            }
+            if (evt.key === 'd') {
+                setDragSelect(true);
             }
             if (toType[evt.key]) {
                 dispatch({
@@ -89,6 +131,17 @@ export const App = ({ initialState }: { initialState: State }) => {
     const ref = React.useRef(null as null | SVGSVGElement);
 
     const [hover, setHover] = React.useState(null as null | Hover);
+
+    const [pendingMirror, setPendingMirror] = React.useState(
+        null as null | PendingMirror,
+    );
+
+    const [dragSelect, setDragSelect] = React.useState(false);
+
+    // Reset when state changes
+    React.useEffect(() => {
+        setPendingMirror(null);
+    }, [state.mirrors, state.guides]);
 
     return (
         <div
@@ -111,14 +164,21 @@ export const App = ({ initialState }: { initialState: State }) => {
                 hover={hover}
                 setHover={setHover}
                 dispatch={dispatch}
+                setDragSelect={setDragSelect}
+                dragSelect={dragSelect}
                 state={state}
                 canvasRef={ref}
+                setPendingMirror={setPendingMirror}
             />
             <Canvas
                 state={state}
                 hover={hover}
+                dragSelect={dragSelect}
+                cancelDragSelect={() => setDragSelect(false)}
                 innerRef={(node) => (ref.current = node)}
                 dispatch={dispatch}
+                pendingMirror={pendingMirror}
+                setPendingMirror={setPendingMirror}
                 width={1000}
                 height={1000}
             />

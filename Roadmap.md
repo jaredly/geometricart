@@ -1,4 +1,29 @@
 
+## CLIPPSSSS
+
+Ok, so one thing: we got issues when we have a starting point in the middle of an arc. apparently.
+
+- [x] also, clip + inset is /not/ working! Maybe the resulting path is abnormal somehow? needs to be simplified?
+	- yay fixed
+
+
+
+- [x] extent!
+	- [x] ok this is getting a little weird though. I'm not deduping segments correctly.
+	- [x] hmm not just verticals. if there are two guides, I'm not deduping the paths.
+		- probably because I assumed that you couldn't have two guides in the same spot.
+- [x] all visible paths have intersections at points, and guides.
+	- [x] FIRST step is to simplify all paths tyvm
+	- [x] oh wait not guides actually, just "next segments" would be enough I think?
+	- [x] need to honor limits on circle primitives
+
+- [x] lighten/darken palette colors!
+	- maybe want to muck with saturation as well?
+	- [x] PREVIEWWWWW PLEASE
+
+- [ ] 'm' should toggle the current mirror. I think. And maybe a key to rotate through them? idk.
+	- maybe shift-m rotates through them. when changing the mirror status, I should briefly show the mirror
+		dealio, dontchaknow.
 
 Basic Plan:
 
@@ -12,15 +37,60 @@ Basic Plan:
 - have a selection of paths, and say "duplicate these around
 
 
+Better path creation
+- Ok, I think I like this! the arrow keys are making sense to me, and I think it'll make for a great mobile experience.
+- now I need to make little arrows, to make it clearer what's happening.
 
 
+- [x] setup temprary zoom. when you go to export, I clear it out, folks.
+	- [x] scroll
+	- [ ] pinch to zoom pleeeease
+- [ ] mobileeeeeee frieeendly
+	- DrawPath should show a virtual "keyboard" for up/down/left/right, as well as "cancel"
+
+- [x] pending guides should show the mirror versions folks
+- [x] add in all points for all visible paths. maybe all line segments, if they're not covered? like that would be really good.
+- [x] might be nice to be able to re-define the "bounds" for a line, if you want to keep things tidy.
+
+- [x] for palettes, it would be nice to be able to paste in a 4- or 5-color one, and have it produce "1 shade lighter / darker", right?
+		- or even better(?), just have a fill option that is darken/lighten? idk
 
 
+- [x] so, I guess I've got image fills now! Which is very cool
+- [x] also, made my own canvas renderer, because svg->canvas was buggy 🤷‍♂️. 
+
+- [x] get colors from an overlay!! maybe I should do an average? At any rate, I reeally want to be rendering more fancily...
+
+- [x] background from palette pleeeease
+
+## [x] INTERSECTONS FOR ALL PATHS, if they don't already exist. AND SEGMENTS FOR ALL PATHS
+
+## [x] MULTI FILL
+
+## [x] INSET, gotta have it.
+
+- [x] all paths should be auto-simplified.
+
+- [ ] OK, so once we do `borders`, then we can have a flag for `don't inset from the border`. Which would make it
+	make more sense to have only a couple things inset, and the rest not.
+- [ ] it would be nice to have the option to "dedup outlines ... so we only get one"
+
+- [ ] FIX MULTIFILL/merge - first, allow me to "remove the custom", but also allow me to just nix the custom color, or inset, or whatever.
+
+## [ ] CLIP PLease, would be very nice. How to define? 
+	- I could just use normal DrawPath ... would that make clipping very complex? I would definitely want to do path simpliciation yes very much.
+
+- [x] SOOO waht about having the default "extent" for lines be something like 2x or 3x? And then have a toggle for "go forever"?
+	- because ... it would make things much cleaner, and more localized ... which is often what you want. But only 1x is often a little short.
 
 
+- [ ] visuallll display of mirrors! Like draw me a picture, thank you.
 
+- [ ] have a fill setting that is "randomize darker/lighter pleaseeee"
 
+- [ ] make it easy/clear how to remove specific styling for a path. "unset"
 
+- [ ] would be verry nice to be able to regroup paths.
 
 - [ ] make coloring make more sense folks.
 	- a hover dealio would be very nice

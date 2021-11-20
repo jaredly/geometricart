@@ -25,54 +25,58 @@ export const GuideElement = ({
 
             return (
                 <>
-                    <line
-                        x1={geom.p1.x * zoom}
-                        y1={geom.p1.y * zoom}
-                        x2={geom.p2.x * zoom}
-                        y2={geom.p2.y * zoom}
-                        stroke="#fff"
-                        strokeWidth={1}
-                    />
-                    <line
-                        x1={geom.p2.x * zoom}
-                        y1={geom.p2.y * zoom}
-                        x2={geom.p3.x * zoom}
-                        y2={geom.p3.y * zoom}
-                        stroke="#fff"
-                        strokeWidth={1}
-                    />
-                    <line
-                        x1={geom.p1.x * zoom}
-                        y1={geom.p1.y * zoom}
-                        x2={geom.p3.x * zoom}
-                        y2={geom.p3.y * zoom}
-                        stroke="#fff"
-                        strokeWidth={1}
-                    />
                     <circle
                         cx={got.center.x * zoom}
                         cy={got.center.y * zoom}
                         r={got.r * zoom}
                         fill="none"
-                        stroke="#fff"
+                        stroke={original ? '#fff' : '#888'}
                         strokeWidth={1}
                     />
-                    <circle
-                        cx={got.m1.x * zoom}
-                        cy={got.m1.y * zoom}
-                        r={10}
-                        fill="none"
-                        stroke="#fff"
-                        strokeWidth={1}
-                    />
-                    <circle
-                        cx={got.m2.x * zoom}
-                        cy={got.m2.y * zoom}
-                        r={10}
-                        fill="none"
-                        stroke="#fff"
-                        strokeWidth={1}
-                    />
+                    {original ? (
+                        <>
+                            <line
+                                x1={geom.p1.x * zoom}
+                                y1={geom.p1.y * zoom}
+                                x2={geom.p2.x * zoom}
+                                y2={geom.p2.y * zoom}
+                                stroke="#fff"
+                                strokeWidth={1}
+                            />
+                            <line
+                                x1={geom.p2.x * zoom}
+                                y1={geom.p2.y * zoom}
+                                x2={geom.p3.x * zoom}
+                                y2={geom.p3.y * zoom}
+                                stroke="#fff"
+                                strokeWidth={1}
+                            />
+                            <line
+                                x1={geom.p1.x * zoom}
+                                y1={geom.p1.y * zoom}
+                                x2={geom.p3.x * zoom}
+                                y2={geom.p3.y * zoom}
+                                stroke="#fff"
+                                strokeWidth={1}
+                            />
+                            <circle
+                                cx={got.m1.x * zoom}
+                                cy={got.m1.y * zoom}
+                                r={10}
+                                fill="none"
+                                stroke="#fff"
+                                strokeWidth={1}
+                            />
+                            <circle
+                                cx={got.m2.x * zoom}
+                                cy={got.m2.y * zoom}
+                                r={10}
+                                fill="none"
+                                stroke="#fff"
+                                strokeWidth={1}
+                            />
+                        </>
+                    ) : null}
                 </>
             );
         }
@@ -121,8 +125,25 @@ export const GuideElement = ({
         }
         case 'Line': {
             const t1 = angleTo(geom.p1, geom.p2);
-            const left = geom.limit ? geom.p1 : push(geom.p1, t1, -10);
-            const right = geom.limit ? geom.p2 : push(geom.p2, t1, 10);
+            const d = dist(geom.p1, geom.p2);
+            const mid = {
+                x: (geom.p1.x + geom.p2.x) / 2,
+                y: (geom.p1.y + geom.p2.y) / 2,
+            };
+            const left = push(
+                mid,
+                t1,
+                -(geom.extent
+                    ? (geom.extent * d) / 2
+                    : geom.limit
+                    ? d * 0.5
+                    : 10),
+            );
+            const right = push(
+                mid,
+                t1,
+                geom.extent ? (geom.extent * d) / 2 : geom.limit ? d * 0.5 : 10,
+            );
             return (
                 <>
                     <line
@@ -130,7 +151,7 @@ export const GuideElement = ({
                         y1={left.y * zoom}
                         x2={right.x * zoom}
                         y2={right.y * zoom}
-                        stroke="#ff0"
+                        stroke={original ? '#ff0' : 'rgba(255,255,0,0.1)'}
                         strokeWidth={1}
                     />
                 </>
@@ -147,7 +168,7 @@ export const GuideElement = ({
                         y1={left.y * zoom}
                         x2={right.x * zoom}
                         y2={right.y * zoom}
-                        stroke="#ff0"
+                        stroke={original ? '#ff0' : '#880'}
                         strokeWidth={1}
                     />
                 </>
@@ -166,7 +187,7 @@ export const GuideElement = ({
                         y1={left.y * zoom}
                         x2={right.x * zoom}
                         y2={right.y * zoom}
-                        stroke="#fff"
+                        stroke={original ? '#ff0' : '#880'}
                         strokeWidth={1}
                     />
                     <line
@@ -211,7 +232,7 @@ export const GuideElement = ({
                         y1={left.y * zoom}
                         x2={right.x * zoom}
                         y2={right.y * zoom}
-                        stroke="#fff"
+                        stroke={original ? '#ff0' : '#880'}
                         strokeWidth={1}
                     />
                 </>
@@ -229,7 +250,8 @@ export const GuideElement = ({
                         r={r * i * zoom}
                         fill="none"
                         strokeDasharray={i === 1 ? '' : '5 5'}
-                        stroke="#666"
+                        // stroke="#666"
+                        stroke={original ? '#ff0' : '#666'}
                         strokeWidth={1}
                     />,
                 );
@@ -239,14 +261,14 @@ export const GuideElement = ({
             const p2 = push(scale(geom.center, zoom), a, -2000);
             return (
                 <>
-                    <line
+                    {/* <line
                         x1={p1.x}
                         y1={p1.y}
                         x2={p2.x}
                         y2={p2.y}
                         stroke="green"
                         strokeWidth={0.5}
-                    />
+                    /> */}
                     {m}
                     {geom.half ? (
                         <circle

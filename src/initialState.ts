@@ -24,7 +24,7 @@ export const initialHistory: History = {
 };
 
 export const initialState: State = {
-    version: 1,
+    version: 2,
     meta: {
         title: '',
         description: '',
@@ -125,5 +125,5 @@ export const initialState: State = {
     },
     activePalette: 'default',
     attachments: {},
-    underlays: {},
+    overlays: {},
 };

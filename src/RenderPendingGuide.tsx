@@ -1,6 +1,8 @@
 /* @jsx jsx */
 /* @jsxFrag React.Fragment */
 import { jsx } from '@emotion/react';
+import { transformGuideGeom } from './calculateGuideElements';
+import { applyMatrices, Matrix } from './getMirrorTransforms';
 import { GuideElement } from './GuideElement';
 import { Coord, GuideGeom, PendingGuide } from './types';
 
@@ -9,11 +11,13 @@ export const RenderPendingGuide = ({
     pos,
     zoom,
     shiftKey,
+    mirror,
 }: {
     pos: Coord;
     guide: PendingGuide;
     zoom: number;
     shiftKey: boolean;
+    mirror: null | Array<Array<Matrix>>;
 }) => {
     let offsets = [
         { x: -1, y: 1 },
@@ -28,10 +32,27 @@ export const RenderPendingGuide = ({
     // const prims = geomToPrimitives(pendingGuide(guide.kind, points, shiftKey));
     return (
         <g style={{ pointerEvents: 'none' }}>
+            {mirror
+                ? mirror.map((transform) => (
+                      <GuideElement
+                          zoom={zoom}
+                          original={false}
+                          geom={transformGuideGeom(
+                              pendingGuide(
+                                  guide.kind,
+                                  points,
+                                  shiftKey,
+                                  guide.extent,
+                              ),
+                              (pos) => applyMatrices(pos, transform),
+                          )}
+                      />
+                  ))
+                : null}
             <GuideElement
                 zoom={zoom}
                 original={true}
-                geom={pendingGuide(guide.kind, points, shiftKey)}
+                geom={pendingGuide(guide.kind, points, shiftKey, guide.extent)}
             />
         </g>
     );
@@ -41,6 +62,7 @@ export const pendingGuide = (
     type: GuideGeom['type'],
     points: Array<Coord>,
     shiftKey: boolean,
+    extent?: number,
 ): GuideGeom => {
     switch (type) {
         case 'Line':
@@ -49,6 +71,7 @@ export const pendingGuide = (
                 p1: points[0],
                 p2: points[1],
                 limit: shiftKey,
+                extent,
             };
         case 'Circle':
             return {
@@ -66,6 +89,7 @@ export const pendingGuide = (
                 p1: points[0],
                 p2: points[1],
                 p3: points[2],
+                extent,
             };
         case 'PerpendicularBisector':
         case 'Perpendicular':
@@ -73,6 +97,7 @@ export const pendingGuide = (
                 type,
                 p1: points[0],
                 p2: points[1],
+                extent,
             };
     }
 };
