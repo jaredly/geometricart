@@ -325,10 +325,18 @@ export const RenderPath = React.memo(
                               cx={seg.to.x * zoom}
                               cy={seg.to.y * zoom}
                               r={(3 / 100) * zoom}
-                              fill="blue"
+                              fill={'blue'}
                           />
                       ))
                     : null}
+                {path.debug ? (
+                    <circle
+                        cx={path.origin.x * zoom}
+                        cy={path.origin.y * zoom}
+                        r={(4 / 100) * zoom}
+                        fill={'green'}
+                    />
+                ) : null}
             </>
         );
     },

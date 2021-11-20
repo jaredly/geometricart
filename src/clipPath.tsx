@@ -1,4 +1,5 @@
 import { coordKey } from './calcAllIntersections';
+import { isClockwise } from './CanvasRender';
 import { angleBetween } from './findNextSegments';
 import { pathToPrimitives } from './findSelection';
 import { angleTo, dist } from './getMirrorTransforms';
@@ -533,6 +534,10 @@ export const clipPath = (
     clip: Array<Segment>,
     clipPrimitives: Array<Primitive>,
 ): Path | null => {
+    if (path.debug) {
+        console.log(`CLIPPING`);
+        console.log(path);
+    }
     // start somewhere.
     // if it's inside the clip, a ray will intersect an odd number of times. right?
     // OHHHK ALSO we need to do the edge test.
@@ -615,6 +620,10 @@ export const clipPath = (
         filtered.push(result[i]);
     }
 
+    if (!isClockwise(filtered)) {
+        console.log('NOT CLOCKWISE');
+    }
+
     return {
         ...path,
         origin: filtered[filtered.length - 1].to,
@@ -639,6 +648,9 @@ export const insidePath = (
             hits[coordKey(coord)] = true;
         });
     });
+    if (debug) {
+        console.log(hits, coord, segs);
+    }
     return Object.keys(hits).length % 2 === 1;
 };
 
@@ -671,12 +683,12 @@ export const findInsideStart = (
             );
 
             if (up && down && left && right) {
+                if (debug) {
+                    console.log(`IT WAS`, prev, clip, hits);
+                }
                 return i;
             }
             // ugh got to check for a tangent hit ...
-            // if (debug) {
-            //     console.log(`IT WAS`, prev, clip, hits);
-            // }
             // return i;
         }
         if (debug) {

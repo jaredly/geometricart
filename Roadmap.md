@@ -7,6 +7,8 @@ Ok, so one thing: we got issues when we have a starting point in the middle of a
 	- yay fixed
 
 
+- [ ] pure circle clip, has some bugs.
+
 
 - [x] extent!
 	- [x] ok this is getting a little weird though. I'm not deduping segments correctly.
