@@ -215,12 +215,14 @@ export const insetPath = (path: Path, inset: number) => {
 export const RenderPath = React.memo(
     ({
         path,
+        origPath,
         zoom,
         groups,
         onClick,
         palette,
     }: {
         path: Path;
+        origPath?: Path;
         zoom: number;
         groups: { [key: string]: PathGroup };
         onClick?: (evt: React.MouseEvent, id: string) => void;
@@ -318,6 +320,19 @@ export const RenderPath = React.memo(
             <>
                 {fills}
                 {lines}
+                {path.debug && origPath
+                    ? origPath.segments.map((seg, i) => (
+                          <circle
+                              key={i}
+                              cx={seg.to.x * zoom}
+                              cy={seg.to.y * zoom}
+                              r={(4 / 100) * zoom}
+                              stroke={i === 0 ? 'red' : 'blue'}
+                              strokeWidth={(1 / 100) * zoom}
+                              fill={'none'}
+                          />
+                      ))
+                    : null}
                 {path.debug
                     ? path.segments.map((seg, i) => (
                           <circle
@@ -329,6 +344,16 @@ export const RenderPath = React.memo(
                           />
                       ))
                     : null}
+                {path.debug && origPath ? (
+                    <circle
+                        cx={origPath.origin.x * zoom}
+                        cy={origPath.origin.y * zoom}
+                        r={(6 / 100) * zoom}
+                        fill={'none'}
+                        stroke={'green'}
+                        strokeWidth={(1 / 100) * zoom}
+                    />
+                ) : null}
                 {path.debug ? (
                     <circle
                         cx={path.origin.x * zoom}

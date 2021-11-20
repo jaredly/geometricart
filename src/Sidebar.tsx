@@ -126,9 +126,9 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactElement } = {
         return (
             <div
                 css={{
-                    overflow: 'auto',
-                    flexShrink: 1,
-                    minHeight: 100,
+                    display: 'flex',
+                    flex: 1,
+                    flexDirection: 'column',
                 }}
             >
                 {state.selection?.type === 'PathGroup' ? (
@@ -155,40 +155,48 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactElement } = {
                         }}
                     />
                 ) : null}
-                {Object.keys(state.pathGroups).map((k) => (
-                    <PathGroupForm
-                        onDelete={() => {
-                            dispatch({ type: 'group:delete', id: k });
-                        }}
-                        palette={state.palettes[state.activePalette]}
-                        selected={
-                            state.selection?.type === 'PathGroup' &&
-                            state.selection.ids.includes(k)
-                        }
-                        key={k}
-                        group={state.pathGroups[k]}
-                        onMouseOver={() => {
-                            setHover({ kind: 'PathGroup', id: k });
-                        }}
-                        onMouseOut={() => setHover(null)}
-                        onChange={(group) =>
-                            dispatch({
-                                type: 'group:update',
-                                id: k,
-                                group,
-                            })
-                        }
-                    />
-                ))}
+                <div
+                    css={{
+                        overflow: 'auto',
+                        flex: 1,
+                        minHeight: 100,
+                    }}
+                >
+                    {Object.keys(state.pathGroups).map((k) => (
+                        <PathGroupForm
+                            onDelete={() => {
+                                dispatch({ type: 'group:delete', id: k });
+                            }}
+                            palette={state.palettes[state.activePalette]}
+                            selected={
+                                state.selection?.type === 'PathGroup' &&
+                                state.selection.ids.includes(k)
+                            }
+                            key={k}
+                            group={state.pathGroups[k]}
+                            onMouseOver={() => {
+                                setHover({ kind: 'PathGroup', id: k });
+                            }}
+                            onMouseOut={() => setHover(null)}
+                            onChange={(group) =>
+                                dispatch({
+                                    type: 'group:update',
+                                    id: k,
+                                    group,
+                                })
+                            }
+                        />
+                    ))}
+                </div>
             </div>
         );
     },
     Paths: ({ state, dispatch, setHover }) => (
         <div
             css={{
-                overflow: 'auto',
+                display: 'flex',
                 flex: 1,
-                minHeight: 100,
+                flexDirection: 'column',
             }}
         >
             {state.selection?.type === 'Path' ? (
@@ -215,29 +223,39 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactElement } = {
                     }}
                 />
             ) : null}
-            {Object.keys(state.paths).map((k) => (
-                <PathForm
-                    key={k}
-                    onDelete={() => dispatch({ type: 'path:delete', id: k })}
-                    selected={
-                        state.selection?.type === 'Path' &&
-                        state.selection.ids.includes(k)
-                    }
-                    palette={state.palettes[state.activePalette]}
-                    path={state.paths[k]}
-                    onMouseOver={() => {
-                        setHover({ kind: 'Path', id: k });
-                    }}
-                    onMouseOut={() => setHover(null)}
-                    onChange={(path) =>
-                        dispatch({
-                            type: 'path:update',
-                            id: k,
-                            path,
-                        })
-                    }
-                />
-            ))}
+            <div
+                css={{
+                    overflow: 'auto',
+                    flex: 1,
+                    minHeight: 100,
+                }}
+            >
+                {Object.keys(state.paths).map((k) => (
+                    <PathForm
+                        key={k}
+                        onDelete={() =>
+                            dispatch({ type: 'path:delete', id: k })
+                        }
+                        selected={
+                            state.selection?.type === 'Path' &&
+                            state.selection.ids.includes(k)
+                        }
+                        palette={state.palettes[state.activePalette]}
+                        path={state.paths[k]}
+                        onMouseOver={() => {
+                            setHover({ kind: 'Path', id: k });
+                        }}
+                        onMouseOut={() => setHover(null)}
+                        onChange={(path) =>
+                            dispatch({
+                                type: 'path:update',
+                                id: k,
+                                path,
+                            })
+                        }
+                    />
+                ))}
+            </div>
         </div>
     ),
     Mirrors: ({ state, dispatch, setHover, setPendingMirror }) => {

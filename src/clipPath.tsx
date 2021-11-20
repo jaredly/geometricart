@@ -157,115 +157,7 @@ export const isInside = (back: Angle, forward: Angle, test: Angle): boolean => {
     } else {
         return tt > ft;
     }
-
-    // const backToForward = sortAngles(back, forward)
-    // const backToTest = sortAngles(back, test)
-    // const forwardToTest = sortAngles(forward, test)
-
-    // if (backToForward === 0) {
-    //     console.log(back, forward)
-    //     throw new Error(`back to forward can't be zero`)
-    // }
-
-    // backToForward can't be zero
-
-    // switch (`${sortKey(backToForward)}:${sortKey(backToTest)}:${sortKey(forwardToTest)}`) {
-    //     case '0:0:0':
-    //     case '-1:0:0':
-    //     case '1:1:1':
-    //     case '-1:'
-    // }
-
-    // let border = angleBetween(back.theta, forward.theta, true);
-    // iff we back and/or forward are Arcs, then we need to adjust, if {border} is close to 0 / 2PI
-
-    // const biasLarge = shouldBiasLarge(back, forward)
-
-    // if the difference in angles is decisive, then that's that.
 };
-
-// true if {test} is "inside" (clockwise from) {forward}, with respect to {back}
-// may also be equal to forward.
-// export const isMoreInside = (back: Angle, forward: Angle, test: Angle) => {
-//     if (anglesEqual(forward, test)) {
-//         return true;
-//     }
-//     // if (back.type === 'flat' && forward.type === 'flat' && test.type === 'flat') {
-//     //     return angleBetween(back.theta, forward.theta, true) <= angleBetween(back.theta, test.theta, true)
-//     // }
-//     const diff =
-//         angleBetween(back.theta, forward.theta, true) -
-//         angleBetween(back.theta, test.theta, true);
-//     if (back.type === 'flat') {
-//         if (forward.type === 'flat') {
-//             if (test.type === 'flat') {
-//                 return diff <= epsilon;
-//             } else {
-//                 if (test.clockwise) {
-//                     // equals is good enough
-//                     return diff <= epsilon;
-//                 } else {
-//                     // equals isn't good enough
-//                     return diff < -epsilon;
-//                 }
-//             }
-//         } else {
-//             if (test.type === 'flat') {
-//                 if (forward.clockwise) {
-//                     // equals is not good enough
-//                     return diff < -epsilon;
-//                 } else {
-//                     // equals isn't good enough
-//                     return diff <= epsilon;
-//                 }
-//             } else {
-//                 if (diff < -epsilon) {
-//                     return true;
-//                 }
-//                 if (diff > epsilon) {
-//                     return false;
-//                 }
-
-//                 if (test.clockwise) {
-//                     if (forward.clockwise) {
-//                         return test.radius <= forward.radius + epsilon;
-//                     } else {
-//                         return true;
-//                     }
-//                 } else {
-//                     if (forward.clockwise) {
-//                         return false;
-//                     } else {
-//                         return test.radius >= forward.radius - epsilon;
-//                     }
-//                 }
-
-//                 // if (test.clockwise && !forward.clockwise) {
-//                 //     return true
-//                 // }
-//                 // if (!test.clockwise && forward.clockwise) {
-//                 //     return false
-//                 // }
-//                 // // Ok they're just about equal
-//                 // // now we test clockwises
-//                 // if (test.clockwise === forward.clockwise) {
-
-//                 // } else {
-
-//                 // }
-//             }
-//         }
-//     } else {
-//         // Ok so in this case, the "back" angle might be ... a little weird.
-//         // like we could forward theta could be the /same/ as the back theta,
-//         // but radius is different, or clockwise is different. which has different implications
-//         // for what it looks like to be inside.
-//         // hmm so it's interesting
-//         // because, if the thetas are meaningfully different, then there's no issues.
-//         // it's only if they're within epsilon of each other.
-//         // because on the one hand there's the question "is this "
-//     }
-// };
 
 export const getSegment = (segments: Array<Segment>, i: number) =>
     i < 0 ? segments[segments.length + i] : segments[i % segments.length];
@@ -279,8 +171,8 @@ export const getBackAngle = (one: Clippable, location: HitLocation): Angle => {
         );
     const prev = getSegment(one.segments, location.segment - 1);
     if (atStart) {
-        const pprev = getSegment(one.segments, location.segment - 2).to;
         if (prev.type === 'Line') {
+            const pprev = getSegment(one.segments, location.segment - 2).to;
             return { type: 'flat', theta: angleTo(prev.to, pprev) };
         } else {
             const theta =
@@ -457,9 +349,26 @@ export const clipTwo = (
 
     const result: Array<Segment> = [];
 
+    const seen: { [key: string]: true } = {};
+
     let state: { clipSide: boolean; loc: HitLocation } = {
         clipSide: false,
         loc: { segment: idx, intersection: -1 },
+    };
+
+    if (debug) {
+        console.log(`CLIPPING`, idx);
+        console.log(path);
+        console.log(clip);
+    }
+
+    const addSegment = (segment: Segment) => {
+        const key = coordKey(segment.to);
+        if (seen[key]) {
+            console.warn(new Error(`seen already! ${key}`));
+        }
+        seen[key] = true;
+        result.push(segment);
     };
 
     let x = 0;
@@ -468,12 +377,28 @@ export const clipTwo = (
         x++ < 100
     ) {
         if (debug) {
-            console.log(state);
+            console.log(`Current state`, { ...state }, result.length);
         }
+        // if (result.length) {
+        //     const key = coordKey(result[result.length - 1].to);
+        //     if (seen[key]) {
+        //         console.warn(new Error(`seen already! ${key}`));
+        //         break;
+        //     }
+        //     seen[key] = true;
+        // }
+
         if (!state.clipSide) {
             const next = state.loc.intersection + 1;
             if (next >= path.hits[state.loc.segment].length) {
-                result.push(path.segments[state.loc.segment]);
+                addSegment(path.segments[state.loc.segment]);
+                if (debug) {
+                    console.log(
+                        `reached the end with no more hits`,
+                        next,
+                        path.segments[state.loc.segment],
+                    );
+                }
                 // move on to the next
                 state.loc = {
                     segment: (state.loc.segment + 1) % path.hits.length,
@@ -489,48 +414,78 @@ export const clipTwo = (
 
             // Is clip going into path?
             if (isGoingInside(path, pathLoc, clip, clipLoc)) {
-                result.push({
+                addSegment({
                     ...path.segments[state.loc.segment],
                     to: hit.coord,
                 });
+                if (debug) {
+                    console.log('switch to clip', hit, clipLoc, hit.coord);
+                }
                 // clip is going into path, we need to switch
                 state = { clipSide: true, loc: clipLoc };
             } else {
-                // must have been tangent, nothing to see here
-                result.push(path.segments[state.loc.segment]);
+                const last = result.length
+                    ? result[result.length - 1].to
+                    : first;
+                // if this is the starting position, ignore it
+                if (!coordsEqual(last, hit.coord)) {
+                    // must have been tangent, nothing to see here
+                    addSegment({
+                        ...path.segments[state.loc.segment],
+                        to: hit.coord,
+                    });
+                }
+                if (debug) {
+                    console.log(
+                        `tangent I guess`,
+                        state.loc,
+                        pathLoc,
+                        hit,
+                        path.segments[state.loc.segment],
+                    );
+                }
                 // move on to the next
                 state.loc = pathLoc;
             }
         } else {
             const next = state.loc.intersection + 1;
             if (next >= clip.hits[state.loc.segment].length) {
-                result.push(clip.segments[state.loc.segment]);
+                addSegment(clip.segments[state.loc.segment]);
                 // move on to the next
                 state.loc = {
                     segment: (state.loc.segment + 1) % clip.hits.length,
                     intersection: -1,
                 };
+                if (debug) {
+                    console.log('reached end of clip segment, moving on');
+                }
                 continue;
             }
 
             const hit = clip.hits[state.loc.segment][next];
 
-            const clipLoc = findHit(path, hit, hit.i);
-            const pathLoc = { segment: state.loc.segment, intersection: next };
+            const pathLoc = findHit(path, hit, hit.i);
+            const clipLoc = { segment: state.loc.segment, intersection: next };
 
             // Is path going into clip?
-            if (isGoingInside(clip, pathLoc, path, clipLoc)) {
-                result.push({
+            if (isGoingInside(clip, clipLoc, path, pathLoc)) {
+                addSegment({
                     ...clip.segments[state.loc.segment],
                     to: hit.coord,
                 });
+                if (debug) {
+                    console.log(`switch to path`, hit, pathLoc);
+                }
                 // path is going into clip, we need to switch
-                state = { clipSide: false, loc: clipLoc };
+                state = { clipSide: false, loc: pathLoc };
             } else {
                 // must have been tangent, nothing to see here
-                result.push(clip.segments[state.loc.segment]);
+                addSegment(clip.segments[state.loc.segment]);
+                if (debug) {
+                    console.log('tangent I guess', state.loc, clipLoc, hit);
+                }
                 // move on to the next
-                state.loc = pathLoc;
+                state.loc = clipLoc;
             }
         }
     }
@@ -564,7 +519,7 @@ export const clipPath = (
     // but here we are.
     const idx = findInsideStart(path.segments, clipPrimitives, 0, path.debug);
     if (idx == null) {
-        console.log(`nothing inside`);
+        // console.log(`nothing inside`);
         // path is not inside, nothing to show
         return null;
     }
@@ -582,10 +537,31 @@ export const clipPath = (
             got.forEach((coord) => {
                 // Nope on matching the end of things
                 if (coordsEqual(coord, path.segments[i].to)) {
+                    if (path.debug) {
+                        console.log(
+                            `skip coord end`,
+                            coord,
+                            path.segments[i],
+                            i,
+                        );
+                    }
                     return;
                 }
+                const isCircle = clipPrim.type === 'circle' && !clipPrim.limit;
                 // Nope on matching the end of things
-                if (coordsEqual(coord, clip[j].to)) {
+                if (!isCircle && coordsEqual(coord, clip[j].to)) {
+                    if (path.debug) {
+                        console.log(
+                            `skip clip end`,
+                            coord,
+                            clip[j].to,
+                            j,
+                            i,
+                            prim,
+                            clipPrim,
+                            got,
+                        );
+                    }
                     return;
                 }
                 const hit = { i, j, coord };

@@ -345,10 +345,6 @@ export const hasNonBodyScrollParent = (node: HTMLElement) => {
                 parent.scrollHeight >
                 parent.getBoundingClientRect().height + 10
             ) {
-                console.log(
-                    parent.scrollHeight,
-                    parent.getBoundingClientRect(),
-                );
                 return true;
             }
         }

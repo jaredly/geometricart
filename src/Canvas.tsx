@@ -295,6 +295,7 @@ export const Canvas = ({
                     {pathsToShow.map((path) => (
                         <RenderPath
                             key={path.id}
+                            origPath={state.paths[path.id]}
                             groups={state.pathGroups}
                             path={path}
                             zoom={view.zoom}
@@ -423,6 +424,7 @@ export const Canvas = ({
                     onClick={() => setTmpView(null)}
                 >
                     Reset zoom
+                    {` ${pos.x.toFixed(4)},${pos.y.toFixed(4)}`}
                 </div>
             ) : null}
         </div>
