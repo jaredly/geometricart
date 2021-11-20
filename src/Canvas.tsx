@@ -4,7 +4,11 @@ import { jsx } from '@emotion/react';
 import React from 'react';
 import { PendingMirror, useCurrent } from './App';
 import { clipPath } from './clipPath';
-import { findSelection, pathToPrimitives } from './findSelection';
+import {
+    findSelection,
+    pathToPrimitives,
+    segmentToPrimitive,
+} from './findSelection';
 // import { DrawPath } from './DrawPathOld';
 import { getMirrorTransforms } from './getMirrorTransforms';
 import { Guides } from './Guides';
@@ -12,6 +16,7 @@ import { handleSelection } from './handleSelection';
 import { mergeFills, mergeStyleLines } from './MultiStyleForm';
 import { Overlay } from './Overlay';
 import { paletteColor, RenderPath } from './RenderPath';
+import { RenderPrimitive } from './RenderPrimitive';
 import { showHover } from './showHover';
 import { Hover } from './Sidebar';
 import {

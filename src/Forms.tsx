@@ -541,9 +541,11 @@ export const ViewForm = ({
     view,
     onChange,
     palette,
+    onHoverClip,
 }: {
     view: View;
     onChange: (view: View) => unknown;
+    onHoverClip: (hover: boolean) => void;
     palette: Array<string>;
 }) => {
     const backgrounds = ['#1e1e1e', 'white', 'black', 'transparent'];
@@ -608,37 +610,16 @@ export const ViewForm = ({
                     palette={palette}
                     extra={backgrounds}
                 />
-                {/* {backgrounds.map((color, i) => (
-                    <div
-                        key={color}
-                        css={{
-                            width: 20,
-                            height: 20,
-                            margin: 4,
-                        }}
-                        style={{
-                            background:
-                                color === 'transparent'
-                                    ? `url("${transparent}")`
-                                    : color,
-                            border: (
-                                color === 'transparent'
-                                    ? !view.background
-                                    : color === view.background
-                            )
-                                ? `2px solid white`
-                                : '2px solid #888',
-                        }}
-                        onClick={() => {
-                            onChange({
-                                ...view,
-                                background:
-                                    color === 'transparent' ? undefined : color,
-                            });
-                        }}
-                    ></div>
-                ))} */}
             </div>
+            {view.clip ? (
+                <button
+                    onClick={() => onChange({ ...view, clip: undefined })}
+                    onMouseOver={() => onHoverClip(true)}
+                    onMouseOut={() => onHoverClip(false)}
+                >
+                    Clear clip
+                </button>
+            ) : null}
         </div>
     );
 };

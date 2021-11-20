@@ -9,6 +9,7 @@ import { UnderlinePath } from './RenderPath';
 import { RenderPrimitive } from './RenderPrimitive';
 import { Hover } from './Sidebar';
 import { State } from './types';
+import { pathToPrimitives } from './findSelection';
 
 export const showHover = (
     key: string,
@@ -78,5 +79,24 @@ export const showHover = (
                 )),
             );
         }
+        case 'Clip':
+            if (!state.view.clip) {
+                return;
+            }
+
+            return pathToPrimitives(
+                state.view.clip[state.view.clip.length - 1].to,
+                state.view.clip,
+            ).map((prim, i) => (
+                <RenderPrimitive
+                    prim={prim}
+                    zoom={zoom}
+                    width={width}
+                    height={height}
+                    color={'red'}
+                    strokeWidth={4}
+                    key={i}
+                />
+            ));
     }
 };

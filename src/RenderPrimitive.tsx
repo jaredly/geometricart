@@ -2,7 +2,9 @@
 /* @jsxFrag React.Fragment */
 import { jsx } from '@emotion/react';
 import React from 'react';
+import { push } from './getMirrorTransforms';
 import { Primitive } from './intersect';
+import { arcPath } from './RenderPendingPath';
 
 export function RenderPrimitive({
     prim,
@@ -82,6 +84,26 @@ export function RenderPrimitive({
                 x2={width}
                 y2={prim.m * width + prim.b * zoom}
                 {...common}
+            />
+        );
+    }
+    if (prim.limit) {
+        const [t0, t1] = prim.limit;
+        const p0 = push(prim.center, t0, prim.radius);
+        return (
+            <path
+                d={`M${p0.x * zoom},${p0.y * zoom} ${arcPath(
+                    {
+                        type: 'Arc',
+                        center: prim.center,
+                        clockwise: true,
+                        to: push(prim.center, t1, prim.radius),
+                    },
+                    p0,
+                    zoom,
+                )}`}
+                {...common}
+                fill="none"
             />
         );
     }

@@ -409,6 +409,9 @@ export const findHit = (
     return { segment: idx, intersection: clip.hits[idx].indexOf(hit) };
 };
 
+// Ok so here's a theory:
+// we're breaking, because start/stop points are being counted twice ... and then not at all? idk.
+
 export const prevPos = (segments: Array<Segment>, idx: number) =>
     idx === 0 ? segments[segments.length - 1].to : segments[idx - 1].to;
 
@@ -432,7 +435,12 @@ export const clipTwo = (clip: Clippable, path: Clippable, idx: number) => {
             findHit(clip, path.hits[idx][0], path.hits[idx][0].j),
         )
     ) {
-        idx++;
+        const got = findInsideStart(path.segments, clip.primitives, idx + 1);
+        if (got == null) {
+            return null;
+        }
+        idx = got;
+        // idx++;
     }
     // Nope, can't do it folks. No idx works.
     if (idx >= path.hits.length) {
@@ -533,7 +541,7 @@ export const clipPath = (
     // in order to be rendered.
     // this is not a guarentee.
     // but here we are.
-    const idx = findInsideStart(path, clipPrimitives);
+    const idx = findInsideStart(path.segments, clipPrimitives, 0, path.debug);
     if (idx == null) {
         console.log(`nothing inside`);
         // path is not inside, nothing to show
@@ -584,6 +592,17 @@ export const clipPath = (
         idx,
     );
 
+    if (path.debug) {
+        console.log(
+            idx,
+            pathPrims,
+            clipPrimitives,
+            result,
+            hitsPerSegment,
+            clipPerspective,
+        );
+    }
+
     if (!result) {
         return null;
     }
@@ -595,7 +614,11 @@ export const clipPath = (
     };
 };
 
-export const insidePath = (coord: Coord, segs: Array<Primitive>) => {
+export const insidePath = (
+    coord: Coord,
+    segs: Array<Primitive>,
+    debug: boolean = false,
+) => {
     const ray: Primitive = {
         type: 'line',
         m: 0,
@@ -608,22 +631,52 @@ export const insidePath = (coord: Coord, segs: Array<Primitive>) => {
             hits[coordKey(coord)] = true;
         });
     });
-    return Object.keys(hits).length % 2 == 1;
+    return Object.keys(hits).length % 2 === 1;
 };
 
 /**
  * Finds the {index} of the {Segment} whose /start/ position (not to) is inside the clip.
  */
 export const findInsideStart = (
-    path: Path,
+    segments: Array<Segment>,
     clip: Array<Primitive>,
     after: number = 0,
+    debug: boolean = false,
 ) => {
-    for (let i = after; i < path.segments.length; i++) {
-        const prev = i === 0 ? path.origin : path.segments[i - 1].to;
-        if (insidePath(prev, clip)) {
-            return i;
+    for (let i = after; i < segments.length; i++) {
+        const prev =
+            i === 0 ? segments[segments.length - 1].to : segments[i - 1].to;
+        const hits = insidePath(prev, clip, debug);
+        if (hits) {
+            const up = insidePath({ x: prev.x, y: prev.y + epsilon * 2 }, clip);
+            const down = insidePath(
+                { x: prev.x, y: prev.y - epsilon * 2 },
+                clip,
+            );
+            const left = insidePath(
+                { x: prev.x - epsilon * 2, y: prev.y },
+                clip,
+            );
+            const right = insidePath(
+                { x: prev.x + epsilon * 2, y: prev.y },
+                clip,
+            );
+
+            if (up && down && left && right) {
+                return i;
+            }
+            // ugh got to check for a tangent hit ...
+            // if (debug) {
+            //     console.log(`IT WAS`, prev, clip, hits);
+            // }
+            // return i;
         }
+        if (debug) {
+            console.log(`nope`, prev, clip, hits);
+        }
+    }
+    if (debug) {
+        console.log(`nothing inside`, segments, clip);
     }
     return null;
 };

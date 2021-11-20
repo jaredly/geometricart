@@ -67,22 +67,7 @@ export const arcPath = (segment: ArcSegment, prev: Coord, zoom: number) => {
 
     const ve = angleTo(segment.center, segment.to);
     const vs = angleTo(segment.center, prev);
-    const sve = angleDiff(ve, vs);
-    // const esv = angleDiff(
-    //     angleTo(prev, segment.center),
-    //     angleTo(prev, segment.to),
-    // );
-
-    // const largeArc = false; // sve > 0; // Math.abs(sve) < Math.PI ? 0 : 1;
-    const largeArc =
-        angleBetween(
-            vs,
-            ve,
-            segment.clockwise,
-            // angleTo(segment.center, prev),
-            // angleTo(segment.center, segment.to)
-        ) > Math.PI;
-    // const sweep = esv > 0;
+    const largeArc = angleBetween(vs, ve, segment.clockwise) > Math.PI;
     const sweep = segment.clockwise;
 
     return `A ${r * zoom} ${r * zoom} 0 ${largeArc ? 1 : 0} ${sweep ? 1 : 0} ${
