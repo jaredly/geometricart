@@ -1,5 +1,5 @@
 import { coordKey } from './calcAllIntersections';
-import { isClockwise } from './CanvasRender';
+import { ensureClockwise, isClockwise } from './CanvasRender';
 import { angleBetween } from './findNextSegments';
 import { pathToPrimitives } from './findSelection';
 import { angleTo, dist } from './getMirrorTransforms';
@@ -416,7 +416,12 @@ export const findHit = (
 export const prevPos = (segments: Array<Segment>, idx: number) =>
     idx === 0 ? segments[segments.length - 1].to : segments[idx - 1].to;
 
-export const clipTwo = (clip: Clippable, path: Clippable, idx: number) => {
+export const clipTwo = (
+    clip: Clippable,
+    path: Clippable,
+    idx: number,
+    debug?: boolean,
+) => {
     // ok, we start off on the path.
 
     const first =
@@ -462,6 +467,9 @@ export const clipTwo = (clip: Clippable, path: Clippable, idx: number) => {
         (!result.length || !coordsEqual(first, result[result.length - 1].to)) &&
         x++ < 100
     ) {
+        if (debug) {
+            console.log(state);
+        }
         if (!state.clipSide) {
             const next = state.loc.intersection + 1;
             if (next >= path.hits[state.loc.segment].length) {
@@ -526,6 +534,10 @@ export const clipTwo = (clip: Clippable, path: Clippable, idx: number) => {
             }
         }
     }
+    if (debug) {
+        console.log(`RESULT`);
+        console.log(result);
+    }
     return result;
 };
 
@@ -537,6 +549,10 @@ export const clipPath = (
     if (path.debug) {
         console.log(`CLIPPING`);
         console.log(path);
+    }
+    if (!isClockwise(path.segments)) {
+        console.warn(`NOT CLOCKWISE???`);
+        path.segments = ensureClockwise(path.segments);
     }
     // start somewhere.
     // if it's inside the clip, a ray will intersect an odd number of times. right?
@@ -595,6 +611,7 @@ export const clipPath = (
             hits: hitsPerSegment,
         },
         idx,
+        path.debug,
     );
 
     if (path.debug) {

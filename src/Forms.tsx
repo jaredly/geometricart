@@ -1,5 +1,6 @@
 /* @jsx jsx */
 /* @jsxFrag React.Fragment */
+import { react } from '@babel/types';
 import { jsx } from '@emotion/react';
 import * as React from 'react';
 import { transparent } from './Icons';
@@ -332,6 +333,30 @@ export const PathGroupForm = ({
     );
 };
 
+export const hasNonBodyScrollParent = (node: HTMLElement) => {
+    let parent = node.parentElement;
+    while (parent && parent !== document.body) {
+        const style = getComputedStyle(parent);
+        if (
+            style.overflow.match(/auto|scroll/) ||
+            style.overflowY.match(/auto|scroll/)
+        ) {
+            if (
+                parent.scrollHeight >
+                parent.getBoundingClientRect().height + 10
+            ) {
+                console.log(
+                    parent.scrollHeight,
+                    parent.getBoundingClientRect(),
+                );
+                return true;
+            }
+        }
+        parent = parent.parentElement;
+    }
+    return false;
+};
+
 export const PathForm = ({
     path,
     palette,
@@ -350,15 +375,16 @@ export const PathForm = ({
     onDelete: () => void;
 }) => {
     const [expanded, setExpanded] = React.useState(false);
-    // const ref = React.useRef(null as null | HTMLDivElement);
-    // React.useEffect(() => {
-    //     if (selected) {
-    //         ref.current?.scrollIntoView(false);
-    //     }
-    // }, [selected]);
+    const ref = React.useRef(null as null | HTMLDivElement);
+    React.useEffect(() => {
+        // console.log(ref.current, 'scroll apth');
+        if (selected && ref.current && hasNonBodyScrollParent(ref.current)) {
+            ref.current?.scrollIntoView({ block: 'nearest' });
+        }
+    }, [selected]);
     return (
         <div
-            // ref={(node) => (ref.current = node)}
+            ref={(node) => (ref.current = node)}
             css={{ padding: 4, borderBottom: '1px solid #aaa', margin: 4 }}
             style={{
                 backgroundColor: selected ? 'rgba(255,255,255,0.1)' : undefined,
