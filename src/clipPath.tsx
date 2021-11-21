@@ -173,7 +173,7 @@ export const isInside = (
         }
     } else if (tt === ft) {
         const sort = sortAnglesWithSameTheta(forward, test);
-        if (sort < 0) {
+        if (sort <= 0) {
             return true;
         }
         return false;
