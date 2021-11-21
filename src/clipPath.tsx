@@ -566,6 +566,7 @@ export const clipPath = (
                     // throw new Error(`stop`);
                 }
             }
+
             if (
                 prim.type === 'line' &&
                 clipPrim.type === 'line' &&
@@ -603,11 +604,11 @@ export const clipPath = (
                 const clipEnd = coordsEqual(coord, clip[j].to) && !isCircle;
 
                 if (pathEnd || clipEnd) {
-                    const hit = {
-                        i: pathEnd ? (i + 1) % path.segments.length : i,
-                        j: clipEnd ? (j + 1) % clip.length : j,
-                        coord,
-                    };
+                    // const hit = {
+                    //     i: pathEnd ? (i + 1) % path.segments.length : i,
+                    //     j: clipEnd ? (j + 1) % clip.length : j,
+                    //     coord,
+                    // };
                     // if (pathEnd) {
                     //     endHit = hit;
                     // }
