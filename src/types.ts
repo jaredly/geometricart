@@ -623,7 +623,7 @@ export type View = {
     center: Coord;
     zoom: number;
     guides: boolean;
-    clip?: Array<Segment>;
+    activeClip: Id | null;
     background?: string | number;
 };
 
@@ -676,6 +676,8 @@ export type State = {
     mirrors: { [key: Id]: Mirror };
     activeMirror: Id | null;
     view: View;
+
+    clips: { [key: Id]: Array<Segment> };
 
     overlays: { [key: Id]: Overlay };
 
@@ -730,6 +732,20 @@ export const migrateState = (state: State) => {
         });
         state.version = 2;
     }
+    if (state.version < 3) {
+        state.version = 3;
+        if ((state.view as any).clip) {
+            state.clips = {
+                migrated: (state.view as any).clip,
+            };
+            state.view.activeClip = 'migrated';
+            // @ts-ignore
+            delete state.view.clip;
+        } else {
+            state.clips = {};
+            state.view.activeClip = null;
+        }
+    }
     return state;
 };
 
@@ -738,6 +754,9 @@ CHANGELOG:
 
 version 2:
 - simplifying all paths
+
+version 3:
+- multiple clips
 
 
 */

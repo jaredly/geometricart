@@ -563,11 +563,11 @@ export const ViewForm = ({
     view,
     onChange,
     palette,
-    onHoverClip,
-}: {
+}: // onHoverClip,
+{
     view: View;
     onChange: (view: View) => unknown;
-    onHoverClip: (hover: boolean) => void;
+    // onHoverClip: (hover: boolean) => void;
     palette: Array<string>;
 }) => {
     const backgrounds = ['#1e1e1e', 'white', 'black', 'transparent'];
@@ -633,7 +633,7 @@ export const ViewForm = ({
                     extra={backgrounds}
                 />
             </div>
-            {view.clip ? (
+            {/* {view.clip ? (
                 <button
                     onClick={() => onChange({ ...view, clip: undefined })}
                     onMouseOver={() => onHoverClip(true)}
@@ -641,7 +641,7 @@ export const ViewForm = ({
                 >
                     Clear clip
                 </button>
-            ) : null}
+            ) : null} */}
         </div>
     );
 };

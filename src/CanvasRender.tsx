@@ -78,97 +78,95 @@ export const canvasRender = async (
         await renderOverlay(state, overlay, ctx);
     }
 
-    sortedVisiblePaths(state.paths, state.pathGroups, state.view.clip).forEach(
-        (path) => {
-            const style = combinedPathStyles(path, state.pathGroups);
+    const clip = state.view.activeClip
+        ? state.clips[state.view.activeClip]
+        : undefined;
 
-            style.fills.forEach((fill, i) => {
-                if (!fill || fill.color == null) {
+    sortedVisiblePaths(state.paths, state.pathGroups, clip).forEach((path) => {
+        const style = combinedPathStyles(path, state.pathGroups);
+
+        style.fills.forEach((fill, i) => {
+            if (!fill || fill.color == null) {
+                return;
+            }
+
+            let myPath = path;
+            if (fill.inset) {
+                const inset = insetPath(path, fill.inset / 100);
+                if (!inset) {
                     return;
                 }
+                myPath = inset;
+            }
 
-                let myPath = path;
-                if (fill.inset) {
-                    const inset = insetPath(path, fill.inset / 100);
-                    if (!inset) {
-                        return;
-                    }
-                    myPath = inset;
+            ctx.beginPath();
+            tracePath(ctx, myPath, zoom);
+
+            if (fill.opacity != null) {
+                ctx.globalAlpha = fill.opacity;
+            }
+
+            const color = lightenedColor(palette, fill.color, fill.lighten)!;
+            if (color.startsWith('http')) {
+                const img = images[fill.color as number];
+                if (!img) {
+                    ctx.closePath();
+                    return;
                 }
+                ctx.save();
+                ctx.clip();
 
+                drawCenteredImage(img, sourceWidth, sourceHeight, ctx);
+                ctx.restore();
+            } else {
+                ctx.fillStyle = color;
+                ctx.fill();
+            }
+            ctx.globalAlpha = 1;
+        });
+
+        style.lines.forEach((line, i) => {
+            if (!line || line.color == null || !line.width) {
+                return;
+            }
+
+            // TODO line opacity probably
+            // if (line.opacity != null) {
+            //     ctx.globalAlpha = line.opacity;
+            // }
+
+            ctx.lineWidth = (line.width / 100) * zoom;
+
+            const color = lightenedColor(palette, line.color, undefined)!;
+            if (color.startsWith('http')) {
+                const img = images[line.color as number];
+                if (!img) {
+                    return;
+                }
+                ctx.save();
                 ctx.beginPath();
-                tracePath(ctx, myPath, zoom);
+                tracePathLine(ctx, path, zoom, line.width / 100);
+                ctx.clip();
+                drawCenteredImage(img, sourceWidth, sourceHeight, ctx);
+                // ctx.drawImage(
+                //     images[line.color as number]!,
+                //     -500,
+                //     -500,
+                //     ctx.canvas.width,
+                //     ctx.canvas.height,
+                // );
+                ctx.restore();
 
-                if (fill.opacity != null) {
-                    ctx.globalAlpha = fill.opacity;
-                }
-
-                const color = lightenedColor(
-                    palette,
-                    fill.color,
-                    fill.lighten,
-                )!;
-                if (color.startsWith('http')) {
-                    const img = images[fill.color as number];
-                    if (!img) {
-                        ctx.closePath();
-                        return;
-                    }
-                    ctx.save();
-                    ctx.clip();
-
-                    drawCenteredImage(img, sourceWidth, sourceHeight, ctx);
-                    ctx.restore();
-                } else {
-                    ctx.fillStyle = color;
-                    ctx.fill();
-                }
-                ctx.globalAlpha = 1;
-            });
-
-            style.lines.forEach((line, i) => {
-                if (!line || line.color == null || !line.width) {
-                    return;
-                }
-
-                // TODO line opacity probably
-                // if (line.opacity != null) {
-                //     ctx.globalAlpha = line.opacity;
-                // }
-
-                ctx.lineWidth = (line.width / 100) * zoom;
-
-                const color = lightenedColor(palette, line.color, undefined)!;
-                if (color.startsWith('http')) {
-                    const img = images[line.color as number];
-                    if (!img) {
-                        return;
-                    }
-                    ctx.save();
-                    ctx.beginPath();
-                    tracePathLine(ctx, path, zoom, line.width / 100);
-                    ctx.clip();
-                    drawCenteredImage(img, sourceWidth, sourceHeight, ctx);
-                    // ctx.drawImage(
-                    //     images[line.color as number]!,
-                    //     -500,
-                    //     -500,
-                    //     ctx.canvas.width,
-                    //     ctx.canvas.height,
-                    // );
-                    ctx.restore();
-
-                    // debugPath(path, ctx, zoom);
-                } else {
-                    ctx.beginPath();
-                    tracePath(ctx, path, zoom);
-                    ctx.strokeStyle = color;
-                    ctx.stroke();
-                }
-                ctx.globalAlpha = 1;
-            });
-        },
-    );
+                // debugPath(path, ctx, zoom);
+            } else {
+                ctx.beginPath();
+                tracePath(ctx, path, zoom);
+                ctx.strokeStyle = color;
+                ctx.stroke();
+            }
+            ctx.globalAlpha = 1;
+        });
+    });
 
     const oids = Object.keys(state.overlays).filter(
         (id) => !state.overlays[id].hide && state.overlays[id].over,
@@ -228,14 +226,11 @@ export const canvasRender = async (
 
     ctx.globalAlpha = 1;
 
-    if (state.view.clip) {
+    if (clip) {
         ctx.strokeStyle = 'magenta';
         ctx.setLineDash([5, 15]);
         ctx.lineWidth = 10;
-        pathToPrimitives(
-            state.view.clip[state.view.clip.length - 1].to,
-            state.view.clip,
-        ).forEach((prim) => {
+        pathToPrimitives(clip[clip.length - 1].to, clip).forEach((prim) => {
             renderPrimitive(ctx, prim, zoom, sourceHeight, sourceWidth);
         });
     }

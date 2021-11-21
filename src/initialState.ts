@@ -24,7 +24,7 @@ export const initialHistory: History = {
 };
 
 export const initialState: State = {
-    version: 2,
+    version: 3,
     meta: {
         title: '',
         description: '',
@@ -71,7 +71,9 @@ export const initialState: State = {
         // This can't be implemented with svg zoom, because that would muck with line widths of guides and mirrors.
         zoom: 100,
         guides: true,
+        activeClip: null,
     },
+    clips: {},
     selection: null,
     tab: 'Guides',
     palettes: {

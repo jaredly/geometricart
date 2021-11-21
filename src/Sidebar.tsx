@@ -518,9 +518,6 @@ export function Sidebar({
                 <ViewForm
                     view={state.view}
                     palette={state.palettes[state.activePalette]}
-                    onHoverClip={(hover) =>
-                        setHover(hover ? { kind: 'Clip', id: '' } : null)
-                    }
                     onChange={(view) => {
                         dispatch({
                             type: 'view:update',

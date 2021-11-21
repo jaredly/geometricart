@@ -353,13 +353,10 @@ export const Guides = ({
             }
             if (pathOrigin.clip) {
                 dispatch({
-                    type: 'view:update',
-                    view: {
-                        ...currentState.current.view,
-                        clip: simplifyPath(
-                            ensureClockwise(parts.map((p) => p.segment)),
-                        ),
-                    },
+                    type: 'clip:add',
+                    clip: simplifyPath(
+                        ensureClockwise(parts.map((p) => p.segment)),
+                    ),
                 });
             } else {
                 dispatch({
@@ -454,6 +451,8 @@ export const Guides = ({
     React.useEffect(() => {
         setPathOrigin(null);
     }, [allIntersections]);
+
+    const clip = view.activeClip ? state.clips[view.activeClip] : undefined;
 
     return (
         <>
@@ -560,22 +559,21 @@ export const Guides = ({
                     shiftKey={!!shiftKey}
                 />
             ) : null}
-            {view.clip
-                ? pathToPrimitives(
-                      view.clip[view.clip.length - 1].to,
-                      view.clip,
-                  ).map((prim, i) => (
-                      <RenderPrimitive
-                          isImplied
-                          prim={prim}
-                          zoom={view.zoom}
-                          width={width}
-                          height={height}
-                          color={'magenta'}
-                          strokeWidth={4}
-                          key={i}
-                      />
-                  ))
+            {clip
+                ? pathToPrimitives(clip[clip.length - 1].to, clip).map(
+                      (prim, i) => (
+                          <RenderPrimitive
+                              isImplied
+                              prim={prim}
+                              zoom={view.zoom}
+                              width={width}
+                              height={height}
+                              color={'magenta'}
+                              strokeWidth={4}
+                              key={i}
+                          />
+                      ),
+                  )
                 : null}
             {pathOrigin ? (
                 <DrawPath

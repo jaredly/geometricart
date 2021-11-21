@@ -185,10 +185,13 @@ export const Canvas = ({
         handleSelection(path, currentState.current, dispatch, evt.shiftKey);
     }, []);
 
+    const clip = state.view.activeClip
+        ? state.clips[state.view.activeClip]
+        : undefined;
+
     const pathsToShow = React.useMemo(
-        () =>
-            sortedVisiblePaths(state.paths, state.pathGroups, state.view.clip),
-        [state.paths, state.pathGroups, state.view.clip],
+        () => sortedVisiblePaths(state.paths, state.pathGroups, clip),
+        [state.paths, state.pathGroups, clip],
     );
 
     const dragged = dragSelectPos
