@@ -216,13 +216,14 @@ export const angleIsBetween = (
 ) => {
     const one = angleBetween(lower, angle, true);
     const two = angleBetween(lower, upper, true);
-    return one <= two;
+    return one <= two + epsilon;
 };
 
 // TODO: what to do about inf slope, no y intercept
 export function lineCircle(
     { center: { x: cx, y: cy }, radius, limit: climit }: Circle,
     { m: slope, b: intercept, limit }: SlopeIntercept,
+    debug = false,
 ): Array<Coord> {
     // circle: (x - h)^2 + (y - k)^2 = r^2
     // line: y = m * x + n
@@ -388,12 +389,19 @@ export function lineCircle(
             // only 1 intersection
             return [intersections[0]];
         }
+        const center = { x: cx, y: cy };
+        if (debug) {
+            console.log(
+                `Here we are`,
+                intersections,
+                climit,
+                intersections.map((p) => angleTo(center, p)),
+            );
+        }
         return intersections.filter(
             (p) =>
                 (!limit || withinLimit(limit, p.x)) &&
-                (climit
-                    ? angleIsBetween(angleTo({ x: cx, y: cy }, p), climit)
-                    : true),
+                (climit ? angleIsBetween(angleTo(center, p), climit) : true),
         );
     }
     // no intersection

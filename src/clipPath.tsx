@@ -3,9 +3,17 @@ import { ensureClockwise, isClockwise } from './CanvasRender';
 import { angleBetween } from './findNextSegments';
 import { pathToPrimitives } from './findSelection';
 import { angleTo, dist } from './getMirrorTransforms';
-import { epsilon, intersections, Primitive } from './intersect';
+import {
+    Circle,
+    epsilon,
+    intersections,
+    lineCircle,
+    Primitive,
+    SlopeIntercept,
+    withinLimit,
+} from './intersect';
 import { coordsEqual } from './pathsAreIdentical';
-import { ArcSegment, Coord, Path, Segment } from './types';
+import { ArcSegment, Coord, Line, Path, Segment } from './types';
 
 type Hit = { i: number; j: number; coord: Coord };
 
@@ -29,7 +37,7 @@ type Angle =
       };
 
 export const closeEnough = (one: number, two: number) =>
-    Math.abs(one - two) < epsilon;
+    one === two || Math.abs(one - two) < epsilon;
 
 export const anglesEqual = (one: Angle, two: Angle) => {
     if (one.type === 'flat' && two.type === 'flat') {
@@ -363,6 +371,9 @@ export const clipTwo = (
     }
 
     const addSegment = (segment: Segment) => {
+        if (debug) {
+            console.log('ADD', segment);
+        }
         const key = coordKey(segment.to);
         if (seen[key]) {
             console.warn(new Error(`seen already! ${key}`));
@@ -412,21 +423,22 @@ export const clipTwo = (
             const clipLoc = findHit(clip, hit, hit.j);
             const pathLoc = { segment: state.loc.segment, intersection: next };
 
+            const last = result.length ? result[result.length - 1].to : first;
+
             // Is clip going into path?
             if (isGoingInside(path, pathLoc, clip, clipLoc)) {
-                addSegment({
-                    ...path.segments[state.loc.segment],
-                    to: hit.coord,
-                });
+                if (!coordsEqual(last, hit.coord)) {
+                    addSegment({
+                        ...path.segments[state.loc.segment],
+                        to: hit.coord,
+                    });
+                }
                 if (debug) {
                     console.log('switch to clip', hit, clipLoc, hit.coord);
                 }
                 // clip is going into path, we need to switch
                 state = { clipSide: true, loc: clipLoc };
             } else {
-                const last = result.length
-                    ? result[result.length - 1].to
-                    : first;
                 // if this is the starting position, ignore it
                 if (!coordsEqual(last, hit.coord)) {
                     // must have been tangent, nothing to see here
@@ -530,40 +542,112 @@ export const clipPath = (
     let clipPerspective: Array<Array<{ i: number; j: number; coord: Coord }>> =
         clipPrimitives.map(() => []);
 
+    let endHit: null | Hit = null;
     const hitsPerSegment = pathPrims.map((prim, i) => {
-        let all: Array<{ i: number; j: number; coord: Coord }> = [];
+        let all: Array<Hit> = endHit ? [endHit] : [];
+        endHit = null;
         clipPrimitives.forEach((clipPrim, j) => {
             const got = intersections(prim, clipPrim);
+            if (path.debug) {
+                console.log(`INTERSECT`, i, j, prim, clipPrim);
+                console.log(got);
+                if (i === 6 && j === 0) {
+                    // console.log(
+                    //     intersections(prim, { ...clipPrim, limit: null }),
+                    // );
+                    // console.log(
+                    //     'got',
+                    //     lineCircle(
+                    //         prim as Circle,
+                    //         clipPrim as SlopeIntercept,
+                    //         true,
+                    //     ),
+                    // );
+                    // throw new Error(`stop`);
+                }
+            }
+            if (
+                prim.type === 'line' &&
+                clipPrim.type === 'line' &&
+                closeEnough(prim.m, clipPrim.m) &&
+                closeEnough(prim.b, clipPrim.b) &&
+                prim.limit &&
+                clipPrim.limit
+            ) {
+                // check all 4 endpoints, and add intersections for them??
+                if (withinLimit(clipPrim.limit, prim.limit[0])) {
+                    got.push(linePosAt(clipPrim, prim.limit[0]));
+                } else if (withinLimit(prim.limit, clipPrim.limit[0])) {
+                    got.push(linePosAt(prim, clipPrim.limit[0]));
+                }
+
+                if (withinLimit(clipPrim.limit, prim.limit[1])) {
+                    got.push(linePosAt(clipPrim, prim.limit[1]));
+                } else if (withinLimit(prim.limit, clipPrim.limit[1])) {
+                    got.push(linePosAt(prim, clipPrim.limit[1]));
+                }
+            }
+
             got.forEach((coord) => {
                 // Nope on matching the end of things
-                if (coordsEqual(coord, path.segments[i].to)) {
-                    if (path.debug) {
-                        console.log(
-                            `skip coord end`,
-                            coord,
-                            path.segments[i],
-                            i,
-                        );
-                    }
-                    return;
-                }
+                // Ok, so whhat if
+                // START HERE:
+                // - a hit at the end just gets bumped to be at the start of the next one.
+                // - of course sortHits needs to dedup
+                // but then I thinkk we fix the issue...
+                // ORRR we could just deal with hits at the end of things ...
+                //
+
+                const pathEnd = coordsEqual(coord, path.segments[i].to);
                 const isCircle = clipPrim.type === 'circle' && !clipPrim.limit;
-                // Nope on matching the end of things
-                if (!isCircle && coordsEqual(coord, clip[j].to)) {
-                    if (path.debug) {
-                        console.log(
-                            `skip clip end`,
-                            coord,
-                            clip[j].to,
-                            j,
-                            i,
-                            prim,
-                            clipPrim,
-                            got,
-                        );
-                    }
+                const clipEnd = coordsEqual(coord, clip[j].to) && !isCircle;
+
+                if (pathEnd || clipEnd) {
+                    const hit = {
+                        i: pathEnd ? (i + 1) % path.segments.length : i,
+                        j: clipEnd ? (j + 1) % clip.length : j,
+                        coord,
+                    };
+                    // if (pathEnd) {
+                    //     endHit = hit;
+                    // }
+                    // if (clipEnd) {
+                    //     clipPerspective[hit.j].push(hit);
+                    // }
                     return;
                 }
+
+                // //
+                // // BUT: Why doesn't the returning arc register an intersection? 🤔
+                // if (pathEnd) {
+                //     endHits.push({i: i + 1, j, coord})
+                //     if (path.debug) {
+                //         console.log(
+                //             `skip coord end`,
+                //             coord,
+                //             path.segments[i],
+                //             i,
+                //         );
+                //     }
+                //     return;
+                // }
+                // // Nope on matching the end of things
+                // if (!isCircle && clipEnd) {
+                //     if (path.debug) {
+                //         console.log(
+                //             `skip clip end`,
+                //             coord,
+                //             clip[j].to,
+                //             j,
+                //             i,
+                //             prim,
+                //             clipPrim,
+                //             got,
+                //         );
+                //     }
+                //     return;
+                // }
+
                 const hit = { i, j, coord };
                 all.push(hit);
                 clipPerspective[j].push(hit);
@@ -699,6 +783,14 @@ export const sortHitsForPrimitive = <T extends { coord: Coord }>(
     prim: Primitive,
     segment: Segment,
 ): Array<T> => {
+    const seen: { [key: string]: true } = {};
+    const check = (coord: T) => {
+        const key = coordKey(coord.coord);
+        if (seen[key]) {
+            return false;
+        }
+        return (seen[key] = true);
+    };
     if (prim.type === 'line') {
         // sorted "closest first"
         return hits
@@ -707,7 +799,8 @@ export const sortHitsForPrimitive = <T extends { coord: Coord }>(
                 dist: dist(coord.coord, segment.to),
             }))
             .sort((a, b) => b.dist - a.dist)
-            .map((item) => item.coord);
+            .map((item) => item.coord)
+            .filter(check);
     } else {
         const circle = segment as ArcSegment;
         const t1 = angleTo(circle.center, segment.to);
@@ -723,6 +816,14 @@ export const sortHitsForPrimitive = <T extends { coord: Coord }>(
                 ),
             }))
             .sort((a, b) => b.dist - a.dist)
-            .map((item) => item.coord);
+            .map((item) => item.coord)
+            .filter(check);
     }
+};
+
+export const linePosAt = (line: SlopeIntercept, pos: number) => {
+    if (line.m === Infinity) {
+        return { x: line.b, y: pos };
+    }
+    return { x: pos, y: line.m * pos + line.b };
 };

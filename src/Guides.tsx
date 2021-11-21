@@ -560,15 +560,15 @@ export const Guides = ({
                     shiftKey={!!shiftKey}
                 />
             ) : null}
-            {state.view.clip
+            {view.clip
                 ? pathToPrimitives(
-                      state.view.clip[state.view.clip.length - 1].to,
-                      state.view.clip,
+                      view.clip[view.clip.length - 1].to,
+                      view.clip,
                   ).map((prim, i) => (
                       <RenderPrimitive
                           isImplied
                           prim={prim}
-                          zoom={state.view.zoom}
+                          zoom={view.zoom}
                           width={width}
                           height={height}
                           color={'magenta'}

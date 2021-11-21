@@ -1,7 +1,7 @@
 import { coordKey } from './calcAllIntersections';
 import { segmentKey } from './DrawPath';
 import { angleTo } from './getMirrorTransforms';
-import { Primitive } from './intersect';
+import { epsilon, Primitive } from './intersect';
 import {
     Coord,
     Intersect,
@@ -149,6 +149,9 @@ export const angleBetween = (
 ) => {
     if (!clockwise) {
         [left, right] = [right, left];
+    }
+    if (Math.abs(right - left) < epsilon) {
+        return 0;
     }
     if (right >= left) {
         return right - left;
