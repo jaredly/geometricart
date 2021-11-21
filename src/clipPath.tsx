@@ -124,10 +124,19 @@ export const zeroToTwoPi = (angle: number) => {
     return angle;
 };
 
-export const isInside = (back: Angle, forward: Angle, test: Angle): boolean => {
+export const isInside = (
+    back: Angle,
+    forward: Angle,
+    test: Angle,
+    debug = false,
+): boolean => {
     // We need to compare three things to each other.
     const ft = zeroToTwoPi(forward.theta - back.theta);
     const tt = zeroToTwoPi(test.theta - back.theta);
+
+    if (debug) {
+        console.log(`is inside?`, ft, tt);
+    }
 
     if (tt === 0) {
         const sort = sortAnglesWithSameTheta(back, test);
@@ -162,6 +171,12 @@ export const isInside = (back: Angle, forward: Angle, test: Angle): boolean => {
             // forward is very tight behind back, test can't be inside because tt isn't zero
             return false;
         }
+    } else if (tt === ft) {
+        const sort = sortAnglesWithSameTheta(forward, test);
+        if (sort < 0) {
+            return true;
+        }
+        return false;
     } else {
         return tt > ft;
     }
@@ -247,11 +262,15 @@ export const isGoingInside = (
     oneLocation: HitLocation,
     test: Clippable,
     testLocation: HitLocation,
+    debug = false,
 ) => {
     const back = getBackAngle(one, oneLocation);
     const forward = getAngle(one, oneLocation);
     const testAngle = getAngle(test, testLocation);
-    return isInside(back, forward, testAngle);
+    if (debug) {
+        console.log(`Check is going`, back, forward, testAngle);
+    }
+    return isInside(back, forward, testAngle, debug);
 };
 
 /*
@@ -426,7 +445,7 @@ export const clipTwo = (
             const last = result.length ? result[result.length - 1].to : first;
 
             // Is clip going into path?
-            if (isGoingInside(path, pathLoc, clip, clipLoc)) {
+            if (isGoingInside(path, pathLoc, clip, clipLoc, debug)) {
                 if (!coordsEqual(last, hit.coord)) {
                     addSegment({
                         ...path.segments[state.loc.segment],
@@ -548,24 +567,24 @@ export const clipPath = (
         endHit = null;
         clipPrimitives.forEach((clipPrim, j) => {
             const got = intersections(prim, clipPrim);
-            if (path.debug) {
-                console.log(`INTERSECT`, i, j, prim, clipPrim);
-                console.log(got);
-                if (i === 6 && j === 0) {
-                    // console.log(
-                    //     intersections(prim, { ...clipPrim, limit: null }),
-                    // );
-                    // console.log(
-                    //     'got',
-                    //     lineCircle(
-                    //         prim as Circle,
-                    //         clipPrim as SlopeIntercept,
-                    //         true,
-                    //     ),
-                    // );
-                    // throw new Error(`stop`);
-                }
-            }
+            // if (path.debug) {
+            //     // console.log(`INTERSECT`, i, j, prim, clipPrim);
+            //     // console.log(got);
+            //     if (i === 6 && j === 0) {
+            //         // console.log(
+            //         //     intersections(prim, { ...clipPrim, limit: null }),
+            //         // );
+            //         // console.log(
+            //         //     'got',
+            //         //     lineCircle(
+            //         //         prim as Circle,
+            //         //         clipPrim as SlopeIntercept,
+            //         //         true,
+            //         //     ),
+            //         // );
+            //         // throw new Error(`stop`);
+            //     }
+            // }
 
             if (
                 prim.type === 'line' &&
