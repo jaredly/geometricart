@@ -15,6 +15,7 @@
     },
     "dependencies": {
         "@emotion/react": "^11.1.5",
+        "kmeans-js": "^0.1.2",
         "localforage": "^1.9.0",
         "png-metadata": "https://github.com/hometlt/png-metadata",
         "react": "^17.0.1",

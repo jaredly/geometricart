@@ -300,6 +300,14 @@ export type UndoViewUpdate = {
     prev: View;
 };
 
+export type ClipAdd = { type: 'clip:add'; clip: Array<Segment> };
+export type UndoClipAdd = {
+    type: ClipAdd['type'];
+    action: ClipAdd;
+    prevActive: Id | null;
+    added: [string, number];
+};
+
 export type OverlyAdd = { type: 'overlay:add'; attachment: Id };
 export type UndoOverlayAdd = {
     type: OverlyAdd['type'];
@@ -541,6 +549,7 @@ export type UndoableAction =
     | PendingPoint
     | MetaUpdate
     | OverlyAdd
+    | ClipAdd
     // | PathAdd
     | PathUpdate
     | PendingType
@@ -562,6 +571,7 @@ export type UndoableAction =
 export type UndoAction =
     | UndoGuideAdd
     | UndoOverlayAdd
+    | UndoClipAdd
     | UndoGroupUpdate
     | UndoPathUpdate
     | UndoPathUpdateMany
@@ -640,6 +650,7 @@ export type Tab =
     | 'Palette'
     | 'Export'
     | 'Overlays'
+    | 'Clips'
     | 'Help';
 
 export type Attachment = {

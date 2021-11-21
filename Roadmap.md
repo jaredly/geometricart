@@ -6,11 +6,18 @@ Ok, so one thing: we got issues when we have a starting point in the middle of a
 - [x] also, clip + inset is /not/ working! Maybe the resulting path is abnormal somehow? needs to be simplified?
 	- yay fixed
 
-## [ ] CLIP BUGS
+
+## [ ] Better colors!
+
+- pleeease give me a color picker, really anything I need it.
+
+
+## [x] CLIP BUGS
 
 - [ ] if we inset too far, it turns inside out. I tried running an `isClockwise` test, and it lied.
-
-- [ ] it looks like backtracking directly breaks.
+- [x] it looks like backtracking directly breaks.
+- [ ] re-entrant clipping doesn't work either, where we have a clip that ends up cutting something in two.
+	at the moment, you just aren't allowed.
 
 
 - [x] pure circle clip, has some bugs.

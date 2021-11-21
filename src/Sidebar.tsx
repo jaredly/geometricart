@@ -346,6 +346,46 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactElement } = {
         <PalettesForm state={state} dispatch={dispatch} />
     ),
     Overlays: OverlaysForm,
+    Clips: ({ state, dispatch }) => {
+        return (
+            <div>
+                Clips!
+                {Object.keys(state.clips).map((id) => (
+                    <div
+                        key={id}
+                        onClick={() => {
+                            dispatch({
+                                type: 'view:update',
+                                view: {
+                                    ...state.view,
+                                    activeClip:
+                                        state.view.activeClip === id
+                                            ? null
+                                            : id,
+                                },
+                            });
+                        }}
+                        css={{
+                            cursor: 'pointer',
+                            padding: 8,
+                            ':hover': {
+                                background: '#555',
+                            },
+                        }}
+                        style={
+                            state.view.activeClip === id
+                                ? {
+                                      border: '1px solid #aaa',
+                                  }
+                                : {}
+                        }
+                    >
+                        Clip {id}
+                    </div>
+                ))}
+            </div>
+        );
+    },
     Help: () => (
         <div>
             <div>

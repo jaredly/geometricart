@@ -10,6 +10,7 @@ import {
 } from './ExportPalettes';
 import { useDropTarget } from './useDropTarget';
 import { createPortal } from 'react-dom';
+import { rgbToHsl } from './colorConvert';
 
 export const colorAt = (imageData: ImageData, { x, y }: Coord): Rgb => {
     x = Math.floor(x);
@@ -37,6 +38,7 @@ export const ImageChooser = ({
 }) => {
     const ref = React.useRef(null as null | HTMLCanvasElement);
     const data = React.useRef(null as null | ImageData);
+    const [colors, setColors] = React.useState(null as null | Array<number>);
 
     React.useEffect(() => {
         if (!ref.current) {
@@ -46,9 +48,9 @@ export const ImageChooser = ({
         const image = new Image();
         image.src = contents;
         image.onload = () => {
-            ctx.canvas.width = 800;
-            ctx.canvas.height =
-                (image.naturalHeight / image.naturalWidth) * ctx.canvas.width;
+            ctx.canvas.height = 800;
+            ctx.canvas.width =
+                (image.naturalWidth / image.naturalHeight) * ctx.canvas.height;
             ctx.drawImage(image, 0, 0, ctx.canvas.width, ctx.canvas.height);
             data.current = ctx.getImageData(
                 0,
@@ -56,6 +58,7 @@ export const ImageChooser = ({
                 ctx.canvas.width,
                 ctx.canvas.height,
             );
+            setColors(findMajorColors(data.current));
         };
     }, [contents, ref.current]);
 
@@ -90,6 +93,29 @@ export const ImageChooser = ({
                     onChoose(colorAt(data.current, pos));
                 }}
             />
+            {colors ? (
+                <div>
+                    {[0.2, 0.5, 0.7].map((lightness, i) => (
+                        <div
+                            css={{ display: 'flex', flexDirection: 'row' }}
+                            key={i}
+                        >
+                            {colors.map((color) => (
+                                <div
+                                    key={color}
+                                    style={{
+                                        background: `hsl(${color}, 100%, ${(
+                                            lightness * 100
+                                        ).toFixed(1)}%)`,
+                                        width: 20,
+                                        height: 20,
+                                    }}
+                                />
+                            ))}
+                        </div>
+                    ))}
+                </div>
+            ) : null}
             {hover ? (
                 <div
                     style={{
@@ -432,3 +458,36 @@ export const ColorEditor = ({
         </div>
     );
 };
+
+export const findMajorColors = (
+    data: ImageData,
+    bins: number = 50,
+    top: number = 10,
+) => {
+    // const points = []
+    // // h, s, l
+    // // l = 3 bins; 0.3, 0.6
+    // // s = 2 bins 0.5, 1.0
+    // // const bins = 50;
+    const hueBins = new Array(bins).fill(0);
+    for (let x = 0; x < data.width; x++) {
+        for (let y = 0; y < data.height; y++) {
+            const color = colorAt(data, { x, y });
+            const [h, s, l] = rgbToHsl(color.r, color.g, color.b);
+            // outside of range
+            // if (s < 0.5 || l > 0.9 || l < 0.2) {
+            //     continue;
+            // }
+            const hue = Math.floor(h * bins);
+            hueBins[hue]++;
+        }
+    }
+    const sorted = hueBins
+        .map((count, i) => ({ i, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, top)
+        .sort((a, b) => a.i - b.i);
+    return sorted.map((item) => (item.i / bins) * 360);
+};
+
+// import kMeans from 'kmeans-js'

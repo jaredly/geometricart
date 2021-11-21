@@ -484,6 +484,27 @@ export const reduceWithoutUndo = (
                 { type: action.type, action },
             ];
         }
+        case 'clip:add': {
+            let nextId = state.nextId + 1;
+            const id = `id-${state.nextId}`;
+            return [
+                {
+                    ...state,
+                    clips: {
+                        ...state.clips,
+                        [id]: action.clip,
+                    },
+                    view: { ...state.view, activeClip: id },
+                    nextId,
+                },
+                {
+                    type: action.type,
+                    action,
+                    prevActive: state.view.activeClip,
+                    added: [id, state.nextId],
+                },
+            ];
+        }
         default:
             let _x: never = action;
             console.log(`SKIPPING ${(action as any).type}`);
@@ -511,6 +532,18 @@ export const undo = (state: State, action: UndoAction): State => {
                     [action.prev.id]: action.prev,
                 },
             };
+        }
+        case 'clip:add': {
+            state = {
+                ...state,
+                clips: {
+                    ...state.clips,
+                },
+                view: { ...state.view, activeClip: action.prevActive },
+                nextId: action.added[1],
+            };
+            delete state.clips[action.added[0]];
+            return state;
         }
         case 'overlay:add': {
             state = {
