@@ -1,4 +1,5 @@
 import { coordKey } from './calcAllIntersections';
+import { closeEnough } from './clipPath';
 import { segmentKey } from './DrawPath';
 import { angleTo } from './getMirrorTransforms';
 import { epsilon, Primitive } from './intersect';
@@ -138,6 +139,25 @@ export const angleDiff = (one: number, two: number) => {
         return diff - Math.PI * 2;
     }
     return diff;
+};
+
+// true if middle is between left and right, going from left to right around the circle {clockwise/or not}
+// if middle is equal to left or right, also return true
+export const isAngleBetween = (
+    left: number,
+    middle: number,
+    right: number,
+    clockwise: boolean,
+) => {
+    if (closeEnough(left, right)) {
+        return true;
+    }
+    if (closeEnough(middle, right)) {
+        return true;
+    }
+    const lm = angleBetween(left, middle, clockwise);
+    const lr = angleBetween(left, right, clockwise);
+    return lm <= lr;
 };
 
 // left & right are assumed to be between -PI and PI

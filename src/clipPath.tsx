@@ -1,8 +1,8 @@
 import { coordKey } from './calcAllIntersections';
 import { ensureClockwise, isClockwise } from './CanvasRender';
-import { angleBetween } from './findNextSegments';
+import { angleBetween, isAngleBetween } from './findNextSegments';
 import { pathToPrimitives } from './findSelection';
-import { angleTo, dist } from './getMirrorTransforms';
+import { angleTo, dist, push } from './getMirrorTransforms';
 import {
     Circle,
     epsilon,
@@ -692,7 +692,238 @@ export const clipPath = (
     };
 };
 
+// "bottom" here being the visual bottom, so the /greater/ y value. yup thanks.
+export const atLineBottom = (coord: Coord, seg: SlopeIntercept) => {
+    if (!seg.limit) {
+        return false;
+    }
+    if (seg.m === Infinity) {
+        return closeEnough(coord.y, seg.limit[1]);
+    }
+    return closeEnough(coord.x, seg.m > 0 ? seg.limit[1] : seg.limit[0]);
+};
+
+// Also returns true if we're at the top or bottom tangent and not on the top endpoint
+export const atCircleBottomOrSomething = (coord: Coord, seg: Circle) => {
+    const atX = closeEnough(coord.x, seg.center.x);
+
+    if (!seg.limit) {
+        return atX;
+    }
+
+    // If we're at the nadir, always ignore.
+    if (atX && coord.y > seg.center.y) {
+        return true;
+    }
+
+    if (atX) {
+        // if we're at the summit, ignore only if we're not also at an endpoint
+        return !(
+            closeEnough(seg.limit[0], -Math.PI / 2) ||
+            closeEnough(seg.limit[1], -Math.PI / 2)
+        );
+    }
+
+    // Ok, given that we're not at the top or bottom
+
+    // if limit[0] is /less/ than PI away from the summit, limit[0] is a "bottom" point
+    // if limit[1] is /less/ than PI past the summit, it is a "bottom" point
+    if (
+        angleBetween(seg.limit[0], -Math.PI / 2, true) < Math.PI &&
+        coordsEqual(push(seg.center, seg.radius, seg.limit[0]), coord)
+    ) {
+        return true;
+    }
+
+    if (
+        angleBetween(-Math.PI / 2, seg.limit[1], true) < Math.PI &&
+        coordsEqual(push(seg.center, seg.radius, seg.limit[1]), coord)
+    ) {
+        return true;
+    }
+
+    return false;
+
+    // // // the first limit as at the summit of the circle
+    // // if (closeEnough(seg.limit[0], -Math.PI / 2) && atX && coord.y < seg.center.y) {
+    // //     return false
+    // // }
+
+    // // Ok new plan.
+
+    // // if
+
+    // // if (closeEnough(seg.limit[0], Math.PI / 2)) {
+    // //     // first limit is at the nadir of the circle, ignore if coord is the nadir.
+    // // }
+
+    // // Ok at the very start, we can know just from the limits whether we're 'circle top' or 'circle bottom'
+    // // and then if not, we know we're line-like
+
+    // // The "bottom" of the circle is between our two limits, so neither end is at the bottom
+    // // and we've already established that we're not at the nadir.
+    // if (isAngleBetween(seg.limit[0], Math.PI / 2, seg.limit[1], true)) {
+    //     return false
+    // }
+
+    // // TODO: Cache this, this is super inefficient
+    // const p1 = push(seg.center, seg.radius, seg.limit[0])
+    // const p2 = push(seg.center, seg.radius, seg.limit[1])
+
+    // // the first limit as at the summit of the circle, so the other limit is a "bottom" point
+    // if (closeEnough(seg.limit[0], -Math.PI / 2)) {
+    //     return coordsEqual(coord, p2)
+    // }
+
+    // // The "top" of the circle is between our two limits, so we should ignore both endpoints
+    // if (isAngleBetween(seg.limit[0], -Math.PI / 2, seg.limit[1], true)) {
+    // }
+
+    // // So our options are:
+    // // - we're both on the /same side/ of the circle, so we approximate a line
+    // // - we're on /opposite sides/ of the circle, in which case either both ends or neither are "on the bottom"
+    // // - if on as the the top or bottom-most point, it counts as being on the "same side" as the other one.
+    // // - we can test sideliness by just looking at the x coord of the points. yesss.
+
+    // const p1centered = closeEnough(p1.x, seg.center.x)
+    // const p2centered = closeEnough(p2.x, seg.center.x)
+
+    // if (p1centered) {
+
+    // } else if (p2centered) {
+
+    // } else {
+    //     const p1left = p1.x < seg.center.x
+    //     const p2left = p2.x < seg.center.x
+    //     if (p1left === p2left) {
+    //         // the "bottom" is the one with the greater y value
+    //     }
+    // }
+
+    // const p1Side =
+
+    // if no limit, then just "are we tangent to the bottom?"
+    // return closeEnough(coord.x, seg.center.x) && coord.y > seg.center.y
+};
+
+export const isOnLine = (coord: Coord, line: SlopeIntercept) => {
+    if (line.m === Infinity) {
+        return closeEnough(line.b, coord.x);
+    }
+    return closeEnough(line.m * coord.x + line.b, coord.y);
+};
+export const isWithinLineLimit = (coord: Coord, line: SlopeIntercept) => {
+    if (!line.limit) {
+        return true;
+    }
+    if (line.m === Infinity) {
+        return withinLimit(line.limit, coord.y);
+    }
+    return withinLimit(line.limit, coord.x);
+};
+
+export const isOnCircle = (coord: Coord, seg: Circle) => {
+    if (closeEnough(coord.x, seg.center.x)) {
+        if (
+            closeEnough(coord.y, seg.center.y + seg.radius) ||
+            closeEnough(coord.y, seg.center.y - seg.radius)
+        ) {
+            return true;
+        }
+        return false;
+    }
+    if (closeEnough(coord.y, seg.center.y)) {
+        if (
+            closeEnough(coord.x, seg.center.x + seg.radius) ||
+            closeEnough(coord.x, seg.center.x - seg.radius)
+        ) {
+            return true;
+        }
+        return false;
+    }
+    const d = dist(coord, seg.center);
+    return closeEnough(d, seg.radius);
+};
+
+// excludes points that line /on/ the path.
 export const insidePath = (
+    coord: Coord,
+    segs: Array<Primitive>,
+    debug: boolean = false,
+) => {
+    const ray: Primitive = {
+        type: 'line',
+        m: 0,
+        b: coord.y,
+        limit: [coord.x, Infinity],
+    };
+    let isOnEdge = false;
+    const hits: Array<Coord> = [];
+    segs.forEach((seg) => {
+        if (isOnEdge) {
+            // bail fast
+            return;
+        }
+
+        if (seg.type === 'line') {
+            if (isOnLine(coord, seg)) {
+                if (isWithinLineLimit(coord, seg)) {
+                    isOnEdge = true;
+                }
+                // if it's not within limit, we also won't intersect, so skip this seg
+                return;
+            }
+
+            // tangent case
+            // we can do exact equal because `lineToSlope()` takes care of epsilon
+            if (seg.m === 0) {
+                // Don't count any intersections, whether it's the same line or just parallel
+                return;
+            }
+        } else {
+            if (isOnCircle(coord, seg)) {
+                if (
+                    !seg.limit ||
+                    isAngleBetween(
+                        seg.limit[0],
+                        angleTo(seg.center, coord),
+                        seg.limit[1],
+                        true,
+                    )
+                ) {
+                    isOnEdge = true;
+                }
+                return;
+            }
+        }
+
+        intersections(seg, ray).forEach((coord) => {
+            if (seg.type === 'line') {
+                // ignore intersections with the "bottom point" of a line
+                if (atLineBottom(coord, seg)) {
+                    return;
+                }
+            } else {
+                if (atCircleBottomOrSomething(coord, seg)) {
+                    return;
+                }
+            }
+            if (debug) {
+                console.log(`🤞 intersection`, seg, ray, coord);
+            }
+            hits.push(coord);
+        });
+    });
+    if (isOnEdge) {
+        return false;
+    }
+    // if (debug) {
+    //     console.log(hits, coord);
+    // }
+    return Object.keys(hits).length % 2 === 1;
+};
+
+export const insidePathBad = (
     coord: Coord,
     segs: Array<Primitive>,
     debug: boolean = false,
@@ -715,6 +946,20 @@ export const insidePath = (
     return Object.keys(hits).length % 2 === 1;
 };
 
+export const insidePathMulti = (
+    coord: Coord,
+    segs: Array<Primitive>,
+    debug: boolean = false,
+) => {
+    return (
+        insidePathBad(coord, segs, debug) &&
+        insidePathBad({ x: coord.x, y: coord.y + epsilon * 2 }, segs) &&
+        insidePathBad({ x: coord.x, y: coord.y - epsilon * 2 }, segs) &&
+        insidePathBad({ x: coord.x - epsilon * 2, y: coord.y }, segs) &&
+        insidePathBad({ x: coord.x + epsilon * 2, y: coord.y }, segs)
+    );
+};
+
 /**
  * Finds the {index} of the {Segment} whose /start/ position (not to) is inside the clip.
  */
@@ -729,28 +974,7 @@ export const findInsideStart = (
             i === 0 ? segments[segments.length - 1].to : segments[i - 1].to;
         const hits = insidePath(prev, clip, debug);
         if (hits) {
-            const up = insidePath({ x: prev.x, y: prev.y + epsilon * 2 }, clip);
-            const down = insidePath(
-                { x: prev.x, y: prev.y - epsilon * 2 },
-                clip,
-            );
-            const left = insidePath(
-                { x: prev.x - epsilon * 2, y: prev.y },
-                clip,
-            );
-            const right = insidePath(
-                { x: prev.x + epsilon * 2, y: prev.y },
-                clip,
-            );
-
-            if (up && down && left && right) {
-                if (debug) {
-                    console.log(`IT WAS`, prev, clip, hits);
-                }
-                return i;
-            }
-            // ugh got to check for a tangent hit ...
-            // return i;
+            return i;
         }
         if (debug) {
             console.log(`nope`, prev, hits);

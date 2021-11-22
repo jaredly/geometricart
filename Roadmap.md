@@ -6,7 +6,37 @@ Ok, so one thing: we got issues when we have a starting point in the middle of a
 - [x] also, clip + inset is /not/ working! Maybe the resulting path is abnormal somehow? needs to be simplified?
 	- yay fixed
 
-- [ ] um lots more bugs thoughhhh
+- [x] um lots more bugs thoughhhh
+
+- [ ] missing star?
+
+- [ ] ok so bugs:
+	- if the 
+
+
+
+Better "inside polygon" check please!
+It's broken when the line you're checking on is tangent to a line of the clip.
+
+So another thought would be -- similar to the "clockwise" test, but /add/ the angle from the point to the first place we hit.
+
+
+Ok [this](https://en.wikipedia.org/wiki/Point_in_polygon#Winding_number_algorithm) looks like a pretty tight solution?
+hmmm does it also work with arcs? hmm I think so, yes.
+
+orr I could do the "only include the one whose other vertex lies below" ... but with arcs, it's not that easy.
+
+General thoughts?
+
+
+
+
+
+
+
+
+
+
 
 
 ## [ ] Better colors!
