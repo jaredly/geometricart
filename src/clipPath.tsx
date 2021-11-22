@@ -370,6 +370,7 @@ export const clipTwo = (
     }
     // Nope, can't do it folks. No idx works.
     if (idx >= path.hits.length) {
+        console.warn('starting thing is an intersection, cant do it');
         return null;
     }
 
@@ -413,126 +414,69 @@ export const clipTwo = (
         if (debug) {
             console.log(`Current state`, { ...state }, result.length);
         }
-        // if (result.length) {
-        //     const key = coordKey(result[result.length - 1].to);
-        //     if (seen[key]) {
-        //         console.warn(new Error(`seen already! ${key}`));
-        //         break;
-        //     }
-        //     seen[key] = true;
-        // }
 
-        if (!state.clipSide) {
-            const next = state.loc.intersection + 1;
-            if (next >= path.hits[state.loc.segment].length) {
-                if (!addSegment(path.segments[state.loc.segment])) {
-                    break;
-                }
-                if (debug) {
-                    console.log(
-                        `reached the end with no more hits`,
-                        next,
-                        path.segments[state.loc.segment],
-                    );
-                }
-                // move on to the next
-                state.loc = {
-                    segment: (state.loc.segment + 1) % path.hits.length,
-                    intersection: -1,
-                };
-                continue;
+        const [group, other, oidx] = state.clipSide
+            ? [clip, path, (hit: Hit) => hit.i]
+            : [path, clip, (hit: Hit) => hit.j];
+
+        const next = state.loc.intersection + 1;
+        if (next >= group.hits[state.loc.segment].length) {
+            if (!addSegment(group.segments[state.loc.segment])) {
+                break;
             }
-
-            const hit = path.hits[state.loc.segment][next];
-
-            const clipLoc = findHit(clip, hit, hit.j);
-            const pathLoc = { segment: state.loc.segment, intersection: next };
-
-            const last = result.length ? result[result.length - 1].to : first;
-
-            // if this is the starting position, ignore it
-            if (!coordsEqual(last, hit.coord)) {
-                if (
-                    !addSegment({
-                        ...path.segments[state.loc.segment],
-                        to: hit.coord,
-                    })
-                ) {
-                    break;
-                }
+            if (debug) {
+                console.log(
+                    `reached the end with no more hits`,
+                    next,
+                    group.segments[state.loc.segment],
+                );
             }
+            // move on to the next
+            state.loc = {
+                segment: (state.loc.segment + 1) % group.hits.length,
+                intersection: -1,
+            };
+            continue;
+        }
 
-            // Is clip going into path?
-            if (isGoingInside(path, pathLoc, clip, clipLoc, debug)) {
-                if (debug) {
-                    console.log('switch to clip', hit, clipLoc, hit.coord);
-                }
-                // clip is going into path, we need to switch
-                state = { clipSide: true, loc: clipLoc };
-            } else {
-                if (debug) {
-                    console.log(
-                        `tangent I guess`,
-                        state.loc,
-                        pathLoc,
-                        hit,
-                        path.segments[state.loc.segment],
-                    );
-                }
-                // move on to the next
-                state.loc = pathLoc;
+        const hit = group.hits[state.loc.segment][next];
+
+        const otherLoc = findHit(other, hit, oidx(hit));
+        const groupLoc = { segment: state.loc.segment, intersection: next };
+
+        const last = result.length ? result[result.length - 1].to : first;
+
+        // if this is the starting position, ignore it
+        if (!coordsEqual(last, hit.coord)) {
+            if (
+                !addSegment({
+                    ...group.segments[state.loc.segment],
+                    to: hit.coord,
+                })
+            ) {
+                break;
             }
+        }
+
+        // Is other going into group?
+        if (isGoingInside(group, groupLoc, other, otherLoc, debug)) {
+            if (debug) {
+                console.log('switch to other', hit, otherLoc, hit.coord);
+            }
+            // other is going into group, we need to switch
+            state = { clipSide: !state.clipSide, loc: otherLoc };
         } else {
-            const next = state.loc.intersection + 1;
-            if (next >= clip.hits[state.loc.segment].length) {
-                if (!addSegment(clip.segments[state.loc.segment])) {
-                    break;
-                }
-                // move on to the next
-                state.loc = {
-                    segment: (state.loc.segment + 1) % clip.hits.length,
-                    intersection: -1,
-                };
-                if (debug) {
-                    console.log('reached end of clip segment, moving on');
-                }
-                continue;
+            if (debug) {
+                console.log(
+                    `tangent I guess`,
+                    state.loc,
+                    groupLoc,
+                    hit,
+                    group.segments[state.loc.segment],
+                );
             }
-
-            const hit = clip.hits[state.loc.segment][next];
-
-            const pathLoc = findHit(path, hit, hit.i);
-            const clipLoc = { segment: state.loc.segment, intersection: next };
-
-            const last = result.length ? result[result.length - 1].to : first;
-
-            // if this is the starting position, ignore it
-            if (!coordsEqual(last, hit.coord)) {
-                // must have been tangent, nothing to see here
-                if (
-                    !addSegment({
-                        ...clip.segments[state.loc.segment],
-                        to: hit.coord,
-                    })
-                ) {
-                    break;
-                }
-            }
-
-            // Is path going into clip?
-            if (isGoingInside(clip, clipLoc, path, pathLoc)) {
-                if (debug) {
-                    console.log(`switch to path`, hit, pathLoc);
-                }
-                // path is going into clip, we need to switch
-                state = { clipSide: false, loc: pathLoc };
-            } else {
-                if (debug) {
-                    console.log('tangent I guess', state.loc, clipLoc, hit);
-                }
-                // move on to the next
-                state.loc = clipLoc;
-            }
+            // move on to the next
+            state.loc = groupLoc;
         }
     }
     if (debug) {
@@ -566,7 +510,9 @@ export const clipPath = (
     // but here we are.
     const idx = findInsideStart(path.segments, clipPrimitives, 0, path.debug);
     if (idx == null) {
-        // console.log(`nothing inside`);
+        if (path.debug) {
+            console.warn(`Debug path outside of clip`);
+        }
         // path is not inside, nothing to show
         return null;
     }
@@ -753,7 +699,7 @@ export const insidePath = (
 ) => {
     const ray: Primitive = {
         type: 'line',
-        m: 0,
+        m: 0.0,
         b: coord.y,
         limit: [coord.x, Infinity],
     };
@@ -764,7 +710,7 @@ export const insidePath = (
         });
     });
     if (debug) {
-        console.log(hits, coord, segs);
+        console.log(hits, coord);
     }
     return Object.keys(hits).length % 2 === 1;
 };
@@ -807,7 +753,7 @@ export const findInsideStart = (
             // return i;
         }
         if (debug) {
-            console.log(`nope`, prev, clip, hits);
+            console.log(`nope`, prev, hits);
         }
     }
     if (debug) {
