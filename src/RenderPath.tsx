@@ -281,8 +281,8 @@ export const RenderPath = React.memo(
                                   key={i}
                                   cx={seg.to.x * zoom}
                                   cy={seg.to.y * zoom}
-                                  r={(3 / 100) * zoom}
-                                  fill="red"
+                                  r={(2 / 100) * zoom}
+                                  fill="orange"
                               />
                           ))
                         : null}
@@ -335,7 +335,7 @@ export const RenderPath = React.memo(
                               key={i}
                               cx={seg.to.x * zoom}
                               cy={seg.to.y * zoom}
-                              r={(4 / 100) * zoom}
+                              r={(5 / 100) * zoom}
                               stroke={i === 0 ? 'red' : 'blue'}
                               strokeWidth={(1 / 100) * zoom}
                               fill={'none'}
@@ -349,7 +349,7 @@ export const RenderPath = React.memo(
                               cx={seg.to.x * zoom}
                               cy={seg.to.y * zoom}
                               r={(3 / 100) * zoom}
-                              fill={'blue'}
+                              fill={i === 0 ? 'red' : 'blue'}
                           />
                       ))
                     : null}

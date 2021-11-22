@@ -300,6 +300,14 @@ export type UndoViewUpdate = {
     prev: View;
 };
 
+export type ClipAdd = { type: 'clip:add'; clip: Array<Segment> };
+export type UndoClipAdd = {
+    type: ClipAdd['type'];
+    action: ClipAdd;
+    prevActive: Id | null;
+    added: [string, number];
+};
+
 export type OverlyAdd = { type: 'overlay:add'; attachment: Id };
 export type UndoOverlayAdd = {
     type: OverlyAdd['type'];
@@ -541,6 +549,7 @@ export type UndoableAction =
     | PendingPoint
     | MetaUpdate
     | OverlyAdd
+    | ClipAdd
     // | PathAdd
     | PathUpdate
     | PendingType
@@ -562,6 +571,7 @@ export type UndoableAction =
 export type UndoAction =
     | UndoGuideAdd
     | UndoOverlayAdd
+    | UndoClipAdd
     | UndoGroupUpdate
     | UndoPathUpdate
     | UndoPathUpdateMany
@@ -623,7 +633,7 @@ export type View = {
     center: Coord;
     zoom: number;
     guides: boolean;
-    clip?: Array<Segment>;
+    activeClip: Id | null;
     background?: string | number;
 };
 
@@ -640,6 +650,7 @@ export type Tab =
     | 'Palette'
     | 'Export'
     | 'Overlays'
+    | 'Clips'
     | 'Help';
 
 export type Attachment = {
@@ -676,6 +687,8 @@ export type State = {
     mirrors: { [key: Id]: Mirror };
     activeMirror: Id | null;
     view: View;
+
+    clips: { [key: Id]: Array<Segment> };
 
     overlays: { [key: Id]: Overlay };
 
@@ -730,6 +743,20 @@ export const migrateState = (state: State) => {
         });
         state.version = 2;
     }
+    if (state.version < 3) {
+        state.version = 3;
+        if ((state.view as any).clip) {
+            state.clips = {
+                migrated: (state.view as any).clip,
+            };
+            state.view.activeClip = 'migrated';
+            // @ts-ignore
+            delete state.view.clip;
+        } else {
+            state.clips = {};
+            state.view.activeClip = null;
+        }
+    }
     return state;
 };
 
@@ -738,6 +765,9 @@ CHANGELOG:
 
 version 2:
 - simplifying all paths
+
+version 3:
+- multiple clips
 
 
 */

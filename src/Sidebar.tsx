@@ -2,13 +2,8 @@
 /* @jsxFrag React.Fragment */
 import { jsx } from '@emotion/react';
 import React from 'react';
-import {
-    GuideForm,
-    MirrorForm,
-    PathForm,
-    PathGroupForm,
-    ViewForm,
-} from './Forms';
+import { GuideForm, PathForm, PathGroupForm, ViewForm } from './Forms';
+import { MirrorForm } from './MirrorForm';
 import { guideTypes, State, Action, Tab, Id, Path, PathGroup } from './types';
 import { initialState } from './initialState';
 import { Export } from './Export';
@@ -265,7 +260,13 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactElement } = {
                     overflow: 'auto',
                     flexShrink: 1,
                     flex: 1,
-                    minHeight: 100,
+                    display: 'flex',
+                    flexDirection: 'row',
+                    flexWrap: 'wrap',
+                    alignItems: 'flex-start',
+                    alignContent: 'flex-start',
+                    justifyContent: 'flex-start',
+                    // minHeight: 100,
                 }}
                 onClick={() => {
                     dispatch({ type: 'selection:set', selection: null });
@@ -274,6 +275,7 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactElement } = {
                 {Object.keys(state.mirrors).map((k) => (
                     <MirrorForm
                         key={k}
+                        mirrors={state.mirrors}
                         selected={
                             state.selection?.type === 'Mirror' &&
                             state.selection.ids.includes(k)
@@ -346,6 +348,46 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactElement } = {
         <PalettesForm state={state} dispatch={dispatch} />
     ),
     Overlays: OverlaysForm,
+    Clips: ({ state, dispatch }) => {
+        return (
+            <div>
+                Clips!
+                {Object.keys(state.clips).map((id) => (
+                    <div
+                        key={id}
+                        onClick={() => {
+                            dispatch({
+                                type: 'view:update',
+                                view: {
+                                    ...state.view,
+                                    activeClip:
+                                        state.view.activeClip === id
+                                            ? null
+                                            : id,
+                                },
+                            });
+                        }}
+                        css={{
+                            cursor: 'pointer',
+                            padding: 8,
+                            ':hover': {
+                                background: '#555',
+                            },
+                        }}
+                        style={
+                            state.view.activeClip === id
+                                ? {
+                                      border: '1px solid #aaa',
+                                  }
+                                : {}
+                        }
+                    >
+                        Clip {id}
+                    </div>
+                ))}
+            </div>
+        );
+    },
     Help: () => (
         <div>
             <div>
@@ -518,9 +560,6 @@ export function Sidebar({
                 <ViewForm
                     view={state.view}
                     palette={state.palettes[state.activePalette]}
-                    onHoverClip={(hover) =>
-                        setHover(hover ? { kind: 'Clip', id: '' } : null)
-                    }
                     onChange={(view) => {
                         dispatch({
                             type: 'view:update',
