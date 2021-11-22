@@ -44,6 +44,9 @@ export const UnderlinePath = ({
 
 export const calcPathD = (path: Path, zoom: number) => {
     let d = `M ${path.origin.x * zoom} ${path.origin.y * zoom}`;
+    if (path.segments.length === 1) {
+        // this can only happen if we're a pure cicle
+    }
     path.segments.forEach((seg, i) => {
         if (seg.type === 'Line') {
             d += ` L ${seg.to.x * zoom} ${seg.to.y * zoom}`;
@@ -242,6 +245,44 @@ export const RenderPath = React.memo(
             if (!fill) {
                 return null;
             }
+            const color = paletteColor(palette, fill.color, fill.lighten);
+            if (color === 'transparent') {
+                return null;
+            }
+
+            const common = {
+                key: `fill-${i}`,
+                fillOpacity: fill.opacity,
+                stroke: 'none',
+                css: onClick
+                    ? {
+                          cursor: 'pointer',
+                      }
+                    : {},
+                onMouseDown: onClick
+                    ? (evt: React.MouseEvent) => evt.preventDefault()
+                    : undefined,
+                fill: color,
+                onClick: onClick
+                    ? (evt: React.MouseEvent) => onClick(evt, path.id)
+                    : undefined,
+            };
+            if (path.segments.length === 1 && path.segments[0].type === 'Arc') {
+                let r = dist(path.segments[0].center, path.segments[0].to);
+                if (fill.inset) {
+                    r -= fill.inset / 100;
+                }
+                // it's full circle
+                return (
+                    <circle
+                        cx={path.segments[0].center.x * zoom}
+                        cy={path.segments[0].center.y * zoom}
+                        r={r * zoom}
+                        {...common}
+                    />
+                );
+            }
+
             let raw = d;
             let newPath = path;
             if (fill.inset) {
@@ -254,27 +295,7 @@ export const RenderPath = React.memo(
             }
             return (
                 <>
-                    <path
-                        key={`fill-${i}`}
-                        data-id={path.id}
-                        fillOpacity={fill.opacity}
-                        stroke="none"
-                        css={
-                            onClick
-                                ? {
-                                      cursor: 'pointer',
-                                  }
-                                : {}
-                        }
-                        d={raw}
-                        onMouseDown={
-                            onClick ? (evt) => evt.preventDefault() : undefined
-                        }
-                        fill={paletteColor(palette, fill.color, fill.lighten)}
-                        onClick={
-                            onClick ? (evt) => onClick(evt, path.id) : undefined
-                        }
-                    />
+                    <path data-id={path.id} d={raw} {...common} />
                     {path.debug
                         ? newPath.segments.map((seg, i) => (
                               <circle
@@ -293,37 +314,62 @@ export const RenderPath = React.memo(
             if (!line) {
                 return null;
             }
-            return (
-                <path
-                    key={`line-${i}`}
-                    d={d}
-                    data-id={path.id}
-                    stroke={paletteColor(palette, line.color)}
-                    strokeDasharray={
-                        line.dash
-                            ? line.dash
-                                  .map((d) => ((d / 100) * zoom).toFixed(2))
-                                  .join(' ')
-                            : undefined
-                    }
-                    fill="none"
-                    strokeLinejoin="round"
-                    onClick={
-                        onClick ? (evt) => onClick(evt, path.id) : undefined
-                    }
-                    css={
-                        onClick
-                            ? {
-                                  cursor: 'pointer',
-                              }
-                            : {}
-                    }
-                    strokeWidth={line.width ? (line.width / 100) * zoom : 0}
-                    onMouseDown={
-                        onClick ? (evt) => evt.preventDefault() : undefined
-                    }
-                />
-            );
+            const color = paletteColor(palette, line.color);
+            if (color === 'transparent') {
+                return null;
+            }
+
+            const common = {
+                key: `line-${i}`,
+                stroke: color,
+                strokeDasharray: line.dash
+                    ? line.dash
+                          .map((d) => ((d / 100) * zoom).toFixed(2))
+                          .join(' ')
+                    : undefined,
+                fill: 'none',
+                strokeLinejoin: 'round' as 'round',
+                onClick: onClick
+                    ? (evt: React.MouseEvent) => onClick(evt, path.id)
+                    : undefined,
+                css: onClick
+                    ? {
+                          cursor: 'pointer',
+                      }
+                    : {},
+                strokeWidth: line.width ? (line.width / 100) * zoom : 0,
+                onMouseDown: onClick
+                    ? (evt: React.MouseEvent) => evt.preventDefault()
+                    : undefined,
+            };
+            if (path.segments.length === 1 && path.segments[0].type === 'Arc') {
+                let r = dist(path.segments[0].center, path.segments[0].to);
+                if (line.inset) {
+                    r -= line.inset / 100;
+                }
+                // it's full circle
+                return (
+                    <circle
+                        cx={path.segments[0].center.x * zoom}
+                        cy={path.segments[0].center.y * zoom}
+                        r={r * zoom}
+                        {...common}
+                    />
+                );
+            }
+
+            let raw = d;
+            let newPath = path;
+            if (line.inset) {
+                const inset = insetPath(path, line.inset / 100);
+                if (!inset) {
+                    return null;
+                }
+                newPath = inset;
+                raw = calcPathD(newPath, zoom);
+            }
+
+            return <path d={raw} data-id={path.id} {...common} />;
         });
         return (
             <>

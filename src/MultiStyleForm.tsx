@@ -61,11 +61,17 @@ export const MultiStyleForm = ({
         });
     });
     return (
-        <div>
+        <div css={{ border: '1px solid magenta', padding: 8 }}>
             Change {styles.length} styles.
             <div>Fills</div>
             {fills.map((fill, i) => (
-                <div css={{ display: 'flex', alignItems: 'center' }}>
+                <div
+                    css={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        flexWrap: 'wrap',
+                    }}
+                >
                     <MultiColor
                         color={fill.color}
                         onChange={(color) => {
@@ -128,6 +134,13 @@ export const MultiStyleForm = ({
                             }}
                         />
                     </div>
+                    <button
+                        onClick={() => {
+                            onChange(removeFill(styles, i));
+                        }}
+                    >
+                        Delete
+                    </button>
                 </div>
             ))}
             <button
@@ -164,7 +177,13 @@ export const MultiStyleForm = ({
             </button>
             <div>Lines</div>
             {lines.map((line, i) => (
-                <div css={{ display: 'flex', alignItems: 'center' }}>
+                <div
+                    css={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        flexWrap: 'wrap',
+                    }}
+                >
                     <MultiColor
                         color={line.color}
                         onChange={(color) => {
@@ -186,6 +205,23 @@ export const MultiStyleForm = ({
                                         i,
                                         width ?? undefined,
                                         'width',
+                                    ),
+                                );
+                            }}
+                        />
+                    </div>
+                    <div style={{ flexBasis: 16 }} />
+                    <div key={`inset-${i}`}>
+                        inset:
+                        <MultiNumber
+                            value={line.inset}
+                            onChange={(inset) => {
+                                onChange(
+                                    updateLine(
+                                        styles,
+                                        i,
+                                        inset ?? undefined,
+                                        'inset',
                                     ),
                                 );
                             }}
@@ -423,6 +459,17 @@ export function updateLine(
             lines[i] = { ...lines[i], [key]: value };
         }
         return { ...style, lines };
+    });
+}
+
+export function removeFill(styles: Style[], i: number): (Style | null)[] {
+    return styles.map((style) => {
+        if (style.fills[i] == null) {
+            return null;
+        }
+        const fills = style.fills.slice();
+        fills[i] = null;
+        return { ...style, fills };
     });
 }
 

@@ -586,7 +586,12 @@ export function sortedVisiblePaths(
             // and we want to know when one of the clip edges
             // intersects with one of the path edges.
             // is that happen often?
-            return clipPath(path, clip, clipPrims);
+            return clipPath(
+                path,
+                clip,
+                clipPrims,
+                path.group ? pathGroups[path.group].clipMode : undefined,
+            );
         })
         .filter(Boolean) as Array<Path>;
 }

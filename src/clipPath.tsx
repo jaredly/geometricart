@@ -14,7 +14,7 @@ import {
 } from './intersect';
 import { coordsEqual } from './pathsAreIdentical';
 import { simplifyPath } from './RenderPath';
-import { ArcSegment, Coord, Line, Path, Segment } from './types';
+import { ArcSegment, Coord, Line, Path, PathGroup, Segment } from './types';
 
 type Hit = { i: number; j: number; coord: Coord };
 
@@ -341,7 +341,7 @@ export const clipTwo = (
     path: Clippable,
     idx: number,
     debug?: boolean,
-) => {
+): { result: Array<Segment>; clipSide: Array<boolean> } => {
     // ok, we start off on the path.
 
     const first =
@@ -349,34 +349,35 @@ export const clipTwo = (
             ? path.segments[path.segments.length - 1].to
             : path.segments[idx - 1].to;
 
-    // ifff the starting segment is also an intersection ... we have some explaining to do
-    while (
-        idx < path.hits.length &&
-        path.hits[idx].length > 0 &&
-        coordsEqual(path.hits[idx][0].coord, prevPos(path.segments, idx)) &&
-        isGoingInside(
-            path,
-            { segment: idx, intersection: 0 },
-            clip,
-            findHit(clip, path.hits[idx][0], path.hits[idx][0].j),
-        )
-    ) {
-        const got = findInsideStart(path.segments, clip.primitives, idx + 1);
-        if (got == null) {
-            return null;
-        }
-        idx = got;
-        // idx++;
-    }
-    // Nope, can't do it folks. No idx works.
-    if (idx >= path.hits.length) {
-        console.warn('starting thing is an intersection, cant do it');
-        return null;
-    }
+    // // ifff the starting segment is also an intersection ... we have some explaining to do
+    // while (
+    //     idx < path.hits.length &&
+    //     path.hits[idx].length > 0 &&
+    //     coordsEqual(path.hits[idx][0].coord, prevPos(path.segments, idx)) &&
+    //     isGoingInside(
+    //         path,
+    //         { segment: idx, intersection: 0 },
+    //         clip,
+    //         findHit(clip, path.hits[idx][0], path.hits[idx][0].j),
+    //     )
+    // ) {
+    //     const got = findInsideStart(path.segments, clip.primitives, idx + 1);
+    //     if (got == null) {
+    //         return null;
+    //     }
+    //     idx = got;
+    //     // idx++;
+    // }
+    // // Nope, can't do it folks. No idx works.
+    // if (idx >= path.hits.length) {
+    //     console.warn('starting thing is an intersection, cant do it');
+    //     return null;
+    // }
 
     // while (!isGoingInside)
 
     const result: Array<Segment> = [];
+    const clipSide: Array<boolean> = [];
 
     const seen: { [key: string]: true } = {};
 
@@ -401,6 +402,7 @@ export const clipTwo = (
             // TODO: Change to `false` and see what renders weird.
             return true;
         }
+        clipSide.push(state.clipSide);
         seen[key] = true;
         result.push(segment);
         return true;
@@ -483,18 +485,26 @@ export const clipTwo = (
         console.log(`RESULT`);
         console.log(result);
     }
-    return result;
+    return { result, clipSide };
 };
 
 export const clipPath = (
     path: Path,
     clip: Array<Segment>,
     clipPrimitives: Array<Primitive>,
+    groupMode?: PathGroup['clipMode'],
 ): Path | null => {
     if (path.debug) {
         console.log(`CLIPPING`);
         console.log(path);
     }
+
+    const clipMode = path.clipMode ?? groupMode;
+
+    if (clipMode === 'none') {
+        return path;
+    }
+
     if (!isClockwise(path.segments)) {
         console.warn(`NOT CLOCKWISE???`);
         path.segments = ensureClockwise(path.segments);
@@ -645,7 +655,7 @@ export const clipPath = (
         return sortHitsForPrimitive(hits, clipPrimitives[j], clip[j]);
     });
 
-    const result = clipTwo(
+    const { result, clipSide } = clipTwo(
         { primitives: clipPrimitives, segments: clip, hits: clipPerspective },
         {
             segments: path.segments,
@@ -655,6 +665,10 @@ export const clipPath = (
         idx,
         path.debug,
     );
+
+    if (clipSide.some(Boolean) && clipMode === 'remove') {
+        return null;
+    }
 
     if (path.debug) {
         console.log(

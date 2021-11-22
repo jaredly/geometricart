@@ -195,6 +195,9 @@ export type Path = {
     ordering: number;
     style: Style;
     group: Id | null;
+    // 'remove' means, if it intersects with the clip, just remove the path
+    // 'none' means don't clip it.
+    clipMode?: 'none' | 'remove' | 'normal';
     origin: Coord;
     segments: Array<Segment>;
     hidden: boolean;
@@ -216,6 +219,7 @@ export type PathGroup = {
     style: Style;
     group: Id | null;
     hide?: boolean;
+    clipMode?: 'none' | 'remove' | 'normal';
     ordering?: number;
 };
 

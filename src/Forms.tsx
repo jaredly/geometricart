@@ -271,7 +271,7 @@ export const PathGroupForm = ({
     onDelete: () => void;
 }) => {
     // const ref = React.useRef(null as null | HTMLDivElement);
-    const [expanded, setExpanded] = React.useState(false);
+    const [expanded, setExpanded] = React.useState(true);
     // React.useEffect(() => {
     //     if (selected) {
     //         ref.current?.scrollIntoView(false);
@@ -288,7 +288,11 @@ export const PathGroupForm = ({
             onMouseOver={onMouseOver}
         >
             <div
-                css={{ display: 'flex', alignItems: 'center' }}
+                css={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    flexWrap: 'wrap',
+                }}
                 onClick={() => setExpanded(!expanded)}
             >
                 {expanded ? '🔻' : '▶️'}
@@ -312,6 +316,28 @@ export const PathGroupForm = ({
                 >
                     Delete
                 </button>
+            </div>
+            <div>
+                Clip Mode:
+                {['none', 'remove', 'normal'].map((name) => (
+                    <button
+                        key={name}
+                        onClick={() => {
+                            if (group.clipMode === name) {
+                                return onChange({
+                                    ...group,
+                                    clipMode: undefined,
+                                });
+                            }
+                            return onChange({
+                                ...group,
+                                clipMode: name as PathGroup['clipMode'],
+                            });
+                        }}
+                    >
+                        {name}
+                    </button>
+                ))}
             </div>
             {expanded ? (
                 <StyleForm
@@ -361,7 +387,7 @@ export const PathForm = ({
     onChange: (path: Path) => unknown;
     onDelete: () => void;
 }) => {
-    const [expanded, setExpanded] = React.useState(false);
+    const [expanded, setExpanded] = React.useState(true);
     const ref = React.useRef(null as null | HTMLDivElement);
     React.useEffect(() => {
         // console.log(ref.current, 'scroll apth');
@@ -383,6 +409,7 @@ export const PathForm = ({
                 css={{
                     display: 'flex',
                     flexDirection: 'row',
+                    flexWrap: 'wrap',
                     alignItems: 'center',
                 }}
                 onClick={() => setExpanded(!expanded)}
@@ -413,6 +440,28 @@ export const PathForm = ({
                     {path.group ? `Group: ${path.group}` : `No group...`}
                 </>
             ) : null}
+            <div>
+                Clip Mode:
+                {['none', 'remove', 'normal'].map((name) => (
+                    <button
+                        key={name}
+                        onClick={() => {
+                            if (path.clipMode === name) {
+                                return onChange({
+                                    ...path,
+                                    clipMode: undefined,
+                                });
+                            }
+                            return onChange({
+                                ...path,
+                                clipMode: name as Path['clipMode'],
+                            });
+                        }}
+                    >
+                        {name}
+                    </button>
+                ))}
+            </div>
         </div>
     );
 };

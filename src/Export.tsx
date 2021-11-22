@@ -104,7 +104,24 @@ export const Export = ({
                         }, 'image/png');
                     }}
                 >
-                    Export
+                    Export PNG
+                </button>
+                <button
+                    css={{ marginRight: 16 }}
+                    onClick={async () => {
+                        let text = canvasRef.current!.outerHTML;
+                        if (embed) {
+                            text += `\n\n${PREFIX}${JSON.stringify(
+                                state,
+                            )}${SUFFIX}`;
+                        }
+                        const blob = new Blob([text], {
+                            type: 'image/svg+xml',
+                        });
+                        setUrl(URL.createObjectURL(blob));
+                    }}
+                >
+                    Export SVG
                 </button>
                 Size (for .png):{' '}
                 <input
