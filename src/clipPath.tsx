@@ -450,36 +450,26 @@ export const clipTwo = (
 
             const last = result.length ? result[result.length - 1].to : first;
 
+            // if this is the starting position, ignore it
+            if (!coordsEqual(last, hit.coord)) {
+                if (
+                    !addSegment({
+                        ...path.segments[state.loc.segment],
+                        to: hit.coord,
+                    })
+                ) {
+                    break;
+                }
+            }
+
             // Is clip going into path?
             if (isGoingInside(path, pathLoc, clip, clipLoc, debug)) {
-                if (!coordsEqual(last, hit.coord)) {
-                    if (
-                        !addSegment({
-                            ...path.segments[state.loc.segment],
-                            to: hit.coord,
-                        })
-                    ) {
-                        break;
-                    }
-                }
                 if (debug) {
                     console.log('switch to clip', hit, clipLoc, hit.coord);
                 }
                 // clip is going into path, we need to switch
                 state = { clipSide: true, loc: clipLoc };
             } else {
-                // if this is the starting position, ignore it
-                if (!coordsEqual(last, hit.coord)) {
-                    // must have been tangent, nothing to see here
-                    if (
-                        !addSegment({
-                            ...path.segments[state.loc.segment],
-                            to: hit.coord,
-                        })
-                    ) {
-                        break;
-                    }
-                }
                 if (debug) {
                     console.log(
                         `tangent I guess`,
@@ -516,8 +506,9 @@ export const clipTwo = (
 
             const last = result.length ? result[result.length - 1].to : first;
 
-            // Is path going into clip?
-            if (isGoingInside(clip, clipLoc, path, pathLoc)) {
+            // if this is the starting position, ignore it
+            if (!coordsEqual(last, hit.coord)) {
+                // must have been tangent, nothing to see here
                 if (
                     !addSegment({
                         ...clip.segments[state.loc.segment],
@@ -526,24 +517,16 @@ export const clipTwo = (
                 ) {
                     break;
                 }
+            }
+
+            // Is path going into clip?
+            if (isGoingInside(clip, clipLoc, path, pathLoc)) {
                 if (debug) {
                     console.log(`switch to path`, hit, pathLoc);
                 }
                 // path is going into clip, we need to switch
                 state = { clipSide: false, loc: pathLoc };
             } else {
-                // if this is the starting position, ignore it
-                if (!coordsEqual(last, hit.coord)) {
-                    // must have been tangent, nothing to see here
-                    if (
-                        !addSegment({
-                            ...clip.segments[state.loc.segment],
-                            to: hit.coord,
-                        })
-                    ) {
-                        break;
-                    }
-                }
                 if (debug) {
                     console.log('tangent I guess', state.loc, clipLoc, hit);
                 }
