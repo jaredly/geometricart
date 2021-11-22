@@ -6,10 +6,38 @@ Ok, so one thing: we got issues when we have a starting point in the middle of a
 - [x] also, clip + inset is /not/ working! Maybe the resulting path is abnormal somehow? needs to be simplified?
 	- yay fixed
 
+- [ ] um lots more bugs thoughhhh
+
 
 ## [ ] Better colors!
 
+- Ok, so the issue is: We're following the clip to the end, for some reason.
+  and then coming back.
+
 - pleeease give me a color picker, really anything I need it.
+
+also, can i autogenerate palette colors?
+like
+hmm I don't super want to have to implement kmeans https://twitter.com/GalaxyKate/status/1462258231963791361/photo/3
+
+so first, filter out anything with saturation < 0.5
+and anything too light or too dark
+
+then, we just have hues
+
+so first, I'll normalize all saturations
+and then bin hues
+
+so, kmeans is interesting. but maybe not the ticket? idk.
+
+ok, have a button that is "pick the top x colors for me"
+
+
+ok, also, I want to be able to edit a palette with the image in front of me? Like select a whole palette from an image.
+
+
+
+
 
 
 ## [x] CLIP BUGS

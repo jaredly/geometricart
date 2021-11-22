@@ -4,16 +4,7 @@ import { react } from '@babel/types';
 import { jsx } from '@emotion/react';
 import * as React from 'react';
 import { transparent } from './Icons';
-import {
-    Circle,
-    Guide,
-    Line,
-    Mirror,
-    Path,
-    PathGroup,
-    Style,
-    View,
-} from './types';
+import { Circle, Guide, Line, Path, PathGroup, Style, View } from './types';
 
 export const Text = ({
     value,
@@ -642,115 +633,6 @@ export const ViewForm = ({
                     Clear clip
                 </button>
             ) : null} */}
-        </div>
-    );
-};
-
-export const MirrorForm = ({
-    mirror,
-    onMouseOver,
-    onMouseOut,
-    onChange,
-    onSelect,
-    isActive,
-    selected,
-    setSelected,
-    onDuplicate,
-    onChild,
-}: {
-    mirror: Mirror;
-    isActive: boolean;
-    selected: boolean;
-    onMouseOver: () => void;
-    onMouseOut: () => void;
-    setSelected: (sel: boolean) => void;
-    onChange: (m: Mirror) => unknown;
-    onSelect: () => void;
-    onDuplicate: () => void;
-    onChild: () => void;
-}) => {
-    return (
-        <div
-            css={{
-                padding: 8,
-            }}
-            style={selected ? { border: '1px solid white' } : {}}
-            onClick={(evt) => {
-                evt.stopPropagation();
-                setSelected(true);
-            }}
-            onMouseOver={onMouseOver}
-            onMouseOut={onMouseOut}
-        >
-            <div
-                css={{
-                    cursor: 'pointer',
-                    background: isActive
-                        ? 'rgba(100,100,100,0.4)'
-                        : 'rgba(100,100,100,0.1)',
-                    ':hover': {
-                        background: 'rgba(100,100,100,0.2)',
-                    },
-                }}
-                onClick={onSelect}
-            >
-                Mirror {isActive ? '(active)' : null}
-            </div>
-            <Toggle
-                label="Mirror?"
-                value={mirror.reflect}
-                onChange={(reflect) => onChange({ ...mirror, reflect })}
-            />
-            <div>
-                <Label text="rotations" />
-                <Int
-                    value={mirror.rotational.length + 1}
-                    onChange={(number) => {
-                        if (number == null || number < 1) {
-                            return;
-                        }
-                        number -= 1;
-                        let rotational = mirror.rotational;
-                        if (number < mirror.rotational.length) {
-                            rotational = rotational.slice(0, number);
-                        } else {
-                            rotational = rotational.slice();
-                            for (let i = rotational.length; i < number; i++) {
-                                rotational.push(true);
-                            }
-                        }
-                        onChange({ ...mirror, rotational });
-                    }}
-                />
-            </div>
-            <div css={{ display: 'flex' }}>
-                {mirror.rotational.map((enabled, i) => (
-                    <Toggle
-                        key={i}
-                        label={'' + i}
-                        value={enabled}
-                        onChange={(enabled) => {
-                            const rotational = mirror.rotational.slice();
-                            rotational[i] = enabled;
-                            onChange({ ...mirror, rotational });
-                        }}
-                    />
-                ))}
-            </div>
-            <button
-                onClick={() => {
-                    onDuplicate();
-                }}
-            >
-                Duplicate
-            </button>
-            <button
-                onClick={() => {
-                    onChild();
-                }}
-            >
-                Create child mirror
-            </button>
         </div>
     );
 };

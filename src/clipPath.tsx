@@ -13,6 +13,7 @@ import {
     withinLimit,
 } from './intersect';
 import { coordsEqual } from './pathsAreIdentical';
+import { simplifyPath } from './RenderPath';
 import { ArcSegment, Coord, Line, Path, Segment } from './types';
 
 type Hit = { i: number; j: number; coord: Coord };
@@ -396,9 +397,11 @@ export const clipTwo = (
         const key = coordKey(segment.to);
         if (seen[key]) {
             console.warn(new Error(`seen already! ${key}`));
+            return false;
         }
         seen[key] = true;
         result.push(segment);
+        return true;
     };
 
     let x = 0;
@@ -421,7 +424,9 @@ export const clipTwo = (
         if (!state.clipSide) {
             const next = state.loc.intersection + 1;
             if (next >= path.hits[state.loc.segment].length) {
-                addSegment(path.segments[state.loc.segment]);
+                if (!addSegment(path.segments[state.loc.segment])) {
+                    break;
+                }
                 if (debug) {
                     console.log(
                         `reached the end with no more hits`,
@@ -447,10 +452,14 @@ export const clipTwo = (
             // Is clip going into path?
             if (isGoingInside(path, pathLoc, clip, clipLoc, debug)) {
                 if (!coordsEqual(last, hit.coord)) {
-                    addSegment({
-                        ...path.segments[state.loc.segment],
-                        to: hit.coord,
-                    });
+                    if (
+                        !addSegment({
+                            ...path.segments[state.loc.segment],
+                            to: hit.coord,
+                        })
+                    ) {
+                        break;
+                    }
                 }
                 if (debug) {
                     console.log('switch to clip', hit, clipLoc, hit.coord);
@@ -461,10 +470,14 @@ export const clipTwo = (
                 // if this is the starting position, ignore it
                 if (!coordsEqual(last, hit.coord)) {
                     // must have been tangent, nothing to see here
-                    addSegment({
-                        ...path.segments[state.loc.segment],
-                        to: hit.coord,
-                    });
+                    if (
+                        !addSegment({
+                            ...path.segments[state.loc.segment],
+                            to: hit.coord,
+                        })
+                    ) {
+                        break;
+                    }
                 }
                 if (debug) {
                     console.log(
@@ -481,7 +494,9 @@ export const clipTwo = (
         } else {
             const next = state.loc.intersection + 1;
             if (next >= clip.hits[state.loc.segment].length) {
-                addSegment(clip.segments[state.loc.segment]);
+                if (!addSegment(clip.segments[state.loc.segment])) {
+                    break;
+                }
                 // move on to the next
                 state.loc = {
                     segment: (state.loc.segment + 1) % clip.hits.length,
@@ -498,20 +513,36 @@ export const clipTwo = (
             const pathLoc = findHit(path, hit, hit.i);
             const clipLoc = { segment: state.loc.segment, intersection: next };
 
+            const last = result.length ? result[result.length - 1].to : first;
+
             // Is path going into clip?
             if (isGoingInside(clip, clipLoc, path, pathLoc)) {
-                addSegment({
-                    ...clip.segments[state.loc.segment],
-                    to: hit.coord,
-                });
+                if (
+                    !addSegment({
+                        ...clip.segments[state.loc.segment],
+                        to: hit.coord,
+                    })
+                ) {
+                    break;
+                }
                 if (debug) {
                     console.log(`switch to path`, hit, pathLoc);
                 }
                 // path is going into clip, we need to switch
                 state = { clipSide: false, loc: pathLoc };
             } else {
-                // must have been tangent, nothing to see here
-                addSegment(clip.segments[state.loc.segment]);
+                // if this is the starting position, ignore it
+                if (!coordsEqual(last, hit.coord)) {
+                    // must have been tangent, nothing to see here
+                    if (
+                        !addSegment({
+                            ...clip.segments[state.loc.segment],
+                            to: hit.coord,
+                        })
+                    ) {
+                        break;
+                    }
+                }
                 if (debug) {
                     console.log('tangent I guess', state.loc, clipLoc, hit);
                 }
@@ -540,6 +571,7 @@ export const clipPath = (
         console.warn(`NOT CLOCKWISE???`);
         path.segments = ensureClockwise(path.segments);
     }
+    path.segments = simplifyPath(path.segments);
     // start somewhere.
     // if it's inside the clip, a ray will intersect an odd number of times. right?
     // OHHHK ALSO we need to do the edge test.
@@ -709,7 +741,7 @@ export const clipPath = (
         return null;
     }
 
-    const filtered = [result[0]];
+    let filtered = [result[0]];
     for (let i = 1; i < result.length; i++) {
         if (coordsEqual(result[i].to, filtered[filtered.length - 1].to)) {
             continue;
@@ -720,6 +752,8 @@ export const clipPath = (
     if (!isClockwise(filtered)) {
         console.log('NOT CLOCKWISE');
     }
+
+    filtered = simplifyPath(ensureClockwise(filtered));
 
     return {
         ...path,
