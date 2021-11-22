@@ -11,6 +11,7 @@ import {
 import { useDropTarget } from './useDropTarget';
 import { createPortal } from 'react-dom';
 import { hslToRgb, rgbToHsl } from './colorConvert';
+import { SwatchesPicker } from 'react-color';
 
 export const averageAt = (data: ImageData, pos: Coord): Rgb => {
     const colors = [
@@ -459,8 +460,9 @@ export const ColorEditor = ({
     onChoose: () => void;
 }) => {
     const [text, setText] = React.useState(null as null | string);
+    const [visual, showVisual] = React.useState(false);
     return (
-        <div css={{ display: 'flex' }}>
+        <div css={{ display: 'flex', position: 'relative' }}>
             <div
                 style={{
                     background: (text ?? color).startsWith('http')
@@ -492,6 +494,31 @@ export const ColorEditor = ({
                 }}
             />
             <button onClick={() => onChoose()}>Choose from attachments</button>
+            <button
+                onClick={() => {
+                    showVisual(!visual);
+                }}
+            >
+                Visual picker
+            </button>
+            {visual ? (
+                <div
+                    css={{
+                        position: 'absolute',
+                        zIndex: 10,
+                        top: '100%',
+                        marginTop: 16,
+                    }}
+                >
+                    <SwatchesPicker
+                        color={text ?? undefined}
+                        onChange={(change) => {
+                            // setText(change.hex);
+                            onChange(change.hex);
+                        }}
+                    />
+                </div>
+            ) : null}
         </div>
     );
 };

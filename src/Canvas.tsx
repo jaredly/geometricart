@@ -257,7 +257,7 @@ export const Canvas = ({
                     )}
                 </defs>
                 <g transform={`translate(${x} ${y})`}>
-                    {view.background ? (
+                    {view.background != null ? (
                         <rect
                             width={width}
                             height={height}
