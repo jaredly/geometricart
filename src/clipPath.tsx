@@ -392,12 +392,13 @@ export const clipTwo = (
 
     const addSegment = (segment: Segment) => {
         if (debug) {
-            console.log('ADD', segment);
+            console.log('✅ ADD', segment);
         }
         const key = coordKey(segment.to);
         if (seen[key]) {
             console.warn(new Error(`seen already! ${key}`));
-            return false;
+            // TODO: Change to `false` and see what renders weird.
+            return true;
         }
         seen[key] = true;
         result.push(segment);
@@ -863,11 +864,13 @@ export const sortHitsForPrimitive = <T extends { coord: Coord }>(
         return hits
             .map((coord) => ({
                 coord,
-                dist: angleBetween(
-                    t1,
-                    angleTo(circle.center, coord.coord),
-                    false,
-                ),
+                dist: coordsEqual(segment.to, coord.coord)
+                    ? Math.PI * 2
+                    : angleBetween(
+                          t1,
+                          angleTo(circle.center, coord.coord),
+                          false,
+                      ),
             }))
             .sort((a, b) => b.dist - a.dist)
             .map((item) => item.coord)
