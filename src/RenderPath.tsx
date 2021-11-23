@@ -245,7 +245,12 @@ export const RenderPath = React.memo(
             if (!fill) {
                 return null;
             }
-            const color = paletteColor(palette, fill.color, fill.lighten);
+            let lighten = fill.lighten;
+            if (fill.colorVariation) {
+                const off = (Math.random() * 2 - 1.0) * fill.colorVariation;
+                lighten = lighten != null ? lighten + off : off;
+            }
+            const color = paletteColor(palette, fill.color, lighten);
             if (color === 'transparent') {
                 return null;
             }

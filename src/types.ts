@@ -169,6 +169,7 @@ export type Fill = {
     inset?: number;
     opacity?: number;
     color?: string | number;
+    colorVariation?: number;
     lighten?: number; // negatives for darken. units somewhat arbitrary.
 };
 

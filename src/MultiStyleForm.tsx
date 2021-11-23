@@ -36,7 +36,13 @@ export const MultiStyleForm = ({
         0,
     );
     for (let i = 0; i < maxFills; i++) {
-        fills.push({ color: [], inset: [], opacity: [], lighten: [] });
+        fills.push({
+            color: [],
+            inset: [],
+            opacity: [],
+            lighten: [],
+            colorVariation: [],
+        });
     }
     for (let i = 0; i < maxLines; i++) {
         lines.push({
@@ -52,6 +58,7 @@ export const MultiStyleForm = ({
             addIfNew(fills[i].color, fill?.color ?? null);
             addIfNew(fills[i].inset, fill?.inset ?? null);
             addIfNew(fills[i].opacity, fill?.opacity ?? null);
+            addIfNew(fills[i].colorVariation, fill?.colorVariation ?? null);
             addIfNew(fills[i].lighten, fill?.lighten ?? null);
         });
         style.lines.forEach((line, i) => {
@@ -81,6 +88,23 @@ export const MultiStyleForm = ({
                         palette={palette}
                         key={i}
                     />
+                    <div style={{ flexBasis: 16 }} />
+                    <div key={`variation-${i}`}>
+                        colorVariation:
+                        <MultiNumber
+                            value={fill.colorVariation}
+                            onChange={(colorVariation) => {
+                                onChange(
+                                    updateFill(
+                                        styles,
+                                        i,
+                                        colorVariation ?? undefined,
+                                        'colorVariation',
+                                    ),
+                                );
+                            }}
+                        />
+                    </div>
                     <div style={{ flexBasis: 16 }} />
                     <div key={`opacity-${i}`}>
                         opacity:
@@ -293,6 +317,7 @@ export type MultiLine = {
 export type MultiFill = {
     color: Array<string | number | null>;
     opacity: Array<number | null>;
+    colorVariation: Array<number | null>;
     inset: Array<number | null>;
     lighten: Array<number | null>;
 };
@@ -358,7 +383,9 @@ export const MultiNumber = ({
     const [text, setText] = React.useState(null as null | string);
     return (
         <input
-            value={text ?? (value.length === 1 ? value[0] ?? '' : 'mixed')}
+            value={
+                text ?? (value.length === 1 ? value[0] ?? '' : value.join(','))
+            }
             onChange={(evt) => setText(evt.target.value)}
             css={{
                 width: 50,
