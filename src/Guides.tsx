@@ -560,20 +560,18 @@ export const Guides = ({
                 />
             ) : null}
             {clip
-                ? pathToPrimitives(clip[clip.length - 1].to, clip).map(
-                      (prim, i) => (
-                          <RenderPrimitive
-                              isImplied
-                              prim={prim}
-                              zoom={view.zoom}
-                              width={width}
-                              height={height}
-                              color={'magenta'}
-                              strokeWidth={4}
-                              key={i}
-                          />
-                      ),
-                  )
+                ? pathToPrimitives(clip).map((prim, i) => (
+                      <RenderPrimitive
+                          isImplied
+                          prim={prim}
+                          zoom={view.zoom}
+                          width={width}
+                          height={height}
+                          color={'magenta'}
+                          strokeWidth={4}
+                          key={i}
+                      />
+                  ))
                 : null}
             {pathOrigin ? (
                 <DrawPath

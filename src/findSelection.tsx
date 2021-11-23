@@ -65,7 +65,7 @@ export const intersectsRect = (path: Path, rect: Rect, debug?: boolean) => {
         ),
     ];
 
-    const pathAsPrimitives = pathToPrimitives(path.origin, path.segments);
+    const pathAsPrimitives = pathToPrimitives(path.segments);
 
     for (let line of rectLines) {
         for (let seg of pathAsPrimitives) {
@@ -102,9 +102,10 @@ export const pointInRect = (pos: Coord, rect: Rect) =>
     rect.y1 <= pos.y &&
     pos.y <= rect.y2;
 
-export function pathToPrimitives(origin: Coord, segments: Array<Segment>) {
+export function pathToPrimitives(segments: Array<Segment>) {
     return segments.map((seg, i): Primitive => {
-        const prev = i === 0 ? origin : segments[i - 1].to;
+        const prev =
+            i === 0 ? segments[segments.length - 1].to : segments[i - 1].to;
         return segmentToPrimitive(prev, seg);
     });
 }

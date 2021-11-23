@@ -4,9 +4,10 @@ import { hslToRgb, rgbToHsl } from './colorConvert';
 import { pathToPrimitives } from './findSelection';
 import { Primitive } from './intersect';
 import { Rgb } from './PalettesForm';
+import { transformSegment } from './points';
 import { combinedPathStyles, insetPath, paletteColor } from './RenderPath';
 import { shaderFunctions } from './shaderFunctions';
-import { Coord, Fill, Path, State } from './types';
+import { Coord, Fill, Path, State, StyleLine } from './types';
 
 const namedColors: { [key: string]: Rgb } = {
     white: { r: 1, g: 1, b: 1 },
@@ -113,7 +114,7 @@ vec3 signedDistance(vec2 p) {
 	// ok, so this quad requires it to be convex I believe.
 	// but I can probably slice my polygons into convex polygons...
 
-	${makePathFunctions(paths, state, palette, pathToExpensive, maxPathLength)}
+	${makePathFunctions(paths, state, palette, maxPathLength)}
 
 	return ${vec3(backgroundColor)};
 }
@@ -150,14 +151,6 @@ export function makePathFunctions(
     paths: Path[],
     state: State,
     palette: string[],
-    pathToSdf: (
-        path: Path,
-        // worldPos: (pos: Coord) => Coord,
-        zoom: number,
-        color: Rgb,
-        fill: Fill,
-        maxSegs: number,
-    ) => string,
     maxSegs: number,
 ) {
     // const worldPos = (pos: Coord) =>
@@ -188,6 +181,7 @@ export function makePathFunctions(
                 if (!style.fills.length) {
                     return '';
                 }
+                const stroke = style.lines[0];
                 let res: Array<string> = [];
                 for (let i = style.fills.length - 1; i >= 0; i--) {
                     const fill = style.fills[i];
@@ -216,7 +210,12 @@ export function makePathFunctions(
                             state.view.zoom,
                             color,
                             fill,
-                            maxSegs,
+                            stroke ? stroke.width ?? 0 : 0,
+                            stroke
+                                ? parseColor(
+                                      paletteColor(palette, stroke.color),
+                                  )
+                                : null,
                         ),
                     );
                 }
@@ -259,6 +258,23 @@ export const primToGlsl = (prim: Primitive) =>
         prim.type === 'line' ? { x: prim.m, y: prim.b } : prim.center,
     )}, ${prim.type === 'circle' ? prim.radius.toFixed(2) : '0.0'})`;
 
+// export const alignPrimitives = (prims: Array<Primitive>) => {
+// 	prims.forEach((prim, i) => {
+// 		const prev = i === 0 ? prims[prims.length - 1] : prims[i - 1]
+// 		if (prev.type === 'line' && prim.type === 'line') {
+// 			if (prev.m === Infinity) {
+// 				if (prim.m > 0) {
+// 					prim.limit[0] = prev.limit[0]
+// 				} else {
+// 					prim.limit[1] = prev.limit[0]
+// 				}
+// 			} else {
+// 				if (prim.m > 0 && prev.limit > 0)
+// 			}
+// 		}
+// 	})
+// }
+
 function pathToExpensive(
     path: Path,
     // worldPos: (pos: Coord) => Coord,
@@ -267,9 +283,10 @@ function pathToExpensive(
     fill: Fill,
     maxSegs: number,
 ): string {
-    const prims = pathToPrimitives(path.origin, path.segments).map((prim) =>
-        transformPrim(prim, zoom),
+    const prims = pathToPrimitives(
+        path.segments.map((seg) => ({ ...seg, to: scale(seg.to, zoom) })),
     );
+    // alignPrimitives(prims)
 
     return `{ // path ${path.id}
 		Segment[${maxSegs}] segments;
@@ -278,19 +295,20 @@ function pathToExpensive(
                 return `segments[${i}] = ${primToGlsl(prim)};`;
             })
             .join('\n    ')}
-		bool hits = isInsidePath(p, segments, ${prims.length});
-		if (hits) {
+		bool hits = isInsidePath(p, segments, ${prims.length}, false);
+		// bool hits2 = isInsidePath(p, segments, ${prims.length}, true);
+		if (hits ) {
 			return ${vec3(lightDark(color, fill.lighten))};
 		}
 	}`;
 }
 
-function pathToSdf(
+function strokeToSdf(
     path: Path,
     // worldPos: (pos: Coord) => { x: number; y: number },
     zoom: number,
     color: Rgb,
-    fill: Fill,
+    stroke: StyleLine,
 ): string {
     const points = pathToPoints(path.segments);
     const last = points[points.length - 1];
@@ -326,8 +344,68 @@ function pathToSdf(
         })
         .join('\n    ')}
     
-    float d = sqrt(res.x)*sign(res.w);
-	if (d < 0.0) {
+    // float d = sqrt(res.x)*sign(res.w);
+	if (abs(res.x) < ${(stroke.width ?? 2.0).toFixed(1)}) {
+				return ${vec3(color)};
+
+	}
+
+
+				}`;
+}
+
+function pathToSdf(
+    path: Path,
+    // worldPos: (pos: Coord) => { x: number; y: number },
+    zoom: number,
+    color: Rgb,
+    fill: Fill,
+    strokeWidth?: number,
+    stroke?: Rgb | null,
+): string {
+    const points = pathToPoints(path.segments);
+    const last = points[points.length - 1];
+
+    return `{ // path ${path.id}
+	float gs = ${cross(
+        sub(scale(points[0], zoom), scale(last, zoom)),
+        sub(scale(points[1], zoom), scale(points[0], zoom)),
+    ).toFixed(3)};
+    vec4 res;
+
+	${points
+        .map((point, i) => {
+            const next = scale(
+                i === points.length - 1 ? points[0] : points[i + 1],
+                zoom,
+            );
+            const pos = vec2(scale(point, zoom));
+            return `{ // point ${i}
+    // vec2  e = ${vec2(next)}-${pos}, w = p-${pos};
+    vec2  e = ${vec2(sub(next, scale(point, zoom)))}, w = p-${pos};
+    vec2  q = w-e*clamp(dot(w,e)/dot(e,e),0.0,1.0);
+    float d = dot(q,q), s = gs*cro(w,e);
+    res = ${
+        i === 0
+            ? 'vec4(d,q,s)'
+            : `
+    vec4( (d<res.x) ? vec3(d,q) : res.xyz,
+                (s>res.w) ?      s    : res.w );
+	`
+    };
+		}`;
+        })
+        .join('\n    ')}
+    
+    // float d = sqrt(res.x)*sign(res.w);
+	${
+        strokeWidth && stroke
+            ? `if (abs(res.x) < ${strokeWidth.toFixed(1)}) {
+		return ${vec3(stroke)};
+	}`
+            : ''
+    }
+	if (res.w < 0.0) {
 				return ${vec3(lightDark(color, fill.lighten))};
 
 	}

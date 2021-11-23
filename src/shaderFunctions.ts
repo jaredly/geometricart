@@ -16,7 +16,7 @@ struct Intersections {
 	vec2[2] coords;
 };
 
-const float epsilon = 0.00001;
+const float epsilon = 0.0001;
 const float PI = ${Math.PI.toFixed(10)};
 
 bool closeEnough(float one, float two) {
@@ -24,7 +24,7 @@ bool closeEnough(float one, float two) {
 }
 
 bool isOnLine(vec2 coord, vec2 slopeIntercept) {
-	if (isinf(slopeIntercept.x)) {
+	if (slopeIntercept.x == Infinity) {
 		return closeEnough(slopeIntercept.y, coord.x);
 	}
 	return closeEnough(slopeIntercept.x * coord.x + slopeIntercept.y, coord.y);
@@ -35,7 +35,7 @@ bool withinLimit(vec2 limit, float value) {
 }
 
 bool isWithinLineLimit(vec2 coord, Segment seg) {
-	if (isinf(seg.centerSI.x)) {
+	if (seg.centerSI.x == Infinity) {
 		return withinLimit(seg.limit, coord.y);
 	}
 	return withinLimit(seg.limit, coord.x);
@@ -114,31 +114,35 @@ Intersections lineLine(Segment one, Segment two) {
 		return result;
 	}
 
-	if (isinf(one.centerSI.x)) {
-		float y = two.centerSI.x * one.centerSI.y + two.centerSI.y;
+	if (one.centerSI.x == Infinity) {
+		float x = one.centerSI.y;
+		float y = two.centerSI.x * x + two.centerSI.y;
 		if (!withinLimit(one.limit, y)) {
 			return result;
 		}
-		if (!withinLimit(two.limit, one.centerSI.y)) {
+		if (!withinLimit(two.limit, x)) {
 			return result;
 		}
 		result.count = 1;
-		result.coords[0] = vec2(one.centerSI.y, y);
+		result.coords[0] = vec2(x, y);
+		return result;
 	}
 
-	if (isinf(two.centerSI.x)) {
-		float y = one.centerSI.x * two.centerSI.y + one.centerSI.y;
+	if (two.centerSI.x == Infinity) {
+		float x = two.centerSI.y;
+		float y = one.centerSI.x * x + one.centerSI.y;
 		if (!withinLimit(two.limit, y)) {
 			return result;
 		}
-		if (!withinLimit(one.limit, two.centerSI.y)) {
+		if (!withinLimit(one.limit, x)) {
 			return result;
 		}
 		result.count = 1;
-		result.coords[0] = vec2(two.centerSI.y, y);
+		result.coords[0] = vec2(x, y);
+		return result;
 	}
 
-	if (closeEnough(one.centerSI.x, two.centerSI.y)) {
+	if (closeEnough(one.centerSI.x, two.centerSI.x)) {
 		return result;
 	}
 
@@ -223,8 +227,8 @@ bool atCircleBottomOrSomething(vec2 coord, Segment seg) {
 
 
 
-bool isInsidePath(vec2 coord, Segment[${numSegs}] segments, int count) {
-	Segment ray = Segment(false, vec2(coord.x, Infinity), vec2(0.0, coord.y), 0.0);
+bool isInsidePath(vec2 coord, Segment[${numSegs}] segments, int count, bool left) {
+	Segment ray = Segment(false, left ? vec2(-Infinity, coord.x) : vec2(coord.x, Infinity), vec2(0.0, coord.y), 0.0);
 
 	int allHits = 0;
 

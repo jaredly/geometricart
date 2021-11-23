@@ -610,7 +610,7 @@ export function sortedVisiblePaths(
         return visible.map((k) => paths[k]);
     }
 
-    const clipPrims = pathToPrimitives(clip[clip.length - 1].to, clip);
+    const clipPrims = pathToPrimitives(clip);
     console.log(clipPrims);
 
     // hmm how to communicate which segments are ... clipped?

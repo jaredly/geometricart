@@ -239,7 +239,7 @@ export const canvasRender = async (
         ctx.strokeStyle = 'magenta';
         ctx.setLineDash([5, 15]);
         ctx.lineWidth = 10;
-        pathToPrimitives(clip[clip.length - 1].to, clip).forEach((prim) => {
+        pathToPrimitives(clip).forEach((prim) => {
             renderPrimitive(ctx, prim, zoom, sourceHeight, sourceWidth);
         });
     }
