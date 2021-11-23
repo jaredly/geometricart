@@ -18,6 +18,7 @@
         "kmeans-js": "^0.1.2",
         "localforage": "^1.9.0",
         "png-metadata": "https://github.com/hometlt/png-metadata",
+        "prando": "^6.0.1",
         "react": "^17.0.1",
         "react-color": "^2.19.3",
         "react-colorful": "^5.2.2",

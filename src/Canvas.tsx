@@ -1,6 +1,7 @@
 /* @jsx jsx */
 /* @jsxFrag React.Fragment */
 import { jsx } from '@emotion/react';
+import Prando from 'prando';
 import React from 'react';
 import { PendingMirror, useCurrent } from './App';
 import { ensureClockwise } from './CanvasRender';
@@ -219,6 +220,8 @@ export const Canvas = ({
             ? paletteColor(state.palettes[state.activePalette], view.background)
             : null;
 
+    const rand = new Prando('ok');
+
     return (
         <div
             css={{
@@ -315,6 +318,7 @@ export const Canvas = ({
                             key={path.id}
                             origPath={state.paths[path.id]}
                             groups={state.pathGroups}
+                            rand={rand}
                             path={path}
                             zoom={view.zoom}
                             palette={state.palettes[state.activePalette]}

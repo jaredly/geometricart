@@ -17,6 +17,7 @@ import {
 import { angleBetween, angleDiff } from './findNextSegments';
 import { rgbToHsl } from './colorConvert';
 import { coordsEqual } from './pathsAreIdentical';
+import Prando from 'prando';
 
 export const UnderlinePath = ({
     path,
@@ -228,7 +229,9 @@ export const RenderPath = React.memo(
         groups,
         onClick,
         palette,
+        rand,
     }: {
+        rand?: Prando;
         path: Path;
         origPath?: Path;
         zoom: number;
@@ -246,8 +249,8 @@ export const RenderPath = React.memo(
                 return null;
             }
             let lighten = fill.lighten;
-            if (fill.colorVariation) {
-                const off = (Math.random() * 2 - 1.0) * fill.colorVariation;
+            if (fill.colorVariation && rand) {
+                const off = rand.next(-1.0, 1.0) * fill.colorVariation;
                 lighten = lighten != null ? lighten + off : off;
             }
             const color = paletteColor(palette, fill.color, lighten);

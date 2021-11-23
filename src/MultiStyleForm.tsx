@@ -391,7 +391,7 @@ export const MultiNumber = ({
                 width: 50,
             }}
             onBlur={() => {
-                if (text != null) {
+                if (text != null && !text.includes(',')) {
                     const num = parseFloat(text);
                     if (value.length === 1) {
                         if (value[0] == null && text.trim() == '') {
