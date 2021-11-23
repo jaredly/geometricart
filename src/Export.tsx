@@ -128,10 +128,10 @@ export const Export = ({
                 </button>
                 <button
                     onClick={() => {
-                        setRender(true);
+                        setRender(!render);
                     }}
                 >
-                    Render
+                    {render ? `Clear render` : `Render`}
                 </button>
                 Size (for .png):{' '}
                 <input

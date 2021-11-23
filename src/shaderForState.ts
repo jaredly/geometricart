@@ -3,6 +3,7 @@ import { pathToPoints } from './CanvasRender';
 import { hslToRgb, rgbToHsl } from './colorConvert';
 import { Rgb } from './PalettesForm';
 import { combinedPathStyles, insetPath, paletteColor } from './RenderPath';
+import { shaderFunctions } from './shaderFunctions';
 import { Coord, Fill, Path, State } from './types';
 
 const namedColors: { [key: string]: Rgb } = {
@@ -62,6 +63,11 @@ export const shaderForState = (state: State): [number, string] => {
         }
     }
 
+    const maxPathLength = paths.reduce(
+        (m, p) => Math.max(m, p.segments.length),
+        0,
+    );
+
     return [
         paths.length,
         `#version 300 es
@@ -74,6 +80,7 @@ uniform vec2 u_resolution;
 
 float cro( vec2 a, vec2 b ) { return a.x*b.y - a.y*b.x; }
 
+${shaderFunctions(maxPathLength)}
 
 vec3 sdgTriangle( in vec2 p, in vec2 v[3] )
 {
