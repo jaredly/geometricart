@@ -45,7 +45,11 @@ vec4 mainImage(in vec2 fragCoord )
     float so = .4+1./(16.+size);
 	float amt = clamp(smoothstep(-so, so, sin((6.+size*12.)*g)), 0.0, 1.0);
     col = vec3((amt));
-    return vec4(col / 6.0, 0.1);
+	// if (fragCoord.x < 200.) {
+		// return vec4(col / 6.0, 0.1);
+	// } else {
+		return vec4(vec3(0.0), (1.0 - amt) / 4.);
+	// }
 }
 
 void main() {
