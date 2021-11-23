@@ -24,6 +24,7 @@ import {
 } from './pathsAreIdentical';
 import { paletteColor, RenderPath, simplifyPath } from './RenderPath';
 import { RenderPrimitive } from './RenderPrimitive';
+import { RenderWebGL } from './RenderWebGL';
 import { showHover } from './showHover';
 import { Hover } from './Sidebar';
 import {
@@ -449,6 +450,7 @@ export const Canvas = ({
                     {` ${pos.x.toFixed(4)},${pos.y.toFixed(4)}`}
                 </div>
             ) : null}
+            <RenderWebGL state={state} />
         </div>
     );
 };

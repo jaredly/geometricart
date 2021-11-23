@@ -1,3 +1,4 @@
+import Prando from 'prando';
 import { calcAllIntersections } from './calcAllIntersections';
 import {
     calculateGuideElements,
@@ -47,6 +48,8 @@ export const canvasRender = async (
                 : null,
         ),
     );
+
+    const rand = new Prando('ok');
 
     const zoom = state.view.zoom;
 
@@ -106,7 +109,13 @@ export const canvasRender = async (
                 ctx.globalAlpha = fill.opacity;
             }
 
-            const color = lightenedColor(palette, fill.color, fill.lighten)!;
+            let lighten = fill.lighten;
+            if (fill.colorVariation) {
+                const off = rand.next(-1.0, 1.0) * fill.colorVariation;
+                lighten = lighten != null ? lighten + off : off;
+            }
+
+            const color = lightenedColor(palette, fill.color, lighten)!;
             if (color.startsWith('http')) {
                 const img = images[fill.color as number];
                 if (!img) {
