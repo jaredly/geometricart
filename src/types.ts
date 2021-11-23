@@ -638,6 +638,7 @@ export type View = {
     zoom: number;
     guides: boolean;
     activeClip: Id | null;
+    hideDuplicatePaths?: boolean;
     background?: string | number;
 };
 

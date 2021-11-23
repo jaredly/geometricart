@@ -627,6 +627,14 @@ export const ViewForm = ({
                 onChange={(guides) => onChange({ ...view, guides })}
             />
 
+            <Toggle
+                label="Hide duplicate paths"
+                value={!!view.hideDuplicatePaths}
+                onChange={(hideDuplicatePaths) =>
+                    onChange({ ...view, hideDuplicatePaths })
+                }
+            />
+
             <div>
                 Zoom
                 <Float

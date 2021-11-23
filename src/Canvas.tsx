@@ -3,6 +3,7 @@
 import { jsx } from '@emotion/react';
 import React from 'react';
 import { PendingMirror, useCurrent } from './App';
+import { ensureClockwise } from './CanvasRender';
 import { clipPath } from './clipPath';
 import {
     findSelection,
@@ -15,7 +16,12 @@ import { Guides } from './Guides';
 import { handleSelection } from './handleSelection';
 import { mergeFills, mergeStyleLines } from './MultiStyleForm';
 import { Overlay } from './Overlay';
-import { paletteColor, RenderPath } from './RenderPath';
+import {
+    pathsAreIdentical,
+    pathToReversedSegmentKeys,
+    pathToSegmentKeys,
+} from './pathsAreIdentical';
+import { paletteColor, RenderPath, simplifyPath } from './RenderPath';
 import { RenderPrimitive } from './RenderPrimitive';
 import { showHover } from './showHover';
 import { Hover } from './Sidebar';
@@ -190,8 +196,14 @@ export const Canvas = ({
         : undefined;
 
     const pathsToShow = React.useMemo(
-        () => sortedVisiblePaths(state.paths, state.pathGroups, clip),
-        [state.paths, state.pathGroups, clip],
+        () =>
+            sortedVisiblePaths(
+                state.paths,
+                state.pathGroups,
+                clip,
+                state.view.hideDuplicatePaths,
+            ),
+        [state.paths, state.pathGroups, clip, state.view.hideDuplicatePaths],
     );
 
     const dragged = dragSelectPos
@@ -201,6 +213,11 @@ export const Canvas = ({
               rectForCorners(pos, dragSelectPos),
           )
         : null;
+
+    const backgroundColor =
+        view.background != null
+            ? paletteColor(state.palettes[state.activePalette], view.background)
+            : null;
 
     return (
         <div
@@ -257,17 +274,15 @@ export const Canvas = ({
                     )}
                 </defs>
                 <g transform={`translate(${x} ${y})`}>
-                    {view.background != null ? (
+                    {backgroundColor != null &&
+                    backgroundColor !== 'transparent' ? (
                         <rect
                             width={width}
                             height={height}
                             x={-x}
                             y={-y}
                             stroke="none"
-                            fill={paletteColor(
-                                state.palettes[state.activePalette],
-                                view.background,
-                            )}
+                            fill={backgroundColor}
                         />
                     ) : null}
                     {Object.keys(state.overlays)
@@ -543,8 +558,9 @@ export function sortedVisiblePaths(
     paths: { [key: string]: Path },
     pathGroups: { [key: string]: PathGroup },
     clip?: Array<Segment>,
+    hideDuplicatePaths?: boolean,
 ): Array<Path> {
-    const visible = Object.keys(paths)
+    let visible = Object.keys(paths)
         .filter(
             (k) =>
                 !paths[k].hidden &&
@@ -568,6 +584,28 @@ export function sortedVisiblePaths(
             }
             return ob - oa;
         });
+
+    if (hideDuplicatePaths) {
+        const usedPaths: Array<Array<string>> = [];
+        visible = visible.filter((k) => {
+            const path = paths[k];
+            const segments = simplifyPath(ensureClockwise(path.segments));
+            const forward = pathToSegmentKeys(path.origin, segments);
+            const backward = pathToReversedSegmentKeys(path.origin, segments);
+            if (
+                usedPaths.some(
+                    (path) =>
+                        pathsAreIdentical(path, backward) ||
+                        pathsAreIdentical(path, forward),
+                )
+            ) {
+                return false;
+            }
+            usedPaths.push(forward);
+            return true;
+        });
+    }
+
     if (!clip) {
         return visible.map((k) => paths[k]);
     }
