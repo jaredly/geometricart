@@ -151,6 +151,7 @@ Intersections lineLine(Segment one, Segment two) {
 	}
 	result.count = 1;
 	result.coords[0] = vec2(x, one.centerSI.x * x + one.centerSI.y);
+	return result;
 }
 
 Intersections findIntersections(Segment one, Segment two) {
@@ -259,6 +260,7 @@ bool isInsidePath(vec2 coord, Segment[${numSegs}] segments, int count) {
 		}
 	}
 
+	// return allHits;
 	return allHits % 2 == 1;
 }
 

@@ -95,7 +95,7 @@ vec2 v[4] = vec2[4](
 
         const start = performance.now();
         const [count, shader] = shaderForState(state);
-        // console.log(shader);
+        console.log(shader);
         setup(ctx, shader, 0);
         const end = performance.now();
         setTime([count, end - start]);

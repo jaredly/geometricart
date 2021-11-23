@@ -62,7 +62,7 @@ export const initialState: State = {
             parent: null,
             point: { x: 0, y: -1 },
             reflect: true,
-            rotational: [true, true], // , true, true, true], // 6-fold
+            rotational: [true, true, true, true, true], // 6-fold
         },
     },
     activeMirror: 'baseMirror',
