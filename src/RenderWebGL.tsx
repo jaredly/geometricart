@@ -4,6 +4,7 @@ import { State } from './types';
 
 export const RenderWebGL = ({ state }: { state: State }) => {
     const ref = React.useRef(null as null | HTMLCanvasElement);
+    const [time, setTime] = React.useState(null as null | [number, number]);
     React.useEffect(() => {
         const ctx = ref.current!.getContext('webgl2')!;
 
@@ -92,9 +93,12 @@ vec2 v[4] = vec2[4](
 
 }`;
 
-        const shader = shaderForState(state);
+        const start = performance.now();
+        const [count, shader] = shaderForState(state);
         // console.log(shader);
         setup(ctx, shader, 0);
+        const end = performance.now();
+        setTime([count, end - start]);
     }, []);
     return (
         <div>
@@ -104,6 +108,11 @@ vec2 v[4] = vec2[4](
                 height="1000"
                 style={{ width: 400 }}
             />
+            {time != null
+                ? `${time[0]} paths took ${time[1].toFixed(0)}ms to render, ${
+                      time[1] / time[0]
+                  }ms per path`
+                : 'no time yet'}
         </div>
     );
 };

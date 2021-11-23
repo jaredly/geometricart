@@ -1,4 +1,25 @@
 
+## Fancy Shader Goodness
+
+How are we planning to do it?
+
+So I tried "have every pixel know about every sub-path", and it didn't go well.
+So, next plan:
+iterate through all paths, and do a canvas render just for that path.
+we can generate a shader that takes up to the max number of segments...
+so that we don't have to recompile for every path. that's probably worth it.
+
+and then we pass in the path as a uniform, ... still only supporting lines for the moment, no arcs.
+
+And then, in the shader we compute:
+- whether we're inside the path
+- distance to closest edge
+- "how far around" we are for that edge, and for the whole shape.
+
+why am I doing this?
+b/c I want to be able to draw fancy things, with noise.
+
+
 ## CLIPPSSSS
 
 Ok, so one thing: we got issues when we have a starting point in the middle of an arc. apparently.
