@@ -1,8 +1,8 @@
 // Many thanks to folks
 
 // based on https://www.shadertoy.com/view/wsdyRf
-export const texture1 = () => {
-    const cell = 15;
+export const texture1 = (scale: number, intensity: number) => {
+    const cell = 5 + scale * 20;
     return `#version 300 es
 
 precision mediump float;
@@ -55,7 +55,7 @@ void main() {
 
 // cross hatchy
 // based on https://www.shadertoy.com/view/MsSGD1
-export const texture2 = () => {
+export const texture2 = (scale: number, intensity: number) => {
     return `#version 300 es
 
 precision mediump float;
@@ -87,7 +87,7 @@ vec4 getPixel(vec2 p)
     
     // [300, 200] was great, diagonal
     // [0, 350] was solid vertical
-	float a1 = 0., a2 = 350.;
+	float a1 = 0., a2 = ${(200 + (1 - scale) * 400).toFixed(2)};
 	// float a1 = 300., a2 = 200.;
     // float a1 = 0.; // 170. + sin(iTime * 4.) * 40.;
     // float a2 = 350.;//100. + sin(iTime * 4.) * 40.0 * 0.;

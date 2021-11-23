@@ -704,6 +704,23 @@ export const ViewForm = ({
                         Clear texture
                     </button>
                 ) : null}
+                {view.texture ? (
+                    <div>
+                        Scale (0-1)
+                        <Float
+                            value={view.texture.scale}
+                            onChange={(scale) =>
+                                onChange({
+                                    ...view,
+                                    texture: {
+                                        ...view.texture!,
+                                        scale: Math.min(Math.max(0, scale), 1),
+                                    },
+                                })
+                            }
+                        />
+                    </div>
+                ) : null}
             </div>
             <div
                 css={{
