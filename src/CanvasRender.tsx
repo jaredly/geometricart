@@ -137,6 +137,15 @@ export const canvasRender = async (
 
             ctx.lineWidth = (line.width / 100) * zoom;
 
+            let myPath = path;
+            if (line.inset) {
+                const inset = insetPath(path, line.inset / 100);
+                if (!inset) {
+                    return;
+                }
+                myPath = inset;
+            }
+
             const color = lightenedColor(palette, line.color, undefined)!;
             if (color.startsWith('http')) {
                 const img = images[line.color as number];
@@ -145,7 +154,7 @@ export const canvasRender = async (
                 }
                 ctx.save();
                 ctx.beginPath();
-                tracePathLine(ctx, path, zoom, line.width / 100);
+                tracePathLine(ctx, myPath, zoom, line.width / 100);
                 ctx.clip();
                 drawCenteredImage(img, sourceWidth, sourceHeight, ctx);
                 // ctx.drawImage(
@@ -157,10 +166,10 @@ export const canvasRender = async (
                 // );
                 ctx.restore();
 
-                // debugPath(path, ctx, zoom);
+                // debugPath(myPath, ctx, zoom);
             } else {
                 ctx.beginPath();
-                tracePath(ctx, path, zoom);
+                tracePath(ctx, myPath, zoom);
                 ctx.strokeStyle = color;
                 ctx.stroke();
             }

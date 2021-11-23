@@ -12,6 +12,8 @@ import { useDropTarget } from './useDropTarget';
 import { createPortal } from 'react-dom';
 import { hslToRgb, rgbToHsl } from './colorConvert';
 import { SwatchesPicker } from 'react-color';
+// @ts-ignore
+import kMeans from 'kmeans-js';
 
 export const averageAt = (data: ImageData, pos: Coord): Rgb => {
     const colors = [
@@ -599,5 +601,3 @@ export const findMajorColors = (
         .sort((a, b) => a.i - b.i);
     return sorted.map((item) => [(item.i / bins) * 360, 0.8, 0.3]);
 };
-
-import kMeans from 'kmeans-js';

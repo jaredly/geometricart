@@ -5,21 +5,14 @@ Ok, so one thing: we got issues when we have a starting point in the middle of a
 
 - [x] also, clip + inset is /not/ working! Maybe the resulting path is abnormal somehow? needs to be simplified?
 	- yay fixed
-
 - [x] um lots more bugs thoughhhh
-
-- [ ] missing star?
-
-- [ ] ok so bugs:
-	- if the 
-
-
+- [x] missing star?
+- [x] ok so bugs:
 
 Better "inside polygon" check please!
 It's broken when the line you're checking on is tangent to a line of the clip.
 
 So another thought would be -- similar to the "clockwise" test, but /add/ the angle from the point to the first place we hit.
-
 
 Ok [this](https://en.wikipedia.org/wiki/Point_in_polygon#Winding_number_algorithm) looks like a pretty tight solution?
 hmmm does it also work with arcs? hmm I think so, yes.
@@ -28,7 +21,7 @@ orr I could do the "only include the one whose other vertex lies below" ... but 
 
 General thoughts?
 
-
+yay it's working!
 
 
 
@@ -77,11 +70,7 @@ ok, also, I want to be able to edit a palette with the image in front of me? Lik
 - [ ] re-entrant clipping doesn't work either, where we have a clip that ends up cutting something in two.
 	at the moment, you just aren't allowed.
 
-
 - [x] pure circle clip, has some bugs.
-	- START HERE PLEEEASE
-
-
 - [x] extent!
 	- [x] ok this is getting a little weird though. I'm not deduping segments correctly.
 	- [x] hmm not just verticals. if there are two guides, I'm not deduping the paths.
@@ -158,7 +147,7 @@ Better path creation
 	- because ... it would make things much cleaner, and more localized ... which is often what you want. But only 1x is often a little short.
 
 
-- [ ] visuallll display of mirrors! Like draw me a picture, thank you.
+- [x] visuallll display of mirrors! Like draw me a picture, thank you.
 
 - [ ] have a fill setting that is "randomize darker/lighter pleaseeee"
 

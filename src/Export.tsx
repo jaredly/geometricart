@@ -13,6 +13,7 @@ import {
 import { Toggle, Text } from './Forms';
 import { transparent } from './Icons';
 import { canvasRender } from './CanvasRender';
+import { RenderWebGL } from './RenderWebGL';
 
 export const Export = ({
     canvasRef,
@@ -28,6 +29,8 @@ export const Export = ({
     const [url, setUrl] = React.useState(null as null | string);
 
     const [png, setPng] = React.useState(null as null | string);
+
+    const [render, setRender] = React.useState(false);
 
     const [size, setSize] = React.useState(1000);
     const [embed, setEmbed] = React.useState(true);
@@ -123,6 +126,13 @@ export const Export = ({
                 >
                     Export SVG
                 </button>
+                <button
+                    onClick={() => {
+                        setRender(true);
+                    }}
+                >
+                    Render
+                </button>
                 Size (for .png):{' '}
                 <input
                     type="number"
@@ -204,6 +214,7 @@ export const Export = ({
                         </>
                     ) : null}
                 </div>
+                {render ? <RenderWebGL state={state} /> : null}
             </div>
         </div>
     );
