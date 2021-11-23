@@ -637,13 +637,14 @@ export const ViewForm = ({
 
             <div>
                 Zoom
+                <span style={{ marginLeft: 8 }} />
                 <Float
                     value={view.zoom}
                     onChange={(zoom) => onChange({ ...view, zoom })}
                 />
-            </div>
-            <div>
+                <span style={{ marginLeft: 16 }} />
                 Offset
+                <span style={{ marginLeft: 8 }} />
                 <Float
                     value={view.center.x}
                     onChange={(x) =>
@@ -656,6 +657,53 @@ export const ViewForm = ({
                         onChange({ ...view, center: { ...view.center, y } })
                     }
                 />
+            </div>
+            <div>
+                {['texture1', 'texture2'].map((id, i) => (
+                    <button
+                        key={id}
+                        css={{
+                            backgroundColor: 'transparent',
+                            padding: '4px 8px',
+                            border: '1px solid #aaa',
+                            color: 'white',
+                            cursor: 'pointer',
+                            margin: 4,
+                        }}
+                        style={
+                            view.texture?.id === id
+                                ? {
+                                      backgroundColor: '#555',
+                                  }
+                                : {}
+                        }
+                        onClick={() => {
+                            onChange({
+                                ...view,
+                                texture:
+                                    view.texture?.id === id
+                                        ? undefined
+                                        : {
+                                              scale: 0.5,
+                                              intensity: 0.5,
+                                              ...view.texture,
+                                              id,
+                                          },
+                            });
+                        }}
+                    >
+                        {id}
+                    </button>
+                ))}
+                {view.texture ? (
+                    <button
+                        onClick={() => {
+                            onChange({ ...view, texture: undefined });
+                        }}
+                    >
+                        Clear texture
+                    </button>
+                ) : null}
             </div>
             <div
                 css={{

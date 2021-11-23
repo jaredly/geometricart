@@ -53,6 +53,8 @@ void main() {
 }`;
 };
 
+// cross hatchy
+// based on https://www.shadertoy.com/view/MsSGD1
 export const texture2 = () => {
     return `#version 300 es
 
@@ -71,40 +73,6 @@ float triangle(float x)
 {
 	return abs(1.0 - mod(abs(x), 2.0)) * 2.0 - 1.0;
 }
-
-// vec4 getPixel(vec2 p)
-// {
-//     float diffuse = 0.5;
-//     vec3 c;
-	
-// 	float xs = 1.;
-// 	float ys = 1.;
-//     float off = 11.0;
-//     float amt = 10.;//sin(iTime * 3.0) * 3.0;
-    
-//     // [300, 200] was great, diagonal
-//     // [0, 350] was solid vertical
-//     float a1 = 0.; // 170. + sin(iTime * 4.) * 40.;
-//     float a2 = 350.;//100. + sin(iTime * 4.) * 40.0 * 0.;
-// 	float hatching = max(
-//     clamp(
-//       (sin(
-//         p.x * xs * (a1 + rand(off) * amt) +
-//         p.y * ys * (a2 + rand(off * 1.91) * amt)
-//        ) * 0.5 + 0.5) 
-//        - (1.0 - diffuse), 0.0, 1.0),
-// 	clamp(
-//       (sin(
-//         p.x * xs * (-a2 + rand(off * 4.74) * amt) +
-// 		p.y * ys * (a1 + rand(off * 3.91) * amt)
-//        )* 0.5 + 0.5) 
-//             -(1.0 - diffuse), 0.0, 1.0));
-	
-// 	vec4 mCol = mix(vec4(0.0), vec4(1.0), hatching);
-// 	return mCol;
-// }
-
-
 
 
 vec4 getPixel(vec2 p)
@@ -135,31 +103,10 @@ vec4 getPixel(vec2 p)
        )* 0.5 + up)), 0., 1.);
 	
 	vec4 mCol = mix(vec4(0.0), vec4(0.3), hatching);
-    mCol.w = 0.3;
+    mCol.w = 0.5 - mCol.x;
+	mCol.xyz = vec3(0., 0., 0.);
 	return mCol;
 }
-
-
-// void mainImage( out vec4 fragColor, in vec2 fragCoord )
-// {	
-// 	// pixel position
-// 	vec2 q = fragCoord.xy / iResolution.xy;
-// 	vec2 p = -1.0+2.0*q;
-// 	p.x *= -iResolution.x/iResolution.y;
-    
-//     float wave = 1.0;//sin(iTime * 5.0) * 2.5;
-    
-//     float off = 1.0;
-    
-// 	p += vec2(triangle(p.y * rand(off) * 4.0),
-// 			  triangle(p.x * rand(off * 3.4) * 4.0)) * 0.015 * wave;
-// 	p += vec2(rand(p.x * 3.1 + p.y * 8.7),
-// 			  rand(p.x * 1.1 + p.y * 6.7)) * 0.01;
-	
-// 	// alculate color
-// 	fragColor = getPixel(p) / 3.0;
-// }
-
 
 void main()
 {	
@@ -176,14 +123,12 @@ void main()
 	p += vec2(rand(p.x * 3.1 + p.y * 8.7),
 			  rand(p.x * 1.1 + p.y * 6.7)) * 0.01;
 	
-	// alculate color
 	fragColor = getPixel(p);
+
+	// For testing:
 	// if (gl_FragCoord.x < 100.0) {
 	// 	discard;
 	// }
 }
-
-
-
 	`;
 };

@@ -3,7 +3,13 @@ import { shaderForState } from './shaderForState';
 import { texture1, texture2 } from './textures';
 import { State } from './types';
 
-export const RenderWebGL = ({ state }: { state: State }) => {
+export const RenderWebGL = ({
+    state,
+    texture,
+}: {
+    state: State;
+    texture: { id: string; scale: number; intensity: number };
+}) => {
     const ref = React.useRef(null as null | HTMLCanvasElement);
     // const [time, setTime] = React.useState(null as null | [number, number]);
     React.useEffect(() => {
@@ -12,10 +18,17 @@ export const RenderWebGL = ({ state }: { state: State }) => {
         // const start = performance.now();
         // const [count, shader] = shaderForState(state);
         // console.log(shader);
-        setup(ctx, texture2(), 0);
+        const fns: {
+            [key: string]: (scale: number, intensity: number) => string;
+        } = { texture1: texture1, texture2: texture2 };
+        const fn = fns[texture.id];
+        if (!fn) {
+            return;
+        }
+        setup(ctx, fn(texture.scale, texture.intensity), 0);
         // const end = performance.now();
         // setTime([count, end - start]);
-    }, []);
+    }, [texture]);
     return (
         <canvas
             ref={(node) => (ref.current = node)}

@@ -641,6 +641,7 @@ export type View = {
     activeClip: Id | null;
     hideDuplicatePaths?: boolean;
     background?: string | number;
+    texture?: { id: string; scale: number; intensity: number };
 };
 
 export type Selection = {

@@ -450,7 +450,9 @@ export const Canvas = ({
                     {` ${pos.x.toFixed(4)},${pos.y.toFixed(4)}`}
                 </div>
             ) : null}
-            <RenderWebGL state={state} />
+            {view.texture ? (
+                <RenderWebGL state={state} texture={view.texture} />
+            ) : null}
         </div>
     );
 };
