@@ -123,23 +123,46 @@ export const canvasRender = async (
 
             const color = lightenedColor(palette, fill.color, lighten)!;
 
-            if (rough && !color.startsWith('http')) {
-                rough.path(calcPathD(myPath, zoom), {
-                    fill: color,
-                    fillStyle: 'solid',
-                    stroke: 'none',
-                    seed: idSeed(path.id),
-                    roughness: state.view.sketchiness!,
-                });
-                return;
+            if (fill.opacity != null) {
+                ctx.globalAlpha = fill.opacity;
+            }
+
+            if (rough) {
+                if (!color.startsWith('http')) {
+                    rough.path(calcPathD(myPath, zoom), {
+                        fill: color,
+                        fillStyle: 'solid',
+                        stroke: 'none',
+                        seed: idSeed(path.id),
+                        roughness: state.view.sketchiness!,
+                    });
+                    ctx.globalAlpha = 1;
+                    return;
+                } else {
+                    const img = images[fill.color as number];
+                    if (!img) {
+                        return;
+                    }
+                    const data = rough.generator.path(calcPathD(myPath, zoom), {
+                        fill: color,
+                        fillStyle: 'solid',
+                        stroke: 'none',
+                        seed: idSeed(path.id),
+                        roughness: state.view.sketchiness!,
+                    });
+                    rough.generator.toPaths(data).forEach((info) => {
+                        const p2d = new Path2D(info.d);
+                        ctx.save();
+                        ctx.clip(p2d);
+                        drawCenteredImage(img, sourceWidth, sourceHeight, ctx);
+                        ctx.restore();
+                    });
+                }
             }
 
             ctx.beginPath();
             tracePath(ctx, myPath, zoom);
 
-            if (fill.opacity != null) {
-                ctx.globalAlpha = fill.opacity;
-            }
             if (color.startsWith('http')) {
                 const img = images[fill.color as number];
                 if (!img) {
