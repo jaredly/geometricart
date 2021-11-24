@@ -581,7 +581,7 @@ export const Guides = ({
                             ? mirrorTransforms[state.activeMirror]
                             : null
                     }
-                    zoom={view.zoom}
+                    view={view}
                     isClip={pathOrigin.clip}
                     origin={pathOrigin.coord}
                     primitives={guidePrimitives}

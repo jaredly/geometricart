@@ -3,6 +3,7 @@
 import { jsx } from '@emotion/react';
 import Prando from 'prando';
 import React from 'react';
+import { RoughGenerator } from 'roughjs/bin/generator';
 import { PendingMirror, useCurrent } from './App';
 import { ensureClockwise } from './CanvasRender';
 import { clipPath } from './clipPath';
@@ -131,6 +132,8 @@ export const Canvas = ({
     const ref = React.useRef(null as null | SVGSVGElement);
 
     useScrollWheel(ref, setTmpView, currentState, width, height);
+
+    const generator = React.useMemo(() => new RoughGenerator(), []);
 
     const [dragPos, setDragPos] = React.useState(
         null as null | { view: View; coord: Coord },
@@ -317,11 +320,12 @@ export const Canvas = ({
                     {pathsToShow.map((path) => (
                         <RenderPath
                             key={path.id}
+                            generator={generator}
                             origPath={state.paths[path.id]}
                             groups={state.pathGroups}
                             rand={rand}
                             path={path}
-                            zoom={view.zoom}
+                            view={view}
                             palette={state.palettes[state.activePalette]}
                             onClick={
                                 // TODO: Disable path clickies if we're doing guides, folks.

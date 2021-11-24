@@ -2,7 +2,7 @@
 /* @jsxFrag React.Fragment */
 import * as React from 'react';
 import { jsx } from '@emotion/react';
-import { Coord, Path, PathGroup, Segment } from './types';
+import { Coord, Path, PathGroup, Segment, View } from './types';
 import { combineStyles } from './Canvas';
 import { arcPath } from './RenderPendingPath';
 import { ensureClockwise, isClockwise, reversePath } from './CanvasRender';
@@ -18,6 +18,7 @@ import { angleBetween, angleDiff } from './findNextSegments';
 import { rgbToHsl } from './colorConvert';
 import { coordsEqual } from './pathsAreIdentical';
 import Prando from 'prando';
+import { RoughGenerator } from 'roughjs/bin/generator';
 
 export const UnderlinePath = ({
     path,
@@ -225,23 +226,26 @@ export const RenderPath = React.memo(
     ({
         path,
         origPath,
-        zoom,
+        view,
         groups,
         onClick,
         palette,
+        generator,
         rand,
     }: {
         rand?: Prando;
+        generator?: RoughGenerator;
         path: Path;
         origPath?: Path;
-        zoom: number;
+        view: View;
         groups: { [key: string]: PathGroup };
         onClick?: (evt: React.MouseEvent, id: string) => void;
         palette: Array<string>;
     }) => {
-        const d = calcPathD(path, zoom);
+        const d = calcPathD(path, view.zoom);
         const style = combinedPathStyles(path, groups);
 
+        const zoom = view.zoom;
         // const insetPaths =
         //
         const fills = style.fills.map((fill, i) => {
@@ -301,6 +305,30 @@ export const RenderPath = React.memo(
                 newPath = inset;
                 raw = calcPathD(newPath, zoom);
             }
+
+            if (generator && view.sketchiness && view.sketchiness > 0) {
+                const p = generator.path(raw, {
+                    fill: common.fill,
+                    fillStyle: 'solid',
+                    seed: idSeed(path.id),
+                    roughness: view.sketchiness,
+                    stroke: 'none',
+                });
+                const info = generator.toPaths(p);
+                return info.map((info, i) => (
+                    <path
+                        key={i}
+                        d={info.d}
+                        stroke={info.stroke}
+                        fill={info.fill != 'none' ? info.fill : common.fill}
+                        strokeWidth={info.strokeWidth}
+                        onClick={common.onClick}
+                        onMouseDown={common.onMouseDown}
+                        css={common.css}
+                    />
+                ));
+            }
+
             return (
                 <>
                     <path data-id={path.id} d={raw} {...common} />
@@ -375,6 +403,29 @@ export const RenderPath = React.memo(
                 }
                 newPath = inset;
                 raw = calcPathD(newPath, zoom);
+            }
+
+            if (generator && view.sketchiness && view.sketchiness > 0) {
+                const p = generator.path(raw, {
+                    fill: 'none',
+                    seed: idSeed(path.id),
+                    roughness: view.sketchiness,
+                    stroke: common.stroke,
+                    strokeWidth: common.strokeWidth,
+                });
+                const info = generator.toPaths(p);
+                return info.map((info, i) => (
+                    <path
+                        key={i}
+                        d={info.d}
+                        stroke={info.stroke}
+                        fill={info.fill}
+                        strokeWidth={info.strokeWidth}
+                        onClick={common.onClick}
+                        onMouseDown={common.onMouseDown}
+                        css={common.css}
+                    />
+                ));
             }
 
             return <path d={raw} data-id={path.id} {...common} />;
@@ -467,7 +518,7 @@ export const paletteColor = (
         return undefined;
     }
     const raw = lightenedColor(palette, color, lighten);
-    return raw?.startsWith('http') ? `url(#palette-${raw})` : raw;
+    return raw?.startsWith('http') ? `url(#palette-${color})` : raw;
 };
 
 export function combinedPathStyles(
@@ -486,3 +537,14 @@ export function combinedPathStyles(
     const style = combineStyles(styles);
     return style;
 }
+
+export const idSeed = (id: string) => {
+    if (id.startsWith('id-')) {
+        return parseInt(id.slice('id-'.length));
+    }
+    let num = 0;
+    for (let i = 0; i < id.length; i++) {
+        num += id.charCodeAt(i);
+    }
+    return num;
+};

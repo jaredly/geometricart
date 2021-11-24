@@ -721,6 +721,16 @@ export const ViewForm = ({
                         />
                     </div>
                 ) : null}
+                Sketchiness
+                <Float
+                    value={view.sketchiness || 0}
+                    onChange={(sketchiness) =>
+                        onChange({
+                            ...view,
+                            sketchiness,
+                        })
+                    }
+                />
             </div>
             <div
                 css={{

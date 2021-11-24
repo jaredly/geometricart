@@ -253,6 +253,38 @@ export const MultiStyleForm = ({
                     </div>
                 </div>
             ))}
+            <button
+                onClick={() => {
+                    const maxNum = styles.reduce(
+                        (num, style) => Math.max(num, style.lines.length),
+                        0,
+                    );
+                    const maxInset = styles.reduce(
+                        (num, style) =>
+                            Math.max(
+                                num,
+                                style.lines.reduce(
+                                    (n, f) => Math.max(n, f?.inset ?? 0),
+                                    0,
+                                ),
+                            ),
+                        0,
+                    );
+                    const inset = maxInset + 5;
+                    onChange(
+                        styles.map((style) => {
+                            const lines = style.lines.slice();
+                            for (let i = lines.length; i < maxNum; i++) {
+                                lines.push(null);
+                            }
+                            lines.push({ color: 0, inset });
+                            return { ...style, lines };
+                        }),
+                    );
+                }}
+            >
+                Add inset line
+            </button>
         </div>
     );
 };
