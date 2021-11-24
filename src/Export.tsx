@@ -13,7 +13,8 @@ import {
 import { Toggle, Text } from './Forms';
 import { transparent } from './Icons';
 import { canvasRender } from './CanvasRender';
-import { RenderWebGL } from './RenderWebGL';
+import { RenderWebGL, setup } from './RenderWebGL';
+import { texture1, texture2 } from './textures';
 
 export const Export = ({
     canvasRef,
@@ -98,7 +99,42 @@ export const Export = ({
                         canvas.width = canvas.height = size;
                         const ctx = canvas.getContext('2d')!;
 
+                        ctx.save();
                         await canvasRender(ctx, state);
+                        ctx.restore();
+
+                        if (state.view.texture) {
+                            const fns: {
+                                [key: string]: (
+                                    scale: number,
+                                    intensity: number,
+                                ) => string;
+                            } = { texture1: texture1, texture2: texture2 };
+                            const fn = fns[state.view.texture.id];
+                            if (fn) {
+                                const texture =
+                                    document.createElement('canvas');
+                                texture.width = texture.height = size;
+
+                                const gl = texture.getContext('webgl2');
+                                if (!gl) {
+                                    throw new Error(
+                                        `unable to get webgl context`,
+                                    );
+                                }
+                                setup(
+                                    gl,
+                                    fn(
+                                        state.view.texture.scale,
+                                        state.view.texture.intensity,
+                                    ),
+                                    0,
+                                );
+
+                                ctx.drawImage(texture, 0, 0);
+                            }
+                        }
+
                         canvas.toBlob(async (blob) => {
                             if (embed) {
                                 blob = await addMetadata(blob, state);
@@ -126,13 +162,13 @@ export const Export = ({
                 >
                     Export SVG
                 </button>
-                <button
+                {/* <button
                     onClick={() => {
                         setRender(!render);
                     }}
                 >
                     {render ? `Clear render` : `Render`}
-                </button>
+                </button> */}
                 Size (for .png):{' '}
                 <input
                     type="number"
@@ -214,7 +250,7 @@ export const Export = ({
                         </>
                     ) : null}
                 </div>
-                {render ? <RenderWebGL state={state} /> : null}
+                {/* {render ? <RenderWebGL state={state} /> : null} */}
             </div>
         </div>
     );

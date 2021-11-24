@@ -12,6 +12,7 @@ import {
     Intersect,
     PendingSegment,
     Segment,
+    View,
 } from './types';
 import {
     angleTo,
@@ -87,7 +88,7 @@ export const DrawPath = React.memo(
         intersections,
         mirror,
         origin,
-        zoom,
+        view,
         isClip,
         onComplete,
         palette,
@@ -96,7 +97,7 @@ export const DrawPath = React.memo(
         mirror: null | Array<Array<Matrix>>;
         primitives: Array<{ prim: Primitive; guides: Array<Id> }>;
         origin: Intersect;
-        zoom: number;
+        view: View;
         intersections: Array<Intersect>;
         palette: Array<string>;
         onComplete: (segments: Array<PendingSegment>) => unknown;
@@ -104,6 +105,7 @@ export const DrawPath = React.memo(
         const [state, setState] = React.useState(() =>
             initialState(origin, primitives, intersections),
         );
+        const zoom = view.zoom;
 
         // let parts = parts.concat([])
 
@@ -284,7 +286,7 @@ export const DrawPath = React.memo(
                     {transformedParts
                         ? transformedParts.map((path) => (
                               <RenderPath
-                                  zoom={zoom}
+                                  view={view}
                                   path={{
                                       group: null,
                                       id: '',
@@ -311,7 +313,7 @@ export const DrawPath = React.memo(
                         : null}
 
                     <RenderPath
-                        zoom={zoom}
+                        view={view}
                         path={{
                             group: null,
                             id: '',

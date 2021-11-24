@@ -24,7 +24,7 @@ export const clipPath = (
 
     const allIntersections: { [i: number]: { [j: number]: Array<Coord> } } = {};
 
-    const pathPrims = pathToPrimitives(path.origin, path.segments);
+    const pathPrims = pathToPrimitives(path.segments);
 
     // Intersections from the perspective of the clip.
     let clipPerspective: Array<Array<{ i: number; j: number; coord: Coord }>> =

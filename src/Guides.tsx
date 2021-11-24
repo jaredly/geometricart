@@ -560,20 +560,18 @@ export const Guides = ({
                 />
             ) : null}
             {clip
-                ? pathToPrimitives(clip[clip.length - 1].to, clip).map(
-                      (prim, i) => (
-                          <RenderPrimitive
-                              isImplied
-                              prim={prim}
-                              zoom={view.zoom}
-                              width={width}
-                              height={height}
-                              color={'magenta'}
-                              strokeWidth={4}
-                              key={i}
-                          />
-                      ),
-                  )
+                ? pathToPrimitives(clip).map((prim, i) => (
+                      <RenderPrimitive
+                          isImplied
+                          prim={prim}
+                          zoom={view.zoom}
+                          width={width}
+                          height={height}
+                          color={'magenta'}
+                          strokeWidth={4}
+                          key={i}
+                      />
+                  ))
                 : null}
             {pathOrigin ? (
                 <DrawPath
@@ -583,7 +581,7 @@ export const Guides = ({
                             ? mirrorTransforms[state.activeMirror]
                             : null
                     }
-                    zoom={view.zoom}
+                    view={view}
                     isClip={pathOrigin.clip}
                     origin={pathOrigin.coord}
                     primitives={guidePrimitives}

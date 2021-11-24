@@ -1,7 +1,9 @@
 /* @jsx jsx */
 /* @jsxFrag React.Fragment */
 import { jsx } from '@emotion/react';
+import Prando from 'prando';
 import React from 'react';
+import { RoughGenerator } from 'roughjs/bin/generator';
 import { PendingMirror, useCurrent } from './App';
 import { ensureClockwise } from './CanvasRender';
 import { clipPath } from './clipPath';
@@ -23,6 +25,7 @@ import {
 } from './pathsAreIdentical';
 import { paletteColor, RenderPath, simplifyPath } from './RenderPath';
 import { RenderPrimitive } from './RenderPrimitive';
+import { RenderWebGL } from './RenderWebGL';
 import { showHover } from './showHover';
 import { Hover } from './Sidebar';
 import {
@@ -130,6 +133,8 @@ export const Canvas = ({
 
     useScrollWheel(ref, setTmpView, currentState, width, height);
 
+    const generator = React.useMemo(() => new RoughGenerator(), []);
+
     const [dragPos, setDragPos] = React.useState(
         null as null | { view: View; coord: Coord },
     );
@@ -218,6 +223,8 @@ export const Canvas = ({
         view.background != null
             ? paletteColor(state.palettes[state.activePalette], view.background)
             : null;
+
+    const rand = new Prando('ok');
 
     return (
         <div
@@ -313,10 +320,12 @@ export const Canvas = ({
                     {pathsToShow.map((path) => (
                         <RenderPath
                             key={path.id}
+                            generator={generator}
                             origPath={state.paths[path.id]}
                             groups={state.pathGroups}
+                            rand={rand}
                             path={path}
-                            zoom={view.zoom}
+                            view={view}
                             palette={state.palettes[state.activePalette]}
                             onClick={
                                 // TODO: Disable path clickies if we're doing guides, folks.
@@ -444,6 +453,9 @@ export const Canvas = ({
                     Reset zoom
                     {` ${pos.x.toFixed(4)},${pos.y.toFixed(4)}`}
                 </div>
+            ) : null}
+            {view.texture ? (
+                <RenderWebGL state={state} texture={view.texture} />
             ) : null}
         </div>
     );
@@ -610,7 +622,7 @@ export function sortedVisiblePaths(
         return visible.map((k) => paths[k]);
     }
 
-    const clipPrims = pathToPrimitives(clip[clip.length - 1].to, clip);
+    const clipPrims = pathToPrimitives(clip);
     console.log(clipPrims);
 
     // hmm how to communicate which segments are ... clipped?

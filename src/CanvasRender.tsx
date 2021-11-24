@@ -1,3 +1,6 @@
+import Prando from 'prando';
+import { RoughCanvas } from 'roughjs/bin/canvas';
+import { RoughGenerator } from 'roughjs/bin/generator';
 import { calcAllIntersections } from './calcAllIntersections';
 import {
     calculateGuideElements,
@@ -16,7 +19,13 @@ import {
 import { primitivesForElementsAndPaths } from './Guides';
 import { Primitive } from './intersect';
 import { reverseSegment } from './pathsAreIdentical';
-import { combinedPathStyles, insetPath, lightenedColor } from './RenderPath';
+import {
+    calcPathD,
+    combinedPathStyles,
+    idSeed,
+    insetPath,
+    lightenedColor,
+} from './RenderPath';
 import { Coord, Overlay, Path, Segment, State } from './types';
 
 export const makeImage = (href: string): Promise<HTMLImageElement> => {
@@ -48,13 +57,20 @@ export const canvasRender = async (
         ),
     );
 
+    const rough =
+        state.view.sketchiness && state.view.sketchiness > 0
+            ? new RoughCanvas(ctx.canvas)
+            : null;
+
+    const rand = new Prando('ok');
+
     const zoom = state.view.zoom;
 
     const xoff = sourceWidth / 2 + state.view.center.x * zoom;
     const yoff = sourceHeight / 2 + state.view.center.y * zoom;
     ctx.translate(xoff, yoff);
 
-    if (state.view.background) {
+    if (state.view.background != null) {
         const color =
             typeof state.view.background === 'number'
                 ? palette[state.view.background]
@@ -99,14 +115,31 @@ export const canvasRender = async (
                 myPath = inset;
             }
 
+            let lighten = fill.lighten;
+            if (fill.colorVariation) {
+                const off = rand.next(-1.0, 1.0) * fill.colorVariation;
+                lighten = lighten != null ? lighten + off : off;
+            }
+
+            const color = lightenedColor(palette, fill.color, lighten)!;
+
+            if (rough && !color.startsWith('http')) {
+                rough.path(calcPathD(myPath, zoom), {
+                    fill: color,
+                    fillStyle: 'solid',
+                    stroke: 'none',
+                    seed: idSeed(path.id),
+                    roughness: state.view.sketchiness!,
+                });
+                return;
+            }
+
             ctx.beginPath();
             tracePath(ctx, myPath, zoom);
 
             if (fill.opacity != null) {
                 ctx.globalAlpha = fill.opacity;
             }
-
-            const color = lightenedColor(palette, fill.color, fill.lighten)!;
             if (color.startsWith('http')) {
                 const img = images[fill.color as number];
                 if (!img) {
@@ -147,6 +180,19 @@ export const canvasRender = async (
             }
 
             const color = lightenedColor(palette, line.color, undefined)!;
+
+            if (rough) {
+                rough.path(calcPathD(myPath, zoom), {
+                    fill: 'none',
+                    fillStyle: 'solid',
+                    stroke: color,
+                    strokeWidth: line.width,
+                    seed: idSeed(path.id),
+                    roughness: state.view.sketchiness!,
+                });
+                return;
+            }
+
             if (color.startsWith('http')) {
                 const img = images[line.color as number];
                 if (!img) {
@@ -239,7 +285,7 @@ export const canvasRender = async (
         ctx.strokeStyle = 'magenta';
         ctx.setLineDash([5, 15]);
         ctx.lineWidth = 10;
-        pathToPrimitives(clip[clip.length - 1].to, clip).forEach((prim) => {
+        pathToPrimitives(clip).forEach((prim) => {
             renderPrimitive(ctx, prim, zoom, sourceHeight, sourceWidth);
         });
     }

@@ -169,6 +169,7 @@ export type Fill = {
     inset?: number;
     opacity?: number;
     color?: string | number;
+    colorVariation?: number;
     lighten?: number; // negatives for darken. units somewhat arbitrary.
 };
 
@@ -640,6 +641,8 @@ export type View = {
     activeClip: Id | null;
     hideDuplicatePaths?: boolean;
     background?: string | number;
+    sketchiness?: number;
+    texture?: { id: string; scale: number; intensity: number };
 };
 
 export type Selection = {
