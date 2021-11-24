@@ -123,7 +123,7 @@ export const canvasRender = async (
 
             const color = lightenedColor(palette, fill.color, lighten)!;
 
-            if (rough) {
+            if (rough && !color.startsWith('http')) {
                 rough.path(calcPathD(myPath, zoom), {
                     fill: color,
                     fillStyle: 'solid',
