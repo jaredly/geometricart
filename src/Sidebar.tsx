@@ -233,16 +233,16 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactElement } = {
                 }}
             >
                 {Object.keys(state.paths)
-                    // .filter(
-                    //     (k) =>
-                    //         (state.selection?.type === 'Path' &&
-                    //             state.selection.ids.includes(k)) ||
-                    //         state.paths[k].hidden ||
-                    //         (state.selection?.type === 'PathGroup' &&
-                    //             state.selection.ids.includes(
-                    //                 state.paths[k].group!,
-                    //             )),
-                    // )
+                    .filter(
+                        (k) =>
+                            (state.selection?.type === 'Path' &&
+                                state.selection.ids.includes(k)) ||
+                            state.paths[k].hidden ||
+                            (state.selection?.type === 'PathGroup' &&
+                                state.selection.ids.includes(
+                                    state.paths[k].group!,
+                                )),
+                    )
                     .map((k) => (
                         <PathForm
                             key={k}

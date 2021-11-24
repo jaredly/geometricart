@@ -271,7 +271,6 @@ export const PathGroupForm = ({
     onDelete: () => void;
 }) => {
     // const ref = React.useRef(null as null | HTMLDivElement);
-    const [expanded, setExpanded] = React.useState(true);
     // React.useEffect(() => {
     //     if (selected) {
     //         ref.current?.scrollIntoView(false);
@@ -293,9 +292,7 @@ export const PathGroupForm = ({
                     alignItems: 'center',
                     flexWrap: 'wrap',
                 }}
-                onClick={() => setExpanded(!expanded)}
             >
-                {expanded ? '🔻' : '▶️'}
                 Path Group {group.id}
                 <div style={{ flexBasis: 10 }} />
                 <Toggle
@@ -339,13 +336,6 @@ export const PathGroupForm = ({
                     </button>
                 ))}
             </div>
-            {expanded ? (
-                <StyleForm
-                    palette={palette}
-                    style={group.style}
-                    onChange={(style) => onChange({ ...group, style })}
-                />
-            ) : null}
         </div>
     );
 };
@@ -387,7 +377,6 @@ export const PathForm = ({
     onChange: (path: Path) => unknown;
     onDelete: () => void;
 }) => {
-    const [expanded, setExpanded] = React.useState(true);
     const ref = React.useRef(null as null | HTMLDivElement);
     React.useEffect(() => {
         // console.log(ref.current, 'scroll apth');
@@ -412,9 +401,7 @@ export const PathForm = ({
                     flexWrap: 'wrap',
                     alignItems: 'center',
                 }}
-                onClick={() => setExpanded(!expanded)}
             >
-                {expanded ? '🔻' : '▶️'}
                 Path! {path.id}
                 <div style={{ flexBasis: 8 }} />
                 <Toggle
@@ -425,21 +412,11 @@ export const PathForm = ({
                 <div style={{ flex: 1 }} />
                 <button onClick={onDelete}>Delete</button>
             </div>
-            {expanded ? (
-                <>
-                    <Toggle
-                        label="Debug"
-                        value={!!path.debug}
-                        onChange={(debug) => onChange({ ...path, debug })}
-                    />
-                    <StyleForm
-                        palette={palette}
-                        style={path.style}
-                        onChange={(style) => onChange({ ...path, style })}
-                    />
-                    {path.group ? `Group: ${path.group}` : `No group...`}
-                </>
-            ) : null}
+            <Toggle
+                label="Debug"
+                value={!!path.debug}
+                onChange={(debug) => onChange({ ...path, debug })}
+            />
             <div>
                 Clip Mode:
                 {['none', 'remove', 'normal'].map((name) => (

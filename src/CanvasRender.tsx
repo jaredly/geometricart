@@ -157,6 +157,7 @@ export const canvasRender = async (
                         drawCenteredImage(img, sourceWidth, sourceHeight, ctx);
                         ctx.restore();
                     });
+                    return;
                 }
             }
 
