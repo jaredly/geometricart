@@ -41,8 +41,8 @@ might be a little extra
 but like, should be doable? idk.
 
 https://www.shadertoy.com/view/4lV3RG
-https://www.shadertoy.com/view/MsSGD1
-https://www.shadertoy.com/view/ldXfRj
+https://www.shadertoy.com/view/MsSGD1 // cross-hatching
+https://www.shadertoy.com/view/ldXfRj // some gneral sketchiness
 https://www.shadertoy.com/view/XtVGD1
 
 https://www.shadertoy.com/view/WtjGRc - maybe do a papercraft look?

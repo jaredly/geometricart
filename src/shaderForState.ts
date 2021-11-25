@@ -5,7 +5,8 @@ import { pathToPrimitives } from './findSelection';
 import { Primitive } from './intersect';
 import { Rgb } from './PalettesForm';
 import { transformSegment } from './points';
-import { combinedPathStyles, insetPath, paletteColor } from './RenderPath';
+import { combinedPathStyles, paletteColor } from './RenderPath';
+import { insetPath } from './insetPath';
 import { shaderFunctions } from './shaderFunctions';
 import { Coord, Fill, Path, State, StyleLine } from './types';
 

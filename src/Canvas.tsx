@@ -23,7 +23,8 @@ import {
     pathToReversedSegmentKeys,
     pathToSegmentKeys,
 } from './pathsAreIdentical';
-import { paletteColor, RenderPath, simplifyPath } from './RenderPath';
+import { paletteColor, RenderPath } from './RenderPath';
+import { simplifyPath } from './insetPath';
 import { RenderPrimitive } from './RenderPrimitive';
 import { RenderWebGL } from './RenderWebGL';
 import { showHover } from './showHover';

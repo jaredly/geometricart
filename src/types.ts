@@ -1,7 +1,7 @@
 import { ensureClockwise } from './CanvasRender';
 import { initialState } from './initialState';
 import { Primitive } from './intersect';
-import { simplifyPath } from './RenderPath';
+import { simplifyPath } from './insetPath';
 
 // Should I do polar coords?
 export type Coord = { x: number; y: number };

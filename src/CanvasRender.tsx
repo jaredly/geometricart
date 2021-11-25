@@ -17,15 +17,15 @@ import {
     push,
 } from './getMirrorTransforms';
 import { primitivesForElementsAndPaths } from './Guides';
-import { Primitive } from './intersect';
+import { epsilon, Primitive } from './intersect';
 import { reverseSegment } from './pathsAreIdentical';
 import {
     calcPathD,
     combinedPathStyles,
     idSeed,
-    insetPath,
     lightenedColor,
 } from './RenderPath';
+import { insetPath } from './insetPath';
 import { Coord, Overlay, Path, Segment, State } from './types';
 
 export const makeImage = (href: string): Promise<HTMLImageElement> => {
@@ -210,7 +210,7 @@ export const canvasRender = async (
                     fill: 'none',
                     fillStyle: 'solid',
                     stroke: color,
-                    strokeWidth: line.width,
+                    strokeWidth: (line.width / 100) * zoom,
                     seed: idSeed(path.id),
                     roughness: state.view.sketchiness!,
                 });
@@ -484,7 +484,7 @@ export const pathToPoints = (segments: Array<Segment>) => {
     return points;
 };
 
-export const isClockwise = (segments: Array<Segment>) => {
+export const totalAngle = (segments: Array<Segment>) => {
     const points = pathToPoints(segments);
     const angles = points.map((point, i) => {
         const prev = i === 0 ? points[points.length - 1] : points[i - 1];
@@ -498,7 +498,11 @@ export const isClockwise = (segments: Array<Segment>) => {
         between > Math.PI ? between - Math.PI * 2 : between,
     );
     let total = relatives.reduce((a, b) => a + b);
-    return total > 0;
+    return total;
+};
+
+export const isClockwise = (segments: Array<Segment>) => {
+    return totalAngle(segments) >= Math.PI - epsilon;
 };
 
 export const toDegrees = (x: number) => Math.floor((x / Math.PI) * 180);

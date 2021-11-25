@@ -13,7 +13,7 @@ import {
     withinLimit,
 } from './intersect';
 import { coordsEqual } from './pathsAreIdentical';
-import { simplifyPath } from './RenderPath';
+import { simplifyPath } from './insetPath';
 import { ArcSegment, Coord, Line, Path, PathGroup, Segment } from './types';
 
 type Hit = { i: number; j: number; coord: Coord };

@@ -42,7 +42,7 @@ import {
     calculateInactiveGuideElements,
 } from './calculateGuideElements';
 import { geomToPrimitives } from './points';
-import { simplifyPath } from './RenderPath';
+import { simplifyPath } from './insetPath';
 import { ensureClockwise } from './CanvasRender';
 import { pathToPrimitives } from './findSelection';
 

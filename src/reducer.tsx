@@ -26,7 +26,7 @@ import {
     pathToReversedSegmentKeys,
     pathToSegmentKeys,
 } from './pathsAreIdentical';
-import { simplifyPath } from './RenderPath';
+import { simplifyPath } from './insetPath';
 import { ensureClockwise } from './CanvasRender';
 
 export const reducer = (state: State, action: Action): State => {
