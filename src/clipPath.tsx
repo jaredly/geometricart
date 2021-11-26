@@ -16,18 +16,18 @@ import { coordsEqual } from './pathsAreIdentical';
 import { simplifyPath } from './insetPath';
 import { ArcSegment, Coord, Line, Path, PathGroup, Segment } from './types';
 
-type Hit = { i: number; j: number; coord: Coord };
+export type Hit = { i: number; j: number; coord: Coord };
 
-type Clippable = {
+export type Clippable<Hit> = {
     primitives: Array<Primitive>;
     segments: Array<Segment>;
     hits: Array<Array<Hit>>;
 };
 
 // if intersection is -1, it means we're at the start of the segment.
-type HitLocation = { segment: number; intersection: number };
+export type HitLocation = { segment: number; intersection: number };
 
-type Angle =
+export type Angle =
     | { type: 'flat'; theta: number }
     | {
           type: 'arc';
@@ -186,7 +186,10 @@ export const isInside = (
 export const getSegment = (segments: Array<Segment>, i: number) =>
     i < 0 ? segments[segments.length + i] : segments[i % segments.length];
 
-export const getBackAngle = (one: Clippable, location: HitLocation): Angle => {
+export const getBackAngle = <T extends { coord: Coord }>(
+    one: Clippable<T>,
+    location: HitLocation,
+): Angle => {
     const atStart =
         location.intersection === -1 ||
         coordsEqual(
@@ -227,7 +230,10 @@ export const getBackAngle = (one: Clippable, location: HitLocation): Angle => {
     }
 };
 
-export const getAngle = (one: Clippable, location: HitLocation): Angle => {
+export const getAngle = <T extends { coord: Coord }>(
+    one: Clippable<T>,
+    location: HitLocation,
+): Angle => {
     const pos =
         location.intersection === -1
             ? getSegment(one.segments, location.segment - 1).to
@@ -258,10 +264,10 @@ export const getAngle = (one: Clippable, location: HitLocation): Angle => {
  * to examine the /next/ segment in the list. If we're at the start of a segment, we do need
  * to check the previous segment, however.
  */
-export const isGoingInside = (
-    one: Clippable,
+export const isGoingInside = <T extends { coord: Coord }>(
+    one: Clippable<T>,
     oneLocation: HitLocation,
-    test: Clippable,
+    test: Clippable<T>,
     testLocation: HitLocation,
     debug = false,
 ) => {
@@ -323,7 +329,7 @@ If both are, we're on a shared edge.
 
 // let's return `clipInformation` along with it, I think. like `{path, clipped: Array<segment index>}`
 export const findHit = (
-    clip: Clippable,
+    clip: Clippable<Hit>,
     hit: Hit,
     idx: number,
 ): HitLocation => {
@@ -337,8 +343,8 @@ export const prevPos = (segments: Array<Segment>, idx: number) =>
     idx === 0 ? segments[segments.length - 1].to : segments[idx - 1].to;
 
 export const clipTwo = (
-    clip: Clippable,
-    path: Clippable,
+    clip: Clippable<Hit>,
+    path: Clippable<Hit>,
     idx: number,
     debug?: boolean,
 ): { result: Array<Segment>; clipSide: Array<boolean> } => {

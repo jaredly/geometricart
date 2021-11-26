@@ -8,11 +8,21 @@ import {
     lineCircle,
     lineLine,
     lineToSlope,
+    Primitive,
 } from './intersect';
 import { angleBetween } from './findNextSegments';
 import { coordsEqual } from './pathsAreIdentical';
 import { pathToPrimitives } from './findSelection';
-import { sortHitsForPrimitive } from './clipPath';
+import {
+    Clippable,
+    clipTwo,
+    getAngle,
+    getBackAngle,
+    HitLocation,
+    isInside,
+    sortHitsForPrimitive,
+} from './clipPath';
+import { coordKey } from './calcAllIntersections';
 
 /*
 
@@ -30,16 +40,31 @@ how to traverse all of them .. and know that I have?
 
 */
 
+/*
+
+Ok I think the rule holds.
+
+If you can follow a segment around, switching when you hit an intersection, and it's
+clockwise throughout, you're good.
+
+if you get to an intersection where switching /isn't/ better, then you bail, and drop everything.
+
+
+*/
+
 export type Hit = { first: number; second: number; coord: Coord };
 
-export const pruneInsetPath = (segments: Array<Segment>) => {
+export const pruneInsetPath = (
+    segments: Array<Segment>,
+): Array<Array<Segment>> => {
     const primitives = pathToPrimitives(segments);
-    const hits: Array<Array<Hit>> = [];
-    let anyHits = false;
+    const hits: Array<Array<Hit>> = new Array(segments.length)
+        .fill([])
+        .map((m) => []);
+    const allHits: Array<Hit> = [];
     for (let i = 0; i < segments.length; i++) {
         const previ =
             i === 0 ? segments[segments.length - 1].to : segments[i - 1].to;
-        hits.push([]);
         for (let j = i + 1; j < segments.length; j++) {
             const prevj =
                 j === 0 ? segments[segments.length - 1].to : segments[j - 1].to;
@@ -57,15 +82,15 @@ export const pruneInsetPath = (segments: Array<Segment>) => {
                 if (iend && jend) {
                     return;
                 }
-                anyHits = true;
                 const hit = { first: i, second: j, coord };
                 hits[i].push(hit);
                 hits[j].push(hit);
+                allHits.push(hit);
             });
         }
     }
 
-    if (!anyHits) {
+    if (!allHits.length) {
         return [segments];
     }
 
@@ -75,59 +100,234 @@ export const pruneInsetPath = (segments: Array<Segment>) => {
 
     const seen: { [key: string]: true } = {};
 
-    travelPath(sorted, segments, { idx: 0, hit: -1 }, seen);
+    // const clippable: Clippable = {
+    // 	segments,
+    // 	primitives,
+    // 	hits: sorted
+    // }
+
+    const pruned: Array<Array<Segment>> = [];
+
+    while (allHits.length) {
+        const hit = allHits.shift()!;
+        const startHit = hit;
+        const segment = getClockwiseExit(sorted, segments, primitives, hit);
+        const startPos = {
+            segment,
+            intersection: sorted[segment].indexOf(hit),
+        };
+        const start = hit.coord;
+        let path: Array<Segment> = [];
+
+        const addSegment = (segment: Segment) => {
+            const key = coordKey(segment.to);
+            if (
+                path.length &&
+                coordsEqual(path[path.length - 1].to, segment.to)
+            ) {
+                // skip immediate duplicate, probably at start or end
+                return;
+            }
+            // if (seen[key]) {
+            // 	console.warn(new Error(`seen already! ${key}`));
+            // 	// TODO: Change to `false` and see what renders weird.
+            // 	return true;
+            // }
+            // seen[key] = true;
+            path.push(segment);
+        };
+
+        let at = startPos;
+        let bad = false;
+
+        while (!path.length || !coordsEqual(path[path.length - 1].to, start)) {
+            const next = at.intersection + 1;
+            if (next >= sorted[at.segment].length) {
+                addSegment(segments[at.segment]);
+                // move on to the next
+                at = {
+                    segment: (at.segment + 1) % sorted.length,
+                    intersection: -1,
+                };
+                continue;
+            }
+
+            const hit = sorted[at.segment][next];
+
+            addSegment({ ...segments[at.segment], to: hit.coord });
+
+            if (hit === startHit) {
+                // success!
+                break;
+            }
+
+            const segment = getClockwiseExit(sorted, segments, primitives, hit);
+
+            if (segment === at.segment) {
+                bad = true;
+                break;
+            }
+
+            const hidx = allHits.indexOf(hit);
+            if (hidx === -1) {
+                throw new Error(
+                    `how did I reach an intersection I've seen before? unless it's the start one again.... but I already accoutned for that`,
+                );
+            }
+            // no need to traverse, we've gone the only good way.
+            allHits.splice(hidx, 1);
+
+            at = { segment, intersection: sorted[segment].indexOf(hit) };
+        }
+
+        if (bad) {
+            continue;
+        }
+
+        pruned.push(path);
+    }
+
+    return pruned;
 };
 
-type Pos = { idx: number; hit: number };
+export const getClockwiseExit = (
+    sorted: Array<Array<Hit>>,
+    segments: Array<Segment>,
+    primitives: Array<Primitive>,
+    hit: Hit,
+): number => {
+    const firstLocation: HitLocation = {
+        segment: hit.first,
+        intersection: sorted[hit.first].indexOf(hit),
+    };
+    const secondLocation: HitLocation = {
+        segment: hit.second,
+        intersection: sorted[hit.second].indexOf(hit),
+    };
+    const clippable: Clippable<Hit> = {
+        hits: sorted,
+        segments,
+        primitives,
+    };
+    const back = getBackAngle(clippable, firstLocation);
+    const forward = getAngle(clippable, firstLocation);
+    const testAnble = getAngle(clippable, secondLocation);
+    if (isInside(back, forward, testAnble)) {
+        return hit.second;
+    }
+    return hit.first;
+};
+
+type Pos = HitLocation;
 
 export const segmentStart = (segments: Array<Segment>, idx: number) =>
     idx === 0 ? segments[segments.length - 1].to : segments[idx - 1].to;
 
-export const travelPath = (
+export const notMe = (idx: number, hit: Hit) => {
+    return hit.first === idx ? hit.second : hit.first;
+};
+export const nextForPos = (
+    idx: number,
+    hit: Hit,
+    sorted: Array<Array<Hit>>,
+): Pos => {
+    const hitAt = sorted[idx].indexOf(hit);
+    if (hitAt < sorted[idx].length - 1) {
+        return { segment: idx, intersection: hitAt + 1 };
+    } else {
+        return { intersection: -1, segment: (idx + 1) % sorted.length };
+    }
+};
+
+export const coordForPos = (
+    pos: Pos,
     sorted: Array<Array<Hit>>,
     segments: Array<Segment>,
-    pos: Pos,
-    seen: { [key: string]: true },
 ) => {
-    // ok here we go.
-    // keep track of accumulated angle
-    // and all the "sub-segments" you've traveersed, so we can mark them as "done".
-    // because we'll need to check all of the subsegments one by one.
-    let first = segmentStart(segments, pos.idx);
-    let prev = first;
-    let pprev = first;
-    let result: Array<Segment> = [];
-    while (
-        !result.length ||
-        !coordsEqual(result[result.length - 1].to, first)
-    ) {
-        // so, the seg is (the current one)
-        // and ...
-        // where are we?
-        // We're at a cross-road, looking to the future.
-
-        let seg = segments[pos.idx];
-        let hit = sorted[pos.idx][pos.hit + 1];
-        let next: Coord;
-        let nextPos: Pos;
-        if (!hit) {
-            next = seg.to;
-            nextPos = { idx: (pos.idx + 1) % segments.length, hit: -1 };
-        } else {
-            next = hit.coord;
-            hit.coord;
-            nextPos = { idx: pos.idx, hit: pos.hit + 1 };
-        }
-        // If we haven't moved, don't muck
-        if (!coordsEqual(next, prev)) {
-            result.push({ ...seg, to: next });
-            pprev = prev;
-            prev = next;
-        }
-        pos = nextPos;
+    if (pos.intersection !== -1) {
+        return sorted[pos.segment][pos.intersection].coord;
     }
-    return result;
+    let prev = pos.segment === 0 ? segments.length - 1 : pos.segment - 1;
+    return segments[prev].to;
 };
+
+// export const travelPath = (
+//     sorted: Array<Array<Hit>>,
+//     segments: Array<Segment>,
+//     pos: Pos,
+//     seen: { [key: string]: true },
+// ) => {
+//     // ok here we go.
+//     // keep track of accumulated angle
+//     // and all the "sub-segments" you've traveersed, so we can mark them as "done".
+//     // because we'll need to check all of the subsegments one by one.
+//     let first = segmentStart(segments, pos.idx);
+//     let prev = first;
+//     let pprev = first;
+//     let result: Array<Segment> = [];
+//     const seenHits: Array<Hit> = [];
+//     while (
+//         !result.length ||
+//         !coordsEqual(result[result.length - 1].to, first)
+//     ) {
+//         // so, the seg is (the current one)
+//         // and ...
+//         // where are we?
+//         // We're at a cross-road, looking to the future.
+
+//         // ok, so we want a list of options.
+//         // I guess, there will only be one other option.
+//         // so the "main" option vs the cross-cutting one.
+//         // and if the cross-cutting one is ...
+//         // /tighter/ than the main one, then we switch to it.
+
+// 		// if (pos.hit === -1)
+
+//         let alternative =
+//             pos.hit === -1
+//                 ? null
+//                 : nextForPos(
+//                       notMe(pos.idx, sorted[pos.idx][pos.hit]),
+//                       sorted[pos.idx][pos.hit],
+//                       sorted,
+//                   );
+
+//         let seg = segments[pos.idx];
+//         let nextHit = sorted[pos.idx][pos.hit + 1];
+//         let next: Coord;
+//         let nextPos: Pos;
+//         if (!nextHit) {
+//             next = seg.to;
+//             nextPos = { idx: (pos.idx + 1) % segments.length, hit: -1 };
+//         } else {
+//             next = nextHit.coord;
+//             nextHit.coord;
+//             nextPos = { idx: pos.idx, hit: pos.hit + 1 };
+//         }
+
+//         if (alternative) {
+//             let forward = getAngle(sorted, pos);
+//             let branch = getAngle(sorted, alternative);
+//             // todo this might violate assumptions about not having a hit at the end of a segment
+//             let back = getBackAngle(sorted, pos);
+
+//             // switch it up!
+//             if (isInside(back, forward, branch)) {
+//                 nextPos = alternative;
+//                 next = coordForPos(nextPos, sorted, segments);
+//             }
+//         }
+
+//         // If we haven't moved, don't muck
+//         if (!coordsEqual(next, prev)) {
+//             result.push({ ...seg, to: next });
+//             pprev = prev;
+//             prev = next;
+//         }
+//         pos = nextPos;
+//     }
+//     return result;
+// };
 
 export const insetPath = (path: Path, inset: number) => {
     // All paths are clockwise, it just makes this easier
@@ -144,20 +344,6 @@ export const insetPath = (path: Path, inset: number) => {
     });
 
     // Ok, so once we've done the inset, how do we check for self intersections?
-
-    const angle = totalAngle(segments);
-
-    // We have a twist!
-    // but that's no the only possible self-intersection.
-    // If we have a concave shape, it's easy to self-intersect.
-    // So what we need to do is ... find self-intersections, and then
-    // do self-clipping?
-    // Basically do the same kind of clip walk, but it's just on one path.
-    // And we'd have to do the same deal where we look at all points, to see
-    // which ones are in a still-clockwise section of things.
-    if (Math.abs(angle) < epsilon * 2) {
-        return null;
-    }
 
     // we've gone inside out!
     // if (!isClockwise(segments)) {

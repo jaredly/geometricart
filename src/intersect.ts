@@ -1,4 +1,5 @@
-import { angleBetween } from './findNextSegments';
+import { isWithinLineLimit } from './clipPath';
+import { angleBetween, isAngleBetween } from './findNextSegments';
 import { angleTo, dist, push } from './getMirrorTransforms';
 import { Coord } from './types';
 
@@ -164,6 +165,27 @@ export const circleCircle = (one: Circle, two: Circle): Array<Coord> => {
     let dy = two.center.y - one.center.y;
     let d = Math.sqrt(dx * dx + dy * dy);
 
+    const check =
+        one.limit || two.limit
+            ? (pos: Coord) =>
+                  (one.limit
+                      ? isAngleBetween(
+                            one.limit[0],
+                            angleTo(one.center, pos),
+                            one.limit[1],
+                            true,
+                        )
+                      : true) &&
+                  (two.limit
+                      ? isAngleBetween(
+                            two.limit[0],
+                            angleTo(two.center, pos),
+                            two.limit[1],
+                            true,
+                        )
+                      : true)
+            : (pos: Coord) => pos;
+
     // tangent (or nearly)
     if (close(one.radius + two.radius, d)) {
         const ratio = (one.radius + two.radius) / one.radius;
@@ -172,7 +194,7 @@ export const circleCircle = (one: Circle, two: Circle): Array<Coord> => {
                 x: one.center.x + dx / ratio,
                 y: one.center.y + dy / ratio,
             },
-        ];
+        ].filter(check);
     }
     const larger = one.radius > two.radius ? one : two;
     const smaller = one.radius > two.radius ? two : one;
@@ -184,7 +206,7 @@ export const circleCircle = (one: Circle, two: Circle): Array<Coord> => {
         )
     ) {
         const t = angleTo(larger.center, smaller.center);
-        return [push(larger.center, t, larger.radius)];
+        return [push(larger.center, t, larger.radius)].filter(check);
     }
 
     let R = one.radius;
@@ -207,7 +229,7 @@ export const circleCircle = (one: Circle, two: Circle): Array<Coord> => {
             x: one.center.x + dx * x + dy * y,
             y: one.center.y + dy * x - dx * y,
         },
-    ];
+    ].filter(check);
 };
 
 export const angleIsBetween = (

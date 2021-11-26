@@ -5,13 +5,14 @@ import { jsx } from '@emotion/react';
 import { Path, PathGroup, View } from './types';
 import { combineStyles } from './Canvas';
 import { arcPath } from './RenderPendingPath';
-import { ensureClockwise } from './CanvasRender';
+import { ensureClockwise, totalAngle } from './CanvasRender';
 import { dist } from './getMirrorTransforms';
 import { angleDiff } from './findNextSegments';
 import { rgbToHsl } from './colorConvert';
 import Prando from 'prando';
 import { RoughGenerator } from 'roughjs/bin/generator';
-import { insetPath } from './insetPath';
+import { insetPath, pruneInsetPath } from './insetPath';
+import { epsilon } from './intersect';
 
 export const UnderlinePath = ({
     path,
@@ -129,54 +130,84 @@ export const RenderPath = React.memo(
 
             let raw = d;
             let newPath = path;
+            let pathInfos = [{ path, raw }];
             if (fill.inset) {
                 const inset = insetPath(path, fill.inset / 100);
-                if (!inset) {
-                    return null;
+
+                const angle = totalAngle(inset.segments);
+
+                // We have a twist!
+                // but that's no the only possible self-intersection.
+                // If we have a concave shape, it's easy to self-intersect.
+                // So what we need to do is ... find self-intersections, and then
+                // do self-clipping?
+                // Basically do the same kind of clip walk, but it's just on one path.
+                // And we'd have to do the same deal where we look at all points, to see
+                // which ones are in a still-clockwise section of things.
+                // if (Math.abs(angle) < epsilon * 2) {
+                pathInfos = pruneInsetPath(inset.segments).map((segments) => ({
+                    path: {
+                        ...path,
+                        segments,
+                        origin: segments[segments.length - 1].to,
+                    },
+                    raw: calcPathD(
+                        {
+                            ...path,
+                            segments,
+                            origin: segments[segments.length - 1].to,
+                        },
+                        zoom,
+                    ),
+                }));
+                // } else if (angle < Math.PI - epsilon) {
+                //     return null;
+                // } else {
+                // pathInfos = [{ path: inset, raw: calcPathD(inset, zoom) }];
+                // }
+            }
+
+            return pathInfos.map(({ path: newPath, raw }, k) => {
+                if (generator && view.sketchiness && view.sketchiness > 0) {
+                    const p = generator.path(raw, {
+                        fill: common.fill,
+                        fillStyle: 'solid',
+                        seed: idSeed(path.id),
+                        roughness: view.sketchiness,
+                        stroke: 'none',
+                    });
+                    const info = generator.toPaths(p);
+                    return info.map((info, i) => (
+                        <path
+                            key={`${k}:${i}`}
+                            d={info.d}
+                            stroke={info.stroke}
+                            fill={info.fill != 'none' ? info.fill : common.fill}
+                            strokeWidth={info.strokeWidth}
+                            onClick={common.onClick}
+                            onMouseDown={common.onMouseDown}
+                            css={common.css}
+                        />
+                    ));
                 }
-                newPath = inset;
-                raw = calcPathD(newPath, zoom);
-            }
 
-            if (generator && view.sketchiness && view.sketchiness > 0) {
-                const p = generator.path(raw, {
-                    fill: common.fill,
-                    fillStyle: 'solid',
-                    seed: idSeed(path.id),
-                    roughness: view.sketchiness,
-                    stroke: 'none',
-                });
-                const info = generator.toPaths(p);
-                return info.map((info, i) => (
-                    <path
-                        key={i}
-                        d={info.d}
-                        stroke={info.stroke}
-                        fill={info.fill != 'none' ? info.fill : common.fill}
-                        strokeWidth={info.strokeWidth}
-                        onClick={common.onClick}
-                        onMouseDown={common.onMouseDown}
-                        css={common.css}
-                    />
-                ));
-            }
-
-            return (
-                <>
-                    <path data-id={path.id} d={raw} {...common} />
-                    {path.debug
-                        ? newPath.segments.map((seg, i) => (
-                              <circle
-                                  key={i}
-                                  cx={seg.to.x * zoom}
-                                  cy={seg.to.y * zoom}
-                                  r={(2 / 100) * zoom}
-                                  fill="orange"
-                              />
-                          ))
-                        : null}
-                </>
-            );
+                return (
+                    <>
+                        <path data-id={path.id} d={raw} {...common} key={k} />
+                        {path.debug
+                            ? newPath.segments.map((seg, i) => (
+                                  <circle
+                                      key={`${k}:${i}`}
+                                      cx={seg.to.x * zoom}
+                                      cy={seg.to.y * zoom}
+                                      r={(2 / 100) * zoom}
+                                      fill="orange"
+                                  />
+                              ))
+                            : null}
+                    </>
+                );
+            });
         });
         const lines = style.lines.map((line, i) => {
             if (!line) {

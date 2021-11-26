@@ -624,7 +624,7 @@ export function sortedVisiblePaths(
     }
 
     const clipPrims = pathToPrimitives(clip);
-    console.log(clipPrims);
+    // console.log(clipPrims);
 
     // hmm how to communicate which segments are ... clipped?
     // might have to add to the segment type? don't love it.
