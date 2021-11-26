@@ -91,6 +91,9 @@ export const pruneInsetPath = (
     }
 
     if (!allHits.length) {
+        if (!isClockwise(segments)) {
+            return [];
+        }
         return [segments];
     }
 
