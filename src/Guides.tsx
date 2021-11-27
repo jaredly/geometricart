@@ -454,6 +454,74 @@ export const Guides = ({
 
     const clip = view.activeClip ? state.clips[view.activeClip] : undefined;
 
+    const clickInactive = React.useCallback(
+        (guides: string[], shift: boolean): void => {
+            if (!shift) {
+                dispatch({
+                    type: 'tab:set',
+                    tab: 'Guides',
+                });
+                dispatch({
+                    type: 'selection:set',
+                    selection: {
+                        type: 'Guide',
+                        ids: dedupString(guides),
+                    },
+                });
+                return;
+            }
+            console.log(guides, 'click');
+            const seen: {
+                [key: string]: true;
+            } = {};
+            // ok
+            guides.forEach((guide) => {
+                if (seen[guide]) {
+                    return;
+                }
+                seen[guide] = true;
+                dispatch({
+                    type: 'guide:toggle',
+                    id: guide,
+                });
+            });
+        },
+        [],
+    );
+    const clickActive = React.useCallback(
+        (guides: string[], shift: boolean): void => {
+            if (!shift) {
+                dispatch({
+                    type: 'tab:set',
+                    tab: 'Guides',
+                });
+                dispatch({
+                    type: 'selection:set',
+                    selection: {
+                        type: 'Guide',
+                        ids: dedupString(guides),
+                    },
+                });
+                return;
+            }
+            console.log(guides, 'click');
+            const seen: {
+                [key: string]: true;
+            } = {};
+            // ok
+            guides.forEach((guide) => {
+                if (seen[guide]) {
+                    return;
+                }
+                seen[guide] = true;
+                dispatch({
+                    type: 'guide:toggle',
+                    id: guide,
+                });
+            });
+        },
+        [],
+    );
     return (
         <>
             <RenderPrimitives
@@ -462,82 +530,14 @@ export const Guides = ({
                 width={width}
                 height={height}
                 inactive
-                onClick={
-                    pathOrigin
-                        ? undefined
-                        : (guides, shift) => {
-                              if (!shift) {
-                                  dispatch({
-                                      type: 'tab:set',
-                                      tab: 'Guides',
-                                  });
-                                  dispatch({
-                                      type: 'selection:set',
-                                      selection: {
-                                          type: 'Guide',
-                                          ids: dedupString(guides),
-                                      },
-                                  });
-                                  return;
-                              }
-                              console.log(guides, 'click');
-                              const seen: {
-                                  [key: string]: true;
-                              } = {};
-                              // ok
-                              guides.forEach((guide) => {
-                                  if (seen[guide]) {
-                                      return;
-                                  }
-                                  seen[guide] = true;
-                                  dispatch({
-                                      type: 'guide:toggle',
-                                      id: guide,
-                                  });
-                              });
-                          }
-                }
+                onClick={pathOrigin ? undefined : clickInactive}
             />
             <RenderPrimitives
                 primitives={guidePrimitives}
                 zoom={view.zoom}
                 width={width}
                 height={height}
-                onClick={
-                    pathOrigin
-                        ? undefined
-                        : (guides, shift) => {
-                              if (!shift) {
-                                  dispatch({
-                                      type: 'tab:set',
-                                      tab: 'Guides',
-                                  });
-                                  dispatch({
-                                      type: 'selection:set',
-                                      selection: {
-                                          type: 'Guide',
-                                          ids: dedupString(guides),
-                                      },
-                                  });
-                                  return;
-                              }
-                              console.log(guides, 'click');
-                              const seen: {
-                                  [key: string]: true;
-                              } = {};
-                              // ok
-                              guides.forEach((guide) => {
-                                  if (seen[guide]) {
-                                      return;
-                                  }
-                                  seen[guide] = true;
-                                  dispatch({
-                                      type: 'guide:toggle',
-                                      id: guide,
-                                  });
-                              });
-                          }
-                }
+                onClick={pathOrigin ? undefined : clickActive}
             />
             {!pathOrigin ? (
                 <RenderIntersections

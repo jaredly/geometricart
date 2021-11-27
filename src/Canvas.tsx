@@ -125,8 +125,10 @@ export const Canvas = ({
 
     const [tmpView, setTmpView] = React.useState(null as null | View);
 
-    let view = tmpView ?? state.view;
-    view = { ...state.view, center: view.center, zoom: view.zoom };
+    let view = React.useMemo(() => {
+        let view = tmpView ?? state.view;
+        return { ...state.view, center: view.center, zoom: view.zoom };
+    }, [state.view, tmpView]);
 
     const { x, y } = viewPos(view, width, height);
 
@@ -225,7 +227,8 @@ export const Canvas = ({
             ? paletteColor(state.palettes[state.activePalette], view.background)
             : null;
 
-    const rand = new Prando('ok');
+    const rand = React.useRef(new Prando('ok'));
+    rand.current.reset();
 
     return (
         <div
@@ -324,9 +327,10 @@ export const Canvas = ({
                             generator={generator}
                             origPath={state.paths[path.id]}
                             groups={state.pathGroups}
-                            rand={rand}
+                            rand={rand.current}
                             path={path}
-                            view={view}
+                            zoom={view.zoom}
+                            sketchiness={view.sketchiness}
                             palette={state.palettes[state.activePalette]}
                             onClick={
                                 // TODO: Disable path clickies if we're doing guides, folks.

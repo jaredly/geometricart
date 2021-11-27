@@ -59,7 +59,8 @@ export const RenderPath = React.memo(
     ({
         path,
         origPath,
-        view,
+        zoom,
+        sketchiness,
         groups,
         onClick,
         palette,
@@ -70,15 +71,15 @@ export const RenderPath = React.memo(
         generator?: RoughGenerator;
         path: Path;
         origPath?: Path;
-        view: View;
+        zoom: number;
+        sketchiness: number;
         groups: { [key: string]: PathGroup };
         onClick?: (evt: React.MouseEvent, id: string) => void;
         palette: Array<string>;
     }) => {
-        const d = calcPathD(path, view.zoom);
+        const d = calcPathD(path, zoom);
         const style = combinedPathStyles(path, groups);
 
-        const zoom = view.zoom;
         // const insetPaths =
         //
         const fills = style.fills.map((fill, i) => {
@@ -168,12 +169,12 @@ export const RenderPath = React.memo(
             }
 
             return pathInfos.map(({ path: newPath, raw }, k) => {
-                if (generator && view.sketchiness && view.sketchiness > 0) {
+                if (generator && sketchiness && sketchiness > 0) {
                     const p = generator.path(raw, {
                         fill: common.fill,
                         fillStyle: 'solid',
                         seed: idSeed(path.id),
-                        roughness: view.sketchiness,
+                        roughness: sketchiness,
                         stroke: 'none',
                     });
                     const info = generator.toPaths(p);
@@ -268,11 +269,11 @@ export const RenderPath = React.memo(
                 raw = calcPathD(newPath, zoom);
             }
 
-            if (generator && view.sketchiness && view.sketchiness > 0) {
+            if (generator && sketchiness && sketchiness > 0) {
                 const p = generator.path(raw, {
                     fill: 'none',
                     seed: idSeed(path.id),
-                    roughness: view.sketchiness,
+                    roughness: sketchiness,
                     stroke: common.stroke,
                     strokeWidth: common.strokeWidth,
                 });

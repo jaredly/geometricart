@@ -1,4 +1,14 @@
 
+## [ ] "Multiply path(s) around mirror
+	- this would put the resulting paths in the same pathgroup as the original, and we'll also do deduping
+		on pths in the same pathgroup.
+
+
+- [ ] what about "regroup"?
+- [ ] also perf is really bad, I need to figure out what to memoize.
+
+
+
 ## Fancy Shader Goodness
 
 How are we planning to do it?
