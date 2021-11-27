@@ -72,7 +72,7 @@ export const RenderPath = React.memo(
         path: Path;
         origPath?: Path;
         zoom: number;
-        sketchiness: number;
+        sketchiness: number | undefined;
         groups: { [key: string]: PathGroup };
         onClick?: (evt: React.MouseEvent, id: string) => void;
         palette: Array<string>;

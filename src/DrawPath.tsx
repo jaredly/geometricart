@@ -286,7 +286,8 @@ export const DrawPath = React.memo(
                     {transformedParts
                         ? transformedParts.map((path) => (
                               <RenderPath
-                                  view={view}
+                                  zoom={view.zoom}
+                                  sketchiness={0}
                                   path={{
                                       group: null,
                                       id: '',
@@ -313,7 +314,8 @@ export const DrawPath = React.memo(
                         : null}
 
                     <RenderPath
-                        view={view}
+                        zoom={view.zoom}
+                        sketchiness={0}
                         path={{
                             group: null,
                             id: '',
