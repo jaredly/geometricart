@@ -4,7 +4,16 @@ import { jsx } from '@emotion/react';
 import React from 'react';
 import { GuideForm, PathForm, PathGroupForm, ViewForm } from './Forms';
 import { MirrorForm } from './MirrorForm';
-import { guideTypes, State, Action, Tab, Id, Path, PathGroup } from './types';
+import {
+    guideTypes,
+    State,
+    Action,
+    Tab,
+    Id,
+    Path,
+    PathGroup,
+    PathMultiply,
+} from './types';
 import { initialState } from './initialState';
 import { Export } from './Export';
 import { PendingMirror, toTypeRev } from './App';
@@ -290,6 +299,22 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactElement } = {
                     dispatch({ type: 'selection:set', selection: null });
                 }}
             >
+                {(state.selection?.type === 'Path' ||
+                    state.selection?.type === 'PathGroup') &&
+                state.activeMirror ? (
+                    <button
+                        onClick={() => {
+                            dispatch({
+                                type: 'path:multiply',
+                                selection:
+                                    state.selection as PathMultiply['selection'],
+                                mirror: state.activeMirror!,
+                            });
+                        }}
+                    >
+                        Multiply selection around active mirror
+                    </button>
+                ) : null}
                 {Object.keys(state.mirrors).map((k) => (
                     <MirrorForm
                         key={k}

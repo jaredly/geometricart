@@ -1,11 +1,14 @@
 
-## [ ] "Multiply path(s) around mirror
+## [x] "Multiply path(s) around mirror
 	- this would put the resulting paths in the same pathgroup as the original, and we'll also do deduping
 		on pths in the same pathgroup.
 
+- [x] button to remove path-level styles
+- [ ] selection type for PathOrGroup thx
+- [ ] shift-drag to resize overlay, so you don't have to zoom out. indicate via cursor.
 
 - [ ] what about "regroup"?
-- [ ] also perf is really bad, I need to figure out what to memoize.
+- [x] also perf is really bad, I need to figure out what to memoize.
 
 
 

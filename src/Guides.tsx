@@ -152,10 +152,12 @@ export const Guides = ({
     pos,
     mirrorTransforms,
     hover,
+    zooming,
     pendingMirror,
     setPendingMirror,
 }: {
     state: State;
+    zooming: boolean;
     dispatch: (action: Action) => void;
     width: number;
     height: number;
@@ -539,7 +541,7 @@ export const Guides = ({
                 height={height}
                 onClick={pathOrigin ? undefined : clickActive}
             />
-            {!pathOrigin ? (
+            {!pathOrigin && !zooming ? (
                 <RenderIntersections
                     zoom={view.zoom}
                     intersections={allIntersections}

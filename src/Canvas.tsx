@@ -125,6 +125,8 @@ export const Canvas = ({
 
     const [tmpView, setTmpView] = React.useState(null as null | View);
 
+    const [zooming, setZooming] = React.useState(false);
+
     let view = React.useMemo(() => {
         let view = tmpView ?? state.view;
         return { ...state.view, center: view.center, zoom: view.zoom };
@@ -134,7 +136,7 @@ export const Canvas = ({
 
     const ref = React.useRef(null as null | SVGSVGElement);
 
-    useScrollWheel(ref, setTmpView, currentState, width, height);
+    useScrollWheel(ref, setTmpView, setZooming, currentState, width, height);
 
     const generator = React.useMemo(() => new RoughGenerator(), []);
 
@@ -372,6 +374,7 @@ export const Canvas = ({
                             dispatch={dispatch}
                             width={width}
                             height={height}
+                            zooming={zooming}
                             view={view}
                             pos={pos}
                             mirrorTransforms={mirrorTransforms}

@@ -20,6 +20,7 @@ import {
     PathGroup,
     PendingGuide,
     PathCreate,
+    PathMultiply,
 } from './types';
 import {
     pathsAreIdentical,
@@ -237,6 +238,9 @@ export const reduceWithoutUndo = (
             ];
         }
 
+        case 'path:multiply': {
+            return handlePathMultiply(state, action);
+        }
         case 'path:create': {
             return handlePathCreate(state, action);
         }
@@ -610,6 +614,40 @@ export const undo = (state: State, action: UndoAction): State => {
         case 'view:update':
             return { ...state, view: action.prev };
 
+        case 'path:multiply': {
+            state = {
+                ...state,
+                paths: {
+                    ...state.paths,
+                },
+                nextId: action.added[2],
+            };
+            action.added[0].forEach((id) => {
+                delete state.paths[id];
+            });
+            if (action.added[1]) {
+                state.pathGroups = { ...state.pathGroups };
+                delete state.pathGroups[action.added[1]];
+
+                const sourceIds =
+                    action.action.selection.type === 'Path'
+                        ? action.action.selection.ids
+                        : Object.keys(state.paths).filter(
+                              (k) =>
+                                  state.paths[k].group &&
+                                  action.action.selection.ids.includes(
+                                      state.paths[k].group!,
+                                  ),
+                          );
+                sourceIds.forEach((id) => {
+                    if (state.paths[id].group === action.added[1]) {
+                        state.paths[id].group = null;
+                    }
+                });
+            }
+
+            return state;
+        }
         case 'path:create': {
             state = {
                 ...state,
@@ -679,6 +717,104 @@ export const undo = (state: State, action: UndoAction): State => {
             };
     }
 };
+
+export function handlePathMultiply(
+    state: State,
+    action: PathMultiply,
+): [State, UndoAction | null] {
+    let nextId = state.nextId;
+
+    const transforms = getTransformsForMirror(action.mirror, state.mirrors);
+
+    const sourceIds =
+        action.selection.type === 'Path'
+            ? action.selection.ids
+            : Object.keys(state.paths).filter(
+                  (k) =>
+                      state.paths[k].group &&
+                      action.selection.ids.includes(state.paths[k].group!),
+              );
+
+    const ids: Array<Id> = [];
+
+    const usedPaths = Object.keys(state.paths).map((k) =>
+        pathToSegmentKeys(state.paths[k].origin, state.paths[k].segments),
+    );
+    // const usedPaths = [pathToSegmentKeys(main.origin, main.segments)];
+
+    state = { ...state, paths: { ...state.paths } };
+
+    let groupId = null as null | Id;
+
+    sourceIds.forEach((id) => {
+        const main = state.paths[id];
+
+        if (!main.group) {
+            if (!groupId) {
+                groupId = `id-${nextId++}`;
+                state.pathGroups = {
+                    ...state.pathGroups,
+                    [groupId]: {
+                        group: null,
+                        id: groupId,
+                        style: main.style,
+                    },
+                };
+            }
+            state.paths[id] = {
+                ...main,
+                group: groupId!,
+            };
+        }
+
+        transforms.forEach((matrices) => {
+            const origin = applyMatrices(main.origin, matrices);
+            const segments = main.segments.map((seg) =>
+                transformSegment(seg, matrices),
+            );
+            // TOOD: should I check each prev against my forward & backward,
+            // or put both forward & backward into the list?
+            // Are they equivalent?
+            const forward = pathToSegmentKeys(origin, segments);
+            const backward = pathToReversedSegmentKeys(origin, segments);
+            if (
+                usedPaths.some(
+                    (path) =>
+                        pathsAreIdentical(path, backward) ||
+                        pathsAreIdentical(path, forward),
+                )
+            ) {
+                return;
+            }
+            usedPaths.push(forward);
+            let nid = `id-${nextId++}`;
+            state.paths[nid] = {
+                id: nid,
+                group: main.group ?? groupId,
+                ordering: 0,
+                hidden: false,
+                created: 0,
+                origin,
+                segments,
+                style: main.group ? main.style : { fills: [], lines: [] },
+            };
+            ids.push(nid);
+        });
+    });
+
+    return [
+        {
+            ...state,
+            nextId,
+            pending: null,
+        },
+        {
+            type: action.type,
+            action,
+            added: [ids, groupId, state.nextId],
+        },
+    ];
+}
 
 export function handlePathCreate(
     state: State,

@@ -1,8 +1,18 @@
 /* @jsx jsx */
 /* @jsxFrag React.Fragment */
-import { jsx } from '@emotion/react';
+import { jsx, css } from '@emotion/react';
 import React from 'react';
 import { Intersect } from './types';
+
+const whatsit = css({
+    fill: 'rgba(255,255,255,0.1)',
+    cursor: 'pointer',
+    transition: '.2s ease r, .2s ease fill',
+    ':hover': {
+        r: 7,
+        fill: 'white',
+    },
+});
 
 export const RenderIntersections = React.memo(
     ({
@@ -14,6 +24,9 @@ export const RenderIntersections = React.memo(
         intersections: Array<Intersect>;
         onClick: (item: Intersect, shiftKey: boolean) => unknown;
     }) => {
+        // if (true) {
+        //     return null;
+        // }
         return (
             <>
                 {intersections.map((intersection, i) => (
@@ -26,15 +39,16 @@ export const RenderIntersections = React.memo(
                         }}
                         r={5}
                         fill={'rgba(255,255,255,0.1)'}
-                        css={{
-                            fill: 'rgba(255,255,255,0.1)',
-                            cursor: 'pointer',
-                            transition: '.2s ease r, .2s ease fill',
-                            ':hover': {
-                                r: 7,
-                                fill: 'white',
-                            },
-                        }}
+                        css={whatsit}
+                        // css={{
+                        //     fill: 'rgba(255,255,255,0.1)',
+                        //     cursor: 'pointer',
+                        //     transition: '.2s ease r, .2s ease fill',
+                        //     ':hover': {
+                        //         r: 7,
+                        //         fill: 'white',
+                        //     },
+                        // }}
                     />
                 ))}
             </>

@@ -463,6 +463,17 @@ export type UndoPathCreate = {
     added: [Array<Id>, Id | null, number];
 };
 
+export type PathMultiply = {
+    type: 'path:multiply';
+    selection: { type: 'Path' | 'PathGroup'; ids: Array<Id> };
+    mirror: Id;
+};
+export type UndoPathMultiply = {
+    type: PathMultiply['type'];
+    action: PathMultiply;
+    added: [Array<Id>, Id | null, number];
+};
+
 export type PendingExtent = {
     type: 'pending:extent';
     delta: number;
@@ -571,6 +582,7 @@ export type UndoableAction =
     | OverlayUpdate
     | PathGroupUpdateMany
     | PathCreate
+    | PathMultiply
     | GuideToggle;
 
 export type UndoAction =
@@ -594,6 +606,7 @@ export type UndoAction =
     // | UndoPathPoint
     // | UndoPathAdd
     | UndoPathCreate
+    | UndoPathMultiply
     | UndoPendingExtent
     | UndoPendingType
     | UndoGuideToggle

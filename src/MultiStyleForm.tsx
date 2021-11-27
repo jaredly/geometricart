@@ -69,6 +69,15 @@ export const MultiStyleForm = ({
     });
     return (
         <div css={{ border: '1px solid magenta', padding: 8 }}>
+            <div>
+                <button
+                    onClick={() => {
+                        onChange(styles.map(() => ({ fills: [], lines: [] })));
+                    }}
+                >
+                    Remove custom (non-group) styles
+                </button>
+            </div>
             Change {styles.length} styles.
             <div>Fills</div>
             {fills.map((fill, i) => (
