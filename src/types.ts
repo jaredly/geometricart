@@ -2,6 +2,7 @@ import { ensureClockwise } from './CanvasRender';
 import { initialState } from './initialState';
 import { Primitive } from './intersect';
 import { simplifyPath } from './insetPath';
+import { combineStyles } from './Canvas';
 
 // Should I do polar coords?
 export type Coord = { x: number; y: number };
@@ -217,7 +218,7 @@ export type Segment = { type: 'Line'; to: Coord } | ArcSegment; // long = "the l
 
 export type PathGroup = {
     id: Id;
-    style: Style;
+    // style: Style;
     group: Id | null;
     hide?: boolean;
     clipMode?: 'none' | 'remove' | 'normal';
@@ -689,7 +690,7 @@ export type Meta = {
 };
 
 export type State = {
-    version: number;
+    version: 4;
     nextId: number;
     history: History;
     meta: Meta;
@@ -726,6 +727,7 @@ export type State = {
 
 export const migrateState = (state: State) => {
     if (!state.version) {
+        // @ts-ignore
         state.version = 1;
         if (!state.overlays) {
             state.overlays = {};
@@ -762,9 +764,11 @@ export const migrateState = (state: State) => {
                 ),
             };
         });
+        // @ts-ignore
         state.version = 2;
     }
     if (state.version < 3) {
+        // @ts-ignore
         state.version = 3;
         if ((state.view as any).clip) {
             state.clips = {
@@ -778,8 +782,40 @@ export const migrateState = (state: State) => {
             state.view.activeClip = null;
         }
     }
+    if (state.version < 4) {
+        state.version = 4;
+
+        Object.keys(state.paths).forEach((k) => {
+            const path = state.paths[k];
+            if (path.group) {
+                path.style = combinedPathStyles(path, state.pathGroups);
+            }
+        });
+
+        Object.keys(state.pathGroups).forEach((k) => {
+            const group = state.pathGroups[k];
+            // @ts-ignore
+            delete group.style;
+        });
+    }
     return state;
 };
+
+function combinedPathStyles(path: Path, groups: { [key: string]: PathGroup }) {
+    const styles = [path.style];
+    if (path.group) {
+        let group = groups[path.group];
+        // @ts-ignore
+        styles.unshift(group.style);
+        while (group.group) {
+            group = groups[group.group];
+            // @ts-ignore
+            styles.unshift(group.style);
+        }
+    }
+    const style = combineStyles(styles);
+    return style;
+}
 
 /*
 CHANGELOG:

@@ -19,12 +19,7 @@ import {
 import { primitivesForElementsAndPaths } from './Guides';
 import { epsilon, Primitive } from './intersect';
 import { reverseSegment } from './pathsAreIdentical';
-import {
-    calcPathD,
-    combinedPathStyles,
-    idSeed,
-    lightenedColor,
-} from './RenderPath';
+import { calcPathD, idSeed, lightenedColor } from './RenderPath';
 import { insetPath } from './insetPath';
 import { Coord, Overlay, Path, Segment, State } from './types';
 
@@ -99,7 +94,7 @@ export const canvasRender = async (
         : undefined;
 
     sortedVisiblePaths(state.paths, state.pathGroups, clip).forEach((path) => {
-        const style = combinedPathStyles(path, state.pathGroups);
+        const style = path.style;
 
         style.fills.forEach((fill, i) => {
             if (!fill || fill.color == null) {

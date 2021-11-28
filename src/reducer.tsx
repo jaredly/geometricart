@@ -757,7 +757,6 @@ export function handlePathMultiply(
                     [groupId]: {
                         group: null,
                         id: groupId,
-                        style: main.style,
                     },
                 };
             }
@@ -840,10 +839,7 @@ export function handlePathCreate(
         origin: action.origin,
         // simplify it up y'all
         segments: simplifyPath(ensureClockwise(action.segments)),
-        style: {
-            fills: [],
-            lines: [],
-        },
+        style,
     };
 
     if (state.activeMirror) {
@@ -885,10 +881,7 @@ export function handlePathCreate(
                 created: 0,
                 origin,
                 segments,
-                style: {
-                    lines: [],
-                    fills: [],
-                },
+                style,
             };
             ids.push(nid);
         });
@@ -897,12 +890,8 @@ export function handlePathCreate(
             [groupId]: {
                 group: null,
                 id: groupId,
-                style,
             },
         };
-        // here we gooooo
-    } else {
-        main.style = style;
     }
     state.paths[id] = main;
     return [

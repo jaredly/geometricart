@@ -1,4 +1,8 @@
 
+- [ ] remove style from groups! Instead, just mass-update the styles of paths.
+- [ ] then, make a button to "group selected paths", which will change their grouping to a new group.
+	if all of one group is contained in the selection, the other paths are added to this group.
+
 ## [x] "Multiply path(s) around mirror
 	- this would put the resulting paths in the same pathgroup as the original, and we'll also do deduping
 		on pths in the same pathgroup.

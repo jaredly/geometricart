@@ -78,7 +78,7 @@ export const RenderPath = React.memo(
         palette: Array<string>;
     }) => {
         const d = calcPathD(path, zoom);
-        const style = combinedPathStyles(path, groups);
+        const style = path.style;
 
         // const insetPaths =
         //
@@ -384,23 +384,6 @@ export const paletteColor = (
     const raw = lightenedColor(palette, color, lighten);
     return raw?.startsWith('http') ? `url(#palette-${color})` : raw;
 };
-
-export function combinedPathStyles(
-    path: Path,
-    groups: { [key: string]: PathGroup },
-) {
-    const styles = [path.style];
-    if (path.group) {
-        let group = groups[path.group];
-        styles.unshift(group.style);
-        while (group.group) {
-            group = groups[group.group];
-            styles.unshift(group.style);
-        }
-    }
-    const style = combineStyles(styles);
-    return style;
-}
 
 export const idSeed = (id: string) => {
     if (id.startsWith('id-')) {

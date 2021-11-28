@@ -135,30 +135,38 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactElement } = {
                     flexDirection: 'column',
                 }}
             >
-                {state.selection?.type === 'PathGroup' ? (
-                    <MultiStyleForm
-                        palette={state.palettes[state.activePalette]}
-                        styles={state.selection.ids.map(
-                            (id) => state.pathGroups[id].style,
-                        )}
-                        onChange={(styles) => {
-                            const changed: { [key: string]: PathGroup } = {};
-                            styles.forEach((style, i) => {
-                                if (style != null) {
-                                    const id = state.selection!.ids[i];
-                                    changed[id] = {
-                                        ...state.pathGroups[id],
-                                        style,
-                                    };
-                                }
-                            });
-                            dispatch({
-                                type: 'pathGroup:update:many',
-                                changed,
-                            });
-                        }}
-                    />
-                ) : null}
+                {state.selection?.type === 'PathGroup'
+                    ? (() => {
+                          const ids = Object.keys(state.paths).filter((k) =>
+                              state.selection!.ids.includes(
+                                  state.paths[k].group!,
+                              ),
+                          );
+                          return (
+                              <MultiStyleForm
+                                  palette={state.palettes[state.activePalette]}
+                                  styles={ids.map((k) => state.paths[k].style)}
+                                  onChange={(styles) => {
+                                      const changed: { [key: string]: Path } =
+                                          {};
+                                      styles.forEach((style, i) => {
+                                          if (style != null) {
+                                              const id = ids[i];
+                                              changed[id] = {
+                                                  ...state.paths[id],
+                                                  style,
+                                              };
+                                          }
+                                      });
+                                      dispatch({
+                                          type: 'path:update:many',
+                                          changed,
+                                      });
+                                  }}
+                              />
+                          );
+                      })()
+                    : null}
                 <div
                     css={{
                         overflow: 'auto',
@@ -213,14 +221,8 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactElement } = {
             {state.selection?.type === 'Path' ? (
                 <MultiStyleForm
                     palette={state.palettes[state.activePalette]}
-                    styles={state.selection.ids.map((id) =>
-                        state.paths[id].group
-                            ? mergeStyles(
-                                  state.pathGroups[state.paths[id].group!]
-                                      .style,
-                                  state.paths[id].style,
-                              )
-                            : state.paths[id].style,
+                    styles={state.selection.ids.map(
+                        (id) => state.paths[id].style,
                     )}
                     onChange={(styles) => {
                         const changed: { [key: string]: Path } = {};

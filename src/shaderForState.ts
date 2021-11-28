@@ -5,7 +5,7 @@ import { pathToPrimitives } from './findSelection';
 import { Primitive } from './intersect';
 import { Rgb } from './PalettesForm';
 import { transformSegment } from './points';
-import { combinedPathStyles, paletteColor } from './RenderPath';
+import { paletteColor } from './RenderPath';
 import { insetPath } from './insetPath';
 import { shaderFunctions } from './shaderFunctions';
 import { Coord, Fill, Path, State, StyleLine } from './types';
@@ -160,7 +160,7 @@ export function makePathFunctions(
     return (
         paths
             .filter((path) => {
-                const style = combinedPathStyles(path, state.pathGroups);
+                const style = path.style;
 
                 if (!style.fills.length || !style.fills[0]) {
                     console.log('no fill', path.id);
@@ -177,7 +177,7 @@ export function makePathFunctions(
             })
             // .slice(0, 1)
             .map((path, i) => {
-                const style = combinedPathStyles(path, state.pathGroups);
+                const style = path.style;
 
                 if (!style.fills.length) {
                     return '';
