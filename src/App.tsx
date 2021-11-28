@@ -51,13 +51,61 @@ export const App = ({ initialState }: { initialState: State }) => {
         localforage.setItem(key, JSON.stringify(state));
     }, [state]);
 
+    const [hover, setHover] = React.useState(null as null | Hover);
+
     React.useEffect(() => {
+        let tid: null | NodeJS.Timeout = null;
+        const hoverMirror = (id: Id, quick: boolean) => {
+            setHover({ kind: 'Mirror', id });
+            if (tid) {
+                clearTimeout(tid);
+            }
+            tid = setTimeout(
+                () => {
+                    setHover(null);
+                },
+                quick ? 100 : 1000,
+            );
+        };
+
+        let prevMirror = state.activeMirror;
         const fn = (evt: KeyboardEvent) => {
             if (
                 evt.target !== document.body &&
                 (evt.target instanceof HTMLInputElement ||
                     evt.target instanceof HTMLTextAreaElement)
             ) {
+                return;
+            }
+            console.log('key', evt.key);
+            if (evt.key === 'M') {
+                const ids = Object.keys(latestState.current.mirrors);
+                let id = ids[0];
+                if (latestState.current.activeMirror) {
+                    const idx = ids.indexOf(latestState.current.activeMirror);
+                    id = ids[(idx + 1) % ids.length];
+                }
+                dispatch({ type: 'mirror:active', id });
+                hoverMirror(id, false);
+                return;
+            }
+            if ((evt.key === 'm' || evt.key === 'µ') && evt.altKey) {
+                console.log('ok');
+                if (latestState.current.activeMirror) {
+                    prevMirror = latestState.current.activeMirror;
+                    hoverMirror(prevMirror, true);
+                    dispatch({ type: 'mirror:active', id: null });
+                } else if (prevMirror) {
+                    dispatch({ type: 'mirror:active', id: prevMirror });
+                    hoverMirror(prevMirror, false);
+                } else {
+                    const id = Object.keys(latestState.current.mirrors)[0];
+                    dispatch({
+                        type: 'mirror:active',
+                        id: id,
+                    });
+                    hoverMirror(id, false);
+                }
                 return;
             }
             if (evt.key === 'a' && (evt.ctrlKey || evt.metaKey)) {
@@ -129,8 +177,6 @@ export const App = ({ initialState }: { initialState: State }) => {
     }, []);
 
     const ref = React.useRef(null as null | SVGSVGElement);
-
-    const [hover, setHover] = React.useState(null as null | Hover);
 
     const [pendingMirror, setPendingMirror] = React.useState(
         null as null | PendingMirror,

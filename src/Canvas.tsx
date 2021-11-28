@@ -240,7 +240,7 @@ export const Canvas = ({
             // style={{ width, height }}
             onClick={(evt) => {
                 // if (evt.target === evt.currentTarget) {
-                if (state.selection) {
+                if (state.selection && !evt.shiftKey) {
                     dispatch({
                         type: 'selection:set',
                         selection: null,

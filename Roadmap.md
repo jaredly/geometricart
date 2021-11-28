@@ -1,5 +1,7 @@
 
-- [ ] remove style from groups! Instead, just mass-update the styles of paths.
+- [x] remove style from groups! Instead, just mass-update the styles of paths.
+- [ ] "clone style" would be very nice.
+- [x] shortcuts for toggling mirrors! alt-m to toggle on/off, shift-m to cycle.
 - [ ] then, make a button to "group selected paths", which will change their grouping to a new group.
 	if all of one group is contained in the selection, the other paths are added to this group.
 

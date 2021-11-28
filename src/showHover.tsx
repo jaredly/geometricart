@@ -3,13 +3,14 @@
 import * as React from 'react';
 import { jsx } from '@emotion/react';
 import { geomsForGiude } from './calculateGuideElements';
-import { Matrix } from './getMirrorTransforms';
+import { getTransformsForMirror, Matrix } from './getMirrorTransforms';
 import { geomToPrimitives } from './points';
 import { UnderlinePath } from './RenderPath';
 import { RenderPrimitive } from './RenderPrimitive';
 import { Hover } from './Sidebar';
 import { State } from './types';
 import { pathToPrimitives } from './findSelection';
+import { RenderMirror } from './RenderMirror';
 
 export const showHover = (
     key: string,
@@ -23,6 +24,15 @@ export const showHover = (
 ) => {
     const color = selection ? 'blue' : 'magenta';
     switch (hover.kind) {
+        case 'Mirror': {
+            return (
+                <RenderMirror
+                    zoom={zoom}
+                    mirror={state.mirrors[hover.id]}
+                    transforms={mirrorTransforms[hover.id]}
+                />
+            );
+        }
         case 'Path': {
             if (!state.paths[hover.id]) {
                 return;

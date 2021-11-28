@@ -1,5 +1,6 @@
 /* @jsx jsx */
 /* @jsxFrag React.Fragment */
+import * as React from 'react';
 import { jsx } from '@emotion/react';
 import { angleTo, applyMatrices, Matrix, push } from './getMirrorTransforms';
 import { Mirror } from './types';
@@ -24,17 +25,28 @@ export const RenderMirror = ({
         })),
     );
     return (
-        <g style={{ pointerEvents: 'none', opacity: 0.3 }}>
+        <g style={{ pointerEvents: 'none' }}>
             {lines.map(({ p1, p2 }, i) => (
-                <line
-                    key={i}
-                    x1={p1.x * zoom}
-                    y1={p1.y * zoom}
-                    x2={p2.x * zoom}
-                    y2={p2.y * zoom}
-                    stroke={'#fa0'}
-                    strokeWidth={'4'}
-                />
+                <>
+                    <line
+                        key={i}
+                        x1={p1.x * zoom}
+                        y1={p1.y * zoom}
+                        x2={p2.x * zoom}
+                        y2={p2.y * zoom}
+                        stroke={'#000'}
+                        strokeWidth={'6'}
+                    />
+                    <line
+                        key={`${i}-`}
+                        x1={p1.x * zoom}
+                        y1={p1.y * zoom}
+                        x2={p2.x * zoom}
+                        y2={p2.y * zoom}
+                        stroke={'#fa0'}
+                        strokeWidth={'4'}
+                    />
+                </>
             ))}
             <circle
                 r={10}
