@@ -20,7 +20,7 @@ import { primitivesForElementsAndPaths } from './Guides';
 import { epsilon, Primitive } from './intersect';
 import { reverseSegment } from './pathsAreIdentical';
 import { calcPathD, idSeed, lightenedColor } from './RenderPath';
-import { insetPath } from './insetPath';
+import { insetPath, pruneInsetPath } from './insetPath';
 import { Coord, Overlay, Path, Segment, State } from './types';
 
 export const makeImage = (href: string): Promise<HTMLImageElement> => {
@@ -101,13 +101,22 @@ export const canvasRender = async (
                 return;
             }
 
-            let myPath = path;
+            let pathInfos = [path];
+
+            // let myPath = path;
             if (fill.inset) {
                 const inset = insetPath(path, fill.inset / 100);
                 if (!inset) {
                     return;
                 }
-                myPath = inset;
+
+                pathInfos = pruneInsetPath(inset.segments).map((segments) => ({
+                    ...path,
+                    segments,
+                    origin: segments[segments.length - 1].to,
+                }));
+
+                // myPath = inset;
             }
 
             let lighten = fill.lighten;
@@ -122,58 +131,69 @@ export const canvasRender = async (
                 ctx.globalAlpha = fill.opacity;
             }
 
-            if (rough) {
-                if (!color.startsWith('http')) {
-                    rough.path(calcPathD(myPath, zoom), {
-                        fill: color,
-                        fillStyle: 'solid',
-                        stroke: 'none',
-                        seed: idSeed(path.id),
-                        roughness: state.view.sketchiness!,
-                    });
-                    ctx.globalAlpha = 1;
-                    return;
-                } else {
-                    const img = images[fill.color as number];
-                    if (!img) {
+            pathInfos.forEach((myPath) => {
+                if (rough) {
+                    if (!color.startsWith('http')) {
+                        rough.path(calcPathD(myPath, zoom), {
+                            fill: color,
+                            fillStyle: 'solid',
+                            stroke: 'none',
+                            seed: idSeed(path.id),
+                            roughness: state.view.sketchiness!,
+                        });
+                        ctx.globalAlpha = 1;
+                        return;
+                    } else {
+                        const img = images[fill.color as number];
+                        if (!img) {
+                            return;
+                        }
+                        const data = rough.generator.path(
+                            calcPathD(myPath, zoom),
+                            {
+                                fill: color,
+                                fillStyle: 'solid',
+                                stroke: 'none',
+                                seed: idSeed(path.id),
+                                roughness: state.view.sketchiness!,
+                            },
+                        );
+                        rough.generator.toPaths(data).forEach((info) => {
+                            const p2d = new Path2D(info.d);
+                            ctx.save();
+                            ctx.clip(p2d);
+                            drawCenteredImage(
+                                img,
+                                sourceWidth,
+                                sourceHeight,
+                                ctx,
+                            );
+                            ctx.restore();
+                        });
                         return;
                     }
-                    const data = rough.generator.path(calcPathD(myPath, zoom), {
-                        fill: color,
-                        fillStyle: 'solid',
-                        stroke: 'none',
-                        seed: idSeed(path.id),
-                        roughness: state.view.sketchiness!,
-                    });
-                    rough.generator.toPaths(data).forEach((info) => {
-                        const p2d = new Path2D(info.d);
-                        ctx.save();
-                        ctx.clip(p2d);
-                        drawCenteredImage(img, sourceWidth, sourceHeight, ctx);
-                        ctx.restore();
-                    });
-                    return;
                 }
-            }
 
-            ctx.beginPath();
-            tracePath(ctx, myPath, zoom);
+                ctx.beginPath();
+                tracePath(ctx, myPath, zoom);
 
-            if (color.startsWith('http')) {
-                const img = images[fill.color as number];
-                if (!img) {
-                    ctx.closePath();
-                    return;
+                if (color.startsWith('http')) {
+                    const img = images[fill.color as number];
+                    if (!img) {
+                        ctx.closePath();
+                        return;
+                    }
+                    ctx.save();
+                    ctx.clip();
+
+                    drawCenteredImage(img, sourceWidth, sourceHeight, ctx);
+                    ctx.restore();
+                } else {
+                    ctx.fillStyle = color;
+                    ctx.fill();
                 }
-                ctx.save();
-                ctx.clip();
+            });
 
-                drawCenteredImage(img, sourceWidth, sourceHeight, ctx);
-                ctx.restore();
-            } else {
-                ctx.fillStyle = color;
-                ctx.fill();
-            }
             ctx.globalAlpha = 1;
         });
 

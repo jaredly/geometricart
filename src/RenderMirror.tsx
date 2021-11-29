@@ -67,6 +67,13 @@ export const RenderMirror = ({
             />
             <circle
                 r={10}
+                cx={mirror.origin.x * zoom}
+                cy={mirror.origin.y * zoom}
+                fill="none"
+                stroke="#fa0"
+            />
+            <circle
+                r={10}
                 cx={mirror.point.x * zoom}
                 cy={mirror.point.y * zoom}
                 fill="none"
