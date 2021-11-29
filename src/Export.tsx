@@ -15,6 +15,7 @@ import { transparent } from './Icons';
 import { canvasRender } from './CanvasRender';
 import { RenderWebGL, setup } from './RenderWebGL';
 import { texture1, texture2 } from './textures';
+import { initialHistory } from './initialState';
 
 export const Export = ({
     canvasRef,
@@ -35,6 +36,7 @@ export const Export = ({
 
     const [size, setSize] = React.useState(1000);
     const [embed, setEmbed] = React.useState(true);
+    const [history, setHistory] = React.useState(true);
 
     return (
         <div
@@ -137,7 +139,12 @@ export const Export = ({
 
                         canvas.toBlob(async (blob) => {
                             if (embed) {
-                                blob = await addMetadata(blob, state);
+                                blob = await addMetadata(
+                                    blob,
+                                    history
+                                        ? state
+                                        : { ...state, history: initialHistory },
+                                );
                             }
                             setPng(URL.createObjectURL(blob));
                         }, 'image/png');
@@ -151,7 +158,9 @@ export const Export = ({
                         let text = canvasRef.current!.outerHTML;
                         if (embed) {
                             text += `\n\n${PREFIX}${JSON.stringify(
-                                state,
+                                history
+                                    ? state
+                                    : { ...state, history: initialHistory },
                             )}${SUFFIX}`;
                         }
                         const blob = new Blob([text], {
@@ -180,6 +189,13 @@ export const Export = ({
                     value={embed}
                     onChange={setEmbed}
                 />
+                {embed ? (
+                    <Toggle
+                        label="Embed history"
+                        value={history}
+                        onChange={setHistory}
+                    />
+                ) : null}
                 {url ? (
                     <button onClick={() => setUrl(null)}>Close</button>
                 ) : null}

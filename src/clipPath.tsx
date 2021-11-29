@@ -37,6 +37,19 @@ export type Angle =
           clockwise: boolean;
       };
 
+// export const anglesEqual = (one: Angle, two: Angle): boolean => {
+//     if (one.type !== two.type) {
+//         return false
+//     }
+//     if (!closeEnough(one.theta, two.theta)) {
+//         return false
+//     }
+//     if(one.type === 'arc' && two.type === 'arc') {
+//         return one.clockwise === two.clockwise && closeEnough(one.radius, two.radius)
+//     }
+//     return true
+// }
+
 export const closeEnough = (one: number, two: number) =>
     one === two || Math.abs(one - two) < epsilon;
 
@@ -214,6 +227,22 @@ export const getBackAngle = <T extends { coord: Coord }>(
         }
     }
     const segment = getSegment(one.segments, location.segment);
+    const atEnd =
+        location.intersection != -1
+            ? coordsEqual(
+                  one.hits[location.segment][location.intersection].coord,
+                  segment.to,
+              )
+            : false;
+    if (atEnd) {
+        // const next = getSegment(one.segments, location.segment + 1)
+        // if (segment.type === 'Line')
+        // throw new Error(`at end!`);
+        return getBackAngle(one, {
+            segment: location.segment + 1,
+            intersection: -1,
+        });
+    }
     if (segment.type === 'Line') {
         return { type: 'flat', theta: angleTo(segment.to, prev.to) };
     } else {
@@ -239,6 +268,24 @@ export const getAngle = <T extends { coord: Coord }>(
             ? getSegment(one.segments, location.segment - 1).to
             : one.hits[location.segment][location.intersection].coord;
     const segment = getSegment(one.segments, location.segment);
+    const atEnd =
+        location.intersection != -1
+            ? coordsEqual(
+                  one.hits[location.segment][location.intersection].coord,
+                  segment.to,
+              )
+            : false;
+    if (atEnd) {
+        // const next = getSegment(one.segments, location.segment + 1)
+        // if (segment.type === 'Line')
+        // throw new Error(`at end!`);
+        console.log(`at end`, location.segment + 1, one);
+        console.error(new Error('nope'));
+        return getAngle(one, {
+            segment: location.segment + 1,
+            intersection: -1,
+        });
+    }
     if (segment.type === 'Line') {
         return { type: 'flat', theta: angleTo(pos, segment.to) };
     } else {

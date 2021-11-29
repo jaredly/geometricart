@@ -14,6 +14,7 @@ import { angleBetween } from './findNextSegments';
 import { coordsEqual } from './pathsAreIdentical';
 import { pathToPrimitives } from './findSelection';
 import {
+    anglesEqual,
     Clippable,
     clipTwo,
     getAngle,
@@ -143,7 +144,10 @@ export const pruneInsetPath = (
         let at = startPos;
         let bad = false;
 
-        while (!path.length || !coordsEqual(path[path.length - 1].to, start)) {
+        while (
+            (!path.length || !coordsEqual(path[path.length - 1].to, start)) &&
+            allHits.length
+        ) {
             const next = at.intersection + 1;
             if (next >= sorted[at.segment].length) {
                 addSegment(segments[at.segment]);
@@ -173,12 +177,14 @@ export const pruneInsetPath = (
 
             const hidx = allHits.indexOf(hit);
             if (hidx === -1) {
+                // console.log(allHits, hit);
                 throw new Error(
                     `how did I reach an intersection I've seen before? unless it's the start one again.... but I already accoutned for that`,
                 );
+            } else {
+                // no need to traverse, we've gone the only good way.
+                allHits.splice(hidx, 1);
             }
-            // no need to traverse, we've gone the only good way.
-            allHits.splice(hidx, 1);
 
             at = { segment, intersection: sorted[segment].indexOf(hit) };
         }
@@ -214,9 +220,20 @@ export const getClockwiseExit = (
     };
     const back = getBackAngle(clippable, firstLocation);
     const forward = getAngle(clippable, firstLocation);
+    if (anglesEqual(back, forward)) {
+        console.log(clippable, firstLocation);
+        throw new Error(
+            `Back and forward angles are equal. The thing you gave me is a degenerate polygon?`,
+        );
+    }
     const testAnble = getAngle(clippable, secondLocation);
-    if (isInside(back, forward, testAnble)) {
-        return hit.second;
+    try {
+        if (isInside(back, forward, testAnble)) {
+            return hit.second;
+        }
+    } catch (err) {
+        console.log(firstLocation, clippable, back, forward);
+        throw err;
     }
     return hit.first;
 };
