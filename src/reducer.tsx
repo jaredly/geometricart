@@ -509,6 +509,47 @@ export const reduceWithoutUndo = (
                 },
             ];
         }
+        case 'group:regroup': {
+            const paths = { ...state.paths };
+            const touched: { [key: Id]: true } = {};
+            const ids =
+                action.selection.type === 'Path'
+                    ? action.selection.ids
+                    : Object.keys(paths).filter((k) =>
+                          action.selection.ids.includes(paths[k].group!),
+                      );
+            let nextId = state.nextId;
+            const group = `id-${nextId++}`;
+            const prevGroups: { [key: Id]: Id | null } = {};
+            ids.forEach((id) => {
+                // if (paths[id].group) {
+                //     touched[paths[id].group!] = true
+                // }
+                prevGroups[id] = paths[id].group;
+                paths[id] = { ...paths[id], group };
+            });
+            return [
+                {
+                    ...state,
+                    nextId,
+                    selection: { type: 'PathGroup', ids: [group] },
+                    paths,
+                    pathGroups: {
+                        ...state.pathGroups,
+                        [group]: {
+                            id: group,
+                            group: null,
+                        },
+                    },
+                },
+                {
+                    type: action.type,
+                    action,
+                    created: [group, state.nextId],
+                    prevGroups,
+                },
+            ];
+        }
         default:
             let _x: never = action;
             console.log(`SKIPPING ${(action as any).type}`);
@@ -518,6 +559,18 @@ export const reduceWithoutUndo = (
 
 export const undo = (state: State, action: UndoAction): State => {
     switch (action.type) {
+        case 'group:regroup': {
+            state = { ...state };
+            if (action.created) {
+                state.pathGroups = { ...state.pathGroups };
+                delete state.pathGroups[action.created[0]];
+                state.nextId = action.created[1];
+            }
+            Object.keys(action.prevGroups).forEach((k) => {
+                state.paths[k].group = action.prevGroups[k];
+            });
+            return state;
+        }
         case 'pending:extent': {
             const pending = state.pending as PendingGuide;
             return {

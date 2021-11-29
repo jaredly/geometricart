@@ -5,7 +5,7 @@ import React from 'react';
 import { Canvas } from './Canvas';
 import { reducer } from './reducer';
 import { Hover, Sidebar } from './Sidebar';
-import { Coord, GuideGeom, Id, State } from './types';
+import { Coord, GroupRegroup, GuideGeom, Id, State } from './types';
 import { initialState } from './initialState';
 import { useDropTarget } from './useDropTarget';
 
@@ -120,6 +120,17 @@ export const App = ({ initialState }: { initialState: State }) => {
                 });
             }
             if (evt.key === 'Delete' || evt.key === 'Backspace') {
+                console.log('ok', latestState.current.selection?.type);
+                if (latestState.current.selection?.type === 'Guide') {
+                    // TODO: make a group:deletee:many
+                    latestState.current.selection.ids.forEach((id) => {
+                        dispatch({
+                            type: 'guide:delete',
+                            id,
+                        });
+                    });
+                    return;
+                }
                 if (latestState.current.selection?.type === 'Path') {
                     return dispatch({
                         type: 'path:delete:many',
@@ -136,6 +147,22 @@ export const App = ({ initialState }: { initialState: State }) => {
                 }
             }
             if (evt.key === 'g') {
+                if (evt.metaKey || evt.ctrlKey) {
+                    evt.preventDefault();
+                    evt.stopPropagation();
+                    const { selection } = latestState.current;
+                    if (
+                        selection?.type !== 'PathGroup' &&
+                        selection?.type !== 'Path'
+                    ) {
+                        return;
+                    }
+                    return dispatch({
+                        type: 'group:regroup',
+                        selection: latestState.current
+                            .selection as GroupRegroup['selection'],
+                    });
+                }
                 return dispatch({
                     type: 'view:update',
                     view: {

@@ -2,7 +2,13 @@
 /* @jsxFrag React.Fragment */
 import * as React from 'react';
 import { jsx } from '@emotion/react';
-import { angleTo, applyMatrices, Matrix, push } from './getMirrorTransforms';
+import {
+    angleTo,
+    applyMatrices,
+    dist,
+    Matrix,
+    push,
+} from './getMirrorTransforms';
 import { Mirror } from './types';
 
 export const RenderMirror = ({
@@ -15,9 +21,11 @@ export const RenderMirror = ({
     zoom: number;
 }) => {
     const d = angleTo(mirror.origin, mirror.point);
-    const off = push(mirror.origin, d + Math.PI / 2, 0.2);
-    const top = push(mirror.origin, d, 0.4);
-    const line = { p1: off, p2: top };
+    const len = dist(mirror.origin, mirror.point);
+    const mid = push(mirror.origin, d, len / 2);
+    const off = mirror.reflect ? push(mid, d + Math.PI / 2, len / 4) : mid;
+    // const top = push(mirror.origin, d, len);
+    const line = { p1: off, p2: mirror.point };
     const lines = [line].concat(
         transforms.map((tr) => ({
             p1: applyMatrices(line.p1, tr),
@@ -48,6 +56,15 @@ export const RenderMirror = ({
                     />
                 </>
             ))}
+            <line
+                x1={mirror.origin.x * zoom}
+                y1={mirror.origin.y * zoom}
+                x2={mirror.point.x * zoom}
+                y2={mirror.point.y * zoom}
+                stroke={'#fa0'}
+                strokeWidth={'2'}
+                strokeDasharray="5 5"
+            />
             <circle
                 r={10}
                 cx={mirror.point.x * zoom}

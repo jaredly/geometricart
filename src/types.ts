@@ -395,6 +395,17 @@ export type GroupUpdate = {
     group: PathGroup;
 };
 
+export type GroupRegroup = {
+    type: 'group:regroup';
+    selection: { type: 'Path' | 'PathGroup'; ids: Array<Id> };
+};
+export type UndoGroupRegroup = {
+    type: GroupRegroup['type'];
+    action: GroupRegroup;
+    created: null | [Id, number];
+    prevGroups: { [key: Id]: Id | null };
+};
+
 export type PathDelete = {
     type: 'path:delete';
     id: Id;
@@ -583,6 +594,7 @@ export type UndoableAction =
     | OverlayUpdate
     | PathGroupUpdateMany
     | PathCreate
+    | GroupRegroup
     | PathMultiply
     | GuideToggle;
 
@@ -591,6 +603,7 @@ export type UndoAction =
     | UndoOverlayAdd
     | UndoClipAdd
     | UndoGroupUpdate
+    | UndoGroupRegroup
     | UndoPathUpdate
     | UndoPathUpdateMany
     | UndoPathDeleteMany

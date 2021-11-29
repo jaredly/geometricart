@@ -13,7 +13,6 @@
 - [ ] selection type for PathOrGroup thx
 - [ ] shift-drag to resize overlay, so you don't have to zoom out. indicate via cursor.
 
-- [ ] what about "regroup"?
 - [x] also perf is really bad, I need to figure out what to memoize.
 
 

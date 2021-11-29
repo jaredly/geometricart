@@ -25,16 +25,31 @@ export function Overlay({
         null as null | { orig: Coord; current: Coord },
     );
 
-    const [resize, setResize] = React.useState(null as null | Coord);
+    const [resize, setResize] = React.useState(
+        null as null | { origin: Coord; pos: Coord },
+    );
 
     const overlay = state.overlays[id];
     const attachment = state.attachments[overlay.source];
-    const iwidth = resize
-        ? Math.abs(resize.x - overlay.center.x) * 2 * view.zoom
-        : ((attachment.width * view.zoom) / 100) * overlay.scale.x;
-    const iheight = resize
-        ? Math.abs(resize.y - overlay.center.y) * 2 * view.zoom
-        : ((attachment.height * view.zoom) / 100) * overlay.scale.y;
+
+    const scale = resize
+        ? ((resize.pos.x - overlay.center.x) /
+              (resize.origin.x - overlay.center.x)) *
+          overlay.scale.x
+        : overlay.scale.x;
+
+    const iwidth = ((attachment.width * view.zoom) / 100) * scale;
+    const iheight = ((attachment.height * view.zoom) / 100) * scale;
+    // const iwidth = resize
+    //     ? Math.abs(
+    // 		(resize.pos.x - overlay.center.x) /
+    // 		(resize.origin.x - overlay.center.x)
+    // 		// resize.pos.x - overlay.center.x
+    // 	) * overlay.scale.x
+    //     : ((attachment.width * view.zoom) / 100) * overlay.scale.x;
+    // const iheight = resize
+    //     ? Math.abs(resize.pos.y - overlay.center.y) * 2 * view.zoom
+    //     : ((attachment.height * view.zoom) / 100) * overlay.scale.y;
 
     const x =
         overlay.center.x * view.zoom +
@@ -55,33 +70,44 @@ export function Overlay({
         height,
         view,
         React.useCallback((pos) => {
-            setResize(pos);
+            setResize((res) => (res ? { ...res, pos } : res));
         }, []),
         React.useCallback(() => {
             setResize((resize) => {
                 if (!resize) {
                     return null;
                 }
+                const overlay = currentOverlay.current;
 
-                const w =
-                    Math.abs(resize.x - currentOverlay.current.center.x) * 2;
-                const h =
-                    Math.abs(resize.y - currentOverlay.current.center.y) * 2;
+                const scale =
+                    ((resize.pos.x - overlay.center.x) /
+                        (resize.origin.x - overlay.center.x)) *
+                    overlay.scale.x;
 
-                const iwidth =
-                    (currentAttachment.current.width / 100) *
-                    currentOverlay.current.scale.x;
-                const iheight =
-                    (currentAttachment.current.height / 100) *
-                    currentOverlay.current.scale.y;
+                // const iwidth = ((attachment.width * view.zoom) / 100) * scale;
+                // const iheight = ((attachment.height * view.zoom) / 100) * scale;
 
-                const scale = {
-                    x: currentOverlay.current.scale.x * (w / iwidth),
-                    y: currentOverlay.current.scale.y * (h / iheight),
-                };
+                // const w =
+                //     Math.abs(resize.pos.x - overlay.center.x) *
+                //     2;
+                // const h =
+                //     Math.abs(resize.pos.y - overlay.center.y) *
+                //     2;
+
+                // const iwidth =
+                //     (currentAttachment.current.width / 100) *
+                //     overlay.scale.x;
+                // const iheight =
+                //     (currentAttachment.current.height / 100) *
+                //     overlay.scale.y;
+
+                // const scale = {
+                //     x: overlay.scale.x * (w / iwidth),
+                //     y: overlay.scale.y * (h / iheight),
+                // };
                 onUpdate({
-                    ...currentOverlay.current,
-                    scale,
+                    ...overlay,
+                    scale: { x: scale, y: scale },
                 });
                 return null;
             });
@@ -141,6 +167,20 @@ export function Overlay({
                     if (!svg) {
                         return console.warn('NOS SVG');
                     }
+                    if (evt.shiftKey) {
+                        const rect = svg.getBoundingClientRect();
+                        const pos = screenToWorld(
+                            width,
+                            height,
+                            {
+                                x: evt.clientX - rect.left,
+                                y: evt.clientY - rect.top,
+                            },
+                            view,
+                        );
+                        setResize({ origin: pos, pos });
+                        return;
+                    }
                     const rect = svg.getBoundingClientRect();
                     // evt.
                     const pos = screenToWorld(
@@ -179,25 +219,25 @@ export function Overlay({
                                 },
                                 view,
                             );
-                            setResize(pos);
+                            setResize({ origin: pos, pos });
                         }}
                     />
-                    {drag ? (
+                    {/* {drag ? (
                         <circle
                             cx={drag.current.x * view.zoom}
                             cy={drag.current.y * view.zoom}
                             r={30}
                             fill="rgba(255,0,0,0.5)"
                         />
-                    ) : null}
-                    {resize ? (
+                    ) : null} */}
+                    {/* {resize ? (
                         <circle
                             cx={resize.x * view.zoom}
                             cy={resize.y * view.zoom}
                             r={30}
                             fill="rgba(255,0,0,0.5)"
                         />
-                    ) : null}
+                    ) : null} */}
                 </>
             ) : null}
         </>

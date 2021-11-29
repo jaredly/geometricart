@@ -69,111 +69,106 @@ export const MultiStyleForm = ({
     });
     return (
         <div css={{ border: '1px solid magenta', padding: 8 }}>
-            <div>
-                <button
-                    onClick={() => {
-                        onChange(styles.map(() => ({ fills: [], lines: [] })));
-                    }}
-                >
-                    Remove custom (non-group) styles
-                </button>
-            </div>
             Change {styles.length} styles.
             <div>Fills</div>
             {fills.map((fill, i) => (
                 <div
                     css={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        flexWrap: 'wrap',
+                        // display: 'flex',
+                        // alignItems: 'center',
+                        marginBottom: 8,
+                        // flexWrap: 'wrap',
                     }}
                 >
-                    <MultiColor
-                        color={fill.color}
-                        onChange={(color) => {
-                            onChange(updateFill(styles, i, color, 'color'));
-                            // ok
-                        }}
-                        palette={palette}
-                        key={i}
-                    />
-                    <div style={{ flexBasis: 16 }} />
-                    <div key={`variation-${i}`}>
-                        colorVariation:
-                        <MultiNumber
-                            value={fill.colorVariation}
-                            onChange={(colorVariation) => {
-                                onChange(
-                                    updateFill(
-                                        styles,
-                                        i,
-                                        colorVariation ?? undefined,
-                                        'colorVariation',
-                                    ),
-                                );
-                            }}
-                        />
-                    </div>
-                    <div style={{ flexBasis: 16 }} />
-                    <div key={`opacity-${i}`}>
-                        opacity:
-                        <MultiNumber
-                            value={fill.opacity}
-                            onChange={(opacity) => {
-                                onChange(
-                                    updateFill(
-                                        styles,
-                                        i,
-                                        opacity ?? undefined,
-                                        'opacity',
-                                    ),
-                                );
-                            }}
-                        />
-                    </div>
-                    <div style={{ flexBasis: 16 }} />
-                    <div key={`inset-${i}`}>
-                        inset:
-                        <MultiNumber
-                            value={fill.inset}
-                            onChange={(inset) => {
-                                onChange(
-                                    updateFill(
-                                        styles,
-                                        i,
-                                        inset ?? undefined,
-                                        'inset',
-                                    ),
-                                );
-                            }}
-                        />
-                    </div>
-                    <div style={{ flexBasis: 16 }} />
-                    <div key={`lighten-${i}`}>
-                        lighten/darken:
-                        <LightDark
-                            lighten={fill.lighten}
-                            palette={palette}
+                    <div css={{ display: 'flex' }}>
+                        <div key={`inset-${i}`}>
+                            inset:
+                            <MultiNumber
+                                value={fill.inset}
+                                onChange={(inset) => {
+                                    onChange(
+                                        updateFill(
+                                            styles,
+                                            i,
+                                            inset ?? undefined,
+                                            'inset',
+                                        ),
+                                    );
+                                }}
+                            />
+                        </div>
+                        <div style={{ flexBasis: 16 }} />
+                        <MultiColor
                             color={fill.color}
-                            onChange={(lighten) => {
-                                onChange(
-                                    updateFill(
-                                        styles,
-                                        i,
-                                        lighten ?? undefined,
-                                        'lighten',
-                                    ),
-                                );
+                            onChange={(color) => {
+                                onChange(updateFill(styles, i, color, 'color'));
+                                // ok
                             }}
+                            palette={palette}
+                            key={i}
                         />
+                        <div style={{ flexBasis: 16 }} />
+                        <div key={`lighten-${i}`}>
+                            <LightDark
+                                lighten={fill.lighten}
+                                palette={palette}
+                                color={fill.color}
+                                onChange={(lighten) => {
+                                    onChange(
+                                        updateFill(
+                                            styles,
+                                            i,
+                                            lighten ?? undefined,
+                                            'lighten',
+                                        ),
+                                    );
+                                }}
+                            />
+                        </div>
                     </div>
-                    <button
-                        onClick={() => {
-                            onChange(removeFill(styles, i));
-                        }}
-                    >
-                        Delete
-                    </button>
+                    <div css={{ display: 'flex' }}>
+                        <div key={`variation-${i}`}>
+                            variation:
+                            <MultiNumber
+                                value={fill.colorVariation}
+                                onChange={(colorVariation) => {
+                                    onChange(
+                                        updateFill(
+                                            styles,
+                                            i,
+                                            colorVariation ?? undefined,
+                                            'colorVariation',
+                                        ),
+                                    );
+                                }}
+                            />
+                        </div>
+                        <div style={{ flexBasis: 16 }} />
+                        <div key={`opacity-${i}`}>
+                            opacity:
+                            <MultiNumber
+                                value={fill.opacity}
+                                onChange={(opacity) => {
+                                    onChange(
+                                        updateFill(
+                                            styles,
+                                            i,
+                                            opacity ?? undefined,
+                                            'opacity',
+                                        ),
+                                    );
+                                }}
+                            />
+                        </div>
+                        <div style={{ flexBasis: 16 }} />
+                        <button
+                            onClick={() => {
+                                onChange(removeFill(styles, i));
+                            }}
+                        >
+                            Delete fill
+                        </button>
+                    </div>
                 </div>
             ))}
             <button
@@ -312,7 +307,7 @@ export const LightDark = ({
     const options = [-3, -2, -1.5, -1, -0.5, 0, 0.5, 1, 1.5, 2, 3];
     const allSame = lighten.length === 1 ? lighten[0] : null;
     return (
-        <div css={{ display: 'flex' }}>
+        <div css={{ display: 'flex', marginBottom: 2 }}>
             {options.map((value, i) => (
                 <div key={i}>
                     {color
@@ -323,11 +318,25 @@ export const LightDark = ({
                                     onChange(allSame === value ? null : value)
                                 }
                                 style={{
-                                    borderColor:
-                                        allSame === value ||
-                                        (allSame == null && value === 0)
-                                            ? 'white'
-                                            : 'transparent',
+                                    // borderColor:
+                                    // lighten.includes(value) ? 'black' : 'transparent',
+                                    // allSame === value ||
+                                    // (allSame == null && value === 0)
+                                    //     ? '#000'
+                                    //     : lighten.includes(value)
+                                    //     ? '#f00'
+                                    //     : '#000',
+                                    boxShadow:
+                                        lighten.includes(value) ||
+                                        (value === 0 && lighten.includes(null))
+                                            ? `0 3px 0 ${
+                                                  allSame === value ||
+                                                  (allSame == null &&
+                                                      value === 0)
+                                                      ? 'white'
+                                                      : 'orange'
+                                              }`
+                                            : 'none',
                                     background: paletteColor(
                                         palette,
                                         color!,
@@ -335,7 +344,14 @@ export const LightDark = ({
                                     ),
                                 }}
                                 css={{
-                                    border: '2px solid transparent',
+                                    cursor: 'pointer',
+                                    ':hover': {
+                                        outline: '1px solid magenta',
+                                        zIndex: 10,
+                                        position: 'relative',
+                                        borderBottom: 'none',
+                                    },
+                                    borderBottom: '2px solid black',
                                     width: 20,
                                     height: 20,
                                 }}
@@ -467,21 +483,34 @@ export const MultiColor = ({
     const options = ['black', 'white', 'transparent'];
     const highlight = color.length === 1 ? 'white' : '#faa';
     return (
-        <div>
+        <div css={{ marginBottom: 4, marginTop: 2, display: 'flex' }}>
             {palette.map((item, i) => (
                 <button
                     key={i}
                     onClick={() => onChange(i)}
                     style={{
-                        border: `2px solid ${
-                            color.includes(i) ? highlight : '#444'
-                        }`,
+                        boxShadow: color.includes(i)
+                            ? `0 3px 0 ${highlight}`
+                            : 'none',
+                        // border: `2px solid ${
+                        //     color.includes(i) ? highlight : '#444'
+                        // }`,
                     }}
                     css={{
                         background: maybeUrlColor(item),
                         width: 20,
+                        display: 'block',
                         height: 20,
                         cursor: 'pointer',
+                        border: 'none',
+                        marginTop: 2,
+                        borderBottom: '2px solid black',
+                        ':hover': {
+                            outline: '1px solid magenta',
+                            zIndex: 10,
+                            position: 'relative',
+                            borderBottom: 'none',
+                        },
                     }}
                 />
             ))}
@@ -489,17 +518,33 @@ export const MultiColor = ({
                 <button
                     key={name}
                     onClick={() => onChange(name)}
-                    css={{
+                    style={{
                         background:
                             name === 'transparent'
                                 ? `url("${transparent}")`
                                 : maybeUrlColor(name),
-                        border: `2px solid ${
-                            color.includes(name) ? highlight : '#444'
-                        }`,
+
+                        boxShadow: color.includes(i)
+                            ? `0 3px 0 ${highlight}`
+                            : 'none',
+                    }}
+                    css={{
+                        border: 'none',
+                        // border: `2px solid ${
+                        //     color.includes(name) ? highlight : '#444'
+                        // }`,
+                        marginTop: 2,
+                        display: 'block',
+                        borderBottom: '2px solid black',
                         width: 20,
                         height: 20,
                         cursor: 'pointer',
+                        ':hover': {
+                            outline: '1px solid magenta',
+                            zIndex: 10,
+                            position: 'relative',
+                            borderBottom: 'none',
+                        },
                     }}
                 ></button>
             ))}
