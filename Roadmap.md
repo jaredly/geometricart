@@ -1,6 +1,8 @@
 
 - [ ] ifff a line goes backwards after inset, just delete that segment and recalculate?
 
+- [ ] make a setting for "clip first, then inset" or "inset first, then clip".
+
 - [x] remove style from groups! Instead, just mass-update the styles of paths.
 - [ ] "clone style" would be very nice.
 - [x] shortcuts for toggling mirrors! alt-m to toggle on/off, shift-m to cycle.

@@ -222,6 +222,7 @@ export type PathGroup = {
     group: Id | null;
     hide?: boolean;
     clipMode?: 'none' | 'remove' | 'normal';
+    insetBeforeClip?: boolean;
     ordering?: number;
 };
 

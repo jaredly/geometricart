@@ -314,6 +314,13 @@ export const PathGroupForm = ({
                     Delete
                 </button>
             </div>
+            <Toggle
+                value={!!group.insetBeforeClip}
+                onChange={(insetBeforeClip) =>
+                    onChange({ ...group, insetBeforeClip })
+                }
+                label="Inset before clip"
+            />
             <div>
                 Clip Mode:
                 {['none', 'remove', 'normal'].map((name) => (
