@@ -297,9 +297,9 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactElement } = {
                     justifyContent: 'flex-start',
                     // minHeight: 100,
                 }}
-                onClick={() => {
-                    dispatch({ type: 'selection:set', selection: null });
-                }}
+                // onClick={() => {
+                //     dispatch({ type: 'selection:set', selection: null });
+                // }}
             >
                 {(state.selection?.type === 'Path' ||
                     state.selection?.type === 'PathGroup') &&
@@ -325,19 +325,19 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactElement } = {
                             state.selection?.type === 'Mirror' &&
                             state.selection.ids.includes(k)
                         }
-                        setSelected={(sel) => {
-                            if (sel) {
-                                dispatch({
-                                    type: 'selection:set',
-                                    selection: { type: 'Mirror', ids: [k] },
-                                });
-                            } else {
-                                dispatch({
-                                    type: 'selection:set',
-                                    selection: null,
-                                });
-                            }
-                        }}
+                        // setSelected={(sel) => {
+                        //     if (sel) {
+                        //         dispatch({
+                        //             type: 'selection:set',
+                        //             selection: { type: 'Mirror', ids: [k] },
+                        //         });
+                        //     } else {
+                        //         dispatch({
+                        //             type: 'selection:set',
+                        //             selection: null,
+                        //         });
+                        //     }
+                        // }}
                         onMouseOut={() => setHover(null)}
                         onMouseOver={() => setHover({ kind: 'Mirror', id: k })}
                         isActive={state.activeMirror === k}

@@ -349,7 +349,7 @@ export const coordForPos = (
 //     return result;
 // };
 
-export const insetPath = (path: Path, inset: number) => {
+export const insetPath = (path: Path, inset: number): Path => {
     // All paths are clockwise, it just makes this easier
     if (!isClockwise(path.segments)) {
         path = { ...path, segments: reversePath(path.segments) };

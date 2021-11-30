@@ -132,41 +132,41 @@ export const RenderPath = React.memo(
             let raw = d;
             // let newPath = path;
             let pathInfos = [{ path, raw }];
-            if (fill.inset) {
-                const inset = insetPath(path, fill.inset / 100);
+            // if (fill.inset) {
+            //     const inset = insetPath(path, fill.inset / 100);
 
-                const angle = totalAngle(inset.segments);
+            //     const angle = totalAngle(inset.segments);
 
-                // We have a twist!
-                // but that's no the only possible self-intersection.
-                // If we have a concave shape, it's easy to self-intersect.
-                // So what we need to do is ... find self-intersections, and then
-                // do self-clipping?
-                // Basically do the same kind of clip walk, but it's just on one path.
-                // And we'd have to do the same deal where we look at all points, to see
-                // which ones are in a still-clockwise section of things.
-                // if (Math.abs(angle) < epsilon * 2) {
-                pathInfos = pruneInsetPath(inset.segments).map((segments) => ({
-                    path: {
-                        ...path,
-                        segments,
-                        origin: segments[segments.length - 1].to,
-                    },
-                    raw: calcPathD(
-                        {
-                            ...path,
-                            segments,
-                            origin: segments[segments.length - 1].to,
-                        },
-                        zoom,
-                    ),
-                }));
-                // } else if (angle < Math.PI - epsilon) {
-                //     return null;
-                // } else {
-                // pathInfos = [{ path: inset, raw: calcPathD(inset, zoom) }];
-                // }
-            }
+            //     // We have a twist!
+            //     // but that's no the only possible self-intersection.
+            //     // If we have a concave shape, it's easy to self-intersect.
+            //     // So what we need to do is ... find self-intersections, and then
+            //     // do self-clipping?
+            //     // Basically do the same kind of clip walk, but it's just on one path.
+            //     // And we'd have to do the same deal where we look at all points, to see
+            //     // which ones are in a still-clockwise section of things.
+            //     // if (Math.abs(angle) < epsilon * 2) {
+            //     pathInfos = pruneInsetPath(inset.segments).map((segments) => ({
+            //         path: {
+            //             ...path,
+            //             segments,
+            //             origin: segments[segments.length - 1].to,
+            //         },
+            //         raw: calcPathD(
+            //             {
+            //                 ...path,
+            //                 segments,
+            //                 origin: segments[segments.length - 1].to,
+            //             },
+            //             zoom,
+            //         ),
+            //     }));
+            //     // } else if (angle < Math.PI - epsilon) {
+            //     //     return null;
+            //     // } else {
+            //     // pathInfos = [{ path: inset, raw: calcPathD(inset, zoom) }];
+            //     // }
+            // }
 
             return pathInfos.map(({ path: newPath, raw }, k) => {
                 if (generator && sketchiness && sketchiness > 0) {
@@ -259,44 +259,44 @@ export const RenderPath = React.memo(
             }
 
             let pathInfos = [{ path, raw: d }];
-            if (line.inset) {
-                const inset = insetPath(path, line.inset / 100);
+            // if (line.inset) {
+            //     const inset = insetPath(path, line.inset / 100);
 
-                // const angle = totalAngle(inset.segments);
+            //     // const angle = totalAngle(inset.segments);
 
-                // We have a twist!
-                // but that's no the only possible self-intersection.
-                // If we have a concave shape, it's easy to self-intersect.
-                // So what we need to do is ... find self-intersections, and then
-                // do self-clipping?
-                // Basically do the same kind of clip walk, but it's just on one path.
-                // And we'd have to do the same deal where we look at all points, to see
-                // which ones are in a still-clockwise section of things.
-                // if (Math.abs(angle) < epsilon * 2) {
-                pathInfos = pruneInsetPath(inset.segments)
-                    .filter((s) => s.length)
-                    .map((segments) => ({
-                        path: {
-                            ...path,
-                            segments,
-                            origin: segments[segments.length - 1].to,
-                        },
-                        raw: calcPathD(
-                            {
-                                ...path,
-                                segments,
-                                origin: segments[segments.length - 1].to,
-                            },
-                            zoom,
-                        ),
-                    }));
-                // } else if (angle < Math.PI - epsilon) {
-                //     return null;
-                // } else {
-                // pathInfos = [{ path: inset, raw: calcPathD(inset, zoom) }];
-                // }
-                pathInfos = [{ path: inset, raw: calcPathD(inset, zoom) }];
-            }
+            //     // We have a twist!
+            //     // but that's no the only possible self-intersection.
+            //     // If we have a concave shape, it's easy to self-intersect.
+            //     // So what we need to do is ... find self-intersections, and then
+            //     // do self-clipping?
+            //     // Basically do the same kind of clip walk, but it's just on one path.
+            //     // And we'd have to do the same deal where we look at all points, to see
+            //     // which ones are in a still-clockwise section of things.
+            //     // if (Math.abs(angle) < epsilon * 2) {
+            //     pathInfos = pruneInsetPath(inset.segments)
+            //         .filter((s) => s.length)
+            //         .map((segments) => ({
+            //             path: {
+            //                 ...path,
+            //                 segments,
+            //                 origin: segments[segments.length - 1].to,
+            //             },
+            //             raw: calcPathD(
+            //                 {
+            //                     ...path,
+            //                     segments,
+            //                     origin: segments[segments.length - 1].to,
+            //                 },
+            //                 zoom,
+            //             ),
+            //         }));
+            //     // } else if (angle < Math.PI - epsilon) {
+            //     //     return null;
+            //     // } else {
+            //     // pathInfos = [{ path: inset, raw: calcPathD(inset, zoom) }];
+            //     // }
+            //     pathInfos = [{ path: inset, raw: calcPathD(inset, zoom) }];
+            // }
 
             return pathInfos.map(({ path: newPath, raw }, k) => {
                 // let raw = d;

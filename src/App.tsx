@@ -26,7 +26,7 @@ export const toType: { [key: string]: GuideGeom['type'] } = {
     b: 'PerpendicularBisector',
     p: 'Perpendicular',
     i: 'InCircle',
-    m: 'CircumCircle',
+    o: 'CircumCircle',
 };
 
 export const toTypeRev: { [key: string]: string } = {};
@@ -107,6 +107,14 @@ export const App = ({ initialState }: { initialState: State }) => {
                     hoverMirror(id, false);
                 }
                 return;
+            }
+            if (evt.key === 'm') {
+                setPendingMirror({
+                    parent: latestState.current.activeMirror,
+                    rotations: 3,
+                    reflect: true,
+                    center: null,
+                });
             }
             if (evt.key === 'a' && (evt.ctrlKey || evt.metaKey)) {
                 evt.preventDefault();

@@ -24,7 +24,7 @@ import {
     pathToSegmentKeys,
 } from './pathsAreIdentical';
 import { paletteColor, RenderPath } from './RenderPath';
-import { simplifyPath } from './insetPath';
+import { insetPath, pruneInsetPath, simplifyPath } from './insetPath';
 import { RenderPrimitive } from './RenderPrimitive';
 import { RenderWebGL } from './RenderWebGL';
 import { showHover } from './showHover';
@@ -207,7 +207,7 @@ export const Canvas = ({
 
     const pathsToShow = React.useMemo(
         () =>
-            sortedVisiblePaths(
+            sortedVisibleInsetPaths(
                 state.paths,
                 state.pathGroups,
                 clip,
@@ -323,9 +323,9 @@ export const Canvas = ({
                             );
                         })}
 
-                    {pathsToShow.map((path) => (
+                    {pathsToShow.map((path, i) => (
                         <RenderPath
-                            key={path.id}
+                            key={path.id + '-' + i}
                             generator={generator}
                             origPath={state.paths[path.id]}
                             groups={state.pathGroups}
@@ -574,6 +574,195 @@ export function usePalettePreload(state: State) {
     }, [state.palettes[state.activePalette]]);
 }
 
+// export type PathInfo<Content> = {
+//         content: Content;
+//         stroke: null | { color: string; width: number };
+//         fill: null | string;
+// }
+
+// This should produce:
+// a list of lines
+// and a list of fills
+// lines come after fills? maybe? idk, that would make some things harder.
+export function sortedVisibleInsetPaths(
+    paths: { [key: string]: Path },
+    pathGroups: { [key: string]: PathGroup },
+    clip?: Array<Segment>,
+    hideDuplicatePaths?: boolean,
+): Array<Path> {
+    let visible = Object.keys(paths)
+        .filter(
+            (k) =>
+                !paths[k].hidden &&
+                (!paths[k].group || !pathGroups[paths[k].group!].hide),
+        )
+        .sort((a, b) => {
+            const oa = paths[a].group
+                ? pathGroups[paths[a].group!].ordering
+                : paths[a].ordering;
+            const ob = paths[b].group
+                ? pathGroups[paths[b].group!].ordering
+                : paths[b].ordering;
+            if (oa === ob) {
+                return 0;
+            }
+            if (oa == null) {
+                return 1;
+            }
+            if (ob == null) {
+                return -1;
+            }
+            return ob - oa;
+        });
+
+    if (hideDuplicatePaths) {
+        const usedPaths: Array<Array<string>> = [];
+        visible = visible.filter((k) => {
+            const path = paths[k];
+            const segments = simplifyPath(ensureClockwise(path.segments));
+            const forward = pathToSegmentKeys(path.origin, segments);
+            const backward = pathToReversedSegmentKeys(path.origin, segments);
+            if (
+                usedPaths.some(
+                    (path) =>
+                        pathsAreIdentical(path, backward) ||
+                        pathsAreIdentical(path, forward),
+                )
+            ) {
+                return false;
+            }
+            usedPaths.push(forward);
+            return true;
+        });
+    }
+
+    /*
+    If it's clip first, go through and clip the paths, leaving the styles.
+    if it's inset first, go through and inset the paths, ... ok yeah that's fine.
+    */
+
+    let clipPrims = clip ? pathToPrimitives(clip) : null;
+
+    let processed: Array<Path> = visible
+        .map((k) => paths[k])
+        .map((path) => {
+            const group = path.group ? pathGroups[path.group] : null;
+            if (group?.insetBeforeClip) {
+                return pathToInsetPaths(path)
+                    .map((insetPath) => {
+                        return clip
+                            ? clipPath(
+                                  insetPath,
+                                  clip,
+                                  clipPrims!,
+                                  group?.clipMode,
+                              )
+                            : insetPath;
+                    })
+                    .flat();
+            } else if (clip) {
+                return clipPath(path, clip, clipPrims!, group?.clipMode)
+                    .map((clipped) => pathToInsetPaths(clipped))
+                    .flat();
+            } else {
+                return pathToInsetPaths(path);
+            }
+        })
+        .flat();
+
+    return processed;
+
+    // let infos: Array<PathInfo<Array<Segment>>> = visible.map(k => {
+    //     const path = paths[k];
+    //     const info: PathInfo<Array<Segment>> = {
+    //         content: path.segments,
+    //         fill: null,
+    //         stroke: null
+    //     }
+    // })
+
+    // let clipped: Array<Path>;
+
+    // if (!clip) {
+    //     clipped = visible.map((k) => paths[k]);
+    // } else {
+    //     const clipPrims = pathToPrimitives(clip);
+    //     // console.log(clipPrims);
+
+    //     // hmm how to communicate which segments are ... clipped?
+    //     // might have to add to the segment type? don't love it.
+    //     // or something to path?
+    //     // also don't love it.
+    //     clipped = visible
+    //         .map((k) => paths[k])
+    //         .map((path) => {
+    //             // so we're going along ... through the clip ...
+    //             // and we want to know when one of the clip edges
+    //             // intersects with one of the path edges.
+    //             // is that happen often?
+    //             return clipPath(
+    //                 path,
+    //                 clip,
+    //                 clipPrims,
+    //                 path.group ? pathGroups[path.group].clipMode : undefined,
+    //             );
+    //         })
+    //         .filter(Boolean) as Array<Path>;
+    // }
+}
+
+export const pathToInsetPaths = (path: Path) => {
+    const singles: Array<[Path, number | undefined]> = [];
+    path.style.fills.forEach((fill) => {
+        if (!fill) {
+            return;
+        }
+        singles.push([
+            {
+                ...path,
+                style: {
+                    fills: [{ ...fill, inset: undefined }],
+                    lines: [],
+                },
+            },
+            fill.inset,
+        ]);
+    });
+    path.style.lines.forEach((line) => {
+        if (!line) {
+            return;
+        }
+        singles.push([
+            {
+                ...path,
+                style: {
+                    lines: [{ ...line, inset: undefined }],
+                    fills: [],
+                },
+            },
+            line.inset,
+        ]);
+    });
+    // const result = insetPath(path)
+    return singles
+        .map(([path, inset]) => {
+            if (!inset) {
+                return [path];
+            }
+            const result = insetPath(path, inset / 100);
+            return pruneInsetPath(result.segments).map((segments) => ({
+                ...result,
+                segments,
+                origin: segments[segments.length - 1].to,
+            }));
+        })
+        .flat();
+};
+
+// This should produce:
+// a list of lines
+// and a list of fills
+// lines come after fills? maybe? idk, that would make some things harder.
 export function sortedVisiblePaths(
     paths: { [key: string]: Path },
     pathGroups: { [key: string]: PathGroup },
@@ -651,5 +840,5 @@ export function sortedVisiblePaths(
                 path.group ? pathGroups[path.group].clipMode : undefined,
             );
         })
-        .filter(Boolean) as Array<Path>;
+        .flat();
 }

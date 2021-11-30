@@ -546,7 +546,7 @@ export const clipPath = (
     clip: Array<Segment>,
     clipPrimitives: Array<Primitive>,
     groupMode?: PathGroup['clipMode'],
-): Path | null => {
+): Array<Path> => {
     if (path.debug) {
         console.log(`CLIPPING`);
         console.log(path);
@@ -555,7 +555,7 @@ export const clipPath = (
     const clipMode = path.clipMode ?? groupMode;
 
     if (clipMode === 'none') {
-        return path;
+        return [path];
     }
 
     if (!isClockwise(path.segments)) {
@@ -577,7 +577,7 @@ export const clipPath = (
             console.warn(`Debug path outside of clip`);
         }
         // path is not inside, nothing to show
-        return null;
+        return [];
     }
 
     const pathPrims = pathToPrimitives(path.segments);
@@ -720,7 +720,7 @@ export const clipPath = (
     );
 
     if (clipSide.some(Boolean) && clipMode === 'remove') {
-        return null;
+        return [];
     }
 
     if (path.debug) {
@@ -735,7 +735,7 @@ export const clipPath = (
     }
 
     if (!result) {
-        return null;
+        return [];
     }
 
     let filtered = [result[0]];
@@ -752,11 +752,13 @@ export const clipPath = (
 
     filtered = simplifyPath(ensureClockwise(filtered));
 
-    return {
-        ...path,
-        origin: filtered[filtered.length - 1].to,
-        segments: filtered,
-    };
+    return [
+        {
+            ...path,
+            origin: filtered[filtered.length - 1].to,
+            segments: filtered,
+        },
+    ];
 };
 
 // "bottom" here being the visual bottom, so the /greater/ y value. yup thanks.

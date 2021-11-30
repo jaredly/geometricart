@@ -70,7 +70,7 @@ export const MirrorForm = ({
     onSelect,
     isActive,
     selected,
-    setSelected,
+    // setSelected,
     onDuplicate,
     onChild,
     mirrors,
@@ -81,7 +81,7 @@ export const MirrorForm = ({
     selected: boolean;
     onMouseOver: () => void;
     onMouseOut: () => void;
-    setSelected: (sel: boolean) => void;
+    // setSelected: (sel: boolean) => void;
     onChange: (m: Mirror) => unknown;
     onSelect: () => void;
     onDuplicate: () => void;
@@ -97,10 +97,10 @@ export const MirrorForm = ({
                 padding: 8,
             }}
             style={selected ? { border: '1px solid white' } : {}}
-            onClick={(evt) => {
-                evt.stopPropagation();
-                setSelected(true);
-            }}
+            // onClick={(evt) => {
+            //     evt.stopPropagation();
+            //     setSelected(true);
+            // }}
             onMouseOver={onMouseOver}
             onMouseOut={onMouseOut}
         >
