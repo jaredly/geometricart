@@ -17,6 +17,7 @@ import {
     anglesEqual,
     Clippable,
     clipTwo,
+    closeEnough,
     getAngle,
     getBackAngle,
     HitLocation,
@@ -24,6 +25,7 @@ import {
     sortHitsForPrimitive,
 } from './clipPath';
 import { coordKey } from './calcAllIntersections';
+import { isLargeArc } from './RenderPendingPath';
 
 /*
 
@@ -349,19 +351,99 @@ export const coordForPos = (
 //     return result;
 // };
 
-export const insetPath = (path: Path, inset: number): Path => {
+export const hasReversed = (
+    one: Segment,
+    onep: Coord,
+    two: Segment,
+    twop: Coord,
+) => {
+    if (
+        one.type === 'Arc' &&
+        two.type === 'Arc' &&
+        isLargeArc(two, twop) !== isLargeArc(one, onep)
+    ) {
+        return true;
+    }
+
+    if (
+        one.type === 'Line' &&
+        two.type === 'Line' &&
+        !closeEnough(angleTo(onep, one.to), angleTo(twop, two.to))
+    ) {
+        return true;
+    }
+
+    return false;
+};
+
+export const insetPath = (
+    path: Path,
+    inset: number,
+    secondRound?: boolean,
+): Path => {
     // All paths are clockwise, it just makes this easier
     if (!isClockwise(path.segments)) {
         path = { ...path, segments: reversePath(path.segments) };
     }
     // console.log('yes', path)
     const simplified = simplifyPath(path.segments);
+    // const prims = pathToPrimitives(simplified);
 
-    const segments = simplified.map((seg, i) => {
-        const prev = i === 0 ? path.origin : simplified[i - 1].to;
-        const next = simplified[i === simplified.length - 1 ? 0 : i + 1];
-        return insetSegment(prev, seg, next, inset);
+    const segments = simplified
+        .map((seg, i) => {
+            const prev = i === 0 ? path.origin : simplified[i - 1].to;
+            const next = simplified[i === simplified.length - 1 ? 0 : i + 1];
+            const result = insetSegment(prev, seg, next, inset);
+            // if (result.type === 'Arc' && seg.type === 'Arc' && isLargeArc(seg, prev) !== isLargeArc(result, prev)) {
+            // 	return null
+
+            // }
+            return result;
+        })
+        .filter(Boolean);
+
+    // const newPrims = pathToPrimitives(segments);
+    let bad: Array<number> = [];
+    segments.forEach((seg, i) => {
+        if (
+            hasReversed(
+                seg,
+                segments[i === 0 ? segments.length - 1 : i - 1].to,
+                simplified[i],
+                simplified[i === 0 ? simplified.length - 1 : i - 1].to,
+            )
+        ) {
+            bad.push(i);
+            // console.log('bad!', i);
+        }
     });
+
+    if (bad.length) {
+        if (secondRound) {
+            console.error(`Second round! and still found some bad ones.`, bad);
+        } else {
+            // return insetPath(
+            //     {
+            //         ...path,
+            //         segments: simplified.filter((_, i) => !bad.includes(i)),
+            //     },
+            //     inset,
+            //     true,
+            // );
+        }
+    }
+    // newPrims.forEach((prim, i) => {
+    //     const pre = prims[i];
+    //     if (
+    //         prim.type === 'line' &&
+    //         pre.type === 'line' &&
+    //         !closeEnough(prim.m, pre.m)
+    //     ) {
+    //         bad.push(i);
+    //         console.log(prim.m, pre.m);
+    //         // throw new Error('bad');
+    //     }
+    // });
 
     // Ok, so once we've done the inset, how do we check for self intersections?
 
