@@ -376,33 +376,22 @@ export const hasReversed = (
     return false;
 };
 
-export const insetPath = (
-    path: Path,
-    inset: number,
-    secondRound?: boolean,
-): Path => {
+export const insetSegments = (segments: Array<Segment>, inset: number) => {
     // All paths are clockwise, it just makes this easier
-    if (!isClockwise(path.segments)) {
-        path = { ...path, segments: reversePath(path.segments) };
+    if (!isClockwise(segments)) {
+        segments = reversePath(segments);
     }
-    // console.log('yes', path)
-    const simplified = simplifyPath(path.segments);
+
+    const simplified = simplifyPath(segments);
     // const prims = pathToPrimitives(simplified);
 
-    const segments = simplified
-        .map((seg, i) => {
-            const prev = i === 0 ? path.origin : simplified[i - 1].to;
-            const next = simplified[i === simplified.length - 1 ? 0 : i + 1];
-            const result = insetSegment(prev, seg, next, inset);
-            // if (result.type === 'Arc' && seg.type === 'Arc' && isLargeArc(seg, prev) !== isLargeArc(result, prev)) {
-            // 	return null
+    segments = simplified.map((seg, i) => {
+        const prev = simplified[i === 0 ? simplified.length - 1 : i - 1].to;
+        const next = simplified[i === simplified.length - 1 ? 0 : i + 1];
+        const result = insetSegment(prev, seg, next, inset);
+        return result;
+    });
 
-            // }
-            return result;
-        })
-        .filter(Boolean);
-
-    // const newPrims = pathToPrimitives(segments);
     let bad: Array<number> = [];
     segments.forEach((seg, i) => {
         if (
@@ -418,20 +407,20 @@ export const insetPath = (
         }
     });
 
-    if (bad.length) {
-        if (secondRound) {
-            console.error(`Second round! and still found some bad ones.`, bad);
-        } else {
-            // return insetPath(
-            //     {
-            //         ...path,
-            //         segments: simplified.filter((_, i) => !bad.includes(i)),
-            //     },
-            //     inset,
-            //     true,
-            // );
-        }
-    }
+    // if (bad.length) {
+    //     if (secondRound) {
+    //         console.error(`Second round! and still found some bad ones.`, bad);
+    //     } else {
+    //         // return insetPath(
+    //         //     {
+    //         //         ...path,
+    //         //         segments: simplified.filter((_, i) => !bad.includes(i)),
+    //         //     },
+    //         //     inset,
+    //         //     true,
+    //         // );
+    //     }
+    // }
     // newPrims.forEach((prim, i) => {
     //     const pre = prims[i];
     //     if (
@@ -444,14 +433,11 @@ export const insetPath = (
     //         // throw new Error('bad');
     //     }
     // });
+    return segments;
+};
 
-    // Ok, so once we've done the inset, how do we check for self intersections?
-
-    // we've gone inside out!
-    // if (!isClockwise(segments)) {
-    //     return null;
-    // }
-
+export const insetPath = (path: Path, inset: number): Path => {
+    const segments = insetSegments(path.segments, inset);
     return { ...path, segments, origin: segments[segments.length - 1].to };
 };
 

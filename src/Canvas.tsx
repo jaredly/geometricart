@@ -750,13 +750,14 @@ export const pathToInsetPaths = (path: Path) => {
                 return [path];
             }
             const result = insetPath(path, inset / 100);
-            return pruneInsetPath(result.segments)
-                .filter((s) => s.length)
-                .map((segments) => ({
-                    ...result,
-                    segments,
-                    origin: segments[segments.length - 1].to,
-                }));
+            // return pruneInsetPath(result.segments)
+            //     .filter((s) => s.length)
+            //     .map((segments) => ({
+            //         ...result,
+            //         segments,
+            //         origin: segments[segments.length - 1].to,
+            //     }));
+            return [result];
         })
         .flat();
 };
