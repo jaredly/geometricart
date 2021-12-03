@@ -1,5 +1,6 @@
 
-- [ ] so what about a "cut paths to clip" button? So that you can then do like some tilings with them.
+- [ ] REIFY GUIDES
+- [x] so what about a "cut paths to clip" button? So that you can then do like some tilings with them.
 
 - [ ] ifff a line goes backwards after inset, just delete that segment and recalculate?
 

@@ -29,6 +29,8 @@ import {
 } from './pathsAreIdentical';
 import { simplifyPath } from './insetPath';
 import { ensureClockwise } from './CanvasRender';
+import { clipPath } from './clipPath';
+import { pathToPrimitives } from './findSelection';
 
 export const reducer = (state: State, action: Action): State => {
     if (action.type === 'undo') {
@@ -550,6 +552,43 @@ export const reduceWithoutUndo = (
                 },
             ];
         }
+        case 'clip:cut': {
+            const paths: State['paths'] = {};
+            const clip = state.clips[action.clip];
+            let clipPrims = pathToPrimitives(clip);
+            const added: Array<Id> = [];
+            const previous: State['paths'] = {};
+            Object.keys(state.paths).forEach((k) => {
+                const path = state.paths[k];
+                const group = path.group ? state.pathGroups[path.group] : null;
+                const result = clipPath(path, clip, clipPrims, group?.clipMode);
+                // TODO: figure out if the result is the same...
+                if (result.length > 0) {
+                    paths[k] = result[0];
+                }
+                if (
+                    result.length !== 1 ||
+                    pathToSegmentKeys(path.origin, path.segments).join(';') !==
+                        pathToSegmentKeys(
+                            result[0].origin,
+                            result[0].segments,
+                        ).join(';')
+                ) {
+                    previous[k] = state.paths[k];
+                }
+                if (result.length > 1) {
+                    result.slice(1).forEach((path, i) => {
+                        const id = `${k}.${i}`;
+                        added.push(id);
+                        paths[id] = { ...path, id };
+                    });
+                }
+            });
+            return [
+                { ...state, paths, view: { ...state.view, activeClip: null } },
+                { type: action.type, action, paths: previous, added },
+            ];
+        }
         default:
             let _x: never = action;
             console.log(`SKIPPING ${(action as any).type}`);
@@ -559,6 +598,20 @@ export const reduceWithoutUndo = (
 
 export const undo = (state: State, action: UndoAction): State => {
     switch (action.type) {
+        case 'clip:cut': {
+            const paths = { ...state.paths, ...action.paths };
+            action.added.forEach((k) => {
+                delete paths[k];
+            });
+            return {
+                ...state,
+                view: {
+                    ...state.view,
+                    activeClip: action.action.clip,
+                },
+                paths,
+            };
+        }
         case 'group:regroup': {
             state = { ...state };
             if (action.created) {

@@ -404,6 +404,7 @@ export type UndoClipCut = {
     type: ClipCut['type'];
     action: ClipCut;
     paths: { [key: Id]: Path };
+    added: Array<Id>;
 };
 
 export type GroupRegroup = {
