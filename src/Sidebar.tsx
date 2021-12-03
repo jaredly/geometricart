@@ -397,6 +397,18 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactElement } = {
         return (
             <div>
                 Clips!
+                {state.view.activeClip ? (
+                    <button
+                        onClick={() => {
+                            dispatch({
+                                type: 'clip:cut',
+                                clip: state.view.activeClip!,
+                            });
+                        }}
+                    >
+                        Cut to active clip
+                    </button>
+                ) : null}
                 {Object.keys(state.clips).map((id) => (
                     <div
                         key={id}

@@ -396,6 +396,16 @@ export type GroupUpdate = {
     group: PathGroup;
 };
 
+export type ClipCut = {
+    type: 'clip:cut';
+    clip: Id;
+};
+export type UndoClipCut = {
+    type: ClipCut['type'];
+    action: ClipCut;
+    paths: { [key: Id]: Path };
+};
+
 export type GroupRegroup = {
     type: 'group:regroup';
     selection: { type: 'Path' | 'PathGroup'; ids: Array<Id> };
@@ -596,6 +606,7 @@ export type UndoableAction =
     | PathGroupUpdateMany
     | PathCreate
     | GroupRegroup
+    | ClipCut
     | PathMultiply
     | GuideToggle;
 
@@ -617,6 +628,7 @@ export type UndoAction =
     | UndoGroupDelete
     | UndoGuideDelete
     | UndoPendingPoint
+    | UndoClipCut
     | UndoPathDelete
     // | UndoPathPoint
     // | UndoPathAdd
