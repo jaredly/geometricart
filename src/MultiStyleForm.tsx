@@ -524,7 +524,7 @@ export const MultiColor = ({
                                 ? `url("${transparent}")`
                                 : maybeUrlColor(name),
 
-                        boxShadow: color.includes(i)
+                        boxShadow: color.includes(name)
                             ? `0 3px 0 ${highlight}`
                             : 'none',
                     }}

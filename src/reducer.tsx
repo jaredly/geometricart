@@ -769,6 +769,7 @@ export const undo = (state: State, action: UndoAction): State => {
                 state.pathGroups = { ...state.pathGroups };
                 delete state.pathGroups[action.added[1]];
             }
+            state.selection = null;
             return state;
         }
 
@@ -1004,6 +1005,9 @@ export function handlePathCreate(
         {
             ...state,
             nextId,
+            selection: groupId
+                ? { type: 'PathGroup', ids: [groupId] }
+                : { type: 'Path', ids: [id] },
             paths: {
                 ...state.paths,
                 [id]: main,

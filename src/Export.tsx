@@ -36,7 +36,7 @@ export const Export = ({
 
     const [size, setSize] = React.useState(1000);
     const [embed, setEmbed] = React.useState(true);
-    const [history, setHistory] = React.useState(true);
+    const [history, setHistory] = React.useState(false);
 
     return (
         <div

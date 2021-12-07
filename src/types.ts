@@ -149,7 +149,7 @@ export type Guide = {
     active: boolean;
     geom: GuideGeom;
     basedOn: Array<Id>;
-    mirror: Id | null;
+    mirror: Id | null | Mirror;
 };
 
 export type Mirror = {
@@ -163,7 +163,7 @@ export type Mirror = {
     // line between origin and point.
     rotational: Array<boolean>;
     reflect: boolean;
-    parent: Id | null;
+    parent: Id | null | Mirror;
 };
 
 export type Fill = {

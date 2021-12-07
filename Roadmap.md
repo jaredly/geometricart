@@ -1,6 +1,7 @@
 
-- [ ] REIFY GUIDES
+- [ ] REIFY GUIDES. GOt to make mirrors and such.
 - [x] so what about a "cut paths to clip" button? So that you can then do like some tilings with them.
+- [ ] "join adjacent tiles" would be very nice"
 
 - [ ] ifff a line goes backwards after inset, just delete that segment and recalculate?
 

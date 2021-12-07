@@ -3,12 +3,16 @@
 import * as React from 'react';
 import { jsx } from '@emotion/react';
 import { geomsForGiude } from './calculateGuideElements';
-import { getTransformsForMirror, Matrix } from './getMirrorTransforms';
+import {
+    getTransformsForMirror,
+    getTransformsForNewMirror,
+    Matrix,
+} from './getMirrorTransforms';
 import { geomToPrimitives } from './points';
 import { UnderlinePath } from './RenderPath';
 import { RenderPrimitive } from './RenderPrimitive';
 import { Hover } from './Sidebar';
-import { State } from './types';
+import { Mirror, State } from './types';
 import { pathToPrimitives } from './findSelection';
 import { RenderMirror } from './RenderMirror';
 
@@ -68,9 +72,17 @@ export const showHover = (
             }
             return geomsForGiude(
                 state.guides[hover.id],
-                state.guides[hover.id].mirror
-                    ? mirrorTransforms[state.guides[hover.id].mirror!]
+                typeof state.guides[hover.id].mirror === 'string'
+                    ? mirrorTransforms[state.guides[hover.id].mirror as string]
+                    : state.guides[hover.id].mirror
+                    ? getTransformsForNewMirror(
+                          state.guides[hover.id].mirror as Mirror,
+                      )
                     : null,
+
+                // state.guides[hover.id].mirror
+                //     ? mirrorTransforms[state.guides[hover.id].mirror!]
+                //     : null,
             ).map((geom, j) =>
                 geomToPrimitives(geom.geom).map((prim, i) => (
                     <RenderPrimitive
