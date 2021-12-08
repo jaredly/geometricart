@@ -157,7 +157,12 @@ export const reduceWithoutUndo = (
                                     action.shiftKey,
                                     state.pending.extent,
                                 ),
-                                mirror: state.activeMirror,
+                                mirror: state.activeMirror
+                                    ? reifyMirror(
+                                          state.mirrors,
+                                          state.activeMirror,
+                                      )
+                                    : null,
                             },
                         },
                     },
@@ -228,7 +233,17 @@ export const reduceWithoutUndo = (
                     ...state,
                     mirrors: {
                         ...state.mirrors,
-                        [id]: { ...action.mirror, id },
+                        [id]: {
+                            ...action.mirror,
+                            parent:
+                                typeof action.mirror.parent === 'string'
+                                    ? reifyMirror(
+                                          state.mirrors,
+                                          action.mirror.parent,
+                                      )
+                                    : action.mirror.parent,
+                            id,
+                        },
                     },
                     nextId,
                 },
@@ -1021,3 +1036,11 @@ export function handlePathCreate(
         },
     ];
 }
+
+export const reifyMirror = (mirrors: { [key: Id]: Mirror }, id: Id): Mirror => {
+    let mirror = mirrors[id];
+    if (typeof mirror.parent === 'string') {
+        mirror = { ...mirror, parent: reifyMirror(mirrors, mirror.parent) };
+    }
+    return mirror;
+};
