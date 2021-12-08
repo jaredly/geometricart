@@ -107,57 +107,15 @@ export const MirrorForm = ({
             <div
                 css={{
                     cursor: 'pointer',
-                    background: isActive
-                        ? 'rgba(100,100,100,0.4)'
-                        : 'rgba(100,100,100,0.1)',
-                    ':hover': {
-                        background: 'rgba(100,100,100,0.2)',
-                    },
+                    background: 'rgba(100,100,100,0.1)',
+                    display: 'flex',
+                    alignItems: 'center',
                 }}
-                onClick={onSelect}
+                // onClick={onSelect}
             >
-                Mirror {isActive ? '(active)' : null}
-            </div>
-            <Toggle
-                label="Reflect across axis?"
-                value={mirror.reflect}
-                onChange={(reflect) => onChange({ ...mirror, reflect })}
-            />
-            <div css={{ display: 'flex', flexDirection: 'row' }}>
-                <Label text="rotations" />
-                <div style={{ flexBasis: 8 }} />
-                <Int
-                    value={mirror.rotational.length + 1}
-                    onChange={(number) => {
-                        if (number == null || number < 1) {
-                            return;
-                        }
-                        number -= 1;
-                        let rotational = mirror.rotational;
-                        if (number < mirror.rotational.length) {
-                            rotational = rotational.slice(0, number);
-                        } else {
-                            rotational = rotational.slice();
-                            for (let i = rotational.length; i < number; i++) {
-                                rotational.push(true);
-                            }
-                        }
-                        onChange({ ...mirror, rotational });
-                    }}
-                />
-                {/* I'm not sure these are even helpful */}
-                {/* {mirror.rotational.map((enabled, i) => (
-                    <Toggle
-                        key={i}
-                        label={'' + i}
-                        value={enabled}
-                        onChange={(enabled) => {
-                            const rotational = mirror.rotational.slice();
-                            rotational[i] = enabled;
-                            onChange({ ...mirror, rotational });
-                        }}
-                    />
-                ))} */}
+                Mirror
+                <div style={{ flexBasis: 16 }} />
+                <Toggle label="Active" value={isActive} onChange={onSelect} />
             </div>
             <button
                 onClick={() => {
