@@ -25,6 +25,7 @@ export const UnderlinePath = ({
             d={d}
             strokeWidth={4}
             stroke={color}
+            style={{ pointerEvents: 'none' }}
             fill="none"
             strokeDasharray="5 10"
             strokeLinecap="square"
@@ -47,7 +48,7 @@ export const calcPathD = (path: Path, zoom: number) => {
         }
     });
 
-    return d + ' Z';
+    return d + (path.open ? '' : ' Z');
 };
 
 export const RenderPath = React.memo(
@@ -155,11 +156,16 @@ export const RenderPath = React.memo(
 
                 return (
                     <>
-                        <path data-id={path.id} d={raw} {...common} key={k} />
+                        <path
+                            data-id={path.id}
+                            d={raw}
+                            {...common}
+                            key={`info-${i}-${k}`}
+                        />
                         {path.debug
                             ? newPath.segments.map((seg, i) => (
                                   <circle
-                                      key={`${k}:${i}`}
+                                      key={`circle-${k}:${i}`}
                                       cx={seg.to.x * zoom}
                                       cy={seg.to.y * zoom}
                                       r={(2 / 100) * zoom}
@@ -203,7 +209,11 @@ export const RenderPath = React.memo(
                     ? (evt: React.MouseEvent) => evt.preventDefault()
                     : undefined,
             };
-            if (path.segments.length === 1 && path.segments[0].type === 'Arc') {
+            if (
+                path.segments.length === 1 &&
+                path.segments[0].type === 'Arc' &&
+                !path.open
+            ) {
                 let r = dist(path.segments[0].center, path.segments[0].to);
                 if (line.inset) {
                     r -= line.inset / 100;
@@ -244,7 +254,7 @@ export const RenderPath = React.memo(
                     const info = generator.toPaths(p);
                     return info.map((info, i) => (
                         <path
-                            key={`${i}:${k}`}
+                            key={`line-info-${i}:${k}`}
                             d={info.d}
                             stroke={info.stroke}
                             fill={info.fill}
@@ -257,7 +267,12 @@ export const RenderPath = React.memo(
                 }
 
                 return (
-                    <path d={raw} data-id={path.id} {...common} key={`${k}`} />
+                    <path
+                        d={raw}
+                        data-id={path.id}
+                        {...common}
+                        key={`line-info-${i}-${k}`}
+                    />
                 );
             });
         });

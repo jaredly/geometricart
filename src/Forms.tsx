@@ -612,6 +612,12 @@ export const ViewForm = ({
             />
 
             <Toggle
+                label="Laser Cut Mode"
+                value={!!view.laserCutMode}
+                onChange={(laserCutMode) => onChange({ ...view, laserCutMode })}
+            />
+
+            <Toggle
                 label="Hide duplicate paths"
                 value={!!view.hideDuplicatePaths}
                 onChange={(hideDuplicatePaths) =>

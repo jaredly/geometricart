@@ -1,4 +1,4 @@
-import { sortedVisiblePaths } from './Canvas';
+import { sortedVisibleInsetPaths, sortedVisiblePaths } from './Canvas';
 import { pathToPoints } from './CanvasRender';
 import { hslToRgb, rgbToHsl } from './colorConvert';
 import { pathToPrimitives } from './findSelection';
@@ -48,7 +48,12 @@ export const shaderForState = (state: State): [number, string] => {
         ? state.clips[state.view.activeClip]
         : undefined;
 
-    const paths = sortedVisiblePaths(state.paths, state.pathGroups, clip);
+    const paths = sortedVisibleInsetPaths(
+        state.paths,
+        state.pathGroups,
+        clip,
+        state.view.hideDuplicatePaths,
+    );
     const palette = state.palettes[state.activePalette];
 
     let backgroundColor = { r: 0, g: 0, b: 0 };

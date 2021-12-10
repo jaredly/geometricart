@@ -202,6 +202,7 @@ export type Path = {
     clipMode?: 'none' | 'remove' | 'normal';
     origin: Coord;
     segments: Array<Segment>;
+    open?: boolean;
     hidden: boolean;
     debug?: boolean;
 };
@@ -681,6 +682,7 @@ export type View = {
     guides: boolean;
     activeClip: Id | null;
     hideDuplicatePaths?: boolean;
+    laserCutMode?: boolean;
     background?: string | number;
     sketchiness?: number;
     texture?: { id: string; scale: number; intensity: number };
