@@ -19,6 +19,35 @@ export function useMouseDrag(
 
     return React.useMemo(
         () => ({
+            onTouchMove: (evt: React.TouchEvent) => {
+                // evt.preventDefault();
+                const touch = evt.touches[0];
+                if (dragPos) {
+                    const rect = evt.currentTarget.getBoundingClientRect();
+                    const clientX = touch.clientX;
+                    const clientY = touch.clientY;
+                    evt.preventDefault();
+
+                    setTmpView((prev) => {
+                        return dragView(
+                            prev,
+                            dragPos,
+                            clientX,
+                            rect,
+                            clientY,
+                            width,
+                            height,
+                        );
+                    });
+                } else {
+                    const rect = evt.currentTarget.getBoundingClientRect();
+                    const pos = {
+                        x: (touch.clientX - rect.left - x) / view.zoom,
+                        y: (touch.clientY - rect.top - y) / view.zoom,
+                    };
+                    setPos(pos);
+                }
+            },
             onMouseMove: (evt: React.MouseEvent) => {
                 if (dragPos) {
                     const rect = evt.currentTarget.getBoundingClientRect();
@@ -46,11 +75,35 @@ export function useMouseDrag(
                     setPos(pos);
                 }
             },
+            onTouchEnd: (evt: React.MouseEvent) => {
+                if (dragPos) {
+                    setDragPos(null);
+                    evt.preventDefault();
+                }
+            },
             onMouseUpCapture: (evt: React.MouseEvent) => {
                 if (dragPos) {
                     setDragPos(null);
                     evt.preventDefault();
                 }
+            },
+            onTouchStart: (evt: React.TouchEvent) => {
+                // evt.preventDefault();
+                const touch = evt.touches[0];
+                const rect = evt.currentTarget.getBoundingClientRect();
+                const coord = screenToWorld(
+                    width,
+                    height,
+                    {
+                        x: touch.clientX - rect.left,
+                        y: touch.clientY - rect.top,
+                    },
+                    view,
+                );
+                setDragPos({
+                    coord: coord,
+                    view,
+                });
             },
             onMouseDown: (evt: React.MouseEvent) => {
                 const rect = evt.currentTarget.getBoundingClientRect();

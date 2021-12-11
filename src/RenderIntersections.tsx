@@ -37,6 +37,12 @@ export const RenderIntersections = React.memo(
                         onClick={(evt) => {
                             onClick(intersection, evt.shiftKey);
                         }}
+                        onTouchStart={() => {
+                            console.log('ok');
+                        }}
+                        onTouchEnd={() => {
+                            onClick(intersection, false);
+                        }}
                         r={5}
                         fill={'rgba(255,255,255,0.1)'}
                         css={whatsit}

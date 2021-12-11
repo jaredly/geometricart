@@ -293,7 +293,7 @@ export const Canvas = ({
             css={{
                 position: 'relative',
             }}
-            // style={{ width, height }}
+            style={{ width, height }}
             onClick={(evt) => {
                 // if (evt.target === evt.currentTarget) {
                 if (state.selection && !evt.shiftKey) {
@@ -583,6 +583,7 @@ export const PendingPathControls = ({
             {isComplete(state) ? (
                 <>
                     <button
+                        css={{ fontSize: 40 }}
                         onClick={() => {
                             onComplete(
                                 state.isClip,
@@ -598,6 +599,7 @@ export const PendingPathControls = ({
                         finish ✅
                     </button>
                     <button
+                        css={{ fontSize: 40 }}
                         onClick={() => {
                             setState(
                                 backUp(
@@ -614,6 +616,7 @@ export const PendingPathControls = ({
             ) : (
                 <>
                     <button
+                        css={{ fontSize: 40 }}
                         onClick={() => {
                             setState(goLeft);
                         }}
@@ -621,6 +624,7 @@ export const PendingPathControls = ({
                         👈
                     </button>
                     <button
+                        css={{ fontSize: 40 }}
                         onClick={() => {
                             if (state && isComplete(state)) {
                                 return onComplete(
@@ -641,6 +645,7 @@ export const PendingPathControls = ({
                         ✅
                     </button>
                     <button
+                        css={{ fontSize: 40 }}
                         onClick={() => {
                             setState(goRight);
                         }}
@@ -648,6 +653,7 @@ export const PendingPathControls = ({
                         👉
                     </button>
                     <button
+                        css={{ fontSize: 40 }}
                         onClick={() => {
                             setState(
                                 backUp(
