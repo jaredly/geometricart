@@ -1,4 +1,4 @@
-import { sortedVisibleInsetPaths } from './Canvas';
+import { sortedVisibleInsetPaths } from './sortedVisibleInsetPaths';
 import { pathToPoints } from './CanvasRender';
 import { hslToRgb, rgbToHsl } from './colorConvert';
 import { pathToPrimitives } from './findSelection';

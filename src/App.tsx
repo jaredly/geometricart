@@ -78,8 +78,9 @@ export const App = ({ initialState }: { initialState: State }) => {
         setPendingMirror(null);
     }, [state.mirrors, state.guides]);
 
-    const width = 1000;
-    const height = 1000;
+    const width = Math.min(1000, window.innerWidth);
+    const height = Math.min(1000, window.innerHeight);
+    const isTouchScreen = 'ontouchstart' in window;
 
     return (
         <div
@@ -96,25 +97,31 @@ export const App = ({ initialState }: { initialState: State }) => {
                     overflow: 'visible',
                     height: 'unset',
                 },
+                '@media (max-width: 1000px)': {
+                    padding: 0,
+                },
             }}
         >
-            <Sidebar
-                hover={hover}
-                setHover={setHover}
-                dispatch={dispatch}
-                setDragSelect={setDragSelect}
-                dragSelect={dragSelect}
-                state={state}
-                canvasRef={ref}
-                setPendingMirror={setPendingMirror}
-                width={width}
-                height={height}
-            />
+            {window.innerWidth > 1000 ? (
+                <Sidebar
+                    hover={hover}
+                    setHover={setHover}
+                    dispatch={dispatch}
+                    setDragSelect={setDragSelect}
+                    dragSelect={dragSelect}
+                    state={state}
+                    canvasRef={ref}
+                    setPendingMirror={setPendingMirror}
+                    width={width}
+                    height={height}
+                />
+            ) : null}
             <Canvas
                 state={state}
                 hover={hover}
                 dragSelect={dragSelect}
                 cancelDragSelect={() => setDragSelect(false)}
+                isTouchScreen={isTouchScreen}
                 innerRef={(node) => (ref.current = node)}
                 dispatch={dispatch}
                 pendingMirror={pendingMirror}
