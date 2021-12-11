@@ -1,5 +1,12 @@
 
-- [ ] REIFY GUIDES. GOt to make mirrors and such.
+
+## Ok let's try different sized screens
+to prepare for mobile ya know
+
+
+
+
+- [x] REIFY GUIDES. Got to make mirrors and such.
 - [x] so what about a "cut paths to clip" button? So that you can then do like some tilings with them.
 - [ ] "join adjacent tiles" would be very nice"
 

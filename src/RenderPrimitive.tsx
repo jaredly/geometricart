@@ -81,49 +81,6 @@ export function RenderPrimitive({
                 />
             );
         }
-        // if (prim.m === Infinity) {
-        //     if (prim.limit) {
-        //         return (
-        //             <line
-        //                 x1={prim.b * zoom}
-        //                 y1={prim.limit[0] * zoom}
-        //                 y2={prim.limit[1] * zoom}
-        //                 x2={prim.b * zoom}
-        //                 {...common}
-        //             />
-        //         );
-        //     }
-        //     return (
-        //         <line
-        //             x1={prim.b * zoom}
-        //             y1={-height}
-        //             y2={height}
-        //             x2={prim.b * zoom}
-        //             {...common}
-        //         />
-        //     );
-        // }
-        // if (prim.limit) {
-        //     return (
-        //         <line
-        //             x1={prim.limit[0] * zoom}
-        //             y1={prim.limit[0] * zoom * prim.m + prim.b * zoom}
-        //             x2={prim.limit[1] * zoom}
-        //             y2={prim.limit[1] * zoom * prim.m + prim.b * zoom}
-        //             {...common}
-        //         />
-        //     );
-        // }
-
-        // return (
-        //     <line
-        //         x1={-width}
-        //         y1={-width * prim.m + prim.b * zoom}
-        //         x2={width}
-        //         y2={prim.m * width + prim.b * zoom}
-        //         {...common}
-        //     />
-        // );
     }
     if (prim.limit && prim.limit[0] !== prim.limit[1]) {
         const [t0, t1] = prim.limit;

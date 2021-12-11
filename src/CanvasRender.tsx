@@ -37,12 +37,15 @@ export const makeImage = (href: string): Promise<HTMLImageElement> => {
 export const canvasRender = async (
     ctx: CanvasRenderingContext2D,
     state: State,
+    sourceWidth: number,
+    sourceHeight: number,
+    extraZoom: number,
 ) => {
     const palette = state.palettes[state.activePalette];
 
-    // um yeah we're just assuming 1000 w/h
-    const sourceWidth = 1000;
-    const sourceHeight = 1000;
+    // // um yeah we're just assuming 1000 w/h
+    // const sourceWidth = 1000;
+    // const sourceHeight = 1000;
 
     const images = await Promise.all(
         palette.map((c) =>
@@ -59,7 +62,7 @@ export const canvasRender = async (
 
     const rand = new Prando('ok');
 
-    const zoom = state.view.zoom;
+    const zoom = state.view.zoom * extraZoom;
 
     const xoff = sourceWidth / 2 + state.view.center.x * zoom;
     const yoff = sourceHeight / 2 + state.view.center.y * zoom;

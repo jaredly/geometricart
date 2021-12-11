@@ -102,7 +102,7 @@ export const Export = ({
                         const ctx = canvas.getContext('2d')!;
 
                         ctx.save();
-                        await canvasRender(ctx, state);
+                        await canvasRender(ctx, state, size, size, size / 1000);
                         ctx.restore();
 
                         if (state.view.texture) {
@@ -127,7 +127,8 @@ export const Export = ({
                                 setup(
                                     gl,
                                     fn(
-                                        state.view.texture.scale,
+                                        (state.view.texture.scale * size) /
+                                            1000,
                                         state.view.texture.intensity,
                                     ),
                                     0,
