@@ -23,8 +23,6 @@ export const showHover = (
     hover: Hover,
     state: State,
     mirrorTransforms: { [key: string]: Array<Array<Matrix>> },
-    height: number,
-    width: number,
     zoom: number,
     bounds: Bounds,
     selection: boolean,
@@ -98,8 +96,6 @@ export const showHover = (
                                 : 'rgba(102,102,102,0.5)'
                         }
                         zoom={zoom}
-                        height={height}
-                        width={width}
                         key={`${key}:${j}:${i}`}
                     />
                 )),

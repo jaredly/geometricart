@@ -413,8 +413,6 @@ export const Canvas = ({
                                   { kind: state.selection!.type, id },
                                   state,
                                   mirrorTransforms,
-                                  width,
-                                  height,
                                   view.zoom,
                                   bounds,
                                   true,
@@ -428,8 +426,6 @@ export const Canvas = ({
                                   { kind: 'Path', id },
                                   state,
                                   mirrorTransforms,
-                                  width,
-                                  height,
                                   view.zoom,
                                   bounds,
                                   false,
@@ -443,8 +439,6 @@ export const Canvas = ({
                                 hover,
                                 state,
                                 mirrorTransforms,
-                                width,
-                                height,
                                 view.zoom,
                                 bounds,
                                 false,
@@ -489,7 +483,12 @@ export const Canvas = ({
                 </div>
             ) : null}
             {view.texture ? (
-                <RenderWebGL state={state} texture={view.texture} />
+                <RenderWebGL
+                    state={state}
+                    texture={view.texture}
+                    width={width}
+                    height={height}
+                />
             ) : null}
         </div>
     );

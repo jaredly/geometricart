@@ -578,8 +578,6 @@ export const Guides = ({
                           isImplied
                           prim={prim}
                           zoom={view.zoom}
-                          width={width}
-                          height={height}
                           color={'magenta'}
                           strokeWidth={4}
                           key={i}
@@ -727,8 +725,6 @@ export const RenderPrimitives = React.memo(
                             bounds={bounds}
                             prim={prim.prim}
                             zoom={zoom}
-                            height={height}
-                            width={width}
                             inactive={inactive}
                             isImplied={!prim.guides.length}
                             onClick={

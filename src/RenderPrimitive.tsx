@@ -10,27 +10,21 @@ import { arcPath } from './RenderPendingPath';
 export function RenderPrimitive({
     prim,
     zoom,
-    height,
-    width,
     onClick,
     isImplied,
     bounds,
     color,
     inactive,
     strokeWidth = 1,
-}: // strokeDasharray,
-{
+}: {
     color?: string;
     isImplied?: boolean;
     prim: Primitive;
     bounds: Bounds;
     zoom: number;
-    height: number;
-    width: number;
     inactive?: boolean;
     strokeWidth?: number;
     onClick?: (evt: React.MouseEvent) => unknown;
-    // strokeDasharray?: Array<number>
 }): jsx.JSX.Element {
     const common = {
         stroke: color ?? (inactive ? 'rgba(102, 102, 102, 0.3)' : '#666'),
