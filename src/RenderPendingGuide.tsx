@@ -3,18 +3,20 @@
 import { jsx } from '@emotion/react';
 import { transformGuideGeom } from './calculateGuideElements';
 import { applyMatrices, Matrix } from './getMirrorTransforms';
-import { GuideElement } from './GuideElement';
+import { Bounds, GuideElement } from './GuideElement';
 import { Coord, GuideGeom, PendingGuide } from './types';
 
 export const RenderPendingGuide = ({
     guide,
     pos,
     zoom,
+    bounds,
     shiftKey,
     mirror,
 }: {
     pos: Coord;
     guide: PendingGuide;
+    bounds: Bounds;
     zoom: number;
     shiftKey: boolean;
     mirror: null | Array<Array<Matrix>>;
@@ -36,6 +38,7 @@ export const RenderPendingGuide = ({
                 ? mirror.map((transform) => (
                       <GuideElement
                           zoom={zoom}
+                          bounds={bounds}
                           original={false}
                           geom={transformGuideGeom(
                               pendingGuide(
@@ -51,6 +54,7 @@ export const RenderPendingGuide = ({
                 : null}
             <GuideElement
                 zoom={zoom}
+                bounds={bounds}
                 original={true}
                 geom={pendingGuide(guide.kind, points, shiftKey, guide.extent)}
             />

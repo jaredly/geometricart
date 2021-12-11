@@ -4,16 +4,33 @@ import * as React from 'react';
 import { jsx } from '@emotion/react';
 import { angleTo, dist, push, scale } from './getMirrorTransforms';
 import { GuideGeom } from './types';
-import { lineLine, lineToSlope } from './intersect';
+import { lineLine, lineToSlope, SlopeIntercept } from './intersect';
 import { getCircumCircle, getInCircle } from './points';
+
+export type Bounds = { x0: number; y0: number; x1: number; y1: number };
+
+export const visibleEndPoints = (si: SlopeIntercept, bounds: Bounds) => {
+    if (si.m === Infinity) {
+        return [
+            { x: si.b, y: bounds.y0 },
+            { x: si.b, y: bounds.y1 },
+        ];
+    }
+    return [
+        { x: bounds.x0, y: bounds.x0 * si.m + si.b },
+        { x: bounds.x1, y: bounds.x1 * si.m + si.b },
+    ];
+};
 
 export const GuideElement = ({
     geom,
     zoom,
     original,
+    bounds,
 }: {
     geom: GuideGeom;
     zoom: number;
+    bounds: Bounds;
     original: boolean;
 }) => {
     switch (geom.type) {
@@ -130,27 +147,20 @@ export const GuideElement = ({
                 x: (geom.p1.x + geom.p2.x) / 2,
                 y: (geom.p1.y + geom.p2.y) / 2,
             };
-            const left = push(
-                mid,
-                t1,
-                -(geom.extent
-                    ? (geom.extent * d) / 2
-                    : geom.limit
-                    ? d * 0.5
-                    : 10),
-            );
-            const right = push(
-                mid,
-                t1,
-                geom.extent ? (geom.extent * d) / 2 : geom.limit ? d * 0.5 : 10,
-            );
+            const extent = geom.extent
+                ? (geom.extent * d) / 2
+                : geom.limit
+                ? d * 0.5
+                : null;
+            const left = scale(push(mid, t1, -(extent ?? 10)), zoom);
+            const right = scale(push(mid, t1, extent ?? 10), zoom);
             return (
                 <>
                     <line
-                        x1={left.x * zoom}
-                        y1={left.y * zoom}
-                        x2={right.x * zoom}
-                        y2={right.y * zoom}
+                        x1={left.x}
+                        y1={left.y}
+                        x2={right.x}
+                        y2={right.y}
                         stroke={original ? '#ff0' : 'rgba(255,255,0,0.1)'}
                         strokeWidth={1}
                     />
@@ -159,8 +169,8 @@ export const GuideElement = ({
         }
         case 'Perpendicular': {
             const t1 = angleTo(geom.p1, geom.p2) + Math.PI / 2;
-            const left = push(geom.p1, t1, -10);
-            const right = push(geom.p1, t1, 10);
+            const si = lineToSlope(geom.p1, geom.p2);
+            const [left, right] = visibleEndPoints(si, bounds);
             return (
                 <>
                     <line

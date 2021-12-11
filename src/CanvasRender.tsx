@@ -6,11 +6,7 @@ import {
     calculateGuideElements,
     calculateInactiveGuideElements,
 } from './calculateGuideElements';
-import {
-    imageCache,
-    sortedVisibleInsetPaths,
-    sortedVisiblePaths,
-} from './Canvas';
+import { imageCache, sortedVisibleInsetPaths } from './Canvas';
 import { segmentKey } from './DrawPath';
 import { angleBetween } from './findNextSegments';
 import { pathToPrimitives } from './findSelection';

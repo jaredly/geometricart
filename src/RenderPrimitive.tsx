@@ -3,6 +3,7 @@
 import { jsx } from '@emotion/react';
 import React from 'react';
 import { push } from './getMirrorTransforms';
+import { Bounds, visibleEndPoints } from './GuideElement';
 import { Primitive } from './intersect';
 import { arcPath } from './RenderPendingPath';
 
@@ -13,6 +14,7 @@ export function RenderPrimitive({
     width,
     onClick,
     isImplied,
+    bounds,
     color,
     inactive,
     strokeWidth = 1,
@@ -21,6 +23,7 @@ export function RenderPrimitive({
     color?: string;
     isImplied?: boolean;
     prim: Primitive;
+    bounds: Bounds;
     zoom: number;
     height: number;
     width: number;
@@ -45,8 +48,8 @@ export function RenderPrimitive({
             : {},
     };
     if (prim.type === 'line') {
-        if (prim.m === Infinity) {
-            if (prim.limit) {
+        if (prim.limit) {
+            if (prim.m === Infinity) {
                 return (
                     <line
                         x1={prim.b * zoom}
@@ -59,17 +62,6 @@ export function RenderPrimitive({
             }
             return (
                 <line
-                    x1={prim.b * zoom}
-                    y1={-height}
-                    y2={height}
-                    x2={prim.b * zoom}
-                    {...common}
-                />
-            );
-        }
-        if (prim.limit) {
-            return (
-                <line
                     x1={prim.limit[0] * zoom}
                     y1={prim.limit[0] * zoom * prim.m + prim.b * zoom}
                     x2={prim.limit[1] * zoom}
@@ -77,17 +69,61 @@ export function RenderPrimitive({
                     {...common}
                 />
             );
+        } else {
+            const [left, right] = visibleEndPoints(prim, bounds);
+            return (
+                <line
+                    x1={left.x * zoom}
+                    y1={left.y * zoom}
+                    x2={right.x * zoom}
+                    y2={right.y * zoom}
+                    {...common}
+                />
+            );
         }
+        // if (prim.m === Infinity) {
+        //     if (prim.limit) {
+        //         return (
+        //             <line
+        //                 x1={prim.b * zoom}
+        //                 y1={prim.limit[0] * zoom}
+        //                 y2={prim.limit[1] * zoom}
+        //                 x2={prim.b * zoom}
+        //                 {...common}
+        //             />
+        //         );
+        //     }
+        //     return (
+        //         <line
+        //             x1={prim.b * zoom}
+        //             y1={-height}
+        //             y2={height}
+        //             x2={prim.b * zoom}
+        //             {...common}
+        //         />
+        //     );
+        // }
+        // if (prim.limit) {
+        //     return (
+        //         <line
+        //             x1={prim.limit[0] * zoom}
+        //             y1={prim.limit[0] * zoom * prim.m + prim.b * zoom}
+        //             x2={prim.limit[1] * zoom}
+        //             y2={prim.limit[1] * zoom * prim.m + prim.b * zoom}
+        //             {...common}
+        //         />
+        //     );
+        // }
 
-        return (
-            <line
-                x1={-width}
-                y1={-width * prim.m + prim.b * zoom}
-                x2={width}
-                y2={prim.m * width + prim.b * zoom}
-                {...common}
-            />
-        );
+        // return (
+        //     <line
+        //         x1={-width}
+        //         y1={-width * prim.m + prim.b * zoom}
+        //         x2={width}
+        //         y2={prim.m * width + prim.b * zoom}
+        //         {...common}
+        //     />
+        // );
     }
     if (prim.limit && prim.limit[0] !== prim.limit[1]) {
         const [t0, t1] = prim.limit;

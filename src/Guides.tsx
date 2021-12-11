@@ -45,6 +45,8 @@ import { geomToPrimitives } from './points';
 import { simplifyPath } from './insetPath';
 import { ensureClockwise } from './CanvasRender';
 import { pathToPrimitives } from './findSelection';
+import { screenToWorld } from './Canvas';
+import { Bounds } from './GuideElement';
 
 // This /will/ contain duplicates!
 // export const calculatePathElements = (
@@ -490,6 +492,11 @@ export const Guides = ({
         },
         [],
     );
+
+    const bounds = React.useMemo(() => {
+        return calculateBounds(width, height, view);
+    }, [view, width, height]);
+
     const clickActive = React.useCallback(
         (guides: string[], shift: boolean): void => {
             if (!shift) {
@@ -529,6 +536,7 @@ export const Guides = ({
             <RenderPrimitives
                 primitives={inactiveGuidePrimitives}
                 zoom={view.zoom}
+                bounds={bounds}
                 width={width}
                 height={height}
                 inactive
@@ -537,6 +545,7 @@ export const Guides = ({
             <RenderPrimitives
                 primitives={guidePrimitives}
                 zoom={view.zoom}
+                bounds={bounds}
                 width={width}
                 height={height}
                 onClick={pathOrigin ? undefined : clickActive}
@@ -550,6 +559,7 @@ export const Guides = ({
             ) : null}
             {state.pending && state.pending.type === 'Guide' ? (
                 <RenderPendingGuide
+                    bounds={bounds}
                     mirror={
                         state.activeMirror
                             ? mirrorTransforms[state.activeMirror]
@@ -564,6 +574,7 @@ export const Guides = ({
             {clip
                 ? pathToPrimitives(clip).map((prim, i) => (
                       <RenderPrimitive
+                          bounds={bounds}
                           isImplied
                           prim={prim}
                           zoom={view.zoom}
@@ -696,10 +707,12 @@ export const RenderPrimitives = React.memo(
         height,
         width,
         onClick,
+        bounds,
         inactive,
     }: {
         zoom: number;
         height: number;
+        bounds: Bounds;
         width: number;
         primitives: Array<{ prim: Primitive; guides: Array<Id> }>;
         onClick?: (guides: Array<Id>, shift: boolean) => unknown;
@@ -711,6 +724,7 @@ export const RenderPrimitives = React.memo(
                 {primitives.map((prim, i) =>
                     prim.guides.length === 0 ? null : (
                         <RenderPrimitive
+                            bounds={bounds}
                             prim={prim.prim}
                             zoom={zoom}
                             height={height}
@@ -733,3 +747,14 @@ export const RenderPrimitives = React.memo(
         );
     },
 );
+export function calculateBounds(width: number, height: number, view: View) {
+    const { x: x0, y: y0 } = screenToWorld(width, height, { x: 0, y: 0 }, view);
+    const { x: x1, y: y1 } = screenToWorld(
+        width,
+        height,
+        { x: width, y: height },
+        view,
+    );
+
+    return { x0, y0, x1, y1 };
+}

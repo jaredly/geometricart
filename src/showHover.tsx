@@ -15,6 +15,8 @@ import { Hover } from './Sidebar';
 import { Mirror, State } from './types';
 import { pathToPrimitives } from './findSelection';
 import { RenderMirror } from './RenderMirror';
+import { Bounds } from './GuideElement';
+import { calculateBounds } from './Guides';
 
 export const showHover = (
     key: string,
@@ -24,6 +26,7 @@ export const showHover = (
     height: number,
     width: number,
     zoom: number,
+    bounds: Bounds,
     selection: boolean,
 ) => {
     const color = selection ? 'blue' : 'magenta';
@@ -86,6 +89,7 @@ export const showHover = (
             ).map((geom, j) =>
                 geomToPrimitives(geom.geom).map((prim, i) => (
                     <RenderPrimitive
+                        bounds={bounds}
                         prim={prim}
                         strokeWidth={4}
                         color={

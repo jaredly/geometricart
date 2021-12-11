@@ -14,7 +14,7 @@ import {
 } from './findSelection';
 // import { DrawPath } from './DrawPathOld';
 import { angleTo, dist, getMirrorTransforms } from './getMirrorTransforms';
-import { Guides } from './Guides';
+import { calculateBounds, Guides } from './Guides';
 import { handleSelection } from './handleSelection';
 import { mergeFills, mergeStyleLines } from './MultiStyleForm';
 import { Overlay } from './Overlay';
@@ -250,6 +250,11 @@ export const Canvas = ({
     const rand = React.useRef(new Prando('ok'));
     rand.current.reset();
 
+    const bounds = React.useMemo(
+        () => calculateBounds(width, height, view),
+        [width, height, view],
+    );
+
     return (
         <div
             css={{
@@ -412,6 +417,7 @@ export const Canvas = ({
                                   width,
                                   height,
                                   view.zoom,
+                                  bounds,
                                   true,
                               ),
                           )
@@ -426,6 +432,7 @@ export const Canvas = ({
                                   width,
                                   height,
                                   view.zoom,
+                                  bounds,
                                   false,
                               ),
                           )
@@ -440,6 +447,7 @@ export const Canvas = ({
                                 width,
                                 height,
                                 view.zoom,
+                                bounds,
                                 false,
                             )}
                         </>

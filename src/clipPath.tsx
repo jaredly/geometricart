@@ -464,7 +464,7 @@ export const clipTwo = (
     let x = 0;
     while (
         (!result.length || !coordsEqual(first, result[result.length - 1].to)) &&
-        x++ < 100
+        x++ < 1000
     ) {
         if (debug) {
             console.log(`Current state`, { ...state }, result.length);
