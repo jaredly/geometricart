@@ -5,7 +5,7 @@ import React from 'react';
 import { Canvas } from './Canvas';
 import { reducer } from './reducer';
 import { Hover, Sidebar } from './Sidebar';
-import { Coord, GroupRegroup, GuideGeom, Id, State } from './types';
+import { Action, Coord, GroupRegroup, GuideGeom, Id, State } from './types';
 import { initialState } from './initialState';
 import { useDropTarget } from './useDropTarget';
 
@@ -53,171 +53,25 @@ export const App = ({ initialState }: { initialState: State }) => {
 
     const [hover, setHover] = React.useState(null as null | Hover);
 
-    React.useEffect(() => {
-        let tid: null | NodeJS.Timeout = null;
-        const hoverMirror = (id: Id, quick: boolean) => {
-            setHover({ kind: 'Mirror', id });
-            if (tid) {
-                clearTimeout(tid);
-            }
-            tid = setTimeout(
-                () => {
-                    setHover(null);
-                },
-                quick ? 100 : 1000,
-            );
-        };
-
-        let prevMirror = state.activeMirror;
-        const fn = (evt: KeyboardEvent) => {
-            if (
-                evt.target !== document.body &&
-                (evt.target instanceof HTMLInputElement ||
-                    evt.target instanceof HTMLTextAreaElement)
-            ) {
-                return;
-            }
-            console.log('key', evt.key);
-            if (evt.key === 'M') {
-                const ids = Object.keys(latestState.current.mirrors);
-                let id = ids[0];
-                if (latestState.current.activeMirror) {
-                    const idx = ids.indexOf(latestState.current.activeMirror);
-                    id = ids[(idx + 1) % ids.length];
-                }
-                dispatch({ type: 'mirror:active', id });
-                hoverMirror(id, false);
-                return;
-            }
-            if ((evt.key === 'm' || evt.key === 'µ') && evt.altKey) {
-                console.log('ok');
-                if (latestState.current.activeMirror) {
-                    prevMirror = latestState.current.activeMirror;
-                    hoverMirror(prevMirror, true);
-                    dispatch({ type: 'mirror:active', id: null });
-                } else if (prevMirror) {
-                    dispatch({ type: 'mirror:active', id: prevMirror });
-                    hoverMirror(prevMirror, false);
-                } else {
-                    const id = Object.keys(latestState.current.mirrors)[0];
-                    dispatch({
-                        type: 'mirror:active',
-                        id: id,
-                    });
-                    hoverMirror(id, false);
-                }
-                return;
-            }
-            if (evt.key === 'm') {
-                setPendingMirror({
-                    parent: latestState.current.activeMirror,
-                    rotations: 3,
-                    reflect: true,
-                    center: null,
-                });
-            }
-            if (evt.key === 'a' && (evt.ctrlKey || evt.metaKey)) {
-                evt.preventDefault();
-                evt.stopPropagation();
-                return dispatch({
-                    type: 'selection:set',
-                    selection: {
-                        type: 'PathGroup',
-                        ids: Object.keys(latestState.current.pathGroups),
-                    },
-                });
-            }
-            if (evt.key === 'Delete' || evt.key === 'Backspace') {
-                console.log('ok', latestState.current.selection?.type);
-                if (latestState.current.selection?.type === 'Guide') {
-                    // TODO: make a group:deletee:many
-                    latestState.current.selection.ids.forEach((id) => {
-                        dispatch({
-                            type: 'guide:delete',
-                            id,
-                        });
-                    });
-                    return;
-                }
-                if (latestState.current.selection?.type === 'Path') {
-                    return dispatch({
-                        type: 'path:delete:many',
-                        ids: latestState.current.selection.ids,
-                    });
-                }
-                if (latestState.current.selection?.type === 'PathGroup') {
-                    return latestState.current.selection.ids.forEach((id) =>
-                        dispatch({
-                            type: 'group:delete',
-                            id,
-                        }),
-                    );
-                }
-            }
-            if (evt.key === 'g') {
-                if (evt.metaKey || evt.ctrlKey) {
-                    evt.preventDefault();
-                    evt.stopPropagation();
-                    const { selection } = latestState.current;
-                    if (
-                        selection?.type !== 'PathGroup' &&
-                        selection?.type !== 'Path'
-                    ) {
-                        return;
-                    }
-                    return dispatch({
-                        type: 'group:regroup',
-                        selection: latestState.current
-                            .selection as GroupRegroup['selection'],
-                    });
-                }
-                return dispatch({
-                    type: 'view:update',
-                    view: {
-                        ...latestState.current.view,
-                        guides: !latestState.current.view.guides,
-                    },
-                });
-            }
-            if (evt.key === 'Escape') {
-                if (latestState.current.pending) {
-                    return dispatch({ type: 'pending:type', kind: null });
-                }
-                if (latestState.current.selection) {
-                    return dispatch({ type: 'selection:set', selection: null });
-                }
-            }
-            if (evt.key === 'z' && (evt.ctrlKey || evt.metaKey)) {
-                evt.preventDefault();
-                evt.stopPropagation();
-                return dispatch({ type: evt.shiftKey ? 'redo' : 'undo' });
-            }
-            if (evt.key === 'y' && (evt.ctrlKey || evt.metaKey)) {
-                evt.stopPropagation();
-                evt.preventDefault();
-                return dispatch({ type: 'redo' });
-            }
-            if (evt.key === 'd') {
-                setDragSelect(true);
-            }
-            if (toType[evt.key]) {
-                dispatch({
-                    type: 'pending:type',
-                    kind: toType[evt.key],
-                });
-            }
-        };
-        document.addEventListener('keydown', fn);
-        return () => document.removeEventListener('keydown', fn);
-    }, []);
-
-    const ref = React.useRef(null as null | SVGSVGElement);
-
     const [pendingMirror, setPendingMirror] = React.useState(
         null as null | PendingMirror,
     );
 
     const [dragSelect, setDragSelect] = React.useState(false);
+
+    React.useEffect(() => {
+        const fn = handleKeyboard(
+            latestState,
+            dispatch,
+            setHover,
+            setPendingMirror,
+            setDragSelect,
+        );
+        document.addEventListener('keydown', fn);
+        return () => document.removeEventListener('keydown', fn);
+    }, []);
+
+    const ref = React.useRef(null as null | SVGSVGElement);
 
     // Reset when state changes
     React.useEffect(() => {
@@ -270,4 +124,167 @@ export const App = ({ initialState }: { initialState: State }) => {
             />
         </div>
     );
+};
+
+export const handleKeyboard = (
+    latestState: { current: State },
+    dispatch: (action: Action) => void,
+    setHover: (hover: Hover | null) => void,
+    setPendingMirror: (pending: PendingMirror | null) => void,
+    setDragSelect: (ds: boolean) => void,
+) => {
+    let tid: null | NodeJS.Timeout = null;
+    const hoverMirror = (id: Id, quick: boolean) => {
+        setHover({ kind: 'Mirror', id });
+        if (tid) {
+            clearTimeout(tid);
+        }
+        tid = setTimeout(
+            () => {
+                setHover(null);
+            },
+            quick ? 100 : 1000,
+        );
+    };
+
+    let prevMirror = latestState.current.activeMirror;
+
+    return (evt: KeyboardEvent) => {
+        if (
+            evt.target !== document.body &&
+            (evt.target instanceof HTMLInputElement ||
+                evt.target instanceof HTMLTextAreaElement)
+        ) {
+            return;
+        }
+        console.log('key', evt.key);
+        if (evt.key === 'M') {
+            const ids = Object.keys(latestState.current.mirrors);
+            let id = ids[0];
+            if (latestState.current.activeMirror) {
+                const idx = ids.indexOf(latestState.current.activeMirror);
+                id = ids[(idx + 1) % ids.length];
+            }
+            dispatch({ type: 'mirror:active', id });
+            hoverMirror(id, false);
+            return;
+        }
+        if ((evt.key === 'm' || evt.key === 'µ') && evt.altKey) {
+            console.log('ok');
+            if (latestState.current.activeMirror) {
+                prevMirror = latestState.current.activeMirror;
+                hoverMirror(prevMirror, true);
+                dispatch({ type: 'mirror:active', id: null });
+            } else if (prevMirror) {
+                dispatch({ type: 'mirror:active', id: prevMirror });
+                hoverMirror(prevMirror, false);
+            } else {
+                const id = Object.keys(latestState.current.mirrors)[0];
+                dispatch({
+                    type: 'mirror:active',
+                    id: id,
+                });
+                hoverMirror(id, false);
+            }
+            return;
+        }
+        if (evt.key === 'm') {
+            setPendingMirror({
+                parent: latestState.current.activeMirror,
+                rotations: 3,
+                reflect: true,
+                center: null,
+            });
+        }
+        if (evt.key === 'a' && (evt.ctrlKey || evt.metaKey)) {
+            evt.preventDefault();
+            evt.stopPropagation();
+            return dispatch({
+                type: 'selection:set',
+                selection: {
+                    type: 'PathGroup',
+                    ids: Object.keys(latestState.current.pathGroups),
+                },
+            });
+        }
+        if (evt.key === 'Delete' || evt.key === 'Backspace') {
+            console.log('ok', latestState.current.selection?.type);
+            if (latestState.current.selection?.type === 'Guide') {
+                // TODO: make a group:deletee:many
+                latestState.current.selection.ids.forEach((id) => {
+                    dispatch({
+                        type: 'guide:delete',
+                        id,
+                    });
+                });
+                return;
+            }
+            if (latestState.current.selection?.type === 'Path') {
+                return dispatch({
+                    type: 'path:delete:many',
+                    ids: latestState.current.selection.ids,
+                });
+            }
+            if (latestState.current.selection?.type === 'PathGroup') {
+                return latestState.current.selection.ids.forEach((id) =>
+                    dispatch({
+                        type: 'group:delete',
+                        id,
+                    }),
+                );
+            }
+        }
+        if (evt.key === 'g') {
+            if (evt.metaKey || evt.ctrlKey) {
+                evt.preventDefault();
+                evt.stopPropagation();
+                const { selection } = latestState.current;
+                if (
+                    selection?.type !== 'PathGroup' &&
+                    selection?.type !== 'Path'
+                ) {
+                    return;
+                }
+                return dispatch({
+                    type: 'group:regroup',
+                    selection: latestState.current
+                        .selection as GroupRegroup['selection'],
+                });
+            }
+            return dispatch({
+                type: 'view:update',
+                view: {
+                    ...latestState.current.view,
+                    guides: !latestState.current.view.guides,
+                },
+            });
+        }
+        if (evt.key === 'Escape') {
+            if (latestState.current.pending) {
+                return dispatch({ type: 'pending:type', kind: null });
+            }
+            if (latestState.current.selection) {
+                return dispatch({ type: 'selection:set', selection: null });
+            }
+        }
+        if (evt.key === 'z' && (evt.ctrlKey || evt.metaKey)) {
+            evt.preventDefault();
+            evt.stopPropagation();
+            return dispatch({ type: evt.shiftKey ? 'redo' : 'undo' });
+        }
+        if (evt.key === 'y' && (evt.ctrlKey || evt.metaKey)) {
+            evt.stopPropagation();
+            evt.preventDefault();
+            return dispatch({ type: 'redo' });
+        }
+        if (evt.key === 'd') {
+            setDragSelect(true);
+        }
+        if (toType[evt.key]) {
+            dispatch({
+                type: 'pending:type',
+                kind: toType[evt.key],
+            });
+        }
+    };
 };
