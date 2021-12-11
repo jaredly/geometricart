@@ -88,6 +88,8 @@ export type TabProps = {
     dispatch: (action: Action) => unknown;
     canvasRef: { current: SVGSVGElement | null };
     hover: Hover | null;
+    width: number;
+    height: number;
     setHover: (hover: Hover | null) => void;
     setPendingMirror: (mirror: PendingMirror | null) => void;
 };
@@ -386,8 +388,13 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactElement } = {
             </div>
         );
     },
-    Export: ({ state, canvasRef, dispatch }) => (
-        <Export state={state} canvasRef={canvasRef} dispatch={dispatch} />
+    Export: ({ state, canvasRef, dispatch, width, height }) => (
+        <Export
+            state={state}
+            canvasRef={canvasRef}
+            dispatch={dispatch}
+            originalSize={Math.max(width, height)}
+        />
     ),
     Palette: ({ state, dispatch }) => (
         <PalettesForm state={state} dispatch={dispatch} />
@@ -559,6 +566,8 @@ export function Sidebar({
     state,
     canvasRef,
     hover,
+    width,
+    height,
     setHover,
     setPendingMirror,
     setDragSelect,
@@ -567,6 +576,8 @@ export function Sidebar({
     dispatch: (action: Action) => void;
     hover: Hover | null;
     setHover: (hover: Hover | null) => void;
+    width: number;
+    height: number;
     state: State;
     canvasRef: React.MutableRefObject<SVGSVGElement | null>;
     setPendingMirror: (mirror: PendingMirror | null) => void;
@@ -681,6 +692,8 @@ export function Sidebar({
                 current={state.tab}
                 props={{
                     state,
+                    width,
+                    height,
                     dispatch,
                     canvasRef,
                     hover,

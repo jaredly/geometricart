@@ -43,10 +43,6 @@ export const canvasRender = async (
 ) => {
     const palette = state.palettes[state.activePalette];
 
-    // // um yeah we're just assuming 1000 w/h
-    // const sourceWidth = 1000;
-    // const sourceHeight = 1000;
-
     const images = await Promise.all(
         palette.map((c) =>
             c.startsWith('http') && imageCache[c]

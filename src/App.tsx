@@ -224,6 +224,9 @@ export const App = ({ initialState }: { initialState: State }) => {
         setPendingMirror(null);
     }, [state.mirrors, state.guides]);
 
+    const width = 1000;
+    const height = 1000;
+
     return (
         <div
             css={{
@@ -250,6 +253,8 @@ export const App = ({ initialState }: { initialState: State }) => {
                 state={state}
                 canvasRef={ref}
                 setPendingMirror={setPendingMirror}
+                width={width}
+                height={height}
             />
             <Canvas
                 state={state}
@@ -260,8 +265,8 @@ export const App = ({ initialState }: { initialState: State }) => {
                 dispatch={dispatch}
                 pendingMirror={pendingMirror}
                 setPendingMirror={setPendingMirror}
-                width={1000}
-                height={1000}
+                width={width}
+                height={height}
             />
         </div>
     );

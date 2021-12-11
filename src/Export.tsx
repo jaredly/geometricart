@@ -21,8 +21,10 @@ export const Export = ({
     canvasRef,
     state,
     dispatch,
+    originalSize,
 }: {
     state: State;
+    originalSize: number;
     canvasRef: { current: null | SVGSVGElement };
     dispatch: (action: Action) => void;
 }) => {
@@ -34,7 +36,7 @@ export const Export = ({
 
     const [render, setRender] = React.useState(false);
 
-    const [size, setSize] = React.useState(1000);
+    const [size, setSize] = React.useState(originalSize);
     const [embed, setEmbed] = React.useState(true);
     const [history, setHistory] = React.useState(false);
 
@@ -86,22 +88,9 @@ export const Export = ({
                 <button
                     css={{ marginRight: 16 }}
                     onClick={async () => {
-                        // let text = canvasRef.current!.outerHTML;
-                        // if (embed) {
-                        //     text += `\n\n${PREFIX}${JSON.stringify(
-                        //         state,
-                        //     )}${SUFFIX}`;
-                        // }
-                        // const blob = new Blob([text], {
-                        //     type: 'image/svg+xml',
-                        // });
-                        // setUrl(URL.createObjectURL(blob));
-
                         const canvas = document.createElement('canvas');
                         canvas.width = canvas.height = size;
                         const ctx = canvas.getContext('2d')!;
-
-                        const originalSize = 1000;
 
                         ctx.save();
                         await canvasRender(
@@ -147,6 +136,10 @@ export const Export = ({
                         }
 
                         canvas.toBlob(async (blob) => {
+                            if (!blob) {
+                                alert('Unable to export. Canvas error');
+                                return;
+                            }
                             if (embed) {
                                 blob = await addMetadata(
                                     blob,
