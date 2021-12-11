@@ -12,7 +12,12 @@ import {
 } from './findSelection';
 // import { DrawPath } from './DrawPathOld';
 import { getMirrorTransforms } from './getMirrorTransforms';
-import { calculateBounds, Guides } from './Guides';
+import {
+    calculateBounds,
+    Guides,
+    PendingPathPair,
+    primitivesForElementsAndPaths,
+} from './Guides';
 import { handleSelection } from './handleSelection';
 import { mergeFills, mergeStyleLines } from './MultiStyleForm';
 import { Overlay } from './Overlay';
@@ -21,11 +26,33 @@ import { RenderPrimitive } from './RenderPrimitive';
 import { RenderWebGL } from './RenderWebGL';
 import { showHover } from './showHover';
 import { Hover } from './Sidebar';
-import { Action, ArcSegment, Coord, State, Style, View } from './types';
+import {
+    Action,
+    ArcSegment,
+    Coord,
+    Id,
+    Intersect,
+    Segment,
+    State,
+    Style,
+    View,
+} from './types';
 import { useDragSelect, useMouseDrag } from './useMouseDrag';
 import { useScrollWheel } from './useScrollWheel';
 import { sortedVisibleInsetPaths } from './sortedVisibleInsetPaths';
-import { DrawPathState } from './DrawPath';
+import {
+    backUp,
+    DrawPathState,
+    goForward,
+    goLeft,
+    goRight,
+    isComplete,
+} from './DrawPath';
+import { Primitive } from './intersect';
+import { calculateGuideElements } from './calculateGuideElements';
+import { calcAllIntersections } from './calcAllIntersections';
+import { simplifyPath } from './insetPath';
+import { ensureClockwise } from './CanvasRender';
 
 export type Props = {
     state: State;
@@ -240,6 +267,27 @@ export const Canvas = ({
 
     const pendingPath = React.useState(null as null | DrawPathState);
 
+    const guidePrimitives = React.useMemo(() => {
+        return primitivesForElementsAndPaths(
+            calculateGuideElements(state.guides, mirrorTransforms),
+            Object.keys(state.paths)
+                .filter(
+                    (k) =>
+                        !state.paths[k].hidden &&
+                        (!state.paths[k].group ||
+                            !state.pathGroups[state.paths[k].group!].hide),
+                )
+                .map((k) => state.paths[k]),
+        );
+    }, [state.guides, state.paths, state.pathGroups, mirrorTransforms]);
+
+    const allIntersections = React.useMemo(() => {
+        const { coords: fromGuides, seenCoords } = calcAllIntersections(
+            guidePrimitives.map((p) => p.prim),
+        );
+        return fromGuides;
+    }, [guidePrimitives, state.paths, state.pathGroups]);
+
     return (
         <div
             css={{
@@ -384,6 +432,8 @@ export const Canvas = ({
                             dispatch={dispatch}
                             width={width}
                             height={height}
+                            allIntersections={allIntersections}
+                            guidePrimitives={guidePrimitives}
                             zooming={zooming}
                             view={view}
                             pos={pos}
@@ -450,10 +500,6 @@ export const Canvas = ({
                     ) : null}
                 </g>
             </svg>
-            {/* <div>
-                Guides: {guideElements.length}, Points:{' '}
-                {allIntersections.length}
-            </div> */}
             {tmpView ? (
                 <div
                     css={{
@@ -478,6 +524,144 @@ export const Canvas = ({
                     height={height}
                 />
             ) : null}
+            {isTouchScreen && pendingPath[0] ? (
+                <PendingPathControls
+                    pendingPath={pendingPath}
+                    allIntersections={allIntersections}
+                    guidePrimitives={guidePrimitives}
+                    onComplete={(
+                        isClip: boolean,
+                        origin: Coord,
+                        segments: Array<Segment>,
+                    ) => {
+                        if (isClip) {
+                            dispatch({
+                                type: 'clip:add',
+                                clip: segments,
+                            });
+                        } else {
+                            dispatch({
+                                type: 'path:create',
+                                segments,
+                                origin,
+                            });
+                        }
+                    }}
+                />
+            ) : null}
+        </div>
+    );
+};
+
+export const PendingPathControls = ({
+    pendingPath: [state, setState],
+    allIntersections,
+    guidePrimitives,
+    onComplete,
+}: {
+    pendingPath: PendingPathPair;
+    allIntersections: Array<Intersect>;
+    guidePrimitives: Array<{ prim: Primitive; guides: Array<Id> }>;
+    onComplete: (
+        isClip: boolean,
+        origin: Coord,
+        segments: Array<Segment>,
+    ) => void;
+}) => {
+    if (!state) {
+        return null;
+    }
+    return (
+        <div
+            css={{
+                position: 'fixed',
+                bottom: 0,
+                left: 0,
+                right: 0,
+            }}
+        >
+            {isComplete(state) ? (
+                <>
+                    <button
+                        onClick={() => {
+                            onComplete(
+                                state.isClip,
+                                state.origin.coord,
+                                simplifyPath(
+                                    ensureClockwise(
+                                        state.parts.map((p) => p.segment),
+                                    ),
+                                ),
+                            );
+                        }}
+                    >
+                        finish ✅
+                    </button>
+                    <button
+                        onClick={() => {
+                            setState(
+                                backUp(
+                                    state.origin,
+                                    guidePrimitives,
+                                    allIntersections,
+                                ),
+                            );
+                        }}
+                    >
+                        back ❌
+                    </button>
+                </>
+            ) : (
+                <>
+                    <button
+                        onClick={() => {
+                            setState(goLeft);
+                        }}
+                    >
+                        👈
+                    </button>
+                    <button
+                        onClick={() => {
+                            if (state && isComplete(state)) {
+                                return onComplete(
+                                    state.isClip,
+                                    state.origin.coord,
+                                    simplifyPath(
+                                        ensureClockwise(
+                                            state.parts.map((p) => p.segment),
+                                        ),
+                                    ),
+                                );
+                            }
+                            setState(
+                                goForward(guidePrimitives, allIntersections),
+                            );
+                        }}
+                    >
+                        ✅
+                    </button>
+                    <button
+                        onClick={() => {
+                            setState(goRight);
+                        }}
+                    >
+                        👉
+                    </button>
+                    <button
+                        onClick={() => {
+                            setState(
+                                backUp(
+                                    state.origin,
+                                    guidePrimitives,
+                                    allIntersections,
+                                ),
+                            );
+                        }}
+                    >
+                        ❌
+                    </button>
+                </>
+            )}
         </div>
     );
 };

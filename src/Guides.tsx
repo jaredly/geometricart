@@ -145,6 +145,16 @@ export function primitivesForElementsAndPaths(
         .filter(Boolean) as Array<{ prim: Primitive; guides: Array<Id> }>;
 }
 
+export type PendingPathPair = [
+    null | DrawPathState,
+    (
+        fn:
+            | DrawPathState
+            | null
+            | ((state: DrawPathState | null) => DrawPathState | null),
+    ) => void,
+];
+
 export const Guides = ({
     state,
     dispatch,
@@ -158,6 +168,8 @@ export const Guides = ({
     pendingMirror,
     setPendingMirror,
     pendingPath,
+    guidePrimitives,
+    allIntersections,
 }: {
     state: State;
     zooming: boolean;
@@ -167,37 +179,17 @@ export const Guides = ({
     view: View;
     hover: Hover | null;
     pos: Coord;
-    pendingPath: [
-        null | DrawPathState,
-        (
-            fn:
-                | DrawPathState
-                | null
-                | ((state: DrawPathState | null) => DrawPathState | null),
-        ) => void,
-    ];
+    pendingPath: PendingPathPair;
     mirrorTransforms: { [key: string]: Array<Array<Matrix>> };
     pendingMirror: PendingMirror | null;
+    guidePrimitives: Array<{ prim: Primitive; guides: Array<Id> }>;
+    allIntersections: Array<Intersect>;
     setPendingMirror: (
         mirror:
             | (PendingMirror | null)
             | ((mirror: PendingMirror | null) => PendingMirror | null),
     ) => void;
 }) => {
-    const guidePrimitives = React.useMemo(() => {
-        return primitivesForElementsAndPaths(
-            calculateGuideElements(state.guides, mirrorTransforms),
-            Object.keys(state.paths)
-                .filter(
-                    (k) =>
-                        !state.paths[k].hidden &&
-                        (!state.paths[k].group ||
-                            !state.pathGroups[state.paths[k].group!].hide),
-                )
-                .map((k) => state.paths[k]),
-        );
-    }, [state.guides, state.paths, state.pathGroups, mirrorTransforms]);
-
     const inactiveGuidePrimitives = React.useMemo(() => {
         return primitivesForElementsAndPaths(
             calculateInactiveGuideElements(state.guides, mirrorTransforms),
@@ -266,13 +258,6 @@ export const Guides = ({
         },
         [pendingPath[0]],
     );
-
-    const allIntersections = React.useMemo(() => {
-        const { coords: fromGuides, seenCoords } = calcAllIntersections(
-            guidePrimitives.map((p) => p.prim),
-        );
-        return fromGuides;
-    }, [guidePrimitives, state.paths, state.pathGroups]);
 
     const primsAndStuff = useCurrent({ guidePrimitives, allIntersections });
 

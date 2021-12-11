@@ -99,8 +99,8 @@ export const DrawPath = React.memo(
         ];
         mirror: null | Array<Array<Matrix>>;
         primitives: Array<{ prim: Primitive; guides: Array<Id> }>;
-        view: View;
         intersections: Array<Intersect>;
+        view: View;
         palette: Array<string>;
         onComplete: (segments: Array<PendingSegment>) => unknown;
     }) => {
@@ -147,86 +147,25 @@ export const DrawPath = React.memo(
                 if (evt.key === 'ArrowDown' || evt.key === 'j') {
                     evt.preventDefault();
                     evt.stopPropagation();
-                    setState((state) => {
-                        if (!state || !state.parts.length) {
-                            return state;
-                        }
-                        const index = state.parts.length - 1;
-                        return backUpToIndex(
-                            state,
-                            index,
-                            origin,
-                            primitives,
-                            intersections,
-                        );
-                    });
+                    setState(backUp(origin, primitives, intersections));
                 }
                 if (evt.key === 'ArrowUp' || evt.key === 'k') {
                     evt.preventDefault();
                     evt.stopPropagation();
                     // Go to the next one
-                    setState((state) => {
-                        if (!state || state.selection >= state.next.length) {
-                            return state;
-                        }
-
-                        const completed =
-                            state.parts.length &&
-                            coordKey(
-                                state.parts[state.parts.length - 1].to.coord,
-                            ) === coordKey(origin.coord);
-                        if (completed) {
-                            return state;
-                        }
-
-                        const parts = state.parts.concat([
-                            state.next[state.selection],
-                        ]);
-
-                        const next = nextForState(
-                            parts,
-                            origin,
-                            primitives,
-                            intersections,
-                        );
-
-                        return {
-                            ...state,
-                            parts,
-                            next,
-                            selection: 0,
-                        };
-                    });
+                    setState(goForward(primitives, intersections));
                 }
                 if (evt.key === 'ArrowLeft' || evt.key === 'h') {
                     evt.preventDefault();
                     evt.stopPropagation();
                     evt.stopImmediatePropagation();
-                    setState((state) =>
-                        state
-                            ? {
-                                  ...state,
-                                  selection:
-                                      state.selection === 0
-                                          ? state.next.length - 1
-                                          : state.selection - 1,
-                              }
-                            : state,
-                    );
+                    setState(goLeft);
                 }
                 if (evt.key === 'ArrowRight' || evt.key === 'l') {
                     evt.preventDefault();
                     evt.stopPropagation();
                     // go to the left
-                    setState((state) =>
-                        state
-                            ? {
-                                  ...state,
-                                  selection:
-                                      (state.selection + 1) % state.next.length,
-                              }
-                            : state,
-                    );
+                    setState(goRight);
                     // go right, yes folks
                 }
             };
@@ -421,6 +360,78 @@ export const segmentAngle = (
         );
     }
 };
+
+export const goLeft = (state: DrawPathState | null) =>
+    state
+        ? {
+              ...state,
+              selection:
+                  state.selection === 0
+                      ? state.next.length - 1
+                      : state.selection - 1,
+          }
+        : state;
+
+export const goRight = (state: DrawPathState | null): DrawPathState | null =>
+    state
+        ? {
+              ...state,
+              selection: (state.selection + 1) % state.next.length,
+          }
+        : state;
+
+export function goForward(
+    primitives: { prim: Primitive; guides: Array<Id> }[],
+    intersections: Intersect[],
+): (state: DrawPathState | null) => DrawPathState | null {
+    return (state) => {
+        if (!state || state.selection >= state.next.length) {
+            return state;
+        }
+
+        if (isComplete(state)) {
+            return state;
+        }
+
+        const parts = state.parts.concat([state.next[state.selection]]);
+
+        const next = nextForState(
+            parts,
+            state.origin,
+            primitives,
+            intersections,
+        );
+
+        return {
+            ...state,
+            parts,
+            next,
+            selection: 0,
+        };
+    };
+}
+
+export function isComplete(state: DrawPathState) {
+    return (
+        state.parts.length &&
+        coordKey(state.parts[state.parts.length - 1].to.coord) ===
+            coordKey(state.origin.coord)
+    );
+}
+
+export function backUp(
+    origin: Intersect,
+    primitives: { prim: Primitive; guides: Array<Id> }[],
+    intersections: Intersect[],
+): (state: DrawPathState | null) => DrawPathState | null {
+    return (state) => {
+        if (!state || !state.parts.length) {
+            return null;
+        }
+        const index = state.parts.length - 1;
+        return backUpToIndex(state, index, origin, primitives, intersections);
+    };
+}
 
 function backUpToIndex(
     state: DrawPathState,
