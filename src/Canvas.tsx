@@ -229,6 +229,11 @@ export const Canvas = ({
         ],
     );
 
+    const clipPrimitives = React.useMemo(
+        () => (clip ? pathToPrimitives(clip) : null),
+        [clip],
+    );
+
     const dragged = dragSelectPos
         ? findSelection(
               currentState.current.paths,
@@ -343,6 +348,7 @@ export const Canvas = ({
                             origPath={state.paths[path.id]}
                             groups={state.pathGroups}
                             rand={rand.current}
+                            clip={clipPrimitives}
                             path={path}
                             zoom={view.zoom}
                             sketchiness={view.sketchiness}

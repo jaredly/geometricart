@@ -4,10 +4,12 @@ import { jsx } from '@emotion/react';
 import Prando from 'prando';
 import * as React from 'react';
 import { RoughGenerator } from 'roughjs/bin/generator';
+import { insidePath } from './clipPath';
 import { rgbToHsl } from './colorConvert';
 import { dist } from './getMirrorTransforms';
+import { Primitive } from './intersect';
 import { arcPath } from './RenderPendingPath';
-import { Path, PathGroup } from './types';
+import { Path, PathGroup, Segment } from './types';
 
 export const UnderlinePath = ({
     path,
@@ -62,11 +64,13 @@ export const RenderPath = React.memo(
         palette,
         generator,
         rand,
+        clip,
     }: {
         rand?: Prando;
         generator?: RoughGenerator;
         path: Path;
         origPath?: Path;
+        clip?: Array<Primitive> | null;
         zoom: number;
         sketchiness: number | undefined;
         groups: { [key: string]: PathGroup };
@@ -287,7 +291,13 @@ export const RenderPath = React.memo(
                               cx={seg.to.x * zoom}
                               cy={seg.to.y * zoom}
                               r={(5 / 100) * zoom}
-                              stroke={i === 0 ? 'red' : 'blue'}
+                              stroke={
+                                  clip && !insidePath(seg.to, clip, false)
+                                      ? 'yellow'
+                                      : i === 0
+                                      ? 'red'
+                                      : 'blue'
+                              }
                               strokeWidth={(1 / 100) * zoom}
                               fill={'none'}
                           />

@@ -951,11 +951,12 @@ export function handlePathCreate(
         fills: [{ color: 0 }],
         lines: [{ color: 'white', width: 3 }],
     };
+    groupId = `id-${nextId++}`;
 
     let main: Path = {
         id,
         created: 0,
-        group: null,
+        group: groupId,
         ordering: 0,
         hidden: false,
         origin: action.origin,
@@ -964,9 +965,15 @@ export function handlePathCreate(
         style,
     };
 
+    state.pathGroups = {
+        ...state.pathGroups,
+        [groupId]: {
+            group: null,
+            id: groupId,
+        },
+    };
+
     if (state.activeMirror) {
-        groupId = `id-${nextId++}`;
-        main.group = groupId;
         const transforms = getTransformsForMirror(
             state.activeMirror,
             state.mirrors,
@@ -1007,22 +1014,13 @@ export function handlePathCreate(
             };
             ids.push(nid);
         });
-        state.pathGroups = {
-            ...state.pathGroups,
-            [groupId]: {
-                group: null,
-                id: groupId,
-            },
-        };
     }
     state.paths[id] = main;
     return [
         {
             ...state,
             nextId,
-            selection: groupId
-                ? { type: 'PathGroup', ids: [groupId] }
-                : { type: 'Path', ids: [id] },
+            selection: { type: 'PathGroup', ids: [groupId] },
             paths: {
                 ...state.paths,
                 [id]: main,

@@ -73,6 +73,7 @@ export const MultiStyleForm = ({
             <div>Fills</div>
             {fills.map((fill, i) => (
                 <div
+                    key={i}
                     css={{
                         // display: 'flex',
                         // alignItems: 'center',
@@ -206,6 +207,7 @@ export const MultiStyleForm = ({
             <div>Lines</div>
             {lines.map((line, i) => (
                 <div
+                    key={i}
                     css={{
                         display: 'flex',
                         alignItems: 'center',
@@ -314,6 +316,7 @@ export const LightDark = ({
                         .filter((x) => x != null)
                         .map((color) => (
                             <div
+                                key={`${i}-${color}`}
                                 onClick={() =>
                                     onChange(allSame === value ? null : value)
                                 }
@@ -516,7 +519,7 @@ export const MultiColor = ({
             ))}
             {options.map((name, i) => (
                 <button
-                    key={name}
+                    key={name + i}
                     onClick={() => onChange(name)}
                     style={{
                         background:
