@@ -71,10 +71,9 @@ export function useMouseDrag(
                     setPos(pos);
                 }
             },
-            onTouchEnd: (evt: React.MouseEvent) => {
+            onTouchEnd: (evt: React.TouchEvent) => {
                 if (dragPos) {
                     setDragPos(null);
-                    evt.preventDefault();
                 }
             },
             onMouseUpCapture: (evt: React.MouseEvent) => {
@@ -146,7 +145,7 @@ export function useDragSelect(
                 };
                 setPos(pos);
             },
-            onTouchEnd: (evt: React.MouseEvent) => {
+            onTouchEnd: (evt: React.TouchEvent) => {
                 if (dragPos) {
                     setDragPos(null);
                     evt.preventDefault();
