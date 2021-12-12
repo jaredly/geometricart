@@ -8,6 +8,7 @@ import { insidePath } from './clipPath';
 import { rgbToHsl } from './colorConvert';
 import { dist } from './getMirrorTransforms';
 import { Primitive } from './intersect';
+import { useTouchClick } from './RenderIntersections';
 import { arcPath } from './RenderPendingPath';
 import { Path, PathGroup, Segment } from './types';
 
@@ -74,11 +75,14 @@ export const RenderPath = React.memo(
         zoom: number;
         sketchiness: number | undefined;
         groups: { [key: string]: PathGroup };
-        onClick?: (evt: React.MouseEvent, id: string) => void;
+        onClick?: (shiftKey: boolean, id: string) => void;
         palette: Array<string>;
     }) => {
         const d = calcPathD(path, zoom);
         const style = path.style;
+        const handlers = useTouchClick<null>(() =>
+            onClick ? onClick(false, path.id) : null,
+        );
 
         // const insetPaths =
         //
@@ -110,8 +114,13 @@ export const RenderPath = React.memo(
                     : undefined,
                 fill: color,
                 onClick: onClick
-                    ? (evt: React.MouseEvent) => onClick(evt, path.id)
+                    ? (evt: React.MouseEvent) => {
+                          evt.stopPropagation();
+                          evt.preventDefault();
+                          onClick(evt.shiftKey, path.id);
+                      }
                     : undefined,
+                ...handlers(null),
             };
             if (path.segments.length === 1 && path.segments[0].type === 'Arc') {
                 let r = dist(path.segments[0].center, path.segments[0].to);
@@ -201,13 +210,18 @@ export const RenderPath = React.memo(
                 fill: 'none',
                 strokeLinejoin: 'round' as 'round',
                 onClick: onClick
-                    ? (evt: React.MouseEvent) => onClick(evt, path.id)
+                    ? (evt: React.MouseEvent) => {
+                          evt.stopPropagation();
+                          evt.preventDefault();
+                          onClick(evt.shiftKey, path.id);
+                      }
                     : undefined,
                 css: onClick
                     ? {
                           cursor: 'pointer',
                       }
                     : {},
+                ...handlers(null),
                 strokeWidth: line.width ? (line.width / 100) * zoom : 0,
                 onMouseDown: onClick
                     ? (evt: React.MouseEvent) => evt.preventDefault()

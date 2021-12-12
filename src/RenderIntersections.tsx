@@ -14,6 +14,31 @@ const whatsit = css({
     },
 });
 
+export const useTouchClick = <T,>(fn: (arg: T) => void) => {
+    const ref = React.useRef(null as null | boolean);
+    return (arg: T) => ({
+        onTouchStart: (evt: React.TouchEvent) => {
+            if (ref.current === null) {
+                ref.current = true;
+            } else {
+                ref.current = false;
+            }
+        },
+        onTouchMove: (evt: React.TouchEvent) => {
+            ref.current = false;
+        },
+        onTouchEnd: (evt: React.TouchEvent) => {
+            if (evt.touches.length > 0) {
+                return;
+            }
+            if (ref.current === true) {
+                fn(arg);
+            }
+            ref.current = null;
+        },
+    });
+};
+
 export const RenderIntersections = React.memo(
     ({
         zoom,
@@ -27,6 +52,9 @@ export const RenderIntersections = React.memo(
         // if (true) {
         //     return null;
         // }
+        const handlers = useTouchClick<Intersect>((intersection) =>
+            onClick(intersection, false),
+        );
         return (
             <>
                 {intersections.map((intersection, i) => (
@@ -37,12 +65,7 @@ export const RenderIntersections = React.memo(
                         onClick={(evt) => {
                             onClick(intersection, evt.shiftKey);
                         }}
-                        onTouchStart={() => {
-                            console.log('ok');
-                        }}
-                        onTouchEnd={() => {
-                            onClick(intersection, false);
-                        }}
+                        {...handlers(intersection)}
                         r={5}
                         fill={'rgba(255,255,255,0.1)'}
                         css={whatsit}

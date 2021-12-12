@@ -208,11 +208,17 @@ export const Canvas = ({
               setDragPos,
           );
 
-    const clickPath = React.useCallback((evt, id) => {
-        evt.stopPropagation();
-        evt.preventDefault();
+    const [multiSelect, setMultiSelect] = React.useState(false);
+    const multiRef = useCurrent(multiSelect);
+
+    const clickPath = React.useCallback((shiftKey, id) => {
         const path = currentState.current.paths[id];
-        handleSelection(path, currentState.current, dispatch, evt.shiftKey);
+        handleSelection(
+            path,
+            currentState.current,
+            dispatch,
+            shiftKey || multiRef.current,
+        );
     }, []);
 
     const clip = state.view.activeClip
@@ -524,30 +530,67 @@ export const Canvas = ({
                     height={height}
                 />
             ) : null}
-            {isTouchScreen && pendingPath[0] ? (
-                <PendingPathControls
-                    pendingPath={pendingPath}
-                    allIntersections={allIntersections}
-                    guidePrimitives={guidePrimitives}
-                    onComplete={(
-                        isClip: boolean,
-                        origin: Coord,
-                        segments: Array<Segment>,
-                    ) => {
-                        if (isClip) {
-                            dispatch({
-                                type: 'clip:add',
-                                clip: segments,
-                            });
-                        } else {
-                            dispatch({
-                                type: 'path:create',
-                                segments,
-                                origin,
-                            });
-                        }
+            {isTouchScreen ? (
+                <div
+                    css={{
+                        position: 'fixed',
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
                     }}
-                />
+                    onClick={(evt) => evt.stopPropagation()}
+                >
+                    {state.selection ? (
+                        <div>
+                            <button
+                                onClick={() => {
+                                    dispatch({
+                                        type: 'selection:set',
+                                        selection: null,
+                                    });
+                                }}
+                            >
+                                Clear selection
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setMultiSelect((s) => !s);
+                                }}
+                                style={{
+                                    fontWeight: multiSelect ? 'bold' : 'normal',
+                                }}
+                            >
+                                Multi-select
+                            </button>
+                        </div>
+                    ) : null}
+
+                    {pendingPath[0] ? (
+                        <PendingPathControls
+                            pendingPath={pendingPath}
+                            allIntersections={allIntersections}
+                            guidePrimitives={guidePrimitives}
+                            onComplete={(
+                                isClip: boolean,
+                                origin: Coord,
+                                segments: Array<Segment>,
+                            ) => {
+                                if (isClip) {
+                                    dispatch({
+                                        type: 'clip:add',
+                                        clip: segments,
+                                    });
+                                } else {
+                                    dispatch({
+                                        type: 'path:create',
+                                        segments,
+                                        origin,
+                                    });
+                                }
+                            }}
+                        />
+                    ) : null}
+                </div>
             ) : null}
         </div>
     );
@@ -572,14 +615,7 @@ export const PendingPathControls = ({
         return null;
     }
     return (
-        <div
-            css={{
-                position: 'fixed',
-                bottom: 0,
-                left: 0,
-                right: 0,
-            }}
-        >
+        <div css={{}}>
             {isComplete(state) ? (
                 <>
                     <button
