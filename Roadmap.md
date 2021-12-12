@@ -3,6 +3,8 @@
 ## Ok let's try different sized screens
 to prepare for mobile ya know
 
+- [ ] get two-finger zoom to work, it probably doesn't.
+- [ ] when a tile is selected, show the multistyler please
 
 
 

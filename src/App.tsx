@@ -82,6 +82,8 @@ export const App = ({ initialState }: { initialState: State }) => {
     const height = Math.min(1000, window.innerHeight);
     const isTouchScreen = 'ontouchstart' in window;
 
+    const [sidebarOverlay, setSidebarOverlay] = React.useState(false);
+
     return (
         <div
             css={{
@@ -129,6 +131,49 @@ export const App = ({ initialState }: { initialState: State }) => {
                 width={width}
                 height={height}
             />
+            {sidebarOverlay ? (
+                <div
+                    css={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        bottom: 0,
+                        right: 0,
+                        overflow: 'auto',
+                        background: 'rgba(0,0,0,0.5)',
+                    }}
+                >
+                    <Sidebar
+                        hover={hover}
+                        setHover={setHover}
+                        dispatch={dispatch}
+                        setDragSelect={setDragSelect}
+                        dragSelect={dragSelect}
+                        state={state}
+                        canvasRef={ref}
+                        setPendingMirror={setPendingMirror}
+                        width={width}
+                        height={height}
+                    />
+                </div>
+            ) : null}
+            {isTouchScreen ? (
+                <button
+                    onClick={() => setSidebarOverlay((m) => !m)}
+                    css={{
+                        position: 'absolute',
+                        top: 0,
+                        right: 0,
+                        padding: '0 4px',
+                        fontSize: 40,
+                    }}
+                    style={{
+                        opacity: sidebarOverlay ? 1 : 0.4,
+                    }}
+                >
+                    ⚙
+                </button>
+            ) : null}
         </div>
     );
 };
