@@ -211,6 +211,12 @@ export const Canvas = ({
     const [multiSelect, setMultiSelect] = React.useState(false);
     const multiRef = useCurrent(multiSelect);
 
+    React.useEffect(() => {
+        if (!state.selection && multiRef.current) {
+            setMultiSelect(false);
+        }
+    }, [!!state.selection]);
+
     const clickPath = React.useCallback((shiftKey, id) => {
         const path = currentState.current.paths[id];
         handleSelection(
