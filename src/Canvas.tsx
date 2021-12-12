@@ -188,25 +188,26 @@ export const Canvas = ({
         });
     }, []);
 
-    const mouseHandlers = dragSelect
-        ? useDragSelect(
-              dragSelectPos,
-              width,
-              height,
-              view,
-              setPos,
-              setDragSelect,
-              finishDrag,
-          )
-        : useMouseDrag(
-              dragPos,
-              setTmpView,
-              width,
-              height,
-              view,
-              setPos,
-              setDragPos,
-          );
+    const dragSelectHandlers = useDragSelect(
+        dragSelectPos,
+        width,
+        height,
+        view,
+        setPos,
+        setDragSelect,
+        finishDrag,
+    );
+    const mouseDragHandlers = useMouseDrag(
+        dragPos,
+        setTmpView,
+        width,
+        height,
+        view,
+        setPos,
+        setDragPos,
+    );
+
+    const mouseHandlers = dragSelect ? dragSelectHandlers : mouseDragHandlers;
 
     const [multiSelect, setMultiSelect] = React.useState(false);
     const multiRef = useCurrent(multiSelect);

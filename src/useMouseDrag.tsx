@@ -7,9 +7,7 @@ export function useMouseDrag(
     setTmpView: React.Dispatch<React.SetStateAction<View | null>>,
     width: number,
     height: number,
-    // x: number,
     view: View,
-    // y: number,
     setPos: React.Dispatch<React.SetStateAction<{ x: number; y: number }>>,
     setDragPos: React.Dispatch<
         React.SetStateAction<{ view: View; coord: Coord } | null>
@@ -20,13 +18,11 @@ export function useMouseDrag(
     return React.useMemo(
         () => ({
             onTouchMove: (evt: React.TouchEvent) => {
-                // evt.preventDefault();
                 const touch = evt.touches[0];
                 if (dragPos) {
                     const rect = evt.currentTarget.getBoundingClientRect();
                     const clientX = touch.clientX;
                     const clientY = touch.clientY;
-                    evt.preventDefault();
 
                     setTmpView((prev) => {
                         return dragView(
@@ -128,12 +124,9 @@ export function useMouseDrag(
 
 export function useDragSelect(
     dragPos: Coord | null,
-    // setTmpView: React.Dispatch<React.SetStateAction<View | null>>,
     width: number,
     height: number,
-    // x: number,
     view: View,
-    // y: number,
     setPos: React.Dispatch<React.SetStateAction<{ x: number; y: number }>>,
     setDragPos: React.Dispatch<React.SetStateAction<Coord | null>>,
     cancelDragSelect: (shiftKey: boolean) => void,
@@ -142,32 +135,47 @@ export function useDragSelect(
 
     return React.useMemo(
         () => ({
+            onTouchMove: (evt: React.TouchEvent) => {
+                const touch = evt.touches[0];
+                const clientX = touch.clientX;
+                const clientY = touch.clientY;
+                const rect = evt.currentTarget.getBoundingClientRect();
+                const pos = {
+                    x: (clientX - rect.left - x) / view.zoom,
+                    y: (clientY - rect.top - y) / view.zoom,
+                };
+                setPos(pos);
+            },
+            onTouchEnd: (evt: React.MouseEvent) => {
+                if (dragPos) {
+                    setDragPos(null);
+                    evt.preventDefault();
+                }
+                cancelDragSelect(evt.shiftKey);
+            },
+            onTouchStart: (evt: React.TouchEvent) => {
+                const touch = evt.touches[0];
+                const clientX = touch.clientX;
+                const clientY = touch.clientY;
+                const rect = evt.currentTarget.getBoundingClientRect();
+                const coord = screenToWorld(
+                    width,
+                    height,
+                    {
+                        x: clientX - rect.left,
+                        y: clientY - rect.top,
+                    },
+                    view,
+                );
+                setDragPos(coord);
+            },
             onMouseMove: (evt: React.MouseEvent) => {
-                // if (dragPos) {
-                //     const rect = evt.currentTarget.getBoundingClientRect();
-                //     const clientX = evt.clientX;
-                //     const clientY = evt.clientY;
-                //     evt.preventDefault();
-
-                //     setTmpView((prev) => {
-                //         return dragView(
-                //             prev,
-                //             dragPos,
-                //             clientX,
-                //             rect,
-                //             clientY,
-                //             width,
-                //             height,
-                //         );
-                //     });
-                // } else {
                 const rect = evt.currentTarget.getBoundingClientRect();
                 const pos = {
                     x: (evt.clientX - rect.left - x) / view.zoom,
                     y: (evt.clientY - rect.top - y) / view.zoom,
                 };
                 setPos(pos);
-                // }
             },
             onMouseUpCapture: (evt: React.MouseEvent) => {
                 if (dragPos) {
