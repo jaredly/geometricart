@@ -13,6 +13,7 @@ import { Coord, Path, PathGroup, Segment } from './types';
 import { segmentKey, segmentKeyReverse } from './DrawPath';
 import { coordKey, numKey } from './calcAllIntersections';
 import { isAngleBetween } from './findNextSegments';
+import { lineToSlope, withinLimit } from './intersect';
 
 // This should produce:
 // a list of lines
@@ -137,7 +138,7 @@ export function sortedVisibleInsetPaths(
             );
             return color !== 'red' && color !== 'blue';
         });
-        type Used = { [centerRad: string]: Array<[number, number, number]> };
+        type Used = { [centerRad: string]: Array<[[number, number], number]> };
         const used: { red: Used; blue: Used } = { red: {}, blue: {} };
 
         // let usedSegments: { red: Array<string>; blue: Array<string> } = {
@@ -148,23 +149,87 @@ export function sortedVisibleInsetPaths(
         const addToUsed = (path: Path, used: Used, pi: number) => {
             path.segments.forEach((seg, i) => {
                 const prev = i === 0 ? path.origin : path.segments[i - 1].to;
-                if (seg.type === 'Arc') {
-                    let t0 = angleTo(seg.center, prev);
-                    let t1 = angleTo(seg.center, seg.to);
-                    const key = `${coordKey(seg.center)}:${numKey(
-                        dist(seg.center, seg.to),
-                    )}`;
-                    if (!used[key]) {
-                        used[key] = [];
-                    }
-                    used[key].push(seg.clockwise ? [t0, t1, pi] : [t1, t0, pi]);
+                const [key, limit] = segmentKeyAndLimit(prev, seg);
+                if (!used[key]) {
+                    used[key] = [];
                 }
+                used[key].push([limit, pi]);
+                // if (seg.type === 'Arc') {
+                //     let t0 = angleTo(seg.center, prev);
+                //     let t1 = angleTo(seg.center, seg.to);
+                //     const key = `${coordKey(seg.center)}:${numKey(
+                //         dist(seg.center, seg.to),
+                //     )}`;
+                //     if (!used[key]) {
+                //         used[key] = [];
+                //     }
+                //     used[key].push(
+                //         seg.clockwise ? [[t0, t1], pi] : [[t1, t0], pi],
+                //     );
+                // } else {
+                //     const si = lineToSlope(prev, seg.to, true);
+                //     const key = `l:${numKey(si.m)}:${numKey(si.b)}`;
+                //     if (!used[key]) {
+                //         used[key] = [];
+                //     }
+                //     used[key].push([si.limit!, pi]);
+                // }
             });
+        };
+
+        // TOOO DOOO: THe lines aren't dedoping right, sorry can't continue like this.
+        const segmentKeyAndLimit = (
+            prev: Coord,
+            seg: Segment,
+        ): [string, [number, number]] => {
+            if (seg.type === 'Line') {
+                const si = lineToSlope(prev, seg.to, true);
+                const key = `l:${numKey(si.m)}:${numKey(si.b)}`;
+                return [key, si.limit!];
+            } else {
+                const key = `${coordKey(seg.center)}:${numKey(
+                    dist(seg.center, seg.to),
+                )}`;
+                let t0 = angleTo(seg.center, prev);
+                let t1 = angleTo(seg.center, seg.to);
+                if (!seg.clockwise) {
+                    [t0, t1] = [t1, t0];
+                }
+                return [key, [t0, t1]];
+            }
+        };
+        // Is l1 inside of l2?
+        const isEntirelyWithinInner = (
+            l1: [number, number],
+            i1: number,
+            l2: [number, number],
+            i2: number,
+            otherWins: boolean,
+        ) => {
+            if (i1 === i2) {
+                return false;
+            }
+            if (closeEnough(l1[0], l2[0]) && closeEnough(l1[1], l2[1])) {
+                return otherWins || i1 < i2;
+            }
+            return withinLimit(l2, l1[0]) && withinLimit(l2, l1[1]);
         };
 
         // Register all arc segments.
         red.forEach((path, pi) => addToUsed(path, used.red, pi));
         blue.forEach((path, pi) => addToUsed(path, used.blue, pi));
+        console.log(used.red);
+
+        const reduced: Used = {};
+        Object.keys(used.red).forEach((key) => {
+            reduced[key] = used.red[key].filter(
+                ([limit, i]) =>
+                    !used.red[key].some(([l2, i2]) =>
+                        isEntirelyWithinInner(limit, i, l2, i2, false),
+                    ),
+            );
+        });
+        console.log(reduced);
 
         const isEntirelyWithin = (
             prev: Coord,
@@ -173,38 +238,70 @@ export function sortedVisibleInsetPaths(
             used: Used,
             otherWins: boolean,
         ) => {
-            if (seg.type === 'Line') {
-                // TODO:
+            const [key, limit] = segmentKeyAndLimit(prev, seg);
+            if (!used[key]) {
                 return false;
             }
-            const key = `${coordKey(seg.center)}:${numKey(
-                dist(seg.center, seg.to),
-            )}`;
-            let t0 = angleTo(seg.center, prev);
-            let t1 = angleTo(seg.center, seg.to);
-            if (!seg.clockwise) {
-                [t0, t1] = [t1, t0];
-            }
-            if (
-                used[key] &&
-                used[key].find(([ot0, ot1, opi]) => {
-                    if (opi === pi) {
-                        return false;
-                    }
-                    // If exactly equal, the "lower id" number wins, I don't make the rules.
-                    if (closeEnough(ot0, t0) && closeEnough(ot1, t1)) {
-                        return otherWins || pi < opi;
-                    }
-                    return (
-                        pi !== opi &&
-                        isAngleBetween(ot0, t0, ot1, true) &&
-                        isAngleBetween(ot0, t1, ot1, true)
-                    );
-                })
-            ) {
-                return true;
-            }
-            return false;
+            return (
+                used[key].find(([limit2, i2]) =>
+                    isEntirelyWithinInner(limit, pi, limit2, i2, otherWins),
+                ) != null
+            );
+            // if (seg.type === 'Line') {
+            //     const si = lineToSlope(prev, seg.to, true);
+            //     const key = `l:${numKey(si.m)}:${numKey(si.b)}`;
+            //     const [low, high] = si.limit!;
+            //     if (
+            //         used[key] &&
+            //         used[key].find(([[olow, ohigh], opi]) => {
+            //             if (opi === pi) {
+            //                 return false;
+            //             }
+            //             if (
+            //                 closeEnough(olow, low) &&
+            //                 closeEnough(ohigh, high)
+            //             ) {
+            //                 return otherWins || pi < opi;
+            //             }
+            //             return (
+            //                 withinLimit([olow, ohigh], low) &&
+            //                 withinLimit([olow, ohigh], high)
+            //             );
+            //         })
+            //     ) {
+            //         return true;
+            //     }
+            //     // TODO:
+            //     return false;
+            // }
+            // const key = `${coordKey(seg.center)}:${numKey(
+            //     dist(seg.center, seg.to),
+            // )}`;
+            // let t0 = angleTo(seg.center, prev);
+            // let t1 = angleTo(seg.center, seg.to);
+            // if (!seg.clockwise) {
+            //     [t0, t1] = [t1, t0];
+            // }
+            // if (
+            //     used[key] &&
+            //     used[key].find(([ot0, ot1, opi]) => {
+            //         if (opi === pi) {
+            //             return false;
+            //         }
+            //         // If exactly equal, the "lower id" number wins, I don't make the rules.
+            //         if (closeEnough(ot0, t0) && closeEnough(ot1, t1)) {
+            //             return otherWins || pi < opi;
+            //         }
+            //         return (
+            //             pi !== opi &&
+            //             isAngleBetween(ot0, t0, ot1, true) &&
+            //             isAngleBetween(ot0, t1, ot1, true)
+            //         );
+            //     })
+            // ) {
+            //     return true;
+            // }
+            // return false;
         };
 
         const removeOverlays = (
@@ -215,15 +312,16 @@ export function sortedVisibleInsetPaths(
         ) => {
             const finished: Array<Path> = [];
             let current: Path = { ...path, segments: [], open: true };
+            let droppedAny = false;
             // const used = usedSegments.red;
             path.segments.forEach((seg, i) => {
                 const prev = i === 0 ? path.origin : path.segments[i - 1].to;
-                const key = segmentKey(prev, seg);
-                const keyRev = segmentKeyReverse(prev, seg);
+                // const key = segmentKey(prev, seg); const keyRev = segmentKeyReverse(prev, seg);
                 const shouldDrop =
                     isEntirelyWithin(prev, seg, pi, used, false) ||
                     (other && isEntirelyWithin(prev, seg, pi, other, true));
                 if (shouldDrop) {
+                    droppedAny = true;
                     // console.log(`used!`, key);
                     // finish off the current one
                     if (current.segments.length) {
@@ -240,7 +338,7 @@ export function sortedVisibleInsetPaths(
                 }
                 current.segments.push(seg);
             });
-            if (finished.length) {
+            if (droppedAny) {
                 return current.segments.length
                     ? finished.concat([current])
                     : finished;

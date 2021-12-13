@@ -4,7 +4,10 @@
 to prepare for mobile ya know
 
 - [ ] get two-finger zoom to work, it probably doesn't.
-- [ ] when a tile is selected, show the multistyler please
+- [x] when a tile is selected, show the multistyler please
+- [x] have the "pos" for creating new guides be the center of the screen, with a cursor
+- [ ] would be really nice to have a mode where you just drag to make a tile... instead of having to tap so much.
+- [ ] show a "mirrors" tap-up that allows you to create a new mirror, delete the current mirror, switch the active mirror.
 
 
 
@@ -14,7 +17,7 @@ to prepare for mobile ya know
 
 - [ ] ifff a line goes backwards after inset, just delete that segment and recalculate?
 
-- [ ] make a setting for "clip first, then inset" or "inset first, then clip".
+- [x] make a setting for "clip first, then inset" or "inset first, then clip".
 
 - [x] remove style from groups! Instead, just mass-update the styles of paths.
 - [ ] "clone style" would be very nice.
