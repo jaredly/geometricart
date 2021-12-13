@@ -72,6 +72,7 @@ export function useMouseDrag(
                 }
             },
             onTouchEnd: (evt: React.TouchEvent) => {
+                evt.preventDefault();
                 if (dragPos) {
                     setDragPos(null);
                 }
@@ -146,9 +147,9 @@ export function useDragSelect(
                 setPos(pos);
             },
             onTouchEnd: (evt: React.TouchEvent) => {
+                evt.preventDefault();
                 if (dragPos) {
                     setDragPos(null);
-                    evt.preventDefault();
                 }
                 cancelDragSelect(evt.shiftKey);
             },

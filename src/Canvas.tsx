@@ -11,7 +11,7 @@ import {
     segmentToPrimitive,
 } from './findSelection';
 // import { DrawPath } from './DrawPathOld';
-import { getMirrorTransforms } from './getMirrorTransforms';
+import { getMirrorTransforms, scale } from './getMirrorTransforms';
 import {
     calculateBounds,
     Guides,
@@ -30,8 +30,10 @@ import {
     Action,
     ArcSegment,
     Coord,
+    guideTypes,
     Id,
     Intersect,
+    PendingType,
     Segment,
     State,
     Style,
@@ -219,6 +221,7 @@ export const Canvas = ({
     }, [!!state.selection]);
 
     const clickPath = React.useCallback((shiftKey, id) => {
+        console.log('CLICK PATH');
         const path = currentState.current.paths[id];
         handleSelection(
             path,
@@ -307,15 +310,26 @@ export const Canvas = ({
                 position: 'relative',
             }}
             style={{ width, height }}
+            onTouchEnd={(evt) => {
+                if (
+                    state.selection &&
+                    !evt.shiftKey &&
+                    evt.target instanceof SVGElement
+                ) {
+                    evt.preventDefault();
+                }
+            }}
             onClick={(evt) => {
-                // if (evt.target === evt.currentTarget) {
-                if (state.selection && !evt.shiftKey) {
+                if (
+                    state.selection &&
+                    !evt.shiftKey &&
+                    evt.target instanceof SVGElement
+                ) {
                     dispatch({
                         type: 'selection:set',
                         selection: null,
                     });
                 }
-                // }
             }}
         >
             <svg
@@ -442,6 +456,7 @@ export const Canvas = ({
                     {view.guides ? (
                         <Guides
                             state={state}
+                            isTouchScreen={isTouchScreen}
                             dispatch={dispatch}
                             width={width}
                             height={height}
@@ -449,7 +464,7 @@ export const Canvas = ({
                             guidePrimitives={guidePrimitives}
                             zooming={zooming}
                             view={view}
-                            pos={pos}
+                            pos={isTouchScreen ? scale(view.center, -1) : pos}
                             pendingPath={pendingPath}
                             mirrorTransforms={mirrorTransforms}
                             pendingMirror={pendingMirror}
@@ -570,7 +585,29 @@ export const Canvas = ({
                                 Multi-select
                             </button>
                         </div>
-                    ) : null}
+                    ) : (
+                        <select
+                            css={{
+                                width: 100,
+                                fontSize: 40,
+                            }}
+                            onChange={(evt) => {
+                                dispatch({
+                                    type: 'pending:type',
+                                    kind: evt.target
+                                        .value as PendingType['kind'],
+                                });
+                            }}
+                            value={0}
+                        >
+                            <option value={0} disabled>
+                                + Guide
+                            </option>
+                            {guideTypes.map((kind) => (
+                                <option value={kind}>{kind}</option>
+                            ))}
+                        </select>
+                    )}
 
                     {pendingPath[0] ? (
                         <PendingPathControls
@@ -622,11 +659,17 @@ export const PendingPathControls = ({
         return null;
     }
     return (
-        <div css={{}}>
+        <div
+            css={{
+                display: 'flex',
+                flexDirection: 'row',
+                alignItems: 'stretch',
+            }}
+        >
             {isComplete(state) ? (
                 <>
                     <button
-                        css={{ fontSize: 40 }}
+                        css={{ fontSize: 40, flex: 1 }}
                         onClick={() => {
                             onComplete(
                                 state.isClip,
@@ -642,7 +685,7 @@ export const PendingPathControls = ({
                         finish ✅
                     </button>
                     <button
-                        css={{ fontSize: 40 }}
+                        css={{ fontSize: 40, flex: 1 }}
                         onClick={() => {
                             setState(
                                 backUp(
@@ -659,7 +702,7 @@ export const PendingPathControls = ({
             ) : (
                 <>
                     <button
-                        css={{ fontSize: 40 }}
+                        css={{ fontSize: 40, flex: 1 }}
                         onClick={() => {
                             setState(goLeft);
                         }}
@@ -667,7 +710,7 @@ export const PendingPathControls = ({
                         👈
                     </button>
                     <button
-                        css={{ fontSize: 40 }}
+                        css={{ fontSize: 40, flex: 1 }}
                         onClick={() => {
                             if (state && isComplete(state)) {
                                 return onComplete(
@@ -688,7 +731,7 @@ export const PendingPathControls = ({
                         ✅
                     </button>
                     <button
-                        css={{ fontSize: 40 }}
+                        css={{ fontSize: 40, flex: 1 }}
                         onClick={() => {
                             setState(goRight);
                         }}
@@ -696,7 +739,7 @@ export const PendingPathControls = ({
                         👉
                     </button>
                     <button
-                        css={{ fontSize: 40 }}
+                        css={{ fontSize: 40, flex: 1 }}
                         onClick={() => {
                             setState(
                                 backUp(

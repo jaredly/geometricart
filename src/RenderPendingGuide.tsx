@@ -58,6 +58,31 @@ export const RenderPendingGuide = ({
                 original={true}
                 geom={pendingGuide(guide.kind, points, shiftKey, guide.extent)}
             />
+            {/* <circle
+                cx={pos.x * zoom}
+                cy={pos.y * zoom}
+                r={10}
+                fill="white"
+                opacity={0.5}
+                stroke={'red'}
+                strokeWidth={2}
+            /> */}
+            <line
+                x1={pos.x * zoom}
+                x2={pos.x * zoom}
+                y1={pos.y * zoom - 10}
+                y2={pos.y * zoom + 10}
+                stroke="red"
+                strokeWidth={1}
+            />
+            <line
+                x1={pos.x * zoom - 10}
+                x2={pos.x * zoom + 10}
+                y1={pos.y * zoom}
+                y2={pos.y * zoom}
+                stroke="red"
+                strokeWidth={1}
+            />
         </g>
     );
 };

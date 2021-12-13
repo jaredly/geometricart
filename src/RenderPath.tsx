@@ -160,8 +160,8 @@ export const RenderPath = React.memo(
                             stroke={info.stroke}
                             fill={info.fill != 'none' ? info.fill : common.fill}
                             strokeWidth={info.strokeWidth}
-                            onClick={common.onClick}
-                            onMouseDown={common.onMouseDown}
+                            // onClick={common.onClick}
+                            // onMouseDown={common.onMouseDown}
                             css={common.css}
                         />
                     ));

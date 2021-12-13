@@ -170,8 +170,10 @@ export const Guides = ({
     pendingPath,
     guidePrimitives,
     allIntersections,
+    isTouchScreen,
 }: {
     state: State;
+    isTouchScreen: boolean;
     zooming: boolean;
     dispatch: (action: Action) => void;
     width: number;

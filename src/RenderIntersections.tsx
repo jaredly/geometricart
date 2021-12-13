@@ -28,6 +28,7 @@ export const useTouchClick = <T,>(fn: (arg: T) => void) => {
             ref.current = false;
         },
         onTouchEnd: (evt: React.TouchEvent) => {
+            evt.preventDefault(); // stop onclick from happening.
             if (evt.touches.length > 0) {
                 return;
             }
@@ -55,6 +56,7 @@ export const RenderIntersections = React.memo(
         const handlers = useTouchClick<Intersect>((intersection) =>
             onClick(intersection, false),
         );
+        const isTouchScreen = 'ontouchstart' in window;
         return (
             <>
                 {intersections.map((intersection, i) => (
