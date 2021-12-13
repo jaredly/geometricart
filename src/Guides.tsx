@@ -20,7 +20,7 @@ import {
     transformsToMatrices,
 } from './getMirrorTransforms';
 import { lineToSlope, Primitive } from './intersect';
-import { RenderIntersections } from './RenderIntersections';
+import { RenderIntersections, useTouchClick } from './RenderIntersections';
 import { RenderMirror } from './RenderMirror';
 import { RenderPendingGuide } from './RenderPendingGuide';
 import { Hover } from './Sidebar';
@@ -579,12 +579,12 @@ export const RenderPrimitives = React.memo(
         onClick?: (guides: Array<Id>, shift: boolean) => unknown;
         inactive?: boolean;
     }) => {
-        // console.log(primitives);
         return (
             <>
                 {primitives.map((prim, i) =>
                     prim.guides.length === 0 ? null : (
                         <RenderPrimitive
+                            strokeWidth={5}
                             bounds={bounds}
                             prim={prim.prim}
                             zoom={zoom}
@@ -592,10 +592,8 @@ export const RenderPrimitives = React.memo(
                             isImplied={!prim.guides.length}
                             onClick={
                                 onClick && prim.guides.length
-                                    ? (evt: React.MouseEvent) => {
-                                          evt.stopPropagation();
-                                          onClick(prim.guides, evt.shiftKey);
-                                      }
+                                    ? (shiftKey) =>
+                                          onClick(prim.guides, shiftKey)
                                     : undefined
                             }
                             key={i}

@@ -2,9 +2,11 @@
 /* @jsxFrag React.Fragment */
 import { jsx } from '@emotion/react';
 import React from 'react';
+import { useCurrent } from './App';
 import { push } from './getMirrorTransforms';
 import { Bounds, visibleEndPoints } from './GuideElement';
 import { Primitive } from './intersect';
+import { useTouchClick } from './RenderIntersections';
 import { arcPath } from './RenderPendingPath';
 
 export function RenderPrimitive({
@@ -24,12 +26,25 @@ export function RenderPrimitive({
     zoom: number;
     inactive?: boolean;
     strokeWidth?: number;
-    onClick?: (evt: React.MouseEvent) => unknown;
+    onClick?: (shiftKey: boolean) => unknown;
 }): jsx.JSX.Element {
+    // const clickRef = useCurrent(onClick);
+    const handlers = useTouchClick<void>(() => {
+        if (onClick) {
+            onClick(false);
+        }
+    });
+
     const common = {
         stroke: color ?? (inactive ? 'rgba(102, 102, 102, 0.3)' : '#666'),
         strokeWidth,
-        onClick: onClick,
+        onClick: onClick
+            ? (evt: React.MouseEvent) => {
+                  evt.stopPropagation();
+                  onClick(evt.shiftKey);
+              }
+            : undefined,
+        ...handlers(undefined),
         style: onClick ? { cursor: 'pointer' } : {},
         strokeDasharray: isImplied ? '3 3' : '',
 
