@@ -19,7 +19,7 @@ import {
     primitivesForElementsAndPaths,
 } from './Guides';
 import { handleSelection } from './handleSelection';
-import { mergeFills, mergeStyleLines } from './MultiStyleForm';
+import { mergeFills, mergeStyleLines, MultiStyleForm } from './MultiStyleForm';
 import { Overlay } from './Overlay';
 import { paletteColor, RenderPath } from './RenderPath';
 import { RenderPrimitive } from './RenderPrimitive';
@@ -33,6 +33,7 @@ import {
     guideTypes,
     Id,
     Intersect,
+    Path,
     PendingType,
     Segment,
     State,
@@ -552,90 +553,17 @@ export const Canvas = ({
                     height={height}
                 />
             ) : null}
-            {isTouchScreen ? (
-                <div
-                    css={{
-                        position: 'fixed',
-                        bottom: 0,
-                        left: 0,
-                        right: 0,
-                    }}
-                    onClick={(evt) => evt.stopPropagation()}
-                >
-                    {state.selection ? (
-                        <div>
-                            <button
-                                onClick={() => {
-                                    dispatch({
-                                        type: 'selection:set',
-                                        selection: null,
-                                    });
-                                }}
-                            >
-                                Clear selection
-                            </button>
-                            <button
-                                onClick={() => {
-                                    setMultiSelect((s) => !s);
-                                }}
-                                style={{
-                                    fontWeight: multiSelect ? 'bold' : 'normal',
-                                }}
-                            >
-                                Multi-select
-                            </button>
-                        </div>
-                    ) : (
-                        <select
-                            css={{
-                                width: 100,
-                                fontSize: 40,
-                            }}
-                            onChange={(evt) => {
-                                dispatch({
-                                    type: 'pending:type',
-                                    kind: evt.target
-                                        .value as PendingType['kind'],
-                                });
-                            }}
-                            value={0}
-                        >
-                            <option value={0} disabled>
-                                + Guide
-                            </option>
-                            {guideTypes.map((kind) => (
-                                <option value={kind}>{kind}</option>
-                            ))}
-                        </select>
-                    )}
-
-                    {pendingPath[0] ? (
-                        <PendingPathControls
-                            pendingPath={pendingPath}
-                            allIntersections={allIntersections}
-                            guidePrimitives={guidePrimitives}
-                            onComplete={(
-                                isClip: boolean,
-                                origin: Coord,
-                                segments: Array<Segment>,
-                            ) => {
-                                if (isClip) {
-                                    dispatch({
-                                        type: 'clip:add',
-                                        clip: segments,
-                                    });
-                                } else {
-                                    dispatch({
-                                        type: 'path:create',
-                                        segments,
-                                        origin,
-                                    });
-                                }
-                            }}
-                        />
-                    ) : null}
-                </div>
-            ) : null}
+            {isTouchScreen
+                ? touchscreenControls(
+                      state,
+                      dispatch,
+                      setMultiSelect,
+                      multiSelect,
+                      pendingPath,
+                      allIntersections,
+                      guidePrimitives,
+                  )
+                : null}
         </div>
     );
 };
@@ -817,6 +745,153 @@ export const dragView = (
     };
     return res;
 };
+
+function touchscreenControls(
+    state: State,
+    dispatch: (action: Action) => unknown,
+    setMultiSelect: React.Dispatch<React.SetStateAction<boolean>>,
+    multiSelect: boolean,
+    pendingPath: [
+        DrawPathState | null,
+        React.Dispatch<React.SetStateAction<DrawPathState | null>>,
+    ],
+    allIntersections: Intersect[],
+    guidePrimitives: { prim: Primitive; guides: string[] }[],
+): React.ReactNode {
+    return (
+        <div
+            css={{
+                position: 'fixed',
+                bottom: 0,
+                left: 0,
+                right: 0,
+            }}
+            onClick={(evt) => evt.stopPropagation()}
+        >
+            {state.selection?.type === 'PathGroup' ||
+            state.selection?.type === 'Path'
+                ? (() => {
+                      const ids =
+                          state.selection.type === 'PathGroup'
+                              ? Object.keys(state.paths).filter((k) =>
+                                    state.selection!.ids.includes(
+                                        state.paths[k].group!,
+                                    ),
+                                )
+                              : state.selection.ids;
+                      return (
+                          <MultiStyleForm
+                              palette={state.palettes[state.activePalette]}
+                              styles={ids.map((k) => state.paths[k].style)}
+                              onChange={(styles) => {
+                                  const changed: {
+                                      [key: string]: Path;
+                                  } = {};
+                                  styles.forEach((style, i) => {
+                                      if (style != null) {
+                                          const id = ids[i];
+                                          changed[id] = {
+                                              ...state.paths[id],
+                                              style,
+                                          };
+                                      }
+                                  });
+                                  dispatch({
+                                      type: 'path:update:many',
+                                      changed,
+                                  });
+                              }}
+                          />
+                      );
+                  })()
+                : null}
+            {state.selection ? (
+                <div>
+                    <button
+                        css={{ fontSize: '150%' }}
+                        onClick={() => {
+                            dispatch({
+                                type: 'selection:set',
+                                selection: null,
+                            });
+                        }}
+                    >
+                        Clear selection
+                    </button>
+                    <button
+                        css={{ fontSize: '150%' }}
+                        onClick={() => {
+                            setMultiSelect((s) => !s);
+                        }}
+                        style={{
+                            fontWeight: multiSelect ? 'bold' : 'normal',
+                        }}
+                    >
+                        Multi-select
+                    </button>
+                </div>
+            ) : state.pending ? (
+                <button
+                    css={{
+                        fontSize: 30,
+                    }}
+                    onClick={() =>
+                        dispatch({ type: 'pending:type', kind: null })
+                    }
+                >
+                    Cancel guide
+                </button>
+            ) : (
+                <select
+                    css={{
+                        width: 140,
+                        fontSize: 30,
+                    }}
+                    onChange={(evt) => {
+                        dispatch({
+                            type: 'pending:type',
+                            kind: evt.target.value as PendingType['kind'],
+                        });
+                    }}
+                    value={0}
+                >
+                    <option value={0} disabled>
+                        + Guide
+                    </option>
+                    {guideTypes.map((kind) => (
+                        <option value={kind}>{kind}</option>
+                    ))}
+                </select>
+            )}
+
+            {pendingPath[0] ? (
+                <PendingPathControls
+                    pendingPath={pendingPath}
+                    allIntersections={allIntersections}
+                    guidePrimitives={guidePrimitives}
+                    onComplete={(
+                        isClip: boolean,
+                        origin: Coord,
+                        segments: Array<Segment>,
+                    ) => {
+                        if (isClip) {
+                            dispatch({
+                                type: 'clip:add',
+                                clip: segments,
+                            });
+                        } else {
+                            dispatch({
+                                type: 'path:create',
+                                segments,
+                                origin,
+                            });
+                        }
+                    }}
+                />
+            ) : null}
+        </div>
+    );
+}
 
 function rectForCorners(pos: { x: number; y: number }, drag: Coord) {
     return {
