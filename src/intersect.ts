@@ -1,4 +1,4 @@
-import { isWithinLineLimit } from './clipPath';
+import { closeEnough, isWithinLineLimit, zeroToTwoPi } from './clipPath';
 import { angleBetween, isAngleBetween } from './findNextSegments';
 import { angleTo, dist, push } from './getMirrorTransforms';
 import { Coord } from './types';
@@ -90,6 +90,24 @@ export const convertCircle = (p1: Coord, p2: Coord): Circle => ({
 });
 
 export const epsilon = 0.000001;
+
+export const slopeToLine = (si: SlopeIntercept) => {
+    if (!si.limit) {
+        throw new Error(
+            `cannot convert a si that doesn't have a limit back to a line`,
+        );
+    }
+    if (si.m === Infinity) {
+        return [
+            { x: si.b, y: si.limit[0] },
+            { x: si.b, y: si.limit[1] },
+        ];
+    }
+    return [
+        { x: si.limit[0], y: si.m * si.limit[0] + si.b },
+        { x: si.limit[1], y: si.m * si.limit[1] + si.b },
+    ];
+};
 
 // NOTE: if these two points are the same, we pretend it's a horizontal line.
 export const lineToSlope = (
@@ -231,6 +249,9 @@ export const circleCircle = (one: Circle, two: Circle): Array<Coord> => {
         },
     ].filter(check);
 };
+
+export const closeEnoughAngle = (one: number, two: number) =>
+    closeEnough(zeroToTwoPi(one), zeroToTwoPi(two));
 
 export const angleIsBetween = (
     angle: number,
