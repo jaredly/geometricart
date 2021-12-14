@@ -242,66 +242,9 @@ export function sortedVisibleInsetPaths(
             if (!used[key]) {
                 return false;
             }
-            return (
-                used[key].find(([limit2, i2]) =>
-                    isEntirelyWithinInner(limit, pi, limit2, i2, otherWins),
-                ) != null
+            return used[key].some(([limit2, i2]) =>
+                isEntirelyWithinInner(limit, pi, limit2, i2, otherWins),
             );
-            // if (seg.type === 'Line') {
-            //     const si = lineToSlope(prev, seg.to, true);
-            //     const key = `l:${numKey(si.m)}:${numKey(si.b)}`;
-            //     const [low, high] = si.limit!;
-            //     if (
-            //         used[key] &&
-            //         used[key].find(([[olow, ohigh], opi]) => {
-            //             if (opi === pi) {
-            //                 return false;
-            //             }
-            //             if (
-            //                 closeEnough(olow, low) &&
-            //                 closeEnough(ohigh, high)
-            //             ) {
-            //                 return otherWins || pi < opi;
-            //             }
-            //             return (
-            //                 withinLimit([olow, ohigh], low) &&
-            //                 withinLimit([olow, ohigh], high)
-            //             );
-            //         })
-            //     ) {
-            //         return true;
-            //     }
-            //     // TODO:
-            //     return false;
-            // }
-            // const key = `${coordKey(seg.center)}:${numKey(
-            //     dist(seg.center, seg.to),
-            // )}`;
-            // let t0 = angleTo(seg.center, prev);
-            // let t1 = angleTo(seg.center, seg.to);
-            // if (!seg.clockwise) {
-            //     [t0, t1] = [t1, t0];
-            // }
-            // if (
-            //     used[key] &&
-            //     used[key].find(([ot0, ot1, opi]) => {
-            //         if (opi === pi) {
-            //             return false;
-            //         }
-            //         // If exactly equal, the "lower id" number wins, I don't make the rules.
-            //         if (closeEnough(ot0, t0) && closeEnough(ot1, t1)) {
-            //             return otherWins || pi < opi;
-            //         }
-            //         return (
-            //             pi !== opi &&
-            //             isAngleBetween(ot0, t0, ot1, true) &&
-            //             isAngleBetween(ot0, t1, ot1, true)
-            //         );
-            //     })
-            // ) {
-            //     return true;
-            // }
-            // return false;
         };
 
         const removeOverlays = (
