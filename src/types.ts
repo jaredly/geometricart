@@ -519,6 +519,17 @@ export type UndoPendingExtent = {
 //     added: [Array<Id>, Id | null, number, PendingPath] | null;
 // };
 
+export type UndoMirrorDelete = {
+    type: MirrorDelete['type'];
+    action: MirrorDelete;
+    mirror: Mirror;
+    prevActive: Id | null;
+};
+export type MirrorDelete = {
+    type: 'mirror:delete';
+    id: Id;
+};
+
 export type UndoMirrorAdd = {
     type: MirrorAdd['type'];
     action: MirrorAdd;
@@ -593,6 +604,7 @@ export type UndoableAction =
     | ClipAdd
     // | PathAdd
     | PathUpdate
+    | MirrorDelete
     | PendingType
     // | PathPoint
     | MirrorActive
@@ -627,6 +639,7 @@ export type UndoAction =
     | UndoOverlayUpdate
     | UndoViewUpdate
     | UndoMirrorAdd
+    | UndoMirrorDelete
     | UndoGroupDelete
     | UndoGuideDelete
     | UndoPendingPoint

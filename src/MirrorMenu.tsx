@@ -25,6 +25,12 @@ export const MirrorMenu = ({
                 left: 8,
                 backgroundColor: 'rgba(0,0,0,0.2)',
             }}
+            onMouseDown={(evt) => {
+                evt.stopPropagation();
+            }}
+            onClick={(evt) => {
+                evt.stopPropagation();
+            }}
         >
             <button
                 onClick={() => setOpen((o) => !o)}
@@ -49,7 +55,7 @@ export const MirrorMenu = ({
                         size={50}
                     />
                 ) : (
-                    'No mirror'
+                    'No active mirror'
                 )}
                 <div
                     css={{
@@ -104,7 +110,10 @@ export const MirrorMenu = ({
                                 <button
                                     onClick={(evt) => {
                                         evt.stopPropagation();
-                                        // dispatch({type: 'mirror:delete', id: k})
+                                        dispatch({
+                                            type: 'mirror:delete',
+                                            id: k,
+                                        });
                                     }}
                                     css={{
                                         position: 'absolute',
@@ -136,7 +145,6 @@ export const MirrorMenu = ({
                             evt.stopPropagation();
                             setOpen(false);
                             onAdd();
-                            // dispatch({type: 'mirror:delete', id: k})
                         }}
                         css={{
                             position: 'absolute',

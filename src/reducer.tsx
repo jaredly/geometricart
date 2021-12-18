@@ -1,6 +1,10 @@
 import { pendingGuide } from './RenderPendingGuide';
 import { coordKey } from './calcAllIntersections';
-import { applyMatrices, getTransformsForMirror } from './getMirrorTransforms';
+import {
+    applyMatrices,
+    getTransformsForMirror,
+    mirrorTransforms,
+} from './getMirrorTransforms';
 import { addAction, redoAction, undoAction } from './history';
 import { transformSegment } from './points';
 import {
@@ -604,6 +608,26 @@ export const reduceWithoutUndo = (
                 { type: action.type, action, paths: previous, added },
             ];
         }
+        case 'mirror:delete': {
+            const mirrors = { ...state.mirrors };
+            delete mirrors[action.id];
+            return [
+                {
+                    ...state,
+                    mirrors,
+                    activeMirror:
+                        state.activeMirror === action.id
+                            ? null
+                            : state.activeMirror,
+                },
+                {
+                    type: action.type,
+                    action,
+                    mirror: state.mirrors[action.id],
+                    prevActive: state.activeMirror,
+                },
+            ];
+        }
         default:
             let _x: never = action;
             console.log(`SKIPPING ${(action as any).type}`);
@@ -613,6 +637,16 @@ export const reduceWithoutUndo = (
 
 export const undo = (state: State, action: UndoAction): State => {
     switch (action.type) {
+        case 'mirror:delete': {
+            return {
+                ...state,
+                mirrors: {
+                    ...state.mirrors,
+                    [action.action.id]: action.mirror,
+                },
+                activeMirror: action.prevActive,
+            };
+        }
         case 'clip:cut': {
             const paths = { ...state.paths, ...action.paths };
             action.added.forEach((k) => {
