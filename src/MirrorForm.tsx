@@ -15,9 +15,11 @@ import {
 export const ShowMirror = ({
     mirror,
     transforms,
+    size = 200,
 }: {
     mirror: Mirror;
     transforms: Array<Array<Matrix>>;
+    size?: number;
 }) => {
     const angle = angleTo(mirror.point, mirror.origin);
     const d = dist(mirror.point, mirror.origin);
@@ -39,7 +41,7 @@ export const ShowMirror = ({
     const width = maxX - minX;
     const height = maxY - minY;
 
-    const size = 200;
+    // const size = 200;
 
     const scale = width < height ? size / height : size / width;
 

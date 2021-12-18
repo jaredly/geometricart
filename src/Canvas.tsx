@@ -56,6 +56,8 @@ import { calculateGuideElements } from './calculateGuideElements';
 import { calcAllIntersections } from './calcAllIntersections';
 import { simplifyPath } from './insetPath';
 import { ensureClockwise } from './CanvasRender';
+import { RenderMirror } from './RenderMirror';
+import { MirrorMenu } from './MirrorMenu';
 
 export type Props = {
     state: State;
@@ -553,6 +555,19 @@ export const Canvas = ({
                     height={height}
                 />
             ) : null}
+            <MirrorMenu
+                onAdd={() =>
+                    setPendingMirror({
+                        parent: state.activeMirror,
+                        rotations: 3,
+                        reflect: true,
+                        center: null,
+                    })
+                }
+                state={state}
+                dispatch={dispatch}
+                transforms={mirrorTransforms}
+            />
             {touchscreenControls(
                 state,
                 dispatch,
@@ -760,7 +775,6 @@ function touchscreenControls(
         <div
             css={{
                 position: 'absolute',
-                backgroundColor: 'rgba(0,0,0,0.8)',
                 bottom: 0,
                 left: 0,
                 right: 0,
@@ -779,28 +793,34 @@ function touchscreenControls(
                                 )
                               : state.selection.ids;
                       return (
-                          <MultiStyleForm
-                              palette={state.palettes[state.activePalette]}
-                              styles={ids.map((k) => state.paths[k].style)}
-                              onChange={(styles) => {
-                                  const changed: {
-                                      [key: string]: Path;
-                                  } = {};
-                                  styles.forEach((style, i) => {
-                                      if (style != null) {
-                                          const id = ids[i];
-                                          changed[id] = {
-                                              ...state.paths[id],
-                                              style,
-                                          };
-                                      }
-                                  });
-                                  dispatch({
-                                      type: 'path:update:many',
-                                      changed,
-                                  });
+                          <div
+                              css={{
+                                  backgroundColor: 'rgba(0,0,0,0.8)',
                               }}
-                          />
+                          >
+                              <MultiStyleForm
+                                  palette={state.palettes[state.activePalette]}
+                                  styles={ids.map((k) => state.paths[k].style)}
+                                  onChange={(styles) => {
+                                      const changed: {
+                                          [key: string]: Path;
+                                      } = {};
+                                      styles.forEach((style, i) => {
+                                          if (style != null) {
+                                              const id = ids[i];
+                                              changed[id] = {
+                                                  ...state.paths[id],
+                                                  style,
+                                              };
+                                          }
+                                      });
+                                      dispatch({
+                                          type: 'path:update:many',
+                                          changed,
+                                      });
+                                  }}
+                              />
+                          </div>
                       );
                   })()
                 : null}
