@@ -9,6 +9,12 @@ to prepare for mobile ya know
 - [ ] would be really nice to have a mode where you just drag to make a tile... instead of having to tap so much.
 - [ ] show a "mirrors" tap-up that allows you to create a new mirror, delete the current mirror, switch the active mirror.
 
+- [ ] MIRROR OVERLAY
+	- allow deletion of mirrors
+
+
+- FIRST RUN EXPERIENCE:
+	- allow you to select the initial mirror, don't just use a default.
 
 
 - [x] REIFY GUIDES. Got to make mirrors and such.

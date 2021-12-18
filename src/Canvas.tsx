@@ -553,17 +553,15 @@ export const Canvas = ({
                     height={height}
                 />
             ) : null}
-            {isTouchScreen
-                ? touchscreenControls(
-                      state,
-                      dispatch,
-                      setMultiSelect,
-                      multiSelect,
-                      pendingPath,
-                      allIntersections,
-                      guidePrimitives,
-                  )
-                : null}
+            {touchscreenControls(
+                state,
+                dispatch,
+                setMultiSelect,
+                multiSelect,
+                pendingPath,
+                allIntersections,
+                guidePrimitives,
+            )}
         </div>
     );
 };
@@ -761,7 +759,8 @@ function touchscreenControls(
     return (
         <div
             css={{
-                position: 'fixed',
+                position: 'absolute',
+                backgroundColor: 'rgba(0,0,0,0.8)',
                 bottom: 0,
                 left: 0,
                 right: 0,

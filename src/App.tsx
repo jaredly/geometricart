@@ -91,6 +91,7 @@ export const App = ({ initialState }: { initialState: State }) => {
                 display: 'flex',
                 flexDirection: 'row',
                 alignItems: 'stretch',
+                justifyContent: 'center',
                 height: '100vh',
                 width: '100vw',
                 overflow: 'hidden',
@@ -104,7 +105,12 @@ export const App = ({ initialState }: { initialState: State }) => {
                 },
             }}
         >
-            {window.innerWidth > 1000 ? (
+            <div
+                css={{
+                    position: 'relative',
+                }}
+            >
+                {/* {window.innerWidth > 1000 ? (
                 <Sidebar
                     hover={hover}
                     setHover={setHover}
@@ -117,47 +123,47 @@ export const App = ({ initialState }: { initialState: State }) => {
                     width={width}
                     height={height}
                 />
-            ) : null}
-            <Canvas
-                state={state}
-                hover={hover}
-                dragSelect={dragSelect}
-                cancelDragSelect={() => setDragSelect(false)}
-                isTouchScreen={isTouchScreen}
-                innerRef={(node) => (ref.current = node)}
-                dispatch={dispatch}
-                pendingMirror={pendingMirror}
-                setPendingMirror={setPendingMirror}
-                width={width}
-                height={height}
-            />
-            {sidebarOverlay ? (
-                <div
-                    css={{
-                        position: 'fixed',
-                        top: 0,
-                        left: 0,
-                        bottom: 0,
-                        right: 0,
-                        overflow: 'auto',
-                        background: 'rgba(0,0,0,0.5)',
-                    }}
-                >
-                    <Sidebar
-                        hover={hover}
-                        setHover={setHover}
-                        dispatch={dispatch}
-                        setDragSelect={setDragSelect}
-                        dragSelect={dragSelect}
-                        state={state}
-                        canvasRef={ref}
-                        setPendingMirror={setPendingMirror}
-                        width={width}
-                        height={height}
-                    />
-                </div>
-            ) : null}
-            {isTouchScreen ? (
+            ) : null} */}
+                <Canvas
+                    state={state}
+                    hover={hover}
+                    dragSelect={dragSelect}
+                    cancelDragSelect={() => setDragSelect(false)}
+                    isTouchScreen={isTouchScreen}
+                    innerRef={(node) => (ref.current = node)}
+                    dispatch={dispatch}
+                    pendingMirror={pendingMirror}
+                    setPendingMirror={setPendingMirror}
+                    width={width}
+                    height={height}
+                />
+                {sidebarOverlay ? (
+                    <div
+                        css={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            bottom: 0,
+                            right: 0,
+                            overflow: 'auto',
+                            background: 'rgba(0,0,0,0.5)',
+                        }}
+                    >
+                        <Sidebar
+                            hover={hover}
+                            setHover={setHover}
+                            dispatch={dispatch}
+                            setDragSelect={setDragSelect}
+                            dragSelect={dragSelect}
+                            state={state}
+                            canvasRef={ref}
+                            setPendingMirror={setPendingMirror}
+                            width={width}
+                            height={height}
+                        />
+                    </div>
+                ) : null}
+
                 <button
                     onClick={() => setSidebarOverlay((m) => !m)}
                     css={{
@@ -173,7 +179,7 @@ export const App = ({ initialState }: { initialState: State }) => {
                 >
                     ⚙
                 </button>
-            ) : null}
+            </div>
         </div>
     );
 };
