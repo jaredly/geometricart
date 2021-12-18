@@ -400,8 +400,6 @@ export const Guides = ({
                 primitives={inactiveGuidePrimitives}
                 zoom={view.zoom}
                 bounds={bounds}
-                width={width}
-                height={height}
                 inactive
                 onClick={pendingPath[0] ? undefined : clickInactive}
             />
@@ -409,8 +407,6 @@ export const Guides = ({
                 primitives={guidePrimitives}
                 zoom={view.zoom}
                 bounds={bounds}
-                width={width}
-                height={height}
                 onClick={pendingPath[0] ? undefined : clickActive}
             />
             {!pendingPath[0] && !zooming ? (
@@ -565,16 +561,12 @@ export const RenderPrimitives = React.memo(
     ({
         primitives,
         zoom,
-        height,
-        width,
         onClick,
         bounds,
         inactive,
     }: {
         zoom: number;
-        height: number;
         bounds: Bounds;
-        width: number;
         primitives: Array<{ prim: Primitive; guides: Array<Id> }>;
         onClick?: (guides: Array<Id>, shift: boolean) => unknown;
         inactive?: boolean;
