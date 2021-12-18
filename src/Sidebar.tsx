@@ -609,7 +609,7 @@ export function Sidebar({
                         dispatch({ type: 'reset', state: initialState });
                     }}
                 />
-                <button
+                {/* <button
                     css={{ margin: 8 }}
                     onClick={() => {
                         dispatch({ type: 'undo' });
@@ -624,7 +624,7 @@ export function Sidebar({
                     }}
                 >
                     Redo
-                </button>
+                </button> */}
                 <ViewForm
                     view={state.view}
                     palette={state.palettes[state.activePalette]}

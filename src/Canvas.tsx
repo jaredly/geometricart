@@ -581,6 +581,7 @@ export const Canvas = ({
                 pendingPath,
                 allIntersections,
                 guidePrimitives,
+                pendingMirror ? () => setPendingMirror(null) : undefined,
             )}
         </div>
     );
@@ -775,6 +776,7 @@ function touchscreenControls(
     ],
     allIntersections: Intersect[],
     guidePrimitives: { prim: Primitive; guides: string[] }[],
+    clearPendingMirror?: () => void,
 ): React.ReactNode {
     return (
         <div
@@ -842,16 +844,47 @@ function touchscreenControls(
                     >
                         Clear selection
                     </button>
+                    {state.selection.type === 'PathGroup' ||
+                    state.selection.type === 'Path' ? (
+                        <button
+                            css={{ fontSize: '150%' }}
+                            onClick={() => {
+                                setMultiSelect((s) => !s);
+                            }}
+                            style={{
+                                fontWeight: multiSelect ? 'bold' : 'normal',
+                            }}
+                        >
+                            Multi-select
+                        </button>
+                    ) : null}
                     <button
                         css={{ fontSize: '150%' }}
                         onClick={() => {
-                            setMultiSelect((s) => !s);
-                        }}
-                        style={{
-                            fontWeight: multiSelect ? 'bold' : 'normal',
+                            if (!state.selection) {
+                                return;
+                            }
+                            switch (state.selection.type) {
+                                case 'PathGroup':
+                                    return state.selection.ids.forEach((id) =>
+                                        dispatch({
+                                            type: 'group:delete',
+                                            id,
+                                        }),
+                                    );
+                                case 'Path':
+                                    return dispatch({
+                                        type: 'path:delete:many',
+                                        ids: state.selection.ids,
+                                    });
+                                case 'Guide':
+                                    return state.selection.ids.forEach((id) =>
+                                        dispatch({ type: 'guide:delete', id }),
+                                    );
+                            }
                         }}
                     >
-                        Multi-select
+                        Delete {state.selection.type}
                     </button>
                 </div>
             ) : state.pending ? (
@@ -887,6 +920,16 @@ function touchscreenControls(
                     ))}
                 </select>
             )}
+            {clearPendingMirror ? (
+                <button
+                    css={{
+                        fontSize: 30,
+                    }}
+                    onClick={() => clearPendingMirror()}
+                >
+                    Cancel mirror
+                </button>
+            ) : null}
 
             {pendingPath[0] ? (
                 <PendingPathControls

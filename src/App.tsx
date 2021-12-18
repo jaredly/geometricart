@@ -108,6 +108,9 @@ export const App = ({ initialState }: { initialState: State }) => {
             <div
                 css={{
                     position: 'relative',
+                    // display: 'flex',
+                    // flexDirection: 'column',
+                    alignSelf: 'center',
                 }}
             >
                 {/* {window.innerWidth > 1000 ? (
@@ -165,21 +168,61 @@ export const App = ({ initialState }: { initialState: State }) => {
                     </div>
                 ) : null}
 
-                <button
-                    onClick={() => setSidebarOverlay((m) => !m)}
+                <div
                     css={{
                         position: 'absolute',
                         top: 0,
                         right: 0,
-                        padding: '0 4px',
-                        fontSize: 40,
-                    }}
-                    style={{
-                        opacity: sidebarOverlay ? 1 : 0.4,
                     }}
                 >
-                    ⚙
-                </button>
+                    <button
+                        onClick={() => dispatch({ type: 'undo' })}
+                        css={{
+                            padding: '0 4px',
+                            fontSize: 40,
+                            border: 'none',
+                            cursor: 'pointer',
+                            backgroundColor: 'transparent',
+                        }}
+                        style={{
+                            opacity: sidebarOverlay ? 1 : 0.4,
+                        }}
+                    >
+                        ↪️
+                    </button>
+                    <button
+                        onClick={() => dispatch({ type: 'redo' })}
+                        disabled={state.history.undo === 0}
+                        css={{
+                            padding: '0 4px',
+                            fontSize: 40,
+                            backgroundColor: 'transparent',
+                            border: 'none',
+                            cursor: 'pointer',
+                        }}
+                        style={{
+                            opacity: sidebarOverlay ? 1 : 0.4,
+                        }}
+                    >
+                        ↩️
+                    </button>
+                    <button
+                        onClick={() => setSidebarOverlay((m) => !m)}
+                        css={{
+                            padding: '0 8px',
+                            fontSize: 40,
+                            border: 'none',
+                            cursor: 'pointer',
+                            color: 'white',
+                            backgroundColor: 'transparent',
+                        }}
+                        style={{
+                            opacity: sidebarOverlay ? 1 : 0.4,
+                        }}
+                    >
+                        ⚙
+                    </button>
+                </div>
             </div>
         </div>
     );

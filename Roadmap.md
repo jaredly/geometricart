@@ -1,8 +1,9 @@
 
 ## Mobile things that currently only have key shortcuts
 
-- [ ] deleting stuff (selected tiles, or guides probably)
-- [ ] guides dont multi-select, there's nothing to do there.
+- [x] undo/redo
+- [x] deleting stuff (selected tiles, or guides probably)
+- [x] guides dont multi-select, there's nothing to do there.
 - [-] ooh should I have a way to say "multiply this guide around this mirror?"
 	- I think maybe not?
 
@@ -14,7 +15,7 @@ to prepare for mobile ya know
 - [x] when a tile is selected, show the multistyler please
 - [x] have the "pos" for creating new guides be the center of the screen, with a cursor
 - [ ] would be really nice to have a mode where you just drag to make a tile... instead of having to tap so much.
-- [ ] show a "mirrors" tap-up that allows you to create a new mirror, delete the current mirror, switch the active mirror.
+- [x] show a "mirrors" tap-up that allows you to create a new mirror, delete the current mirror, switch the active mirror.
 
 - [x] MIRROR OVERLAY
 	- [x] allow deletion of mirrors
