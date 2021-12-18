@@ -30,6 +30,9 @@ export const showHover = (
     const color = selection ? 'blue' : 'magenta';
     switch (hover.kind) {
         case 'Mirror': {
+            if (!state.mirrors[hover.id]) {
+                return null;
+            }
             return (
                 <RenderMirror
                     zoom={zoom}

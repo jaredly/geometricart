@@ -1,4 +1,11 @@
 
+## Mobile things that currently only have key shortcuts
+
+- [ ] deleting stuff (selected tiles, or guides probably)
+- [ ] guides dont multi-select, there's nothing to do there.
+- [-] ooh should I have a way to say "multiply this guide around this mirror?"
+	- I think maybe not?
+
 
 ## Ok let's try different sized screens
 to prepare for mobile ya know

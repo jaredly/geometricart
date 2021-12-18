@@ -159,9 +159,6 @@ export const MirrorMenu = ({
                             onAdd();
                         }}
                         css={{
-                            // position: 'absolute',
-                            // left: '100%',
-                            // top: -1,
                             width: 68,
                             height: 68,
                             display: 'block',
