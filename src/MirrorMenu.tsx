@@ -2,15 +2,17 @@
 /* @jsxFrag React.Fragment */
 import { jsx } from '@emotion/react';
 import React from 'react';
-import { Action, State } from './types';
+import { Action, Id, State } from './types';
 import { ShowMirror } from './MirrorForm';
 
 export const MirrorMenu = ({
     state,
     dispatch,
     transforms,
+    onHover,
     onAdd,
 }: {
+    onHover: (id: Id | null) => void;
     state: State;
     dispatch: (action: Action) => void;
     transforms: any;
@@ -34,6 +36,14 @@ export const MirrorMenu = ({
         >
             <button
                 onClick={() => setOpen((o) => !o)}
+                onMouseOver={
+                    state.activeMirror
+                        ? () => onHover(state.activeMirror)
+                        : undefined
+                }
+                onMouseOut={
+                    state.activeMirror ? () => onHover(null) : undefined
+                }
                 css={{
                     backgroundColor: 'transparent',
                     cursor: 'pointer',
@@ -76,6 +86,8 @@ export const MirrorMenu = ({
                     {Object.keys(state.mirrors).map((k) => (
                         <div
                             key={k}
+                            onMouseOver={() => onHover(k)}
+                            onMouseOut={() => onHover(null)}
                             css={{
                                 cursor: 'pointer',
                                 padding: 8,
@@ -147,14 +159,14 @@ export const MirrorMenu = ({
                             onAdd();
                         }}
                         css={{
-                            position: 'absolute',
-                            left: '100%',
-                            top: -1,
+                            // position: 'absolute',
+                            // left: '100%',
+                            // top: -1,
                             width: 68,
                             height: 68,
                             display: 'block',
                             padding: 8,
-                            marginLeft: 8,
+                            marginTop: 8,
                             fontSize: 40,
                             backgroundColor: 'transparent',
                             color: 'white',

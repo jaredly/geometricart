@@ -9,8 +9,11 @@ to prepare for mobile ya know
 - [ ] would be really nice to have a mode where you just drag to make a tile... instead of having to tap so much.
 - [ ] show a "mirrors" tap-up that allows you to create a new mirror, delete the current mirror, switch the active mirror.
 
-- [ ] MIRROR OVERLAY
-	- allow deletion of mirrors
+- [x] MIRROR OVERLAY
+	- [x] allow deletion of mirrors
+	- [x] switch between mirrors
+	- [ ] on-screen buttons for controlling pending mirror (change number, reflect, cancel)
+	- [ ] button for "copy select tiles around active mirror"
 
 
 - FIRST RUN EXPERIENCE:

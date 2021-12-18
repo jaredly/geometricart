@@ -75,6 +75,7 @@ export type Props = {
     ) => void;
     dispatch: (action: Action) => unknown;
     hover: Hover | null;
+    setHover: (hover: Hover | null) => void;
 };
 
 export const worldToScreen = (
@@ -124,6 +125,7 @@ export const Canvas = ({
     dispatch,
     innerRef,
     hover,
+    setHover,
     pendingMirror,
     setPendingMirror,
     dragSelect,
@@ -556,6 +558,9 @@ export const Canvas = ({
                 />
             ) : null}
             <MirrorMenu
+                onHover={(k) =>
+                    k ? setHover({ kind: 'Mirror', id: k }) : setHover(null)
+                }
                 onAdd={() =>
                     setPendingMirror({
                         parent: state.activeMirror,

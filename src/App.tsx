@@ -127,6 +127,7 @@ export const App = ({ initialState }: { initialState: State }) => {
                 <Canvas
                     state={state}
                     hover={hover}
+                    setHover={setHover}
                     dragSelect={dragSelect}
                     cancelDragSelect={() => setDragSelect(false)}
                     isTouchScreen={isTouchScreen}
