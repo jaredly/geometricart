@@ -579,12 +579,13 @@ export const RenderPrimitives = React.memo(
         onClick?: (guides: Array<Id>, shift: boolean) => unknown;
         inactive?: boolean;
     }) => {
+        const isTouchScreen = 'ontouchstart' in window;
         return (
             <>
                 {primitives.map((prim, i) =>
                     prim.guides.length === 0 ? null : (
                         <RenderPrimitive
-                            strokeWidth={5}
+                            strokeWidth={isTouchScreen ? 5 : 1}
                             bounds={bounds}
                             prim={prim.prim}
                             zoom={zoom}
