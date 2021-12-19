@@ -36,36 +36,36 @@ export const initialState: State = {
     history: initialHistory,
     pathGroups: {},
     guides: {
-        base: {
-            id: 'base',
-            geom: {
-                type: 'Circle',
-                center: { x: 0, y: 0 },
-                radius: { x: 0, y: -1 },
-                line: true,
-                half: false,
-                multiples: 0,
-            },
-            active: true,
-            basedOn: [],
-            mirror: 'baseMirror',
-        },
+        // base: {
+        //     id: 'base',
+        //     geom: {
+        //         type: 'Circle',
+        //         center: { x: 0, y: 0 },
+        //         radius: { x: 0, y: -1 },
+        //         line: true,
+        //         half: false,
+        //         multiples: 0,
+        //     },
+        //     active: true,
+        //     basedOn: [],
+        //     mirror: 'baseMirror',
+        // },
     },
     mirrors: {
         // second: {
         // 	id: 'second',
         // 	reflect: true,
         // },
-        baseMirror: {
-            id: 'baseMirror',
-            origin: { x: 0, y: 0 },
-            parent: null,
-            point: { x: 0, y: -1 },
-            reflect: true,
-            rotational: [true, true, true, true, true], // 6-fold
-        },
+        // baseMirror: {
+        //     id: 'baseMirror',
+        //     origin: { x: 0, y: 0 },
+        //     parent: null,
+        //     point: { x: 0, y: -1 },
+        //     reflect: true,
+        //     rotational: [true, true, true, true, true], // 6-fold
+        // },
     },
-    activeMirror: 'baseMirror',
+    activeMirror: null, // 'baseMirror',
     view: {
         center: { x: 0, y: 0 },
         // This can't be implemented with svg zoom, because that would muck with line widths of guides and mirrors.

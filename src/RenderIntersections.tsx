@@ -5,7 +5,7 @@ import React from 'react';
 import { Intersect } from './types';
 
 const whatsit = css({
-    fill: 'rgba(255,255,255,0.1)',
+    // fill: 'rgba(255,255,255,0.1)',
     cursor: 'pointer',
     transition: '.2s ease r, .2s ease fill',
     ':hover': {
@@ -45,8 +45,10 @@ export const RenderIntersections = React.memo(
         zoom,
         intersections,
         onClick,
+        highlight,
     }: {
         zoom: number;
+        highlight: boolean;
         intersections: Array<Intersect>;
         onClick: (item: Intersect, shiftKey: boolean) => unknown;
     }) => {
@@ -69,7 +71,8 @@ export const RenderIntersections = React.memo(
                         }}
                         {...handlers(intersection)}
                         r={5}
-                        fill={'rgba(255,255,255,0.1)'}
+                        fill={highlight ? '#faa' : 'rgba(255,255,255,0.1)'}
+                        stroke={'black'}
                         css={whatsit}
                         // css={{
                         //     fill: 'rgba(255,255,255,0.1)',

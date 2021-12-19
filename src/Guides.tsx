@@ -412,6 +412,7 @@ export const Guides = ({
             {!pendingPath[0] && !zooming ? (
                 <RenderIntersections
                     zoom={view.zoom}
+                    highlight={state.pending != null}
                     intersections={allIntersections}
                     onClick={onClickIntersection}
                 />

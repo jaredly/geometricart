@@ -6,7 +6,11 @@ export const calcAllIntersections = (
     primitives: Array<Primitive>,
 ): { coords: Array<Intersect>; seenCoords: { [key: string]: Intersect } } => {
     const seenCoords: { [k: string]: Intersect } = {};
-    const coords: Array<Intersect> = [];
+    const coords: Array<Intersect> = [
+        { coord: { x: 0, y: 0 }, primitives: [] },
+        { coord: { x: 0, y: -1 }, primitives: [] },
+    ];
+    coords.forEach((c) => (seenCoords[coordKey(c.coord)] = c));
     for (let i = 0; i < primitives.length; i++) {
         for (let j = i + 1; j < primitives.length; j++) {
             const pair: [number, number] = [i, j];
