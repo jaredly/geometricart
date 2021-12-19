@@ -34,6 +34,7 @@ import {
     Id,
     Intersect,
     Path,
+    PathMultiply,
     PendingType,
     Segment,
     State,
@@ -886,6 +887,23 @@ function touchscreenControls(
                     >
                         Delete {state.selection.type}
                     </button>
+                    {state.activeMirror &&
+                    (state.selection.type === 'Path' ||
+                        state.selection.type === 'PathGroup') ? (
+                        <button
+                            css={{ fontSize: '150%' }}
+                            onClick={() => {
+                                dispatch({
+                                    type: 'path:multiply',
+                                    selection:
+                                        state.selection as PathMultiply['selection'],
+                                    mirror: state.activeMirror!,
+                                });
+                            }}
+                        >
+                            Clone around mirror
+                        </button>
+                    ) : null}
                 </div>
             ) : state.pending ? (
                 <button

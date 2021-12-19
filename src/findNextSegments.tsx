@@ -2,7 +2,7 @@ import { coordKey } from './calcAllIntersections';
 import { closeEnough } from './clipPath';
 import { segmentKey } from './DrawPath';
 import { angleTo } from './getMirrorTransforms';
-import { epsilon, Primitive } from './intersect';
+import { closeEnoughAngle, epsilon, Primitive } from './intersect';
 import {
     Coord,
     Intersect,
@@ -26,13 +26,14 @@ export const findNextSegments = (
     primitives: Array<Primitive>,
     coords: Array<Intersect>,
 ): Array<PendingSegment> => {
-    const next = pending.parts.length
+    const current = pending.parts.length
         ? pending.parts[pending.parts.length - 1].to
         : pending.origin;
-    const intersections = next.primitives;
+    const intersections = current.primitives;
     const touchingPrimitives = dedup(
         ([] as Array<number>).concat(...intersections),
     );
+    // List of coords that each primtive touches.
     const coordsForPrimitive: { [key: number]: { [key: string]: Intersect } } =
         {};
     touchingPrimitives.forEach((id) => (coordsForPrimitive[id] = {}));
@@ -55,10 +56,10 @@ export const findNextSegments = (
     const res = ([] as Array<PendingSegment>)
         .concat(
             ...touchingPrimitives.map((id) => {
-                // Each primitive should give me 2 segments. Right?
+                // Each primitive should give me at most 2 segments. Right?
                 return calcPendingSegments(
                     primitives[id],
-                    next,
+                    current,
                     Object.keys(coordsForPrimitive[id]).map(
                         (k) => coordsForPrimitive[id][k],
                     ),
@@ -69,7 +70,7 @@ export const findNextSegments = (
             if (prev && coordKey(p.to.coord) === coordKey(prev)) {
                 return false;
             }
-            const k = segmentKey(next.coord, p.segment);
+            const k = segmentKey(current.coord, p.segment);
             if (seen[k]) {
                 return false;
             }
@@ -80,7 +81,9 @@ export const findNextSegments = (
 
 export const calcPendingSegments = (
     primitive: Primitive,
+    // the "starting" coord that we're starting segments from
     coord: Intersect,
+    // all the coords that this primitive intersects with?
     allCoords: Array<Intersect>,
 ): Array<PendingSegment> => {
     if (primitive.type === 'line') {
@@ -90,7 +93,8 @@ export const calcPendingSegments = (
                 : allCoords.sort((a, b) => a.coord.x - b.coord.x);
         const idx = sorted.findIndex((c) => c === coord);
         if (idx === -1) {
-            throw new Error(`coord not in allcoords?`);
+            console.warn(`coord not in allcoords?`);
+            return [];
         }
         const left = idx > 0 ? sorted[idx - 1] : null;
         const right = idx < sorted.length - 1 ? sorted[idx + 1] : null;
@@ -104,6 +108,7 @@ export const calcPendingSegments = (
             }),
         );
     } else {
+        // we're sorting the points by their angle around the circle
         const withTheta = allCoords.map((coord) => ({
             coord,
             theta: angleTo(primitive.center, coord.coord),
@@ -111,22 +116,48 @@ export const calcPendingSegments = (
         withTheta.sort((a, b) => a.theta - b.theta);
         const idx = withTheta.findIndex((c) => c.coord === coord);
         if (idx === -1) {
-            throw new Error(`coord not in allcoords?`);
+            console.warn(
+                `current coord not in the list of coords that this circle touches`,
+            );
+            return [];
         }
+        // the one just counter-clockwise of this one
         const left =
             idx > 0 ? withTheta[idx - 1] : withTheta[withTheta.length - 1];
+        // the one just clockwise of this one
         const right =
             idx < withTheta.length - 1 ? withTheta[idx + 1] : withTheta[0];
-        return [left, right].map((item, i) => ({
-            to: item.coord,
-            segment: {
-                type: 'Arc',
-                center: primitive.center,
-                to: item.coord.coord,
-                // what does this even mean, idk
-                clockwise: i !== 0,
-            },
-        }));
+        return [left, right]
+            .map(
+                (item, i): PendingSegment => ({
+                    to: item.coord,
+                    segment: {
+                        type: 'Arc',
+                        center: primitive.center,
+                        to: item.coord.coord,
+                        // what does this even mean, idk
+                        clockwise: i !== 0,
+                    },
+                }),
+            )
+            .filter((r, i) => {
+                if (!primitive.limit) {
+                    return true;
+                }
+                if (
+                    closeEnoughAngle(left.theta, primitive.limit[0]) &&
+                    i === 0
+                ) {
+                    return false;
+                }
+                if (
+                    closeEnoughAngle(right.theta, primitive.limit[1]) &&
+                    i === 1
+                ) {
+                    return false;
+                }
+                return true;
+            });
     }
 };
 

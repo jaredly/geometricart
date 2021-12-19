@@ -220,7 +220,7 @@ export const App = ({ initialState }: { initialState: State }) => {
                             border: 'none',
                             cursor: 'pointer',
                             color: 'white',
-                            backgroundColor: 'transparent',
+                            backgroundColor: 'rgba(0,0,0,0.4)',
                         }}
                         style={{
                             opacity: sidebarOverlay ? 1 : 0.4,

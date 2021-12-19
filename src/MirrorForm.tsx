@@ -34,10 +34,14 @@ export const ShowMirror = ({
             p2: applyMatrices(line.p2, transform),
         });
     });
-    const minX = lines.reduce((a, b) => Math.min(a, b.p1.x, b.p2.x), Infinity);
-    const minY = lines.reduce((a, b) => Math.min(a, b.p1.y, b.p2.y), Infinity);
-    const maxX = lines.reduce((a, b) => Math.max(a, b.p1.x, b.p2.x), -Infinity);
-    const maxY = lines.reduce((a, b) => Math.max(a, b.p1.y, b.p2.y), -Infinity);
+    let minX = lines.reduce((a, b) => Math.min(a, b.p1.x, b.p2.x), Infinity);
+    let minY = lines.reduce((a, b) => Math.min(a, b.p1.y, b.p2.y), Infinity);
+    let maxX = lines.reduce((a, b) => Math.max(a, b.p1.x, b.p2.x), -Infinity);
+    let maxY = lines.reduce((a, b) => Math.max(a, b.p1.y, b.p2.y), -Infinity);
+    minX = Math.min(minX, -maxX);
+    minY = Math.min(minY, -maxY);
+    maxX = Math.max(-minX, maxX);
+    maxY = Math.max(-minY, maxY);
     const width = maxX - minX;
     const height = maxY - minY;
 
