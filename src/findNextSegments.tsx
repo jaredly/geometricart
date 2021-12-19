@@ -113,6 +113,8 @@ export const calcPendingSegments = (
             coord,
             theta: angleTo(primitive.center, coord.coord),
         }));
+        // Sort by lowest theta, which will put these in clockwise order.
+        // or, actually maybe counter-clockwise???
         withTheta.sort((a, b) => a.theta - b.theta);
         const idx = withTheta.findIndex((c) => c.coord === coord);
         if (idx === -1) {
@@ -121,6 +123,7 @@ export const calcPendingSegments = (
             );
             return [];
         }
+        const thisTheta = withTheta[idx].theta;
         // the one just counter-clockwise of this one
         const left =
             idx > 0 ? withTheta[idx - 1] : withTheta[withTheta.length - 1];
@@ -145,13 +148,13 @@ export const calcPendingSegments = (
                     return true;
                 }
                 if (
-                    closeEnoughAngle(left.theta, primitive.limit[0]) &&
+                    closeEnoughAngle(thisTheta, primitive.limit[0]) &&
                     i === 0
                 ) {
                     return false;
                 }
                 if (
-                    closeEnoughAngle(right.theta, primitive.limit[1]) &&
+                    closeEnoughAngle(thisTheta, primitive.limit[1]) &&
                     i === 1
                 ) {
                     return false;
