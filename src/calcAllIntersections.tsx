@@ -41,9 +41,9 @@ export const numKey = (num: number) => {
 const precision = 3;
 export const primitiveKey = (p: Primitive) =>
     p.type === 'line'
-        ? `${numKey(p.m)}:${numKey(p.b)}${
-              p.limit ? `${numKey(p.limit[0])}:${numKey(p.limit[1])}` : ''
-          }`
-        : `${coordKey(p.center)}:${numKey(p.radius)}`;
+        ? `${numKey(p.m)}:${numKey(p.b)}${limitKey(p.limit)}`
+        : `${coordKey(p.center)}:${numKey(p.radius)}${limitKey(p.limit)}`;
+export const limitKey = (limit?: [number, number] | null) =>
+    limit ? `:${numKey(limit[0])}:${numKey(limit[1])}` : '';
 export const coordKey = (coord: Coord) =>
     `${numKey(coord.x)},${numKey(coord.y)}`;
