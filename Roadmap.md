@@ -1,5 +1,5 @@
 
-- [ ] deal with circles that don't meet up
+- [x] deal with circles that don't meet up
 
 ## Mobile things that currently only have key shortcuts
 

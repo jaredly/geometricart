@@ -383,56 +383,32 @@ export const insetSegments = (segments: Array<Segment>, inset: number) => {
     }
 
     const simplified = simplifyPath(segments);
-    // const prims = pathToPrimitives(simplified);
 
-    segments = simplified.map((seg, i) => {
-        const prev = simplified[i === 0 ? simplified.length - 1 : i - 1].to;
-        const next = simplified[i === simplified.length - 1 ? 0 : i + 1];
-        const result = insetSegment(prev, seg, next, inset);
-        return result;
-    });
+    segments = simplified
+        .map((seg, i) => {
+            const prev = simplified[i === 0 ? simplified.length - 1 : i - 1].to;
+            const next = simplified[i === simplified.length - 1 ? 0 : i + 1];
+            // ok, so ... this needs to maybe return two segments.
+            const result = insetSegment(prev, seg, next, inset);
+            return Array.isArray(result) ? result : [result];
+        })
+        .flat();
+    // console.log(segments);
 
-    let bad: Array<number> = [];
-    segments.forEach((seg, i) => {
-        if (
-            hasReversed(
-                seg,
-                segments[i === 0 ? segments.length - 1 : i - 1].to,
-                simplified[i],
-                simplified[i === 0 ? simplified.length - 1 : i - 1].to,
-            )
-        ) {
-            bad.push(i);
-            // console.log('bad!', i);
-        }
-    });
-
-    // if (bad.length) {
-    //     if (secondRound) {
-    //         console.error(`Second round! and still found some bad ones.`, bad);
-    //     } else {
-    //         // return insetPath(
-    //         //     {
-    //         //         ...path,
-    //         //         segments: simplified.filter((_, i) => !bad.includes(i)),
-    //         //     },
-    //         //     inset,
-    //         //     true,
-    //         // );
-    //     }
-    // }
-    // newPrims.forEach((prim, i) => {
-    //     const pre = prims[i];
+    // let bad: Array<number> = [];
+    // segments.forEach((seg, i) => {
     //     if (
-    //         prim.type === 'line' &&
-    //         pre.type === 'line' &&
-    //         !closeEnough(prim.m, pre.m)
+    //         hasReversed(
+    //             seg,
+    //             segments[i === 0 ? segments.length - 1 : i - 1].to,
+    //             simplified[i],
+    //             simplified[i === 0 ? simplified.length - 1 : i - 1].to,
+    //         )
     //     ) {
     //         bad.push(i);
-    //         console.log(prim.m, pre.m);
-    //         // throw new Error('bad');
     //     }
     // });
+
     return segments;
 };
 
@@ -446,7 +422,7 @@ export const insetSegment = (
     seg: Segment,
     next: Segment,
     amount: number,
-): Segment => {
+): Segment | Array<Segment> => {
     if (seg.type === 'Line') {
         const t = angleTo(prev, seg.to);
         const p0 = push(prev, t + Math.PI / 2, amount);
@@ -512,6 +488,27 @@ export const insetSegment = (
                 { center: next.center, radius: radius2, type: 'circle' },
                 { center: seg.center, radius: radius, type: 'circle' },
             );
+            if (intersection.length === 0) {
+                const newTo = push(seg.center, angle, radius);
+                const otherTo = push(
+                    next.center,
+                    angleTo(next.center, seg.to),
+                    radius2,
+                );
+                const mid = angleTo(seg.center, next.center) + Math.PI / 2;
+                const mp = push(seg.to, mid, amount);
+                return [
+                    { ...seg, to: newTo },
+                    // {
+                    //     type: 'Arc',
+                    //     center: seg.to,
+                    //     clockwise: false,
+                    //     to: otherTo,
+                    // },
+                    { type: 'Line', to: mp },
+                    { type: 'Line', to: otherTo },
+                ];
+            }
             // if (intersection.length === 1 && 1 == 0) {
             //     return { ...seg, to: intersection[0] };
             // }
