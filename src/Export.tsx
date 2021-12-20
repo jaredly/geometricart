@@ -1,6 +1,7 @@
 /* @jsx jsx */
 /* @jsxFrag React.Fragment */
 import { jsx } from '@emotion/react';
+import * as ReactDOM from 'react-dom';
 import React from 'react';
 import { Action, State } from './types';
 import { PREFIX, SUFFIX } from './Sidebar';
@@ -16,6 +17,7 @@ import { canvasRender } from './CanvasRender';
 import { RenderWebGL, setup } from './RenderWebGL';
 import { texture1, texture2 } from './textures';
 import { initialHistory } from './initialState';
+import { Canvas } from './Canvas';
 
 export const Export = ({
     canvasRef,
@@ -36,6 +38,7 @@ export const Export = ({
 
     const [render, setRender] = React.useState(false);
 
+    const [ppi, setPPI] = React.useState(170);
     const [size, setSize] = React.useState(originalSize);
     const [embed, setEmbed] = React.useState(true);
     const [history, setHistory] = React.useState(false);
@@ -85,79 +88,82 @@ export const Export = ({
                 />
             </div>
             <div>
+                <Toggle
+                    label="Embed editor state"
+                    value={embed}
+                    onChange={setEmbed}
+                />
+                {embed ? (
+                    <Toggle
+                        label="Embed history"
+                        value={history}
+                        onChange={setHistory}
+                    />
+                ) : null}
+            </div>
+            <div css={{ marginTop: 16 }}>
+                Width (px):{' '}
+                <input
+                    type="number"
+                    value={size}
+                    onChange={(evt) => setSize(+evt.target.value)}
+                />
                 <button
                     css={{ marginRight: 16 }}
                     onClick={async () => {
-                        const canvas = document.createElement('canvas');
-                        canvas.width = canvas.height = size;
-                        const ctx = canvas.getContext('2d')!;
-
-                        ctx.save();
-                        await canvasRender(
-                            ctx,
+                        const url = await exportPNG(
+                            size,
                             state,
-                            size,
-                            size,
-                            size / originalSize,
+                            originalSize,
+                            embed,
+                            history,
                         );
-                        ctx.restore();
-
-                        if (state.view.texture) {
-                            const fns: {
-                                [key: string]: (
-                                    scale: number,
-                                    intensity: number,
-                                ) => string;
-                            } = { texture1: texture1, texture2: texture2 };
-                            const fn = fns[state.view.texture.id];
-                            if (fn) {
-                                const texture =
-                                    document.createElement('canvas');
-                                texture.width = texture.height = size;
-
-                                const gl = texture.getContext('webgl2');
-                                if (!gl) {
-                                    throw new Error(
-                                        `unable to get webgl context`,
-                                    );
-                                }
-                                setup(
-                                    gl,
-                                    fn(
-                                        (state.view.texture.scale * size) /
-                                            originalSize,
-                                        state.view.texture.intensity,
-                                    ),
-                                    0,
-                                );
-
-                                ctx.drawImage(texture, 0, 0);
-                            }
-                        }
-
-                        canvas.toBlob(async (blob) => {
-                            if (!blob) {
-                                alert('Unable to export. Canvas error');
-                                return;
-                            }
-                            if (embed) {
-                                blob = await addMetadata(
-                                    blob,
-                                    history
-                                        ? state
-                                        : { ...state, history: initialHistory },
-                                );
-                            }
-                            setPng(URL.createObjectURL(blob));
-                        }, 'image/png');
+                        setPng(url);
                     }}
                 >
                     Export PNG
                 </button>
+            </div>
+            <div css={{ marginTop: 16 }}>
+                pixels per inch:{' '}
+                <input
+                    type="number"
+                    value={ppi}
+                    onChange={(evt) => setPPI(+evt.target.value)}
+                />
+                Width: {(originalSize / ppi).toFixed(2)}in
                 <button
                     css={{ marginRight: 16 }}
                     onClick={async () => {
-                        let text = canvasRef.current!.outerHTML;
+                        // I need to do e.g. `width=1in, height=1in viewbox="0 0 1000 1000"`
+                        // Use the zoom, and the ... "final size" ...
+                        // But really, I should ditch the "just hijack the current svg"
+                        // because it's buggy.
+                        // Or at the very least, render a new svg in an invisible node.
+                        // That's probably good.
+                        // And there can be a mode for "real-world size units", dontcha know.
+                        let svgNode: SVGElement | null = null;
+                        const dest = document.createElement('div');
+                        ReactDOM.render(
+                            <Canvas
+                                state={state}
+                                dragSelect={false}
+                                cancelDragSelect={() => {}}
+                                isTouchScreen={false}
+                                width={originalSize}
+                                height={originalSize}
+                                innerRef={(node) => (svgNode = node)}
+                                pendingMirror={null}
+                                setPendingMirror={(_) => {}}
+                                dispatch={(_) => {}}
+                                hover={null}
+                                setHover={(_) => {}}
+                                ppi={ppi}
+                            />,
+                            dest,
+                        );
+                        // let text = canvasRef.current!.outerHTML;
+                        let text = svgNode!.outerHTML;
                         if (embed) {
                             text += `\n\n${PREFIX}${JSON.stringify(
                                 history
@@ -180,24 +186,6 @@ export const Export = ({
                 >
                     {render ? `Clear render` : `Render`}
                 </button> */}
-                Size (for .png):{' '}
-                <input
-                    type="number"
-                    value={size}
-                    onChange={(evt) => setSize(+evt.target.value)}
-                />
-                <Toggle
-                    label="Embed editor state"
-                    value={embed}
-                    onChange={setEmbed}
-                />
-                {embed ? (
-                    <Toggle
-                        label="Embed history"
-                        value={history}
-                        onChange={setHistory}
-                    />
-                ) : null}
                 {url ? (
                     <button onClick={() => setUrl(null)}>Close</button>
                 ) : null}
@@ -273,6 +261,64 @@ export const Export = ({
         </div>
     );
 };
+
+async function exportPNG(
+    size: number,
+    state: State,
+    originalSize: number,
+    embed: boolean,
+    history: boolean,
+): Promise<string> {
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = size;
+    const ctx = canvas.getContext('2d')!;
+
+    ctx.save();
+    await canvasRender(ctx, state, size, size, size / originalSize);
+    ctx.restore();
+
+    if (state.view.texture) {
+        const fns: {
+            [key: string]: (scale: number, intensity: number) => string;
+        } = { texture1: texture1, texture2: texture2 };
+        const fn = fns[state.view.texture.id];
+        if (fn) {
+            const texture = document.createElement('canvas');
+            texture.width = texture.height = size;
+
+            const gl = texture.getContext('webgl2');
+            if (!gl) {
+                throw new Error(`unable to get webgl context`);
+            }
+            setup(
+                gl,
+                fn(
+                    (state.view.texture.scale * size) / originalSize,
+                    state.view.texture.intensity,
+                ),
+                0,
+            );
+
+            ctx.drawImage(texture, 0, 0);
+        }
+    }
+
+    return new Promise((res, rej) =>
+        canvas.toBlob(async (blob) => {
+            if (!blob) {
+                alert('Unable to export. Canvas error');
+                return rej(new Error('Unable to export'));
+            }
+            if (embed) {
+                blob = await addMetadata(
+                    blob,
+                    history ? state : { ...state, history: initialHistory },
+                );
+            }
+            res(URL.createObjectURL(blob));
+        }, 'image/png'),
+    );
+}
 
 async function addMetadata(blob: Blob | null, state: State) {
     const buffer = await blob!.arrayBuffer();

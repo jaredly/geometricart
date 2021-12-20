@@ -1,4 +1,10 @@
 
+- [ ] bake into the export a dpi dealio. And when exporting the svg, indicate what the real size (in & mm) is of the
+	full screen, and the bounding rect.
+	- [ ] also add the ability to say "crop to content, w/ X margin"
+
+- [ ] add visual tests for inset, that produce an SVG for visual check.
+
 - [x] deal with circles that don't meet up
 
 ## Mobile things that currently only have key shortcuts
@@ -8,6 +14,9 @@
 - [x] guides dont multi-select, there's nothing to do there.
 - [-] ooh should I have a way to say "multiply this guide around this mirror?"
 	- I think maybe not?
+	- hm it would be nice tho
+		- if the guide doesn't have a mirror yet, it's easy
+		- otherwise, we just duplicate, it's not grouped, boohoo.
 
 
 ## Ok let's try different sized screens
@@ -23,7 +32,7 @@ to prepare for mobile ya know
 	- [x] allow deletion of mirrors
 	- [x] switch between mirrors
 	- [ ] on-screen buttons for controlling pending mirror (change number, reflect, cancel)
-	- [ ] button for "copy select tiles around active mirror"
+	- [x] button for "copy select tiles around active mirror"
 
 
 - FIRST RUN EXPERIENCE:

@@ -543,6 +543,8 @@ export const reversePath = (source: Array<Segment>): Array<Segment> => {
     return segments;
 };
 
+// This is used for making a "clip" to the line of a path.
+// for when the stroke is supposed to be an image.
 export function tracePathLine(
     ctx: CanvasRenderingContext2D,
     path: Path,
