@@ -36,6 +36,7 @@ export const showHover = (
             return (
                 <RenderMirror
                     zoom={zoom}
+                    key={key}
                     mirror={state.mirrors[hover.id]}
                     transforms={mirrorTransforms[hover.id]}
                 />
@@ -56,7 +57,7 @@ export const showHover = (
         }
         case 'PathGroup': {
             return (
-                <>
+                <React.Fragment key={key}>
                     {Object.keys(state.paths)
                         .filter((k) => state.paths[k].group === hover.id)
                         .map((k, i) => (
@@ -67,7 +68,7 @@ export const showHover = (
                                 color={color}
                             />
                         ))}
-                </>
+                </React.Fragment>
             );
         }
         case 'Guide': {
