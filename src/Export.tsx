@@ -11,7 +11,7 @@ import {
     encodeChunks,
     readMetadata,
 } from 'png-metadata';
-import { Toggle, Text } from './Forms';
+import { Toggle, Text, BlurInt } from './Forms';
 import { transparent } from './Icons';
 import { canvasRender } from './CanvasRender';
 import { RenderWebGL, setup } from './RenderWebGL';
@@ -38,7 +38,6 @@ export const Export = ({
 
     const [render, setRender] = React.useState(false);
 
-    const [ppi, setPPI] = React.useState(170);
     const [size, setSize] = React.useState(originalSize);
     const [embed, setEmbed] = React.useState(true);
     const [history, setHistory] = React.useState(false);
@@ -126,12 +125,22 @@ export const Export = ({
             </div>
             <div css={{ marginTop: 16 }}>
                 pixels per inch:{' '}
-                <input
-                    type="number"
-                    value={ppi}
-                    onChange={(evt) => setPPI(+evt.target.value)}
+                <BlurInt
+                    value={state.meta.ppi}
+                    onChange={(ppi) =>
+                        ppi != null
+                            ? dispatch({
+                                  type: 'meta:update',
+                                  meta: { ...state.meta, ppi },
+                              })
+                            : null
+                    }
+                    label={(ppi) => (
+                        <span css={{ marginLeft: 8, marginRight: 8 }}>
+                            Width: {(originalSize / ppi).toFixed(2)}in
+                        </span>
+                    )}
                 />
-                Width: {(originalSize / ppi).toFixed(2)}in
                 <button
                     css={{ marginRight: 16 }}
                     onClick={async () => {
@@ -158,7 +167,7 @@ export const Export = ({
                                 dispatch={(_) => {}}
                                 hover={null}
                                 setHover={(_) => {}}
-                                ppi={ppi}
+                                ppi={state.meta.ppi}
                             />,
                             dest,
                         );

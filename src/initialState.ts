@@ -29,6 +29,7 @@ export const initialState: State = {
         title: '',
         description: '',
         created: 0,
+        ppi: 170,
     },
     pending: null,
     nextId: 0,

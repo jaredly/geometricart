@@ -729,6 +729,7 @@ export type Meta = {
     title: string;
     description: string;
     created: number;
+    ppi: number;
 };
 
 export type State = {
@@ -789,6 +790,7 @@ export const migrateState = (state: State) => {
                 created: Date.now(),
                 title: '',
                 description: '',
+                ppi: 170,
             };
         }
     }
@@ -839,6 +841,9 @@ export const migrateState = (state: State) => {
             // @ts-ignore
             delete group.style;
         });
+    }
+    if (state.meta.ppi == null) {
+        state.meta.ppi = 170;
     }
     return state;
 };

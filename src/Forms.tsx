@@ -35,6 +35,56 @@ export const Text = ({
     );
 };
 
+export const BlurInt = ({
+    value,
+    onChange,
+    label,
+}: {
+    value: number | undefined;
+    onChange: (v: number | undefined) => unknown;
+    label?: (ppi: number) => React.ReactNode;
+}) => {
+    const [text, setText] = React.useState(null as null | string);
+    let v = value;
+    if (text != null) {
+        const res = +text;
+        if (!isNaN(res) && text.trim()) {
+            v = res;
+        }
+    }
+    return (
+        <>
+            <input
+                value={text != null ? text : value}
+                onChange={(evt) => {
+                    setText(evt.target.value);
+                }}
+                onKeyDown={(evt) => {
+                    if (evt.key === 'Return' || evt.key === 'Enter') {
+                        (evt.target as HTMLInputElement).blur();
+                    }
+                }}
+                onBlur={() => {
+                    if (text != null) {
+                        const res = +text;
+                        if (isNaN(res) || !text.trim()) {
+                            onChange(undefined);
+                        } else {
+                            onChange(res);
+                        }
+                    }
+                }}
+                css={{
+                    width: 50,
+                }}
+                step="1"
+                type="number"
+            />
+            {label && v != null ? label(v) : null}
+        </>
+    );
+};
+
 export const Float = ({
     value,
     onChange,

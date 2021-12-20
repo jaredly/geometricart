@@ -1,6 +1,17 @@
 
-- [ ] bake into the export a dpi dealio. And when exporting the svg, indicate what the real size (in & mm) is of the
-	full screen, and the bounding rect.
+# So
+what things do I still have to shell out for?
+- palette stuff
+- exports
+Is that it?
+
+
+
+- [x] bake into the export a dpi dealio.
+	- [x] persist in the state my folks.
+	- [x] And when exporting the svg, indicate what the real size (in & mm) is of the
+	full screen,
+	- [ ] and the bounding rect.
 	- [ ] also add the ability to say "crop to content, w/ X margin"
 
 - [ ] add visual tests for inset, that produce an SVG for visual check.
