@@ -12,7 +12,7 @@ Is that it?
 	- [x] And when exporting the svg, indicate what the real size (in & mm) is of the
 	full screen,
 	- [x] and the bounding rect.
-	- [ ] also add the ability to say "crop to content, w/ X margin"
+	- [x] also add the ability to say "crop to content, w/ X margin"
 
 - [ ] add visual tests for inset, that produce an SVG for visual check.
 

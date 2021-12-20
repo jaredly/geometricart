@@ -74,6 +74,8 @@ export const Export = ({
     const [embed, setEmbed] = React.useState(true);
     const [history, setHistory] = React.useState(false);
 
+    const [crop, setCrop] = React.useState(null as null | number);
+
     const boundingRect = React.useMemo(
         () => findBoundingRect(state),
         [state.paths, state.pathGroups, state.clips, state.view.activeClip],
@@ -190,6 +192,11 @@ export const Export = ({
                         </span>
                     )}
                 />
+                Crop margin (in/100):
+                <BlurInt
+                    value={crop}
+                    onChange={(crop) => setCrop(crop ?? null)}
+                />
                 <button
                     css={{ marginRight: 16 }}
                     onClick={async () => {
@@ -202,14 +209,26 @@ export const Export = ({
                         // And there can be a mode for "real-world size units", dontcha know.
                         let svgNode: SVGElement | null = null;
                         const dest = document.createElement('div');
+                        const h =
+                            crop && boundingRect
+                                ? (boundingRect.y2 - boundingRect.y1) *
+                                      state.view.zoom +
+                                  (crop / 50) * state.meta.ppi
+                                : originalSize;
+                        const w =
+                            crop && boundingRect
+                                ? (boundingRect.x2 - boundingRect.x1) *
+                                      state.view.zoom +
+                                  (crop / 50) * state.meta.ppi
+                                : originalSize;
                         ReactDOM.render(
                             <Canvas
                                 state={state}
                                 dragSelect={false}
                                 cancelDragSelect={() => {}}
                                 isTouchScreen={false}
-                                width={originalSize}
-                                height={originalSize}
+                                width={w}
+                                height={h}
                                 innerRef={(node) => (svgNode = node)}
                                 pendingMirror={null}
                                 setPendingMirror={(_) => {}}

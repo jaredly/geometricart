@@ -40,7 +40,7 @@ export const BlurInt = ({
     onChange,
     label,
 }: {
-    value: number | undefined;
+    value: number | undefined | null;
     onChange: (v: number | undefined) => unknown;
     label?: (ppi: number) => React.ReactNode;
 }) => {
@@ -55,7 +55,7 @@ export const BlurInt = ({
     return (
         <>
             <input
-                value={text != null ? text : value}
+                value={text != null ? text : value ?? ''}
                 onChange={(evt) => {
                     setText(evt.target.value);
                 }}
