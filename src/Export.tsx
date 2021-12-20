@@ -200,13 +200,6 @@ export const Export = ({
                 <button
                     css={{ marginRight: 16 }}
                     onClick={async () => {
-                        // I need to do e.g. `width=1in, height=1in viewbox="0 0 1000 1000"`
-                        // Use the zoom, and the ... "final size" ...
-                        // But really, I should ditch the "just hijack the current svg"
-                        // because it's buggy.
-                        // Or at the very least, render a new svg in an invisible node.
-                        // That's probably good.
-                        // And there can be a mode for "real-world size units", dontcha know.
                         let svgNode: SVGElement | null = null;
                         const dest = document.createElement('div');
                         const h =
@@ -256,13 +249,6 @@ export const Export = ({
                 >
                     Export SVG
                 </button>
-                {/* <button
-                    onClick={() => {
-                        setRender(!render);
-                    }}
-                >
-                    {render ? `Clear render` : `Render`}
-                </button> */}
                 {url ? (
                     <button onClick={() => setUrl(null)}>Close</button>
                 ) : null}
