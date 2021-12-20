@@ -3,7 +3,7 @@
 import { jsx } from '@emotion/react';
 import * as ReactDOM from 'react-dom';
 import React from 'react';
-import { Action, State } from './types';
+import { Action, Coord, State } from './types';
 import { PREFIX, SUFFIX } from './Sidebar';
 import {
     extractChunks,
@@ -18,6 +18,38 @@ import { RenderWebGL, setup } from './RenderWebGL';
 import { texture1, texture2 } from './textures';
 import { initialHistory } from './initialState';
 import { Canvas } from './Canvas';
+import { sortedVisibleInsetPaths } from './sortedVisibleInsetPaths';
+
+export const findBoundingRect = (state: State) => {
+    const clip = state.view.activeClip
+        ? state.clips[state.view.activeClip]
+        : undefined;
+
+    let bounds: {
+        x1: null | number;
+        x2: null | number;
+        y1: null | number;
+        y2: null | number;
+    } = { x1: null, y1: null, x2: null, y2: null };
+    let addCoord = (c: Coord) => {
+        bounds.x1 = bounds.x1 == null ? c.x : Math.min(c.x, bounds.x1);
+        bounds.x2 = bounds.x2 == null ? c.x : Math.max(c.x, bounds.x2);
+        bounds.y1 = bounds.y1 == null ? c.y : Math.min(c.y, bounds.y1);
+        bounds.y2 = bounds.y2 == null ? c.y : Math.max(c.y, bounds.y2);
+    };
+    // NOTE: This won't totally cover arcs, but that's just too bad folks.
+    sortedVisibleInsetPaths(state.paths, state.pathGroups, clip).forEach(
+        (path) => {
+            addCoord(path.origin);
+            // TODO: Get proper bounding box for arc segments.
+            path.segments.forEach((t) => addCoord(t.to));
+        },
+    );
+    if (!bounds.x1 || !bounds.y1) {
+        return null;
+    }
+    return { x1: bounds.x1!, y1: bounds.y1!, x2: bounds.x2!, y2: bounds.y2! };
+};
 
 export const Export = ({
     canvasRef,
@@ -41,6 +73,11 @@ export const Export = ({
     const [size, setSize] = React.useState(originalSize);
     const [embed, setEmbed] = React.useState(true);
     const [history, setHistory] = React.useState(false);
+
+    const boundingRect = React.useMemo(
+        () => findBoundingRect(state),
+        [state.paths, state.pathGroups, state.clips, state.view.activeClip],
+    );
 
     return (
         <div
@@ -137,7 +174,19 @@ export const Export = ({
                     }
                     label={(ppi) => (
                         <span css={{ marginLeft: 8, marginRight: 8 }}>
-                            Width: {(originalSize / ppi).toFixed(2)}in
+                            Width: {(originalSize / ppi).toFixed(2)}in. Content
+                            Size:
+                            {boundingRect
+                                ? ` ${(
+                                      ((boundingRect.x2 - boundingRect.x1) /
+                                          ppi) *
+                                      state.view.zoom
+                                  ).toFixed(2)}in x ${(
+                                      ((boundingRect.y2 - boundingRect.y1) /
+                                          ppi) *
+                                      state.view.zoom
+                                  ).toFixed(2)}in`
+                                : null}
                         </span>
                     )}
                 />
