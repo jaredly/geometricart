@@ -35,7 +35,7 @@ export const RenderMirror = ({
     return (
         <g style={{ pointerEvents: 'none' }}>
             {lines.map(({ p1, p2 }, i) => (
-                <>
+                <React.Fragment key={i}>
                     <line
                         key={i}
                         x1={p1.x * zoom}
@@ -54,7 +54,7 @@ export const RenderMirror = ({
                         stroke={'#fa0'}
                         strokeWidth={'4'}
                     />
-                </>
+                </React.Fragment>
             ))}
             <line
                 x1={mirror.origin.x * zoom}

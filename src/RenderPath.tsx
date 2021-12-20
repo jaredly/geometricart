@@ -168,7 +168,7 @@ export const RenderPath = React.memo(
                 }
 
                 return (
-                    <>
+                    <React.Fragment key={`info-${i}-${k}`}>
                         <path
                             data-id={path.id}
                             d={raw}
@@ -186,7 +186,7 @@ export const RenderPath = React.memo(
                                   />
                               ))
                             : null}
-                    </>
+                    </React.Fragment>
                 );
             });
         });
