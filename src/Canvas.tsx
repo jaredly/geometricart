@@ -554,6 +554,38 @@ export const Canvas = ({
                 dispatch={dispatch}
                 transforms={mirrorTransforms}
             />
+            {Object.keys(state.overlays).length === 1 ? (
+                <div
+                    css={{
+                        position: 'absolute',
+                        top: 8,
+                        left: 60,
+                    }}
+                >
+                    <button
+                        onClick={() => {
+                            if (state.selection?.type === 'Overlay') {
+                                dispatch({
+                                    type: 'selection:set',
+                                    selection: null,
+                                });
+                            } else {
+                                dispatch({
+                                    type: 'selection:set',
+                                    selection: {
+                                        type: 'Overlay',
+                                        ids: [Object.keys(state.overlays)[0]],
+                                    },
+                                });
+                            }
+                        }}
+                    >
+                        {state.selection?.type === 'Overlay'
+                            ? 'Deselect overlay'
+                            : 'Select overlay'}
+                    </button>
+                </div>
+            ) : null}
             {touchscreenControls(
                 state,
                 dispatch,

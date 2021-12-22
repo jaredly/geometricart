@@ -155,7 +155,7 @@ export function Overlay({
                 ref={(node) => (ref.current = node)}
                 width={iwidth}
                 height={iheight}
-                opacity={overlay.opacity}
+                opacity={isSelected ? 0.8 : overlay.opacity}
                 x={-iwidth / 2 + x}
                 y={-iheight / 2 + y}
                 style={isSelected ? {} : { pointerEvents: 'none' }}
