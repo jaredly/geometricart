@@ -68,8 +68,6 @@ export const Export = ({
 
     const [png, setPng] = React.useState(null as null | string);
 
-    const [render, setRender] = React.useState(false);
-
     const [size, setSize] = React.useState(originalSize);
     const [embed, setEmbed] = React.useState(true);
     const [history, setHistory] = React.useState(false);
@@ -139,7 +137,7 @@ export const Export = ({
                     />
                 ) : null}
             </div>
-            <div css={{ marginTop: 16 }}>
+            <div css={{ marginTop: 16, border: '1px solid #aaa', padding: 8 }}>
                 Width (px):{' '}
                 <input
                     type="number"
@@ -147,7 +145,7 @@ export const Export = ({
                     onChange={(evt) => setSize(+evt.target.value)}
                 />
                 <button
-                    css={{ marginRight: 16 }}
+                    css={{ marginTop: 16, display: 'block' }}
                     onClick={async () => {
                         const url = await exportPNG(
                             size,
@@ -161,8 +159,54 @@ export const Export = ({
                 >
                     Export PNG
                 </button>
+                {png ? (
+                    <div
+                        css={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                        }}
+                    >
+                        <a
+                            href={png}
+                            download={name.replace('.svg', '.png')}
+                            css={{
+                                display: 'block',
+                                color: 'white',
+                                background: '#666',
+                                borderRadius: 6,
+                                marginBottom: 16,
+                                padding: '4px 8px',
+                                textDecoration: 'none',
+                                cursor: 'pointer',
+                            }}
+                        >
+                            Download {name.replace('.svg', '.png')}
+                        </a>
+                        <div
+                            style={{
+                                backgroundImage: `url("${transparent}")`,
+                                backgroundRepeat: 'repeat',
+                                backgroundSize: 40,
+                            }}
+                        >
+                            <img css={{ maxHeight: 400 }} src={png} />
+                        </div>
+                    </div>
+                ) : null}
             </div>
-            <div css={{ marginTop: 16 }}>
+            <div css={{ marginTop: 16, border: '1px solid #aaa', padding: 8 }}>
+                <Toggle
+                    label="Laser Cut Mode"
+                    value={!!state.view.laserCutMode}
+                    onChange={(laserCutMode) =>
+                        dispatch({
+                            type: 'view:update',
+                            view: { ...state.view, laserCutMode },
+                        })
+                    }
+                />
                 pixels per inch:{' '}
                 <BlurInt
                     value={state.meta.ppi}
@@ -175,9 +219,10 @@ export const Export = ({
                             : null
                     }
                     label={(ppi) => (
-                        <span css={{ marginLeft: 8, marginRight: 8 }}>
-                            Width: {(originalSize / ppi).toFixed(2)}in. Content
-                            Size:
+                        <div css={{ marginTop: 8 }}>
+                            Width: {(originalSize / ppi).toFixed(2)}in.
+                            <br />
+                            Content Size:
                             {boundingRect
                                 ? ` ${(
                                       ((boundingRect.x2 - boundingRect.x1) /
@@ -189,16 +234,18 @@ export const Export = ({
                                       state.view.zoom
                                   ).toFixed(2)}in`
                                 : null}
-                        </span>
+                        </div>
                     )}
                 />
+                <br />
                 Crop margin (in/100):
                 <BlurInt
                     value={crop}
                     onChange={(crop) => setCrop(crop ?? null)}
                 />
+                <br />
                 <button
-                    css={{ marginRight: 16 }}
+                    css={{ marginTop: 16, display: 'block' }}
                     onClick={async () => {
                         let svgNode: SVGElement | null = null;
                         const dest = document.createElement('div');
@@ -252,15 +299,15 @@ export const Export = ({
                 {url ? (
                     <button onClick={() => setUrl(null)}>Close</button>
                 ) : null}
-            </div>
-            <div
-                css={{
-                    display: 'flex',
-                    flexDirection: 'row',
-                }}
-            >
                 {url ? (
-                    <div css={{ marginRight: 16 }}>
+                    <div
+                        css={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                        }}
+                    >
                         <a
                             href={url}
                             download={name}
@@ -288,37 +335,14 @@ export const Export = ({
                         </div>
                     </div>
                 ) : null}
-                <div>
-                    {png ? (
-                        <>
-                            <a
-                                href={png}
-                                download={name.replace('.svg', '.png')}
-                                css={{
-                                    display: 'block',
-                                    color: 'white',
-                                    background: '#666',
-                                    borderRadius: 6,
-                                    marginBottom: 16,
-                                    padding: '4px 8px',
-                                    textDecoration: 'none',
-                                    cursor: 'pointer',
-                                }}
-                            >
-                                Download {name.replace('.svg', '.png')}
-                            </a>
-                            <div
-                                style={{
-                                    backgroundImage: `url("${transparent}")`,
-                                    backgroundRepeat: 'repeat',
-                                    backgroundSize: 40,
-                                }}
-                            >
-                                <img css={{ maxHeight: 400 }} src={png} />
-                            </div>
-                        </>
-                    ) : null}
-                </div>
+            </div>
+            <div
+                css={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                }}
+            >
+                <div></div>
                 {/* {render ? <RenderWebGL state={state} /> : null} */}
             </div>
         </div>
