@@ -22,7 +22,7 @@ import { epsilon, Primitive } from './intersect';
 import { reverseSegment } from './pathsAreIdentical';
 import { calcPathD, idSeed, lightenedColor } from './RenderPath';
 import { insetPath, pruneInsetPath } from './insetPath';
-import { Coord, Overlay, Path, Segment, State } from './types';
+import { ArcSegment, Coord, Overlay, Path, Segment, State } from './types';
 
 export const makeImage = (href: string): Promise<HTMLImageElement> => {
     return new Promise((res, rej) => {
@@ -460,6 +460,23 @@ export function tracePath(
     ctx.lineJoin = 'round';
     ctx.lineCap = 'round';
     ctx.moveTo(path.origin.x * zoom, path.origin.y * zoom);
+    if (
+        path.segments.length === 1 &&
+        path.segments[0].type === 'Arc' &&
+        !path.open
+    ) {
+        const seg = path.segments[0] as ArcSegment;
+        const radius = dist(seg.center, seg.to);
+        ctx.arc(
+            seg.center.x * zoom,
+            seg.center.y * zoom,
+            radius * zoom,
+            0,
+            Math.PI * 2,
+            false,
+        );
+        return;
+    }
     path.segments.forEach((seg, i) => {
         if (seg.type === 'Line') {
             ctx.lineTo(seg.to.x * zoom, seg.to.y * zoom);
