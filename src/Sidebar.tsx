@@ -584,9 +584,10 @@ export function Sidebar({
     setDragSelect: (fn: (select: boolean) => boolean) => void;
     dragSelect: boolean;
 }) {
-    const [dragging, callbacks] = useDropStateTarget((state) =>
-        dispatch({ type: 'reset', state }),
-    );
+    // const [dragging, callbacks] = useDropStateTarget(
+    //     (state) => dispatch({ type: 'reset', state }),
+    //     () => {},
+    // );
 
     return (
         <div
@@ -596,10 +597,10 @@ export function Sidebar({
                 display: 'flex',
                 flexDirection: 'column',
                 flex: 1,
-                background: dragging ? 'rgba(255,255,255,0.1)' : '',
+                // background: dragging ? 'rgba(255,255,255,0.1)' : '',
                 transition: '.3s ease background',
             }}
-            {...callbacks}
+            // {...callbacks}
         >
             <div>
                 <ReallyButton

@@ -42,8 +42,26 @@ export type PendingMirror = {
 export const App = ({ initialState }: { initialState: State }) => {
     const [state, dispatch] = React.useReducer(reducer, initialState);
 
-    const [dragging, callbacks] = useDropStateTarget((state) =>
-        dispatch({ type: 'reset', state }),
+    const [dragging, callbacks] = useDropStateTarget(
+        (state) => dispatch({ type: 'reset', state }),
+        (name, src, width, height) => {
+            const id = Math.random().toString(36).slice(2);
+            dispatch({
+                type: 'attachment:add',
+                attachment: {
+                    id,
+                    contents: src,
+                    height,
+                    width,
+                    name,
+                },
+                id,
+            });
+            dispatch({
+                type: 'overlay:add',
+                attachment: id,
+            });
+        },
     );
 
     // @ts-ignore

@@ -31,27 +31,45 @@ export const useDropTarget = (onDrop: (file: File) => void) => {
     return [dragging, callbacks];
 };
 
-export const useDropStateTarget = (onDrop: (state: State) => void) => {
+export const useDropStateTarget = (
+    onDrop: (state: State) => void,
+    onDropAttachment: (name: string, src: string, w: number, h: number) => void,
+) => {
     return useDropTarget((file) => {
-        getStateFromFile(file, (state) => {
-            if (state) {
-                onDrop(migrateState(state));
-            }
-        });
+        getStateFromFile(
+            file,
+            (state) => {
+                if (state) {
+                    onDrop(migrateState(state));
+                }
+            },
+            onDropAttachment,
+            (err) => {
+                console.log(err);
+                alert(err);
+            },
+        );
     });
 };
 
 export const getStateFromFile = (
     file: File,
     done: (s: State | null) => void,
+    attachment: (name: string, src: string, w: number, h: number) => void,
+    err: (message: string) => void,
 ) => {
-    if (file.type === 'image/png') {
+    if (file.type === 'image/jpeg') {
+        return parseAttachment(attachment, file, err);
+    } else if (file.type === 'image/png') {
         const reader = new FileReader();
         reader.onload = () => {
             const buffer = new Uint8Array(reader.result as ArrayBuffer);
             const meta = readMetadata(buffer);
             if (meta.tEXt['GeometricArt']) {
                 done(JSON.parse(meta.tEXt['GeometricArt']));
+            } else {
+                console.log('nope');
+                parseAttachment(attachment, file, err);
             }
         };
         reader.readAsArrayBuffer(file);
@@ -73,3 +91,30 @@ export const getStateFromFile = (
         reader.readAsText(file);
     }
 };
+function parseAttachment(
+    attachment: (name: string, src: string, w: number, h: number) => void,
+    file: File,
+    err: (message: string) => void,
+) {
+    const stringReader = new FileReader();
+    stringReader.onload = () => {
+        var base64data = stringReader.result as string;
+        const image = new Image();
+        image.src = base64data;
+        image.onload = () => {
+            attachment(
+                file.name,
+                base64data,
+                image.naturalWidth,
+                image.naturalHeight,
+            );
+        };
+        image.onerror = () => {
+            err('Unable to load base64 image');
+        };
+    };
+    stringReader.onerror = () => {
+        err('error');
+    };
+    stringReader.readAsDataURL(file);
+}
