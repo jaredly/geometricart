@@ -32,14 +32,19 @@ export function Overlay({
     const overlay = state.overlays[id];
     const attachment = state.attachments[overlay.source];
 
-    const scale = resize
-        ? ((resize.pos.x - overlay.center.x) /
-              (resize.origin.x - overlay.center.x)) *
-          overlay.scale.x
-        : overlay.scale.x;
+    // const scale = resize
+    //     ? ((resize.pos.x - overlay.center.x) /
+    //           (resize.origin.x - overlay.center.x)) *
+    //       overlay.scale.x
+    //     : overlay.scale.x;
+
+    const reScale = resize ? Math.abs(resize.pos.x / resize.origin.x) : 1;
+
+    const scale = reScale * overlay.scale.x;
 
     const iwidth = ((attachment.width * view.zoom) / 100) * scale;
     const iheight = ((attachment.height * view.zoom) / 100) * scale;
+
     // const iwidth = resize
     //     ? Math.abs(
     // 		(resize.pos.x - overlay.center.x) /
@@ -52,10 +57,10 @@ export function Overlay({
     //     : ((attachment.height * view.zoom) / 100) * overlay.scale.y;
 
     const x =
-        overlay.center.x * view.zoom +
+        reScale * overlay.center.x * view.zoom +
         (drag ? (drag.current.x - drag.orig.x) * view.zoom : 0);
     const y =
-        overlay.center.y * view.zoom +
+        reScale * overlay.center.y * view.zoom +
         (drag ? (drag.current.y - drag.orig.y) * view.zoom : 0);
 
     const ref = React.useRef(null as null | SVGImageElement);
@@ -79,10 +84,12 @@ export function Overlay({
                 }
                 const overlay = currentOverlay.current;
 
-                const scale =
-                    ((resize.pos.x - overlay.center.x) /
-                        (resize.origin.x - overlay.center.x)) *
-                    overlay.scale.x;
+                const reScale = Math.abs(resize.pos.x / resize.origin.x);
+                const scale = reScale * overlay.scale.x;
+                // const scale =
+                //     ((resize.pos.x - overlay.center.x) /
+                //         (resize.origin.x - overlay.center.x)) *
+                //     overlay.scale.x;
 
                 // const iwidth = ((attachment.width * view.zoom) / 100) * scale;
                 // const iheight = ((attachment.height * view.zoom) / 100) * scale;
@@ -108,6 +115,10 @@ export function Overlay({
                 onUpdate({
                     ...overlay,
                     scale: { x: scale, y: scale },
+                    center: {
+                        x: overlay.center.x * reScale,
+                        y: overlay.center.y * reScale,
+                    },
                 });
                 return null;
             });

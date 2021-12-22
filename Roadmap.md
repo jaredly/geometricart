@@ -5,6 +5,10 @@ what things do I still have to shell out for?
 - exports
 Is that it?
 
+- make overlays usable
+	- [ ] button to open file picker, so mobile works
+	- [ ] make pinch-zoom work.
+
 
 
 - [x] bake into the export a dpi dealio.
