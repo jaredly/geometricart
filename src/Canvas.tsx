@@ -17,6 +17,7 @@ import {
     primitivesForElementsAndPaths,
 } from './Guides';
 import { handleSelection } from './handleSelection';
+import { IconButton, ImagesIcon } from './icons/Icon';
 import { MirrorMenu } from './MirrorMenu';
 import { mergeFills, mergeStyleLines } from './MultiStyleForm';
 import { Overlay } from './Overlay';
@@ -32,7 +33,7 @@ import { useScrollWheel } from './useScrollWheel';
 
 export type Props = {
     state: State;
-    dragSelect: boolean;
+    // dragSelect: boolean;
     // cancelDragSelect: () => void;
     isTouchScreen: boolean;
     width: number;
@@ -567,10 +568,10 @@ export const Canvas = ({
                     css={{
                         position: 'absolute',
                         top: 8,
-                        left: 60,
+                        left: 80,
                     }}
                 >
-                    <button
+                    <IconButton
                         onClick={() => {
                             if (state.selection?.type === 'Overlay') {
                                 dispatch({
@@ -587,11 +588,20 @@ export const Canvas = ({
                                 });
                             }
                         }}
+                        css={{
+                            width: 66,
+                            height: 66,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                        }}
+                        selected={state.selection?.type === 'Overlay'}
                     >
-                        {state.selection?.type === 'Overlay'
+                        <ImagesIcon />
+                        {/* {state.selection?.type === 'Overlay'
                             ? 'Deselect overlay'
-                            : 'Select overlay'}
-                    </button>
+                            : 'Select overlay'} */}
+                    </IconButton>
                 </div>
             ) : null}
             {touchscreenControls(

@@ -9,6 +9,9 @@ Is that it?
 	- [ ] button to open file picker, so mobile works
 	- [ ] make pinch-zoom work.
 
+- [ ] reset zoom needs to go somewhere else?
+- [ ] clips! Need to show on screen, next to mirrors and overlays
+- [ ] make the overlay display at all good please.
 
 
 - [x] bake into the export a dpi dealio.

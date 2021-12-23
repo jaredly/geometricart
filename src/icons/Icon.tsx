@@ -9,12 +9,14 @@ export const IconButton = ({
     selected,
     disabled,
     color,
+    className,
 }: {
     onClick: (evt: React.MouseEvent) => void;
     children: React.ReactNode;
     selected?: boolean;
     disabled?: boolean;
     color?: string;
+    className?: string;
 }) => {
     return (
         <div
@@ -37,6 +39,7 @@ export const IconButton = ({
                           border: '1px solid #fff',
                       },
             }}
+            className={className}
             onClick={onClick}
         >
             {children}
@@ -148,6 +151,44 @@ export function SelectDragIcon(props: React.SVGProps<SVGSVGElement>) {
             {...props}
         >
             <path d="M13 17h4v-4h2v4h4v2h-4v4h-2v-4h-4v-2m-2 0v2H9v-2h2m-4 0v2H5v-2h2m12-8v2h-2V9h2m0-4v2h-2V5h2m-4 0v2h-2V5h2m-4 0v2H9V5h2M7 5v2H5V5h2m0 8v2H5v-2h2m0-4v2H5V9h2z" />
+        </svg>
+    );
+}
+
+export function ImagesIcon(props: React.SVGProps<SVGSVGElement>) {
+    return (
+        <svg
+            fill="currentColor"
+            viewBox="0 0 16 16"
+            height="1em"
+            width="1em"
+            {...props}
+        >
+            <path
+                fillRule="evenodd"
+                d="M12.002 4h-10a1 1 0 00-1 1v8l2.646-2.354a.5.5 0 01.63-.062l2.66 1.773 3.71-3.71a.5.5 0 01.577-.094l1.777 1.947V5a1 1 0 00-1-1zm-10-1a2 2 0 00-2 2v8a2 2 0 002 2h10a2 2 0 002-2V5a2 2 0 00-2-2h-10zm4 4.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z"
+            />
+            <path
+                fillRule="evenodd"
+                d="M4 2h10a1 1 0 011 1v8a1 1 0 01-1 1v1a2 2 0 002-2V3a2 2 0 00-2-2H4a2 2 0 00-2 2h1a1 1 0 011-1z"
+            />
+        </svg>
+    );
+}
+
+export function MirrorIcon(props: React.SVGProps<SVGSVGElement>) {
+    return (
+        <svg
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            height="1em"
+            width="1em"
+            {...props}
+        >
+            <path
+                fillRule="evenodd"
+                d="M12 10.75a.75.75 0 01.75.75v1a.75.75 0 01-1.5 0v-1a.75.75 0 01.75-.75zm0 4a.75.75 0 01.75.75v1a.75.75 0 01-1.5 0v-1a.75.75 0 01.75-.75zm0 4a.75.75 0 01.75.75v1a.75.75 0 01-1.5 0v-1a.75.75 0 01.75-.75zm0-12a.75.75 0 01.75.75v1a.75.75 0 01-1.5 0v-1a.75.75 0 01.75-.75zm0-4a.75.75 0 01.75.75v1a.75.75 0 01-1.5 0v-1a.75.75 0 01.75-.75zm9.553 3.314A.75.75 0 0122 6.75v10.5a.75.75 0 01-1.256.554l-5.75-5.25a.75.75 0 010-1.108l5.75-5.25a.75.75 0 01.809-.132zM16.613 12l3.887 3.55v-7.1L16.612 12zM2.447 17.936A.75.75 0 012 17.25V6.75a.75.75 0 011.256-.554l5.75 5.25a.75.75 0 010 1.108l-5.75 5.25a.75.75 0 01-.809.132zM7.387 12L3.5 8.45v7.1L7.388 12z"
+            />
         </svg>
     );
 }

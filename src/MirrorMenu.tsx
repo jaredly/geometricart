@@ -4,6 +4,7 @@ import { jsx } from '@emotion/react';
 import React from 'react';
 import { Action, Id, State } from './types';
 import { ShowMirror } from './MirrorForm';
+import { MirrorIcon } from './icons/Icon';
 
 export const MirrorMenu = ({
     state,
@@ -65,7 +66,12 @@ export const MirrorMenu = ({
                         size={50}
                     />
                 ) : (
-                    'No active mirror'
+                    <MirrorIcon
+                        css={{
+                            fontSize: 50,
+                        }}
+                    />
+                    // 'No active mirror'
                 )}
                 <div
                     css={{
