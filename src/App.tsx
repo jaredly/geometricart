@@ -80,7 +80,7 @@ export const App = ({ initialState }: { initialState: State }) => {
         null as null | PendingMirror,
     );
 
-    const [dragSelect, setDragSelect] = React.useState(false);
+    // const [dragSelect, setDragSelect] = React.useState(false);
 
     React.useEffect(() => {
         const fn = handleKeyboard(
@@ -88,7 +88,7 @@ export const App = ({ initialState }: { initialState: State }) => {
             dispatch,
             setHover,
             setPendingMirror,
-            setDragSelect,
+            // setDragSelect,
         );
         document.addEventListener('keydown', fn);
         return () => document.removeEventListener('keydown', fn);
@@ -156,8 +156,8 @@ export const App = ({ initialState }: { initialState: State }) => {
                     state={state}
                     hover={hover}
                     setHover={setHover}
-                    dragSelect={dragSelect}
-                    cancelDragSelect={() => setDragSelect(false)}
+                    // dragSelect={dragSelect}
+                    // cancelDragSelect={() => setDragSelect(false)}
                     isTouchScreen={isTouchScreen}
                     innerRef={(node) => (ref.current = node)}
                     dispatch={dispatch}
@@ -182,8 +182,8 @@ export const App = ({ initialState }: { initialState: State }) => {
                             hover={hover}
                             setHover={setHover}
                             dispatch={dispatch}
-                            setDragSelect={setDragSelect}
-                            dragSelect={dragSelect}
+                            // setDragSelect={setDragSelect}
+                            // dragSelect={dragSelect}
                             state={state}
                             canvasRef={ref}
                             setPendingMirror={setPendingMirror}
@@ -258,7 +258,7 @@ export const handleKeyboard = (
     dispatch: (action: Action) => void,
     setHover: (hover: Hover | null) => void,
     setPendingMirror: (pending: PendingMirror | null) => void,
-    setDragSelect: (ds: boolean) => void,
+    // setDragSelect: (ds: boolean) => void,
 ) => {
     let tid: null | NodeJS.Timeout = null;
     const hoverMirror = (id: Id, quick: boolean) => {
@@ -405,7 +405,7 @@ export const handleKeyboard = (
             return dispatch({ type: 'redo' });
         }
         if (evt.key === 'd') {
-            setDragSelect(true);
+            // setDragSelect(true);
         }
         if (toType[evt.key]) {
             dispatch({

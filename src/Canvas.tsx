@@ -33,7 +33,7 @@ import { useScrollWheel } from './useScrollWheel';
 export type Props = {
     state: State;
     dragSelect: boolean;
-    cancelDragSelect: () => void;
+    // cancelDragSelect: () => void;
     isTouchScreen: boolean;
     width: number;
     height: number;
@@ -104,9 +104,9 @@ export const Canvas = ({
     setHover,
     pendingMirror,
     setPendingMirror,
-    dragSelect,
+    // dragSelect,
     isTouchScreen,
-    cancelDragSelect,
+    // cancelDragSelect,
     ppi,
 }: Props) => {
     const mirrorTransforms = React.useMemo(
@@ -146,7 +146,8 @@ export const Canvas = ({
     const currentDrag = useCurrent({ pos, drag: dragSelectPos });
 
     const finishDrag = React.useCallback((shiftKey: boolean) => {
-        cancelDragSelect();
+        setDragSelecting(false);
+        // cancelDragSelect();
         const { pos, drag } = currentDrag.current;
         if (!drag) {
             return;
@@ -158,7 +159,10 @@ export const Canvas = ({
             currentState.current.pathGroups,
             rect,
         );
-        if (shiftKey && currentState.current.selection?.type === 'Path') {
+        if (
+            (shiftKey || multiRef.current) &&
+            currentState.current.selection?.type === 'Path'
+        ) {
             selected.push(
                 ...currentState.current.selection.ids.filter(
                     (id) => !selected.includes(id),
@@ -190,7 +194,11 @@ export const Canvas = ({
         setDragPos,
     );
 
-    const mouseHandlers = dragSelect ? dragSelectHandlers : mouseDragHandlers;
+    const [isDragSelecting, setDragSelecting] = React.useState(false);
+
+    const mouseHandlers = isDragSelecting
+        ? dragSelectHandlers
+        : mouseDragHandlers;
 
     const [multiSelect, setMultiSelect] = React.useState(false);
     const multiRef = useCurrent(multiSelect);
@@ -594,6 +602,8 @@ export const Canvas = ({
                 pendingPath,
                 allIntersections,
                 guidePrimitives,
+                setDragSelecting,
+                isDragSelecting,
                 pendingMirror ? () => setPendingMirror(null) : undefined,
             )}
         </div>

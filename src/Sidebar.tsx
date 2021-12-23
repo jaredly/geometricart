@@ -452,78 +452,6 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactElement } = {
             </div>
         );
     },
-    Help: () => (
-        <div>
-            <div>
-                <h3>Recent Changes</h3>
-                <ul>
-                    <li>"z" and "shift+z" are now the zoom keys</li>
-                    <li>
-                        clicking a guide now selects it; shift+click to
-                        enable/disable
-                    </li>
-                </ul>
-            </div>
-            <p>
-                A sure sign this is a very usable piece of software is that I
-                feel the need to prominantly display this help section.
-            </p>
-            <p>Basic strategy:</p>
-            <ol>
-                <li>
-                    Make some guides (lines, circles). Click a guide button,
-                    then click some points to define the guide.
-                </li>
-                <li>
-                    Make some paths! With no guide active, click a starting
-                    point for your path. Then mouse over green / red path
-                    segments to define your path. Make it around to the starting
-                    point to complete the path.
-                </li>
-                <li>Color the paths! Click a path group, click a color</li>
-                <li>
-                    Export! Both the SVG export and the PNG export can be later
-                    re-imported (drag &amp; drop onto the sidebar) for further
-                    editing.
-                </li>
-            </ol>
-            <p>Misc:</p>
-            <ul>
-                <li>
-                    Shift+Click on a guide to toggle it. When disabled, it will
-                    not produce intersections. This can make defining paths
-                    easier (fewer segments to mess with).
-                </li>
-                <li>
-                    I recorded a quick &amp; dirty video walkthrough,{' '}
-                    <a href="https://youtu.be/OfHB5STp0pM">enjoy.</a>
-                </li>
-            </ul>
-            <p>Keyboard shortcuts:</p>
-            <table>
-                <tbody>
-                    {Object.entries({
-                        g: 'Toggle guides on/off',
-                        l: 'New [L]ine guide',
-                        c: 'New [C]ircle guide',
-                        p: 'New [P]erpendicular bisector guide',
-                        i: 'New [I]ncircle guide',
-                        m: 'New Circu[m]circle guide',
-                        a: 'New [A]ngle bisector guide',
-                        Escape: 'Cancel whatever is happening',
-                        z: 'Zoom (shift to zoom more) (handy for drawing paths with tight edges)',
-                        'cmd+z': 'Undo (infinite)',
-                        'cmd+shift+z': 'Redo',
-                    }).map(([k, v]) => (
-                        <tr key={k}>
-                            <td>{k}</td>
-                            <td>{v}</td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-        </div>
-    ),
 };
 
 export const ReallyButton = ({
@@ -570,9 +498,9 @@ export function Sidebar({
     height,
     setHover,
     setPendingMirror,
-    setDragSelect,
-    dragSelect,
-}: {
+}: // setDragSelect,
+// dragSelect,
+{
     dispatch: (action: Action) => void;
     hover: Hover | null;
     setHover: (hover: Hover | null) => void;
@@ -581,8 +509,8 @@ export function Sidebar({
     state: State;
     canvasRef: React.MutableRefObject<SVGSVGElement | null>;
     setPendingMirror: (mirror: PendingMirror | null) => void;
-    setDragSelect: (fn: (select: boolean) => boolean) => void;
-    dragSelect: boolean;
+    // setDragSelect: (fn: (select: boolean) => boolean) => void;
+    // dragSelect: boolean;
 }) {
     // const [dragging, callbacks] = useDropStateTarget(
     //     (state) => dispatch({ type: 'reset', state }),
@@ -610,22 +538,6 @@ export function Sidebar({
                         dispatch({ type: 'reset', state: initialState });
                     }}
                 />
-                {/* <button
-                    css={{ margin: 8 }}
-                    onClick={() => {
-                        dispatch({ type: 'undo' });
-                    }}
-                >
-                    Undo
-                </button>
-                <button
-                    css={{ margin: 8 }}
-                    onClick={() => {
-                        dispatch({ type: 'redo' });
-                    }}
-                >
-                    Redo
-                </button> */}
                 <ViewForm
                     view={state.view}
                     palette={state.palettes[state.activePalette]}
@@ -637,40 +549,7 @@ export function Sidebar({
                     }}
                 />
             </div>
-            <div>
-                {guideTypes.map((kind) => (
-                    <button
-                        onClick={() => {
-                            dispatch({
-                                type: 'pending:type',
-                                kind,
-                            });
-                        }}
-                        key={kind}
-                        css={{
-                            margin: 8,
-                            padding: 8,
-                            fontSize: '120%',
-                        }}
-                    >
-                        {kind}
-                        {toTypeRev[kind] ? ` (${toTypeRev[kind]})` : ''}
-                    </button>
-                ))}
-                {state.pending ? (
-                    <button
-                        onClick={() =>
-                            dispatch({ type: 'pending:type', kind: null })
-                        }
-                        css={{
-                            margin: 8,
-                            padding: 8,
-                            fontSize: '120%',
-                        }}
-                    >
-                        Cancel pending
-                    </button>
-                ) : null}
+            {/* <div>
                 <button
                     onClick={() => setDragSelect((current) => !current)}
                     css={{
@@ -681,7 +560,7 @@ export function Sidebar({
                 >
                     {dragSelect ? 'Cancel drag select' : '(D)rag select'}
                 </button>
-            </div>
+            </div> */}
             <div
                 style={{
                     height: 4,

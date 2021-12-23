@@ -23,6 +23,7 @@ import {
     CancelIcon,
     DeleteForeverIcon,
     IconButton,
+    SelectDragIcon,
 } from './icons/Icon';
 
 export function touchscreenControls(
@@ -36,6 +37,8 @@ export function touchscreenControls(
     ],
     allIntersections: Intersect[],
     guidePrimitives: { prim: Primitive; guides: string[] }[],
+    setDragSelect: (fn: (select: boolean) => boolean) => void,
+    dragSelect: boolean,
     clearPendingMirror?: () => void,
 ): React.ReactNode {
     return (
@@ -102,6 +105,14 @@ export function touchscreenControls(
                         }}
                     >
                         <CancelIcon />
+                    </IconButton>
+                    <IconButton
+                        selected={dragSelect}
+                        onClick={() => {
+                            setDragSelect((current) => !current);
+                        }}
+                    >
+                        <SelectDragIcon />
                     </IconButton>
                     {state.selection.type === 'PathGroup' ||
                     state.selection.type === 'Path' ? (
@@ -189,6 +200,14 @@ export function touchscreenControls(
                     >
                         <EyeIcon />
                     </IconButton>
+                    <IconButton
+                        selected={dragSelect}
+                        onClick={() => {
+                            setDragSelect((current) => !current);
+                        }}
+                    >
+                        <SelectDragIcon />
+                    </IconButton>
 
                     <select
                         css={{
@@ -225,6 +244,14 @@ export function touchscreenControls(
                         }}
                     >
                         <EyeInvisibleIcon />
+                    </IconButton>
+                    <IconButton
+                        selected={dragSelect}
+                        onClick={() => {
+                            setDragSelect((current) => !current);
+                        }}
+                    >
+                        <SelectDragIcon />
                     </IconButton>
                 </div>
             )}

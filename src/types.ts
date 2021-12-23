@@ -714,8 +714,7 @@ export type Tab =
     | 'Palette'
     | 'Export'
     | 'Overlays'
-    | 'Clips'
-    | 'Help';
+    | 'Clips';
 
 export type Attachment = {
     id: Id;
