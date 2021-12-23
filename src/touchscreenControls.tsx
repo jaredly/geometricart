@@ -17,6 +17,13 @@ import {
 import { DrawPathState } from './DrawPath';
 import { Primitive } from './intersect';
 import { PendingPathControls } from './PendingPathControls';
+import { EyeIcon, EyeInvisibleIcon } from './icons/Eyes';
+import {
+    BxSelectMultipleIcon,
+    CancelIcon,
+    DeleteForeverIcon,
+    IconButton,
+} from './icons/Icon';
 
 export function touchscreenControls(
     state: State,
@@ -86,8 +93,7 @@ export function touchscreenControls(
                 : null}
             {state.selection ? (
                 <div>
-                    <button
-                        css={{ fontSize: '150%' }}
+                    <IconButton
                         onClick={() => {
                             dispatch({
                                 type: 'selection:set',
@@ -95,24 +101,24 @@ export function touchscreenControls(
                             });
                         }}
                     >
-                        Clear selection
-                    </button>
+                        <CancelIcon />
+                    </IconButton>
                     {state.selection.type === 'PathGroup' ||
                     state.selection.type === 'Path' ? (
-                        <button
-                            css={{ fontSize: '150%' }}
+                        <IconButton
                             onClick={() => {
                                 setMultiSelect((s) => !s);
                             }}
-                            style={{
-                                fontWeight: multiSelect ? 'bold' : 'normal',
-                            }}
+                            selected={multiSelect}
+                            // style={{
+                            //     fontWeight: multiSelect ? 'bold' : 'normal',
+                            // }}
                         >
-                            Multi-select
-                        </button>
+                            <BxSelectMultipleIcon />
+                        </IconButton>
                     ) : null}
-                    <button
-                        css={{ fontSize: '150%' }}
+                    <IconButton
+                        color="rgb(255,200,200)"
                         onClick={() => {
                             if (!state.selection) {
                                 return;
@@ -137,8 +143,8 @@ export function touchscreenControls(
                             }
                         }}
                     >
-                        Delete {state.selection.type}
-                    </button>
+                        <DeleteForeverIcon />
+                    </IconButton>
                     {state.activeMirror &&
                     (state.selection.type === 'Path' ||
                         state.selection.type === 'PathGroup') ? (
@@ -168,27 +174,59 @@ export function touchscreenControls(
                 >
                     Cancel guide
                 </button>
+            ) : state.view.guides ? (
+                <div>
+                    <IconButton
+                        onClick={() => {
+                            dispatch({
+                                type: 'view:update',
+                                view: {
+                                    ...state.view,
+                                    guides: !state.view.guides,
+                                },
+                            });
+                        }}
+                    >
+                        <EyeIcon />
+                    </IconButton>
+
+                    <select
+                        css={{
+                            width: 140,
+                            fontSize: 30,
+                        }}
+                        onChange={(evt) => {
+                            dispatch({
+                                type: 'pending:type',
+                                kind: evt.target.value as PendingType['kind'],
+                            });
+                        }}
+                        value={0}
+                    >
+                        <option value={0} disabled>
+                            + Guide
+                        </option>
+                        {guideTypes.map((kind) => (
+                            <option value={kind}>{kind}</option>
+                        ))}
+                    </select>
+                </div>
             ) : (
-                <select
-                    css={{
-                        width: 140,
-                        fontSize: 30,
-                    }}
-                    onChange={(evt) => {
-                        dispatch({
-                            type: 'pending:type',
-                            kind: evt.target.value as PendingType['kind'],
-                        });
-                    }}
-                    value={0}
-                >
-                    <option value={0} disabled>
-                        + Guide
-                    </option>
-                    {guideTypes.map((kind) => (
-                        <option value={kind}>{kind}</option>
-                    ))}
-                </select>
+                <div>
+                    <IconButton
+                        onClick={() => {
+                            dispatch({
+                                type: 'view:update',
+                                view: {
+                                    ...state.view,
+                                    guides: !state.view.guides,
+                                },
+                            });
+                        }}
+                    >
+                        <EyeInvisibleIcon />
+                    </IconButton>
+                </div>
             )}
             {clearPendingMirror ? (
                 <button

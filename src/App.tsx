@@ -8,6 +8,7 @@ import { Hover, Sidebar } from './Sidebar';
 import { Action, Coord, GroupRegroup, GuideGeom, Id, State } from './types';
 import { initialState } from './initialState';
 import { useDropStateTarget, useDropTarget } from './useDropTarget';
+import { CogIcon, IconButton, RedoIcon, UndoIcon } from './icons/Icon';
 
 export const key = `geometric-art`;
 
@@ -199,53 +200,53 @@ export const App = ({ initialState }: { initialState: State }) => {
                         right: 0,
                     }}
                 >
-                    <button
+                    <IconButton
                         onClick={() => dispatch({ type: 'undo' })}
-                        css={{
-                            padding: '0 4px',
-                            fontSize: 40,
-                            border: 'none',
-                            cursor: 'pointer',
-                            backgroundColor: 'transparent',
-                        }}
-                        style={{
-                            opacity: sidebarOverlay ? 1 : 0.4,
-                        }}
+                        // css={{
+                        //     padding: '0 4px',
+                        //     fontSize: 40,
+                        //     border: 'none',
+                        //     cursor: 'pointer',
+                        //     backgroundColor: 'transparent',
+                        // }}
+                        // style={{
+                        //     opacity: sidebarOverlay ? 1 : 0.4,
+                        // }}
                     >
-                        ↪️
-                    </button>
-                    <button
+                        <UndoIcon />
+                    </IconButton>
+                    <IconButton
                         onClick={() => dispatch({ type: 'redo' })}
                         disabled={state.history.undo === 0}
-                        css={{
-                            padding: '0 4px',
-                            fontSize: 40,
-                            backgroundColor: 'transparent',
-                            border: 'none',
-                            cursor: 'pointer',
-                        }}
-                        style={{
-                            opacity: sidebarOverlay ? 1 : 0.4,
-                        }}
+                        // css={{
+                        //     padding: '0 4px',
+                        //     fontSize: 40,
+                        //     backgroundColor: 'transparent',
+                        //     border: 'none',
+                        //     cursor: 'pointer',
+                        // }}
+                        // style={{
+                        //     opacity: sidebarOverlay ? 1 : 0.4,
+                        // }}
                     >
-                        ↩️
-                    </button>
-                    <button
+                        <RedoIcon />
+                    </IconButton>
+                    <IconButton
                         onClick={() => setSidebarOverlay((m) => !m)}
-                        css={{
-                            padding: '0 16px',
-                            fontSize: 40,
-                            border: 'none',
-                            cursor: 'pointer',
-                            color: 'white',
-                            backgroundColor: 'rgba(0,0,0,0.4)',
-                        }}
-                        style={{
-                            opacity: sidebarOverlay ? 1 : 0.4,
-                        }}
+                        // css={{
+                        //     padding: '0 16px',
+                        //     fontSize: 40,
+                        //     border: 'none',
+                        //     cursor: 'pointer',
+                        //     color: 'white',
+                        //     backgroundColor: 'rgba(0,0,0,0.4)',
+                        // }}
+                        // style={{
+                        //     opacity: sidebarOverlay ? 1 : 0.4,
+                        // }}
                     >
-                        ⚙
-                    </button>
+                        <CogIcon />
+                    </IconButton>
                 </div>
             </div>
         </div>
