@@ -264,8 +264,6 @@ export const Export = ({
                         ReactDOM.render(
                             <Canvas
                                 state={state}
-                                dragSelect={false}
-                                cancelDragSelect={() => {}}
                                 isTouchScreen={false}
                                 width={w}
                                 height={h}

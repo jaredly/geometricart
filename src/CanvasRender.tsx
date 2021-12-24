@@ -459,7 +459,6 @@ export function tracePath(
 ) {
     ctx.lineJoin = 'round';
     ctx.lineCap = 'round';
-    ctx.moveTo(path.origin.x * zoom, path.origin.y * zoom);
     if (
         path.segments.length === 1 &&
         path.segments[0].type === 'Arc' &&
@@ -477,6 +476,7 @@ export function tracePath(
         );
         return;
     }
+    ctx.moveTo(path.origin.x * zoom, path.origin.y * zoom);
     path.segments.forEach((seg, i) => {
         if (seg.type === 'Line') {
             ctx.lineTo(seg.to.x * zoom, seg.to.y * zoom);

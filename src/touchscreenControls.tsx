@@ -48,6 +48,7 @@ export function touchscreenControls(
                 bottom: 0,
                 left: 0,
                 right: 0,
+                overflow: 'auto',
             }}
             onClick={(evt) => evt.stopPropagation()}
         >

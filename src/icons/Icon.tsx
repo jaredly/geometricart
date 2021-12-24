@@ -2,6 +2,7 @@
 /* @jsxFrag React.Fragment */
 import { jsx } from '@emotion/react';
 import * as React from 'react';
+import { useTouchClick } from '../RenderIntersections';
 
 export const IconButton = ({
     onClick,
@@ -11,15 +12,17 @@ export const IconButton = ({
     color,
     className,
 }: {
-    onClick: (evt: React.MouseEvent) => void;
+    onClick: () => void;
     children: React.ReactNode;
     selected?: boolean;
     disabled?: boolean;
     color?: string;
     className?: string;
 }) => {
+    const handlers = useTouchClick<void>((_) => onClick());
     return (
         <div
+            {...handlers(undefined)}
             css={{
                 display: 'inline-block',
                 padding: 8,
