@@ -5,6 +5,10 @@ what things do I still have to shell out for?
 - exports
 Is that it?
 
+- [x] hide selection outline when hovering the style picker.
+	- [x] maybe not have the style picker be up by default? Yeah I think that would make more sense.
+	- [ ] hovering colors previews it, of course!
+
 - make overlays usable
 	- [ ] button to open file picker, so mobile works
 	- [ ] make pinch-zoom work.

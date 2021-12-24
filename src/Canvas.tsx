@@ -146,6 +146,11 @@ export const Canvas = ({
 
     const currentDrag = useCurrent({ pos, drag: dragSelectPos });
 
+    const [styleOpen, setStyleOpen] = React.useState(false);
+    React.useEffect(() => {
+        setStyleOpen(false);
+    }, [state.selection]);
+
     const finishDrag = React.useCallback((shiftKey: boolean) => {
         setDragSelecting(false);
         // cancelDragSelect();
@@ -435,7 +440,7 @@ export const Canvas = ({
                         hover={hover}
                     />
                 ) : null}
-                {state.selection
+                {state.selection && !styleOpen
                     ? state.selection.ids.map((id) =>
                           showHover(
                               id,
@@ -614,7 +619,9 @@ export const Canvas = ({
                 guidePrimitives,
                 setDragSelecting,
                 isDragSelecting,
-                pendingMirror ? () => setPendingMirror(null) : undefined,
+                pendingMirror ? () => setPendingMirror(null) : null,
+                styleOpen,
+                setStyleOpen,
             )}
         </div>
     );

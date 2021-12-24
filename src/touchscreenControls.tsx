@@ -23,8 +23,23 @@ import {
     CancelIcon,
     DeleteForeverIcon,
     IconButton,
+    PaintFillIcon,
     SelectDragIcon,
 } from './icons/Icon';
+
+export const idsToStyle = (state: State) => {
+    if (
+        state.selection?.type === 'PathGroup' ||
+        state.selection?.type === 'Path'
+    ) {
+        return state.selection.type === 'PathGroup'
+            ? Object.keys(state.paths).filter((k) =>
+                  state.selection!.ids.includes(state.paths[k].group!),
+              )
+            : state.selection.ids;
+    }
+    return [];
+};
 
 export function touchscreenControls(
     state: State,
@@ -39,8 +54,11 @@ export function touchscreenControls(
     guidePrimitives: { prim: Primitive; guides: string[] }[],
     setDragSelect: (fn: (select: boolean) => boolean) => void,
     dragSelect: boolean,
-    clearPendingMirror?: () => void,
+    clearPendingMirror: null | (() => void),
+    styleOpen: boolean,
+    setStyleOpen: (fn: (select: boolean) => boolean) => void,
 ): React.ReactNode {
+    const styleIds = idsToStyle(state);
     return (
         <div
             css={{
@@ -52,17 +70,8 @@ export function touchscreenControls(
             }}
             onClick={(evt) => evt.stopPropagation()}
         >
-            {state.selection?.type === 'PathGroup' ||
-            state.selection?.type === 'Path'
+            {styleIds.length && styleOpen
                 ? (() => {
-                      const ids =
-                          state.selection.type === 'PathGroup'
-                              ? Object.keys(state.paths).filter((k) =>
-                                    state.selection!.ids.includes(
-                                        state.paths[k].group!,
-                                    ),
-                                )
-                              : state.selection.ids;
                       return (
                           <div
                               css={{
@@ -71,14 +80,16 @@ export function touchscreenControls(
                           >
                               <MultiStyleForm
                                   palette={state.palettes[state.activePalette]}
-                                  styles={ids.map((k) => state.paths[k].style)}
+                                  styles={styleIds.map(
+                                      (k) => state.paths[k].style,
+                                  )}
                                   onChange={(styles) => {
                                       const changed: {
                                           [key: string]: Path;
                                       } = {};
                                       styles.forEach((style, i) => {
                                           if (style != null) {
-                                              const id = ids[i];
+                                              const id = styleIds[i];
                                               changed[id] = {
                                                   ...state.paths[id],
                                                   style,
@@ -115,6 +126,19 @@ export function touchscreenControls(
                     >
                         <SelectDragIcon />
                     </IconButton>
+                    {styleIds.length ? (
+                        <IconButton
+                            onClick={() => {
+                                setStyleOpen((s) => !s);
+                            }}
+                            selected={styleOpen}
+                            // style={{
+                            //     fontWeight: multiSelect ? 'bold' : 'normal',
+                            // }}
+                        >
+                            <PaintFillIcon />
+                        </IconButton>
+                    ) : null}
                     {state.selection.type === 'PathGroup' ||
                     state.selection.type === 'Path' ? (
                         <IconButton
