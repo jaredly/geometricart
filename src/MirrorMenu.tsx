@@ -4,7 +4,7 @@ import { jsx } from '@emotion/react';
 import React from 'react';
 import { Action, Id, State } from './types';
 import { ShowMirror } from './MirrorForm';
-import { MirrorIcon } from './icons/Icon';
+import { DeleteForeverIcon, IconButton, MirrorIcon } from './icons/Icon';
 
 export const MirrorMenu = ({
     state,
@@ -24,8 +24,10 @@ export const MirrorMenu = ({
         <div
             css={{
                 position: 'absolute',
-                top: 8,
-                left: 8,
+                top: 0,
+                left: 0,
+                // top: 8,
+                // left: 8,
                 backgroundColor: 'rgba(0,0,0,0.2)',
             }}
             onMouseDown={(evt) => {
@@ -50,10 +52,12 @@ export const MirrorMenu = ({
                     cursor: 'pointer',
                     position: 'relative',
                     padding: 8,
-                    width: 66,
-                    height: 66,
+                    width: 58,
+                    height: 58,
+                    display: 'block',
                     color: 'white',
-                    border: '1px solid rgba(255,255,255,0.5)',
+                    // border: '1px solid rgba(255,255,255,0.5)',
+                    border: 'none',
                     ':hover': {
                         backgroundColor: 'rgba(255,255,255,0.1)',
                     },
@@ -63,12 +67,12 @@ export const MirrorMenu = ({
                     <ShowMirror
                         mirror={state.mirrors[state.activeMirror]}
                         transforms={transforms[state.activeMirror]}
-                        size={50}
+                        size={40}
                     />
                 ) : (
                     <MirrorIcon
                         css={{
-                            fontSize: 50,
+                            fontSize: 40,
                         }}
                     />
                     // 'No active mirror'
@@ -96,13 +100,18 @@ export const MirrorMenu = ({
                             onMouseOut={() => onHover(null)}
                             css={{
                                 cursor: 'pointer',
-                                padding: 8,
+                                padding: 4,
                                 position: 'relative',
-                                marginTop: 8,
+                                // marginTop: 8,
+                                width: 58,
+                                height: 58,
+                                display: 'flex',
+                                justifyContent: 'center',
+                                alignItems: 'center',
                                 border:
-                                    '1px solid ' +
+                                    '4px solid ' +
                                     (k === state.activeMirror
-                                        ? 'white'
+                                        ? 'rgba(255,255,255,0.8)'
                                         : 'transparent'),
                                 ':hover': {
                                     backgroundColor: 'rgba(255,255,255,0.1)',
@@ -114,20 +123,22 @@ export const MirrorMenu = ({
                                         type: 'mirror:active',
                                         id: null,
                                     });
+                                    setOpen(false);
                                 } else {
                                     dispatch({ type: 'mirror:active', id: k });
+                                    setOpen(false);
                                 }
+                                onHover(null);
                             }}
                         >
                             <ShowMirror
                                 mirror={state.mirrors[k]}
                                 transforms={transforms[k]}
-                                size={50}
+                                size={40}
                             />
                             {k === state.activeMirror ? (
-                                <button
-                                    onClick={(evt) => {
-                                        evt.stopPropagation();
+                                <IconButton
+                                    onClick={() => {
                                         dispatch({
                                             type: 'mirror:delete',
                                             id: k,
@@ -136,25 +147,26 @@ export const MirrorMenu = ({
                                     css={{
                                         position: 'absolute',
                                         left: '100%',
-                                        top: -1,
-                                        width: 68,
-                                        height: 68,
-                                        display: 'block',
-                                        padding: 8,
-                                        marginLeft: 8,
+                                        top: -4,
+                                        marginLeft: 4,
+                                        // width: 58,
+                                        // height: 58,
+                                        // display: 'block',
+                                        // padding: 8,
+                                        // marginLeft: 8,
                                         fontSize: 40,
-                                        backgroundColor: 'transparent',
-                                        color: 'white',
-                                        cursor: 'pointer',
-                                        border: '1px solid white',
-                                        ':hover': {
-                                            backgroundColor:
-                                                'rgba(255,255,255,0.1)',
-                                        },
+                                        // backgroundColor: 'transparent',
+                                        // color: 'white',
+                                        // cursor: 'pointer',
+                                        // border: '1px solid white',
+                                        // ':hover': {
+                                        //     backgroundColor:
+                                        //         'rgba(255,255,255,0.1)',
+                                        // },
                                     }}
                                 >
-                                    -
-                                </button>
+                                    <DeleteForeverIcon />
+                                </IconButton>
                             ) : null}
                         </div>
                     ))}
@@ -165,11 +177,11 @@ export const MirrorMenu = ({
                             onAdd();
                         }}
                         css={{
-                            width: 68,
-                            height: 68,
+                            width: 58,
+                            height: 58,
                             display: 'block',
                             padding: 8,
-                            marginTop: 8,
+                            // marginTop: 8,
                             fontSize: 40,
                             backgroundColor: 'transparent',
                             color: 'white',

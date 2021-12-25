@@ -43,7 +43,10 @@ export const IconButton = ({
                       },
             }}
             className={className}
-            onClick={onClick}
+            onClick={(evt) => {
+                evt.stopPropagation();
+                onClick();
+            }}
         >
             {children}
         </div>

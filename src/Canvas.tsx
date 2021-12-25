@@ -572,8 +572,8 @@ export const Canvas = ({
                 <div
                     css={{
                         position: 'absolute',
-                        top: 8,
-                        left: 80,
+                        top: 0,
+                        left: 58,
                     }}
                 >
                     <IconButton
@@ -594,8 +594,8 @@ export const Canvas = ({
                             }
                         }}
                         css={{
-                            width: 66,
-                            height: 66,
+                            width: 58,
+                            height: 58,
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',

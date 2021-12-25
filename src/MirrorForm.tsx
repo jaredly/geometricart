@@ -46,17 +46,33 @@ export const ShowMirror = ({
     const height = maxY - minY;
 
     // const size = 200;
+    const inSize = size - 4;
 
-    const scale = width < height ? size / height : size / width;
+    const scale = width < height ? inSize / height : inSize / width;
 
-    const xoff = (minX - (width < height ? (height - width) / 2 : 0)) * scale;
-    const yoff = (minY - (height < width ? (width - height) / 2 : 0)) * scale;
+    const xoff =
+        (minX - (width < height ? (height - width) / 2 : 0)) * scale - 2;
+    const yoff =
+        (minY - (height < width ? (width - height) / 2 : 0)) * scale - 2;
 
     return (
         <svg width={size} height={size} style={{ display: 'block' }}>
             {lines.map((line, i) => (
                 <line
                     key={i}
+                    stroke="black"
+                    strokeWidth={5}
+                    strokeLinecap="round"
+                    x1={line.p1.x * scale - xoff}
+                    y1={line.p1.y * scale - yoff}
+                    x2={line.p2.x * scale - xoff}
+                    y2={line.p2.y * scale - yoff}
+                />
+            ))}
+            {lines.map((line, i) => (
+                <line
+                    key={i}
+                    strokeWidth={1}
                     stroke="red"
                     x1={line.p1.x * scale - xoff}
                     y1={line.p1.y * scale - yoff}
