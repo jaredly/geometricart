@@ -13,14 +13,19 @@ import {
     Path,
     PathGroup,
     PathMultiply,
+    UndoAction,
 } from './types';
 import { initialState } from './initialState';
 import { Export } from './Export';
 import { PendingMirror, toTypeRev } from './App';
-import { useDropStateTarget } from './useDropTarget';
+import {
+    getStateFromFile,
+    useDropStateOrAttachmentTarget,
+} from './useDropTarget';
 import { PalettesForm } from './PalettesForm';
 import { MultiStyleForm, mergeStyles } from './MultiStyleForm';
 import { OverlaysForm } from './OverlaysForm';
+import { diff } from 'json-diff-ts';
 
 export const PREFIX = `<!-- STATE:`;
 export const SUFFIX = '-->';
@@ -452,6 +457,93 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactElement } = {
             </div>
         );
     },
+    Undo: ({ state, dispatch }) => {
+        const [branch, setBranch] = React.useState(state.history.currentBranch);
+        const current = state.history.branches[+branch];
+        return (
+            <div
+                css={{
+                    flex: 1,
+                    display: 'flex',
+                    flexDirection: 'column',
+                }}
+            >
+                <select
+                    css={{ display: 'block' }}
+                    value={branch}
+                    onChange={(evt) => setBranch(+evt.target.value)}
+                >
+                    {Object.keys(state.history.branches).map((k) => (
+                        <option value={k} key={k}>
+                            Branch {k}
+                        </option>
+                    ))}
+                </select>
+                <div>{current.items.length} items</div>
+                {current.parent ? (
+                    <div
+                        onClick={() => setBranch(current.parent!.branch)}
+                        css={{
+                            padding: '4px 8px',
+                            border: '1px solid #aaa',
+                            cursor: 'pointer',
+                            ':hover': {
+                                backgroundColor: 'rgba(255,255,255,0.5)',
+                            },
+                        }}
+                    >
+                        Parent branch: {current.parent.branch} @{' '}
+                        {current.parent.idx}
+                    </div>
+                ) : (
+                    'No parent'
+                )}
+                <div
+                    css={{
+                        overflow: 'auto',
+                        flex: 1,
+                        minHeight: 0,
+                    }}
+                >
+                    {current.items.map((item, i) => (
+                        <div
+                            key={`${i}`}
+                            css={{
+                                padding: 8,
+                            }}
+                        >
+                            <UndoItem item={item} />
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+    },
+};
+
+export const UndoItem = ({ item }: { item: UndoAction }) => {
+    switch (item.type) {
+        case 'view:update':
+            return (
+                <span>
+                    View: {JSON.stringify(diff(item.action.view, item.prev))}
+                </span>
+            );
+        case 'overlay:update':
+            return (
+                <span>
+                    Overlay:{' '}
+                    {JSON.stringify(diff(item.action.overlay, item.prev))}
+                </span>
+            );
+        case 'path:update:many':
+            return (
+                <span>
+                    Update {Object.keys(item.action.changed).length} paths
+                </span>
+            );
+    }
+    return <span>{item.type}</span>;
 };
 
 export const ReallyButton = ({
@@ -531,13 +623,48 @@ export function Sidebar({
             // {...callbacks}
         >
             <div>
-                <ReallyButton
-                    label="Clear all"
-                    css={{ margin: 8 }}
-                    onClick={() => {
-                        dispatch({ type: 'reset', state: initialState });
+                <div
+                    css={{
+                        height: 52,
+                        display: 'flex',
+                        alignItems: 'center',
                     }}
-                />
+                >
+                    <ReallyButton
+                        label="Clear all"
+                        css={{ margin: 8 }}
+                        onClick={() => {
+                            dispatch({ type: 'reset', state: initialState });
+                        }}
+                    />
+                    Import project:{' '}
+                    <input
+                        type="file"
+                        placeholder="Select a file to import"
+                        onChange={(evt) => {
+                            if (evt.target.files?.length !== 1) {
+                                return;
+                            }
+                            getStateFromFile(
+                                evt.target.files[0],
+                                (state) => {
+                                    if (state) {
+                                        dispatch({ type: 'reset', state });
+                                    } else {
+                                        alert(
+                                            "Unable to parse state from image. Maybe this wasn't saved with project metadata?",
+                                        );
+                                    }
+                                },
+                                null,
+                                (err) => {
+                                    console.log(err);
+                                    alert(err);
+                                },
+                            );
+                        }}
+                    />
+                </div>
                 <ViewForm
                     view={state.view}
                     palette={state.palettes[state.activePalette]}

@@ -2832,6 +2832,11 @@ jsesc@~0.5.0:
   resolved "https://registry.yarnpkg.com/jsesc/-/jsesc-0.5.0.tgz#e7dee66e35d6fc16f710fe91d5cf69f70f08911d"
   integrity sha1-597mbjXW/Bb3EP6R1c9p9w8IkR0=
 
+json-diff-ts@^1.2.4:
+  version "1.2.4"
+  resolved "https://registry.yarnpkg.com/json-diff-ts/-/json-diff-ts-1.2.4.tgz#f35fbc156ff3c1fd38ed32522f176fd30daf9cf5"
+  integrity sha512-5FkCsWWp5ynBTlt2KCRNhP4SreYqQLUrBywikl5ELQNMjsKIXritWGf2+kbZY2QXSVuv8s1shtyxBHkGf14qCQ==
+
 json5@^2.1.2:
   version "2.2.0"
   resolved "https://registry.yarnpkg.com/json5/-/json5-2.2.0.tgz#2dfefe720c6ba525d9ebd909950f0515316c89a3"

@@ -31,7 +31,27 @@ export const useDropTarget = (onDrop: (file: File) => void) => {
     return [dragging, callbacks];
 };
 
-export const useDropStateTarget = (
+export const useDropStateTarget = (onDrop: (state: State | null) => void) => {
+    return useDropTarget((file) => {
+        getStateFromFile(
+            file,
+            (state) => {
+                if (state) {
+                    onDrop(migrateState(state));
+                } else {
+                    onDrop(null);
+                }
+            },
+            null,
+            (err) => {
+                console.log(err);
+                alert(err);
+            },
+        );
+    });
+};
+
+export const useDropStateOrAttachmentTarget = (
     onDrop: (state: State) => void,
     onDropAttachment: (name: string, src: string, w: number, h: number) => void,
 ) => {
@@ -55,11 +75,17 @@ export const useDropStateTarget = (
 export const getStateFromFile = (
     file: File,
     done: (s: State | null) => void,
-    attachment: (name: string, src: string, w: number, h: number) => void,
+    attachment:
+        | null
+        | ((name: string, src: string, w: number, h: number) => void),
     err: (message: string) => void,
 ) => {
     if (file.type === 'image/jpeg') {
-        return parseAttachment(attachment, file, err);
+        if (attachment) {
+            return parseAttachment(attachment, file, err);
+        } else {
+            done(null);
+        }
     } else if (file.type === 'image/png') {
         const reader = new FileReader();
         reader.onload = () => {
@@ -67,9 +93,11 @@ export const getStateFromFile = (
             const meta = readMetadata(buffer);
             if (meta.tEXt['GeometricArt']) {
                 done(JSON.parse(meta.tEXt['GeometricArt']));
-            } else {
+            } else if (attachment) {
                 console.log('nope');
                 parseAttachment(attachment, file, err);
+            } else {
+                done(null);
             }
         };
         reader.readAsArrayBuffer(file);

@@ -714,6 +714,7 @@ export type Tab =
     | 'Palette'
     | 'Export'
     | 'Overlays'
+    | 'Undo'
     | 'Clips';
 
 export type Attachment = {

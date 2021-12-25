@@ -5,6 +5,19 @@ what things do I still have to shell out for?
 - exports
 Is that it?
 
+- [ ] hover colors to preview
+- [ ] overlay, actual menu (show/hide) (over/under) (delete) (add)
+- [ ] import button in config menu
+
+- [ ] ooooh use https://www.npmjs.com/package/json-diff-ts to dramatically reduce the undoaction size! That sounds great.
+
+
+# Undo Sidebar Tab???
+- yeah I've wanted something like this for a minute
+- [ ] make the display a little more interesting....
+- [ ] holy grail: hover over an undo item, and show what it would look like to undo/redo to that point.
+
+
 - [x] hide selection outline when hovering the style picker.
 	- [x] maybe not have the style picker be up by default? Yeah I think that would make more sense.
 	- [ ] hovering colors previews it, of course!

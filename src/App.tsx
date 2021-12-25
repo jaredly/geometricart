@@ -7,7 +7,7 @@ import { reducer } from './reducer';
 import { Hover, Sidebar } from './Sidebar';
 import { Action, Coord, GroupRegroup, GuideGeom, Id, State } from './types';
 import { initialState } from './initialState';
-import { useDropStateTarget, useDropTarget } from './useDropTarget';
+import { useDropStateOrAttachmentTarget, useDropTarget } from './useDropTarget';
 import { CogIcon, IconButton, RedoIcon, UndoIcon } from './icons/Icon';
 
 export const key = `geometric-art`;
@@ -43,7 +43,7 @@ export type PendingMirror = {
 export const App = ({ initialState }: { initialState: State }) => {
     const [state, dispatch] = React.useReducer(reducer, initialState);
 
-    const [dragging, callbacks] = useDropStateTarget(
+    const [dragging, callbacks] = useDropStateOrAttachmentTarget(
         (state) => dispatch({ type: 'reset', state }),
         (name, src, width, height) => {
             const id = Math.random().toString(36).slice(2);
@@ -174,6 +174,8 @@ export const App = ({ initialState }: { initialState: State }) => {
                             left: 0,
                             bottom: 0,
                             right: 0,
+                            display: 'flex',
+                            flexDirection: 'column',
                             overflow: 'auto',
                             background: 'rgba(0,0,0,0.5)',
                         }}
