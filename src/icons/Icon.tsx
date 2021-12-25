@@ -8,6 +8,7 @@ export const IconButton = ({
     onClick,
     onMouseOver,
     onMouseOut,
+    hoverIcon,
     children,
     selected,
     disabled,
@@ -17,6 +18,7 @@ export const IconButton = ({
     onClick: () => void;
     onMouseOver?: (evt: React.MouseEvent) => void;
     onMouseOut?: (evt: React.MouseEvent) => void;
+    hoverIcon?: React.ReactNode;
     children: React.ReactNode;
     selected?: boolean;
     disabled?: boolean;
@@ -24,11 +26,22 @@ export const IconButton = ({
     className?: string;
 }) => {
     const handlers = useTouchClick<void>((_) => onClick());
+    const [hover, setHover] = React.useState(false);
     return (
         <div
             {...handlers(undefined)}
-            onMouseOver={onMouseOver}
-            onMouseOut={onMouseOut}
+            onMouseOver={(evt) => {
+                setHover(true);
+                if (onMouseOver) {
+                    onMouseOver(evt);
+                }
+            }}
+            onMouseOut={(evt) => {
+                setHover(false);
+                if (onMouseOut) {
+                    onMouseOut(evt);
+                }
+            }}
             css={{
                 display: 'inline-block',
                 padding: 8,
@@ -54,7 +67,7 @@ export const IconButton = ({
                 onClick();
             }}
         >
-            {children}
+            {hover && hoverIcon ? hoverIcon : children}
         </div>
     );
 };
@@ -216,6 +229,36 @@ export function PaintFillIcon(props: React.SVGProps<SVGSVGElement>) {
         >
             <path fill="none" d="M0 0h24v24H0z" />
             <path d="M19.228 18.732l1.768-1.768 1.767 1.768a2.5 2.5 0 11-3.535 0zM8.878 1.08l11.314 11.313a1 1 0 010 1.415l-8.485 8.485a1 1 0 01-1.414 0l-8.485-8.485a1 1 0 010-1.415l7.778-7.778-2.122-2.121L8.88 1.08zM11 6.03L3.929 13.1H18.07L11 6.03z" />
+        </svg>
+    );
+}
+
+export function BringToFrontIcon(props: React.SVGProps<SVGSVGElement>) {
+    return (
+        <svg
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            height="1em"
+            width="1em"
+            {...props}
+        >
+            <path fill="none" d="M0 0h24v24H0z" />
+            <path d="M11 3a1 1 0 011 1v2h5a1 1 0 011 1v5h2a1 1 0 011 1v7a1 1 0 01-1 1h-7a1 1 0 01-1-1v-2H7a1 1 0 01-1-1v-5H4a1 1 0 01-1-1V4a1 1 0 011-1h7zm5 5H8v8h8V8z" />
+        </svg>
+    );
+}
+
+export function SendToBackIcon(props: React.SVGProps<SVGSVGElement>) {
+    return (
+        <svg
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            height="1em"
+            width="1em"
+            {...props}
+        >
+            <path fill="none" d="M0 0h24v24H0z" />
+            <path d="M11 3a1 1 0 011 1v2h5a1 1 0 011 1v5h2a1 1 0 011 1v7a1 1 0 01-1 1h-7a1 1 0 01-1-1v-2H7a1 1 0 01-1-1v-5H4a1 1 0 01-1-1V4a1 1 0 011-1h7zm5 5h-4v3a1 1 0 01-1 1H8v4h4v-3a1 1 0 011-1h3V8z" />
         </svg>
     );
 }

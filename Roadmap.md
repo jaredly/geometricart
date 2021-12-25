@@ -6,10 +6,10 @@ what things do I still have to shell out for?
 Is that it?
 
 - [ ] hover to show guides! pleasssse
-- [ ] hover to show/hide overlay!
+- [x] hover to show/hide overlay!
 
 
-- [ ] overlay, actual menu (show/hide) (over/under) (delete) (add)
+- [x] overlay, actual menu (show/hide) (over/under) (delete) (add)
 
 - [ ] hover colors to preview
 - [x] import button in config menu

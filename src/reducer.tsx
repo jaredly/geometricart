@@ -628,6 +628,18 @@ export const reduceWithoutUndo = (
                 },
             ];
         }
+        case 'overlay:delete': {
+            const overlays = { ...state.overlays };
+            delete overlays[action.id];
+            return [
+                { ...state, overlays },
+                {
+                    type: action.type,
+                    action,
+                    removed: state.overlays[action.id],
+                },
+            ];
+        }
         default:
             let _x: never = action;
             console.log(`SKIPPING ${(action as any).type}`);
@@ -637,6 +649,15 @@ export const reduceWithoutUndo = (
 
 export const undo = (state: State, action: UndoAction): State => {
     switch (action.type) {
+        case 'overlay:delete': {
+            return {
+                ...state,
+                overlays: {
+                    ...state.overlays,
+                    [action.action.id]: action.removed,
+                },
+            };
+        }
         case 'mirror:delete': {
             return {
                 ...state,

@@ -316,6 +316,13 @@ export type UndoClipAdd = {
     added: [string, number];
 };
 
+export type OverlayDelete = { type: 'overlay:delete'; id: Id };
+export type UndoOverlayDelete = {
+    type: OverlayDelete['type'];
+    action: OverlayDelete;
+    removed: Overlay;
+};
+
 export type OverlyAdd = { type: 'overlay:add'; attachment: Id };
 export type UndoOverlayAdd = {
     type: OverlyAdd['type'];
@@ -601,6 +608,7 @@ export type UndoableAction =
     | PendingPoint
     | MetaUpdate
     | OverlyAdd
+    | OverlayDelete
     | ClipAdd
     // | PathAdd
     | PathUpdate
@@ -627,6 +635,7 @@ export type UndoableAction =
 export type UndoAction =
     | UndoGuideAdd
     | UndoOverlayAdd
+    | UndoOverlayDelete
     | UndoClipAdd
     | UndoGroupUpdate
     | UndoGroupRegroup
