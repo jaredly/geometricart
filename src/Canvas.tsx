@@ -17,10 +17,10 @@ import {
     primitivesForElementsAndPaths,
 } from './Guides';
 import { handleSelection } from './handleSelection';
-import { IconButton, ImagesIcon } from './icons/Icon';
 import { MirrorMenu } from './MirrorMenu';
 import { mergeFills, mergeStyleLines } from './MultiStyleForm';
 import { Overlay } from './Overlay';
+import { OverlayMenu } from './OverlayMenu';
 import { paletteColor, RenderPath } from './RenderPath';
 import { RenderWebGL } from './RenderWebGL';
 import { showHover } from './showHover';
@@ -352,8 +352,10 @@ export const Canvas = ({
                 {Object.keys(state.overlays)
                     .filter(
                         (id) =>
-                            !state.overlays[id].hide &&
-                            !state.overlays[id].over,
+                            maybeReverse(
+                                !state.overlays[id].hide,
+                                hover?.kind === 'Overlay' && hover?.id === id,
+                            ) && !state.overlays[id].over,
                     )
                     .map((id) => {
                         return (
@@ -400,7 +402,10 @@ export const Canvas = ({
                 {Object.keys(state.overlays)
                     .filter(
                         (id) =>
-                            !state.overlays[id].hide && state.overlays[id].over,
+                            maybeReverse(
+                                !state.overlays[id].hide,
+                                hover?.kind === 'Overlay' && hover?.id === id,
+                            ) && state.overlays[id].over,
                     )
                     .map((id) => {
                         return (
@@ -569,45 +574,11 @@ export const Canvas = ({
                 transforms={mirrorTransforms}
             />
             {Object.keys(state.overlays).length === 1 ? (
-                <div
-                    css={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 58,
-                    }}
-                >
-                    <IconButton
-                        onClick={() => {
-                            if (state.selection?.type === 'Overlay') {
-                                dispatch({
-                                    type: 'selection:set',
-                                    selection: null,
-                                });
-                            } else {
-                                dispatch({
-                                    type: 'selection:set',
-                                    selection: {
-                                        type: 'Overlay',
-                                        ids: [Object.keys(state.overlays)[0]],
-                                    },
-                                });
-                            }
-                        }}
-                        css={{
-                            width: 58,
-                            height: 58,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                        }}
-                        selected={state.selection?.type === 'Overlay'}
-                    >
-                        <ImagesIcon />
-                        {/* {state.selection?.type === 'Overlay'
-                            ? 'Deselect overlay'
-                            : 'Select overlay'} */}
-                    </IconButton>
-                </div>
+                <OverlayMenu
+                    state={state}
+                    dispatch={dispatch}
+                    setHover={setHover}
+                />
             ) : null}
             {touchscreenControls(
                 state,
@@ -626,6 +597,9 @@ export const Canvas = ({
         </div>
     );
 };
+
+export const maybeReverse = (v: boolean, reverse: boolean) =>
+    reverse ? !v : v;
 
 export const combineStyles = (styles: Array<Style>): Style => {
     const result: Style = {

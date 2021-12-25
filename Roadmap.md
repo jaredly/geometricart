@@ -5,12 +5,20 @@ what things do I still have to shell out for?
 - exports
 Is that it?
 
-- [ ] hover colors to preview
+- [ ] hover to show guides! pleasssse
+- [ ] hover to show/hide overlay!
+
+
 - [ ] overlay, actual menu (show/hide) (over/under) (delete) (add)
-- [ ] import button in config menu
+
+- [ ] hover colors to preview
+- [x] import button in config menu
+- [x] make mirrors show up better
+- [x] fix mirror menu to have same size & button style as other things
 
 - [ ] ooooh use https://www.npmjs.com/package/json-diff-ts to dramatically reduce the undoaction size! That sounds great.
 
+- [ ] when a line guide is selected, show plus / minus buttons
 
 # Undo Sidebar Tab???
 - yeah I've wanted something like this for a minute

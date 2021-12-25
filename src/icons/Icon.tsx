@@ -6,6 +6,8 @@ import { useTouchClick } from '../RenderIntersections';
 
 export const IconButton = ({
     onClick,
+    onMouseOver,
+    onMouseOut,
     children,
     selected,
     disabled,
@@ -13,6 +15,8 @@ export const IconButton = ({
     className,
 }: {
     onClick: () => void;
+    onMouseOver?: (evt: React.MouseEvent) => void;
+    onMouseOut?: (evt: React.MouseEvent) => void;
     children: React.ReactNode;
     selected?: boolean;
     disabled?: boolean;
@@ -23,6 +27,8 @@ export const IconButton = ({
     return (
         <div
             {...handlers(undefined)}
+            onMouseOver={onMouseOver}
+            onMouseOut={onMouseOut}
             css={{
                 display: 'inline-block',
                 padding: 8,
