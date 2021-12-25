@@ -28,7 +28,7 @@ export const MirrorMenu = ({
                 left: 0,
                 // top: 8,
                 // left: 8,
-                backgroundColor: 'rgba(0,0,0,0.2)',
+                backgroundColor: 'rgba(0,0,0,0.4)',
             }}
             onMouseDown={(evt) => {
                 evt.stopPropagation();

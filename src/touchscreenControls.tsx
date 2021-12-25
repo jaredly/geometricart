@@ -8,6 +8,7 @@ import {
     Coord,
     guideTypes,
     Intersect,
+    Line,
     Path,
     PathMultiply,
     PendingType,
@@ -23,6 +24,8 @@ import {
     CancelIcon,
     DeleteForeverIcon,
     IconButton,
+    LineLongerIcon,
+    LineShorterIcon,
     PaintFillIcon,
     SelectDragIcon,
 } from './icons/Icon';
@@ -138,6 +141,62 @@ export function touchscreenControls(
                         >
                             <PaintFillIcon />
                         </IconButton>
+                    ) : null}
+                    {state.selection.type === 'Guide' &&
+                    state.selection.ids.length === 1 &&
+                    state.guides[state.selection.ids[0]].geom.type ===
+                        'Line' ? (
+                        <>
+                            <IconButton
+                                onClick={() => {
+                                    // dispatch
+                                    const id = state.selection!.ids[0];
+                                    const geom = state.guides[id].geom as Line;
+                                    dispatch({
+                                        type: 'guide:update',
+                                        id,
+                                        guide: {
+                                            ...state.guides[id],
+                                            geom: {
+                                                ...geom,
+                                                extent:
+                                                    geom.extent != null
+                                                        ? geom.extent + 1
+                                                        : 2,
+                                            },
+                                        },
+                                    });
+                                }}
+                            >
+                                <LineLongerIcon />
+                            </IconButton>
+                            <IconButton
+                                onClick={() => {
+                                    // dispatch
+                                    const id = state.selection!.ids[0];
+                                    const geom = state.guides[id].geom as Line;
+                                    dispatch({
+                                        type: 'guide:update',
+                                        id,
+                                        guide: {
+                                            ...state.guides[id],
+                                            geom: {
+                                                ...geom,
+                                                extent:
+                                                    geom.extent != null
+                                                        ? Math.max(
+                                                              0,
+                                                              geom.extent - 1,
+                                                          )
+                                                        : 1,
+                                            },
+                                        },
+                                    });
+                                }}
+                            >
+                                <LineShorterIcon />
+                            </IconButton>
+                        </>
                     ) : null}
                     {state.selection.type === 'PathGroup' ||
                     state.selection.type === 'Path' ? (

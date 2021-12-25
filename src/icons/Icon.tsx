@@ -262,3 +262,39 @@ export function SendToBackIcon(props: React.SVGProps<SVGSVGElement>) {
         </svg>
     );
 }
+
+export function LineLongerIcon(props: React.SVGProps<SVGSVGElement>) {
+    return (
+        <svg
+            fill="none"
+            viewBox="0 0 24 24"
+            height="1em"
+            width="1em"
+            {...props}
+        >
+            <path
+                stroke="currentColor"
+                fill="none"
+                d="M2 12 L 22 12 M 18 8 L 22 12 L 18 16 M 6 8 L 2 12 L 6 16"
+            />
+        </svg>
+    );
+}
+
+export function LineShorterIcon(props: React.SVGProps<SVGSVGElement>) {
+    return (
+        <svg
+            fill="none"
+            viewBox="0 0 24 24"
+            height="1em"
+            width="1em"
+            {...props}
+        >
+            <path
+                stroke="currentColor"
+                fill="none"
+                d="M6 12 L 18 12 M 22 8 L 18 12 L 22 16 M 2 8 L 6 12 L 2 16"
+            />
+        </svg>
+    );
+}
