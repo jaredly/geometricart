@@ -186,6 +186,7 @@ export const DrawPath = React.memo(
                               <RenderPath
                                   zoom={view.zoom}
                                   sketchiness={0}
+                                  styleHover={null}
                                   path={{
                                       group: null,
                                       id: '',
@@ -214,6 +215,7 @@ export const DrawPath = React.memo(
                     <RenderPath
                         zoom={view.zoom}
                         sketchiness={0}
+                        styleHover={null}
                         path={{
                             group: null,
                             id: '',

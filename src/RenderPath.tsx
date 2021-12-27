@@ -8,6 +8,7 @@ import { insidePath } from './clipPath';
 import { rgbToHsl } from './colorConvert';
 import { dist } from './getMirrorTransforms';
 import { Primitive } from './intersect';
+import { StyleHover } from './MultiStyleForm';
 import { useTouchClick } from './RenderIntersections';
 import { arcPath } from './RenderPendingPath';
 import { Path, PathGroup, Segment } from './types';
@@ -66,10 +67,12 @@ export const RenderPath = React.memo(
         generator,
         rand,
         clip,
+        styleHover,
     }: {
         rand?: Prando;
         generator?: RoughGenerator;
         path: Path;
+        styleHover: StyleHover | null;
         origPath?: Path;
         clip?: Array<Primitive> | null;
         zoom: number;

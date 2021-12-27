@@ -314,6 +314,17 @@ export const Canvas = ({
         null as null | StyleHover,
     );
 
+    const selectedIds: { [key: string]: boolean } = {};
+    if (state.selection?.type === 'Path') {
+        state.selection.ids.forEach((id) => (selectedIds[id] = true));
+    } else if (state.selection?.type === 'PathGroup') {
+        Object.keys(state.paths).forEach((id) => {
+            if (state.selection!.ids.includes(state.paths[id].group!)) {
+                selectedIds[id] = true;
+            }
+        });
+    }
+
     const inner = (
         <svg
             width={ppi != null ? calcPPI(ppi, width, view.zoom) : width}
@@ -403,6 +414,7 @@ export const Canvas = ({
                         zoom={view.zoom}
                         sketchiness={view.sketchiness}
                         palette={state.palettes[state.activePalette]}
+                        styleHover={selectedIds[path.id] ? styleHover : null}
                         onClick={
                             // TODO: Disable path clickies if we're doing guides, folks.
                             pendingPath[0]
@@ -461,7 +473,7 @@ export const Canvas = ({
                         hover={hover}
                     />
                 ) : null}
-                {state.selection && !styleOpen
+                {state.selection && !styleHover
                     ? state.selection.ids.map((id) =>
                           showHover(
                               id,
