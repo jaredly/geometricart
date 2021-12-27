@@ -241,6 +241,24 @@ export const Canvas = ({
         ? state.clips[state.view.activeClip]
         : undefined;
 
+    const [styleHover, setStyleHover] = React.useState(
+        null as null | StyleHover,
+    );
+
+    const selectedIds = React.useMemo(() => {
+        const selectedIds: { [key: string]: boolean } = {};
+        if (state.selection?.type === 'Path') {
+            state.selection.ids.forEach((id) => (selectedIds[id] = true));
+        } else if (state.selection?.type === 'PathGroup') {
+            Object.keys(state.paths).forEach((id) => {
+                if (state.selection!.ids.includes(state.paths[id].group!)) {
+                    selectedIds[id] = true;
+                }
+            });
+        }
+        return selectedIds;
+    }, [state.selection, state.paths]);
+
     const pathsToShow = React.useMemo(
         () =>
             sortedVisibleInsetPaths(
@@ -251,6 +269,8 @@ export const Canvas = ({
                 state.view.laserCutMode
                     ? state.palettes[state.activePalette]
                     : undefined,
+                styleHover ?? undefined,
+                selectedIds,
             ),
         [
             state.paths,
@@ -258,6 +278,8 @@ export const Canvas = ({
             clip,
             state.view.hideDuplicatePaths,
             state.view.laserCutMode,
+            styleHover,
+            selectedIds,
         ],
     );
 
@@ -309,21 +331,6 @@ export const Canvas = ({
         );
         return fromGuides;
     }, [guidePrimitives, state.paths, state.pathGroups]);
-
-    const [styleHover, setStyleHover] = React.useState(
-        null as null | StyleHover,
-    );
-
-    const selectedIds: { [key: string]: boolean } = {};
-    if (state.selection?.type === 'Path') {
-        state.selection.ids.forEach((id) => (selectedIds[id] = true));
-    } else if (state.selection?.type === 'PathGroup') {
-        Object.keys(state.paths).forEach((id) => {
-            if (state.selection!.ids.includes(state.paths[id].group!)) {
-                selectedIds[id] = true;
-            }
-        });
-    }
 
     const inner = (
         <svg
@@ -628,7 +635,10 @@ export const Canvas = ({
                         <MultiStyleForm
                             palette={state.palettes[state.activePalette]}
                             styles={styleIds.map((k) => state.paths[k].style)}
-                            onHover={setStyleHover}
+                            onHover={(hover) => {
+                                setStyleHover(hover);
+                                console.log(hover);
+                            }}
                             onChange={(styles) => {
                                 const changed: {
                                     [key: string]: Path;

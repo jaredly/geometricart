@@ -472,7 +472,7 @@ export const MultiColor = ({
                 <button
                     key={i}
                     onClick={() => onChange(i)}
-                    onMouseOver={() => onHover(item)}
+                    onMouseOver={() => onHover(i)}
                     onMouseOut={() => onHover(null)}
                     style={{
                         boxShadow: color.includes(i)

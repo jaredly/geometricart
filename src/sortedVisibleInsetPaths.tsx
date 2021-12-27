@@ -7,7 +7,7 @@ import {
     pathToReversedSegmentKeys,
     pathToSegmentKeys,
 } from './pathsAreIdentical';
-import { paletteColor } from './RenderPath';
+import { applyStyleHover, paletteColor } from './RenderPath';
 import { insetPath, pruneInsetPath, simplifyPath } from './insetPath';
 import { Coord, Path, PathGroup, Segment } from './types';
 import { segmentKey, segmentKeyReverse } from './DrawPath';
@@ -21,6 +21,7 @@ import {
     withinLimit,
 } from './intersect';
 import { calculateBounds } from './Guides';
+import { StyleHover } from './MultiStyleForm';
 
 // This should produce:
 // a list of lines
@@ -33,6 +34,8 @@ export function sortedVisibleInsetPaths(
     clip?: Array<Segment>,
     hideDuplicatePaths?: boolean,
     laserCutPalette?: Array<string>,
+    styleHover?: StyleHover,
+    selectedIds: { [key: string]: boolean } = {},
 ): Array<Path> {
     let visible = Object.keys(paths)
         .filter(
@@ -90,6 +93,12 @@ export function sortedVisibleInsetPaths(
         .map((k) => paths[k])
         .map((path) => {
             const group = path.group ? pathGroups[path.group] : null;
+            if (selectedIds[path.id] && styleHover) {
+                path = {
+                    ...path,
+                    style: applyStyleHover(styleHover, path.style),
+                };
+            }
             if (group?.insetBeforeClip) {
                 return pathToInsetPaths(path)
                     .map((insetPath) => {
