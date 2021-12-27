@@ -18,16 +18,22 @@ import {
 } from './Guides';
 import { handleSelection } from './handleSelection';
 import { MirrorMenu } from './MirrorMenu';
-import { mergeFills, mergeStyleLines } from './MultiStyleForm';
+import { mergeFills, mergeStyleLines, MultiStyleForm } from './MultiStyleForm';
 import { Overlay } from './Overlay';
 import { OverlayMenu } from './OverlayMenu';
+import { PendingPathControls } from './PendingPathControls';
 import { paletteColor, RenderPath } from './RenderPath';
 import { RenderWebGL } from './RenderWebGL';
 import { showHover } from './showHover';
 import { Hover } from './Sidebar';
 import { sortedVisibleInsetPaths } from './sortedVisibleInsetPaths';
-import { touchscreenControls } from './touchscreenControls';
-import { Action, Coord, State, Style, View } from './types';
+import {
+    idsToStyle,
+    mirrorControls,
+    selectionSection,
+    guideSection,
+} from './touchscreenControls';
+import { Action, Coord, Path, Segment, State, Style, View } from './types';
 import { useDragSelect, useMouseDrag } from './useMouseDrag';
 import { useScrollWheel } from './useScrollWheel';
 
@@ -437,6 +443,7 @@ export const Canvas = ({
                         guidePrimitives={guidePrimitives}
                         zooming={zooming}
                         view={view}
+                        disableGuides={!!pendingMirror}
                         pos={isTouchScreen ? scale(view.center, -1) : pos}
                         pendingPath={pendingPath}
                         mirrorTransforms={mirrorTransforms}
@@ -504,6 +511,8 @@ export const Canvas = ({
         return inner;
     }
 
+    const styleIds = idsToStyle(state);
+
     return (
         <div
             css={{
@@ -533,22 +542,6 @@ export const Canvas = ({
             }}
         >
             {inner}
-            {tmpView ? (
-                <div
-                    css={{
-                        position: 'absolute',
-                        padding: 20,
-                        backgroundColor: 'rgba(255,255,255,0.3)',
-                        color: 'black',
-                        top: 0,
-                        left: 0,
-                    }}
-                    onClick={() => setTmpView(null)}
-                >
-                    Reset zoom
-                    {` ${pos.x.toFixed(4)},${pos.y.toFixed(4)}`}
-                </div>
-            ) : null}
             {view.texture ? (
                 <RenderWebGL
                     state={state}
@@ -573,27 +566,114 @@ export const Canvas = ({
                 dispatch={dispatch}
                 transforms={mirrorTransforms}
             />
-            {Object.keys(state.overlays).length === 1 ? (
-                <OverlayMenu
-                    state={state}
-                    dispatch={dispatch}
-                    setHover={setHover}
-                />
+            <OverlayMenu
+                state={state}
+                dispatch={dispatch}
+                setHover={setHover}
+            />
+            {tmpView ? (
+                <div
+                    css={{
+                        position: 'absolute',
+                        padding: 20,
+                        backgroundColor: 'rgba(255,255,255,0.3)',
+                        color: 'black',
+                        top: 0,
+                        left: 58 * 2,
+                    }}
+                    onClick={() => setTmpView(null)}
+                >
+                    Reset zoom
+                    {` ${pos.x.toFixed(4)},${pos.y.toFixed(4)}`}
+                </div>
             ) : null}
-            {touchscreenControls(
-                state,
-                dispatch,
-                setMultiSelect,
-                multiSelect,
-                pendingPath,
-                allIntersections,
-                guidePrimitives,
-                setDragSelecting,
-                isDragSelecting,
-                pendingMirror ? () => setPendingMirror(null) : null,
-                styleOpen,
-                setStyleOpen,
-            )}
+
+            <div
+                css={{
+                    position: 'absolute',
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    overflow: 'auto',
+                }}
+                onClick={(evt) => evt.stopPropagation()}
+            >
+                {styleIds.length && styleOpen ? (
+                    <div
+                        css={{
+                            backgroundColor: 'rgba(0,0,0,0.8)',
+                        }}
+                    >
+                        <MultiStyleForm
+                            palette={state.palettes[state.activePalette]}
+                            styles={styleIds.map((k) => state.paths[k].style)}
+                            onChange={(styles) => {
+                                const changed: {
+                                    [key: string]: Path;
+                                } = {};
+                                styles.forEach((style, i) => {
+                                    if (style != null) {
+                                        const id = styleIds[i];
+                                        changed[id] = {
+                                            ...state.paths[id],
+                                            style,
+                                        };
+                                    }
+                                });
+                                dispatch({
+                                    type: 'path:update:many',
+                                    changed,
+                                });
+                            }}
+                        />
+                    </div>
+                ) : null}
+                {pendingMirror
+                    ? mirrorControls(setPendingMirror, pendingMirror)
+                    : state.selection
+                    ? selectionSection(
+                          dispatch,
+                          isDragSelecting,
+                          setDragSelecting,
+                          styleIds,
+                          setStyleOpen,
+                          styleOpen,
+                          state,
+                          setMultiSelect,
+                          multiSelect,
+                      )
+                    : guideSection(
+                          state,
+                          dispatch,
+                          setDragSelecting,
+                          isDragSelecting,
+                      )}
+                {pendingPath[0] ? (
+                    <PendingPathControls
+                        pendingPath={pendingPath}
+                        allIntersections={allIntersections}
+                        guidePrimitives={guidePrimitives}
+                        onComplete={(
+                            isClip: boolean,
+                            origin: Coord,
+                            segments: Array<Segment>,
+                        ) => {
+                            if (isClip) {
+                                dispatch({
+                                    type: 'clip:add',
+                                    clip: segments,
+                                });
+                            } else {
+                                dispatch({
+                                    type: 'path:create',
+                                    segments,
+                                    origin,
+                                });
+                            }
+                        }}
+                    />
+                ) : null}
+            </div>
         </div>
     );
 };

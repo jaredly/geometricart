@@ -298,3 +298,53 @@ export function LineShorterIcon(props: React.SVGProps<SVGSVGElement>) {
         </svg>
     );
 }
+
+export function LibraryAddIcon(props: React.SVGProps<SVGSVGElement>) {
+    return (
+        <svg
+            viewBox="0 0 48 48"
+            fill="currentColor"
+            height="1em"
+            width="1em"
+            {...props}
+        >
+            <path d="M8 12H4v28c0 2.21 1.79 4 4 4h28v-4H8V12zm32-8H16c-2.21 0-4 1.79-4 4v24c0 2.21 1.79 4 4 4h24c2.21 0 4-1.79 4-4V8c0-2.21-1.79-4-4-4zm-2 18h-8v8h-4v-8h-8v-4h8v-8h4v8h8v4z" />
+        </svg>
+    );
+}
+
+export function AddIcon(props: React.SVGProps<SVGSVGElement>) {
+    return (
+        <svg
+            viewBox="0 0 512 512"
+            fill="currentColor"
+            height="1em"
+            width="1em"
+            {...props}
+        >
+            <path
+                fill="none"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={32}
+                d="M256 112v288M400 256H112"
+            />
+        </svg>
+    );
+}
+
+export function SubtractLineIcon(props: React.SVGProps<SVGSVGElement>) {
+    return (
+        <svg
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            height="1em"
+            width="1em"
+            {...props}
+        >
+            <path fill="none" d="M0 0h24v24H0z" />
+            <path d="M5 11h14v2H5z" />
+        </svg>
+    );
+}

@@ -7,7 +7,12 @@ Is that it?
 
 - [ ] hover to show guides! pleasssse
 - [x] hover to show/hide overlay!
+- [ ] clipssss need a menu for them, thanks.
+	- also need to be able to configure clip behavior of groups
+	- also button to 'group'
 
+- I want to start doing some process ones.
+- [ ] make a slider that you can open up to scrub through undo states.
 
 - [x] overlay, actual menu (show/hide) (over/under) (delete) (add)
 
@@ -18,7 +23,18 @@ Is that it?
 
 - [ ] ooooh use https://www.npmjs.com/package/json-diff-ts to dramatically reduce the undoaction size! That sounds great.
 
-- [ ] when a line guide is selected, show plus / minus buttons
+- [x] when a line guide is selected, show plus / minus buttons to lengthen/shorten
+	- [ ] make a button to "go infinite" which toggles to "go some kinda way"
+
+
+
+- [ ] for making tiles, I think what I mostly want is "paint to fill". Like mouse over the sub-sections, and it makes the tile that includes them all.
+	- this wouldn't work for some cases, but is probably the most user-friendly, so should be the default.
+	- hmm although sometimes there are really little bitses. so it wouldn't be better ....
+
+
+# Ok, so it would be suuuper cool to be able to automatically weave stuff.
+
 
 # Undo Sidebar Tab???
 - yeah I've wanted something like this for a minute
@@ -36,7 +52,7 @@ Is that it?
 
 - [ ] reset zoom needs to go somewhere else?
 - [ ] clips! Need to show on screen, next to mirrors and overlays
-- [ ] make the overlay display at all good please.
+- [x] make the overlay display at all good please.
 
 
 - [x] bake into the export a dpi dealio.

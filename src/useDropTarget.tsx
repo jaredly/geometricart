@@ -91,7 +91,7 @@ export const getStateFromFile = (
         reader.onload = () => {
             const buffer = new Uint8Array(reader.result as ArrayBuffer);
             const meta = readMetadata(buffer);
-            if (meta.tEXt['GeometricArt']) {
+            if (meta && meta.tEXt && meta.tEXt['GeometricArt']) {
                 done(JSON.parse(meta.tEXt['GeometricArt']));
             } else if (attachment) {
                 console.log('nope');
@@ -119,7 +119,8 @@ export const getStateFromFile = (
         reader.readAsText(file);
     }
 };
-function parseAttachment(
+
+export function parseAttachment(
     attachment: (name: string, src: string, w: number, h: number) => void,
     file: File,
     err: (message: string) => void,

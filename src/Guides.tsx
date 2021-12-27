@@ -164,6 +164,7 @@ export const Guides = ({
     guidePrimitives,
     allIntersections,
     isTouchScreen,
+    disableGuides,
 }: {
     state: State;
     isTouchScreen: boolean;
@@ -184,6 +185,7 @@ export const Guides = ({
             | (PendingMirror | null)
             | ((mirror: PendingMirror | null) => PendingMirror | null),
     ) => void;
+    disableGuides: boolean;
 }) => {
     const inactiveGuidePrimitives = React.useMemo(() => {
         return primitivesForElementsAndPaths(
@@ -394,13 +396,17 @@ export const Guides = ({
                 zoom={view.zoom}
                 bounds={bounds}
                 inactive
-                onClick={pendingPath[0] ? undefined : clickInactive}
+                onClick={
+                    disableGuides || pendingPath[0] ? undefined : clickInactive
+                }
             />
             <RenderPrimitives
                 primitives={guidePrimitives}
                 zoom={view.zoom}
                 bounds={bounds}
-                onClick={pendingPath[0] ? undefined : clickActive}
+                onClick={
+                    disableGuides || pendingPath[0] ? undefined : clickActive
+                }
             />
             {!pendingPath[0] && !zooming ? (
                 <RenderIntersections

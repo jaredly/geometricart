@@ -7,6 +7,7 @@ import {
     Action,
     Coord,
     guideTypes,
+    Id,
     Intersect,
     Line,
     Path,
@@ -20,15 +21,19 @@ import { Primitive } from './intersect';
 import { PendingPathControls } from './PendingPathControls';
 import { EyeIcon, EyeInvisibleIcon } from './icons/Eyes';
 import {
+    AddIcon,
     BxSelectMultipleIcon,
     CancelIcon,
     DeleteForeverIcon,
     IconButton,
     LineLongerIcon,
     LineShorterIcon,
+    MirrorIcon,
     PaintFillIcon,
     SelectDragIcon,
+    SubtractLineIcon,
 } from './icons/Icon';
+import { PendingMirror } from './App';
 
 export const idsToStyle = (state: State) => {
     if (
@@ -44,337 +49,326 @@ export const idsToStyle = (state: State) => {
     return [];
 };
 
-export function touchscreenControls(
+export function guideSection(
     state: State,
     dispatch: (action: Action) => unknown,
-    setMultiSelect: React.Dispatch<React.SetStateAction<boolean>>,
-    multiSelect: boolean,
-    pendingPath: [
-        DrawPathState | null,
-        React.Dispatch<React.SetStateAction<DrawPathState | null>>,
-    ],
-    allIntersections: Intersect[],
-    guidePrimitives: { prim: Primitive; guides: string[] }[],
     setDragSelect: (fn: (select: boolean) => boolean) => void,
     dragSelect: boolean,
-    clearPendingMirror: null | (() => void),
-    styleOpen: boolean,
-    setStyleOpen: (fn: (select: boolean) => boolean) => void,
 ): React.ReactNode {
-    const styleIds = idsToStyle(state);
+    if (state.pending) {
+        return (
+            <button
+                css={{
+                    fontSize: 30,
+                }}
+                onClick={() => dispatch({ type: 'pending:type', kind: null })}
+            >
+                Cancel guide
+            </button>
+        );
+    } else if (state.view.guides) {
+        return (
+            <div>
+                <IconButton
+                    onClick={() => {
+                        dispatch({
+                            type: 'view:update',
+                            view: {
+                                ...state.view,
+                                guides: !state.view.guides,
+                            },
+                        });
+                    }}
+                >
+                    <EyeIcon />
+                </IconButton>
+                <IconButton
+                    selected={dragSelect}
+                    onClick={() => {
+                        setDragSelect((current) => !current);
+                    }}
+                >
+                    <SelectDragIcon />
+                </IconButton>
+
+                <select
+                    css={{
+                        width: 140,
+                        fontSize: 30,
+                    }}
+                    onChange={(evt) => {
+                        dispatch({
+                            type: 'pending:type',
+                            kind: evt.target.value as PendingType['kind'],
+                        });
+                    }}
+                    value={0}
+                >
+                    <option value={0} disabled>
+                        + Guide
+                    </option>
+                    {guideTypes.map((kind) => (
+                        <option value={kind}>{kind}</option>
+                    ))}
+                </select>
+            </div>
+        );
+    } else {
+        return (
+            <div>
+                <IconButton
+                    onClick={() => {
+                        dispatch({
+                            type: 'view:update',
+                            view: {
+                                ...state.view,
+                                guides: !state.view.guides,
+                            },
+                        });
+                    }}
+                >
+                    <EyeInvisibleIcon />
+                </IconButton>
+                <IconButton
+                    selected={dragSelect}
+                    onClick={() => {
+                        setDragSelect((current) => !current);
+                    }}
+                >
+                    <SelectDragIcon />
+                </IconButton>
+            </div>
+        );
+    }
+}
+
+export function selectionSection(
+    dispatch: (action: Action) => unknown,
+    dragSelect: boolean,
+    setDragSelect: (fn: (select: boolean) => boolean) => void,
+    styleIds: string[],
+    setStyleOpen: (fn: (select: boolean) => boolean) => void,
+    styleOpen: boolean,
+    state: State,
+    setMultiSelect: React.Dispatch<React.SetStateAction<boolean>>,
+    multiSelect: boolean,
+): React.ReactNode {
+    if (!state.selection) {
+        return null;
+    }
     return (
-        <div
-            css={{
-                position: 'absolute',
-                bottom: 0,
-                left: 0,
-                right: 0,
-                overflow: 'auto',
-            }}
-            onClick={(evt) => evt.stopPropagation()}
-        >
-            {styleIds.length && styleOpen
-                ? (() => {
-                      return (
-                          <div
-                              css={{
-                                  backgroundColor: 'rgba(0,0,0,0.8)',
-                              }}
-                          >
-                              <MultiStyleForm
-                                  palette={state.palettes[state.activePalette]}
-                                  styles={styleIds.map(
-                                      (k) => state.paths[k].style,
-                                  )}
-                                  onChange={(styles) => {
-                                      const changed: {
-                                          [key: string]: Path;
-                                      } = {};
-                                      styles.forEach((style, i) => {
-                                          if (style != null) {
-                                              const id = styleIds[i];
-                                              changed[id] = {
-                                                  ...state.paths[id],
-                                                  style,
-                                              };
-                                          }
-                                      });
-                                      dispatch({
-                                          type: 'path:update:many',
-                                          changed,
-                                      });
-                                  }}
-                              />
-                          </div>
-                      );
-                  })()
-                : null}
-            {state.selection ? (
-                <div>
+        <div>
+            <IconButton
+                onClick={() => {
+                    dispatch({
+                        type: 'selection:set',
+                        selection: null,
+                    });
+                }}
+            >
+                <CancelIcon />
+            </IconButton>
+            <IconButton
+                selected={dragSelect}
+                onClick={() => {
+                    setDragSelect((current) => !current);
+                }}
+            >
+                <SelectDragIcon />
+            </IconButton>
+            {styleIds.length ? (
+                <IconButton
+                    onClick={() => {
+                        setStyleOpen((s) => !s);
+                    }}
+                    selected={styleOpen}
+                >
+                    <PaintFillIcon />
+                </IconButton>
+            ) : null}
+            {state.selection.type === 'Guide' &&
+            state.selection.ids.length === 1 &&
+            state.guides[state.selection.ids[0]].geom.type === 'Line' ? (
+                <>
                     <IconButton
                         onClick={() => {
+                            // dispatch
+                            const id = state.selection!.ids[0];
+                            const geom = state.guides[id].geom as Line;
                             dispatch({
-                                type: 'selection:set',
-                                selection: null,
+                                type: 'guide:update',
+                                id,
+                                guide: {
+                                    ...state.guides[id],
+                                    geom: {
+                                        ...geom,
+                                        extent:
+                                            geom.extent != null
+                                                ? geom.extent + 1
+                                                : 2,
+                                    },
+                                },
                             });
                         }}
                     >
-                        <CancelIcon />
+                        <LineLongerIcon />
                     </IconButton>
                     <IconButton
-                        selected={dragSelect}
                         onClick={() => {
-                            setDragSelect((current) => !current);
+                            // dispatch
+                            const id = state.selection!.ids[0];
+                            const geom = state.guides[id].geom as Line;
+                            dispatch({
+                                type: 'guide:update',
+                                id,
+                                guide: {
+                                    ...state.guides[id],
+                                    geom: {
+                                        ...geom,
+                                        extent:
+                                            geom.extent != null
+                                                ? Math.max(0, geom.extent - 1)
+                                                : 1,
+                                    },
+                                },
+                            });
                         }}
                     >
-                        <SelectDragIcon />
+                        <LineShorterIcon />
                     </IconButton>
-                    {styleIds.length ? (
-                        <IconButton
-                            onClick={() => {
-                                setStyleOpen((s) => !s);
-                            }}
-                            selected={styleOpen}
-                            // style={{
-                            //     fontWeight: multiSelect ? 'bold' : 'normal',
-                            // }}
-                        >
-                            <PaintFillIcon />
-                        </IconButton>
-                    ) : null}
-                    {state.selection.type === 'Guide' &&
-                    state.selection.ids.length === 1 &&
-                    state.guides[state.selection.ids[0]].geom.type ===
-                        'Line' ? (
-                        <>
-                            <IconButton
-                                onClick={() => {
-                                    // dispatch
-                                    const id = state.selection!.ids[0];
-                                    const geom = state.guides[id].geom as Line;
-                                    dispatch({
-                                        type: 'guide:update',
-                                        id,
-                                        guide: {
-                                            ...state.guides[id],
-                                            geom: {
-                                                ...geom,
-                                                extent:
-                                                    geom.extent != null
-                                                        ? geom.extent + 1
-                                                        : 2,
-                                            },
-                                        },
-                                    });
-                                }}
-                            >
-                                <LineLongerIcon />
-                            </IconButton>
-                            <IconButton
-                                onClick={() => {
-                                    // dispatch
-                                    const id = state.selection!.ids[0];
-                                    const geom = state.guides[id].geom as Line;
-                                    dispatch({
-                                        type: 'guide:update',
-                                        id,
-                                        guide: {
-                                            ...state.guides[id],
-                                            geom: {
-                                                ...geom,
-                                                extent:
-                                                    geom.extent != null
-                                                        ? Math.max(
-                                                              0,
-                                                              geom.extent - 1,
-                                                          )
-                                                        : 1,
-                                            },
-                                        },
-                                    });
-                                }}
-                            >
-                                <LineShorterIcon />
-                            </IconButton>
-                        </>
-                    ) : null}
-                    {state.selection.type === 'PathGroup' ||
-                    state.selection.type === 'Path' ? (
-                        <IconButton
-                            onClick={() => {
-                                setMultiSelect((s) => !s);
-                            }}
-                            selected={multiSelect}
-                            // style={{
-                            //     fontWeight: multiSelect ? 'bold' : 'normal',
-                            // }}
-                        >
-                            <BxSelectMultipleIcon />
-                        </IconButton>
-                    ) : null}
-                    <IconButton
-                        color="rgb(255,200,200)"
-                        onClick={() => {
-                            if (!state.selection) {
-                                return;
-                            }
-                            switch (state.selection.type) {
-                                case 'PathGroup':
-                                    return state.selection.ids.forEach((id) =>
-                                        dispatch({
-                                            type: 'group:delete',
-                                            id,
-                                        }),
-                                    );
-                                case 'Path':
-                                    return dispatch({
-                                        type: 'path:delete:many',
-                                        ids: state.selection.ids,
-                                    });
-                                case 'Guide':
-                                    return state.selection.ids.forEach((id) =>
-                                        dispatch({ type: 'guide:delete', id }),
-                                    );
-                            }
-                        }}
-                    >
-                        <DeleteForeverIcon />
-                    </IconButton>
-                    {state.activeMirror &&
-                    (state.selection.type === 'Path' ||
-                        state.selection.type === 'PathGroup') ? (
-                        <button
-                            css={{ fontSize: '150%' }}
-                            onClick={() => {
-                                dispatch({
-                                    type: 'path:multiply',
-                                    selection:
-                                        state.selection as PathMultiply['selection'],
-                                    mirror: state.activeMirror!,
-                                });
-                            }}
-                        >
-                            Clone around mirror
-                        </button>
-                    ) : null}
-                </div>
-            ) : state.pending ? (
-                <button
-                    css={{
-                        fontSize: 30,
+                </>
+            ) : null}
+            {state.selection.type === 'PathGroup' ||
+            state.selection.type === 'Path' ? (
+                <IconButton
+                    onClick={() => {
+                        setMultiSelect((s) => !s);
                     }}
-                    onClick={() =>
-                        dispatch({ type: 'pending:type', kind: null })
+                    selected={multiSelect}
+                >
+                    <BxSelectMultipleIcon />
+                </IconButton>
+            ) : null}
+            <IconButton
+                color="rgb(255,200,200)"
+                onClick={() => {
+                    if (!state.selection) {
+                        return;
                     }
-                >
-                    Cancel guide
-                </button>
-            ) : state.view.guides ? (
-                <div>
-                    <IconButton
-                        onClick={() => {
-                            dispatch({
-                                type: 'view:update',
-                                view: {
-                                    ...state.view,
-                                    guides: !state.view.guides,
-                                },
+                    switch (state.selection.type) {
+                        case 'PathGroup':
+                            return state.selection.ids.forEach((id) =>
+                                dispatch({
+                                    type: 'group:delete',
+                                    id,
+                                }),
+                            );
+                        case 'Path':
+                            return dispatch({
+                                type: 'path:delete:many',
+                                ids: state.selection.ids,
                             });
-                        }}
-                    >
-                        <EyeIcon />
-                    </IconButton>
-                    <IconButton
-                        selected={dragSelect}
-                        onClick={() => {
-                            setDragSelect((current) => !current);
-                        }}
-                    >
-                        <SelectDragIcon />
-                    </IconButton>
-
-                    <select
-                        css={{
-                            width: 140,
-                            fontSize: 30,
-                        }}
-                        onChange={(evt) => {
-                            dispatch({
-                                type: 'pending:type',
-                                kind: evt.target.value as PendingType['kind'],
-                            });
-                        }}
-                        value={0}
-                    >
-                        <option value={0} disabled>
-                            + Guide
-                        </option>
-                        {guideTypes.map((kind) => (
-                            <option value={kind}>{kind}</option>
-                        ))}
-                    </select>
-                </div>
-            ) : (
-                <div>
-                    <IconButton
-                        onClick={() => {
-                            dispatch({
-                                type: 'view:update',
-                                view: {
-                                    ...state.view,
-                                    guides: !state.view.guides,
-                                },
-                            });
-                        }}
-                    >
-                        <EyeInvisibleIcon />
-                    </IconButton>
-                    <IconButton
-                        selected={dragSelect}
-                        onClick={() => {
-                            setDragSelect((current) => !current);
-                        }}
-                    >
-                        <SelectDragIcon />
-                    </IconButton>
-                </div>
-            )}
-            {clearPendingMirror ? (
+                        case 'Guide':
+                            return state.selection.ids.forEach((id) =>
+                                dispatch({ type: 'guide:delete', id }),
+                            );
+                    }
+                }}
+            >
+                <DeleteForeverIcon />
+            </IconButton>
+            {state.activeMirror &&
+            (state.selection.type === 'Path' ||
+                state.selection.type === 'PathGroup') ? (
                 <button
-                    css={{
-                        fontSize: 30,
+                    css={{ fontSize: '150%' }}
+                    onClick={() => {
+                        dispatch({
+                            type: 'path:multiply',
+                            selection:
+                                state.selection as PathMultiply['selection'],
+                            mirror: state.activeMirror!,
+                        });
                     }}
-                    onClick={() => clearPendingMirror()}
                 >
-                    Cancel mirror
+                    Clone around mirror
                 </button>
             ) : null}
+        </div>
+    );
+}
 
-            {pendingPath[0] ? (
-                <PendingPathControls
-                    pendingPath={pendingPath}
-                    allIntersections={allIntersections}
-                    guidePrimitives={guidePrimitives}
-                    onComplete={(
-                        isClip: boolean,
-                        origin: Coord,
-                        segments: Array<Segment>,
-                    ) => {
-                        if (isClip) {
-                            dispatch({
-                                type: 'clip:add',
-                                clip: segments,
-                            });
-                        } else {
-                            dispatch({
-                                type: 'path:create',
-                                segments,
-                                origin,
-                            });
-                        }
-                    }}
-                />
-            ) : null}
+export function mirrorControls(
+    setPendingMirror: (
+        fn:
+            | PendingMirror
+            | ((m: PendingMirror | null) => PendingMirror | null)
+            | null,
+    ) => void,
+    pendingMirror: PendingMirror,
+): React.ReactChild {
+    return (
+        <div>
+            <IconButton
+                css={{
+                    fontSize: 40,
+                }}
+                onClick={() => setPendingMirror(null)}
+            >
+                <CancelIcon />
+            </IconButton>
+            <IconButton
+                css={{
+                    fontSize: 40,
+                }}
+                onClick={() => {
+                    setPendingMirror((mirror) =>
+                        mirror
+                            ? {
+                                  ...mirror,
+                                  rotations: mirror.rotations + 1,
+                              }
+                            : null,
+                    );
+                }}
+            >
+                <AddIcon />
+            </IconButton>
+            <IconButton
+                css={{
+                    fontSize: 40,
+                }}
+                onClick={() => {
+                    setPendingMirror((mirror) =>
+                        mirror
+                            ? {
+                                  ...mirror,
+                                  rotations: Math.max(1, mirror.rotations - 1),
+                              }
+                            : null,
+                    );
+                }}
+            >
+                <SubtractLineIcon />
+            </IconButton>
+            <IconButton
+                css={{
+                    fontSize: 40,
+                }}
+                onClick={() => {
+                    setPendingMirror((mirror) =>
+                        mirror
+                            ? {
+                                  ...mirror,
+                                  reflect: !mirror.reflect,
+                              }
+                            : null,
+                    );
+                }}
+                selected={pendingMirror.reflect}
+            >
+                <MirrorIcon />
+            </IconButton>
         </div>
     );
 }

@@ -169,7 +169,7 @@ export const GuideElement = ({
         }
         case 'Perpendicular': {
             const t1 = angleTo(geom.p1, geom.p2) + Math.PI / 2;
-            const si = lineToSlope(geom.p1, geom.p2);
+            const si = lineToSlope(geom.p1, push(geom.p1, t1, 2));
             const [left, right] = visibleEndPoints(si, bounds);
             return (
                 <>

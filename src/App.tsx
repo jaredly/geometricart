@@ -7,7 +7,11 @@ import { reducer } from './reducer';
 import { Hover, Sidebar } from './Sidebar';
 import { Action, Coord, GroupRegroup, GuideGeom, Id, State } from './types';
 import { initialState } from './initialState';
-import { useDropStateOrAttachmentTarget, useDropTarget } from './useDropTarget';
+import {
+    getStateFromFile,
+    useDropStateOrAttachmentTarget,
+    useDropTarget,
+} from './useDropTarget';
 import { CogIcon, IconButton, RedoIcon, UndoIcon } from './icons/Icon';
 
 export const key = `geometric-art`;
@@ -42,6 +46,48 @@ export type PendingMirror = {
 
 export const App = ({ initialState }: { initialState: State }) => {
     const [state, dispatch] = React.useReducer(reducer, initialState);
+
+    React.useEffect(() => {
+        const fn = (evt: ClipboardEvent) => {
+            if (document.activeElement !== document.body) {
+                return;
+            }
+            if (evt.clipboardData?.files.length) {
+                getStateFromFile(
+                    evt.clipboardData.files[0],
+                    (state) => {
+                        if (state) {
+                            dispatch({ type: 'reset', state });
+                        }
+                    },
+                    (name, src, width, height) => {
+                        const id = Math.random().toString(36).slice(2);
+                        dispatch({
+                            type: 'attachment:add',
+                            attachment: {
+                                id,
+                                contents: src,
+                                height,
+                                width,
+                                name,
+                            },
+                            id,
+                        });
+                        dispatch({
+                            type: 'overlay:add',
+                            attachment: id,
+                        });
+                    },
+                    (err) => {
+                        console.log(err);
+                        alert(err);
+                    },
+                );
+            }
+        };
+        document.addEventListener('paste', fn);
+        return () => document.removeEventListener('paste', fn);
+    });
 
     const [dragging, callbacks] = useDropStateOrAttachmentTarget(
         (state) => dispatch({ type: 'reset', state }),

@@ -8,10 +8,25 @@ import {
     DeleteForeverIcon,
     IconButton,
     ImagesIcon,
+    LibraryAddIcon,
     SendToBackIcon,
 } from './icons/Icon';
 import { Hover } from './Sidebar';
 import { Action, State } from './types';
+import { parseAttachment } from './useDropTarget';
+
+export const openFile = (onSuccess: (files: FileList | null) => void) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    document.body.appendChild(input);
+    input.style.display = 'none';
+    input.oninput = (evt) => {
+        const files = (evt.target as HTMLInputElement).files;
+        onSuccess(files);
+        input.remove();
+    };
+    input.click();
+};
 
 export const OverlayMenu = ({
     state,
@@ -179,6 +194,58 @@ export const OverlayMenu = ({
                             </div>
                         </div>
                     ))}
+                    <IconButton
+                        onClick={() => {
+                            openFile((files) => {
+                                console.log(files);
+                                if (files?.length) {
+                                    parseAttachment(
+                                        (name, contents, width, height) => {
+                                            const id = Math.random()
+                                                .toString(36)
+                                                .slice(2);
+                                            dispatch({
+                                                type: 'attachment:add',
+                                                attachment: {
+                                                    id,
+                                                    contents,
+                                                    height,
+                                                    width,
+                                                    name,
+                                                },
+                                                id,
+                                            });
+                                            dispatch({
+                                                type: 'overlay:add',
+                                                attachment: id,
+                                            });
+                                        },
+                                        files[0],
+                                        (err) => {
+                                            alert(
+                                                `Failed to parse image: ${err}`,
+                                            );
+                                        },
+                                    );
+                                }
+                            });
+                            // setOpen((o) => !o);
+                        }}
+                        css={
+                            {
+                                // width: 58,
+                                // height: 58,
+                                // display: 'flex',
+                                // alignItems: 'center',
+                                // justifyContent: 'center',
+                            }
+                        }
+                    >
+                        <LibraryAddIcon />
+                        {/* {state.selection?.type === 'Overlay'
+                        ? 'Deselect overlay'
+                        : 'Select overlay'} */}
+                    </IconButton>
                 </div>
             ) : null}
         </div>
