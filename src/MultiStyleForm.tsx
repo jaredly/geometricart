@@ -16,71 +16,36 @@ import { lightenedColor, paletteColor } from './RenderPath';
 // values: [one, two, null, etc.]
 // values: [one, null]
 
+export type StyleHover =
+    | {
+          type: 'fill-color';
+          idx: number;
+          color: string | number;
+      }
+    | {
+          type: 'line-color';
+          idx: number;
+          color: string | number;
+      }; // TODO add line width and inset and stuff, when we have a slider or something
+
 export const MultiStyleForm = ({
     styles,
     onChange,
     palette,
+    onHover,
 }: {
     styles: Array<Style>;
     onChange: (updated: Array<Style | null>) => void;
     palette: Array<string>;
+    onHover: (hover: StyleHover | null) => void;
 }) => {
-    const fills: Array<MultiFill> = [];
-    const lines: Array<MultiLine> = [];
-    const maxLines = styles.reduce(
-        (num, style) => Math.max(num, style.lines.length),
-        0,
-    );
-    const maxFills = styles.reduce(
-        (num, style) => Math.max(num, style.fills.length),
-        0,
-    );
-    for (let i = 0; i < maxFills; i++) {
-        fills.push({
-            color: [],
-            inset: [],
-            opacity: [],
-            lighten: [],
-            colorVariation: [],
-        });
-    }
-    for (let i = 0; i < maxLines; i++) {
-        lines.push({
-            color: [],
-            inset: [],
-            dash: [],
-            joinStyle: [],
-            width: [],
-        });
-    }
-    styles.forEach((style) => {
-        style.fills.forEach((fill, i) => {
-            addIfNew(fills[i].color, fill?.color ?? null);
-            addIfNew(fills[i].inset, fill?.inset ?? null);
-            addIfNew(fills[i].opacity, fill?.opacity ?? null);
-            addIfNew(fills[i].colorVariation, fill?.colorVariation ?? null);
-            addIfNew(fills[i].lighten, fill?.lighten ?? null);
-        });
-        style.lines.forEach((line, i) => {
-            addIfNew(lines[i].color, line?.color ?? null);
-            addIfNew(lines[i].inset, line?.inset ?? null);
-            addIfNew(lines[i].width, line?.width ?? null);
-        });
-    });
+    const { fills, lines } = collectMultiStyles(styles);
     return (
         <div css={{ border: '1px solid magenta', padding: 8 }}>
             Change {styles.length} styles.
             <div>Fills</div>
             {fills.map((fill, i) => (
-                <div
-                    key={i}
-                    css={{
-                        // display: 'flex',
-                        // alignItems: 'center',
-                        marginBottom: 8,
-                        // flexWrap: 'wrap',
-                    }}
-                >
+                <div key={i} css={{ marginBottom: 8 }}>
                     <div css={{ display: 'flex' }}>
                         <div key={`inset-${i}`}>
                             inset:
@@ -105,6 +70,15 @@ export const MultiStyleForm = ({
                                 onChange(updateFill(styles, i, color, 'color'));
                                 // ok
                             }}
+                            onHover={(color) =>
+                                color
+                                    ? onHover({
+                                          type: 'fill-color',
+                                          idx: i,
+                                          color,
+                                      })
+                                    : onHover(null)
+                            }
                             palette={palette}
                             key={i}
                         />
@@ -220,6 +194,11 @@ export const MultiStyleForm = ({
                             onChange(updateLine(styles, i, color, 'color'));
                             // ok
                         }}
+                        onHover={(color) =>
+                            color
+                                ? onHover({ type: 'line-color', idx: i, color })
+                                : onHover(null)
+                        }
                         palette={palette}
                         key={i}
                     />
@@ -478,10 +457,12 @@ export const MultiColor = ({
     color,
     onChange,
     palette,
+    onHover,
 }: {
     color: Array<string | null | number>;
     onChange: (color: string | number) => void;
     palette: Array<string>;
+    onHover: (color: string | number | null) => void;
 }) => {
     const options = ['black', 'white', 'transparent'];
     const highlight = color.length === 1 ? 'white' : '#faa';
@@ -491,6 +472,8 @@ export const MultiColor = ({
                 <button
                     key={i}
                     onClick={() => onChange(i)}
+                    onMouseOver={() => onHover(item)}
+                    onMouseOut={() => onHover(null)}
                     style={{
                         boxShadow: color.includes(i)
                             ? `0 3px 0 ${highlight}`
@@ -521,6 +504,8 @@ export const MultiColor = ({
                 <button
                     key={name + i}
                     onClick={() => onChange(name)}
+                    onMouseOver={() => onHover(name)}
+                    onMouseOut={() => onHover(null)}
                     style={{
                         background:
                             name === 'transparent'
@@ -557,6 +542,52 @@ export const MultiColor = ({
 
 export const maybeUrlColor = (color: string) =>
     color.startsWith('http') ? `url("${color}")` : color;
+
+export function collectMultiStyles(styles: Style[]) {
+    const fills: Array<MultiFill> = [];
+    const lines: Array<MultiLine> = [];
+    const maxLines = styles.reduce(
+        (num, style) => Math.max(num, style.lines.length),
+        0,
+    );
+    const maxFills = styles.reduce(
+        (num, style) => Math.max(num, style.fills.length),
+        0,
+    );
+    for (let i = 0; i < maxFills; i++) {
+        fills.push({
+            color: [],
+            inset: [],
+            opacity: [],
+            lighten: [],
+            colorVariation: [],
+        });
+    }
+    for (let i = 0; i < maxLines; i++) {
+        lines.push({
+            color: [],
+            inset: [],
+            dash: [],
+            joinStyle: [],
+            width: [],
+        });
+    }
+    styles.forEach((style) => {
+        style.fills.forEach((fill, i) => {
+            addIfNew(fills[i].color, fill?.color ?? null);
+            addIfNew(fills[i].inset, fill?.inset ?? null);
+            addIfNew(fills[i].opacity, fill?.opacity ?? null);
+            addIfNew(fills[i].colorVariation, fill?.colorVariation ?? null);
+            addIfNew(fills[i].lighten, fill?.lighten ?? null);
+        });
+        style.lines.forEach((line, i) => {
+            addIfNew(lines[i].color, line?.color ?? null);
+            addIfNew(lines[i].inset, line?.inset ?? null);
+            addIfNew(lines[i].width, line?.width ?? null);
+        });
+    });
+    return { fills, lines };
+}
 
 export function updateLine(
     styles: Style[],

@@ -18,7 +18,12 @@ import {
 } from './Guides';
 import { handleSelection } from './handleSelection';
 import { MirrorMenu } from './MirrorMenu';
-import { mergeFills, mergeStyleLines, MultiStyleForm } from './MultiStyleForm';
+import {
+    mergeFills,
+    mergeStyleLines,
+    MultiStyleForm,
+    StyleHover,
+} from './MultiStyleForm';
 import { Overlay } from './Overlay';
 import { OverlayMenu } from './OverlayMenu';
 import { PendingPathControls } from './PendingPathControls';
@@ -304,6 +309,10 @@ export const Canvas = ({
         );
         return fromGuides;
     }, [guidePrimitives, state.paths, state.pathGroups]);
+
+    const [styleHover, setStyleHover] = React.useState(
+        null as null | StyleHover,
+    );
 
     const inner = (
         <svg
@@ -607,6 +616,7 @@ export const Canvas = ({
                         <MultiStyleForm
                             palette={state.palettes[state.activePalette]}
                             styles={styleIds.map((k) => state.paths[k].style)}
+                            onHover={setStyleHover}
                             onChange={(styles) => {
                                 const changed: {
                                     [key: string]: Path;

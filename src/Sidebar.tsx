@@ -153,6 +153,7 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactElement } = {
                               <MultiStyleForm
                                   palette={state.palettes[state.activePalette]}
                                   styles={ids.map((k) => state.paths[k].style)}
+                                  onHover={() => {}}
                                   onChange={(styles) => {
                                       const changed: { [key: string]: Path } =
                                           {};
@@ -231,6 +232,7 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactElement } = {
                     styles={state.selection.ids.map(
                         (id) => state.paths[id].style,
                     )}
+                    onHover={() => {}}
                     onChange={(styles) => {
                         const changed: { [key: string]: Path } = {};
                         styles.forEach((style, i) => {
