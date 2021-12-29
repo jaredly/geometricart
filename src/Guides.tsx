@@ -472,7 +472,9 @@ export const Guides = ({
                 />
             ) : null}
             {Object.keys(state.mirrors).map((m) =>
-                hover?.kind === 'Mirror' && hover.id === m ? (
+                hover?.type === 'element' &&
+                hover?.kind === 'Mirror' &&
+                hover.id === m ? (
                     <RenderMirror
                         key={m}
                         mirror={state.mirrors[m]}

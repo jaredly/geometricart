@@ -83,10 +83,13 @@ export const Tabs = ({
     );
 };
 
-export type Hover = {
-    kind: Selection['type'] | 'Clip';
-    id: Id;
-};
+export type Hover =
+    | {
+          type: 'element';
+          kind: Selection['type'] | 'Clip';
+          id: Id;
+      }
+    | { type: 'guides' };
 
 export type TabProps = {
     state: State;
@@ -118,7 +121,9 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactElement } = {
                             state.selection.ids.includes(k)
                         }
                         onMouseOut={() => setHover(null)}
-                        onMouseOver={() => setHover({ kind: 'Guide', id: k })}
+                        onMouseOver={() =>
+                            setHover({ kind: 'Guide', id: k, type: 'element' })
+                        }
                         key={k}
                         guide={state.guides[k]}
                         onChange={(guide) =>
@@ -202,7 +207,11 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactElement } = {
                                 key={k}
                                 group={state.pathGroups[k]}
                                 onMouseOver={() => {
-                                    setHover({ kind: 'PathGroup', id: k });
+                                    setHover({
+                                        kind: 'PathGroup',
+                                        id: k,
+                                        type: 'element',
+                                    });
                                 }}
                                 onMouseOut={() => setHover(null)}
                                 onChange={(group) =>
@@ -276,7 +285,11 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactElement } = {
                             palette={state.palettes[state.activePalette]}
                             path={state.paths[k]}
                             onMouseOver={() => {
-                                setHover({ kind: 'Path', id: k });
+                                setHover({
+                                    kind: 'Path',
+                                    id: k,
+                                    type: 'element',
+                                });
                             }}
                             onMouseOut={() => setHover(null)}
                             onChange={(path) =>
@@ -348,7 +361,9 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactElement } = {
                         //     }
                         // }}
                         onMouseOut={() => setHover(null)}
-                        onMouseOver={() => setHover({ kind: 'Mirror', id: k })}
+                        onMouseOver={() =>
+                            setHover({ kind: 'Mirror', id: k, type: 'element' })
+                        }
                         isActive={state.activeMirror === k}
                         onDuplicate={() => {
                             dispatch({

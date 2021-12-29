@@ -133,7 +133,11 @@ export const OverlayMenu = ({
                                         setHover(null);
                                     }}
                                     onMouseOver={() =>
-                                        setHover({ kind: 'Overlay', id: k })
+                                        setHover({
+                                            kind: 'Overlay',
+                                            id: k,
+                                            type: 'element',
+                                        })
                                     }
                                     onMouseOut={() => setHover(null)}
                                     hoverIcon={

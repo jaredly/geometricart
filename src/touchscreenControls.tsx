@@ -34,6 +34,7 @@ import {
     SubtractLineIcon,
 } from './icons/Icon';
 import { PendingMirror } from './App';
+import { Hover } from './Sidebar';
 
 export const idsToStyle = (state: State) => {
     if (
@@ -54,6 +55,7 @@ export function guideSection(
     dispatch: (action: Action) => unknown,
     setDragSelect: (fn: (select: boolean) => boolean) => void,
     dragSelect: boolean,
+    setHover: (hover: Hover | null) => void,
 ): React.ReactNode {
     if (state.pending) {
         return (
@@ -66,31 +68,35 @@ export function guideSection(
                 Cancel guide
             </button>
         );
-    } else if (state.view.guides) {
-        return (
-            <div>
-                <IconButton
-                    onClick={() => {
-                        dispatch({
-                            type: 'view:update',
-                            view: {
-                                ...state.view,
-                                guides: !state.view.guides,
-                            },
-                        });
-                    }}
-                >
-                    <EyeIcon />
-                </IconButton>
-                <IconButton
-                    selected={dragSelect}
-                    onClick={() => {
-                        setDragSelect((current) => !current);
-                    }}
-                >
-                    <SelectDragIcon />
-                </IconButton>
+    }
+    return (
+        <div>
+            <IconButton
+                onClick={() => {
+                    dispatch({
+                        type: 'view:update',
+                        view: {
+                            ...state.view,
+                            guides: !state.view.guides,
+                        },
+                    });
+                    setHover(null);
+                }}
+                // onMouseOut={() => setHover(null)}
+                // onMouseOver={() => setHover({ type: 'guides' })}
+            >
+                {state.view.guides ? <EyeIcon /> : <EyeInvisibleIcon />}
+            </IconButton>
+            <IconButton
+                selected={dragSelect}
+                onClick={() => {
+                    setDragSelect((current) => !current);
+                }}
+            >
+                <SelectDragIcon />
+            </IconButton>
 
+            {state.view.guides ? (
                 <select
                     css={{
                         width: 140,
@@ -111,35 +117,9 @@ export function guideSection(
                         <option value={kind}>{kind}</option>
                     ))}
                 </select>
-            </div>
-        );
-    } else {
-        return (
-            <div>
-                <IconButton
-                    onClick={() => {
-                        dispatch({
-                            type: 'view:update',
-                            view: {
-                                ...state.view,
-                                guides: !state.view.guides,
-                            },
-                        });
-                    }}
-                >
-                    <EyeInvisibleIcon />
-                </IconButton>
-                <IconButton
-                    selected={dragSelect}
-                    onClick={() => {
-                        setDragSelect((current) => !current);
-                    }}
-                >
-                    <SelectDragIcon />
-                </IconButton>
-            </div>
-        );
-    }
+            ) : null}
+        </div>
+    );
 }
 
 export function selectionSection(

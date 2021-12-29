@@ -55,31 +55,6 @@ export const calcPathD = (path: Path, zoom: number) => {
     return d + (path.open ? '' : ' Z');
 };
 
-export const applyStyleHover = (
-    styleHover: StyleHover,
-    style: Style,
-): Style => {
-    if (style.fills.length > 1) {
-        console.log('OKK', style);
-    }
-    style = { ...style };
-    if (styleHover.type === 'fill-color') {
-        style.fills = style.fills.slice();
-        const fill = style.fills[styleHover.idx];
-        if (fill) {
-            style.fills[styleHover.idx] = { ...fill, color: styleHover.color };
-        }
-    } else if (styleHover.type === 'line-color') {
-        style.lines = style.lines.slice();
-        const line = style.lines[styleHover.idx];
-        if (line) {
-            style.lines[styleHover.idx] = { ...line, color: styleHover.color };
-        }
-    }
-    // console.log(style);
-    return style;
-};
-
 export const RenderPath = React.memo(
     ({
         path,

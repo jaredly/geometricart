@@ -22,11 +22,42 @@ export type StyleHover =
           idx: number;
           color: string | number;
       }
+    | { type: 'fill-lightness'; idx: number; lighten: number }
     | {
           type: 'line-color';
           idx: number;
           color: string | number;
       }; // TODO add line width and inset and stuff, when we have a slider or something
+
+export const applyStyleHover = (
+    styleHover: StyleHover,
+    style: Style,
+): Style => {
+    style = { ...style };
+    if (styleHover.type === 'fill-color') {
+        style.fills = style.fills.slice();
+        const fill = style.fills[styleHover.idx];
+        if (fill) {
+            style.fills[styleHover.idx] = { ...fill, color: styleHover.color };
+        }
+    } else if (styleHover.type === 'line-color') {
+        style.lines = style.lines.slice();
+        const line = style.lines[styleHover.idx];
+        if (line) {
+            style.lines[styleHover.idx] = { ...line, color: styleHover.color };
+        }
+    } else if (styleHover.type === 'fill-lightness') {
+        style.fills = style.fills.slice();
+        const fill = style.fills[styleHover.idx];
+        if (fill) {
+            style.fills[styleHover.idx] = {
+                ...fill,
+                lighten: styleHover.lighten,
+            };
+        }
+    }
+    return style;
+};
 
 export const MultiStyleForm = ({
     styles,
@@ -71,7 +102,7 @@ export const MultiStyleForm = ({
                                 // ok
                             }}
                             onHover={(color) =>
-                                color
+                                color != null
                                     ? onHover({
                                           type: 'fill-color',
                                           idx: i,
@@ -88,6 +119,17 @@ export const MultiStyleForm = ({
                                 lighten={fill.lighten}
                                 palette={palette}
                                 color={fill.color}
+                                onHover={(lighten) =>
+                                    onHover(
+                                        lighten != null
+                                            ? {
+                                                  type: 'fill-lightness',
+                                                  lighten,
+                                                  idx: i,
+                                              }
+                                            : null,
+                                    )
+                                }
                                 onChange={(lighten) => {
                                     onChange(
                                         updateFill(
@@ -195,7 +237,7 @@ export const MultiStyleForm = ({
                             // ok
                         }}
                         onHover={(color) =>
-                            color
+                            color != null
                                 ? onHover({ type: 'line-color', idx: i, color })
                                 : onHover(null)
                         }
@@ -279,11 +321,13 @@ export const LightDark = ({
     palette,
     color,
     onChange,
+    onHover,
 }: {
     lighten: Array<number | null>;
     palette: Array<string>;
     color: Array<string | number | null>;
     onChange: (value: number | null) => void;
+    onHover: (lighten: number | null) => void;
 }) => {
     const options = [-3, -2, -1.5, -1, -0.5, 0, 0.5, 1, 1.5, 2, 3];
     const allSame = lighten.length === 1 ? lighten[0] : null;
@@ -299,6 +343,8 @@ export const LightDark = ({
                                 onClick={() =>
                                     onChange(allSame === value ? null : value)
                                 }
+                                onMouseOver={() => onHover(value)}
+                                onMouseOut={() => onHover(null)}
                                 style={{
                                     // borderColor:
                                     // lighten.includes(value) ? 'black' : 'transparent',

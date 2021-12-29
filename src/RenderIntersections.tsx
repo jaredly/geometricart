@@ -1,10 +1,8 @@
-/* @jsx jsx */
-/* @jsxFrag React.Fragment */
-import { jsx, css } from '@emotion/react';
 import React from 'react';
 import { Intersect } from './types';
+import { css } from '@emotion/css';
 
-const whatsit = css({
+const intersectionStyle = css({
     // fill: 'rgba(255,255,255,0.1)',
     cursor: 'pointer',
     transition: '.2s ease r, .2s ease fill',
@@ -73,7 +71,8 @@ export const RenderIntersections = React.memo(
                         r={5}
                         fill={highlight ? '#faa' : 'rgba(255,255,255,0.1)'}
                         stroke={'black'}
-                        css={whatsit}
+                        className={intersectionStyle}
+                        // css={intersectionStyle}
                         // css={{
                         //     fill: 'rgba(255,255,255,0.1)',
                         //     cursor: 'pointer',

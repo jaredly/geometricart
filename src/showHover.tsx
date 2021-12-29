@@ -27,6 +27,9 @@ export const showHover = (
     bounds: Bounds,
     selection: boolean,
 ) => {
+    if (hover.type !== 'element') {
+        return null;
+    }
     const color = selection ? 'blue' : 'magenta';
     switch (hover.kind) {
         case 'Mirror': {

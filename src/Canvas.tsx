@@ -160,7 +160,7 @@ export const Canvas = ({
     const [styleOpen, setStyleOpen] = React.useState(false);
     React.useEffect(() => {
         setStyleOpen(false);
-    }, [state.selection]);
+    }, [state.selection != null]);
 
     const finishDrag = React.useCallback((shiftKey: boolean) => {
         setDragSelecting(false);
@@ -169,7 +169,6 @@ export const Canvas = ({
         if (!drag) {
             return;
         }
-        console.log(pos, drag);
         const rect = rectForCorners(pos, drag);
         const selected = findSelection(
             currentState.current.paths,
@@ -227,7 +226,6 @@ export const Canvas = ({
     }, [!!state.selection]);
 
     const clickPath = React.useCallback((shiftKey, id) => {
-        console.log('CLICK PATH');
         const path = currentState.current.paths[id];
         handleSelection(
             path,
@@ -387,7 +385,9 @@ export const Canvas = ({
                         (id) =>
                             maybeReverse(
                                 !state.overlays[id].hide,
-                                hover?.kind === 'Overlay' && hover?.id === id,
+                                hover?.type === 'element' &&
+                                    hover?.kind === 'Overlay' &&
+                                    hover?.id === id,
                             ) && !state.overlays[id].over,
                     )
                     .map((id) => {
@@ -438,7 +438,9 @@ export const Canvas = ({
                         (id) =>
                             maybeReverse(
                                 !state.overlays[id].hide,
-                                hover?.kind === 'Overlay' && hover?.id === id,
+                                hover?.type === 'element' &&
+                                    hover?.kind === 'Overlay' &&
+                                    hover?.id === id,
                             ) && state.overlays[id].over,
                     )
                     .map((id) => {
@@ -460,7 +462,7 @@ export const Canvas = ({
                         );
                     })}
 
-                {view.guides ? (
+                {maybeReverse(view.guides, hover?.type === 'guides') ? (
                     <Guides
                         state={state}
                         isTouchScreen={isTouchScreen}
@@ -484,7 +486,11 @@ export const Canvas = ({
                     ? state.selection.ids.map((id) =>
                           showHover(
                               id,
-                              { kind: state.selection!.type, id },
+                              {
+                                  kind: state.selection!.type,
+                                  id,
+                                  type: 'element',
+                              },
                               state,
                               mirrorTransforms,
                               view.zoom,
@@ -497,7 +503,7 @@ export const Canvas = ({
                     ? dragged.map((id) =>
                           showHover(
                               id,
-                              { kind: 'Path', id },
+                              { kind: 'Path', id, type: 'element' },
                               state,
                               mirrorTransforms,
                               view.zoom,
@@ -580,7 +586,9 @@ export const Canvas = ({
             ) : null}
             <MirrorMenu
                 onHover={(k) =>
-                    k ? setHover({ kind: 'Mirror', id: k }) : setHover(null)
+                    k
+                        ? setHover({ kind: 'Mirror', id: k, type: 'element' })
+                        : setHover(null)
                 }
                 onAdd={() =>
                     setPendingMirror({
@@ -637,7 +645,6 @@ export const Canvas = ({
                             styles={styleIds.map((k) => state.paths[k].style)}
                             onHover={(hover) => {
                                 setStyleHover(hover);
-                                console.log(hover);
                             }}
                             onChange={(styles) => {
                                 const changed: {
@@ -679,6 +686,7 @@ export const Canvas = ({
                           dispatch,
                           setDragSelecting,
                           isDragSelecting,
+                          setHover,
                       )}
                 {pendingPath[0] ? (
                     <PendingPathControls

@@ -310,7 +310,7 @@ export const handleKeyboard = (
 ) => {
     let tid: null | NodeJS.Timeout = null;
     const hoverMirror = (id: Id, quick: boolean) => {
-        setHover({ kind: 'Mirror', id });
+        setHover({ kind: 'Mirror', id, type: 'element' });
         if (tid) {
             clearTimeout(tid);
         }

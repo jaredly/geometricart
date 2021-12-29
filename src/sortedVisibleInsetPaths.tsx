@@ -7,7 +7,7 @@ import {
     pathToReversedSegmentKeys,
     pathToSegmentKeys,
 } from './pathsAreIdentical';
-import { applyStyleHover, paletteColor } from './RenderPath';
+import { paletteColor } from './RenderPath';
 import { insetPath, pruneInsetPath, simplifyPath } from './insetPath';
 import { Coord, Path, PathGroup, Segment } from './types';
 import { segmentKey, segmentKeyReverse } from './DrawPath';
@@ -21,7 +21,7 @@ import {
     withinLimit,
 } from './intersect';
 import { calculateBounds } from './Guides';
-import { StyleHover } from './MultiStyleForm';
+import { applyStyleHover, StyleHover } from './MultiStyleForm';
 
 // This should produce:
 // a list of lines

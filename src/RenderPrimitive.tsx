@@ -1,13 +1,16 @@
-/* @jsx jsx */
-/* @jsxFrag React.Fragment */
-import { jsx } from '@emotion/react';
+import { css } from '@emotion/css';
 import React from 'react';
-import { useCurrent } from './App';
 import { push } from './getMirrorTransforms';
 import { Bounds, visibleEndPoints } from './GuideElement';
 import { Primitive } from './intersect';
 import { useTouchClick } from './RenderIntersections';
 import { arcPath } from './RenderPendingPath';
+
+const hoverClass = css({
+    ':hover': {
+        stroke: '#fff',
+    },
+});
 
 export function RenderPrimitive({
     prim,
@@ -27,8 +30,7 @@ export function RenderPrimitive({
     inactive?: boolean;
     strokeWidth?: number;
     onClick?: (shiftKey: boolean) => unknown;
-}): jsx.JSX.Element {
-    // const clickRef = useCurrent(onClick);
+}) {
     const handlers = useTouchClick<void>(() => {
         if (onClick) {
             onClick(false);
@@ -48,13 +50,7 @@ export function RenderPrimitive({
         style: onClick ? { cursor: 'pointer' } : {},
         strokeDasharray: isImplied ? '3 3' : '',
 
-        css: onClick
-            ? {
-                  ':hover': {
-                      stroke: '#fff',
-                  },
-              }
-            : {},
+        className: onClick ? hoverClass : undefined,
     };
     if (prim.type === 'line') {
         if (prim.limit) {
