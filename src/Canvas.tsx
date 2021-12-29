@@ -36,7 +36,7 @@ import {
     idsToStyle,
     mirrorControls,
     selectionSection,
-    guideSection,
+    GuideSection,
 } from './touchscreenControls';
 import { Action, Coord, Path, Segment, State, Style, View } from './types';
 import { useDragSelect, useMouseDrag } from './useMouseDrag';
@@ -667,27 +667,29 @@ export const Canvas = ({
                         />
                     </div>
                 ) : null}
-                {pendingMirror
-                    ? mirrorControls(setPendingMirror, pendingMirror)
-                    : state.selection
-                    ? selectionSection(
-                          dispatch,
-                          isDragSelecting,
-                          setDragSelecting,
-                          styleIds,
-                          setStyleOpen,
-                          styleOpen,
-                          state,
-                          setMultiSelect,
-                          multiSelect,
-                      )
-                    : guideSection(
-                          state,
-                          dispatch,
-                          setDragSelecting,
-                          isDragSelecting,
-                          setHover,
-                      )}
+                {pendingMirror ? (
+                    mirrorControls(setPendingMirror, pendingMirror)
+                ) : state.selection ? (
+                    selectionSection(
+                        dispatch,
+                        isDragSelecting,
+                        setDragSelecting,
+                        styleIds,
+                        setStyleOpen,
+                        styleOpen,
+                        state,
+                        setMultiSelect,
+                        multiSelect,
+                    )
+                ) : (
+                    <GuideSection
+                        state={state}
+                        dispatch={dispatch}
+                        setDragSelect={setDragSelecting}
+                        dragSelect={isDragSelecting}
+                        setHover={setHover}
+                    />
+                )}
                 {pendingPath[0] ? (
                     <PendingPathControls
                         pendingPath={pendingPath}

@@ -50,13 +50,20 @@ export const idsToStyle = (state: State) => {
     return [];
 };
 
-export function guideSection(
-    state: State,
-    dispatch: (action: Action) => unknown,
-    setDragSelect: (fn: (select: boolean) => boolean) => void,
-    dragSelect: boolean,
-    setHover: (hover: Hover | null) => void,
-): React.ReactNode {
+export function GuideSection({
+    state,
+    dispatch,
+    setDragSelect,
+    dragSelect,
+    setHover,
+}: {
+    state: State;
+    dispatch: (action: Action) => unknown;
+    setDragSelect: (fn: (select: boolean) => boolean) => void;
+    dragSelect: boolean;
+    setHover: (hover: Hover | null) => void;
+}) {
+    const tap = React.useRef(false);
     if (state.pending) {
         return (
             <button
@@ -70,7 +77,7 @@ export function guideSection(
         );
     }
     return (
-        <div>
+        <div key="guide-section">
             <IconButton
                 onClick={() => {
                     dispatch({
@@ -81,9 +88,16 @@ export function guideSection(
                         },
                     });
                     setHover(null);
+                    tap.current = true;
                 }}
-                // onMouseOut={() => setHover(null)}
-                // onMouseOver={() => setHover({ type: 'guides' })}
+                onMouseOut={() => setHover(null)}
+                onMouseOver={() => {
+                    if (tap.current) {
+                        tap.current = false;
+                        return;
+                    }
+                    setHover({ type: 'guides' });
+                }}
             >
                 {state.view.guides ? <EyeIcon /> : <EyeInvisibleIcon />}
             </IconButton>
@@ -114,7 +128,9 @@ export function guideSection(
                         + Guide
                     </option>
                     {guideTypes.map((kind) => (
-                        <option value={kind}>{kind}</option>
+                        <option key={kind} value={kind}>
+                            {kind}
+                        </option>
                     ))}
                 </select>
             ) : null}
