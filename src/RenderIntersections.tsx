@@ -50,43 +50,29 @@ export const RenderIntersections = React.memo(
         intersections: Array<Intersect>;
         onClick: (item: Intersect, shiftKey: boolean) => unknown;
     }) => {
-        // if (true) {
-        //     return null;
-        // }
         const handlers = useTouchClick<Intersect>((intersection) =>
             onClick(intersection, false),
         );
         const isTouchScreen = 'ontouchstart' in window;
         return (
             <>
-            {isTouchScreen
-            ?
-                intersections.map((intersection, i) => (
-                    <circle
-                        key={i}
-                        cx={intersection.coord.x * zoom}
-                        cy={intersection.coord.y * zoom}
-                        onClick={(evt) => {
-                            onClick(intersection, evt.shiftKey);
-                        }}
-                        {...handlers(intersection)}
-                        r={15}
-                        fill='rgba(255,255,255,0)'
-                        stroke={'none'}
-                        className={intersectionStyle}
-                        // css={intersectionStyle}
-                        // css={{
-                        //     fill: 'rgba(255,255,255,0.1)',
-                        //     cursor: 'pointer',
-                        //     transition: '.2s ease r, .2s ease fill',
-                        //     ':hover': {
-                        //         r: 7,
-                        //         fill: 'white',
-                        //     },
-                        // }}
-                    />
-                ))
-        : null}}
+                {isTouchScreen
+                    ? intersections.map((intersection, i) => (
+                          <circle
+                              key={i}
+                              cx={intersection.coord.x * zoom}
+                              cy={intersection.coord.y * zoom}
+                              onClick={(evt) => {
+                                  onClick(intersection, evt.shiftKey);
+                              }}
+                              {...handlers(intersection)}
+                              r={15}
+                              fill="rgba(255,255,255,0)"
+                              stroke={'none'}
+                              className={intersectionStyle}
+                          />
+                      ))
+                    : null}
                 {intersections.map((intersection, i) => (
                     <circle
                         key={i}
@@ -100,16 +86,6 @@ export const RenderIntersections = React.memo(
                         fill={highlight ? '#faa' : 'rgba(255,255,255,0.1)'}
                         stroke={'black'}
                         className={intersectionStyle}
-                        // css={intersectionStyle}
-                        // css={{
-                        //     fill: 'rgba(255,255,255,0.1)',
-                        //     cursor: 'pointer',
-                        //     transition: '.2s ease r, .2s ease fill',
-                        //     ':hover': {
-                        //         r: 7,
-                        //         fill: 'white',
-                        //     },
-                        // }}
                     />
                 ))}
             </>
