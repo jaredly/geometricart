@@ -20,6 +20,7 @@ export function RenderPrimitive({
     bounds,
     color,
     inactive,
+    touchOnly,
     strokeWidth = 1,
 }: {
     color?: string;
@@ -27,6 +28,7 @@ export function RenderPrimitive({
     prim: Primitive;
     bounds: Bounds;
     zoom: number;
+    touchOnly?: boolean;
     inactive?: boolean;
     strokeWidth?: number;
     onClick?: (shiftKey: boolean) => unknown;
@@ -49,7 +51,14 @@ export function RenderPrimitive({
         ...handlers(undefined),
         style: onClick ? { cursor: 'pointer' } : {},
         strokeDasharray: isImplied ? '3 3' : '',
-
+        ...(touchOnly
+            ? {
+                  strokeWidth: 20,
+                  strokeLinecap: 'round' as 'round',
+                  opacity: 0.01,
+                  stroke: 'blue',
+              }
+            : {}),
         className: onClick ? hoverClass : undefined,
     };
     if (prim.type === 'line') {

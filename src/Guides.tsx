@@ -504,10 +504,32 @@ export const RenderPrimitives = React.memo(
         const isTouchScreen = 'ontouchstart' in window;
         return (
             <>
+                {isTouchScreen
+                    ? primitives.map((prim, i) =>
+                          prim.guides.length === 0 ? null : (
+                              <RenderPrimitive
+                                  strokeWidth={1}
+                                  bounds={bounds}
+                                  prim={prim.prim}
+                                  zoom={zoom}
+                                  inactive={inactive}
+                                  touchOnly
+                                  isImplied={!prim.guides.length}
+                                  onClick={
+                                      onClick && prim.guides.length
+                                          ? (shiftKey) =>
+                                                onClick(prim.guides, shiftKey)
+                                          : undefined
+                                  }
+                                  key={i}
+                              />
+                          ),
+                      )
+                    : null}
                 {primitives.map((prim, i) =>
                     prim.guides.length === 0 ? null : (
                         <RenderPrimitive
-                            strokeWidth={isTouchScreen ? 5 : 1}
+                            strokeWidth={1}
                             bounds={bounds}
                             prim={prim.prim}
                             zoom={zoom}

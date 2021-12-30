@@ -10,8 +10,9 @@ what things do I still have to shell out for?
 - exports
 Is that it?
 
-- [ ] zoooom for mobile
-- [ ] then make hit targets for mobile so big.
+- [x] zoooom for mobile
+- [x] then make hit targets for mobile so big.
+	- but less visible, ya know
 
 - [x] hover to show guides! pleasssse
 - [x] hover to show/hide overlay!
