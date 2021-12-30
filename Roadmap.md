@@ -1,11 +1,19 @@
 
+Question:
+is it higher priority to make mobile work reasonably, or to do animation stuff?
+I can tell you animation is more exciting.
+but I'm soooo close to mobile being good.
+
 # So
 what things do I still have to shell out for?
 - palette stuff
 - exports
 Is that it?
 
-- [ ] hover to show guides! pleasssse
+- [ ] zoooom for mobile
+- [ ] then make hit targets for mobile so big.
+
+- [x] hover to show guides! pleasssse
 - [x] hover to show/hide overlay!
 - [ ] clipssss need a menu for them, thanks.
 	- also need to be able to configure clip behavior of groups

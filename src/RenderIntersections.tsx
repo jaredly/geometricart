@@ -13,27 +13,27 @@ const intersectionStyle = css({
 });
 
 export const useTouchClick = <T,>(fn: (arg: T) => void) => {
-    const ref = React.useRef(null as null | boolean);
+    const valid = React.useRef(null as null | boolean);
     return (arg: T) => ({
         onTouchStart: (evt: React.TouchEvent) => {
-            if (ref.current === null) {
-                ref.current = true;
+            if (valid.current === null) {
+                valid.current = true;
             } else {
-                ref.current = false;
+                valid.current = false;
             }
         },
         onTouchMove: (evt: React.TouchEvent) => {
-            ref.current = false;
+            valid.current = false;
         },
         onTouchEnd: (evt: React.TouchEvent) => {
             evt.preventDefault(); // stop onclick from happening.
             if (evt.touches.length > 0) {
                 return;
             }
-            if (ref.current === true) {
+            if (valid.current === true) {
                 fn(arg);
             }
-            ref.current = null;
+            valid.current = null;
         },
     });
 };
