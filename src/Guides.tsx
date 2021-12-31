@@ -165,7 +165,9 @@ export const Guides = ({
     allIntersections,
     isTouchScreen,
     disableGuides,
+    bounds,
 }: {
+    bounds: Bounds;
     state: State;
     isTouchScreen: boolean;
     zooming: boolean;
@@ -350,10 +352,6 @@ export const Guides = ({
         },
         [],
     );
-
-    const bounds = React.useMemo(() => {
-        return calculateBounds(width, height, view);
-    }, [view, width, height]);
 
     const clickActive = React.useCallback(
         (guides: string[], shift: boolean): void => {

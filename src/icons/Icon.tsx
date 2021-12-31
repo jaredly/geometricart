@@ -348,3 +348,36 @@ export function SubtractLineIcon(props: React.SVGProps<SVGSVGElement>) {
         </svg>
     );
 }
+
+export function CopyIcon(props: React.SVGProps<SVGSVGElement>) {
+    return (
+        <svg
+            fill="none"
+            stroke="currentColor"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            viewBox="0 0 24 24"
+            height="1em"
+            width="1em"
+            {...props}
+        >
+            <path d="M11 9 H20 A2 2 0 0 1 22 11 V20 A2 2 0 0 1 20 22 H11 A2 2 0 0 1 9 20 V11 A2 2 0 0 1 11 9 z" />
+            <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+        </svg>
+    );
+}
+
+export function VectorSelectionIcon(props: React.SVGProps<SVGSVGElement>) {
+    return (
+        <svg
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            height="1em"
+            width="1em"
+            {...props}
+        >
+            <path d="M3 1h2v2H3v2H1V3a2 2 0 012-2m11 0a2 2 0 012 2v2h-2V3h-2V1h2m6 6a2 2 0 012 2v2h-2V9h-2V7h2m2 13a2 2 0 01-2 2h-2v-2h2v-2h2v2m-2-7h2v3h-2v-3m-7-4V7h3v3h-2V9h-1m0 13v-2h3v2h-3m-4 0a2 2 0 01-2-2v-2h2v2h2v2H9m-2-6v-3h2v1h1v2H7M7 3V1h3v2H7M3 16a2 2 0 01-2-2v-2h2v2h2v2H3M1 7h2v3H1V7m8 0h2v2H9v2H7V9a2 2 0 012-2m7 7a2 2 0 01-2 2h-2v-2h2v-2h2v2z" />
+        </svg>
+    );
+}

@@ -125,6 +125,9 @@ export const App = ({ initialState }: { initialState: State }) => {
     const [pendingMirror, setPendingMirror] = React.useState(
         null as null | PendingMirror,
     );
+    if (pendingMirror && pendingMirror.parent !== state.activeMirror) {
+        pendingMirror.parent = state.activeMirror;
+    }
 
     // const [dragSelect, setDragSelect] = React.useState(false);
 

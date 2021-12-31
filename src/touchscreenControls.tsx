@@ -32,6 +32,7 @@ import {
     PaintFillIcon,
     SelectDragIcon,
     SubtractLineIcon,
+    VectorSelectionIcon,
 } from './icons/Icon';
 import { PendingMirror } from './App';
 import { Hover } from './Sidebar';
@@ -276,8 +277,7 @@ export function selectionSection(
             {state.activeMirror &&
             (state.selection.type === 'Path' ||
                 state.selection.type === 'PathGroup') ? (
-                <button
-                    css={{ fontSize: '150%' }}
+                <IconButton
                     onClick={() => {
                         dispatch({
                             type: 'path:multiply',
@@ -287,8 +287,9 @@ export function selectionSection(
                         });
                     }}
                 >
-                    Clone around mirror
-                </button>
+                    <MirrorIcon />
+                    <VectorSelectionIcon />
+                </IconButton>
             ) : null}
         </div>
     );

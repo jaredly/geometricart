@@ -302,9 +302,11 @@ export const Canvas = ({
     const rand = React.useRef(new Prando('ok'));
     rand.current.reset();
 
+    // Ok, so what I want is:
+    // while dragging, freeze the bounds.
     const bounds = React.useMemo(
         () => calculateBounds(width, height, view),
-        [width, height, view],
+        [width, height, dragPos ? null : view],
     );
 
     const pendingPath = React.useState(null as null | DrawPathState);
@@ -465,6 +467,7 @@ export const Canvas = ({
                 {maybeReverse(view.guides, hover?.type === 'guides') ? (
                     <Guides
                         state={state}
+                        bounds={bounds}
                         isTouchScreen={isTouchScreen}
                         dispatch={dispatch}
                         width={width}
@@ -540,6 +543,24 @@ export const Canvas = ({
         </svg>
     );
 
+    const mirrorHover = React.useCallback(
+        (k) =>
+            k
+                ? setHover({ kind: 'Mirror', id: k, type: 'element' })
+                : setHover(null),
+        [],
+    );
+    const mirrorAdd = React.useCallback(
+        () =>
+            setPendingMirror({
+                parent: state.activeMirror,
+                rotations: 3,
+                reflect: true,
+                center: null,
+            }),
+        [state.activeMirror],
+    );
+
     // This is for rendering only, not interacting.
     if (ppi != null) {
         return inner;
@@ -585,19 +606,8 @@ export const Canvas = ({
                 />
             ) : null}
             <MirrorMenu
-                onHover={(k) =>
-                    k
-                        ? setHover({ kind: 'Mirror', id: k, type: 'element' })
-                        : setHover(null)
-                }
-                onAdd={() =>
-                    setPendingMirror({
-                        parent: state.activeMirror,
-                        rotations: 3,
-                        reflect: true,
-                        center: null,
-                    })
-                }
+                onHover={mirrorHover}
+                onAdd={mirrorAdd}
                 state={state}
                 dispatch={dispatch}
                 transforms={mirrorTransforms}

@@ -79,6 +79,7 @@ export function useMouseDrag(
                 evt.preventDefault();
                 if (evt.touches.length === 0) {
                     ref.current = null;
+                    setDragPos(null);
                 }
             },
             onTouchStart: (evt: React.TouchEvent) => {
@@ -97,10 +98,10 @@ export function useMouseDrag(
                         },
                         view,
                     );
-                    // setDragPos({
-                    //     coord: coord,
-                    //     view,
-                    // });
+                    setDragPos({
+                        coord: coord,
+                        view,
+                    });
                     ref.current = { type: 'one', coord: coord, view };
                 } else if (ref.current.type === 'one') {
                     const coord = touchToCoord(
@@ -119,7 +120,7 @@ export function useMouseDrag(
                         view: ref.current.view,
                     };
                     // clear out the drag pos
-                    // setDragPos(null);
+                    setDragPos(null);
                 } else {
                     // invalidated
                     ref.current = false;
