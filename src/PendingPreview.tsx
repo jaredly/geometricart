@@ -5,6 +5,7 @@ import { DrawPathState } from './DrawPath';
 import { adjustBounds, largestDimension, segmentBounds } from './Export';
 import { RenderSegment } from './RenderSegment';
 import { angleTo, push } from './getMirrorTransforms';
+import { useCurrent } from './App';
 
 export const PendingPreview = ({
     state,
@@ -40,7 +41,47 @@ export const PendingPreview = ({
     // if (lastR.current == null) {
     //     lastR.current = getBestR(state.next)
     // }
-    const zoom = r / 2 / segmentSizes[state.selection];
+    const goalZoom = segmentSizes.length
+        ? r / 2 / segmentSizes[state.selection]
+        : 1;
+    const gzr = useCurrent(goalZoom);
+
+    const [currentZoom, setCurrentZoom] = React.useState(goalZoom);
+    const zoomRef = useCurrent(currentZoom);
+    React.useEffect(() => {
+        if (zoomRef.current === goalZoom) {
+            return;
+        }
+        const fn = () => {
+            if (Math.abs(gzr.current - zoomRef.current) < 10) {
+                setCurrentZoom(zoomRef.current);
+            } else {
+                setCurrentZoom((z) => z + (gzr.current - z) / 5);
+                tid = requestAnimationFrame(fn);
+            }
+        };
+        let tid = requestAnimationFrame(fn);
+        return () => cancelAnimationFrame(tid);
+    }, [goalZoom]);
+
+    if (!state.next.length) {
+        return (
+            <div
+                style={{
+                    width: size,
+                    height: size,
+                    color: 'red',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                }}
+            >
+                Blocked!
+            </div>
+        );
+    }
+
+    const zoom = currentZoom;
 
     // const selected = state.next[state.selection]
     // const scale = ...;
