@@ -51,7 +51,7 @@ export function Overlay({
     const currentOverlay = useCurrent(overlay);
     const currentAttachment = useCurrent(attachment);
 
-    useMouseDrag(
+    useMouseDragBad(
         !!resize,
         ref,
         width,
@@ -108,7 +108,7 @@ export function Overlay({
         }, []),
     );
 
-    useMouseDrag(
+    useMouseDragBad(
         !!drag,
         ref,
         width,
@@ -240,7 +240,7 @@ export const findSvg = (value: HTMLElement | SVGElement) => {
     return value;
 };
 
-export function useMouseDrag(
+export function useMouseDragBad(
     active: boolean,
     ref: React.MutableRefObject<SVGImageElement | null>,
     width: number,

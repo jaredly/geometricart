@@ -14,9 +14,11 @@ import { getMirrorTransforms, scale } from './getMirrorTransforms';
 import {
     calculateBounds,
     Guides,
+    PendingPathPair,
     primitivesForElementsAndPaths,
 } from './Guides';
 import { handleSelection } from './handleSelection';
+import { IconButton, ScissorsCuttingIcon } from './icons/Icon';
 import { MirrorMenu } from './MirrorMenu';
 import {
     mergeFills,
@@ -605,6 +607,22 @@ export const Canvas = ({
                     height={height}
                 />
             ) : null}
+            {tmpView ? (
+                <div
+                    css={{
+                        position: 'absolute',
+                        padding: 20,
+                        backgroundColor: 'rgba(255,255,255,0.3)',
+                        color: 'black',
+                        top: 58,
+                        left: 0,
+                    }}
+                    onClick={() => setTmpView(null)}
+                >
+                    Reset zoom
+                    {` ${pos.x.toFixed(4)},${pos.y.toFixed(4)}`}
+                </div>
+            ) : null}
             <MirrorMenu
                 onHover={mirrorHover}
                 onAdd={mirrorAdd}
@@ -617,22 +635,12 @@ export const Canvas = ({
                 dispatch={dispatch}
                 setHover={setHover}
             />
-            {tmpView ? (
-                <div
-                    css={{
-                        position: 'absolute',
-                        padding: 20,
-                        backgroundColor: 'rgba(255,255,255,0.3)',
-                        color: 'black',
-                        top: 0,
-                        left: 58 * 2,
-                    }}
-                    onClick={() => setTmpView(null)}
-                >
-                    Reset zoom
-                    {` ${pos.x.toFixed(4)},${pos.y.toFixed(4)}`}
-                </div>
-            ) : null}
+            <ClipMenu
+                state={state}
+                pendingPath={pendingPath}
+                dispatch={dispatch}
+                // setHover={setHover}
+            />
 
             <div
                 css={{
@@ -837,3 +845,32 @@ export function usePalettePreload(state: State) {
         });
     }, [state.palettes[state.activePalette]]);
 }
+
+export const ClipMenu = ({
+    state,
+    dispatch,
+    pendingPath: [pendingPath, setPendingPath],
+}: {
+    state: State;
+    dispatch: (action: Action) => void;
+    pendingPath: PendingPathPair;
+}) => {
+    return (
+        <div
+            css={{
+                position: 'absolute',
+                left: 58 * 2,
+                top: 0,
+            }}
+        >
+            <IconButton
+                selected={pendingPath?.isClip}
+                onClick={() =>
+                    setPendingPath((p) => (p ? { ...p, isClip: !p.isClip } : p))
+                }
+            >
+                <ScissorsCuttingIcon />
+            </IconButton>
+        </div>
+    );
+};
