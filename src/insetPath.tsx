@@ -3,6 +3,7 @@ import { isClockwise, reversePath, totalAngle } from './CanvasRender';
 import { angleTo, dist, push } from './getMirrorTransforms';
 import {
     circleCircle,
+    closeEnoughAngle,
     epsilon,
     intersections,
     lineCircle,
@@ -59,7 +60,14 @@ export type Hit = { first: number; second: number; coord: Coord };
 
 export const pruneInsetPath = (
     segments: Array<Segment>,
+    debug?: boolean,
 ): Array<Array<Segment>> => {
+    if (!segments.length) {
+        return [];
+    }
+    // if (debug) {
+    //     console.log('debug', segments, isClockwise(segments));
+    // }
     const primitives = pathToPrimitives(segments);
     const hits: Array<Array<Hit>> = new Array(segments.length)
         .fill([])
@@ -376,6 +384,35 @@ export const hasReversed = (
     return false;
 };
 
+export const getToFromMaybeArray = (segments: Array<Segment> | Segment) => {
+    if (Array.isArray(segments)) {
+        return segments[segments.length - 1].to;
+    }
+    return segments.to;
+};
+
+export const differentDirection = (
+    oldPrev: Coord,
+    old: Segment,
+    newPrev: Coord,
+    seg: Segment,
+): boolean => {
+    if (old.type === 'Line' && seg.type === 'Line') {
+        return !closeEnoughAngle(
+            angleTo(oldPrev, old.to),
+            angleTo(newPrev, seg.to),
+        );
+    }
+    // TODO handle arcs
+    return false;
+};
+
+/**
+ * This insets the segments of a path, without doing any validation.
+ * That comes later, with `pruneInsetPath`
+ *
+ * Ok well, it does filter out now-illegal segments. So there's that.
+ */
 export const insetSegments = (segments: Array<Segment>, inset: number) => {
     // All paths are clockwise, it just makes this easier
     if (!isClockwise(segments)) {
@@ -384,17 +421,39 @@ export const insetSegments = (segments: Array<Segment>, inset: number) => {
 
     const simplified = simplifyPath(segments);
 
-    segments = simplified
-        .map((seg, i) => {
-            const prev = simplified[i === 0 ? simplified.length - 1 : i - 1].to;
-            const next = simplified[i === simplified.length - 1 ? 0 : i + 1];
-            // ok, so ... this needs to maybe return two segments.
-            const result = insetSegment(prev, seg, next, inset);
-            return Array.isArray(result) ? result : [result];
-        })
-        .flat();
-    // console.log(segments);
+    const insets = simplified.map((seg, i) => {
+        const prev = simplified[i === 0 ? simplified.length - 1 : i - 1].to;
+        const next = simplified[i === simplified.length - 1 ? 0 : i + 1];
+        // ok, so ... this needs to maybe return two segments.
+        // if we need to bridge the new gap
+        return insetSegment(prev, seg, next, inset);
+    });
 
+    // ok lets go ahead and filter here
+    segments = insets
+        .filter((seg, i) => {
+            if (Array.isArray(seg)) {
+                return true; // BAIL: TODO, figure this out
+            }
+            const pi = i === 0 ? simplified.length - 1 : i - 1;
+            // const prev = Array.isArray(insets[pi])
+            // ? insets[pi].slice(-1)[0].to : insets[pi].to
+            // const old = simplified[i]
+            // const oldPrev = simplified[pi].to
+            if (
+                differentDirection(
+                    getToFromMaybeArray(insets[pi]),
+                    seg,
+                    simplified[pi].to,
+                    simplified[i],
+                )
+            ) {
+                return false;
+            }
+            return true;
+        })
+        .map((seg) => (Array.isArray(seg) ? seg : [seg]))
+        .flat();
     // let bad: Array<number> = [];
     // segments.forEach((seg, i) => {
     //     if (
@@ -412,8 +471,11 @@ export const insetSegments = (segments: Array<Segment>, inset: number) => {
     return segments;
 };
 
-export const insetPath = (path: Path, inset: number): Path => {
+export const insetPath = (path: Path, inset: number): Path | null => {
     const segments = insetSegments(path.segments, inset);
+    if (segments.length === 0) {
+        return null;
+    }
     return { ...path, segments, origin: segments[segments.length - 1].to };
 };
 

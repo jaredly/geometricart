@@ -216,7 +216,7 @@ export const addToUsed = (path: Path, used: Used, pi: number) => {
 type Uses = Array<[[number, number], number]>;
 type Used = { [centerRad: string]: Uses };
 
-export const pathToInsetPaths = (path: Path) => {
+export const pathToInsetPaths = (path: Path): Array<Path> => {
     const singles: Array<[Path, number | undefined]> = [];
     path.style.fills.forEach((fill) => {
         if (!fill) {
@@ -255,7 +255,10 @@ export const pathToInsetPaths = (path: Path) => {
                 return [path];
             }
             const result = insetPath(path, inset / 100);
-            return pruneInsetPath(result.segments)
+            if (!result) {
+                return [];
+            }
+            return pruneInsetPath(result.segments, path.debug)
                 .filter((s) => s.length)
                 .map((segments) => ({
                     ...result,

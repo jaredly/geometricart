@@ -278,6 +278,13 @@ export const MultiStyleForm = ({
                             }}
                         />
                     </div>
+                    <button
+                        onClick={() => {
+                            onChange(removeLine(styles, i));
+                        }}
+                    >
+                        Delete line
+                    </button>
                 </div>
             ))}
             <button
@@ -655,13 +662,24 @@ export function updateLine(
     });
 }
 
+export function removeLine(styles: Style[], i: number): (Style | null)[] {
+    return styles.map((style) => {
+        if (i >= style.lines.length) {
+            return null;
+        }
+        const lines = style.lines.slice();
+        lines.splice(i, 1);
+        return { ...style, lines };
+    });
+}
+
 export function removeFill(styles: Style[], i: number): (Style | null)[] {
     return styles.map((style) => {
-        if (style.fills[i] == null) {
+        if (i >= style.fills.length) {
             return null;
         }
         const fills = style.fills.slice();
-        fills[i] = null;
+        fills.splice(i, 1);
         return { ...style, fills };
     });
 }

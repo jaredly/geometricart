@@ -328,7 +328,18 @@ export const Export = ({
                                 : originalSize;
                         ReactDOM.render(
                             <Canvas
-                                state={state}
+                                // Clear out background in laser cut mode
+                                state={
+                                    state.view.laserCutMode
+                                        ? {
+                                              ...state,
+                                              view: {
+                                                  ...state.view,
+                                                  background: undefined,
+                                              },
+                                          }
+                                        : state
+                                }
                                 isTouchScreen={false}
                                 width={w}
                                 height={h}
