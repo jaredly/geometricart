@@ -13,7 +13,7 @@ Is that it?
 - [x] zoooom for mobile
 - [x] then make hit targets for mobile so big.
 	- but less visible, ya know
-- [ ] make path follower much more better
+- [x] make path follower much more better
 - [x] fix pan perf
 - [x] make pending mirror inherit from whatever the active mirror is.
 

@@ -129,15 +129,12 @@ export const App = ({ initialState }: { initialState: State }) => {
         pendingMirror.parent = state.activeMirror;
     }
 
-    // const [dragSelect, setDragSelect] = React.useState(false);
-
     React.useEffect(() => {
         const fn = handleKeyboard(
             latestState,
             dispatch,
             setHover,
             setPendingMirror,
-            // setDragSelect,
         );
         document.addEventListener('keydown', fn);
         return () => document.removeEventListener('keydown', fn);

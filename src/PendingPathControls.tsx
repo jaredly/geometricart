@@ -8,6 +8,9 @@ import { backUp, goForward, goLeft, goRight, isComplete } from './DrawPath';
 import { Primitive } from './intersect';
 import { simplifyPath } from './insetPath';
 import { ensureClockwise } from './CanvasRender';
+import { adjustSeg } from './sortedVisibleInsetPaths';
+import { PendingPreview } from './PendingPreview';
+import { IconButton, RedoIcon, UndoIcon } from './icons/Icon';
 
 export const PendingPathControls = ({
     pendingPath: [state, setState],
@@ -33,6 +36,7 @@ export const PendingPathControls = ({
                 display: 'flex',
                 flexDirection: 'row',
                 alignItems: 'stretch',
+                backgroundColor: 'rgba(0,0,0,0.8)',
             }}
         >
             {isComplete(state) ? (
@@ -70,57 +74,87 @@ export const PendingPathControls = ({
                 </>
             ) : (
                 <>
-                    <button
-                        css={{ fontSize: 40, flex: 1 }}
+                    <IconButton
+                        css={{
+                            display: 'flex',
+                            flex: 1,
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                        }}
                         onClick={() => {
                             setState(goLeft);
                         }}
                     >
-                        👈
-                    </button>
-                    <button
-                        css={{ fontSize: 40, flex: 1 }}
-                        onClick={() => {
-                            if (state && isComplete(state)) {
-                                return onComplete(
-                                    state.isClip,
-                                    state.origin.coord,
-                                    simplifyPath(
-                                        ensureClockwise(
-                                            state.parts.map((p) => p.segment),
-                                        ),
-                                    ),
-                                );
-                            }
-                            setState(
-                                goForward(guidePrimitives, allIntersections),
-                            );
+                        <UndoIcon />
+                    </IconButton>
+                    <div
+                        css={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'stretch',
                         }}
                     >
-                        ✅
-                    </button>
-                    <button
-                        css={{ fontSize: 40, flex: 1 }}
+                        <button
+                            css={{ fontSize: 40, flex: 1 }}
+                            onClick={() => {
+                                setState(
+                                    backUp(
+                                        state.origin,
+                                        guidePrimitives,
+                                        allIntersections,
+                                    ),
+                                );
+                            }}
+                        >
+                            ❌
+                        </button>
+                        <PendingPreview
+                            state={state}
+                            size={200}
+                            // guidePrimitives={guidePrimitives}
+                            // allIntersections={allIntersections}
+                        />
+
+                        <button
+                            css={{ fontSize: 40, flex: 1 }}
+                            onClick={() => {
+                                if (state && isComplete(state)) {
+                                    return onComplete(
+                                        state.isClip,
+                                        state.origin.coord,
+                                        simplifyPath(
+                                            ensureClockwise(
+                                                state.parts.map(
+                                                    (p) => p.segment,
+                                                ),
+                                            ),
+                                        ),
+                                    );
+                                }
+                                setState(
+                                    goForward(
+                                        guidePrimitives,
+                                        allIntersections,
+                                    ),
+                                );
+                            }}
+                        >
+                            ✅
+                        </button>
+                    </div>
+                    <IconButton
+                        css={{
+                            display: 'flex',
+                            flex: 1,
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                        }}
                         onClick={() => {
                             setState(goRight);
                         }}
                     >
-                        👉
-                    </button>
-                    <button
-                        css={{ fontSize: 40, flex: 1 }}
-                        onClick={() => {
-                            setState(
-                                backUp(
-                                    state.origin,
-                                    guidePrimitives,
-                                    allIntersections,
-                                ),
-                            );
-                        }}
-                    >
-                        ❌
-                    </button>
+                        <RedoIcon />
+                    </IconButton>
                 </>
             )}
         </div>

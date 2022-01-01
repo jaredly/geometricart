@@ -3,7 +3,7 @@
 import { jsx } from '@emotion/react';
 import * as ReactDOM from 'react-dom';
 import React from 'react';
-import { Action, Coord, State } from './types';
+import { Action, Coord, Pending, Segment, State } from './types';
 import { PREFIX, SUFFIX } from './Sidebar';
 import {
     extractChunks,
@@ -19,36 +19,101 @@ import { texture1, texture2 } from './textures';
 import { initialHistory } from './initialState';
 import { Canvas } from './Canvas';
 import { sortedVisibleInsetPaths } from './sortedVisibleInsetPaths';
+import { Bounds } from './GuideElement';
+import { angleBetween } from './findNextSegments';
+import { angleTo, dist, push } from './getMirrorTransforms';
+
+export type PendingBounds = {
+    x0: null | number;
+    x1: null | number;
+    y0: null | number;
+    y1: null | number;
+};
+
+function addCoordToBounds(bounds: PendingBounds, c: Coord) {
+    bounds.x0 = bounds.x0 == null ? c.x : Math.min(c.x, bounds.x0);
+    bounds.x1 = bounds.x1 == null ? c.x : Math.max(c.x, bounds.x1);
+    bounds.y0 = bounds.y0 == null ? c.y : Math.min(c.y, bounds.y0);
+    bounds.y1 = bounds.y1 == null ? c.y : Math.max(c.y, bounds.y1);
+}
+
+function newPendingBounds(): PendingBounds {
+    return { x0: null, y0: null, x1: null, y1: null };
+}
+
+export const boundsForCoords = (...coords: Array<Coord>) => {
+    const xs = coords.map((c) => c.x);
+    const ys = coords.map((c) => c.y);
+    return {
+        x0: Math.min(...xs),
+        x1: Math.max(...xs),
+        y0: Math.min(...ys),
+        y1: Math.max(...ys),
+    };
+};
+
+export const largestDimension = ({ x0, x1, y0, y1 }: Bounds) =>
+    Math.max(Math.abs(x0), Math.abs(x1), Math.abs(y0), Math.abs(y1));
+
+export const adjustBounds = (
+    { x0, x1, y0, y1 }: Bounds,
+    { x, y }: Coord,
+): Bounds => ({
+    x0: x0 - x,
+    x1: x1 - x,
+    y0: y0 - y,
+    y1: y1 - y,
+});
+
+export const segmentBounds = (prev: Coord, segment: Segment): Bounds => {
+    switch (segment.type) {
+        case 'Line':
+            return {
+                x0: Math.min(segment.to.x, prev.x),
+                x1: Math.max(segment.to.x, prev.x),
+                y0: Math.min(segment.to.y, prev.y),
+                y1: Math.max(segment.to.y, prev.y),
+            };
+        case 'Arc': {
+            // lets do 3 samples, we'll be generous
+            const t0 = angleTo(segment.center, prev);
+            const t1 = angleTo(segment.center, segment.to);
+            const around = angleBetween(t0, t1, segment.clockwise);
+            const tmid = t0 + around / 2;
+            const mid = push(segment.center, tmid, dist(segment.center, prev));
+            const coords = [prev, segment.to];
+            for (let i = 0.5; i < 3; i++) {
+                const tmid = t0 + (around / 3) * i;
+                const mid = push(
+                    segment.center,
+                    tmid,
+                    dist(segment.center, prev),
+                );
+                coords.push(mid);
+            }
+            return boundsForCoords(...coords);
+        }
+    }
+};
 
 export const findBoundingRect = (state: State) => {
     const clip = state.view.activeClip
         ? state.clips[state.view.activeClip]
         : undefined;
 
-    let bounds: {
-        x1: null | number;
-        x2: null | number;
-        y1: null | number;
-        y2: null | number;
-    } = { x1: null, y1: null, x2: null, y2: null };
-    let addCoord = (c: Coord) => {
-        bounds.x1 = bounds.x1 == null ? c.x : Math.min(c.x, bounds.x1);
-        bounds.x2 = bounds.x2 == null ? c.x : Math.max(c.x, bounds.x2);
-        bounds.y1 = bounds.y1 == null ? c.y : Math.min(c.y, bounds.y1);
-        bounds.y2 = bounds.y2 == null ? c.y : Math.max(c.y, bounds.y2);
-    };
+    let bounds: PendingBounds = newPendingBounds();
     // NOTE: This won't totally cover arcs, but that's just too bad folks.
     sortedVisibleInsetPaths(state.paths, state.pathGroups, clip).forEach(
         (path) => {
-            addCoord(path.origin);
+            addCoordToBounds(bounds, path.origin);
             // TODO: Get proper bounding box for arc segments.
-            path.segments.forEach((t) => addCoord(t.to));
+            path.segments.forEach((t) => addCoordToBounds(bounds, t.to));
         },
     );
-    if (!bounds.x1 || !bounds.y1) {
+    if (bounds.x0 == null || bounds.y0 == null) {
         return null;
     }
-    return { x1: bounds.x1!, y1: bounds.y1!, x2: bounds.x2!, y2: bounds.y2! };
+    return { x1: bounds.x0!, y1: bounds.y0!, x2: bounds.x1!, y2: bounds.y1! };
 };
 
 export const Export = ({
