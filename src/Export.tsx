@@ -98,8 +98,8 @@ export const segmentBounds = (prev: Coord, segment: Segment): Bounds => {
             const tmid = t0 + around / 2;
             const mid = push(segment.center, tmid, dist(segment.center, prev));
             const coords = [prev, segment.to];
-            for (let i = 0.5; i < 3; i++) {
-                const tmid = t0 + (around / 3) * i;
+            for (let i = 0.5; i < 6; i++) {
+                const tmid = t0 + (around / 6) * i;
                 const mid = push(
                     segment.center,
                     tmid,

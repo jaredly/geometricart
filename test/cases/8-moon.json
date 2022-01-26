@@ -33,77 +33,19 @@
       "clockwise": false
     }
   ],
-  "output": [
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    {
+  "output": {
+    "20": {
       "paths": [],
       "pass": false
     },
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    {
+    "40": {
       "paths": [],
       "pass": false
     },
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    {
+    "60": {
       "paths": [],
       "pass": false
     }
-  ],
+  },
   "title": "moon"
 }

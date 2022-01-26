@@ -50,7 +50,16 @@ const App = () => {
     React.useEffect(() => {
         fetch(`/cases/`)
             .then((res) => res.json())
-            .then((data) => {
+            .then((data: Array<Example>) => {
+                data.forEach((data) => {
+                    let output: Example['output'] = {};
+                    Object.keys(data.output).forEach((k) => {
+                        if (data.output[+k]) {
+                            output[+k] = data.output[+k];
+                        }
+                    });
+                    data.output = output;
+                });
                 setExamples(data);
             });
     }, []);
@@ -83,7 +92,8 @@ const App = () => {
                 style={{
                     display: 'flex',
                     flexDirection: 'row',
-                    overflow: 'auto',
+                    // overflow: 'auto',
+                    flexWrap: 'wrap',
                 }}
             >
                 {examples.map((example, i) => (
@@ -159,7 +169,9 @@ const ShowExample = ({
                                 }}
                                 style={{
                                     flex: 1,
-                                    border: `2px solid ${insetColors[i]}`,
+                                    border: `2px ${
+                                        insets[+k].pass ? 'solid' : 'dotted'
+                                    } ${insetColors[i]}`,
                                     background: 'none',
                                     borderRadius: 0,
                                     color: 'white',
@@ -167,7 +179,7 @@ const ShowExample = ({
                                     cursor: 'pointer',
                                 }}
                             >
-                                {insets[+k].pass ? 'Pass' : 'Fail'}
+                                {insets[+k].pass ? 'P' : 'F'}
                             </button>
                         ))}
                 </div>
@@ -187,8 +199,8 @@ const ShowExample = ({
                 </button>
             </div>
             <svg
-                width={size / 2}
-                height={size / 2}
+                width={size / 3}
+                height={size / 3}
                 viewBox={`${bounds.x0 - 10} ${bounds.y0 - 10} ${
                     bounds.x1 - bounds.x0 + 20
                 } ${bounds.y1 - bounds.y0 + 20}`}
