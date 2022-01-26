@@ -29,7 +29,7 @@ esbuild
                 headers: req.headers,
             };
 
-            const base = __dirname + '/cases';
+            const base = path.join(__dirname, 'cases');
             if (req.url === '/cases/') {
                 if (req.method === 'GET') {
                     res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -38,12 +38,11 @@ esbuild
                             fs
                                 .readdirSync(base)
                                 .filter((name) => name.endsWith('.json'))
-                                .map((name) => ({
-                                    name,
-                                    data: JSON.parse(
+                                .map((name) =>
+                                    JSON.parse(
                                         fs.readFileSync(path.join(base, name)),
                                     ),
-                                })),
+                                ),
                         ),
                     );
                 } else if (req.method === 'POST') {
@@ -54,16 +53,27 @@ esbuild
                     req.on('end', () => {
                         const parsed = JSON.parse(data);
 
+                        let unused = {};
+
                         parsed.forEach((item) => {
-                            if (!item.name.match(/^[a-zA-Z_.]+\.json$/)) {
-                                throw new Error(`Invalid test case name`);
-                            }
+                            const fileName = `${item.id}-${item.title.replace(
+                                /[^a-zA-Z0-9_.-]/g,
+                                '-',
+                            )}.json`;
+                            unused[fileName] = false;
                             // TODO: Maybe come up with different formatting for the test
                             // cases, so the diffs look a little better? idk.
                             fs.writeFileSync(
-                                path.join(base, item.name),
-                                JSON.stringify(item.data, null, 2),
+                                path.join(base, fileName),
+                                JSON.stringify(item, null, 2),
                             );
+                        });
+
+                        // Remove deleted ones
+                        Object.keys(unused).forEach((k) => {
+                            if (unused[k]) {
+                                fs.unlinkSync(path.join(base, k));
+                            }
                         });
 
                         res.writeHead(200, {

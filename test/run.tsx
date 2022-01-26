@@ -30,24 +30,42 @@ So when we're looking at a case, we can say "this passes" or "this doesn't"
 
 */
 
+export const insetColors = ['#0f0', '#00f', '#ff0', '#f0f', '#0ff'];
+
 type Example = {
     input: Array<Segment>;
     output: Insets;
     title: string;
+    id: number;
+};
+
+const maxId = (examples: Array<Example>) => {
+    return examples.reduce((max, ex) => Math.max(ex.id, max), -1);
 };
 
 const App = () => {
     const [examples, setExamples] = React.useState([] as Array<Example>);
 
+    React.useEffect(() => {
+        if (examples.length === 0) {
+            return;
+        }
+        fetch(`/cases/`, {
+            method: 'POST',
+            body: JSON.stringify(examples),
+        });
+    }, [examples]);
+
     return (
-        <div>
+        <div style={{ margin: 48 }}>
             <Canvas
-                onComplete={(segments) => {
+                onComplete={(segments, title) => {
                     setExamples((ex) =>
                         ex.concat({
+                            id: maxId(examples) + 1,
                             input: segments,
                             output: getInsets(segments),
-                            title: `Test ${ex.length}`,
+                            title,
                         }),
                     );
                 }}
@@ -63,6 +81,13 @@ const App = () => {
                     <ShowExample
                         key={i}
                         example={example}
+                        onDelete={() => {
+                            setExamples((ex) => {
+                                ex = ex.slice();
+                                ex.splice(i, 1);
+                                return ex;
+                            });
+                        }}
                         onChange={(example) => {
                             setExamples((ex) => {
                                 ex = ex.slice();
@@ -80,16 +105,18 @@ const App = () => {
 const ShowExample = ({
     example,
     onChange,
+    onDelete,
 }: {
     example: Example;
     onChange: (ex: Example) => void;
+    onDelete: () => void;
 }) => {
     const { input: segments, output: insets, title } = example;
 
     const bounds = React.useMemo(() => {
         let bounds = segmentsBounds(segments);
         Object.keys(insets).forEach((k) => {
-            insets[+k].forEach((inset) => {
+            insets[+k].paths.forEach((inset) => {
                 bounds = mergeBounds(bounds, segmentsBounds(inset));
             });
         });
@@ -103,6 +130,53 @@ const ShowExample = ({
                 flexDirection: 'column',
             }}
         >
+            <div>
+                <div style={{ display: 'flex', flexDirection: 'row' }}>
+                    {Object.keys(insets)
+                        .sort()
+                        .map((k, i) => (
+                            <button
+                                key={i}
+                                onClick={() => {
+                                    const output = { ...insets };
+                                    output[+k] = {
+                                        ...insets[+k],
+                                        pass: !insets[+k].pass,
+                                    };
+                                    onChange({
+                                        ...example,
+                                        output,
+                                    });
+                                }}
+                                style={{
+                                    flex: 1,
+                                    border: `2px solid ${insetColors[i]}`,
+                                    background: 'none',
+                                    borderRadius: 0,
+                                    color: 'white',
+                                    margin: 4,
+                                    cursor: 'pointer',
+                                }}
+                            >
+                                {insets[+k].pass ? 'Pass' : 'Fail'}
+                            </button>
+                        ))}
+                </div>
+                {/* <button
+                        onClick={() => {
+                            setEdit(false);
+                        }}
+                    >
+                        Save
+                    </button> */}
+                <button
+                    onClick={() => {
+                        onDelete();
+                    }}
+                >
+                    Delete
+                </button>
+            </div>
             <svg
                 width={size / 2}
                 height={size / 2}
@@ -115,17 +189,20 @@ const ShowExample = ({
                     strokeWidth={3}
                     d={calcPathD(pathSegs(segments), 1)}
                 />
-                {Object.keys(insets).map((k) =>
-                    insets[+k].map((segments, i) => (
-                        <path
-                            stroke={'green'}
-                            key={`${k}:${i}`}
-                            strokeWidth={3}
-                            fill="none"
-                            d={calcPathD(pathSegs(segments), 1)}
-                        />
-                    )),
-                )}
+                {Object.keys(insets)
+                    .sort()
+                    .map((k, ki) =>
+                        insets[+k].paths.map((segments, i) => (
+                            <path
+                                stroke={insetColors[ki]}
+                                strokeDasharray={insets[+k].pass ? '' : '5 5'}
+                                key={`${k}:${i}`}
+                                strokeWidth={3}
+                                fill="none"
+                                d={calcPathD(pathSegs(segments), 1)}
+                            />
+                        )),
+                    )}
             </svg>
             <Text
                 value={title}
@@ -140,13 +217,14 @@ const ShowExample = ({
 const Canvas = ({
     onComplete,
 }: {
-    onComplete: (segments: Array<Segment>) => void;
+    onComplete: (segments: Array<Segment>, title: string) => void;
 }) => {
     let [segments, setSegments] = React.useState([] as Array<Segment>);
     const origin = segments.length
         ? segments[segments.length - 1].to
         : { x: 0, y: 0 };
     const [cursor, setCursor] = React.useState(null as Coord | null);
+    const [title, setTitle] = React.useState('Untitled');
 
     const [adding, setAdding] = React.useState({ type: 'line' } as
         | { type: 'line' }
@@ -182,8 +260,9 @@ const Canvas = ({
                 }
             }
             if (evt.key === 'Enter') {
-                onComplete(currentSegments.current);
+                onComplete(currentSegments.current, title);
                 setSegments([]);
+                setTitle('Untitled');
             }
         };
         window.addEventListener('keydown', fn);
@@ -217,6 +296,18 @@ const Canvas = ({
 
     return (
         <div>
+            <div>
+                <Text value={title} onChange={setTitle} />
+                <button
+                    onClick={() => {
+                        onComplete(currentSegments.current, title);
+                        setSegments([]);
+                        setTitle('Untitled');
+                    }}
+                >
+                    Add example
+                </button>
+            </div>
             <svg
                 width={size}
                 height={size}
@@ -286,17 +377,20 @@ const Canvas = ({
                         d={calcPathD(pathSegs(segments), 1)}
                     />
                 ) : null}
-                {Object.keys(insets).map((k) =>
-                    insets[+k].map((segments, i) => (
-                        <path
-                            stroke={'green'}
-                            key={`${k}:${i}`}
-                            strokeWidth={3}
-                            fill="none"
-                            d={calcPathD(pathSegs(segments), 1)}
-                        />
-                    )),
-                )}
+                {Object.keys(insets)
+                    .sort()
+                    .map((k, ki) =>
+                        insets[+k].paths.map((segments, i) => (
+                            <path
+                                stroke={insetColors[ki]}
+                                key={`${k}:${i}`}
+                                strokeDasharray={insets[+k].pass ? '' : '5 5'}
+                                strokeWidth={3}
+                                fill="none"
+                                d={calcPathD(pathSegs(segments), 1)}
+                            />
+                        )),
+                    )}
                 <circle cx={origin.x} cy={origin.y} r={5} fill="blue" />
                 {cursor ? (
                     <circle
@@ -338,20 +432,25 @@ const Canvas = ({
 render(<App />, document.getElementById('root'));
 
 export type Insets = {
-    [key: number]: Array<Array<Segment>>;
+    [key: number]: {
+        paths: Array<Array<Segment>>;
+        pass: boolean;
+    };
 };
 
 function getInsets(segments: Segment[]) {
     const insets: Insets = [];
     if (segments.length > 1) {
         for (let i = -2; i < 3; i++) {
-            const inset = i * 5 + 5;
+            const inset = i * 20 + 20;
             if (inset != 0) {
                 const insetted = insetSegments(segments, inset);
-                if (insetted.length) {
-                    const pruned = pruneInsetPath(insetted);
-                    insets[inset] = pruned.filter((s) => s.length);
-                }
+                insets[inset] = {
+                    paths: insetted.length
+                        ? pruneInsetPath(insetted).filter((s) => s.length)
+                        : [],
+                    pass: false,
+                };
             }
         }
     }
