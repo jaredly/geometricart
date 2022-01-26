@@ -1,0 +1,109 @@
+{
+  "id": 8,
+  "input": [
+    {
+      "type": "Line",
+      "to": {
+        "x": 32,
+        "y": -42
+      }
+    },
+    {
+      "type": "Arc",
+      "center": {
+        "x": -59,
+        "y": 33
+      },
+      "to": {
+        "x": -137.39439558289195,
+        "y": -55.0926713251054
+      },
+      "clockwise": true
+    },
+    {
+      "type": "Arc",
+      "center": {
+        "x": -48,
+        "y": -35
+      },
+      "to": {
+        "x": -53.380383720006854,
+        "y": 56.46652324011647
+      },
+      "clockwise": false
+    }
+  ],
+  "output": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    {
+      "paths": [],
+      "pass": false
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    {
+      "paths": [],
+      "pass": false
+    },
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    {
+      "paths": [],
+      "pass": false
+    }
+  ],
+  "title": "moon"
+}

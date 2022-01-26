@@ -2,6 +2,7 @@
 import * as React from 'react';
 import { render } from 'react-dom';
 import { useCurrent } from '../src/App';
+import { ensureClockwise } from '../src/CanvasRender';
 import { mergeBounds, segmentsBounds } from '../src/Export';
 import { Text } from '../src/Forms';
 import { angleTo, dist, push } from '../src/getMirrorTransforms';
@@ -45,6 +46,14 @@ const maxId = (examples: Array<Example>) => {
 
 const App = () => {
     const [examples, setExamples] = React.useState([] as Array<Example>);
+
+    React.useEffect(() => {
+        fetch(`/cases/`)
+            .then((res) => res.json())
+            .then((data) => {
+                setExamples(data);
+            });
+    }, []);
 
     React.useEffect(() => {
         if (examples.length === 0) {
@@ -441,6 +450,7 @@ export type Insets = {
 function getInsets(segments: Segment[]) {
     const insets: Insets = [];
     if (segments.length > 1) {
+        segments = ensureClockwise(segments);
         for (let i = -2; i < 3; i++) {
             const inset = i * 20 + 20;
             if (inset != 0) {
