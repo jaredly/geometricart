@@ -407,6 +407,11 @@ export const differentDirection = (
     return false;
 };
 
+// hmmmmmmmmmmmm
+// I think maybe
+// I need to convert to directed primitives or something
+// or, just [prev, segment] pairs.
+
 /**
  * This insets the segments of a path, without doing any validation.
  * That comes later, with `pruneInsetPath`
@@ -429,10 +434,13 @@ export const insetSegments = (segments: Array<Segment>, inset: number) => {
         return insetSegment(prev, seg, next, inset);
     });
 
+    let allBad = true;
+
     // ok lets go ahead and filter here
     segments = insets
         .filter((seg, i) => {
             if (Array.isArray(seg)) {
+                allBad = false;
                 return true; // BAIL: TODO, figure this out
             }
             const pi = i === 0 ? simplified.length - 1 : i - 1;
@@ -441,19 +449,25 @@ export const insetSegments = (segments: Array<Segment>, inset: number) => {
             // const old = simplified[i]
             // const oldPrev = simplified[pi].to
             if (
-                differentDirection(
+                !differentDirection(
                     getToFromMaybeArray(insets[pi]),
                     seg,
                     simplified[pi].to,
                     simplified[i],
                 )
             ) {
-                return false;
+                allBad = false;
+                return true;
             }
-            return true;
+            // return true;
+            return false;
         })
         .map((seg) => (Array.isArray(seg) ? seg : [seg]))
         .flat();
+
+    if (allBad) {
+        return [];
+    }
     // let bad: Array<number> = [];
     // segments.forEach((seg, i) => {
     //     if (

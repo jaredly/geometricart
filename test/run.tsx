@@ -1,0 +1,320 @@
+// This is for tests? idk
+import * as React from 'react';
+import { render } from 'react-dom';
+import { useCurrent } from '../src/App';
+import { angleTo, dist, push } from '../src/getMirrorTransforms';
+import { insetPath, insetSegments, pruneInsetPath } from '../src/insetPath';
+import { calcPathD } from '../src/RenderPath';
+import { Coord, Path, Segment } from '../src/types';
+
+const size = 500;
+
+/**
+ *
+ * Ok so the basic idea is that I can test my inset code
+ * with various test cases.
+ *
+ * And I can construct the line segments manually
+ * by clicking control points.
+ */
+
+/*
+Ok, test case format:
+- input path (list of segments)
+- for various inset numbers, have the passing output, if it exists
+
+So when we're looking at a case, we can say "this passes" or "this doesn't"
+
+
+*/
+
+const App = () => {
+    const [examples, setExamples] = React.useState(
+        [] as Array<{
+            input: Array<Segment>;
+            output: Insets;
+        }>,
+    );
+
+    return (
+        <div>
+            <Canvas
+                onComplete={(segments) => {
+                    setExamples((ex) =>
+                        ex.concat({
+                            input: segments,
+                            output: getInsets(segments),
+                        }),
+                    );
+                }}
+            />
+            {examples.map(({ input: segments, output: insets }, i) => (
+                <svg
+                    width={size / 3}
+                    height={size / 3}
+                    viewBox={`-${size / 2} -${size / 2} ${size} ${size}`}
+                >
+                    <path
+                        stroke={'red'}
+                        strokeWidth={3}
+                        d={calcPathD(pathSegs(segments), 1)}
+                    />
+                    {Object.keys(insets).map((k) =>
+                        insets[+k].map((segments, i) => (
+                            <path
+                                stroke={'green'}
+                                key={`${k}:${i}`}
+                                strokeWidth={3}
+                                fill="none"
+                                d={calcPathD(pathSegs(segments), 1)}
+                            />
+                        )),
+                    )}
+                </svg>
+            ))}
+        </div>
+    );
+};
+
+const Canvas = ({
+    onComplete,
+}: {
+    onComplete: (segments: Array<Segment>) => void;
+}) => {
+    let [segments, setSegments] = React.useState([] as Array<Segment>);
+    const origin = segments.length
+        ? segments[segments.length - 1].to
+        : { x: 0, y: 0 };
+    const [cursor, setCursor] = React.useState(null as Coord | null);
+
+    const [adding, setAdding] = React.useState({ type: 'line' } as
+        | { type: 'line' }
+        | {
+              type: 'arc';
+              center: null | Coord;
+              clockwise: boolean;
+          });
+
+    const addingNow = useCurrent(adding);
+    const currentSegments = useCurrent(segments);
+
+    React.useEffect(() => {
+        const fn = (evt: KeyboardEvent) => {
+            const adding = addingNow.current;
+            if (evt.key === 'z' && evt.metaKey) {
+                evt.preventDefault();
+                return setSegments((seg) => seg.slice(0, -1));
+            }
+            if (evt.key === 't') {
+                setAdding((adding) =>
+                    adding.type === 'line'
+                        ? { type: 'arc', clockwise: true, center: null }
+                        : { type: 'line' },
+                );
+            }
+            if (evt.key === ' ') {
+                if (adding.type === 'arc') {
+                    console.log('swap');
+                    setAdding({ ...adding, clockwise: !adding.clockwise });
+                } else {
+                    console.log('adding', adding.type);
+                }
+            }
+            if (evt.key === 'Enter') {
+                onComplete(currentSegments.current);
+                setSegments([]);
+            }
+        };
+        window.addEventListener('keydown', fn);
+        return () => window.removeEventListener('keydown', fn);
+    }, []);
+
+    let next: null | Segment = null;
+    if (cursor) {
+        if (adding.type === 'line' && segments.length) {
+            next = { type: 'Line', to: cursor };
+        }
+        if (adding.type === 'arc' && adding.center) {
+            const angle = angleTo(adding.center, cursor);
+            const prev = segments.length
+                ? segments[segments.length - 1].to
+                : origin;
+            const mag = dist(adding.center, prev);
+            const to = push(adding.center, angle, mag);
+            next = {
+                type: 'Arc',
+                center: adding.center,
+                to,
+                clockwise: adding.clockwise,
+            };
+        }
+    }
+
+    segments = next ? segments.concat([next]) : segments;
+
+    const insets = getInsets(segments);
+
+    return (
+        <div>
+            <svg
+                width={size}
+                height={size}
+                onMouseLeave={() => setCursor(null)}
+                viewBox={`-${size / 2} -${size / 2} ${size} ${size}`}
+                style={{
+                    border: '1px solid magenta',
+                }}
+                onMouseMove={(evt) => {
+                    const svg = evt.currentTarget.getBoundingClientRect();
+                    setCursor({
+                        x: evt.clientX - svg.left - size / 2,
+                        y: evt.clientY - svg.top - size / 2,
+                    });
+                }}
+                onClick={() => {
+                    if (!cursor) {
+                        return;
+                    }
+                    if (adding.type === 'line') {
+                        setSegments((segments) => {
+                            return segments.concat([
+                                {
+                                    type: 'Line',
+                                    to: cursor,
+                                },
+                            ]);
+                        });
+                    } else {
+                        const arc = adding;
+                        if (arc.center) {
+                            const angle = angleTo(arc.center, cursor);
+                            const prev = segments.length
+                                ? segments[segments.length - 1].to
+                                : origin;
+                            const mag = dist(arc.center, prev);
+                            const to = push(arc.center, angle, mag);
+                            setSegments((segments) => {
+                                return segments.concat([
+                                    {
+                                        type: 'Arc',
+                                        center: arc.center!,
+                                        to,
+                                        clockwise: arc.clockwise,
+                                    },
+                                ]);
+                            });
+                            setAdding({ ...arc, center: null });
+                        } else {
+                            setAdding({ ...arc, center: cursor });
+                        }
+                    }
+                }}
+            >
+                {adding.type === 'arc' && adding.center ? (
+                    <circle
+                        cx={adding.center.x}
+                        cy={adding.center.y}
+                        r={3}
+                        fill="magenta"
+                    />
+                ) : null}
+                {segments.length ? (
+                    <path
+                        stroke={'red'}
+                        strokeWidth={3}
+                        d={calcPathD(pathSegs(segments), 1)}
+                    />
+                ) : null}
+                {Object.keys(insets).map((k) =>
+                    insets[+k].map((segments, i) => (
+                        <path
+                            stroke={'green'}
+                            key={`${k}:${i}`}
+                            strokeWidth={3}
+                            fill="none"
+                            d={calcPathD(pathSegs(segments), 1)}
+                        />
+                    )),
+                )}
+                <circle cx={origin.x} cy={origin.y} r={5} fill="blue" />
+                {cursor ? (
+                    <circle
+                        cx={cursor.x}
+                        cy={cursor.y}
+                        r={3}
+                        fill={
+                            adding.type === 'arc' && !adding.center
+                                ? 'magenta'
+                                : 'red'
+                        }
+                    />
+                ) : null}
+            </svg>
+            <div>
+                <button
+                    onClick={() => setAdding({ type: 'line' })}
+                    disabled={adding.type === 'line'}
+                >
+                    Line
+                </button>
+                <button
+                    onClick={() =>
+                        setAdding({
+                            type: 'arc',
+                            center: null,
+                            clockwise: true,
+                        })
+                    }
+                    disabled={adding.type !== 'line'}
+                >
+                    Arc
+                </button>
+            </div>
+        </div>
+    );
+};
+
+render(<App />, document.getElementById('root'));
+
+export type Insets = {
+    [key: number]: Array<Array<Segment>>;
+};
+
+function getInsets(segments: Segment[]) {
+    const insets: Insets = [];
+    if (segments.length > 1) {
+        for (let i = -2; i < 3; i++) {
+            const inset = i * 5 + 5;
+            if (inset != 0) {
+                const insetted = insetSegments(segments, inset);
+                if (insetted.length) {
+                    const pruned = pruneInsetPath(insetted);
+                    insets[inset] = pruned.filter((s) => s.length);
+                }
+            }
+        }
+    }
+    return insets;
+}
+
+const blankPath: Path = {
+    segments: [],
+    origin: { x: 0, y: 0 },
+    created: 0,
+    group: null,
+    hidden: false,
+    open: false,
+    id: '',
+    ordering: 0,
+    style: {
+        lines: [],
+        fills: [],
+    },
+    clipMode: 'none',
+};
+
+export const pathSegs = (segments: Array<Segment>): Path => ({
+    ...blankPath,
+    segments,
+    origin: segments[segments.length - 1].to,
+});
