@@ -2,6 +2,8 @@
 import * as React from 'react';
 import { render } from 'react-dom';
 import { useCurrent } from '../src/App';
+import { mergeBounds, segmentsBounds } from '../src/Export';
+import { Text } from '../src/Forms';
 import { angleTo, dist, push } from '../src/getMirrorTransforms';
 import { insetPath, insetSegments, pruneInsetPath } from '../src/insetPath';
 import { calcPathD } from '../src/RenderPath';
@@ -28,13 +30,14 @@ So when we're looking at a case, we can say "this passes" or "this doesn't"
 
 */
 
+type Example = {
+    input: Array<Segment>;
+    output: Insets;
+    title: string;
+};
+
 const App = () => {
-    const [examples, setExamples] = React.useState(
-        [] as Array<{
-            input: Array<Segment>;
-            output: Insets;
-        }>,
-    );
+    const [examples, setExamples] = React.useState([] as Array<Example>);
 
     return (
         <div>
@@ -44,34 +47,92 @@ const App = () => {
                         ex.concat({
                             input: segments,
                             output: getInsets(segments),
+                            title: `Test ${ex.length}`,
                         }),
                     );
                 }}
             />
-            {examples.map(({ input: segments, output: insets }, i) => (
-                <svg
-                    width={size / 3}
-                    height={size / 3}
-                    viewBox={`-${size / 2} -${size / 2} ${size} ${size}`}
-                >
-                    <path
-                        stroke={'red'}
-                        strokeWidth={3}
-                        d={calcPathD(pathSegs(segments), 1)}
+            <div
+                style={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    overflow: 'auto',
+                }}
+            >
+                {examples.map((example, i) => (
+                    <ShowExample
+                        key={i}
+                        example={example}
+                        onChange={(example) => {
+                            setExamples((ex) => {
+                                ex = ex.slice();
+                                ex[i] = example;
+                                return ex;
+                            });
+                        }}
                     />
-                    {Object.keys(insets).map((k) =>
-                        insets[+k].map((segments, i) => (
-                            <path
-                                stroke={'green'}
-                                key={`${k}:${i}`}
-                                strokeWidth={3}
-                                fill="none"
-                                d={calcPathD(pathSegs(segments), 1)}
-                            />
-                        )),
-                    )}
-                </svg>
-            ))}
+                ))}
+            </div>
+        </div>
+    );
+};
+
+const ShowExample = ({
+    example,
+    onChange,
+}: {
+    example: Example;
+    onChange: (ex: Example) => void;
+}) => {
+    const { input: segments, output: insets, title } = example;
+
+    const bounds = React.useMemo(() => {
+        let bounds = segmentsBounds(segments);
+        Object.keys(insets).forEach((k) => {
+            insets[+k].forEach((inset) => {
+                bounds = mergeBounds(bounds, segmentsBounds(inset));
+            });
+        });
+        return bounds;
+    }, [segments, insets]);
+
+    return (
+        <div
+            style={{
+                display: 'flex',
+                flexDirection: 'column',
+            }}
+        >
+            <svg
+                width={size / 2}
+                height={size / 2}
+                viewBox={`${bounds.x0 - 10} ${bounds.y0 - 10} ${
+                    bounds.x1 - bounds.x0 + 20
+                } ${bounds.y1 - bounds.y0 + 20}`}
+            >
+                <path
+                    stroke={'red'}
+                    strokeWidth={3}
+                    d={calcPathD(pathSegs(segments), 1)}
+                />
+                {Object.keys(insets).map((k) =>
+                    insets[+k].map((segments, i) => (
+                        <path
+                            stroke={'green'}
+                            key={`${k}:${i}`}
+                            strokeWidth={3}
+                            fill="none"
+                            d={calcPathD(pathSegs(segments), 1)}
+                        />
+                    )),
+                )}
+            </svg>
+            <Text
+                value={title}
+                onChange={(title) => {
+                    onChange({ ...example, title });
+                }}
+            />
         </div>
     );
 };
@@ -130,7 +191,7 @@ const Canvas = ({
     }, []);
 
     let next: null | Segment = null;
-    if (cursor) {
+    if (cursor && dist(cursor, origin) > 10) {
         if (adding.type === 'line' && segments.length) {
             next = { type: 'Line', to: cursor };
         }

@@ -8,16 +8,11 @@ const PORT = 4363;
 // Start esbuild's server on a random local port
 esbuild
     .serve(
+        { servedir: __dirname },
         {
-            servedir: __dirname,
-        },
-        {
-            // ... your build options go here ...
             entryPoints: ['test/run.tsx'],
             bundle: true,
-            define: {
-                'process.env.NODE_ENV': '"development"',
-            },
+            define: { 'process.env.NODE_ENV': '"development"' },
         },
     )
     .then((result) => {

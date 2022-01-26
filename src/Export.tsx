@@ -30,7 +30,7 @@ export type PendingBounds = {
     y1: null | number;
 };
 
-function addCoordToBounds(bounds: PendingBounds, c: Coord) {
+export function addCoordToBounds(bounds: PendingBounds, c: Coord) {
     bounds.x0 = bounds.x0 == null ? c.x : Math.min(c.x, bounds.x0);
     bounds.x1 = bounds.x1 == null ? c.x : Math.max(c.x, bounds.x1);
     bounds.y0 = bounds.y0 == null ? c.y : Math.min(c.y, bounds.y0);
@@ -52,6 +52,13 @@ export const boundsForCoords = (...coords: Array<Coord>) => {
     };
 };
 
+export const mergeBounds = (b1: Bounds, b2: Bounds): Bounds => ({
+    x0: Math.min(b1.x0, b2.x0),
+    y0: Math.min(b1.y0, b2.y0),
+    x1: Math.max(b1.x1, b2.x1),
+    y1: Math.max(b1.y1, b2.y1),
+});
+
 export const largestDimension = ({ x0, x1, y0, y1 }: Bounds) =>
     Math.max(Math.abs(x0), Math.abs(x1), Math.abs(y0), Math.abs(y1));
 
@@ -64,6 +71,15 @@ export const adjustBounds = (
     y0: y0 - y,
     y1: y1 - y,
 });
+
+export const segmentsBounds = (segments: Array<Segment>): Bounds => {
+    let bounds = segmentBounds(segments[segments.length - 1].to, segments[0]);
+    for (let i = 1; i < segments.length; i++) {
+        const next = segmentBounds(segments[i - 1].to, segments[i]);
+        bounds = mergeBounds(bounds, next);
+    }
+    return bounds;
+};
 
 export const segmentBounds = (prev: Coord, segment: Segment): Bounds => {
     switch (segment.type) {
