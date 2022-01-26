@@ -42,7 +42,8 @@ esbuild
                                     JSON.parse(
                                         fs.readFileSync(path.join(base, name)),
                                     ),
-                                ),
+                                )
+                                .sort((a, b) => a.id - b.id),
                         ),
                     );
                 } else if (req.method === 'POST') {

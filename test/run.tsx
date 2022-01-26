@@ -6,6 +6,7 @@ import { ensureClockwise } from '../src/CanvasRender';
 import { mergeBounds, segmentsBounds } from '../src/Export';
 import { Text } from '../src/Forms';
 import { angleTo, dist, push } from '../src/getMirrorTransforms';
+import { insetSegmentsNew } from '../src/insetAgain';
 import { insetPath, insetSegments, pruneInsetPath } from '../src/insetPath';
 import { calcPathD } from '../src/RenderPath';
 import { Coord, Path, Segment } from '../src/types';
@@ -130,7 +131,11 @@ const ShowExample = ({
     onChange: (ex: Example) => void;
     onDelete: () => void;
 }) => {
-    const { input: segments, output: insets, title } = example;
+    const { input: segments, output: _insets, title } = example;
+
+    const insets = React.useMemo(() => {
+        return getInsets(segments);
+    }, [segments]);
 
     const bounds = React.useMemo(() => {
         let bounds = segmentsBounds(segments);
@@ -466,7 +471,11 @@ function getInsets(segments: Segment[]) {
         for (let i = -2; i < 3; i++) {
             const inset = i * 20 + 20;
             if (inset != 0) {
-                const insetted = insetSegments(segments, inset);
+                const insetted = insetSegmentsNew(segments, inset);
+                insets[inset] = {
+                    paths: insetted.length ? [insetted] : [],
+                    pass: false,
+                };
                 insets[inset] = {
                     paths: insetted.length
                         ? pruneInsetPath(insetted).filter((s) => s.length)

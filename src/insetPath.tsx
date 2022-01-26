@@ -65,9 +65,6 @@ export const pruneInsetPath = (
     if (!segments.length) {
         return [];
     }
-    // if (debug) {
-    //     console.log('debug', segments, isClockwise(segments));
-    // }
     const primitives = pathToPrimitives(segments);
     const hits: Array<Array<Hit>> = new Array(segments.length)
         .fill([])
