@@ -8,7 +8,7 @@ import {
     pathToSegmentKeys,
 } from './pathsAreIdentical';
 import { paletteColor } from './RenderPath';
-import { insetPath, simplifyPath } from './insetPath';
+import { insetPath, insetSegmentsBeta, simplifyPath } from './insetPath';
 import { pruneInsetPath } from './pruneInsetPath';
 import { Coord, Path, PathGroup, Segment } from './types';
 import { segmentKey, segmentKeyReverse } from './segmentKey';
@@ -23,6 +23,7 @@ import {
 } from './intersect';
 import { calculateBounds } from './Guides';
 import { applyStyleHover, StyleHover } from './MultiStyleForm';
+import { cleanUpInsetSegments } from './findInternalRegions';
 
 // This should produce:
 // a list of lines
@@ -255,18 +256,28 @@ export const pathToInsetPaths = (path: Path): Array<Path> => {
             if (!inset) {
                 return [path];
             }
-            const result = insetPath(path, inset / 100);
-            if (!result) {
-                return [];
-            }
-            return pruneInsetPath(result.segments, path.debug)
-                .filter((s) => s.length)
-                .map((segments) => ({
-                    ...result,
-                    segments,
-                    origin: segments[segments.length - 1].to,
-                }));
-            // return [result];
+
+            const regions = cleanUpInsetSegments(
+                insetSegmentsBeta(path.segments, inset / 100),
+            );
+
+            return regions.map((segments) => ({
+                ...path,
+                segments,
+                origin: segments[segments.length - 1].to,
+            }));
+
+            // const result = insetPath(path, inset / 100);
+            // if (!result) {
+            //     return [];
+            // }
+            // return pruneInsetPath(result.segments, path.debug)
+            //     .filter((s) => s.length)
+            //     .map((segments) => ({
+            //         ...result,
+            //         segments,
+            //         origin: segments[segments.length - 1].to,
+            //     }));
         })
         .flat();
 };

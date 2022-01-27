@@ -345,3 +345,8 @@ export const findClockwiseRegions = (
         regions.filter((region) => isClockwise(region)),
     );
 };
+
+export const cleanUpInsetSegments = (segments: Array<Segment>) => {
+    const result = segmentsToNonIntersectingSegments(segments);
+    return findClockwiseRegions(result.result, result.froms);
+};
