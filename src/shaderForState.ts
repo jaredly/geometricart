@@ -1,5 +1,5 @@
 import { sortedVisibleInsetPaths } from './sortedVisibleInsetPaths';
-import { pathToPoints } from './CanvasRender';
+import { pathToPoints } from './pathToPoints';
 import { hslToRgb, rgbToHsl } from './colorConvert';
 import { pathToPrimitives } from './findSelection';
 import { Primitive } from './intersect';

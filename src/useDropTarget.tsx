@@ -1,5 +1,6 @@
 import React from 'react';
-import { State, migrateState } from './types';
+import { State } from './types';
+import { migrateState } from './migrateState';
 import { readMetadata } from 'png-metadata';
 import { PREFIX, SUFFIX } from './Sidebar';
 

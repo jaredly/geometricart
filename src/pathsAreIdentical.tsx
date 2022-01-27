@@ -1,5 +1,5 @@
 import { coordKey } from './calcAllIntersections';
-import { segmentKey } from './DrawPath';
+import { segmentKey } from './segmentKey';
 import { Coord, Segment } from './types';
 
 // export const genId = () => Math.random().toString(36).slice(2);

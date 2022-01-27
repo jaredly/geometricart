@@ -1,20 +1,19 @@
 import { coordKey } from './calcAllIntersections';
-import { ensureClockwise, isClockwise } from './CanvasRender';
 import { angleBetween, isAngleBetween } from './findNextSegments';
 import { pathToPrimitives } from './findSelection';
 import { angleTo, dist, push } from './getMirrorTransforms';
+import { simplifyPath } from './insetPath';
 import {
     Circle,
     epsilon,
     intersections,
-    lineCircle,
     Primitive,
     SlopeIntercept,
     withinLimit,
 } from './intersect';
 import { coordsEqual } from './pathsAreIdentical';
-import { simplifyPath } from './insetPath';
-import { ArcSegment, Coord, Line, Path, PathGroup, Segment } from './types';
+import { ensureClockwise, isClockwise } from './pathToPoints';
+import { ArcSegment, Coord, Path, PathGroup, Segment } from './types';
 
 export type Hit = { i: number; j: number; coord: Coord };
 

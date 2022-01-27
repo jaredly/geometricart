@@ -7,7 +7,7 @@ import { Coord, Id, Intersect, Segment } from './types';
 import { backUp, goForward, goLeft, goRight, isComplete } from './DrawPath';
 import { Primitive } from './intersect';
 import { simplifyPath } from './insetPath';
-import { ensureClockwise } from './CanvasRender';
+import { ensureClockwise } from './pathToPoints';
 import { adjustSeg } from './sortedVisibleInsetPaths';
 import { PendingPreview } from './PendingPreview';
 import { IconButton, RedoIcon, UndoIcon } from './icons/Icon';

@@ -32,7 +32,7 @@ import {
     pathToSegmentKeys,
 } from './pathsAreIdentical';
 import { simplifyPath } from './insetPath';
-import { ensureClockwise } from './CanvasRender';
+import { ensureClockwise } from './pathToPoints';
 import { clipPath } from './clipPath';
 import { pathToPrimitives } from './findSelection';
 

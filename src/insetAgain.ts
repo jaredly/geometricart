@@ -53,28 +53,35 @@ export const insetSegmentsNew = (segments: Array<Segment>, inset: number) => {
 
     // Now we go around the circle, adjusting start & end lines, and inserting
     // connectors if absolutely needed
-    let moved: Array<Full>;
+    let moved: Array<Full> = insets;
 
-    while (true) {
-        let busted: Array<number>;
-        ({ busted, moved } = moveInsetPoints(insets));
+    // // This won't loop forever, because insets starts with a finite number of elements.
+    // // And we must remove elements on each loop.
+    // while (true) {
+    //     let busted: Array<number>;
+    //     ({ busted, moved } = moveInsetPoints(insets));
 
-        if (busted.length) {
-            insets = insets.filter((_, i) => !busted.includes(i));
-        } else {
-            break;
-        }
-    }
+    //     if (busted.length) {
+    //         insets = insets.filter((_, i) => !busted.includes(i));
+    //     } else {
+    //         break;
+    //     }
+    // }
 
+    // Bail early if everything was eliminated.
     if (!moved.length) {
         return [];
     }
 
-    // const { busted, moved } = moveInsetPoints(insets);
+    // Ok so apparetnly we can get to a point where all but one line
+    // is eliminated. So I think I also want to take into account
+    // the previous line as well as the next line.
+    // !!!!!!!!!!!!!!!!!!!!!!
 
-    // if (busted.length) {
-    //     insets = insets.filter((_, i) => !busted.includes(i));
-    // }
+    /// ooooh but the tophat reveals that there might be a line that I think
+    // needs removal, but doesn't once an adjacent line is removed.
+
+    // lol ok let's use an actual algorithm here too.
 
     // now we need to ... find the new intersection points.
     // but where to start?

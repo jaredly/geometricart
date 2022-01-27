@@ -1,4 +1,4 @@
-import { ensureClockwise } from './CanvasRender';
+import { ensureClockwise } from './pathToPoints';
 import { clipPath, closeEnough } from './clipPath';
 import { pathToPrimitives } from './findSelection';
 import { angleTo, dist, push } from './getMirrorTransforms';
@@ -8,9 +8,10 @@ import {
     pathToSegmentKeys,
 } from './pathsAreIdentical';
 import { paletteColor } from './RenderPath';
-import { insetPath, pruneInsetPath, simplifyPath } from './insetPath';
+import { insetPath, simplifyPath } from './insetPath';
+import { pruneInsetPath } from './pruneInsetPath';
 import { Coord, Path, PathGroup, Segment } from './types';
-import { segmentKey, segmentKeyReverse } from './DrawPath';
+import { segmentKey, segmentKeyReverse } from './segmentKey';
 import { coordKey, numKey } from './calcAllIntersections';
 import { angleBetween, isAngleBetween } from './findNextSegments';
 import {

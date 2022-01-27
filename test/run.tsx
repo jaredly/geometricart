@@ -2,12 +2,13 @@
 import * as React from 'react';
 import { render } from 'react-dom';
 import { useCurrent } from '../src/App';
-import { ensureClockwise } from '../src/CanvasRender';
+import { ensureClockwise } from '../src/pathToPoints';
 import { mergeBounds, segmentsBounds } from '../src/Export';
 import { Text } from '../src/Forms';
 import { angleTo, dist, push } from '../src/getMirrorTransforms';
 import { insetSegmentsNew } from '../src/insetAgain';
-import { insetPath, insetSegments, pruneInsetPath } from '../src/insetPath';
+import { insetPath, insetSegments, insetSegmentsBeta } from '../src/insetPath';
+import { pruneInsetPath } from '../src/pruneInsetPath';
 import { calcPathD } from '../src/RenderPath';
 import { Coord, Path, Segment } from '../src/types';
 
@@ -464,6 +465,18 @@ export type Insets = {
     };
 };
 
+/*
+
+ok so https://mcmains.me.berkeley.edu/pubs/DAC05OffsetPolygon.pdf
+
+I think I need to modify things so that I never shrink lines, only grow them.
+and then it seems like it might work?
+
+ok, so that's done.
+Now I just need to segment, and do winding numbers?
+
+*/
+
 function getInsets(segments: Segment[]) {
     const insets: Insets = [];
     if (segments.length > 1) {
@@ -471,17 +484,17 @@ function getInsets(segments: Segment[]) {
         for (let i = -2; i < 3; i++) {
             const inset = i * 20 + 20;
             if (inset != 0) {
-                const insetted = insetSegmentsNew(segments, inset);
+                const insetted = insetSegmentsBeta(segments, inset);
                 insets[inset] = {
                     paths: insetted.length ? [insetted] : [],
                     pass: false,
                 };
-                insets[inset] = {
-                    paths: insetted.length
-                        ? pruneInsetPath(insetted).filter((s) => s.length)
-                        : [],
-                    pass: false,
-                };
+                // insets[inset] = {
+                //     paths: insetted.length
+                //         ? pruneInsetPath(insetted).filter((s) => s.length)
+                //         : [],
+                //     pass: false,
+                // };
             }
         }
     }

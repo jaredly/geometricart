@@ -1,6 +1,6 @@
 import { coordKey } from './calcAllIntersections';
 import { closeEnough } from './clipPath';
-import { segmentKey } from './DrawPath';
+import { segmentKey } from './segmentKey';
 import { angleTo } from './getMirrorTransforms';
 import { closeEnoughAngle, epsilon, Primitive } from './intersect';
 import {

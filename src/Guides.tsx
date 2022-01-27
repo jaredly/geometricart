@@ -35,7 +35,7 @@ import {
 } from './calculateGuideElements';
 import { geomToPrimitives } from './points';
 import { simplifyPath } from './insetPath';
-import { ensureClockwise } from './CanvasRender';
+import { ensureClockwise } from './pathToPoints';
 import { pathToPrimitives } from './findSelection';
 import { screenToWorld } from './Canvas';
 import { Bounds } from './GuideElement';

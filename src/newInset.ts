@@ -65,7 +65,7 @@ and it's called from e.g. sp_selected_path_do_offset in https://gitlab.com/inksc
 
 */
 
-import { isClockwise, reversePath } from './CanvasRender';
+import { isClockwise, reversePath } from './pathToPoints';
 import {
     hasReversed,
     insetSegment,
