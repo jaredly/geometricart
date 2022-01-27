@@ -425,16 +425,21 @@ export const cleanUpInsetSegments2 = (segments: Array<Segment>) => {
     const regions = findRegions(result.result, result.froms).filter(
         isClockwise,
     );
-    const primitives = pathToPrimitives(segments);
-    return removeContainedRegions(
-        regions.filter((region) => {
-            const pos = findInternalPos(region);
-            const wind = windingNumber(pos, primitives, segments, false);
-            const wcount = wind.reduce((c, w) => (w.up ? 1 : -1) + c, 0);
+    return removeContainedRegions(removeNonWindingRegions(segments, regions));
+};
 
-            return wcount > 0;
-        }),
-    );
+export const removeNonWindingRegions = (
+    originalSegments: Array<Segment>,
+    regions: Array<Array<Segment>>,
+) => {
+    const primitives = pathToPrimitives(originalSegments);
+    return regions.filter((region) => {
+        const pos = findInternalPos(region);
+        const wind = windingNumber(pos, primitives, originalSegments, false);
+        const wcount = wind.reduce((c, w) => (w.up ? 1 : -1) + c, 0);
+
+        return wcount > 0;
+    });
 };
 
 // export const cleanUpInsetSegments = (segments: Array<Segment>) => {

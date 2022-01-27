@@ -322,6 +322,17 @@ export const insetSegment = (
                 { center: next.center, radius: radius, type: 'circle' },
                 slope1,
             );
+            if (onlyExtend) {
+                const p2 = push(
+                    next.center,
+                    angleTo(next.center, seg.to),
+                    radius,
+                );
+                return [
+                    { type: 'Line', to: p1 },
+                    { type: 'Line', to: p2 },
+                ];
+            }
             const dists = intersection.map((pos) => dist(pos, p1));
             if (dists.length > 1) {
                 return {
@@ -347,6 +358,18 @@ export const insetSegment = (
                 slope2,
             );
             const dists = intersection.map((pos) => dist(pos, p2));
+            // STOPSHIP: DO this if we would be contracting...
+            if (onlyExtend && 1 > 1.2) {
+                const p1 = push(
+                    seg.center,
+                    angleTo(seg.center, seg.to),
+                    radius,
+                );
+                return [
+                    { ...seg, to: p1 },
+                    { type: 'Line', to: p2 },
+                ];
+            }
             if (dists.length > 1) {
                 return {
                     ...seg,
@@ -383,9 +406,7 @@ export const insetSegment = (
                     { type: 'Line', to: otherTo },
                 ];
             }
-            // if (intersection.length === 1 && 1 == 0) {
-            //     return { ...seg, to: intersection[0] };
-            // }
+            // They're tangent!
             if (intersection.length < 2) {
                 const newTo = push(seg.center, angle, radius);
                 return { ...seg, to: newTo };

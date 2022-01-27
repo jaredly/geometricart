@@ -5,6 +5,9 @@ import {
     cleanUpInsetSegments2,
     findInternalPos,
     findRegions,
+    removeContainedRegions,
+    removeNonWindingRegions,
+    segmentAngle,
     segmentsToNonIntersectingSegments,
 } from '../src/findInternalRegions';
 import { pathToPrimitives } from '../src/findSelection';
@@ -255,7 +258,19 @@ export const Canvas = ({
                     const showWind = 1;
                     if (showWind === 1) {
                         const inset = insetSegmentsBeta(segments, 40);
-                        const result = cleanUpInsetSegments2(inset);
+                        const result = segmentsToNonIntersectingSegments(inset);
+                        const regions = findRegions(
+                            result.result,
+                            result.froms,
+                        );
+                        const finals = removeContainedRegions(
+                            removeNonWindingRegions(
+                                inset,
+                                regions.filter(isClockwise),
+                            ),
+                        );
+
+                        // const result = cleanUpInsetSegments2(inset);
 
                         return (
                             <>
@@ -265,7 +280,19 @@ export const Canvas = ({
                                     strokeWidth={1}
                                     fill="none"
                                 />
-                                {result.map((region, i) => (
+
+                                {regions
+                                    .filter((r) => !isClockwise(r))
+                                    .map((r, i) => (
+                                        <path
+                                            d={calcPathD(pathSegs(r), 1)}
+                                            fill="rgba(255, 255,255,0.1)"
+                                            stroke="yellow"
+                                            strokeWidth={0.5}
+                                            key={i}
+                                        />
+                                    ))}
+                                {finals.map((region, i) => (
                                     <path
                                         d={calcPathD(pathSegs(region), 1)}
                                         fill="rgba(0, 255,0,0.5)"
@@ -274,6 +301,18 @@ export const Canvas = ({
                                         key={i}
                                     />
                                 ))}
+                                {result.result.map((seg, i) =>
+                                    segmentArrow(seg.prev, i, seg.segment),
+                                )}
+                                {/* {inset.map((seg, i) =>
+                                    segmentArrow(
+                                        inset[
+                                            i === 0 ? inset.length - 1 : i - 1
+                                        ].to,
+                                        i,
+                                        seg,
+                                    ),
+                                )} */}
                             </>
                         );
                     }
@@ -492,3 +531,34 @@ const star = (): Array<Segment> => {
     }
     return points.map((to) => ({ type: 'Line', to }));
 };
+function segmentArrow(prev: Coord, i: number, seg: Segment) {
+    // const prev = inset[i === 0 ? inset.length - 1 : i - 1].to;
+    const mid =
+        seg.type === 'Line'
+            ? {
+                  x: (seg.to.x + prev.x) / 2,
+                  y: (seg.to.y + prev.y) / 2,
+              }
+            : push(
+                  seg.center,
+                  (angleTo(seg.center, prev) + angleTo(seg.center, seg.to)) / 2,
+                  dist(seg.center, seg.to),
+              );
+    const theta = angleTo(prev, seg.to);
+    const show = (p: Coord) => `${p.x.toFixed(2)},${p.y.toFixed(2)}`;
+    return (
+        <polygon
+            points={[
+                push(mid, theta, 2),
+                push(mid, theta + (Math.PI * 2) / 3, 2),
+                push(mid, theta + (Math.PI * 4) / 3, 2),
+            ]
+                .map(show)
+                .join(' ')}
+            fill="purple"
+            stroke="white"
+            strokeWidth={0.5}
+            key={i}
+        />
+    );
+}
