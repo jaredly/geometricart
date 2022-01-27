@@ -1,4 +1,7 @@
-import { segmentsToNonIntersectingSegments } from './findInternalRegions';
+import {
+    findClockwiseRegions,
+    segmentsToNonIntersectingSegments,
+} from './findInternalRegions';
 
 describe('ok', () => {
     it('should work', () => {
@@ -8,15 +11,46 @@ describe('ok', () => {
             { type: 'Line', to: { x: 1, y: 1 } },
             { type: 'Line', to: { x: 0, y: 0 } },
         ]);
+        debugger;
         // whyyyy are the x zeroes negative? ???
         expect(result).toEqual({
             result: [
-                { type: 'Line', to: { x: 1, y: 0 } },
-                { type: 'Line', to: { x: 0.5, y: 0.5 } },
-                { type: 'Line', to: { x: 0, y: 1 } },
-                { type: 'Line', to: { x: 1, y: 1 } },
-                { type: 'Line', to: { x: 0.5, y: 0.5 } },
-                { type: 'Line', to: { x: 0, y: 0 } },
+                {
+                    prev: { x: 0, y: 0 },
+                    segment: { type: 'Line', to: { x: 1, y: 0 } },
+                    initialAngle: 0,
+                    finalAngle: 0,
+                },
+                {
+                    prev: { x: 1, y: 0 },
+                    segment: { type: 'Line', to: { x: 0.5, y: 0.5 } },
+                    initialAngle: 2.356194490192345,
+                    finalAngle: 2.356194490192345,
+                },
+                {
+                    prev: { x: 0.5, y: 0.5 },
+                    segment: { type: 'Line', to: { x: 0, y: 1 } },
+                    initialAngle: 2.356194490192345,
+                    finalAngle: 2.356194490192345,
+                },
+                {
+                    prev: { x: 0, y: 1 },
+                    segment: { type: 'Line', to: { x: 1, y: 1 } },
+                    initialAngle: 0,
+                    finalAngle: 0,
+                },
+                {
+                    prev: { x: 1, y: 1 },
+                    segment: { type: 'Line', to: { x: 0.5, y: 0.5 } },
+                    initialAngle: -2.356194490192345,
+                    finalAngle: -2.356194490192345,
+                },
+                {
+                    prev: { x: 0.5, y: 0.5 },
+                    segment: { type: 'Line', to: { x: 0, y: 0 } },
+                    initialAngle: -2.356194490192345,
+                    finalAngle: -2.356194490192345,
+                },
             ],
             froms: {
                 '0.000,0.000': { coord: { x: 0, y: 0 }, exits: [0] },
@@ -26,5 +60,40 @@ describe('ok', () => {
                 '1.000,1.000': { coord: { x: 1, y: 1 }, exits: [4] },
             },
         });
+    });
+
+    it('should preserve a square', () => {
+        const result = segmentsToNonIntersectingSegments([
+            { type: 'Line', to: { x: 1, y: 0 } },
+            { type: 'Line', to: { x: 1, y: 1 } },
+            { type: 'Line', to: { x: 0, y: 1 } },
+            { type: 'Line', to: { x: 0, y: 0 } },
+        ]);
+        const regions = findClockwiseRegions(result.result, result.froms);
+        expect(regions).toEqual([
+            [
+                { type: 'Line', to: { x: 1, y: 0 } },
+                { type: 'Line', to: { x: 1, y: 1 } },
+                { type: 'Line', to: { x: 0, y: 1 } },
+                { type: 'Line', to: { x: 0, y: 0 } },
+            ],
+        ]);
+    });
+
+    it('should find the correct triangle', () => {
+        const result = segmentsToNonIntersectingSegments([
+            { type: 'Line', to: { x: 1, y: 0 } },
+            { type: 'Line', to: { x: 0, y: 1 } },
+            { type: 'Line', to: { x: 1, y: 1 } },
+            { type: 'Line', to: { x: 0, y: 0 } },
+        ]);
+        const regions = findClockwiseRegions(result.result, result.froms);
+        expect(regions).toEqual([
+            [
+                { to: { x: 1, y: 0 }, type: 'Line' },
+                { to: { x: 0.5, y: 0.5 }, type: 'Line' },
+                { to: { x: 0, y: 0 }, type: 'Line' },
+            ],
+        ]);
     });
 });

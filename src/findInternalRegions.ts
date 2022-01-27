@@ -23,6 +23,8 @@ import { intersections } from './intersect';
 import { coordsEqual } from './pathsAreIdentical';
 import { Hit } from './pruneInsetPath';
 import { Coord, Segment } from './types';
+import { angleTo } from './getMirrorTransforms';
+import { angleBetween } from './findNextSegments';
 
 export const segmentsToNonIntersectingSegments = (segments: Array<Segment>) => {
     const primitives = pathToPrimitives(segments);
@@ -64,23 +66,24 @@ export const segmentsToNonIntersectingSegments = (segments: Array<Segment>) => {
         }
     }
 
-    if (!allHits.length) {
-        if (!isClockwise(segments)) {
-            return [];
-        }
-        return [segments];
-    }
+    // if (!allHits.length) {
+    //     if (!isClockwise(segments)) {
+    //         return [];
+    //     }
+    //     return [segments];
+    // }
 
     const sorted = hits.map((hits, i) =>
         sortHitsForPrimitive(hits, primitives[i], segments[i]),
     );
 
     // So, I return a list of segments, and a mapping [fromcoord] -> [exiting segments]
-    const result: Array<Segment> = [];
+    const result: Array<PartialSegment> = [];
+
     // or maybe, because each segmet only has one exit, we just ... hmm
     // although it would be nice to be able to keep track of the ones we've hit.
     // yeah.
-    const froms: { [key: string]: { coord: Coord; exits: Array<number> } } = {};
+    const froms: Froms = {};
     //
     segments.forEach((segment, i) => {
         let prev =
@@ -100,12 +103,99 @@ export const segmentsToNonIntersectingSegments = (segments: Array<Segment>) => {
                     froms[key] = { coord: prev, exits: [] };
                 }
                 froms[key].exits.push(result.length);
-                result.push({ ...segment, to });
+                const theta = angleTo(prev, to); // STOPSHIP broken for arcs I'm sure
+                result.push({
+                    prev,
+                    segment: { ...segment, to },
+                    initialAngle: theta,
+                    finalAngle: theta,
+                });
             }
             prev = to;
             intersection++;
         }
     });
-    console.log(result, froms);
     return { result, froms };
+};
+
+// Ok, so now the game plan is:
+// take those segments, follow them around ...
+// and ... hmmm
+// so the rule is: always switch! We assume there will only ever be
+// 2 exits from a given point, because we're wildly optimistic.
+
+// I mean, we could say:
+// if there's one to the right or left, then take it?
+
+type Froms = {
+    [key: string]: {
+        coord: Coord;
+        exits: Array<number>;
+    };
+};
+
+// So there's probably a weird edge case if two corners happen to touch
+// ... not super likely, but idk what would happen.
+
+type PartialSegment = {
+    prev: Coord;
+    segment: Segment;
+    initialAngle: number;
+    finalAngle: number;
+};
+
+export const findClockwiseRegions = (
+    segments: Array<PartialSegment>,
+    froms: Froms,
+): Array<Array<Segment>> => {
+    const regions: Array<Array<Segment>> = [];
+
+    let seen = new Array(segments.length).fill(false);
+    segments.forEach(({ prev, segment, finalAngle }, i) => {
+        if (seen[i]) {
+            return;
+        }
+
+        let region: Array<Segment> = [];
+
+        while (
+            (!region.length ||
+                !coordsEqual(region[region.length - 1].to, prev)) &&
+            !seen[i]
+        ) {
+            seen[i] = true;
+            const key = coordKey(segment.to);
+            // eliminate the "just go to the next one"
+            const otherExits = froms[key].exits
+                //.filter(k => k !== i + 1)
+                .map((k): [number, number] =>
+                    k === i + 1
+                        ? [Infinity, k]
+                        : [
+                              angleBetween(
+                                  finalAngle,
+                                  segments[k].initialAngle,
+                                  true,
+                              ),
+                              k,
+                          ],
+                )
+                // low to high, I think?
+                .sort((a, b) => a[0] - b[0]);
+
+            let exit = otherExits[0][1];
+            region.push(segment);
+            ({ segment, finalAngle } = segments[exit]);
+            i = exit;
+        }
+
+        regions.push(region);
+
+        // let exit = otherExits.length ? otherExits[0] :
+        // if (!otherExits.length) {
+        // 	exit =
+        // }
+    });
+
+    return regions.filter((region) => isClockwise(region));
 };

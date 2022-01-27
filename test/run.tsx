@@ -11,6 +11,10 @@ import { insetPath, insetSegments, insetSegmentsBeta } from '../src/insetPath';
 import { pruneInsetPath } from '../src/pruneInsetPath';
 import { calcPathD } from '../src/RenderPath';
 import { Coord, Path, Segment } from '../src/types';
+import {
+    findClockwiseRegions,
+    segmentsToNonIntersectingSegments,
+} from '../src/findInternalRegions';
 
 const size = 500;
 
@@ -222,7 +226,9 @@ const ShowExample = ({
                         insets[+k].paths.map((segments, i) => (
                             <path
                                 stroke={insetColors[ki]}
-                                strokeDasharray={insets[+k].pass ? '' : '5 5'}
+                                strokeDasharray={
+                                    insets[+k].pass ? '' : `${(i + 1) * 5}`
+                                }
                                 key={`${k}:${i}`}
                                 strokeWidth={3}
                                 fill="none"
@@ -485,10 +491,19 @@ function getInsets(segments: Segment[]) {
             const inset = i * 20 + 20;
             if (inset != 0) {
                 const insetted = insetSegmentsBeta(segments, inset);
+                const result = segmentsToNonIntersectingSegments(insetted);
+                const regions = findClockwiseRegions(
+                    result.result,
+                    result.froms,
+                );
                 insets[inset] = {
-                    paths: insetted.length ? [insetted] : [],
+                    paths: regions,
                     pass: false,
                 };
+                // insets[inset] = {
+                //     paths: insetted.length ? [insetted] : [],
+                //     pass: false,
+                // };
                 // insets[inset] = {
                 //     paths: insetted.length
                 //         ? pruneInsetPath(insetted).filter((s) => s.length)
