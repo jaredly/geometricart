@@ -1,4 +1,16 @@
 
+ARCCSSS
+
+hmm so the thing that actually makes sense is to extend the border around the now-corner.
+hmm. and extend it around by the inset amount.
+that sounds quite reasonable.
+
+we could square off the ends, or round them off I guess.
+could be up to a user toggle.
+
+
+# Ok, insetting is basically done? I mean arcs aren't quite right.
+
 Question:
 is it higher priority to make mobile work reasonably, or to do animation stuff?
 I can tell you animation is more exciting.

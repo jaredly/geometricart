@@ -12,10 +12,17 @@ export const pathToPoints = (segments: Array<Segment>) => {
             const t1 = angleTo(seg.center, prev);
             const t2 = angleTo(seg.center, seg.to);
             const bt = angleBetween(t1, t2, seg.clockwise);
-            const tm = t1 + (bt / 2) * (seg.clockwise ? 1 : -1); // (t1 + t2) / 2;
-            const d = dist(seg.center, seg.to);
-            const midp = push(seg.center, tm, d);
-            points.push(midp);
+            const subs = 10;
+            for (let i = 1; i < subs; i++) {
+                const tm = t1 + (bt / subs) * i * (seg.clockwise ? 1 : -1);
+                const d = dist(seg.center, seg.to);
+                const midp = push(seg.center, tm, d);
+                points.push(midp);
+            }
+            // const tm = t1 + (bt / 2) * (seg.clockwise ? 1 : -1);
+            // const d = dist(seg.center, seg.to);
+            // const midp = push(seg.center, tm, d);
+            // points.push(midp);
         }
         points.push(seg.to);
 

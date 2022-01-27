@@ -318,11 +318,36 @@ export const insetSegment = (
         } else {
             const radius =
                 dist(next.center, next.to) + amount * (next.clockwise ? -1 : 1);
-            const angle = angleTo(next.center, next.to);
             const intersection = lineCircle(
                 { center: next.center, radius: radius, type: 'circle' },
                 slope1,
             );
+            if (!intersection.length) {
+                // go to the point that's closest between the line and the circle.
+                // So, intersect the line from the ircle center that's perpendicular to the line
+                // const angle = angleTo(next.center, next.to);
+                const perp = lineLine(
+                    slope1,
+                    lineToSlope(
+                        next.center,
+                        push(next.center, t + Math.PI / 2, 10),
+                    ),
+                );
+                if (dist(prev, p0) > dist(p0, p1)) {
+                    // const radius = dist(next.center, next.to)
+                    return [
+                        { type: 'Line', to: perp! },
+                        {
+                            type: 'Line',
+                            to: push(
+                                next.center,
+                                t + (Math.PI / 2) * (next.clockwise ? 1 : -1),
+                                radius,
+                            ),
+                        },
+                    ];
+                }
+            }
             const dists = intersection.map((pos) => dist(pos, p1));
             const target =
                 dists.length > 1
@@ -378,6 +403,29 @@ export const insetSegment = (
                     : intersection.length
                     ? intersection[0]
                     : seg.to;
+            if (!intersection.length) {
+                const perp = lineLine(
+                    slope2,
+                    lineToSlope(
+                        seg.center,
+                        push(seg.center, t1 + Math.PI / 2, 10),
+                    ),
+                );
+                // const radius = dist(next.center, next.to)
+                if (dist(perp!, p3) > dist(p2, p3)) {
+                    return [
+                        {
+                            ...seg,
+                            to: push(
+                                seg.center,
+                                t1 + (Math.PI / 2) * (seg.clockwise ? 1 : -1),
+                                radius,
+                            ),
+                        },
+                        { type: 'Line', to: perp! },
+                    ];
+                }
+            }
             if (
                 !intersection.length ||
                 (onlyExtend && dist(next.to, target) < dist(next.to, seg.to))

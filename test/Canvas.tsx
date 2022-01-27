@@ -12,10 +12,14 @@ import {
 } from '../src/findInternalRegions';
 import { angleBetween } from '../src/findNextSegments';
 import { pathToPrimitives } from '../src/findSelection';
-import { Text } from '../src/Forms';
+import { BlurInt, Text } from '../src/Forms';
 import { angleTo, dist, push } from '../src/getMirrorTransforms';
 import { insetSegmentsBeta } from '../src/insetPath';
-import { ensureClockwise, isClockwise } from '../src/pathToPoints';
+import {
+    ensureClockwise,
+    isClockwise,
+    pathToPoints,
+} from '../src/pathToPoints';
 import { calcPathD } from '../src/RenderPath';
 import { Coord, Segment } from '../src/types';
 import { getInsets, insetColors, pathSegs, size } from './run';
@@ -51,6 +55,9 @@ export const Drawing = ({
 
     React.useEffect(() => {
         const fn = (evt: KeyboardEvent) => {
+            if (document.activeElement !== document.body) {
+                return;
+            }
             const adding = addingNow.current;
             if (evt.key === 'z' && evt.metaKey) {
                 evt.preventDefault();
@@ -231,6 +238,9 @@ export const Canvas = ({
 }) => {
     let [segments, setSegments] = React.useState(initialState());
     const [title, setTitle] = React.useState('Untitled');
+    const [debug, setDebug] = React.useState(
+        null as null | { kind: number; inset: number },
+    );
 
     React.useEffect(() => {
         localStorage[KEY] = JSON.stringify(segments);
@@ -261,13 +271,71 @@ export const Canvas = ({
                 </button>
                 <button onClick={() => setSegments([])}>Clear</button>
             </div>
+            <div>
+                <button onClick={() => setDebug(null)} disabled={debug == null}>
+                    No Debug
+                </button>
+                <button
+                    onClick={() =>
+                        setDebug({ kind: 1, inset: debug?.inset ?? 40 })
+                    }
+                    disabled={debug?.kind === 1}
+                >
+                    Debug 1
+                </button>
+                <button
+                    onClick={() =>
+                        setDebug({ kind: 2, inset: debug?.inset ?? 40 })
+                    }
+                    disabled={debug?.kind === 2}
+                >
+                    Debug 2
+                </button>
+                <button
+                    onClick={() =>
+                        setDebug({ kind: 3, inset: debug?.inset ?? 40 })
+                    }
+                    disabled={debug?.kind === 3}
+                >
+                    Debug 3
+                </button>
+                {debug ? (
+                    <>
+                        <BlurInt
+                            value={debug.inset}
+                            onChange={(inset) =>
+                                inset
+                                    ? setDebug({ inset, kind: debug.kind })
+                                    : null
+                            }
+                        />
+                        <input
+                            type="range"
+                            min={-20}
+                            max={60}
+                            step={10}
+                            value={debug.inset}
+                            onChange={(evt) =>
+                                setDebug({
+                                    inset: +evt.target.value,
+                                    kind: debug.kind,
+                                })
+                            }
+                        />
+                    </>
+                ) : null}
+            </div>
+
             <Drawing
                 segments={segments}
                 setSegments={setSegments}
                 onComplete={() => onComplete(segments, title)}
                 render={(segments) => {
-                    const showWind: number = 1;
-                    const windAt = 60;
+                    if (!segments.length) {
+                        return;
+                    }
+                    const showWind = debug?.kind;
+                    const windAt = debug?.inset ?? 40;
                     if (showWind === 3) {
                         const all = getInsets(segments);
                         const inset = insetSegmentsBeta(segments, windAt);
@@ -333,6 +401,15 @@ export const Canvas = ({
                                 {result.result.map((seg, i) =>
                                     segmentArrow(seg.prev, i, seg.segment),
                                 )}
+                                {pathToPoints(segments).map((point, i) => (
+                                    <circle
+                                        key={i}
+                                        cx={point.x}
+                                        cy={point.y}
+                                        r={5}
+                                        fill="red"
+                                    />
+                                ))}
                             </>
                         );
                     }
