@@ -963,7 +963,7 @@ export const windingNumber = (
                 }
                 const t = angleTo(prim.center, coord);
                 const right = Math.abs(t) < Math.PI / 2;
-                const up = right !== (segs[i] as ArcSegment).clockwise;
+                const up = right === (segs[i] as ArcSegment).clockwise;
                 wind.push({ prev, seg: segs[i], up, hit: coord });
             }
             // if we're going "up" at this point, +1, otherwise -1
@@ -1147,6 +1147,7 @@ export const sortHitsForPrimitive = <T extends { coord: Coord }>(
     } else {
         const circle = segment as ArcSegment;
         const t1 = angleTo(circle.center, segment.to);
+        // console.log(hits, circle, t1);
         // TODO: DEDUP! If we have an intersection with two clip segments, take the /later/ one.
         // the only way this could happen is if they're contiguous.
         return hits
@@ -1157,10 +1158,10 @@ export const sortHitsForPrimitive = <T extends { coord: Coord }>(
                     : angleBetween(
                           t1,
                           angleTo(circle.center, coord.coord),
-                          false,
+                          circle.clockwise,
                       ),
             }))
-            .sort((a, b) => b.dist - a.dist)
+            .sort((a, b) => a.dist - b.dist)
             .map((item) => item.coord)
             .filter(check);
     }

@@ -331,7 +331,10 @@ export const insetSegment = (
                     : intersection.length
                     ? intersection[0]
                     : seg.to;
-            if (onlyExtend && dist(target, p0) < dist(prev, seg.to)) {
+            if (
+                !intersection.length ||
+                (onlyExtend && dist(target, p0) < dist(prev, seg.to))
+            ) {
                 const p2 = push(
                     next.center,
                     angleTo(next.center, seg.to),
@@ -374,7 +377,10 @@ export const insetSegment = (
                     : intersection.length
                     ? intersection[0]
                     : seg.to;
-            if (onlyExtend && dist(next.to, target) < dist(next.to, seg.to)) {
+            if (
+                !intersection.length ||
+                (onlyExtend && dist(next.to, target) < dist(next.to, seg.to))
+            ) {
                 const p1 = push(
                     seg.center,
                     angleTo(seg.center, seg.to),

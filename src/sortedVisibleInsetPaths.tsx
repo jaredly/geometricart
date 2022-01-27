@@ -23,7 +23,10 @@ import {
 } from './intersect';
 import { calculateBounds } from './Guides';
 import { applyStyleHover, StyleHover } from './MultiStyleForm';
-import { cleanUpInsetSegments } from './findInternalRegions';
+import {
+    cleanUpInsetSegments,
+    cleanUpInsetSegments2,
+} from './findInternalRegions';
 
 // This should produce:
 // a list of lines
@@ -257,7 +260,7 @@ export const pathToInsetPaths = (path: Path): Array<Path> => {
                 return [path];
             }
 
-            const regions = cleanUpInsetSegments(
+            const regions = cleanUpInsetSegments2(
                 insetSegmentsBeta(path.segments, inset / 100),
             );
 

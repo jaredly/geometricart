@@ -91,6 +91,9 @@ export const segmentsToNonIntersectingSegments = (segments: Array<Segment>) => {
         let prev =
             i === 0 ? segments[segments.length - 1].to : segments[i - 1].to;
         let intersection = 0;
+        // if (segment.type === 'Arc') {
+        //     console.log(segment, sorted[i], prev, segment.to);
+        // }
         while (
             !coordsEqual(prev, segment.to) &&
             intersection <= sorted[i].length
@@ -116,6 +119,9 @@ export const segmentsToNonIntersectingSegments = (segments: Array<Segment>) => {
             prev = to;
             intersection++;
         }
+        // if (segment.type === 'Arc') {
+        //     console.log('processed', intersection, 'hits');
+        // }
     });
     return { result, froms };
 };
@@ -360,7 +366,30 @@ export const cleanUpInsetSegmentsOld = (segments: Array<Segment>) => {
 export const cleanUpInsetSegments = cleanUpInsetSegmentsOld;
 
 // segments are assumed to be clockwise
+export const findStraightInternalPos = (segments: Array<Segment>) => {
+    for (let i = 0; i < segments.length; i++) {
+        const next = segments[(i + 1) % segments.length];
+        const segment = segments[i];
+        if (next.type !== 'Line' && segment.type !== 'Line') {
+            continue;
+        }
+        const prev = segments[i === 0 ? segments.length - 1 : i - 1].to;
+        const thisTheta = segmentAngle(prev, segment, false);
+        const nextTheta = segmentAngle(segment.to, next, true);
+        const between = angleBetween(nextTheta, thisTheta + Math.PI, true);
+        if (between < Math.PI) {
+            return push(segment.to, nextTheta + between / 2, 0.01);
+        }
+    }
+    return null;
+};
+
+// segments are assumed to be clockwise
 export const findInternalPos = (segments: Array<Segment>) => {
+    const straight = findStraightInternalPos(segments);
+    if (straight) {
+        return straight;
+    }
     for (let i = 0; i < segments.length; i++) {
         const next = segments[(i + 1) % segments.length];
         const segment = segments[i];
@@ -369,7 +398,7 @@ export const findInternalPos = (segments: Array<Segment>) => {
         const nextTheta = segmentAngle(segment.to, next, true);
         const between = angleBetween(nextTheta, thisTheta + Math.PI, true);
         if (between < Math.PI) {
-            return push(segment.to, nextTheta + between / 2, 5);
+            return push(segment.to, nextTheta + between / 2, 0.01);
         }
     }
     console.warn('no internal pos???', segments);

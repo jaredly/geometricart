@@ -64,6 +64,7 @@ export const Drawing = ({
                 );
             }
             if (evt.key === ' ') {
+                evt.preventDefault();
                 if (adding.type === 'arc') {
                     console.log('swap');
                     setAdding({ ...adding, clockwise: !adding.clockwise });
@@ -264,9 +265,9 @@ export const Canvas = ({
                 setSegments={setSegments}
                 onComplete={() => onComplete(segments, title)}
                 render={(segments) => {
-                    const showWind = 1;
+                    const showWind = 0;
                     if (showWind === 1) {
-                        const inset = insetSegmentsBeta(segments, 40);
+                        const inset = insetSegmentsBeta(segments, -20);
                         const result = segmentsToNonIntersectingSegments(inset);
                         const regions = findRegions(
                             result.result,
@@ -313,20 +314,11 @@ export const Canvas = ({
                                 {result.result.map((seg, i) =>
                                     segmentArrow(seg.prev, i, seg.segment),
                                 )}
-                                {/* {inset.map((seg, i) =>
-                                    segmentArrow(
-                                        inset[
-                                            i === 0 ? inset.length - 1 : i - 1
-                                        ].to,
-                                        i,
-                                        seg,
-                                    ),
-                                )} */}
                             </>
                         );
                     }
                     if (showWind) {
-                        const inset = insetSegmentsBeta(segments, 40);
+                        const inset = insetSegmentsBeta(segments, -20);
                         const parts = segmentsToNonIntersectingSegments(inset);
                         const regions = findRegions(
                             parts.result,
@@ -357,40 +349,15 @@ export const Canvas = ({
                                     stroke="yellow"
                                     strokeWidth={1}
                                 />
-                                {inset.map((seg, i) => {
-                                    const prev =
+                                {inset.map((seg, i) =>
+                                    segmentArrow(
                                         inset[
                                             i === 0 ? inset.length - 1 : i - 1
-                                        ].to;
-                                    const mid = {
-                                        x: (seg.to.x + prev.x) / 2,
-                                        y: (seg.to.y + prev.y) / 2,
-                                    };
-                                    const theta = angleTo(prev, seg.to);
-                                    const show = (p: Coord) =>
-                                        `${p.x.toFixed(2)},${p.y.toFixed(2)}`;
-                                    return (
-                                        <polygon
-                                            points={[
-                                                push(mid, theta, 2),
-                                                push(
-                                                    mid,
-                                                    theta + (Math.PI * 2) / 3,
-                                                    2,
-                                                ),
-                                                push(
-                                                    mid,
-                                                    theta + (Math.PI * 4) / 3,
-                                                    2,
-                                                ),
-                                            ]
-                                                .map(show)
-                                                .join(' ')}
-                                            fill="purple"
-                                            key={i}
-                                        />
-                                    );
-                                })}
+                                        ].to,
+                                        i,
+                                        seg,
+                                    ),
+                                )}
                                 {regions.map((region, i) => {
                                     const pos = findInternalPos(region);
                                     const wind = windingNumber(
