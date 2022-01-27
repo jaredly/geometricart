@@ -913,7 +913,66 @@ export const isOnCircle = (coord: Coord, seg: Circle) => {
     return closeEnough(d, seg.radius);
 };
 
+export const windingNumber = (
+    coord: Coord,
+    prims: Array<Primitive>,
+    segs: Array<Segment>,
+) => {
+    const ray: Primitive = {
+        type: 'line',
+        m: 0,
+        b: coord.y,
+        limit: [coord.x, Infinity],
+    };
+    // let isOnEdge = false;
+    let wind = 0; // UP is positive, DOWN is negative
+    prims.forEach((prim, i) => {
+        // if (isOnEdge) {
+        //     // bail fast
+        //     return;
+        // }
+
+        if (prim.type === 'line') {
+            if (prim.m === 0) {
+                return;
+            }
+        }
+
+        intersections(prim, ray).forEach((coord) => {
+            if (prim.type === 'line') {
+                // ignore intersections with the "bottom point" of a line
+                // we might not need this? because we're taking direction into account
+                // hmm yeah I think we do need it. so we don't double-count
+                if (atLineBottom(coord, prim)) {
+                    return;
+                }
+                const prev = segs[i === 0 ? segs.length - 1 : i - 1].to;
+                const line = segs[i];
+                const dy = line.to.y - prev.y;
+                wind += dy > 0 ? 1 : -1;
+            } else {
+                if (atCircleBottomOrSomething(coord, prim)) {
+                    return;
+                }
+                const t = angleTo(prim.center, coord);
+                const right = Math.abs(t) < Math.PI / 2;
+                wind += right !== (segs[i] as ArcSegment).clockwise ? 1 : -1;
+            }
+            // if we're going "up" at this point, +1, otherwise -1
+            // hits.push(coord);
+        });
+    });
+    // if (isOnEdge) {
+    //     return false;
+    // }
+    // if (debug) {
+    //     console.log(hits, coord);
+    // }
+    return wind;
+};
+
 // excludes points that line /on/ the path.
+// segs *need not be ordered or contiguous*
 export const insidePath = (
     coord: Coord,
     segs: Array<Primitive>,

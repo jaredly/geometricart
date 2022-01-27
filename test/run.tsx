@@ -13,6 +13,7 @@ import { calcPathD } from '../src/RenderPath';
 import { Coord, Path, Segment } from '../src/types';
 import {
     cleanUpInsetSegments,
+    cleanUpInsetSegmentsOld,
     findClockwiseRegions,
     segmentsToNonIntersectingSegments,
 } from '../src/findInternalRegions';
@@ -248,12 +249,31 @@ const ShowExample = ({
     );
 };
 
+export const pathSegs = (segments: Array<Segment>): Path => ({
+    ...blankPath,
+    segments,
+    origin: segments[segments.length - 1].to,
+});
+
+const star = () => {
+    const r0 = 70;
+    const r1 = 60;
+    const points = [];
+    const n = 20;
+    for (let i = 0; i < n; i++) {
+        const t = ((Math.PI * 2) / n) * i;
+        const p = push({ x: 0, y: 0 }, t, i % 2 === 0 ? r1 : r0);
+        points.push(p);
+    }
+    return points.map((to) => ({ type: 'Line', to }));
+};
+
 const Canvas = ({
     onComplete,
 }: {
     onComplete: (segments: Array<Segment>, title: string) => void;
 }) => {
-    let [segments, setSegments] = React.useState([] as Array<Segment>);
+    let [segments, setSegments] = React.useState(star() as Array<Segment>);
     const origin = segments.length
         ? segments[segments.length - 1].to
         : { x: 0, y: 0 };
@@ -418,8 +438,8 @@ const Canvas = ({
                             <path
                                 stroke={insetColors[ki]}
                                 key={`${k}:${i}`}
-                                strokeDasharray={insets[+k].pass ? '' : '5 5'}
-                                strokeWidth={3}
+                                strokeDasharray={insets[+k].pass ? '' : '2'}
+                                strokeWidth={1}
                                 fill="none"
                                 d={calcPathD(pathSegs(segments), 1)}
                             />
@@ -463,8 +483,6 @@ const Canvas = ({
     );
 };
 
-render(<App />, document.getElementById('root'));
-
 export type Insets = {
     [key: number]: {
         paths: Array<Array<Segment>>;
@@ -491,18 +509,20 @@ function getInsets(segments: Segment[]) {
         for (let i = -2; i < 3; i++) {
             const inset = i * 20 + 20;
             if (inset != 0) {
-                const insetted = insetSegmentsBeta(segments, inset);
-                const result = segmentsToNonIntersectingSegments(insetted);
-                const regions = findClockwiseRegions(
-                    result.result,
-                    result.froms,
-                );
+                // const insetted = insetSegmentsBeta(segments, inset);
+                // const result = segmentsToNonIntersectingSegments(insetted);
+                // const regions = findClockwiseRegions(
+                //     result.result,
+                //     result.froms,
+                // );
+                // insets[inset] = {
+                //     paths: insetted.length ? [insetted] : [],
+                //     pass: false,
+                // };
                 insets[inset] = {
-                    paths: insetted.length ? [insetted] : [],
-                    pass: false,
-                };
-                insets[inset] = {
-                    paths: regions,
+                    paths: cleanUpInsetSegments(
+                        insetSegmentsBeta(segments, inset),
+                    ),
                     pass: false,
                 };
                 // insets[inset] = {
@@ -533,8 +553,4 @@ const blankPath: Path = {
     clipMode: 'none',
 };
 
-export const pathSegs = (segments: Array<Segment>): Path => ({
-    ...blankPath,
-    segments,
-    origin: segments[segments.length - 1].to,
-});
+render(<App />, document.getElementById('root'));

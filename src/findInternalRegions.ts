@@ -17,16 +17,16 @@
 
 import { coordKey } from './calcAllIntersections';
 import { isClockwise } from './pathToPoints';
-import { insidePath, sortHitsForPrimitive } from './clipPath';
+import { insidePath, sortHitsForPrimitive, windingNumber } from './clipPath';
 import { pathToPrimitives } from './findSelection';
 import { intersections, Primitive, withinLimit } from './intersect';
 import { coordsEqual } from './pathsAreIdentical';
 import { Hit } from './pruneInsetPath';
 import { Coord, Segment } from './types';
-import { angleTo } from './getMirrorTransforms';
+import { angleTo, push } from './getMirrorTransforms';
 import { angleBetween } from './findNextSegments';
 import { Bounds } from './GuideElement';
-import { segmentsBounds } from './Export';
+import { segmentBounds, segmentsBounds } from './Export';
 
 export const segmentsToNonIntersectingSegments = (segments: Array<Segment>) => {
     const primitives = pathToPrimitives(segments);
@@ -243,13 +243,18 @@ export const getCornerAngle = (segments: Array<Segment>, i: number) => {
             angleTo(seg.center, prev.to) +
             (Math.PI / 2) * (seg.clockwise ? 1 : -1);
     }
-    return angleBetween(enterAngle, exitAngle, true);
+    return { enterAngle, exitAngle }; // angleBetween(enterAngle, exitAngle, true);
 };
 
 export const precalcRegion = (segments: Array<Segment>): Region => {
     const corners: Region['corners'] = {};
     segments.forEach((segment, i) => {
-        corners[coordKey(segment.to)] = getCornerAngle(segments, i);
+        const { enterAngle, exitAngle } = getCornerAngle(segments, i);
+        corners[coordKey(segment.to)] = angleBetween(
+            enterAngle,
+            exitAngle,
+            true,
+        );
     });
 
     return {
@@ -263,6 +268,7 @@ export const precalcRegion = (segments: Array<Segment>): Region => {
 export const removeContainedRegions = (
     regionSegments: Array<Array<Segment>>,
 ): Array<Array<Segment>> => {
+    // return regionSegments;
     let remove: Array<number> = [];
     const regions = regionSegments.map(precalcRegion);
     regions.forEach((first, i) => {
@@ -341,12 +347,31 @@ export const findClockwiseRegions = (
         regions.push(region);
     });
 
+    return regions.filter((region) => isClockwise(region));
+};
+
+export const cleanUpInsetSegmentsOld = (segments: Array<Segment>) => {
+    const result = segmentsToNonIntersectingSegments(segments);
     return removeContainedRegions(
-        regions.filter((region) => isClockwise(region)),
+        findClockwiseRegions(result.result, result.froms),
     );
 };
 
 export const cleanUpInsetSegments = (segments: Array<Segment>) => {
     const result = segmentsToNonIntersectingSegments(segments);
-    return findClockwiseRegions(result.result, result.froms);
+    const regions = findClockwiseRegions(result.result, result.froms);
+    const allPrims = pathToPrimitives(segments);
+    return regions.filter((region) => {
+        const bound = segmentsBounds(region);
+        const inside = {
+            x: (bound.x1 + bound.x0) / 2,
+            y: (bound.y1 + bound.y0) / 2,
+        };
+        // let { enterAngle, exitAngle } = getCornerAngle(region, 0);
+        // const center = angleBetween(exitAngle, enterAngle + Math.PI, true);
+        // const inside = push(region[0].to, exitAngle + center / 2, 0.1);
+        const pointInside = windingNumber(inside, allPrims, segments);
+        // console.log(pointInside);
+        return pointInside > 0;
+    });
 };
