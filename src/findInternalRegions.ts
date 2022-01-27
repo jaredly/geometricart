@@ -19,12 +19,14 @@ import { coordKey } from './calcAllIntersections';
 import { isClockwise } from './pathToPoints';
 import { sortHitsForPrimitive } from './clipPath';
 import { pathToPrimitives } from './findSelection';
-import { intersections } from './intersect';
+import { intersections, withinLimit } from './intersect';
 import { coordsEqual } from './pathsAreIdentical';
 import { Hit } from './pruneInsetPath';
 import { Coord, Segment } from './types';
 import { angleTo } from './getMirrorTransforms';
 import { angleBetween } from './findNextSegments';
+import { Bounds } from './GuideElement';
+import { segmentsBounds } from './Export';
 
 export const segmentsToNonIntersectingSegments = (segments: Array<Segment>) => {
     const primitives = pathToPrimitives(segments);
@@ -144,6 +146,140 @@ type PartialSegment = {
     finalAngle: number;
 };
 
+/* ok whats the stragety
+
+so we know these regions wont be mutually intersecting, right?
+
+Ok, so faster way, will work for most:
+- if they share a point, we can know which one is outside. >< the "top" one if we're going left to right.
+- if they don't share a point, check if they bounding box intersect.
+	- if not, leave them alone
+	- if they do, the smaller bounding box one gets eliminated? I mean ...
+		the one that has a control point in the other one gets eliminated.
+		so, it's enough to test 1 point of 1 against the other. if it's inside, rmeove it
+		if not, test one point of the other, and if it's in, then remove that other.
+
+*/
+
+type Region = {
+    segments: Array<Segment>;
+    bounds: Bounds;
+    corners: { [key: string]: number }; // the angle, clockwise I think
+};
+
+export const overlap = (a: number, b: number, c: number, d: number) => {
+    return (
+        withinLimit([a, b], c) ||
+        withinLimit([a, b], d) ||
+        withinLimit([c, d], a) ||
+        withinLimit([c, d], b)
+    );
+};
+
+export const boundsIntersect = (one: Bounds, two: Bounds) => {
+    return (
+        overlap(one.x0, one.x1, two.x0, two.x1) &&
+        overlap(one.y0, one.y1, two.y0, two.y1)
+    );
+};
+
+export const checkContained = (
+    first: Region,
+    second: Region,
+): null | boolean => {
+    if (!boundsIntersect(first.bounds, second.bounds)) {
+        return null;
+    }
+
+    for (let corner of Object.keys(first.corners)) {
+        if (second.corners[corner]) {
+            // they share a corner!
+            // the one that's "inside" is the one with the ... smaller angle. the convex one, if you will.
+            if (first.corners[corner] < second.corners[corner]) {
+                return true; // first one goes
+            } else {
+                return false; // second one goes
+            }
+        }
+    }
+
+    return null;
+};
+
+export const getCornerAngle = (segments: Array<Segment>, i: number) => {
+    // 0 is the angle between the first and the second
+    // segments.length - 1 is the angle between the last and the first
+    const pprev = segments[i === 0 ? segments.length - 1 : i - 1].to;
+    const prev = segments[i];
+    const seg = segments[(i + 1) % segments.length];
+
+    let enterAngle;
+    if (prev.type === 'Line') {
+        enterAngle = angleTo(pprev, prev.to);
+    } else {
+        enterAngle =
+            angleTo(prev.center, prev.to) +
+            (Math.PI / 2) * (prev.clockwise ? 1 : -1);
+    }
+    let exitAngle;
+    if (seg.type === 'Line') {
+        exitAngle = angleTo(prev.to, seg.to);
+    } else {
+        exitAngle =
+            angleTo(seg.center, prev.to) +
+            (Math.PI / 2) * (seg.clockwise ? 1 : -1);
+    }
+    return angleBetween(enterAngle, exitAngle, true);
+};
+
+export const precalcRegion = (segments: Array<Segment>): Region => {
+    const corners: Region['corners'] = {};
+    segments.forEach((segment, i) => {
+        // const pos = segments[i === 0 ? segments.length - 1 : i - 1].to;
+        corners[coordKey(segment.to)] = getCornerAngle(segments, i);
+    });
+
+    return {
+        segments,
+        bounds: segmentsBounds(segments),
+        corners,
+    };
+};
+
+export const removeContainedRegions = (
+    regionSegments: Array<Array<Segment>>,
+): Array<Array<Segment>> => {
+    // return regionSegments;
+    let remove: Array<number> = [];
+    const regions = regionSegments.map(precalcRegion);
+    regions.forEach((first, i) => {
+        if (remove.includes(i)) {
+            return;
+        }
+        for (let j = i + 1; j < regions.length; j++) {
+            if (remove.includes(j)) {
+                continue;
+            }
+            const second = regions[j];
+
+            const result = checkContained(first, second);
+            if (result == true) {
+                // first is contained within second
+                remove.push(i);
+                // bail out of checking first, it'll be removed anyway
+                return;
+            } else if (result === false) {
+                // second is contained within first
+                remove.push(j);
+            }
+        }
+    });
+
+    return remove.length
+        ? regionSegments.filter((_, i) => !remove.includes(i))
+        : regionSegments;
+};
+
 export const findClockwiseRegions = (
     segments: Array<PartialSegment>,
     froms: Froms,
@@ -190,12 +326,9 @@ export const findClockwiseRegions = (
         }
 
         regions.push(region);
-
-        // let exit = otherExits.length ? otherExits[0] :
-        // if (!otherExits.length) {
-        // 	exit =
-        // }
     });
 
-    return regions.filter((region) => isClockwise(region));
+    return removeContainedRegions(
+        regions.filter((region) => isClockwise(region)),
+    );
 };
