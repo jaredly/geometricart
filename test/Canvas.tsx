@@ -10,6 +10,7 @@ import {
     segmentAngle,
     segmentsToNonIntersectingSegments,
 } from '../src/findInternalRegions';
+import { angleBetween } from '../src/findNextSegments';
 import { pathToPrimitives } from '../src/findSelection';
 import { Text } from '../src/Forms';
 import { angleTo, dist, push } from '../src/getMirrorTransforms';
@@ -212,10 +213,14 @@ export const Drawing = ({
 };
 
 const initialState = (): Array<Segment> => {
+    if (localStorage[KEY]) {
+        return JSON.parse(localStorage[KEY]);
+    }
     return star();
     // return []
 };
 
+const KEY = 'geo-test-canvas';
 export const Canvas = ({
     onComplete,
     initial,
@@ -225,6 +230,10 @@ export const Canvas = ({
 }) => {
     let [segments, setSegments] = React.useState(initialState());
     const [title, setTitle] = React.useState('Untitled');
+
+    React.useEffect(() => {
+        localStorage[KEY] = JSON.stringify(segments);
+    }, [segments]);
 
     const iref = React.useRef(initial);
     React.useEffect(() => {
@@ -531,19 +540,19 @@ const star = (): Array<Segment> => {
     }
     return points.map((to) => ({ type: 'Line', to }));
 };
+
 function segmentArrow(prev: Coord, i: number, seg: Segment) {
-    // const prev = inset[i === 0 ? inset.length - 1 : i - 1].to;
-    const mid =
-        seg.type === 'Line'
-            ? {
-                  x: (seg.to.x + prev.x) / 2,
-                  y: (seg.to.y + prev.y) / 2,
-              }
-            : push(
-                  seg.center,
-                  (angleTo(seg.center, prev) + angleTo(seg.center, seg.to)) / 2,
-                  dist(seg.center, seg.to),
-              );
+    let mid;
+    if (seg.type === 'Line') {
+        mid = {
+            x: (seg.to.x + prev.x) / 2,
+            y: (seg.to.y + prev.y) / 2,
+        };
+    } else {
+        const t0 = angleTo(seg.center, prev);
+        const tb = angleBetween(t0, angleTo(seg.center, seg.to), seg.clockwise);
+        mid = push(seg.center, t0 + tb / 2, dist(seg.center, seg.to));
+    }
     const theta = angleTo(prev, seg.to);
     const show = (p: Coord) => `${p.x.toFixed(2)},${p.y.toFixed(2)}`;
     return (

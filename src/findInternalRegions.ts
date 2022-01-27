@@ -35,25 +35,25 @@ export const segmentsToNonIntersectingSegments = (segments: Array<Segment>) => {
         .map((m) => []);
     const allHits: Array<Hit> = [];
     for (let i = 0; i < segments.length; i++) {
-        const previ =
-            i === 0 ? segments[segments.length - 1].to : segments[i - 1].to;
+        // const previ =
+        //     i === 0 ? segments[segments.length - 1].to : segments[i - 1].to;
         for (let j = i + 1; j < segments.length; j++) {
-            const prevj =
-                j === 0 ? segments[segments.length - 1].to : segments[j - 1].to;
+            // const prevj =
+            //     j === 0 ? segments[segments.length - 1].to : segments[j - 1].to;
             const these = intersections(primitives[i], primitives[j]);
             these.forEach((coord) => {
-                if (coord.x === -0) {
+                if (coord.x === 0) {
                     coord.x = 0;
                 }
-                if (coord.y === -0) {
+                if (coord.y === 0) {
                     coord.y = 0;
                 }
-                const iend =
-                    coordsEqual(coord, previ) ||
-                    coordsEqual(coord, segments[i].to);
-                const jend =
-                    coordsEqual(coord, prevj) ||
-                    coordsEqual(coord, segments[j].to);
+                // const iend =
+                //     coordsEqual(coord, previ) ||
+                //     coordsEqual(coord, segments[i].to);
+                // const jend =
+                //     coordsEqual(coord, prevj) ||
+                //     coordsEqual(coord, segments[j].to);
                 // This is just two segments meeting. no big deal.
                 // Note that if we managed to get in a place where four lines met in the same place,
                 // this logic would break. here's hoping.
