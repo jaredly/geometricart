@@ -215,11 +215,23 @@ const initialState = (): Array<Segment> => {
 
 export const Canvas = ({
     onComplete,
+    initial,
 }: {
     onComplete: (segments: Array<Segment>, title: string) => void;
+    initial: null | Array<Segment>;
 }) => {
     let [segments, setSegments] = React.useState(initialState());
     const [title, setTitle] = React.useState('Untitled');
+
+    const iref = React.useRef(initial);
+    React.useEffect(() => {
+        if (iref.current !== initial) {
+            iref.current = initial;
+            if (initial) {
+                setSegments(initial);
+            }
+        }
+    }, [initial]);
 
     return (
         <div>
@@ -251,6 +263,7 @@ export const Canvas = ({
                                     d={calcPathD(pathSegs(inset), 1)}
                                     stroke="rgba(255,255,0,0.5)"
                                     strokeWidth={1}
+                                    fill="none"
                                 />
                                 {result.map((region, i) => (
                                     <path

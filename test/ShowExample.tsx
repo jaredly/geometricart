@@ -8,8 +8,10 @@ export const ShowExample = ({
     example,
     onChange,
     onDelete,
+    onClick,
 }: {
     example: Example;
+    onClick: () => void;
     onChange: (ex: Example) => void;
     onDelete: () => void;
 }) => {
@@ -88,6 +90,7 @@ export const ShowExample = ({
             <svg
                 width={size / 3}
                 height={size / 3}
+                onClick={onClick}
                 viewBox={`${bounds.x0 - 10} ${bounds.y0 - 10} ${
                     bounds.x1 - bounds.x0 + 20
                 } ${bounds.y1 - bounds.y0 + 20}`}

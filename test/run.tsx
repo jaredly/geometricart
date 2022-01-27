@@ -48,6 +48,7 @@ const maxId = (examples: Array<Example>) => {
 
 const App = () => {
     const [examples, setExamples] = React.useState([] as Array<Example>);
+    const [initial, setInitial] = React.useState(null as null | Array<Segment>);
 
     React.useEffect(() => {
         fetch(`/cases/`)
@@ -79,6 +80,7 @@ const App = () => {
     return (
         <div style={{ margin: 48 }}>
             <Canvas
+                initial={initial}
                 onComplete={(segments, title) => {
                     setExamples((ex) =>
                         ex.concat({
@@ -102,6 +104,12 @@ const App = () => {
                     <ShowExample
                         key={i}
                         example={example}
+                        onClick={() => {
+                            setInitial(example.input);
+                            setTimeout(() => {
+                                setInitial(null);
+                            }, 100);
+                        }}
                         onDelete={() => {
                             setExamples((ex) => {
                                 ex = ex.slice();
