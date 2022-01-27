@@ -17,9 +17,9 @@
 
 import { coordKey } from './calcAllIntersections';
 import { isClockwise } from './pathToPoints';
-import { sortHitsForPrimitive } from './clipPath';
+import { insidePath, sortHitsForPrimitive } from './clipPath';
 import { pathToPrimitives } from './findSelection';
-import { intersections, withinLimit } from './intersect';
+import { intersections, Primitive, withinLimit } from './intersect';
 import { coordsEqual } from './pathsAreIdentical';
 import { Hit } from './pruneInsetPath';
 import { Coord, Segment } from './types';
@@ -163,6 +163,7 @@ Ok, so faster way, will work for most:
 
 type Region = {
     segments: Array<Segment>;
+    primitives: Array<Primitive>;
     bounds: Bounds;
     corners: { [key: string]: number }; // the angle, clockwise I think
 };
@@ -203,6 +204,19 @@ export const checkContained = (
         }
     }
 
+    const fp = first.segments.find((seg) => !second.corners[coordKey(seg.to)]);
+    if (fp) {
+        if (insidePath(fp.to, second.primitives)) {
+            return true;
+        }
+    }
+    const sp = second.segments.find((seg) => !first.corners[coordKey(seg.to)]);
+    if (sp) {
+        if (insidePath(sp.to, first.primitives)) {
+            return false;
+        }
+    }
+
     return null;
 };
 
@@ -235,12 +249,12 @@ export const getCornerAngle = (segments: Array<Segment>, i: number) => {
 export const precalcRegion = (segments: Array<Segment>): Region => {
     const corners: Region['corners'] = {};
     segments.forEach((segment, i) => {
-        // const pos = segments[i === 0 ? segments.length - 1 : i - 1].to;
         corners[coordKey(segment.to)] = getCornerAngle(segments, i);
     });
 
     return {
         segments,
+        primitives: pathToPrimitives(segments),
         bounds: segmentsBounds(segments),
         corners,
     };
@@ -249,7 +263,6 @@ export const precalcRegion = (segments: Array<Segment>): Region => {
 export const removeContainedRegions = (
     regionSegments: Array<Array<Segment>>,
 ): Array<Array<Segment>> => {
-    // return regionSegments;
     let remove: Array<number> = [];
     const regions = regionSegments.map(precalcRegion);
     regions.forEach((first, i) => {
