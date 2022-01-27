@@ -1,24 +1,15 @@
 // This is for tests? idk
 import * as React from 'react';
 import { render } from 'react-dom';
-import { useCurrent } from '../src/App';
+import { cleanUpInsetSegments } from '../src/findInternalRegions';
+import { push } from '../src/getMirrorTransforms';
+import { insetSegmentsBeta } from '../src/insetPath';
 import { ensureClockwise } from '../src/pathToPoints';
-import { mergeBounds, segmentsBounds } from '../src/Export';
-import { Text } from '../src/Forms';
-import { angleTo, dist, push } from '../src/getMirrorTransforms';
-import { insetSegmentsNew } from '../src/insetAgain';
-import { insetPath, insetSegments, insetSegmentsBeta } from '../src/insetPath';
-import { pruneInsetPath } from '../src/pruneInsetPath';
-import { calcPathD } from '../src/RenderPath';
-import { Coord, Path, Segment } from '../src/types';
-import {
-    cleanUpInsetSegments,
-    cleanUpInsetSegmentsOld,
-    findClockwiseRegions,
-    segmentsToNonIntersectingSegments,
-} from '../src/findInternalRegions';
+import { Path, Segment } from '../src/types';
+import { Canvas } from './Canvas';
+import { ShowExample } from './ShowExample';
 
-const size = 500;
+export const size = 500;
 
 /**
  *
@@ -41,7 +32,7 @@ So when we're looking at a case, we can say "this passes" or "this doesn't"
 
 export const insetColors = ['#0f0', '#00f', '#ff0', '#f0f', '#0ff'];
 
-type Example = {
+export type Example = {
     input: Array<Segment>;
     output: Insets;
     title: string;
@@ -129,126 +120,6 @@ const App = () => {
     );
 };
 
-const ShowExample = ({
-    example,
-    onChange,
-    onDelete,
-}: {
-    example: Example;
-    onChange: (ex: Example) => void;
-    onDelete: () => void;
-}) => {
-    const { input: segments, output: _insets, title } = example;
-
-    const insets = React.useMemo(() => {
-        return getInsets(segments);
-    }, [segments]);
-
-    const bounds = React.useMemo(() => {
-        let bounds = segmentsBounds(segments);
-        Object.keys(insets).forEach((k) => {
-            insets[+k].paths.forEach((inset) => {
-                bounds = mergeBounds(bounds, segmentsBounds(inset));
-            });
-        });
-        return bounds;
-    }, [segments, insets]);
-
-    return (
-        <div
-            style={{
-                display: 'flex',
-                flexDirection: 'column',
-            }}
-        >
-            <div>
-                <div style={{ display: 'flex', flexDirection: 'row' }}>
-                    {Object.keys(insets)
-                        .sort()
-                        .map((k, i) => (
-                            <button
-                                key={i}
-                                onClick={() => {
-                                    const output = { ...insets };
-                                    output[+k] = {
-                                        ...insets[+k],
-                                        pass: !insets[+k].pass,
-                                    };
-                                    onChange({
-                                        ...example,
-                                        output,
-                                    });
-                                }}
-                                style={{
-                                    flex: 1,
-                                    border: `2px ${
-                                        insets[+k].pass ? 'solid' : 'dotted'
-                                    } ${insetColors[i]}`,
-                                    background: 'none',
-                                    borderRadius: 0,
-                                    color: 'white',
-                                    margin: 4,
-                                    cursor: 'pointer',
-                                }}
-                            >
-                                {insets[+k].pass ? 'P' : 'F'}
-                            </button>
-                        ))}
-                </div>
-                {/* <button
-                        onClick={() => {
-                            setEdit(false);
-                        }}
-                    >
-                        Save
-                    </button> */}
-                <button
-                    onClick={() => {
-                        onDelete();
-                    }}
-                >
-                    Delete
-                </button>
-            </div>
-            <svg
-                width={size / 3}
-                height={size / 3}
-                viewBox={`${bounds.x0 - 10} ${bounds.y0 - 10} ${
-                    bounds.x1 - bounds.x0 + 20
-                } ${bounds.y1 - bounds.y0 + 20}`}
-            >
-                <path
-                    stroke={'red'}
-                    strokeWidth={3}
-                    d={calcPathD(pathSegs(segments), 1)}
-                />
-                {Object.keys(insets)
-                    .sort()
-                    .map((k, ki) =>
-                        insets[+k].paths.map((segments, i) => (
-                            <path
-                                stroke={insetColors[ki]}
-                                strokeDasharray={
-                                    insets[+k].pass ? '' : `${(i + 1) * 2}`
-                                }
-                                key={`${k}:${i}`}
-                                strokeWidth={1}
-                                fill="none"
-                                d={calcPathD(pathSegs(segments), 1)}
-                            />
-                        )),
-                    )}
-            </svg>
-            <Text
-                value={title}
-                onChange={(title) => {
-                    onChange({ ...example, title });
-                }}
-            />
-        </div>
-    );
-};
-
 export const pathSegs = (segments: Array<Segment>): Path => ({
     ...blankPath,
     segments,
@@ -266,221 +137,6 @@ const star = () => {
         points.push(p);
     }
     return points.map((to) => ({ type: 'Line', to }));
-};
-
-const Canvas = ({
-    onComplete,
-}: {
-    onComplete: (segments: Array<Segment>, title: string) => void;
-}) => {
-    let [segments, setSegments] = React.useState(star() as Array<Segment>);
-    const origin = segments.length
-        ? segments[segments.length - 1].to
-        : { x: 0, y: 0 };
-    const [cursor, setCursor] = React.useState(null as Coord | null);
-    const [title, setTitle] = React.useState('Untitled');
-
-    const [adding, setAdding] = React.useState({ type: 'line' } as
-        | { type: 'line' }
-        | {
-              type: 'arc';
-              center: null | Coord;
-              clockwise: boolean;
-          });
-
-    const addingNow = useCurrent(adding);
-    const currentSegments = useCurrent(segments);
-
-    React.useEffect(() => {
-        const fn = (evt: KeyboardEvent) => {
-            const adding = addingNow.current;
-            if (evt.key === 'z' && evt.metaKey) {
-                evt.preventDefault();
-                return setSegments((seg) => seg.slice(0, -1));
-            }
-            if (evt.key === 't') {
-                setAdding((adding) =>
-                    adding.type === 'line'
-                        ? { type: 'arc', clockwise: true, center: null }
-                        : { type: 'line' },
-                );
-            }
-            if (evt.key === ' ') {
-                if (adding.type === 'arc') {
-                    console.log('swap');
-                    setAdding({ ...adding, clockwise: !adding.clockwise });
-                } else {
-                    console.log('adding', adding.type);
-                }
-            }
-            if (evt.key === 'Enter') {
-                onComplete(currentSegments.current, title);
-                setSegments([]);
-                setTitle('Untitled');
-            }
-        };
-        window.addEventListener('keydown', fn);
-        return () => window.removeEventListener('keydown', fn);
-    }, []);
-
-    let next: null | Segment = null;
-    if (cursor && dist(cursor, origin) > 10) {
-        if (adding.type === 'line' && segments.length) {
-            next = { type: 'Line', to: cursor };
-        }
-        if (adding.type === 'arc' && adding.center) {
-            const angle = angleTo(adding.center, cursor);
-            const prev = segments.length
-                ? segments[segments.length - 1].to
-                : origin;
-            const mag = dist(adding.center, prev);
-            const to = push(adding.center, angle, mag);
-            next = {
-                type: 'Arc',
-                center: adding.center,
-                to,
-                clockwise: adding.clockwise,
-            };
-        }
-    }
-
-    segments = next ? segments.concat([next]) : segments;
-
-    const insets = getInsets(segments);
-
-    return (
-        <div>
-            <div>
-                <Text value={title} onChange={setTitle} />
-                <button
-                    onClick={() => {
-                        onComplete(currentSegments.current, title);
-                        setSegments([]);
-                        setTitle('Untitled');
-                    }}
-                >
-                    Add example
-                </button>
-            </div>
-            <svg
-                width={size}
-                height={size}
-                onMouseLeave={() => setCursor(null)}
-                viewBox={`-${size / 2} -${size / 2} ${size} ${size}`}
-                style={{
-                    border: '1px solid magenta',
-                }}
-                onMouseMove={(evt) => {
-                    const svg = evt.currentTarget.getBoundingClientRect();
-                    setCursor({
-                        x: evt.clientX - svg.left - size / 2,
-                        y: evt.clientY - svg.top - size / 2,
-                    });
-                }}
-                onClick={() => {
-                    if (!cursor) {
-                        return;
-                    }
-                    if (adding.type === 'line') {
-                        setSegments((segments) => {
-                            return segments.concat([
-                                {
-                                    type: 'Line',
-                                    to: cursor,
-                                },
-                            ]);
-                        });
-                    } else {
-                        const arc = adding;
-                        if (arc.center) {
-                            const angle = angleTo(arc.center, cursor);
-                            const prev = segments.length
-                                ? segments[segments.length - 1].to
-                                : origin;
-                            const mag = dist(arc.center, prev);
-                            const to = push(arc.center, angle, mag);
-                            setSegments((segments) => {
-                                return segments.concat([
-                                    {
-                                        type: 'Arc',
-                                        center: arc.center!,
-                                        to,
-                                        clockwise: arc.clockwise,
-                                    },
-                                ]);
-                            });
-                            setAdding({ ...arc, center: null });
-                        } else {
-                            setAdding({ ...arc, center: cursor });
-                        }
-                    }
-                }}
-            >
-                {adding.type === 'arc' && adding.center ? (
-                    <circle
-                        cx={adding.center.x}
-                        cy={adding.center.y}
-                        r={3}
-                        fill="magenta"
-                    />
-                ) : null}
-                {segments.length ? (
-                    <path
-                        stroke={'red'}
-                        strokeWidth={3}
-                        d={calcPathD(pathSegs(segments), 1)}
-                    />
-                ) : null}
-                {Object.keys(insets)
-                    .sort()
-                    .map((k, ki) =>
-                        insets[+k].paths.map((segments, i) => (
-                            <path
-                                stroke={insetColors[ki]}
-                                key={`${k}:${i}`}
-                                strokeDasharray={insets[+k].pass ? '' : '2'}
-                                strokeWidth={1}
-                                fill="none"
-                                d={calcPathD(pathSegs(segments), 1)}
-                            />
-                        )),
-                    )}
-                <circle cx={origin.x} cy={origin.y} r={5} fill="blue" />
-                {cursor ? (
-                    <circle
-                        cx={cursor.x}
-                        cy={cursor.y}
-                        r={3}
-                        fill={
-                            adding.type === 'arc' && !adding.center
-                                ? 'magenta'
-                                : 'red'
-                        }
-                    />
-                ) : null}
-            </svg>
-            <div>
-                <button
-                    onClick={() => setAdding({ type: 'line' })}
-                    disabled={adding.type === 'line'}
-                >
-                    Line
-                </button>
-                <button
-                    onClick={() =>
-                        setAdding({
-                            type: 'arc',
-                            center: null,
-                            clockwise: true,
-                        })
-                    }
-                    disabled={adding.type !== 'line'}
-                >
-                    Arc
-                </button>
-            </div>
-        </div>
-    );
 };
 
 export type Insets = {
@@ -502,7 +158,7 @@ Now I just need to segment, and do winding numbers?
 
 */
 
-function getInsets(segments: Segment[]) {
+export function getInsets(segments: Segment[]) {
     const insets: Insets = [];
     if (segments.length > 1) {
         segments = ensureClockwise(segments);

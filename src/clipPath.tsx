@@ -917,6 +917,7 @@ export const windingNumber = (
     coord: Coord,
     prims: Array<Primitive>,
     segs: Array<Segment>,
+    debug?: boolean,
 ) => {
     const ray: Primitive = {
         type: 'line',
@@ -925,7 +926,8 @@ export const windingNumber = (
         limit: [coord.x, Infinity],
     };
     // let isOnEdge = false;
-    let wind = 0; // UP is positive, DOWN is negative
+    let wind: Array<{ prev: Coord; seg: Segment; up: boolean; hit: Coord }> =
+        []; // UP is positive, DOWN is negative
     prims.forEach((prim, i) => {
         // if (isOnEdge) {
         //     // bail fast
@@ -939,6 +941,7 @@ export const windingNumber = (
         }
 
         intersections(prim, ray).forEach((coord) => {
+            const prev = segs[i === 0 ? segs.length - 1 : i - 1].to;
             if (prim.type === 'line') {
                 // ignore intersections with the "bottom point" of a line
                 // we might not need this? because we're taking direction into account
@@ -946,17 +949,22 @@ export const windingNumber = (
                 if (atLineBottom(coord, prim)) {
                     return;
                 }
-                const prev = segs[i === 0 ? segs.length - 1 : i - 1].to;
                 const line = segs[i];
                 const dy = line.to.y - prev.y;
-                wind += dy > 0 ? 1 : -1;
+                wind.push({
+                    prev,
+                    seg: line,
+                    up: dy > 0,
+                    hit: coord,
+                });
             } else {
                 if (atCircleBottomOrSomething(coord, prim)) {
                     return;
                 }
                 const t = angleTo(prim.center, coord);
                 const right = Math.abs(t) < Math.PI / 2;
-                wind += right !== (segs[i] as ArcSegment).clockwise ? 1 : -1;
+                const up = right !== (segs[i] as ArcSegment).clockwise;
+                wind.push({ prev, seg: segs[i], up, hit: coord });
             }
             // if we're going "up" at this point, +1, otherwise -1
             // hits.push(coord);

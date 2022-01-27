@@ -299,7 +299,7 @@ export const removeContainedRegions = (
         : regionSegments;
 };
 
-export const findClockwiseRegions = (
+export const findRegions = (
     segments: Array<PartialSegment>,
     froms: Froms,
 ): Array<Array<Segment>> => {
@@ -347,31 +347,79 @@ export const findClockwiseRegions = (
         regions.push(region);
     });
 
-    return regions.filter((region) => isClockwise(region));
+    return regions; // regions.filter((region) => isClockwise(region));
 };
 
 export const cleanUpInsetSegmentsOld = (segments: Array<Segment>) => {
     const result = segmentsToNonIntersectingSegments(segments);
     return removeContainedRegions(
-        findClockwiseRegions(result.result, result.froms),
+        findRegions(result.result, result.froms).filter(isClockwise),
     );
 };
 
-export const cleanUpInsetSegments = (segments: Array<Segment>) => {
-    const result = segmentsToNonIntersectingSegments(segments);
-    const regions = findClockwiseRegions(result.result, result.froms);
-    const allPrims = pathToPrimitives(segments);
-    return regions.filter((region) => {
-        const bound = segmentsBounds(region);
-        const inside = {
-            x: (bound.x1 + bound.x0) / 2,
-            y: (bound.y1 + bound.y0) / 2,
-        };
-        // let { enterAngle, exitAngle } = getCornerAngle(region, 0);
-        // const center = angleBetween(exitAngle, enterAngle + Math.PI, true);
-        // const inside = push(region[0].to, exitAngle + center / 2, 0.1);
-        const pointInside = windingNumber(inside, allPrims, segments);
-        // console.log(pointInside);
-        return pointInside > 0;
-    });
-};
+export const cleanUpInsetSegments = cleanUpInsetSegmentsOld;
+
+// OKSSS so in order to use the winding number route,
+// I need to split things up into actual smallest subsections
+// and then paste them back together again.
+// So, the findRegions dealio also needs to include entries.
+// when we're forming regions, we ignore direction of things????
+// I think??? hmmm but how do I ... ensure I'm getting everything.
+// like, for each segment, do I find the thing on the one side,
+// and the thing on the other? and then I thiiink I can just toss
+// out things that end up not being clockwise ... right? otherwise
+// it would get hairy. because the one that encompasses everything would be wrong.
+// although maybe that's the only trick? or just: remove ones that are
+// supersets of other ones?
+// yeah, I guess that would be a reasonable pseudo-code.
+/*
+
+for each seg, we need to travel it twice, once in each direction.
+when you get to an intersection, take the exit that's most clockwise.
+keep doing that until you get back to yourself.
+after we've done all that, we'll have a list of regions.
+The convex hull region, we should discard.
+then we winding-rule it up, by finding a point in that region
+and not in the other regions (start from a corner, go in a little bit)
+and winding with the /original segments/.
+once we through out the segments that have negative winding, we then
+need to merge all the regions that are adjacent.
+which will potentially involve some ... holes.
+so my path primitive needs to support holes.
+
+
+hmmm
+
+
+I wonder if there's a way to detect that the polygon is ... well formed ...
+and so ... we don't need to go through all this bonanza.
+like, if it's "strictly ordered", in that all of the points are in their proper order
+around the midpoint, then we don't need to mess.
+
+Yeah that's a good way to tell. And then we can hmm at least postpone the
+problems.
+
+
+*/
+
+// export const cleanUpInsetSegments = (segments: Array<Segment>) => {
+//     const result = segmentsToNonIntersectingSegments(segments);
+//     const regions = findRegions(result.result, result.froms).filter(
+//         isClockwise,
+//     );
+//     const allPrims = pathToPrimitives(segments);
+//     return regions.filter((region) => {
+//         const bound = segmentsBounds(region);
+//         const inside = {
+//             x: (bound.x1 + bound.x0) / 2,
+//             y: (bound.y1 + bound.y0) / 2,
+//         };
+//         // let { enterAngle, exitAngle } = getCornerAngle(region, 0);
+//         // const center = angleBetween(exitAngle, enterAngle + Math.PI, true);
+//         // const inside = push(region[0].to, exitAngle + center / 2, 0.1);
+//         const winds = windingNumber(inside, allPrims, segments);
+//         // console.log(pointInside);
+//         return winds.reduce((c, w) => c + (w.up ? 1 : -1), 0) > 0;
+//         // return true;
+//     });
+// };
