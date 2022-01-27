@@ -322,7 +322,16 @@ export const insetSegment = (
                 { center: next.center, radius: radius, type: 'circle' },
                 slope1,
             );
-            if (onlyExtend) {
+            const dists = intersection.map((pos) => dist(pos, p1));
+            const target =
+                dists.length > 1
+                    ? dists[0] > dists[1]
+                        ? intersection[1]
+                        : intersection[0]
+                    : intersection.length
+                    ? intersection[0]
+                    : seg.to;
+            if (onlyExtend && dist(target, p0) < dist(prev, seg.to)) {
                 const p2 = push(
                     next.center,
                     angleTo(next.center, seg.to),
@@ -333,7 +342,6 @@ export const insetSegment = (
                     { type: 'Line', to: p2 },
                 ];
             }
-            const dists = intersection.map((pos) => dist(pos, p1));
             if (dists.length > 1) {
                 return {
                     ...seg,
@@ -358,8 +366,15 @@ export const insetSegment = (
                 slope2,
             );
             const dists = intersection.map((pos) => dist(pos, p2));
-            // STOPSHIP: DO this if we would be contracting...
-            if (onlyExtend && 1 > 1.2) {
+            const target =
+                intersection.length === 2
+                    ? dists[0] > dists[1]
+                        ? intersection[1]
+                        : intersection[0]
+                    : intersection.length
+                    ? intersection[0]
+                    : seg.to;
+            if (onlyExtend && dist(next.to, target) < dist(next.to, seg.to)) {
                 const p1 = push(
                     seg.center,
                     angleTo(seg.center, seg.to),
@@ -370,13 +385,14 @@ export const insetSegment = (
                     { type: 'Line', to: p2 },
                 ];
             }
-            if (dists.length > 1) {
-                return {
-                    ...seg,
-                    to: dists[0] > dists[1] ? intersection[1] : intersection[0],
-                };
-            }
-            return intersection.length ? { ...seg, to: intersection[0] } : seg;
+            // if (dists.length > 1) {
+            //     return {
+            //         ...seg,
+            //         to: dists[0] > dists[1] ? intersection[1] : intersection[0],
+            //     };
+            // }
+            // return intersection.length ? { ...seg, to: intersection[0] } : seg;
+            return { ...seg, to: target };
         } else {
             const radius2 =
                 dist(next.center, next.to) + amount * (next.clockwise ? -1 : 1);
