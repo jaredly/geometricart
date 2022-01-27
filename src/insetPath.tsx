@@ -309,6 +309,7 @@ export const insetSegment = (
                 if (d2 < d || !closeEnoughAngle(t, t2)) {
                     return [
                         { type: 'Line', to: p1 },
+                        { type: 'Line', to: seg.to },
                         { type: 'Line', to: p2 },
                     ];
                 }

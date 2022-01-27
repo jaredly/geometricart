@@ -157,7 +157,7 @@ Now I just need to segment, and do winding numbers?
 */
 
 export function getInsets(segments: Segment[]) {
-    const insets: Insets = [];
+    const insets: Insets = {};
     if (segments.length > 1) {
         segments = ensureClockwise(segments);
         for (let i = -2; i < 3; i++) {

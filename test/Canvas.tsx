@@ -259,15 +259,34 @@ export const Canvas = ({
                 >
                     Add example
                 </button>
+                <button onClick={() => setSegments([])}>Clear</button>
             </div>
             <Drawing
                 segments={segments}
                 setSegments={setSegments}
                 onComplete={() => onComplete(segments, title)}
                 render={(segments) => {
-                    const showWind = 0;
+                    const showWind: number = 1;
+                    const windAt = 60;
+                    if (showWind === 3) {
+                        const all = getInsets(segments);
+                        const inset = insetSegmentsBeta(segments, windAt);
+                        const result = cleanUpInsetSegments2(inset);
+                        console.log(all, result);
+
+                        return result.map((segments, i) => (
+                            <path
+                                stroke={insetColors[i]}
+                                key={i}
+                                strokeDasharray={'2'}
+                                strokeWidth={1}
+                                fill="none"
+                                d={calcPathD(pathSegs(segments), 1)}
+                            />
+                        ));
+                    }
                     if (showWind === 1) {
-                        const inset = insetSegmentsBeta(segments, -20);
+                        const inset = insetSegmentsBeta(segments, windAt);
                         const result = segmentsToNonIntersectingSegments(inset);
                         const regions = findRegions(
                             result.result,
@@ -318,7 +337,7 @@ export const Canvas = ({
                         );
                     }
                     if (showWind) {
-                        const inset = insetSegmentsBeta(segments, -20);
+                        const inset = insetSegmentsBeta(segments, windAt);
                         const parts = segmentsToNonIntersectingSegments(inset);
                         const regions = findRegions(
                             parts.result,
@@ -440,31 +459,6 @@ export const Canvas = ({
                                         </g>
                                     );
                                 })} */}
-                                {segments.map((s, i) => (
-                                    <circle
-                                        key={i}
-                                        cx={
-                                            (s.to.x +
-                                                segments[
-                                                    (i + 1) % segments.length
-                                                ].to.x *
-                                                    10) /
-                                            11
-                                        }
-                                        cy={
-                                            (s.to.y +
-                                                segments[
-                                                    (i + 1) % segments.length
-                                                ].to.y *
-                                                    10) /
-                                            11
-                                        }
-                                        r={10}
-                                        strokeWidth={3}
-                                        stroke="black"
-                                        fill="none"
-                                    />
-                                ))}
                             </>
                         );
                     }
