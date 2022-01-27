@@ -1,7 +1,10 @@
 // This is for tests? idk
 import * as React from 'react';
 import { render } from 'react-dom';
-import { cleanUpInsetSegments } from '../src/findInternalRegions';
+import {
+    cleanUpInsetSegments,
+    cleanUpInsetSegments2,
+} from '../src/findInternalRegions';
 import { push } from '../src/getMirrorTransforms';
 import { insetSegmentsBeta } from '../src/insetPath';
 import { ensureClockwise } from '../src/pathToPoints';
@@ -126,19 +129,6 @@ export const pathSegs = (segments: Array<Segment>): Path => ({
     origin: segments[segments.length - 1].to,
 });
 
-const star = () => {
-    const r0 = 70;
-    const r1 = 60;
-    const points = [];
-    const n = 20;
-    for (let i = 0; i < n; i++) {
-        const t = ((Math.PI * 2) / n) * i;
-        const p = push({ x: 0, y: 0 }, t, i % 2 === 0 ? r1 : r0);
-        points.push(p);
-    }
-    return points.map((to) => ({ type: 'Line', to }));
-};
-
 export type Insets = {
     [key: number]: {
         paths: Array<Array<Segment>>;
@@ -176,7 +166,7 @@ export function getInsets(segments: Segment[]) {
                 //     pass: false,
                 // };
                 insets[inset] = {
-                    paths: cleanUpInsetSegments(
+                    paths: cleanUpInsetSegments2(
                         insetSegmentsBeta(segments, inset),
                     ),
                     pass: false,

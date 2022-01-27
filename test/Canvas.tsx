@@ -1,14 +1,20 @@
 import * as React from 'react';
 import { useCurrent } from '../src/App';
-import { ensureClockwise } from '../src/pathToPoints';
+import { windingNumber } from '../src/clipPath';
+import {
+    cleanUpInsetSegments2,
+    findInternalPos,
+    findRegions,
+    segmentsToNonIntersectingSegments,
+} from '../src/findInternalRegions';
+import { pathToPrimitives } from '../src/findSelection';
 import { Text } from '../src/Forms';
 import { angleTo, dist, push } from '../src/getMirrorTransforms';
+import { insetSegmentsBeta } from '../src/insetPath';
+import { ensureClockwise, isClockwise } from '../src/pathToPoints';
 import { calcPathD } from '../src/RenderPath';
 import { Coord, Segment } from '../src/types';
-import { windingNumber } from '../src/clipPath';
-import { pathToPrimitives } from '../src/findSelection';
-import { getInsets, size, pathSegs, insetColors } from './run';
-import { RenderSegment } from '../src/RenderSegment';
+import { getInsets, insetColors, pathSegs, size } from './run';
 
 export const Drawing = ({
     segments,
@@ -202,12 +208,17 @@ export const Drawing = ({
     );
 };
 
+const initialState = (): Array<Segment> => {
+    return star();
+    // return []
+};
+
 export const Canvas = ({
     onComplete,
 }: {
     onComplete: (segments: Array<Segment>, title: string) => void;
 }) => {
-    let [segments, setSegments] = React.useState([] as Array<Segment>);
+    let [segments, setSegments] = React.useState(initialState());
     const [title, setTitle] = React.useState('Untitled');
 
     return (
@@ -229,26 +240,161 @@ export const Canvas = ({
                 setSegments={setSegments}
                 onComplete={() => onComplete(segments, title)}
                 render={(segments) => {
-                    const showWind = true;
-                    if (showWind) {
-                        segments = ensureClockwise(segments);
-                        const wind = windingNumber(
-                            { x: 0, y: 0 },
-                            pathToPrimitives(segments),
-                            segments,
-                            false,
-                        );
-                        const wcount = wind.reduce(
-                            (c, w) => (w.up ? 1 : -1) + c,
-                            0,
-                        );
+                    const showWind = 1;
+                    if (showWind === 1) {
+                        const inset = insetSegmentsBeta(segments, 40);
+                        const result = cleanUpInsetSegments2(inset);
 
                         return (
                             <>
-                                <text x={0} y={0} fill={'white'}>
+                                <path
+                                    d={calcPathD(pathSegs(inset), 1)}
+                                    stroke="rgba(255,255,0,0.5)"
+                                    strokeWidth={1}
+                                />
+                                {result.map((region, i) => (
+                                    <path
+                                        d={calcPathD(pathSegs(region), 1)}
+                                        fill="rgba(0, 255,0,0.5)"
+                                        stroke="yellow"
+                                        strokeWidth={1}
+                                        key={i}
+                                    />
+                                ))}
+                            </>
+                        );
+                    }
+                    if (showWind) {
+                        const inset = insetSegmentsBeta(segments, 40);
+                        const parts = segmentsToNonIntersectingSegments(inset);
+                        const regions = findRegions(
+                            parts.result,
+                            parts.froms,
+                        ).filter(isClockwise);
+
+                        segments = ensureClockwise(segments);
+                        const primitives = pathToPrimitives(inset);
+                        // const wind = windingNumber(
+                        //     { x: 0, y: 0 },
+                        //     primitives,
+                        //     segments,
+                        //     false,
+                        // );
+                        // const wcount = wind.reduce(
+                        //     (c, w) => (w.up ? 1 : -1) + c,
+                        //     0,
+                        // );
+
+                        return (
+                            <>
+                                {/* <text x={0} y={0} fill={'white'}>
                                     {wcount}
-                                </text>
-                                {wind.map(({ prev, seg, up, hit }, i) => {
+                                </text> */}
+                                <path
+                                    d={calcPathD(pathSegs(inset), 1)}
+                                    fill="none"
+                                    stroke="yellow"
+                                    strokeWidth={1}
+                                />
+                                {inset.map((seg, i) => {
+                                    const prev =
+                                        inset[
+                                            i === 0 ? inset.length - 1 : i - 1
+                                        ].to;
+                                    const mid = {
+                                        x: (seg.to.x + prev.x) / 2,
+                                        y: (seg.to.y + prev.y) / 2,
+                                    };
+                                    const theta = angleTo(prev, seg.to);
+                                    const show = (p: Coord) =>
+                                        `${p.x.toFixed(2)},${p.y.toFixed(2)}`;
+                                    return (
+                                        <polygon
+                                            points={[
+                                                push(mid, theta, 2),
+                                                push(
+                                                    mid,
+                                                    theta + (Math.PI * 2) / 3,
+                                                    2,
+                                                ),
+                                                push(
+                                                    mid,
+                                                    theta + (Math.PI * 4) / 3,
+                                                    2,
+                                                ),
+                                            ]
+                                                .map(show)
+                                                .join(' ')}
+                                            fill="purple"
+                                            key={i}
+                                        />
+                                    );
+                                })}
+                                {regions.map((region, i) => {
+                                    const pos = findInternalPos(region);
+                                    const wind = windingNumber(
+                                        pos,
+                                        primitives,
+                                        inset,
+                                        false,
+                                    );
+                                    const wcount = wind.reduce(
+                                        (c, w) => (w.up ? 1 : -1) + c,
+                                        0,
+                                    );
+                                    return (
+                                        <>
+                                            <path
+                                                d={calcPathD(
+                                                    pathSegs(region),
+                                                    1,
+                                                )}
+                                                fill={`hsla(${
+                                                    (i / regions.length) * 360
+                                                }, 100%, 50%, 0.5)`}
+                                                key={i}
+                                            />
+                                            <circle
+                                                cx={pos.x}
+                                                cy={pos.y}
+                                                r={2}
+                                                fill={'purple'}
+                                            />
+                                            <text
+                                                x={pos.x}
+                                                y={pos.y}
+                                                fill={'white'}
+                                            >
+                                                {wcount}
+                                            </text>
+                                            {wind.map(
+                                                ({ prev, seg, up, hit }, j) => {
+                                                    return (
+                                                        <g key={i + 'w' + j}>
+                                                            {/* <RenderSegment
+                                                                prev={prev}
+                                                                segment={seg}
+                                                                zoom={1}
+                                                                color={
+                                                                    up
+                                                                        ? 'red'
+                                                                        : 'green'
+                                                                }
+                                                            /> */}
+                                                            <circle
+                                                                cx={hit.x}
+                                                                cy={hit.y}
+                                                                r={2}
+                                                                fill="green"
+                                                            />
+                                                        </g>
+                                                    );
+                                                },
+                                            )}
+                                        </>
+                                    );
+                                })}
+                                {/* {wind.map(({ prev, seg, up, hit }, i) => {
                                     return (
                                         <g key={i}>
                                             <RenderSegment
@@ -265,7 +411,7 @@ export const Canvas = ({
                                             />
                                         </g>
                                     );
-                                })}
+                                })} */}
                                 {segments.map((s, i) => (
                                     <circle
                                         key={i}
@@ -319,4 +465,17 @@ export const Canvas = ({
             />
         </div>
     );
+};
+
+const star = (): Array<Segment> => {
+    const r0 = 70;
+    const r1 = 60;
+    const points = [];
+    const n = 20;
+    for (let i = 0; i < n; i++) {
+        const t = ((Math.PI * 2) / n) * i;
+        const p = push({ x: 0, y: 0 }, t, i % 2 === 0 ? r1 : r0);
+        points.push(p);
+    }
+    return points.map((to) => ({ type: 'Line', to }));
 };

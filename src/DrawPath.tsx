@@ -25,6 +25,7 @@ import { transformSegment } from './points';
 import { useCurrent } from './App';
 import { coordsEqual, segmentsEqual } from './pathsAreIdentical';
 import { segmentKey, segmentKeyReverse } from './segmentKey';
+import { segmentAngle } from './findInternalRegions';
 
 export type DrawPathState = {
     origin: Intersect;
@@ -297,38 +298,6 @@ export const DrawPath = React.memo(
         );
     },
 );
-
-export const segmentAngle = (
-    prev: Coord,
-    segment: Segment,
-    initial: boolean = true,
-) => {
-    if (segment.type === 'Line') {
-        return angleTo(prev, segment.to);
-    }
-    if (initial) {
-        const t1 = angleTo(segment.center, prev);
-        const t2 = angleTo(segment.center, segment.to);
-        const bt = angleBetween(t1, t2, segment.clockwise);
-        const tm = t1 + (bt / 2) * (segment.clockwise ? 1 : -1); // (t1 + t2) / 2;
-        const d = dist(segment.center, segment.to);
-        const midp = push(segment.center, tm, d);
-        // console.log(segment, t1, t2, bt, tm);
-        // const midp =
-        // tangent at prev,
-        return angleTo(prev, midp);
-        // return (
-        //     angleTo(segment.center, prev) +
-        //     (Math.PI / 2) * (segment.clockwise ? 1 : -1)
-        // );
-    } else {
-        // tangent at land
-        return (
-            angleTo(segment.center, segment.to) +
-            (Math.PI / 2) * (segment.clockwise ? 1 : -1)
-        );
-    }
-};
 
 export const goLeft = (state: DrawPathState | null) =>
     state

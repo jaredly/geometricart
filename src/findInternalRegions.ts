@@ -23,7 +23,7 @@ import { intersections, Primitive, withinLimit } from './intersect';
 import { coordsEqual } from './pathsAreIdentical';
 import { Hit } from './pruneInsetPath';
 import { Coord, Segment } from './types';
-import { angleTo, push } from './getMirrorTransforms';
+import { angleTo, dist, push } from './getMirrorTransforms';
 import { angleBetween } from './findNextSegments';
 import { Bounds } from './GuideElement';
 import { segmentBounds, segmentsBounds } from './Export';
@@ -359,6 +359,24 @@ export const cleanUpInsetSegmentsOld = (segments: Array<Segment>) => {
 
 export const cleanUpInsetSegments = cleanUpInsetSegmentsOld;
 
+// segments are assumed to be clockwise
+export const findInternalPos = (segments: Array<Segment>) => {
+    for (let i = 0; i < segments.length; i++) {
+        const next = segments[(i + 1) % segments.length];
+        const segment = segments[i];
+        const prev = segments[i === 0 ? segments.length - 1 : i - 1].to;
+        const thisTheta = segmentAngle(prev, segment, false);
+        const nextTheta = segmentAngle(segment.to, next, true);
+        const between = angleBetween(nextTheta, thisTheta + Math.PI, true);
+        if (between < Math.PI) {
+            return push(segment.to, nextTheta + between / 2, 5);
+        }
+    }
+    console.warn('no internal pos???', segments);
+    // throw new Error(`nope`);
+    return segments[0].to;
+};
+
 // OKSSS so in order to use the winding number route,
 // I need to split things up into actual smallest subsections
 // and then paste them back together again.
@@ -402,6 +420,23 @@ problems.
 
 */
 
+export const cleanUpInsetSegments2 = (segments: Array<Segment>) => {
+    const result = segmentsToNonIntersectingSegments(segments);
+    const regions = findRegions(result.result, result.froms).filter(
+        isClockwise,
+    );
+    const primitives = pathToPrimitives(segments);
+    return removeContainedRegions(
+        regions.filter((region) => {
+            const pos = findInternalPos(region);
+            const wind = windingNumber(pos, primitives, segments, false);
+            const wcount = wind.reduce((c, w) => (w.up ? 1 : -1) + c, 0);
+
+            return wcount > 0;
+        }),
+    );
+};
+
 // export const cleanUpInsetSegments = (segments: Array<Segment>) => {
 //     const result = segmentsToNonIntersectingSegments(segments);
 //     const regions = findRegions(result.result, result.froms).filter(
@@ -423,3 +458,35 @@ problems.
 //         // return true;
 //     });
 // };
+
+export const segmentAngle = (
+    prev: Coord,
+    segment: Segment,
+    initial: boolean = true,
+) => {
+    if (segment.type === 'Line') {
+        return angleTo(prev, segment.to);
+    }
+    if (initial) {
+        const t1 = angleTo(segment.center, prev);
+        const t2 = angleTo(segment.center, segment.to);
+        const bt = angleBetween(t1, t2, segment.clockwise);
+        const tm = t1 + (bt / 2) * (segment.clockwise ? 1 : -1); // (t1 + t2) / 2;
+        const d = dist(segment.center, segment.to);
+        const midp = push(segment.center, tm, d);
+        // console.log(segment, t1, t2, bt, tm);
+        // const midp =
+        // tangent at prev,
+        return angleTo(prev, midp);
+        // return (
+        //     angleTo(segment.center, prev) +
+        //     (Math.PI / 2) * (segment.clockwise ? 1 : -1)
+        // );
+    } else {
+        // tangent at land
+        return (
+            angleTo(segment.center, segment.to) +
+            (Math.PI / 2) * (segment.clockwise ? 1 : -1)
+        );
+    }
+};

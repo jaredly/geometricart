@@ -4,9 +4,9 @@ import { closeEnoughAngle, lineLine, lineToSlope } from './intersect';
 import { coordsEqual } from './pathsAreIdentical';
 import { Coord, Segment } from './types';
 
-type Line = { type: 'Line'; p0: Coord; p1: Coord };
-type Full = Line | Arc;
-type Arc = {
+export type Line = { type: 'Line'; p0: Coord; p1: Coord };
+export type Full = Line | Arc;
+export type Arc = {
     type: 'Arc';
     center: Coord;
     t0: number;
