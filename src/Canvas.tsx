@@ -904,14 +904,29 @@ export const Canvas = ({
                 }}
             >
                 {Object.keys(state.animations.scripts).map((key) => {
+                    const script = state.animations.scripts[key];
                     return (
                         <div>
                             {key}
+                            <button
+                                onClick={() => {
+                                    dispatch({
+                                        type: 'script:update',
+                                        key,
+                                        script: {
+                                            ...script,
+                                            enabled: !script.enabled,
+                                        },
+                                    });
+                                }}
+                            >
+                                {script.enabled ? 'Disable' : 'Enable'}
+                            </button>
 
                             <Text
                                 key={key}
                                 multiline
-                                value={state.animations.scripts[key].code}
+                                value={script.code}
                                 onChange={(code) => {
                                     const formatted = prettier.format(code, {
                                         plugins: [babel],
@@ -919,10 +934,7 @@ export const Canvas = ({
                                     dispatch({
                                         type: 'script:update',
                                         key,
-                                        script: {
-                                            ...state.animations.scripts[key],
-                                            code: formatted,
-                                        },
+                                        script: { ...script, code: formatted },
                                     });
                                 }}
                             />

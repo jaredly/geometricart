@@ -3305,9 +3305,9 @@ pkg-dir@^4.2.0:
   dependencies:
     find-up "^4.0.0"
 
-"png-metadata@https://github.com/hometlt/png-metadata":
+"png-metadata@https://github.com/neil-morrison44/png-metadata#1de6be3c50402a188ce06a494c91010f14a297b8":
   version "1.0.0"
-  resolved "https://github.com/hometlt/png-metadata#3d9754c015ef29e76e3f3fbf864b1d3f4be5bd3a"
+  resolved "https://github.com/neil-morrison44/png-metadata#1de6be3c50402a188ce06a494c91010f14a297b8"
   dependencies:
     crc-32 "^1.2.0"
 
