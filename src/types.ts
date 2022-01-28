@@ -211,7 +211,8 @@ export type ArcSegment = {
     // large
 };
 
-export type Segment = { type: 'Line'; to: Coord } | ArcSegment; // long = "the long way round"
+export type LineSegment = { type: 'Line'; to: Coord };
+export type Segment = LineSegment | ArcSegment; // long = "the long way round"
 
 export type PathGroup = {
     id: Id;

@@ -313,7 +313,7 @@ export const Canvas = ({
                             type="range"
                             min={-20}
                             max={60}
-                            step={10}
+                            // step={10}
                             value={debug.inset}
                             onChange={(evt) =>
                                 setDebug({
@@ -589,7 +589,11 @@ function segmentArrow(prev: Coord, i: number, seg: Segment) {
     } else {
         const t0 = angleTo(seg.center, prev);
         const tb = angleBetween(t0, angleTo(seg.center, seg.to), seg.clockwise);
-        mid = push(seg.center, t0 + tb / 2, dist(seg.center, seg.to));
+        mid = push(
+            seg.center,
+            t0 + (tb / 2) * (seg.clockwise ? 1 : -1),
+            dist(seg.center, seg.to),
+        );
     }
     const theta = angleTo(prev, seg.to);
     const show = (p: Coord) => `${p.x.toFixed(2)},${p.y.toFixed(2)}`;
