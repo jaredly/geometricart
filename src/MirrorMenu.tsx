@@ -2,7 +2,8 @@
 /* @jsxFrag React.Fragment */
 import { jsx } from '@emotion/react';
 import React from 'react';
-import { Action, Id, State } from './types';
+import { Id, State } from './types';
+import { Action } from './Action';
 import { ShowMirror } from './MirrorForm';
 import { DeleteForeverIcon, IconButton, MirrorIcon } from './icons/Icon';
 

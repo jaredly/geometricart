@@ -3,7 +3,8 @@
 import { jsx } from '@emotion/react';
 import * as ReactDOM from 'react-dom';
 import React from 'react';
-import { Action, Coord, Pending, Segment, State } from './types';
+import { Coord, Pending, Segment, State } from './types';
+import { Action } from './Action';
 import { PREFIX, SUFFIX } from './Sidebar';
 import {
     extractChunks,

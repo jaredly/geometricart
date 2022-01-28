@@ -2,7 +2,8 @@
 /* @jsxFrag React.Fragment */
 import * as React from 'react';
 import { jsx } from '@emotion/react';
-import { State, Action } from './types';
+import { State } from './types';
+import { Action } from './Action';
 import { useDropTarget } from './useDropTarget';
 import { Float, Int, Toggle } from './Forms';
 

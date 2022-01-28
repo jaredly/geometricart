@@ -17,7 +17,6 @@ import { RenderMirror } from './RenderMirror';
 import { RenderPendingGuide } from './RenderPendingGuide';
 import { Hover } from './Sidebar';
 import {
-    Action,
     Coord,
     GuideElement,
     Id,
@@ -28,6 +27,7 @@ import {
     State,
     View,
 } from './types';
+import { Action } from './Action';
 import { RenderPrimitive } from './RenderPrimitive';
 import {
     calculateGuideElements,

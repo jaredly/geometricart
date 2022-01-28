@@ -9,8 +9,9 @@ import { calcAllIntersections } from './calcAllIntersections';
 import { calculateGuideElements } from './calculateGuideElements';
 import { DrawPathState } from './DrawPath';
 import { findSelection, pathToPrimitives } from './findSelection';
+import { BlurInt, Float, Text } from './Forms';
 // import { DrawPath } from './DrawPathOld';
-import { getMirrorTransforms, scale } from './getMirrorTransforms';
+import { dist, getMirrorTransforms, scale } from './getMirrorTransforms';
 import {
     calculateBounds,
     Guides,
@@ -41,9 +42,23 @@ import {
     selectionSection,
     GuideSection,
 } from './touchscreenControls';
-import { Action, Coord, Path, Segment, State, Style, View } from './types';
+import {
+    Animations,
+    Coord,
+    FloatTimeline,
+    Path,
+    Segment,
+    State,
+    Style,
+    TimelinePoint,
+    View,
+} from './types';
+import { Action } from './Action';
 import { useDragSelect, useMouseDrag } from './useMouseDrag';
 import { useScrollWheel } from './useScrollWheel';
+import { segmentsBounds } from './Export';
+import prettier from 'prettier';
+import babel from 'prettier/parser-babel';
 
 export type Props = {
     state: State;
@@ -109,6 +124,60 @@ export const calcPPI = (ppi: number, pixels: number, zoom: number) => {
     return `${(pixels / ppi).toFixed(3)}in`;
 };
 
+export const evaluateBetween = (
+    left: TimelinePoint,
+    right: TimelinePoint,
+    position: number,
+) => {
+    const percent = (position - left.pos.x) / (right.pos.x - left.pos.x);
+    // TODO splines
+    return percent * (right.pos.y - left.pos.y) + left.pos.y;
+};
+
+export const evaluateTimeline = (timeline: FloatTimeline, position: number) => {
+    if (!timeline.points.length) {
+        return (
+            (timeline.range[1] - timeline.range[0]) * position +
+            timeline.range[0]
+        );
+    }
+    let y = null;
+    for (let i = 0; i < timeline.points.length; i++) {
+        if (position < timeline.points[i].pos.x) {
+            y = evaluateBetween(
+                i === 0 ? { pos: { x: 0, y: 0 } } : timeline.points[i - 1],
+                timeline.points[i],
+                position,
+            );
+            break;
+        }
+    }
+    if (y == null) {
+        y = evaluateBetween(
+            timeline.points[timeline.points.length - 1],
+            { pos: { x: 1, y: 1 } },
+            position,
+        );
+    }
+    return y * (timeline.range[1] - timeline.range[0]) + timeline.range[0];
+};
+
+export const evaluateAnimatedValues = (
+    animations: Animations,
+    position: number,
+) => {
+    const values: { [key: string]: number } = {};
+    Object.keys(animations.timeline).forEach((vbl) => {
+        const t = animations.timeline[vbl];
+        if (t.type === 'float') {
+            values[vbl] = evaluateTimeline(t, position);
+        } else {
+            values[vbl] = 0;
+        }
+    });
+    return values;
+};
+
 export const Canvas = ({
     state,
     width,
@@ -129,6 +198,13 @@ export const Canvas = ({
         [state.mirrors],
     );
     const [tmpView, setTmpView] = React.useState(null as null | View);
+
+    const [animationPosition, setAnimationPosition] = React.useState(0);
+
+    const currentAnimatedValues = evaluateAnimatedValues(
+        state.animations,
+        animationPosition,
+    );
 
     const [pos, setPos] = React.useState({ x: 0, y: 0 });
 
@@ -260,10 +336,81 @@ export const Canvas = ({
         return selectedIds;
     }, [state.selection, state.paths]);
 
+    const scripts = React.useMemo(() => {
+        return Object.keys(state.animations.scripts)
+            .filter((k) => state.animations.scripts[k].enabled)
+            .map((key) => {
+                const script = state.animations.scripts[key];
+                const line = script.code.match(
+                    /\s*\(((\s*\w+\s*,)+(\s*\w+)?\s*)\)\s*=>/,
+                );
+                console.log(line);
+                if (!line) {
+                    console.log(`No match`);
+                    return null;
+                }
+                const args = line![1]
+                    .split(',')
+                    .map((m) => m.trim())
+                    .filter(Boolean);
+                if (args[0] !== 'paths') {
+                    console.log('bad args', args);
+                    return null;
+                }
+                const builtins: any = { dist: dist, segmentsBounds };
+                try {
+                    const fn = new Function(
+                        Object.keys(builtins).join(','),
+                        'return ' + script.code,
+                    )(...Object.keys(builtins).map((k) => builtins[k]));
+                    return {
+                        key,
+                        fn,
+                        args: args.slice(1),
+                        phase: script.phase,
+                    };
+                } catch (err) {
+                    console.log('Bad fn');
+                    console.error(err);
+                    return null;
+                }
+            })
+            .filter(Boolean);
+    }, [state.animations]);
+    // console.log('ok scripts', scripts, state.animations.scripts);
+
+    const animatedPaths = React.useMemo(() => {
+        if (!scripts.length) {
+            return state.paths;
+        }
+        const paths = { ...state.paths };
+        scripts.forEach((script) => {
+            const args = [
+                paths,
+                ...script!.args.map((arg) => currentAnimatedValues[arg] || 0),
+            ];
+            // console.log(
+            //     'scripts!',
+            //     script!.key,
+            //     args,
+            //     currentAnimatedValues,
+            //     script!.args,
+            // );
+            try {
+                script!.fn.apply(null, args);
+            } catch (err) {
+                console.error(err);
+                console.log(`Bad fn invocation`, script.key);
+            }
+        });
+        // console.log('pathd', paths);
+        return paths;
+    }, [state.paths, state.pathGroups, scripts, currentAnimatedValues]);
+
     let pathsToShow = React.useMemo(
         () =>
             sortedVisibleInsetPaths(
-                state.paths,
+                animatedPaths,
                 state.pathGroups,
                 clip,
                 state.view.hideDuplicatePaths,
@@ -275,7 +422,7 @@ export const Canvas = ({
                 selectedIds,
             ),
         [
-            state.paths,
+            animatedPaths,
             state.pathGroups,
             clip,
             state.view.hideDuplicatePaths,
@@ -747,6 +894,101 @@ export const Canvas = ({
                     />
                 ) : null}
             </div>
+            <div
+                style={{
+                    position: 'fixed',
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    height: 400,
+                }}
+            >
+                {Object.keys(state.animations.scripts).map((key) => {
+                    return (
+                        <div>
+                            {key}
+
+                            <Text
+                                key={key}
+                                multiline
+                                value={state.animations.scripts[key].code}
+                                onChange={(code) => {
+                                    const formatted = prettier.format(code, {
+                                        plugins: [babel],
+                                    });
+                                    dispatch({
+                                        type: 'script:update',
+                                        key,
+                                        script: {
+                                            ...state.animations.scripts[key],
+                                            code: formatted,
+                                        },
+                                    });
+                                }}
+                            />
+                        </div>
+                    );
+                })}
+                <button
+                    onClick={() => {
+                        let i = 0;
+                        while (state.animations.scripts[`script-${i}`]) {
+                            i++;
+                        }
+                        const newKey = `script-${i}`;
+                        dispatch({
+                            type: 'script:update',
+                            key: newKey,
+                            script: {
+                                code: `(paths) => {\n    // do stuff\n}`,
+                                enabled: true,
+                                phase: 'pre-inset',
+                            },
+                        });
+                    }}
+                >
+                    Add script
+                </button>
+                <TickTock t={animationPosition} set={setAnimationPosition} />
+            </div>
+        </div>
+    );
+};
+
+export const TickTock = ({
+    t,
+    set,
+}: {
+    t: number;
+    set: (t: number) => void;
+}) => {
+    const [tick, setTick] = React.useState(null as number | null);
+    React.useEffect(() => {
+        if (!tick) {
+            return;
+        }
+        let at = t;
+        const id = setInterval(() => {
+            at = (at + 0.05) % 1;
+            set(at);
+        }, tick);
+        return () => clearInterval(id);
+    }, [tick]);
+    return (
+        <div>
+            {t.toFixed(2)}
+            <BlurInt value={t} onChange={(t) => (t ? set(t) : null)} />
+            <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value={t + ''}
+                onChange={(evt) => set(+evt.target.value)}
+            />
+            <button onClick={() => setTick(100)}>100ms</button>
+            <button onClick={() => setTick(20)}>20ms</button>
+            <button onClick={() => setTick(null)}>Clear tick</button>
         </div>
     );
 };

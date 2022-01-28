@@ -1,7 +1,7 @@
 /* @jsx jsx */
 import { jsx } from '@emotion/react';
 import React from 'react';
-import { Action } from './types';
+import { Action } from './Action';
 
 export const generatePaletteSvg = (palettes: {
     [key: string]: Array<string>;

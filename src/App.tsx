@@ -5,7 +5,8 @@ import React from 'react';
 import { Canvas } from './Canvas';
 import { reducer } from './reducer';
 import { Hover, Sidebar } from './Sidebar';
-import { Action, Coord, GroupRegroup, GuideGeom, Id, State } from './types';
+import { Coord, GuideGeom, Id, State } from './types';
+import { Action, GroupRegroup } from './Action';
 import { initialState } from './initialState';
 import {
     getStateFromFile,
@@ -176,34 +177,11 @@ export const App = ({ initialState }: { initialState: State }) => {
             }}
             {...callbacks}
         >
-            <div
-                css={{
-                    position: 'relative',
-                    // display: 'flex',
-                    // flexDirection: 'column',
-                    alignSelf: 'center',
-                }}
-            >
-                {/* {window.innerWidth > 1000 ? (
-                <Sidebar
-                    hover={hover}
-                    setHover={setHover}
-                    dispatch={dispatch}
-                    setDragSelect={setDragSelect}
-                    dragSelect={dragSelect}
-                    state={state}
-                    canvasRef={ref}
-                    setPendingMirror={setPendingMirror}
-                    width={width}
-                    height={height}
-                />
-            ) : null} */}
+            <div css={{ position: 'relative', alignSelf: 'center' }}>
                 <Canvas
                     state={state}
                     hover={hover}
                     setHover={setHover}
-                    // dragSelect={dragSelect}
-                    // cancelDragSelect={() => setDragSelect(false)}
                     isTouchScreen={isTouchScreen}
                     innerRef={(node) => (ref.current = node)}
                     dispatch={dispatch}
@@ -230,8 +208,6 @@ export const App = ({ initialState }: { initialState: State }) => {
                             hover={hover}
                             setHover={setHover}
                             dispatch={dispatch}
-                            // setDragSelect={setDragSelect}
-                            // dragSelect={dragSelect}
                             state={state}
                             canvasRef={ref}
                             setPendingMirror={setPendingMirror}
@@ -248,51 +224,16 @@ export const App = ({ initialState }: { initialState: State }) => {
                         right: 0,
                     }}
                 >
-                    <IconButton
-                        onClick={() => dispatch({ type: 'undo' })}
-                        // css={{
-                        //     padding: '0 4px',
-                        //     fontSize: 40,
-                        //     border: 'none',
-                        //     cursor: 'pointer',
-                        //     backgroundColor: 'transparent',
-                        // }}
-                        // style={{
-                        //     opacity: sidebarOverlay ? 1 : 0.4,
-                        // }}
-                    >
+                    <IconButton onClick={() => dispatch({ type: 'undo' })}>
                         <UndoIcon />
                     </IconButton>
                     <IconButton
                         onClick={() => dispatch({ type: 'redo' })}
                         disabled={state.history.undo === 0}
-                        // css={{
-                        //     padding: '0 4px',
-                        //     fontSize: 40,
-                        //     backgroundColor: 'transparent',
-                        //     border: 'none',
-                        //     cursor: 'pointer',
-                        // }}
-                        // style={{
-                        //     opacity: sidebarOverlay ? 1 : 0.4,
-                        // }}
                     >
                         <RedoIcon />
                     </IconButton>
-                    <IconButton
-                        onClick={() => setSidebarOverlay((m) => !m)}
-                        // css={{
-                        //     padding: '0 16px',
-                        //     fontSize: 40,
-                        //     border: 'none',
-                        //     cursor: 'pointer',
-                        //     color: 'white',
-                        //     backgroundColor: 'rgba(0,0,0,0.4)',
-                        // }}
-                        // style={{
-                        //     opacity: sidebarOverlay ? 1 : 0.4,
-                        // }}
-                    >
+                    <IconButton onClick={() => setSidebarOverlay((m) => !m)}>
                         <CogIcon />
                     </IconButton>
                 </div>

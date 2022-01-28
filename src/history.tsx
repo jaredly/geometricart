@@ -1,4 +1,5 @@
-import { UndoableAction, History, UndoAction } from './types';
+import { History } from './types';
+import { UndoableAction, UndoAction } from './Action';
 
 /** Returns the things to undo to get to a common parent, and then the things to do to get up to the new branch. */
 export const switchBranches = (

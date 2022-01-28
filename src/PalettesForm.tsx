@@ -1,7 +1,8 @@
 /* @jsx jsx */
 import * as React from 'react';
 import { jsx } from '@emotion/react';
-import { State, Action, Attachment, Coord } from './types';
+import { State, Attachment, Coord } from './types';
+import { Action } from './Action';
 import {
     ExportPalettes,
     getPalettesFromFile,

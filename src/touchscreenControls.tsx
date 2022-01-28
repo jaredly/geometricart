@@ -4,18 +4,16 @@ import { jsx } from '@emotion/react';
 import React from 'react';
 import { MultiStyleForm } from './MultiStyleForm';
 import {
-    Action,
     Coord,
     guideTypes,
     Id,
     Intersect,
     Line,
     Path,
-    PathMultiply,
-    PendingType,
     Segment,
     State,
 } from './types';
+import { Action, PathMultiply, PendingType } from './Action';
 import { DrawPathState } from './DrawPath';
 import { Primitive } from './intersect';
 import { PendingPathControls } from './PendingPathControls';
