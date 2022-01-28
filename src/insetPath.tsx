@@ -1,139 +1,274 @@
 import { Coord, Path, Segment } from './types';
-import { isClockwise, reversePath, totalAngle } from './CanvasRender';
-import { angleTo, dist, push } from './getMirrorTransforms';
-import {
-    circleCircle,
-    epsilon,
-    lineCircle,
-    lineLine,
-    lineToSlope,
-} from './intersect';
-import { angleBetween } from './findNextSegments';
+import { isClockwise, reversePath, totalAngle } from './pathToPoints';
+import { angleTo } from './getMirrorTransforms';
+import { closeEnoughAngle, epsilon } from './intersect';
 import { coordsEqual } from './pathsAreIdentical';
+import { clipTwo, closeEnough, HitLocation } from './clipPath';
+import { isLargeArc } from './RenderPendingPath';
+import { Hit } from './pruneInsetPath';
+import { insetSegment } from './insetSegment';
 
-export const insetPath = (path: Path, inset: number) => {
-    // All paths are clockwise, it just makes this easier
-    if (!isClockwise(path.segments)) {
-        path = { ...path, segments: reversePath(path.segments) };
+type Pos = HitLocation;
+
+export const segmentStart = (segments: Array<Segment>, idx: number) =>
+    idx === 0 ? segments[segments.length - 1].to : segments[idx - 1].to;
+
+export const notMe = (idx: number, hit: Hit) => {
+    return hit.first === idx ? hit.second : hit.first;
+};
+export const nextForPos = (
+    idx: number,
+    hit: Hit,
+    sorted: Array<Array<Hit>>,
+): Pos => {
+    const hitAt = sorted[idx].indexOf(hit);
+    if (hitAt < sorted[idx].length - 1) {
+        return { segment: idx, intersection: hitAt + 1 };
+    } else {
+        return { intersection: -1, segment: (idx + 1) % sorted.length };
     }
-    // console.log('yes', path)
-    const simplified = simplifyPath(path.segments);
+};
 
-    const segments = simplified.map((seg, i) => {
-        const prev = i === 0 ? path.origin : simplified[i - 1].to;
+export const coordForPos = (
+    pos: Pos,
+    sorted: Array<Array<Hit>>,
+    segments: Array<Segment>,
+) => {
+    if (pos.intersection !== -1) {
+        return sorted[pos.segment][pos.intersection].coord;
+    }
+    let prev = pos.segment === 0 ? segments.length - 1 : pos.segment - 1;
+    return segments[prev].to;
+};
+
+// export const travelPath = (
+//     sorted: Array<Array<Hit>>,
+//     segments: Array<Segment>,
+//     pos: Pos,
+//     seen: { [key: string]: true },
+// ) => {
+//     // ok here we go.
+//     // keep track of accumulated angle
+//     // and all the "sub-segments" you've traveersed, so we can mark them as "done".
+//     // because we'll need to check all of the subsegments one by one.
+//     let first = segmentStart(segments, pos.idx);
+//     let prev = first;
+//     let pprev = first;
+//     let result: Array<Segment> = [];
+//     const seenHits: Array<Hit> = [];
+//     while (
+//         !result.length ||
+//         !coordsEqual(result[result.length - 1].to, first)
+//     ) {
+//         // so, the seg is (the current one)
+//         // and ...
+//         // where are we?
+//         // We're at a cross-road, looking to the future.
+
+//         // ok, so we want a list of options.
+//         // I guess, there will only be one other option.
+//         // so the "main" option vs the cross-cutting one.
+//         // and if the cross-cutting one is ...
+//         // /tighter/ than the main one, then we switch to it.
+
+// 		// if (pos.hit === -1)
+
+//         let alternative =
+//             pos.hit === -1
+//                 ? null
+//                 : nextForPos(
+//                       notMe(pos.idx, sorted[pos.idx][pos.hit]),
+//                       sorted[pos.idx][pos.hit],
+//                       sorted,
+//                   );
+
+//         let seg = segments[pos.idx];
+//         let nextHit = sorted[pos.idx][pos.hit + 1];
+//         let next: Coord;
+//         let nextPos: Pos;
+//         if (!nextHit) {
+//             next = seg.to;
+//             nextPos = { idx: (pos.idx + 1) % segments.length, hit: -1 };
+//         } else {
+//             next = nextHit.coord;
+//             nextHit.coord;
+//             nextPos = { idx: pos.idx, hit: pos.hit + 1 };
+//         }
+
+//         if (alternative) {
+//             let forward = getAngle(sorted, pos);
+//             let branch = getAngle(sorted, alternative);
+//             // todo this might violate assumptions about not having a hit at the end of a segment
+//             let back = getBackAngle(sorted, pos);
+
+//             // switch it up!
+//             if (isInside(back, forward, branch)) {
+//                 nextPos = alternative;
+//                 next = coordForPos(nextPos, sorted, segments);
+//             }
+//         }
+
+//         // If we haven't moved, don't muck
+//         if (!coordsEqual(next, prev)) {
+//             result.push({ ...seg, to: next });
+//             pprev = prev;
+//             prev = next;
+//         }
+//         pos = nextPos;
+//     }
+//     return result;
+// };
+
+export const hasReversed = (
+    one: Segment,
+    onep: Coord,
+    two: Segment,
+    twop: Coord,
+) => {
+    if (
+        one.type === 'Arc' &&
+        two.type === 'Arc' &&
+        isLargeArc(two, twop) !== isLargeArc(one, onep)
+    ) {
+        return true;
+    }
+
+    if (
+        one.type === 'Line' &&
+        two.type === 'Line' &&
+        !closeEnough(angleTo(onep, one.to), angleTo(twop, two.to))
+    ) {
+        return true;
+    }
+
+    return false;
+};
+
+export const getToFromMaybeArray = (segments: Array<Segment> | Segment) => {
+    if (Array.isArray(segments)) {
+        return segments[segments.length - 1].to;
+    }
+    return segments.to;
+};
+
+export const differentDirection = (
+    oldPrev: Coord,
+    old: Segment,
+    newPrev: Coord,
+    seg: Segment,
+): boolean => {
+    if (old.type === 'Line' && seg.type === 'Line') {
+        return !closeEnoughAngle(
+            angleTo(oldPrev, old.to),
+            angleTo(newPrev, seg.to),
+        );
+    }
+    // TODO handle arcs
+    return false;
+};
+
+export const insetSegmentsBeta = (segments: Array<Segment>, inset: number) => {
+    if (!isClockwise(segments)) {
+        segments = reversePath(segments);
+    }
+
+    const simplified = simplifyPath(segments);
+
+    const insets = simplified.map((seg, i) => {
+        const prev = simplified[i === 0 ? simplified.length - 1 : i - 1].to;
         const next = simplified[i === simplified.length - 1 ? 0 : i + 1];
+        // ok, so ... this needs to maybe return two segments.
+        // if we need to bridge the new gap
+        return insetSegment(prev, seg, next, inset, true);
+    });
+
+    return insets.flat();
+};
+
+// hmmmmmmmmmmmm
+// I think maybe
+// I need to convert to directed primitives or something
+// or, just [prev, segment] pairs.
+
+/**
+ * This insets the segments of a path, without doing any validation.
+ * That comes later, with `pruneInsetPath`
+ *
+ * Ok well, it does filter out now-illegal segments. So there's that.
+ */
+export const insetSegments = (segments: Array<Segment>, inset: number) => {
+    // All paths are clockwise, it just makes this easier
+    if (!isClockwise(segments)) {
+        segments = reversePath(segments);
+    }
+
+    const simplified = simplifyPath(segments);
+
+    const insets = simplified.map((seg, i) => {
+        const prev = simplified[i === 0 ? simplified.length - 1 : i - 1].to;
+        const next = simplified[i === simplified.length - 1 ? 0 : i + 1];
+        // ok, so ... this needs to maybe return two segments.
+        // if we need to bridge the new gap
         return insetSegment(prev, seg, next, inset);
     });
 
-    // Ok, so once we've done the inset, how do we check for self intersections?
+    let allBad = true;
 
-    const angle = totalAngle(segments);
+    // ok lets go ahead and filter here
+    segments = insets
+        .filter((seg, i) => {
+            if (Array.isArray(seg)) {
+                allBad = false;
+                return true; // BAIL: TODO, figure this out
+            }
+            const pi = i === 0 ? simplified.length - 1 : i - 1;
+            // const prev = Array.isArray(insets[pi])
+            // ? insets[pi].slice(-1)[0].to : insets[pi].to
+            // const old = simplified[i]
+            // const oldPrev = simplified[pi].to
+            if (
+                !differentDirection(
+                    getToFromMaybeArray(insets[pi]),
+                    seg,
+                    simplified[pi].to,
+                    simplified[i],
+                )
+            ) {
+                allBad = false;
+                return true;
+            }
+            // return true;
+            return false;
+        })
+        .map((seg) => (Array.isArray(seg) ? seg : [seg]))
+        .flat();
 
-    // We have a twist!
-    // but that's no the only possible self-intersection.
-    // If we have a concave shape, it's easy to self-intersect.
-    if (Math.abs(angle) < epsilon * 2) {
-        return null;
+    if (allBad) {
+        return [];
     }
+    // let bad: Array<number> = [];
+    // segments.forEach((seg, i) => {
+    //     if (
+    //         hasReversed(
+    //             seg,
+    //             segments[i === 0 ? segments.length - 1 : i - 1].to,
+    //             simplified[i],
+    //             simplified[i === 0 ? simplified.length - 1 : i - 1].to,
+    //         )
+    //     ) {
+    //         bad.push(i);
+    //     }
+    // });
 
-    // we've gone inside out!
-    // if (!isClockwise(segments)) {
-    //     return null;
-    // }
-
-    return { ...path, segments, origin: segments[segments.length - 1].to };
+    return segments;
 };
 
-export const insetSegment = (
-    prev: Coord,
-    seg: Segment,
-    next: Segment,
-    amount: number,
-): Segment => {
-    if (seg.type === 'Line') {
-        const t = angleTo(prev, seg.to);
-        const p0 = push(prev, t + Math.PI / 2, amount);
-        const p1 = push(seg.to, t + Math.PI / 2, amount);
-        const slope1 = lineToSlope(p0, p1);
-
-        if (next.type === 'Line') {
-            const t1 = angleTo(seg.to, next.to);
-            const p2 = push(seg.to, t1 + Math.PI / 2, amount);
-            const p3 = push(next.to, t1 + Math.PI / 2, amount);
-            const slope2 = lineToSlope(p2, p3);
-            const intersection = lineLine(slope1, slope2);
-            if (!intersection) {
-                // Assume they're the same line, so the pushed one is correct
-                return { ...seg, to: p2 };
-            }
-            return { ...seg, to: intersection };
-        } else {
-            const radius =
-                dist(next.center, next.to) + amount * (next.clockwise ? -1 : 1);
-            const angle = angleTo(next.center, next.to);
-            const intersection = lineCircle(
-                { center: next.center, radius: radius, type: 'circle' },
-                slope1,
-            );
-            const dists = intersection.map((pos) => dist(pos, p1));
-            if (dists.length > 1) {
-                return {
-                    ...seg,
-                    to: dists[0] > dists[1] ? intersection[1] : intersection[0],
-                };
-            }
-            return intersection.length ? { ...seg, to: intersection[0] } : seg;
-        }
+export const insetPath = (path: Path, inset: number): Path | null => {
+    const segments = insetSegments(path.segments, inset);
+    if (segments.length === 0) {
+        return null;
     }
-    if (seg.type === 'Arc') {
-        const radius =
-            dist(seg.center, seg.to) + amount * (seg.clockwise ? -1 : 1);
-        const angle = angleTo(seg.center, seg.to);
-
-        if (next.type === 'Line') {
-            const t1 = angleTo(seg.to, next.to);
-            const p2 = push(seg.to, t1 + Math.PI / 2, amount);
-            const p3 = push(next.to, t1 + Math.PI / 2, amount);
-            const slope2 = lineToSlope(p2, p3);
-            const intersection = lineCircle(
-                { center: seg.center, radius: radius, type: 'circle' },
-                slope2,
-            );
-            const dists = intersection.map((pos) => dist(pos, p2));
-            if (dists.length > 1) {
-                return {
-                    ...seg,
-                    to: dists[0] > dists[1] ? intersection[1] : intersection[0],
-                };
-            }
-            return intersection.length ? { ...seg, to: intersection[0] } : seg;
-        } else {
-            const radius2 =
-                dist(next.center, next.to) + amount * (next.clockwise ? -1 : 1);
-            // const angle2 = angleTo(next.center, next.to);
-            const intersection = circleCircle(
-                { center: next.center, radius: radius2, type: 'circle' },
-                { center: seg.center, radius: radius, type: 'circle' },
-            );
-            // if (intersection.length === 1 && 1 == 0) {
-            //     return { ...seg, to: intersection[0] };
-            // }
-            if (intersection.length < 2) {
-                const newTo = push(seg.center, angle, radius);
-                return { ...seg, to: newTo };
-            }
-            const angle0 = angleTo(seg.center, prev);
-            const angles = intersection.map((pos) =>
-                angleBetween(angle0, angleTo(seg.center, pos), seg.clockwise),
-            );
-            // We want the first one we run into, going around the original circle.
-            if (angles[0] < angles[1]) {
-                return { ...seg, to: intersection[0] };
-            }
-            return { ...seg, to: intersection[1] };
-        }
-    }
-    throw new Error(`nope`);
+    return { ...path, segments, origin: segments[segments.length - 1].to };
 };
 
 export const areContiguous = (prev: Coord, one: Segment, two: Segment) => {

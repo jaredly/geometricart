@@ -1,33 +1,32 @@
 import { coordKey } from './calcAllIntersections';
-import { ensureClockwise, isClockwise } from './CanvasRender';
 import { angleBetween, isAngleBetween } from './findNextSegments';
 import { pathToPrimitives } from './findSelection';
 import { angleTo, dist, push } from './getMirrorTransforms';
+import { simplifyPath } from './insetPath';
 import {
     Circle,
     epsilon,
     intersections,
-    lineCircle,
     Primitive,
     SlopeIntercept,
     withinLimit,
 } from './intersect';
 import { coordsEqual } from './pathsAreIdentical';
-import { simplifyPath } from './insetPath';
-import { ArcSegment, Coord, Line, Path, PathGroup, Segment } from './types';
+import { ensureClockwise, isClockwise } from './pathToPoints';
+import { ArcSegment, Coord, Path, PathGroup, Segment } from './types';
 
-type Hit = { i: number; j: number; coord: Coord };
+export type Hit = { i: number; j: number; coord: Coord };
 
-type Clippable = {
+export type Clippable<Hit> = {
     primitives: Array<Primitive>;
     segments: Array<Segment>;
     hits: Array<Array<Hit>>;
 };
 
 // if intersection is -1, it means we're at the start of the segment.
-type HitLocation = { segment: number; intersection: number };
+export type HitLocation = { segment: number; intersection: number };
 
-type Angle =
+export type Angle =
     | { type: 'flat'; theta: number }
     | {
           type: 'arc';
@@ -36,6 +35,19 @@ type Angle =
           radius: number;
           clockwise: boolean;
       };
+
+// export const anglesEqual = (one: Angle, two: Angle): boolean => {
+//     if (one.type !== two.type) {
+//         return false
+//     }
+//     if (!closeEnough(one.theta, two.theta)) {
+//         return false
+//     }
+//     if(one.type === 'arc' && two.type === 'arc') {
+//         return one.clockwise === two.clockwise && closeEnough(one.radius, two.radius)
+//     }
+//     return true
+// }
 
 export const closeEnough = (one: number, two: number) =>
     one === two || Math.abs(one - two) < epsilon;
@@ -186,7 +198,10 @@ export const isInside = (
 export const getSegment = (segments: Array<Segment>, i: number) =>
     i < 0 ? segments[segments.length + i] : segments[i % segments.length];
 
-export const getBackAngle = (one: Clippable, location: HitLocation): Angle => {
+export const getBackAngle = <T extends { coord: Coord }>(
+    one: Clippable<T>,
+    location: HitLocation,
+): Angle => {
     const atStart =
         location.intersection === -1 ||
         coordsEqual(
@@ -211,6 +226,22 @@ export const getBackAngle = (one: Clippable, location: HitLocation): Angle => {
         }
     }
     const segment = getSegment(one.segments, location.segment);
+    const atEnd =
+        location.intersection != -1
+            ? coordsEqual(
+                  one.hits[location.segment][location.intersection].coord,
+                  segment.to,
+              )
+            : false;
+    if (atEnd) {
+        // const next = getSegment(one.segments, location.segment + 1)
+        // if (segment.type === 'Line')
+        // throw new Error(`at end!`);
+        return getBackAngle(one, {
+            segment: location.segment + 1,
+            intersection: -1,
+        });
+    }
     if (segment.type === 'Line') {
         return { type: 'flat', theta: angleTo(segment.to, prev.to) };
     } else {
@@ -227,12 +258,33 @@ export const getBackAngle = (one: Clippable, location: HitLocation): Angle => {
     }
 };
 
-export const getAngle = (one: Clippable, location: HitLocation): Angle => {
+export const getAngle = <T extends { coord: Coord }>(
+    one: Clippable<T>,
+    location: HitLocation,
+): Angle => {
     const pos =
         location.intersection === -1
             ? getSegment(one.segments, location.segment - 1).to
             : one.hits[location.segment][location.intersection].coord;
     const segment = getSegment(one.segments, location.segment);
+    const atEnd =
+        location.intersection != -1
+            ? coordsEqual(
+                  one.hits[location.segment][location.intersection].coord,
+                  segment.to,
+              )
+            : false;
+    if (atEnd) {
+        // const next = getSegment(one.segments, location.segment + 1)
+        // if (segment.type === 'Line')
+        // throw new Error(`at end!`);
+        console.log(`at end`, location.segment + 1, one);
+        console.error(new Error('nope'));
+        return getAngle(one, {
+            segment: location.segment + 1,
+            intersection: -1,
+        });
+    }
     if (segment.type === 'Line') {
         return { type: 'flat', theta: angleTo(pos, segment.to) };
     } else {
@@ -258,10 +310,10 @@ export const getAngle = (one: Clippable, location: HitLocation): Angle => {
  * to examine the /next/ segment in the list. If we're at the start of a segment, we do need
  * to check the previous segment, however.
  */
-export const isGoingInside = (
-    one: Clippable,
+export const isGoingInside = <T extends { coord: Coord }>(
+    one: Clippable<T>,
     oneLocation: HitLocation,
-    test: Clippable,
+    test: Clippable<T>,
     testLocation: HitLocation,
     debug = false,
 ) => {
@@ -323,7 +375,7 @@ If both are, we're on a shared edge.
 
 // let's return `clipInformation` along with it, I think. like `{path, clipped: Array<segment index>}`
 export const findHit = (
-    clip: Clippable,
+    clip: Clippable<Hit>,
     hit: Hit,
     idx: number,
 ): HitLocation => {
@@ -337,8 +389,8 @@ export const prevPos = (segments: Array<Segment>, idx: number) =>
     idx === 0 ? segments[segments.length - 1].to : segments[idx - 1].to;
 
 export const clipTwo = (
-    clip: Clippable,
-    path: Clippable,
+    clip: Clippable<Hit>,
+    path: Clippable<Hit>,
     idx: number,
     debug?: boolean,
 ): { result: Array<Segment>; clipSide: Array<boolean> } => {
@@ -411,7 +463,7 @@ export const clipTwo = (
     let x = 0;
     while (
         (!result.length || !coordsEqual(first, result[result.length - 1].to)) &&
-        x++ < 100
+        x++ < 1000
     ) {
         if (debug) {
             console.log(`Current state`, { ...state }, result.length);
@@ -493,7 +545,7 @@ export const clipPath = (
     clip: Array<Segment>,
     clipPrimitives: Array<Primitive>,
     groupMode?: PathGroup['clipMode'],
-): Path | null => {
+): Array<Path> => {
     if (path.debug) {
         console.log(`CLIPPING`);
         console.log(path);
@@ -502,7 +554,7 @@ export const clipPath = (
     const clipMode = path.clipMode ?? groupMode;
 
     if (clipMode === 'none') {
-        return path;
+        return [path];
     }
 
     if (!isClockwise(path.segments)) {
@@ -524,7 +576,7 @@ export const clipPath = (
             console.warn(`Debug path outside of clip`);
         }
         // path is not inside, nothing to show
-        return null;
+        return [];
     }
 
     const pathPrims = pathToPrimitives(path.segments);
@@ -667,7 +719,7 @@ export const clipPath = (
     );
 
     if (clipSide.some(Boolean) && clipMode === 'remove') {
-        return null;
+        return [];
     }
 
     if (path.debug) {
@@ -682,7 +734,7 @@ export const clipPath = (
     }
 
     if (!result) {
-        return null;
+        return [];
     }
 
     let filtered = [result[0]];
@@ -699,11 +751,13 @@ export const clipPath = (
 
     filtered = simplifyPath(ensureClockwise(filtered));
 
-    return {
-        ...path,
-        origin: filtered[filtered.length - 1].to,
-        segments: filtered,
-    };
+    return [
+        {
+            ...path,
+            origin: filtered[filtered.length - 1].to,
+            segments: filtered,
+        },
+    ];
 };
 
 // "bottom" here being the visual bottom, so the /greater/ y value. yup thanks.
@@ -859,7 +913,74 @@ export const isOnCircle = (coord: Coord, seg: Circle) => {
     return closeEnough(d, seg.radius);
 };
 
+export const windingNumber = (
+    coord: Coord,
+    prims: Array<Primitive>,
+    segs: Array<Segment>,
+    debug?: boolean,
+) => {
+    const ray: Primitive = {
+        type: 'line',
+        m: 0,
+        b: coord.y,
+        limit: [coord.x, Infinity],
+    };
+    // let isOnEdge = false;
+    let wind: Array<{ prev: Coord; seg: Segment; up: boolean; hit: Coord }> =
+        []; // UP is positive, DOWN is negative
+    prims.forEach((prim, i) => {
+        // if (isOnEdge) {
+        //     // bail fast
+        //     return;
+        // }
+
+        if (prim.type === 'line') {
+            if (prim.m === 0) {
+                return;
+            }
+        }
+
+        intersections(prim, ray).forEach((coord) => {
+            const prev = segs[i === 0 ? segs.length - 1 : i - 1].to;
+            if (prim.type === 'line') {
+                // ignore intersections with the "bottom point" of a line
+                // we might not need this? because we're taking direction into account
+                // hmm yeah I think we do need it. so we don't double-count
+                if (atLineBottom(coord, prim)) {
+                    return;
+                }
+                const line = segs[i];
+                const dy = line.to.y - prev.y;
+                wind.push({
+                    prev,
+                    seg: line,
+                    up: dy > 0,
+                    hit: coord,
+                });
+            } else {
+                if (atCircleBottomOrSomething(coord, prim)) {
+                    return;
+                }
+                const t = angleTo(prim.center, coord);
+                const right = Math.abs(t) < Math.PI / 2;
+                const up = right === (segs[i] as ArcSegment).clockwise;
+                wind.push({ prev, seg: segs[i], up, hit: coord });
+            }
+            // if we're going "up" at this point, +1, otherwise -1
+            // hits.push(coord);
+        });
+    });
+    // if (isOnEdge) {
+    //     return false;
+    // }
+    // if (debug) {
+    //     console.log(hits, coord);
+    // }
+    return wind;
+};
+
 // excludes points that line /on/ the path.
+// segs *need not be ordered or contiguous*
 export const insidePath = (
     coord: Coord,
     segs: Array<Primitive>,
@@ -1026,6 +1147,7 @@ export const sortHitsForPrimitive = <T extends { coord: Coord }>(
     } else {
         const circle = segment as ArcSegment;
         const t1 = angleTo(circle.center, segment.to);
+        // console.log(hits, circle, t1);
         // TODO: DEDUP! If we have an intersection with two clip segments, take the /later/ one.
         // the only way this could happen is if they're contiguous.
         return hits
@@ -1036,10 +1158,10 @@ export const sortHitsForPrimitive = <T extends { coord: Coord }>(
                     : angleBetween(
                           t1,
                           angleTo(circle.center, coord.coord),
-                          false,
+                          circle.clockwise,
                       ),
             }))
-            .sort((a, b) => b.dist - a.dist)
+            .sort((a, b) => a.dist - b.dist)
             .map((item) => item.coord)
             .filter(check);
     }

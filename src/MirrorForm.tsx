@@ -15,9 +15,11 @@ import {
 export const ShowMirror = ({
     mirror,
     transforms,
+    size = 200,
 }: {
     mirror: Mirror;
     transforms: Array<Array<Matrix>>;
+    size?: number;
 }) => {
     const angle = angleTo(mirror.point, mirror.origin);
     const d = dist(mirror.point, mirror.origin);
@@ -32,25 +34,45 @@ export const ShowMirror = ({
             p2: applyMatrices(line.p2, transform),
         });
     });
-    const minX = lines.reduce((a, b) => Math.min(a, b.p1.x, b.p2.x), Infinity);
-    const minY = lines.reduce((a, b) => Math.min(a, b.p1.y, b.p2.y), Infinity);
-    const maxX = lines.reduce((a, b) => Math.max(a, b.p1.x, b.p2.x), -Infinity);
-    const maxY = lines.reduce((a, b) => Math.max(a, b.p1.y, b.p2.y), -Infinity);
+    let minX = lines.reduce((a, b) => Math.min(a, b.p1.x, b.p2.x), Infinity);
+    let minY = lines.reduce((a, b) => Math.min(a, b.p1.y, b.p2.y), Infinity);
+    let maxX = lines.reduce((a, b) => Math.max(a, b.p1.x, b.p2.x), -Infinity);
+    let maxY = lines.reduce((a, b) => Math.max(a, b.p1.y, b.p2.y), -Infinity);
+    minX = Math.min(minX, -maxX);
+    minY = Math.min(minY, -maxY);
+    maxX = Math.max(-minX, maxX);
+    maxY = Math.max(-minY, maxY);
     const width = maxX - minX;
     const height = maxY - minY;
 
-    const size = 200;
+    // const size = 200;
+    const inSize = size - 4;
 
-    const scale = width < height ? size / height : size / width;
+    const scale = width < height ? inSize / height : inSize / width;
 
-    const xoff = (minX - (width < height ? (height - width) / 2 : 0)) * scale;
-    const yoff = (minY - (height < width ? (width - height) / 2 : 0)) * scale;
+    const xoff =
+        (minX - (width < height ? (height - width) / 2 : 0)) * scale - 2;
+    const yoff =
+        (minY - (height < width ? (width - height) / 2 : 0)) * scale - 2;
 
     return (
         <svg width={size} height={size} style={{ display: 'block' }}>
             {lines.map((line, i) => (
                 <line
                     key={i}
+                    stroke="black"
+                    strokeWidth={5}
+                    strokeLinecap="round"
+                    x1={line.p1.x * scale - xoff}
+                    y1={line.p1.y * scale - yoff}
+                    x2={line.p2.x * scale - xoff}
+                    y2={line.p2.y * scale - yoff}
+                />
+            ))}
+            {lines.map((line, i) => (
+                <line
+                    key={i}
+                    strokeWidth={1}
                     stroke="red"
                     x1={line.p1.x * scale - xoff}
                     y1={line.p1.y * scale - yoff}
@@ -70,7 +92,7 @@ export const MirrorForm = ({
     onSelect,
     isActive,
     selected,
-    setSelected,
+    // setSelected,
     onDuplicate,
     onChild,
     mirrors,
@@ -81,7 +103,7 @@ export const MirrorForm = ({
     selected: boolean;
     onMouseOver: () => void;
     onMouseOut: () => void;
-    setSelected: (sel: boolean) => void;
+    // setSelected: (sel: boolean) => void;
     onChange: (m: Mirror) => unknown;
     onSelect: () => void;
     onDuplicate: () => void;
@@ -97,67 +119,25 @@ export const MirrorForm = ({
                 padding: 8,
             }}
             style={selected ? { border: '1px solid white' } : {}}
-            onClick={(evt) => {
-                evt.stopPropagation();
-                setSelected(true);
-            }}
+            // onClick={(evt) => {
+            //     evt.stopPropagation();
+            //     setSelected(true);
+            // }}
             onMouseOver={onMouseOver}
             onMouseOut={onMouseOut}
         >
             <div
                 css={{
                     cursor: 'pointer',
-                    background: isActive
-                        ? 'rgba(100,100,100,0.4)'
-                        : 'rgba(100,100,100,0.1)',
-                    ':hover': {
-                        background: 'rgba(100,100,100,0.2)',
-                    },
+                    background: 'rgba(100,100,100,0.1)',
+                    display: 'flex',
+                    alignItems: 'center',
                 }}
-                onClick={onSelect}
+                // onClick={onSelect}
             >
-                Mirror {isActive ? '(active)' : null}
-            </div>
-            <Toggle
-                label="Reflect across axis?"
-                value={mirror.reflect}
-                onChange={(reflect) => onChange({ ...mirror, reflect })}
-            />
-            <div css={{ display: 'flex', flexDirection: 'row' }}>
-                <Label text="rotations" />
-                <div style={{ flexBasis: 8 }} />
-                <Int
-                    value={mirror.rotational.length + 1}
-                    onChange={(number) => {
-                        if (number == null || number < 1) {
-                            return;
-                        }
-                        number -= 1;
-                        let rotational = mirror.rotational;
-                        if (number < mirror.rotational.length) {
-                            rotational = rotational.slice(0, number);
-                        } else {
-                            rotational = rotational.slice();
-                            for (let i = rotational.length; i < number; i++) {
-                                rotational.push(true);
-                            }
-                        }
-                        onChange({ ...mirror, rotational });
-                    }}
-                />
-                {/* I'm not sure these are even helpful */}
-                {/* {mirror.rotational.map((enabled, i) => (
-                    <Toggle
-                        key={i}
-                        label={'' + i}
-                        value={enabled}
-                        onChange={(enabled) => {
-                            const rotational = mirror.rotational.slice();
-                            rotational[i] = enabled;
-                            onChange({ ...mirror, rotational });
-                        }}
-                    />
-                ))} */}
+                Mirror
+                <div style={{ flexBasis: 16 }} />
+                <Toggle label="Active" value={isActive} onChange={onSelect} />
             </div>
             <button
                 onClick={() => {

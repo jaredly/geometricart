@@ -5,7 +5,8 @@ import * as React from 'react';
 import { render } from 'react-dom';
 import { App, key } from './App';
 import { initialState } from './initialState';
-import { migrateState, State } from './types';
+import { State } from './types';
+import { migrateState } from './migrateState';
 
 localforage.getItem(key).then((data) => {
     const state: State =

@@ -4,14 +4,28 @@ import { jsx } from '@emotion/react';
 import React from 'react';
 import { GuideForm, PathForm, PathGroupForm, ViewForm } from './Forms';
 import { MirrorForm } from './MirrorForm';
-import { guideTypes, State, Action, Tab, Id, Path, PathGroup } from './types';
+import {
+    guideTypes,
+    State,
+    Action,
+    Tab,
+    Id,
+    Path,
+    PathGroup,
+    PathMultiply,
+    UndoAction,
+} from './types';
 import { initialState } from './initialState';
 import { Export } from './Export';
 import { PendingMirror, toTypeRev } from './App';
-import { useDropStateTarget } from './useDropTarget';
+import {
+    getStateFromFile,
+    useDropStateOrAttachmentTarget,
+} from './useDropTarget';
 import { PalettesForm } from './PalettesForm';
 import { MultiStyleForm, mergeStyles } from './MultiStyleForm';
 import { OverlaysForm } from './OverlaysForm';
+import { diff } from 'json-diff-ts';
 
 export const PREFIX = `<!-- STATE:`;
 export const SUFFIX = '-->';
@@ -69,16 +83,21 @@ export const Tabs = ({
     );
 };
 
-export type Hover = {
-    kind: Selection['type'] | 'Clip';
-    id: Id;
-};
+export type Hover =
+    | {
+          type: 'element';
+          kind: Selection['type'] | 'Clip';
+          id: Id;
+      }
+    | { type: 'guides' };
 
 export type TabProps = {
     state: State;
     dispatch: (action: Action) => unknown;
     canvasRef: { current: SVGSVGElement | null };
     hover: Hover | null;
+    width: number;
+    height: number;
     setHover: (hover: Hover | null) => void;
     setPendingMirror: (mirror: PendingMirror | null) => void;
 };
@@ -102,7 +121,9 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactElement } = {
                             state.selection.ids.includes(k)
                         }
                         onMouseOut={() => setHover(null)}
-                        onMouseOver={() => setHover({ kind: 'Guide', id: k })}
+                        onMouseOver={() =>
+                            setHover({ kind: 'Guide', id: k, type: 'element' })
+                        }
                         key={k}
                         guide={state.guides[k]}
                         onChange={(guide) =>
@@ -126,30 +147,39 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactElement } = {
                     flexDirection: 'column',
                 }}
             >
-                {state.selection?.type === 'PathGroup' ? (
-                    <MultiStyleForm
-                        palette={state.palettes[state.activePalette]}
-                        styles={state.selection.ids.map(
-                            (id) => state.pathGroups[id].style,
-                        )}
-                        onChange={(styles) => {
-                            const changed: { [key: string]: PathGroup } = {};
-                            styles.forEach((style, i) => {
-                                if (style != null) {
-                                    const id = state.selection!.ids[i];
-                                    changed[id] = {
-                                        ...state.pathGroups[id],
-                                        style,
-                                    };
-                                }
-                            });
-                            dispatch({
-                                type: 'pathGroup:update:many',
-                                changed,
-                            });
-                        }}
-                    />
-                ) : null}
+                {state.selection?.type === 'PathGroup'
+                    ? (() => {
+                          const ids = Object.keys(state.paths).filter((k) =>
+                              state.selection!.ids.includes(
+                                  state.paths[k].group!,
+                              ),
+                          );
+                          return (
+                              <MultiStyleForm
+                                  palette={state.palettes[state.activePalette]}
+                                  styles={ids.map((k) => state.paths[k].style)}
+                                  onHover={() => {}}
+                                  onChange={(styles) => {
+                                      const changed: { [key: string]: Path } =
+                                          {};
+                                      styles.forEach((style, i) => {
+                                          if (style != null) {
+                                              const id = ids[i];
+                                              changed[id] = {
+                                                  ...state.paths[id],
+                                                  style,
+                                              };
+                                          }
+                                      });
+                                      dispatch({
+                                          type: 'path:update:many',
+                                          changed,
+                                      });
+                                  }}
+                              />
+                          );
+                      })()
+                    : null}
                 <div
                     css={{
                         overflow: 'auto',
@@ -177,7 +207,11 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactElement } = {
                                 key={k}
                                 group={state.pathGroups[k]}
                                 onMouseOver={() => {
-                                    setHover({ kind: 'PathGroup', id: k });
+                                    setHover({
+                                        kind: 'PathGroup',
+                                        id: k,
+                                        type: 'element',
+                                    });
                                 }}
                                 onMouseOut={() => setHover(null)}
                                 onChange={(group) =>
@@ -204,15 +238,10 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactElement } = {
             {state.selection?.type === 'Path' ? (
                 <MultiStyleForm
                     palette={state.palettes[state.activePalette]}
-                    styles={state.selection.ids.map((id) =>
-                        state.paths[id].group
-                            ? mergeStyles(
-                                  state.pathGroups[state.paths[id].group!]
-                                      .style,
-                                  state.paths[id].style,
-                              )
-                            : state.paths[id].style,
+                    styles={state.selection.ids.map(
+                        (id) => state.paths[id].style,
                     )}
+                    onHover={() => {}}
                     onChange={(styles) => {
                         const changed: { [key: string]: Path } = {};
                         styles.forEach((style, i) => {
@@ -256,7 +285,11 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactElement } = {
                             palette={state.palettes[state.activePalette]}
                             path={state.paths[k]}
                             onMouseOver={() => {
-                                setHover({ kind: 'Path', id: k });
+                                setHover({
+                                    kind: 'Path',
+                                    id: k,
+                                    type: 'element',
+                                });
                             }}
                             onMouseOut={() => setHover(null)}
                             onChange={(path) =>
@@ -286,10 +319,26 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactElement } = {
                     justifyContent: 'flex-start',
                     // minHeight: 100,
                 }}
-                onClick={() => {
-                    dispatch({ type: 'selection:set', selection: null });
-                }}
+                // onClick={() => {
+                //     dispatch({ type: 'selection:set', selection: null });
+                // }}
             >
+                {(state.selection?.type === 'Path' ||
+                    state.selection?.type === 'PathGroup') &&
+                state.activeMirror ? (
+                    <button
+                        onClick={() => {
+                            dispatch({
+                                type: 'path:multiply',
+                                selection:
+                                    state.selection as PathMultiply['selection'],
+                                mirror: state.activeMirror!,
+                            });
+                        }}
+                    >
+                        Multiply selection around active mirror
+                    </button>
+                ) : null}
                 {Object.keys(state.mirrors).map((k) => (
                     <MirrorForm
                         key={k}
@@ -298,21 +347,23 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactElement } = {
                             state.selection?.type === 'Mirror' &&
                             state.selection.ids.includes(k)
                         }
-                        setSelected={(sel) => {
-                            if (sel) {
-                                dispatch({
-                                    type: 'selection:set',
-                                    selection: { type: 'Mirror', ids: [k] },
-                                });
-                            } else {
-                                dispatch({
-                                    type: 'selection:set',
-                                    selection: null,
-                                });
-                            }
-                        }}
+                        // setSelected={(sel) => {
+                        //     if (sel) {
+                        //         dispatch({
+                        //             type: 'selection:set',
+                        //             selection: { type: 'Mirror', ids: [k] },
+                        //         });
+                        //     } else {
+                        //         dispatch({
+                        //             type: 'selection:set',
+                        //             selection: null,
+                        //         });
+                        //     }
+                        // }}
                         onMouseOut={() => setHover(null)}
-                        onMouseOver={() => setHover({ kind: 'Mirror', id: k })}
+                        onMouseOver={() =>
+                            setHover({ kind: 'Mirror', id: k, type: 'element' })
+                        }
                         isActive={state.activeMirror === k}
                         onDuplicate={() => {
                             dispatch({
@@ -359,8 +410,13 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactElement } = {
             </div>
         );
     },
-    Export: ({ state, canvasRef, dispatch }) => (
-        <Export state={state} canvasRef={canvasRef} dispatch={dispatch} />
+    Export: ({ state, canvasRef, dispatch, width, height }) => (
+        <Export
+            state={state}
+            canvasRef={canvasRef}
+            dispatch={dispatch}
+            originalSize={Math.max(width, height)}
+        />
     ),
     Palette: ({ state, dispatch }) => (
         <PalettesForm state={state} dispatch={dispatch} />
@@ -370,6 +426,18 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactElement } = {
         return (
             <div>
                 Clips!
+                {state.view.activeClip ? (
+                    <button
+                        onClick={() => {
+                            dispatch({
+                                type: 'clip:cut',
+                                clip: state.view.activeClip!,
+                            });
+                        }}
+                    >
+                        Cut to active clip
+                    </button>
+                ) : null}
                 {Object.keys(state.clips).map((id) => (
                     <div
                         key={id}
@@ -406,78 +474,93 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactElement } = {
             </div>
         );
     },
-    Help: () => (
-        <div>
-            <div>
-                <h3>Recent Changes</h3>
-                <ul>
-                    <li>"z" and "shift+z" are now the zoom keys</li>
-                    <li>
-                        clicking a guide now selects it; shift+click to
-                        enable/disable
-                    </li>
-                </ul>
-            </div>
-            <p>
-                A sure sign this is a very usable piece of software is that I
-                feel the need to prominantly display this help section.
-            </p>
-            <p>Basic strategy:</p>
-            <ol>
-                <li>
-                    Make some guides (lines, circles). Click a guide button,
-                    then click some points to define the guide.
-                </li>
-                <li>
-                    Make some paths! With no guide active, click a starting
-                    point for your path. Then mouse over green / red path
-                    segments to define your path. Make it around to the starting
-                    point to complete the path.
-                </li>
-                <li>Color the paths! Click a path group, click a color</li>
-                <li>
-                    Export! Both the SVG export and the PNG export can be later
-                    re-imported (drag &amp; drop onto the sidebar) for further
-                    editing.
-                </li>
-            </ol>
-            <p>Misc:</p>
-            <ul>
-                <li>
-                    Shift+Click on a guide to toggle it. When disabled, it will
-                    not produce intersections. This can make defining paths
-                    easier (fewer segments to mess with).
-                </li>
-                <li>
-                    I recorded a quick &amp; dirty video walkthrough,{' '}
-                    <a href="https://youtu.be/OfHB5STp0pM">enjoy.</a>
-                </li>
-            </ul>
-            <p>Keyboard shortcuts:</p>
-            <table>
-                <tbody>
-                    {Object.entries({
-                        g: 'Toggle guides on/off',
-                        l: 'New [L]ine guide',
-                        c: 'New [C]ircle guide',
-                        p: 'New [P]erpendicular bisector guide',
-                        i: 'New [I]ncircle guide',
-                        m: 'New Circu[m]circle guide',
-                        a: 'New [A]ngle bisector guide',
-                        Escape: 'Cancel whatever is happening',
-                        z: 'Zoom (shift to zoom more) (handy for drawing paths with tight edges)',
-                        'cmd+z': 'Undo (infinite)',
-                        'cmd+shift+z': 'Redo',
-                    }).map(([k, v]) => (
-                        <tr key={k}>
-                            <td>{k}</td>
-                            <td>{v}</td>
-                        </tr>
+    Undo: ({ state, dispatch }) => {
+        const [branch, setBranch] = React.useState(state.history.currentBranch);
+        const current = state.history.branches[+branch];
+        return (
+            <div
+                css={{
+                    flex: 1,
+                    display: 'flex',
+                    flexDirection: 'column',
+                }}
+            >
+                <select
+                    css={{ display: 'block' }}
+                    value={branch}
+                    onChange={(evt) => setBranch(+evt.target.value)}
+                >
+                    {Object.keys(state.history.branches).map((k) => (
+                        <option value={k} key={k}>
+                            Branch {k}
+                        </option>
                     ))}
-                </tbody>
-            </table>
-        </div>
-    ),
+                </select>
+                <div>{current.items.length} items</div>
+                {current.parent ? (
+                    <div
+                        onClick={() => setBranch(current.parent!.branch)}
+                        css={{
+                            padding: '4px 8px',
+                            border: '1px solid #aaa',
+                            cursor: 'pointer',
+                            ':hover': {
+                                backgroundColor: 'rgba(255,255,255,0.5)',
+                            },
+                        }}
+                    >
+                        Parent branch: {current.parent.branch} @{' '}
+                        {current.parent.idx}
+                    </div>
+                ) : (
+                    'No parent'
+                )}
+                <div
+                    css={{
+                        overflow: 'auto',
+                        flex: 1,
+                        minHeight: 0,
+                    }}
+                >
+                    {current.items.map((item, i) => (
+                        <div
+                            key={`${i}`}
+                            css={{
+                                padding: 8,
+                            }}
+                        >
+                            <UndoItem item={item} />
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+    },
+};
+
+export const UndoItem = ({ item }: { item: UndoAction }) => {
+    switch (item.type) {
+        case 'view:update':
+            return (
+                <span>
+                    View: {JSON.stringify(diff(item.action.view, item.prev))}
+                </span>
+            );
+        case 'overlay:update':
+            return (
+                <span>
+                    Overlay:{' '}
+                    {JSON.stringify(diff(item.action.overlay, item.prev))}
+                </span>
+            );
+        case 'path:update:many':
+            return (
+                <span>
+                    Update {Object.keys(item.action.changed).length} paths
+                </span>
+            );
+    }
+    return <span>{item.type}</span>;
 };
 
 export const ReallyButton = ({
@@ -520,23 +603,28 @@ export function Sidebar({
     state,
     canvasRef,
     hover,
+    width,
+    height,
     setHover,
     setPendingMirror,
-    setDragSelect,
-    dragSelect,
-}: {
+}: // setDragSelect,
+// dragSelect,
+{
     dispatch: (action: Action) => void;
     hover: Hover | null;
     setHover: (hover: Hover | null) => void;
+    width: number;
+    height: number;
     state: State;
     canvasRef: React.MutableRefObject<SVGSVGElement | null>;
     setPendingMirror: (mirror: PendingMirror | null) => void;
-    setDragSelect: (fn: (select: boolean) => boolean) => void;
-    dragSelect: boolean;
+    // setDragSelect: (fn: (select: boolean) => boolean) => void;
+    // dragSelect: boolean;
 }) {
-    const [dragging, callbacks] = useDropStateTarget((state) =>
-        dispatch({ type: 'reset', state }),
-    );
+    // const [dragging, callbacks] = useDropStateTarget(
+    //     (state) => dispatch({ type: 'reset', state }),
+    //     () => {},
+    // );
 
     return (
         <div
@@ -546,35 +634,54 @@ export function Sidebar({
                 display: 'flex',
                 flexDirection: 'column',
                 flex: 1,
-                background: dragging ? 'rgba(255,255,255,0.1)' : '',
+                // background: dragging ? 'rgba(255,255,255,0.1)' : '',
                 transition: '.3s ease background',
             }}
-            {...callbacks}
+            // {...callbacks}
         >
             <div>
-                <ReallyButton
-                    label="Clear all"
-                    css={{ margin: 8 }}
-                    onClick={() => {
-                        dispatch({ type: 'reset', state: initialState });
-                    }}
-                />
-                <button
-                    css={{ margin: 8 }}
-                    onClick={() => {
-                        dispatch({ type: 'undo' });
+                <div
+                    css={{
+                        height: 52,
+                        display: 'flex',
+                        alignItems: 'center',
                     }}
                 >
-                    Undo
-                </button>
-                <button
-                    css={{ margin: 8 }}
-                    onClick={() => {
-                        dispatch({ type: 'redo' });
-                    }}
-                >
-                    Redo
-                </button>
+                    <ReallyButton
+                        label="Clear all"
+                        css={{ margin: 8 }}
+                        onClick={() => {
+                            dispatch({ type: 'reset', state: initialState });
+                        }}
+                    />
+                    Import project:{' '}
+                    <input
+                        type="file"
+                        placeholder="Select a file to import"
+                        onChange={(evt) => {
+                            if (evt.target.files?.length !== 1) {
+                                return;
+                            }
+                            getStateFromFile(
+                                evt.target.files[0],
+                                (state) => {
+                                    if (state) {
+                                        dispatch({ type: 'reset', state });
+                                    } else {
+                                        alert(
+                                            "Unable to parse state from image. Maybe this wasn't saved with project metadata?",
+                                        );
+                                    }
+                                },
+                                null,
+                                (err) => {
+                                    console.log(err);
+                                    alert(err);
+                                },
+                            );
+                        }}
+                    />
+                </div>
                 <ViewForm
                     view={state.view}
                     palette={state.palettes[state.activePalette]}
@@ -586,40 +693,7 @@ export function Sidebar({
                     }}
                 />
             </div>
-            <div>
-                {guideTypes.map((kind) => (
-                    <button
-                        onClick={() => {
-                            dispatch({
-                                type: 'pending:type',
-                                kind,
-                            });
-                        }}
-                        key={kind}
-                        css={{
-                            margin: 8,
-                            padding: 8,
-                            fontSize: '120%',
-                        }}
-                    >
-                        {kind}
-                        {toTypeRev[kind] ? ` (${toTypeRev[kind]})` : ''}
-                    </button>
-                ))}
-                {state.pending ? (
-                    <button
-                        onClick={() =>
-                            dispatch({ type: 'pending:type', kind: null })
-                        }
-                        css={{
-                            margin: 8,
-                            padding: 8,
-                            fontSize: '120%',
-                        }}
-                    >
-                        Cancel pending
-                    </button>
-                ) : null}
+            {/* <div>
                 <button
                     onClick={() => setDragSelect((current) => !current)}
                     css={{
@@ -630,7 +704,7 @@ export function Sidebar({
                 >
                     {dragSelect ? 'Cancel drag select' : '(D)rag select'}
                 </button>
-            </div>
+            </div> */}
             <div
                 style={{
                     height: 4,
@@ -642,6 +716,8 @@ export function Sidebar({
                 current={state.tab}
                 props={{
                     state,
+                    width,
+                    height,
                     dispatch,
                     canvasRef,
                     hover,

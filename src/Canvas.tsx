@@ -5,47 +5,51 @@ import Prando from 'prando';
 import React from 'react';
 import { RoughGenerator } from 'roughjs/bin/generator';
 import { PendingMirror, useCurrent } from './App';
-import { ensureClockwise } from './CanvasRender';
-import { clipPath } from './clipPath';
-import {
-    findSelection,
-    pathToPrimitives,
-    segmentToPrimitive,
-} from './findSelection';
+import { calcAllIntersections } from './calcAllIntersections';
+import { calculateGuideElements } from './calculateGuideElements';
+import { DrawPathState } from './DrawPath';
+import { findSelection, pathToPrimitives } from './findSelection';
 // import { DrawPath } from './DrawPathOld';
-import { getMirrorTransforms } from './getMirrorTransforms';
-import { Guides } from './Guides';
-import { handleSelection } from './handleSelection';
-import { mergeFills, mergeStyleLines } from './MultiStyleForm';
-import { Overlay } from './Overlay';
+import { getMirrorTransforms, scale } from './getMirrorTransforms';
 import {
-    pathsAreIdentical,
-    pathToReversedSegmentKeys,
-    pathToSegmentKeys,
-} from './pathsAreIdentical';
+    calculateBounds,
+    Guides,
+    PendingPathPair,
+    primitivesForElementsAndPaths,
+} from './Guides';
+import { handleSelection } from './handleSelection';
+import { IconButton, ScissorsCuttingIcon } from './icons/Icon';
+import { MirrorMenu } from './MirrorMenu';
+import {
+    applyStyleHover,
+    mergeFills,
+    mergeStyleLines,
+    MultiStyleForm,
+    StyleHover,
+} from './MultiStyleForm';
+import { Overlay } from './Overlay';
+import { OverlayMenu } from './OverlayMenu';
+import { PendingPathControls } from './PendingPathControls';
 import { paletteColor, RenderPath } from './RenderPath';
-import { simplifyPath } from './insetPath';
-import { RenderPrimitive } from './RenderPrimitive';
 import { RenderWebGL } from './RenderWebGL';
 import { showHover } from './showHover';
 import { Hover } from './Sidebar';
+import { sortedVisibleInsetPaths } from './sortedVisibleInsetPaths';
 import {
-    Action,
-    Coord,
-    Path,
-    PathGroup,
-    Segment,
-    State,
-    Style,
-    View,
-} from './types';
+    idsToStyle,
+    mirrorControls,
+    selectionSection,
+    GuideSection,
+} from './touchscreenControls';
+import { Action, Coord, Path, Segment, State, Style, View } from './types';
 import { useDragSelect, useMouseDrag } from './useMouseDrag';
 import { useScrollWheel } from './useScrollWheel';
 
 export type Props = {
     state: State;
-    dragSelect: boolean;
-    cancelDragSelect: () => void;
+    // dragSelect: boolean;
+    // cancelDragSelect: () => void;
+    isTouchScreen: boolean;
     width: number;
     height: number;
     innerRef: (node: SVGSVGElement | null) => unknown;
@@ -57,6 +61,8 @@ export type Props = {
     ) => void;
     dispatch: (action: Action) => unknown;
     hover: Hover | null;
+    setHover: (hover: Hover | null) => void;
+    ppi?: number;
 };
 
 export const worldToScreen = (
@@ -99,6 +105,10 @@ Kinds of state:
 
 */
 
+export const calcPPI = (ppi: number, pixels: number, zoom: number) => {
+    return `${(pixels / ppi).toFixed(3)}in`;
+};
+
 export const Canvas = ({
     state,
     width,
@@ -106,15 +116,19 @@ export const Canvas = ({
     dispatch,
     innerRef,
     hover,
+    setHover,
     pendingMirror,
     setPendingMirror,
-    dragSelect,
-    cancelDragSelect,
+    // dragSelect,
+    isTouchScreen,
+    // cancelDragSelect,
+    ppi,
 }: Props) => {
     const mirrorTransforms = React.useMemo(
         () => getMirrorTransforms(state.mirrors),
         [state.mirrors],
     );
+    const [tmpView, setTmpView] = React.useState(null as null | View);
 
     const [pos, setPos] = React.useState({ x: 0, y: 0 });
 
@@ -123,16 +137,18 @@ export const Canvas = ({
 
     usePalettePreload(state);
 
-    const [tmpView, setTmpView] = React.useState(null as null | View);
+    const [zooming, setZooming] = React.useState(false);
 
-    let view = tmpView ?? state.view;
-    view = { ...state.view, center: view.center, zoom: view.zoom };
+    let view = React.useMemo(() => {
+        let view = tmpView ?? state.view;
+        return { ...state.view, center: view.center, zoom: view.zoom };
+    }, [state.view, tmpView]);
 
     const { x, y } = viewPos(view, width, height);
 
     const ref = React.useRef(null as null | SVGSVGElement);
 
-    useScrollWheel(ref, setTmpView, currentState, width, height);
+    useScrollWheel(ref, setTmpView, setZooming, currentState, width, height);
 
     const generator = React.useMemo(() => new RoughGenerator(), []);
 
@@ -144,20 +160,28 @@ export const Canvas = ({
 
     const currentDrag = useCurrent({ pos, drag: dragSelectPos });
 
+    const [styleOpen, setStyleOpen] = React.useState(false);
+    React.useEffect(() => {
+        setStyleOpen(false);
+    }, [state.selection != null]);
+
     const finishDrag = React.useCallback((shiftKey: boolean) => {
-        cancelDragSelect();
+        setDragSelecting(false);
+        // cancelDragSelect();
         const { pos, drag } = currentDrag.current;
         if (!drag) {
             return;
         }
-        console.log(pos, drag);
         const rect = rectForCorners(pos, drag);
         const selected = findSelection(
             currentState.current.paths,
             currentState.current.pathGroups,
             rect,
         );
-        if (shiftKey && currentState.current.selection?.type === 'Path') {
+        if (
+            (shiftKey || multiRef.current) &&
+            currentState.current.selection?.type === 'Path'
+        ) {
             selected.push(
                 ...currentState.current.selection.ids.filter(
                     (id) => !selected.includes(id),
@@ -170,46 +194,111 @@ export const Canvas = ({
         });
     }, []);
 
-    const mouseHandlers = dragSelect
-        ? useDragSelect(
-              dragSelectPos,
-              width,
-              height,
-              view,
-              setPos,
-              setDragSelect,
-              finishDrag,
-          )
-        : useMouseDrag(
-              dragPos,
-              setTmpView,
-              width,
-              height,
-              view,
-              setPos,
-              setDragPos,
-          );
+    const dragSelectHandlers = useDragSelect(
+        dragSelectPos,
+        width,
+        height,
+        view,
+        setPos,
+        setDragSelect,
+        finishDrag,
+    );
+    const mouseDragHandlers = useMouseDrag(
+        dragPos,
+        setTmpView,
+        width,
+        height,
+        view,
+        setPos,
+        setDragPos,
+    );
 
-    const clickPath = React.useCallback((evt, id) => {
-        evt.stopPropagation();
-        evt.preventDefault();
+    const [isDragSelecting, setDragSelecting] = React.useState(false);
+
+    const mouseHandlers = isDragSelecting
+        ? dragSelectHandlers
+        : mouseDragHandlers;
+
+    const [multiSelect, setMultiSelect] = React.useState(false);
+    const multiRef = useCurrent(multiSelect);
+
+    React.useEffect(() => {
+        if (!state.selection && multiRef.current) {
+            setMultiSelect(false);
+        }
+    }, [!!state.selection]);
+
+    const clickPath = React.useCallback((shiftKey, id) => {
         const path = currentState.current.paths[id];
-        handleSelection(path, currentState.current, dispatch, evt.shiftKey);
+        handleSelection(
+            path,
+            currentState.current,
+            dispatch,
+            shiftKey || multiRef.current,
+        );
     }, []);
 
     const clip = state.view.activeClip
         ? state.clips[state.view.activeClip]
         : undefined;
 
-    const pathsToShow = React.useMemo(
+    const [styleHover, setStyleHover] = React.useState(
+        null as null | StyleHover,
+    );
+
+    const selectedIds = React.useMemo(() => {
+        const selectedIds: { [key: string]: boolean } = {};
+        if (state.selection?.type === 'Path') {
+            state.selection.ids.forEach((id) => (selectedIds[id] = true));
+        } else if (state.selection?.type === 'PathGroup') {
+            Object.keys(state.paths).forEach((id) => {
+                if (state.selection!.ids.includes(state.paths[id].group!)) {
+                    selectedIds[id] = true;
+                }
+            });
+        }
+        return selectedIds;
+    }, [state.selection, state.paths]);
+
+    let pathsToShow = React.useMemo(
         () =>
-            sortedVisiblePaths(
+            sortedVisibleInsetPaths(
                 state.paths,
                 state.pathGroups,
                 clip,
                 state.view.hideDuplicatePaths,
+                state.view.laserCutMode
+                    ? state.palettes[state.activePalette]
+                    : undefined,
+                // styleHover ?? undefined,
+                undefined,
+                selectedIds,
             ),
-        [state.paths, state.pathGroups, clip, state.view.hideDuplicatePaths],
+        [
+            state.paths,
+            state.pathGroups,
+            clip,
+            state.view.hideDuplicatePaths,
+            state.view.laserCutMode,
+            // styleHover,
+            selectedIds,
+        ],
+    );
+    if (styleHover) {
+        pathsToShow = pathsToShow.map((path) => {
+            if (selectedIds[path.id]) {
+                return {
+                    ...path,
+                    style: applyStyleHover(styleHover, path.style),
+                };
+            }
+            return path;
+        });
+    }
+
+    const clipPrimitives = React.useMemo(
+        () => (clip ? pathToPrimitives(clip) : null),
+        [clip],
     );
 
     const dragged = dragSelectPos
@@ -225,220 +314,312 @@ export const Canvas = ({
             ? paletteColor(state.palettes[state.activePalette], view.background)
             : null;
 
-    const rand = new Prando('ok');
+    const rand = React.useRef(new Prando('ok'));
+    rand.current.reset();
+
+    // Ok, so what I want is:
+    // while dragging, freeze the bounds.
+    const bounds = React.useMemo(
+        () => calculateBounds(width, height, view),
+        [width, height, dragPos ? null : view],
+    );
+
+    const pendingPath = React.useState(null as null | DrawPathState);
+
+    const guidePrimitives = React.useMemo(() => {
+        return primitivesForElementsAndPaths(
+            calculateGuideElements(state.guides, mirrorTransforms),
+            Object.keys(state.paths)
+                .filter(
+                    (k) =>
+                        !state.paths[k].hidden &&
+                        (!state.paths[k].group ||
+                            !state.pathGroups[state.paths[k].group!].hide),
+                )
+                .map((k) => state.paths[k]),
+        );
+    }, [state.guides, state.paths, state.pathGroups, mirrorTransforms]);
+
+    const allIntersections = React.useMemo(() => {
+        const { coords: fromGuides, seenCoords } = calcAllIntersections(
+            guidePrimitives.map((p) => p.prim),
+        );
+        return fromGuides;
+    }, [guidePrimitives, state.paths, state.pathGroups]);
+
+    const inner = (
+        <svg
+            width={ppi != null ? calcPPI(ppi, width, view.zoom) : width}
+            height={ppi != null ? calcPPI(ppi, height, view.zoom) : height}
+            viewBox={`0 0 ${width} ${height}`}
+            xmlns="http://www.w3.org/2000/svg"
+            ref={(node) => {
+                innerRef(node);
+                ref.current = node;
+            }}
+            css={{
+                outline: '1px solid magenta',
+            }}
+            {...mouseHandlers}
+        >
+            <defs>
+                {state.palettes[state.activePalette].map((color, i) =>
+                    color.startsWith('http') && imageCache[color] ? (
+                        <pattern
+                            key={`palette-${i}`}
+                            id={`palette-${i}`}
+                            x={-x}
+                            y={-y}
+                            width={width}
+                            height={height}
+                            patternUnits="userSpaceOnUse"
+                            preserveAspectRatio="xMidYMid slice"
+                        >
+                            <image
+                                width={width}
+                                height={height}
+                                preserveAspectRatio="xMidYMid slice"
+                                href={imageCache[color] as string}
+                            />
+                        </pattern>
+                    ) : null,
+                )}
+            </defs>
+            <g transform={`translate(${x} ${y})`}>
+                {backgroundColor != null &&
+                backgroundColor !== 'transparent' ? (
+                    <rect
+                        width={width}
+                        height={height}
+                        x={-x}
+                        y={-y}
+                        stroke="none"
+                        fill={backgroundColor}
+                    />
+                ) : null}
+                {Object.keys(state.overlays)
+                    .filter(
+                        (id) =>
+                            maybeReverse(
+                                !state.overlays[id].hide,
+                                hover?.type === 'element' &&
+                                    hover?.kind === 'Overlay' &&
+                                    hover?.id === id,
+                            ) && !state.overlays[id].over,
+                    )
+                    .map((id) => {
+                        return (
+                            <Overlay
+                                state={state}
+                                id={id}
+                                view={view}
+                                key={id}
+                                width={width}
+                                height={height}
+                                onUpdate={(overlay) =>
+                                    dispatch({
+                                        type: 'overlay:update',
+                                        overlay,
+                                    })
+                                }
+                            />
+                        );
+                    })}
+
+                {pathsToShow.map((path, i) => (
+                    <RenderPath
+                        key={path.id + '-' + i}
+                        generator={generator}
+                        origPath={state.paths[path.id]}
+                        groups={state.pathGroups}
+                        rand={rand.current}
+                        clip={clipPrimitives}
+                        path={path}
+                        zoom={view.zoom}
+                        sketchiness={view.sketchiness}
+                        palette={state.palettes[state.activePalette]}
+                        styleHover={selectedIds[path.id] ? styleHover : null}
+                        onClick={
+                            // TODO: Disable path clickies if we're doing guides, folks.
+                            pendingPath[0]
+                                ? undefined
+                                : // pathOrigin
+                                  //     ? undefined :
+                                  clickPath
+                        }
+                    />
+                ))}
+
+                {Object.keys(state.overlays)
+                    .filter(
+                        (id) =>
+                            maybeReverse(
+                                !state.overlays[id].hide,
+                                hover?.type === 'element' &&
+                                    hover?.kind === 'Overlay' &&
+                                    hover?.id === id,
+                            ) && state.overlays[id].over,
+                    )
+                    .map((id) => {
+                        return (
+                            <Overlay
+                                state={state}
+                                id={id}
+                                view={view}
+                                key={id}
+                                width={width}
+                                height={height}
+                                onUpdate={(overlay) =>
+                                    dispatch({
+                                        type: 'overlay:update',
+                                        overlay,
+                                    })
+                                }
+                            />
+                        );
+                    })}
+
+                {maybeReverse(view.guides, hover?.type === 'guides') ? (
+                    <Guides
+                        state={state}
+                        bounds={bounds}
+                        isTouchScreen={isTouchScreen}
+                        dispatch={dispatch}
+                        width={width}
+                        height={height}
+                        allIntersections={allIntersections}
+                        guidePrimitives={guidePrimitives}
+                        zooming={zooming}
+                        view={view}
+                        disableGuides={!!pendingMirror}
+                        pos={isTouchScreen ? scale(view.center, -1) : pos}
+                        pendingPath={pendingPath}
+                        mirrorTransforms={mirrorTransforms}
+                        pendingMirror={pendingMirror}
+                        setPendingMirror={setPendingMirror}
+                        hover={hover}
+                    />
+                ) : null}
+                {state.selection && !styleHover
+                    ? state.selection.ids.map((id) =>
+                          showHover(
+                              id,
+                              {
+                                  kind: state.selection!.type,
+                                  id,
+                                  type: 'element',
+                              },
+                              state,
+                              mirrorTransforms,
+                              view.zoom,
+                              bounds,
+                              true,
+                          ),
+                      )
+                    : null}
+                {dragged
+                    ? dragged.map((id) =>
+                          showHover(
+                              id,
+                              { kind: 'Path', id, type: 'element' },
+                              state,
+                              mirrorTransforms,
+                              view.zoom,
+                              bounds,
+                              false,
+                          ),
+                      )
+                    : null}
+                {hover ? (
+                    <>
+                        {showHover(
+                            `hover`,
+                            hover,
+                            state,
+                            mirrorTransforms,
+                            view.zoom,
+                            bounds,
+                            false,
+                        )}
+                    </>
+                ) : null}
+                {dragSelectPos ? (
+                    <rect
+                        x={Math.min(dragSelectPos.x, pos.x) * view.zoom}
+                        y={Math.min(dragSelectPos.y, pos.y) * view.zoom}
+                        width={Math.abs(dragSelectPos.x - pos.x) * view.zoom}
+                        height={Math.abs(dragSelectPos.y - pos.y) * view.zoom}
+                        fill="rgba(255,255,255,0.2)"
+                        stroke="red"
+                        strokeWidth="2"
+                    />
+                ) : null}
+            </g>
+        </svg>
+    );
+
+    const mirrorHover = React.useCallback(
+        (k) =>
+            k
+                ? setHover({ kind: 'Mirror', id: k, type: 'element' })
+                : setHover(null),
+        [],
+    );
+    const mirrorAdd = React.useCallback(
+        () =>
+            setPendingMirror({
+                parent: state.activeMirror,
+                rotations: 3,
+                reflect: true,
+                center: null,
+            }),
+        [state.activeMirror],
+    );
+
+    // This is for rendering only, not interacting.
+    if (ppi != null) {
+        return inner;
+    }
+
+    const styleIds = idsToStyle(state);
 
     return (
         <div
             css={{
                 position: 'relative',
             }}
-            // style={{ width, height }}
+            style={{ width, height }}
+            onTouchEnd={(evt) => {
+                if (
+                    state.selection &&
+                    !evt.shiftKey &&
+                    evt.target instanceof SVGElement
+                ) {
+                    evt.preventDefault();
+                }
+            }}
             onClick={(evt) => {
-                // if (evt.target === evt.currentTarget) {
-                if (state.selection) {
+                if (
+                    state.selection &&
+                    !evt.shiftKey &&
+                    evt.target instanceof SVGElement
+                ) {
                     dispatch({
                         type: 'selection:set',
                         selection: null,
                     });
                 }
-                // }
             }}
         >
-            <svg
-                width={width}
-                height={height}
-                xmlns="http://www.w3.org/2000/svg"
-                ref={(node) => {
-                    innerRef(node);
-                    ref.current = node;
-                }}
-                css={{
-                    outline: '1px solid magenta',
-                }}
-                {...mouseHandlers}
-            >
-                <defs>
-                    {state.palettes[state.activePalette].map((color, i) =>
-                        color.startsWith('http') && imageCache[color] ? (
-                            <pattern
-                                key={`palette-${i}`}
-                                id={`palette-${i}`}
-                                x={-x}
-                                y={-y}
-                                width={width}
-                                height={height}
-                                // viewBox="0 0 1000 1000"
-                                patternUnits="userSpaceOnUse"
-                                preserveAspectRatio="xMidYMid slice"
-                            >
-                                <image
-                                    width={width}
-                                    height={height}
-                                    preserveAspectRatio="xMidYMid slice"
-                                    href={imageCache[color] as string}
-                                />
-                            </pattern>
-                        ) : null,
-                    )}
-                </defs>
-                <g transform={`translate(${x} ${y})`}>
-                    {backgroundColor != null &&
-                    backgroundColor !== 'transparent' ? (
-                        <rect
-                            width={width}
-                            height={height}
-                            x={-x}
-                            y={-y}
-                            stroke="none"
-                            fill={backgroundColor}
-                        />
-                    ) : null}
-                    {Object.keys(state.overlays)
-                        .filter(
-                            (id) =>
-                                !state.overlays[id].hide &&
-                                !state.overlays[id].over,
-                        )
-                        .map((id) => {
-                            return (
-                                <Overlay
-                                    state={state}
-                                    id={id}
-                                    view={view}
-                                    key={id}
-                                    width={width}
-                                    height={height}
-                                    onUpdate={(overlay) =>
-                                        dispatch({
-                                            type: 'overlay:update',
-                                            overlay,
-                                        })
-                                    }
-                                />
-                            );
-                        })}
-
-                    {pathsToShow.map((path) => (
-                        <RenderPath
-                            key={path.id}
-                            generator={generator}
-                            origPath={state.paths[path.id]}
-                            groups={state.pathGroups}
-                            rand={rand}
-                            path={path}
-                            view={view}
-                            palette={state.palettes[state.activePalette]}
-                            onClick={
-                                // TODO: Disable path clickies if we're doing guides, folks.
-                                // pathOrigin
-                                //     ? undefined :
-                                clickPath
-                            }
-                        />
-                    ))}
-
-                    {Object.keys(state.overlays)
-                        .filter(
-                            (id) =>
-                                !state.overlays[id].hide &&
-                                state.overlays[id].over,
-                        )
-                        .map((id) => {
-                            return (
-                                <Overlay
-                                    state={state}
-                                    id={id}
-                                    view={view}
-                                    key={id}
-                                    width={width}
-                                    height={height}
-                                    onUpdate={(overlay) =>
-                                        dispatch({
-                                            type: 'overlay:update',
-                                            overlay,
-                                        })
-                                    }
-                                />
-                            );
-                        })}
-
-                    {view.guides ? (
-                        <Guides
-                            state={state}
-                            dispatch={dispatch}
-                            width={width}
-                            height={height}
-                            view={view}
-                            pos={pos}
-                            mirrorTransforms={mirrorTransforms}
-                            pendingMirror={pendingMirror}
-                            setPendingMirror={setPendingMirror}
-                            hover={hover}
-                        />
-                    ) : null}
-                    {state.selection
-                        ? state.selection.ids.map((id) =>
-                              showHover(
-                                  id,
-                                  { kind: state.selection!.type, id },
-                                  state,
-                                  mirrorTransforms,
-                                  width,
-                                  height,
-                                  view.zoom,
-                                  true,
-                              ),
-                          )
-                        : null}
-                    {dragged
-                        ? dragged.map((id) =>
-                              showHover(
-                                  id,
-                                  { kind: 'Path', id },
-                                  state,
-                                  mirrorTransforms,
-                                  width,
-                                  height,
-                                  view.zoom,
-                                  false,
-                              ),
-                          )
-                        : null}
-                    {hover ? (
-                        <>
-                            {showHover(
-                                `hover`,
-                                hover,
-                                state,
-                                mirrorTransforms,
-                                width,
-                                height,
-                                view.zoom,
-                                false,
-                            )}
-                        </>
-                    ) : null}
-                    {dragSelectPos ? (
-                        <rect
-                            x={Math.min(dragSelectPos.x, pos.x) * view.zoom}
-                            y={Math.min(dragSelectPos.y, pos.y) * view.zoom}
-                            width={
-                                Math.abs(dragSelectPos.x - pos.x) * view.zoom
-                            }
-                            height={
-                                Math.abs(dragSelectPos.y - pos.y) * view.zoom
-                            }
-                            fill="rgba(255,255,255,0.2)"
-                            stroke="red"
-                            strokeWidth="2"
-                        />
-                    ) : null}
-                </g>
-            </svg>
-            {/* <div>
-                Guides: {guideElements.length}, Points:{' '}
-                {allIntersections.length}
-            </div> */}
+            {inner}
+            {view.texture ? (
+                <RenderWebGL
+                    state={state}
+                    texture={view.texture}
+                    width={width}
+                    height={height}
+                />
+            ) : null}
             {tmpView ? (
                 <div
                     css={{
@@ -446,7 +627,7 @@ export const Canvas = ({
                         padding: 20,
                         backgroundColor: 'rgba(255,255,255,0.3)',
                         color: 'black',
-                        top: 0,
+                        top: 58,
                         left: 0,
                     }}
                     onClick={() => setTmpView(null)}
@@ -455,12 +636,123 @@ export const Canvas = ({
                     {` ${pos.x.toFixed(4)},${pos.y.toFixed(4)}`}
                 </div>
             ) : null}
-            {view.texture ? (
-                <RenderWebGL state={state} texture={view.texture} />
-            ) : null}
+            <MirrorMenu
+                onHover={mirrorHover}
+                onAdd={mirrorAdd}
+                state={state}
+                dispatch={dispatch}
+                transforms={mirrorTransforms}
+            />
+            <OverlayMenu
+                state={state}
+                dispatch={dispatch}
+                setHover={setHover}
+            />
+            <ClipMenu
+                state={state}
+                pendingPath={pendingPath}
+                dispatch={dispatch}
+                // setHover={setHover}
+            />
+
+            <div
+                css={{
+                    position: 'absolute',
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    overflow: 'auto',
+                }}
+                onClick={(evt) => evt.stopPropagation()}
+            >
+                {styleIds.length && styleOpen ? (
+                    <div
+                        css={{
+                            backgroundColor: 'rgba(0,0,0,0.8)',
+                        }}
+                    >
+                        <MultiStyleForm
+                            palette={state.palettes[state.activePalette]}
+                            styles={styleIds.map((k) => state.paths[k].style)}
+                            onHover={(hover) => {
+                                setStyleHover(hover);
+                            }}
+                            onChange={(styles) => {
+                                const changed: {
+                                    [key: string]: Path;
+                                } = {};
+                                styles.forEach((style, i) => {
+                                    if (style != null) {
+                                        const id = styleIds[i];
+                                        changed[id] = {
+                                            ...state.paths[id],
+                                            style,
+                                        };
+                                    }
+                                });
+                                dispatch({
+                                    type: 'path:update:many',
+                                    changed,
+                                });
+                            }}
+                        />
+                    </div>
+                ) : null}
+                {pendingMirror ? (
+                    mirrorControls(setPendingMirror, pendingMirror)
+                ) : state.selection ? (
+                    selectionSection(
+                        dispatch,
+                        isDragSelecting,
+                        setDragSelecting,
+                        styleIds,
+                        setStyleOpen,
+                        styleOpen,
+                        state,
+                        setMultiSelect,
+                        multiSelect,
+                    )
+                ) : (
+                    <GuideSection
+                        state={state}
+                        dispatch={dispatch}
+                        setDragSelect={setDragSelecting}
+                        dragSelect={isDragSelecting}
+                        setHover={setHover}
+                    />
+                )}
+                {pendingPath[0] ? (
+                    <PendingPathControls
+                        pendingPath={pendingPath}
+                        allIntersections={allIntersections}
+                        guidePrimitives={guidePrimitives}
+                        onComplete={(
+                            isClip: boolean,
+                            origin: Coord,
+                            segments: Array<Segment>,
+                        ) => {
+                            if (isClip) {
+                                dispatch({
+                                    type: 'clip:add',
+                                    clip: segments,
+                                });
+                            } else {
+                                dispatch({
+                                    type: 'path:create',
+                                    segments,
+                                    origin,
+                                });
+                            }
+                        }}
+                    />
+                ) : null}
+            </div>
         </div>
     );
 };
+
+export const maybeReverse = (v: boolean, reverse: boolean) =>
+    reverse ? !v : v;
 
 export const combineStyles = (styles: Array<Style>): Style => {
     const result: Style = {
@@ -567,82 +859,31 @@ export function usePalettePreload(state: State) {
     }, [state.palettes[state.activePalette]]);
 }
 
-export function sortedVisiblePaths(
-    paths: { [key: string]: Path },
-    pathGroups: { [key: string]: PathGroup },
-    clip?: Array<Segment>,
-    hideDuplicatePaths?: boolean,
-): Array<Path> {
-    let visible = Object.keys(paths)
-        .filter(
-            (k) =>
-                !paths[k].hidden &&
-                (!paths[k].group || !pathGroups[paths[k].group!].hide),
-        )
-        .sort((a, b) => {
-            const oa = paths[a].group
-                ? pathGroups[paths[a].group!].ordering
-                : paths[a].ordering;
-            const ob = paths[b].group
-                ? pathGroups[paths[b].group!].ordering
-                : paths[b].ordering;
-            if (oa === ob) {
-                return 0;
-            }
-            if (oa == null) {
-                return 1;
-            }
-            if (ob == null) {
-                return -1;
-            }
-            return ob - oa;
-        });
-
-    if (hideDuplicatePaths) {
-        const usedPaths: Array<Array<string>> = [];
-        visible = visible.filter((k) => {
-            const path = paths[k];
-            const segments = simplifyPath(ensureClockwise(path.segments));
-            const forward = pathToSegmentKeys(path.origin, segments);
-            const backward = pathToReversedSegmentKeys(path.origin, segments);
-            if (
-                usedPaths.some(
-                    (path) =>
-                        pathsAreIdentical(path, backward) ||
-                        pathsAreIdentical(path, forward),
-                )
-            ) {
-                return false;
-            }
-            usedPaths.push(forward);
-            return true;
-        });
-    }
-
-    if (!clip) {
-        return visible.map((k) => paths[k]);
-    }
-
-    const clipPrims = pathToPrimitives(clip);
-    console.log(clipPrims);
-
-    // hmm how to communicate which segments are ... clipped?
-    // might have to add to the segment type? don't love it.
-    // or something to path?
-    // also don't love it.
-    return visible
-        .map((k) => paths[k])
-        .map((path) => {
-            // so we're going along ... through the clip ...
-            // and we want to know when one of the clip edges
-            // intersects with one of the path edges.
-            // is that happen often?
-            return clipPath(
-                path,
-                clip,
-                clipPrims,
-                path.group ? pathGroups[path.group].clipMode : undefined,
-            );
-        })
-        .filter(Boolean) as Array<Path>;
-}
+export const ClipMenu = ({
+    state,
+    dispatch,
+    pendingPath: [pendingPath, setPendingPath],
+}: {
+    state: State;
+    dispatch: (action: Action) => void;
+    pendingPath: PendingPathPair;
+}) => {
+    return (
+        <div
+            css={{
+                position: 'absolute',
+                left: 58 * 2,
+                top: 0,
+            }}
+        >
+            <IconButton
+                selected={pendingPath?.isClip}
+                onClick={() =>
+                    setPendingPath((p) => (p ? { ...p, isClip: !p.isClip } : p))
+                }
+            >
+                <ScissorsCuttingIcon />
+            </IconButton>
+        </div>
+    );
+};

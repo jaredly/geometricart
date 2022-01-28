@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<meta charset="utf8" />
+<title>Tests for path functions</title>
+<link rel="shortcut icon" href="favicon.png" />
+<link rel="preconnect" href="https://fonts.gstatic.com" />
+<link
+    href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@200;300;400&display=swap"
+    rel="stylesheet"
+/>
+<link
+    href="https://fonts.googleapis.com/icon?family=Material+Icons"
+    rel="stylesheet"
+/>
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, user-scalable=no"
+/>
+<style>
+    html,
+    body {
+        margin: 0;
+        padding: 0;
+        background-color: #1e1e1e;
+        color: white;
+        font-family: system-ui;
+        overscroll-behavior: none;
+    }
+    * {
+        text-decoration-skip-ink: none;
+        box-sizing: border-box;
+    }
+    div {
+        min-height: 0;
+        min-width: 0;
+        flex-shrink: 0;
+    }
+</style>
+<body>
+    <div id="root"></div>
+    <script>
+        window.cwd = () => '/';
+    </script>
+    <script src="run.js"></script>
+</body>

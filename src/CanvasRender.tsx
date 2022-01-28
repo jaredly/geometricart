@@ -6,9 +6,9 @@ import {
     calculateGuideElements,
     calculateInactiveGuideElements,
 } from './calculateGuideElements';
-import { imageCache, sortedVisiblePaths } from './Canvas';
-import { segmentKey } from './DrawPath';
-import { angleBetween } from './findNextSegments';
+import { imageCache } from './Canvas';
+import { sortedVisibleInsetPaths } from './sortedVisibleInsetPaths';
+import { segmentKey } from './segmentKey';
 import { pathToPrimitives } from './findSelection';
 import {
     angleTo,
@@ -17,16 +17,12 @@ import {
     push,
 } from './getMirrorTransforms';
 import { primitivesForElementsAndPaths } from './Guides';
-import { epsilon, Primitive } from './intersect';
-import { reverseSegment } from './pathsAreIdentical';
-import {
-    calcPathD,
-    combinedPathStyles,
-    idSeed,
-    lightenedColor,
-} from './RenderPath';
+import { Primitive } from './intersect';
+import { calcPathD, idSeed, lightenedColor } from './RenderPath';
 import { insetPath } from './insetPath';
-import { Coord, Overlay, Path, Segment, State } from './types';
+import { pruneInsetPath } from './pruneInsetPath';
+import { ArcSegment, Overlay, Path, State } from './types';
+import { pathToPoints, isClockwise, reversePath } from './pathToPoints';
 
 export const makeImage = (href: string): Promise<HTMLImageElement> => {
     return new Promise((res, rej) => {
@@ -42,12 +38,11 @@ export const makeImage = (href: string): Promise<HTMLImageElement> => {
 export const canvasRender = async (
     ctx: CanvasRenderingContext2D,
     state: State,
+    sourceWidth: number,
+    sourceHeight: number,
+    extraZoom: number,
 ) => {
     const palette = state.palettes[state.activePalette];
-
-    // um yeah we're just assuming 1000 w/h
-    const sourceWidth = 1000;
-    const sourceHeight = 1000;
 
     const images = await Promise.all(
         palette.map((c) =>
@@ -64,7 +59,7 @@ export const canvasRender = async (
 
     const rand = new Prando('ok');
 
-    const zoom = state.view.zoom;
+    const zoom = state.view.zoom * extraZoom;
 
     const xoff = sourceWidth / 2 + state.view.center.x * zoom;
     const yoff = sourceHeight / 2 + state.view.center.y * zoom;
@@ -98,154 +93,178 @@ export const canvasRender = async (
         ? state.clips[state.view.activeClip]
         : undefined;
 
-    sortedVisiblePaths(state.paths, state.pathGroups, clip).forEach((path) => {
-        const style = combinedPathStyles(path, state.pathGroups);
+    sortedVisibleInsetPaths(state.paths, state.pathGroups, clip).forEach(
+        (path) => {
+            const style = path.style;
 
-        style.fills.forEach((fill, i) => {
-            if (!fill || fill.color == null) {
-                return;
-            }
-
-            let myPath = path;
-            if (fill.inset) {
-                const inset = insetPath(path, fill.inset / 100);
-                if (!inset) {
+            style.fills.forEach((fill, i) => {
+                if (!fill || fill.color == null) {
                     return;
                 }
-                myPath = inset;
-            }
 
-            let lighten = fill.lighten;
-            if (fill.colorVariation) {
-                const off = rand.next(-1.0, 1.0) * fill.colorVariation;
-                lighten = lighten != null ? lighten + off : off;
-            }
+                let pathInfos = [path];
 
-            const color = lightenedColor(palette, fill.color, lighten)!;
+                // let myPath = path;
+                if (fill.inset) {
+                    throw new Error('inset');
+                }
+                //     const inset = insetPath(path, fill.inset / 100);
+                //     if (!inset) {
+                //         return;
+                //     }
 
-            if (fill.opacity != null) {
-                ctx.globalAlpha = fill.opacity;
-            }
+                //     pathInfos = pruneInsetPath(inset.segments).map((segments) => ({
+                //         ...path,
+                //         segments,
+                //         origin: segments[segments.length - 1].to,
+                //     }));
 
-            if (rough) {
-                if (!color.startsWith('http')) {
+                //     // myPath = inset;
+                // }
+
+                let lighten = fill.lighten;
+                if (fill.colorVariation) {
+                    const off = rand.next(-1.0, 1.0) * fill.colorVariation;
+                    lighten = lighten != null ? lighten + off : off;
+                }
+
+                const color = lightenedColor(palette, fill.color, lighten)!;
+
+                if (fill.opacity != null) {
+                    ctx.globalAlpha = fill.opacity;
+                }
+
+                pathInfos.forEach((myPath) => {
+                    if (rough) {
+                        if (!color.startsWith('http')) {
+                            rough.path(calcPathD(myPath, zoom), {
+                                fill: color,
+                                fillStyle: 'solid',
+                                stroke: 'none',
+                                seed: idSeed(path.id),
+                                roughness: state.view.sketchiness!,
+                            });
+                            ctx.globalAlpha = 1;
+                            return;
+                        } else {
+                            const img = images[fill.color as number];
+                            if (!img) {
+                                return;
+                            }
+                            const data = rough.generator.path(
+                                calcPathD(myPath, zoom),
+                                {
+                                    fill: color,
+                                    fillStyle: 'solid',
+                                    stroke: 'none',
+                                    seed: idSeed(path.id),
+                                    roughness: state.view.sketchiness!,
+                                },
+                            );
+                            rough.generator.toPaths(data).forEach((info) => {
+                                const p2d = new Path2D(info.d);
+                                ctx.save();
+                                ctx.clip(p2d);
+                                drawCenteredImage(
+                                    img,
+                                    sourceWidth,
+                                    sourceHeight,
+                                    ctx,
+                                );
+                                ctx.restore();
+                            });
+                            return;
+                        }
+                    }
+
+                    ctx.beginPath();
+                    tracePath(ctx, myPath, zoom);
+
+                    if (color.startsWith('http')) {
+                        const img = images[fill.color as number];
+                        if (!img) {
+                            ctx.closePath();
+                            return;
+                        }
+                        ctx.save();
+                        ctx.clip();
+
+                        drawCenteredImage(img, sourceWidth, sourceHeight, ctx);
+                        ctx.restore();
+                    } else {
+                        ctx.fillStyle = color;
+                        ctx.fill();
+                    }
+                });
+
+                ctx.globalAlpha = 1;
+            });
+
+            style.lines.forEach((line, i) => {
+                if (!line || line.color == null || !line.width) {
+                    return;
+                }
+
+                // TODO line opacity probably
+                // if (line.opacity != null) {
+                //     ctx.globalAlpha = line.opacity;
+                // }
+
+                ctx.lineWidth = (line.width / 100) * zoom;
+
+                let myPath = path;
+                // if (line.inset) {
+                //     const inset = insetPath(path, line.inset / 100);
+                //     if (!inset) {
+                //         return;
+                //     }
+                //     myPath = inset;
+                // }
+
+                const color = lightenedColor(palette, line.color, undefined)!;
+
+                if (rough) {
                     rough.path(calcPathD(myPath, zoom), {
-                        fill: color,
+                        fill: 'none',
                         fillStyle: 'solid',
-                        stroke: 'none',
+                        stroke: color,
+                        strokeWidth: (line.width / 100) * zoom,
                         seed: idSeed(path.id),
                         roughness: state.view.sketchiness!,
                     });
-                    ctx.globalAlpha = 1;
                     return;
-                } else {
-                    const img = images[fill.color as number];
+                }
+
+                if (color.startsWith('http')) {
+                    const img = images[line.color as number];
                     if (!img) {
                         return;
                     }
-                    const data = rough.generator.path(calcPathD(myPath, zoom), {
-                        fill: color,
-                        fillStyle: 'solid',
-                        stroke: 'none',
-                        seed: idSeed(path.id),
-                        roughness: state.view.sketchiness!,
-                    });
-                    rough.generator.toPaths(data).forEach((info) => {
-                        const p2d = new Path2D(info.d);
-                        ctx.save();
-                        ctx.clip(p2d);
-                        drawCenteredImage(img, sourceWidth, sourceHeight, ctx);
-                        ctx.restore();
-                    });
-                    return;
+                    ctx.save();
+                    ctx.beginPath();
+                    tracePathLine(ctx, myPath, zoom, line.width / 100);
+                    ctx.clip();
+                    drawCenteredImage(img, sourceWidth, sourceHeight, ctx);
+                    // ctx.drawImage(
+                    //     images[line.color as number]!,
+                    //     -500,
+                    //     -500,
+                    //     ctx.canvas.width,
+                    //     ctx.canvas.height,
+                    // );
+                    ctx.restore();
+
+                    // debugPath(myPath, ctx, zoom);
+                } else {
+                    ctx.beginPath();
+                    tracePath(ctx, myPath, zoom);
+                    ctx.strokeStyle = color;
+                    ctx.stroke();
                 }
-            }
-
-            ctx.beginPath();
-            tracePath(ctx, myPath, zoom);
-
-            if (color.startsWith('http')) {
-                const img = images[fill.color as number];
-                if (!img) {
-                    ctx.closePath();
-                    return;
-                }
-                ctx.save();
-                ctx.clip();
-
-                drawCenteredImage(img, sourceWidth, sourceHeight, ctx);
-                ctx.restore();
-            } else {
-                ctx.fillStyle = color;
-                ctx.fill();
-            }
-            ctx.globalAlpha = 1;
-        });
-
-        style.lines.forEach((line, i) => {
-            if (!line || line.color == null || !line.width) {
-                return;
-            }
-
-            // TODO line opacity probably
-            // if (line.opacity != null) {
-            //     ctx.globalAlpha = line.opacity;
-            // }
-
-            ctx.lineWidth = (line.width / 100) * zoom;
-
-            let myPath = path;
-            if (line.inset) {
-                const inset = insetPath(path, line.inset / 100);
-                if (!inset) {
-                    return;
-                }
-                myPath = inset;
-            }
-
-            const color = lightenedColor(palette, line.color, undefined)!;
-
-            if (rough) {
-                rough.path(calcPathD(myPath, zoom), {
-                    fill: 'none',
-                    fillStyle: 'solid',
-                    stroke: color,
-                    strokeWidth: (line.width / 100) * zoom,
-                    seed: idSeed(path.id),
-                    roughness: state.view.sketchiness!,
-                });
-                return;
-            }
-
-            if (color.startsWith('http')) {
-                const img = images[line.color as number];
-                if (!img) {
-                    return;
-                }
-                ctx.save();
-                ctx.beginPath();
-                tracePathLine(ctx, myPath, zoom, line.width / 100);
-                ctx.clip();
-                drawCenteredImage(img, sourceWidth, sourceHeight, ctx);
-                // ctx.drawImage(
-                //     images[line.color as number]!,
-                //     -500,
-                //     -500,
-                //     ctx.canvas.width,
-                //     ctx.canvas.height,
-                // );
-                ctx.restore();
-
-                // debugPath(myPath, ctx, zoom);
-            } else {
-                ctx.beginPath();
-                tracePath(ctx, myPath, zoom);
-                ctx.strokeStyle = color;
-                ctx.stroke();
-            }
-            ctx.globalAlpha = 1;
-        });
-    });
+                ctx.globalAlpha = 1;
+            });
+        },
+    );
 
     const oids = Object.keys(state.overlays).filter(
         (id) => !state.overlays[id].hide && state.overlays[id].over,
@@ -440,6 +459,23 @@ export function tracePath(
 ) {
     ctx.lineJoin = 'round';
     ctx.lineCap = 'round';
+    if (
+        path.segments.length === 1 &&
+        path.segments[0].type === 'Arc' &&
+        !path.open
+    ) {
+        const seg = path.segments[0] as ArcSegment;
+        const radius = dist(seg.center, seg.to);
+        ctx.arc(
+            seg.center.x * zoom,
+            seg.center.y * zoom,
+            radius * zoom,
+            0,
+            Math.PI * 2,
+            false,
+        );
+        return;
+    }
     ctx.moveTo(path.origin.x * zoom, path.origin.y * zoom);
     path.segments.forEach((seg, i) => {
         if (seg.type === 'Line') {
@@ -464,66 +500,8 @@ export function tracePath(
     ctx.closePath();
 }
 
-export const pathToPoints = (segments: Array<Segment>) => {
-    const points: Array<Coord> = [];
-    let prev = segments[segments.length - 1].to;
-    segments.forEach((seg) => {
-        if (seg.type === 'Arc') {
-            const t1 = angleTo(seg.center, prev);
-            const t2 = angleTo(seg.center, seg.to);
-            const bt = angleBetween(t1, t2, seg.clockwise);
-            const tm = t1 + (bt / 2) * (seg.clockwise ? 1 : -1); // (t1 + t2) / 2;
-            const d = dist(seg.center, seg.to);
-            const midp = push(seg.center, tm, d);
-            points.push(midp);
-        }
-        points.push(seg.to);
-
-        prev = seg.to;
-    });
-    return points;
-};
-
-export const totalAngle = (segments: Array<Segment>) => {
-    const points = pathToPoints(segments);
-    const angles = points.map((point, i) => {
-        const prev = i === 0 ? points[points.length - 1] : points[i - 1];
-        return angleTo(prev, point);
-    });
-    const betweens = angles.map((angle, i) => {
-        const prev = i === 0 ? angles[angles.length - 1] : angles[i - 1];
-        return angleBetween(prev, angle, true);
-    });
-    const relatives = betweens.map((between) =>
-        between > Math.PI ? between - Math.PI * 2 : between,
-    );
-    let total = relatives.reduce((a, b) => a + b);
-    return total;
-};
-
-export const isClockwise = (segments: Array<Segment>) => {
-    return totalAngle(segments) >= Math.PI - epsilon;
-};
-
-export const toDegrees = (x: number) => Math.floor((x / Math.PI) * 180);
-
-export const ensureClockwise = (segments: Array<Segment>) => {
-    if (isClockwise(segments)) {
-        return segments;
-    }
-    return reversePath(segments);
-};
-
-export const reversePath = (source: Array<Segment>): Array<Segment> => {
-    const segments: Array<Segment> = [];
-    for (let i = source.length - 1; i >= 0; i--) {
-        const seg = source[i];
-        const prev = i === 0 ? source[source.length - 1].to : source[i - 1].to;
-        segments.push(reverseSegment(prev, seg));
-    }
-    return segments;
-};
-
+// This is used for making a "clip" to the line of a path.
+// for when the stroke is supposed to be an image.
 export function tracePathLine(
     ctx: CanvasRenderingContext2D,
     path: Path,

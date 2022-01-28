@@ -5,6 +5,7 @@ import { screenToWorld } from './Canvas';
 export function useScrollWheel(
     ref: React.MutableRefObject<SVGSVGElement | null>,
     setTmpView: React.Dispatch<React.SetStateAction<View | null>>,
+    setZooming: (zooming: boolean) => void,
     currentState: React.MutableRefObject<State>,
     width: number,
     height: number,
@@ -13,12 +14,21 @@ export function useScrollWheel(
         if (!ref.current) {
             return console.warn('NO REF');
         }
+        let timer = null as null | NodeJS.Timeout;
         const fn = (evt: WheelEvent) => {
             const rect = ref.current!.getBoundingClientRect();
             const clientX = evt.clientX;
             const clientY = evt.clientY;
             const dy = -evt.deltaY;
             evt.preventDefault();
+
+            setZooming(true);
+            if (timer) {
+                clearTimeout(timer);
+            }
+            timer = setTimeout(() => {
+                setZooming(false);
+            }, 50);
 
             setTmpView((past) => {
                 let view = past || currentState.current.view;
@@ -50,6 +60,12 @@ export function useScrollWheel(
             });
         };
         ref.current!.addEventListener('wheel', fn, { passive: false });
-        return () => ref.current!.removeEventListener('wheel', fn);
+        return () => {
+            if (timer != null) {
+                clearTimeout(timer);
+                setZooming(false);
+            }
+            ref.current!.removeEventListener('wheel', fn);
+        };
     }, []);
 }

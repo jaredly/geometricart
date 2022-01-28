@@ -1,7 +1,4 @@
-import { ensureClockwise } from './CanvasRender';
-import { initialState } from './initialState';
 import { Primitive } from './intersect';
-import { simplifyPath } from './insetPath';
 
 // Should I do polar coords?
 export type Coord = { x: number; y: number };
@@ -148,7 +145,7 @@ export type Guide = {
     active: boolean;
     geom: GuideGeom;
     basedOn: Array<Id>;
-    mirror: Id | null;
+    mirror: Id | null | Mirror;
 };
 
 export type Mirror = {
@@ -162,10 +159,11 @@ export type Mirror = {
     // line between origin and point.
     rotational: Array<boolean>;
     reflect: boolean;
-    parent: Id | null;
+    parent: Id | null | Mirror;
 };
 
 export type Fill = {
+    originalIdx?: number;
     inset?: number;
     opacity?: number;
     color?: string | number;
@@ -174,6 +172,7 @@ export type Fill = {
 };
 
 export type StyleLine = {
+    originalIdx?: number;
     inset?: number;
     color?: string | number;
     width?: number;
@@ -201,6 +200,7 @@ export type Path = {
     clipMode?: 'none' | 'remove' | 'normal';
     origin: Coord;
     segments: Array<Segment>;
+    open?: boolean;
     hidden: boolean;
     debug?: boolean;
 };
@@ -213,14 +213,16 @@ export type ArcSegment = {
     // large
 };
 
-export type Segment = { type: 'Line'; to: Coord } | ArcSegment; // long = "the long way round"
+export type LineSegment = { type: 'Line'; to: Coord };
+export type Segment = LineSegment | ArcSegment; // long = "the long way round"
 
 export type PathGroup = {
     id: Id;
-    style: Style;
+    // style: Style;
     group: Id | null;
     hide?: boolean;
     clipMode?: 'none' | 'remove' | 'normal';
+    insetBeforeClip?: boolean;
     ordering?: number;
 };
 
@@ -313,6 +315,13 @@ export type UndoClipAdd = {
     added: [string, number];
 };
 
+export type OverlayDelete = { type: 'overlay:delete'; id: Id };
+export type UndoOverlayDelete = {
+    type: OverlayDelete['type'];
+    action: OverlayDelete;
+    removed: Overlay;
+};
+
 export type OverlyAdd = { type: 'overlay:add'; attachment: Id };
 export type UndoOverlayAdd = {
     type: OverlyAdd['type'];
@@ -394,6 +403,28 @@ export type GroupUpdate = {
     group: PathGroup;
 };
 
+export type ClipCut = {
+    type: 'clip:cut';
+    clip: Id;
+};
+export type UndoClipCut = {
+    type: ClipCut['type'];
+    action: ClipCut;
+    paths: { [key: Id]: Path };
+    added: Array<Id>;
+};
+
+export type GroupRegroup = {
+    type: 'group:regroup';
+    selection: { type: 'Path' | 'PathGroup'; ids: Array<Id> };
+};
+export type UndoGroupRegroup = {
+    type: GroupRegroup['type'];
+    action: GroupRegroup;
+    created: null | [Id, number];
+    prevGroups: { [key: Id]: Id | null };
+};
+
 export type PathDelete = {
     type: 'path:delete';
     id: Id;
@@ -463,6 +494,17 @@ export type UndoPathCreate = {
     added: [Array<Id>, Id | null, number];
 };
 
+export type PathMultiply = {
+    type: 'path:multiply';
+    selection: { type: 'Path' | 'PathGroup'; ids: Array<Id> };
+    mirror: Id;
+};
+export type UndoPathMultiply = {
+    type: PathMultiply['type'];
+    action: PathMultiply;
+    added: [Array<Id>, Id | null, number];
+};
+
 export type PendingExtent = {
     type: 'pending:extent';
     delta: number;
@@ -482,6 +524,17 @@ export type UndoPendingExtent = {
 //     action: PathAdd;
 //     added: [Array<Id>, Id | null, number, PendingPath] | null;
 // };
+
+export type UndoMirrorDelete = {
+    type: MirrorDelete['type'];
+    action: MirrorDelete;
+    mirror: Mirror;
+    prevActive: Id | null;
+};
+export type MirrorDelete = {
+    type: 'mirror:delete';
+    id: Id;
+};
 
 export type UndoMirrorAdd = {
     type: MirrorAdd['type'];
@@ -554,9 +607,11 @@ export type UndoableAction =
     | PendingPoint
     | MetaUpdate
     | OverlyAdd
+    | OverlayDelete
     | ClipAdd
     // | PathAdd
     | PathUpdate
+    | MirrorDelete
     | PendingType
     // | PathPoint
     | MirrorActive
@@ -571,13 +626,18 @@ export type UndoableAction =
     | OverlayUpdate
     | PathGroupUpdateMany
     | PathCreate
+    | GroupRegroup
+    | ClipCut
+    | PathMultiply
     | GuideToggle;
 
 export type UndoAction =
     | UndoGuideAdd
     | UndoOverlayAdd
+    | UndoOverlayDelete
     | UndoClipAdd
     | UndoGroupUpdate
+    | UndoGroupRegroup
     | UndoPathUpdate
     | UndoPathUpdateMany
     | UndoPathDeleteMany
@@ -587,13 +647,16 @@ export type UndoAction =
     | UndoOverlayUpdate
     | UndoViewUpdate
     | UndoMirrorAdd
+    | UndoMirrorDelete
     | UndoGroupDelete
     | UndoGuideDelete
     | UndoPendingPoint
+    | UndoClipCut
     | UndoPathDelete
     // | UndoPathPoint
     // | UndoPathAdd
     | UndoPathCreate
+    | UndoPathMultiply
     | UndoPendingExtent
     | UndoPendingType
     | UndoGuideToggle
@@ -640,6 +703,7 @@ export type View = {
     guides: boolean;
     activeClip: Id | null;
     hideDuplicatePaths?: boolean;
+    laserCutMode?: boolean;
     background?: string | number;
     sketchiness?: number;
     texture?: { id: string; scale: number; intensity: number };
@@ -658,8 +722,8 @@ export type Tab =
     | 'Palette'
     | 'Export'
     | 'Overlays'
-    | 'Clips'
-    | 'Help';
+    | 'Undo'
+    | 'Clips';
 
 export type Attachment = {
     id: Id;
@@ -673,10 +737,11 @@ export type Meta = {
     title: string;
     description: string;
     created: number;
+    ppi: number;
 };
 
 export type State = {
-    version: number;
+    version: 4;
     nextId: number;
     history: History;
     meta: Meta;
@@ -709,63 +774,6 @@ export type State = {
     attachments: {
         [key: Id]: Attachment;
     };
-};
-
-export const migrateState = (state: State) => {
-    if (!state.version) {
-        state.version = 1;
-        if (!state.overlays) {
-            state.overlays = {};
-            state.attachments = {};
-        }
-        if (!state.palettes) {
-            state.palettes = {};
-            state.tab = 'Guides';
-            state.selection = null;
-        }
-        if (!state.activePalette) {
-            state.palettes['default'] = initialState.palettes['default'];
-            state.activePalette = 'default';
-        }
-        if (!state.meta) {
-            state.meta = {
-                created: Date.now(),
-                title: '',
-                description: '',
-            };
-        }
-    }
-    if (!state.overlays) {
-        state.overlays = {};
-        // @ts-ignore
-        delete state.underlays;
-    }
-    if (state.version < 2) {
-        Object.keys(state.paths).forEach((k) => {
-            state.paths[k] = {
-                ...state.paths[k],
-                segments: simplifyPath(
-                    ensureClockwise(state.paths[k].segments),
-                ),
-            };
-        });
-        state.version = 2;
-    }
-    if (state.version < 3) {
-        state.version = 3;
-        if ((state.view as any).clip) {
-            state.clips = {
-                migrated: (state.view as any).clip,
-            };
-            state.view.activeClip = 'migrated';
-            // @ts-ignore
-            delete state.view.clip;
-        } else {
-            state.clips = {};
-            state.view.activeClip = null;
-        }
-    }
-    return state;
 };
 
 /*

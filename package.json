@@ -14,7 +14,9 @@
         "canvas": "node ../language/bootstrap.js prelude-types ../web/src/plugins/canvas/canvas-jd.ts ../web/src/plugins/canvas/canvas.jd"
     },
     "dependencies": {
+        "@emotion/css": "^11.7.1",
         "@emotion/react": "^11.1.5",
+        "json-diff-ts": "^1.2.4",
         "kmeans-js": "^0.1.2",
         "localforage": "^1.9.0",
         "png-metadata": "https://github.com/hometlt/png-metadata",
@@ -24,17 +26,11 @@
         "react-colorful": "^5.2.2",
         "react-dom": "^17.0.1",
         "roughjs": "^4.5.0",
+        "tinytar": "jaredly/tinytar#tinytar-v0.1.0-gitpkg",
         "typescript": "^4.4.4"
     },
     "jest": {
-        "verbose": true,
-        "testEnvironment": "jsdom",
-        "snapshotSerializers": [
-            "jest-snapshot-serializer-raw"
-        ],
-        "setupFilesAfterEnv": [
-            "<rootDir>/jest-setup.js"
-        ]
+        "verbose": true
     },
     "devDependencies": {
         "@babel/core": "^7.14.8",

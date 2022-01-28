@@ -1,4 +1,169 @@
 
+AOKKK now we're up to animations. Love it so much.
+
+Oh but first, can has some optimization? idk.
+
+
+
+
+
+
+ARCCSSS
+
+hmm so the thing that actually makes sense is to extend the border around the now-corner.
+hmm. and extend it around by the inset amount.
+that sounds quite reasonable.
+
+we could square off the ends, or round them off I guess.
+could be up to a user toggle.
+
+Ok, so inset is now correct between two arcs. It's possible that
+the arc/line and line/arc stuff is still faked, and I need to do the same
+thing I did with the arc/arc. But I think it might also be fine.
+
+The big deal now is getting performance back to a good place.
+probably by aggressively caching.
+
+
+# Ok, insetting is basically done? I mean arcs aren't quite right.
+
+Question:
+is it higher priority to make mobile work reasonably, or to do animation stuff?
+I can tell you animation is more exciting.
+but I'm soooo close to mobile being good.
+
+# So
+what things do I still have to shell out for?
+- palette stuff
+- exports
+Is that it?
+
+- [x] zoooom for mobile
+- [x] then make hit targets for mobile so big.
+	- but less visible, ya know
+- [x] make path follower much more better
+- [x] fix pan perf
+- [x] make pending mirror inherit from whatever the active mirror is.
+
+- [x] hover to show guides! pleasssse
+- [x] hover to show/hide overlay!
+- [ ] clipssss need a menu for them, thanks.
+	- also need to be able to configure clip behavior of groups
+	- also button to 'group'
+
+- I want to start doing some process ones.
+- [ ] make a slider that you can open up to scrub through undo states.
+
+- [x] overlay, actual menu (show/hide) (over/under) (delete) (add)
+
+- [ ] hover colors to preview
+- [x] import button in config menu
+- [x] make mirrors show up better
+- [x] fix mirror menu to have same size & button style as other things
+
+- [ ] ooooh use https://www.npmjs.com/package/json-diff-ts to dramatically reduce the undoaction size! That sounds great.
+
+- [x] when a line guide is selected, show plus / minus buttons to lengthen/shorten
+	- [ ] make a button to "go infinite" which toggles to "go some kinda way"
+
+
+
+- [ ] for making tiles, I think what I mostly want is "paint to fill". Like mouse over the sub-sections, and it makes the tile that includes them all.
+	- this wouldn't work for some cases, but is probably the most user-friendly, so should be the default.
+	- hmm although sometimes there are really little bitses. so it wouldn't be better ....
+
+
+# Ok, so it would be suuuper cool to be able to automatically weave stuff.
+
+
+# Undo Sidebar Tab???
+- yeah I've wanted something like this for a minute
+- [ ] make the display a little more interesting....
+- [ ] holy grail: hover over an undo item, and show what it would look like to undo/redo to that point.
+
+
+- [x] hide selection outline when hovering the style picker.
+	- [x] maybe not have the style picker be up by default? Yeah I think that would make more sense.
+	- [ ] hovering colors previews it, of course!
+
+- make overlays usable
+	- [ ] button to open file picker, so mobile works
+	- [ ] make pinch-zoom work.
+
+- [ ] reset zoom needs to go somewhere else?
+- [ ] clips! Need to show on screen, next to mirrors and overlays
+- [x] make the overlay display at all good please.
+
+
+- [x] bake into the export a dpi dealio.
+	- [x] persist in the state my folks.
+	- [x] And when exporting the svg, indicate what the real size (in & mm) is of the
+	full screen,
+	- [x] and the bounding rect.
+	- [x] also add the ability to say "crop to content, w/ X margin"
+
+- [ ] add visual tests for inset, that produce an SVG for visual check.
+
+- [x] deal with circles that don't meet up
+
+## Mobile things that currently only have key shortcuts
+
+- [x] undo/redo
+- [x] deleting stuff (selected tiles, or guides probably)
+- [x] guides dont multi-select, there's nothing to do there.
+- [-] ooh should I have a way to say "multiply this guide around this mirror?"
+	- I think maybe not?
+	- hm it would be nice tho
+		- if the guide doesn't have a mirror yet, it's easy
+		- otherwise, we just duplicate, it's not grouped, boohoo.
+
+
+## Ok let's try different sized screens
+to prepare for mobile ya know
+
+- [ ] get two-finger zoom to work, it probably doesn't.
+- [x] when a tile is selected, show the multistyler please
+- [x] have the "pos" for creating new guides be the center of the screen, with a cursor
+- [ ] would be really nice to have a mode where you just drag to make a tile... instead of having to tap so much.
+- [x] show a "mirrors" tap-up that allows you to create a new mirror, delete the current mirror, switch the active mirror.
+
+- [x] MIRROR OVERLAY
+	- [x] allow deletion of mirrors
+	- [x] switch between mirrors
+	- [ ] on-screen buttons for controlling pending mirror (change number, reflect, cancel)
+	- [x] button for "copy select tiles around active mirror"
+
+
+- FIRST RUN EXPERIENCE:
+	- allow you to select the initial mirror, don't just use a default.
+
+
+- [x] REIFY GUIDES. Got to make mirrors and such.
+- [x] so what about a "cut paths to clip" button? So that you can then do like some tilings with them.
+- [ ] "join adjacent tiles" would be very nice"
+
+- [ ] ifff a line goes backwards after inset, just delete that segment and recalculate?
+
+- [x] make a setting for "clip first, then inset" or "inset first, then clip".
+
+- [x] remove style from groups! Instead, just mass-update the styles of paths.
+- [ ] "clone style" would be very nice.
+- [x] shortcuts for toggling mirrors! alt-m to toggle on/off, shift-m to cycle.
+- [x] then, make a button to "group selected paths", which will change their grouping to a new group.
+	- [ ] if all of one group is contained in the selection, the other paths are added to this group.
+
+## [x] "Multiply path(s) around mirror
+	- this would put the resulting paths in the same pathgroup as the original, and we'll also do deduping
+		on pths in the same pathgroup.
+
+- [x] button to remove path-level styles
+- [ ] selection type for PathOrGroup thx
+- [ ] shift-drag to resize overlay, so you don't have to zoom out. indicate via cursor.
+
+- [x] also perf is really bad, I need to figure out what to memoize.
+
+
+
 ## Fancy Shader Goodness
 
 How are we planning to do it?

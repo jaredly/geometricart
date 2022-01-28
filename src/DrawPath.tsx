@@ -24,42 +24,12 @@ import {
 import { transformSegment } from './points';
 import { useCurrent } from './App';
 import { coordsEqual, segmentsEqual } from './pathsAreIdentical';
+import { segmentKey, segmentKeyReverse } from './segmentKey';
+import { segmentAngle } from './findInternalRegions';
 
-/*
-
-Ok, let's get serious here.
-
-NOT ALLOWED:
-- BACKTRACKING. What does that mean?
-    Going backwards over the same path.
-    How do we tell, with arcs?
-- going TO a point that we've already covered, if it's not the origin.
-
-
-    btw I can probably ditch pendingsegment...
-
-*/
-
-export const segmentKeyReverse = (prev: Coord, segment: Segment) =>
-    segment.type === 'Line'
-        ? segmentKey(segment.to, { type: 'Line', to: prev })
-        : segmentKey(segment.to, {
-              type: 'Arc',
-              center: segment.center,
-              clockwise: !segment.clockwise,
-              to: prev,
-          });
-
-export const segmentKey = (prev: Coord, segment: Segment) =>
-    coordKey(prev) +
-    ` ${segment.type} ` +
-    (segment.type === 'Line'
-        ? ''
-        : `via ${coordKey(segment.center)}${segment.clockwise ? 'C' : 'A'}`) +
-    ' to ' +
-    coordKey(segment.to);
-
-export type State = {
+export type DrawPathState = {
+    origin: Intersect;
+    isClip: boolean;
     parts: Array<PendingSegment>;
     next: Array<PendingSegment>;
     selection: number;
@@ -69,16 +39,13 @@ export const initialState = (
     origin: Intersect,
     primitives: Array<{ prim: Primitive; guides: Array<Id> }>,
     intersections: Array<Intersect>,
-): State => {
+): DrawPathState => {
     return {
+        origin,
         parts: [],
+        isClip: false,
         selection: 0,
         next: nextForState([], origin, primitives, intersections),
-        // findNextSegments(
-        //     { type: 'Path', origin, parts: [] },
-        //     primitives,
-        //     intersections,
-        // ),
     };
 };
 
@@ -87,87 +54,38 @@ export const DrawPath = React.memo(
         primitives,
         intersections,
         mirror,
-        origin,
+        pendingPath: [state, setState],
         view,
         isClip,
         onComplete,
         palette,
     }: {
         isClip: boolean;
+        pendingPath: [
+            DrawPathState,
+            (fn: (state: DrawPathState | null) => DrawPathState | null) => void,
+        ];
         mirror: null | Array<Array<Matrix>>;
         primitives: Array<{ prim: Primitive; guides: Array<Id> }>;
-        origin: Intersect;
-        view: View;
         intersections: Array<Intersect>;
+        view: View;
         palette: Array<string>;
         onComplete: (segments: Array<PendingSegment>) => unknown;
     }) => {
-        const [state, setState] = React.useState(() =>
-            initialState(origin, primitives, intersections),
-        );
-        const zoom = view.zoom;
-
-        // let parts = parts.concat([])
-
-        // const covered = state.parts.map((part) => coordKey(part.to.coord));
-        // const butLast = covered.slice(0, -1);
-        // .concat([coordKey(origin.coord)]);
-
-        // const used = state.parts
-        //     .map((part, i) => {
-        //         const prev =
-        //             i === 0 ? origin.coord : state.parts[i - 1].to.coord;
-        //         return [
-        //             segmentKey(prev, part.segment),
-        //             segmentKeyReverse(prev, part.segment),
-        //         ];
-        //     })
-        //     .flat();
-
-        // const next = findNextSegments(
-        //     { type: 'Path', origin, parts: state.parts },
-        //     primitives.map((prim) => prim.prim),
-        //     intersections,
-        // ).filter(
-        //     (seg, i) =>
-        //         !covered.includes(coordKey(seg.to.coord)) &&
-        //         !used.includes(segmentKey(current.coord, seg.segment)),
+        // const [state, setState] = React.useState(() =>
+        //     initialState(origin, primitives, intersections),
         // );
-        // const prevBase = parts.length < 2 ? origin : parts[parts.length - 2].to;
-        // const prev =
-        //     parts.length > 0
-        //         ? findNextSegments(
-        //               { type: 'Path', origin, parts: parts.slice(0, -1) },
-        //               primitives.map((prim) => prim.prim),
-        //               intersections,
-        //           ).filter(
-        //               (seg) =>
-        //                   !butLast.includes(coordKey(seg.to.coord)) &&
-        //                   !used.includes(
-        //                       segmentKey(prevBase.coord, seg.segment),
-        //                   ),
-        //               //   (seg) => coordKey(seg.to.coord) !== coordKey(current.coord),
-        //           )
-        //         : null;
-
-        // const nextSegments = React.useMemo(() => {
-        //     return findNextSegments(
-        //         { type: 'Path', origin, parts },
-        //         primitives,
-        //         intersections,
-        //     );
-        // }, [parts, intersections, primitives]);
-
-        // console.log(next, prev, parts, used);
+        const origin = state.origin;
+        const zoom = view.zoom;
 
         const completed =
             state.parts.length &&
             coordKey(state.parts[state.parts.length - 1].to.coord) ===
-                coordKey(origin.coord);
+                coordKey(state.origin.coord);
 
         const transformedParts = mirror
             ? mirror.map((transform) => ({
-                  origin: applyMatrices(origin.coord, transform),
+                  origin: applyMatrices(state.origin.coord, transform),
                   segments: state.parts.map((seg) =>
                       transformSegment(seg.segment, transform),
                   ),
@@ -197,77 +115,25 @@ export const DrawPath = React.memo(
                 if (evt.key === 'ArrowDown' || evt.key === 'j') {
                     evt.preventDefault();
                     evt.stopPropagation();
-                    setState((state) => {
-                        if (!state.parts.length) {
-                            return state;
-                        }
-                        const index = state.parts.length - 1;
-                        return backUpToIndex(
-                            state,
-                            index,
-                            origin,
-                            primitives,
-                            intersections,
-                        );
-                    });
+                    setState(backUp(origin, primitives, intersections));
                 }
                 if (evt.key === 'ArrowUp' || evt.key === 'k') {
                     evt.preventDefault();
                     evt.stopPropagation();
                     // Go to the next one
-                    setState((state) => {
-                        if (state.selection >= state.next.length) {
-                            return state;
-                        }
-
-                        const completed =
-                            state.parts.length &&
-                            coordKey(
-                                state.parts[state.parts.length - 1].to.coord,
-                            ) === coordKey(origin.coord);
-                        if (completed) {
-                            return state;
-                        }
-
-                        const parts = state.parts.concat([
-                            state.next[state.selection],
-                        ]);
-
-                        const next = nextForState(
-                            parts,
-                            origin,
-                            primitives,
-                            intersections,
-                        );
-
-                        return {
-                            ...state,
-                            parts,
-                            next,
-                            selection: 0,
-                        };
-                    });
+                    setState(goForward(primitives, intersections));
                 }
                 if (evt.key === 'ArrowLeft' || evt.key === 'h') {
                     evt.preventDefault();
                     evt.stopPropagation();
                     evt.stopImmediatePropagation();
-                    setState((state) => ({
-                        ...state,
-                        selection:
-                            state.selection === 0
-                                ? state.next.length - 1
-                                : state.selection - 1,
-                    }));
+                    setState(goLeft);
                 }
                 if (evt.key === 'ArrowRight' || evt.key === 'l') {
                     evt.preventDefault();
                     evt.stopPropagation();
                     // go to the left
-                    setState((state) => ({
-                        ...state,
-                        selection: (state.selection + 1) % state.next.length,
-                    }));
+                    setState(goRight);
                     // go right, yes folks
                 }
             };
@@ -286,7 +152,9 @@ export const DrawPath = React.memo(
                     {transformedParts
                         ? transformedParts.map((path) => (
                               <RenderPath
-                                  view={view}
+                                  zoom={view.zoom}
+                                  sketchiness={0}
+                                  styleHover={null}
                                   path={{
                                       group: null,
                                       id: '',
@@ -313,7 +181,9 @@ export const DrawPath = React.memo(
                         : null}
 
                     <RenderPath
-                        view={view}
+                        zoom={view.zoom}
+                        sketchiness={0}
+                        styleHover={null}
                         path={{
                             group: null,
                             id: '',
@@ -375,13 +245,15 @@ export const DrawPath = React.memo(
                         color={isClip ? 'magenta' : 'rgba(0, 0, 255, 1.0)'}
                         onClick={() => {
                             setState((state) =>
-                                backUpToIndex(
-                                    state,
-                                    i,
-                                    origin,
-                                    primitives,
-                                    intersections,
-                                ),
+                                state
+                                    ? backUpToIndex(
+                                          state,
+                                          i,
+                                          origin,
+                                          primitives,
+                                          intersections,
+                                      )
+                                    : state,
                             );
                         }}
                     />
@@ -400,6 +272,9 @@ export const DrawPath = React.memo(
                         prev={current.coord}
                         onClick={() => {
                             setState((state) => {
+                                if (!state) {
+                                    return state;
+                                }
                                 const parts = state.parts.concat([seg]);
 
                                 const next = nextForState(
@@ -424,40 +299,80 @@ export const DrawPath = React.memo(
     },
 );
 
-export const segmentAngle = (
-    prev: Coord,
-    segment: Segment,
-    initial: boolean = true,
-) => {
-    if (segment.type === 'Line') {
-        return angleTo(prev, segment.to);
-    }
-    if (initial) {
-        const t1 = angleTo(segment.center, prev);
-        const t2 = angleTo(segment.center, segment.to);
-        const bt = angleBetween(t1, t2, segment.clockwise);
-        const tm = t1 + (bt / 2) * (segment.clockwise ? 1 : -1); // (t1 + t2) / 2;
-        const d = dist(segment.center, segment.to);
-        const midp = push(segment.center, tm, d);
-        // console.log(segment, t1, t2, bt, tm);
-        // const midp =
-        // tangent at prev,
-        return angleTo(prev, midp);
-        // return (
-        //     angleTo(segment.center, prev) +
-        //     (Math.PI / 2) * (segment.clockwise ? 1 : -1)
-        // );
-    } else {
-        // tangent at land
-        return (
-            angleTo(segment.center, segment.to) +
-            (Math.PI / 2) * (segment.clockwise ? 1 : -1)
+export const goLeft = (state: DrawPathState | null) =>
+    state
+        ? {
+              ...state,
+              selection:
+                  state.selection === 0
+                      ? state.next.length - 1
+                      : state.selection - 1,
+          }
+        : state;
+
+export const goRight = (state: DrawPathState | null): DrawPathState | null =>
+    state
+        ? {
+              ...state,
+              selection: (state.selection + 1) % state.next.length,
+          }
+        : state;
+
+export function goForward(
+    primitives: { prim: Primitive; guides: Array<Id> }[],
+    intersections: Intersect[],
+): (state: DrawPathState | null) => DrawPathState | null {
+    return (state) => {
+        if (!state || state.selection >= state.next.length) {
+            return state;
+        }
+
+        if (isComplete(state)) {
+            return state;
+        }
+
+        const parts = state.parts.concat([state.next[state.selection]]);
+
+        const next = nextForState(
+            parts,
+            state.origin,
+            primitives,
+            intersections,
         );
-    }
-};
+
+        return {
+            ...state,
+            parts,
+            next,
+            selection: 0,
+        };
+    };
+}
+
+export function isComplete(state: DrawPathState) {
+    return (
+        state.parts.length &&
+        coordKey(state.parts[state.parts.length - 1].to.coord) ===
+            coordKey(state.origin.coord)
+    );
+}
+
+export function backUp(
+    origin: Intersect,
+    primitives: { prim: Primitive; guides: Array<Id> }[],
+    intersections: Intersect[],
+): (state: DrawPathState | null) => DrawPathState | null {
+    return (state) => {
+        if (!state || !state.parts.length) {
+            return null;
+        }
+        const index = state.parts.length - 1;
+        return backUpToIndex(state, index, origin, primitives, intersections);
+    };
+}
 
 function backUpToIndex(
-    state: State,
+    state: DrawPathState,
     index: number,
     origin: Intersect,
     primitives: { prim: Primitive; guides: Array<Id> }[],

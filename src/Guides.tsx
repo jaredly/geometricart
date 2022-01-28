@@ -8,19 +8,11 @@ import {
     coordKey,
     primitiveKey,
 } from './calcAllIntersections';
-import { DrawPath } from './DrawPath';
+import { DrawPath, DrawPathState, initialState } from './DrawPath';
 import { dedupString } from './findNextSegments';
-import {
-    angleTo,
-    applyMatrices,
-    dist,
-    Matrix,
-    mirrorTransforms,
-    push,
-    transformsToMatrices,
-} from './getMirrorTransforms';
+import { angleTo, dist, Matrix } from './getMirrorTransforms';
 import { lineToSlope, Primitive } from './intersect';
-import { RenderIntersections } from './RenderIntersections';
+import { RenderIntersections, useTouchClick } from './RenderIntersections';
 import { RenderMirror } from './RenderMirror';
 import { RenderPendingGuide } from './RenderPendingGuide';
 import { Hover } from './Sidebar';
@@ -43,8 +35,11 @@ import {
 } from './calculateGuideElements';
 import { geomToPrimitives } from './points';
 import { simplifyPath } from './insetPath';
-import { ensureClockwise } from './CanvasRender';
+import { ensureClockwise } from './pathToPoints';
 import { pathToPrimitives } from './findSelection';
+import { screenToWorld } from './Canvas';
+import { Bounds } from './GuideElement';
+import { RenderPendingMirror } from './RenderPendingMirror';
 
 // This /will/ contain duplicates!
 // export const calculatePathElements = (
@@ -143,6 +138,16 @@ export function primitivesForElementsAndPaths(
         .filter(Boolean) as Array<{ prim: Primitive; guides: Array<Id> }>;
 }
 
+export type PendingPathPair = [
+    null | DrawPathState,
+    (
+        fn:
+            | DrawPathState
+            | null
+            | ((state: DrawPathState | null) => DrawPathState | null),
+    ) => void,
+];
+
 export const Guides = ({
     state,
     dispatch,
@@ -152,38 +157,38 @@ export const Guides = ({
     pos,
     mirrorTransforms,
     hover,
+    zooming,
     pendingMirror,
     setPendingMirror,
+    pendingPath,
+    guidePrimitives,
+    allIntersections,
+    isTouchScreen,
+    disableGuides,
+    bounds,
 }: {
+    bounds: Bounds;
     state: State;
+    isTouchScreen: boolean;
+    zooming: boolean;
     dispatch: (action: Action) => void;
     width: number;
     height: number;
     view: View;
     hover: Hover | null;
     pos: Coord;
+    pendingPath: PendingPathPair;
     mirrorTransforms: { [key: string]: Array<Array<Matrix>> };
     pendingMirror: PendingMirror | null;
+    guidePrimitives: Array<{ prim: Primitive; guides: Array<Id> }>;
+    allIntersections: Array<Intersect>;
     setPendingMirror: (
         mirror:
             | (PendingMirror | null)
             | ((mirror: PendingMirror | null) => PendingMirror | null),
     ) => void;
+    disableGuides: boolean;
 }) => {
-    const guidePrimitives = React.useMemo(() => {
-        return primitivesForElementsAndPaths(
-            calculateGuideElements(state.guides, mirrorTransforms),
-            Object.keys(state.paths)
-                .filter(
-                    (k) =>
-                        !state.paths[k].hidden &&
-                        (!state.paths[k].group ||
-                            !state.pathGroups[state.paths[k].group!].hide),
-                )
-                .map((k) => state.paths[k]),
-        );
-    }, [state.guides, state.paths, state.pathGroups, mirrorTransforms]);
-
     const inactiveGuidePrimitives = React.useMemo(() => {
         return primitivesForElementsAndPaths(
             calculateInactiveGuideElements(state.guides, mirrorTransforms),
@@ -198,141 +203,24 @@ export const Guides = ({
 
     const currentPos = useCurrent(pos);
 
-    const [pathOrigin, setPathOrigin] = React.useState(
-        null as null | { coord: Intersect; clip: boolean },
-    );
+    // const [pathOrigin, setPathOrigin] = React.useState(
+    //     null as null | { coord: Intersect; clip: boolean },
+    // );
 
     const currentPendingMirror = useCurrent(pendingMirror);
 
-    const currentPathOrigin = useCurrent(pathOrigin);
+    const currentPathOrigin = useCurrent(pendingPath);
 
     React.useEffect(() => {
-        const fn = (evt: KeyboardEvent) => {
-            const state = currentState.current;
-            if (evt.target !== document.body || evt.metaKey || evt.ctrlKey) {
-                return;
-            }
-            if (evt.key === 'C' && currentPathOrigin.current) {
-                evt.stopPropagation();
-                return setPathOrigin((path) =>
-                    path ? { ...path, clip: !path.clip } : null,
-                );
-            }
-            if (evt.key === 'ArrowUp' || evt.key === 'k') {
-                if (state.pending?.type === 'Guide') {
-                    dispatch({
-                        type: 'pending:extent',
-                        delta: 1,
-                    });
-                }
-                if (
-                    state.selection?.type === 'Guide' &&
-                    state.selection.ids.length === 1
-                ) {
-                    const id = state.selection.ids[0];
-                    const geom = state.guides[id].geom;
-                    if (geom.type === 'Line') {
-                        dispatch({
-                            type: 'guide:update',
-                            id,
-                            guide: {
-                                ...state.guides[id],
-                                geom: {
-                                    ...geom,
-                                    extent:
-                                        geom.extent != null
-                                            ? geom.extent + 1
-                                            : 2,
-                                },
-                            },
-                        });
-                    }
-                }
-            }
-            if (evt.key === 'ArrowDown' || evt.key === 'j') {
-                if (state.pending?.type === 'Guide') {
-                    dispatch({
-                        type: 'pending:extent',
-                        delta: -1,
-                    });
-                }
-                if (
-                    state.selection?.type === 'Guide' &&
-                    state.selection.ids.length === 1
-                ) {
-                    const id = state.selection.ids[0];
-                    const geom = state.guides[id].geom;
-                    if (geom.type === 'Line') {
-                        dispatch({
-                            type: 'guide:update',
-                            id,
-                            guide: {
-                                ...state.guides[id],
-                                geom: {
-                                    ...geom,
-                                    extent:
-                                        geom.extent != null
-                                            ? Math.max(0, geom.extent - 1)
-                                            : 1,
-                                },
-                            },
-                        });
-                    }
-                }
-            }
-            if (evt.key === 'ArrowUp' && currentPendingMirror.current) {
-                setPendingMirror((mirror) =>
-                    mirror
-                        ? {
-                              ...mirror,
-                              rotations: mirror.rotations + 1,
-                          }
-                        : null,
-                );
-                evt.preventDefault();
-                evt.stopPropagation();
-                return;
-            }
-            if (evt.key === 'ArrowDown' && currentPendingMirror.current) {
-                setPendingMirror((mirror) =>
-                    mirror
-                        ? {
-                              ...mirror,
-                              rotations: Math.max(1, mirror.rotations - 1),
-                          }
-                        : null,
-                );
-                evt.preventDefault();
-                evt.stopPropagation();
-                return;
-            }
-            if (evt.key === 'r' && currentPendingMirror.current) {
-                setPendingMirror((mirror) =>
-                    mirror
-                        ? {
-                              ...mirror,
-                              reflect: !mirror.reflect,
-                          }
-                        : null,
-                );
-                evt.preventDefault();
-                evt.stopPropagation();
-                return;
-            }
-            if (evt.key === 'Escape' && currentPendingMirror.current) {
-                setPendingMirror(null);
-                evt.preventDefault();
-                evt.stopPropagation();
-                return;
-            }
-            if (evt.key === 'Shift') {
-                setShiftKey(currentPos.current);
-            }
-            if (pathOrigin && evt.key === 'Escape') {
-                setPathOrigin(null);
-                evt.stopPropagation();
-            }
-        };
+        const fn = keyHandler(
+            currentState,
+            currentPathOrigin,
+            dispatch,
+            currentPendingMirror,
+            setPendingMirror,
+            setShiftKey,
+            currentPos,
+        );
         const up = (evt: KeyboardEvent) => {
             if (evt.key === 'Shift') {
                 setShiftKey(false);
@@ -344,14 +232,14 @@ export const Guides = ({
             document.removeEventListener('keydown', fn);
             document.removeEventListener('keyup', up);
         };
-    }, [!!pathOrigin]);
+    }, [!!pendingPath[0]]);
 
     const onCompletePath = React.useCallback(
         (parts: Array<PendingSegment>) => {
-            if (!pathOrigin) {
+            if (!pendingPath[0]) {
                 return;
             }
-            if (pathOrigin.clip) {
+            if (pendingPath[0].isClip) {
                 dispatch({
                     type: 'clip:add',
                     clip: simplifyPath(
@@ -362,13 +250,15 @@ export const Guides = ({
                 dispatch({
                     type: 'path:create',
                     segments: parts.map((s) => s.segment),
-                    origin: pathOrigin.coord.coord,
+                    origin: pendingPath[0].origin.coord,
                 });
             }
-            setPathOrigin(null);
+            pendingPath[1]((_) => null);
         },
-        [pathOrigin],
+        [pendingPath[0]],
     );
+
+    const primsAndStuff = useCurrent({ guidePrimitives, allIntersections });
 
     const onClickIntersection = React.useCallback(
         (coord: Intersect, shiftKey: boolean) => {
@@ -403,10 +293,14 @@ export const Guides = ({
             }
             const state = currentState.current;
             if (!state.pending) {
-                setPathOrigin({ coord, clip: false });
+                const { guidePrimitives, allIntersections } =
+                    primsAndStuff.current;
+                pendingPath[1](
+                    initialState(coord, guidePrimitives, allIntersections),
+                );
+                // setPathOrigin({ coord, clip: false });
                 // dispatch({ type: 'path:point', coord });
-            }
-            if (state.pending && state.pending.type === 'Guide') {
+            } else if (state.pending.type === 'Guide') {
                 dispatch({
                     type: 'pending:point',
                     coord: coord.coord,
@@ -417,137 +311,112 @@ export const Guides = ({
         [],
     );
 
-    const allIntersections = React.useMemo(() => {
-        // hmm yeah that's not actually gonna be the best.
-        // because if you have a point that's on another guide, you'd
-        // expect it to be able to intersect that guide.
-        const { coords: fromGuides, seenCoords } = calcAllIntersections(
-            guidePrimitives.map((p) => p.prim),
-        );
-        // hmmm
-        // will it be obnoxiously much
-        // to just generate new primitives for all paths?
-        // seems like a bit muchc
-        // Object.keys(state.paths).forEach((key) => {
-        //     const path = state.paths[key];
-        //     if (
-        //         path.hidden ||
-        //         (path.group && state.pathGroups[path.group].hide)
-        //     ) {
-        //         return;
-        //     }
-        //     path.segments.forEach((seg) => {
-        //         const k = coordKey(seg.to);
-        //         if (!seenCoords[k]) {
-        //             seenCoords[k] = { coord: seg.to, primitives: [] };
-        //             fromGuides.push(seenCoords[k]);
-        //         }
-        //     });
-        // });
-        return fromGuides;
-    }, [guidePrimitives, state.paths, state.pathGroups]);
-
     // When intersections change, cancel pending stuffs
     React.useEffect(() => {
-        setPathOrigin(null);
+        pendingPath[1](null);
     }, [allIntersections]);
 
     const clip = view.activeClip ? state.clips[view.activeClip] : undefined;
 
+    const clickInactive = React.useCallback(
+        (guides: string[], shift: boolean): void => {
+            if (!shift) {
+                dispatch({
+                    type: 'tab:set',
+                    tab: 'Guides',
+                });
+                dispatch({
+                    type: 'selection:set',
+                    selection: {
+                        type: 'Guide',
+                        ids: dedupString(guides),
+                    },
+                });
+                return;
+            }
+            console.log(guides, 'click');
+            const seen: {
+                [key: string]: true;
+            } = {};
+            // ok
+            guides.forEach((guide) => {
+                if (seen[guide]) {
+                    return;
+                }
+                seen[guide] = true;
+                dispatch({
+                    type: 'guide:toggle',
+                    id: guide,
+                });
+            });
+        },
+        [],
+    );
+
+    const clickActive = React.useCallback(
+        (guides: string[], shift: boolean): void => {
+            if (!shift) {
+                dispatch({
+                    type: 'tab:set',
+                    tab: 'Guides',
+                });
+                dispatch({
+                    type: 'selection:set',
+                    selection: {
+                        type: 'Guide',
+                        ids: dedupString(guides),
+                    },
+                });
+                return;
+            }
+            console.log(guides, 'click');
+            const seen: {
+                [key: string]: true;
+            } = {};
+            // ok
+            guides.forEach((guide) => {
+                if (seen[guide]) {
+                    return;
+                }
+                seen[guide] = true;
+                dispatch({
+                    type: 'guide:toggle',
+                    id: guide,
+                });
+            });
+        },
+        [],
+    );
     return (
         <>
             <RenderPrimitives
                 primitives={inactiveGuidePrimitives}
                 zoom={view.zoom}
-                width={width}
-                height={height}
+                bounds={bounds}
                 inactive
                 onClick={
-                    pathOrigin
-                        ? undefined
-                        : (guides, shift) => {
-                              if (!shift) {
-                                  dispatch({
-                                      type: 'tab:set',
-                                      tab: 'Guides',
-                                  });
-                                  dispatch({
-                                      type: 'selection:set',
-                                      selection: {
-                                          type: 'Guide',
-                                          ids: dedupString(guides),
-                                      },
-                                  });
-                                  return;
-                              }
-                              console.log(guides, 'click');
-                              const seen: {
-                                  [key: string]: true;
-                              } = {};
-                              // ok
-                              guides.forEach((guide) => {
-                                  if (seen[guide]) {
-                                      return;
-                                  }
-                                  seen[guide] = true;
-                                  dispatch({
-                                      type: 'guide:toggle',
-                                      id: guide,
-                                  });
-                              });
-                          }
+                    disableGuides || pendingPath[0] ? undefined : clickInactive
                 }
             />
             <RenderPrimitives
                 primitives={guidePrimitives}
                 zoom={view.zoom}
-                width={width}
-                height={height}
+                bounds={bounds}
                 onClick={
-                    pathOrigin
-                        ? undefined
-                        : (guides, shift) => {
-                              if (!shift) {
-                                  dispatch({
-                                      type: 'tab:set',
-                                      tab: 'Guides',
-                                  });
-                                  dispatch({
-                                      type: 'selection:set',
-                                      selection: {
-                                          type: 'Guide',
-                                          ids: dedupString(guides),
-                                      },
-                                  });
-                                  return;
-                              }
-                              console.log(guides, 'click');
-                              const seen: {
-                                  [key: string]: true;
-                              } = {};
-                              // ok
-                              guides.forEach((guide) => {
-                                  if (seen[guide]) {
-                                      return;
-                                  }
-                                  seen[guide] = true;
-                                  dispatch({
-                                      type: 'guide:toggle',
-                                      id: guide,
-                                  });
-                              });
-                          }
+                    disableGuides || pendingPath[0] ? undefined : clickActive
                 }
             />
-            {!pathOrigin ? (
+            {!pendingPath[0] && !zooming ? (
                 <RenderIntersections
                     zoom={view.zoom}
+                    highlight={state.pending != null}
                     intersections={allIntersections}
                     onClick={onClickIntersection}
                 />
             ) : null}
             {state.pending && state.pending.type === 'Guide' ? (
                 <RenderPendingGuide
+                    bounds={bounds}
                     mirror={
                         state.activeMirror
                             ? mirrorTransforms[state.activeMirror]
@@ -562,28 +431,27 @@ export const Guides = ({
             {clip
                 ? pathToPrimitives(clip).map((prim, i) => (
                       <RenderPrimitive
+                          bounds={bounds}
                           isImplied
                           prim={prim}
                           zoom={view.zoom}
-                          width={width}
-                          height={height}
                           color={'magenta'}
                           strokeWidth={4}
                           key={i}
                       />
                   ))
                 : null}
-            {pathOrigin ? (
+            {pendingPath[0] ? (
                 <DrawPath
                     palette={state.palettes[state.activePalette]}
                     mirror={
-                        state.activeMirror && !pathOrigin.clip
+                        state.activeMirror && !pendingPath[0].isClip
                             ? mirrorTransforms[state.activeMirror]
                             : null
                     }
+                    pendingPath={[pendingPath[0], pendingPath[1]]}
                     view={view}
-                    isClip={pathOrigin.clip}
-                    origin={pathOrigin.coord}
+                    isClip={pendingPath[0].isClip}
                     primitives={guidePrimitives}
                     intersections={allIntersections}
                     onComplete={onCompletePath}
@@ -602,7 +470,9 @@ export const Guides = ({
                 />
             ) : null}
             {Object.keys(state.mirrors).map((m) =>
-                hover?.kind === 'Mirror' && hover.id === m ? (
+                hover?.type === 'element' &&
+                hover?.kind === 'Mirror' &&
+                hover.id === m ? (
                     <RenderMirror
                         key={m}
                         mirror={state.mirrors[m]}
@@ -615,112 +485,58 @@ export const Guides = ({
     );
 };
 
-export const RenderPendingMirror = ({
-    mirror,
-    zoom,
-    transforms,
-    mouse,
-}: {
-    mirror: PendingMirror;
-    zoom: number;
-    transforms: null | Array<Array<Matrix>>;
-    mouse: Coord;
-}) => {
-    let center = mirror.center ?? mouse;
-    let radial = mirror.center ? mouse : push(center, 0, 100 / zoom);
-    let line = {
-        p1: radial,
-        p2: push(
-            radial,
-            angleTo(radial, center) + (mirror.reflect ? Math.PI / 8 : 0),
-            dist(center, radial) / 2,
-        ),
-    };
-    const rotational: Array<boolean> = [];
-    for (let i = 0; i < mirror.rotations - 1; i++) {
-        rotational.push(true);
-    }
-    const mine = mirrorTransforms({
-        id: '',
-        origin: center,
-        point: radial,
-        rotational,
-        reflect: mirror.reflect,
-        parent: mirror.parent,
-    }).map(transformsToMatrices);
-    const alls: Array<Array<Matrix>> = mine.slice();
-    transforms?.forEach((outer) => {
-        alls.push(outer);
-        mine.forEach((inner) => {
-            alls.push(inner.concat(outer));
-        });
-    });
-    // let transformed =
-    return (
-        <>
-            <line
-                x1={line.p1.x * zoom}
-                y1={line.p1.y * zoom}
-                x2={line.p2.x * zoom}
-                y2={line.p2.y * zoom}
-                stroke="blue"
-                strokeWidth="2"
-                pointerEvents="none"
-            />
-            {alls.map((transforms, i) => {
-                const p1 = applyMatrices(line.p1, transforms);
-                const p2 = applyMatrices(line.p2, transforms);
-                return (
-                    <line
-                        pointerEvents="none"
-                        key={i}
-                        x1={p1.x * zoom}
-                        y1={p1.y * zoom}
-                        x2={p2.x * zoom}
-                        y2={p2.y * zoom}
-                        stroke="red"
-                        strokeWidth="2"
-                    />
-                );
-            })}
-        </>
-    );
-};
-
 export const RenderPrimitives = React.memo(
     ({
         primitives,
         zoom,
-        height,
-        width,
         onClick,
+        bounds,
         inactive,
     }: {
         zoom: number;
-        height: number;
-        width: number;
+        bounds: Bounds;
         primitives: Array<{ prim: Primitive; guides: Array<Id> }>;
         onClick?: (guides: Array<Id>, shift: boolean) => unknown;
         inactive?: boolean;
     }) => {
-        // console.log(primitives);
+        const isTouchScreen = 'ontouchstart' in window;
         return (
             <>
+                {isTouchScreen
+                    ? primitives.map((prim, i) =>
+                          prim.guides.length === 0 ? null : (
+                              <RenderPrimitive
+                                  strokeWidth={1}
+                                  bounds={bounds}
+                                  prim={prim.prim}
+                                  zoom={zoom}
+                                  inactive={inactive}
+                                  touchOnly
+                                  isImplied={!prim.guides.length}
+                                  onClick={
+                                      onClick && prim.guides.length
+                                          ? (shiftKey) =>
+                                                onClick(prim.guides, shiftKey)
+                                          : undefined
+                                  }
+                                  key={i}
+                              />
+                          ),
+                      )
+                    : null}
                 {primitives.map((prim, i) =>
                     prim.guides.length === 0 ? null : (
                         <RenderPrimitive
+                            strokeWidth={1}
+                            bounds={bounds}
                             prim={prim.prim}
                             zoom={zoom}
-                            height={height}
-                            width={width}
                             inactive={inactive}
                             isImplied={!prim.guides.length}
                             onClick={
                                 onClick && prim.guides.length
-                                    ? (evt: React.MouseEvent) => {
-                                          evt.stopPropagation();
-                                          onClick(prim.guides, evt.shiftKey);
-                                      }
+                                    ? (shiftKey) =>
+                                          onClick(prim.guides, shiftKey)
                                     : undefined
                             }
                             key={i}
@@ -731,3 +547,169 @@ export const RenderPrimitives = React.memo(
         );
     },
 );
+
+function keyHandler(
+    currentState: React.MutableRefObject<State>,
+    currentPathOrigin: React.MutableRefObject<
+        [
+            DrawPathState | null,
+            (
+                v:
+                    | DrawPathState
+                    | null
+                    | ((state: DrawPathState | null) => DrawPathState | null),
+            ) => void,
+        ]
+    >,
+    // setPathOrigin: React.Dispatch<
+    //     React.SetStateAction<{ coord: Intersect; clip: boolean } | null>
+    // >,
+    dispatch: (action: Action) => void,
+    currentPendingMirror: React.MutableRefObject<PendingMirror | null>,
+    setPendingMirror: (
+        mirror:
+            | PendingMirror
+            | ((mirror: PendingMirror | null) => PendingMirror | null)
+            | null,
+    ) => void,
+    setShiftKey: React.Dispatch<React.SetStateAction<false | Coord>>,
+    currentPos: React.MutableRefObject<Coord>,
+    // pathOrigin: { coord: Intersect; clip: boolean } | null,
+) {
+    return (evt: KeyboardEvent) => {
+        const state = currentState.current;
+        if (evt.target !== document.body || evt.metaKey || evt.ctrlKey) {
+            return;
+        }
+        if (evt.key === 'C' && currentPathOrigin.current) {
+            evt.stopPropagation();
+            return currentPathOrigin.current[1]((path) =>
+                path ? { ...path, isClip: !path.isClip } : null,
+            );
+        }
+        if (evt.key === 'ArrowUp' || evt.key === 'k') {
+            if (state.pending?.type === 'Guide') {
+                dispatch({
+                    type: 'pending:extent',
+                    delta: 1,
+                });
+            }
+            if (
+                state.selection?.type === 'Guide' &&
+                state.selection.ids.length === 1
+            ) {
+                const id = state.selection.ids[0];
+                const geom = state.guides[id].geom;
+                if (geom.type === 'Line') {
+                    dispatch({
+                        type: 'guide:update',
+                        id,
+                        guide: {
+                            ...state.guides[id],
+                            geom: {
+                                ...geom,
+                                extent:
+                                    geom.extent != null ? geom.extent + 1 : 2,
+                            },
+                        },
+                    });
+                }
+            }
+        }
+        if (evt.key === 'ArrowDown' || evt.key === 'j') {
+            if (state.pending?.type === 'Guide') {
+                dispatch({
+                    type: 'pending:extent',
+                    delta: -1,
+                });
+            }
+            if (
+                state.selection?.type === 'Guide' &&
+                state.selection.ids.length === 1
+            ) {
+                const id = state.selection.ids[0];
+                const geom = state.guides[id].geom;
+                if (geom.type === 'Line') {
+                    dispatch({
+                        type: 'guide:update',
+                        id,
+                        guide: {
+                            ...state.guides[id],
+                            geom: {
+                                ...geom,
+                                extent:
+                                    geom.extent != null
+                                        ? Math.max(0, geom.extent - 1)
+                                        : 1,
+                            },
+                        },
+                    });
+                }
+            }
+        }
+        if (evt.key === 'ArrowUp' && currentPendingMirror.current) {
+            setPendingMirror((mirror) =>
+                mirror
+                    ? {
+                          ...mirror,
+                          rotations: mirror.rotations + 1,
+                      }
+                    : null,
+            );
+            evt.preventDefault();
+            evt.stopPropagation();
+            return;
+        }
+        if (evt.key === 'ArrowDown' && currentPendingMirror.current) {
+            setPendingMirror((mirror) =>
+                mirror
+                    ? {
+                          ...mirror,
+                          rotations: Math.max(1, mirror.rotations - 1),
+                      }
+                    : null,
+            );
+            evt.preventDefault();
+            evt.stopPropagation();
+            return;
+        }
+        if (evt.key === 'r' && currentPendingMirror.current) {
+            setPendingMirror((mirror) =>
+                mirror
+                    ? {
+                          ...mirror,
+                          reflect: !mirror.reflect,
+                      }
+                    : null,
+            );
+            evt.preventDefault();
+            evt.stopPropagation();
+            return;
+        }
+        if (evt.key === 'Escape' && currentPendingMirror.current) {
+            setPendingMirror(null);
+            evt.preventDefault();
+            evt.stopPropagation();
+            return;
+        }
+        if (evt.key === 'Shift') {
+            setShiftKey(currentPos.current);
+        }
+        if (currentPathOrigin.current[0] && evt.key === 'Escape') {
+            currentPathOrigin.current[1](null);
+            evt.stopPropagation();
+        }
+    };
+}
+
+export function calculateBounds(width: number, height: number, view: View) {
+    const { x: x0, y: y0 } = screenToWorld(width, height, { x: 0, y: 0 }, view);
+    const { x: x1, y: y1 } = screenToWorld(
+        width,
+        height,
+        { x: width, y: height },
+        view,
+    );
+
+    return { x0, y0, x1, y1 };
+}

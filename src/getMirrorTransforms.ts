@@ -8,10 +8,15 @@ export const getMirrorTransforms = (mirrors: { [key: Id]: Mirror }) => {
     const got: { [key: Id]: Array<Array<Matrix>> } = {};
     const left = Object.keys(mirrors).filter((k) => {
         const m = mirrors[k];
-        if (m.parent) {
+        if (typeof m.parent === 'string') {
             return true;
         }
-        got[k] = mirrorTransforms(m).map(transformsToMatrices);
+        // otherwise, we're in the new style, with reified mirrors
+        if (m.parent) {
+            got[k] = getTransformsForNewMirror(m);
+        } else {
+            got[k] = mirrorTransforms(m).map(transformsToMatrices);
+        }
     });
     let tick = 0;
     while (left.length) {
@@ -20,11 +25,11 @@ export const getMirrorTransforms = (mirrors: { [key: Id]: Mirror }) => {
         }
         for (let i = 0; i < left.length; i++) {
             const m = mirrors[left[i]];
-            if (got[m.parent!]) {
+            if (typeof m.parent === 'string' && got[m.parent]) {
                 left.splice(i, 1);
 
                 let transforms = mirrorTransforms(m).map(transformsToMatrices);
-                const parent = got[m.parent!];
+                const parent = got[m.parent];
                 const res: Array<Array<Matrix>> = transforms.slice();
                 parent.forEach((outer) => {
                     res.push(outer);
@@ -40,6 +45,26 @@ export const getMirrorTransforms = (mirrors: { [key: Id]: Mirror }) => {
     return got;
 };
 
+export const getTransformsForNewMirror = (
+    mirror: Mirror,
+): Array<Array<Matrix>> => {
+    let transforms = mirrorTransforms(mirror).map(transformsToMatrices);
+    let current = mirror;
+    while (current.parent && typeof current.parent !== 'string') {
+        current = current.parent;
+        const outer = mirrorTransforms(current).map(transformsToMatrices);
+        let next: Array<Array<Matrix>> = transforms.slice();
+        outer.forEach((steps) => {
+            next.push(steps);
+            transforms.forEach((inner) => {
+                next.push(inner.concat(steps));
+            });
+        });
+        transforms = next;
+    }
+    return transforms;
+};
+
 export const getTransformsForMirror = (
     mirror: Id,
     mirrors: { [key: Id]: Mirror },
@@ -49,9 +74,11 @@ export const getTransformsForMirror = (
     );
     let current = mirrors[mirror];
     while (current.parent) {
-        current = mirrors[current.parent];
+        current =
+            typeof current.parent === 'string'
+                ? mirrors[current.parent]
+                : current.parent;
         const outer = mirrorTransforms(current).map(transformsToMatrices);
-        // TODO: I think `next` should be `transforms.slice()`???
         let next: Array<Array<Matrix>> = transforms.slice();
         outer.forEach((steps) => {
             next.push(steps);

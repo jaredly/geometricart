@@ -1,52 +1,69 @@
-/* @jsx jsx */
-/* @jsxFrag React.Fragment */
-import { jsx } from '@emotion/react';
+import { css } from '@emotion/css';
 import React from 'react';
 import { push } from './getMirrorTransforms';
+import { Bounds, visibleEndPoints } from './GuideElement';
 import { Primitive } from './intersect';
+import { useTouchClick } from './RenderIntersections';
 import { arcPath } from './RenderPendingPath';
+
+const hoverClass = css({
+    ':hover': {
+        stroke: '#fff',
+    },
+});
 
 export function RenderPrimitive({
     prim,
     zoom,
-    height,
-    width,
     onClick,
     isImplied,
+    bounds,
     color,
     inactive,
+    touchOnly,
     strokeWidth = 1,
-}: // strokeDasharray,
-{
+}: {
     color?: string;
     isImplied?: boolean;
     prim: Primitive;
+    bounds: Bounds;
     zoom: number;
-    height: number;
-    width: number;
+    touchOnly?: boolean;
     inactive?: boolean;
     strokeWidth?: number;
-    onClick?: (evt: React.MouseEvent) => unknown;
-    // strokeDasharray?: Array<number>
-}): jsx.JSX.Element {
+    onClick?: (shiftKey: boolean) => unknown;
+}) {
+    const handlers = useTouchClick<void>(() => {
+        if (onClick) {
+            onClick(false);
+        }
+    });
+
     const common = {
         stroke: color ?? (inactive ? 'rgba(102, 102, 102, 0.3)' : '#666'),
         strokeWidth,
-        onClick: onClick,
+        onClick: onClick
+            ? (evt: React.MouseEvent) => {
+                  evt.stopPropagation();
+                  onClick(evt.shiftKey);
+              }
+            : undefined,
+        ...handlers(undefined),
         style: onClick ? { cursor: 'pointer' } : {},
         strokeDasharray: isImplied ? '3 3' : '',
-
-        css: onClick
+        ...(touchOnly
             ? {
-                  ':hover': {
-                      stroke: '#fff',
-                  },
+                  strokeWidth: 20,
+                  strokeLinecap: 'round' as 'round',
+                  opacity: 0.01,
+                  stroke: 'blue',
               }
-            : {},
+            : {}),
+        className: onClick ? hoverClass : undefined,
     };
     if (prim.type === 'line') {
-        if (prim.m === Infinity) {
-            if (prim.limit) {
+        if (prim.limit) {
+            if (prim.m === Infinity) {
                 return (
                     <line
                         x1={prim.b * zoom}
@@ -59,17 +76,6 @@ export function RenderPrimitive({
             }
             return (
                 <line
-                    x1={prim.b * zoom}
-                    y1={-height}
-                    y2={height}
-                    x2={prim.b * zoom}
-                    {...common}
-                />
-            );
-        }
-        if (prim.limit) {
-            return (
-                <line
                     x1={prim.limit[0] * zoom}
                     y1={prim.limit[0] * zoom * prim.m + prim.b * zoom}
                     x2={prim.limit[1] * zoom}
@@ -77,17 +83,18 @@ export function RenderPrimitive({
                     {...common}
                 />
             );
+        } else {
+            const [left, right] = visibleEndPoints(prim, bounds);
+            return (
+                <line
+                    x1={left.x * zoom}
+                    y1={left.y * zoom}
+                    x2={right.x * zoom}
+                    y2={right.y * zoom}
+                    {...common}
+                />
+            );
         }
-
-        return (
-            <line
-                x1={-width}
-                y1={-width * prim.m + prim.b * zoom}
-                x2={width}
-                y2={prim.m * width + prim.b * zoom}
-                {...common}
-            />
-        );
     }
     if (prim.limit && prim.limit[0] !== prim.limit[1]) {
         const [t0, t1] = prim.limit;

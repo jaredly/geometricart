@@ -1,5 +1,9 @@
-import { applyMatrices, Matrix } from './getMirrorTransforms';
-import { Coord, Guide, GuideGeom, Id } from './types';
+import {
+    applyMatrices,
+    getTransformsForNewMirror,
+    Matrix,
+} from './getMirrorTransforms';
+import { Coord, Guide, GuideGeom, Id, Mirror } from './types';
 
 // These are NOT in /view/ coordinates!
 
@@ -15,7 +19,11 @@ export const calculateInactiveGuideElements = (
         elements.push(
             ...geomsForGiude(
                 guides[k],
-                guides[k].mirror ? mirrorTransforms[guides[k].mirror!] : null,
+                typeof guides[k].mirror === 'string'
+                    ? mirrorTransforms[guides[k].mirror as string]
+                    : guides[k].mirror
+                    ? getTransformsForNewMirror(guides[k].mirror as Mirror)
+                    : null,
             ),
         );
     });
@@ -34,7 +42,11 @@ export const calculateGuideElements = (
         elements.push(
             ...geomsForGiude(
                 guides[k],
-                guides[k].mirror ? mirrorTransforms[guides[k].mirror!] : null,
+                typeof guides[k].mirror === 'string'
+                    ? mirrorTransforms[guides[k].mirror as string]
+                    : guides[k].mirror
+                    ? getTransformsForNewMirror(guides[k].mirror as Mirror)
+                    : null,
             ),
         );
     });

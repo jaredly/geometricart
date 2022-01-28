@@ -1,6 +1,10 @@
 import { pendingGuide } from './RenderPendingGuide';
 import { coordKey } from './calcAllIntersections';
-import { applyMatrices, getTransformsForMirror } from './getMirrorTransforms';
+import {
+    applyMatrices,
+    getTransformsForMirror,
+    mirrorTransforms,
+} from './getMirrorTransforms';
 import { addAction, redoAction, undoAction } from './history';
 import { transformSegment } from './points';
 import {
@@ -20,6 +24,7 @@ import {
     PathGroup,
     PendingGuide,
     PathCreate,
+    PathMultiply,
 } from './types';
 import {
     pathsAreIdentical,
@@ -27,7 +32,9 @@ import {
     pathToSegmentKeys,
 } from './pathsAreIdentical';
 import { simplifyPath } from './insetPath';
-import { ensureClockwise } from './CanvasRender';
+import { ensureClockwise } from './pathToPoints';
+import { clipPath } from './clipPath';
+import { pathToPrimitives } from './findSelection';
 
 export const reducer = (state: State, action: Action): State => {
     if (action.type === 'undo') {
@@ -154,7 +161,12 @@ export const reduceWithoutUndo = (
                                     action.shiftKey,
                                     state.pending.extent,
                                 ),
-                                mirror: state.activeMirror,
+                                mirror: state.activeMirror
+                                    ? reifyMirror(
+                                          state.mirrors,
+                                          state.activeMirror,
+                                      )
+                                    : null,
                             },
                         },
                     },
@@ -225,7 +237,17 @@ export const reduceWithoutUndo = (
                     ...state,
                     mirrors: {
                         ...state.mirrors,
-                        [id]: { ...action.mirror, id },
+                        [id]: {
+                            ...action.mirror,
+                            parent:
+                                typeof action.mirror.parent === 'string'
+                                    ? reifyMirror(
+                                          state.mirrors,
+                                          action.mirror.parent,
+                                      )
+                                    : action.mirror.parent,
+                            id,
+                        },
                     },
                     nextId,
                 },
@@ -237,6 +259,9 @@ export const reduceWithoutUndo = (
             ];
         }
 
+        case 'path:multiply': {
+            return handlePathMultiply(state, action);
+        }
         case 'path:create': {
             return handlePathCreate(state, action);
         }
@@ -505,6 +530,116 @@ export const reduceWithoutUndo = (
                 },
             ];
         }
+        case 'group:regroup': {
+            const paths = { ...state.paths };
+            const touched: { [key: Id]: true } = {};
+            const ids =
+                action.selection.type === 'Path'
+                    ? action.selection.ids
+                    : Object.keys(paths).filter((k) =>
+                          action.selection.ids.includes(paths[k].group!),
+                      );
+            let nextId = state.nextId;
+            const group = `id-${nextId++}`;
+            const prevGroups: { [key: Id]: Id | null } = {};
+            ids.forEach((id) => {
+                // if (paths[id].group) {
+                //     touched[paths[id].group!] = true
+                // }
+                prevGroups[id] = paths[id].group;
+                paths[id] = { ...paths[id], group };
+            });
+            return [
+                {
+                    ...state,
+                    nextId,
+                    selection: { type: 'PathGroup', ids: [group] },
+                    paths,
+                    pathGroups: {
+                        ...state.pathGroups,
+                        [group]: {
+                            id: group,
+                            group: null,
+                        },
+                    },
+                },
+                {
+                    type: action.type,
+                    action,
+                    created: [group, state.nextId],
+                    prevGroups,
+                },
+            ];
+        }
+        case 'clip:cut': {
+            const paths: State['paths'] = {};
+            const clip = state.clips[action.clip];
+            let clipPrims = pathToPrimitives(clip);
+            const added: Array<Id> = [];
+            const previous: State['paths'] = {};
+            Object.keys(state.paths).forEach((k) => {
+                const path = state.paths[k];
+                const group = path.group ? state.pathGroups[path.group] : null;
+                const result = clipPath(path, clip, clipPrims, group?.clipMode);
+                // TODO: figure out if the result is the same...
+                if (result.length > 0) {
+                    paths[k] = result[0];
+                }
+                if (
+                    result.length !== 1 ||
+                    pathToSegmentKeys(path.origin, path.segments).join(';') !==
+                        pathToSegmentKeys(
+                            result[0].origin,
+                            result[0].segments,
+                        ).join(';')
+                ) {
+                    previous[k] = state.paths[k];
+                }
+                if (result.length > 1) {
+                    result.slice(1).forEach((path, i) => {
+                        const id = `${k}.${i}`;
+                        added.push(id);
+                        paths[id] = { ...path, id };
+                    });
+                }
+            });
+            return [
+                { ...state, paths, view: { ...state.view, activeClip: null } },
+                { type: action.type, action, paths: previous, added },
+            ];
+        }
+        case 'mirror:delete': {
+            const mirrors = { ...state.mirrors };
+            delete mirrors[action.id];
+            return [
+                {
+                    ...state,
+                    mirrors,
+                    activeMirror:
+                        state.activeMirror === action.id
+                            ? null
+                            : state.activeMirror,
+                },
+                {
+                    type: action.type,
+                    action,
+                    mirror: state.mirrors[action.id],
+                    prevActive: state.activeMirror,
+                },
+            ];
+        }
+        case 'overlay:delete': {
+            const overlays = { ...state.overlays };
+            delete overlays[action.id];
+            return [
+                { ...state, overlays },
+                {
+                    type: action.type,
+                    action,
+                    removed: state.overlays[action.id],
+                },
+            ];
+        }
         default:
             let _x: never = action;
             console.log(`SKIPPING ${(action as any).type}`);
@@ -514,6 +649,51 @@ export const reduceWithoutUndo = (
 
 export const undo = (state: State, action: UndoAction): State => {
     switch (action.type) {
+        case 'overlay:delete': {
+            return {
+                ...state,
+                overlays: {
+                    ...state.overlays,
+                    [action.action.id]: action.removed,
+                },
+            };
+        }
+        case 'mirror:delete': {
+            return {
+                ...state,
+                mirrors: {
+                    ...state.mirrors,
+                    [action.action.id]: action.mirror,
+                },
+                activeMirror: action.prevActive,
+            };
+        }
+        case 'clip:cut': {
+            const paths = { ...state.paths, ...action.paths };
+            action.added.forEach((k) => {
+                delete paths[k];
+            });
+            return {
+                ...state,
+                view: {
+                    ...state.view,
+                    activeClip: action.action.clip,
+                },
+                paths,
+            };
+        }
+        case 'group:regroup': {
+            state = { ...state };
+            if (action.created) {
+                state.pathGroups = { ...state.pathGroups };
+                delete state.pathGroups[action.created[0]];
+                state.nextId = action.created[1];
+            }
+            Object.keys(action.prevGroups).forEach((k) => {
+                state.paths[k].group = action.prevGroups[k];
+            });
+            return state;
+        }
         case 'pending:extent': {
             const pending = state.pending as PendingGuide;
             return {
@@ -610,6 +790,40 @@ export const undo = (state: State, action: UndoAction): State => {
         case 'view:update':
             return { ...state, view: action.prev };
 
+        case 'path:multiply': {
+            state = {
+                ...state,
+                paths: {
+                    ...state.paths,
+                },
+                nextId: action.added[2],
+            };
+            action.added[0].forEach((id) => {
+                delete state.paths[id];
+            });
+            if (action.added[1]) {
+                state.pathGroups = { ...state.pathGroups };
+                delete state.pathGroups[action.added[1]];
+
+                const sourceIds =
+                    action.action.selection.type === 'Path'
+                        ? action.action.selection.ids
+                        : Object.keys(state.paths).filter(
+                              (k) =>
+                                  state.paths[k].group &&
+                                  action.action.selection.ids.includes(
+                                      state.paths[k].group!,
+                                  ),
+                          );
+                sourceIds.forEach((id) => {
+                    if (state.paths[id].group === action.added[1]) {
+                        state.paths[id].group = null;
+                    }
+                });
+            }
+
+            return state;
+        }
         case 'path:create': {
             state = {
                 ...state,
@@ -625,6 +839,7 @@ export const undo = (state: State, action: UndoAction): State => {
                 state.pathGroups = { ...state.pathGroups };
                 delete state.pathGroups[action.added[1]];
             }
+            state.selection = null;
             return state;
         }
 
@@ -680,6 +895,103 @@ export const undo = (state: State, action: UndoAction): State => {
     }
 };
 
+export function handlePathMultiply(
+    state: State,
+    action: PathMultiply,
+): [State, UndoAction | null] {
+    let nextId = state.nextId;
+
+    const transforms = getTransformsForMirror(action.mirror, state.mirrors);
+
+    const sourceIds =
+        action.selection.type === 'Path'
+            ? action.selection.ids
+            : Object.keys(state.paths).filter(
+                  (k) =>
+                      state.paths[k].group &&
+                      action.selection.ids.includes(state.paths[k].group!),
+              );
+
+    const ids: Array<Id> = [];
+
+    const usedPaths = Object.keys(state.paths).map((k) =>
+        pathToSegmentKeys(state.paths[k].origin, state.paths[k].segments),
+    );
+    // const usedPaths = [pathToSegmentKeys(main.origin, main.segments)];
+
+    state = { ...state, paths: { ...state.paths } };
+
+    let groupId = null as null | Id;
+
+    sourceIds.forEach((id) => {
+        const main = state.paths[id];
+
+        if (!main.group) {
+            if (!groupId) {
+                groupId = `id-${nextId++}`;
+                state.pathGroups = {
+                    ...state.pathGroups,
+                    [groupId]: {
+                        group: null,
+                        id: groupId,
+                    },
+                };
+            }
+            state.paths[id] = {
+                ...main,
+                group: groupId!,
+            };
+        }
+
+        transforms.forEach((matrices) => {
+            const origin = applyMatrices(main.origin, matrices);
+            const segments = main.segments.map((seg) =>
+                transformSegment(seg, matrices),
+            );
+            // TOOD: should I check each prev against my forward & backward,
+            // or put both forward & backward into the list?
+            // Are they equivalent?
+            const forward = pathToSegmentKeys(origin, segments);
+            const backward = pathToReversedSegmentKeys(origin, segments);
+            if (
+                usedPaths.some(
+                    (path) =>
+                        pathsAreIdentical(path, backward) ||
+                        pathsAreIdentical(path, forward),
+                )
+            ) {
+                return;
+            }
+            usedPaths.push(forward);
+            let nid = `id-${nextId++}`;
+            state.paths[nid] = {
+                id: nid,
+                group: main.group ?? groupId,
+                ordering: 0,
+                hidden: false,
+                created: 0,
+                origin,
+                segments,
+                style: main.group ? main.style : { fills: [], lines: [] },
+            };
+            ids.push(nid);
+        });
+    });
+
+    return [
+        {
+            ...state,
+            nextId,
+            pending: null,
+        },
+        {
+            type: action.type,
+            action,
+            added: [ids, groupId, state.nextId],
+        },
+    ];
+}
+
 export function handlePathCreate(
     state: State,
     action: PathCreate,
@@ -694,25 +1006,29 @@ export function handlePathCreate(
         fills: [{ color: 0 }],
         lines: [{ color: 'white', width: 3 }],
     };
+    groupId = `id-${nextId++}`;
 
     let main: Path = {
         id,
         created: 0,
-        group: null,
+        group: groupId,
         ordering: 0,
         hidden: false,
         origin: action.origin,
         // simplify it up y'all
         segments: simplifyPath(ensureClockwise(action.segments)),
-        style: {
-            fills: [],
-            lines: [],
+        style,
+    };
+
+    state.pathGroups = {
+        ...state.pathGroups,
+        [groupId]: {
+            group: null,
+            id: groupId,
         },
     };
 
     if (state.activeMirror) {
-        groupId = `id-${nextId++}`;
-        main.group = groupId;
         const transforms = getTransformsForMirror(
             state.activeMirror,
             state.mirrors,
@@ -749,30 +1065,17 @@ export function handlePathCreate(
                 created: 0,
                 origin,
                 segments,
-                style: {
-                    lines: [],
-                    fills: [],
-                },
+                style,
             };
             ids.push(nid);
         });
-        state.pathGroups = {
-            ...state.pathGroups,
-            [groupId]: {
-                group: null,
-                id: groupId,
-                style,
-            },
-        };
-        // here we gooooo
-    } else {
-        main.style = style;
     }
     state.paths[id] = main;
     return [
         {
             ...state,
             nextId,
+            selection: { type: 'PathGroup', ids: [groupId] },
             paths: {
                 ...state.paths,
                 [id]: main,
@@ -786,3 +1089,11 @@ export function handlePathCreate(
         },
     ];
 }
+
+export const reifyMirror = (mirrors: { [key: Id]: Mirror }, id: Id): Mirror => {
+    let mirror = mirrors[id];
+    if (typeof mirror.parent === 'string') {
+        mirror = { ...mirror, parent: reifyMirror(mirrors, mirror.parent) };
+    }
+    return mirror;
+};

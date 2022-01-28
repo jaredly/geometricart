@@ -6,9 +6,13 @@ import { State } from './types';
 export const RenderWebGL = ({
     state,
     texture,
+    width,
+    height,
 }: {
     state: State;
     texture: { id: string; scale: number; intensity: number };
+    width: number;
+    height: number;
 }) => {
     const ref = React.useRef(null as null | HTMLCanvasElement);
     // const [time, setTime] = React.useState(null as null | [number, number]);
@@ -32,8 +36,8 @@ export const RenderWebGL = ({
     return (
         <canvas
             ref={(node) => (ref.current = node)}
-            width="1000"
-            height="1000"
+            width={width}
+            height={height}
             style={{
                 position: 'absolute',
                 top: 0,

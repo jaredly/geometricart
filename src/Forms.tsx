@@ -35,6 +35,56 @@ export const Text = ({
     );
 };
 
+export const BlurInt = ({
+    value,
+    onChange,
+    label,
+}: {
+    value: number | undefined | null;
+    onChange: (v: number | undefined) => unknown;
+    label?: (ppi: number) => React.ReactNode;
+}) => {
+    const [text, setText] = React.useState(null as null | string);
+    let v = value;
+    if (text != null) {
+        const res = +text;
+        if (!isNaN(res) && text.trim()) {
+            v = res;
+        }
+    }
+    return (
+        <>
+            <input
+                value={text != null ? text : value ?? ''}
+                onChange={(evt) => {
+                    setText(evt.target.value);
+                }}
+                onKeyDown={(evt) => {
+                    if (evt.key === 'Return' || evt.key === 'Enter') {
+                        (evt.target as HTMLInputElement).blur();
+                    }
+                }}
+                onBlur={() => {
+                    if (text != null) {
+                        const res = +text;
+                        if (isNaN(res) || !text.trim()) {
+                            onChange(undefined);
+                        } else {
+                            onChange(res);
+                        }
+                    }
+                }}
+                css={{
+                    width: 50,
+                }}
+                step="1"
+                type="number"
+            />
+            {label && v != null ? label(v) : null}
+        </>
+    );
+};
+
 export const Float = ({
     value,
     onChange,
@@ -314,6 +364,13 @@ export const PathGroupForm = ({
                     Delete
                 </button>
             </div>
+            <Toggle
+                value={!!group.insetBeforeClip}
+                onChange={(insetBeforeClip) =>
+                    onChange({ ...group, insetBeforeClip })
+                }
+                label="Inset before clip"
+            />
             <div>
                 Clip Mode:
                 {['none', 'remove', 'normal'].map((name) => (
@@ -602,6 +659,12 @@ export const ViewForm = ({
                 label="Show guides"
                 value={view.guides}
                 onChange={(guides) => onChange({ ...view, guides })}
+            />
+
+            <Toggle
+                label="Laser Cut Mode"
+                value={!!view.laserCutMode}
+                onChange={(laserCutMode) => onChange({ ...view, laserCutMode })}
             />
 
             <Toggle
