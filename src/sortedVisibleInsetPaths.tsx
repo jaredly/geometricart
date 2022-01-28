@@ -223,7 +223,7 @@ type Used = { [centerRad: string]: Uses };
 
 export const pathToInsetPaths = (path: Path): Array<Path> => {
     const singles: Array<[Path, number | undefined]> = [];
-    path.style.fills.forEach((fill) => {
+    path.style.fills.forEach((fill, i) => {
         if (!fill) {
             return;
         }
@@ -231,14 +231,14 @@ export const pathToInsetPaths = (path: Path): Array<Path> => {
             {
                 ...path,
                 style: {
-                    fills: [{ ...fill, inset: undefined }],
+                    fills: [{ ...fill, inset: undefined, originalIdx: i }],
                     lines: [],
                 },
             },
             fill.inset,
         ]);
     });
-    path.style.lines.forEach((line) => {
+    path.style.lines.forEach((line, i) => {
         if (!line) {
             return;
         }
@@ -246,7 +246,7 @@ export const pathToInsetPaths = (path: Path): Array<Path> => {
             {
                 ...path,
                 style: {
-                    lines: [{ ...line, inset: undefined }],
+                    lines: [{ ...line, inset: undefined, originalIdx: i }],
                     fills: [],
                 },
             },
@@ -259,11 +259,12 @@ export const pathToInsetPaths = (path: Path): Array<Path> => {
             if (!inset) {
                 return [path];
             }
-            console.log('INSETS');
+            // console.log('INSETS');
 
             const regions = cleanUpInsetSegments2(
                 insetSegmentsBeta(path.segments, inset / 100),
             );
+            console.log('insets', regions.length);
 
             return regions.map((segments) => ({
                 ...path,

@@ -383,7 +383,7 @@ export const findStraightInternalPos = (
             return [
                 thisTheta + Math.PI,
                 nextTheta,
-                push(segment.to, nextTheta + between / 2, 10),
+                push(segment.to, nextTheta + between / 2, 0.01),
                 segment.to,
             ];
         }
@@ -410,7 +410,7 @@ export const findInternalPos = (
             return [
                 thisTheta + Math.PI,
                 nextTheta,
-                push(segment.to, nextTheta + between / 2, 10),
+                push(segment.to, nextTheta + between / 2, 0.01),
                 segment.to,
             ];
         }

@@ -29,6 +29,7 @@ export type StyleHover =
           color: string | number;
       }; // TODO add line width and inset and stuff, when we have a slider or something
 
+// This may be done after splitting everything.
 export const applyStyleHover = (
     styleHover: StyleHover,
     style: Style,
@@ -36,24 +37,51 @@ export const applyStyleHover = (
     style = { ...style };
     if (styleHover.type === 'fill-color') {
         style.fills = style.fills.slice();
-        const fill = style.fills[styleHover.idx];
-        if (fill) {
-            style.fills[styleHover.idx] = { ...fill, color: styleHover.color };
+        if (
+            style.fills.length === 1 &&
+            style.fills[0]?.originalIdx === styleHover.idx
+        ) {
+            style.fills[0] = { ...style.fills[0], color: styleHover.color };
+        } else {
+            const fill = style.fills[styleHover.idx];
+            if (fill) {
+                style.fills[styleHover.idx] = {
+                    ...fill,
+                    color: styleHover.color,
+                };
+            }
         }
     } else if (styleHover.type === 'line-color') {
         style.lines = style.lines.slice();
-        const line = style.lines[styleHover.idx];
-        if (line) {
-            style.lines[styleHover.idx] = { ...line, color: styleHover.color };
+        if (
+            style.lines.length === 1 &&
+            style.lines[0]?.originalIdx === styleHover.idx
+        ) {
+            style.lines[0] = { ...style.lines[0], color: styleHover.color };
+        } else {
+            const line = style.lines[styleHover.idx];
+            if (line) {
+                style.lines[styleHover.idx] = {
+                    ...line,
+                    color: styleHover.color,
+                };
+            }
         }
     } else if (styleHover.type === 'fill-lightness') {
         style.fills = style.fills.slice();
-        const fill = style.fills[styleHover.idx];
-        if (fill) {
-            style.fills[styleHover.idx] = {
-                ...fill,
-                lighten: styleHover.lighten,
-            };
+        if (
+            style.fills.length === 1 &&
+            style.fills[0]?.originalIdx === styleHover.idx
+        ) {
+            style.fills[0] = { ...style.fills[0], lighten: styleHover.lighten };
+        } else {
+            const fill = style.fills[styleHover.idx];
+            if (fill) {
+                style.fills[styleHover.idx] = {
+                    ...fill,
+                    lighten: styleHover.lighten,
+                };
+            }
         }
     }
     return style;

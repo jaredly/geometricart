@@ -163,6 +163,7 @@ export type Mirror = {
 };
 
 export type Fill = {
+    originalIdx?: number;
     inset?: number;
     opacity?: number;
     color?: string | number;
@@ -171,6 +172,7 @@ export type Fill = {
 };
 
 export type StyleLine = {
+    originalIdx?: number;
     inset?: number;
     color?: string | number;
     width?: number;
