@@ -374,6 +374,10 @@ export type Animations = {
             code: string;
             enabled: boolean;
             phase: 'pre-inset' | 'post-inset';
+            selection?: {
+                type: 'Path' | 'PathGroup';
+                ids: Array<Id>;
+            };
         };
     };
 };

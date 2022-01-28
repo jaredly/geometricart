@@ -323,17 +323,7 @@ export const Canvas = ({
     );
 
     const selectedIds = React.useMemo(() => {
-        const selectedIds: { [key: string]: boolean } = {};
-        if (state.selection?.type === 'Path') {
-            state.selection.ids.forEach((id) => (selectedIds[id] = true));
-        } else if (state.selection?.type === 'PathGroup') {
-            Object.keys(state.paths).forEach((id) => {
-                if (state.selection!.ids.includes(state.paths[id].group!)) {
-                    selectedIds[id] = true;
-                }
-            });
-        }
-        return selectedIds;
+        return getSelectedIds(state.paths, state.selection);
     }, [state.selection, state.paths]);
 
     const scripts = React.useMemo(() => {
@@ -368,6 +358,7 @@ export const Canvas = ({
                         fn,
                         args: args.slice(1),
                         phase: script.phase,
+                        selection: script.selection,
                     };
                 } catch (err) {
                     console.log('Bad fn');
@@ -377,7 +368,6 @@ export const Canvas = ({
             })
             .filter(Boolean);
     }, [state.animations]);
-    // console.log('ok scripts', scripts, state.animations.scripts);
 
     const animatedPaths = React.useMemo(() => {
         if (!scripts.length) {
@@ -385,25 +375,36 @@ export const Canvas = ({
         }
         const paths = { ...state.paths };
         scripts.forEach((script) => {
+            if (!script) {
+                return;
+            }
+
+            const selectedIds = script.selection
+                ? getSelectedIds(paths, script.selection)
+                : null;
+            let subset = paths;
+            if (selectedIds) {
+                subset = {};
+                Object.keys(selectedIds).forEach(
+                    (id) => (subset[id] = paths[id]),
+                );
+            }
             const args = [
-                paths,
+                subset,
                 ...script!.args.map((arg) => currentAnimatedValues[arg] || 0),
             ];
-            // console.log(
-            //     'scripts!',
-            //     script!.key,
-            //     args,
-            //     currentAnimatedValues,
-            //     script!.args,
-            // );
             try {
                 script!.fn.apply(null, args);
             } catch (err) {
                 console.error(err);
                 console.log(`Bad fn invocation`, script!.key);
             }
+            if (selectedIds) {
+                Object.keys(selectedIds).forEach(
+                    (id) => (paths[id] = subset[id]),
+                );
+            }
         });
-        // console.log('pathd', paths);
         return paths;
     }, [state.paths, state.pathGroups, scripts, currentAnimatedValues]);
 
@@ -417,7 +418,6 @@ export const Canvas = ({
                 state.view.laserCutMode
                     ? state.palettes[state.activePalette]
                     : undefined,
-                // styleHover ?? undefined,
                 undefined,
                 selectedIds,
             ),
@@ -427,7 +427,6 @@ export const Canvas = ({
             clip,
             state.view.hideDuplicatePaths,
             state.view.laserCutMode,
-            // styleHover,
             selectedIds,
         ],
     );
@@ -901,13 +900,14 @@ export const Canvas = ({
                     left: 0,
                     right: 0,
                     height: 400,
+                    background: 'rgba(255,255,255,0.1)',
                 }}
             >
                 {Object.keys(state.animations.scripts).map((key) => {
                     const script = state.animations.scripts[key];
                     return (
                         <div>
-                            {key}
+                            <div>{key}</div>
                             <button
                                 onClick={() => {
                                     dispatch({
@@ -922,22 +922,75 @@ export const Canvas = ({
                             >
                                 {script.enabled ? 'Disable' : 'Enable'}
                             </button>
-
-                            <Text
-                                key={key}
-                                multiline
-                                value={script.code}
-                                onChange={(code) => {
-                                    const formatted = prettier.format(code, {
-                                        plugins: [babel],
-                                    });
-                                    dispatch({
-                                        type: 'script:update',
-                                        key,
-                                        script: { ...script, code: formatted },
-                                    });
-                                }}
-                            />
+                            {script.selection ? (
+                                <div>
+                                    Current selection:{' '}
+                                    {script.selection.ids.length}{' '}
+                                    {script.selection.type}
+                                    <button
+                                        onClick={() => {
+                                            dispatch({
+                                                type: 'script:update',
+                                                key,
+                                                script: {
+                                                    ...script,
+                                                    selection: undefined,
+                                                },
+                                            });
+                                        }}
+                                    >
+                                        Clear selection
+                                    </button>
+                                </div>
+                            ) : (
+                                <div>
+                                    No selection (will apply to all paths)
+                                    <button
+                                        disabled={!state.selection}
+                                        onClick={() => {
+                                            const sel = state.selection;
+                                            if (
+                                                sel?.type === 'PathGroup' ||
+                                                sel?.type === 'Path'
+                                            ) {
+                                                dispatch({
+                                                    type: 'script:update',
+                                                    key,
+                                                    script: {
+                                                        ...script,
+                                                        selection: sel as any,
+                                                    },
+                                                });
+                                            }
+                                        }}
+                                    >
+                                        Set current selection
+                                    </button>
+                                </div>
+                            )}
+                            <div>
+                                <Text
+                                    key={key}
+                                    multiline
+                                    value={script.code}
+                                    onChange={(code) => {
+                                        const formatted = prettier.format(
+                                            code,
+                                            {
+                                                plugins: [babel],
+                                            },
+                                        );
+                                        dispatch({
+                                            type: 'script:update',
+                                            key,
+                                            script: {
+                                                ...script,
+                                                code: formatted,
+                                            },
+                                        });
+                                    }}
+                                />
+                            </div>
                         </div>
                     );
                 })}
@@ -988,7 +1041,6 @@ export const TickTock = ({
     }, [tick]);
     return (
         <div>
-            {t.toFixed(2)}
             <BlurInt value={t} onChange={(t) => (t ? set(t) : null)} />
             <input
                 type="range"
@@ -1067,6 +1119,20 @@ export const dragView = (
     };
     return res;
 };
+
+function getSelectedIds(paths: State['paths'], selection: State['selection']) {
+    const selectedIds: { [key: string]: boolean } = {};
+    if (selection?.type === 'Path') {
+        selection.ids.forEach((id) => (selectedIds[id] = true));
+    } else if (selection?.type === 'PathGroup') {
+        Object.keys(paths).forEach((id) => {
+            if (selection!.ids.includes(paths[id].group!)) {
+                selectedIds[id] = true;
+            }
+        });
+    }
+    return selectedIds;
+}
 
 function rectForCorners(pos: { x: number; y: number }, drag: Coord) {
     return {
