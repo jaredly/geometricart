@@ -95,6 +95,7 @@ export const PendingPreview = ({
             >
                 {state.parts.map((part, i) => (
                     <RenderSegment
+                        key={i}
                         segment={part.segment}
                         prev={
                             i >= 1

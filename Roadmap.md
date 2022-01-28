@@ -1,4 +1,13 @@
 
+AOKKK now we're up to animations. Love it so much.
+
+Oh but first, can has some optimization? idk.
+
+
+
+
+
+
 ARCCSSS
 
 hmm so the thing that actually makes sense is to extend the border around the now-corner.
@@ -7,6 +16,13 @@ that sounds quite reasonable.
 
 we could square off the ends, or round them off I guess.
 could be up to a user toggle.
+
+Ok, so inset is now correct between two arcs. It's possible that
+the arc/line and line/arc stuff is still faked, and I need to do the same
+thing I did with the arc/arc. But I think it might also be fine.
+
+The big deal now is getting performance back to a good place.
+probably by aggressively caching.
 
 
 # Ok, insetting is basically done? I mean arcs aren't quite right.
