@@ -413,7 +413,7 @@ export const Canvas = ({
                             </>
                         );
                     }
-                    if (showWind) {
+                    if (showWind === 2) {
                         const inset = insetSegmentsBeta(segments, windAt);
                         const parts = segmentsToNonIntersectingSegments(inset);
                         const regions = findRegions(
@@ -455,7 +455,12 @@ export const Canvas = ({
                                     ),
                                 )}
                                 {regions.map((region, i) => {
-                                    const pos = findInternalPos(region);
+                                    const [t0, t1, pos, p0] =
+                                        findInternalPos(region);
+
+                                    const pa = push(p0, t0, 10);
+                                    const pb = push(p0, t1, 10);
+
                                     const wind = windingNumber(
                                         pos,
                                         primitives,
@@ -468,6 +473,13 @@ export const Canvas = ({
                                     );
                                     return (
                                         <>
+                                            <text
+                                                x={pos.x}
+                                                y={pos.y}
+                                                fill={'white'}
+                                            >
+                                                {wcount}
+                                            </text>
                                             <path
                                                 d={calcPathD(
                                                     pathSegs(region),
@@ -484,37 +496,37 @@ export const Canvas = ({
                                                 r={2}
                                                 fill={'purple'}
                                             />
-                                            <text
-                                                x={pos.x}
-                                                y={pos.y}
-                                                fill={'white'}
-                                            >
-                                                {wcount}
-                                            </text>
-                                            {wind.map(
-                                                ({ prev, seg, up, hit }, j) => {
-                                                    return (
-                                                        <g key={i + 'w' + j}>
-                                                            {/* <RenderSegment
-                                                                prev={prev}
-                                                                segment={seg}
-                                                                zoom={1}
-                                                                color={
-                                                                    up
-                                                                        ? 'red'
-                                                                        : 'green'
-                                                                }
-                                                            /> */}
-                                                            <circle
-                                                                cx={hit.x}
-                                                                cy={hit.y}
-                                                                r={2}
-                                                                fill="green"
-                                                            />
-                                                        </g>
-                                                    );
-                                                },
-                                            )}
+                                            {wind.map(({ hit }, j) => {
+                                                return (
+                                                    <g key={i + 'w' + j}>
+                                                        <line
+                                                            x1={hit.x - 3}
+                                                            y1={hit.y}
+                                                            x2={hit.x + 3}
+                                                            y2={hit.y}
+                                                            stroke="green"
+                                                            strokeWidth={1}
+                                                            fill="none"
+                                                        />
+                                                    </g>
+                                                );
+                                            })}
+                                            <line
+                                                stroke="black"
+                                                strokeWidth={2}
+                                                x1={p0.x}
+                                                y1={p0.y}
+                                                x2={pa.x}
+                                                y2={pa.y}
+                                            />
+                                            <line
+                                                stroke="white"
+                                                strokeWidth={2}
+                                                x1={p0.x}
+                                                y1={p0.y}
+                                                x2={pb.x}
+                                                y2={pb.y}
+                                            />
                                         </>
                                     );
                                 })}

@@ -366,7 +366,9 @@ export const cleanUpInsetSegmentsOld = (segments: Array<Segment>) => {
 export const cleanUpInsetSegments = cleanUpInsetSegmentsOld;
 
 // segments are assumed to be clockwise
-export const findStraightInternalPos = (segments: Array<Segment>) => {
+export const findStraightInternalPos = (
+    segments: Array<Segment>,
+): [number, number, Coord, Coord] | null => {
     for (let i = 0; i < segments.length; i++) {
         const next = segments[(i + 1) % segments.length];
         const segment = segments[i];
@@ -374,36 +376,48 @@ export const findStraightInternalPos = (segments: Array<Segment>) => {
             continue;
         }
         const prev = segments[i === 0 ? segments.length - 1 : i - 1].to;
-        const thisTheta = segmentAngle(prev, segment, false);
-        const nextTheta = segmentAngle(segment.to, next, true);
+        const thisTheta = segmentAngle(prev, segment, false, true);
+        const nextTheta = segmentAngle(segment.to, next, true, true);
         const between = angleBetween(nextTheta, thisTheta + Math.PI, true);
         if (between < Math.PI) {
-            return push(segment.to, nextTheta + between / 2, 0.01);
+            return [
+                thisTheta + Math.PI,
+                nextTheta,
+                push(segment.to, nextTheta + between / 2, 10),
+                segment.to,
+            ];
         }
     }
     return null;
 };
 
 // segments are assumed to be clockwise
-export const findInternalPos = (segments: Array<Segment>) => {
+export const findInternalPos = (
+    segments: Array<Segment>,
+): [number, number, Coord, Coord] => {
     const straight = findStraightInternalPos(segments);
     if (straight) {
         return straight;
     }
     for (let i = 0; i < segments.length; i++) {
-        const next = segments[(i + 1) % segments.length];
-        const segment = segments[i];
         const prev = segments[i === 0 ? segments.length - 1 : i - 1].to;
-        const thisTheta = segmentAngle(prev, segment, false);
-        const nextTheta = segmentAngle(segment.to, next, true);
+        const segment = segments[i];
+        const next = segments[(i + 1) % segments.length];
+        const thisTheta = segmentAngle(prev, segment, false, true);
+        const nextTheta = segmentAngle(segment.to, next, true, true);
         const between = angleBetween(nextTheta, thisTheta + Math.PI, true);
         if (between < Math.PI) {
-            return push(segment.to, nextTheta + between / 2, 0.01);
+            return [
+                thisTheta + Math.PI,
+                nextTheta,
+                push(segment.to, nextTheta + between / 2, 10),
+                segment.to,
+            ];
         }
     }
     console.warn('no internal pos???', segments);
     // throw new Error(`nope`);
-    return segments[0].to;
+    return [0, 0, segments[0].to, segments[0].to];
 };
 
 export const cleanUpInsetSegments2 = (segments: Array<Segment>) => {
@@ -420,7 +434,7 @@ export const removeNonWindingRegions = (
 ) => {
     const primitives = pathToPrimitives(originalSegments);
     return regions.filter((region) => {
-        const pos = findInternalPos(region);
+        const [, , pos] = findInternalPos(region);
         const wind = windingNumber(pos, primitives, originalSegments, false);
         const wcount = wind.reduce((c, w) => (w.up ? 1 : -1) + c, 0);
 
@@ -432,11 +446,18 @@ export const segmentAngle = (
     prev: Coord,
     segment: Segment,
     initial: boolean = true,
+    real: boolean = false,
 ) => {
     if (segment.type === 'Line') {
         return angleTo(prev, segment.to);
     }
     if (initial) {
+        if (real) {
+            return (
+                angleTo(segment.center, prev) +
+                (Math.PI / 2) * (segment.clockwise ? 1 : -1)
+            );
+        }
         const t1 = angleTo(segment.center, prev);
         const t2 = angleTo(segment.center, segment.to);
         const bt = angleBetween(t1, t2, segment.clockwise);
