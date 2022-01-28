@@ -21,6 +21,7 @@ import { handleSelection } from './handleSelection';
 import { IconButton, ScissorsCuttingIcon } from './icons/Icon';
 import { MirrorMenu } from './MirrorMenu';
 import {
+    applyStyleHover,
     mergeFills,
     mergeStyleLines,
     MultiStyleForm,
@@ -259,7 +260,7 @@ export const Canvas = ({
         return selectedIds;
     }, [state.selection, state.paths]);
 
-    const pathsToShow = React.useMemo(
+    let pathsToShow = React.useMemo(
         () =>
             sortedVisibleInsetPaths(
                 state.paths,
@@ -269,7 +270,8 @@ export const Canvas = ({
                 state.view.laserCutMode
                     ? state.palettes[state.activePalette]
                     : undefined,
-                styleHover ?? undefined,
+                // styleHover ?? undefined,
+                undefined,
                 selectedIds,
             ),
         [
@@ -278,10 +280,21 @@ export const Canvas = ({
             clip,
             state.view.hideDuplicatePaths,
             state.view.laserCutMode,
-            styleHover,
+            // styleHover,
             selectedIds,
         ],
     );
+    if (styleHover) {
+        pathsToShow = pathsToShow.map((path) => {
+            if (selectedIds[path.id]) {
+                return {
+                    ...path,
+                    style: applyStyleHover(styleHover, path.style),
+                };
+            }
+            return path;
+        });
+    }
 
     const clipPrimitives = React.useMemo(
         () => (clip ? pathToPrimitives(clip) : null),

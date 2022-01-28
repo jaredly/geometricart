@@ -259,6 +259,7 @@ export const pathToInsetPaths = (path: Path): Array<Path> => {
             if (!inset) {
                 return [path];
             }
+            console.log('INSETS');
 
             const regions = cleanUpInsetSegments2(
                 insetSegmentsBeta(path.segments, inset / 100),
