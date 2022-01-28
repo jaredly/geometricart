@@ -740,8 +740,34 @@ export type Meta = {
     ppi: number;
 };
 
+export type Animations = {
+    timeline: {
+        // ooh some vbls might not be floats?
+        // like could be nice to interpolate colors, in some cases
+        [vblName: string]:
+            | {
+                  type: 'float';
+                  points: Array<{
+                      pos: Coord;
+                      leftCtrl?: Coord;
+                      rightCtrl?: Coord;
+                  }>;
+              }
+            | {
+                  type: 'float-fn';
+                  code: string;
+              };
+    };
+    scripts: {
+        [name: string]: {
+            code: string;
+            enabled: boolean;
+        };
+    };
+};
+
 export type State = {
-    version: 4;
+    version: 5;
     nextId: number;
     history: History;
     meta: Meta;
@@ -774,6 +800,8 @@ export type State = {
     attachments: {
         [key: Id]: Attachment;
     };
+
+    animations: Animations;
 };
 
 /*

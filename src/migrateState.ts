@@ -63,8 +63,6 @@ export const migrateState = (state: State) => {
         }
     }
     if (state.version < 4) {
-        state.version = 4;
-
         Object.keys(state.paths).forEach((k) => {
             const path = state.paths[k];
             if (path.group) {
@@ -77,6 +75,13 @@ export const migrateState = (state: State) => {
             // @ts-ignore
             delete group.style;
         });
+    }
+    if (state.version < 5) {
+        state.version = 5;
+        state.animations = {
+            timeline: {},
+            scripts: {},
+        };
     }
     if (state.meta.ppi == null) {
         state.meta.ppi = 170;
