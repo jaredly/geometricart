@@ -400,7 +400,7 @@ export const Canvas = ({
                 script!.fn.apply(null, args);
             } catch (err) {
                 console.error(err);
-                console.log(`Bad fn invocation`, script.key);
+                console.log(`Bad fn invocation`, script!.key);
             }
         });
         // console.log('pathd', paths);
