@@ -189,7 +189,6 @@ export const insetArcArc = (
 
     const radius2 =
         dist(next.center, next.to) + amount * (next.clockwise ? -1 : 1);
-    // const angle2 = angleTo(next.center, next.to);
     const intersection = circleCircle(
         { center: next.center, radius: radius2, type: 'circle' },
         { center: seg.center, radius: radius, type: 'circle' },
@@ -220,15 +219,33 @@ export const insetArcArc = (
         const newTo = push(seg.center, angle, radius);
         return { ...seg, to: newTo };
     }
-    const angle0 = angleTo(seg.center, prev);
-    const angles = intersection.map((pos) =>
-        angleBetween(angle0, angleTo(seg.center, pos), seg.clockwise),
-    );
-    // We want the first one we run into, going around the original circle.
-    if (angles[0] < angles[1]) {
-        return { ...seg, to: intersection[0] };
-    }
-    return { ...seg, to: intersection[1] };
+
+    // Ok, so the original intersection was either on the "top" or "bottom" of
+    // the pair of circles, looking at the prev as being on the seg and the next
+    // as being on the right
+    // And so we want the new intersection to match that.
+    const between = angleTo(seg.center, next.center);
+
+    const isTop = angleBetween(between, angle, true) > Math.PI;
+
+    const firstTop =
+        angleBetween(between, angleTo(seg.center, intersection[0]), true) >
+        Math.PI;
+
+    return {
+        ...seg,
+        to: isTop === firstTop ? intersection[0] : intersection[1],
+    };
+
+    // const angle0 = angleTo(seg.center, prev);
+    // const angles = intersection.map((pos) =>
+    //     angleBetween(angle0, angleTo(seg.center, pos), seg.clockwise),
+    // );
+    // // We want the first one we run into, going around the original circle.
+    // if (angles[0] < angles[1]) {
+    //     return { ...seg, to: intersection[0] };
+    // }
+    // return { ...seg, to: intersection[1] };
 };
 
 export const insetSegment = (

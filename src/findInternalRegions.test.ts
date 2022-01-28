@@ -1,7 +1,8 @@
 import {
-    findClockwiseRegions,
+    findRegions,
     segmentsToNonIntersectingSegments,
 } from './findInternalRegions';
+import { isClockwise } from './pathToPoints';
 
 describe('ok', () => {
     it('should work', () => {
@@ -69,7 +70,9 @@ describe('ok', () => {
             { type: 'Line', to: { x: 0, y: 1 } },
             { type: 'Line', to: { x: 0, y: 0 } },
         ]);
-        const regions = findClockwiseRegions(result.result, result.froms);
+        const regions = findRegions(result.result, result.froms).filter(
+            isClockwise,
+        );
         expect(regions).toEqual([
             [
                 { type: 'Line', to: { x: 1, y: 0 } },
@@ -87,7 +90,9 @@ describe('ok', () => {
             { type: 'Line', to: { x: 1, y: 1 } },
             { type: 'Line', to: { x: 0, y: 0 } },
         ]);
-        const regions = findClockwiseRegions(result.result, result.froms);
+        const regions = findRegions(result.result, result.froms).filter(
+            isClockwise,
+        );
         expect(regions).toEqual([
             [
                 { to: { x: 1, y: 0 }, type: 'Line' },
@@ -97,3 +102,7 @@ describe('ok', () => {
         ]);
     });
 });
+
+// hrmmmm now I need to remove the little vestigal triangles.
+// and, for extra credit, if I could do the holes that might be
+// created that would be awesome.
