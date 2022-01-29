@@ -199,11 +199,12 @@ export const Canvas = ({
     );
     const [tmpView, setTmpView] = React.useState(null as null | View);
 
+    const [showAnimations, setShowAnimations] = React.useState(false);
     const [animationPosition, setAnimationPosition] = React.useState(0);
 
-    const currentAnimatedValues = evaluateAnimatedValues(
-        state.animations,
-        animationPosition,
+    const currentAnimatedValues = React.useMemo(
+        () => evaluateAnimatedValues(state.animations, animationPosition),
+        [state.animations, animationPosition],
     );
 
     const [pos, setPos] = React.useState({ x: 0, y: 0 });
@@ -327,85 +328,14 @@ export const Canvas = ({
     }, [state.selection, state.paths]);
 
     const scripts = React.useMemo(() => {
-        return Object.keys(state.animations.scripts)
-            .filter((k) => state.animations.scripts[k].enabled)
-            .map((key) => {
-                const script = state.animations.scripts[key];
-                const line = script.code.match(
-                    /\s*\(((\s*\w+\s*,)+(\s*\w+)?\s*)\)\s*=>/,
-                );
-                console.log(line);
-                if (!line) {
-                    console.log(`No match`);
-                    return null;
-                }
-                const args = line![1]
-                    .split(',')
-                    .map((m) => m.trim())
-                    .filter(Boolean);
-                if (args[0] !== 'paths') {
-                    console.log('bad args', args);
-                    return null;
-                }
-                const builtins: any = { dist: dist, segmentsBounds };
-                try {
-                    const fn = new Function(
-                        Object.keys(builtins).join(','),
-                        'return ' + script.code,
-                    )(...Object.keys(builtins).map((k) => builtins[k]));
-                    return {
-                        key,
-                        fn,
-                        args: args.slice(1),
-                        phase: script.phase,
-                        selection: script.selection,
-                    };
-                } catch (err) {
-                    console.log('Bad fn');
-                    console.error(err);
-                    return null;
-                }
-            })
-            .filter(Boolean);
+        return getAnimationScripts(state);
     }, [state.animations]);
 
     const animatedPaths = React.useMemo(() => {
         if (!scripts.length) {
             return state.paths;
         }
-        const paths = { ...state.paths };
-        scripts.forEach((script) => {
-            if (!script) {
-                return;
-            }
-
-            const selectedIds = script.selection
-                ? getSelectedIds(paths, script.selection)
-                : null;
-            let subset = paths;
-            if (selectedIds) {
-                subset = {};
-                Object.keys(selectedIds).forEach(
-                    (id) => (subset[id] = paths[id]),
-                );
-            }
-            const args = [
-                subset,
-                ...script!.args.map((arg) => currentAnimatedValues[arg] || 0),
-            ];
-            try {
-                script!.fn.apply(null, args);
-            } catch (err) {
-                console.error(err);
-                console.log(`Bad fn invocation`, script!.key);
-            }
-            if (selectedIds) {
-                Object.keys(selectedIds).forEach(
-                    (id) => (paths[id] = subset[id]),
-                );
-            }
-        });
-        return paths;
+        return getAnimatedPaths(state, scripts, currentAnimatedValues);
     }, [state.paths, state.pathGroups, scripts, currentAnimatedValues]);
 
     let pathsToShow = React.useMemo(
@@ -800,6 +730,20 @@ export const Canvas = ({
                 dispatch={dispatch}
                 // setHover={setHover}
             />
+            <div
+                css={{
+                    position: 'absolute',
+                    left: 58 * 3,
+                    top: 0,
+                }}
+            >
+                <IconButton
+                    selected={showAnimations}
+                    onClick={() => setShowAnimations(!showAnimations)}
+                >
+                    <ScissorsCuttingIcon />
+                </IconButton>
+            </div>
 
             <div
                 css={{
@@ -893,129 +837,191 @@ export const Canvas = ({
                     />
                 ) : null}
             </div>
-            <div
-                style={{
-                    position: 'fixed',
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    height: 400,
-                    background: 'rgba(255,255,255,0.1)',
-                }}
-            >
-                {Object.keys(state.animations.scripts).map((key) => {
-                    const script = state.animations.scripts[key];
-                    return (
-                        <div>
-                            <div>{key}</div>
-                            <button
-                                onClick={() => {
-                                    dispatch({
-                                        type: 'script:update',
-                                        key,
-                                        script: {
-                                            ...script,
-                                            enabled: !script.enabled,
-                                        },
-                                    });
+            {showAnimations ? (
+                <div
+                    style={{
+                        position: 'fixed',
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        height: 400,
+                        background: 'rgba(255,255,255,0.1)',
+                        overflow: 'auto',
+                    }}
+                >
+                    <button onClick={() => setShowAnimations(false)}>
+                        Hide animations
+                    </button>
+                    {Object.keys(state.animations.scripts).map((key) => {
+                        const script = state.animations.scripts[key];
+                        return (
+                            <div
+                                key={key}
+                                style={{
+                                    padding: 8,
+                                    border: '1px solid white',
+                                    margin: 8,
                                 }}
                             >
-                                {script.enabled ? 'Disable' : 'Enable'}
-                            </button>
-                            {script.selection ? (
-                                <div>
-                                    Current selection:{' '}
-                                    {script.selection.ids.length}{' '}
-                                    {script.selection.type}
-                                    <button
-                                        onClick={() => {
-                                            dispatch({
-                                                type: 'script:update',
-                                                key,
-                                                script: {
-                                                    ...script,
-                                                    selection: undefined,
-                                                },
-                                            });
-                                        }}
-                                    >
-                                        Clear selection
-                                    </button>
-                                </div>
-                            ) : (
-                                <div>
-                                    No selection (will apply to all paths)
-                                    <button
-                                        disabled={!state.selection}
-                                        onClick={() => {
-                                            const sel = state.selection;
-                                            if (
-                                                sel?.type === 'PathGroup' ||
-                                                sel?.type === 'Path'
-                                            ) {
-                                                dispatch({
-                                                    type: 'script:update',
-                                                    key,
-                                                    script: {
-                                                        ...script,
-                                                        selection: sel as any,
-                                                    },
-                                                });
-                                            }
-                                        }}
-                                    >
-                                        Set current selection
-                                    </button>
-                                </div>
-                            )}
-                            <div>
-                                <Text
-                                    key={key}
-                                    multiline
-                                    value={script.code}
-                                    onChange={(code) => {
-                                        const formatted = prettier.format(
-                                            code,
-                                            {
-                                                plugins: [babel],
-                                            },
-                                        );
+                                <div>{key}</div>
+                                <button
+                                    onClick={() => {
                                         dispatch({
                                             type: 'script:update',
                                             key,
                                             script: {
                                                 ...script,
-                                                code: formatted,
+                                                enabled: !script.enabled,
                                             },
                                         });
                                     }}
-                                />
+                                >
+                                    {script.enabled ? 'Disable' : 'Enable'}
+                                </button>
+                                {script.selection ? (
+                                    <div>
+                                        Current selection:{' '}
+                                        {script.selection.ids.length}{' '}
+                                        {script.selection.type}
+                                        <button
+                                            onClick={() => {
+                                                dispatch({
+                                                    type: 'script:update',
+                                                    key,
+                                                    script: {
+                                                        ...script,
+                                                        selection: undefined,
+                                                    },
+                                                });
+                                            }}
+                                        >
+                                            Clear selection
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div>
+                                        No selection (will apply to all paths)
+                                        <button
+                                            disabled={!state.selection}
+                                            onClick={() => {
+                                                const sel = state.selection;
+                                                if (
+                                                    sel?.type === 'PathGroup' ||
+                                                    sel?.type === 'Path'
+                                                ) {
+                                                    dispatch({
+                                                        type: 'script:update',
+                                                        key,
+                                                        script: {
+                                                            ...script,
+                                                            selection:
+                                                                sel as any,
+                                                        },
+                                                    });
+                                                }
+                                            }}
+                                        >
+                                            Set current selection
+                                        </button>
+                                    </div>
+                                )}
+                                <div>
+                                    <Text
+                                        key={key}
+                                        multiline
+                                        value={script.code}
+                                        onChange={(code) => {
+                                            const formatted = prettier.format(
+                                                code,
+                                                {
+                                                    plugins: [babel],
+                                                },
+                                            );
+                                            dispatch({
+                                                type: 'script:update',
+                                                key,
+                                                script: {
+                                                    ...script,
+                                                    code: formatted,
+                                                },
+                                            });
+                                        }}
+                                    />
+                                </div>
                             </div>
-                        </div>
-                    );
-                })}
-                <button
-                    onClick={() => {
-                        let i = 0;
-                        while (state.animations.scripts[`script-${i}`]) {
-                            i++;
+                        );
+                    })}
+                    <button
+                        onClick={() => {
+                            let i = 0;
+                            while (state.animations.scripts[`script-${i}`]) {
+                                i++;
+                            }
+                            const newKey = `script-${i}`;
+                            dispatch({
+                                type: 'script:update',
+                                key: newKey,
+                                script: {
+                                    code: `(paths) => {\n    // do stuff\n}`,
+                                    enabled: true,
+                                    phase: 'pre-inset',
+                                },
+                            });
+                        }}
+                    >
+                        Add script
+                    </button>
+                    {Object.keys(state.animations.timeline).map((key) => {
+                        const vbl = state.animations.timeline[key];
+                        if (vbl.type !== 'float') {
+                            return 'Not a float, not yet supported';
                         }
-                        const newKey = `script-${i}`;
-                        dispatch({
-                            type: 'script:update',
-                            key: newKey,
-                            script: {
-                                code: `(paths) => {\n    // do stuff\n}`,
-                                enabled: true,
-                                phase: 'pre-inset',
-                            },
-                        });
-                    }}
-                >
-                    Add script
-                </button>
-                <TickTock t={animationPosition} set={setAnimationPosition} />
-            </div>
+                        return (
+                            <div key={key} style={{ padding: 8 }}>
+                                {key}
+                                <div>
+                                    Range:
+                                    <BlurInt
+                                        value={vbl.range[0]}
+                                        onChange={(low) => {
+                                            dispatch({
+                                                type: 'timeline:update',
+                                                vbl: {
+                                                    ...vbl,
+                                                    range: [low, vbl.range[1]],
+                                                },
+                                            });
+                                        }}
+                                    />
+                                    <BlurInt
+                                        value={vbl.range[1]}
+                                        onChange={(high) => {
+                                            dispatch({
+                                                type: 'timeline:update',
+                                                vbl: {
+                                                    ...vbl,
+                                                    range: [vbl.range[0], high],
+                                                },
+                                            });
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                        );
+                    })}
+                    <button
+                        onClick={() => {
+                            dispatch({ type: 'timeline:add' });
+                        }}
+                    >
+                        Add timeline variable
+                    </button>
+                    <TickTock
+                        t={animationPosition}
+                        set={setAnimationPosition}
+                    />
+                </div>
+            ) : null}
         </div>
     );
 };
@@ -1119,6 +1125,97 @@ export const dragView = (
     };
     return res;
 };
+
+export function getAnimatedPaths(
+    state: State,
+    scripts: ({
+        key: string;
+        fn: any;
+        args: string[];
+        phase: 'pre-inset' | 'post-inset';
+        selection: { type: 'Path' | 'PathGroup'; ids: string[] } | undefined;
+    } | null)[],
+    currentAnimatedValues: { [key: string]: number },
+) {
+    const paths = { ...state.paths };
+    scripts.forEach((script) => {
+        if (!script) {
+            return;
+        }
+
+        const selectedIds = script.selection
+            ? getSelectedIds(paths, script.selection)
+            : null;
+        let subset = paths;
+        if (selectedIds) {
+            subset = {};
+            Object.keys(selectedIds).forEach((id) => (subset[id] = paths[id]));
+        }
+        const args = [
+            subset,
+            ...script!.args.map((arg) => currentAnimatedValues[arg] || 0),
+        ];
+        try {
+            script!.fn.apply(null, args);
+        } catch (err) {
+            console.error(err);
+            console.log(`Bad fn invocation`, script!.key);
+        }
+        if (selectedIds) {
+            Object.keys(selectedIds).forEach((id) => (paths[id] = subset[id]));
+        }
+    });
+    return paths;
+}
+
+export function getAnimationScripts(state: State): ({
+    key: string;
+    fn: any;
+    args: string[];
+    phase: 'pre-inset' | 'post-inset';
+    selection: { type: 'Path' | 'PathGroup'; ids: string[] } | undefined;
+} | null)[] {
+    return Object.keys(state.animations.scripts)
+        .filter((k) => state.animations.scripts[k].enabled)
+        .map((key) => {
+            const script = state.animations.scripts[key];
+            const line = script.code.match(
+                /\s*\(((\s*\w+\s*,)+(\s*\w+)?\s*)\)\s*=>/,
+            );
+            console.log(line);
+            if (!line) {
+                console.log(`No match`);
+                return null;
+            }
+            const args = line![1]
+                .split(',')
+                .map((m) => m.trim())
+                .filter(Boolean);
+            if (args[0] !== 'paths') {
+                console.log('bad args', args);
+                return null;
+            }
+            const builtins: any = { dist: dist, segmentsBounds };
+            try {
+                const fn = new Function(
+                    Object.keys(builtins).join(','),
+                    'return ' + script.code,
+                )(...Object.keys(builtins).map((k) => builtins[k]));
+                return {
+                    key,
+                    fn,
+                    args: args.slice(1),
+                    phase: script.phase,
+                    selection: script.selection,
+                };
+            } catch (err) {
+                console.log('Bad fn');
+                console.error(err);
+                return null;
+            }
+        })
+        .filter(Boolean);
+}
 
 function getSelectedIds(paths: State['paths'], selection: State['selection']) {
     const selectedIds: { [key: string]: boolean } = {};

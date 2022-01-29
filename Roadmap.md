@@ -3,6 +3,12 @@ AOKKK now we're up to animations. Love it so much.
 
 Oh but first, can has some optimization? idk.
 
+- [x] yayyy animations!
+- [ ] when animations are enabled, disable like everything else in the name of performance.
+	- so no interactivity, basically.
+- [ ] um also maybe render to canvas in that case?
+- [ ] also I still need to do moreeee optimizations, not sure where.
+
 
 
 

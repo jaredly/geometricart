@@ -6,7 +6,12 @@ import {
     calculateGuideElements,
     calculateInactiveGuideElements,
 } from './calculateGuideElements';
-import { imageCache } from './Canvas';
+import {
+    evaluateAnimatedValues,
+    getAnimatedPaths,
+    getAnimationScripts,
+    imageCache,
+} from './Canvas';
 import { sortedVisibleInsetPaths } from './sortedVisibleInsetPaths';
 import { segmentKey } from './segmentKey';
 import { pathToPrimitives } from './findSelection';
@@ -41,6 +46,7 @@ export const canvasRender = async (
     sourceWidth: number,
     sourceHeight: number,
     extraZoom: number,
+    animationPosition: number,
 ) => {
     const palette = state.palettes[state.activePalette];
 
@@ -93,7 +99,17 @@ export const canvasRender = async (
         ? state.clips[state.view.activeClip]
         : undefined;
 
-    sortedVisibleInsetPaths(state.paths, state.pathGroups, clip).forEach(
+    const currentAnimatedValues = evaluateAnimatedValues(
+        state.animations,
+        animationPosition,
+    );
+
+    const scripts = getAnimationScripts(state);
+    const animatedPaths = scripts.length
+        ? getAnimatedPaths(state, scripts, currentAnimatedValues)
+        : state.paths;
+
+    sortedVisibleInsetPaths(animatedPaths, state.pathGroups, clip).forEach(
         (path) => {
             const style = path.style;
 
