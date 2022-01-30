@@ -661,6 +661,25 @@ export const reduceWithoutUndo = (
                 },
             ];
         }
+        case 'timeline:update': {
+            const timeline = { ...state.animations.timeline };
+            if (!action.vbl) {
+                delete timeline[action.key];
+            } else {
+                timeline[action.key] = action.vbl;
+            }
+            return [
+                {
+                    ...state,
+                    animations: { ...state.animations, timeline },
+                },
+                {
+                    type: action.type,
+                    action,
+                    prev: state.animations.timeline[action.key],
+                },
+            ];
+        }
         default:
             let _x: never = action;
             console.log(`SKIPPING ${(action as any).type}`);
@@ -682,6 +701,21 @@ export const undo = (state: State, action: UndoAction): State => {
                 animations: {
                     ...state.animations,
                     scripts,
+                },
+            };
+        }
+        case 'timeline:update': {
+            const timeline = { ...state.animations.timeline };
+            if (!action.prev) {
+                delete timeline[action.action.key];
+            } else {
+                timeline[action.action.key] = action.prev;
+            }
+            return {
+                ...state,
+                animations: {
+                    ...state.animations,
+                    timeline,
                 },
             };
         }

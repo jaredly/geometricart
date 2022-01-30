@@ -73,6 +73,11 @@ export const adjustBounds = (
     y1: y1 - y,
 });
 
+export const segmentsCenter = (segments: Array<Segment>): Coord => {
+    const bounds = segmentsBounds(segments);
+    return { x: (bounds.x0 + bounds.x1) / 2, y: (bounds.y0 + bounds.y1) / 2 };
+};
+
 export const segmentsBounds = (segments: Array<Segment>): Bounds => {
     let bounds = segmentBounds(segments[segments.length - 1].to, segments[0]);
     for (let i = 1; i < segments.length; i++) {

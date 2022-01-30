@@ -59,6 +59,17 @@ export type UndoScriptUpdate = {
     prev: Animations['scripts'][''] | null;
 };
 
+export type TimelineUpdate = {
+    type: 'timeline:update';
+    key: string;
+    vbl: Animations['timeline'][''] | null;
+};
+export type UndoTimelineUpdate = {
+    type: TimelineUpdate['type'];
+    action: TimelineUpdate;
+    prev: TimelineUpdate['vbl'];
+};
+
 export type ClipAdd = { type: 'clip:add'; clip: Array<Segment> };
 export type UndoClipAdd = {
     type: ClipAdd['type'];
@@ -364,6 +375,7 @@ export type UndoableAction =
     | MirrorActive
     | ViewUpdate
     | ScriptUpdate
+    | TimelineUpdate
     | PathUpdateMany
     | GroupUpdate
     | GuideDelete
@@ -383,6 +395,7 @@ export type UndoAction =
     | UndoGuideAdd
     | UndoOverlayAdd
     | UndoScriptUpdate
+    | UndoTimelineUpdate
     | UndoOverlayDelete
     | UndoClipAdd
     | UndoGroupUpdate
