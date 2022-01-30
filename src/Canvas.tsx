@@ -4,20 +4,16 @@ import { jsx } from '@emotion/react';
 import Prando from 'prando';
 import React from 'react';
 import { RoughGenerator } from 'roughjs/bin/generator';
+import { Action } from './Action';
+import { AnimationUI } from './AnimationUI';
 import { PendingMirror, useCurrent } from './App';
 import { calcAllIntersections } from './calcAllIntersections';
 import { calculateGuideElements } from './calculateGuideElements';
 import { DrawPathState } from './DrawPath';
 import { findSelection, pathToPrimitives } from './findSelection';
-import { BlurInt, Float, Text } from './Forms';
+import { getAnimatedPaths, getAnimationScripts } from './getAnimatedPaths';
 // import { DrawPath } from './DrawPathOld';
-import {
-    angleTo,
-    dist,
-    getMirrorTransforms,
-    push,
-    scale,
-} from './getMirrorTransforms';
+import { getMirrorTransforms, scale } from './getMirrorTransforms';
 import {
     calculateBounds,
     Guides,
@@ -43,10 +39,10 @@ import { showHover } from './showHover';
 import { Hover } from './Sidebar';
 import { sortedVisibleInsetPaths } from './sortedVisibleInsetPaths';
 import {
+    GuideSection,
     idsToStyle,
     mirrorControls,
     selectionSection,
-    GuideSection,
 } from './touchscreenControls';
 import {
     Animations,
@@ -59,13 +55,8 @@ import {
     TimelinePoint,
     View,
 } from './types';
-import { Action } from './Action';
 import { useDragSelect, useMouseDrag } from './useMouseDrag';
 import { useScrollWheel } from './useScrollWheel';
-import { segmentsBounds, segmentsCenter } from './Export';
-import prettier from 'prettier';
-import babel from 'prettier/parser-babel';
-import { angleBetween } from './findNextSegments';
 
 export type Props = {
     state: State;
@@ -845,331 +836,13 @@ export const Canvas = ({
                 ) : null}
             </div>
             {showAnimations ? (
-                <div
-                    style={{
-                        position: 'fixed',
-                        bottom: 0,
-                        left: 0,
-                        right: 0,
-                        height: 400,
-                        background: 'rgba(0,0,0,0.4)',
-                        overflow: 'auto',
-                        display: 'flex',
-                    }}
-                >
-                    <div style={{ flex: 1 }}>
-                        <div style={{ display: 'flex', padding: 8 }}>
-                            <button
-                                style={{ marginRight: 16 }}
-                                onClick={() => {
-                                    let i = 0;
-                                    while (
-                                        state.animations.scripts[`script-${i}`]
-                                    ) {
-                                        i++;
-                                    }
-                                    const newKey = `script-${i}`;
-                                    dispatch({
-                                        type: 'script:update',
-                                        key: newKey,
-                                        script: {
-                                            code: `(paths) => {\n    // do stuff\n}`,
-                                            enabled: true,
-                                            phase: 'pre-inset',
-                                        },
-                                    });
-                                }}
-                            >
-                                Add script
-                            </button>
-                            <TickTock
-                                t={animationPosition}
-                                set={setAnimationPosition}
-                            />
-                        </div>
-                        {Object.keys(state.animations.scripts).map((key) => {
-                            const script = state.animations.scripts[key];
-                            if (!script.enabled) {
-                                return (
-                                    <div
-                                        key={key}
-                                        style={{
-                                            padding: 8,
-                                            border: '1px solid #aaa',
-                                            margin: 8,
-                                        }}
-                                    >
-                                        {key}{' '}
-                                        <button
-                                            onClick={() => {
-                                                dispatch({
-                                                    type: 'script:update',
-                                                    key,
-                                                    script: {
-                                                        ...script,
-                                                        enabled: true,
-                                                    },
-                                                });
-                                            }}
-                                        >
-                                            Enable
-                                        </button>
-                                    </div>
-                                );
-                            }
-                            return (
-                                <div
-                                    key={key}
-                                    style={{
-                                        padding: 8,
-                                        border: '1px solid white',
-                                        margin: 8,
-                                    }}
-                                >
-                                    <div>{key}</div>
-                                    <button
-                                        onClick={() => {
-                                            dispatch({
-                                                type: 'script:update',
-                                                key,
-                                                script: {
-                                                    ...script,
-                                                    enabled: !script.enabled,
-                                                },
-                                            });
-                                        }}
-                                    >
-                                        {script.enabled ? 'Disable' : 'Enable'}
-                                    </button>
-                                    {script.selection ? (
-                                        <div>
-                                            Current selection:{' '}
-                                            {script.selection.ids.length}{' '}
-                                            {script.selection.type}
-                                            <button
-                                                onClick={() => {
-                                                    dispatch({
-                                                        type: 'script:update',
-                                                        key,
-                                                        script: {
-                                                            ...script,
-                                                            selection:
-                                                                undefined,
-                                                        },
-                                                    });
-                                                }}
-                                            >
-                                                Clear selection
-                                            </button>
-                                        </div>
-                                    ) : (
-                                        <div>
-                                            No selection (will apply to all
-                                            paths)
-                                            <button
-                                                disabled={!state.selection}
-                                                onClick={() => {
-                                                    const sel = state.selection;
-                                                    if (
-                                                        sel?.type ===
-                                                            'PathGroup' ||
-                                                        sel?.type === 'Path'
-                                                    ) {
-                                                        dispatch({
-                                                            type: 'script:update',
-                                                            key,
-                                                            script: {
-                                                                ...script,
-                                                                selection:
-                                                                    sel as any,
-                                                            },
-                                                        });
-                                                    }
-                                                }}
-                                            >
-                                                Set current selection
-                                            </button>
-                                        </div>
-                                    )}
-                                    <div>
-                                        <Text
-                                            key={key}
-                                            multiline
-                                            value={script.code}
-                                            onChange={(code) => {
-                                                const formatted =
-                                                    prettier.format(code, {
-                                                        plugins: [babel],
-                                                    });
-                                                dispatch({
-                                                    type: 'script:update',
-                                                    key,
-                                                    script: {
-                                                        ...script,
-                                                        code: formatted,
-                                                    },
-                                                });
-                                            }}
-                                        />
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                    <div style={{ flex: 1, overflow: 'auto' }}>
-                        <AddVbl
-                            onAdd={(key, vbl) => {
-                                dispatch({ type: 'timeline:update', key, vbl });
-                            }}
-                        />
-                        {Object.keys(state.animations.timeline).map((key) => {
-                            const vbl = state.animations.timeline[key];
-                            if (vbl.type !== 'float') {
-                                return 'Not a float, not yet supported';
-                            }
-                            return (
-                                <div
-                                    key={key}
-                                    style={{
-                                        padding: 8,
-                                        border: '1px solid #aaa',
-                                    }}
-                                >
-                                    {key}
-                                    <div>
-                                        Range:
-                                        <BlurInt
-                                            value={vbl.range[0]}
-                                            onChange={(low) => {
-                                                if (low == null) return;
-                                                dispatch({
-                                                    type: 'timeline:update',
-                                                    key,
-                                                    vbl: {
-                                                        ...vbl,
-                                                        range: [
-                                                            low,
-                                                            vbl.range[1],
-                                                        ],
-                                                    },
-                                                });
-                                            }}
-                                        />
-                                        <BlurInt
-                                            value={vbl.range[1]}
-                                            onChange={(high) => {
-                                                if (high == null) return;
-                                                dispatch({
-                                                    type: 'timeline:update',
-                                                    key,
-                                                    vbl: {
-                                                        ...vbl,
-                                                        range: [
-                                                            vbl.range[0],
-                                                            high,
-                                                        ],
-                                                    },
-                                                });
-                                            }}
-                                        />
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
+                <AnimationUI
+                    state={state}
+                    dispatch={dispatch}
+                    animationPosition={animationPosition}
+                    setAnimationPosition={setAnimationPosition}
+                />
             ) : null}
-        </div>
-    );
-};
-
-export const AddVbl = ({
-    onAdd,
-}: {
-    onAdd: (name: string, v: Animations['timeline']['']) => void;
-}) => {
-    const [key, setKey] = React.useState('t');
-    const [low, setLow] = React.useState(0);
-    const [high, setHigh] = React.useState(1);
-    return (
-        <div style={{ border: '1px solid #aaa', padding: 8, margin: 8 }}>
-            <span>
-                Vbl name:{' '}
-                <input
-                    value={key}
-                    onChange={(evt) => setKey(evt.target.value)}
-                    placeholder="vbl name"
-                />
-            </span>
-            <span>
-                Low:{' '}
-                <BlurInt
-                    value={low}
-                    onChange={(v) => (v != null ? setLow(v) : null)}
-                />
-            </span>
-            <span>
-                High:{' '}
-                <BlurInt
-                    value={high}
-                    onChange={(v) => (v != null ? setHigh(v) : null)}
-                />
-            </span>
-            <button
-                onClick={() => {
-                    onAdd(key, {
-                        type: 'float',
-                        range: [low, high],
-                        points: [],
-                    });
-                }}
-            >
-                Add New Vbl
-            </button>
-        </div>
-    );
-};
-
-export const TickTock = ({
-    t,
-    set,
-}: {
-    t: number;
-    set: (t: number) => void;
-}) => {
-    const [tick, setTick] = React.useState(null as number | null);
-    const [increment, setIncrement] = React.useState(0.05);
-    React.useEffect(() => {
-        if (!tick) {
-            return;
-        }
-        let at = t;
-        const id = setInterval(() => {
-            at = (at + increment) % 1;
-            set(at);
-        }, tick);
-        return () => clearInterval(id);
-    }, [tick, increment]);
-    return (
-        <div>
-            <BlurInt value={t} onChange={(t) => (t ? set(t) : null)} />
-            <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.01"
-                value={t + ''}
-                onChange={(evt) => set(+evt.target.value)}
-            />
-            <button onClick={() => setTick(100)}>100ms</button>
-            <button onClick={() => setTick(20)}>20ms</button>
-            <button onClick={() => setTick(null)}>Clear tick</button>
-            <BlurInt
-                value={increment}
-                onChange={(increment) =>
-                    increment ? setIncrement(increment) : null
-                }
-            />
         </div>
     );
 };
@@ -1237,138 +910,10 @@ export const dragView = (
     return res;
 };
 
-export function getAnimatedPaths(
-    state: State,
-    scripts: ({
-        key: string;
-        fn: any;
-        args: string[];
-        phase: 'pre-inset' | 'post-inset';
-        selection: { type: 'Path' | 'PathGroup'; ids: string[] } | undefined;
-    } | null)[],
-    currentAnimatedValues: { [key: string]: number },
+export function getSelectedIds(
+    paths: State['paths'],
+    selection: State['selection'],
 ) {
-    const paths = { ...state.paths };
-    scripts.forEach((script) => {
-        if (!script) {
-            return;
-        }
-
-        const selectedIds = script.selection
-            ? getSelectedIds(paths, script.selection)
-            : null;
-        let subset = paths;
-        if (selectedIds) {
-            subset = {};
-            Object.keys(selectedIds).forEach((id) => (subset[id] = paths[id]));
-        }
-        const args = [
-            subset,
-            ...script!.args.map((arg) => currentAnimatedValues[arg] || 0),
-        ];
-        try {
-            script!.fn.apply(null, args);
-        } catch (err) {
-            console.error(err);
-            console.log(`Bad fn invocation`, script!.key);
-        }
-        if (selectedIds) {
-            Object.keys(selectedIds).forEach((id) => (paths[id] = subset[id]));
-        }
-    });
-    return paths;
-}
-
-export function getAnimationScripts(state: State): ({
-    key: string;
-    fn: any;
-    args: string[];
-    phase: 'pre-inset' | 'post-inset';
-    selection: { type: 'Path' | 'PathGroup'; ids: string[] } | undefined;
-} | null)[] {
-    return Object.keys(state.animations.scripts)
-        .filter((k) => state.animations.scripts[k].enabled)
-        .map((key) => {
-            const script = state.animations.scripts[key];
-            const line = script.code.match(
-                /\s*\(((\s*\w+\s*,)+(\s*\w+)?\s*)\)\s*=>/,
-            );
-            console.log(line);
-            if (!line) {
-                console.log(`No match`);
-                return null;
-            }
-            const args = line![1]
-                .split(',')
-                .map((m) => m.trim())
-                .filter(Boolean);
-            if (args[0] !== 'paths') {
-                console.log('bad args', args);
-                return null;
-            }
-
-            const lerpPos = (p1: Coord, p2: Coord, percent: number) => {
-                return {
-                    x: (p2.x - p1.x) * percent + p1.x,
-                    y: (p2.y - p1.y) * percent + p1.y,
-                };
-            };
-
-            const followPath = (points: Array<Coord>, percent: number) => {
-                const dists = [];
-                let total = 0;
-                for (let i = 1; i < points.length; i++) {
-                    const d = dist(points[i - 1], points[i]);
-                    total += d;
-                    dists.push(d);
-                }
-                const desired = percent * total;
-                let at = 0;
-                for (let i = 0; i < points.length - 1; i++) {
-                    if (at + dists[i] > desired) {
-                        return lerpPos(
-                            points[i],
-                            points[i + 1],
-                            (desired - at) / dists[i],
-                        );
-                    }
-                    at += dists[i];
-                }
-                return points[points.length - 1];
-            };
-
-            const builtins: any = {
-                dist,
-                push,
-                angleTo,
-                angleBetween,
-                segmentsBounds,
-                segmentsCenter,
-                followPath,
-                lerpPos,
-            };
-            try {
-                const fn = new Function(
-                    Object.keys(builtins).join(','),
-                    'return ' + script.code,
-                )(...Object.keys(builtins).map((k) => builtins[k]));
-                return {
-                    key,
-                    fn,
-                    args: args.slice(1),
-                    phase: script.phase,
-                    selection: script.selection,
-                };
-            } catch (err) {
-                console.log('Bad fn');
-                console.error(err);
-                return null;
-            }
-        })
-        .filter(Boolean);
-}
-
-function getSelectedIds(paths: State['paths'], selection: State['selection']) {
     const selectedIds: { [key: string]: boolean } = {};
     if (selection?.type === 'Path') {
         selection.ids.forEach((id) => (selectedIds[id] = true));
