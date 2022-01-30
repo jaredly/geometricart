@@ -58,7 +58,7 @@ export const AnimationEditor = ({
                 return;
             }
             ctx.save();
-            canvasRender(ctx, state, 2000, 2000, 2, i).then(() => {
+            canvasRender(ctx, state, w * 2, h * 2, 2, i).then(() => {
                 ctx.restore();
                 requestAnimationFrame(fn);
             });

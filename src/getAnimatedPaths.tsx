@@ -60,7 +60,6 @@ export function getAnimationScripts(state: State): ({
             const line = script.code.match(
                 /\s*\(((\s*\w+\s*,)+(\s*\w+)?\s*)\)\s*=>/,
             );
-            console.log(line);
             if (!line) {
                 console.log(`No match`);
                 return null;
