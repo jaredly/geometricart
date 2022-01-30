@@ -197,7 +197,6 @@ export const Canvas = ({
     );
     const [tmpView, setTmpView] = React.useState(null as null | View);
 
-    const [showAnimations, setShowAnimations] = React.useState(false);
     const [animationPosition, setAnimationPosition] = React.useState(0);
 
     const currentAnimatedValues = React.useMemo(
@@ -325,16 +324,18 @@ export const Canvas = ({
         return getSelectedIds(state.paths, state.selection);
     }, [state.selection, state.paths]);
 
-    const scripts = React.useMemo(() => {
-        return getAnimationScripts(state);
-    }, [state.animations]);
+    // const scripts = React.useMemo(() => {
+    //     return getAnimationScripts(state);
+    // }, [state.animations]);
 
-    const animatedPaths = React.useMemo(() => {
-        if (!scripts.length) {
-            return state.paths;
-        }
-        return getAnimatedPaths(state, scripts, currentAnimatedValues);
-    }, [state.paths, state.pathGroups, scripts, currentAnimatedValues]);
+    // const animatedPaths = React.useMemo(() => {
+    //     if (!scripts.length) {
+    //         return state.paths;
+    //     }
+    //     return getAnimatedPaths(state, scripts, currentAnimatedValues);
+    // }, [state.paths, state.pathGroups, scripts, currentAnimatedValues]);
+
+    const animatedPaths = state.paths;
 
     let pathsToShow = React.useMemo(
         () =>
@@ -420,6 +421,24 @@ export const Canvas = ({
         );
         return fromGuides;
     }, [guidePrimitives, state.paths, state.pathGroups]);
+
+    const mirrorHover = React.useCallback(
+        (k) =>
+            k
+                ? setHover({ kind: 'Mirror', id: k, type: 'element' })
+                : setHover(null),
+        [],
+    );
+    const mirrorAdd = React.useCallback(
+        () =>
+            setPendingMirror({
+                parent: state.activeMirror,
+                rotations: 3,
+                reflect: true,
+                center: null,
+            }),
+        [state.activeMirror],
+    );
 
     const inner = (
         <svg
@@ -632,24 +651,6 @@ export const Canvas = ({
         </svg>
     );
 
-    const mirrorHover = React.useCallback(
-        (k) =>
-            k
-                ? setHover({ kind: 'Mirror', id: k, type: 'element' })
-                : setHover(null),
-        [],
-    );
-    const mirrorAdd = React.useCallback(
-        () =>
-            setPendingMirror({
-                parent: state.activeMirror,
-                rotations: 3,
-                reflect: true,
-                center: null,
-            }),
-        [state.activeMirror],
-    );
-
     // This is for rendering only, not interacting.
     if (ppi != null) {
         return inner;
@@ -728,20 +729,6 @@ export const Canvas = ({
                 dispatch={dispatch}
                 // setHover={setHover}
             />
-            <div
-                css={{
-                    position: 'absolute',
-                    left: 58 * 3,
-                    top: 0,
-                }}
-            >
-                <IconButton
-                    selected={showAnimations}
-                    onClick={() => setShowAnimations(!showAnimations)}
-                >
-                    <ScissorsCuttingIcon />
-                </IconButton>
-            </div>
 
             <div
                 css={{
@@ -835,14 +822,6 @@ export const Canvas = ({
                     />
                 ) : null}
             </div>
-            {showAnimations ? (
-                <AnimationUI
-                    state={state}
-                    dispatch={dispatch}
-                    animationPosition={animationPosition}
-                    setAnimationPosition={setAnimationPosition}
-                />
-            ) : null}
         </div>
     );
 };

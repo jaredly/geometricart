@@ -13,7 +13,14 @@ import {
     useDropStateOrAttachmentTarget,
     useDropTarget,
 } from './useDropTarget';
-import { CogIcon, IconButton, RedoIcon, UndoIcon } from './icons/Icon';
+import {
+    CogIcon,
+    IconButton,
+    MagicWandIcon,
+    RedoIcon,
+    UndoIcon,
+} from './icons/Icon';
+import { AnimationEditor } from './AnimationUI';
 
 export const key = `geometric-art`;
 
@@ -153,6 +160,7 @@ export const App = ({ initialState }: { initialState: State }) => {
     const isTouchScreen = 'ontouchstart' in window;
 
     const [sidebarOverlay, setSidebarOverlay] = React.useState(false);
+    const [animationMode, setAnimationMode] = React.useState(false);
 
     return (
         <div
@@ -178,18 +186,22 @@ export const App = ({ initialState }: { initialState: State }) => {
             {...callbacks}
         >
             <div css={{ position: 'relative', alignSelf: 'center' }}>
-                <Canvas
-                    state={state}
-                    hover={hover}
-                    setHover={setHover}
-                    isTouchScreen={isTouchScreen}
-                    innerRef={(node) => (ref.current = node)}
-                    dispatch={dispatch}
-                    pendingMirror={pendingMirror}
-                    setPendingMirror={setPendingMirror}
-                    width={width}
-                    height={height}
-                />
+                {animationMode ? (
+                    <AnimationEditor state={state} dispatch={dispatch} />
+                ) : (
+                    <Canvas
+                        state={state}
+                        hover={hover}
+                        setHover={setHover}
+                        isTouchScreen={isTouchScreen}
+                        innerRef={(node) => (ref.current = node)}
+                        dispatch={dispatch}
+                        pendingMirror={pendingMirror}
+                        setPendingMirror={setPendingMirror}
+                        width={width}
+                        height={height}
+                    />
+                )}
                 {sidebarOverlay ? (
                     <div
                         css={{
@@ -235,6 +247,11 @@ export const App = ({ initialState }: { initialState: State }) => {
                     </IconButton>
                     <IconButton onClick={() => setSidebarOverlay((m) => !m)}>
                         <CogIcon />
+                    </IconButton>
+                    <IconButton
+                        onClick={() => setAnimationMode(!animationMode)}
+                    >
+                        <MagicWandIcon />
                     </IconButton>
                 </div>
             </div>

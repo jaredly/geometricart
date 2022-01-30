@@ -6,12 +6,8 @@ import {
     calculateGuideElements,
     calculateInactiveGuideElements,
 } from './calculateGuideElements';
-import {
-    evaluateAnimatedValues,
-    getAnimatedPaths,
-    getAnimationScripts,
-    imageCache,
-} from './Canvas';
+import { evaluateAnimatedValues, imageCache } from './Canvas';
+import { getAnimatedPaths, getAnimationScripts } from './getAnimatedPaths';
 import { sortedVisibleInsetPaths } from './sortedVisibleInsetPaths';
 import { segmentKey } from './segmentKey';
 import { pathToPrimitives } from './findSelection';

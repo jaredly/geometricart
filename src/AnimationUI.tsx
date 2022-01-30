@@ -5,17 +5,98 @@ import { Animations, State } from './types';
 import { Action } from './Action';
 import prettier from 'prettier';
 import babel from 'prettier/parser-babel';
+import { canvasRender } from './CanvasRender';
+import { epsilon } from './intersect';
+import { findBoundingRect } from './Export';
+
+export const AnimationEditor = ({
+    state,
+    dispatch,
+}: {
+    state: State;
+    dispatch: (action: Action) => unknown;
+}) => {
+    const [animationPosition, setAnimationPosition] = React.useState(0);
+    const canvas = React.useRef(null as null | HTMLCanvasElement);
+
+    const bounds = React.useMemo(
+        () => findBoundingRect(state),
+        [state.view, state.paths, state.pathGroups],
+    );
+
+    const originalSize = 1000;
+    const crop = 10;
+
+    const h = bounds
+        ? (bounds.y2 - bounds.y1) * state.view.zoom + crop * 2
+        : originalSize;
+    const w = bounds
+        ? (bounds.x2 - bounds.x1) * state.view.zoom + crop * 2
+        : originalSize;
+
+    React.useEffect(() => {
+        if (!canvas.current) {
+            return;
+        }
+
+        const ctx = canvas.current.getContext('2d')!;
+        ctx.save();
+        canvasRender(ctx, state, w * 2, h * 2, 2, animationPosition).then(
+            () => {
+                ctx.restore();
+            },
+        );
+    }, [animationPosition, state]);
+
+    const onRecord = (increment: number) => {
+        const ctx = canvas.current!.getContext('2d')!;
+
+        let i = 0;
+        const fn = () => {
+            i += increment;
+            if (i >= 1 - epsilon) {
+                return;
+            }
+            ctx.save();
+            canvasRender(ctx, state, 2000, 2000, 2, i).then(() => {
+                ctx.restore();
+                requestAnimationFrame(fn);
+            });
+        };
+        requestAnimationFrame(fn);
+    };
+
+    return (
+        <div>
+            <canvas
+                ref={canvas}
+                width={w * 2}
+                height={h * 2}
+                style={{ width: w, height: h }}
+            />
+            <AnimationUI
+                state={state}
+                dispatch={dispatch}
+                animationPosition={animationPosition}
+                setAnimationPosition={setAnimationPosition}
+                onRecord={onRecord}
+            />
+        </div>
+    );
+};
 
 export function AnimationUI({
     state,
     dispatch,
     animationPosition,
     setAnimationPosition,
+    onRecord,
 }: {
     state: State;
     dispatch: (action: Action) => unknown;
     animationPosition: number;
     setAnimationPosition: React.Dispatch<React.SetStateAction<number>>;
+    onRecord: (increment: number) => void;
 }) {
     return (
         <div
@@ -56,6 +137,7 @@ export function AnimationUI({
                     <TickTock
                         t={animationPosition}
                         set={setAnimationPosition}
+                        onRecord={onRecord}
                     />
                 </div>
                 {Object.keys(state.animations.scripts).map((key) => {
@@ -294,9 +376,11 @@ export const AddVbl = ({
 export const TickTock = ({
     t,
     set,
+    onRecord,
 }: {
     t: number;
     set: (t: number) => void;
+    onRecord: (increment: number) => void;
 }) => {
     const [tick, setTick] = React.useState(null as number | null);
     const [increment, setIncrement] = React.useState(0.05);
@@ -331,6 +415,13 @@ export const TickTock = ({
                     increment ? setIncrement(increment) : null
                 }
             />
+            <button
+                onClick={() => {
+                    onRecord(increment);
+                }}
+            >
+                Record
+            </button>
         </div>
     );
 };
