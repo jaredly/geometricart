@@ -452,6 +452,7 @@ export const Canvas = ({
                                             prev,
                                             seg,
                                             next,
+                                            10,
                                         );
                                         if (!res) {
                                             return;
@@ -536,8 +537,10 @@ export const Canvas = ({
                                     ),
                                 )}
                                 {regions.map((region, i) => {
-                                    const [t0, t1, pos, p0] =
-                                        findInternalPos(region);
+                                    const [t0, t1, pos, p0] = findInternalPos(
+                                        region,
+                                        20,
+                                    );
 
                                     const pa = push(p0, t0, 10);
                                     const pb = push(p0, t1, 10);

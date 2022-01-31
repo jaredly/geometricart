@@ -368,6 +368,7 @@ export const cleanUpInsetSegments = cleanUpInsetSegmentsOld;
 // segments are assumed to be clockwise
 export const findStraightInternalPos = (
     segments: Array<Segment>,
+    internalMargin = INTERNAL_MARGIN,
 ): [number, number, Coord, Coord] | null => {
     for (let i = 0; i < segments.length; i++) {
         const next = segments[(i + 1) % segments.length];
@@ -383,7 +384,7 @@ export const findStraightInternalPos = (
             return [
                 thisTheta + Math.PI,
                 nextTheta,
-                push(segment.to, nextTheta + between / 2, INTERNAL_MARGIN),
+                push(segment.to, nextTheta + between / 2, internalMargin),
                 segment.to,
             ];
         }
@@ -397,6 +398,7 @@ export const findInsidePoint = (
     prev: Coord,
     one: Segment,
     two: Segment,
+    internalMargin = INTERNAL_MARGIN,
 ): [number, number, Coord, Coord] | null => {
     if (one.type === 'Line' && two.type === 'Line') {
         const backTheta = angleTo(one.to, prev);
@@ -406,7 +408,7 @@ export const findInsidePoint = (
             return [
                 backTheta,
                 nextTheta,
-                push(one.to, backTheta - between / 2, INTERNAL_MARGIN),
+                push(one.to, backTheta - between / 2, internalMargin),
                 one.to,
             ];
         }
@@ -420,7 +422,7 @@ export const findInsidePoint = (
         const nextPoint = push(
             two.center,
             angleTo(two.center, one.to) +
-                (INTERNAL_MARGIN / d) * (two.clockwise ? 1 : -1),
+                (internalMargin / d) * (two.clockwise ? 1 : -1),
             d,
         );
         const between = angleBetween(
@@ -431,8 +433,8 @@ export const findInsidePoint = (
         if (between <= Math.PI) {
             const np = push(
                 one.to,
-                backTheta + (between / 2) * (two.clockwise ? 1 : -1),
-                INTERNAL_MARGIN,
+                backTheta + (between / 2) * -1,
+                internalMargin,
             );
             return [backTheta, angleTo(one.to, nextPoint), np, one.to];
         }
@@ -446,7 +448,7 @@ export const findInsidePoint = (
         const backPoint = push(
             one.center,
             angleTo(one.center, one.to) +
-                (INTERNAL_MARGIN / d) * (one.clockwise ? -1 : 1),
+                (internalMargin / d) * (one.clockwise ? -1 : 1),
             d,
         );
         const between = angleBetween(
@@ -457,8 +459,8 @@ export const findInsidePoint = (
         if (between <= Math.PI) {
             const np = push(
                 one.to,
-                nextTheta + (between / 2) * (one.clockwise ? -1 : 1),
-                INTERNAL_MARGIN,
+                nextTheta + (between / 2) * (one.clockwise ? 1 : 1),
+                internalMargin,
             );
             return [angleTo(one.to, backPoint), nextTheta, np, one.to];
         }
@@ -471,13 +473,13 @@ export const findInsidePoint = (
         const backPoint = push(
             one.center,
             angleTo(one.center, one.to) +
-                (INTERNAL_MARGIN / d1) * (one.clockwise ? -1 : 1),
+                (internalMargin / d1) * (one.clockwise ? -1 : 1),
             d1,
         );
         const nextPoint = push(
             two.center,
             angleTo(two.center, one.to) +
-                (INTERNAL_MARGIN / d2) * (two.clockwise ? 1 : -1),
+                (internalMargin / d2) * (two.clockwise ? 1 : -1),
             d2,
         );
         const nextTheta = angleTo(one.to, nextPoint);
@@ -489,8 +491,8 @@ export const findInsidePoint = (
         if (between <= Math.PI) {
             const np = push(
                 one.to,
-                nextTheta + (between / 2) * (one.clockwise ? -1 : 1),
-                INTERNAL_MARGIN,
+                nextTheta + (between / 2) * (one.clockwise ? 1 : 1),
+                internalMargin,
             );
             return [angleTo(one.to, backPoint), nextTheta, np, one.to];
         }
@@ -503,8 +505,9 @@ export const findInsidePoint = (
 // segments are assumed to be clockwise
 export const findInternalPos = (
     segments: Array<Segment>,
+    internalMargin = INTERNAL_MARGIN,
 ): [number, number, Coord, Coord] => {
-    const straight = findStraightInternalPos(segments);
+    const straight = findStraightInternalPos(segments, internalMargin);
     if (straight) {
         return straight;
     }
@@ -513,22 +516,24 @@ export const findInternalPos = (
         const segment = segments[i];
         const next = segments[(i + 1) % segments.length];
 
-        const thisTheta = segmentAngle(prev, segment, false, true);
-        const nextTheta = segmentAngle(segment.to, next, true, true);
-        const between = angleBetween(nextTheta, thisTheta + Math.PI, true);
-        if (between < Math.PI) {
-            return [
-                thisTheta + Math.PI,
-                nextTheta,
-                push(segment.to, nextTheta + between / 2, INTERNAL_MARGIN),
-                segment.to,
-            ];
+        if (1 === 0) {
+            const inside = findInsidePoint(prev, segment, next);
+            if (inside) {
+                return inside;
+            }
+        } else {
+            const thisTheta = segmentAngle(prev, segment, false, true);
+            const nextTheta = segmentAngle(segment.to, next, true, true);
+            const between = angleBetween(nextTheta, thisTheta + Math.PI, true);
+            if (between < Math.PI) {
+                return [
+                    thisTheta + Math.PI,
+                    nextTheta,
+                    push(segment.to, nextTheta + between / 2, internalMargin),
+                    segment.to,
+                ];
+            }
         }
-
-        // const inside = findInsidePoint(prev, segment, next);
-        // if (inside) {
-        //     return inside;
-        // }
     }
     console.warn('no internal pos???', segments);
     // throw new Error(`nope`);
