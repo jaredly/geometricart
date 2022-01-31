@@ -1,6 +1,6 @@
 import { jsx } from '@emotion/react';
 import React from 'react';
-import { BlurInt, Text } from './Forms';
+import { BlurInt, Text, Toggle } from './Forms';
 import { Animations, State } from './types';
 import { Action } from './Action';
 import prettier from 'prettier';
@@ -24,6 +24,7 @@ export const AnimationEditor = ({
     const [animationPosition, setAnimationPosition] = React.useState(0);
     const canvas = React.useRef(null as null | HTMLCanvasElement);
     const [fps, setFps] = React.useState(60);
+    const [lockAspectRatio, setLockAspectRatio] = React.useState(false);
 
     const [downloadUrl, setDownloadUrl] = React.useState(null as null | string);
     const [transcodingProgress, setTranscodingProgress] = React.useState({
@@ -45,8 +46,13 @@ export const AnimationEditor = ({
     let w = bounds
         ? makeEven((bounds.x2 - bounds.x1) * state.view.zoom + crop * 2)
         : originalSize;
-    if (w / h > 16 / 9) {
-        h = (w / 16) * 9;
+    if (lockAspectRatio) {
+        if (w / h > 16 / 9) {
+            h = (w / 16) * 9;
+        }
+        if (h / w > 4 / 3) {
+            w = (h / 4) * 3;
+        }
     }
 
     React.useEffect(() => {
@@ -106,6 +112,11 @@ export const AnimationEditor = ({
             <div>
                 FPS:{' '}
                 <BlurInt value={fps} onChange={(f) => (f ? setFps(f) : null)} />
+                <Toggle
+                    value={lockAspectRatio}
+                    onChange={setLockAspectRatio}
+                    label="Ensure aspect ratio is between 16:9 and 3:4"
+                />
             </div>
             {transcodingProgress.start === 0 ? null : (
                 <div>
