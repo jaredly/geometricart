@@ -13,7 +13,7 @@ export const Text = ({
 }: {
     value: string;
     onChange: (v: string) => void;
-    style: React.StyleHTMLAttributes<'div'>['style'];
+    style?: React.StyleHTMLAttributes<'div'>['style'];
     multiline?: boolean;
 }) => {
     const [text, setText] = React.useState(null as null | string);

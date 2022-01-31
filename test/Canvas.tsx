@@ -3,6 +3,7 @@ import { useCurrent } from '../src/App';
 import { windingNumber } from '../src/clipPath';
 import {
     cleanUpInsetSegments2,
+    findInsidePoint,
     findInternalPos,
     findRegions,
     removeContainedRegions,
@@ -340,7 +341,7 @@ export const Canvas = ({
                         const all = getInsets(segments);
                         const inset = insetSegmentsBeta(segments, windAt);
                         const result = cleanUpInsetSegments2(inset);
-                        console.log(all, result);
+                        // console.log(all, result);
 
                         return result.map((segments, i) => (
                             <path
@@ -353,6 +354,8 @@ export const Canvas = ({
                             />
                         ));
                     }
+
+                    /*
                     if (showWind === 1) {
                         const inset = insetSegmentsBeta(segments, windAt);
                         const result = segmentsToNonIntersectingSegments(inset);
@@ -410,6 +413,84 @@ export const Canvas = ({
                                         fill="red"
                                     />
                                 ))}
+                            </>
+                        );
+                    }
+                    */
+                    if (showWind === 1) {
+                        const inset = insetSegmentsBeta(segments, windAt);
+                        const parts = segmentsToNonIntersectingSegments(inset);
+                        const regions = findRegions(parts.result, parts.froms); //.filter(isClockwise);
+                        return (
+                            <>
+                                <path
+                                    d={calcPathD(pathSegs(inset), 1)}
+                                    fill="none"
+                                    stroke="yellow"
+                                    strokeWidth={1}
+                                />
+                                {inset.map((seg, i) =>
+                                    segmentArrow(
+                                        inset[
+                                            i === 0 ? inset.length - 1 : i - 1
+                                        ].to,
+                                        i,
+                                        seg,
+                                    ),
+                                )}
+                                {regions.map((region, ri) => {
+                                    return region.map((seg, i) => {
+                                        const prev =
+                                            region[
+                                                i === 0
+                                                    ? region.length - 1
+                                                    : i - 1
+                                            ].to;
+                                        const next =
+                                            region[(i + 1) % region.length];
+                                        const res = findInsidePoint(
+                                            prev,
+                                            seg,
+                                            next,
+                                        );
+                                        if (!res) {
+                                            return;
+                                        }
+                                        const [t0, t1, pos, p0] = res;
+
+                                        const pa = push(p0, t0, 10);
+                                        const pb = push(p0, t1, 10);
+
+                                        return (
+                                            <g key={`${ri}-${i}`}>
+                                                <line
+                                                    x1={p0.x}
+                                                    y1={p0.y}
+                                                    x2={pa.x}
+                                                    y2={pa.y}
+                                                    stroke="white"
+                                                    strokeWidth={1}
+                                                />
+                                                <line
+                                                    x1={p0.x}
+                                                    y1={p0.y}
+                                                    x2={pb.x}
+                                                    y2={pb.y}
+                                                    stroke="black"
+                                                    strokeWidth={1}
+                                                />
+                                                <line
+                                                    x1={p0.x}
+                                                    y1={p0.y}
+                                                    x2={pos.x}
+                                                    y2={pos.y}
+                                                    stroke="red"
+                                                    strokeWidth={1}
+                                                />
+                                            </g>
+                                        );
+                                    });
+                                })}
                             </>
                         );
                     }
@@ -490,11 +571,13 @@ export const Canvas = ({
                                                 }, 100%, 50%, 0.5)`}
                                                 key={i}
                                             />
-                                            <circle
-                                                cx={pos.x}
-                                                cy={pos.y}
-                                                r={2}
-                                                fill={'purple'}
+                                            <line
+                                                x1={pos.x}
+                                                y1={pos.y}
+                                                x2={p0.x}
+                                                y2={p0.y}
+                                                stroke="blue"
+                                                strokeWidth={1}
                                             />
                                             {wind.map(({ hit }, j) => {
                                                 return (

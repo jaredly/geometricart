@@ -19,7 +19,7 @@ import { coordKey } from './calcAllIntersections';
 import { isClockwise } from './pathToPoints';
 import { insidePath, sortHitsForPrimitive, windingNumber } from './clipPath';
 import { pathToPrimitives } from './findSelection';
-import { intersections, Primitive, withinLimit } from './intersect';
+import { epsilon, intersections, Primitive, withinLimit } from './intersect';
 import { coordsEqual } from './pathsAreIdentical';
 import { Hit } from './pruneInsetPath';
 import { Coord, Segment } from './types';
@@ -383,11 +383,120 @@ export const findStraightInternalPos = (
             return [
                 thisTheta + Math.PI,
                 nextTheta,
-                push(segment.to, nextTheta + between / 2, 0.01),
+                push(segment.to, nextTheta + between / 2, INTERNAL_MARGIN),
                 segment.to,
             ];
         }
     }
+    return null;
+};
+
+const INTERNAL_MARGIN = epsilon * 2; // 0.01;
+
+export const findInsidePoint = (
+    prev: Coord,
+    one: Segment,
+    two: Segment,
+): [number, number, Coord, Coord] | null => {
+    if (one.type === 'Line' && two.type === 'Line') {
+        const backTheta = angleTo(one.to, prev);
+        const nextTheta = angleTo(one.to, two.to);
+        const between = angleBetween(backTheta, nextTheta, false);
+        if (between <= Math.PI) {
+            return [
+                backTheta,
+                nextTheta,
+                push(one.to, backTheta - between / 2, INTERNAL_MARGIN),
+                one.to,
+            ];
+        }
+        return null;
+    }
+
+    if (one.type === 'Line' && two.type === 'Arc') {
+        const backTheta = angleTo(one.to, prev);
+        const d = dist(two.center, one.to);
+        // so M / r radians gets you M distance around circumference
+        const nextPoint = push(
+            two.center,
+            angleTo(two.center, one.to) +
+                (INTERNAL_MARGIN / d) * (two.clockwise ? 1 : -1),
+            d,
+        );
+        const between = angleBetween(
+            backTheta,
+            angleTo(one.to, nextPoint),
+            false,
+        );
+        if (between <= Math.PI) {
+            const np = push(
+                one.to,
+                backTheta + (between / 2) * (two.clockwise ? 1 : -1),
+                INTERNAL_MARGIN,
+            );
+            return [backTheta, angleTo(one.to, nextPoint), np, one.to];
+        }
+        return null;
+    }
+
+    if (one.type === 'Arc' && two.type === 'Line') {
+        const nextTheta = angleTo(one.to, two.to);
+        const d = dist(one.center, one.to);
+        // so M / r radians gets you M distance around circumference
+        const backPoint = push(
+            one.center,
+            angleTo(one.center, one.to) +
+                (INTERNAL_MARGIN / d) * (one.clockwise ? -1 : 1),
+            d,
+        );
+        const between = angleBetween(
+            nextTheta,
+            angleTo(one.to, backPoint),
+            true,
+        );
+        if (between <= Math.PI) {
+            const np = push(
+                one.to,
+                nextTheta + (between / 2) * (one.clockwise ? -1 : 1),
+                INTERNAL_MARGIN,
+            );
+            return [angleTo(one.to, backPoint), nextTheta, np, one.to];
+        }
+        return null;
+    }
+
+    if (one.type === 'Arc' && two.type === 'Arc') {
+        const d1 = dist(one.center, one.to);
+        const d2 = dist(two.center, one.to);
+        const backPoint = push(
+            one.center,
+            angleTo(one.center, one.to) +
+                (INTERNAL_MARGIN / d1) * (one.clockwise ? -1 : 1),
+            d1,
+        );
+        const nextPoint = push(
+            two.center,
+            angleTo(two.center, one.to) +
+                (INTERNAL_MARGIN / d2) * (two.clockwise ? 1 : -1),
+            d2,
+        );
+        const nextTheta = angleTo(one.to, nextPoint);
+        const between = angleBetween(
+            nextTheta,
+            angleTo(one.to, backPoint),
+            true,
+        );
+        if (between <= Math.PI) {
+            const np = push(
+                one.to,
+                nextTheta + (between / 2) * (one.clockwise ? -1 : 1),
+                INTERNAL_MARGIN,
+            );
+            return [angleTo(one.to, backPoint), nextTheta, np, one.to];
+        }
+        return null;
+    }
+
     return null;
 };
 
@@ -403,6 +512,7 @@ export const findInternalPos = (
         const prev = segments[i === 0 ? segments.length - 1 : i - 1].to;
         const segment = segments[i];
         const next = segments[(i + 1) % segments.length];
+
         const thisTheta = segmentAngle(prev, segment, false, true);
         const nextTheta = segmentAngle(segment.to, next, true, true);
         const between = angleBetween(nextTheta, thisTheta + Math.PI, true);
@@ -410,10 +520,15 @@ export const findInternalPos = (
             return [
                 thisTheta + Math.PI,
                 nextTheta,
-                push(segment.to, nextTheta + between / 2, 0.01),
+                push(segment.to, nextTheta + between / 2, INTERNAL_MARGIN),
                 segment.to,
             ];
         }
+
+        // const inside = findInsidePoint(prev, segment, next);
+        // if (inside) {
+        //     return inside;
+        // }
     }
     console.warn('no internal pos???', segments);
     // throw new Error(`nope`);
