@@ -216,6 +216,7 @@ export const circleCircle = (one: Circle, two: Circle): Array<Coord> => {
     }
     const larger = one.radius > two.radius ? one : two;
     const smaller = one.radius > two.radius ? two : one;
+    // one inside the other
     if (
         close(
             // difference between the two

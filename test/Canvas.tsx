@@ -311,8 +311,8 @@ export const Canvas = ({
                         />
                         <input
                             type="range"
-                            min={-20}
-                            max={60}
+                            min={-60}
+                            max={160}
                             // step={10}
                             value={debug.inset}
                             onChange={(evt) =>
