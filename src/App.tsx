@@ -185,7 +185,13 @@ export const App = ({ initialState }: { initialState: State }) => {
             }}
             {...callbacks}
         >
-            <div css={{ position: 'relative', alignSelf: 'center' }}>
+            <div
+                css={{
+                    position: 'relative',
+                    alignSelf: 'stretch',
+                    overflow: 'auto',
+                }}
+            >
                 {animationMode ? (
                     <AnimationEditor state={state} dispatch={dispatch} />
                 ) : (

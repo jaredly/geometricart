@@ -1,5 +1,3 @@
-import { jsx } from '@emotion/react';
-import { css } from '@emotion/css';
 import Prando from 'prando';
 import * as React from 'react';
 import { RoughGenerator } from 'roughjs/bin/generator';
@@ -105,7 +103,7 @@ const RenderPathMemo = ({
             key: `fill-${i}`,
             fillOpacity: fill.opacity,
             stroke: 'none',
-            css: onClick
+            style: onClick
                 ? {
                       cursor: 'pointer',
                   }
@@ -163,7 +161,7 @@ const RenderPathMemo = ({
                         strokeWidth={info.strokeWidth}
                         // onClick={common.onClick}
                         // onMouseDown={common.onMouseDown}
-                        style={common.css}
+                        style={common.style}
                     />
                 ));
             }
@@ -215,7 +213,7 @@ const RenderPathMemo = ({
                       onClick(evt.shiftKey, path.id);
                   }
                 : undefined,
-            css: onClick
+            style: onClick
                 ? {
                       cursor: 'pointer',
                   }
@@ -278,7 +276,7 @@ const RenderPathMemo = ({
                         strokeWidth={info.strokeWidth}
                         onClick={common.onClick}
                         onMouseDown={common.onMouseDown}
-                        style={common.css}
+                        style={common.style}
                     />
                 ));
             }

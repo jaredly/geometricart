@@ -528,7 +528,7 @@ async function exportPNG(
     );
 }
 
-async function addMetadata(blob: Blob | null, state: State) {
+export async function addMetadata(blob: Blob | null, state: State) {
     const buffer = await blob!.arrayBuffer();
     const uint8Array = new Uint8Array(buffer);
     const meta = {
