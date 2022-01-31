@@ -64,7 +64,6 @@ export const AnimationEditor = ({
         if (!canvas.current) {
             return;
         }
-        console.log('OK?');
 
         const ctx = canvas.current.getContext('2d')!;
         ctx.clearRect(0, 0, canvas.current.width, canvas.current.height);
@@ -210,7 +209,7 @@ export const AnimationEditor = ({
             <div
                 style={{
                     background: 'rgba(0,0,0,0.4)',
-                    display: 'flex',
+                    // display: 'flex',
                 }}
             >
                 <Scripts dispatch={dispatch} state={state} />
@@ -372,6 +371,7 @@ function Scripts({
     state: State;
     dispatch: (action: Action) => unknown;
 }) {
+    const [error, setError] = React.useState(null as null | Error);
     return (
         <div style={{ flex: 1, marginBottom: 100 }}>
             <div style={{ display: 'flex', padding: 8 }}>
@@ -496,26 +496,56 @@ function Scripts({
                                 </button>
                             </div>
                         )}
-                        <div>
+                        <div
+                            style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'stretch',
+                            }}
+                        >
                             <Text
                                 key={key}
                                 multiline
                                 value={script.code}
+                                style={{ minHeight: 100 }}
                                 onChange={(code) => {
-                                    const formatted = prettier.format(code, {
-                                        plugins: [babel],
-                                        parser: 'babel',
-                                    });
-                                    dispatch({
-                                        type: 'script:update',
-                                        key,
-                                        script: {
-                                            ...script,
-                                            code: formatted,
-                                        },
-                                    });
+                                    try {
+                                        const formatted = prettier.format(
+                                            code,
+                                            {
+                                                plugins: [babel],
+                                                parser: 'babel',
+                                            },
+                                        );
+                                        dispatch({
+                                            type: 'script:update',
+                                            key,
+                                            script: {
+                                                ...script,
+                                                code: formatted,
+                                            },
+                                        });
+                                        setError(null);
+                                    } catch (err) {
+                                        setError(err as Error);
+                                    }
                                 }}
                             />
+                            {error ? (
+                                <div
+                                    style={{
+                                        background: '#faa',
+                                        border: '2px solid #f00',
+                                        padding: 16,
+                                        margin: 8,
+                                        width: 400,
+                                        whiteSpace: 'pre-wrap',
+                                        fontFamily: 'monospace',
+                                    }}
+                                >
+                                    {error.message}
+                                </div>
+                            ) : null}
                         </div>
                     </div>
                 );

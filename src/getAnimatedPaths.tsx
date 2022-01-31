@@ -1,8 +1,16 @@
-import { angleTo, dist, push } from './getMirrorTransforms';
+import {
+    angleTo,
+    applyMatrices,
+    dist,
+    push,
+    transformsToMatrices,
+    transformToMatrices,
+} from './getMirrorTransforms';
 import { Coord, State } from './types';
 import { getSelectedIds } from './Canvas';
 import { angleBetween } from './findNextSegments';
 import { segmentsBounds, segmentsCenter } from './Export';
+import { transformSegment } from './points';
 
 export function getAnimatedPaths(
     state: State,
@@ -110,6 +118,9 @@ export function getAnimationScripts(state: State): ({
                 angleBetween,
                 segmentsBounds,
                 segmentsCenter,
+                transformSegment,
+                applyMatrices,
+                transformsToMatrices,
                 followPath,
                 lerpPos,
             };
