@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { useCurrent } from '../src/App';
 import { windingNumber } from '../src/clipPath';
+import { segmentsCenter } from '../src/Export';
 import {
     cleanUpInsetSegments2,
     findInsidePoint,
@@ -14,23 +15,32 @@ import {
 import { angleBetween } from '../src/findNextSegments';
 import { pathToPrimitives } from '../src/findSelection';
 import { BlurInt, Text } from '../src/Forms';
-import { angleTo, dist, push } from '../src/getMirrorTransforms';
+import {
+    angleTo,
+    dist,
+    push,
+    translationMatrix,
+} from '../src/getMirrorTransforms';
 import { insetSegmentsBeta } from '../src/insetPath';
 import {
     ensureClockwise,
     isClockwise,
     pathToPoints,
 } from '../src/pathToPoints';
+import { transformSegment } from '../src/points';
 import { calcPathD } from '../src/RenderPath';
 import { Coord, Segment } from '../src/types';
+import { fixture } from './fixture';
 import { getInsets, insetColors, pathSegs, size } from './run';
 
 export const Drawing = ({
     segments,
+    zoom,
     setSegments,
     onComplete,
     render,
 }: {
+    zoom: number;
     segments: Array<Segment>;
     setSegments: (
         fn: Array<Segment> | ((segments: Array<Segment>) => Array<Segment>),
@@ -222,11 +232,21 @@ export const Drawing = ({
 };
 
 const initialState = (): Array<Segment> => {
+    // const center = segmentsCenter(fixture);
+    // return fixture.map((seg) =>
+    //     transformSegment(seg, [
+    //         translationMatrix({
+    //             x: -center.x,
+    //             y: -center.y,
+    //         }),
+    //     ]),
+    // ); // insetSegmentsBeta(segments, windAt);
+
+    // return fixture;
     if (localStorage[KEY]) {
         return JSON.parse(localStorage[KEY]);
     }
     return star();
-    // return []
 };
 
 const KEY = 'geo-test-canvas';
@@ -242,6 +262,12 @@ export const Canvas = ({
     const [debug, setDebug] = React.useState(
         null as null | { kind: number; inset: number },
     );
+    const [scale, setScale] = React.useState(1);
+    // const scale = 300;
+    const scalePos = (p: Coord) => ({
+        x: p.x * scale,
+        y: p.y * scale,
+    });
 
     React.useEffect(() => {
         localStorage[KEY] = JSON.stringify(segments);
@@ -278,7 +304,7 @@ export const Canvas = ({
                 </button>
                 <button
                     onClick={() =>
-                        setDebug({ kind: 1, inset: debug?.inset ?? 40 })
+                        setDebug({ kind: 1, inset: debug?.inset ?? 0 })
                     }
                     disabled={debug?.kind === 1}
                 >
@@ -286,7 +312,7 @@ export const Canvas = ({
                 </button>
                 <button
                     onClick={() =>
-                        setDebug({ kind: 2, inset: debug?.inset ?? 40 })
+                        setDebug({ kind: 2, inset: debug?.inset ?? 0 })
                     }
                     disabled={debug?.kind === 2}
                 >
@@ -294,7 +320,7 @@ export const Canvas = ({
                 </button>
                 <button
                     onClick={() =>
-                        setDebug({ kind: 3, inset: debug?.inset ?? 40 })
+                        setDebug({ kind: 3, inset: debug?.inset ?? 0 })
                     }
                     disabled={debug?.kind === 3}
                 >
@@ -305,7 +331,7 @@ export const Canvas = ({
                         <BlurInt
                             value={debug.inset}
                             onChange={(inset) =>
-                                inset
+                                inset != null
                                     ? setDebug({ inset, kind: debug.kind })
                                     : null
                             }
@@ -328,6 +354,7 @@ export const Canvas = ({
             </div>
 
             <Drawing
+                zoom={scale}
                 segments={segments}
                 setSegments={setSegments}
                 onComplete={() => onComplete(segments, title)}
@@ -350,7 +377,7 @@ export const Canvas = ({
                                 strokeDasharray={'2'}
                                 strokeWidth={1}
                                 fill="none"
-                                d={calcPathD(pathSegs(segments), 1)}
+                                d={calcPathD(pathSegs(segments), scale)}
                             />
                         ));
                     }
@@ -419,12 +446,13 @@ export const Canvas = ({
                     */
                     if (showWind === 1) {
                         const inset = insetSegmentsBeta(segments, windAt);
+                        const primitives = pathToPrimitives(inset);
                         const parts = segmentsToNonIntersectingSegments(inset);
                         const regions = findRegions(parts.result, parts.froms); //.filter(isClockwise);
                         return (
                             <>
                                 <path
-                                    d={calcPathD(pathSegs(inset), 1)}
+                                    d={calcPathD(pathSegs(inset), scale)}
                                     fill="none"
                                     stroke="yellow"
                                     strokeWidth={1}
@@ -452,13 +480,26 @@ export const Canvas = ({
                                             prev,
                                             seg,
                                             next,
-                                            10,
+                                            10 / scale,
                                         );
                                         if (!res) {
                                             return;
                                         }
-                                        const [t0, t1, pos, p0] = res;
+                                        let [t0, t1, pos, p0] = res;
 
+                                        const wind = windingNumber(
+                                            pos,
+                                            primitives,
+                                            inset,
+                                            false,
+                                        );
+                                        const wcount = wind.reduce(
+                                            (c, w) => (w.up ? 1 : -1) + c,
+                                            0,
+                                        );
+
+                                        pos = scalePos(pos);
+                                        p0 = scalePos(p0);
                                         const pa = push(p0, t0, 10);
                                         const pb = push(p0, t1, 10);
 
@@ -485,7 +526,11 @@ export const Canvas = ({
                                                     y1={p0.y}
                                                     x2={pos.x}
                                                     y2={pos.y}
-                                                    stroke="red"
+                                                    stroke={
+                                                        wcount === 0
+                                                            ? 'red'
+                                                            : 'green'
+                                                    }
                                                     strokeWidth={1}
                                                 />
                                             </g>
@@ -522,7 +567,7 @@ export const Canvas = ({
                                     {wcount}
                                 </text> */}
                                 <path
-                                    d={calcPathD(pathSegs(inset), 1)}
+                                    d={calcPathD(pathSegs(inset), scale)}
                                     fill="none"
                                     stroke="yellow"
                                     strokeWidth={1}
@@ -537,13 +582,10 @@ export const Canvas = ({
                                     ),
                                 )}
                                 {regions.map((region, i) => {
-                                    const [t0, t1, pos, p0] = findInternalPos(
+                                    let [t0, t1, pos, p0] = findInternalPos(
                                         region,
                                         20,
                                     );
-
-                                    const pa = push(p0, t0, 10);
-                                    const pb = push(p0, t1, 10);
 
                                     const wind = windingNumber(
                                         pos,
@@ -555,6 +597,11 @@ export const Canvas = ({
                                         (c, w) => (w.up ? 1 : -1) + c,
                                         0,
                                     );
+                                    pos = scalePos(pos);
+                                    p0 = scalePos(p0);
+
+                                    const pa = push(p0, t0, 10);
+                                    const pb = push(p0, t1, 10);
                                     return (
                                         <>
                                             <text
@@ -567,7 +614,7 @@ export const Canvas = ({
                                             <path
                                                 d={calcPathD(
                                                     pathSegs(region),
-                                                    1,
+                                                    scale,
                                                 )}
                                                 fill={`hsla(${
                                                     (i / regions.length) * 360
@@ -652,7 +699,10 @@ export const Canvas = ({
                                             }
                                             strokeWidth={1}
                                             fill="none"
-                                            d={calcPathD(pathSegs(segments), 1)}
+                                            d={calcPathD(
+                                                pathSegs(segments),
+                                                scale,
+                                            )}
                                         />
                                     )),
                                 )}

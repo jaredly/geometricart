@@ -261,10 +261,13 @@ export const pathToInsetPaths = (path: Path): Array<Path> => {
             }
             // console.log('INSETS');
 
-            const regions = cleanUpInsetSegments2(
-                insetSegmentsBeta(path.segments, inset / 100),
-            );
+            const segments = insetSegmentsBeta(path.segments, inset / 100);
+            const regions = cleanUpInsetSegments2(segments);
             // console.log('insets', regions.length);
+            if (path.debug && !regions.length) {
+                console.log(inset, 'dropping debug path, no regions');
+                console.log(segments);
+            }
 
             return regions.map((segments) => ({
                 ...path,

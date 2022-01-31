@@ -536,12 +536,24 @@ export const findInternalPos = (
         }
     }
     console.warn('no internal pos???', segments);
-    // throw new Error(`nope`);
     return [0, 0, segments[0].to, segments[0].to];
 };
 
+export const filterTooSmallSegments = (segments: Array<Segment>) => {
+    return segments.filter((seg, i) => {
+        let prev = segments[i === 0 ? segments.length - 1 : i - 1].to;
+        if (coordsEqual(prev, seg.to)) {
+            console.log('SEGMETNS ZERO_LENTH', seg, prev);
+            return false;
+        }
+        return true;
+    });
+};
+
 export const cleanUpInsetSegments2 = (segments: Array<Segment>) => {
-    const result = segmentsToNonIntersectingSegments(segments);
+    const result = segmentsToNonIntersectingSegments(
+        filterTooSmallSegments(segments),
+    );
     const regions = findRegions(result.result, result.froms).filter(
         isClockwise,
     );

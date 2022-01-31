@@ -168,6 +168,10 @@ export const differentDirection = (
 };
 
 export const insetSegmentsBeta = (segments: Array<Segment>, inset: number) => {
+    if (closeEnough(inset, 0)) {
+        return segments;
+    }
+
     if (!isClockwise(segments)) {
         segments = reversePath(segments);
     }

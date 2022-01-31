@@ -11,6 +11,7 @@ import { ensureClockwise } from '../src/pathToPoints';
 import { Path, Segment } from '../src/types';
 import { Canvas } from './Canvas';
 import { ShowExample } from './ShowExample';
+import { fixture } from './fixture';
 
 export const size = 500;
 
@@ -48,7 +49,9 @@ const maxId = (examples: Array<Example>) => {
 
 const App = () => {
     const [examples, setExamples] = React.useState([] as Array<Example>);
-    const [initial, setInitial] = React.useState(null as null | Array<Segment>);
+    const [initial, setInitial] = React.useState(
+        fixture as null | Array<Segment>,
+    );
 
     React.useEffect(() => {
         fetch(`/cases/`)
