@@ -129,15 +129,17 @@ export const calcPPI = (ppi: number, pixels: number, zoom: number) => {
     return `${(pixels / ppi).toFixed(3)}in`;
 };
 
+export type TLSegmentCurve = {
+    type: 'curve';
+    // normalized! x0 = 0, x1 = 1
+    bezier: Bezier;
+    lookUpTable: LookUpTable;
+    x0: number;
+};
+
 export type TLSegment =
     | { type: 'straight'; y0: number; span: number; x0: number }
-    | {
-          type: 'curve';
-          // normalized! x0 = 0, x1 = 1
-          bezier: Bezier;
-          lookUpTable: LookUpTable;
-          x0: number;
-      };
+    | TLSegmentCurve;
 
 export const evaluateSegment = (seg: TLSegment, percent: number) => {
     if (seg.type === 'straight') {
@@ -185,25 +187,15 @@ export const evaluateBetween = (
 };
 
 export const timelineFunction = (timeline: FloatTimeline) => {
-    const segments: Array<TLSegment> = [];
-    const points = timeline.points.slice();
-    if (!points.length || points[0].pos.x > 0 + epsilon) {
-        points.unshift({ pos: { x: 0, y: 0 } });
-    }
-    if (points[points.length - 1].pos.x < 1 - epsilon) {
-        points.push({ pos: { x: 1, y: 1 } });
-    }
-    for (let i = 1; i < points.length; i++) {
-        const prev = points[i - 1];
-        const now = points[i];
-        segments.push(segmentForPoints(prev, now));
-    }
+    const segments: Array<TLSegment> = timelineSegments(timeline);
+    // console.log(segments);
     return (x: number) => {
         for (let i = 0; i < segments.length; i++) {
             const x0 = segments[i].x0;
-            if (x > x0) {
-                const x1 = i === segments.length - 1 ? 1 : segments[i + 1].x0;
-                const percent = (x - x0) / (x1 - x0);
+            const next = i === segments.length - 1 ? 1 : segments[i + 1].x0;
+            if (x < next) {
+                // const x1 = i === segments.length - 1 ? 1 : segments[i + 1].x0;
+                const percent = (x - x0) / (next - x0);
                 return evaluateSegment(segments[i], percent);
             }
         }
@@ -1011,6 +1003,23 @@ export const dragView = (
     };
     return res;
 };
+
+export function timelineSegments(timeline: FloatTimeline) {
+    const segments: Array<TLSegment> = [];
+    const points = timeline.points.slice();
+    if (!points.length || points[0].pos.x > 0) {
+        points.unshift({ pos: { x: 0, y: 0 } });
+    }
+    if (points[points.length - 1].pos.x < 1 - epsilon) {
+        points.push({ pos: { x: 1, y: 1 } });
+    }
+    for (let i = 1; i < points.length; i++) {
+        const prev = points[i - 1];
+        const now = points[i];
+        segments.push(segmentForPoints(prev, now));
+    }
+    return segments;
+}
 
 export function getSelectedIds(
     paths: State['paths'],

@@ -12,6 +12,7 @@ import { Path, Segment } from '../src/types';
 import { Canvas } from './Canvas';
 import { ShowExample } from './ShowExample';
 import { fixture } from './fixture';
+import { Timeline } from './Timeline';
 
 export const size = 500;
 
@@ -210,4 +211,4 @@ const blankPath: Path = {
     clipMode: 'none',
 };
 
-render(<App />, document.getElementById('root'));
+render(<Timeline />, document.getElementById('root'));

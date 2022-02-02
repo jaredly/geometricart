@@ -658,7 +658,35 @@ function FloatTimeline({
     vbl: FloatTimeline;
     dispatch: (action: Action) => unknown;
 }): JSX.Element {
-    const [editingPoints, setEditingPoints] = useState(false);
+    const [current, setCurrentInner] = React.useState(
+        null as null | FloatTimeline,
+    );
+    const last = React.useRef(vbl.points);
+    React.useEffect(() => {
+        if (last.current !== vbl.points) {
+            last.current = vbl.points;
+            setCurrentInner((c) => (c ? { ...c, points: vbl.points } : c));
+        }
+    }, [vbl.points]);
+
+    if (!current) {
+        return (
+            <div
+                style={{
+                    padding: 8,
+                    margin: 8,
+                    border: '1px solid #aaa',
+                }}
+            >
+                {key}
+                <PointsViewer
+                    onClick={() => setCurrentInner(vbl)}
+                    points={vbl.points}
+                />
+            </div>
+        );
+    }
+
     return (
         <div
             style={{
@@ -668,55 +696,66 @@ function FloatTimeline({
             }}
         >
             {key}
+            <button
+                onClick={() => {
+                    dispatch({
+                        type: 'timeline:update',
+                        key,
+                        vbl: current,
+                    });
+                    setCurrentInner(null);
+                }}
+            >
+                Save
+            </button>
+            <button
+                onClick={() => {
+                    setCurrentInner(null);
+                }}
+            >
+                Cancel
+            </button>
             <div>
                 Range:
                 <BlurInt
-                    value={vbl.range[0]}
+                    value={current.range[0]}
                     onChange={(low) => {
                         if (low == null) return;
                         dispatch({
                             type: 'timeline:update',
                             key,
                             vbl: {
-                                ...vbl,
-                                range: [low, vbl.range[1]],
+                                ...current,
+                                range: [low, current.range[1]],
                             },
                         });
                     }}
                 />
                 <BlurInt
-                    value={vbl.range[1]}
+                    value={current.range[1]}
                     onChange={(high) => {
                         if (high == null) return;
                         dispatch({
                             type: 'timeline:update',
                             key,
                             vbl: {
-                                ...vbl,
-                                range: [vbl.range[0], high],
+                                ...current,
+                                range: [current.range[0], high],
                             },
                         });
                     }}
                 />
             </div>
-            {editingPoints ? (
-                <PointsEditor
-                    points={vbl.points}
-                    onChange={(points) => {
-                        dispatch({
-                            type: 'timeline:update',
-                            key,
-                            vbl: { ...vbl, points },
-                        });
-                        setEditingPoints(false);
-                    }}
-                />
-            ) : (
-                <PointsViewer
-                    onClick={() => setEditingPoints(true)}
-                    points={vbl.points}
-                />
-            )}
+            <PointsEditor
+                current={current.points}
+                setCurrentInner={(points) =>
+                    typeof points === 'function'
+                        ? setCurrentInner((v) =>
+                              v ? { ...v, points: points(v.points) } : v,
+                          )
+                        : setCurrentInner((v) => (v ? { ...v, points } : v))
+                }
+            />
         </div>
     );
 }
@@ -732,17 +771,8 @@ export const PointsViewer = ({
 }) => {
     const width = 50;
     const height = 50;
-    const scale = { x: width, y: height };
 
-    const path = pointsPath([
-        { pos: { x: 0, y: height } },
-        ...points.map((p) => ({
-            pos: mulPos(p.pos, scale),
-            leftCtrl: p.leftCtrl ? mulPos(p.leftCtrl, scale) : undefined,
-            rightCtrl: p.rightCtrl ? mulPos(p.rightCtrl, scale) : undefined,
-        })),
-        { pos: { x: width, y: 0 } },
-    ]).join(' ');
+    const path = pointsPathD(height, points, width);
     return (
         <svg onClick={onClick} width={width} height={height}>
             <path d={path} stroke="red" strokeWidth={1} fill="none" />
@@ -751,22 +781,21 @@ export const PointsViewer = ({
 };
 
 export const PointsEditor = ({
-    points,
-    onChange,
+    current,
+    // setCurrent,
+    setCurrentInner,
 }: {
-    points: Array<TimelinePoint>;
-    onChange: (p: Array<TimelinePoint>) => void;
+    current: Array<TimelinePoint>;
+    // setCurrent: (p: Array<TimelinePoint>) => void;
+    setCurrentInner: (
+        p:
+            | Array<TimelinePoint>
+            | ((p: Array<TimelinePoint>) => Array<TimelinePoint>),
+    ) => void;
 }) => {
-    const [current, setCurrentInner] = React.useState(
-        normalizePoints(points, 0, 1),
-    );
-    const last = React.useRef(points);
-    React.useEffect(() => {
-        if (last.current !== points) {
-            last.current = points;
-            setCurrent(points);
-        }
-    }, [points]);
+    // const [current, setCurrentInner] = React.useState(
+    //     normalizePoints(points, 0, 1),
+    // );
 
     const setCurrent = React.useCallback(
         (
@@ -787,7 +816,7 @@ export const PointsEditor = ({
 
     const width = 500;
     const height = 500;
-    const scale = { x: width, y: height };
+    // const scale = { x: width, y: height };
 
     // const normalized = normalizePoints(current, 0, 1);
 
@@ -809,15 +838,17 @@ export const PointsEditor = ({
             return n;
         });
 
-    const path = pointsPath([
-        { pos: { x: 0, y: height } },
-        ...current.map((p) => ({
-            pos: mulPos(p.pos, scale),
-            leftCtrl: p.leftCtrl ? mulPos(p.leftCtrl, scale) : undefined,
-            rightCtrl: p.rightCtrl ? mulPos(p.rightCtrl, scale) : undefined,
-        })),
-        { pos: { x: width, y: 0 } },
-    ]).join(' ');
+    const path = pointsPathD(height, current, width);
+
+    // const path = pointsPath([
+    //     { pos: { x: 0, y: height } },
+    //     ...current.map((p) => ({
+    //         pos: mulPos(p.pos, scale),
+    //         leftCtrl: p.leftCtrl ? mulPos(p.leftCtrl, scale) : undefined,
+    //         rightCtrl: p.rightCtrl ? mulPos(p.rightCtrl, scale) : undefined,
+    //     })),
+    //     { pos: { x: width, y: 0 } },
+    // ]).join(' ');
 
     const [moving, setMoving] = React.useState(
         null as null | { i: number; which: 'pos' | 'leftCtrl' | 'rightCtrl' },
@@ -861,12 +892,6 @@ export const PointsEditor = ({
 
     return (
         <div>
-            <button
-                onClick={() => onChange(current)}
-                disabled={current === points}
-            >
-                Save
-            </button>
             <svg
                 style={{
                     border: '1px solid magenta',
@@ -886,7 +911,7 @@ export const PointsEditor = ({
             >
                 <path d={path} stroke="red" strokeWidth={1} fill="none" />
                 {current.map((point, i) => (
-                    <>
+                    <React.Fragment key={i}>
                         {point.leftCtrl ? (
                             <line
                                 x1={point.pos.x * width}
@@ -1003,14 +1028,31 @@ export const PointsEditor = ({
                                 fill="green"
                             />
                         ) : null}
-                    </>
+                    </React.Fragment>
                 ))}
             </svg>
         </div>
     );
 };
 
-function pointsPath(current: TimelinePoint[]) {
+export function pointsPathD(
+    height: number,
+    points: TimelinePoint[],
+    width: number,
+) {
+    const scale = { x: width, y: height };
+    return pointsPath([
+        { pos: { x: 0, y: 0 } },
+        ...points.map((p) => ({
+            pos: mulPos(p.pos, scale),
+            leftCtrl: p.leftCtrl ? mulPos(p.leftCtrl, scale) : undefined,
+            rightCtrl: p.rightCtrl ? mulPos(p.rightCtrl, scale) : undefined,
+        })),
+        { pos: { x: width, y: height } },
+    ]).join(' ');
+}
+
+export function pointsPath(current: TimelinePoint[]) {
     return current.map((p, i) => {
         if (i === 0) {
             return `M ${p.pos.x},${p.pos.y}`;
@@ -1028,7 +1070,7 @@ function pointsPath(current: TimelinePoint[]) {
                       x: p.pos.x + p.leftCtrl.x,
                       y: p.pos.y + p.leftCtrl.y,
                   }
-                : prev.pos;
+                : p.pos;
             return `C ${one.x},${one.y} ${two.x},${two.y} ${p.pos.x},${p.pos.y}`;
         }
         return `L ${p.pos.x},${p.pos.y}`;

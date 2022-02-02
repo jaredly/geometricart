@@ -51,7 +51,7 @@ export const evaluateBezier = ({ y0, c1, c2, y1 }: Bezier, t: number) => {
     const b2 = /**/ -3 * t3 + 3 * t2;
     const b3 = t3;
     const x = /* 0 * b0 + */ c1.x * b1 + c2.x * b2 + 1 * b3;
-    const y = /**/ y0 * b0 + c1.y * b2 + c2.y * b2 + y1 * b3;
+    const y = /**/ y0 * b0 + c1.y * b1 + c2.y * b2 + y1 * b3;
     return { x, y };
 };
 
@@ -67,12 +67,26 @@ export const createLookupTable = (bezier: Bezier, count: number) => {
 };
 
 export const evaluateLookUpTable = (table: LookUpTable, x: number) => {
+    if (x === 0) {
+        return 0;
+    }
     for (let i = 1; i < table.length; i++) {
         const prev = table[i - 1];
         const now = table[i];
         if (prev.pos.x <= x && x <= now.pos.x) {
             const percent = (x - prev.pos.x) / (now.pos.x - prev.pos.x);
-            return (now.t - prev.t) * percent + prev.t;
+            const t = (now.t - prev.t) * percent + prev.t;
+            // console.log(
+            //     `ok`,
+            //     x,
+            //     prev.pos.x,
+            //     now.pos.x,
+            //     percent,
+            //     prev.t,
+            //     now.t,
+            //     t,
+            // );
+            return t;
         }
     }
     return 1;
