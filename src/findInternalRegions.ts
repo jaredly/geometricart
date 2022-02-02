@@ -516,7 +516,7 @@ export const findInternalPos = (
         const segment = segments[i];
         const next = segments[(i + 1) % segments.length];
 
-        if (1 === 0) {
+        if (1 === 1) {
             const inside = findInsidePoint(prev, segment, next);
             if (inside) {
                 return inside;

@@ -9,6 +9,8 @@ import { canvasRender } from './CanvasRender';
 import { epsilon } from './intersect';
 import { addMetadata, findBoundingRect } from './Export';
 import { initialHistory } from './initialState';
+import { getAnimatedPaths, getAnimationScripts } from './getAnimatedPaths';
+import { evaluateAnimatedValues } from './Canvas';
 
 export const makeEven = (v: number) => {
     v = Math.ceil(v);
@@ -158,6 +160,42 @@ export const AnimationEditor = ({
                     }}
                 >
                     Export
+                </button>
+                <button
+                    onClick={() => {
+                        canvas.current!.toBlob(async (blob) => {
+                            if (!blob) {
+                                alert('Unable to export. Canvas error');
+                                return;
+                            }
+                            const scripts = getAnimationScripts(state);
+                            const currentAnimatedValues =
+                                evaluateAnimatedValues(
+                                    state.animations,
+                                    animationPosition,
+                                );
+                            const animatedPaths = scripts.length
+                                ? getAnimatedPaths(
+                                      state,
+                                      scripts,
+                                      currentAnimatedValues,
+                                  )
+                                : state.paths;
+
+                            blob = await addMetadata(blob, {
+                                ...state,
+                                paths: animatedPaths,
+                                animations: { timeline: {}, scripts: {} },
+                                history: initialHistory,
+                            });
+                            setDownloadUrl({
+                                url: URL.createObjectURL(blob),
+                                name: new Date().toISOString() + '-still.png',
+                            });
+                        }, 'image/png');
+                    }}
+                >
+                    Export frame
                 </button>
             </div>
             {transcodingProgress.start === 0 ? null : (
