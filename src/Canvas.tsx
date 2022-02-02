@@ -5,7 +5,6 @@ import Prando from 'prando';
 import React from 'react';
 import { RoughGenerator } from 'roughjs/bin/generator';
 import { Action } from './Action';
-import { AnimationUI } from './AnimationUI';
 import { PendingMirror, useCurrent } from './App';
 import { calcAllIntersections } from './calcAllIntersections';
 import { calculateGuideElements } from './calculateGuideElements';
@@ -22,6 +21,12 @@ import {
 } from './Guides';
 import { handleSelection } from './handleSelection';
 import { IconButton, ScissorsCuttingIcon } from './icons/Icon';
+import {
+    Bezier,
+    evaluateBezier,
+    evaluateLookUpTable,
+    LookUpTable,
+} from './lerp';
 import { MirrorMenu } from './MirrorMenu';
 import {
     applyStyleHover,
@@ -122,6 +127,23 @@ export const calcPPI = (ppi: number, pixels: number, zoom: number) => {
     return `${(pixels / ppi).toFixed(3)}in`;
 };
 
+export type TLSegment =
+    | { type: 'straight'; y0: number; span: number }
+    | {
+          type: 'curve';
+          // normalized! x0 = 0, x1 = 1
+          bezier: Bezier;
+          lookUpTable: LookUpTable;
+      };
+
+export const evaluateSegment = (seg: TLSegment, percent: number) => {
+    if (seg.type === 'straight') {
+        return seg.y0 + seg.span * percent;
+    }
+    const t = evaluateLookUpTable(seg.lookUpTable, percent);
+    return evaluateBezier(seg.bezier, t).y;
+};
+
 export const evaluateBetween = (
     left: TimelinePoint,
     right: TimelinePoint,
@@ -164,8 +186,14 @@ export const evaluateAnimatedValues = (
     animations: Animations,
     position: number,
 ) => {
-    const values: { [key: string]: number } = {};
+    const values: { [key: string]: number | ((x: number) => number) } = {
+        t: position,
+    };
     Object.keys(animations.timeline).forEach((vbl) => {
+        if (vbl === 't') {
+            console.warn(`Can't have a custom vbl named t. Ignoring`);
+            return;
+        }
         const t = animations.timeline[vbl];
         if (t.type === 'float') {
             values[vbl] = evaluateTimeline(t, position);
