@@ -481,6 +481,7 @@ async function exportPNG(
         size,
         size,
         size / originalSize,
+        {},
         animationPosition,
     );
     ctx.restore();

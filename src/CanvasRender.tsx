@@ -6,7 +6,11 @@ import {
     calculateGuideElements,
     calculateInactiveGuideElements,
 } from './calculateGuideElements';
-import { evaluateAnimatedValues, imageCache } from './Canvas';
+import {
+    AnimatedFunctions,
+    evaluateAnimatedValues,
+    imageCache,
+} from './Canvas';
 import { getAnimatedPaths, getAnimationScripts } from './getAnimatedPaths';
 import { sortedVisibleInsetPaths } from './sortedVisibleInsetPaths';
 import { segmentKey } from './segmentKey';
@@ -42,6 +46,7 @@ export const canvasRender = async (
     sourceWidth: number,
     sourceHeight: number,
     extraZoom: number,
+    animatedFunctions: AnimatedFunctions,
     animationPosition: number,
 ) => {
     const palette = state.palettes[state.activePalette];
@@ -96,7 +101,7 @@ export const canvasRender = async (
         : undefined;
 
     const currentAnimatedValues = evaluateAnimatedValues(
-        state.animations,
+        animatedFunctions,
         animationPosition,
     );
 

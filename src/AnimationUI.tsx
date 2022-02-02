@@ -16,7 +16,7 @@ import { epsilon } from './intersect';
 import { addMetadata, findBoundingRect } from './Export';
 import { initialHistory } from './initialState';
 import { getAnimatedPaths, getAnimationScripts } from './getAnimatedPaths';
-import { evaluateAnimatedValues } from './Canvas';
+import { evaluateAnimatedValues, getAnimatedFunctions } from './Canvas';
 
 export const makeEven = (v: number) => {
     v = Math.ceil(v);
@@ -68,6 +68,11 @@ export const AnimationEditor = ({
         }
     }
 
+    const animatedFunctions = React.useMemo(
+        () => getAnimatedFunctions(state.animations),
+        [state.animations],
+    );
+
     React.useEffect(() => {
         if (!canvas.current) {
             return;
@@ -76,11 +81,17 @@ export const AnimationEditor = ({
         const ctx = canvas.current.getContext('2d')!;
         ctx.clearRect(0, 0, canvas.current.width, canvas.current.height);
         ctx.save();
-        canvasRender(ctx, state, w * 2, h * 2, 2, animationPosition).then(
-            () => {
-                ctx.restore();
-            },
-        );
+        canvasRender(
+            ctx,
+            state,
+            w * 2,
+            h * 2,
+            2,
+            animatedFunctions,
+            animationPosition,
+        ).then(() => {
+            ctx.restore();
+        });
     }, [animationPosition, state, w, h]);
 
     const onRecord = (increment: number) => {
@@ -103,7 +114,15 @@ export const AnimationEditor = ({
                 return;
             }
             ctx.save();
-            canvasRender(ctx, state, w * 2, h * 2, 2, i).then(() => {
+            canvasRender(
+                ctx,
+                state,
+                w * 2,
+                h * 2,
+                2,
+                animatedFunctions,
+                i,
+            ).then(() => {
                 ctx.restore();
 
                 setTranscodingProgress((t) => ({ ...t, percent: i }));
@@ -177,7 +196,7 @@ export const AnimationEditor = ({
                             const scripts = getAnimationScripts(state);
                             const currentAnimatedValues =
                                 evaluateAnimatedValues(
-                                    state.animations,
+                                    animatedFunctions,
                                     animationPosition,
                                 );
                             const animatedPaths = scripts.length
@@ -711,8 +730,8 @@ export const PointsViewer = ({
     points: Array<TimelinePoint>;
     onClick: () => void;
 }) => {
-    const width = 200;
-    const height = 20;
+    const width = 50;
+    const height = 50;
     const scale = { x: width, y: height };
 
     const path = pointsPath([
@@ -767,7 +786,7 @@ export const PointsEditor = ({
     const svg = React.useRef(null as null | SVGElement);
 
     const width = 500;
-    const height = 100;
+    const height = 500;
     const scale = { x: width, y: height };
 
     // const normalized = normalizePoints(current, 0, 1);
