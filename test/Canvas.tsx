@@ -232,15 +232,15 @@ export const Drawing = ({
 };
 
 const initialState = (): Array<Segment> => {
-    // const center = segmentsCenter(fixture);
-    // return fixture.map((seg) =>
-    //     transformSegment(seg, [
-    //         translationMatrix({
-    //             x: -center.x,
-    //             y: -center.y,
-    //         }),
-    //     ]),
-    // ); // insetSegmentsBeta(segments, windAt);
+    const center = segmentsCenter(fixture);
+    return fixture.map((seg) =>
+        transformSegment(seg, [
+            translationMatrix({
+                x: -center.x,
+                y: -center.y,
+            }),
+        ]),
+    ); // insetSegmentsBeta(segments, windAt);
 
     // return fixture;
     if (localStorage[KEY]) {
@@ -262,7 +262,7 @@ export const Canvas = ({
     const [debug, setDebug] = React.useState(
         null as null | { kind: number; inset: number },
     );
-    const [scale, setScale] = React.useState(1);
+    const [scale, setScale] = React.useState(200);
     // const scale = 300;
     const scalePos = (p: Coord) => ({
         x: p.x * scale,

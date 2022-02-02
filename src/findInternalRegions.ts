@@ -566,11 +566,34 @@ export const removeNonWindingRegions = (
 ) => {
     const primitives = pathToPrimitives(originalSegments);
     return regions.filter((region) => {
-        const [, , pos] = findInternalPos(region);
-        const wind = windingNumber(pos, primitives, originalSegments, false);
-        const wcount = wind.reduce((c, w) => (w.up ? 1 : -1) + c, 0);
+        for (let i = 0; i < region.length; i++) {
+            const prev = region[i === 0 ? region.length - 1 : i - 1].to;
+            const segment = region[i];
+            const next = region[(i + 1) % region.length];
 
-        return wcount > 0;
+            const inside = findInsidePoint(prev, segment, next);
+            if (inside) {
+                const [, , pos] = inside;
+                const wind = windingNumber(
+                    pos,
+                    primitives,
+                    originalSegments,
+                    false,
+                );
+                const wcount = wind.reduce((c, w) => (w.up ? 1 : -1) + c, 0);
+
+                if (wcount > 0) {
+                    return true;
+                }
+            }
+        }
+
+        // const [, , pos] = findInternalPos(region);
+        // const wind = windingNumber(pos, primitives, originalSegments, false);
+        // const wcount = wind.reduce((c, w) => (w.up ? 1 : -1) + c, 0);
+
+        // return wcount > 0;
+        return false;
     });
 };
 
