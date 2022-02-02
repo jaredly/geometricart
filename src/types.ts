@@ -362,6 +362,7 @@ export type Animations = {
     timeline: {
         // ooh some vbls might not be floats?
         // like could be nice to interpolate colors, in some cases
+        // and positions! LIke following a path
         [vblName: string]:
             | FloatTimeline
             | {

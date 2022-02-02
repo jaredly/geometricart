@@ -1,7 +1,13 @@
 import { jsx } from '@emotion/react';
 import React from 'react';
 import { BlurInt, Text, Toggle } from './Forms';
-import { Animations, State } from './types';
+import {
+    Animations,
+    Coord,
+    FloatTimeline,
+    State,
+    TimelinePoint,
+} from './types';
 import { Action } from './Action';
 import prettier from 'prettier';
 import babel from 'prettier/parser-babel';
@@ -612,51 +618,240 @@ function TimelineVariables({
                     return 'Not a float, not yet supported';
                 }
                 return (
-                    <div
+                    <FloatTimeline
                         key={key}
-                        style={{
-                            padding: 8,
-                            margin: 8,
-                            border: '1px solid #aaa',
-                        }}
-                    >
-                        {key}
-                        <div>
-                            Range:
-                            <BlurInt
-                                value={vbl.range[0]}
-                                onChange={(low) => {
-                                    if (low == null) return;
-                                    dispatch({
-                                        type: 'timeline:update',
-                                        key,
-                                        vbl: {
-                                            ...vbl,
-                                            range: [low, vbl.range[1]],
-                                        },
-                                    });
-                                }}
-                            />
-                            <BlurInt
-                                value={vbl.range[1]}
-                                onChange={(high) => {
-                                    if (high == null) return;
-                                    dispatch({
-                                        type: 'timeline:update',
-                                        key,
-                                        vbl: {
-                                            ...vbl,
-                                            range: [vbl.range[0], high],
-                                        },
-                                    });
-                                }}
-                            />
-                        </div>
-                    </div>
+                        id={key}
+                        vbl={vbl}
+                        dispatch={dispatch}
+                    />
                 );
             })}
         </div>
     );
+}
+
+function FloatTimeline({
+    id: key,
+    vbl,
+    dispatch,
+}: {
+    id: string;
+    vbl: FloatTimeline;
+    dispatch: (action: Action) => unknown;
+}): JSX.Element {
+    return (
+        <div
+            style={{
+                padding: 8,
+                margin: 8,
+                border: '1px solid #aaa',
+            }}
+        >
+            {key}
+            <div>
+                Range:
+                <BlurInt
+                    value={vbl.range[0]}
+                    onChange={(low) => {
+                        if (low == null) return;
+                        dispatch({
+                            type: 'timeline:update',
+                            key,
+                            vbl: {
+                                ...vbl,
+                                range: [low, vbl.range[1]],
+                            },
+                        });
+                    }}
+                />
+                <BlurInt
+                    value={vbl.range[1]}
+                    onChange={(high) => {
+                        if (high == null) return;
+                        dispatch({
+                            type: 'timeline:update',
+                            key,
+                            vbl: {
+                                ...vbl,
+                                range: [vbl.range[0], high],
+                            },
+                        });
+                    }}
+                />
+            </div>
+            <PointsEditor
+                points={vbl.points}
+                onChange={(points) =>
+                    dispatch({
+                        type: 'timeline:update',
+                        key,
+                        vbl: { ...vbl, points },
+                    })
+                }
+            />
+        </div>
+    );
+}
+
+export const mulPos = (a: Coord, b: Coord) => ({ x: a.x * b.x, y: a.y * b.y });
+
+export const PointsEditor = ({
+    points,
+    onChange,
+}: {
+    points: Array<TimelinePoint>;
+    onChange: (p: Array<TimelinePoint>) => void;
+}) => {
+    const [current, setCurrent] = React.useState(points);
+    const last = React.useRef(points);
+    React.useEffect(() => {
+        if (last.current !== points) {
+            last.current = points;
+            setCurrent(points);
+        }
+    }, [points]);
+
+    const svg = React.useRef(null as null | SVGElement);
+
+    const width = 500;
+    const height = 50;
+    const scale = { x: width, y: height };
+
+    const normalized = normalizePoints(current, 0, 1);
+
+    const changePoint = (point: TimelinePoint, i: number) =>
+        setCurrent((c) => {
+            const n = normalized.slice();
+            n[i] = point;
+            return n;
+        });
+
+    const path = pointsPath([
+        { pos: { x: 0, y: height } },
+        ...normalized.map((p) => ({
+            pos: mulPos(p.pos, scale),
+            leftCtrl: p.leftCtrl ? mulPos(p.leftCtrl, scale) : undefined,
+            rightCtrl: p.rightCtrl ? mulPos(p.rightCtrl, scale) : undefined,
+        })),
+        { pos: { x: width, y: 0 } },
+    ]).join(' ');
+
+    return (
+        <div>
+            <button
+                onClick={() => onChange(current)}
+                disabled={current === points}
+            >
+                Save
+            </button>
+            <svg
+                style={{
+                    border: '1px solid magenta',
+                    display: 'block',
+                }}
+                ref={(node) => (node ? (svg.current = node) : null)}
+                width={width}
+                height={height}
+                onClick={(evt) => {
+                    const box = svg.current!.getBoundingClientRect();
+                    const pos = {
+                        x: (evt.clientX - box.left) / width,
+                        y: (evt.clientY - box.top) / height,
+                    };
+                    setCurrent(current.concat([{ pos }]));
+                }}
+            >
+                <path d={path} stroke="red" strokeWidth={2} />
+                {normalized.map((point, i) => (
+                    <>
+                        <circle
+                            key={i}
+                            cx={point.pos.x * width}
+                            cy={point.pos.y * height}
+                            r={5}
+                            fill="red"
+                            onClick={(evt) => {
+                                evt.stopPropagation();
+                                evt.preventDefault();
+                                if (evt.shiftKey) {
+                                    const n = normalized.slice();
+                                    n.splice(i, 1);
+                                    return setCurrent(n);
+                                }
+                                if (point.leftCtrl || point.rightCtrl) {
+                                    changePoint({ pos: point.pos }, i);
+                                } else {
+                                    changePoint(
+                                        {
+                                            pos: point.pos,
+                                            leftCtrl: point.leftCtrl || {
+                                                x: point.pos.x - 0.1,
+                                                y: point.pos.y,
+                                            },
+                                            rightCtrl: point.rightCtrl || {
+                                                x: point.pos.x + 0.1,
+                                                y: point.pos.y,
+                                            },
+                                        },
+                                        i,
+                                    );
+                                }
+                            }}
+                        />
+                        {point.leftCtrl ? (
+                            <circle
+                                key={i + 'l'}
+                                cx={point.leftCtrl.x * width}
+                                cy={point.leftCtrl.y * height}
+                                r={5}
+                                fill="blue"
+                            />
+                        ) : null}
+                        {point.rightCtrl ? (
+                            <circle
+                                key={i + 'r'}
+                                cx={point.rightCtrl.x * width}
+                                cy={point.rightCtrl.y * height}
+                                r={5}
+                                fill="green"
+                            />
+                        ) : null}
+                    </>
+                ))}
+            </svg>
+        </div>
+    );
+};
+
+function pointsPath(current: TimelinePoint[]) {
+    return current.map((p, i) => {
+        if (i === 0) {
+            return `M ${p.pos.x},${p.pos.y}`;
+        }
+        const prev = current[i - 1];
+        if (prev.rightCtrl || p.leftCtrl) {
+            const one = prev.rightCtrl || prev.pos;
+            const two = p.leftCtrl || p.pos;
+            return `C ${one.x},${one.y} ${two.x},${two.y} ${p.pos.x},${p.pos.y}`;
+        }
+        return `L ${p.pos.x},${p.pos.y}`;
+    });
+}
+
+function normalizePoints(current: TimelinePoint[], min: number, max: number) {
+    let sorted = current.slice().sort((a, b) => a.pos.x - b.pos.x);
+    sorted = sorted.map((point, i) => {
+        const prev = i === 0 ? min : sorted[i - 1].pos.x;
+        const next = i === sorted.length - 1 ? max : sorted[i + 1].pos.x;
+        let leftCtrl = point.leftCtrl
+            ? { ...point.leftCtrl, x: Math.max(prev, point.leftCtrl.x) }
+            : undefined;
+        let rightCtrl = point.rightCtrl
+            ? { ...point.rightCtrl, x: Math.min(next, point.rightCtrl.x) }
+            : undefined;
+        return { ...point, leftCtrl, rightCtrl };
+    });
+    return sorted;
 }
 
 function convertDataURIToBinary(dataURI: string) {
