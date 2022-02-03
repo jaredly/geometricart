@@ -1,4 +1,4 @@
-import { ensureClockwise } from './pathToPoints';
+import { ensureClockwise, isClockwise, isMaybeClockwise } from './pathToPoints';
 import { clipPath, closeEnough } from './clipPath';
 import { pathToPrimitives } from './findSelection';
 import { angleTo, dist, push } from './getMirrorTransforms';
@@ -26,6 +26,9 @@ import { applyStyleHover, StyleHover } from './MultiStyleForm';
 import {
     cleanUpInsetSegments,
     cleanUpInsetSegments2,
+    filterTooSmallSegments,
+    findRegions,
+    segmentsToNonIntersectingSegments,
 } from './findInternalRegions';
 
 // This should produce:
@@ -274,6 +277,20 @@ export const pathToInsetPaths = (path: Path): Array<Path> => {
 
             const segments = insetSegmentsBeta(path.segments, inset / 100);
             const regions = cleanUpInsetSegments2(segments);
+            if (path.debug) {
+                const result = segmentsToNonIntersectingSegments(
+                    filterTooSmallSegments(segments),
+                );
+                const regions = findRegions(result.result, result.froms).filter(
+                    isMaybeClockwise,
+                );
+
+                return regions.map((segments) => ({
+                    ...path,
+                    segments,
+                    origin: segments[segments.length - 1].to,
+                }));
+            }
             // if (path.debug) {
             //     console.log('seg', segments);
             //     console.log('regions', regions);

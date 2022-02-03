@@ -9,6 +9,17 @@ Ok, so I've added a bunch of debugging to this weird path behavior.
 
 
 
+BUG
+SO I think findRegions iswrong?
+and I think the coordKey dealio is the reason.
+
+I thiiink that my "split into segments" ought to be able to produce
+a correct mapping of "here are the shared coordinates", right?
+because like I just did the intersections of all the things.
+
+hmmmm maybe Froms is already wrong? hmmm
+
+
 
 
 Sooo

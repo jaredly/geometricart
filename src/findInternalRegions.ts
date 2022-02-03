@@ -108,13 +108,34 @@ export const segmentsToNonIntersectingSegments = (segments: Array<Segment>) => {
                     froms[key] = { coord: prev, exits: [] };
                 }
                 froms[key].exits.push(result.length);
-                const theta = angleTo(prev, to); // STOPSHIP broken for arcs I'm sure
-                result.push({
-                    prev,
-                    segment: { ...segment, to },
-                    initialAngle: theta,
-                    finalAngle: theta,
-                });
+                if (segment.type === 'Arc') {
+                    const initialAngle = segmentAngle(
+                        prev,
+                        { ...segment, to },
+                        true,
+                        true,
+                    );
+                    const finalAngle = segmentAngle(
+                        prev,
+                        { ...segment, to },
+                        false,
+                        true,
+                    );
+                    result.push({
+                        prev,
+                        segment: { ...segment, to },
+                        initialAngle,
+                        finalAngle,
+                    });
+                } else {
+                    const theta = angleTo(prev, to); // STOPSHIP broken for arcs I'm sure
+                    result.push({
+                        prev,
+                        segment: { ...segment, to },
+                        initialAngle: theta,
+                        finalAngle: theta,
+                    });
+                }
             }
             prev = to;
             intersection++;

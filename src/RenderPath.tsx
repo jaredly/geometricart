@@ -346,7 +346,10 @@ export const DebugOrigPath = ({
     clip?: Array<Primitive> | null;
 }) => {
     let inset: number | null = null;
-    if (path.style.lines.length) {
+    if (
+        path.style.lines.length &&
+        origPath.style.lines[path.style.lines[0]?.originalIdx!]?.inset
+    ) {
         inset =
             origPath.style.lines[path.style.lines[0]!.originalIdx!]!.inset ??
             null;
@@ -361,7 +364,8 @@ export const DebugOrigPath = ({
         const primitives = pathToPrimitives(insetSegments);
         const parts = segmentsToNonIntersectingSegments(insetSegments);
         const regions = findRegions(parts.result, parts.froms); //.filter(isClockwise);
-        const colors = ['#0f0', '#00f', '#ff0', '#f0f', '#0ff'];
+        console.log(parts);
+        const colors = ['#0f0', '#00f', '#ff0', '#f0f', '#0ff', '#aaa', '#555'];
         let mode = 0;
         if (mode === 0) {
             insetEls = (
@@ -384,7 +388,7 @@ export const DebugOrigPath = ({
                             }}
                         />
                     ))}
-                    {regions.map((region, i) => (
+                    {/* {regions.map((region, i) => (
                         <path
                             d={calcPathD(pathSegs(region), zoom)}
                             fill={colors[i % colors.length]}
@@ -392,7 +396,7 @@ export const DebugOrigPath = ({
                             stroke="white"
                             strokeWidth={1}
                         />
-                    ))}
+                    ))} */}
                     {parts.result.map((part, i) =>
                         segmentArrow(part.prev, i, part.segment, zoom, 10),
                     )}
