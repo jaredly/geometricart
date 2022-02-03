@@ -32,7 +32,7 @@ export const calcAllIntersections = (
 };
 
 export const numKey = (num: number) => {
-    const res = (num === -0 ? 0 : num).toFixed(precision);
+    const res = num.toFixed(precision);
     if (res === '-0.000') {
         return '0.000';
     }
@@ -45,5 +45,5 @@ export const primitiveKey = (p: Primitive) =>
         : `${coordKey(p.center)}:${numKey(p.radius)}${limitKey(p.limit)}`;
 export const limitKey = (limit?: [number, number] | null) =>
     limit ? `:${numKey(limit[0])}:${numKey(limit[1])}` : '';
-export const coordKey = (coord: Coord, n?: number) =>
+export const coordKey = (coord: Coord) =>
     `${numKey(coord.x)},${numKey(coord.y)}`;
