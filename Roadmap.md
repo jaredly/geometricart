@@ -20,6 +20,10 @@ because like I just did the intersections of all the things.
 hmmmm maybe Froms is already wrong? hmmm
 
 
+should I try to do a whole new method of "split into segments"?
+Like could I do segments and regions at the same time? idk.
+.... I guess that's what I was doing before. Maybe it'd be more robust???
+
 
 
 Sooo

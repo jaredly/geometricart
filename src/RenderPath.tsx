@@ -190,7 +190,8 @@ const RenderPathMemo = ({
                                   key={`circle-${k}:${i}`}
                                   cx={seg.to.x * zoom}
                                   cy={seg.to.y * zoom}
-                                  r={(2 / 100) * zoom}
+                                  r={Math.min(20, (2 / 100) * zoom)}
+                                  //   r={20}
                                   fill="orange"
                               />
                           ))
@@ -607,7 +608,7 @@ export const DebugOrigPath = ({
                     key={i}
                     cx={seg.to.x * zoom}
                     cy={seg.to.y * zoom}
-                    r={10}
+                    r={Math.min(10, (1 / 100) * zoom)}
                     fill={i === 0 ? 'red' : 'blue'}
                 />
             ))}
