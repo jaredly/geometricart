@@ -22,7 +22,11 @@ export const Timeline = () => {
         () => timelineFunction({ points, type: 'float', range: [0, 1] }),
         [points],
     );
-    const segments = timelineSegments({ points, type: 'float', range: [0, 1] });
+    const segments = React.useMemo(() => {
+        const seg = timelineSegments({ points, type: 'float', range: [0, 1] });
+        console.log(seg);
+        return seg;
+    }, [points]);
     // const bex = {
     //     y0: 0,
     //     c1: { x: 0, y: 0 },

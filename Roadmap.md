@@ -1,4 +1,9 @@
 
+- [ ] to stabilize colorVariation, tick the rng even if the thing doesn't end up
+			being displayed. Also, let's have uniform coloring for all bits of the inset.
+- [ ] can I use my fancy new algorithm to figure out clipping more robustly? seems like
+			I ought to be able to.
+
 
 Sooo
 to speed things up quite a bit

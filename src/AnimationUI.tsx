@@ -272,7 +272,7 @@ export const AnimationEditor = ({
             <div
                 style={{
                     background: 'rgba(0,0,0,0.4)',
-                    // display: 'flex',
+                    display: 'flex',
                 }}
             >
                 <Scripts dispatch={dispatch} state={state} />
@@ -450,7 +450,7 @@ function Scripts({
                             type: 'script:update',
                             key: newKey,
                             script: {
-                                code: `(paths) => {\n    // do stuff\n}`,
+                                code: `(paths, t) => {\n    // do stuff\n}`,
                                 enabled: true,
                                 phase: 'pre-inset',
                             },
@@ -683,6 +683,13 @@ function FloatTimeline({
                     onClick={() => setCurrentInner(vbl)}
                     points={vbl.points}
                 />
+                <button
+                    onClick={() => {
+                        dispatch({ type: 'timeline:update', key, vbl: null });
+                    }}
+                >
+                    Delete
+                </button>
             </div>
         );
     }
@@ -1041,15 +1048,18 @@ export function pointsPathD(
     width: number,
 ) {
     const scale = { x: width, y: height };
-    return pointsPath([
-        { pos: { x: 0, y: 0 } },
-        ...points.map((p) => ({
-            pos: mulPos(p.pos, scale),
-            leftCtrl: p.leftCtrl ? mulPos(p.leftCtrl, scale) : undefined,
-            rightCtrl: p.rightCtrl ? mulPos(p.rightCtrl, scale) : undefined,
-        })),
-        { pos: { x: width, y: height } },
-    ]).join(' ');
+    const scaled: Array<TimelinePoint> = points.map((p) => ({
+        pos: mulPos(p.pos, scale),
+        leftCtrl: p.leftCtrl ? mulPos(p.leftCtrl, scale) : undefined,
+        rightCtrl: p.rightCtrl ? mulPos(p.rightCtrl, scale) : undefined,
+    }));
+    if (!scaled.length || scaled[0].pos.x > 0) {
+        scaled.unshift({ pos: { x: 0, y: 0 } });
+    }
+    if (!points.length || points[points.length - 1].pos.x < 1) {
+        scaled.push({ pos: { x: width, y: height } });
+    }
+    return pointsPath(scaled).join(' ');
 }
 
 export function pointsPath(current: TimelinePoint[]) {

@@ -97,6 +97,9 @@ export function sortedVisibleInsetPaths(
     let processed: Array<Path> = visible
         .map((k) => paths[k])
         .map((path) => {
+            if (path.debug) {
+                console.log(`debug`, path);
+            }
             const group = path.group ? pathGroups[path.group] : null;
             if (selectedIds[path.id] && styleHover) {
                 path = {
@@ -126,6 +129,11 @@ export function sortedVisibleInsetPaths(
             }
         })
         .flat();
+    processed.forEach((p) => {
+        if (p.debug) {
+            console.log('debug processed', p);
+        }
+    });
 
     if (laserCutPalette) {
         // processed paths are singles at this point
@@ -179,7 +187,7 @@ export function sortedVisibleInsetPaths(
         red.forEach((path, pi) => addToUsed(path, used.red, pi));
         blue.forEach((path, pi) => addToUsed(path, used.blue, pi));
 
-        console.log(used);
+        // console.log(used);
 
         red = red
             .map((path, pi) => removePartialOverlaps(path, pi, used.red))
@@ -259,10 +267,17 @@ export const pathToInsetPaths = (path: Path): Array<Path> => {
             if (!inset) {
                 return [path];
             }
+            if (path.debug) {
+                console.log('ok single', path, inset);
+            }
             // console.log('INSETS');
 
             const segments = insetSegmentsBeta(path.segments, inset / 100);
             const regions = cleanUpInsetSegments2(segments);
+            if (path.debug) {
+                console.log('seg', segments);
+                console.log('regions', regions);
+            }
             // console.log('insets', regions.length);
             if (path.debug && !regions.length) {
                 console.log(inset, 'dropping debug path, no regions');
