@@ -38,7 +38,7 @@ export const numKey = (num: number) => {
     }
     return res;
 };
-const precision = 3;
+const precision = 5;
 export const primitiveKey = (p: Primitive) =>
     p.type === 'line'
         ? `${numKey(p.m)}:${numKey(p.b)}${limitKey(p.limit)}`

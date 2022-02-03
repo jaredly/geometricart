@@ -361,6 +361,7 @@ export const DebugOrigPath = ({
         const primitives = pathToPrimitives(insetSegments);
         const parts = segmentsToNonIntersectingSegments(insetSegments);
         const regions = findRegions(parts.result, parts.froms); //.filter(isClockwise);
+        const colors = ['#0f0', '#00f', '#ff0', '#f0f', '#0ff'];
         let mode = 0;
         if (mode === 0) {
             insetEls = (
@@ -383,9 +384,84 @@ export const DebugOrigPath = ({
                             }}
                         />
                     ))}
+                    {regions.map((region, i) => (
+                        <path
+                            d={calcPathD(pathSegs(region), zoom)}
+                            fill={colors[i % colors.length]}
+                            key={i}
+                            stroke="white"
+                            strokeWidth={1}
+                        />
+                    ))}
                     {parts.result.map((part, i) =>
                         segmentArrow(part.prev, i, part.segment, zoom, 10),
                     )}
+                    {regions.map((region, ri) => {
+                        return region.map((seg, i) => {
+                            const prev =
+                                region[i === 0 ? region.length - 1 : i - 1].to;
+                            const next = region[(i + 1) % region.length];
+                            const res = findInsidePoint(
+                                prev,
+                                seg,
+                                next,
+                                25 / zoom,
+                            );
+                            if (!res) {
+                                return;
+                            }
+                            let [t0, t1, pos, p0] = res;
+
+                            const wind = windingNumber(
+                                pos,
+                                primitives,
+                                insetSegments,
+                                false,
+                            );
+                            const wcount = wind.reduce(
+                                (c, w) => (w.up ? 1 : -1) + c,
+                                0,
+                            );
+                            const scalePos = (p: Coord) => ({
+                                x: p.x * zoom,
+                                y: p.y * zoom,
+                            });
+
+                            pos = scalePos(pos);
+                            p0 = scalePos(p0);
+                            const pa = push(p0, t0, 35);
+                            const pb = push(p0, t1, 30);
+
+                            return (
+                                <g key={`${ri}-${i}`}>
+                                    <line
+                                        x1={p0.x}
+                                        y1={p0.y}
+                                        x2={pa.x}
+                                        y2={pa.y}
+                                        stroke="white"
+                                        strokeWidth={3}
+                                    />
+                                    <line
+                                        x1={p0.x}
+                                        y1={p0.y}
+                                        x2={pb.x}
+                                        y2={pb.y}
+                                        stroke="black"
+                                        strokeWidth={3}
+                                    />
+                                    <line
+                                        x1={p0.x}
+                                        y1={p0.y}
+                                        x2={pos.x}
+                                        y2={pos.y}
+                                        stroke={wcount === 0 ? 'red' : '#af0'}
+                                        strokeWidth={3}
+                                    />
+                                </g>
+                            );
+                        });
+                    })}
                 </>
             );
         } else {
@@ -632,7 +708,7 @@ export function segmentArrow(
     return (
         <polygon
             points={[
-                push(mid, theta, size),
+                push(mid, theta, size * 2),
                 push(mid, theta + (Math.PI * 2) / 3, size),
                 push(mid, theta + (Math.PI * 4) / 3, size),
             ]
