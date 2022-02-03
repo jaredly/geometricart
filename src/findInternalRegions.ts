@@ -28,6 +28,8 @@ import { angleBetween } from './findNextSegments';
 import { Bounds } from './GuideElement';
 import { segmentBounds, segmentsBounds } from './Export';
 
+const HIGH_PRECISION = 4;
+
 export const segmentsToNonIntersectingSegments = (segments: Array<Segment>) => {
     const primitives = pathToPrimitives(segments);
     const hits: Array<Array<Hit>> = new Array(segments.length)
@@ -49,11 +51,11 @@ export const segmentsToNonIntersectingSegments = (segments: Array<Segment>) => {
                     coord.y = 0;
                 }
                 const iend =
-                    coordsEqual(coord, previ) ||
-                    coordsEqual(coord, segments[i].to);
+                    coordsEqual(coord, previ, HIGH_PRECISION) ||
+                    coordsEqual(coord, segments[i].to, HIGH_PRECISION);
                 const jend =
-                    coordsEqual(coord, prevj) ||
-                    coordsEqual(coord, segments[j].to);
+                    coordsEqual(coord, prevj, HIGH_PRECISION) ||
+                    coordsEqual(coord, segments[j].to, HIGH_PRECISION);
                 // This is just two segments meeting. no big deal.
                 // Note that if we managed to get in a place where four lines met in the same place,
                 // this logic would break. here's hoping.
@@ -95,15 +97,15 @@ export const segmentsToNonIntersectingSegments = (segments: Array<Segment>) => {
         //     console.log(segment, sorted[i], prev, segment.to);
         // }
         while (
-            !coordsEqual(prev, segment.to) &&
+            !coordsEqual(prev, segment.to, HIGH_PRECISION) &&
             intersection <= sorted[i].length
         ) {
-            const key = coordKey(prev);
+            const key = coordKey(prev, HIGH_PRECISION);
             const to =
                 intersection === sorted[i].length
                     ? segment.to
                     : sorted[i][intersection].coord;
-            if (!coordsEqual(prev, to)) {
+            if (!coordsEqual(prev, to, HIGH_PRECISION)) {
                 if (!froms[key]) {
                     froms[key] = { coord: prev, exits: [] };
                 }
@@ -231,13 +233,17 @@ export const checkContained = (
         }
     }
 
-    const fp = first.segments.find((seg) => !second.corners[coordKey(seg.to)]);
+    const fp = first.segments.find(
+        (seg) => !second.corners[coordKey(seg.to, HIGH_PRECISION)],
+    );
     if (fp) {
         if (insidePath(fp.to, second.primitives)) {
             return true;
         }
     }
-    const sp = second.segments.find((seg) => !first.corners[coordKey(seg.to)]);
+    const sp = second.segments.find(
+        (seg) => !first.corners[coordKey(seg.to, HIGH_PRECISION)],
+    );
     if (sp) {
         if (insidePath(sp.to, first.primitives)) {
             return false;
@@ -277,7 +283,7 @@ export const precalcRegion = (segments: Array<Segment>): Region => {
     const corners: Region['corners'] = {};
     segments.forEach((segment, i) => {
         const { enterAngle, exitAngle } = getCornerAngle(segments, i);
-        corners[coordKey(segment.to)] = angleBetween(
+        corners[coordKey(segment.to, HIGH_PRECISION)] = angleBetween(
             enterAngle,
             exitAngle,
             true,
@@ -342,11 +348,15 @@ export const findRegions = (
 
         while (
             (!region.length ||
-                !coordsEqual(region[region.length - 1].to, prev)) &&
+                !coordsEqual(
+                    region[region.length - 1].to,
+                    prev,
+                    HIGH_PRECISION,
+                )) &&
             !seen[i]
         ) {
             seen[i] = true;
-            const key = coordKey(segment.to);
+            const key = coordKey(segment.to, HIGH_PRECISION);
             // eliminate the "just go to the next one"
             const otherExits = froms[key].exits
                 //.filter(k => k !== i + 1)
@@ -563,7 +573,7 @@ export const findInternalPos = (
 export const filterTooSmallSegments = (segments: Array<Segment>) => {
     return segments.filter((seg, i) => {
         let prev = segments[i === 0 ? segments.length - 1 : i - 1].to;
-        if (coordsEqual(prev, seg.to)) {
+        if (coordsEqual(prev, seg.to, HIGH_PRECISION)) {
             console.log('SEGMETNS ZERO_LENTH', seg, prev);
             return false;
         }

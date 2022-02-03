@@ -4,8 +4,8 @@ import { Coord, Segment } from './types';
 
 // export const genId = () => Math.random().toString(36).slice(2);
 
-export const coordsEqual = (one: Coord, two: Coord) =>
-    coordKey(one) === coordKey(two);
+export const coordsEqual = (one: Coord, two: Coord, precision?: number) =>
+    coordKey(one, precision) === coordKey(two, precision);
 export const segmentsEqual = (prev: Coord, one: Segment, two: Segment) =>
     segmentKey(prev, one) === segmentKey(prev, two);
 
