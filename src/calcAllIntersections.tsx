@@ -31,11 +31,14 @@ export const calcAllIntersections = (
     return { coords, seenCoords };
 };
 
-export const numKey = (num: number, n = precision) => {
-    const res = (num === -0 ? 0 : num).toFixed(n);
+export const numKey = (num: number) => {
+    const res = (num === -0 ? 0 : num).toFixed(precision);
+    if (res === '-0.000') {
+        return '0.000';
+    }
     return res;
 };
-const precision = 6;
+const precision = 3;
 export const primitiveKey = (p: Primitive) =>
     p.type === 'line'
         ? `${numKey(p.m)}:${numKey(p.b)}${limitKey(p.limit)}`
@@ -43,4 +46,4 @@ export const primitiveKey = (p: Primitive) =>
 export const limitKey = (limit?: [number, number] | null) =>
     limit ? `:${numKey(limit[0])}:${numKey(limit[1])}` : '';
 export const coordKey = (coord: Coord, n?: number) =>
-    `${numKey(coord.x, n)},${numKey(coord.y, n)}`;
+    `${numKey(coord.x)},${numKey(coord.y)}`;
