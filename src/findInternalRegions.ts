@@ -35,11 +35,11 @@ export const segmentsToNonIntersectingSegments = (segments: Array<Segment>) => {
         .map((m) => []);
     const allHits: Array<Hit> = [];
     for (let i = 0; i < segments.length; i++) {
-        // const previ =
-        //     i === 0 ? segments[segments.length - 1].to : segments[i - 1].to;
+        const previ =
+            i === 0 ? segments[segments.length - 1].to : segments[i - 1].to;
         for (let j = i + 1; j < segments.length; j++) {
-            // const prevj =
-            //     j === 0 ? segments[segments.length - 1].to : segments[j - 1].to;
+            const prevj =
+                j === 0 ? segments[segments.length - 1].to : segments[j - 1].to;
             const these = intersections(primitives[i], primitives[j]);
             these.forEach((coord) => {
                 if (coord.x === 0) {
@@ -48,18 +48,18 @@ export const segmentsToNonIntersectingSegments = (segments: Array<Segment>) => {
                 if (coord.y === 0) {
                     coord.y = 0;
                 }
-                // const iend =
-                //     coordsEqual(coord, previ) ||
-                //     coordsEqual(coord, segments[i].to);
-                // const jend =
-                //     coordsEqual(coord, prevj) ||
-                //     coordsEqual(coord, segments[j].to);
+                const iend =
+                    coordsEqual(coord, previ) ||
+                    coordsEqual(coord, segments[i].to);
+                const jend =
+                    coordsEqual(coord, prevj) ||
+                    coordsEqual(coord, segments[j].to);
                 // This is just two segments meeting. no big deal.
                 // Note that if we managed to get in a place where four lines met in the same place,
                 // this logic would break. here's hoping.
-                // if (iend && jend) {
-                //     return;
-                // }
+                if (iend && jend) {
+                    return;
+                }
                 const hit = { first: i, second: j, coord };
                 hits[i].push(hit);
                 hits[j].push(hit);
@@ -156,7 +156,7 @@ export const segmentsToNonIntersectingSegments = (segments: Array<Segment>) => {
 // I mean, we could say:
 // if there's one to the right or left, then take it?
 
-type Froms = {
+export type Froms = {
     [key: string]: {
         coord: Coord;
         exits: Array<number>;
@@ -166,7 +166,7 @@ type Froms = {
 // So there's probably a weird edge case if two corners happen to touch
 // ... not super likely, but idk what would happen.
 
-type PartialSegment = {
+export type PartialSegment = {
     prev: Coord;
     segment: Segment;
     initialAngle: number;

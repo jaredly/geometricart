@@ -254,12 +254,6 @@ export const insetArcArc = (
         const mp = push(seg.to, mid, amount);
         return [
             { ...seg, to: newTo },
-            // {
-            //     type: 'Arc',
-            //     center: seg.to,
-            //     clockwise: false,
-            //     to: otherTo,
-            // },
             { type: 'Line', to: mp },
             { type: 'Line', to: otherTo },
         ];
@@ -304,6 +298,26 @@ export const insetArcArc = (
             seg.clockwise,
         ) < Math.PI
     ) {
+        const nextPos = push(
+            next.center,
+            angleTo(next.center, seg.to),
+            radius2,
+        );
+        return [
+            // I, ugh, don't know why this fixes a bug.
+            // but it does.
+            // it's splitting this segment into two pieces.
+            // and even after this, there's what looks like
+            // an extra segment at the corner here, when I
+            // look at the post-splitting debug info. But
+            // it's not making problems right now, so 🤷‍♂️.
+            { ...seg, to: push(seg.center, angle, radius) },
+            { ...seg, to },
+            // { type: 'Line', to: to },
+            // { type: 'Line', to: nextPos },
+            // { ...next, to: nextPos },
+        ];
+
         return {
             ...seg,
             to,

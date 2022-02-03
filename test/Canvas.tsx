@@ -262,7 +262,7 @@ export const Canvas = ({
     const [debug, setDebug] = React.useState(
         null as null | { kind: number; inset: number },
     );
-    const [scale, setScale] = React.useState(300);
+    const [scale, setScale] = React.useState(1);
     // const scale = 300;
     const scalePos = (p: Coord) => ({
         x: p.x * scale,

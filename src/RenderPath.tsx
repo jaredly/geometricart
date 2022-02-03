@@ -184,18 +184,6 @@ const RenderPathMemo = ({
                         {...common}
                         key={`info-${i}-${k}`}
                     />
-                    {path.debug
-                        ? newPath.segments.map((seg, i) => (
-                              <circle
-                                  key={`circle-${k}:${i}`}
-                                  cx={seg.to.x * zoom}
-                                  cy={seg.to.y * zoom}
-                                  r={Math.min(20, (2 / 100) * zoom)}
-                                  //   r={20}
-                                  fill="orange"
-                              />
-                          ))
-                        : null}
                 </React.Fragment>
             );
         });
@@ -377,6 +365,12 @@ export const DebugOrigPath = ({
                         stroke="white"
                         strokeWidth={1}
                     />
+                    <path
+                        d={calcPathD(pathSegs(insetSegments), zoom)}
+                        fill="none"
+                        stroke="red"
+                        strokeWidth={1}
+                    />
                     {parts.result.map((part, i) => (
                         <RenderSegmentBasic
                             zoom={zoom}
@@ -399,7 +393,13 @@ export const DebugOrigPath = ({
                         />
                     ))} */}
                     {parts.result.map((part, i) =>
-                        segmentArrow(part.prev, i, part.segment, zoom, 10),
+                        segmentArrow(
+                            part.prev,
+                            i,
+                            part.segment,
+                            zoom,
+                            Math.max(5, Math.min(10, (1 / 100) * zoom)),
+                        ),
                     )}
                     {regions.map((region, ri) => {
                         return region.map((seg, i) => {
@@ -603,30 +603,46 @@ export const DebugOrigPath = ({
                     fill={'none'}
                 />
             ))}
-            {path.segments.map((seg, i) => (
-                <circle
-                    key={i}
-                    cx={seg.to.x * zoom}
-                    cy={seg.to.y * zoom}
-                    r={Math.min(10, (1 / 100) * zoom)}
-                    fill={i === 0 ? 'red' : 'blue'}
-                />
-            ))}
+            {false &&
+                path.segments.map((seg, i) => (
+                    <circle
+                        key={i}
+                        cx={seg.to.x * zoom}
+                        cy={seg.to.y * zoom}
+                        r={Math.min(10, (1 / 100) * zoom)}
+                        fill={i === 0 ? 'red' : 'blue'}
+                    />
+                ))}
 
-            <circle
-                cx={origPath.origin.x * zoom}
-                cy={origPath.origin.y * zoom}
-                r={10}
-                fill={'none'}
-                stroke={'green'}
-                strokeWidth={(1 / 100) * zoom}
-            />
-            <circle
-                cx={path.origin.x * zoom}
-                cy={path.origin.y * zoom}
-                r={10}
-                fill={'green'}
-            />
+            {false && (
+                <circle
+                    cx={origPath.origin.x * zoom}
+                    cy={origPath.origin.y * zoom}
+                    r={10}
+                    fill={'none'}
+                    stroke={'green'}
+                    strokeWidth={(1 / 100) * zoom}
+                />
+            )}
+            {false && (
+                <circle
+                    cx={path.origin.x * zoom}
+                    cy={path.origin.y * zoom}
+                    r={10}
+                    fill={'green'}
+                />
+            )}
+            {false &&
+                path.segments.map((seg, i) => (
+                    <circle
+                        key={`circle-${i}`}
+                        cx={seg.to.x * zoom}
+                        cy={seg.to.y * zoom}
+                        r={Math.min(20, (2 / 100) * zoom)}
+                        //   r={20}
+                        fill="orange"
+                    />
+                ))}
             {insetEls}
         </>
     );

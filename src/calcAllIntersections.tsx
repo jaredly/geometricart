@@ -31,19 +31,16 @@ export const calcAllIntersections = (
     return { coords, seenCoords };
 };
 
-export const numKey = (num: number) => {
-    const res = num.toFixed(precision);
-    if (res === '-0.000') {
-        return '0.000';
-    }
+export const numKey = (num: number, n = precision) => {
+    const res = (num === -0 ? 0 : num).toFixed(n);
     return res;
 };
-const precision = 4;
+const precision = 6;
 export const primitiveKey = (p: Primitive) =>
     p.type === 'line'
         ? `${numKey(p.m)}:${numKey(p.b)}${limitKey(p.limit)}`
         : `${coordKey(p.center)}:${numKey(p.radius)}${limitKey(p.limit)}`;
 export const limitKey = (limit?: [number, number] | null) =>
     limit ? `:${numKey(limit[0])}:${numKey(limit[1])}` : '';
-export const coordKey = (coord: Coord) =>
-    `${numKey(coord.x)},${numKey(coord.y)}`;
+export const coordKey = (coord: Coord, n?: number) =>
+    `${numKey(coord.x, n)},${numKey(coord.y, n)}`;
