@@ -43,7 +43,7 @@ export function useScrollWheel(
                 const amount = dy / 100 + 1.0;
                 const newZoom = Math.min(
                     Math.max(view.zoom * amount, 10),
-                    10000,
+                    200000,
                 );
                 const newPos = screenToWorld(width, height, screenPos, {
                     ...view,

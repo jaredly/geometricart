@@ -5,6 +5,12 @@
 			I ought to be able to.
 
 
+Ok, so I've added a bunch of debugging to this weird path behavior.
+
+
+
+
+
 Sooo
 to speed things up quite a bit
 lets do "each path has a hash of the first-point-aligned segments list

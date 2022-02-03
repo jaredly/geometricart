@@ -28,7 +28,7 @@ import {
     pathToPoints,
 } from '../src/pathToPoints';
 import { transformSegment } from '../src/points';
-import { calcPathD } from '../src/RenderPath';
+import { calcPathD, segmentArrow } from '../src/RenderPath';
 import { Coord, Segment } from '../src/types';
 import { fixture } from './fixture';
 import { getInsets, insetColors, pathSegs, size } from './run';
@@ -726,38 +726,3 @@ const star = (): Array<Segment> => {
     }
     return points.map((to) => ({ type: 'Line', to }));
 };
-
-function segmentArrow(prev: Coord, i: number, seg: Segment) {
-    let mid;
-    if (seg.type === 'Line') {
-        mid = {
-            x: (seg.to.x + prev.x) / 2,
-            y: (seg.to.y + prev.y) / 2,
-        };
-    } else {
-        const t0 = angleTo(seg.center, prev);
-        const tb = angleBetween(t0, angleTo(seg.center, seg.to), seg.clockwise);
-        mid = push(
-            seg.center,
-            t0 + (tb / 2) * (seg.clockwise ? 1 : -1),
-            dist(seg.center, seg.to),
-        );
-    }
-    const theta = angleTo(prev, seg.to);
-    const show = (p: Coord) => `${p.x.toFixed(2)},${p.y.toFixed(2)}`;
-    return (
-        <polygon
-            points={[
-                push(mid, theta, 2),
-                push(mid, theta + (Math.PI * 2) / 3, 2),
-                push(mid, theta + (Math.PI * 4) / 3, 2),
-            ]
-                .map(show)
-                .join(' ')}
-            fill="purple"
-            stroke="white"
-            strokeWidth={0.5}
-            key={i}
-        />
-    );
-}
