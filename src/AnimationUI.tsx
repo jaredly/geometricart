@@ -59,6 +59,10 @@ export const AnimationEditor = ({
     let w = bounds
         ? makeEven((bounds.x2 - bounds.x1) * state.view.zoom + crop * 2)
         : originalSize;
+
+    let dx = bounds ? (bounds.x1 + bounds.x2) / 2 : 0;
+    let dy = bounds ? (bounds.y1 + bounds.y2) / 2 : 0;
+
     if (lockAspectRatio) {
         if (w / h > 16 / 9) {
             h = (w / 16) * 9;
@@ -83,7 +87,7 @@ export const AnimationEditor = ({
         ctx.save();
         canvasRender(
             ctx,
-            state,
+            { ...state, view: { ...state.view, center: { x: -dx, y: -dy } } },
             w * 2,
             h * 2,
             2,
@@ -92,7 +96,7 @@ export const AnimationEditor = ({
         ).then(() => {
             ctx.restore();
         });
-    }, [animationPosition, state, w, h]);
+    }, [animationPosition, state, w, h, dx, dy]);
 
     const onRecord = (increment: number) => {
         const ctx = canvas.current!.getContext('2d')!;
@@ -116,7 +120,10 @@ export const AnimationEditor = ({
             ctx.save();
             canvasRender(
                 ctx,
-                state,
+                {
+                    ...state,
+                    view: { ...state.view, center: { x: -dx, y: -dy } },
+                },
                 w * 2,
                 h * 2,
                 2,

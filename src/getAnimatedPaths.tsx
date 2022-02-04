@@ -2,15 +2,42 @@ import {
     angleTo,
     applyMatrices,
     dist,
+    Matrix,
     push,
     transformsToMatrices,
     transformToMatrices,
 } from './getMirrorTransforms';
-import { Coord, State } from './types';
+import { Coord, Path, State } from './types';
 import { getSelectedIds } from './Canvas';
 import { angleBetween } from './findNextSegments';
 import { segmentsBounds, segmentsCenter } from './Export';
 import { transformSegment } from './points';
+
+const lerpPos = (p1: Coord, p2: Coord, percent: number) => {
+    return {
+        x: (p2.x - p1.x) * percent + p1.x,
+        y: (p2.y - p1.y) * percent + p1.y,
+    };
+};
+
+const followPath = (points: Array<Coord>, percent: number) => {
+    const dists = [];
+    let total = 0;
+    for (let i = 1; i < points.length; i++) {
+        const d = dist(points[i - 1], points[i]);
+        total += d;
+        dists.push(d);
+    }
+    const desired = percent * total;
+    let at = 0;
+    for (let i = 0; i < points.length - 1; i++) {
+        if (at + dists[i] > desired) {
+            return lerpPos(points[i], points[i + 1], (desired - at) / dists[i]);
+        }
+        at += dists[i];
+    }
+    return points[points.length - 1];
+};
 
 export function getAnimatedPaths(
     state: State,
@@ -81,36 +108,6 @@ export function getAnimationScripts(state: State): ({
                 return null;
             }
 
-            const lerpPos = (p1: Coord, p2: Coord, percent: number) => {
-                return {
-                    x: (p2.x - p1.x) * percent + p1.x,
-                    y: (p2.y - p1.y) * percent + p1.y,
-                };
-            };
-
-            const followPath = (points: Array<Coord>, percent: number) => {
-                const dists = [];
-                let total = 0;
-                for (let i = 1; i < points.length; i++) {
-                    const d = dist(points[i - 1], points[i]);
-                    total += d;
-                    dists.push(d);
-                }
-                const desired = percent * total;
-                let at = 0;
-                for (let i = 0; i < points.length - 1; i++) {
-                    if (at + dists[i] > desired) {
-                        return lerpPos(
-                            points[i],
-                            points[i + 1],
-                            (desired - at) / dists[i],
-                        );
-                    }
-                    at += dists[i];
-                }
-                return points[points.length - 1];
-            };
-
             const builtins: { [key: string]: Function } = {
                 dist,
                 push,
@@ -121,9 +118,19 @@ export function getAnimationScripts(state: State): ({
                 transformSegment,
                 applyMatrices,
                 transformsToMatrices,
+                transformPath: (path: Path, tx: Array<Matrix>): Path => {
+                    return {
+                        ...path,
+                        origin: applyMatrices(path.origin, tx),
+                        segments: path.segments.map((s) =>
+                            transformSegment(s, tx),
+                        ),
+                    };
+                },
                 followPath,
                 lerpPos,
             };
+
             try {
                 const fn = new Function(
                     Object.keys(builtins).join(','),

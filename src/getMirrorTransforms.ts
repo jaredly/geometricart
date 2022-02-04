@@ -103,7 +103,7 @@ export const applyMatrices = (pos: Coord, matrices: Array<Matrix>) => {
     return matrices.reduce(applyMatrix, pos);
 };
 
-export const mirrorTransforms = (mirror: Mirror) => {
+export const mirrorTransforms = (mirror: Mirror): Array<Array<Transform>> => {
     const original: Array<Array<Transform>> = [[]];
     const transforms: Array<Array<Transform>> = [];
     if (mirror.reflect) {
