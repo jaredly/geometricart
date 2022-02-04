@@ -1,4 +1,15 @@
 
+# Fun things to do with animation:
+
+## Gradually build up, in a certain order
+Could be quite cool to be able to run a script to prepare things,
+and then have the cache be populated on subsequent runs. I guess
+I could just pass in a cache variable? yeah that sounds reasonable.
+Would maybe want a button to clear the cache or something?
+
+
+
+
 - [ ] to stabilize colorVariation, tick the rng even if the thing doesn't end up
 			being displayed. Also, let's have uniform coloring for all bits of the inset.
 - [ ] can I use my fancy new algorithm to figure out clipping more robustly? seems like
