@@ -33,6 +33,7 @@ export const AnimationEditor = ({
     const [animationPosition, setAnimationPosition] = React.useState(0);
     const canvas = React.useRef(null as null | HTMLCanvasElement);
     const [fps, setFps] = React.useState(60);
+    const [zoom, setZoom] = React.useState(1);
     const [increment, setIncrement] = React.useState(0.05);
     const [lockAspectRatio, setLockAspectRatio] = React.useState(false);
     const [crop, setCrop] = React.useState(10);
@@ -88,15 +89,15 @@ export const AnimationEditor = ({
         canvasRender(
             ctx,
             { ...state, view: { ...state.view, center: { x: -dx, y: -dy } } },
-            w * 2,
-            h * 2,
-            2,
+            w * 2 * zoom,
+            h * 2 * zoom,
+            2 * zoom,
             animatedFunctions,
             animationPosition,
         ).then(() => {
             ctx.restore();
         });
-    }, [animationPosition, state, w, h, dx, dy]);
+    }, [animationPosition, state, w, h, dx, dy, zoom]);
 
     const onRecord = (increment: number) => {
         const ctx = canvas.current!.getContext('2d')!;
@@ -124,9 +125,9 @@ export const AnimationEditor = ({
                     ...state,
                     view: { ...state.view, center: { x: -dx, y: -dy } },
                 },
-                w * 2,
-                h * 2,
-                2,
+                w * 2 * zoom,
+                h * 2 * zoom,
+                2 * zoom,
                 animatedFunctions,
                 i,
             ).then(() => {
@@ -148,9 +149,9 @@ export const AnimationEditor = ({
         <div style={{}}>
             <canvas
                 ref={canvas}
-                width={w * 2}
-                height={h * 2}
-                style={{ width: w, height: h }}
+                width={makeEven(w * 2 * zoom)}
+                height={makeEven(h * 2 * zoom)}
+                style={{ width: w * zoom, height: h * zoom }}
             />
             <div style={{ display: 'flex' }}>
                 <div>
@@ -158,6 +159,13 @@ export const AnimationEditor = ({
                     <BlurInt
                         value={fps}
                         onChange={(f) => (f ? setFps(f) : null)}
+                    />
+                </div>
+                <div>
+                    Zoom:{' '}
+                    <BlurInt
+                        value={zoom}
+                        onChange={(f) => (f ? setZoom(f) : null)}
                     />
                 </div>
                 <Toggle

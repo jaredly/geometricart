@@ -4,8 +4,11 @@ import {
     dist,
     Matrix,
     push,
+    rotationMatrix,
+    scaleMatrix,
     transformsToMatrices,
     transformToMatrices,
+    translationMatrix,
 } from './getMirrorTransforms';
 import { Coord, Path, State } from './types';
 import { getSelectedIds } from './Canvas';
@@ -117,7 +120,37 @@ export function getAnimationScripts(state: State): ({
                 segmentsCenter,
                 transformSegment,
                 applyMatrices,
+                scaleMatrix,
+                translationMatrix,
+                rotationMatrix,
                 transformsToMatrices,
+                scaleInsets: (path: Path, scale: number): Path => {
+                    return {
+                        ...path,
+                        style: {
+                            fills: path.style.fills.map((f) =>
+                                f
+                                    ? {
+                                          ...f,
+                                          inset: f.inset
+                                              ? f.inset * scale
+                                              : f.inset,
+                                      }
+                                    : f,
+                            ),
+                            lines: path.style.lines.map((f) =>
+                                f
+                                    ? {
+                                          ...f,
+                                          inset: f.inset
+                                              ? f.inset * scale
+                                              : f.inset,
+                                      }
+                                    : f,
+                            ),
+                        },
+                    };
+                },
                 transformPath: (path: Path, tx: Array<Matrix>): Path => {
                     return {
                         ...path,
