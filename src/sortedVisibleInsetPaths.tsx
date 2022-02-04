@@ -267,7 +267,7 @@ export const pathToInsetPaths = (path: Path): Array<Path> => {
     // const result = insetPath(path)
     return singles
         .map(([path, inset]) => {
-            if (!inset) {
+            if (!inset || inset < 0.005) {
                 return [path];
             }
             // if (path.debug) {
