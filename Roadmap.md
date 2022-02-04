@@ -1,7 +1,64 @@
 
+# Fun things to do with animation:
+
+## Gradually build up, in a certain order
+Could be quite cool to be able to run a script to prepare things,
+and then have the cache be populated on subsequent runs. I guess
+I could just pass in a cache variable? yeah that sounds reasonable.
+Would maybe want a button to clear the cache or something?
+
+
+
+
+- [ ] to stabilize colorVariation, tick the rng even if the thing doesn't end up
+			being displayed. Also, let's have uniform coloring for all bits of the inset.
+- [ ] can I use my fancy new algorithm to figure out clipping more robustly? seems like
+			I ought to be able to.
+
+
+Ok, so I've added a bunch of debugging to this weird path behavior.
+
+
+
+BUG
+SO I think findRegions iswrong?
+and I think the coordKey dealio is the reason.
+
+I thiiink that my "split into segments" ought to be able to produce
+a correct mapping of "here are the shared coordinates", right?
+because like I just did the intersections of all the things.
+
+hmmmm maybe Froms is already wrong? hmmm
+
+
+should I try to do a whole new method of "split into segments"?
+Like could I do segments and regions at the same time? idk.
+.... I guess that's what I was doing before. Maybe it'd be more robust???
+
+
+
+Sooo
+to speed things up quite a bit
+lets do "each path has a hash of the first-point-aligned segments list
+which is the segments with the first point at zero, and the second point along the x axis.
+Then we can do all our inset/outset etc of that prototype, and then just rotate it
+accordingly. I think this would be much faster.
+would be good to do it in a way that ensures that though.
+the quick & dirty method would be to compute the hashes on the fly
+although they could be indefinitely cached.
+
+
+
+
 AOKKK now we're up to animations. Love it so much.
 
 Oh but first, can has some optimization? idk.
+
+- [x] yayyy animations!
+- [ ] when animations are enabled, disable like everything else in the name of performance.
+	- so no interactivity, basically.
+- [ ] um also maybe render to canvas in that case?
+- [ ] also I still need to do moreeee optimizations, not sure where.
 
 
 

@@ -8,8 +8,6 @@ import {
 import { addAction, redoAction, undoAction } from './history';
 import { transformSegment } from './points';
 import {
-    Action,
-    UndoableAction,
     Guide,
     GuideGeom,
     guidePoints,
@@ -18,14 +16,18 @@ import {
     Pending,
     PendingPath,
     State,
-    UndoAction,
     Path,
     Style,
     PathGroup,
     PendingGuide,
+} from './types';
+import {
+    Action,
+    UndoableAction,
+    UndoAction,
     PathCreate,
     PathMultiply,
-} from './types';
+} from './Action';
 import {
     pathsAreIdentical,
     pathToReversedSegmentKeys,
@@ -640,6 +642,44 @@ export const reduceWithoutUndo = (
                 },
             ];
         }
+        case 'script:update': {
+            const scripts = { ...state.animations.scripts };
+            if (!action.script) {
+                delete scripts[action.key];
+            } else {
+                scripts[action.key] = action.script;
+            }
+            return [
+                {
+                    ...state,
+                    animations: { ...state.animations, scripts },
+                },
+                {
+                    type: action.type,
+                    action,
+                    prev: state.animations.scripts[action.key],
+                },
+            ];
+        }
+        case 'timeline:update': {
+            const timeline = { ...state.animations.timeline };
+            if (!action.vbl) {
+                delete timeline[action.key];
+            } else {
+                timeline[action.key] = action.vbl;
+            }
+            return [
+                {
+                    ...state,
+                    animations: { ...state.animations, timeline },
+                },
+                {
+                    type: action.type,
+                    action,
+                    prev: state.animations.timeline[action.key],
+                },
+            ];
+        }
         default:
             let _x: never = action;
             console.log(`SKIPPING ${(action as any).type}`);
@@ -649,6 +689,36 @@ export const reduceWithoutUndo = (
 
 export const undo = (state: State, action: UndoAction): State => {
     switch (action.type) {
+        case 'script:update': {
+            const scripts = { ...state.animations.scripts };
+            if (!action.prev) {
+                delete scripts[action.action.key];
+            } else {
+                scripts[action.action.key] = action.prev;
+            }
+            return {
+                ...state,
+                animations: {
+                    ...state.animations,
+                    scripts,
+                },
+            };
+        }
+        case 'timeline:update': {
+            const timeline = { ...state.animations.timeline };
+            if (!action.prev) {
+                delete timeline[action.action.key];
+            } else {
+                timeline[action.action.key] = action.prev;
+            }
+            return {
+                ...state,
+                animations: {
+                    ...state.animations,
+                    timeline,
+                },
+            };
+        }
         case 'overlay:delete': {
             return {
                 ...state,

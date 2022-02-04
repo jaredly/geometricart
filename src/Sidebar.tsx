@@ -4,17 +4,8 @@ import { jsx } from '@emotion/react';
 import React from 'react';
 import { GuideForm, PathForm, PathGroupForm, ViewForm } from './Forms';
 import { MirrorForm } from './MirrorForm';
-import {
-    guideTypes,
-    State,
-    Action,
-    Tab,
-    Id,
-    Path,
-    PathGroup,
-    PathMultiply,
-    UndoAction,
-} from './types';
+import { guideTypes, State, Tab, Id, Path, PathGroup } from './types';
+import { Action, PathMultiply, UndoAction } from './Action';
 import { initialState } from './initialState';
 import { Export } from './Export';
 import { PendingMirror, toTypeRev } from './App';

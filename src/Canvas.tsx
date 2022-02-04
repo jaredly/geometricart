@@ -4,11 +4,13 @@ import { jsx } from '@emotion/react';
 import Prando from 'prando';
 import React from 'react';
 import { RoughGenerator } from 'roughjs/bin/generator';
+import { Action } from './Action';
 import { PendingMirror, useCurrent } from './App';
 import { calcAllIntersections } from './calcAllIntersections';
 import { calculateGuideElements } from './calculateGuideElements';
 import { DrawPathState } from './DrawPath';
 import { findSelection, pathToPrimitives } from './findSelection';
+import { getAnimatedPaths, getAnimationScripts } from './getAnimatedPaths';
 // import { DrawPath } from './DrawPathOld';
 import { getMirrorTransforms, scale } from './getMirrorTransforms';
 import {
@@ -19,6 +21,14 @@ import {
 } from './Guides';
 import { handleSelection } from './handleSelection';
 import { IconButton, ScissorsCuttingIcon } from './icons/Icon';
+import { epsilon } from './intersect';
+import {
+    Bezier,
+    createLookupTable,
+    evaluateBezier,
+    evaluateLookUpTable,
+    LookUpTable,
+} from './lerp';
 import { MirrorMenu } from './MirrorMenu';
 import {
     applyStyleHover,
@@ -36,12 +46,22 @@ import { showHover } from './showHover';
 import { Hover } from './Sidebar';
 import { sortedVisibleInsetPaths } from './sortedVisibleInsetPaths';
 import {
+    GuideSection,
     idsToStyle,
     mirrorControls,
     selectionSection,
-    GuideSection,
 } from './touchscreenControls';
-import { Action, Coord, Path, Segment, State, Style, View } from './types';
+import {
+    Animations,
+    Coord,
+    FloatTimeline,
+    Path,
+    Segment,
+    State,
+    Style,
+    TimelinePoint,
+    View,
+} from './types';
 import { useDragSelect, useMouseDrag } from './useMouseDrag';
 import { useScrollWheel } from './useScrollWheel';
 
@@ -109,6 +129,173 @@ export const calcPPI = (ppi: number, pixels: number, zoom: number) => {
     return `${(pixels / ppi).toFixed(3)}in`;
 };
 
+export type TLSegmentCurve = {
+    type: 'curve';
+    // normalized! x0 = 0, x1 = 1
+    bezier: Bezier;
+    lookUpTable: LookUpTable;
+    x0: number;
+};
+
+export type TLSegment =
+    | { type: 'straight'; y0: number; span: number; x0: number }
+    | TLSegmentCurve;
+
+export const evaluateSegment = (seg: TLSegment, percent: number) => {
+    if (seg.type === 'straight') {
+        return seg.y0 + seg.span * percent;
+    }
+    const t = evaluateLookUpTable(seg.lookUpTable, percent);
+    return evaluateBezier(seg.bezier, t).y;
+};
+
+export const segmentForPoints = (
+    left: TimelinePoint,
+    right: TimelinePoint,
+): TLSegment => {
+    if (!left.rightCtrl && !right.leftCtrl) {
+        return {
+            type: 'straight',
+            y0: left.pos.y,
+            span: right.pos.y - left.pos.y,
+            x0: left.pos.x,
+        };
+    }
+    const dx = right.pos.x - left.pos.x;
+    const c1 = left.rightCtrl
+        ? { x: left.rightCtrl.x / dx, y: left.rightCtrl.y + left.pos.y }
+        : { x: 0, y: left.pos.y };
+    const c2 = right.leftCtrl
+        ? { x: (dx + right.leftCtrl.x) / dx, y: right.leftCtrl.y + right.pos.y }
+        : { x: 1, y: right.pos.y };
+    const bezier: Bezier = { y0: left.pos.y, c1, c2, y1: right.pos.y };
+    return {
+        type: 'curve',
+        bezier,
+        lookUpTable: createLookupTable(bezier, 10),
+        x0: left.pos.x,
+    };
+};
+
+export const evaluateBetween = (
+    left: TimelinePoint,
+    right: TimelinePoint,
+    position: number,
+) => {
+    const percent = (position - left.pos.x) / (right.pos.x - left.pos.x);
+    return percent * (right.pos.y - left.pos.y) + left.pos.y;
+};
+
+export const timelineFunction = (timeline: FloatTimeline) => {
+    const segments: Array<TLSegment> = timelineSegments(timeline);
+    // console.log(segments);
+    return (x: number) => {
+        for (let i = 0; i < segments.length; i++) {
+            const x0 = segments[i].x0;
+            const next = i === segments.length - 1 ? 1 : segments[i + 1].x0;
+            if (x < next) {
+                // const x1 = i === segments.length - 1 ? 1 : segments[i + 1].x0;
+                const percent = (x - x0) / (next - x0);
+                return evaluateSegment(segments[i], percent);
+            }
+        }
+        return 1;
+    };
+};
+
+export const evaluateTimeline = (timeline: FloatTimeline, position: number) => {
+    if (!timeline.points.length) {
+        return (
+            (timeline.range[1] - timeline.range[0]) * position +
+            timeline.range[0]
+        );
+    }
+    let y = null;
+    for (let i = 0; i < timeline.points.length; i++) {
+        if (position < timeline.points[i].pos.x) {
+            y = evaluateBetween(
+                i === 0 ? { pos: { x: 0, y: 0 } } : timeline.points[i - 1],
+                timeline.points[i],
+                position,
+            );
+            break;
+        }
+    }
+    if (y == null) {
+        y = evaluateBetween(
+            timeline.points[timeline.points.length - 1],
+            { pos: { x: 1, y: 1 } },
+            position,
+        );
+    }
+    return y * (timeline.range[1] - timeline.range[0]) + timeline.range[0];
+};
+
+export type AnimatedFunctions = {
+    [key: string]:
+        | ((n: number) => number)
+        | ((n: Coord) => Coord)
+        | ((n: number) => Coord);
+};
+
+export const getAnimatedFunctions = (
+    animations: Animations,
+): AnimatedFunctions => {
+    const fn: AnimatedFunctions = {};
+    Object.keys(animations.timeline).forEach((key) => {
+        if (key === 't') {
+            console.warn(`Can't have a custom vbl named t. Ignoring`);
+            return;
+        }
+        const vbl = animations.timeline[key];
+        if (vbl.type === 'float') {
+            fn[key] = timelineFunction(vbl);
+        } else {
+            try {
+                const k = new Function(
+                    'x',
+                    vbl.code.includes('\n') || vbl.code.startsWith('return')
+                        ? vbl.code
+                        : `return ${vbl.code}`,
+                );
+                fn[key] = k as (n: number) => number;
+            } catch (err) {
+                console.warn(
+                    `Zeroing out ${key}, there was an error evaliation.`,
+                );
+                console.error(err);
+                fn[key] = (n: number) => {
+                    return 0;
+                };
+            }
+        }
+    });
+    return fn;
+};
+
+export const evaluateAnimatedValues = (
+    animatedFunctions: AnimatedFunctions,
+    // animations: Animations,
+    position: number,
+) => {
+    // const values: { [key: string]: number | ((x: number) => number) } = {
+    //     t: position,
+    // };
+    // Object.keys(animations.timeline).forEach((vbl) => {
+    //     if (vbl === 't') {
+    //         console.warn(`Can't have a custom vbl named t. Ignoring`);
+    //         return;
+    //     }
+    //     const t = animations.timeline[vbl];
+    //     if (t.type === 'float') {
+    //         values[vbl] = evaluateTimeline(t, position);
+    //     } else {
+    //         values[vbl] = 0;
+    //     }
+    // });
+    return { ...animatedFunctions, t: position };
+};
+
 export const Canvas = ({
     state,
     width,
@@ -129,6 +316,8 @@ export const Canvas = ({
         [state.mirrors],
     );
     const [tmpView, setTmpView] = React.useState(null as null | View);
+
+    const [animationPosition, setAnimationPosition] = React.useState(0);
 
     const [pos, setPos] = React.useState({ x: 0, y: 0 });
 
@@ -247,40 +436,41 @@ export const Canvas = ({
     );
 
     const selectedIds = React.useMemo(() => {
-        const selectedIds: { [key: string]: boolean } = {};
-        if (state.selection?.type === 'Path') {
-            state.selection.ids.forEach((id) => (selectedIds[id] = true));
-        } else if (state.selection?.type === 'PathGroup') {
-            Object.keys(state.paths).forEach((id) => {
-                if (state.selection!.ids.includes(state.paths[id].group!)) {
-                    selectedIds[id] = true;
-                }
-            });
-        }
-        return selectedIds;
+        return getSelectedIds(state.paths, state.selection);
     }, [state.selection, state.paths]);
+
+    // const scripts = React.useMemo(() => {
+    //     return getAnimationScripts(state);
+    // }, [state.animations]);
+
+    // const animatedPaths = React.useMemo(() => {
+    //     if (!scripts.length) {
+    //         return state.paths;
+    //     }
+    //     return getAnimatedPaths(state, scripts, currentAnimatedValues);
+    // }, [state.paths, state.pathGroups, scripts, currentAnimatedValues]);
+
+    const animatedPaths = state.paths;
 
     let pathsToShow = React.useMemo(
         () =>
             sortedVisibleInsetPaths(
-                state.paths,
+                animatedPaths,
                 state.pathGroups,
                 clip,
                 state.view.hideDuplicatePaths,
                 state.view.laserCutMode
                     ? state.palettes[state.activePalette]
                     : undefined,
-                // styleHover ?? undefined,
                 undefined,
                 selectedIds,
             ),
         [
-            state.paths,
+            animatedPaths,
             state.pathGroups,
             clip,
             state.view.hideDuplicatePaths,
             state.view.laserCutMode,
-            // styleHover,
             selectedIds,
         ],
     );
@@ -346,6 +536,24 @@ export const Canvas = ({
         );
         return fromGuides;
     }, [guidePrimitives, state.paths, state.pathGroups]);
+
+    const mirrorHover = React.useCallback(
+        (k) =>
+            k
+                ? setHover({ kind: 'Mirror', id: k, type: 'element' })
+                : setHover(null),
+        [],
+    );
+    const mirrorAdd = React.useCallback(
+        () =>
+            setPendingMirror({
+                parent: state.activeMirror,
+                rotations: 3,
+                reflect: true,
+                center: null,
+            }),
+        [state.activeMirror],
+    );
 
     const inner = (
         <svg
@@ -556,24 +764,6 @@ export const Canvas = ({
                 ) : null}
             </g>
         </svg>
-    );
-
-    const mirrorHover = React.useCallback(
-        (k) =>
-            k
-                ? setHover({ kind: 'Mirror', id: k, type: 'element' })
-                : setHover(null),
-        [],
-    );
-    const mirrorAdd = React.useCallback(
-        () =>
-            setPendingMirror({
-                parent: state.activeMirror,
-                rotations: 3,
-                reflect: true,
-                center: null,
-            }),
-        [state.activeMirror],
     );
 
     // This is for rendering only, not interacting.
@@ -813,6 +1003,40 @@ export const dragView = (
     };
     return res;
 };
+
+export function timelineSegments(timeline: FloatTimeline) {
+    const segments: Array<TLSegment> = [];
+    const points = timeline.points.slice();
+    if (!points.length || points[0].pos.x > 0) {
+        points.unshift({ pos: { x: 0, y: 0 } });
+    }
+    if (points[points.length - 1].pos.x < 1 - epsilon) {
+        points.push({ pos: { x: 1, y: 1 } });
+    }
+    for (let i = 1; i < points.length; i++) {
+        const prev = points[i - 1];
+        const now = points[i];
+        segments.push(segmentForPoints(prev, now));
+    }
+    return segments;
+}
+
+export function getSelectedIds(
+    paths: State['paths'],
+    selection: State['selection'],
+) {
+    const selectedIds: { [key: string]: boolean } = {};
+    if (selection?.type === 'Path') {
+        selection.ids.forEach((id) => (selectedIds[id] = true));
+    } else if (selection?.type === 'PathGroup') {
+        Object.keys(paths).forEach((id) => {
+            if (selection!.ids.includes(paths[id].group!)) {
+                selectedIds[id] = true;
+            }
+        });
+    }
+    return selectedIds;
+}
 
 function rectForCorners(pos: { x: number; y: number }, drag: Coord) {
     return {

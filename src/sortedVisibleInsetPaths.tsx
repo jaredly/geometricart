@@ -1,4 +1,4 @@
-import { ensureClockwise } from './pathToPoints';
+import { ensureClockwise, isClockwise, isMaybeClockwise } from './pathToPoints';
 import { clipPath, closeEnough } from './clipPath';
 import { pathToPrimitives } from './findSelection';
 import { angleTo, dist, push } from './getMirrorTransforms';
@@ -26,6 +26,9 @@ import { applyStyleHover, StyleHover } from './MultiStyleForm';
 import {
     cleanUpInsetSegments,
     cleanUpInsetSegments2,
+    filterTooSmallSegments,
+    findRegions,
+    segmentsToNonIntersectingSegments,
 } from './findInternalRegions';
 
 // This should produce:
@@ -97,6 +100,9 @@ export function sortedVisibleInsetPaths(
     let processed: Array<Path> = visible
         .map((k) => paths[k])
         .map((path) => {
+            // if (path.debug) {
+            //     console.log(`debug`, path);
+            // }
             const group = path.group ? pathGroups[path.group] : null;
             if (selectedIds[path.id] && styleHover) {
                 path = {
@@ -126,6 +132,11 @@ export function sortedVisibleInsetPaths(
             }
         })
         .flat();
+    // processed.forEach((p) => {
+    //     if (p.debug) {
+    //         console.log('debug processed', p);
+    //     }
+    // });
 
     if (laserCutPalette) {
         // processed paths are singles at this point
@@ -179,7 +190,7 @@ export function sortedVisibleInsetPaths(
         red.forEach((path, pi) => addToUsed(path, used.red, pi));
         blue.forEach((path, pi) => addToUsed(path, used.blue, pi));
 
-        console.log(used);
+        // console.log(used);
 
         red = red
             .map((path, pi) => removePartialOverlaps(path, pi, used.red))
@@ -259,12 +270,36 @@ export const pathToInsetPaths = (path: Path): Array<Path> => {
             if (!inset) {
                 return [path];
             }
+            // if (path.debug) {
+            //     console.log('ok single', path, inset);
+            // }
             // console.log('INSETS');
 
-            const regions = cleanUpInsetSegments2(
-                insetSegmentsBeta(path.segments, inset / 100),
-            );
-            console.log('insets', regions.length);
+            const segments = insetSegmentsBeta(path.segments, inset / 100);
+            const regions = cleanUpInsetSegments2(segments);
+            if (path.debug) {
+                const result = segmentsToNonIntersectingSegments(
+                    filterTooSmallSegments(segments),
+                );
+                const regions = findRegions(result.result, result.froms).filter(
+                    isMaybeClockwise,
+                );
+
+                return regions.map((segments) => ({
+                    ...path,
+                    segments,
+                    origin: segments[segments.length - 1].to,
+                }));
+            }
+            // if (path.debug) {
+            //     console.log('seg', segments);
+            //     console.log('regions', regions);
+            // }
+            // // console.log('insets', regions.length);
+            // if (path.debug && !regions.length) {
+            //     console.log(inset, 'dropping debug path, no regions');
+            //     console.log(segments);
+            // }
 
             return regions.map((segments) => ({
                 ...path,

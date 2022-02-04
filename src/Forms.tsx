@@ -1,6 +1,5 @@
 /* @jsx jsx */
 /* @jsxFrag React.Fragment */
-import { react } from '@babel/types';
 import { jsx } from '@emotion/react';
 import * as React from 'react';
 import { transparent } from './Icons';
@@ -10,21 +9,31 @@ export const Text = ({
     value,
     onChange,
     multiline,
+    style,
 }: {
     value: string;
     onChange: (v: string) => void;
+    style?: React.StyleHTMLAttributes<'div'>['style'];
     multiline?: boolean;
 }) => {
     const [text, setText] = React.useState(null as null | string);
+    const lastValue = React.useRef(value);
+    React.useEffect(() => {
+        if (lastValue.current !== value) {
+            setText(value);
+            lastValue.current = value;
+        }
+    }, [value]);
     const shared = {
         value: text ?? value,
+        style,
         onChange: (
             evt: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
         ) => setText(evt.target.value),
         onBlur: () => {
             if (text != null) {
                 onChange(text);
-                setText(null);
+                // setText(null);
             }
         },
     };

@@ -48,6 +48,19 @@ export const totalAngle = (segments: Array<Segment>) => {
     return total;
 };
 
+export const isMaybeClockwise = (segments: Array<Segment>) => {
+    const points = pathToPoints(segments);
+    const angles = points.map((point, i) => {
+        const prev = i === 0 ? points[points.length - 1] : points[i - 1];
+        return angleTo(prev, point);
+    });
+    const betweens = angles.map((angle, i) => {
+        const prev = i === 0 ? angles[angles.length - 1] : angles[i - 1];
+        return angleBetween(prev, angle, true);
+    });
+    return betweens.some((a) => a < Math.PI);
+};
+
 export const isClockwise = (segments: Array<Segment>) => {
     return totalAngle(segments) >= Math.PI - epsilon;
 };

@@ -4,6 +4,8 @@ import { jsx } from '@emotion/react';
 import * as React from 'react';
 import { useTouchClick } from '../RenderIntersections';
 
+/** Gotten from https://reactsvgicons.com/search?q=scissors */
+
 export const IconButton = ({
     onClick,
     onMouseOver,
@@ -392,6 +394,23 @@ export function ScissorsCuttingIcon(props: React.SVGProps<SVGSVGElement>) {
             {...props}
         >
             <path d="M11 21H7v-2h4v2m4.5-2H17v2h-4v-2h.2l-1.4-6.1-2.5.6c-.1.5-.3.9-.5 1.3-.9 1.5-2.8 1.9-4.3 1-1.5-.9-1.9-2.8-1-4.3.9-1.5 2.8-1.9 4.3-1 .4.2.7.6.9.9l2.5-.6-.6-2.5c-.4-.1-.8-.3-1.2-.5C8 6.9 7.5 5 8.4 3.5c.9-1.5 2.8-1.9 4.3-1 1.5.9 1.9 2.8 1 4.3-.2.4-.6.7-.9.9L15.5 19M7 11.8c-.7-.5-1.7-.2-2.2.5-.5.7-.2 1.7.5 2.1.7.5 1.7.3 2.2-.5.4-.7.2-1.7-.5-2.1M12.4 6c.5-.7.2-1.7-.5-2.2-.7-.5-1.7-.2-2.2.5-.4.7-.2 1.7.6 2.2.7.4 1.7.2 2.1-.5m.4 5.3c-.2-.1-.4-.1-.5.1-.1.2-.1.4.1.5.2.1.4.1.5-.1.2-.2.1-.4-.1-.5M21 8.5L14.5 10l.5 2.2 7.5-1.8.5-.7-2-1.2M23 19h-4v2h4v-2M5 19H1v2h4v-2z" />
+        </svg>
+    );
+}
+
+export function MagicWandIcon(props: React.SVGProps<SVGSVGElement>) {
+    return (
+        <svg
+            viewBox="0 0 16 16"
+            fill="currentColor"
+            height="1em"
+            width="1em"
+            {...props}
+        >
+            <path
+                fill="currentColor"
+                d="M4 3L2 1H1v1l2 2zm1-3h1v2H5zm4 5h2v1H9zm1-3V1H9L7 3l1 1zM0 5h2v1H0zm5 4h1v2H5zM1 9v1h1l2-2-1-1zm14.781 4.781L5.842 3.842a.752.752 0 00-1.061 0l-.939.939a.752.752 0 000 1.061l9.939 9.939a.752.752 0 001.061 0l.939-.939a.752.752 0 000-1.061zM7.5 8.5l-3-3 1-1 3 3-1 1z"
+            />
         </svg>
     );
 }

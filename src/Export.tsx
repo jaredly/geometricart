@@ -3,7 +3,8 @@
 import { jsx } from '@emotion/react';
 import * as ReactDOM from 'react-dom';
 import React from 'react';
-import { Action, Coord, Pending, Segment, State } from './types';
+import { Coord, Pending, Segment, State } from './types';
+import { Action } from './Action';
 import { PREFIX, SUFFIX } from './Sidebar';
 import {
     extractChunks,
@@ -71,6 +72,11 @@ export const adjustBounds = (
     y0: y0 - y,
     y1: y1 - y,
 });
+
+export const segmentsCenter = (segments: Array<Segment>): Coord => {
+    const bounds = segmentsBounds(segments);
+    return { x: (bounds.x0 + bounds.x1) / 2, y: (bounds.y0 + bounds.y1) / 2 };
+};
 
 export const segmentsBounds = (segments: Array<Segment>): Bounds => {
     let bounds = segmentBounds(segments[segments.length - 1].to, segments[0]);
@@ -146,6 +152,7 @@ export const Export = ({
     // const [name, setName] = React.useState()
     const name = `image-${Date.now()}.svg`;
     const [url, setUrl] = React.useState(null as null | string);
+    const [animationPosition, setAnimationPosition] = React.useState(0);
 
     const [png, setPng] = React.useState(null as null | string);
 
@@ -153,7 +160,7 @@ export const Export = ({
     const [embed, setEmbed] = React.useState(true);
     const [history, setHistory] = React.useState(false);
 
-    const [crop, setCrop] = React.useState(null as null | number);
+    const [crop, setCrop] = React.useState(10 as null | number);
 
     const boundingRect = React.useMemo(
         () => findBoundingRect(state),
@@ -218,6 +225,21 @@ export const Export = ({
                     />
                 ) : null}
             </div>
+            <div>
+                Animation Position
+                <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    value={animationPosition}
+                    onChange={(evt) => setAnimationPosition(+evt.target.value)}
+                />
+                <BlurInt
+                    value={animationPosition}
+                    onChange={(v) => (v ? setAnimationPosition(v) : null)}
+                />
+            </div>
             <div css={{ marginTop: 16, border: '1px solid #aaa', padding: 8 }}>
                 Width (px):{' '}
                 <input
@@ -234,6 +256,7 @@ export const Export = ({
                             originalSize,
                             embed,
                             history,
+                            animationPosition,
                         );
                         setPng(url);
                     }}
@@ -445,13 +468,22 @@ async function exportPNG(
     originalSize: number,
     embed: boolean,
     history: boolean,
+    animationPosition: number,
 ): Promise<string> {
     const canvas = document.createElement('canvas');
     canvas.width = canvas.height = size;
     const ctx = canvas.getContext('2d')!;
 
     ctx.save();
-    await canvasRender(ctx, state, size, size, size / originalSize);
+    await canvasRender(
+        ctx,
+        state,
+        size,
+        size,
+        size / originalSize,
+        {},
+        animationPosition,
+    );
     ctx.restore();
 
     if (state.view.texture) {
@@ -497,7 +529,7 @@ async function exportPNG(
     );
 }
 
-async function addMetadata(blob: Blob | null, state: State) {
+export async function addMetadata(blob: Blob | null, state: State) {
     const buffer = await blob!.arrayBuffer();
     const uint8Array = new Uint8Array(buffer);
     const meta = {

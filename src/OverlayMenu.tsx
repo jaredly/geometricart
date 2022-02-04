@@ -12,7 +12,8 @@ import {
     SendToBackIcon,
 } from './icons/Icon';
 import { Hover } from './Sidebar';
-import { Action, State } from './types';
+import { State } from './types';
+import { Action } from './Action';
 import { parseAttachment } from './useDropTarget';
 
 export const openFile = (onSuccess: (files: FileList | null) => void) => {

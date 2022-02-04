@@ -1,4 +1,5 @@
-import { Action, Path, State } from './types';
+import { Path, State } from './types';
+import { Action } from './Action';
 
 export const handleSelection = (
     path: Path,

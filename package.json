@@ -14,13 +14,15 @@
         "canvas": "node ../language/bootstrap.js prelude-types ../web/src/plugins/canvas/canvas-jd.ts ../web/src/plugins/canvas/canvas.jd"
     },
     "dependencies": {
+        "@babel/parser": "^7.16.12",
         "@emotion/css": "^11.7.1",
         "@emotion/react": "^11.1.5",
         "json-diff-ts": "^1.2.4",
         "kmeans-js": "^0.1.2",
         "localforage": "^1.9.0",
-        "png-metadata": "https://github.com/hometlt/png-metadata",
+        "png-metadata": "https://github.com/neil-morrison44/png-metadata#1de6be3c50402a188ce06a494c91010f14a297b8",
         "prando": "^6.0.1",
+        "prettier": "^2.5.1",
         "react": "^17.0.1",
         "react-color": "^2.19.3",
         "react-colorful": "^5.2.2",
