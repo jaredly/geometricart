@@ -39,6 +39,7 @@ import {
 export function sortedVisibleInsetPaths(
     paths: { [key: string]: Path },
     pathGroups: { [key: string]: PathGroup },
+    rand: { next: (min: number, max: number) => number },
     clip?: Array<Segment>,
     hideDuplicatePaths?: boolean,
     laserCutPalette?: Array<string>,
@@ -110,6 +111,28 @@ export function sortedVisibleInsetPaths(
                     style: applyStyleHover(styleHover, path.style),
                 };
             }
+            path = {
+                ...path,
+                style: {
+                    ...path.style,
+                    fills: path.style.fills.map((fill) => {
+                        if (fill?.colorVariation != null) {
+                            let lighten = fill.lighten;
+                            if (fill.colorVariation) {
+                                const off =
+                                    rand.next(-1.0, 1.0) * fill.colorVariation;
+                                lighten = lighten != null ? lighten + off : off;
+                            }
+                            return {
+                                ...fill,
+                                colorVariation: undefined,
+                                lighten,
+                            };
+                        }
+                        return fill;
+                    }),
+                },
+            };
             if (group?.insetBeforeClip) {
                 return pathToInsetPaths(path)
                     .map((insetPath) => {
@@ -238,6 +261,7 @@ export const pathToInsetPaths = (path: Path): Array<Path> => {
         if (!fill) {
             return;
         }
+
         singles.push([
             {
                 ...path,

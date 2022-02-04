@@ -452,11 +452,15 @@ export const Canvas = ({
 
     const animatedPaths = state.paths;
 
+    const rand = React.useRef(new Prando('ok'));
+    rand.current.reset();
+
     let pathsToShow = React.useMemo(
         () =>
             sortedVisibleInsetPaths(
                 animatedPaths,
                 state.pathGroups,
+                rand.current,
                 clip,
                 state.view.hideDuplicatePaths,
                 state.view.laserCutMode
@@ -503,9 +507,6 @@ export const Canvas = ({
         view.background != null
             ? paletteColor(state.palettes[state.activePalette], view.background)
             : null;
-
-    const rand = React.useRef(new Prando('ok'));
-    rand.current.reset();
 
     // Ok, so what I want is:
     // while dragging, freeze the bounds.

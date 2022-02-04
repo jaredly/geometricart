@@ -51,6 +51,7 @@ export const shaderForState = (state: State): [number, string] => {
     const paths = sortedVisibleInsetPaths(
         state.paths,
         state.pathGroups,
+        { next: (_, __) => 0 },
         clip,
         state.view.hideDuplicatePaths,
     );

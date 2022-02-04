@@ -125,13 +125,16 @@ export const findBoundingRect = (state: State) => {
 
     let bounds: PendingBounds = newPendingBounds();
     // NOTE: This won't totally cover arcs, but that's just too bad folks.
-    sortedVisibleInsetPaths(state.paths, state.pathGroups, clip).forEach(
-        (path) => {
-            addCoordToBounds(bounds, path.origin);
-            // TODO: Get proper bounding box for arc segments.
-            path.segments.forEach((t) => addCoordToBounds(bounds, t.to));
-        },
-    );
+    sortedVisibleInsetPaths(
+        state.paths,
+        state.pathGroups,
+        { next: (_, __) => 0 },
+        clip,
+    ).forEach((path) => {
+        addCoordToBounds(bounds, path.origin);
+        // TODO: Get proper bounding box for arc segments.
+        path.segments.forEach((t) => addCoordToBounds(bounds, t.to));
+    });
     if (bounds.x0 == null || bounds.y0 == null) {
         return null;
     }

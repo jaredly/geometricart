@@ -110,178 +110,181 @@ export const canvasRender = async (
         ? getAnimatedPaths(state, scripts, currentAnimatedValues)
         : state.paths;
 
-    sortedVisibleInsetPaths(animatedPaths, state.pathGroups, clip).forEach(
-        (path) => {
-            const style = path.style;
+    sortedVisibleInsetPaths(
+        animatedPaths,
+        state.pathGroups,
+        rand,
+        clip,
+    ).forEach((path) => {
+        const style = path.style;
 
-            style.fills.forEach((fill, i) => {
-                if (!fill || fill.color == null) {
-                    return;
-                }
+        style.fills.forEach((fill, i) => {
+            if (!fill || fill.color == null) {
+                return;
+            }
 
-                let pathInfos = [path];
+            let pathInfos = [path];
 
-                // let myPath = path;
-                if (fill.inset) {
-                    throw new Error('inset');
-                }
-                //     const inset = insetPath(path, fill.inset / 100);
-                //     if (!inset) {
-                //         return;
-                //     }
+            // let myPath = path;
+            if (fill.inset) {
+                throw new Error('inset');
+            }
+            //     const inset = insetPath(path, fill.inset / 100);
+            //     if (!inset) {
+            //         return;
+            //     }
 
-                //     pathInfos = pruneInsetPath(inset.segments).map((segments) => ({
-                //         ...path,
-                //         segments,
-                //         origin: segments[segments.length - 1].to,
-                //     }));
+            //     pathInfos = pruneInsetPath(inset.segments).map((segments) => ({
+            //         ...path,
+            //         segments,
+            //         origin: segments[segments.length - 1].to,
+            //     }));
 
-                //     // myPath = inset;
-                // }
+            //     // myPath = inset;
+            // }
 
-                let lighten = fill.lighten;
-                if (fill.colorVariation) {
-                    const off = rand.next(-1.0, 1.0) * fill.colorVariation;
-                    lighten = lighten != null ? lighten + off : off;
-                }
+            let lighten = fill.lighten;
+            // if (fill.colorVariation) {
+            //     const off = rand.next(-1.0, 1.0) * fill.colorVariation;
+            //     lighten = lighten != null ? lighten + off : off;
+            // }
 
-                const color = lightenedColor(palette, fill.color, lighten)!;
+            const color = lightenedColor(palette, fill.color, lighten)!;
 
-                if (fill.opacity != null) {
-                    ctx.globalAlpha = fill.opacity;
-                }
+            if (fill.opacity != null) {
+                ctx.globalAlpha = fill.opacity;
+            }
 
-                pathInfos.forEach((myPath) => {
-                    if (rough) {
-                        if (!color.startsWith('http')) {
-                            rough.path(calcPathD(myPath, zoom), {
+            pathInfos.forEach((myPath) => {
+                if (rough) {
+                    if (!color.startsWith('http')) {
+                        rough.path(calcPathD(myPath, zoom), {
+                            fill: color,
+                            fillStyle: 'solid',
+                            stroke: 'none',
+                            seed: idSeed(path.id),
+                            roughness: state.view.sketchiness!,
+                        });
+                        ctx.globalAlpha = 1;
+                        return;
+                    } else {
+                        const img = images[fill.color as number];
+                        if (!img) {
+                            return;
+                        }
+                        const data = rough.generator.path(
+                            calcPathD(myPath, zoom),
+                            {
                                 fill: color,
                                 fillStyle: 'solid',
                                 stroke: 'none',
                                 seed: idSeed(path.id),
                                 roughness: state.view.sketchiness!,
-                            });
-                            ctx.globalAlpha = 1;
-                            return;
-                        } else {
-                            const img = images[fill.color as number];
-                            if (!img) {
-                                return;
-                            }
-                            const data = rough.generator.path(
-                                calcPathD(myPath, zoom),
-                                {
-                                    fill: color,
-                                    fillStyle: 'solid',
-                                    stroke: 'none',
-                                    seed: idSeed(path.id),
-                                    roughness: state.view.sketchiness!,
-                                },
+                            },
+                        );
+                        rough.generator.toPaths(data).forEach((info) => {
+                            const p2d = new Path2D(info.d);
+                            ctx.save();
+                            ctx.clip(p2d);
+                            drawCenteredImage(
+                                img,
+                                sourceWidth,
+                                sourceHeight,
+                                ctx,
                             );
-                            rough.generator.toPaths(data).forEach((info) => {
-                                const p2d = new Path2D(info.d);
-                                ctx.save();
-                                ctx.clip(p2d);
-                                drawCenteredImage(
-                                    img,
-                                    sourceWidth,
-                                    sourceHeight,
-                                    ctx,
-                                );
-                                ctx.restore();
-                            });
-                            return;
-                        }
+                            ctx.restore();
+                        });
+                        return;
                     }
-
-                    ctx.beginPath();
-                    tracePath(ctx, myPath, zoom);
-
-                    if (color.startsWith('http')) {
-                        const img = images[fill.color as number];
-                        if (!img) {
-                            ctx.closePath();
-                            return;
-                        }
-                        ctx.save();
-                        ctx.clip();
-
-                        drawCenteredImage(img, sourceWidth, sourceHeight, ctx);
-                        ctx.restore();
-                    } else {
-                        ctx.fillStyle = color;
-                        ctx.fill();
-                    }
-                });
-
-                ctx.globalAlpha = 1;
-            });
-
-            style.lines.forEach((line, i) => {
-                if (!line || line.color == null || !line.width) {
-                    return;
                 }
 
-                // TODO line opacity probably
-                // if (line.opacity != null) {
-                //     ctx.globalAlpha = line.opacity;
-                // }
-
-                ctx.lineWidth = (line.width / 100) * zoom;
-
-                let myPath = path;
-                // if (line.inset) {
-                //     const inset = insetPath(path, line.inset / 100);
-                //     if (!inset) {
-                //         return;
-                //     }
-                //     myPath = inset;
-                // }
-
-                const color = lightenedColor(palette, line.color, undefined)!;
-
-                if (rough) {
-                    rough.path(calcPathD(myPath, zoom), {
-                        fill: 'none',
-                        fillStyle: 'solid',
-                        stroke: color,
-                        strokeWidth: (line.width / 100) * zoom,
-                        seed: idSeed(path.id),
-                        roughness: state.view.sketchiness!,
-                    });
-                    return;
-                }
+                ctx.beginPath();
+                tracePath(ctx, myPath, zoom);
 
                 if (color.startsWith('http')) {
-                    const img = images[line.color as number];
+                    const img = images[fill.color as number];
                     if (!img) {
+                        ctx.closePath();
                         return;
                     }
                     ctx.save();
-                    ctx.beginPath();
-                    tracePathLine(ctx, myPath, zoom, line.width / 100);
                     ctx.clip();
-                    drawCenteredImage(img, sourceWidth, sourceHeight, ctx);
-                    // ctx.drawImage(
-                    //     images[line.color as number]!,
-                    //     -500,
-                    //     -500,
-                    //     ctx.canvas.width,
-                    //     ctx.canvas.height,
-                    // );
-                    ctx.restore();
 
-                    // debugPath(myPath, ctx, zoom);
+                    drawCenteredImage(img, sourceWidth, sourceHeight, ctx);
+                    ctx.restore();
                 } else {
-                    ctx.beginPath();
-                    tracePath(ctx, myPath, zoom);
-                    ctx.strokeStyle = color;
-                    ctx.stroke();
+                    ctx.fillStyle = color;
+                    ctx.fill();
                 }
-                ctx.globalAlpha = 1;
             });
-        },
-    );
+
+            ctx.globalAlpha = 1;
+        });
+
+        style.lines.forEach((line, i) => {
+            if (!line || line.color == null || !line.width) {
+                return;
+            }
+
+            // TODO line opacity probably
+            // if (line.opacity != null) {
+            //     ctx.globalAlpha = line.opacity;
+            // }
+
+            ctx.lineWidth = (line.width / 100) * zoom;
+
+            let myPath = path;
+            // if (line.inset) {
+            //     const inset = insetPath(path, line.inset / 100);
+            //     if (!inset) {
+            //         return;
+            //     }
+            //     myPath = inset;
+            // }
+
+            const color = lightenedColor(palette, line.color, undefined)!;
+
+            if (rough) {
+                rough.path(calcPathD(myPath, zoom), {
+                    fill: 'none',
+                    fillStyle: 'solid',
+                    stroke: color,
+                    strokeWidth: (line.width / 100) * zoom,
+                    seed: idSeed(path.id),
+                    roughness: state.view.sketchiness!,
+                });
+                return;
+            }
+
+            if (color.startsWith('http')) {
+                const img = images[line.color as number];
+                if (!img) {
+                    return;
+                }
+                ctx.save();
+                ctx.beginPath();
+                tracePathLine(ctx, myPath, zoom, line.width / 100);
+                ctx.clip();
+                drawCenteredImage(img, sourceWidth, sourceHeight, ctx);
+                // ctx.drawImage(
+                //     images[line.color as number]!,
+                //     -500,
+                //     -500,
+                //     ctx.canvas.width,
+                //     ctx.canvas.height,
+                // );
+                ctx.restore();
+
+                // debugPath(myPath, ctx, zoom);
+            } else {
+                ctx.beginPath();
+                tracePath(ctx, myPath, zoom);
+                ctx.strokeStyle = color;
+                ctx.stroke();
+            }
+            ctx.globalAlpha = 1;
+        });
+    });
 
     const oids = Object.keys(state.overlays).filter(
         (id) => !state.overlays[id].hide && state.overlays[id].over,

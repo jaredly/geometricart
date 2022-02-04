@@ -100,10 +100,10 @@ const RenderPathMemo = ({
             return null;
         }
         let lighten = fill.lighten;
-        if (fill.colorVariation && rand) {
-            const off = rand.next(-1.0, 1.0) * fill.colorVariation;
-            lighten = lighten != null ? lighten + off : off;
-        }
+        // if (fill.colorVariation && rand) {
+        //     const off = rand.next(-1.0, 1.0) * fill.colorVariation;
+        //     lighten = lighten != null ? lighten + off : off;
+        // }
         const color = paletteColor(palette, fill.color, lighten);
         if (color === 'transparent') {
             return null;
