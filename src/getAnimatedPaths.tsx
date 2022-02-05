@@ -37,6 +37,18 @@ export const closestPoint = (center: Coord, segments: Array<Segment>) => {
     return best;
 };
 
+export const farthestPoint = (center: Coord, segments: Array<Segment>) => {
+    let best = null as null | [number, Coord];
+    pathToPoints(segments).forEach((point) => {
+        const d = dist(point, center);
+        if (best == null || best[0] < d) {
+            best = [d, point];
+        }
+    });
+
+    return best;
+};
+
 // Returns 'idx', 'percent through it'
 const animationTimer = (
     t: number,
@@ -167,6 +179,7 @@ export function getAnimationScripts(state: State): ({
                 transformsToMatrices,
                 animationTimer,
                 closestPoint,
+                farthestPoint,
                 scaleInsets,
                 transformPath: (path: Path, tx: Array<Matrix>): Path => {
                     return {

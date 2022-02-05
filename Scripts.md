@@ -49,3 +49,91 @@ ok
 };
 
 ```
+
+
+## Spin appear
+
+```ts
+
+(paths, t) => {
+  const cache = {};
+  Object.keys(paths).forEach((k) => {
+    const [d, c] = farthestPoint({ x: 0, y: 0 }, paths[k].segments);
+    // const d = dist({ x: 0, y: 0 }, c);
+    const theta = angleTo({ x: 0, y: 0 }, c);
+    cache[k] = { center: c, dist: d, theta };
+  });
+  const sorted = Object.keys(paths).sort((a, b) => {
+    const diff = cache[a].dist - cache[b].dist;
+    return Math.abs(diff) < 0.01 ? cache[a].theta - cache[b].theta : diff;
+  });
+  sorted.forEach((k, i) => {
+    if (i > t * sorted.length) {
+      paths[k] = { ...paths[k], hidden: true };
+      return;
+    }
+  });
+};
+
+```
+
+## Spin drop in, so fun
+
+```ts
+
+(paths, t) => {
+  const cache = {};
+  Object.keys(paths).forEach((k) => {
+    const [d, c] = farthestPoint({ x: 0, y: 0 }, paths[k].segments);
+    const theta = angleTo({ x: 0, y: 0 }, c);
+    cache[k] = { center: c, dist: d, theta };
+  });
+  const sorted = Object.keys(paths).sort((a, b) => {
+    const diff = cache[a].dist - cache[b].dist;
+    return Math.abs(diff) < 0.01 ? cache[a].theta - cache[b].theta : diff;
+  });
+  const thresh = t * sorted.length * 1.1;
+  sorted.forEach((k, i) => {
+    if (i > thresh) {
+      const timeLeft = i / (sorted.length * 1.1) - t;
+      const amt = Math.sqrt(timeLeft);
+      paths[k] = transformPath(paths[k], [
+        translationMatrix(push({ x: 0, y: 0 }, cache[k].theta, amt * 15)),
+      ]);
+      return;
+    }
+  });
+};
+
+```
+
+With acceleration
+
+```ts
+
+(paths, t, progress) => {
+  const cache = {};
+  Object.keys(paths).forEach((k) => {
+    const [d, c] = farthestPoint({ x: 0, y: 0 }, paths[k].segments);
+    const theta = angleTo({ x: 0, y: 0 }, c);
+    cache[k] = { center: c, dist: d, theta };
+  });
+  const sorted = Object.keys(paths).sort((a, b) => {
+    const diff = cache[a].dist - cache[b].dist;
+    return Math.abs(diff) < 0.01 ? cache[a].theta - cache[b].theta : diff;
+  });
+  t = progress(t * 1.1);
+  const thresh = t * sorted.length * 1.1;
+  sorted.forEach((k, i) => {
+    if (i > thresh) {
+      const timeLeft = i / (sorted.length * 1.1) - t;
+      const amt = Math.sqrt(timeLeft);
+      paths[k] = transformPath(paths[k], [
+        translationMatrix(push({ x: 0, y: 0 }, cache[k].theta, amt * 15)),
+      ]);
+      return;
+    }
+  });
+};
+
+```

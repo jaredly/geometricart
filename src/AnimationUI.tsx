@@ -115,7 +115,8 @@ export const AnimationEditor = ({
         setTranscodingProgress({ start: Date.now(), percent: 0 });
 
         let i = 0;
-        const fn = () => {
+
+        const encodeFrame = async () => {
             i += increment;
             if (i >= 1 - epsilon) {
                 const blob = tarImages(images, fps, state);
@@ -125,10 +126,10 @@ export const AnimationEditor = ({
                     name: new Date().toISOString() + '.tar.jdanim',
                 });
                 setTranscodingProgress({ start: 0, percent: 0 });
-                return;
+                return true;
             }
             ctx.save();
-            canvasRender(
+            await canvasRender(
                 ctx,
                 {
                     ...state,
@@ -139,28 +140,44 @@ export const AnimationEditor = ({
                 2 * zoom,
                 animatedFunctions,
                 i,
-            ).then(() => {
-                ctx.restore();
-                if (state.view.texture) {
-                    renderTexture(
-                        state.view.texture,
-                        Math.max(w * 2 * zoom, h * 2 * zoom),
-                        1000,
-                        // originalSize / 2,
-                        ctx,
-                    );
+            );
+            ctx.restore();
+            if (state.view.texture) {
+                renderTexture(
+                    state.view.texture,
+                    Math.max(w * 2 * zoom, h * 2 * zoom),
+                    1000,
+                    // originalSize / 2,
+                    ctx,
+                );
+            }
+
+            setTranscodingProgress((t) => ({ ...t, percent: i }));
+
+            const dataUrl = canvas.current!.toDataURL('image/jpeg');
+            const data = convertDataURIToBinary(dataUrl);
+            images.push(data);
+            return false;
+        };
+
+        const budget = 100;
+
+        const fn = (budgetLeft: number) => {
+            let start = Date.now();
+            encodeFrame().then((finished) => {
+                if (finished) {
+                    return;
                 }
-
-                setTranscodingProgress((t) => ({ ...t, percent: i }));
-
-                const dataUrl = canvas.current!.toDataURL('image/jpeg');
-                const data = convertDataURIToBinary(dataUrl);
-                images.push(data);
-
-                requestAnimationFrame(fn);
+                budgetLeft -= Date.now() - start;
+                if (budgetLeft > 0) {
+                    fn(budgetLeft);
+                } else {
+                    requestAnimationFrame(() => fn(budget));
+                }
             });
         };
-        requestAnimationFrame(fn);
+
+        requestAnimationFrame(() => fn(budget));
     };
 
     return (

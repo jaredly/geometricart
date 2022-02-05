@@ -65,7 +65,7 @@ export function useScrollWheel(
                 clearTimeout(timer);
                 setZooming(false);
             }
-            ref.current!.removeEventListener('wheel', fn);
+            ref.current?.removeEventListener('wheel', fn);
         };
     }, []);
 }
