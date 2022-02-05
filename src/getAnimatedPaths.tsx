@@ -11,17 +11,30 @@ import {
     transformToMatrices,
     translationMatrix,
 } from './getMirrorTransforms';
-import { Coord, Path, State } from './types';
+import { Coord, Path, Segment, State } from './types';
 import { getSelectedIds } from './Canvas';
 import { angleBetween } from './findNextSegments';
 import { segmentsBounds, segmentsCenter } from './Export';
 import { transformSegment } from './points';
+import { pathToPoints } from './pathToPoints';
 
 const lerpPos = (p1: Coord, p2: Coord, percent: number) => {
     return {
         x: (p2.x - p1.x) * percent + p1.x,
         y: (p2.y - p1.y) * percent + p1.y,
     };
+};
+
+export const closestPoint = (center: Coord, segments: Array<Segment>) => {
+    let best = null as null | [number, Coord];
+    pathToPoints(segments).forEach((point) => {
+        const d = dist(point, center);
+        if (best == null || best[0] > d) {
+            best = [d, point];
+        }
+    });
+
+    return best;
 };
 
 // Returns 'idx', 'percent through it'
@@ -153,6 +166,7 @@ export function getAnimationScripts(state: State): ({
                 rotationMatrix,
                 transformsToMatrices,
                 animationTimer,
+                closestPoint,
                 scaleInsets,
                 transformPath: (path: Path, tx: Array<Matrix>): Path => {
                     return {

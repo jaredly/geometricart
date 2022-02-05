@@ -1,4 +1,6 @@
 
+# Would be really cool to get step-by-step animations going.
+
 # Fancier Animation Planning
 
 - I want to be able to chain animation scripts, viually.
@@ -10,6 +12,11 @@
 
 
 # Fun things to do with animation:
+
+## Demonstrate how to build up a pattern!
+
+## Morph??
+Yeah that could be a really cool effect. Demonstrating different shapes that are within the same basic pattern.
 
 ## Gradually build up, in a certain order
 Could be quite cool to be able to run a script to prepare things,
