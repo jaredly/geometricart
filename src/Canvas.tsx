@@ -439,17 +439,6 @@ export const Canvas = ({
         return getSelectedIds(state.paths, state.selection);
     }, [state.selection, state.paths]);
 
-    // const scripts = React.useMemo(() => {
-    //     return getAnimationScripts(state);
-    // }, [state.animations]);
-
-    // const animatedPaths = React.useMemo(() => {
-    //     if (!scripts.length) {
-    //         return state.paths;
-    //     }
-    //     return getAnimatedPaths(state, scripts, currentAnimatedValues);
-    // }, [state.paths, state.pathGroups, scripts, currentAnimatedValues]);
-
     const animatedPaths = state.paths;
 
     const rand = React.useRef(new Prando('ok'));

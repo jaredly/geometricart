@@ -286,7 +286,8 @@ export function PalettesForm({
                     let parts;
                     if (data.startsWith(`https://coolors.co/`)) {
                         parts = data
-                            .slice(`https://coolors.co/`.length)
+                            .split('/')
+                            .slice(-1)[0]
                             .split('-')
                             .map((m) => `#` + m);
                     } else {

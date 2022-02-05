@@ -13,7 +13,7 @@ import prettier from 'prettier';
 import babel from 'prettier/parser-babel';
 import { canvasRender } from './CanvasRender';
 import { epsilon } from './intersect';
-import { addMetadata, findBoundingRect } from './Export';
+import { addMetadata, findBoundingRect, renderTexture } from './Export';
 import { initialHistory } from './initialState';
 import { getAnimatedPaths, getAnimationScripts } from './getAnimatedPaths';
 import { evaluateAnimatedValues, getAnimatedFunctions } from './Canvas';
@@ -32,9 +32,9 @@ export const AnimationEditor = ({
 }) => {
     const [animationPosition, setAnimationPosition] = React.useState(0);
     const canvas = React.useRef(null as null | HTMLCanvasElement);
-    const [fps, setFps] = React.useState(60);
+    const [fps, setFps] = React.useState(50);
     const [zoom, setZoom] = React.useState(1);
-    const [increment, setIncrement] = React.useState(0.05);
+    const [increment, setIncrement] = React.useState(0.01);
     const [lockAspectRatio, setLockAspectRatio] = React.useState(false);
     const [crop, setCrop] = React.useState(10);
 
@@ -96,6 +96,15 @@ export const AnimationEditor = ({
             animationPosition,
         ).then(() => {
             ctx.restore();
+            if (state.view.texture) {
+                renderTexture(
+                    state.view.texture,
+                    Math.max(w * 2 * zoom, h * 2 * zoom),
+                    1000,
+                    // originalSize / 2,
+                    ctx,
+                );
+            }
         });
     }, [animationPosition, state, w, h, dx, dy, zoom]);
 
@@ -132,6 +141,15 @@ export const AnimationEditor = ({
                 i,
             ).then(() => {
                 ctx.restore();
+                if (state.view.texture) {
+                    renderTexture(
+                        state.view.texture,
+                        Math.max(w * 2 * zoom, h * 2 * zoom),
+                        1000,
+                        // originalSize / 2,
+                        ctx,
+                    );
+                }
 
                 setTranscodingProgress((t) => ({ ...t, percent: i }));
 

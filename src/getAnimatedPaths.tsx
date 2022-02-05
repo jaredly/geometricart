@@ -5,6 +5,7 @@ import {
     Matrix,
     push,
     rotationMatrix,
+    scale,
     scaleMatrix,
     transformsToMatrices,
     transformToMatrices,
@@ -21,6 +22,32 @@ const lerpPos = (p1: Coord, p2: Coord, percent: number) => {
         x: (p2.x - p1.x) * percent + p1.x,
         y: (p2.y - p1.y) * percent + p1.y,
     };
+};
+
+// Returns 'idx', 'percent through it'
+const animationTimer = (
+    t: number,
+    weights: Array<number>,
+    pause: number = 0, // in the same units as the weights.
+): [number, number] => {
+    const total = weights.reduce((a, b) => a + b) + pause * weights.length;
+    t *= total;
+    let at = 0;
+    for (let i = 0; i < weights.length; i++) {
+        let w = weights[i] + pause;
+        if (at + w > t) {
+            const off = t - at;
+            if (off < pause / 2) {
+                return [i, 0];
+            }
+            if (off > w - pause / 2) {
+                return [i, 1];
+            }
+            return [i, (off - pause / 2) / (w - pause)];
+        }
+        at += w;
+    }
+    return [weights.length - 1, 1];
 };
 
 const followPath = (points: Array<Coord>, percent: number) => {
@@ -114,6 +141,7 @@ export function getAnimationScripts(state: State): ({
             const builtins: { [key: string]: Function } = {
                 dist,
                 push,
+                scale,
                 angleTo,
                 angleBetween,
                 segmentsBounds,
@@ -124,33 +152,8 @@ export function getAnimationScripts(state: State): ({
                 translationMatrix,
                 rotationMatrix,
                 transformsToMatrices,
-                scaleInsets: (path: Path, scale: number): Path => {
-                    return {
-                        ...path,
-                        style: {
-                            fills: path.style.fills.map((f) =>
-                                f
-                                    ? {
-                                          ...f,
-                                          inset: f.inset
-                                              ? f.inset * scale
-                                              : f.inset,
-                                      }
-                                    : f,
-                            ),
-                            lines: path.style.lines.map((f) =>
-                                f
-                                    ? {
-                                          ...f,
-                                          inset: f.inset
-                                              ? f.inset * scale
-                                              : f.inset,
-                                      }
-                                    : f,
-                            ),
-                        },
-                    };
-                },
+                animationTimer,
+                scaleInsets,
                 transformPath: (path: Path, tx: Array<Matrix>): Path => {
                     return {
                         ...path,
@@ -184,3 +187,26 @@ export function getAnimationScripts(state: State): ({
         })
         .filter(Boolean);
 }
+const scaleInsets = (path: Path, scale: number): Path => {
+    return {
+        ...path,
+        style: {
+            fills: path.style.fills.map((f) =>
+                f
+                    ? {
+                          ...f,
+                          inset: f.inset ? f.inset * scale : f.inset,
+                      }
+                    : f,
+            ),
+            lines: path.style.lines.map((f) =>
+                f
+                    ? {
+                          ...f,
+                          inset: f.inset ? f.inset * scale : f.inset,
+                      }
+                    : f,
+            ),
+        },
+    };
+};

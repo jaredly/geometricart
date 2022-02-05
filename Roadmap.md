@@ -1,4 +1,14 @@
 
+# Fancier Animation Planning
+
+- I want to be able to chain animation scripts, viually.
+	- and scrub through, knowing where they start and stop
+	- and drag to change duration
+	- and enable/disable them, for funs
+	- also, have multiple tracks, so animations might be running
+		at the same time.
+
+
 # Fun things to do with animation:
 
 ## Gradually build up, in a certain order

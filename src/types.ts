@@ -304,6 +304,12 @@ export type History = {
     // idx: number;
 };
 
+export type TextureConfig = {
+    id: string;
+    scale: number;
+    intensity: number;
+};
+
 export type View = {
     center: Coord;
     zoom: number;
@@ -313,7 +319,7 @@ export type View = {
     laserCutMode?: boolean;
     background?: string | number;
     sketchiness?: number;
-    texture?: { id: string; scale: number; intensity: number };
+    texture?: TextureConfig;
 };
 
 export type Selection = {

@@ -3,7 +3,7 @@
 import { jsx } from '@emotion/react';
 import * as ReactDOM from 'react-dom';
 import React from 'react';
-import { Coord, Pending, Segment, State } from './types';
+import { Coord, Pending, Segment, State, TextureConfig } from './types';
 import { Action } from './Action';
 import { PREFIX, SUFFIX } from './Sidebar';
 import {
@@ -490,29 +490,7 @@ async function exportPNG(
     ctx.restore();
 
     if (state.view.texture) {
-        const fns: {
-            [key: string]: (scale: number, intensity: number) => string;
-        } = { texture1: texture1, texture2: texture2 };
-        const fn = fns[state.view.texture.id];
-        if (fn) {
-            const texture = document.createElement('canvas');
-            texture.width = texture.height = size;
-
-            const gl = texture.getContext('webgl2');
-            if (!gl) {
-                throw new Error(`unable to get webgl context`);
-            }
-            setup(
-                gl,
-                fn(
-                    (state.view.texture.scale * size) / originalSize,
-                    state.view.texture.intensity,
-                ),
-                0,
-            );
-
-            ctx.drawImage(texture, 0, 0);
-        }
+        renderTexture(state.view.texture, size, originalSize, ctx);
     }
 
     return new Promise((res, rej) =>
@@ -530,6 +508,37 @@ async function exportPNG(
             res(URL.createObjectURL(blob));
         }, 'image/png'),
     );
+}
+
+export function renderTexture(
+    textureConfig: TextureConfig,
+    size: number,
+    originalSize: number,
+    ctx: CanvasRenderingContext2D,
+) {
+    const fns: {
+        [key: string]: (scale: number, intensity: number) => string;
+    } = { texture1: texture1, texture2: texture2 };
+    const fn = fns[textureConfig.id];
+    if (fn) {
+        const texture = document.createElement('canvas');
+        texture.width = texture.height = size;
+
+        const gl = texture.getContext('webgl2');
+        if (!gl) {
+            throw new Error(`unable to get webgl context`);
+        }
+        setup(
+            gl,
+            fn(
+                (textureConfig.scale * size) / originalSize,
+                textureConfig.intensity,
+            ),
+            0,
+        );
+
+        ctx.drawImage(texture, 0, 0);
+    }
 }
 
 export async function addMetadata(blob: Blob | null, state: State) {
