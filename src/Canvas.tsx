@@ -54,12 +54,12 @@ import {
 import {
     Animations,
     Coord,
-    FloatTimeline,
+    FloatLerp,
     Path,
     Segment,
     State,
     Style,
-    TimelinePoint,
+    LerpPoint,
     View,
 } from './types';
 import { useDragSelect, useMouseDrag } from './useMouseDrag';
@@ -150,8 +150,8 @@ export const evaluateSegment = (seg: TLSegment, percent: number) => {
 };
 
 export const segmentForPoints = (
-    left: TimelinePoint,
-    right: TimelinePoint,
+    left: LerpPoint,
+    right: LerpPoint,
 ): TLSegment => {
     if (!left.rightCtrl && !right.leftCtrl) {
         return {
@@ -178,15 +178,15 @@ export const segmentForPoints = (
 };
 
 export const evaluateBetween = (
-    left: TimelinePoint,
-    right: TimelinePoint,
+    left: LerpPoint,
+    right: LerpPoint,
     position: number,
 ) => {
     const percent = (position - left.pos.x) / (right.pos.x - left.pos.x);
     return percent * (right.pos.y - left.pos.y) + left.pos.y;
 };
 
-export const timelineFunction = (timeline: FloatTimeline) => {
+export const timelineFunction = (timeline: FloatLerp) => {
     const segments: Array<TLSegment> = timelineSegments(timeline);
     // console.log(segments);
     return (x: number) => {
@@ -203,7 +203,7 @@ export const timelineFunction = (timeline: FloatTimeline) => {
     };
 };
 
-export const evaluateTimeline = (timeline: FloatTimeline, position: number) => {
+export const evaluateTimeline = (timeline: FloatLerp, position: number) => {
     if (!timeline.points.length) {
         return (
             (timeline.range[1] - timeline.range[0]) * position +
@@ -994,7 +994,7 @@ export const dragView = (
     return res;
 };
 
-export function timelineSegments(timeline: FloatTimeline) {
+export function timelineSegments(timeline: FloatLerp) {
     const segments: Array<TLSegment> = [];
     const points = timeline.points.slice();
     if (!points.length || points[0].pos.x > 0) {

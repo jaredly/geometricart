@@ -1,13 +1,7 @@
 import { jsx } from '@emotion/react';
 import React, { useState } from 'react';
 import { BlurInt, Text, Toggle } from './Forms';
-import {
-    Animations,
-    Coord,
-    FloatTimeline,
-    State,
-    TimelinePoint,
-} from './types';
+import { Animations, Coord, FloatLerp, State, LerpPoint } from './types';
 import { Action } from './Action';
 import prettier from 'prettier';
 import babel from 'prettier/parser-babel';
@@ -17,6 +11,7 @@ import { addMetadata, findBoundingRect, renderTexture } from './Export';
 import { initialHistory } from './initialState';
 import { getAnimatedPaths, getAnimationScripts } from './getAnimatedPaths';
 import { evaluateAnimatedValues, getAnimatedFunctions } from './Canvas';
+import { useCurrent } from './App';
 
 export const makeEven = (v: number) => {
     v = Math.ceil(v);
@@ -37,6 +32,7 @@ export const AnimationEditor = ({
     const [increment, setIncrement] = React.useState(0.01);
     const [lockAspectRatio, setLockAspectRatio] = React.useState(false);
     const [crop, setCrop] = React.useState(10);
+    const [recording, setRecording] = React.useState(false);
 
     const [downloadUrl, setDownloadUrl] = React.useState(
         null as null | { url: string; name: string },
@@ -78,8 +74,13 @@ export const AnimationEditor = ({
         [state.animations],
     );
 
+    const nowRecording = useCurrent(recording);
+
     React.useEffect(() => {
         if (!canvas.current) {
+            return;
+        }
+        if (nowRecording.current) {
             return;
         }
 
@@ -111,12 +112,18 @@ export const AnimationEditor = ({
     const onRecord = (increment: number) => {
         const ctx = canvas.current!.getContext('2d')!;
         const images: Array<Uint8Array> = [];
+        setRecording(true);
+        nowRecording.current = true;
 
         setTranscodingProgress({ start: Date.now(), percent: 0 });
 
         let i = 0;
 
         const encodeFrame = async () => {
+            if (!nowRecording.current) {
+                setTranscodingProgress({ start: 0, percent: 0 });
+                return true;
+            }
             i += increment;
             if (i >= 1 - epsilon) {
                 const blob = tarImages(images, fps, state);
@@ -126,6 +133,7 @@ export const AnimationEditor = ({
                     name: new Date().toISOString() + '.tar.jdanim',
                 });
                 setTranscodingProgress({ start: 0, percent: 0 });
+                setRecording(false);
                 return true;
             }
             ctx.save();
@@ -284,6 +292,11 @@ export const AnimationEditor = ({
                         (1 - transcodingProgress.percent)
                     ).toFixed(1)}
                     seconds
+                    {recording ? (
+                        <button onClick={() => setRecording(false)}>
+                            Cancel recording
+                        </button>
+                    ) : null}
                 </div>
             )}
             {downloadUrl ? (
@@ -705,12 +718,10 @@ function FloatTimeline({
     dispatch,
 }: {
     id: string;
-    vbl: FloatTimeline;
+    vbl: FloatLerp;
     dispatch: (action: Action) => unknown;
 }): JSX.Element {
-    const [current, setCurrentInner] = React.useState(
-        null as null | FloatTimeline,
-    );
+    const [current, setCurrentInner] = React.useState(null as null | FloatLerp);
     const last = React.useRef(vbl.points);
     React.useEffect(() => {
         if (last.current !== vbl.points) {
@@ -823,7 +834,7 @@ export const PointsViewer = ({
     points,
     onClick,
 }: {
-    points: Array<TimelinePoint>;
+    points: Array<LerpPoint>;
     onClick: () => void;
 }) => {
     const width = 50;
@@ -842,12 +853,10 @@ export const PointsEditor = ({
     // setCurrent,
     setCurrentInner,
 }: {
-    current: Array<TimelinePoint>;
+    current: Array<LerpPoint>;
     // setCurrent: (p: Array<TimelinePoint>) => void;
     setCurrentInner: (
-        p:
-            | Array<TimelinePoint>
-            | ((p: Array<TimelinePoint>) => Array<TimelinePoint>),
+        p: Array<LerpPoint> | ((p: Array<LerpPoint>) => Array<LerpPoint>),
     ) => void;
 }) => {
     // const [current, setCurrentInner] = React.useState(
@@ -857,8 +866,8 @@ export const PointsEditor = ({
     const setCurrent = React.useCallback(
         (
             points:
-                | Array<TimelinePoint>
-                | ((p: Array<TimelinePoint>) => Array<TimelinePoint>),
+                | Array<LerpPoint>
+                | ((p: Array<LerpPoint>) => Array<LerpPoint>),
         ) => {
             if (typeof points === 'function') {
                 setCurrentInner((p) => normalizePoints(points(p), 0, 1));
@@ -888,7 +897,7 @@ export const PointsEditor = ({
         [],
     );
 
-    const changePoint = (point: TimelinePoint, i: number) =>
+    const changePoint = (point: LerpPoint, i: number) =>
         setCurrent((c) => {
             const n = current.slice();
             n[i] = point;
@@ -1094,11 +1103,11 @@ export const PointsEditor = ({
 
 export function pointsPathD(
     height: number,
-    points: TimelinePoint[],
+    points: LerpPoint[],
     width: number,
 ) {
     const scale = { x: width, y: height };
-    const scaled: Array<TimelinePoint> = points.map((p) => ({
+    const scaled: Array<LerpPoint> = points.map((p) => ({
         pos: mulPos(p.pos, scale),
         leftCtrl: p.leftCtrl ? mulPos(p.leftCtrl, scale) : undefined,
         rightCtrl: p.rightCtrl ? mulPos(p.rightCtrl, scale) : undefined,
@@ -1112,7 +1121,7 @@ export function pointsPathD(
     return pointsPath(scaled).join(' ');
 }
 
-export function pointsPath(current: TimelinePoint[]) {
+export function pointsPath(current: LerpPoint[]) {
     return current.map((p, i) => {
         if (i === 0) {
             return `M ${p.pos.x},${p.pos.y}`;
@@ -1137,7 +1146,7 @@ export function pointsPath(current: TimelinePoint[]) {
     });
 }
 
-function normalizePoints(current: TimelinePoint[], min: number, max: number) {
+function normalizePoints(current: LerpPoint[], min: number, max: number) {
     let sorted = current.slice().sort((a, b) => a.pos.x - b.pos.x);
     sorted = sorted.map((point, i) => {
         const prev = i === 0 ? min : sorted[i - 1].pos.x;

@@ -181,6 +181,7 @@ export function getAnimationScripts(state: State): ({
                 closestPoint,
                 farthestPoint,
                 scaleInsets,
+                modInsets,
                 transformPath: (path: Path, tx: Array<Matrix>): Path => {
                     return {
                         ...path,
@@ -214,7 +215,15 @@ export function getAnimationScripts(state: State): ({
         })
         .filter(Boolean);
 }
+
 const scaleInsets = (path: Path, scale: number): Path => {
+    return modInsets(path, (i) => (i ? i * scale : i));
+};
+
+const modInsets = (
+    path: Path,
+    mod: (inset: number | undefined) => number | undefined,
+): Path => {
     return {
         ...path,
         style: {
@@ -222,7 +231,7 @@ const scaleInsets = (path: Path, scale: number): Path => {
                 f
                     ? {
                           ...f,
-                          inset: f.inset ? f.inset * scale : f.inset,
+                          inset: mod(f.inset),
                       }
                     : f,
             ),
@@ -230,7 +239,7 @@ const scaleInsets = (path: Path, scale: number): Path => {
                 f
                     ? {
                           ...f,
-                          inset: f.inset ? f.inset * scale : f.inset,
+                          inset: mod(f.inset),
                       }
                     : f,
             ),

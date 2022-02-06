@@ -14,9 +14,13 @@ import {
     Primitive,
     SlopeIntercept,
 } from './intersect';
-import { Coord, GuideGeom, Segment } from './types';
+import { Coord, GuideGeom, Path, Segment } from './types';
 
 // export type Primitive = {type: 'line', data: SlopeIntercept} | {type: 'circle', center: Coord, radius: number}
+export const transformPath = (path: Path, matrices: Array<Matrix>): Path => ({
+    ...path,
+    origin: applyMatrices(path.origin, matrices),
+});
 
 export const transformSegment = (
     segment: Segment,

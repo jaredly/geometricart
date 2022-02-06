@@ -1,6 +1,6 @@
-import { Coord, FloatTimeline } from './types';
+import { Coord, FloatLerp } from './types';
 
-export const timelineLerp = (timeline: FloatTimeline) => {};
+export const timelineLerp = (timeline: FloatLerp) => {};
 
 /*
 

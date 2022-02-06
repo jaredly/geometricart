@@ -12,10 +12,10 @@ import {
     evaluateBezier,
     evaluateLookUpTable,
 } from '../src/lerp';
-import { Coord, TimelinePoint } from '../src/types';
+import { Coord, LerpPoint } from '../src/types';
 
 export const Timeline = () => {
-    const [points, setPoints] = useState([] as Array<TimelinePoint>);
+    const [points, setPoints] = useState([] as Array<LerpPoint>);
     const size = 500;
 
     let fn = useMemo(

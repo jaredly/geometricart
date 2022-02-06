@@ -352,30 +352,46 @@ export type Meta = {
     created: number;
     ppi: number;
 };
-export type TimelinePoint = {
+export type LerpPoint = {
     pos: Coord;
     leftCtrl?: Coord;
     rightCtrl?: Coord;
 };
-export type FloatTimeline = {
+export type FloatLerp = {
     type: 'float';
-    points: Array<TimelinePoint>;
+    points: Array<LerpPoint>;
     range: [number, number];
+};
+
+export type TimelineSlot = {
+    enabled: boolean;
+    arrange:
+        | { type: 'flex'; weight: number }
+        | { type: 'abs'; start: number; end: number };
+    custom: { [vbl: string]: number | Array<Id> | boolean };
+    scriptId: string;
+};
+
+export type TimelineLane = {
+    enabled: boolean;
+    items: Array<{}>;
 };
 
 export type Animations = {
     steps?: number;
+    // yeah I know they're often not linear :P
     timeline: {
         // ooh some vbls might not be floats?
         // like could be nice to interpolate colors, in some cases
-        // and positions! LIke following a path
+        // and positions! Like following a path
         [vblName: string]:
-            | FloatTimeline
+            | FloatLerp
             | {
                   type: 'float-fn';
                   code: string;
               };
     };
+    // timeline: Array<TimelineLane>;
     scripts: {
         [name: string]: {
             code: string;

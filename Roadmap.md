@@ -1,4 +1,13 @@
 
+# Animation Planner
+
+- now with actual timelines.
+
+	scripts still get 't', and they can also get 'T' which is the overall time, and 'idx' which is their index (maybe? could be weird).
+	andddd it would also be nice to allow scripts to have config variables ...
+
+- [ ] export animation config! Would be great to be able to export the scripts & vbls and such, to use in another project.
+
 # Would be really cool to get step-by-step animations going.
 
 # Fancier Animation Planning
