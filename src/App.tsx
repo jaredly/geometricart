@@ -173,7 +173,6 @@ export const App = ({ initialState }: { initialState: State }) => {
     return (
         <div
             css={{
-                padding: 32,
                 display: 'flex',
                 flexDirection: 'row',
                 alignItems: 'stretch',
@@ -187,9 +186,6 @@ export const App = ({ initialState }: { initialState: State }) => {
                     overflow: 'visible',
                     height: 'unset',
                 },
-                '@media (max-width: 1000px)': {
-                    padding: 0,
-                },
             }}
             {...callbacks}
         >
@@ -198,6 +194,10 @@ export const App = ({ initialState }: { initialState: State }) => {
                     position: 'relative',
                     alignSelf: 'stretch',
                     overflow: 'auto',
+                    // padding: 32,
+                    '@media (max-width: 1000px)': {
+                        padding: 0,
+                    },
                 }}
             >
                 {animationMode ? (

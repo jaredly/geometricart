@@ -1,6 +1,19 @@
 
+# Layers?
+
+Some of the animations I'm imagining involve having multiple different patterns that we transition between.
+Maybe that would mean having multiple "layers"? Every path & group has a "layer" that it's associated with,
+and you can only edit / interact with one layer at a time?
+But then animations can do fun things with them.
+
+# Annnimation Yahoo Pipes FBP??
+
+like I think it would be a lot easier to reuse functionality, and such.
+but I should probably do the animation planner first? idk.
+yeah. And I can extract reusable things in to builtins.
+
 # "Duplicate"
-I want a simple "I have a selection, duplicate it by rotation 180º around this point.
+- [x] I want a simple "I have a selection, duplicate it by rotation 180º around this point.
 
 # Animation Planner
 
@@ -24,6 +37,12 @@ I want a simple "I have a selection, duplicate it by rotation 180º around this 
 
 
 # Fun things to do with animation:
+
+## "Burning" where I trace each thing with a yellow dot? With fade out in the back?
+
+## 3d with blocks that have different shapes depending on orientation
+Constructed using https://evanw.github.io/csg.js/ ?
+Would also need https://threejs.org/docs/#api/en/cameras/OrthographicCamera probably
 
 ## Demonstrate how to build up a pattern!
 

@@ -558,9 +558,6 @@ export const Canvas = ({
                 innerRef(node);
                 ref.current = node;
             }}
-            css={{
-                outline: '1px solid magenta',
-            }}
             {...mouseHandlers}
         >
             <defs>

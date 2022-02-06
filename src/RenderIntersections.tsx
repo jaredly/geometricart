@@ -63,6 +63,8 @@ export const RenderIntersections = React.memo(
                               cx={intersection.coord.x * zoom}
                               cy={intersection.coord.y * zoom}
                               onClick={(evt) => {
+                                  evt.preventDefault();
+                                  evt.stopPropagation();
                                   onClick(intersection, evt.shiftKey);
                               }}
                               {...handlers(intersection)}
@@ -79,6 +81,8 @@ export const RenderIntersections = React.memo(
                         cx={intersection.coord.x * zoom}
                         cy={intersection.coord.y * zoom}
                         onClick={(evt) => {
+                            evt.preventDefault();
+                            evt.stopPropagation();
                             onClick(intersection, evt.shiftKey);
                         }}
                         {...handlers(intersection)}
