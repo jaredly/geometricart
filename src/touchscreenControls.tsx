@@ -34,6 +34,7 @@ import {
 } from './icons/Icon';
 import { PendingMirror } from './App';
 import { Hover } from './Sidebar';
+import { PendingDuplication } from './Guides';
 
 export const idsToStyle = (state: State) => {
     if (
@@ -147,6 +148,7 @@ export function selectionSection(
     state: State,
     setMultiSelect: React.Dispatch<React.SetStateAction<boolean>>,
     multiSelect: boolean,
+    setPendingDuplication: (b: null | PendingDuplication) => void,
 ): React.ReactNode {
     if (!state.selection) {
         return null;
@@ -286,6 +288,17 @@ export function selectionSection(
                     }}
                 >
                     <MirrorIcon />
+                    <VectorSelectionIcon />
+                </IconButton>
+            ) : null}
+            {(state.selection.type === 'Path' ||
+                state.selection.type === 'PathGroup') &&
+            state.view.guides ? (
+                <IconButton
+                    onClick={() => {
+                        setPendingDuplication({ reflect: false, p0: null });
+                    }}
+                >
                     <VectorSelectionIcon />
                 </IconButton>
             ) : null}

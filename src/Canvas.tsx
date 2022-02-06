@@ -21,7 +21,12 @@ import {
     primitivesForElementsAndPaths,
 } from './Guides';
 import { handleSelection } from './handleSelection';
-import { IconButton, ScissorsCuttingIcon } from './icons/Icon';
+import {
+    CancelIcon,
+    IconButton,
+    MirrorIcon,
+    ScissorsCuttingIcon,
+} from './icons/Icon';
 import { epsilon } from './intersect';
 import {
     Bezier,
@@ -882,6 +887,35 @@ export const Canvas = ({
                 ) : null}
                 {pendingMirror ? (
                     mirrorControls(setPendingMirror, pendingMirror)
+                ) : pendingDuplication ? (
+                    <div>
+                        <IconButton
+                            onClick={() => {
+                                setPendingDuplication(null);
+                            }}
+                        >
+                            <CancelIcon />
+                        </IconButton>
+                        <IconButton
+                            selected={pendingDuplication.reflect}
+                            onClick={() => {
+                                pendingDuplication.reflect
+                                    ? setPendingDuplication({
+                                          reflect: false,
+                                          p0: null,
+                                      })
+                                    : setPendingDuplication({
+                                          reflect: true,
+                                          p0: null,
+                                      });
+                            }}
+                        >
+                            <MirrorIcon />
+                        </IconButton>
+                        {pendingDuplication.reflect
+                            ? 'Click two points to reflect across'
+                            : `Click a point to duplicate around`}
+                    </div>
                 ) : state.selection ? (
                     selectionSection(
                         dispatch,
@@ -893,6 +927,7 @@ export const Canvas = ({
                         state,
                         setMultiSelect,
                         multiSelect,
+                        setPendingDuplication,
                     )
                 ) : (
                     <GuideSection
@@ -928,11 +963,6 @@ export const Canvas = ({
                         }}
                     />
                 ) : null}
-                {pendingDuplication
-                    ? pendingDuplication.reflect
-                        ? 'Click two points to reflect across'
-                        : `Click a point to duplicate around`
-                    : null}
             </div>
         </div>
     );
