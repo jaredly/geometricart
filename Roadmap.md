@@ -1,4 +1,7 @@
 
+# "Duplicate"
+I want a simple "I have a selection, duplicate it by rotation 180º around this point.
+
 # Animation Planner
 
 - now with actual timelines.

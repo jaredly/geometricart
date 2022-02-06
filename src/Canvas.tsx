@@ -16,6 +16,7 @@ import { getMirrorTransforms, scale } from './getMirrorTransforms';
 import {
     calculateBounds,
     Guides,
+    PendingDuplication,
     PendingPathPair,
     primitivesForElementsAndPaths,
 } from './Guides';
@@ -74,6 +75,8 @@ export type Props = {
     height: number;
     innerRef: (node: SVGSVGElement | null) => unknown;
     pendingMirror: PendingMirror | null;
+    pendingDuplication: null | PendingDuplication;
+    setPendingDuplication: (b: null | PendingDuplication) => void;
     setPendingMirror: (
         mirror:
             | (PendingMirror | null)
@@ -306,6 +309,8 @@ export const Canvas = ({
     setHover,
     pendingMirror,
     setPendingMirror,
+    pendingDuplication,
+    setPendingDuplication,
     // dragSelect,
     isTouchScreen,
     // cancelDragSelect,
@@ -316,8 +321,6 @@ export const Canvas = ({
         [state.mirrors],
     );
     const [tmpView, setTmpView] = React.useState(null as null | View);
-
-    const [animationPosition, setAnimationPosition] = React.useState(0);
 
     const [pos, setPos] = React.useState({ x: 0, y: 0 });
 
@@ -682,6 +685,8 @@ export const Canvas = ({
                         state={state}
                         bounds={bounds}
                         isTouchScreen={isTouchScreen}
+                        pendingDuplication={pendingDuplication}
+                        setPendingDuplication={setPendingDuplication}
                         dispatch={dispatch}
                         width={width}
                         height={height}
@@ -926,6 +931,11 @@ export const Canvas = ({
                         }}
                     />
                 ) : null}
+                {pendingDuplication
+                    ? pendingDuplication.reflect
+                        ? 'Click two points to reflect across'
+                        : `Click a point to duplicate around`
+                    : null}
             </div>
         </div>
     );

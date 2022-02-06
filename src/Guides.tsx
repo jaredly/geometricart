@@ -27,7 +27,7 @@ import {
     State,
     View,
 } from './types';
-import { Action } from './Action';
+import { Action, PathMultiply } from './Action';
 import { RenderPrimitive } from './RenderPrimitive';
 import {
     calculateGuideElements,
@@ -148,6 +148,11 @@ export type PendingPathPair = [
     ) => void,
 ];
 
+export type PendingDuplication = {
+    reflect: boolean;
+    p0: Coord | null;
+};
+
 export const Guides = ({
     state,
     dispatch,
@@ -158,6 +163,8 @@ export const Guides = ({
     mirrorTransforms,
     hover,
     zooming,
+    pendingDuplication,
+    setPendingDuplication,
     pendingMirror,
     setPendingMirror,
     pendingPath,
@@ -177,6 +184,8 @@ export const Guides = ({
     view: View;
     hover: Hover | null;
     pos: Coord;
+    pendingDuplication: null | PendingDuplication;
+    setPendingDuplication: (b: null | PendingDuplication) => void;
     pendingPath: PendingPathPair;
     mirrorTransforms: { [key: string]: Array<Array<Matrix>> };
     pendingMirror: PendingMirror | null;
@@ -260,8 +269,50 @@ export const Guides = ({
 
     const primsAndStuff = useCurrent({ guidePrimitives, allIntersections });
 
+    const currentDuplication = useCurrent(pendingDuplication);
+
     const onClickIntersection = React.useCallback(
         (coord: Intersect, shiftKey: boolean) => {
+            if (currentDuplication.current) {
+                if (
+                    !['Path', 'PathGroup'].includes(
+                        currentState.current.selection?.type ?? '',
+                    )
+                ) {
+                    return;
+                }
+                if (
+                    currentDuplication.current.reflect &&
+                    !currentDuplication.current.p0
+                ) {
+                    console.log('got a p0', coord.coord);
+                    setPendingDuplication({
+                        reflect: true,
+                        p0: coord.coord,
+                    });
+                    return;
+                }
+                setPendingDuplication(null);
+                dispatch({
+                    type: 'path:multiply',
+                    selection: currentState.current
+                        .selection as PathMultiply['selection'],
+                    mirror: {
+                        id: 'tmp',
+                        origin: coord.coord,
+                        parent: null,
+                        point: currentDuplication.current.p0 ?? {
+                            x: 100,
+                            y: 0,
+                        },
+                        reflect: currentDuplication.current.reflect,
+                        rotational: currentDuplication.current.reflect
+                            ? []
+                            : [true],
+                    },
+                });
+                return;
+            }
             if (currentPendingMirror.current) {
                 const mirror = currentPendingMirror.current;
                 if (mirror.center) {

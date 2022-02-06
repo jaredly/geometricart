@@ -21,6 +21,7 @@ import {
     UndoIcon,
 } from './icons/Icon';
 import { AnimationEditor } from './AnimationUI';
+import { PendingDuplication } from './Guides';
 
 export const key = `geometric-art`;
 
@@ -137,12 +138,19 @@ export const App = ({ initialState }: { initialState: State }) => {
         pendingMirror.parent = state.activeMirror;
     }
 
+    const [pendingDuplication, setPendingDuplication] = React.useState(
+        null as null | PendingDuplication,
+    );
+
+    const currentPendingDuplication = useCurrent(pendingDuplication);
     React.useEffect(() => {
         const fn = handleKeyboard(
             latestState,
             dispatch,
             setHover,
             setPendingMirror,
+            currentPendingDuplication,
+            setPendingDuplication,
         );
         document.addEventListener('keydown', fn);
         return () => document.removeEventListener('keydown', fn);
@@ -199,6 +207,8 @@ export const App = ({ initialState }: { initialState: State }) => {
                         state={state}
                         hover={hover}
                         setHover={setHover}
+                        pendingDuplication={pendingDuplication}
+                        setPendingDuplication={setPendingDuplication}
                         isTouchScreen={isTouchScreen}
                         innerRef={(node) => (ref.current = node)}
                         dispatch={dispatch}
@@ -270,6 +280,8 @@ export const handleKeyboard = (
     dispatch: (action: Action) => void,
     setHover: (hover: Hover | null) => void,
     setPendingMirror: (pending: PendingMirror | null) => void,
+    pendingDuplication: { current: null | PendingDuplication },
+    setPendingDuplication: (d: null | PendingDuplication) => void,
     // setDragSelect: (ds: boolean) => void,
 ) => {
     let tid: null | NodeJS.Timeout = null;
@@ -297,6 +309,15 @@ export const handleKeyboard = (
             return;
         }
         console.log('key', evt.key);
+        if (evt.key === 'd') {
+            // uhm
+            setPendingDuplication({ reflect: false, p0: null });
+            return;
+        }
+        if (evt.key === 'D') {
+            setPendingDuplication({ reflect: true, p0: null });
+            return;
+        }
         if (evt.key === 'M') {
             const ids = Object.keys(latestState.current.mirrors);
             let id = ids[0];
@@ -399,6 +420,9 @@ export const handleKeyboard = (
             });
         }
         if (evt.key === 'Escape') {
+            if (pendingDuplication.current) {
+                return setPendingDuplication(null);
+            }
             if (latestState.current.pending) {
                 return dispatch({ type: 'pending:type', kind: null });
             }

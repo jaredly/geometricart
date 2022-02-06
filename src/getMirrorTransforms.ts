@@ -66,13 +66,12 @@ export const getTransformsForNewMirror = (
 };
 
 export const getTransformsForMirror = (
-    mirror: Id,
+    mirror: Id | Mirror,
     mirrors: { [key: Id]: Mirror },
 ): Array<Array<Matrix>> => {
-    let transforms = mirrorTransforms(mirrors[mirror]).map(
-        transformsToMatrices,
-    );
-    let current = mirrors[mirror];
+    const m = typeof mirror === 'string' ? mirrors[mirror] : mirror;
+    let transforms = mirrorTransforms(m).map(transformsToMatrices);
+    let current = m;
     while (current.parent) {
         current =
             typeof current.parent === 'string'

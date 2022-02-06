@@ -137,3 +137,62 @@ With acceleration
 };
 
 ```
+
+### Drop in & Decay
+
+```ts
+(paths, t, progress) => {
+  const cache = {};
+  Object.keys(paths).forEach((k) => {
+    const [d, c] = farthestPoint({ x: 0, y: 0 }, paths[k].segments);
+    // const d = dist({ x: 0, y: 0 }, c);
+    const theta = angleTo({ x: 0, y: 0 }, c);
+    cache[k] = { center: c, dist: d, theta };
+  });
+  const sorted = Object.keys(paths).sort((a, b) => {
+    const diff = cache[a].dist - cache[b].dist;
+    return Math.abs(diff) < 0.01 ? cache[a].theta - cache[b].theta : diff;
+  });
+
+  const m = Math.max(0, t * 3.3 - 2);
+  sorted.forEach((k, i) => {
+    if (i != 0 && i < m * sorted.length) {
+      const timeGone = m - i / sorted.length;
+      if (timeGone > 0.3) {
+        paths[k] = { ...paths[k], hidden: true };
+      } else {
+        const inset = Math.floor(timeGone * 100 * 10) / 10;
+        paths[k] = transformPath(
+          modInsets(paths[k], (i) => (i || 0) + inset),
+          [
+            translationMatrix(
+              push(
+                { x: 0, y: 0 },
+                cache[k].theta + Math.PI,
+                timeGone * cache[k].dist
+              )
+            ),
+          ]
+        );
+      }
+    }
+  });
+
+  t = progress(t * 1.5);
+  const extra = 25;
+  const thresh = t * (sorted.length + extra);
+  sorted.forEach((k, i) => {
+    if (i == 0) return;
+    i += extra;
+    if (i > thresh) {
+      const timeLeft = i / (sorted.length + extra) - t;
+      const amt = Math.sqrt(timeLeft);
+      // paths[k] = { ...paths[k], hidden: true };
+      paths[k] = transformPath(paths[k], [
+        translationMatrix(push({ x: 0, y: 0 }, cache[k].theta, amt * 15)),
+      ]);
+      return;
+    }
+  });
+};
+```

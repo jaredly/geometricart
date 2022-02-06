@@ -258,7 +258,7 @@ export type UndoPathCreate = {
 export type PathMultiply = {
     type: 'path:multiply';
     selection: { type: 'Path' | 'PathGroup'; ids: Array<Id> };
-    mirror: Id;
+    mirror: Id | Mirror;
 };
 export type UndoPathMultiply = {
     type: PathMultiply['type'];
