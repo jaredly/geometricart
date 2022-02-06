@@ -196,3 +196,54 @@ With acceleration
   });
 };
 ```
+
+
+# Sweep fills
+```ts
+(paths, t) => {
+  const sweepFills = (t, size, p0, diff, pdiff) => {
+    Object.keys(paths).forEach((key) => {
+      const center = segmentsCenter(paths[key].segments);
+      const d = dist(center, p0);
+      const path = paths[key];
+      if (d > t * size) {
+        paths[key] = {
+          ...path,
+          style: {
+            ...path.style,
+            fills: path.style.fills.map((f) => ({
+              ...f,
+              color: f.color + pdiff,
+            })),
+          },
+        };
+        return;
+      }
+      paths[key] = {
+        ...path,
+        style: {
+          ...path.style,
+          fills: path.style.fills.map((f) => ({
+            ...f,
+            color: f.color + diff,
+          })),
+        },
+      };
+    });
+  };
+
+  const [i, p] = animationTimer(t, [1, 1, 1, 1]);
+
+  const corners = [
+    { x: 5, y: 5 },
+    { x: 5, y: -5 },
+    { x: -5, y: -5 },
+    { x: -5, y: 5 },
+  ];
+
+  sweepFills(p, 16, corners[i], (i + 1) % 4, i);
+
+  // do stuff
+};
+
+```
