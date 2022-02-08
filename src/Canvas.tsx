@@ -250,12 +250,12 @@ export const getAnimatedFunctions = (
     animations: Animations,
 ): AnimatedFunctions => {
     const fn: AnimatedFunctions = {};
-    Object.keys(animations.timeline).forEach((key) => {
+    Object.keys(animations.lerps).forEach((key) => {
         if (key === 't') {
             console.warn(`Can't have a custom vbl named t. Ignoring`);
             return;
         }
-        const vbl = animations.timeline[key];
+        const vbl = animations.lerps[key];
         if (vbl.type === 'float') {
             fn[key] = timelineFunction(vbl);
         } else {

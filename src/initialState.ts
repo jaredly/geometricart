@@ -31,7 +31,7 @@ export const initialState: State = {
         created: 0,
         ppi: 170,
     },
-    animations: { scripts: {}, timeline: {} },
+    animations: { scripts: {}, lerps: {} },
     pending: null,
     nextId: 0,
     paths: {},

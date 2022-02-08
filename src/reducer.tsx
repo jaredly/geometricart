@@ -662,7 +662,7 @@ export const reduceWithoutUndo = (
             ];
         }
         case 'timeline:update': {
-            const timeline = { ...state.animations.timeline };
+            const timeline = { ...state.animations.lerps };
             if (!action.vbl) {
                 delete timeline[action.key];
             } else {
@@ -671,12 +671,12 @@ export const reduceWithoutUndo = (
             return [
                 {
                     ...state,
-                    animations: { ...state.animations, timeline },
+                    animations: { ...state.animations, lerps: timeline },
                 },
                 {
                     type: action.type,
                     action,
-                    prev: state.animations.timeline[action.key],
+                    prev: state.animations.lerps[action.key],
                 },
             ];
         }
@@ -705,7 +705,7 @@ export const undo = (state: State, action: UndoAction): State => {
             };
         }
         case 'timeline:update': {
-            const timeline = { ...state.animations.timeline };
+            const timeline = { ...state.animations.lerps };
             if (!action.prev) {
                 delete timeline[action.action.key];
             } else {
@@ -715,7 +715,7 @@ export const undo = (state: State, action: UndoAction): State => {
                 ...state,
                 animations: {
                     ...state.animations,
-                    timeline,
+                    lerps: timeline,
                 },
             };
         }

@@ -310,7 +310,7 @@ export const AnimationEditor = ({
                             blob = await addMetadata(blob, {
                                 ...state,
                                 paths: animatedPaths,
-                                animations: { timeline: {}, scripts: {} },
+                                animations: { lerps: {}, scripts: {} },
                                 history: initialHistory,
                             });
                             setDownloadUrl({
@@ -441,7 +441,7 @@ function tarImages(images: Uint8Array[], fps: number, state: State) {
 export const AddVbl = ({
     onAdd,
 }: {
-    onAdd: (name: string, v: Animations['timeline']['']) => void;
+    onAdd: (name: string, v: Animations['lerps']['']) => void;
 }) => {
     const [key, setKey] = React.useState('vbl');
     const [low, setLow] = React.useState(0);
@@ -736,8 +736,8 @@ function TimelineVariables({
                     dispatch({ type: 'timeline:update', key, vbl });
                 }}
             />
-            {Object.keys(state.animations.timeline).map((key) => {
-                const vbl = state.animations.timeline[key];
+            {Object.keys(state.animations.lerps).map((key) => {
+                const vbl = state.animations.lerps[key];
                 if (vbl.type !== 'float') {
                     return 'Not a float, not yet supported';
                 }

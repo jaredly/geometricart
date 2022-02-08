@@ -77,11 +77,18 @@ export const migrateState = (state: State) => {
         });
     }
     if (state.version < 5) {
-        state.version = 5;
         state.animations = {
+            // @ts-ignore
             timeline: {},
             scripts: {},
         };
+    }
+    if (state.version < 6) {
+        state.version = 6;
+        // @ts-ignore
+        state.animations.lerps = state.animations.timeline;
+        // @ts-ignore
+        delete state.animations.timeline;
     }
     if (state.meta.ppi == null) {
         state.meta.ppi = 170;

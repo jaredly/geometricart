@@ -247,3 +247,69 @@ With acceleration
 };
 
 ```
+
+
+# Concentric dots
+
+```ts
+
+(paths, t) => {
+  t *= 3;
+  Object.keys(paths).forEach((k) => {
+    let path = paths[k];
+    let inset = insetPath(path, 4 * (1 + Math.floor(t * 2)));
+    delete paths[k];
+
+    inset.forEach((path, i) => {
+      const at = followPath(path, t % 1);
+      const c = segmentsCenter(path.segments);
+      const off = { x: c.x - at.x, y: c.y - at.y };
+      const r = 0.01;
+      const origin = { x: at.x - r, y: at.y };
+      const segments = [{ type: "Arc", center: at, to: origin }];
+      paths[k + i] = {
+        ...paths[k],
+        origin,
+        segments,
+        style: {
+          lines: [], // [{ color: "white", width: 0.1 }],
+
+          fills: [
+            {
+              color: path.style.fills[0].color,
+              lighten: path.style.fills[0].lighten,
+            },
+          ],
+          //fills: [{ color: "aqua" }],
+        },
+      };
+
+      if (true) {
+        const at = followPath(path, 1 - (t % 1));
+        const c = segmentsCenter(path.segments);
+        const off = { x: c.x - at.x, y: c.y - at.y };
+        const r = 0.01;
+        const origin = { x: at.x - r, y: at.y };
+        const segments = [{ type: "Arc", center: at, to: origin }];
+        paths[k + "second" + i] = {
+          ...paths[k],
+          origin,
+          segments,
+          style: {
+            lines: [],
+            fills: [
+              {
+                color: path.style.fills[0].color,
+                lighten: path.style.fills[0].lighten,
+              },
+            ],
+            //fills: [{ color: "aqua" }],
+          },
+        };
+      }
+    });
+  });
+};
+
+
+```

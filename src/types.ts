@@ -381,7 +381,7 @@ export type TimelineLane = {
 export type Animations = {
     steps?: number;
     // yeah I know they're often not linear :P
-    timeline: {
+    lerps: {
         // ooh some vbls might not be floats?
         // like could be nice to interpolate colors, in some cases
         // and positions! Like following a path
@@ -408,7 +408,7 @@ export type Animations = {
 };
 
 export type State = {
-    version: 5;
+    version: 6;
     nextId: number;
     history: History;
     meta: Meta;
