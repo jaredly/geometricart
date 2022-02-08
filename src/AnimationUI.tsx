@@ -1,10 +1,8 @@
 import { jsx } from '@emotion/react';
 import React, { useState } from 'react';
-import { BlurInt, Text, Toggle } from './Forms';
+import { BlurInt, Toggle } from './Forms';
 import { Animations, Coord, FloatLerp, State, LerpPoint } from './types';
 import { Action } from './Action';
-import prettier from 'prettier';
-import babel from 'prettier/parser-babel';
 import { canvasRender } from './CanvasRender';
 import { epsilon } from './intersect';
 import { addMetadata, findBoundingRect, renderTexture } from './Export';
@@ -12,6 +10,7 @@ import { initialHistory } from './initialState';
 import { getAnimatedPaths, getAnimationScripts } from './getAnimatedPaths';
 import { evaluateAnimatedValues, getAnimatedFunctions } from './Canvas';
 import { useCurrent } from './App';
+import { Scripts } from './Scripts';
 
 export const makeEven = (v: number) => {
     v = Math.ceil(v);
@@ -409,7 +408,17 @@ export const AnimationEditor = ({
                     display: 'flex',
                 }}
             >
-                <Scripts dispatch={dispatch} state={state} />
+                <Scripts
+                    dispatch={dispatch}
+                    state={state}
+                    // animations={editingAnimations ?? state.animations}
+                    // onChange={animations => setEditingAnimations(animations)}
+                    // onSave={() => {
+                    //     dispatch({type: 'animation:update'})
+                    // }}
+                    animationPosition={animationPosition}
+                    setAnimationPosition={setAnimationPosition}
+                />
                 <TimelineVariables dispatch={dispatch} state={state} />
             </div>
         </div>
@@ -560,198 +569,6 @@ export const TickTock = ({
         </div>
     );
 };
-
-function Scripts({
-    state,
-    dispatch,
-}: {
-    state: State;
-    dispatch: (action: Action) => unknown;
-}) {
-    const [error, setError] = React.useState(null as null | Error);
-
-    // return (
-    //     <div style={{ flex: 1, marginBottom: 100 }}>
-    //         <div style={{ display: 'flex', padding: 8 }}>
-    //             <button
-    //                 style={{ marginRight: 16 }}
-    //                 onClick={() => {
-    //                     let i = 0;
-    //                     while (state.animations.scripts[`script-${i}`]) {
-    //                         i++;
-    //                     }
-    //                     const newKey = `script-${i}`;
-    //                     dispatch({
-    //                         type: 'script:update',
-    //                         key: newKey,
-    //                         script: {
-    //                             code: `(paths, t) => {\n    // do stuff\n}`,
-    //                             enabled: true,
-    //                             phase: 'pre-inset',
-    //                         },
-    //                     });
-    //                 }}
-    //             >
-    //                 Add script
-    //             </button>
-    //         </div>
-    //         {Object.keys(state.animations.scripts).map((key) => {
-    //             const script = state.animations.scripts[key];
-    //             if (!script.enabled) {
-    //                 return (
-    //                     <div
-    //                         key={key}
-    //                         style={{
-    //                             padding: 8,
-    //                             border: '1px solid #aaa',
-    //                             margin: 8,
-    //                         }}
-    //                     >
-    //                         {key}{' '}
-    //                         <button
-    //                             onClick={() => {
-    //                                 dispatch({
-    //                                     type: 'script:update',
-    //                                     key,
-    //                                     script: {
-    //                                         ...script,
-    //                                         enabled: true,
-    //                                     },
-    //                                 });
-    //                             }}
-    //                         >
-    //                             Enable
-    //                         </button>
-    //                     </div>
-    //                 );
-    //             }
-    //             return (
-    //                 <div
-    //                     key={key}
-    //                     style={{
-    //                         padding: 8,
-    //                         border: '1px solid white',
-    //                         margin: 8,
-    //                     }}
-    //                 >
-    //                     <div>{key}</div>
-    //                     <button
-    //                         onClick={() => {
-    //                             dispatch({
-    //                                 type: 'script:update',
-    //                                 key,
-    //                                 script: {
-    //                                     ...script,
-    //                                     enabled: !script.enabled,
-    //                                 },
-    //                             });
-    //                         }}
-    //                     >
-    //                         {script.enabled ? 'Disable' : 'Enable'}
-    //                     </button>
-    //                     {script.selection ? (
-    //                         <div>
-    //                             Current selection: {script.selection.ids.length}{' '}
-    //                             {script.selection.type}
-    //                             <button
-    //                                 onClick={() => {
-    //                                     dispatch({
-    //                                         type: 'script:update',
-    //                                         key,
-    //                                         script: {
-    //                                             ...script,
-    //                                             selection: undefined,
-    //                                         },
-    //                                     });
-    //                                 }}
-    //                             >
-    //                                 Clear selection
-    //                             </button>
-    //                         </div>
-    //                     ) : (
-    //                         <div>
-    //                             No selection (will apply to all paths)
-    //                             <button
-    //                                 disabled={!state.selection}
-    //                                 onClick={() => {
-    //                                     const sel = state.selection;
-    //                                     if (
-    //                                         sel?.type === 'PathGroup' ||
-    //                                         sel?.type === 'Path'
-    //                                     ) {
-    //                                         dispatch({
-    //                                             type: 'script:update',
-    //                                             key,
-    //                                             script: {
-    //                                                 ...script,
-    //                                                 selection: sel as any,
-    //                                             },
-    //                                         });
-    //                                     }
-    //                                 }}
-    //                             >
-    //                                 Set current selection
-    //                             </button>
-    //                         </div>
-    //                     )}
-    //                     <div
-    //                         style={{
-    //                             display: 'flex',
-    //                             flexDirection: 'column',
-    //                             alignItems: 'stretch',
-    //                         }}
-    //                     >
-    //                         <Text
-    //                             key={key}
-    //                             multiline
-    //                             value={script.code}
-    //                             style={{ minHeight: 100 }}
-    //                             onChange={(code) => {
-    //                                 try {
-    //                                     const formatted = prettier.format(
-    //                                         code,
-    //                                         {
-    //                                             plugins: [babel],
-    //                                             parser: 'babel',
-    //                                         },
-    //                                     );
-    //                                     dispatch({
-    //                                         type: 'script:update',
-    //                                         key,
-    //                                         script: {
-    //                                             ...script,
-    //                                             code: formatted,
-    //                                         },
-    //                                     });
-    //                                     setError(null);
-    //                                 } catch (err) {
-    //                                     setError(err as Error);
-    //                                 }
-    //                             }}
-    //                         />
-    //                         {error ? (
-    //                             <div
-    //                                 style={{
-    //                                     background: '#faa',
-    //                                     border: '2px solid #f00',
-    //                                     padding: 16,
-    //                                     margin: 8,
-    //                                     width: 400,
-    //                                     whiteSpace: 'pre-wrap',
-    //                                     fontFamily: 'monospace',
-    //                                 }}
-    //                             >
-    //                                 {error.message}
-    //                             </div>
-    //                         ) : null}
-    //                     </div>
-    //                 </div>
-    //             );
-    //         })}
-    //     </div>
-    // );
-    return <div>ok</div>;
-}
 
 function TimelineVariables({
     dispatch,

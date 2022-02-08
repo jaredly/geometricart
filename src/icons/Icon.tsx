@@ -16,6 +16,7 @@ export const IconButton = ({
     disabled,
     color,
     className,
+    size,
 }: {
     onClick: () => void;
     onMouseOver?: (evt: React.MouseEvent) => void;
@@ -26,6 +27,7 @@ export const IconButton = ({
     disabled?: boolean;
     color?: string;
     className?: string;
+    size?: number;
 }) => {
     const handlers = useTouchClick<void>((_) => onClick());
     const [hover, setHover] = React.useState(false);
@@ -52,7 +54,7 @@ export const IconButton = ({
                 backgroundColor: selected
                     ? 'rgba(150,150,150,0.4)'
                     : 'rgba(0,0,0,0.4)',
-                fontSize: 40,
+                fontSize: size ?? 40,
                 color: color ?? (selected ? 'black' : 'white'),
                 opacity: disabled ? 0.5 : 1,
                 lineHeight: 0.5,

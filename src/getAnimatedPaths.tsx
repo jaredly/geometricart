@@ -1,19 +1,6 @@
-import {
-    angleTo,
-    push,
-    rotationMatrix,
-    scale,
-    scaleMatrix,
-    transformsToMatrices,
-    transformToMatrices,
-    translationMatrix,
-} from './getMirrorTransforms';
-import { Path, State } from './types';
 import { getSelectedIds } from './Canvas';
-import { angleBetween } from './findNextSegments';
-import { segmentsBounds, segmentsCenter } from './Export';
 import { animationTimer, getBuiltins } from './getBuiltins';
-// import { insetPath } from './insetPath';
+import { State } from './types';
 
 export function getAnimatedPaths(
     state: State,
@@ -22,7 +9,6 @@ export function getAnimatedPaths(
     currentAnimatedValues: { [key: string]: number },
 ) {
     const paths = { ...state.paths };
-    // console.log('geta nia');
 
     state.animations.timelines.forEach((timeline) => {
         // console.log('tl', timeline);
