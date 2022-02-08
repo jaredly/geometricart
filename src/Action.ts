@@ -48,14 +48,14 @@ export type AddRemoveEdit<T, Key> =
           type: 'add';
           key: Key;
       }
-    | { type: 'edit'; key: Key; value: T }
+    | { type: 'edit'; key: Key; value: Partial<T> }
     | { type: 'remove'; key: Key };
 export type UndoAddRemoveEdit<T, Key> =
     | {
           type: 'add';
           key: Key;
       }
-    | { type: 'edit'; prev: T; key: Key }
+    | { type: 'edit'; prev: Partial<T>; key: Key }
     | { type: 'remove'; prev: T; key: Key };
 
 export type TimelineLaneARE = {

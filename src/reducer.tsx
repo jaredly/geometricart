@@ -1237,7 +1237,7 @@ export const handleARE = <T, Key, Result>(
     are: AddRemoveEdit<T, Key>,
     handlers: {
         add: (key: Key) => Result;
-        edit: (key: Key, value: T) => [Result, T];
+        edit: (key: Key, value: Partial<T>) => [Result, T];
         remove: (key: Key) => [Result, T];
     },
 ): [Result, UndoAddRemoveEdit<T, Key>] => {
@@ -1263,7 +1263,7 @@ export const undoListARE = <T,>(
         list.splice(are.key, 0, are.prev);
         return list;
     } else {
-        list[are.key] = are.prev;
+        list[are.key] = { ...list[are.key], ...are.prev };
         return list;
     }
 };
@@ -1278,9 +1278,9 @@ export const handleListARE = <T,>(
             list.splice(index, 0, blank);
             return list;
         },
-        edit: (key, lane) => {
+        edit: (key, value) => {
             const old = list[key];
-            list[key] = lane;
+            list[key] = { ...old, ...value };
             return [list, old];
         },
         remove: (key) => {

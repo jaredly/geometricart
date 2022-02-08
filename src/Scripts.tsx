@@ -6,6 +6,7 @@ import { Action } from './Action';
 import { BlurInt, Toggle } from './Forms';
 import { AddIcon, IconButton } from './icons/Icon';
 import { State, TimelineSlot } from './types';
+import eq from 'fast-deep-equal';
 
 export const ItemEditor = ({
     item,
@@ -13,7 +14,6 @@ export const ItemEditor = ({
 }: {
     item: TimelineSlot;
     onChange: (item: TimelineSlot) => void;
-    onSave: () => void;
 }) => {
     return (
         <>
@@ -49,12 +49,21 @@ export const Item = ({
 }) => {
     const [editing, setEditing] = React.useState(null as null | TimelineSlot);
     if (editing) {
+        const unChanged = eq(editing, item);
         return (
-            <ItemEditor
-                item={editing}
-                onChange={setEditing}
-                onSave={() => onChange(editing)}
-            />
+            <>
+                <ItemEditor item={editing} onChange={setEditing} />
+                <button
+                    disabled={unChanged}
+                    onClick={() => {
+                        onChange(editing);
+                        setEditing(null);
+                    }}
+                >
+                    Save
+                </button>
+                <button onClick={() => setEditing(null)}>Cancel</button>
+            </>
         );
     }
     if (item.contents.type === 'spacer') {
@@ -109,7 +118,16 @@ export function Scripts({
                         <Toggle
                             label="enabled"
                             value={timeline.enabled}
-                            onChange={(enabled) => {}}
+                            onChange={(enabled) => {
+                                dispatch({
+                                    type: 'timeline:lane:are',
+                                    action: {
+                                        type: 'edit',
+                                        key: ti,
+                                        value: { enabled },
+                                    },
+                                });
+                            }}
                         />
                     </div>
                     <div
