@@ -33,6 +33,9 @@ export const AnimationEditor = ({
     const [lockAspectRatio, setLockAspectRatio] = React.useState(false);
     const [crop, setCrop] = React.useState(10);
     const [recording, setRecording] = React.useState(false);
+    const [backgroundAlpha, setBackgroundAlpha] = React.useState(
+        null as null | number,
+    );
 
     const [downloadUrl, setDownloadUrl] = React.useState(
         null as null | { url: string; name: string },
@@ -64,8 +67,8 @@ export const AnimationEditor = ({
         if (w / h > 16 / 9) {
             h = (w / 16) * 9;
         }
-        if (h / w > 4 / 3) {
-            w = (h / 4) * 3;
+        if (h / w > 5 / 4) {
+            w = (h / 5) * 4;
         }
     }
 
@@ -85,7 +88,6 @@ export const AnimationEditor = ({
         }
 
         const ctx = canvas.current.getContext('2d')!;
-        ctx.clearRect(0, 0, canvas.current.width, canvas.current.height);
         ctx.save();
         canvasRender(
             ctx,
@@ -95,6 +97,7 @@ export const AnimationEditor = ({
             2 * zoom,
             animatedFunctions,
             animationPosition,
+            backgroundAlpha,
         ).then(() => {
             ctx.restore();
             if (state.view.texture) {
@@ -107,7 +110,7 @@ export const AnimationEditor = ({
                 );
             }
         });
-    }, [animationPosition, state, w, h, dx, dy, zoom]);
+    }, [animationPosition, state, w, h, dx, dy, zoom, backgroundAlpha]);
 
     const onRecord = (increment: number) => {
         const ctx = canvas.current!.getContext('2d')!;
@@ -117,7 +120,32 @@ export const AnimationEditor = ({
 
         setTranscodingProgress({ start: Date.now(), percent: 0 });
 
+        const centeredState = {
+            ...state,
+            view: { ...state.view, center: { x: -dx, y: -dy } },
+        };
+
         let i = 0;
+        const prepare = async () => {
+            if (backgroundAlpha != null) {
+                ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+                // for (let i = 0; i < 1 - epsilon; i += increment) {
+                //     ctx.save();
+                //     await canvasRender(
+                //         ctx,
+                //         centeredState,
+                //         w * 2 * zoom,
+                //         h * 2 * zoom,
+                //         2 * zoom,
+                //         animatedFunctions,
+                //         i,
+                //         backgroundAlpha,
+                //     );
+                //     ctx.restore();
+                // }
+            }
+        };
 
         const encodeFrame = async () => {
             if (!nowRecording.current) {
@@ -136,18 +164,22 @@ export const AnimationEditor = ({
                 setRecording(false);
                 return true;
             }
+            // ctx.globalAlpha = 0.02;
+            // ctx.fillStyle = 'black';
+            // ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+            // // ctx.clearRect(0, 0, canvas.current.width, canvas.current.height);
+            // ctx.globalAlpha = 1;
+
             ctx.save();
             await canvasRender(
                 ctx,
-                {
-                    ...state,
-                    view: { ...state.view, center: { x: -dx, y: -dy } },
-                },
+                centeredState,
                 w * 2 * zoom,
                 h * 2 * zoom,
                 2 * zoom,
                 animatedFunctions,
                 i,
+                backgroundAlpha,
             );
             ctx.restore();
             if (state.view.texture) {
@@ -185,7 +217,9 @@ export const AnimationEditor = ({
             });
         };
 
-        requestAnimationFrame(() => fn(budget));
+        prepare().then(() => {
+            requestAnimationFrame(() => fn(budget));
+        });
     };
 
     return (
@@ -202,7 +236,8 @@ export const AnimationEditor = ({
                     <BlurInt
                         value={fps}
                         onChange={(f) => (f ? setFps(f) : null)}
-                    />
+                    />{' '}
+                    {1 / increment / fps} Seconds
                 </div>
                 <div>
                     Zoom:{' '}
@@ -211,10 +246,17 @@ export const AnimationEditor = ({
                         onChange={(f) => (f ? setZoom(f) : null)}
                     />
                 </div>
+                <div>
+                    BackgroundAlpha:{' '}
+                    <BlurInt
+                        value={backgroundAlpha}
+                        onChange={(f) => (f ? setBackgroundAlpha(f) : null)}
+                    />
+                </div>
                 <Toggle
                     value={lockAspectRatio}
                     onChange={setLockAspectRatio}
-                    label="Ensure aspect ratio is between 16:9 and 3:4"
+                    label="Ensure aspect ratio is between 16:9 and 4:5"
                 />
                 <div>
                     Crop:

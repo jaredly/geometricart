@@ -267,13 +267,13 @@ export const insetSegments = (segments: Array<Segment>, inset: number) => {
     return segments;
 };
 
-export const insetPath = (path: Path, inset: number): Path | null => {
-    const segments = insetSegments(path.segments, inset);
-    if (segments.length === 0) {
-        return null;
-    }
-    return { ...path, segments, origin: segments[segments.length - 1].to };
-};
+// export const insetPath = (path: Path, inset: number): Path | null => {
+//     const segments = insetSegments(path.segments, inset);
+//     if (segments.length === 0) {
+//         return null;
+//     }
+//     return { ...path, segments, origin: segments[segments.length - 1].to };
+// };
 
 export const areContiguous = (prev: Coord, one: Segment, two: Segment) => {
     if (one.type !== two.type) {

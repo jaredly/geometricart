@@ -371,6 +371,8 @@ export const Export = ({
                         ReactDOM.render(
                             <Canvas
                                 // Clear out background in laser cut mode
+                                pendingDuplication={null}
+                                setPendingDuplication={() => null}
                                 state={
                                     state.view.laserCutMode
                                         ? {

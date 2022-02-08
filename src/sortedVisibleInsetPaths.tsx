@@ -1,19 +1,15 @@
-import { ensureClockwise, isClockwise, isMaybeClockwise } from './pathToPoints';
+import { coordKey, numKey } from './calcAllIntersections';
 import { clipPath, closeEnough } from './clipPath';
+import {
+    cleanUpInsetSegments2,
+    filterTooSmallSegments,
+    findRegions,
+    segmentsToNonIntersectingSegments,
+} from './findInternalRegions';
+import { angleBetween } from './findNextSegments';
 import { pathToPrimitives } from './findSelection';
 import { angleTo, dist, push } from './getMirrorTransforms';
-import {
-    pathsAreIdentical,
-    pathToReversedSegmentKeys,
-    pathToSegmentKeys,
-} from './pathsAreIdentical';
-import { paletteColor } from './RenderPath';
-import { insetPath, insetSegmentsBeta, simplifyPath } from './insetPath';
-import { pruneInsetPath } from './pruneInsetPath';
-import { Coord, Path, PathGroup, Segment } from './types';
-import { segmentKey, segmentKeyReverse } from './segmentKey';
-import { coordKey, numKey } from './calcAllIntersections';
-import { angleBetween, isAngleBetween } from './findNextSegments';
+import { insetSegmentsBeta, simplifyPath } from './insetPath';
 import {
     angleIsBetween,
     closeEnoughAngle,
@@ -21,15 +17,15 @@ import {
     slopeToLine,
     withinLimit,
 } from './intersect';
-import { calculateBounds } from './Guides';
 import { applyStyleHover, StyleHover } from './MultiStyleForm';
 import {
-    cleanUpInsetSegments,
-    cleanUpInsetSegments2,
-    filterTooSmallSegments,
-    findRegions,
-    segmentsToNonIntersectingSegments,
-} from './findInternalRegions';
+    pathsAreIdentical,
+    pathToReversedSegmentKeys,
+    pathToSegmentKeys,
+} from './pathsAreIdentical';
+import { ensureClockwise, isMaybeClockwise } from './pathToPoints';
+import { paletteColor } from './RenderPath';
+import { Coord, Path, PathGroup, Segment } from './types';
 
 // This should produce:
 // a list of lines

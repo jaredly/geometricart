@@ -6,7 +6,6 @@ import { Primitive } from './intersect';
 import { Rgb } from './PalettesForm';
 import { transformSegment } from './points';
 import { paletteColor } from './RenderPath';
-import { insetPath } from './insetPath';
 import { shaderFunctions } from './shaderFunctions';
 import { Coord, Fill, Path, State, StyleLine } from './types';
 
@@ -198,11 +197,12 @@ export function makePathFunctions(
 
                     let myPath = path;
                     if (fill.inset) {
-                        const inset = insetPath(path, fill.inset / 100);
-                        if (!inset) {
-                            return;
-                        }
-                        myPath = inset;
+                        // STOPSHIP
+                        // const inset = insetPath(path, fill.inset / 100);
+                        // if (!inset) {
+                        //     return;
+                        // }
+                        // myPath = inset;
                     }
 
                     const color = parseColor(paletteColor(palette, fill.color));

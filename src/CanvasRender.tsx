@@ -1,6 +1,5 @@
 import Prando from 'prando';
 import { RoughCanvas } from 'roughjs/bin/canvas';
-import { RoughGenerator } from 'roughjs/bin/generator';
 import { calcAllIntersections } from './calcAllIntersections';
 import {
     calculateGuideElements,
@@ -11,10 +10,8 @@ import {
     evaluateAnimatedValues,
     imageCache,
 } from './Canvas';
-import { getAnimatedPaths, getAnimationScripts } from './getAnimatedPaths';
-import { sortedVisibleInsetPaths } from './sortedVisibleInsetPaths';
-import { segmentKey } from './segmentKey';
 import { pathToPrimitives } from './findSelection';
+import { getAnimatedPaths, getAnimationScripts } from './getAnimatedPaths';
 import {
     angleTo,
     dist,
@@ -23,11 +20,10 @@ import {
 } from './getMirrorTransforms';
 import { primitivesForElementsAndPaths } from './Guides';
 import { Primitive } from './intersect';
+import { isClockwise, pathToPoints, reversePath } from './pathToPoints';
 import { calcPathD, idSeed, lightenedColor } from './RenderPath';
-import { insetPath } from './insetPath';
-import { pruneInsetPath } from './pruneInsetPath';
+import { sortedVisibleInsetPaths } from './sortedVisibleInsetPaths';
 import { ArcSegment, Overlay, Path, State } from './types';
-import { pathToPoints, isClockwise, reversePath } from './pathToPoints';
 
 export const makeImage = (href: string): Promise<HTMLImageElement> => {
     return new Promise((res, rej) => {
@@ -48,6 +44,7 @@ export const canvasRender = async (
     extraZoom: number,
     animatedFunctions: AnimatedFunctions,
     animationPosition: number,
+    backgroundAlpha?: number | null,
 ) => {
     const palette = state.palettes[state.activePalette];
 
@@ -73,6 +70,9 @@ export const canvasRender = async (
     ctx.translate(xoff, yoff);
 
     if (state.view.background != null) {
+        if (backgroundAlpha != null) {
+            ctx.globalAlpha = backgroundAlpha;
+        }
         const color =
             typeof state.view.background === 'number'
                 ? palette[state.view.background]
@@ -86,6 +86,13 @@ export const canvasRender = async (
             ctx.fillStyle = color;
             ctx.fillRect(-xoff, -yoff, ctx.canvas.width, ctx.canvas.height);
         }
+        ctx.globalAlpha = 1;
+    } else {
+        if (backgroundAlpha != null) {
+            ctx.globalAlpha = backgroundAlpha;
+        }
+        ctx.clearRect(-xoff, -yoff, ctx.canvas.width, ctx.canvas.height);
+        ctx.globalAlpha = 1;
     }
 
     const uids = Object.keys(state.overlays).filter(

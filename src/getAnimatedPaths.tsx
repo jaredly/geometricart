@@ -17,6 +17,20 @@ import { angleBetween } from './findNextSegments';
 import { segmentsBounds, segmentsCenter } from './Export';
 import { transformSegment } from './points';
 import { pathToPoints } from './pathToPoints';
+import { insetSegmentsBeta } from './insetPath';
+import { cleanUpInsetSegments2 } from './findInternalRegions';
+// import { insetPath } from './insetPath';
+
+export const insetPath = (path: Path, inset: number): Array<Path> => {
+    const segments = insetSegmentsBeta(path.segments, inset / 100);
+    const regions = cleanUpInsetSegments2(segments);
+
+    return regions.map((segments) => ({
+        ...path,
+        segments,
+        origin: segments[segments.length - 1].to,
+    }));
+};
 
 const lerpPos = (p1: Coord, p2: Coord, percent: number) => {
     return {
@@ -75,7 +89,14 @@ const animationTimer = (
     return [weights.length - 1, 1];
 };
 
-const followPath = (points: Array<Coord>, percent: number) => {
+const followPath = (path: Array<Coord> | Path, percent: number) => {
+    let points;
+    if (!Array.isArray(path)) {
+        points = pathToPoints(path.segments);
+        points = points.concat([points[0]]);
+    } else {
+        points = path;
+    }
     const dists = [];
     let total = 0;
     for (let i = 1; i < points.length; i++) {
@@ -94,6 +115,13 @@ const followPath = (points: Array<Coord>, percent: number) => {
     return points[points.length - 1];
 };
 
+// export type RenderPrimitive = {
+//     type: 'circle';
+//     center: Coord;
+//     radius: number;
+//     color: string;
+// };
+
 export function getAnimatedPaths(
     state: State,
     scripts: ({
@@ -106,6 +134,7 @@ export function getAnimatedPaths(
     currentAnimatedValues: { [key: string]: number },
 ) {
     const paths = { ...state.paths };
+    // const primitives: Array<RenderPrimitive> = [];
     scripts.forEach((script) => {
         if (!script) {
             return;
@@ -124,7 +153,10 @@ export function getAnimatedPaths(
             ...script!.args.map((arg) => currentAnimatedValues[arg] || 0),
         ];
         try {
-            script!.fn.apply(null, args);
+            const result: unknown = script!.fn.apply(null, args);
+            // if (result && Array.isArray(result)) {
+            //     // primitives.push(...result);
+            // }
         } catch (err) {
             console.error(err);
             console.log(`Bad fn invocation`, script!.key);
@@ -192,6 +224,7 @@ export function getAnimationScripts(state: State): ({
                     };
                 },
                 followPath,
+                insetPath,
                 lerpPos,
             };
 
