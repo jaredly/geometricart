@@ -113,8 +113,13 @@ export const canvasRender = async (
     );
 
     const scripts = getAnimationScripts(state);
-    const animatedPaths = scripts.length
-        ? getAnimatedPaths(state, scripts, currentAnimatedValues)
+    const animatedPaths = state.animations.timelines.some((t) => t.items.length)
+        ? getAnimatedPaths(
+              state,
+              scripts,
+              animationPosition,
+              currentAnimatedValues,
+          )
         : state.paths;
 
     sortedVisibleInsetPaths(

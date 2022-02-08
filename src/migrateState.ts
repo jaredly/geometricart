@@ -90,8 +90,31 @@ export const migrateState = (state: State) => {
         delete state.animations.timeline;
     }
     if (state.version < 7) {
-        state.version = 7;
         state.animations.config = initialState.animations.config;
+    }
+    if (state.version < 8) {
+        state.version = 8;
+        state.animations.timelines = Object.keys(state.animations.scripts).map(
+            (id) => ({
+                enabled: true,
+                items: [
+                    {
+                        // @ts-ignore
+                        enabled: state.animations.scripts[id].enabled,
+                        weight: 1,
+                        contents: {
+                            type: 'script',
+                            custom: {},
+                            scriptId: id,
+                            // @ts-ignore
+                            phase: state.animations.scripts[id].phase,
+                            // @ts-ignore
+                            selection: state.animations.scripts[id].selection,
+                        },
+                    },
+                ],
+            }),
+        );
     }
     if (state.meta.ppi == null) {
         state.meta.ppi = 170;

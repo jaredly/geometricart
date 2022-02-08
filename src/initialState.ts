@@ -24,7 +24,7 @@ export const initialHistory: History = {
 };
 
 export const initialState: State = {
-    version: 7,
+    version: 8,
     meta: {
         title: '',
         description: '',
@@ -32,6 +32,7 @@ export const initialState: State = {
         ppi: 170,
     },
     animations: {
+        timelines: [{ enabled: true, items: [] }],
         scripts: {},
         lerps: {},
         config: {

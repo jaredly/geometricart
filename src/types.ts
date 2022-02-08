@@ -371,6 +371,11 @@ export type TimelineSlot = {
               type: 'script';
               custom: { [vbl: string]: number | Array<Id> | boolean };
               scriptId: string;
+              phase: 'pre-inset' | 'post-inset';
+              selection?: {
+                  type: 'Path' | 'PathGroup';
+                  ids: Array<Id>;
+              };
           }
         | {
               type: 'spacer';
@@ -382,6 +387,13 @@ export type TimelineLane = {
     enabled: boolean;
     items: Array<TimelineSlot>;
 };
+
+export type Lerp =
+    | FloatLerp
+    | {
+          type: 'float-fn';
+          code: string;
+      };
 
 export type Animations = {
     config: {
@@ -398,29 +410,32 @@ export type Animations = {
         // ooh some vbls might not be floats?
         // like could be nice to interpolate colors, in some cases
         // and positions! Like following a path
-        [vblName: string]:
-            | FloatLerp
-            | {
-                  type: 'float-fn';
-                  code: string;
-              };
+        [vblName: string]: Lerp;
     };
+
+    timelines: Array<TimelineLane>;
 
     scripts: {
         [name: string]: {
             code: string;
-            enabled: boolean;
-            phase: 'pre-inset' | 'post-inset';
-            selection?: {
-                type: 'Path' | 'PathGroup';
-                ids: Array<Id>;
-            };
         };
     };
 };
 
+export type Library = {
+    version: 1;
+    scripts: { [id: string]: string };
+    lerps: { [id: string]: Lerp };
+};
+
+export const initialLibrary: Library = {
+    version: 1,
+    scripts: {},
+    lerps: {},
+};
+
 export type State = {
-    version: 7;
+    version: 8;
     nextId: number;
     history: History;
     meta: Meta;
