@@ -59,10 +59,20 @@ export type UndoScriptUpdate = {
     prev: Animations['scripts'][''] | null;
 };
 
+export type AnimationConfig = {
+    type: 'animation:config';
+    config: Animations['config'];
+};
+export type UndoAnimationConfig = {
+    type: AnimationConfig['type'];
+    action: AnimationConfig;
+    prev: Animations['config'];
+};
+
 export type TimelineUpdate = {
     type: 'timeline:update';
     key: string;
-    vbl: Animations['timeline'][''] | null;
+    vbl: Animations['lerps'][''] | null;
 };
 export type UndoTimelineUpdate = {
     type: TimelineUpdate['type'];
@@ -376,6 +386,7 @@ export type UndoableAction =
     | ViewUpdate
     | ScriptUpdate
     | TimelineUpdate
+    | AnimationConfig
     | PathUpdateMany
     | GroupUpdate
     | GuideDelete
@@ -393,6 +404,7 @@ export type UndoableAction =
 
 export type UndoAction =
     | UndoGuideAdd
+    | UndoAnimationConfig
     | UndoOverlayAdd
     | UndoScriptUpdate
     | UndoTimelineUpdate

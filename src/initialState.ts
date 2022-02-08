@@ -24,14 +24,25 @@ export const initialHistory: History = {
 };
 
 export const initialState: State = {
-    version: 5,
+    version: 7,
     meta: {
         title: '',
         description: '',
         created: 0,
         ppi: 170,
     },
-    animations: { scripts: {}, lerps: {} },
+    animations: {
+        scripts: {},
+        lerps: {},
+        config: {
+            backgroundAlpha: null,
+            crop: 10,
+            fps: 50,
+            increment: 0.01,
+            restrictAspectRatio: false,
+            zoom: 1,
+        },
+    },
     pending: null,
     nextId: 0,
     paths: {},

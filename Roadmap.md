@@ -1,4 +1,8 @@
 
+# Gotta do a fade out!
+At the end of a fading thing, to clear away paths.
+or a sweep idk
+
 # Layers?
 
 Some of the animations I'm imagining involve having multiple different patterns that we transition between.

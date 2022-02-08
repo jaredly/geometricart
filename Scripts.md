@@ -253,18 +253,38 @@ With acceleration
 
 ```ts
 
-(paths, t) => {
-  t *= 3;
+(paths, t, progress) => {
+  t = progress(t);
+  if (t === 1) {
+    Object.keys(paths).forEach((k) => {
+      delete paths[k];
+    });
+
+    paths["black"] = pathForSegments([
+      { type: "Line", to: { x: 5, y: 5 } },
+      { type: "Line", to: { x: -5, y: 5 } },
+      { type: "Line", to: { x: -5, y: -5 } },
+      { type: "Line", to: { x: 5, y: -5 } },
+    ]);
+    paths["black"].style = {
+      lines: [],
+      fills: [{ color: "black", opacity: 0.1 }],
+    };
+
+    return;
+  }
+  t = t * 3;
+  const size = 3;
+  const r = 0.008;
   Object.keys(paths).forEach((k) => {
     let path = paths[k];
-    let inset = insetPath(path, 4 * (1 + Math.floor(t * 2)));
+    let inset = insetPath(path, size * (0.5 + Math.floor(t * 2)));
     delete paths[k];
 
     inset.forEach((path, i) => {
       const at = followPath(path, t % 1);
       const c = segmentsCenter(path.segments);
       const off = { x: c.x - at.x, y: c.y - at.y };
-      const r = 0.01;
       const origin = { x: at.x - r, y: at.y };
       const segments = [{ type: "Arc", center: at, to: origin }];
       paths[k + i] = {
@@ -288,7 +308,6 @@ With acceleration
         const at = followPath(path, 1 - (t % 1));
         const c = segmentsCenter(path.segments);
         const off = { x: c.x - at.x, y: c.y - at.y };
-        const r = 0.01;
         const origin = { x: at.x - r, y: at.y };
         const segments = [{ type: "Arc", center: at, to: origin }];
         paths[k + "second" + i] = {

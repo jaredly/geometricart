@@ -680,6 +680,15 @@ export const reduceWithoutUndo = (
                 },
             ];
         }
+        case 'animation:config': {
+            return [
+                {
+                    ...state,
+                    animations: { ...state.animations, config: action.config },
+                },
+                { type: action.type, action, prev: state.animations.config },
+            ];
+        }
         default:
             let _x: never = action;
             console.log(`SKIPPING ${(action as any).type}`);
@@ -689,6 +698,12 @@ export const reduceWithoutUndo = (
 
 export const undo = (state: State, action: UndoAction): State => {
     switch (action.type) {
+        case 'animation:config': {
+            return {
+                ...state,
+                animations: { ...state.animations, config: action.prev },
+            };
+        }
         case 'script:update': {
             const scripts = { ...state.animations.scripts };
             if (!action.prev) {

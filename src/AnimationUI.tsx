@@ -310,7 +310,11 @@ export const AnimationEditor = ({
                             blob = await addMetadata(blob, {
                                 ...state,
                                 paths: animatedPaths,
-                                animations: { lerps: {}, scripts: {} },
+                                animations: {
+                                    lerps: {},
+                                    scripts: {},
+                                    config: state.animations.config,
+                                },
                                 history: initialHistory,
                             });
                             setDownloadUrl({

@@ -19,6 +19,7 @@ import { transformSegment } from './points';
 import { pathToPoints } from './pathToPoints';
 import { insetSegmentsBeta } from './insetPath';
 import { cleanUpInsetSegments2 } from './findInternalRegions';
+import { pathSegs } from './RenderPath';
 // import { insetPath } from './insetPath';
 
 export const insetPath = (path: Path, inset: number): Array<Path> => {
@@ -210,6 +211,7 @@ export function getAnimationScripts(state: State): ({
                 rotationMatrix,
                 transformsToMatrices,
                 animationTimer,
+                pathForSegments: pathSegs,
                 closestPoint,
                 farthestPoint,
                 scaleInsets,

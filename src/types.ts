@@ -379,6 +379,14 @@ export type TimelineLane = {
 };
 
 export type Animations = {
+    config: {
+        fps: number;
+        backgroundAlpha: null | number;
+        increment: number;
+        crop: number;
+        restrictAspectRatio: boolean;
+        zoom: number;
+    };
     steps?: number;
     // yeah I know they're often not linear :P
     lerps: {
@@ -392,7 +400,6 @@ export type Animations = {
                   code: string;
               };
     };
-    // timeline: Array<TimelineLane>;
 
     scripts: {
         [name: string]: {
@@ -408,7 +415,7 @@ export type Animations = {
 };
 
 export type State = {
-    version: 6;
+    version: 7;
     nextId: number;
     history: History;
     meta: Meta;
