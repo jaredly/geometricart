@@ -27,15 +27,38 @@ export const AnimationEditor = ({
 }) => {
     const [animationPosition, setAnimationPosition] = React.useState(0);
     const canvas = React.useRef(null as null | HTMLCanvasElement);
-    const [fps, setFps] = React.useState(50);
-    const [zoom, setZoom] = React.useState(1);
-    const [increment, setIncrement] = React.useState(0.01);
-    const [lockAspectRatio, setLockAspectRatio] = React.useState(false);
-    const [crop, setCrop] = React.useState(10);
+    // const [fps, setFps] = React.useState(50);
+    // const [zoom, setZoom] = React.useState(1);
+    // const [increment, setIncrement] = React.useState(0.01);
+    // const [lockAspectRatio, setLockAspectRatio] = React.useState(false);
+    // const [crop, setCrop] = React.useState(10);
     const [recording, setRecording] = React.useState(false);
-    const [backgroundAlpha, setBackgroundAlpha] = React.useState(
-        null as null | number,
-    );
+    // const [backgroundAlpha, setBackgroundAlpha] = React.useState(
+    //     null as null | number,
+    // );
+
+    const {
+        crop,
+        fps,
+        zoom,
+        increment,
+        restrictAspectRatio: lockAspectRatio,
+        backgroundAlpha,
+    } = state.animations.config;
+    const setConfig = (fn: (c: Animations['config']) => Animations['config']) =>
+        dispatch({
+            type: 'animation:config',
+            config: fn(state.animations.config),
+        });
+    const setCrop = (crop: number) => setConfig((c) => ({ ...c, crop }));
+    const setFps = (fps: number) => setConfig((c) => ({ ...c, fps }));
+    const setZoom = (zoom: number) => setConfig((c) => ({ ...c, zoom }));
+    const setIncrement = (increment: number) =>
+        setConfig((c) => ({ ...c, increment }));
+    const setLockAspectRatio = (restrictAspectRatio: boolean) =>
+        setConfig((c) => ({ ...c, restrictAspectRatio }));
+    const setBackgroundAlpha = (backgroundAlpha: number) =>
+        setConfig((c) => ({ ...c, backgroundAlpha }));
 
     const [downloadUrl, setDownloadUrl] = React.useState(
         null as null | { url: string; name: string },
@@ -51,7 +74,6 @@ export const AnimationEditor = ({
     );
 
     const originalSize = 1000;
-    // const crop = 10;
 
     let h = bounds
         ? makeEven((bounds.y2 - bounds.y1) * state.view.zoom + crop * 2)
@@ -362,6 +384,7 @@ export const AnimationEditor = ({
             ) : null}
             <BlurInt
                 value={increment}
+                width={60}
                 onChange={(increment) =>
                     increment ? setIncrement(increment) : null
                 }

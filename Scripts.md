@@ -251,25 +251,30 @@ With acceleration
 
 # Concentric dots
 
+`progress` starts slow and speeds up, with a shelf at the end.
+
 ```ts
 
 (paths, t, progress) => {
+  const ot = t;
   t = progress(t);
   if (t === 1) {
     Object.keys(paths).forEach((k) => {
       delete paths[k];
     });
 
-    paths["black"] = pathForSegments([
-      { type: "Line", to: { x: 5, y: 5 } },
-      { type: "Line", to: { x: -5, y: 5 } },
-      { type: "Line", to: { x: -5, y: -5 } },
-      { type: "Line", to: { x: 5, y: -5 } },
-    ]);
-    paths["black"].style = {
-      lines: [],
-      fills: [{ color: "black", opacity: 0.1 }],
-    };
+    if (ot > 0.95) {
+      paths["black"] = pathForSegments([
+        { type: "Line", to: { x: 5, y: 5 } },
+        { type: "Line", to: { x: -5, y: 5 } },
+        { type: "Line", to: { x: -5, y: -5 } },
+        { type: "Line", to: { x: 5, y: -5 } },
+      ]);
+      paths["black"].style = {
+        lines: [],
+        fills: [{ color: "black", opacity: 0.15 }],
+      };
+    }
 
     return;
   }

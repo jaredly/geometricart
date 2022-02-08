@@ -1,7 +1,34 @@
 
+# Let's talk about the timeline.
+
+Want a "script library", similar to the palette library I guess, but better concieved.
+So you can copy between them, basically.
+
+Want to be able to export/import as well.
+
+Things that the library contains:
+- scripts (with a readable id) - scripts can reference a lerp explicitly, could be fun
+- lerps, sure thing.
+
+So yeah, I can do that first.
+
+And then I can do timelines.
+
+hmmmmmm I wonder if I need ... the ability to group actions into a single undo-group. That sure would be nice for some of these things.
+
+So the script editor will have a "save to library" button.
+And at that point you give it an id? And if the script is saved to the library already,
+it will ... indicate that.
+Yeah when you give it an ID, it will rename things.
+
+Also a "load from library".
+
+
 # Gotta do a fade out!
 At the end of a fading thing, to clear away paths.
 or a sweep idk
+
+simple, effective
 
 # Layers?
 

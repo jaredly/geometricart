@@ -366,11 +366,16 @@ export type FloatLerp = {
 export type TimelineSlot = {
     enabled: boolean;
     weight: number;
-    contents: null | {
-        type: 'script';
-        custom: { [vbl: string]: number | Array<Id> | boolean };
-        scriptId: string;
-    };
+    contents:
+        | {
+              type: 'script';
+              custom: { [vbl: string]: number | Array<Id> | boolean };
+              scriptId: string;
+          }
+        | {
+              type: 'spacer';
+              still: null | 'left' | 'right';
+          };
 };
 
 export type TimelineLane = {

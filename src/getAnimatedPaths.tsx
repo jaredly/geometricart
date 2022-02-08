@@ -116,13 +116,6 @@ const followPath = (path: Array<Coord> | Path, percent: number) => {
     return points[points.length - 1];
 };
 
-// export type RenderPrimitive = {
-//     type: 'circle';
-//     center: Coord;
-//     radius: number;
-//     color: string;
-// };
-
 export function getAnimatedPaths(
     state: State,
     scripts: ({

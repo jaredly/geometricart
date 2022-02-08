@@ -48,8 +48,10 @@ export const BlurInt = ({
     value,
     onChange,
     label,
+    width,
 }: {
     value: number | undefined | null;
+    width?: number;
     onChange: (v: number | undefined) => unknown;
     label?: (ppi: number) => React.ReactNode;
 }) => {
@@ -84,7 +86,7 @@ export const BlurInt = ({
                     }
                 }}
                 css={{
-                    width: 50,
+                    width: width ?? 50,
                 }}
                 step="1"
                 type="number"
