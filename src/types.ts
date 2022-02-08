@@ -365,16 +365,17 @@ export type FloatLerp = {
 
 export type TimelineSlot = {
     enabled: boolean;
-    arrange:
-        | { type: 'flex'; weight: number }
-        | { type: 'abs'; start: number; end: number };
-    custom: { [vbl: string]: number | Array<Id> | boolean };
-    scriptId: string;
+    weight: number;
+    contents: null | {
+        type: 'script';
+        custom: { [vbl: string]: number | Array<Id> | boolean };
+        scriptId: string;
+    };
 };
 
 export type TimelineLane = {
     enabled: boolean;
-    items: Array<{}>;
+    items: Array<TimelineSlot>;
 };
 
 export type Animations = {
@@ -392,6 +393,7 @@ export type Animations = {
               };
     };
     // timeline: Array<TimelineLane>;
+
     scripts: {
         [name: string]: {
             code: string;
