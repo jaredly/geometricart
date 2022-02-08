@@ -133,7 +133,15 @@ export function Scripts({
                             >
                                 <Item
                                     onChange={(item) => {
-                                        // todo dispatch here
+                                        dispatch({
+                                            type: 'timeline:slot:are',
+                                            timeline: ti,
+                                            action: {
+                                                type: 'edit',
+                                                key: i,
+                                                value: item,
+                                            },
+                                        });
                                     }}
                                     item={item}
                                     key={i}

@@ -379,7 +379,7 @@ export type TimelineSlot = {
           }
         | {
               type: 'spacer';
-              still: null | 'left' | 'right';
+              still?: null | 'left' | 'right';
           };
 };
 

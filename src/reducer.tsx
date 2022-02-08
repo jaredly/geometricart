@@ -27,6 +27,8 @@ import {
     UndoAction,
     PathCreate,
     PathMultiply,
+    AddRemoveEdit,
+    UndoAddRemoveEdit,
 } from './Action';
 import {
     pathsAreIdentical,
@@ -689,6 +691,33 @@ export const reduceWithoutUndo = (
                 { type: action.type, action, prev: state.animations.config },
             ];
         }
+        case 'timeline:lane:are': {
+            const [timelines, undo] = handleListARE(
+                action.action,
+                state.animations.timelines.slice(),
+                { enabled: true, items: [] },
+            );
+            return [
+                { ...state, animations: { ...state.animations, timelines } },
+                { type: action.type, action, undo },
+            ];
+        }
+        case 'timeline:slot:are': {
+            const [timline, undo] = handleListARE(
+                action.action,
+                state.animations.timelines[action.timeline].items.slice(),
+                { contents: { type: 'spacer' }, weight: 1, enabled: true },
+            );
+            const timelines = state.animations.timelines.slice();
+            timelines[action.timeline] = {
+                ...timelines[action.timeline],
+                items: timline,
+            };
+            return [
+                { ...state, animations: { ...state.animations, timelines } },
+                { type: action.type, action, undo },
+            ];
+        }
         default:
             let _x: never = action;
             console.log(`SKIPPING ${(action as any).type}`);
@@ -698,6 +727,27 @@ export const reduceWithoutUndo = (
 
 export const undo = (state: State, action: UndoAction): State => {
     switch (action.type) {
+        case 'timeline:slot:are': {
+            const timelines = state.animations.timelines.slice();
+            const idx = action.action.timeline;
+            timelines[idx] = {
+                ...timelines[idx],
+                items: undoListARE(action.undo, timelines[idx].items.slice()),
+            };
+            return { ...state, animations: { ...state.animations, timelines } };
+        }
+        case 'timeline:lane:are': {
+            return {
+                ...state,
+                animations: {
+                    ...state.animations,
+                    timelines: undoListARE(
+                        action.undo,
+                        state.animations.timelines.slice(),
+                    ),
+                },
+            };
+        }
         case 'animation:config': {
             return {
                 ...state,
@@ -1182,3 +1232,74 @@ export const reifyMirror = (mirrors: { [key: Id]: Mirror }, id: Id): Mirror => {
     }
     return mirror;
 };
+
+export const handleARE = <T, Key, Result>(
+    are: AddRemoveEdit<T, Key>,
+    handlers: {
+        add: (key: Key) => Result;
+        edit: (key: Key, value: T) => [Result, T];
+        remove: (key: Key) => [Result, T];
+    },
+): [Result, UndoAddRemoveEdit<T, Key>] => {
+    if (are.type === 'add') {
+        return [handlers.add(are.key), { type: 'add', key: are.key }];
+    } else if (are.type === 'edit') {
+        const [state, prev] = handlers.edit(are.key, are.value);
+        return [state, { type: 'edit', prev, key: are.key }];
+    } else {
+        const [state, prev] = handlers.remove(are.key);
+        return [state, { type: 'remove', prev, key: are.key }];
+    }
+};
+
+export const undoListARE = <T,>(
+    are: UndoAddRemoveEdit<T, number>,
+    list: Array<T>,
+) => {
+    if (are.type === 'add') {
+        list.splice(are.key, 1);
+        return list;
+    } else if (are.type === 'remove') {
+        list.splice(are.key, 0, are.prev);
+        return list;
+    } else {
+        list[are.key] = are.prev;
+        return list;
+    }
+};
+
+export const handleListARE = <T,>(
+    are: AddRemoveEdit<T, number>,
+    list: Array<T>,
+    blank: T,
+) => {
+    return handleARE(are, {
+        add: (index) => {
+            list.splice(index, 0, blank);
+            return list;
+        },
+        edit: (key, lane) => {
+            const old = list[key];
+            list[key] = lane;
+            return [list, old];
+        },
+        remove: (key) => {
+            const old = list[key];
+            list.splice(key, 1);
+            return [list, old];
+        },
+    });
+};
+
+// export const undoARE = <T, Key>(
+//     are: UndoAddRemoveEdit<T, Key>,
+//     handlers: {
+//         undoAdd: (key: Key) => State,
+//         undoEdit: (key: Key, prev: T) => State,
+//         undoRemove: (key: Key, prev: T) => State,
+//     }
+// ) => {
+//     if (are.type === 'add') {
+//         return handlers.undoAdd(are.key)
+//     }
+// }

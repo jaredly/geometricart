@@ -1,4 +1,9 @@
 
+# AddRemoveEdit action type
+
+Could simplify things a lot.
+Now the critical questoin: Can I do a subset?
+
 # Let's talk about the timeline.
 
 Want a "script library", similar to the palette library I guess, but better concieved.

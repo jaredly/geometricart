@@ -16,6 +16,8 @@ import {
     Mirror,
     GuideGeom,
     Animations,
+    TimelineLane,
+    TimelineSlot,
 } from './types';
 
 /*
@@ -40,6 +42,72 @@ export type Action =
     | { type: 'palette:rename'; old: string; new: string }
     | { type: 'palette:update'; name: string; colors: Array<string> }
     | { type: 'palette:select'; name: string };
+
+export type AddRemoveEdit<T, Key> =
+    | {
+          type: 'add';
+          key: Key;
+      }
+    | { type: 'edit'; key: Key; value: T }
+    | { type: 'remove'; key: Key };
+export type UndoAddRemoveEdit<T, Key> =
+    | {
+          type: 'add';
+          key: Key;
+      }
+    | { type: 'edit'; prev: T; key: Key }
+    | { type: 'remove'; prev: T; key: Key };
+
+export type TimelineLaneARE = {
+    type: 'timeline:lane:are';
+    action: AddRemoveEdit<TimelineLane, number>;
+};
+export type UndoTimelineLaneARE = {
+    type: TimelineLaneARE['type'];
+    action: TimelineLaneARE;
+    undo: UndoAddRemoveEdit<TimelineLane, number>;
+};
+
+export type TimelineSlotARE = {
+    type: 'timeline:slot:are';
+    timeline: number;
+    action: AddRemoveEdit<TimelineSlot, number>;
+};
+
+export type UndoTimelineSlotARE = {
+    type: TimelineSlotARE['type'];
+    action: TimelineSlotARE;
+    undo: UndoAddRemoveEdit<TimelineSlot, number>;
+};
+
+// export type TimelineLaneUpdate = {
+//     type: 'timeline:lane:update';
+//     idx: number;
+//     timeline: TimelineLane;
+// };
+// export type UndoTimelineLaneUpdate = {
+//     type: TimelineLaneUpdate['type'];
+//     action: TimelineLaneUpdate;
+//     prev: TimelineLane;
+// };
+
+// export type TimelineLaneAdd = {
+//     type: 'timeline:lane:add';
+//     idx: number;
+// };
+// export type UndoTimelineLaneAdd = {
+//     type: TimelineLaneAdd['type'];
+//     action: TimelineLaneAdd;
+// };
+// export type TimelineLaneDelete = {
+//     type: 'timeline:lane:delete';
+//     idx: number;
+// };
+// export type UndoTimelineLaneDelete = {
+//     type: TimelineLaneDelete['type'];
+//     action: TimelineLaneDelete;
+//     prev: TimelineLane;
+// };
 
 export type ViewUpdate = { type: 'view:update'; view: View };
 export type UndoViewUpdate = {
@@ -384,6 +452,8 @@ export type UndoableAction =
     // | PathPoint
     | MirrorActive
     | ViewUpdate
+    | TimelineLaneARE
+    | TimelineSlotARE
     | ScriptUpdate
     | TimelineUpdate
     | AnimationConfig
@@ -405,6 +475,8 @@ export type UndoableAction =
 export type UndoAction =
     | UndoGuideAdd
     | UndoAnimationConfig
+    | UndoTimelineLaneARE
+    | UndoTimelineSlotARE
     | UndoOverlayAdd
     | UndoScriptUpdate
     | UndoTimelineUpdate
