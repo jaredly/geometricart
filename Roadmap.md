@@ -1,5 +1,15 @@
 
-# AddRemoveEdit action type
+- [x] basic timeline editor
+	- [x] add slots
+	- [x] edito slots
+	- [x] better editing, below, so small slots arent squished.
+	- [ ] custom variables for scripts pleeease
+- [ ] Library! Yes very much want it.
+	- [ ] "save to library"
+	- [ ] "revert to library version"
+	- [ ] "load new from library"
+
+# [x] AddRemoveEdit action type
 
 Could simplify things a lot.
 Now the critical questoin: Can I do a subset?
