@@ -1,10 +1,8 @@
-import prettier from 'prettier';
-import babel from 'prettier/parser-babel';
 import React, { useState } from 'react';
 import { useCurrent } from '../App';
 import { evaluateAnimatedValues, getAnimatedFunctions } from '../editor/Canvas';
 import { addMetadata, findBoundingRect, renderTexture } from '../editor/Export';
-import { BlurInt, Text, Toggle } from '../editor/Forms';
+import { BlurInt, Toggle } from '../editor/Forms';
 import { CancelIcon, CheckmarkIcon, PencilIcon } from '../icons/Icon';
 import { epsilon } from '../rendering/intersect';
 import { canvasRender } from '../rendering/CanvasRender';
@@ -13,6 +11,7 @@ import { initialHistory } from '../state/initialState';
 import { Animations, Coord, FloatLerp, LerpPoint, State } from '../types';
 import { getAnimatedPaths, getAnimationScripts } from './getAnimatedPaths';
 import { Timelines } from './Timeline';
+import { Scripts } from './Scripts';
 
 export const makeEven = (v: number) => {
     v = Math.ceil(v);
@@ -468,88 +467,6 @@ export const Editable = ({
                 <PencilIcon />
             </button>
         </>
-    );
-};
-
-export const Scripts = ({
-    state,
-    dispatch,
-}: {
-    state: State;
-    dispatch: (action: Action) => unknown;
-}) => {
-    const [error, setError] = React.useState(null as null | Error);
-    return (
-        <div>
-            {Object.keys(state.animations.scripts).map((key) => {
-                const script = state.animations.scripts[key];
-                return (
-                    <div key={key}>
-                        <Editable
-                            text={key}
-                            onChange={(newKey) => {
-                                dispatch({
-                                    type: 'script:rename',
-                                    key,
-                                    newKey,
-                                });
-                            }}
-                        />
-                        <div
-                            style={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'stretch',
-                            }}
-                        >
-                            <Text
-                                key={key}
-                                multiline
-                                value={script.code}
-                                style={{ minHeight: 100 }}
-                                onChange={(code) => {
-                                    try {
-                                        const formatted = prettier.format(
-                                            code,
-                                            {
-                                                plugins: [babel],
-                                                parser: 'babel',
-                                            },
-                                        );
-                                        dispatch({
-                                            type: 'script:update',
-                                            key,
-                                            script: {
-                                                ...script,
-                                                code: formatted,
-                                            },
-                                        });
-                                        setError(null);
-                                    } catch (err) {
-                                        setError(err as Error);
-                                    }
-                                }}
-                            />
-                            {error ? (
-                                <div
-                                    style={{
-                                        background: '#faa',
-                                        border: '2px solid #f00',
-                                        padding: 16,
-                                        margin: 8,
-                                        width: 400,
-                                        whiteSpace: 'pre-wrap',
-                                        fontFamily: 'monospace',
-                                    }}
-                                >
-                                    {error.message}
-                                </div>
-                            ) : null}
-                        </div>
-                    </div>
-                );
-            })}
-        </div>
     );
 };
 
