@@ -17,16 +17,39 @@ export const ItemEditor = ({
     onChange: (item: TimelineSlot) => void;
     state: State;
 }) => {
-    if (item.contents.type === 'spacer') {
-        return <div />;
-    }
     const contents = item.contents;
+    if (contents.type === 'spacer') {
+        return (
+            <>
+                <div>
+                    {(
+                        ['left', 'right', null] as Array<
+                            'left' | 'right' | null
+                        >
+                    ).map((still, i) => (
+                        <button
+                            key={i}
+                            disabled={contents.still == still}
+                            onClick={() =>
+                                onChange({
+                                    ...item,
+                                    contents: { ...contents, still },
+                                })
+                            }
+                        >
+                            {still ?? 'none'}
+                        </button>
+                    ))}
+                </div>
+            </>
+        );
+    }
     return (
         <>
             {
                 <>
                     <select
-                        value={item.contents.scriptId}
+                        value={contents.scriptId}
                         onChange={(evt) => {
                             onChange({
                                 ...item,
@@ -42,9 +65,9 @@ export const ItemEditor = ({
                                 {key}
                             </option>
                         ))}
-                        {!state.animations.scripts[item.contents.scriptId] ? (
-                            <option disabled value={item.contents.scriptId}>
-                                {item.contents.scriptId} (missing?)
+                        {!state.animations.scripts[contents.scriptId] ? (
+                            <option disabled value={contents.scriptId}>
+                                {contents.scriptId} (missing?)
                             </option>
                         ) : null}
                     </select>
@@ -264,6 +287,14 @@ export function Timelines({
                                         },
                                     }}
                                     onClick={() => {
+                                        dispatch({
+                                            type: 'timeline:slot:are',
+                                            timeline: ti,
+                                            action: {
+                                                type: 'add',
+                                                key: i + 1,
+                                            },
+                                        });
                                         // ok
                                     }}
                                 >

@@ -101,6 +101,14 @@ export const ScriptEditor = ({
     );
 };
 
+const newScriptKey = (scripts: { [key: string]: unknown }) => {
+    let i = 0;
+    while (scripts[`script-${i}`]) {
+        i++;
+    }
+    return `script-${i}`;
+};
+
 export const Scripts = ({
     state,
     dispatch,
@@ -110,6 +118,17 @@ export const Scripts = ({
 }) => {
     return (
         <div>
+            <button
+                onClick={() => {
+                    dispatch({
+                        type: 'script:update',
+                        key: newScriptKey(state.animations.scripts),
+                        script: { code: `(paths, t) => {\n}` },
+                    });
+                }}
+            >
+                Add script
+            </button>
             {Object.keys(state.animations.scripts).map((key) => {
                 const script = state.animations.scripts[key];
                 return (
