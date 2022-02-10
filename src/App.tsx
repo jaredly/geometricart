@@ -2,17 +2,17 @@
 import { jsx } from '@emotion/react';
 import localforage from 'localforage';
 import React from 'react';
-import { Canvas } from './Canvas';
-import { reducer } from './reducer';
-import { Hover, Sidebar } from './Sidebar';
+import { Canvas } from './editor/Canvas';
+import { reducer } from './state/reducer';
+import { Hover, Sidebar } from './editor/Sidebar';
 import { Coord, GuideGeom, Id, State } from './types';
-import { Action, GroupRegroup } from './Action';
-import { initialState } from './initialState';
+import { Action, GroupRegroup } from './state/Action';
+import { initialState } from './state/initialState';
 import {
     getStateFromFile,
     useDropStateOrAttachmentTarget,
     useDropTarget,
-} from './useDropTarget';
+} from './editor/useDropTarget';
 import {
     CogIcon,
     IconButton,
@@ -20,8 +20,8 @@ import {
     RedoIcon,
     UndoIcon,
 } from './icons/Icon';
-import { AnimationEditor } from './AnimationUI';
-import { PendingDuplication } from './Guides';
+import { AnimationEditor } from './animation/AnimationUI';
+import { PendingDuplication } from './editor/Guides';
 
 export const key = `geometric-art`;
 

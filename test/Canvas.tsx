@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { useCurrent } from '../src/App';
-import { windingNumber } from '../src/clipPath';
-import { segmentsCenter } from '../src/Export';
+import { windingNumber } from '../src/rendering/clipPath';
+import { segmentsCenter } from '../src/editor/Export';
 import {
     cleanUpInsetSegments2,
     findInsidePoint,
@@ -11,24 +11,24 @@ import {
     removeNonWindingRegions,
     segmentAngle,
     segmentsToNonIntersectingSegments,
-} from '../src/findInternalRegions';
-import { angleBetween } from '../src/findNextSegments';
-import { pathToPrimitives } from '../src/findSelection';
-import { BlurInt, Text } from '../src/Forms';
+} from '../src/rendering/findInternalRegions';
+import { angleBetween } from '../src/rendering/findNextSegments';
+import { pathToPrimitives } from '../src/editor/findSelection';
+import { BlurInt, Text } from '../src/editor/Forms';
 import {
     angleTo,
     dist,
     push,
     translationMatrix,
-} from '../src/getMirrorTransforms';
-import { insetSegmentsBeta } from '../src/insetPath';
+} from '../src/rendering/getMirrorTransforms';
+import { insetSegmentsBeta } from '../src/rendering/insetPath';
 import {
     ensureClockwise,
     isClockwise,
     pathToPoints,
-} from '../src/pathToPoints';
-import { transformSegment } from '../src/points';
-import { calcPathD, segmentArrow } from '../src/RenderPath';
+} from '../src/rendering/pathToPoints';
+import { transformSegment } from '../src/rendering/points';
+import { calcPathD, segmentArrow } from '../src/editor/RenderPath';
 import { Coord, Segment } from '../src/types';
 import { fixture } from './fixture';
 import { getInsets, insetColors, pathSegs, size } from './run';

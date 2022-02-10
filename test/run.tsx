@@ -4,15 +4,15 @@ import { render } from 'react-dom';
 import {
     cleanUpInsetSegments,
     cleanUpInsetSegments2,
-} from '../src/findInternalRegions';
-import { push } from '../src/getMirrorTransforms';
-import { insetSegmentsBeta } from '../src/insetPath';
-import { ensureClockwise } from '../src/pathToPoints';
+} from '../src/rendering/findInternalRegions';
+import { push } from '../src/rendering/getMirrorTransforms';
+import { insetSegmentsBeta } from '../src/rendering/insetPath';
+import { ensureClockwise } from '../src/rendering/pathToPoints';
 import { Path, Segment } from '../src/types';
 import { Canvas } from './Canvas';
 import { ShowExample } from './ShowExample';
 import { fixture } from './fixture';
-import { Timeline } from './Timeline';
+import { Timeline } from './TimelineTest';
 
 export const size = 500;
 

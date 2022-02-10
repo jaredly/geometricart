@@ -2,7 +2,7 @@
 /* @jsxFrag React.Fragment */
 import { jsx } from '@emotion/react';
 import * as React from 'react';
-import { useTouchClick } from '../RenderIntersections';
+import { useTouchClick } from '../editor/RenderIntersections';
 
 /** Gotten from https://reactsvgicons.com/search?q=scissors */
 
@@ -412,6 +412,42 @@ export function MagicWandIcon(props: React.SVGProps<SVGSVGElement>) {
             <path
                 fill="currentColor"
                 d="M4 3L2 1H1v1l2 2zm1-3h1v2H5zm4 5h2v1H9zm1-3V1H9L7 3l1 1zM0 5h2v1H0zm5 4h1v2H5zM1 9v1h1l2-2-1-1zm14.781 4.781L5.842 3.842a.752.752 0 00-1.061 0l-.939.939a.752.752 0 000 1.061l9.939 9.939a.752.752 0 001.061 0l.939-.939a.752.752 0 000-1.061zM7.5 8.5l-3-3 1-1 3 3-1 1z"
+            />
+        </svg>
+    );
+}
+
+export function PencilIcon(props: React.SVGProps<SVGSVGElement>) {
+    return (
+        <svg
+            fill="none"
+            stroke="currentColor"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            viewBox="0 0 24 24"
+            height="1em"
+            width="1em"
+            {...props}
+        >
+            <path stroke="none" d="M0 0h24v24H0z" />
+            <path d="M4 20h4L18.5 9.5a1.5 1.5 0 00-4-4L4 16v4M13.5 6.5l4 4" />
+        </svg>
+    );
+}
+
+export function CheckmarkIcon(props: React.SVGProps<SVGSVGElement>) {
+    return (
+        <svg
+            viewBox="0 0 16 16"
+            fill="currentColor"
+            height="1em"
+            width="1em"
+            {...props}
+        >
+            <path
+                fill="currentColor"
+                d="M13.5 2L6 9.5 2.5 6 0 8.5l6 6 10-10z"
             />
         </svg>
     );

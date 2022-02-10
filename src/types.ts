@@ -1,5 +1,5 @@
-import { UndoableAction, UndoAction } from './Action';
-import { Primitive } from './intersect';
+import { UndoableAction, UndoAction } from './state/Action';
+import { Primitive } from './rendering/intersect';
 
 // Should I do polar coords?
 export type Coord = { x: number; y: number };
