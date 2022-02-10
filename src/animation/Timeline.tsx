@@ -7,118 +7,7 @@ import { BlurInt, Toggle } from '../editor/Forms';
 import { AddIcon, IconButton } from '../icons/Icon';
 import { State, TimelineSlot } from '../types';
 import eq from 'fast-deep-equal';
-
-export const ItemEditor = ({
-    item,
-    onChange,
-    state,
-}: {
-    item: TimelineSlot;
-    onChange: (item: TimelineSlot) => void;
-    state: State;
-}) => {
-    const contents = item.contents;
-    if (contents.type === 'spacer') {
-        return (
-            <>
-                <div>
-                    {(
-                        ['left', 'right', null] as Array<
-                            'left' | 'right' | null
-                        >
-                    ).map((still, i) => (
-                        <button
-                            key={i}
-                            disabled={contents.still == still}
-                            onClick={() =>
-                                onChange({
-                                    ...item,
-                                    contents: { ...contents, still },
-                                })
-                            }
-                        >
-                            {still ?? 'none'}
-                        </button>
-                    ))}
-                </div>
-            </>
-        );
-    }
-    return (
-        <>
-            {
-                <>
-                    <select
-                        value={contents.scriptId}
-                        onChange={(evt) => {
-                            onChange({
-                                ...item,
-                                contents: {
-                                    ...contents,
-                                    scriptId: evt.target.value,
-                                },
-                            });
-                        }}
-                    >
-                        {Object.keys(state.animations.scripts).map((key) => (
-                            <option key={key} value={key}>
-                                {key}
-                            </option>
-                        ))}
-                        {!state.animations.scripts[contents.scriptId] ? (
-                            <option disabled value={contents.scriptId}>
-                                {contents.scriptId} (missing?)
-                            </option>
-                        ) : null}
-                    </select>
-                    {contents.selection ? (
-                        <div>
-                            Current selection: {contents.selection.ids.length}{' '}
-                            {contents.selection.type}
-                            <button
-                                onClick={() => {
-                                    onChange({
-                                        ...item,
-                                        contents: {
-                                            ...contents,
-                                            selection: undefined,
-                                        },
-                                    });
-                                }}
-                            >
-                                Clear selection
-                            </button>
-                        </div>
-                    ) : (
-                        <div>
-                            No selection (will apply to all paths)
-                            <button
-                                disabled={!state.selection}
-                                onClick={() => {
-                                    const sel = state.selection;
-                                    if (
-                                        sel?.type === 'PathGroup' ||
-                                        sel?.type === 'Path'
-                                    ) {
-                                        onChange({
-                                            ...item,
-                                            contents: {
-                                                ...contents,
-                                                selection: sel as any,
-                                            },
-                                        });
-                                    }
-                                }}
-                            >
-                                Set current selection
-                            </button>
-                        </div>
-                    )}
-                </>
-            }
-        </>
-    );
-};
+import { SlotEditor } from './SlotEditor';
 
 export const Item = ({
     item,
@@ -135,9 +24,34 @@ export const Item = ({
         return (
             <>
                 <div css={{ display: 'flex', alignItems: 'center' }}>
-                    {item.contents.type[0].toUpperCase() +
-                        item.contents.type.slice(1)}
-                    :{' '}
+                    <select
+                        value={item.contents.type}
+                        onChange={(evt) => {
+                            const v = evt.target.value;
+                            if (v === 'spacer') {
+                                setEditing({
+                                    ...item,
+                                    contents: { type: 'spacer' },
+                                });
+                            } else {
+                                setEditing({
+                                    ...item,
+                                    contents: {
+                                        type: 'script',
+                                        custom: {},
+                                        phase: 'pre-inset',
+                                        scriptId:
+                                            Object.keys(
+                                                state.animations.scripts,
+                                            )[0] ?? 'script-0',
+                                    },
+                                });
+                            }
+                        }}
+                    >
+                        <option value={'spacer'}>Spacer</option>
+                        <option value={'script'}>Script</option>
+                    </select>{' '}
                     <Toggle
                         label="Enabled"
                         value={item.enabled}
@@ -145,7 +59,7 @@ export const Item = ({
                     />
                 </div>
 
-                <ItemEditor
+                <SlotEditor
                     item={editing}
                     onChange={setEditing}
                     state={state}
@@ -295,7 +209,6 @@ export function Timelines({
                                                 key: i + 1,
                                             },
                                         });
-                                        // ok
                                     }}
                                 >
                                     <AddIcon />
@@ -317,186 +230,4 @@ export function Timelines({
             ))}
         </div>
     );
-
-    // return (
-    //     <div style={{ flex: 1, marginBottom: 100 }}>
-    //         <div style={{ display: 'flex', padding: 8 }}>
-    //             <button
-    //                 style={{ marginRight: 16 }}
-    //                 onClick={() => {
-    //                     let i = 0;
-    //                     while (animations.scripts[`script-${i}`]) {
-    //                         i++;
-    //                     }
-    //                     const newKey = `script-${i}`;
-    //                     dispatch({
-    //                         type: 'script:update',
-    //                         key: newKey,
-    //                         script: {
-    //                             code: `(paths, t) => {\n    // do stuff\n}`,
-    //                             enabled: true,
-    //                             phase: 'pre-inset',
-    //                         },
-    //                     });
-    //                 }}
-    //             >
-    //                 Add script
-    //             </button>
-    //         </div>
-    //         {Object.keys(animations.scripts).map((key) => {
-    //             const script = animations.scripts[key];
-    //             if (!script.enabled) {
-    //                 return (
-    //                     <div
-    //                         key={key}
-    //                         style={{
-    //                             padding: 8,
-    //                             border: '1px solid #aaa',
-    //                             margin: 8,
-    //                         }}
-    //                     >
-    //                         {key}{' '}
-    //                         <button
-    //                             onClick={() => {
-    //                                 dispatch({
-    //                                     type: 'script:update',
-    //                                     key,
-    //                                     script: {
-    //                                         ...script,
-    //                                         enabled: true,
-    //                                     },
-    //                                 });
-    //                             }}
-    //                         >
-    //                             Enable
-    //                         </button>
-    //                     </div>
-    //                 );
-    //             }
-    //             return (
-    //                 <div
-    //                     key={key}
-    //                     style={{
-    //                         padding: 8,
-    //                         border: '1px solid white',
-    //                         margin: 8,
-    //                     }}
-    //                 >
-    //                     <div>{key}</div>
-    //                     <button
-    //                         onClick={() => {
-    //                             dispatch({
-    //                                 type: 'script:update',
-    //                                 key,
-    //                                 script: {
-    //                                     ...script,
-    //                                     enabled: !script.enabled,
-    //                                 },
-    //                             });
-    //                         }}
-    //                     >
-    //                         {script.enabled ? 'Disable' : 'Enable'}
-    //                     </button>
-    //                     {script.selection ? (
-    //                         <div>
-    //                             Current selection: {script.selection.ids.length}{' '}
-    //                             {script.selection.type}
-    //                             <button
-    //                                 onClick={() => {
-    //                                     dispatch({
-    //                                         type: 'script:update',
-    //                                         key,
-    //                                         script: {
-    //                                             ...script,
-    //                                             selection: undefined,
-    //                                         },
-    //                                     });
-    //                                 }}
-    //                             >
-    //                                 Clear selection
-    //                             </button>
-    //                         </div>
-    //                     ) : (
-    //                         <div>
-    //                             No selection (will apply to all paths)
-    //                             <button
-    //                                 disabled={!state.selection}
-    //                                 onClick={() => {
-    //                                     const sel = state.selection;
-    //                                     if (
-    //                                         sel?.type === 'PathGroup' ||
-    //                                         sel?.type === 'Path'
-    //                                     ) {
-    //                                         dispatch({
-    //                                             type: 'script:update',
-    //                                             key,
-    //                                             script: {
-    //                                                 ...script,
-    //                                                 selection: sel as any,
-    //                                             },
-    //                                         });
-    //                                     }
-    //                                 }}
-    //                             >
-    //                                 Set current selection
-    //                             </button>
-    //                         </div>
-    //                     )}
-    //                     <div
-    //                         style={{
-    //                             display: 'flex',
-    //                             flexDirection: 'column',
-    //                             alignItems: 'stretch',
-    //                         }}
-    //                     >
-    //                         <Text
-    //                             key={key}
-    //                             multiline
-    //                             value={script.code}
-    //                             style={{ minHeight: 100 }}
-    //                             onChange={(code) => {
-    //                                 try {
-    //                                     const formatted = prettier.format(
-    //                                         code,
-    //                                         {
-    //                                             plugins: [babel],
-    //                                             parser: 'babel',
-    //                                         },
-    //                                     );
-    //                                     dispatch({
-    //                                         type: 'script:update',
-    //                                         key,
-    //                                         script: {
-    //                                             ...script,
-    //                                             code: formatted,
-    //                                         },
-    //                                     });
-    //                                     setError(null);
-    //                                 } catch (err) {
-    //                                     setError(err as Error);
-    //                                 }
-    //                             }}
-    //                         />
-    //                         {error ? (
-    //                             <div
-    //                                 style={{
-    //                                     background: '#faa',
-    //                                     border: '2px solid #f00',
-    //                                     padding: 16,
-    //                                     margin: 8,
-    //                                     width: 400,
-    //                                     whiteSpace: 'pre-wrap',
-    //                                     fontFamily: 'monospace',
-    //                                 }}
-    //                             >
-    //                                 {error.message}
-    //                             </div>
-    //                         ) : null}
-    //                     </div>
-    //                 </div>
-    //             );
-    //         })}
-    //     </div>
-    // );
-    return <div>ok</div>;
 }
