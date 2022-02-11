@@ -695,7 +695,16 @@ export const reduceWithoutUndo = (
             const [timelines, undo] = handleListARE(
                 action.action,
                 state.animations.timelines.slice(),
-                { enabled: true, items: [] },
+                {
+                    enabled: true,
+                    items: [
+                        {
+                            weight: 1,
+                            enabled: true,
+                            contents: { type: 'spacer' },
+                        },
+                    ],
+                },
             );
             return [
                 { ...state, animations: { ...state.animations, timelines } },

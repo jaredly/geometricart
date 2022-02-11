@@ -112,7 +112,7 @@ export const AnimationEditor = ({
             2 * zoom,
             animatedFunctions,
             animationPosition,
-            backgroundAlpha,
+            animationPosition === 0 ? null : backgroundAlpha,
         ).then(() => {
             ctx.restore();
             if (state.view.texture) {
@@ -174,7 +174,7 @@ export const AnimationEditor = ({
                 2 * zoom,
                 animatedFunctions,
                 i,
-                backgroundAlpha,
+                i === 0 ? null : backgroundAlpha,
             );
             ctx.restore();
             if (state.view.texture) {

@@ -15,7 +15,6 @@ import {
     transformToMatrices,
     translationMatrix,
 } from '../rendering/getMirrorTransforms';
-import { State } from '../types';
 import { angleBetween } from '../rendering/findNextSegments';
 import { segmentsBounds, segmentsCenter } from '../editor/Export';
 
@@ -36,6 +35,28 @@ export function getBuiltins(): { [key: string]: Function } {
         transformsToMatrices,
         animationTimer,
         pathForSegments: pathSegs,
+        rectPath: (c: Coord, size: Coord, color: string) => {
+            const path = pathSegs([
+                {
+                    type: 'Line',
+                    to: { x: c.x - size.x / 2, y: c.y - size.y / 2 },
+                },
+                {
+                    type: 'Line',
+                    to: { x: c.x + size.x / 2, y: c.y - size.y / 2 },
+                },
+                {
+                    type: 'Line',
+                    to: { x: c.x + size.x / 2, y: c.y + size.y / 2 },
+                },
+                {
+                    type: 'Line',
+                    to: { x: c.x - size.x / 2, y: c.y + size.y / 2 },
+                },
+            ]);
+            path.style.fills[0] = { color };
+            return path;
+        },
         closestPoint,
         farthestPoint,
         scaleInsets,

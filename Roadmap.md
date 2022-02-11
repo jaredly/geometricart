@@ -16,6 +16,10 @@ honestly that gets you so far
 
 default values? Yeah sure.
 
+
+Soooo all scripts have a lerp parameter that's like "how should we modulate t", right?
+
+
 Ok, so: you write out the function, you add variables.
 Those variables get parsed out, and you can then configure them.
 
