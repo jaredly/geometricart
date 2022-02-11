@@ -11,6 +11,9 @@ export function getAnimatedPaths(
     let paths = { ...state.paths };
 
     state.animations.timelines.forEach((timeline) => {
+        if (!timeline.enabled) {
+            return;
+        }
         // console.log('tl', timeline);
         const enabled = timeline.items.filter((t) => t.enabled);
 

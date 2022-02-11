@@ -8,6 +8,7 @@ import { AddIcon, IconButton } from '../icons/Icon';
 import { State, TimelineSlot } from '../types';
 import eq from 'fast-deep-equal';
 import { SlotEditor } from './SlotEditor';
+import { EyeIcon, EyeInvisibleIcon } from '../icons/Eyes';
 
 export const Item = ({
     item,
@@ -152,10 +153,40 @@ export function Timelines({
                         key={ti}
                         css={{
                             padding: 4,
+                            display: 'flex',
+                            flexDirection: 'row',
                         }}
                         style={timeline.enabled ? {} : { opacity: 0.7 }}
                     >
-                        <div css={{ display: 'flex', flexDirection: 'row' }}>
+                        <div
+                            css={{
+                                cursor: 'pointer',
+                                marginRight: 16,
+                                padding: 8,
+                                ':hover': {
+                                    backgroundColor: 'rgba(255,255,255,0.1)',
+                                },
+                                display: 'flex',
+                                alignItems: 'center',
+                            }}
+                            onClick={() => {
+                                dispatch({
+                                    type: 'timeline:lane:are',
+                                    action: {
+                                        type: 'edit',
+                                        key: ti,
+                                        value: { enabled: !timeline.enabled },
+                                    },
+                                });
+                            }}
+                        >
+                            {timeline.enabled ? (
+                                <EyeIcon />
+                            ) : (
+                                <EyeInvisibleIcon />
+                            )}
+                        </div>
+                        {/* <div css={{ display: 'flex', flexDirection: 'row' }}>
                             <div css={{ fontWeight: 'bold', padding: 4 }}>
                                 Timeline {ti}
                             </div>
@@ -173,10 +204,11 @@ export function Timelines({
                                     });
                                 }}
                             />
-                        </div>
+                        </div> */}
                         <div
                             css={{
                                 display: 'flex',
+                                flex: 1,
                                 flexDirection: 'row',
                                 alignItems: 'stretch',
                                 position: 'relative',
