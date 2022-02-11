@@ -13,6 +13,11 @@ export function getAnimatedPaths(
     state.animations.timelines.forEach((timeline) => {
         // console.log('tl', timeline);
         const enabled = timeline.items.filter((t) => t.enabled);
+
+        if (!enabled.length) {
+            return;
+        }
+
         const weights = enabled.map((t) => t.weight);
         let [idx, t] = animationTimer(animationPosition, weights);
 

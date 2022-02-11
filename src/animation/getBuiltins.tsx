@@ -99,6 +99,9 @@ export const animationTimer = (
     weights: Array<number>,
     pause: number = 0,
 ): [number, number] => {
+    if (!weights.length) {
+        return [0, 0];
+    }
     const total = weights.reduce((a, b) => a + b) + pause * weights.length;
     t *= total;
     let at = 0;

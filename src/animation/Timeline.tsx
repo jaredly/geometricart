@@ -22,7 +22,13 @@ export const Item = ({
     // if (editing) {
     const unChanged = eq(editing, item);
     return (
-        <>
+        <div
+            css={{
+                border: '1px solid magenta',
+                margin: 4,
+                padding: 8,
+            }}
+        >
             <div css={{ display: 'flex', alignItems: 'center' }}>
                 <select
                     value={item.contents.type}
@@ -80,7 +86,7 @@ export const Item = ({
                 Save
             </button>
             <button onClick={() => onChange(null)}>Cancel</button>
-        </>
+        </div>
     );
     // }
     // if (item.contents.type === 'spacer') {
@@ -122,6 +128,19 @@ export function Timelines({
 
     return (
         <div style={{ flex: 1 }}>
+            <button
+                onClick={() => {
+                    dispatch({
+                        type: 'timeline:lane:are',
+                        action: {
+                            type: 'add',
+                            key: state.animations.timelines.length,
+                        },
+                    });
+                }}
+            >
+                Add timeline
+            </button>
             {state.animations.timelines.map((timeline, ti) => {
                 const min = timeline.items.reduce(
                     (x, i) => Math.min(x, i.weight),
@@ -164,6 +183,34 @@ export function Timelines({
                                 margin: 4,
                             }}
                         >
+                            <IconButton
+                                size={12}
+                                css={{
+                                    position: 'absolute',
+                                    left: 0,
+                                    zIndex: 100,
+                                    top: 0,
+                                    marginLeft: -14,
+                                    backgroundColor: 'black',
+                                    opacity: 0.1,
+                                    ':hover': {
+                                        opacity: 1,
+                                    },
+                                }}
+                                onClick={() => {
+                                    dispatch({
+                                        type: 'timeline:slot:are',
+                                        timeline: ti,
+                                        action: {
+                                            type: 'add',
+                                            key: 0,
+                                        },
+                                    });
+                                }}
+                            >
+                                <AddIcon />
+                            </IconButton>
+
                             {timeline.items.map((item, i) => (
                                 <div
                                     key={i}
@@ -226,6 +273,7 @@ export function Timelines({
 
             {editing ? (
                 <Item
+                    key={editing[0] + ':' + editing[1]}
                     state={state}
                     onChange={(item) => {
                         if (!item) {

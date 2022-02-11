@@ -1,4 +1,25 @@
 
+
+# Newfangled Scripts
+
+Need a way to specify configurables.
+What kinds of things?
+- floats (min/max, step?)
+- ints (min/max, step?)
+- boolean
+honestly that gets you so far
+- colors, sure
+- positions! oh definitely
+	ugh do I just go whole hog on FBP or not
+- selections, gotta have it
+- lerps, oh yeah that makes sense!
+
+default values? Yeah sure.
+
+Ok, so: you write out the function, you add variables.
+Those variables get parsed out, and you can then configure them.
+
+
 - [x] basic timeline editor
 	- [x] add slots
 	- [x] edito slots

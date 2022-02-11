@@ -422,9 +422,41 @@ export type Animations = {
     };
 };
 
+export type ScriptVbl =
+    | {
+          type: 'int' | 'float';
+          defaultValue: number;
+          range?: [number, number];
+      }
+    | {
+          type: 'boolean';
+          defaultValue: boolean;
+      }
+    | {
+          type: 'color';
+          defaultValue: string;
+      }
+    | {
+          type: 'coord';
+          defaultValue: Coord;
+      }
+    | {
+          type: 'selection' | 'lerp';
+      };
+
 export type Library = {
     version: 1;
-    scripts: { [id: string]: string };
+    scripts: {
+        [id: string]: {
+            code: string;
+            vbls: {
+                [key: string]: {
+                    kind: ScriptVbl;
+                    description?: string;
+                };
+            };
+        };
+    };
     lerps: { [id: string]: Lerp };
 };
 

@@ -1,17 +1,14 @@
 /* @jsx jsx */
 import { jsx } from '@emotion/react';
-import localforage from 'localforage';
 import React from 'react';
 import { Canvas } from './editor/Canvas';
 import { reducer } from './state/reducer';
 import { Hover, Sidebar } from './editor/Sidebar';
 import { Coord, GuideGeom, Id, State } from './types';
 import { Action, GroupRegroup } from './state/Action';
-import { initialState } from './state/initialState';
 import {
     getStateFromFile,
     useDropStateOrAttachmentTarget,
-    useDropTarget,
 } from './editor/useDropTarget';
 import {
     CogIcon,
@@ -22,8 +19,7 @@ import {
 } from './icons/Icon';
 import { AnimationEditor } from './animation/AnimationUI';
 import { PendingDuplication } from './editor/Guides';
-
-export const key = `geometric-art`;
+import { saveState } from './state/persistence';
 
 export const useCurrent = <T,>(value: T) => {
     const ref = React.useRef(value);
@@ -126,7 +122,7 @@ export const App = ({ initialState }: { initialState: State }) => {
     const latestState = useCurrent(state);
 
     React.useEffect(() => {
-        localforage.setItem(key, JSON.stringify(state));
+        saveState(state);
     }, [state]);
 
     const [hover, setHover] = React.useState(null as null | Hover);
