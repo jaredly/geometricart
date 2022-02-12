@@ -23,6 +23,7 @@ export type StyleHover =
           color: string | number;
       }
     | { type: 'fill-lightness'; idx: number; lighten: number }
+    | { type: 'line-lightness'; idx: number; lighten: number }
     | {
           type: 'line-color';
           idx: number;
@@ -64,6 +65,22 @@ export const applyStyleHover = (
                 style.lines[styleHover.idx] = {
                     ...line,
                     color: styleHover.color,
+                };
+            }
+        }
+    } else if (styleHover.type === 'line-lightness') {
+        style.lines = style.lines.slice();
+        if (
+            style.lines.length === 1 &&
+            style.lines[0]?.originalIdx === styleHover.idx
+        ) {
+            style.lines[0] = { ...style.lines[0], lighten: styleHover.lighten };
+        } else {
+            const line = style.lines[styleHover.idx];
+            if (line) {
+                style.lines[styleHover.idx] = {
+                    ...line,
+                    lighten: styleHover.lighten,
                 };
             }
         }
@@ -273,6 +290,35 @@ export const MultiStyleForm = ({
                         key={i}
                     />
                     <div style={{ flexBasis: 16 }} />
+                    <div key={`lighten-${i}`}>
+                        <LightDark
+                            lighten={line.lighten}
+                            palette={palette}
+                            color={line.color}
+                            onHover={(lighten) =>
+                                onHover(
+                                    lighten != null
+                                        ? {
+                                              type: 'line-lightness',
+                                              lighten,
+                                              idx: i,
+                                          }
+                                        : null,
+                                )
+                            }
+                            onChange={(lighten) => {
+                                onChange(
+                                    updateLine(
+                                        styles,
+                                        i,
+                                        lighten ?? undefined,
+                                        'lighten',
+                                    ),
+                                );
+                            }}
+                        />
+                    </div>
+                    <div style={{ flexBasis: 16 }} />
                     <div key={`stroke-${i}`}>
                         width:
                         <MultiNumber
@@ -306,13 +352,49 @@ export const MultiStyleForm = ({
                             }}
                         />
                     </div>
-                    <button
-                        onClick={() => {
-                            onChange(removeLine(styles, i));
-                        }}
-                    >
-                        Delete line
-                    </button>
+                    <div>
+                        <div key={`variation-${i}`}>
+                            variation:
+                            <MultiNumber
+                                value={line.colorVariation}
+                                onChange={(colorVariation) => {
+                                    onChange(
+                                        updateLine(
+                                            styles,
+                                            i,
+                                            colorVariation ?? undefined,
+                                            'colorVariation',
+                                        ),
+                                    );
+                                }}
+                            />
+                        </div>
+                        <div style={{ flexBasis: 16 }} />
+                        <div key={`opacity-${i}`}>
+                            opacity:
+                            <MultiNumber
+                                value={line.opacity}
+                                onChange={(opacity) => {
+                                    onChange(
+                                        updateLine(
+                                            styles,
+                                            i,
+                                            opacity ?? undefined,
+                                            'opacity',
+                                        ),
+                                    );
+                                }}
+                            />
+                        </div>
+                        <div style={{ flexBasis: 16 }} />
+                        <button
+                            onClick={() => {
+                                onChange(removeLine(styles, i));
+                            }}
+                        >
+                            Delete line
+                        </button>
+                    </div>
                 </div>
             ))}
             <button
@@ -431,7 +513,10 @@ export type MultiLine = {
     color: Array<null | string | number>;
     width: Array<null | number>;
     dash: Array<null | Array<number>>;
+    opacity: Array<number | null>;
     joinStyle: Array<null | string>;
+    colorVariation: Array<number | null>;
+    lighten: Array<number | null>;
 };
 
 export type MultiFill = {
@@ -649,6 +734,9 @@ export function collectMultiStyles(styles: Style[]) {
             color: [],
             inset: [],
             dash: [],
+            lighten: [],
+            opacity: [],
+            colorVariation: [],
             joinStyle: [],
             width: [],
         });
@@ -665,6 +753,9 @@ export function collectMultiStyles(styles: Style[]) {
             addIfNew(lines[i].color, line?.color ?? null);
             addIfNew(lines[i].inset, line?.inset ?? null);
             addIfNew(lines[i].width, line?.width ?? null);
+            addIfNew(lines[i].opacity, line?.opacity ?? null);
+            addIfNew(lines[i].colorVariation, line?.colorVariation ?? null);
+            addIfNew(lines[i].lighten, line?.lighten ?? null);
         });
     });
     return { fills, lines };

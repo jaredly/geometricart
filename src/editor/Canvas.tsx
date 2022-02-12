@@ -205,7 +205,11 @@ export const timelineFunction = (timeline: FloatLerp) => {
                 return evaluateSegment(segments[i], percent);
             }
         }
-        return 1;
+        const last = segments[segments.length - 1];
+        if (last.type === 'straight') {
+            return last.y0 + last.span;
+        }
+        return last.bezier.y1;
     };
 };
 

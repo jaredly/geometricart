@@ -140,29 +140,11 @@ export const canvasRender = async (
 
             let pathInfos = [path];
 
-            // let myPath = path;
             if (fill.inset) {
                 throw new Error('inset');
             }
-            //     const inset = insetPath(path, fill.inset / 100);
-            //     if (!inset) {
-            //         return;
-            //     }
-
-            //     pathInfos = pruneInsetPath(inset.segments).map((segments) => ({
-            //         ...path,
-            //         segments,
-            //         origin: segments[segments.length - 1].to,
-            //     }));
-
-            //     // myPath = inset;
-            // }
 
             let lighten = fill.lighten;
-            // if (fill.colorVariation) {
-            //     const off = rand.next(-1.0, 1.0) * fill.colorVariation;
-            //     lighten = lighten != null ? lighten + off : off;
-            // }
 
             const color = lightenedColor(palette, fill.color, lighten)!;
 
@@ -241,23 +223,16 @@ export const canvasRender = async (
                 return;
             }
 
-            // TODO line opacity probably
-            // if (line.opacity != null) {
-            //     ctx.globalAlpha = line.opacity;
-            // }
+            if (line.opacity != null) {
+                ctx.globalAlpha = line.opacity;
+            }
 
             ctx.lineWidth = (line.width / 100) * zoom;
+            ctx.lineJoin = 'bevel';
+            ctx.lineCap = 'square';
 
             let myPath = path;
-            // if (line.inset) {
-            //     const inset = insetPath(path, line.inset / 100);
-            //     if (!inset) {
-            //         return;
-            //     }
-            //     myPath = inset;
-            // }
-
-            const color = lightenedColor(palette, line.color, undefined)!;
+            const color = lightenedColor(palette, line.color, line.lighten)!;
 
             if (rough) {
                 rough.path(calcPathD(myPath, zoom), {
@@ -492,8 +467,10 @@ export function tracePath(
     path: Path,
     zoom: number,
 ) {
-    ctx.lineJoin = 'round';
-    ctx.lineCap = 'round';
+    // ctx.lineJoin = 'round';
+    // ctx.lineCap = 'round';
+    ctx.lineJoin = 'miter';
+    ctx.lineCap = 'square';
     if (
         path.segments.length === 1 &&
         path.segments[0].type === 'Arc' &&

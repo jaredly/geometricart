@@ -269,7 +269,7 @@ export const pathToInsetPaths = (path: Path): Array<Path> => {
     // const result = insetPath(path)
     return singles
         .map(([path, inset]) => {
-            if (!inset || inset < 0.005) {
+            if (!inset || Math.abs(inset) < 0.005) {
                 return [path];
             }
             // if (path.debug) {
@@ -620,6 +620,21 @@ function applyColorVariations(
         ...path,
         style: {
             ...path.style,
+            lines: path.style.lines.map((line) => {
+                if (line?.colorVariation != null) {
+                    let lighten = line.lighten;
+                    if (line.colorVariation) {
+                        const off = rand.next(-1.0, 1.0) * line.colorVariation;
+                        lighten = lighten != null ? lighten + off : off;
+                    }
+                    return {
+                        ...line,
+                        colorVariation: undefined,
+                        lighten,
+                    };
+                }
+                return line;
+            }),
             fills: path.style.fills.map((fill) => {
                 if (fill?.colorVariation != null) {
                     let lighten = fill.lighten;

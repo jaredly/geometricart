@@ -20,6 +20,7 @@ import {
     Style,
     PathGroup,
     PendingGuide,
+    TimelineLane,
 } from '../types';
 import {
     Action,
@@ -29,6 +30,7 @@ import {
     PathMultiply,
     AddRemoveEdit,
     UndoAddRemoveEdit,
+    ScriptRename,
 } from './Action';
 import {
     pathsAreIdentical,
@@ -738,8 +740,16 @@ export const reduceWithoutUndo = (
             const scripts = { ...state.animations.scripts };
             scripts[action.newKey] = scripts[action.key];
             delete scripts[action.key];
+            const timelines = renameScriptInTimelines(
+                state.animations.timelines,
+                action.key,
+                action.newKey,
+            );
             return [
-                { ...state, animations: { ...state.animations, scripts } },
+                {
+                    ...state,
+                    animations: { ...state.animations, scripts, timelines },
+                },
                 { type: action.type, action },
             ];
         }
@@ -756,7 +766,15 @@ export const undo = (state: State, action: UndoAction): State => {
             const scripts = { ...state.animations.scripts };
             scripts[action.action.key] = scripts[action.action.newKey];
             delete scripts[action.action.newKey];
-            return { ...state, animations: { ...state.animations, scripts } };
+            const timelines = renameScriptInTimelines(
+                state.animations.timelines,
+                action.action.newKey,
+                action.action.key,
+            );
+            return {
+                ...state,
+                animations: { ...state.animations, scripts, timelines },
+            };
         }
         case 'timeline:slot:are': {
             const timelines = state.animations.timelines.slice();
@@ -1060,6 +1078,30 @@ export const undo = (state: State, action: UndoAction): State => {
             };
     }
 };
+
+function renameScriptInTimelines(
+    timelines: Array<TimelineLane>,
+    key: string,
+    newKey: string,
+) {
+    return timelines.map((tl) => {
+        return {
+            ...tl,
+            items: tl.items.map((item) =>
+                item.contents.type === 'script' &&
+                item.contents.scriptId === key
+                    ? {
+                          ...item,
+                          contents: {
+                              ...item.contents,
+                              scriptId: newKey,
+                          },
+                      }
+                    : item,
+            ),
+        };
+    });
+}
 
 export function handlePathMultiply(
     state: State,

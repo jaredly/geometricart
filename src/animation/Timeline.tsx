@@ -13,9 +13,11 @@ import { EyeIcon, EyeInvisibleIcon } from '../icons/Eyes';
 export const Item = ({
     item,
     onChange,
+    onDelete,
     state,
 }: {
     onChange: (item: TimelineSlot | null) => void;
+    onDelete: () => void;
     item: TimelineSlot;
     state: State;
 }) => {
@@ -87,6 +89,7 @@ export const Item = ({
                 Save
             </button>
             <button onClick={() => onChange(null)}>Cancel</button>
+            <button onClick={() => onDelete()}>Delete</button>
         </div>
     );
     // }
@@ -307,6 +310,15 @@ export function Timelines({
                 <Item
                     key={editing[0] + ':' + editing[1]}
                     state={state}
+                    onDelete={() => {
+                        const [ti, i] = editing!;
+                        dispatch({
+                            type: 'timeline:slot:are',
+                            timeline: ti,
+                            action: { type: 'remove', key: i },
+                        });
+                        setEditing(null);
+                    }}
                     onChange={(item) => {
                         if (!item) {
                             return setEditing(null);

@@ -25,6 +25,8 @@ export function getBuiltins(): { [key: string]: Function } {
         scale,
         angleTo,
         angleBetween,
+        limit: (t: number, min: number, max: number) =>
+            Math.min(Math.max(t, min), max),
         segmentsBounds,
         segmentsCenter,
         transformSegment,

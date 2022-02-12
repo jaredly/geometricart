@@ -99,12 +99,7 @@ const RenderPathMemo = ({
         if (!fill) {
             return null;
         }
-        let lighten = fill.lighten;
-        // if (fill.colorVariation && rand) {
-        //     const off = rand.next(-1.0, 1.0) * fill.colorVariation;
-        //     lighten = lighten != null ? lighten + off : off;
-        // }
-        const color = paletteColor(palette, fill.color, lighten);
+        const color = paletteColor(palette, fill.color, fill.lighten);
         if (color === 'transparent') {
             return null;
         }
@@ -192,7 +187,7 @@ const RenderPathMemo = ({
         if (!line) {
             return null;
         }
-        const color = paletteColor(palette, line.color);
+        const color = paletteColor(palette, line.color, line.lighten);
         if (color === 'transparent') {
             return null;
         }

@@ -179,6 +179,9 @@ export type StyleLine = {
     width?: number;
     dash?: Array<number>;
     joinStyle?: string;
+    colorVariation?: number;
+    opacity?: number;
+    lighten?: number; // negatives for darken. units somewhat arbitrary.
 };
 
 export type Style = {
