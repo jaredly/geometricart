@@ -84,12 +84,12 @@ export const insetLineArc = (
                     ),
                 },
             ];
-            // } else {
-            //     const p2 = push(next.center, angleTo(next.center, seg.to), radius);
-            //     return [
-            //         { type: 'Line', to: p1 },
-            //         { type: 'Line', to: p2 },
-            //     ];
+        } else {
+            const p2 = push(next.center, angleTo(next.center, seg.to), radius);
+            return [
+                { type: 'Line', to: p1 },
+                { type: 'Line', to: p2 },
+            ];
         }
     }
 
