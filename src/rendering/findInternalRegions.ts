@@ -221,17 +221,18 @@ export const checkContained = (
         return null;
     }
 
-    for (let corner of Object.keys(first.corners)) {
-        if (second.corners[corner]) {
-            // they share a corner!
-            // the one that's "inside" is the one with the ... smaller angle. the convex one, if you will.
-            if (first.corners[corner] < second.corners[corner]) {
-                return true; // first one goes
-            } else {
-                return false; // second one goes
-            }
-        }
-    }
+    // This is fallible
+    // for (let corner of Object.keys(first.corners)) {
+    //     if (second.corners[corner]) {
+    //         // they share a corner!
+    //         // the one that's "inside" is the one with the ... smaller angle. the convex one, if you will.
+    //         if (first.corners[corner] < second.corners[corner]) {
+    //             return true; // first one goes
+    //         } else {
+    //             return false; // second one goes
+    //         }
+    //     }
+    // }
 
     const fp = first.segments.find(
         (seg) => !second.corners[coordKey(seg.to, HIGH_PRECISION)],

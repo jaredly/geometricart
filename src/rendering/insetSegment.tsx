@@ -252,8 +252,39 @@ export const insetArcArc = (
         );
         const mid = angleTo(seg.center, next.center) + Math.PI / 2;
         const mp = push(seg.to, mid, amount);
+
+        if (true) {
+            // Go to the tangent point
+            const tangentPoint = push(
+                seg.center,
+                angleTo(seg.center, next.center),
+                radius,
+            );
+            const otherTangent = push(
+                next.center,
+                angleTo(next.center, seg.center),
+                radius2,
+            );
+            const dst = dist(tangentPoint, otherTangent);
+            const between = push(
+                seg.center,
+                angleTo(seg.center, next.center),
+                radius + dst / 2,
+            );
+            return [
+                { ...seg, to: tangentPoint },
+                {
+                    type: 'Arc',
+                    center: between,
+                    to: otherTangent,
+                    clockwise: !seg.clockwise,
+                },
+            ];
+        }
+
         return [
             { ...seg, to: newTo },
+            // { type: 'Arc', center: mp, to: otherTo, clockwise: !seg.clockwise },
             { type: 'Line', to: mp },
             { type: 'Line', to: otherTo },
         ];
@@ -318,10 +349,10 @@ export const insetArcArc = (
             // { ...next, to: nextPos },
         ];
 
-        return {
-            ...seg,
-            to,
-        };
+        // return {
+        //     ...seg,
+        //     to,
+        // };
     }
     // This is a contraction! Back off
     const nextPos = push(next.center, angleTo(next.center, seg.to), radius2);
