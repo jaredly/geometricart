@@ -572,6 +572,10 @@ export const findInternalPos = (
 };
 
 export const filterTooSmallSegments = (segments: Array<Segment>) => {
+    // This is a circle probably
+    if (segments.length === 1) {
+        return segments;
+    }
     return segments.filter((seg, i) => {
         let prev = segments[i === 0 ? segments.length - 1 : i - 1].to;
         if (coordsEqual(prev, seg.to, HIGH_PRECISION)) {

@@ -167,9 +167,12 @@ export const differentDirection = (
     return false;
 };
 
-export const insetSegmentsBeta = (segments: Array<Segment>, inset: number) => {
+export const insetSegments = (
+    segments: Array<Segment>,
+    inset: number,
+): [Array<Segment>, Array<Coord>] => {
     if (closeEnough(inset, 0)) {
-        return segments;
+        return [segments, []];
     }
 
     if (!isClockwise(segments)) {
@@ -186,7 +189,11 @@ export const insetSegmentsBeta = (segments: Array<Segment>, inset: number) => {
         return insetSegment(prev, seg, next, inset, true);
     });
 
-    return insets.flat();
+    return [insets.flat(), simplified.map((s) => s.to)];
+};
+
+export const insetSegmentsBeta = (segments: Array<Segment>, inset: number) => {
+    return insetSegments(segments, inset)[0];
 };
 
 // hmmmmmmmmmmmm
@@ -194,78 +201,78 @@ export const insetSegmentsBeta = (segments: Array<Segment>, inset: number) => {
 // I need to convert to directed primitives or something
 // or, just [prev, segment] pairs.
 
-/**
- * This insets the segments of a path, without doing any validation.
- * That comes later, with `pruneInsetPath`
- *
- * Ok well, it does filter out now-illegal segments. So there's that.
- */
-export const insetSegments = (segments: Array<Segment>, inset: number) => {
-    // All paths are clockwise, it just makes this easier
-    if (!isClockwise(segments)) {
-        segments = reversePath(segments);
-    }
+// /**
+//  * This insets the segments of a path, without doing any validation.
+//  * That comes later, with `pruneInsetPath`
+//  *
+//  * Ok well, it does filter out now-illegal segments. So there's that.
+//  */
+// export const insetSegments = (segments: Array<Segment>, inset: number) => {
+//     // All paths are clockwise, it just makes this easier
+//     if (!isClockwise(segments)) {
+//         segments = reversePath(segments);
+//     }
 
-    const simplified = simplifyPath(segments);
+//     const simplified = simplifyPath(segments);
 
-    const insets = simplified.map((seg, i) => {
-        const prev = simplified[i === 0 ? simplified.length - 1 : i - 1].to;
-        const next = simplified[i === simplified.length - 1 ? 0 : i + 1];
-        // ok, so ... this needs to maybe return two segments.
-        // if we need to bridge the new gap
-        return insetSegment(prev, seg, next, inset);
-    });
+//     const insets = simplified.map((seg, i) => {
+//         const prev = simplified[i === 0 ? simplified.length - 1 : i - 1].to;
+//         const next = simplified[i === simplified.length - 1 ? 0 : i + 1];
+//         // ok, so ... this needs to maybe return two segments.
+//         // if we need to bridge the new gap
+//         return insetSegment(prev, seg, next, inset);
+//     });
 
-    let allBad = true;
+//     let allBad = true;
 
-    // ok lets go ahead and filter here
-    segments = insets
-        .filter((seg, i) => {
-            if (Array.isArray(seg)) {
-                allBad = false;
-                return true; // BAIL: TODO, figure this out
-            }
-            const pi = i === 0 ? simplified.length - 1 : i - 1;
-            // const prev = Array.isArray(insets[pi])
-            // ? insets[pi].slice(-1)[0].to : insets[pi].to
-            // const old = simplified[i]
-            // const oldPrev = simplified[pi].to
-            if (
-                !differentDirection(
-                    getToFromMaybeArray(insets[pi]),
-                    seg,
-                    simplified[pi].to,
-                    simplified[i],
-                )
-            ) {
-                allBad = false;
-                return true;
-            }
-            // return true;
-            return false;
-        })
-        .map((seg) => (Array.isArray(seg) ? seg : [seg]))
-        .flat();
+//     // ok lets go ahead and filter here
+//     segments = insets
+//         .filter((seg, i) => {
+//             if (Array.isArray(seg)) {
+//                 allBad = false;
+//                 return true; // BAIL: TODO, figure this out
+//             }
+//             const pi = i === 0 ? simplified.length - 1 : i - 1;
+//             // const prev = Array.isArray(insets[pi])
+//             // ? insets[pi].slice(-1)[0].to : insets[pi].to
+//             // const old = simplified[i]
+//             // const oldPrev = simplified[pi].to
+//             if (
+//                 !differentDirection(
+//                     getToFromMaybeArray(insets[pi]),
+//                     seg,
+//                     simplified[pi].to,
+//                     simplified[i],
+//                 )
+//             ) {
+//                 allBad = false;
+//                 return true;
+//             }
+//             // return true;
+//             return false;
+//         })
+//         .map((seg) => (Array.isArray(seg) ? seg : [seg]))
+//         .flat();
 
-    if (allBad) {
-        return [];
-    }
-    // let bad: Array<number> = [];
-    // segments.forEach((seg, i) => {
-    //     if (
-    //         hasReversed(
-    //             seg,
-    //             segments[i === 0 ? segments.length - 1 : i - 1].to,
-    //             simplified[i],
-    //             simplified[i === 0 ? simplified.length - 1 : i - 1].to,
-    //         )
-    //     ) {
-    //         bad.push(i);
-    //     }
-    // });
+//     if (allBad) {
+//         return [];
+//     }
+//     // let bad: Array<number> = [];
+//     // segments.forEach((seg, i) => {
+//     //     if (
+//     //         hasReversed(
+//     //             seg,
+//     //             segments[i === 0 ? segments.length - 1 : i - 1].to,
+//     //             simplified[i],
+//     //             simplified[i === 0 ? simplified.length - 1 : i - 1].to,
+//     //         )
+//     //     ) {
+//     //         bad.push(i);
+//     //     }
+//     // });
 
-    return segments;
-};
+//     return segments;
+// };
 
 // export const insetPath = (path: Path, inset: number): Path | null => {
 //     const segments = insetSegments(path.segments, inset);

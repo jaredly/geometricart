@@ -4,7 +4,7 @@ import {
     PointsEditor,
     pointsPath,
     pointsPathD,
-} from '../src/animation/AnimationUI';
+} from '../src/animation/PointsEditor';
 import {
     timelineFunction,
     timelineSegments,

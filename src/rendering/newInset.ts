@@ -66,7 +66,7 @@ and it's called from e.g. sp_selected_path_do_offset in https://gitlab.com/inksc
 */
 
 import { isClockwise, reversePath } from './pathToPoints';
-import { hasReversed, insetSegments, simplifyPath } from './insetPath';
+import { hasReversed, simplifyPath } from './insetPath';
 import { insetSegment } from './insetSegment';
 import { Coord, Segment } from '../types';
 
@@ -77,53 +77,53 @@ import { Coord, Segment } from '../types';
 //     point: Coord,
 // ) => {};
 
-export const insetPath = (path: Array<Segment>, inset: number) => {
-    if (!isClockwise(path)) {
-        path = reversePath(path);
-    }
+// export const insetPath = (path: Array<Segment>, inset: number) => {
+//     if (!isClockwise(path)) {
+//         path = reversePath(path);
+//     }
 
-    const simplified = simplifyPath(path);
+//     const simplified = simplifyPath(path);
 
-    const firstRound = insetSegments(simplified, inset);
+//     const firstRound = insetSegments(simplified, inset);
 
-    let bad: Array<number> = [];
-    firstRound.forEach((seg, i) => {
-        if (
-            hasReversed(
-                seg,
-                firstRound[i === 0 ? firstRound.length - 1 : i - 1].to,
-                simplified[i],
-                simplified[i === 0 ? simplified.length - 1 : i - 1].to,
-            )
-        ) {
-            bad.push(i);
-        }
-    });
+//     let bad: Array<number> = [];
+//     firstRound.forEach((seg, i) => {
+//         if (
+//             hasReversed(
+//                 seg,
+//                 firstRound[i === 0 ? firstRound.length - 1 : i - 1].to,
+//                 simplified[i],
+//                 simplified[i === 0 ? simplified.length - 1 : i - 1].to,
+//             )
+//         ) {
+//             bad.push(i);
+//         }
+//     });
 
-    if (bad.length) {
-        throw new Error(`IMPLEMENT PLEASE`);
-        // ok, so here we go through and ... re-inset, but kinda fake?
-        // so insetSegment takes "prev coord" (to complete the current segment),
-        // and "next" to be the next segment.
-        // BUT I need to abstract it, so it takes
-        // prev, seg
-        // and nextPrev, next
-        // in case seg and next aren't adjacent.
-        // I should really have a type that is "IdependentSegment" or something, that includes a prev coord.
-        // And then we can have `insetAdjacentSegment` that does the default easy thing.
-    }
+//     if (bad.length) {
+//         throw new Error(`IMPLEMENT PLEASE`);
+//         // ok, so here we go through and ... re-inset, but kinda fake?
+//         // so insetSegment takes "prev coord" (to complete the current segment),
+//         // and "next" to be the next segment.
+//         // BUT I need to abstract it, so it takes
+//         // prev, seg
+//         // and nextPrev, next
+//         // in case seg and next aren't adjacent.
+//         // I should really have a type that is "IdependentSegment" or something, that includes a prev coord.
+//         // And then we can have `insetAdjacentSegment` that does the default easy thing.
+//     }
 
-    // let completed: Array<Array<Segment>> = [];
-    // let current: Array<Segment> = [];
-    // let i = 0;
-    // // I want a function that finds the insetPoint between two segments
-    // while (true) {
-    //     let current = path[i];
-    //     let next = path[(i + 1) % path.length];
-    //     let point = insetPoint(current, next, inset); // soooo for the case with two tangent circles, we would need a line, not just a point ...
-    //     for (let j = i + 1; j != i; j = (j + 1) % path.length) {
-    //         if (tooClose(point, path[j], inset)) {
-    //         }
-    //     }
-    // }
-};
+//     // let completed: Array<Array<Segment>> = [];
+//     // let current: Array<Segment> = [];
+//     // let i = 0;
+//     // // I want a function that finds the insetPoint between two segments
+//     // while (true) {
+//     //     let current = path[i];
+//     //     let next = path[(i + 1) % path.length];
+//     //     let point = insetPoint(current, next, inset); // soooo for the case with two tangent circles, we would need a line, not just a point ...
+//     //     for (let j = i + 1; j != i; j = (j + 1) % path.length) {
+//     //         if (tooClose(point, path[j], inset)) {
+//     //         }
+//     //     }
+//     // }
+// };
