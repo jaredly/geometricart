@@ -10,7 +10,7 @@ import {
 import { angleBetween } from './findNextSegments';
 import { pathToPrimitives } from '../editor/findSelection';
 import { angleTo, dist, push } from './getMirrorTransforms';
-import { insetSegmentsBeta, simplifyPath } from './insetPath';
+import { insetSegments, insetSegmentsBeta, simplifyPath } from './insetPath';
 import {
     angleIsBetween,
     closeEnoughAngle,
@@ -278,8 +278,11 @@ export const pathToInsetPaths = (path: Path): Array<Path> => {
             // }
             // console.log('INSETS');
 
-            const segments = insetSegmentsBeta(path.segments, inset / 100);
-            const regions = cleanUpInsetSegments2(segments);
+            const [segments, corners] = insetSegments(
+                path.segments,
+                inset / 100,
+            );
+            const regions = cleanUpInsetSegments2(segments, corners);
             if (path.debug) {
                 const result = segmentsToNonIntersectingSegments(
                     filterTooSmallSegments(segments),

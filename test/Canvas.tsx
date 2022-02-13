@@ -21,7 +21,7 @@ import {
     push,
     translationMatrix,
 } from '../src/rendering/getMirrorTransforms';
-import { insetSegmentsBeta } from '../src/rendering/insetPath';
+import { insetSegments, insetSegmentsBeta } from '../src/rendering/insetPath';
 import {
     ensureClockwise,
     isClockwise,
@@ -232,15 +232,15 @@ export const Drawing = ({
 };
 
 const initialState = (): Array<Segment> => {
-    const center = segmentsCenter(fixture);
-    return fixture.map((seg) =>
-        transformSegment(seg, [
-            translationMatrix({
-                x: -center.x,
-                y: -center.y,
-            }),
-        ]),
-    ); // insetSegmentsBeta(segments, windAt);
+    // const center = segmentsCenter(fixture);
+    // return fixture.map((seg) =>
+    //     transformSegment(seg, [
+    //         translationMatrix({
+    //             x: -center.x,
+    //             y: -center.y,
+    //         }),
+    //     ]),
+    // ); // insetSegmentsBeta(segments, windAt);
 
     // return fixture;
     if (localStorage[KEY]) {
@@ -366,8 +366,11 @@ export const Canvas = ({
                     const windAt = debug?.inset ?? 40;
                     if (showWind === 3) {
                         const all = getInsets(segments);
-                        const inset = insetSegmentsBeta(segments, windAt);
-                        const result = cleanUpInsetSegments2(inset);
+                        const [inset, corners] = insetSegments(
+                            segments,
+                            windAt,
+                        );
+                        const result = cleanUpInsetSegments2(inset, corners);
                         // console.log(all, result);
 
                         return result.map((segments, i) => (

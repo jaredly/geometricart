@@ -586,12 +586,17 @@ export const filterTooSmallSegments = (segments: Array<Segment>) => {
     });
 };
 
-export const cleanUpInsetSegments2 = (segments: Array<Segment>) => {
+export const cleanUpInsetSegments2 = (
+    segments: Array<Segment>,
+    originalCorners: Array<Coord>,
+) => {
     const result = segmentsToNonIntersectingSegments(
         filterTooSmallSegments(segments),
     );
-    const regions = findRegions(result.result, result.froms).filter(
-        isClockwise,
+    let regions = findRegions(result.result, result.froms).filter(isClockwise);
+    regions = regions.filter(
+        (region) =>
+            !region.some((segment) => originalCorners.includes(segment.to)),
     );
     return removeContainedRegions(removeNonWindingRegions(segments, regions));
 };

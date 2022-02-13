@@ -180,6 +180,7 @@ export function getInsets(segments: Segment[]) {
                 insets[inset] = {
                     paths: cleanUpInsetSegments2(
                         insetSegmentsBeta(segments, inset),
+                        segments.map((s) => s.to),
                     ),
                     pass: false,
                 };

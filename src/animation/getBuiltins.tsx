@@ -2,7 +2,7 @@ import { applyMatrices, dist, Matrix } from '../rendering/getMirrorTransforms';
 import { Coord, Path, Segment } from '../types';
 import { transformSegment } from '../rendering/points';
 import { pathToPoints } from '../rendering/pathToPoints';
-import { insetSegmentsBeta } from '../rendering/insetPath';
+import { insetSegments, insetSegmentsBeta } from '../rendering/insetPath';
 import { cleanUpInsetSegments2 } from '../rendering/findInternalRegions';
 import { pathSegs } from '../editor/RenderPath';
 import {
@@ -77,8 +77,8 @@ export function getBuiltins(): { [key: string]: Function } {
 }
 
 export const insetPath = (path: Path, inset: number): Array<Path> => {
-    const segments = insetSegmentsBeta(path.segments, inset / 100);
-    const regions = cleanUpInsetSegments2(segments);
+    const [segments, corners] = insetSegments(path.segments, inset / 100);
+    const regions = cleanUpInsetSegments2(segments, corners);
 
     return regions.map((segments) => ({
         ...path,
