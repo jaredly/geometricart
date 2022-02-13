@@ -4,6 +4,7 @@ import {
     cleanUpInsetSegments2,
     filterTooSmallSegments,
     findRegions,
+    removeNonWindingRegions,
     segmentsToNonIntersectingSegments,
 } from './findInternalRegions';
 import { angleBetween } from './findNextSegments';

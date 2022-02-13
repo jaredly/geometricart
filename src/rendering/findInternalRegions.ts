@@ -424,7 +424,7 @@ export const findStraightInternalPos = (
     return null;
 };
 
-const INTERNAL_MARGIN = epsilon * 2; // 0.01;
+const INTERNAL_MARGIN = epsilon * 10; // 0.01;
 
 export const findInsidePoint = (
     prev: Coord,
@@ -603,7 +603,7 @@ export const removeNonWindingRegions = (
             const segment = region[i];
             const next = region[(i + 1) % region.length];
 
-            const inside = findInsidePoint(prev, segment, next);
+            const inside = findInsidePoint(prev, segment, next); //, 0.01);
             if (inside) {
                 const [, , pos] = inside;
                 const wind = windingNumber(
