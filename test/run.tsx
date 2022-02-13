@@ -167,16 +167,6 @@ export function getInsets(segments: Segment[]) {
         for (let i = -2; i < 3; i++) {
             const inset = i * 20 + 20;
             if (inset != 0) {
-                // const insetted = insetSegmentsBeta(segments, inset);
-                // const result = segmentsToNonIntersectingSegments(insetted);
-                // const regions = findClockwiseRegions(
-                //     result.result,
-                //     result.froms,
-                // );
-                // insets[inset] = {
-                //     paths: insetted.length ? [insetted] : [],
-                //     pass: false,
-                // };
                 insets[inset] = {
                     paths: cleanUpInsetSegments2(
                         insetSegmentsBeta(segments, inset),
@@ -184,12 +174,6 @@ export function getInsets(segments: Segment[]) {
                     ),
                     pass: false,
                 };
-                // insets[inset] = {
-                //     paths: insetted.length
-                //         ? pruneInsetPath(insetted).filter((s) => s.length)
-                //         : [],
-                //     pass: false,
-                // };
             }
         }
     }

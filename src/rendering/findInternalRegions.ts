@@ -302,6 +302,9 @@ export const precalcRegion = (segments: Array<Segment>): Region => {
 export const removeContainedRegions = (
     regionSegments: Array<Array<Segment>>,
 ): Array<Array<Segment>> => {
+    if (regionSegments.length === 1) {
+        return regionSegments;
+    }
     // return regionSegments;
     let remove: Array<number> = [];
     const regions = regionSegments.map(precalcRegion);

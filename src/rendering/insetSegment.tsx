@@ -70,7 +70,9 @@ export const insetLineArc = (
             slope1,
             lineToSlope(next.center, push(next.center, t + Math.PI / 2, 10)),
         );
-        if (dist(prev, p0) > dist(p0, p1)) {
+        const insetLength = dist(p0, p1);
+        const lengthToPerp = dist(perp!, p0);
+        if (lengthToPerp > insetLength) {
             return [
                 { type: 'Line', to: perp! },
                 {
@@ -82,12 +84,12 @@ export const insetLineArc = (
                     ),
                 },
             ];
-        } else {
-            const p2 = push(next.center, angleTo(next.center, seg.to), radius);
-            return [
-                { type: 'Line', to: p1 },
-                { type: 'Line', to: p2 },
-            ];
+            // } else {
+            //     const p2 = push(next.center, angleTo(next.center, seg.to), radius);
+            //     return [
+            //         { type: 'Line', to: p1 },
+            //         { type: 'Line', to: p2 },
+            //     ];
         }
     }
 
@@ -99,21 +101,23 @@ export const insetLineArc = (
     const target =
         intersection.length === 1
             ? intersection[0]
+            : intersection.length === 0
+            ? seg.to
             : angleBetween(perp, angleTo(next.center, intersection[0]), true) >
                   Math.PI ===
               isLeft
             ? intersection[0]
             : intersection[1];
 
-    const dists = intersection.map((pos) => dist(pos, p1));
-    const target_ =
-        dists.length > 1
-            ? dists[0] > dists[1]
-                ? intersection[1]
-                : intersection[0]
-            : intersection.length
-            ? intersection[0]
-            : seg.to;
+    // const dists = intersection.map((pos) => dist(pos, p1));
+    // const target_ =
+    //     dists.length > 1
+    //         ? dists[0] > dists[1]
+    //             ? intersection[1]
+    //             : intersection[0]
+    //         : intersection.length
+    //         ? intersection[0]
+    //         : seg.to;
     if (
         !intersection.length ||
         (onlyExtend &&
@@ -171,22 +175,26 @@ export const insetArcLine = (
             ? intersection[0]
             : intersection[1];
 
-    const dists = intersection.map((pos) => dist(pos, p2));
-    const target_ =
-        intersection.length === 2
-            ? dists[0] > dists[1]
-                ? intersection[1]
-                : intersection[0]
-            : intersection.length
-            ? intersection[0]
-            : seg.to;
+    // const dists = intersection.map((pos) => dist(pos, p2));
+    // const target_ =
+    //     intersection.length === 2
+    //         ? dists[0] > dists[1]
+    //             ? intersection[1]
+    //             : intersection[0]
+    //         : intersection.length
+    //         ? intersection[0]
+    //         : seg.to;
     if (!intersection.length) {
         const perp = lineLine(
             slope2,
             lineToSlope(seg.center, push(seg.center, t1 + Math.PI / 2, 10)),
         );
         // const radius = dist(next.center, next.to)
-        if (dist(perp!, p3) > dist(p2, p3)) {
+        const insetNextLength = dist(p2, p3);
+        const perpToNext = dist(perp!, p3);
+        // If it would be an /extension/ to make the next line go to the perpendicular point,
+        // then do that
+        if (perpToNext > insetNextLength) {
             return [
                 {
                     ...seg,
@@ -198,6 +206,12 @@ export const insetArcLine = (
                 },
                 { type: 'Line', to: perp! },
             ];
+            // } else {
+            //     const p2 = push(seg.center, angleTo(seg.center, seg.to), radius);
+            //     return [
+            //         { type: 'Line', to: p1 },
+            //         { type: 'Line', to: p2 },
+            //     ];
         }
     }
     if (
