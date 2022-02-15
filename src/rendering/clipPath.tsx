@@ -984,7 +984,7 @@ export const windingNumber = (
 export const insidePath = (
     coord: Coord,
     segs: Array<Primitive>,
-    debug: boolean = false,
+    debug?: Array<string>,
 ) => {
     const ray: Primitive = {
         type: 'line',
@@ -994,7 +994,7 @@ export const insidePath = (
     };
     let isOnEdge = false;
     const hits: Array<Coord> = [];
-    segs.forEach((seg) => {
+    segs.forEach((seg, i) => {
         if (isOnEdge) {
             // bail fast
             return;
@@ -1002,7 +1002,9 @@ export const insidePath = (
 
         if (seg.type === 'line') {
             if (isOnLine(coord, seg)) {
+                debug?.push(`On line ${i}`);
                 if (isWithinLineLimit(coord, seg)) {
+                    debug?.push(`On edge ${i}`);
                     isOnEdge = true;
                 }
                 // if it's not within limit, we also won't intersect, so skip this seg
@@ -1017,6 +1019,7 @@ export const insidePath = (
             }
         } else {
             if (isOnCircle(coord, seg)) {
+                debug?.push(`On circle ${i}`);
                 if (
                     !seg.limit ||
                     isAngleBetween(
@@ -1026,6 +1029,7 @@ export const insidePath = (
                         true,
                     )
                 ) {
+                    debug?.push(`On edge ${i}`);
                     isOnEdge = true;
                 }
                 return;
@@ -1036,16 +1040,25 @@ export const insidePath = (
             if (seg.type === 'line') {
                 // ignore intersections with the "bottom point" of a line
                 if (atLineBottom(coord, seg)) {
+                    debug?.push(`At bottom ${i}`);
                     return;
                 }
             } else {
                 if (atCircleBottomOrSomething(coord, seg)) {
+                    debug?.push(`At circle bottom or something ${i}`);
                     return;
                 }
             }
-            if (debug) {
-                console.log(`🤞 intersection`, seg, ray, coord);
-            }
+            debug?.push(
+                `At circle bottom or something ${i} ${JSON.stringify({
+                    seg,
+                    ray,
+                    coord,
+                })}`,
+            );
+            // if (debug) {
+            //     console.log(`🤞 intersection`, seg, ray, coord);
+            // }
             hits.push(coord);
         });
     });
@@ -1107,7 +1120,7 @@ export const findInsideStart = (
     for (let i = after; i < segments.length; i++) {
         const prev =
             i === 0 ? segments[segments.length - 1].to : segments[i - 1].to;
-        const hits = insidePath(prev, clip, debug);
+        const hits = insidePath(prev, clip); // TODO: debug?
         if (hits) {
             return i;
         }

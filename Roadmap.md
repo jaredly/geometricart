@@ -1,4 +1,20 @@
 
+# Next up:
+
+- ok, so insets are probably in quite good shape.
+- clips are in rather worse shape. I should change it to use the inset algorithm.
+	- basic idea: for boolean AND, both go clockwise.
+	- for boolean NOT, the negative one goes backwards.
+	- for boolean AND, I think you just 'accept all regions'? And then you have to join them, I guess?
+	- oh wait, not it's not quite that simple. because we want ... hmm I guess you could do "split into regions, and then do the winding test"? But the winding test has been a little fritzy.
+	- that might be the best I've got though, without introducing more complexity to the region-finding.
+		like, segments have colors?
+
+		Anyway, I should probably make a test page for clips, tbh. and in the little editor, make it snap to
+		grid points, so I can have some colocated corners to test those edge cases.
+		Yeah I think as far as robustness goes, that's the next step. Get clipping working really well.
+
+		ohhh hmm so what if, after getting all segments going, I just "delete" all clip segments that are obivously "going outside" of the path? Then I can run the normal regions algorithm and it should work fine, starting from any clip segments that remain?
 
 # Newfangled Scripts
 

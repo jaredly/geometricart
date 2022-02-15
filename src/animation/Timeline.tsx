@@ -254,6 +254,8 @@ export function Timelines({
                                         border: '1px solid white',
                                         height: 30,
                                         position: 'relative',
+                                        textAlign: 'center',
+                                        padding: 4,
                                         cursor: 'pointer',
                                         ':hover': {
                                             background: '#aef',
@@ -261,6 +263,9 @@ export function Timelines({
                                     }}
                                     onClick={() => setEditing([ti, i])}
                                 >
+                                    {item.contents.type === 'script'
+                                        ? item.contents.scriptId
+                                        : ''}
                                     <IconButton
                                         size={12}
                                         css={{
