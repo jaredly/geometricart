@@ -13,10 +13,7 @@ export const DebugInside = ({ path }: { path: Path }) => {
     const canvasRef = useRef(null as null | HTMLCanvasElement);
     const [debug, setDebug] = React.useState([] as Array<any>);
 
-    const segments = useMemo(
-        () => ensureClockwise(path.segments),
-        [path.segments],
-    );
+    const segments = path.segments;
 
     const pixel = 5;
 

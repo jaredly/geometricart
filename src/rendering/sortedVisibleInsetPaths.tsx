@@ -24,7 +24,12 @@ import {
     pathToReversedSegmentKeys,
     pathToSegmentKeys,
 } from './pathsAreIdentical';
-import { ensureClockwise, isMaybeClockwise } from '../rendering/pathToPoints';
+import {
+    ensureClockwise,
+    isClockwise,
+    isMaybeClockwise,
+    reversePath,
+} from '../rendering/pathToPoints';
 import { paletteColor } from '../editor/RenderPath';
 import { Coord, Path, PathGroup, Segment } from '../types';
 
@@ -102,9 +107,11 @@ export function sortedVisibleInsetPaths(
     let processed: Array<Path> = visible
         .map((k) => paths[k])
         .map((path) => {
-            // if (path.debug) {
-            //     console.log(`debug`, path);
-            // }
+            if (!isClockwise(path.segments)) {
+                const segments = reversePath(path.segments);
+                const origin = segments[segments.length - 1].to;
+                return { ...path, segments, origin };
+            }
             const group = path.group ? pathGroups[path.group] : null;
             if (selectedIds[path.id] && styleHover) {
                 path = {
@@ -134,11 +141,6 @@ export function sortedVisibleInsetPaths(
             }
         })
         .flat();
-    // processed.forEach((p) => {
-    //     if (p.debug) {
-    //         console.log('debug processed', p);
-    //     }
-    // });
 
     if (laserCutPalette) {
         // processed paths are singles at this point
