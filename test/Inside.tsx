@@ -73,7 +73,6 @@ export const DebugInside = ({ path }: { path: Path }) => {
                         Math.floor(a / b) * b;
                     const x = round(dx, pixel) / scale + bounds.x0 - margin;
                     const y = round(dy, pixel) / scale + bounds.y0 - margin;
-                    const debug: Array<string> = [];
 
                     const coord = { x, y };
                     const wind = windingNumber(coord, primitives, segments);
@@ -81,7 +80,7 @@ export const DebugInside = ({ path }: { path: Path }) => {
                         (c, w) => (w.up ? 1 : -1) + c,
                         0,
                     );
-                    setDebug([`Ok ${wcount}`].concat(wind));
+                    setDebug([`Ok ${wcount}` as any].concat(wind));
 
                     // const inside = insidePath(coord, primitives, debug);
                     // // console.log(x, y, inside, debug);
