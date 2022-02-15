@@ -490,7 +490,7 @@ export const Canvas = ({
     }
 
     const clipPrimitives = React.useMemo(
-        () => (clip ? pathToPrimitives(clip) : null),
+        () => (clip ? { prims: pathToPrimitives(clip), segments: clip } : null),
         [clip],
     );
 

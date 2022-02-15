@@ -238,7 +238,7 @@ export const checkContained = (
         (seg) => !second.corners[coordKey(seg.to, HIGH_PRECISION)],
     );
     if (fp) {
-        if (insidePath(fp.to, second.primitives)) {
+        if (insidePath(fp.to, second.primitives, second.segments)) {
             return true;
         }
     }
@@ -246,7 +246,7 @@ export const checkContained = (
         (seg) => !first.corners[coordKey(seg.to, HIGH_PRECISION)],
     );
     if (sp) {
-        if (insidePath(sp.to, first.primitives)) {
+        if (insidePath(sp.to, first.primitives, first.segments)) {
             return false;
         }
     }

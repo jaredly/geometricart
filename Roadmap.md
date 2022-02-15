@@ -1,6 +1,15 @@
 
 # Next up:
 
+BUG FIX:
+- replace checkContained's use of insidePath with windingNumber. Pleeeease.
+
+NEXT UP
+let's get variables to scripts going
+and have lerps be just one part of that.
+AND get the library saving to / from working,
+so I can re-use all these lovely scripts.
+
 - ok, so insets are probably in quite good shape.
 - clips are in rather worse shape. I should change it to use the inset algorithm.
 	- basic idea: for boolean AND, both go clockwise.

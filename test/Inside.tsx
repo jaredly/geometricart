@@ -48,9 +48,6 @@ export const DebugInside = ({ path }: { path: Path }) => {
                 };
                 const wind = windingNumber(coord, primitives, segments);
                 const wcount = wind.reduce((c, w) => (w.up ? 1 : -1) + c, 0);
-                // const inside = insidePath(
-                //     primitives,
-                // );
                 if (wcount > 0) {
                     ctx.fillStyle = 'red';
                 } else {
@@ -81,14 +78,6 @@ export const DebugInside = ({ path }: { path: Path }) => {
                         0,
                     );
                     setDebug([`Ok ${wcount}` as any].concat(wind));
-
-                    // const inside = insidePath(coord, primitives, debug);
-                    // // console.log(x, y, inside, debug);
-                    // setDebug(
-                    //     [`${dx},${dy}, ${x} ${y} - inside? ${inside}`].concat(
-                    //         debug,
-                    //     ),
-                    // );
                 }}
                 ref={canvasRef}
                 width={500}

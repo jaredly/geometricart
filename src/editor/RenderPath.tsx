@@ -80,7 +80,7 @@ const RenderPathMemo = ({
     path: Path;
     styleHover: StyleHover | null;
     origPath?: Path;
-    clip?: Array<Primitive> | null;
+    clip?: { prims: Array<Primitive>; segments: Array<Segment> } | null;
     zoom: number;
     sketchiness: number | undefined;
     groups: { [key: string]: PathGroup };
@@ -327,7 +327,7 @@ export const DebugOrigPath = ({
     origPath: Path;
     path: Path;
     zoom: number;
-    clip?: Array<Primitive> | null;
+    clip?: { prims: Array<Primitive>; segments: Array<Segment> } | null;
 }) => {
     let inset: number | null = null;
     if (
@@ -588,7 +588,7 @@ export const DebugOrigPath = ({
                     cy={seg.to.y * zoom}
                     r={10}
                     stroke={
-                        clip && !insidePath(seg.to, clip, false)
+                        clip && !insidePath(seg.to, clip.prims, clip.segments)
                             ? 'yellow'
                             : i === 0
                             ? 'red'

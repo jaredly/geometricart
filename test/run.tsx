@@ -197,6 +197,6 @@ const blankPath: Path = {
     clipMode: 'none',
 };
 
-render(<Inside />, document.getElementById('root'));
-// render(<App />, document.getElementById('root'));
+// render(<Inside />, document.getElementById('root'));
+render(<App />, document.getElementById('root'));
 // render(<Timeline />, document.getElementById('root'));

@@ -570,7 +570,13 @@ export const clipPath = (
     // in order to be rendered.
     // this is not a guarentee.
     // but here we are.
-    const idx = findInsideStart(path.segments, clipPrimitives, 0, path.debug);
+    const idx = findInsideStart(
+        path.segments,
+        clipPrimitives,
+        clip,
+        0,
+        path.debug,
+    );
     if (idx == null) {
         if (path.debug) {
             console.warn(`Debug path outside of clip`);
@@ -980,9 +986,22 @@ export const windingNumber = (
     return wind;
 };
 
+// prims are the primitives of segments.
+// Segments are expected to be CLOCKWISE
+export const insidePath = (
+    coord: Coord,
+    prims: Array<Primitive>,
+    segments: Array<Segment>,
+) => {
+    // return insidePathBADNEWS(coord, prims);
+    const wind = windingNumber(coord, prims, segments);
+    const wcount = wind.reduce((c, w) => (w.up ? 1 : -1) + c, 0);
+    return wcount > 0;
+};
+
 // excludes points that line /on/ the path.
 // segs *need not be ordered or contiguous*
-export const insidePath = (
+export const insidePathBADNEWS = (
     coord: Coord,
     segs: Array<Primitive>,
     debug?: Array<string>,
@@ -1115,13 +1134,14 @@ export const insidePathMulti = (
 export const findInsideStart = (
     segments: Array<Segment>,
     clip: Array<Primitive>,
+    clipSegments: Array<Segment>,
     after: number = 0,
     debug: boolean = false,
 ) => {
     for (let i = after; i < segments.length; i++) {
         const prev =
             i === 0 ? segments[segments.length - 1].to : segments[i - 1].to;
-        const hits = insidePath(prev, clip); // TODO: debug?
+        const hits = insidePath(prev, clip, clipSegments); // TODO: debug?
         if (hits) {
             return i;
         }
