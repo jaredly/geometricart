@@ -913,6 +913,7 @@ export const isOnCircle = (coord: Coord, seg: Circle) => {
     return closeEnough(d, seg.radius);
 };
 
+/** Result > 0 means it's inside. */
 export const windingNumber = (
     coord: Coord,
     prims: Array<Primitive>,
@@ -1050,7 +1051,7 @@ export const insidePath = (
                 }
             }
             debug?.push(
-                `At circle bottom or something ${i} ${JSON.stringify({
+                `Got an intersection I guess ${i} ${JSON.stringify({
                     seg,
                     ray,
                     coord,

@@ -4,16 +4,23 @@ import { useDropStateTarget } from '../src/editor/useDropTarget';
 import { sortedVisibleInsetPaths } from '../src/rendering/sortedVisibleInsetPaths';
 import Prando from 'prando';
 import { segmentsBounds } from '../src/editor/Export';
-import { insidePath } from '../src/rendering/clipPath';
+import { insidePath, windingNumber } from '../src/rendering/clipPath';
 import { pathToPrimitives } from '../src/editor/findSelection';
-import { Path } from '../src/types';
+import { Path, State } from '../src/types';
+import { ensureClockwise, isClockwise } from '../src/rendering/pathToPoints';
 
 export const DebugInside = ({ path }: { path: Path }) => {
     const canvasRef = useRef(null as null | HTMLCanvasElement);
+    const [debug, setDebug] = React.useState([] as Array<any>);
+
+    const segments = useMemo(
+        () => ensureClockwise(path.segments),
+        [path.segments],
+    );
 
     const pixel = 5;
 
-    const bounds = React.useMemo(() => segmentsBounds(path.segments), [path]);
+    const bounds = React.useMemo(() => segmentsBounds(segments), [path]);
 
     let w = bounds.x1 - bounds.x0;
     let h = bounds.y1 - bounds.y0;
@@ -26,6 +33,8 @@ export const DebugInside = ({ path }: { path: Path }) => {
     const scale = width / w;
     const height = Math.floor(h * scale);
 
+    const primitives = useMemo(() => pathToPrimitives(segments), [path]);
+
     React.useEffect(() => {
         if (!canvasRef.current || !bounds) {
             return;
@@ -34,21 +43,21 @@ export const DebugInside = ({ path }: { path: Path }) => {
         ctx.canvas.width = width;
         ctx.canvas.height = height;
 
-        const primitives = pathToPrimitives(path.segments);
-
         for (let x = 0; x < width / pixel; x++) {
             for (let y = 0; y < height / pixel; y++) {
-                const inside = insidePath(
-                    {
-                        x: bounds.x0 - margin + (x * pixel) / scale,
-                        y: bounds.y0 - margin + (y * pixel) / scale,
-                    },
-                    primitives,
-                );
-                if (inside) {
+                const coord = {
+                    x: bounds.x0 - margin + (x * pixel) / scale,
+                    y: bounds.y0 - margin + (y * pixel) / scale,
+                };
+                const wind = windingNumber(coord, primitives, segments);
+                const wcount = wind.reduce((c, w) => (w.up ? 1 : -1) + c, 0);
+                // const inside = insidePath(
+                //     primitives,
+                // );
+                if (wcount > 0) {
                     ctx.fillStyle = 'red';
                 } else {
-                    ctx.fillStyle = 'black';
+                    ctx.fillStyle = 'blue';
                 }
                 ctx.fillRect(x * pixel, y * pixel, pixel, pixel);
             }
@@ -57,33 +66,74 @@ export const DebugInside = ({ path }: { path: Path }) => {
 
     return (
         <div>
+            {/* Clockwise? {isClockwise(segments) + ''} */}
             <canvas
                 onMouseMove={(evt) => {
                     const box = canvasRef.current!.getBoundingClientRect();
                     const dx = evt.clientX - box.left;
                     const dy = evt.clientY - box.top;
+                    const round = (a: number, b: number) =>
+                        Math.floor(a / b) * b;
+                    const x = round(dx, pixel) / scale + bounds.x0 - margin;
+                    const y = round(dy, pixel) / scale + bounds.y0 - margin;
+                    const debug: Array<string> = [];
+
+                    const coord = { x, y };
+                    const wind = windingNumber(coord, primitives, segments);
+                    const wcount = wind.reduce(
+                        (c, w) => (w.up ? 1 : -1) + c,
+                        0,
+                    );
+                    setDebug([`Ok ${wcount}`].concat(wind));
+
+                    // const inside = insidePath(coord, primitives, debug);
+                    // // console.log(x, y, inside, debug);
+                    // setDebug(
+                    //     [`${dx},${dy}, ${x} ${y} - inside? ${inside}`].concat(
+                    //         debug,
+                    //     ),
+                    // );
                 }}
                 ref={canvasRef}
-                // style={{
-                //     width: 500,
-                //     height: 500,
-                // }}
                 width={500}
                 height={500}
             />
+            <div>
+                {debug.map((text, i) => (
+                    <p key={i}>{JSON.stringify(text)}</p>
+                ))}
+            </div>
         </div>
     );
 };
 
+const key = 'test-inside';
+const load = () => {
+    const raw = localStorage[key];
+    if (raw) {
+        return JSON.parse(raw);
+    }
+    return { state: initialState, index: 0 };
+};
+const save = (state: State, index: number) =>
+    (localStorage[key] = JSON.stringify({ state, index }));
+
+const initial = load();
+
 export const Inside = () => {
-    const [state, setState] = React.useState(initialState);
+    const [state, setState] = React.useState(initial.state);
     const [dragging, callbacks] = useDropStateTarget((state) => {
         if (state) {
             setState(state);
         }
     });
 
-    const [index, setIndex] = React.useState(0);
+    const [index, setIndex] = React.useState(initial.index);
+    // Object.keys(state.paths).forEach((k) => {
+    //     if (!isClockwise(state.paths[k].segments)) {
+    //         console.log('NOT', k);
+    //     }
+    // });
 
     const paths = useMemo(
         () =>
@@ -94,6 +144,10 @@ export const Inside = () => {
             ),
         [state],
     );
+
+    React.useEffect(() => {
+        save(state, index);
+    }, [state, index]);
 
     return (
         <div
@@ -113,7 +167,7 @@ export const Inside = () => {
             >
                 prev
             </button>
-            <button onClick={() => setIndex(index + (1 % paths.length))}>
+            <button onClick={() => setIndex((index + 1) % paths.length)}>
                 next
             </button>
             {paths[index] ? <DebugInside path={paths[index]} /> : 'No path'}
