@@ -24,12 +24,14 @@
 
 import {
     findRegions,
-    Froms,
-    PartialSegment,
     removeContainedRegions,
     removeNonWindingRegions,
-    segmentsToNonIntersectingSegments,
 } from './findInternalRegions';
+import {
+    Froms,
+    PartialSegment,
+    segmentsToNonIntersectingSegments,
+} from './segmentsToNonIntersectingSegments';
 import { simplifyPath } from './insetPath';
 import { insetSegment } from './insetSegment';
 import { isClockwise, reversePath } from './pathToPoints';

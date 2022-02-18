@@ -17,163 +17,21 @@
 
 import { coordKey } from './calcAllIntersections';
 import { isClockwise } from './pathToPoints';
-import { insidePath, sortHitsForPrimitive, windingNumber } from './clipPath';
+import { insidePath, windingNumber } from './clipPath';
 import { pathToPrimitives } from '../editor/findSelection';
-import { epsilon, intersections, Primitive, withinLimit } from './intersect';
+import { epsilon, Primitive, withinLimit } from './intersect';
 import { coordsEqual } from './pathsAreIdentical';
-import { Hit } from './pruneInsetPath';
 import { Coord, Segment } from '../types';
 import { angleTo, dist, push } from './getMirrorTransforms';
 import { angleBetween } from './findNextSegments';
 import { Bounds } from '../editor/GuideElement';
 import { segmentBounds, segmentsBounds } from '../editor/Export';
-
-const HIGH_PRECISION = 4;
-
-export const segmentsToNonIntersectingSegments = (segments: Array<Segment>) => {
-    const primitives = pathToPrimitives(segments);
-    const hits: Array<Array<Hit>> = new Array(segments.length)
-        .fill([])
-        .map((m) => []);
-    const allHits: Array<Hit> = [];
-    for (let i = 0; i < segments.length; i++) {
-        const previ =
-            i === 0 ? segments[segments.length - 1].to : segments[i - 1].to;
-        for (let j = i + 1; j < segments.length; j++) {
-            const prevj =
-                j === 0 ? segments[segments.length - 1].to : segments[j - 1].to;
-            const these = intersections(primitives[i], primitives[j]);
-            these.forEach((coord) => {
-                if (coord.x === 0) {
-                    coord.x = 0;
-                }
-                if (coord.y === 0) {
-                    coord.y = 0;
-                }
-                const iend =
-                    coordsEqual(coord, previ, HIGH_PRECISION) ||
-                    coordsEqual(coord, segments[i].to, HIGH_PRECISION);
-                const jend =
-                    coordsEqual(coord, prevj, HIGH_PRECISION) ||
-                    coordsEqual(coord, segments[j].to, HIGH_PRECISION);
-                // This is just two segments meeting. no big deal.
-                // Note that if we managed to get in a place where four lines met in the same place,
-                // this logic would break. here's hoping.
-                if (iend && jend) {
-                    return;
-                }
-                const hit = { first: i, second: j, coord };
-                hits[i].push(hit);
-                hits[j].push(hit);
-                allHits.push(hit);
-            });
-        }
-    }
-
-    // if (!allHits.length) {
-    //     if (!isClockwise(segments)) {
-    //         return [];
-    //     }
-    //     return [segments];
-    // }
-
-    const sorted = hits.map((hits, i) =>
-        sortHitsForPrimitive(hits, primitives[i], segments[i]),
-    );
-
-    // So, I return a list of segments, and a mapping [fromcoord] -> [exiting segments]
-    const result: Array<PartialSegment> = [];
-
-    // or maybe, because each segmet only has one exit, we just ... hmm
-    // although it would be nice to be able to keep track of the ones we've hit.
-    // yeah.
-    const froms: Froms = {};
-    //
-    segments.forEach((segment, i) => {
-        let prev =
-            i === 0 ? segments[segments.length - 1].to : segments[i - 1].to;
-        let intersection = 0;
-        // if (segment.type === 'Arc') {
-        //     console.log(segment, sorted[i], prev, segment.to);
-        // }
-        while (
-            !coordsEqual(prev, segment.to, HIGH_PRECISION) &&
-            intersection <= sorted[i].length
-        ) {
-            const key = coordKey(prev, HIGH_PRECISION);
-            const to =
-                intersection === sorted[i].length
-                    ? segment.to
-                    : sorted[i][intersection].coord;
-            if (!coordsEqual(prev, to, HIGH_PRECISION)) {
-                if (!froms[key]) {
-                    froms[key] = { coord: prev, exits: [] };
-                }
-                froms[key].exits.push(result.length);
-                if (segment.type === 'Arc') {
-                    const initialAngle = segmentAngle(
-                        prev,
-                        { ...segment, to },
-                        true,
-                        true,
-                    );
-                    const finalAngle = segmentAngle(
-                        prev,
-                        { ...segment, to },
-                        false,
-                        true,
-                    );
-                    result.push({
-                        prev,
-                        segment: { ...segment, to },
-                        initialAngle,
-                        finalAngle,
-                    });
-                } else {
-                    const theta = angleTo(prev, to); // STOPSHIP broken for arcs I'm sure
-                    result.push({
-                        prev,
-                        segment: { ...segment, to },
-                        initialAngle: theta,
-                        finalAngle: theta,
-                    });
-                }
-            }
-            prev = to;
-            intersection++;
-        }
-        // if (segment.type === 'Arc') {
-        //     console.log('processed', intersection, 'hits');
-        // }
-    });
-    return { result, froms };
-};
-
-// Ok, so now the game plan is:
-// take those segments, follow them around ...
-// and ... hmmm
-// so the rule is: always switch! We assume there will only ever be
-// 2 exits from a given point, because we're wildly optimistic.
-
-// I mean, we could say:
-// if there's one to the right or left, then take it?
-
-export type Froms = {
-    [key: string]: {
-        coord: Coord;
-        exits: Array<number>;
-    };
-};
-
-// So there's probably a weird edge case if two corners happen to touch
-// ... not super likely, but idk what would happen.
-
-export type PartialSegment = {
-    prev: Coord;
-    segment: Segment;
-    initialAngle: number;
-    finalAngle: number;
-};
+import {
+    HIGH_PRECISION,
+    PartialSegment,
+    Froms,
+    segmentsToNonIntersectingSegments,
+} from './segmentsToNonIntersectingSegments';
 
 /* ok whats the stragety
 

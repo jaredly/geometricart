@@ -14,6 +14,7 @@ import { ShowExample } from './ShowExample';
 import { fixture } from './fixture';
 import { Timeline } from './TimelineTest';
 import { Inside } from './Inside';
+import { Clip } from './Clip';
 
 export const size = 500;
 
@@ -198,5 +199,6 @@ const blankPath: Path = {
 };
 
 // render(<Inside />, document.getElementById('root'));
-render(<App />, document.getElementById('root'));
+// render(<App />, document.getElementById('root'));
+render(<Clip />, document.getElementById('root'));
 // render(<Timeline />, document.getElementById('root'));

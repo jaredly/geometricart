@@ -10,8 +10,8 @@ import {
     removeContainedRegions,
     removeNonWindingRegions,
     segmentAngle,
-    segmentsToNonIntersectingSegments,
 } from '../src/rendering/findInternalRegions';
+import { segmentsToNonIntersectingSegments } from '../src/rendering/segmentsToNonIntersectingSegments';
 import { angleBetween } from '../src/rendering/findNextSegments';
 import { pathToPrimitives } from '../src/editor/findSelection';
 import { BlurInt, Text } from '../src/editor/Forms';
@@ -33,20 +33,23 @@ import { Coord, Segment } from '../src/types';
 import { fixture } from './fixture';
 import { getInsets, insetColors, pathSegs, size } from './run';
 
+export const maybeSnap = (v: number, snap?: number) =>
+    snap ? Math.round(v / snap) * snap : v;
+
 export const Drawing = ({
     segments,
     zoom,
     setSegments,
     onComplete,
     render,
+    snap,
 }: {
     zoom: number;
     segments: Array<Segment>;
-    setSegments: (
-        fn: Array<Segment> | ((segments: Array<Segment>) => Array<Segment>),
-    ) => void;
+    setSegments: (fn: (segments: Array<Segment>) => Array<Segment>) => void;
     onComplete: () => void;
     render: (segs: Array<Segment>) => React.ReactNode;
+    snap?: number;
 }) => {
     const [cursor, setCursor] = React.useState(null as Coord | null);
     const origin = segments.length
@@ -134,8 +137,8 @@ export const Drawing = ({
                 onMouseMove={(evt) => {
                     const svg = evt.currentTarget.getBoundingClientRect();
                     setCursor({
-                        x: evt.clientX - svg.left - size / 2,
-                        y: evt.clientY - svg.top - size / 2,
+                        x: maybeSnap(evt.clientX - svg.left - size / 2, snap),
+                        y: maybeSnap(evt.clientY - svg.top - size / 2, snap),
                     });
                 }}
                 onClick={() => {
@@ -247,6 +250,25 @@ const initialState = (): Array<Segment> => {
         return JSON.parse(localStorage[KEY]);
     }
     return star();
+};
+
+export const useLocalStorage = <T,>(
+    key: string,
+    initial: T,
+): [T, React.Dispatch<React.SetStateAction<T>>] => {
+    const [value, setValue] = React.useState((): T => {
+        const data = localStorage[key];
+        if (data) {
+            return JSON.parse(data);
+        }
+        return initial;
+    });
+    React.useEffect(() => {
+        if (value !== initial) {
+            localStorage[key] = JSON.stringify(value);
+        }
+    }, [value]);
+    return [value, setValue];
 };
 
 const KEY = 'geo-test-canvas';

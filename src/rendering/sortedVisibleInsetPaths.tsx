@@ -5,8 +5,8 @@ import {
     filterTooSmallSegments,
     findRegions,
     removeNonWindingRegions,
-    segmentsToNonIntersectingSegments,
 } from './findInternalRegions';
+import { segmentsToNonIntersectingSegments } from './segmentsToNonIntersectingSegments';
 import { angleBetween } from './findNextSegments';
 import { pathToPrimitives } from '../editor/findSelection';
 import { angleTo, dist, push } from './getMirrorTransforms';

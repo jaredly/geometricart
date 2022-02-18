@@ -73,7 +73,7 @@ export const pruneInsetPath = (
                 if (iend && jend) {
                     return;
                 }
-                const hit = { first: i, second: j, coord };
+                const hit = { first: i, second: j, coord, idx: 0 };
                 hits[i].push(hit);
                 hits[j].push(hit);
                 allHits.push(hit);
@@ -188,7 +188,7 @@ export const pruneInsetPath = (
     return pruned;
 };
 
-export type Hit = { first: number; second: number; coord: Coord };
+export type Hit = { first: number; second: number; coord: Coord; idx: number };
 
 export const getClockwiseExit = (
     sorted: Array<Array<Hit>>,

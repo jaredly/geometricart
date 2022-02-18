@@ -1,7 +1,5 @@
-import {
-    findRegions,
-    segmentsToNonIntersectingSegments,
-} from './findInternalRegions';
+import { findRegions } from './findInternalRegions';
+import { segmentsToNonIntersectingSegments } from './segmentsToNonIntersectingSegments';
 import { isClockwise } from './pathToPoints';
 
 describe('ok', () => {

@@ -3,11 +3,8 @@ import * as React from 'react';
 import { RoughGenerator } from 'roughjs/bin/generator';
 import { insidePath, windingNumber } from '../rendering/clipPath';
 import { rgbToHsl } from '../rendering/colorConvert';
-import {
-    findInsidePoint,
-    findRegions,
-    segmentsToNonIntersectingSegments,
-} from '../rendering/findInternalRegions';
+import { findInsidePoint, findRegions } from '../rendering/findInternalRegions';
+import { segmentsToNonIntersectingSegments } from '../rendering/segmentsToNonIntersectingSegments';
 import { angleBetween } from '../rendering/findNextSegments';
 import { angleTo, dist, push } from '../rendering/getMirrorTransforms';
 import { insetSegmentsBeta } from '../rendering/insetPath';
