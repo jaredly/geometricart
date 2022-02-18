@@ -2,6 +2,7 @@ import * as React from 'react';
 import { pathToPrimitives } from '../src/editor/findSelection';
 import { calcPathD, pathSegs } from '../src/editor/RenderPath';
 import { clipPath } from '../src/rendering/clipPath';
+import { ensureClockwise } from '../src/rendering/pathToPoints';
 import { Segment } from '../src/types';
 import { Drawing, useLocalStorage } from './Canvas';
 
@@ -49,12 +50,20 @@ export const Clip = () => {
                     if (!other.length) {
                         return;
                     }
+                    const cclip =
+                        testCase.clip.length > 2
+                            ? ensureClockwise(testCase.clip)
+                            : testCase.clip;
+                    const cshape =
+                        testCase.shape.length > 2
+                            ? ensureClockwise(testCase.shape)
+                            : testCase.shape;
                     const clipped =
-                        testCase.shape.length > 2 && testCase.clip.length > 2
+                        cshape.length > 2 && cclip.length > 2
                             ? clipPath(
-                                  { ...pathSegs(testCase.shape), debug: false },
-                                  testCase.clip,
-                                  pathToPrimitives(testCase.clip),
+                                  { ...pathSegs(cshape), debug: false },
+                                  cclip,
+                                  pathToPrimitives(cclip),
                               )
                             : null;
                     return (
@@ -121,9 +130,9 @@ export const Clip = () => {
                             d={calcPathD(pathSegs(tc.clip), 1)}
                         />
                         {clipPath(
-                            pathSegs(tc.shape),
-                            tc.clip,
-                            pathToPrimitives(tc.clip),
+                            pathSegs(ensureClockwise(tc.shape)),
+                            ensureClockwise(tc.clip),
+                            pathToPrimitives(ensureClockwise(tc.clip)),
                         ).map((clip, i) => (
                             <path
                                 stroke="white"
