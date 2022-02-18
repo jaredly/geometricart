@@ -18,6 +18,7 @@ import {
  * and, importantly: Do I need to "dedup" hits?
  *
  * Ok I should really make a testing page for this first.
+ * ok, we have the basics.
  */
 
 export const clipPathNew = (

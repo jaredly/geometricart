@@ -309,7 +309,7 @@ export const pathSegs = (segments: Array<Segment>): Path => ({
         lines: [],
         fills: [],
     },
-    clipMode: 'none',
+    clipMode: 'normal',
 
     segments,
     origin: segments[segments.length - 1].to,

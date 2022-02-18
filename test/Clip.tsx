@@ -1,5 +1,7 @@
 import * as React from 'react';
+import { pathToPrimitives } from '../src/editor/findSelection';
 import { calcPathD, pathSegs } from '../src/editor/RenderPath';
+import { clipPath } from '../src/rendering/clipPath';
 import { Segment } from '../src/types';
 import { Drawing, useLocalStorage } from './Canvas';
 
@@ -29,6 +31,14 @@ export const Clip = () => {
                     if (!other.length) {
                         return;
                     }
+                    const clipped =
+                        segments.shape.length > 2 && segments.clip.length > 2
+                            ? clipPath(
+                                  { ...pathSegs(segments.shape), debug: false },
+                                  segments.clip,
+                                  pathToPrimitives(segments.clip),
+                              )
+                            : null;
                     return (
                         <>
                             <path
@@ -37,12 +47,37 @@ export const Clip = () => {
                                 fill="none"
                                 d={calcPathD(pathSegs(other), 1)}
                             />
+                            {clipped
+                                ? clipped.map((segs, i) => (
+                                      <path
+                                          stroke={'white'}
+                                          strokeWidth={1}
+                                          fill="#aaa"
+                                          opacity={0.5}
+                                          key={i}
+                                          d={calcPathD(segs, 1)}
+                                      />
+                                  ))
+                                : null}
                         </>
                     );
                 }}
             />
-            <button onClick={() => setWhich('shape')}>Shape</button>
-            <button onClick={() => setWhich('clip')}>Clip</button>
+            <button
+                disabled={which === 'shape'}
+                onClick={() => setWhich('shape')}
+            >
+                Shape
+            </button>
+            <button
+                disabled={which === 'clip'}
+                onClick={() => setWhich('clip')}
+            >
+                Clip
+            </button>
+            <button onClick={() => setSegments({ shape: [], clip: [] })}>
+                Clear
+            </button>
         </div>
     );
 };
