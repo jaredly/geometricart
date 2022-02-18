@@ -7,6 +7,7 @@ import { Path, PathGroup, Segment } from '../types';
 import { Primitive } from './intersect';
 import { isClockwise } from './pathToPoints';
 import {
+    addPrevsToSegments,
     calculateSortedHitsForSegments,
     segmentsToNonIntersectingSegments,
     splitSegmentsByIntersections,
@@ -50,10 +51,12 @@ export const clipPathNew = (
 
     */
 
-    const allSegments = path.segments.concat(clip);
+    const allSegments = addPrevsToSegments(path.segments).concat(
+        addPrevsToSegments(clip),
+    );
 
     const { sorted, allHits } = calculateSortedHitsForSegments(allSegments);
-    const split = splitSegmentsByIntersections(allSegments, sorted);
+    // const split = splitSegmentsByIntersections(allSegments, sorted);
 
     /**
      * Ok, so now we've done that.

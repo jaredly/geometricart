@@ -1,6 +1,6 @@
 import { coordKey } from './calcAllIntersections';
 import { sortHitsForPrimitive } from './clipPath';
-import { pathToPrimitives } from '../editor/findSelection';
+import { pathToPrimitives, segmentToPrimitive } from '../editor/findSelection';
 import { intersections, Primitive } from './intersect';
 import { coordsEqual } from './pathsAreIdentical';
 import { Hit } from './pruneInsetPath';
@@ -90,8 +90,12 @@ export const splitSegmentsByIntersections = (
     return { result, froms };
 };
 
+// export const addPrevsToSegments =
+
 export const segmentsToNonIntersectingSegments = (segments: Array<Segment>) => {
-    const { sorted } = calculateSortedHitsForSegments(segments);
+    const { sorted } = calculateSortedHitsForSegments(
+        addPrevsToSegments(segments),
+    );
 
     return splitSegmentsByIntersections(segments, sorted);
 };
@@ -124,32 +128,49 @@ export type PartialSegment = {
     hitEnd: number | null;
 };
 
+export type SegmentWithPrev = { prev: Coord; segment: Segment };
+
+export function addPrevsToSegments(segments: Segment[]): SegmentWithPrev[] {
+    return segments.map((s, i) => ({
+        prev: i === 0 ? segments[segments.length - 1].to : segments[i - 1].to,
+        segment: s,
+    }));
+}
+
 export function calculateSortedHitsForSegments(
-    segments: Segment[],
+    segments: SegmentWithPrev[],
     /** Do we want to include intersections that are just two endpoints meeting? */
     allowEndpoints = false,
 ) {
-    const primitives = pathToPrimitives(segments);
+    const primitives = segments.map((s) =>
+        segmentToPrimitive(s.prev, s.segment),
+    );
     const hits: Array<Array<Hit>> = new Array(segments.length)
         .fill([])
         .map((m) => []);
     let hitIdx = 0;
     const allHits: Array<Hit> = [];
     for (let i = 0; i < segments.length; i++) {
-        const previ =
-            i === 0 ? segments[segments.length - 1].to : segments[i - 1].to;
+        const previ = segments[i].prev;
         for (let j = i + 1; j < segments.length; j++) {
-            const prevj =
-                j === 0 ? segments[segments.length - 1].to : segments[j - 1].to;
+            const prevj = segments[j].prev;
             const these = intersections(primitives[i], primitives[j]);
             these.forEach((coord) => {
                 if (!allowEndpoints) {
                     const iend =
                         coordsEqual(coord, previ, HIGH_PRECISION) ||
-                        coordsEqual(coord, segments[i].to, HIGH_PRECISION);
+                        coordsEqual(
+                            coord,
+                            segments[i].segment.to,
+                            HIGH_PRECISION,
+                        );
                     const jend =
                         coordsEqual(coord, prevj, HIGH_PRECISION) ||
-                        coordsEqual(coord, segments[j].to, HIGH_PRECISION);
+                        coordsEqual(
+                            coord,
+                            segments[j].segment.to,
+                            HIGH_PRECISION,
+                        );
                     // This is just two segments meeting. no big deal.
                     // Note that if we managed to get in a place where four lines met in the same place,
                     // this logic would break. here's hoping.
@@ -166,7 +187,7 @@ export function calculateSortedHitsForSegments(
     }
 
     const sorted = hits.map((hits, i) =>
-        sortHitsForPrimitive(hits, primitives[i], segments[i]),
+        sortHitsForPrimitive(hits, primitives[i], segments[i].segment),
     );
     return { sorted, allHits };
 }

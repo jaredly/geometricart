@@ -1,8 +1,13 @@
 import * as React from 'react';
 import { pathToPrimitives } from '../src/editor/findSelection';
 import { calcPathD, pathSegs } from '../src/editor/RenderPath';
+import { coordKey } from '../src/rendering/calcAllIntersections';
 import { clipPath } from '../src/rendering/clipPath';
 import { ensureClockwise } from '../src/rendering/pathToPoints';
+import {
+    addPrevsToSegments,
+    calculateSortedHitsForSegments,
+} from '../src/rendering/segmentsToNonIntersectingSegments';
 import { Segment } from '../src/types';
 import { Drawing, useLocalStorage } from './Canvas';
 
@@ -19,6 +24,11 @@ export const Clip = () => {
         clip: [],
     } as TestCase);
     const [which, setWhich] = React.useState('shape' as 'shape' | 'clip');
+
+    // testCases.concat([testCase]).forEach((kase, i) => {
+    //     examineCase(kase, i);
+    // });
+    examineCase(testCase, 0);
 
     const size = 500;
     return (
@@ -116,6 +126,7 @@ export const Clip = () => {
                     <svg
                         width={200}
                         height={200}
+                        key={i}
                         viewBox={`-${size / 2} -${size / 2} ${size} ${size}`}
                     >
                         <path
@@ -149,3 +160,20 @@ export const Clip = () => {
         </div>
     );
 };
+
+function examineCase(kase: TestCase, i: number) {
+    const allSegs = addPrevsToSegments(ensureClockwise(kase.shape)).concat(
+        addPrevsToSegments(kase.clip),
+    );
+    console.log('ok', i, allSegs);
+    const { sorted, allHits } = calculateSortedHitsForSegments(allSegs, true);
+    const seen = {};
+    allHits.forEach((h) => {
+        const k = coordKey(h.coord);
+        if (seen[k]) {
+            console.log('DUP', k);
+        }
+        seen[k] = true;
+    });
+    console.log(allHits);
+}
