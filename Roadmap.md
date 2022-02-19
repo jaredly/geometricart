@@ -1,4 +1,18 @@
 
+Ok, filtering outside stuff is working pretty well!!!
+
+Definitely need line-over-line fix.
+
+
+hmmm IF there's a toss-up, bias towrd keeping same-shapes together? maybe??
+
+hmmm no. More like, if you've been inside, stay inside. if you've been outside, stay outside.
+otherwise it won't matter? I think??/
+
+yeah, so I need to be able to return a hitPair result that is "ambiguous", either one inside, one unknown, or one outside, one unknown.
+
+---
+
 CLIP ME UP SCOTTY
 
 yes, wonderful progress!!
@@ -14,6 +28,18 @@ And THEN I need to thoroughly test out the arc handling, because it might be bog
 Super stoked, my folks. Gonna be rock solid.
 
 Also maybe I can use this for insets, we'll see. And weaving.
+
+
+BE SURE to test lines that are overlapping, my folks.
+yeah not doing well
+
+
+ALSO not doing well is the corner thats on another line. wows.
+- ok fixed that, nice.
+- but now the lines overlapping is breaking, so gotta figure that out.
+
+
+
 
 
 # Next up:

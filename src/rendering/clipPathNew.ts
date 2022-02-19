@@ -16,8 +16,12 @@ import {
     untangleHit,
 } from './untangleHit';
 
-export function addPrevsToSegments(segments: Segment[]): SegmentWithPrev[] {
+export function addPrevsToSegments(
+    segments: Segment[],
+    shape: number,
+): SegmentWithPrev[] {
     return segments.map((s, i) => ({
+        shape,
         prev: i === 0 ? segments[segments.length - 1].to : segments[i - 1].to,
         segment: s,
     }));
@@ -25,7 +29,7 @@ export function addPrevsToSegments(segments: Segment[]): SegmentWithPrev[] {
 
 export const HIGH_PRECISION = 4;
 
-export type SegmentWithPrev = { prev: Coord; segment: Segment };
+export type SegmentWithPrev = { prev: Coord; segment: Segment; shape: number };
 
 /**
  * what do I need from a 'hit'?
@@ -74,23 +78,24 @@ export const getSomeHits = (segments: SegmentWithPrev[]) => {
                 if (!hits[k]) {
                     hits[k] = { coord, parties: [] };
                 }
-
-                const entryI = calcSI(id++, i, segments[i], coord, k);
-                hits[k].parties.push(entryI);
-                entriesBySegment[i].push({ coord, entry: entryI });
-
-                const entryJ = calcSI(id++, j, segments[j], coord, k);
-                hits[k].parties.push(entryJ);
-                entriesBySegment[j].push({ coord, entry: entryJ });
-
-                entryCoords[entryI.id] = coord;
-                entryCoords[entryJ.id] = coord;
-
-                if (entryI.exit) {
-                    exits[entryI.id] = entryI;
+                if (!hits[k].parties.find((p) => p.segment === i)) {
+                    const entryI = calcSI(id++, i, segments[i], coord, k);
+                    hits[k].parties.push(entryI);
+                    entriesBySegment[i].push({ coord, entry: entryI });
+                    entryCoords[entryI.id] = coord;
+                    if (entryI.exit) {
+                        exits[entryI.id] = entryI;
+                    }
                 }
-                if (entryJ.exit) {
-                    exits[entryJ.id] = entryJ;
+
+                if (!hits[k].parties.find((p) => p.segment === j)) {
+                    const entryJ = calcSI(id++, j, segments[j], coord, k);
+                    hits[k].parties.push(entryJ);
+                    entriesBySegment[j].push({ coord, entry: entryJ });
+                    entryCoords[entryJ.id] = coord;
+                    if (entryJ.exit) {
+                        exits[entryJ.id] = entryJ;
+                    }
                 }
             });
         }
@@ -104,7 +109,7 @@ export const getSomeHits = (segments: SegmentWithPrev[]) => {
 const calcSI = (
     id: number,
     i: number,
-    { segment, prev }: SegmentWithPrev,
+    { segment, prev, shape }: SegmentWithPrev,
     coord: Coord,
     key: string,
 ): SegmentIntersection => {
@@ -128,6 +133,7 @@ const calcSI = (
         enter: !coordsEqual(coord, prev, HIGH_PRECISION),
         exit: !coordsEqual(coord, segment.to, HIGH_PRECISION),
         coordKey: key,
+        shape,
         theta,
         distance,
     };
@@ -140,6 +146,7 @@ const calcSI = (
 export const clipPathNew = (
     path: Path,
     clip: Array<Segment>,
+    debug = false,
     // clipPrimitives: Array<Primitive>,
     groupMode?: PathGroup['clipMode'], // TODO this should definitely be a path level attribute
 ) => {
@@ -170,17 +177,21 @@ export const clipPathNew = (
 
     */
 
-    const allSegments = addPrevsToSegments(path.segments).concat(
-        addPrevsToSegments(clip),
+    const allSegments = addPrevsToSegments(path.segments, 0).concat(
+        addPrevsToSegments(clip, 1),
     );
 
     const { hits, entriesBySegment, exits, entryCoords } =
         getSomeHits(allSegments);
 
-    // console.log('by segment', entriesBySegment);
+    if (debug) {
+        console.log('by segment', entriesBySegment);
+    }
 
     const hitPairs: {
-        [key: string]: Array<[SegmentIntersection, SegmentIntersection]>;
+        [key: string]: Array<
+            [SegmentIntersection, SegmentIntersection, boolean | null]
+        >;
     } = {};
     Object.keys(hits).forEach((k) => {
         const pairs = untangleHit(hits[k].parties);
@@ -196,10 +207,15 @@ export const clipPathNew = (
     let current = entriesBySegment[0][0].entry;
     delete exits[current.id];
 
-    // oh also we have to search around for things that haven't been hit yet. ok.
-    const regions: Array<Array<SegmentWithPrev>> = [];
+    type Region = {
+        segments: Array<SegmentWithPrev>;
+        isInternal: boolean | null;
+    };
 
-    let region: Array<SegmentWithPrev> = [];
+    // oh also we have to search around for things that haven't been hit yet. ok.
+    const regions: Array<Region> = [];
+
+    let region: Region = { isInternal: null, segments: [] };
 
     while (true) {
         // let next: {coord: Coord, entry: SegmentIntersection};
@@ -215,16 +231,9 @@ export const clipPathNew = (
             );
         }
 
-        // console.log(
-        //     'at',
-        //     current.segment,
-        //     idx,
-        //     entryCoords[current.id],
-        //     next.coord,
-        // );
-
-        region.push({
+        region.segments.push({
             prev: entryCoords[current.id],
+            shape: -1,
             segment: {
                 ...allSegments[current.segment].segment,
                 to: next.coord,
@@ -234,6 +243,16 @@ export const clipPathNew = (
         const pair = hitPairs[next.entry.coordKey].find(
             (p) => p[0].id === next.entry.id,
         );
+        if (debug) {
+            console.log(
+                'at',
+                current.segment,
+                idx,
+                entryCoords[current.id],
+                next.coord,
+                pair,
+            );
+        }
 
         if (!pair) {
             console.log(idx, next, hitPairs);
@@ -244,6 +263,9 @@ export const clipPathNew = (
             );
         }
         current = pair[1];
+        if (pair[2] != null) {
+            region.isInternal = pair[2];
+        }
         if (!exits[current.id]) {
             // console.log('finished a region!');
             regions.push(region);
@@ -251,16 +273,21 @@ export const clipPathNew = (
             if (!k) {
                 break;
             }
-            region = [];
+            region = { isInternal: null, segments: [] };
             current = exits[+k];
         }
         delete exits[current.id];
     }
 
+    if (debug) {
+        console.log('regons', regions);
+    }
+
     return regions
+        .filter((region) => region.isInternal !== false)
         .map((region) => {
             // TODO: verify that the prevs actually do match up
-            return region.map((s) => s.segment);
+            return region.segments.map((s) => s.segment);
         })
         .filter(isClockwise);
 

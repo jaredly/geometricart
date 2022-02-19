@@ -35,7 +35,7 @@ export const withinLimit = ([low, high]: [number, number], value: number) => {
 };
 
 export const lineLine = (one: SlopeIntercept, two: SlopeIntercept) => {
-    if (one.m === two.m) {
+    if (closeEnough(one.m, two.m)) {
         return null;
     }
     if (one.m === Infinity) {
@@ -162,6 +162,30 @@ const close = (a: number, b: number) => Math.abs(a - b) < epsilon;
 export const intersections = (one: Primitive, two: Primitive): Array<Coord> => {
     if (one.type === 'line') {
         if (two.type === 'line') {
+            if (closeEnough(one.m, two.m)) {
+                if (closeEnough(one.b, two.b)) {
+                    if (one.limit && two.limit) {
+                        const res = [];
+                        if (withinLimit(one.limit, two.limit[0])) {
+                            res.push(two.limit[0]);
+                        }
+                        if (withinLimit(one.limit, two.limit[1])) {
+                            res.push(two.limit[1]);
+                        }
+                        if (withinLimit(two.limit, one.limit[0])) {
+                            res.push(one.limit[0]);
+                        }
+                        if (withinLimit(two.limit, one.limit[1])) {
+                            res.push(one.limit[1]);
+                        }
+                        return res.map((v) =>
+                            one.m === Infinity
+                                ? { x: one.b, y: v }
+                                : { x: v, y: one.b },
+                        );
+                    }
+                }
+            }
             const res = lineLine(one, two);
             return res ? [res] : [];
         }

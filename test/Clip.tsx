@@ -9,7 +9,8 @@ import {
     addPrevsToSegments,
     calculateSortedHitsForSegments,
 } from '../src/rendering/segmentsToNonIntersectingSegments';
-import { Segment } from '../src/types';
+import { IntersectionError } from '../src/rendering/untangleHit';
+import { Path, Segment } from '../src/types';
 import { Drawing, useLocalStorage } from './Canvas';
 
 type TestCase = { shape: Array<Segment>; clip: Array<Segment> };
@@ -29,7 +30,30 @@ export const Clip = () => {
     // testCases.concat([testCase]).forEach((kase, i) => {
     //     examineCase(kase, i);
     // });
-    examineCase(testCase, 0);
+    // examineCase(testCase, 0);
+
+    const clipTwo = React.useMemo(() => {
+        const cclip =
+            testCase.clip.length > 2
+                ? ensureClockwise(testCase.clip)
+                : testCase.clip;
+        const cshape =
+            testCase.shape.length > 2
+                ? ensureClockwise(testCase.shape)
+                : testCase.shape;
+        let clipTwo = null as null | Array<Array<Segment>>;
+        try {
+            if (cshape.length > 2 && cclip.length > 2) {
+                clipTwo = clipPathNew(pathSegs(cshape), cclip, true);
+            }
+        } catch (err) {
+            console.log('nope');
+            if (err instanceof IntersectionError) {
+                console.log(err.basic, err.entries);
+            }
+        }
+        return clipTwo;
+    }, []);
 
     const size = 500;
     return (
@@ -77,16 +101,6 @@ export const Clip = () => {
                                   pathToPrimitives(cclip),
                               )
                             : null;
-
-                    let clipTwo = null as null | Array<Array<Segment>>;
-                    try {
-                        if (cshape.length > 2 && cclip.length > 2) {
-                            clipTwo = clipPathNew(pathSegs(cshape), cclip);
-                        }
-                    } catch (err) {
-                        console.log('nope');
-                        console.log(err.basic, err.entries);
-                    }
 
                     return (
                         <>
@@ -146,7 +160,7 @@ export const Clip = () => {
                     flexWrap: 'wrap',
                 }}
             >
-                {/* {testCases.map((tc, i) => (
+                {testCases.map((tc, i) => (
                     <svg
                         width={200}
                         height={200}
@@ -165,32 +179,40 @@ export const Clip = () => {
                             fill="none"
                             d={calcPathD(pathSegs(tc.clip), 1)}
                         />
-                        {clipPath(
+                        {clipPathTry(
                             pathSegs(ensureClockwise(tc.shape)),
                             ensureClockwise(tc.clip),
-                            pathToPrimitives(ensureClockwise(tc.clip)),
+                            // pathToPrimitives(ensureClockwise(tc.clip)),
                         ).map((clip, i) => (
                             <path
                                 stroke="white"
                                 strokeWidth={1}
                                 fill="#aaa"
                                 opacity={0.5}
-                                d={calcPathD(clip, 1)}
+                                d={calcPathD(pathSegs(clip), 1)}
                                 key={i}
                             />
                         ))}
                     </svg>
-                ))} */}
+                ))}
             </div>
         </div>
     );
+};
+
+const clipPathTry = (path: Path, clip: Array<Segment>) => {
+    try {
+        return clipPathNew(path, clip);
+    } catch (err) {
+        return [];
+    }
 };
 
 function examineCase(kase: TestCase, i: number) {
     const allSegs = addPrevsToSegments(ensureClockwise(kase.shape)).concat(
         addPrevsToSegments(kase.clip),
     );
-    console.log('ok', i, allSegs);
+    // console.log('ok', i, allSegs);
     const { sorted, allHits } = calculateSortedHitsForSegments(allSegs, true);
     const seen: { [key: string]: boolean } = {};
     allHits.forEach((h) => {
@@ -211,6 +233,8 @@ function examineCase(kase: TestCase, i: number) {
         );
     } catch (err) {
         console.log('No dice');
-        console.log(err.basic, err.entries);
+        if (err instanceof IntersectionError) {
+            console.log(err.basic, err.entries);
+        }
     }
 }
