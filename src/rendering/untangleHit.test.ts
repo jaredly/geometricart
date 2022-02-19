@@ -5,7 +5,15 @@ const si = (
     enter: boolean,
     exit: boolean,
     id: number,
-): SegmentIntersection => ({ theta, enter, exit, distance: 0, segment: 0, id });
+): SegmentIntersection => ({
+    theta,
+    enter,
+    exit,
+    distance: 0,
+    segment: 0,
+    id,
+    coordKey: '0.000,0.000',
+});
 
 const N = -Math.PI / 2;
 const E = 0;

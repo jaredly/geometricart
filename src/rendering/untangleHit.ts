@@ -25,6 +25,7 @@ export type SegmentIntersection = {
     // idx
     segment: number;
     id: number;
+    coordKey: string;
 };
 
 /**
