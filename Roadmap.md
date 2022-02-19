@@ -3,7 +3,7 @@
 
 - [x] non-intersecting (easy to detect, and then do an is-inside check for any of the points of the shape)
 - [x] arcs with the same tangent as a line (see test case)
-- [ ] welp, found another bug
+- [x] welp, found another bug (it was my lazy method of seeing if any actual collisions happened)
 - [ ] (low priority) self-intersecting shapes, so that you can have more than 4 participants in a setup.
 
 AND THEN

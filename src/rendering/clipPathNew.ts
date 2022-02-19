@@ -205,9 +205,19 @@ export const clipPathNew = (
     if (debug) {
         console.log('by segment', entriesBySegment, hitKeys, hits);
     }
+    // If ... it's all just enter & exit, and nothing has more than 2 entries
+    let hasCollision = false;
+    hitKeys.forEach((k) => {
+        if (
+            hits[k].parties.length !== 2 ||
+            hits[k].parties.some((p) => p.enter && p.exit)
+        ) {
+            hasCollision = true;
+        }
+    });
 
     // All we're getting are endpoints.
-    if (hitKeys.length === allSegments.length) {
+    if (!hasCollision) {
         if (insidePath(path.origin, pathToPrimitives(clip), clip)) {
             return [path];
         } else {
