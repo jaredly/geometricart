@@ -1,4 +1,4 @@
-import { SegmentIntersection, untangleHit } from './clipPathNew';
+import { untangleHit, SegmentIntersection } from './untangleHit';
 
 const si = (
     theta: number,
@@ -38,6 +38,18 @@ describe('untangleHit', () => {
             [
                 [1, 0],
                 [0, 2],
+            ],
+        ],
+        // off
+        [
+            [
+                si(E, true, true, 0),
+                si(NE, true, false, 1),
+                si(SE, false, true, 2),
+            ],
+            [
+                [0, 0],
+                [1, 2],
             ],
         ],
     ])('should work', (entries, pairs) => {
