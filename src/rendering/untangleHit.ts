@@ -67,6 +67,7 @@ export const findExit = (
     transitions: HitTransitions,
     entryId: number,
     biasInside: boolean | null,
+    exits: { [key: string]: SegmentIntersection },
 ): null | [SegmentIntersection, boolean | null] => {
     if (transitions.type === 'straight') {
         if (transitions.transition.entry.id !== entryId) {
@@ -80,7 +81,14 @@ export const findExit = (
         const t = transitions.transitions.find((p) => p.entry.id === entryId);
         return t ? [t.exit, t.goingInside] : null;
     } else {
-        if (biasInside == null || biasInside === true) {
+        if (
+            biasInside == null &&
+            (exits[transitions.inside.id] || !exits[transitions.outside.id])
+        ) {
+            return [transitions.inside, true];
+        }
+
+        if (biasInside === true) {
             return [transitions.inside, true];
         }
         return [transitions.outside, false];

@@ -32,6 +32,8 @@ import {
 } from '../rendering/pathToPoints';
 import { paletteColor } from '../editor/RenderPath';
 import { Coord, Path, PathGroup, Segment } from '../types';
+import { segmentsBounds } from '../editor/Export';
+import { clipPathNew, clipPathTry } from './clipPathNew';
 
 // This should produce:
 // a list of lines
@@ -103,6 +105,7 @@ export function sortedVisibleInsetPaths(
     if it's inset first, go through and inset the paths, ... ok yeah that's fine.
     */
     let clipPrims = clip ? pathToPrimitives(clip) : null;
+    const clipBounds = clip ? segmentsBounds(clip) : null;
 
     let processed: Array<Path> = visible
         .map((k) => paths[k])
@@ -123,17 +126,24 @@ export function sortedVisibleInsetPaths(
                 return pathToInsetPaths(path)
                     .map((insetPath) => {
                         return clip
-                            ? clipPath(
+                            ? clipPathTry(
                                   insetPath,
                                   clip,
-                                  clipPrims!,
+                                  clipBounds!,
+                                  false,
                                   group?.clipMode,
                               )
                             : insetPath;
                     })
                     .flat();
             } else if (clip) {
-                return clipPath(path, clip, clipPrims!, group?.clipMode)
+                return clipPathTry(
+                    path,
+                    clip,
+                    clipBounds!,
+                    false,
+                    group?.clipMode,
+                )
                     .map((clipped) => pathToInsetPaths(clipped))
                     .flat();
             } else {

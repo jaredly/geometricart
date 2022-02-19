@@ -92,14 +92,14 @@ export const Clip = () => {
                     if (!other.length) {
                         return;
                     }
-                    const cclip =
-                        testCase.clip.length > 2
-                            ? ensureClockwise(testCase.clip)
-                            : testCase.clip;
-                    const cshape =
-                        testCase.shape.length > 2
-                            ? ensureClockwise(testCase.shape)
-                            : testCase.shape;
+                    // const cclip =
+                    //     testCase.clip.length > 2
+                    //         ? ensureClockwise(testCase.clip)
+                    //         : testCase.clip;
+                    // const cshape =
+                    //     testCase.shape.length > 2
+                    //         ? ensureClockwise(testCase.shape)
+                    //         : testCase.shape;
                     // const clipped =
                     //     cshape.length > 2 && cclip.length > 2
                     //         ? clipPath(
@@ -131,14 +131,25 @@ export const Clip = () => {
                                 : null} */}
                             {clipTwo
                                 ? clipTwo.map((pathPart, i) => (
-                                      <path
-                                          stroke={'magenta'}
-                                          strokeWidth={1}
-                                          fill="#faa"
-                                          opacity={0.5}
-                                          key={i}
-                                          d={calcPathD(pathPart, 1)}
-                                      />
+                                      <React.Fragment key={i}>
+                                          <path
+                                              stroke={'magenta'}
+                                              strokeWidth={1}
+                                              fill="#faa"
+                                              opacity={0.5}
+                                              key={i}
+                                              d={calcPathD(pathPart, 1)}
+                                          />
+                                          {pathPart.segments.map((p, i) => (
+                                              <circle
+                                                  key={i}
+                                                  cx={p.to.x}
+                                                  cy={p.to.y}
+                                                  r={2}
+                                                  fill="yellow"
+                                              />
+                                          ))}
+                                      </React.Fragment>
                                   ))
                                 : null}
                         </>

@@ -181,7 +181,7 @@ export const intersections = (one: Primitive, two: Primitive): Array<Coord> => {
                         return res.map((v) =>
                             one.m === Infinity
                                 ? { x: one.b, y: v }
-                                : { x: v, y: one.b },
+                                : { x: v, y: one.m * v + one.b },
                         );
                     }
                 }

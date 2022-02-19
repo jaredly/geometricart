@@ -150,6 +150,21 @@ const calcSI = (
 
 // }
 
+export const clipPathTry = (
+    path: Path,
+    clip: Array<Segment>,
+    clipBounds: Bounds,
+    debug = false,
+    groupMode?: PathGroup['clipMode'],
+): Array<Path> => {
+    try {
+        return clipPathNew(path, clip, clipBounds, debug, groupMode);
+    } catch (err) {
+        console.error(err);
+        return [];
+    }
+};
+
 export const clipPathNew = (
     path: Path,
     clip: Array<Segment>,
@@ -203,13 +218,15 @@ export const clipPathNew = (
 
     const hitKeys = Object.keys(hits);
     if (debug) {
-        console.log('by segment', entriesBySegment, hitKeys, hits);
+        console.log('by segment', entriesBySegment, hitKeys, hits, allSegments);
     }
     // If ... it's all just enter & exit, and nothing has more than 2 entries
     let hasCollision = false;
     hitKeys.forEach((k) => {
         if (
+            // It's a crossover
             hits[k].parties.length !== 2 ||
+            // We're hitting the middle of a segment
             hits[k].parties.some((p) => p.enter && p.exit)
         ) {
             hasCollision = true;
@@ -230,6 +247,9 @@ export const clipPathNew = (
     const hitPairs: { [key: string]: HitTransitions } = {};
     hitKeys.forEach((k) => {
         const pairs = untangleHit(hits[k].parties, debug);
+        if (debug) {
+            console.log(`Untangled`, k, pairs);
+        }
         hitPairs[k] = pairs;
     });
 
@@ -241,6 +261,9 @@ export const clipPathNew = (
     // Ok, so current is always an exit. And we're looking for our next enter?
     let current = entriesBySegment[0][0].entry;
     delete exits[current.id];
+    if (debug) {
+        console.log(`del exit`, current.id);
+    }
 
     type Region = {
         segments: Array<SegmentWithPrev>;
@@ -266,34 +289,37 @@ export const clipPathNew = (
             );
         }
 
+        const exit = findExit(
+            hitPairs[next.entry.coordKey],
+            next.entry.id,
+            region.isInternal,
+            exits,
+        );
+
         region.segments.push({
             prev: entryCoords[current.id],
-            shape: -1,
+            shape: exit ? exit[0].shape : -1,
             segment: {
                 ...allSegments[current.segment].segment,
                 to: next.coord,
             },
         });
 
-        const exit = findExit(
-            hitPairs[next.entry.coordKey],
-            next.entry.id,
-            region.isInternal,
-        );
         // const pair = hitPairs[next.entry.coordKey].find(
         //     (p) => p[0].id === next.entry.id,
         // );
-        // if (debug) {
-        //     console.log(
-        //         'at',
-        //         current.segment,
-        //         idx,
-        //         entryCoords[current.id],
-        //         next.coord,
-        //         // pair,
-        //         exit,
-        //     );
-        // }
+        if (debug) {
+            console.log(
+                'at',
+                current.segment,
+                idx,
+                entryCoords[current.id],
+                next.coord,
+                // pair,
+                exit,
+            );
+            console.log(region);
+        }
 
         if (!exit) {
             console.log(idx, next, hitPairs);
@@ -308,7 +334,13 @@ export const clipPathNew = (
             region.isInternal = exit[1];
         }
         if (!exits[current.id]) {
-            // console.log('finished a region!');
+            if (debug) {
+                console.log(
+                    'finished a region! No exits for',
+                    current.id,
+                    exits,
+                );
+            }
             regions.push(region);
             const k = Object.keys(exits)[0];
             if (!k) {
@@ -318,6 +350,9 @@ export const clipPathNew = (
             current = exits[+k];
         }
         delete exits[current.id];
+        if (debug) {
+            console.log(`del exit`, current.id);
+        }
     }
 
     if (debug) {
