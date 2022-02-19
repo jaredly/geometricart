@@ -11,6 +11,8 @@ import { intersections, Primitive } from './intersect';
 import { coordsEqual } from './pathsAreIdentical';
 import { isClockwise } from './pathToPoints';
 import {
+    findExit,
+    HitTransitions,
     IntersectionError,
     SegmentIntersection,
     untangleHit,
@@ -188,11 +190,7 @@ export const clipPathNew = (
         console.log('by segment', entriesBySegment);
     }
 
-    const hitPairs: {
-        [key: string]: Array<
-            [SegmentIntersection, SegmentIntersection, boolean | null]
-        >;
-    } = {};
+    const hitPairs: { [key: string]: HitTransitions } = {};
     Object.keys(hits).forEach((k) => {
         const pairs = untangleHit(hits[k].parties);
         hitPairs[k] = pairs;
@@ -240,9 +238,14 @@ export const clipPathNew = (
             },
         });
 
-        const pair = hitPairs[next.entry.coordKey].find(
-            (p) => p[0].id === next.entry.id,
+        const exit = findExit(
+            hitPairs[next.entry.coordKey],
+            next.entry.id,
+            region.isInternal,
         );
+        // const pair = hitPairs[next.entry.coordKey].find(
+        //     (p) => p[0].id === next.entry.id,
+        // );
         if (debug) {
             console.log(
                 'at',
@@ -250,11 +253,12 @@ export const clipPathNew = (
                 idx,
                 entryCoords[current.id],
                 next.coord,
-                pair,
+                // pair,
+                exit,
             );
         }
 
-        if (!pair) {
+        if (!exit) {
             console.log(idx, next, hitPairs);
             console.log(hitPairs[next.entry.coordKey]);
             throw new IntersectionError(
@@ -262,9 +266,9 @@ export const clipPathNew = (
                 entriesBySegment[current.segment].map((m) => m.entry),
             );
         }
-        current = pair[1];
-        if (pair[2] != null) {
-            region.isInternal = pair[2];
+        current = exit[0];
+        if (exit[1] != null) {
+            region.isInternal = exit[1];
         }
         if (!exits[current.id]) {
             // console.log('finished a region!');

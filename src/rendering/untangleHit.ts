@@ -1,4 +1,5 @@
 import { negPiToPi } from './clipPath';
+import { closeEnoughAngle } from './intersect';
 
 export class IntersectionError extends Error {
     basic: string;
@@ -56,14 +57,77 @@ export type SegmentIntersection = {
  * what about going tangent? oh I don't think I handle that...
  */
 
+export const findExit = (
+    transitions: HitTransitions,
+    entryId: number,
+    biasInside: boolean | null,
+): null | [SegmentIntersection, boolean | null] => {
+    if (transitions.type === 'straight') {
+        if (transitions.transition.entry.id !== entryId) {
+            return null;
+        }
+        return [
+            transitions.transition.exit,
+            transitions.transition.goingInside,
+        ];
+    } else if (transitions.type === 'cross') {
+        const t = transitions.transitions.find((p) => p.entry.id === entryId);
+        return t ? [t.exit, t.goingInside] : null;
+    } else {
+        if (biasInside == null || biasInside === true) {
+            return [transitions.inside, true];
+        }
+        return [transitions.outside, false];
+    }
+};
+
+type Cross = {
+    type: 'cross';
+    transitions: [Transition, Transition];
+};
+
+export type HitTransitions =
+    | { type: 'straight'; transition: Transition }
+    | Cross
+    | {
+          type: 'ambiguous';
+          inside: SegmentIntersection;
+          outside: SegmentIntersection;
+      };
+
 export type Transition = {
     entry: SegmentIntersection;
     exit: SegmentIntersection;
+    goingInside: boolean | null;
+};
+
+export const handleHitAmbiguity = ({
+    transitions: [one, two],
+}: Cross): HitTransitions => {
+    // Same entrance! You should pick the exit that keeps with your inside/outside status
+    if (closeEnoughAngle(one.entry.theta, two.entry.theta)) {
+        return {
+            type: 'ambiguous',
+            inside: one.goingInside ? one.exit : two.exit,
+            outside: one.goingInside ? two.exit : one.exit,
+        };
+    }
+    // Same exit! Both are now ambiguous, we can't know inside/outside from here.
+    if (closeEnoughAngle(one.exit.theta, two.exit.theta)) {
+        return {
+            type: 'cross',
+            transitions: [
+                { ...one, goingInside: null },
+                { ...two, goingInside: null },
+            ],
+        };
+    }
+    return { type: 'cross', transitions: [one, two] };
 };
 
 export const untangleHit = (
     entries: Array<SegmentIntersection>,
-): Array<[SegmentIntersection, SegmentIntersection, boolean | null]> => {
+): HitTransitions => {
     const sides: Array<Side> = [];
     entries.forEach((entry) => {
         if (entry.enter) {
@@ -93,7 +157,7 @@ export const untangleHit = (
                 entries,
             );
         }
-        return [sidesPair(a, b)];
+        return { type: 'straight', transition: sidesPair(a, b) };
     }
     /**
      * So, going clockwise:
@@ -136,6 +200,9 @@ export const untangleHit = (
     // hmm except I don't think that my `intersect` function properly returns relevant endpoints...
     // yup that's right it doesn't. So I'll need to account for that.
     // but then maybe picking one arbitrarily would work?
+
+    /// ooof ok I'll need the whole compareAngles setup, because arcs might be tangent, but also
+    // have a definite side they fall out on.
     const [a, b, c, d] = sides;
     if (
         (a.kind.type === 'exit' && b.kind.type === 'enter') ||
@@ -143,9 +210,15 @@ export const untangleHit = (
             b.kind.type === 'exit' &&
             c.kind.type === 'exit')
     ) {
-        return [sidesPair(a, b), sidesPair(c, d)];
+        return handleHitAmbiguity({
+            type: 'cross',
+            transitions: [sidesPair(a, b), sidesPair(c, d)],
+        });
     }
-    return [sidesPair(a, d), sidesPair(b, c)];
+    return handleHitAmbiguity({
+        type: 'cross',
+        transitions: [sidesPair(a, d), sidesPair(b, c)],
+    });
 };
 type Exit = {
     type: 'exit';
@@ -160,10 +233,11 @@ type Side = {
     entry: SegmentIntersection;
     theta: number;
 };
-const sidesPair = (
-    a: Side,
-    b: Side,
-): [SegmentIntersection, SegmentIntersection, boolean | null] =>
+const sidesPair = (a: Side, b: Side): Transition =>
     a.kind.type === 'enter'
-        ? [a.entry, b.entry, (b.kind as Exit).goingInside]
-        : [b.entry, a.entry, a.kind.goingInside];
+        ? {
+              entry: a.entry,
+              exit: b.entry,
+              goingInside: (b.kind as Exit).goingInside,
+          }
+        : { entry: b.entry, exit: a.entry, goingInside: a.kind.goingInside };

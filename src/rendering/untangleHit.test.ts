@@ -11,6 +11,7 @@ const si = (
     exit,
     distance: 0,
     segment: 0,
+    shape: -1,
     id,
     coordKey: '0.000,0.000',
 });
