@@ -128,6 +128,7 @@ export const Clip = () => {
                         height={200}
                         key={i}
                         viewBox={`-${size / 2} -${size / 2} ${size} ${size}`}
+                        onClick={() => setTestCase(tc)}
                     >
                         <path
                             stroke="red"
@@ -167,7 +168,7 @@ function examineCase(kase: TestCase, i: number) {
     );
     console.log('ok', i, allSegs);
     const { sorted, allHits } = calculateSortedHitsForSegments(allSegs, true);
-    const seen = {};
+    const seen: { [key: string]: boolean } = {};
     allHits.forEach((h) => {
         const k = coordKey(h.coord);
         if (seen[k]) {

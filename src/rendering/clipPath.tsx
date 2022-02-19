@@ -137,6 +137,11 @@ export const zeroToTwoPi = (angle: number) => {
     return angle;
 };
 
+export const negPiToPi = (angle: number) => {
+    const res = zeroToTwoPi(angle);
+    return res > Math.PI ? res - Math.PI * 2 : res;
+};
+
 export const isInside = (
     back: Angle,
     forward: Angle,
