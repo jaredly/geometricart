@@ -2,7 +2,8 @@
 # Main Gaps in the Clips Stuffs
 
 - [x] non-intersecting (easy to detect, and then do an is-inside check for any of the points of the shape)
-- [ ] arcs with the same tangent as a line (see test case)
+- [x] arcs with the same tangent as a line (see test case)
+- [ ] welp, found another bug
 - [ ] (low priority) self-intersecting shapes, so that you can have more than 4 participants in a setup.
 
 AND THEN

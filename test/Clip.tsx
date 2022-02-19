@@ -5,6 +5,7 @@ import { calcPathD, pathSegs } from '../src/editor/RenderPath';
 import { coordKey } from '../src/rendering/calcAllIntersections';
 // import { clipPath } from '../src/rendering/clipPath';
 import { clipPathNew } from '../src/rendering/clipPathNew';
+import { simplifyPath } from '../src/rendering/insetPath';
 import { ensureClockwise } from '../src/rendering/pathToPoints';
 import {
     addPrevsToSegments,
@@ -46,7 +47,7 @@ export const Clip = () => {
         try {
             if (cshape.length > 2 && cclip.length > 2) {
                 clipTwo = clipPathNew(
-                    pathSegs(cshape),
+                    pathSegs(simplifyPath(cshape)),
                     cclip,
                     segmentsBounds(cclip),
                     true,
