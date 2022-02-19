@@ -2,9 +2,13 @@
  * Clipping and stuff
  */
 
-import { segmentToPrimitive } from '../editor/findSelection';
+import { segmentsBounds } from '../editor/Export';
+import { pathToPrimitives, segmentToPrimitive } from '../editor/findSelection';
+import { Bounds } from '../editor/GuideElement';
 import { Coord, Path, PathGroup, Segment } from '../types';
 import { coordKey } from './calcAllIntersections';
+import { angleForSegment, getAngle, insidePath, isInside } from './clipPath';
+import { boundsIntersect } from './findInternalRegions';
 import { angleBetween } from './findNextSegments';
 import { angleTo, dist } from './getMirrorTransforms';
 import { intersections, Primitive } from './intersect';
@@ -115,12 +119,13 @@ const calcSI = (
     coord: Coord,
     key: string,
 ): SegmentIntersection => {
-    const theta =
-        segment.type === 'Line'
-            ? angleTo(prev, segment.to)
-            : // TODO: CHECK SIGN!!
-              angleTo(segment.center, coord) +
-              (Math.PI / 2) * (segment.clockwise ? 1 : -1);
+    const theta = angleForSegment(prev, segment, coord);
+    // const theta =
+    //     segment.type === 'Line'
+    //         ? angleTo(prev, segment.to)
+    //         : // TODO: CHECK SIGN!!
+    //           angleTo(segment.center, coord) +
+    //           (Math.PI / 2) * (segment.clockwise ? 1 : -1);
     const distance =
         segment.type === 'Line'
             ? dist(coord, segment.to)
@@ -148,12 +153,22 @@ const calcSI = (
 export const clipPathNew = (
     path: Path,
     clip: Array<Segment>,
+    clipBounds: Bounds,
     debug = false,
-    // clipPrimitives: Array<Primitive>,
-    groupMode?: PathGroup['clipMode'], // TODO this should definitely be a path level attribute
-) => {
+    groupMode?: PathGroup['clipMode'],
+): Array<Path> => {
     if (!isClockwise(path.segments)) {
         throw new Error(`non-clockwise path`);
+    }
+    const clipMode = path.clipMode ?? groupMode;
+
+    if (clipMode === 'none') {
+        return [path];
+    }
+
+    const pathBounding = segmentsBounds(path.segments);
+    if (!boundsIntersect(pathBounding, clipBounds)) {
+        return [];
     }
 
     /*
@@ -186,12 +201,24 @@ export const clipPathNew = (
     const { hits, entriesBySegment, exits, entryCoords } =
         getSomeHits(allSegments);
 
+    const hitKeys = Object.keys(hits);
     if (debug) {
-        console.log('by segment', entriesBySegment);
+        console.log('by segment', entriesBySegment, hitKeys, hits);
+    }
+
+    // All we're getting are endpoints.
+    if (hitKeys.length === allSegments.length) {
+        if (insidePath(path.origin, pathToPrimitives(clip), clip)) {
+            return [path];
+        } else {
+            return [];
+        }
+    } else if (clipMode === 'remove') {
+        return [];
     }
 
     const hitPairs: { [key: string]: HitTransitions } = {};
-    Object.keys(hits).forEach((k) => {
+    hitKeys.forEach((k) => {
         const pairs = untangleHit(hits[k].parties);
         hitPairs[k] = pairs;
     });
@@ -246,17 +273,17 @@ export const clipPathNew = (
         // const pair = hitPairs[next.entry.coordKey].find(
         //     (p) => p[0].id === next.entry.id,
         // );
-        if (debug) {
-            console.log(
-                'at',
-                current.segment,
-                idx,
-                entryCoords[current.id],
-                next.coord,
-                // pair,
-                exit,
-            );
-        }
+        // if (debug) {
+        //     console.log(
+        //         'at',
+        //         current.segment,
+        //         idx,
+        //         entryCoords[current.id],
+        //         next.coord,
+        //         // pair,
+        //         exit,
+        //     );
+        // }
 
         if (!exit) {
             console.log(idx, next, hitPairs);
@@ -293,7 +320,12 @@ export const clipPathNew = (
             // TODO: verify that the prevs actually do match up
             return region.segments.map((s) => s.segment);
         })
-        .filter(isClockwise);
+        .filter(isClockwise)
+        .map((segments) => ({
+            ...path,
+            segments,
+            origin: segments[segments.length - 1].to,
+        }));
 
     // const { sorted, allHits } = calculateSortedHitsForSegments(allSegments);
     // const split = splitSegmentsByIntersections(allSegments, sorted);

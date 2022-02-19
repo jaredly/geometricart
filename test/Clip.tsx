@@ -1,8 +1,9 @@
 import * as React from 'react';
+import { segmentsBounds } from '../src/editor/Export';
 import { pathToPrimitives } from '../src/editor/findSelection';
 import { calcPathD, pathSegs } from '../src/editor/RenderPath';
 import { coordKey } from '../src/rendering/calcAllIntersections';
-import { clipPath } from '../src/rendering/clipPath';
+// import { clipPath } from '../src/rendering/clipPath';
 import { clipPathNew } from '../src/rendering/clipPathNew';
 import { ensureClockwise } from '../src/rendering/pathToPoints';
 import {
@@ -41,10 +42,15 @@ export const Clip = () => {
             testCase.shape.length > 2
                 ? ensureClockwise(testCase.shape)
                 : testCase.shape;
-        let clipTwo = null as null | Array<Array<Segment>>;
+        let clipTwo = null as null | Array<Path>;
         try {
             if (cshape.length > 2 && cclip.length > 2) {
-                clipTwo = clipPathNew(pathSegs(cshape), cclip, true);
+                clipTwo = clipPathNew(
+                    pathSegs(cshape),
+                    cclip,
+                    segmentsBounds(cclip),
+                    true,
+                );
             }
         } catch (err) {
             console.log('nope');
@@ -93,14 +99,14 @@ export const Clip = () => {
                         testCase.shape.length > 2
                             ? ensureClockwise(testCase.shape)
                             : testCase.shape;
-                    const clipped =
-                        cshape.length > 2 && cclip.length > 2
-                            ? clipPath(
-                                  { ...pathSegs(cshape), debug: false },
-                                  cclip,
-                                  pathToPrimitives(cclip),
-                              )
-                            : null;
+                    // const clipped =
+                    //     cshape.length > 2 && cclip.length > 2
+                    //         ? clipPath(
+                    //               { ...pathSegs(cshape), debug: false },
+                    //               cclip,
+                    //               pathToPrimitives(cclip),
+                    //           )
+                    //         : null;
 
                     return (
                         <>
@@ -123,14 +129,14 @@ export const Clip = () => {
                                   ))
                                 : null} */}
                             {clipTwo
-                                ? clipTwo.map((segs, i) => (
+                                ? clipTwo.map((pathPart, i) => (
                                       <path
                                           stroke={'magenta'}
                                           strokeWidth={1}
                                           fill="#faa"
                                           opacity={0.5}
                                           key={i}
-                                          d={calcPathD(pathSegs(segs), 1)}
+                                          d={calcPathD(pathPart, 1)}
                                       />
                                   ))
                                 : null}
@@ -189,7 +195,7 @@ export const Clip = () => {
                                 strokeWidth={1}
                                 fill="#aaa"
                                 opacity={0.5}
-                                d={calcPathD(pathSegs(clip), 1)}
+                                d={calcPathD(clip, 1)}
                                 key={i}
                             />
                         ))}
@@ -202,7 +208,7 @@ export const Clip = () => {
 
 const clipPathTry = (path: Path, clip: Array<Segment>) => {
     try {
-        return clipPathNew(path, clip);
+        return clipPathNew(path, clip, segmentsBounds(clip));
     } catch (err) {
         return [];
     }
@@ -229,6 +235,7 @@ function examineCase(kase: TestCase, i: number) {
             clipPathNew(
                 pathSegs(ensureClockwise(kase.shape)),
                 ensureClockwise(kase.clip),
+                segmentsBounds(kase.clip),
             ),
         );
     } catch (err) {

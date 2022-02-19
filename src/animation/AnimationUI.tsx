@@ -294,7 +294,7 @@ export const AnimationEditor = ({
                                     animatedFunctions,
                                     animationPosition,
                                 );
-                            const animatedPaths = scripts.length
+                            const animatedPaths = Object.keys(scripts).length
                                 ? getAnimatedPaths(
                                       state,
                                       scripts,
@@ -322,6 +322,39 @@ export const AnimationEditor = ({
                     }}
                 >
                     Export frame
+                </button>
+                <button
+                    onClick={() => {
+                        const scripts = getAnimationScripts(state);
+                        const currentAnimatedValues = evaluateAnimatedValues(
+                            animatedFunctions,
+                            animationPosition,
+                        );
+                        const animatedPaths = Object.keys(scripts).length
+                            ? getAnimatedPaths(
+                                  state,
+                                  scripts,
+                                  animationPosition,
+                                  currentAnimatedValues,
+                              )
+                            : state.paths;
+                        dispatch({
+                            type: 'reset',
+                            state: {
+                                ...state,
+                                paths: animatedPaths,
+                                animations: {
+                                    timelines: [],
+                                    lerps: {},
+                                    scripts: {},
+                                    config: state.animations.config,
+                                },
+                                history: initialHistory,
+                            },
+                        });
+                    }}
+                >
+                    Calcify &amp; Reset
                 </button>
             </div>
             {transcodingProgress.start === 0 ? null : (

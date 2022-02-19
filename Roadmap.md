@@ -1,4 +1,20 @@
 
+# Main Gaps in the Clips Stuffs
+
+- [x] non-intersecting (easy to detect, and then do an is-inside check for any of the points of the shape)
+- [ ] arcs with the same tangent as a line (see test case)
+- [ ] (low priority) self-intersecting shapes, so that you can have more than 4 participants in a setup.
+
+AND THEN
+
+we can start using it.
+
+AND THEN
+
+let's do the "path hash", so we only calculate insets for one thing at a time, pleeeeease
+
+
+
 Clips, with arcs!
 
 Ok, I've found some smallish breaking cases.

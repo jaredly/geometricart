@@ -1,4 +1,10 @@
-import { negPiToPi } from './clipPath';
+import {
+    Angle,
+    anglesEqual,
+    backAngle,
+    negPiToPi,
+    sortAngles,
+} from './clipPath';
 import { closeEnoughAngle } from './intersect';
 
 export class IntersectionError extends Error {
@@ -21,7 +27,7 @@ export class IntersectionError extends Error {
  */
 export type SegmentIntersection = {
     shape: number;
-    theta: number;
+    theta: Angle;
     // if false, this is the start of the segment
     enter: boolean;
     // if false, this is the end of the segment
@@ -105,7 +111,7 @@ export const handleHitAmbiguity = ({
     transitions: [one, two],
 }: Cross): HitTransitions => {
     // Same entrance! You should pick the exit that keeps with your inside/outside status
-    if (closeEnoughAngle(one.entry.theta, two.entry.theta)) {
+    if (anglesEqual(one.entry.theta, two.entry.theta)) {
         return {
             type: 'ambiguous',
             inside: one.goingInside ? one.exit : two.exit,
@@ -113,7 +119,7 @@ export const handleHitAmbiguity = ({
         };
     }
     // Same exit! Both are now ambiguous, we can't know inside/outside from here.
-    if (closeEnoughAngle(one.exit.theta, two.exit.theta)) {
+    if (anglesEqual(one.exit.theta, two.exit.theta)) {
         return {
             type: 'cross',
             transitions: [
@@ -136,7 +142,8 @@ export const untangleHit = (
                 entry,
                 // So, we could instead to `angleBetween(0, entry.theta + Math.PI, true)`
                 // which might more effectively normalize? idk.
-                theta: negPiToPi(entry.theta + Math.PI),
+                // theta: negPiToPi(entry.theta + Math.PI),
+                theta: backAngle(entry.theta),
             });
         }
         if (entry.exit) {
@@ -148,7 +155,8 @@ export const untangleHit = (
         }
     });
     // Sorting in clockwise order
-    sides.sort((a, b) => a.theta - b.theta);
+    // sides.sort((a, b) => a.theta - b.theta);
+    sides.sort((a, b) => sortAngles(a.theta, b.theta));
     if (sides.length === 2) {
         const [a, b] = sides;
         if (a.kind.type === b.kind.type) {
@@ -231,7 +239,8 @@ type Exit = {
 type Side = {
     kind: { type: 'enter' } | Exit;
     entry: SegmentIntersection;
-    theta: number;
+    theta: Angle;
+    // theta: number;
 };
 const sidesPair = (a: Side, b: Side): Transition =>
     a.kind.type === 'enter'

@@ -263,6 +263,18 @@ export const getBackAngle = <T extends { coord: Coord }>(
     }
 };
 
+export const backAngle = (angle: Angle): Angle => {
+    if (angle.type === 'flat') {
+        return { type: 'flat', theta: negPiToPi(angle.theta + Math.PI) };
+    }
+    return {
+        type: 'arc',
+        clockwise: !angle.clockwise,
+        radius: angle.radius,
+        theta: negPiToPi(angle.theta + Math.PI),
+    };
+};
+
 export const getAngle = <T extends { coord: Coord }>(
     one: Clippable<T>,
     location: HitLocation,
@@ -295,6 +307,26 @@ export const getAngle = <T extends { coord: Coord }>(
     } else {
         const theta =
             angleTo(segment.center, pos) +
+            (Math.PI / 2) * (segment.clockwise ? 1 : -1);
+        return {
+            type: 'arc',
+            clockwise: segment.clockwise,
+            radius: dist(segment.center, segment.to),
+            theta,
+        };
+    }
+};
+
+export const angleForSegment = (
+    prev: Coord,
+    segment: Segment,
+    coord: Coord,
+): Angle => {
+    if (segment.type === 'Line') {
+        return { type: 'flat', theta: angleTo(prev, segment.to) };
+    } else {
+        const theta =
+            angleTo(segment.center, coord) +
             (Math.PI / 2) * (segment.clockwise ? 1 : -1);
         return {
             type: 'arc',
