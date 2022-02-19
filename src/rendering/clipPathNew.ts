@@ -120,7 +120,7 @@ const calcSI = (
             ? angleTo(prev, segment.to)
             : // TODO: CHECK SIGN!!
               angleTo(segment.center, coord) +
-              Math.PI * (segment.clockwise ? 1 : -1);
+              (Math.PI / 2) * (segment.clockwise ? 1 : -1);
     const distance =
         segment.type === 'Line'
             ? dist(coord, segment.to)

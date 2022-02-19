@@ -1,4 +1,11 @@
 
+Clips, with arcs!
+
+Ok, I've found some smallish breaking cases.
+yayyy ok arcs work!
+
+--
+
 Ok, filtering outside stuff is working pretty well!!!
 
 Definitely need line-over-line fix.
