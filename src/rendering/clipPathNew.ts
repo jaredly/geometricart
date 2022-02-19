@@ -219,7 +219,7 @@ export const clipPathNew = (
 
     const hitPairs: { [key: string]: HitTransitions } = {};
     hitKeys.forEach((k) => {
-        const pairs = untangleHit(hits[k].parties);
+        const pairs = untangleHit(hits[k].parties, debug);
         hitPairs[k] = pairs;
     });
 

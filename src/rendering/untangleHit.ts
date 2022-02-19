@@ -133,6 +133,7 @@ export const handleHitAmbiguity = ({
 
 export const untangleHit = (
     entries: Array<SegmentIntersection>,
+    debug = false,
 ): HitTransitions => {
     const sides: Array<Side> = [];
     entries.forEach((entry) => {
@@ -157,6 +158,9 @@ export const untangleHit = (
     // Sorting in clockwise order
     // sides.sort((a, b) => a.theta - b.theta);
     sides.sort((a, b) => sortAngles(a.theta, b.theta));
+    if (debug) {
+        console.log(`Untangle`, entries, sides);
+    }
     if (sides.length === 2) {
         const [a, b] = sides;
         if (a.kind.type === b.kind.type) {

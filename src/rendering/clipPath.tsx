@@ -332,7 +332,7 @@ export const angleForSegment = (
             type: 'arc',
             clockwise: segment.clockwise,
             radius: dist(segment.center, segment.to),
-            theta,
+            theta: negPiToPi(theta),
         };
     }
 };
