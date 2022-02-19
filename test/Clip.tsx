@@ -53,7 +53,7 @@ export const Clip = () => {
             }
         }
         return clipTwo;
-    }, []);
+    }, [testCase]);
 
     const size = 500;
     return (
