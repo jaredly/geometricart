@@ -3,6 +3,7 @@ import { pathToPrimitives } from '../src/editor/findSelection';
 import { calcPathD, pathSegs } from '../src/editor/RenderPath';
 import { coordKey } from '../src/rendering/calcAllIntersections';
 import { clipPath } from '../src/rendering/clipPath';
+import { clipPathNew } from '../src/rendering/clipPathNew';
 import { ensureClockwise } from '../src/rendering/pathToPoints';
 import {
     addPrevsToSegments,
@@ -76,6 +77,17 @@ export const Clip = () => {
                                   pathToPrimitives(cclip),
                               )
                             : null;
+
+                    let clipTwo = null as null | Array<Array<Segment>>;
+                    try {
+                        if (cshape.length > 2 && cclip.length > 2) {
+                            clipTwo = clipPathNew(pathSegs(cshape), cclip);
+                        }
+                    } catch (err) {
+                        console.log('nope');
+                        console.log(err.basic, err.entries);
+                    }
+
                     return (
                         <>
                             <path
@@ -84,7 +96,7 @@ export const Clip = () => {
                                 fill="none"
                                 d={calcPathD(pathSegs(other), 1)}
                             />
-                            {clipped
+                            {/* {clipped
                                 ? clipped.map((segs, i) => (
                                       <path
                                           stroke={'white'}
@@ -93,6 +105,18 @@ export const Clip = () => {
                                           opacity={0.5}
                                           key={i}
                                           d={calcPathD(segs, 1)}
+                                      />
+                                  ))
+                                : null} */}
+                            {clipTwo
+                                ? clipTwo.map((segs, i) => (
+                                      <path
+                                          stroke={'magenta'}
+                                          strokeWidth={1}
+                                          fill="#faa"
+                                          opacity={0.5}
+                                          key={i}
+                                          d={calcPathD(pathSegs(segs), 1)}
                                       />
                                   ))
                                 : null}
@@ -122,7 +146,7 @@ export const Clip = () => {
                     flexWrap: 'wrap',
                 }}
             >
-                {testCases.map((tc, i) => (
+                {/* {testCases.map((tc, i) => (
                     <svg
                         width={200}
                         height={200}
@@ -156,7 +180,7 @@ export const Clip = () => {
                             />
                         ))}
                     </svg>
-                ))}
+                ))} */}
             </div>
         </div>
     );
@@ -177,4 +201,16 @@ function examineCase(kase: TestCase, i: number) {
         seen[k] = true;
     });
     console.log(allHits);
+    try {
+        console.log(
+            'good news',
+            clipPathNew(
+                pathSegs(ensureClockwise(kase.shape)),
+                ensureClockwise(kase.clip),
+            ),
+        );
+    } catch (err) {
+        console.log('No dice');
+        console.log(err.basic, err.entries);
+    }
 }

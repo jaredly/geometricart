@@ -3,6 +3,8 @@ import { negPiToPi } from './clipPath';
 export class IntersectionError extends Error {
     constructor(message: string, entries: Array<SegmentIntersection>) {
         super(message + `: Entries ${JSON.stringify(entries)}`);
+        this.basic = message;
+        this.entries = entries;
     }
 }
 

@@ -32,6 +32,7 @@ import { calcPathD, segmentArrow } from '../src/editor/RenderPath';
 import { Coord, Segment } from '../src/types';
 import { fixture } from './fixture';
 import { getInsets, insetColors, pathSegs, size } from './run';
+import { coordKey } from '../src/rendering/calcAllIntersections';
 
 export const maybeSnap = (v: number, snap?: number) =>
     snap ? Math.round(v / snap) * snap : v;
@@ -229,6 +230,7 @@ export const Drawing = ({
                 >
                     Arc
                 </button>
+                {cursor ? coordKey(cursor) : ''}
             </div>
         </div>
     );

@@ -1,4 +1,21 @@
 
+CLIP ME UP SCOTTY
+
+yes, wonderful progress!!
+
+now, to filter out the things we don't want, we'll need to:
+
+- keep track of the entries that segments came from? I think
+- examine hit entries, to determine which /exits/ should be excluded
+- then find regions with excluded exits, and drop them!
+
+And THEN I need to thoroughly test out the arc handling, because it might be bogus.
+
+Super stoked, my folks. Gonna be rock solid.
+
+Also maybe I can use this for insets, we'll see. And weaving.
+
+
 # Next up:
 
 BUG FIX:

@@ -1,4 +1,4 @@
-import { Primitive } from './intersect';
+import { epsilon, Primitive } from './intersect';
 import { calculateIntersections } from './points';
 import { Coord, Intersect } from '../types';
 
@@ -33,8 +33,8 @@ export const calcAllIntersections = (
 
 export const numKey = (num: number, precision = 3) => {
     const res = num.toFixed(precision);
-    if (res === '-0.000') {
-        return '0.000';
+    if (res === (-epsilon).toFixed(precision)) {
+        return (0).toFixed(precision);
     }
     return res;
 };

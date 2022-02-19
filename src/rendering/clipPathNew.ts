@@ -58,7 +58,7 @@ export const getSomeHits = (segments: SegmentWithPrev[]) => {
 
     const entriesBySegment: Array<
         Array<{ coord: Coord; entry: SegmentIntersection }>
-    > = new Array(segments.length).fill([]);
+    > = new Array(segments.length).fill([]).map(() => []);
 
     const primitives = segments.map(({ prev, segment }) =>
         segmentToPrimitive(prev, segment),
@@ -140,7 +140,7 @@ const calcSI = (
 export const clipPathNew = (
     path: Path,
     clip: Array<Segment>,
-    clipPrimitives: Array<Primitive>,
+    // clipPrimitives: Array<Primitive>,
     groupMode?: PathGroup['clipMode'], // TODO this should definitely be a path level attribute
 ) => {
     if (!isClockwise(path.segments)) {
@@ -177,6 +177,8 @@ export const clipPathNew = (
     const { hits, entriesBySegment, exits, entryCoords } =
         getSomeHits(allSegments);
 
+    // console.log('by segment', entriesBySegment);
+
     const hitPairs: {
         [key: string]: Array<[SegmentIntersection, SegmentIntersection]>;
     } = {};
@@ -184,6 +186,8 @@ export const clipPathNew = (
         const pairs = untangleHit(hits[k].parties);
         hitPairs[k] = pairs;
     });
+
+    // console.log(`Exits to hit ${Object.keys(exits).length}`);
 
     // whereeee to start?
     // like.
@@ -201,9 +205,23 @@ export const clipPathNew = (
         // let next: {coord: Coord, entry: SegmentIntersection};
 
         const idx = entriesBySegment[current.segment].findIndex(
-            (e) => e.entry === current,
+            (e) => e.entry.id === current.id,
         );
         const next = entriesBySegment[current.segment][idx + 1];
+        if (!next) {
+            throw new IntersectionError(
+                `WHAT?? how is this an exit, and yet nothing next? ${idx}`,
+                entriesBySegment[current.segment].map((s) => s.entry),
+            );
+        }
+
+        // console.log(
+        //     'at',
+        //     current.segment,
+        //     idx,
+        //     entryCoords[current.id],
+        //     next.coord,
+        // );
 
         region.push({
             prev: entryCoords[current.id],
@@ -218,6 +236,8 @@ export const clipPathNew = (
         );
 
         if (!pair) {
+            console.log(idx, next, hitPairs);
+            console.log(hitPairs[next.entry.coordKey]);
             throw new IntersectionError(
                 `no pair foind for next ${idx + 1}`,
                 entriesBySegment[current.segment].map((m) => m.entry),
@@ -225,18 +245,24 @@ export const clipPathNew = (
         }
         current = pair[1];
         if (!exits[current.id]) {
+            // console.log('finished a region!');
+            regions.push(region);
             const k = Object.keys(exits)[0];
             if (!k) {
                 break;
             }
-            regions.push(region);
             region = [];
             current = exits[+k];
-            delete exits[+k];
         }
+        delete exits[current.id];
     }
 
-    return regions;
+    return regions
+        .map((region) => {
+            // TODO: verify that the prevs actually do match up
+            return region.map((s) => s.segment);
+        })
+        .filter(isClockwise);
 
     // const { sorted, allHits } = calculateSortedHitsForSegments(allSegments);
     // const split = splitSegmentsByIntersections(allSegments, sorted);
