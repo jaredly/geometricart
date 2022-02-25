@@ -62,12 +62,18 @@ export const isMaybeClockwise = (segments: Array<Segment>) => {
 };
 
 export const isClockwise = (segments: Array<Segment>) => {
+    if (segments.length === 1 && segments[0].type === 'Arc') {
+        return segments[0].clockwise;
+    }
     return totalAngle(segments) >= Math.PI - epsilon;
 };
 
 export const toDegrees = (x: number) => Math.floor((x / Math.PI) * 180);
 
 export const ensureClockwise = (segments: Array<Segment>) => {
+    if (segments.length === 1 && segments[0].type === 'Arc') {
+        return [{ ...segments[0], clockwise: true }];
+    }
     if (segments.length < 2 || isClockwise(segments)) {
         return segments;
     }

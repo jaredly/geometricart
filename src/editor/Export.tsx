@@ -9,7 +9,7 @@ import { canvasRender } from '../rendering/CanvasRender';
 import { Bounds } from './GuideElement';
 import { BlurInt, Text, Toggle } from './Forms';
 import { transparent } from './Icons';
-import { angleBetween } from '../rendering/findNextSegments';
+import { angleBetween, isAngleBetween } from '../rendering/findNextSegments';
 import { angleTo, dist, push } from '../rendering/getMirrorTransforms';
 import { setup } from './RenderWebGL';
 import { PREFIX, SUFFIX } from './Sidebar';
@@ -93,29 +93,20 @@ export const segmentBounds = (prev: Coord, segment: Segment): Bounds => {
                 y1: Math.max(segment.to.y, prev.y),
             };
         case 'Arc': {
-            // lets do 3 samples, we'll be generous
+            // Hmmm ok what we really need is:
+            // start & end & the 4 cardinal points if they are crossed.
             const t0 = angleTo(segment.center, prev);
             const t1 = angleTo(segment.center, segment.to);
-            let around = angleBetween(t0, t1, segment.clockwise);
-            if (closeEnough(around, 0)) {
-                around = Math.PI * 2;
-            }
 
-            const tmid = t0 + around / 2;
+            const r = dist(segment.center, segment.to);
 
-            const samples = 6;
-            // const mid = push(segment.center, tmid, dist(segment.center, prev));
-            const coords = [prev, segment.to];
-            for (let i = 0.5; i < samples; i++) {
-                const tmid = t0 + (around / samples) * i;
-                const mid = push(
-                    segment.center,
-                    tmid,
-                    dist(segment.center, prev),
-                );
-                coords.push(mid);
-            }
-            return boundsForCoords(...coords);
+            return boundsForCoords(
+                prev,
+                segment.to,
+                ...[0, Math.PI, Math.PI / 2, -Math.PI / 2]
+                    .filter((t) => isAngleBetween(t0, t, t1, segment.clockwise))
+                    .map((t) => push(segment.center, t, r)),
+            );
         }
     }
 };

@@ -55,12 +55,14 @@ export const ShowHitIntersection = ({
     zoom,
     pair,
     coord,
+    arrowSize = 10 / 100,
 }: {
     coord: Coord;
     zoom: number;
+    arrowSize?: number;
     pair: HitTransitions;
 }) => {
-    const size = 10 / 100;
+    const size = arrowSize;
     switch (pair.type) {
         case 'ambiguous':
             return (

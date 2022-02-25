@@ -1,16 +1,19 @@
 import * as React from 'react';
+import { ShowHitIntersection } from '../src/editor/DebugOrigPath';
 import { segmentsBounds } from '../src/editor/Export';
 import { pathToPrimitives } from '../src/editor/findSelection';
 import { calcPathD, pathSegs } from '../src/editor/RenderPath';
 import { coordKey } from '../src/rendering/calcAllIntersections';
 // import { clipPath } from '../src/rendering/clipPath';
-import { clipPathNew } from '../src/rendering/clipPathNew';
-import { simplifyPath } from '../src/rendering/insetPath';
-import { ensureClockwise } from '../src/rendering/pathToPoints';
 import {
     addPrevsToSegments,
-    calculateSortedHitsForSegments,
-} from '../src/rendering/segmentsToNonIntersectingSegments';
+    clipPathNew,
+    getSomeHits,
+    HitsInfo,
+} from '../src/rendering/clipPathNew';
+import { simplifyPath } from '../src/rendering/insetPath';
+import { ensureClockwise } from '../src/rendering/pathToPoints';
+import { calculateSortedHitsForSegments } from '../src/rendering/segmentsToNonIntersectingSegments';
 import { IntersectionError } from '../src/rendering/untangleHit';
 import { Path, Segment } from '../src/types';
 import { Drawing, useLocalStorage, validSegments } from './Canvas';
@@ -34,7 +37,7 @@ export const Clip = () => {
     // });
     // examineCase(testCase, 0);
 
-    const clipTwo = React.useMemo(() => {
+    const clipTwo = React.useMemo((): null | [Array<Path>, HitsInfo] => {
         console.log(testCase);
         const cclip = validSegments(testCase.clip)
             ? ensureClockwise(testCase.clip)
@@ -43,8 +46,14 @@ export const Clip = () => {
             ? ensureClockwise(testCase.shape)
             : testCase.shape;
         let clipTwo = null as null | Array<Path>;
+        let clipData = null as null | HitsInfo;
         try {
             if (validSegments(cshape) && validSegments(cclip)) {
+                clipData = getSomeHits(
+                    addPrevsToSegments(cshape, 0).concat(
+                        addPrevsToSegments(cclip, 1),
+                    ),
+                );
                 clipTwo = clipPathNew(
                     pathSegs(simplifyPath(cshape)),
                     cclip,
@@ -53,12 +62,12 @@ export const Clip = () => {
                 );
             }
         } catch (err) {
-            console.log('nope');
+            console.log('nope', err);
             if (err instanceof IntersectionError) {
                 console.log(err.basic, err.entries);
             }
         }
-        return clipTwo;
+        return clipTwo && clipData ? [clipTwo, clipData] : null;
     }, [testCase]);
 
     const size = 500;
@@ -129,7 +138,7 @@ export const Clip = () => {
                                   ))
                                 : null} */}
                             {clipTwo
-                                ? clipTwo.map((pathPart, i) => (
+                                ? clipTwo[0].map((pathPart, i) => (
                                       <React.Fragment key={i}>
                                           <path
                                               stroke={'magenta'}
@@ -150,6 +159,34 @@ export const Clip = () => {
                                           ))}
                                       </React.Fragment>
                                   ))
+                                : null}
+                            {clipTwo
+                                ? Object.keys(clipTwo[1].hits).map((k) => {
+                                      const zoom = 1;
+                                      const coord = clipTwo[1].hits[k].coord;
+                                      const type = clipTwo[1].hitPairs[k].type;
+                                      const colors = {
+                                          straight: 'red',
+                                          cross: 'green',
+                                          ambiguous: 'magenta',
+                                      };
+                                      return (
+                                          <React.Fragment key={k}>
+                                              <circle
+                                                  cx={coord.x * zoom}
+                                                  cy={coord.y * zoom}
+                                                  r={5}
+                                                  fill={colors[type]}
+                                              />
+                                              <ShowHitIntersection
+                                                  coord={coord}
+                                                  pair={clipTwo[1].hitPairs[k]}
+                                                  zoom={zoom}
+                                                  arrowSize={10}
+                                              />
+                                          </React.Fragment>
+                                      );
+                                  })
                                 : null}
                         </>
                     );
@@ -178,39 +215,62 @@ export const Clip = () => {
                 }}
             >
                 {testCases.map((tc, i) => (
-                    <svg
-                        width={200}
-                        height={200}
+                    <div
                         key={i}
-                        viewBox={`-${size / 2} -${size / 2} ${size} ${size}`}
-                        onClick={() => setTestCase(tc)}
+                        className="hover"
+                        style={{ position: 'relative' }}
                     >
-                        <path
-                            stroke="red"
-                            strokeWidth={3}
-                            d={calcPathD(pathSegs(tc.shape), 1)}
-                        />
-                        <path
-                            stroke="blue"
-                            strokeWidth={3}
-                            fill="none"
-                            d={calcPathD(pathSegs(tc.clip), 1)}
-                        />
-                        {clipPathTry(
-                            pathSegs(ensureClockwise(tc.shape)),
-                            ensureClockwise(tc.clip),
-                            // pathToPrimitives(ensureClockwise(tc.clip)),
-                        ).map((clip, i) => (
+                        <svg
+                            width={200}
+                            height={200}
+                            viewBox={`-${size / 2} -${
+                                size / 2
+                            } ${size} ${size}`}
+                            onClick={() => setTestCase(tc)}
+                        >
                             <path
-                                stroke="white"
-                                strokeWidth={1}
-                                fill="#aaa"
-                                opacity={0.5}
-                                d={calcPathD(clip, 1)}
-                                key={i}
+                                stroke="red"
+                                strokeWidth={3}
+                                d={calcPathD(pathSegs(tc.shape), 1)}
                             />
-                        ))}
-                    </svg>
+                            <path
+                                stroke="blue"
+                                strokeWidth={3}
+                                fill="none"
+                                d={calcPathD(pathSegs(tc.clip), 1)}
+                            />
+                            {clipPathTry(
+                                pathSegs(ensureClockwise(tc.shape)),
+                                ensureClockwise(tc.clip),
+                                // pathToPrimitives(ensureClockwise(tc.clip)),
+                            ).map((clip, i) => (
+                                <path
+                                    stroke="white"
+                                    strokeWidth={1}
+                                    fill="#aaa"
+                                    opacity={0.5}
+                                    d={calcPathD(clip, 1)}
+                                    key={i}
+                                />
+                            ))}
+                        </svg>
+                        <button
+                            className="hovershow"
+                            onClick={() => {
+                                const cases = testCases.slice();
+                                cases.splice(i, 1);
+                                setTestCases(cases);
+                            }}
+                            style={{
+                                cursor: 'pointer',
+                                position: 'absolute',
+                                top: 0,
+                                right: 0,
+                            }}
+                        >
+                            x
+                        </button>
+                    </div>
                 ))}
             </div>
         </div>
@@ -226,8 +286,8 @@ const clipPathTry = (path: Path, clip: Array<Segment>) => {
 };
 
 function examineCase(kase: TestCase, i: number) {
-    const allSegs = addPrevsToSegments(ensureClockwise(kase.shape)).concat(
-        addPrevsToSegments(kase.clip),
+    const allSegs = addPrevsToSegments(ensureClockwise(kase.shape), 0).concat(
+        addPrevsToSegments(kase.clip, 1),
     );
     // console.log('ok', i, allSegs);
     const { sorted, allHits } = calculateSortedHitsForSegments(allSegs, true);

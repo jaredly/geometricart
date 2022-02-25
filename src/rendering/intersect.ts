@@ -159,7 +159,11 @@ export type Primitive = SlopeIntercept | Circle;
 
 const close = (a: number, b: number) => Math.abs(a - b) < epsilon;
 
-export const intersections = (one: Primitive, two: Primitive): Array<Coord> => {
+export const intersections = (
+    one: Primitive,
+    two: Primitive,
+    debug = false,
+): Array<Coord> => {
     if (one.type === 'line') {
         if (two.type === 'line') {
             if (closeEnough(one.m, two.m)) {
@@ -189,10 +193,10 @@ export const intersections = (one: Primitive, two: Primitive): Array<Coord> => {
             const res = lineLine(one, two);
             return res ? [res] : [];
         }
-        return lineCircle(two, one);
+        return lineCircle(two, one, debug);
     }
     if (two.type === 'line') {
-        return lineCircle(one, two);
+        return lineCircle(one, two, debug);
     }
     return circleCircle(one, two);
 };
@@ -317,6 +321,9 @@ export function lineCircle(
             return [];
         }
         const y = Math.sqrt(sq(radius) - sq(intercept - cx));
+        if (debug) {
+            console.log('yes inf');
+        }
         return [
             { x: intercept, y: cy + y },
             { x: intercept, y: cy - y },

@@ -5,12 +5,12 @@
 import { segmentsBounds } from '../editor/Export';
 import { pathToPrimitives, segmentToPrimitive } from '../editor/findSelection';
 import { Bounds } from '../editor/GuideElement';
-import { Coord, Path, PathGroup, Segment } from '../types';
+import { ArcSegment, Coord, Path, PathGroup, Segment } from '../types';
 import { coordKey } from './calcAllIntersections';
 import { angleForSegment, getAngle, insidePath, isInside } from './clipPath';
 import { boundsIntersect } from './findInternalRegions';
 import { angleBetween } from './findNextSegments';
-import { angleTo, dist } from './getMirrorTransforms';
+import { angleTo, dist, push } from './getMirrorTransforms';
 import { intersections, Primitive } from './intersect';
 import { coordsEqual } from './pathsAreIdentical';
 import { isClockwise } from './pathToPoints';
@@ -38,6 +38,28 @@ export const HIGH_PRECISION = 4;
 
 export type SegmentWithPrev = { prev: Coord; segment: Segment; shape: number };
 
+export type HitsInfo = {
+    hits: {
+        [key: string]: {
+            coord: Coord;
+            parties: Array<SegmentIntersection>;
+        };
+    };
+    entriesBySegment: {
+        coord: Coord;
+        entry: SegmentIntersection;
+    }[][];
+    exits: {
+        [key: number]: SegmentIntersection;
+    };
+    entryCoords: {
+        [key: number]: Coord;
+    };
+    hitPairs: {
+        [key: string]: HitTransitions;
+    };
+};
+
 /**
  * what do I need from a 'hit'?
  *
@@ -57,7 +79,10 @@ export type SegmentWithPrev = { prev: Coord; segment: Segment; shape: number };
  * But, it would be quite nice to reuse this logic from the inset stuff.
  * So, maybe I'll just leave it.
  */
-export const getSomeHits = (segments: SegmentWithPrev[], debug = false) => {
+export const getSomeHits = (
+    segments: SegmentWithPrev[],
+    debug = false,
+): HitsInfo | null => {
     const hits: {
         [key: string]: {
             coord: Coord;
@@ -78,8 +103,63 @@ export const getSomeHits = (segments: SegmentWithPrev[], debug = false) => {
     let id = 0;
 
     for (let i = 0; i < segments.length; i++) {
+        // if (
+        //     coordsEqual(segments[i].prev, segments[i].segment.to) &&
+        //     segments[i].segment.type === 'Arc'
+        // ) {
+        //     const arc = segments[i].segment as ArcSegment;
+
+        //     // We have a circle!
+        //     // Add a self-intersection at the to point
+        //     const start: SegmentIntersection = {
+        //         coordKey: coordKey(arc.to, HIGH_PRECISION),
+        //         distance: 0,
+        //         enter: true,
+        //         exit: false,
+        //         id: id++,
+        //         segment: i,
+        //         shape: segments[i].shape,
+        //         theta: angleForSegment(arc.to, arc, arc.to),
+        //     };
+        //     exits[start.id] = start;
+        //     entriesBySegment[i].push({ coord: arc.to, entry: start });
+        //     entryCoords[start.id] = arc.to;
+        //     if (!hits[start.coordKey]) {
+        //         hits[start.coordKey] = { coord: arc.to, parties: [] };
+        //     }
+        //     hits[start.coordKey].parties.push(start);
+
+        //     // We have a circle!
+        //     // Add a self-intersection at the to point
+        //     const end: SegmentIntersection = {
+        //         coordKey: start.coordKey,
+        //         distance: Math.PI * 2,
+        //         enter: false,
+        //         exit: true,
+        //         id: id++,
+        //         segment: i,
+        //         shape: segments[i].shape,
+        //         theta: angleForSegment(arc.to, arc, arc.to),
+        //     };
+        //     exits[end.id] = end;
+        //     entriesBySegment[i].push({ coord: arc.to, entry: end });
+        //     entryCoords[end.id] = arc.to;
+        //     if (!hits[end.coordKey]) {
+        //         hits[end.coordKey] = { coord: arc.to, parties: [] };
+        //     }
+        //     hits[end.coordKey].parties.push(end);
+        // }
+
         for (let j = i + 1; j < segments.length; j++) {
-            const found = intersections(primitives[i], primitives[j]);
+            const found = intersections(primitives[i], primitives[j], debug);
+            if (debug) {
+                console.log(
+                    `Intersecting`,
+                    primitives[i],
+                    primitives[j],
+                    found,
+                );
+            }
             found.forEach((coord) => {
                 const k = coordKey(coord, HIGH_PRECISION);
                 if (!hits[k]) {
@@ -207,12 +287,56 @@ export const clipPathNew = (
         return [path];
     }
 
+    if (path.segments.length === 1 && path.segments[0].type === 'Arc') {
+        const arc = path.segments[0];
+        const mid1 = push(
+            arc.center,
+            angleTo(arc.center, arc.to) + Math.PI / 1000,
+            dist(arc.to, arc.center),
+        );
+        const mid = push(
+            arc.center,
+            angleTo(arc.to, arc.center),
+            dist(arc.to, arc.center),
+        );
+        path = {
+            ...path,
+            segments: [
+                { type: 'Line', to: mid1 },
+                // { type: 'Line', to: arc.to },
+                arc,
+            ],
+        };
+    }
+
     const pathBounding = segmentsBounds(path.segments);
     if (!boundsIntersect(pathBounding, clipBounds)) {
         if (debug) {
-            console.log('no intersect', clipBounds);
+            console.log('no intersect', clipBounds, pathBounding);
         }
         return [];
+    }
+
+    // We have a circle!
+    if (clip.length === 1 && clip[0].type === 'Arc') {
+        const arc = clip[0];
+        const mid1 = push(
+            arc.center,
+            angleTo(arc.center, arc.to) + Math.PI / 1000,
+            dist(arc.to, arc.center),
+        );
+        const mid = push(
+            arc.center,
+            angleTo(arc.to, arc.center),
+            dist(arc.to, arc.center),
+        );
+        // Make it into two half-circles, it will make things much simpler to think about
+        clip = [
+            // { ...arc, to: mid1 },
+            { type: 'Line', to: mid1 },
+            // { type: 'Line', to: arc.to },
+            arc,
+        ];
     }
 
     /*
@@ -304,10 +428,13 @@ export const clipPathNew = (
         );
         const next = entriesBySegment[current.segment][idx + 1];
         if (!next) {
-            throw new IntersectionError(
-                `WHAT?? how is this an exit, and yet nothing next? ${idx}`,
-                entriesBySegment[current.segment].map((s) => s.entry),
+            console.warn(
+                new IntersectionError(
+                    `WHAT?? how is this an exit, and yet nothing next? ${idx}`,
+                    entriesBySegment[current.segment].map((s) => s.entry),
+                ),
             );
+            break;
         }
 
         const exit = findExit(
