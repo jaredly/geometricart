@@ -16,6 +16,7 @@ import { coordsEqual } from './pathsAreIdentical';
 import { isClockwise } from './pathToPoints';
 import {
     findExit,
+    findFirstExit,
     HitTransitions,
     IntersectionError,
     SegmentIntersection,
@@ -264,10 +265,6 @@ export const clipPathNew = (
     // gotta start somewhere, right?
     // Ok, so current is always an exit. And we're looking for our next enter?
     let current = entriesBySegment[0][0].entry;
-    delete exits[current.id];
-    if (debug) {
-        console.log(`del exit`, current.id);
-    }
 
     type Region = {
         segments: Array<SegmentWithPrev>;
@@ -278,6 +275,17 @@ export const clipPathNew = (
     const regions: Array<Region> = [];
 
     let region: Region = { isInternal: null, segments: [] };
+
+    const firstExit = findFirstExit(hitPairs[current.coordKey], current.id);
+    if (firstExit != null) {
+        // throw new Error(`No first exit`);
+        region.isInternal = firstExit;
+    }
+
+    delete exits[current.id];
+    if (debug) {
+        console.log(`del exit`, current.id);
+    }
 
     while (true) {
         // let next: {coord: Coord, entry: SegmentIntersection};

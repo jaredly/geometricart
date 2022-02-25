@@ -64,6 +64,26 @@ export type SegmentIntersection = {
  * what about going tangent? oh I don't think I handle that...
  */
 
+export const findFirstExit = (transitions: HitTransitions, exitId: number) => {
+    if (transitions.type === 'straight') {
+        if (transitions.transition.exit.id !== exitId) {
+            return null;
+        }
+        return transitions.transition.goingInside;
+    } else if (transitions.type === 'cross') {
+        const t = transitions.transitions.find((p) => p.exit.id === exitId);
+        return t ? t.goingInside : null;
+    } else {
+        if (transitions.inside.id === exitId) {
+            return true;
+        }
+        if (transitions.outside.id === exitId) {
+            return false;
+        }
+        return null;
+    }
+};
+
 export const findExit = (
     transitions: HitTransitions,
     entryId: number,
