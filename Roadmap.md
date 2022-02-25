@@ -9,6 +9,11 @@
 
 AND THEN
 
+SO the problem is:
+- [x] we're throwing away the info that we have about inside/outside, when getting into the situation.
+	Ok that's fixed.
+
+
 we can start using it.
 
 AND THEN

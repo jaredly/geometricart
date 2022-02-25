@@ -381,16 +381,28 @@ export const clipPathNew = (
         .filter((region) => region.isInternal !== false)
         .map((region) => {
             // TODO: verify that the prevs actually do match up
-            return region.segments.map((s, i) => {
-                const prev =
-                    region.segments[
-                        i === 0 ? region.segments.length - 1 : i - 1
-                    ].segment.to;
-                if (!coordsEqual(s.prev, prev)) {
-                    console.warn(`BAD PREV`, s.prev, prev, i);
-                }
-                return s.segment;
-            });
+            return region.segments
+                .map((s, i) => {
+                    const prev =
+                        region.segments[
+                            i === 0 ? region.segments.length - 1 : i - 1
+                        ].segment.to;
+                    if (!coordsEqual(s.prev, prev)) {
+                        console.warn(`BAD PREV`, s.prev, prev, i);
+                    }
+                    return s.segment;
+                })
+                .concat(
+                    coordsEqual(
+                        region.segments[0].prev,
+                        region.segments[region.segments.length - 1].segment.to,
+                    )
+                        ? []
+                        : [
+                              { type: 'Line', to: { x: 0, y: 0 } },
+                              { type: 'Line', to: region.segments[0].prev },
+                          ],
+                );
         })
         .filter(isClockwise)
         .map((segments) => ({

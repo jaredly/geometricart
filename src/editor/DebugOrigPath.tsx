@@ -23,20 +23,31 @@ const point = (
     outline = false,
 ) => {
     center = back ? push(center, theta, -size) : center;
+    const mid = push(center, theta, size / 2);
     return (
-        <polygon
-            fill={color}
-            opacity={0.7}
-            // stroke={outline ? 'magenta' : color}
-            // strokeWidth={size / 10}
-            points={[
-                push(center, theta + Math.PI / 2, size / 3),
-                push(center, theta + Math.PI / 2, -size / 3),
-                push(center, theta, size),
-            ]
-                .map((p) => `${p.x * zoom},${p.y * zoom}`)
-                .join(' ')}
-        />
+        <>
+            <polygon
+                fill={color}
+                opacity={0.7}
+                // stroke={outline ? 'magenta' : color}
+                // strokeWidth={size / 10}
+                points={[
+                    push(center, theta + Math.PI / 2, size / 3),
+                    push(center, theta + Math.PI / 2, -size / 3),
+                    push(center, theta, size),
+                ]
+                    .map((p) => `${p.x * zoom},${p.y * zoom}`)
+                    .join(' ')}
+            />
+            {outline ? (
+                <circle
+                    cx={mid.x * zoom}
+                    cy={mid.y * zoom}
+                    r={(size / 4) * zoom}
+                    fill="black"
+                />
+            ) : null}
+        </>
     );
 };
 
@@ -82,6 +93,7 @@ export const ShowHitIntersection = ({
                         pair.transitions[0].entry.theta.theta,
                         size * 0.8,
                         'white',
+                        pair.transitions[0].goingInside == true,
                     )}
                     {point(
                         false,
@@ -99,6 +111,7 @@ export const ShowHitIntersection = ({
                         pair.transitions[1].entry.theta.theta,
                         size * 0.8,
                         'red',
+                        pair.transitions[1].goingInside == true,
                     )}
                     {point(
                         false,
@@ -107,7 +120,7 @@ export const ShowHitIntersection = ({
                         pair.transitions[1].exit.theta.theta, // + Math.PI,
                         size,
                         'green',
-                        pair.transitions[0].goingInside == true,
+                        pair.transitions[1].goingInside == true,
                     )}
                 </>
             );

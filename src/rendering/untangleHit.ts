@@ -2,6 +2,7 @@ import {
     Angle,
     anglesEqual,
     backAngle,
+    isInside,
     negPiToPi,
     sortAngles,
 } from './clipPath';
@@ -120,6 +121,10 @@ export const handleHitAmbiguity = ({
 }: Cross): HitTransitions => {
     // Same entrance! You should pick the exit that keeps with your inside/outside status
     if (anglesEqual(one.entry.theta, two.entry.theta)) {
+        // soo .... it seems like we might possibly encounter a place
+        // where both entrances and exits are the same.
+        // in this case, will it still work?
+        // tbh it might still work.
         return {
             type: 'ambiguous',
             inside: one.goingInside ? one.exit : two.exit,
@@ -128,17 +133,27 @@ export const handleHitAmbiguity = ({
     }
     // Same exit! Both are now ambiguous, we can't know inside/outside from here.
     if (anglesEqual(one.exit.theta, two.exit.theta)) {
+        // AHH OK but we can, actually.
+        // because one will be /coming from/ the outside.
+        // const sort = sortAngles(one.entry.theta, two.entry.theta);
+        const oneInside = isInside(
+            one.entry.theta,
+            backAngle(one.exit.theta),
+            two.entry.theta,
+        );
         return {
             type: 'cross',
             transitions: [
-                { ...one, goingInside: null },
-                { ...two, goingInside: null },
+                { ...one, goingInside: !oneInside },
+                { ...two, goingInside: oneInside },
             ],
         };
     }
+    // If we're doubling back, we can't know if we're going inside
     if (anglesEqual(one.entry.theta, backAngle(one.exit.theta))) {
         one.goingInside = null;
     }
+    // If we're doubling back, we can't know if we're going inside
     if (anglesEqual(two.entry.theta, backAngle(two.exit.theta))) {
         two.goingInside = null;
     }
