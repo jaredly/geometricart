@@ -455,10 +455,12 @@ export const cleanUpInsetSegments2 = (
         filterTooSmallSegments(segments),
     );
     let regions = findRegions(result.result, result.froms).filter(isClockwise);
-    regions = regions.filter(
-        (region) =>
-            !region.some((segment) => originalCorners.includes(segment.to)),
-    );
+    // Hmmmmmmmmm
+    // looks like this was an optimization, that actually doesn't always work.
+    // regions = regions.filter(
+    //     (region) =>
+    //         !region.some((segment) => originalCorners.includes(segment.to)),
+    // );
     return removeContainedRegions(removeNonWindingRegions(segments, regions));
 };
 

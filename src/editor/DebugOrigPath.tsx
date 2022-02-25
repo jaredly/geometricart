@@ -167,11 +167,11 @@ export const DebugOrigPath = ({
         origPath.style.lines[path.style.lines[0]?.originalIdx!]?.inset
     ) {
         inset =
-            origPath.style.lines[path.style.lines[0]!.originalIdx!]!.inset ??
+            origPath.style.lines[path.style.lines[0]!.originalIdx!]?.inset ??
             null;
-    } else if (path.style.fills.length) {
+    } else if (path.style.fills.length && path.style.fills[0]) {
         inset =
-            origPath.style.fills[path.style.fills[0]!.originalIdx!]!.inset ??
+            origPath.style.fills[path.style.fills[0]!.originalIdx!]?.inset ??
             null;
     }
     let insetEls = null;

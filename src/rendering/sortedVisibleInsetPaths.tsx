@@ -295,20 +295,20 @@ export const pathToInsetPaths = (path: Path): Array<Path> => {
                 inset / 100,
             );
             const regions = cleanUpInsetSegments2(segments, corners);
-            if (path.debug) {
-                const result = segmentsToNonIntersectingSegments(
-                    filterTooSmallSegments(segments),
-                );
-                const regions = findRegions(result.result, result.froms).filter(
-                    isMaybeClockwise,
-                );
+            // if (path.debug) {
+            //     const result = segmentsToNonIntersectingSegments(
+            //         filterTooSmallSegments(segments),
+            //     );
+            //     const regions = findRegions(result.result, result.froms).filter(
+            //         isClockwise,
+            //     );
 
-                return regions.map((segments) => ({
-                    ...path,
-                    segments,
-                    origin: segments[segments.length - 1].to,
-                }));
-            }
+            //     return regions.map((segments) => ({
+            //         ...path,
+            //         segments,
+            //         origin: segments[segments.length - 1].to,
+            //     }));
+            // }
             // if (path.debug) {
             //     console.log('seg', segments);
             //     console.log('regions', regions);

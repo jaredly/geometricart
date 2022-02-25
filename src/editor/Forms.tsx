@@ -387,6 +387,11 @@ export const PathGroupForm = ({
                 {['none', 'remove', 'normal'].map((name) => (
                     <button
                         key={name}
+                        style={
+                            group.clipMode === name
+                                ? { fontWeight: 'bold' }
+                                : {}
+                        }
                         onClick={() => {
                             if (group.clipMode === name) {
                                 return onChange({
@@ -490,6 +495,9 @@ export const PathForm = ({
                 {['none', 'remove', 'normal'].map((name) => (
                     <button
                         key={name}
+                        style={
+                            path.clipMode === name ? { fontWeight: 'bold' } : {}
+                        }
                         onClick={() => {
                             if (path.clipMode === name) {
                                 return onChange({

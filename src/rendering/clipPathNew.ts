@@ -281,12 +281,16 @@ export const clipPathNew = (
     if (!isClockwise(path.segments)) {
         throw new Error(`non-clockwise path`);
     }
+    if (!isClockwise(clip)) {
+        throw new Error(`non-clockwise clip`);
+    }
     const clipMode = path.clipMode ?? groupMode;
 
     if (clipMode === 'none') {
         return [path];
     }
 
+    // UGH this is a cheating hack, but I don't realy know how to do it better???
     if (path.segments.length === 1 && path.segments[0].type === 'Arc') {
         const arc = path.segments[0];
         const mid1 = push(
@@ -302,6 +306,7 @@ export const clipPathNew = (
         path = {
             ...path,
             segments: [
+                // {...arc, to: mid1},
                 { type: 'Line', to: mid1 },
                 // { type: 'Line', to: arc.to },
                 arc,
