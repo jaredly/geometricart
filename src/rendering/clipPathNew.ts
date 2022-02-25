@@ -11,6 +11,7 @@ import { angleForSegment, getAngle, insidePath, isInside } from './clipPath';
 import { boundsIntersect } from './findInternalRegions';
 import { angleBetween } from './findNextSegments';
 import { angleTo, dist, push } from './getMirrorTransforms';
+import { simplifyPath } from './insetPath';
 import { intersections, Primitive } from './intersect';
 import { coordsEqual } from './pathsAreIdentical';
 import { isClockwise } from './pathToPoints';
@@ -83,6 +84,10 @@ export const getSomeHits = (
     segments: SegmentWithPrev[],
     debug = false,
 ): HitsInfo | null => {
+    if (debug) {
+        console.group('Get Some Hits');
+        console.groupCollapsed(`Intersections`);
+    }
     const hits: {
         [key: string]: {
             coord: Coord;
@@ -187,6 +192,9 @@ export const getSomeHits = (
             });
         }
     }
+    if (debug) {
+        console.groupEnd();
+    }
 
     let hasCollision = false;
     Object.keys(hits).forEach((k) => {
@@ -200,9 +208,15 @@ export const getSomeHits = (
         }
     });
     if (!hasCollision) {
+        if (debug) {
+            console.groupEnd();
+        }
         return null;
     }
 
+    if (debug) {
+        console.groupCollapsed('Untangling');
+    }
     const hitPairs: { [key: string]: HitTransitions } = {};
     Object.keys(hits).forEach((k) => {
         const pairs = untangleHit(hits[k].parties, debug);
@@ -215,6 +229,10 @@ export const getSomeHits = (
     entriesBySegment.forEach((list) =>
         list.sort((a, b) => b.entry.distance - a.entry.distance),
     );
+    if (debug) {
+        console.groupEnd();
+        console.groupEnd();
+    }
     return { hits, entriesBySegment, exits, entryCoords, hitPairs };
 };
 
@@ -278,6 +296,14 @@ export const clipPathNew = (
     debug = false,
     groupMode?: PathGroup['clipMode'],
 ): Array<Path> => {
+    if (debug) {
+        clip = simplifyPath(clip);
+        console.groupCollapsed(`Clip path ${path.id}`);
+        console.groupCollapsed(`Path & Clip`);
+        console.log(path);
+        console.log(clip);
+        console.groupEnd();
+    }
     if (!isClockwise(path.segments)) {
         throw new Error(`non-clockwise path`);
     }
@@ -287,6 +313,9 @@ export const clipPathNew = (
     const clipMode = path.clipMode ?? groupMode;
 
     if (clipMode === 'none') {
+        if (debug) {
+            console.groupEnd();
+        }
         return [path];
     }
 
@@ -318,6 +347,7 @@ export const clipPathNew = (
     if (!boundsIntersect(pathBounding, clipBounds)) {
         if (debug) {
             console.log('no intersect', clipBounds, pathBounding);
+            console.groupEnd();
         }
         return [];
     }
@@ -378,22 +408,33 @@ export const clipPathNew = (
     }
     if (!hitsResults) {
         if (insidePath(path.origin, pathToPrimitives(clip), clip)) {
+            if (debug) {
+                console.groupEnd();
+            }
             return [path];
         } else {
             if (debug) {
                 console.log('not inside');
             }
+            if (debug) {
+                console.groupEnd();
+            }
             return [];
         }
     } else if (clipMode === 'remove') {
+        if (debug) {
+            console.groupEnd();
+        }
         return [];
     }
     const { hits, entriesBySegment, exits, entryCoords, hitPairs } =
         hitsResults;
 
     if (debug) {
+        console.groupCollapsed(`Details`);
         console.log('by segment', entriesBySegment, hits, allSegments);
         console.log(JSON.stringify(hitPairs, null, 2));
+        console.groupEnd();
     }
 
     // console.log(`Exits to hit ${Object.keys(exits).length}`);
@@ -419,11 +460,20 @@ export const clipPathNew = (
         // throw new Error(`No first exit`);
         region.isInternal = firstExit;
     }
+    if (debug) {
+        console.group(`Region ${regions.length}`);
+        console.log(
+            `First exit:`,
+            region.isInternal,
+            hitPairs[current.coordKey],
+            current.id,
+        );
+    }
 
     delete exits[current.id];
-    if (debug) {
-        console.log(`del exit`, current.id);
-    }
+    // if (debug) {
+    //     console.log(`del exit`, current.id);
+    // }
 
     while (true) {
         // let next: {coord: Coord, entry: SegmentIntersection};
@@ -458,20 +508,27 @@ export const clipPathNew = (
             },
         });
 
-        // const pair = hitPairs[next.entry.coordKey].find(
-        //     (p) => p[0].id === next.entry.id,
-        // );
         if (debug) {
             console.log(
-                'at',
-                current.segment,
-                idx,
+                `Added a segment from ${current.segment} ix ${idx}. From`,
                 entryCoords[current.id],
+                `to`,
                 next.coord,
-                // pair,
+                `Exiting:`,
                 exit,
             );
-            console.log(region);
+            // console.log(
+            //     'at',
+            //     current.segment,
+            //     idx,
+            //     entryCoords[current.id],
+            //     next.coord,
+            //     // pair,
+            //     exit,
+            // );
+            // console.log(
+            //     `Current region status: Internal? ${region.isInternal}. ${region.segments.length} segments.`,
+            // );
         }
 
         if (!exit) {
@@ -503,10 +560,23 @@ export const clipPathNew = (
         if (!exits[current.id]) {
             if (debug) {
                 console.log(
-                    'finished a region! No exits for',
-                    current.id,
-                    exits,
+                    `Finished an ${
+                        {
+                            true: 'internal',
+                            false: 'external',
+                            null: 'unknown',
+                        }[region.isInternal + '']
+                    } region`,
                 );
+                if (
+                    !coordsEqual(
+                        region.segments[region.segments.length - 1].segment.to,
+                        region.segments[0].prev,
+                    )
+                ) {
+                    console.warn(`ERROR endpoints don't match up though`);
+                }
+                console.groupEnd();
             }
             regions.push(region);
             const k = Object.keys(exits)[0];
@@ -515,18 +585,22 @@ export const clipPathNew = (
             }
             region = { isInternal: null, segments: [] };
             current = exits[+k];
+            if (debug) {
+                console.group(`Region ${regions.length}`);
+                console.log(`First current:`, current);
+            }
         }
         delete exits[current.id];
-        if (debug) {
-            console.log(`del exit`, current.id);
-        }
+        // if (debug) {
+        //     console.log(`del exit`, current.id);
+        // }
     }
 
     if (debug) {
         console.log('regons', regions);
     }
 
-    return regions
+    const filtered = regions
         .filter((region) => region.isInternal !== false)
         .map((region) => {
             // TODO: verify that the prevs actually do match up
@@ -559,6 +633,10 @@ export const clipPathNew = (
             segments,
             origin: segments[segments.length - 1].to,
         }));
+    if (debug) {
+        console.groupEnd();
+    }
+    return filtered;
 
     // const { sorted, allHits } = calculateSortedHitsForSegments(allSegments);
     // const split = splitSegmentsByIntersections(allSegments, sorted);

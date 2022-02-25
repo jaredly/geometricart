@@ -279,8 +279,11 @@ export const circleCircle = (one: Circle, two: Circle): Array<Coord> => {
     ].filter(check);
 };
 
-export const closeEnoughAngle = (one: number, two: number) =>
-    closeEnough(zeroToTwoPi(one), zeroToTwoPi(two));
+export const closeEnoughAngle = (one: number, two: number) => {
+    one = zeroToTwoPi(one);
+    two = zeroToTwoPi(two);
+    return closeEnough(one, two);
+};
 
 export const angleIsBetween = (
     angle: number,

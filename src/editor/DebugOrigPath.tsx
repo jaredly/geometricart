@@ -3,7 +3,7 @@ import { insidePath, windingNumber } from '../rendering/clipPath';
 import { findInsidePoint, findRegions } from '../rendering/findInternalRegions';
 import { segmentsToNonIntersectingSegments } from '../rendering/segmentsToNonIntersectingSegments';
 import { push } from '../rendering/getMirrorTransforms';
-import { insetSegmentsBeta } from '../rendering/insetPath';
+import { insetSegmentsBeta, simplifyPath } from '../rendering/insetPath';
 import { Primitive } from '../rendering/intersect';
 import { isClockwise } from '../rendering/pathToPoints';
 import { Coord, Path, Segment } from '../types';
@@ -43,7 +43,7 @@ const point = (
                 <circle
                     cx={mid.x * zoom}
                     cy={mid.y * zoom}
-                    r={(size / 4) * zoom}
+                    r={(size / 8) * zoom}
                     fill="black"
                 />
             ) : null}
@@ -72,7 +72,7 @@ export const ShowHitIntersection = ({
                         coord,
                         zoom,
                         pair.inside.theta.theta,
-                        size,
+                        size * 1.2,
                         'magenta',
                     )}
                     {point(
@@ -80,7 +80,7 @@ export const ShowHitIntersection = ({
                         coord,
                         zoom,
                         pair.outside.theta.theta,
-                        size,
+                        size * 0.7,
                         'teal',
                     )}
                 </>
@@ -415,7 +415,7 @@ export const DebugOrigPath = ({
     if (clip != null) {
         const hitsResults = getSomeHits(
             addPrevsToSegments(origPath.segments, 0).concat(
-                addPrevsToSegments(clip.segments, 1),
+                addPrevsToSegments(simplifyPath(clip.segments), 1),
             ),
         );
         if (hitsResults) {

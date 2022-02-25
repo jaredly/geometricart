@@ -5,6 +5,7 @@ import { angleTo, dist, push } from './getMirrorTransforms';
 import { simplifyPath } from './insetPath';
 import {
     Circle,
+    closeEnoughAngle,
     epsilon,
     intersections,
     Primitive,
@@ -54,12 +55,12 @@ export const closeEnough = (one: number, two: number) =>
 
 export const anglesEqual = (one: Angle, two: Angle) => {
     if (one.type === 'flat' && two.type === 'flat') {
-        return closeEnough(one.theta, two.theta);
+        return closeEnoughAngle(one.theta, two.theta);
     }
     if (one.type === 'arc' && two.type === 'arc') {
         return (
             one.clockwise === two.clockwise &&
-            closeEnough(one.theta, two.theta) &&
+            closeEnoughAngle(one.theta, two.theta) &&
             closeEnough(one.radius, two.radius)
         );
     }
@@ -131,7 +132,10 @@ export const zeroToTwoPi = (angle: number) => {
     if (angle < epsilon) {
         return 0;
     }
-    if (Math.PI * 2 - angle < epsilon) {
+    // if (closeEnough(angle, Math.PI * 2)) {
+    //     return 0;
+    // }
+    if (Math.abs(Math.PI * 2 - angle) < epsilon) {
         return 0;
     }
     return angle;

@@ -172,12 +172,12 @@ export const Clip = () => {
                                       };
                                       return (
                                           <React.Fragment key={k}>
-                                              <circle
+                                              {/* <circle
                                                   cx={coord.x * zoom}
                                                   cy={coord.y * zoom}
-                                                  r={5}
+                                                  r={3}
                                                   fill={colors[type]}
-                                              />
+                                              /> */}
                                               <ShowHitIntersection
                                                   coord={coord}
                                                   pair={clipTwo[1].hitPairs[k]}

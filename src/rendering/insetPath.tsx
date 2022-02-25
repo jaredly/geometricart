@@ -287,9 +287,7 @@ export const areContiguous = (prev: Coord, one: Segment, two: Segment) => {
         return false;
     }
     if (one.type === 'Line' && two.type === 'Line') {
-        return (
-            Math.abs(angleTo(prev, one.to) - angleTo(one.to, two.to)) < epsilon
-        );
+        return closeEnoughAngle(angleTo(prev, one.to), angleTo(one.to, two.to));
     }
     if (one.type === 'Arc' && two.type === 'Arc') {
         return (

@@ -143,6 +143,15 @@ export const handleHitAmbiguity = ({
     if (anglesEqual(one.entry.theta, two.entry.theta)) {
         // soo .... it seems like we might possibly encounter a place
         // where both entrances and exits are the same.
+        if (anglesEqual(one.exit.theta, two.exit.theta)) {
+            return {
+                type: 'cross',
+                transitions: [
+                    { ...one, goingInside: null },
+                    { ...two, goingInside: null },
+                ],
+            };
+        }
         // in this case, will it still work?
         // tbh it might still work.
         return {

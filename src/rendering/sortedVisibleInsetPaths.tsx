@@ -1,5 +1,5 @@
 import { coordKey, numKey } from './calcAllIntersections';
-import { clipPath, closeEnough } from './clipPath';
+import { closeEnough } from './clipPath';
 import {
     cleanUpInsetSegments2,
     filterTooSmallSegments,
@@ -33,7 +33,7 @@ import {
 import { paletteColor } from '../editor/RenderPath';
 import { Coord, Path, PathGroup, Segment } from '../types';
 import { segmentsBounds } from '../editor/Export';
-import { clipPathNew, clipPathTry } from './clipPathNew';
+import { clipPathTry } from './clipPathNew';
 
 // This should produce:
 // a list of lines
@@ -104,17 +104,21 @@ export function sortedVisibleInsetPaths(
     If it's clip first, go through and clip the paths, leaving the styles.
     if it's inset first, go through and inset the paths, ... ok yeah that's fine.
     */
-    let clipPrims = clip ? pathToPrimitives(clip) : null;
+    // let clipPrims = clip ? pathToPrimitives(clip) : null;
     const clipBounds = clip ? segmentsBounds(clip) : null;
 
     let processed: Array<Path> = visible
         .map((k) => paths[k])
         .map((path) => {
+            // if (path.debug) {
+            //     console.log('hi');
+            // }
             if (!isClockwise(path.segments)) {
                 const segments = reversePath(path.segments);
                 const origin = segments[segments.length - 1].to;
-                return { ...path, segments, origin };
+                path = { ...path, segments, origin };
             }
+            // path = { ...path, segments: simplifyPath(path.segments) };
             const group = path.group ? pathGroups[path.group] : null;
             if (selectedIds[path.id] && styleHover) {
                 path = {

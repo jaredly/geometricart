@@ -2,12 +2,16 @@
 # Main Gaps in the Clips Stuffs
 
 - [x] track down the source of BAD PREV. Why are we ending up at not the right place?
-- [ ] soooo clooooose I think??? 
+- [x] soooo clooooose I think??? 
 	Yeah not handling single-circles well.
 - [x] non-intersecting (easy to detect, and then do an is-inside check for any of the points of the shape)
 - [x] arcs with the same tangent as a line (see test case)
 - [x] welp, found another bug (it was my lazy method of seeing if any actual collisions happened)
 - [ ] (low priority) self-intersecting shapes, so that you can have more than 4 participants in a setup.
+
+Lol ok lots more bugs it looks like
+no idea why all these shapes think they're inside the lines.
+- [ ] oh wait maybe all these things are not clockwise? and maybe not simplified? idk
 
 AND THEN
 
