@@ -1030,7 +1030,6 @@ export const insidePath = (
     prims: Array<Primitive>,
     segments: Array<Segment>,
 ) => {
-    // return insidePathBADNEWS(coord, prims);
     const wind = windingNumber(coord, prims, segments);
     const wcount = wind.reduce((c, w) => (w.up ? 1 : -1) + c, 0);
     return wcount > 0;

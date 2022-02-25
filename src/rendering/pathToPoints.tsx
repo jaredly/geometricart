@@ -68,7 +68,7 @@ export const isClockwise = (segments: Array<Segment>) => {
 export const toDegrees = (x: number) => Math.floor((x / Math.PI) * 180);
 
 export const ensureClockwise = (segments: Array<Segment>) => {
-    if (!segments.length || isClockwise(segments)) {
+    if (segments.length < 2 || isClockwise(segments)) {
         return segments;
     }
     return reversePath(segments);

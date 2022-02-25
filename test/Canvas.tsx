@@ -37,6 +37,16 @@ import { coordKey } from '../src/rendering/calcAllIntersections';
 export const maybeSnap = (v: number, snap?: number) =>
     snap ? Math.round(v / snap) * snap : v;
 
+export const validSegments = (seg: Array<Segment>) => {
+    if (seg.length === 0) {
+        return false;
+    }
+    if (seg.length > 2) {
+        return true;
+    }
+    return seg.some((s) => s.type === 'Arc');
+};
+
 export const Drawing = ({
     segments,
     zoom,

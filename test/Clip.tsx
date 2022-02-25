@@ -13,7 +13,7 @@ import {
 } from '../src/rendering/segmentsToNonIntersectingSegments';
 import { IntersectionError } from '../src/rendering/untangleHit';
 import { Path, Segment } from '../src/types';
-import { Drawing, useLocalStorage } from './Canvas';
+import { Drawing, useLocalStorage, validSegments } from './Canvas';
 
 type TestCase = { shape: Array<Segment>; clip: Array<Segment> };
 
@@ -35,17 +35,16 @@ export const Clip = () => {
     // examineCase(testCase, 0);
 
     const clipTwo = React.useMemo(() => {
-        const cclip =
-            testCase.clip.length > 2
-                ? ensureClockwise(testCase.clip)
-                : testCase.clip;
-        const cshape =
-            testCase.shape.length > 2
-                ? ensureClockwise(testCase.shape)
-                : testCase.shape;
+        console.log(testCase);
+        const cclip = validSegments(testCase.clip)
+            ? ensureClockwise(testCase.clip)
+            : testCase.clip;
+        const cshape = validSegments(testCase.shape)
+            ? ensureClockwise(testCase.shape)
+            : testCase.shape;
         let clipTwo = null as null | Array<Path>;
         try {
-            if (cshape.length > 2 && cclip.length > 2) {
+            if (validSegments(cshape) && validSegments(cclip)) {
                 clipTwo = clipPathNew(
                     pathSegs(simplifyPath(cshape)),
                     cclip,

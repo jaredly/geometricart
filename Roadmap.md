@@ -1,7 +1,9 @@
 
 # Main Gaps in the Clips Stuffs
 
-- [ ] track down the source of BAD PREV. Why are we ending up at not the right place?
+- [x] track down the source of BAD PREV. Why are we ending up at not the right place?
+- [ ] soooo clooooose I think??? 
+	Yeah not handling single-circles well.
 - [x] non-intersecting (easy to detect, and then do an is-inside check for any of the points of the shape)
 - [x] arcs with the same tangent as a line (see test case)
 - [x] welp, found another bug (it was my lazy method of seeing if any actual collisions happened)

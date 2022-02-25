@@ -209,6 +209,9 @@ export const clipPathNew = (
 
     const pathBounding = segmentsBounds(path.segments);
     if (!boundsIntersect(pathBounding, clipBounds)) {
+        if (debug) {
+            console.log('no intersect', clipBounds);
+        }
         return [];
     }
 
@@ -241,10 +244,16 @@ export const clipPathNew = (
 
     const hitsResults = getSomeHits(allSegments, debug);
 
+    if (debug) {
+        console.log('wat');
+    }
     if (!hitsResults) {
         if (insidePath(path.origin, pathToPrimitives(clip), clip)) {
             return [path];
         } else {
+            if (debug) {
+                console.log('not inside');
+            }
             return [];
         }
     } else if (clipMode === 'remove') {

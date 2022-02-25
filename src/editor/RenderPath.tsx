@@ -36,9 +36,18 @@ export const UnderlinePath = ({
     );
 };
 
-export const calcPathD = (path: Path, zoom: number) => {
+export const calcPathD = (path: Path, zoom: number): string => {
     let d = `M ${path.origin.x * zoom} ${path.origin.y * zoom}`;
-    if (path.segments.length === 1) {
+    if (path.segments.length === 1 && path.segments[0].type === 'Arc') {
+        const arc = path.segments[0];
+        const { center, to } = arc;
+        const r = dist(center, to);
+        const theta = angleTo(to, center);
+        const opposite = push(center, theta, r);
+        return calcPathD(
+            { ...path, segments: [{ ...arc, to: opposite }, arc] },
+            zoom,
+        );
         // this can only happen if we're a pure cicle
     }
     path.segments.forEach((seg, i) => {

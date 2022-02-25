@@ -18,6 +18,7 @@ import { Action } from '../state/Action';
 import { initialHistory } from '../state/initialState';
 import { texture1, texture2 } from '../rendering/textures';
 import { Coord, Segment, State, TextureConfig } from '../types';
+import { closeEnough } from '../rendering/clipPath';
 
 export type PendingBounds = {
     x0: null | number;
@@ -95,12 +96,18 @@ export const segmentBounds = (prev: Coord, segment: Segment): Bounds => {
             // lets do 3 samples, we'll be generous
             const t0 = angleTo(segment.center, prev);
             const t1 = angleTo(segment.center, segment.to);
-            const around = angleBetween(t0, t1, segment.clockwise);
+            let around = angleBetween(t0, t1, segment.clockwise);
+            if (closeEnough(around, 0)) {
+                around = Math.PI * 2;
+            }
+
             const tmid = t0 + around / 2;
-            const mid = push(segment.center, tmid, dist(segment.center, prev));
+
+            const samples = 6;
+            // const mid = push(segment.center, tmid, dist(segment.center, prev));
             const coords = [prev, segment.to];
-            for (let i = 0.5; i < 6; i++) {
-                const tmid = t0 + (around / 6) * i;
+            for (let i = 0.5; i < samples; i++) {
+                const tmid = t0 + (around / samples) * i;
                 const mid = push(
                     segment.center,
                     tmid,
