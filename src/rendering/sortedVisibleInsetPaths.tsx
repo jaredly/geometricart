@@ -130,7 +130,7 @@ export function sortedVisibleInsetPaths(
                                   insetPath,
                                   clip,
                                   clipBounds!,
-                                  false,
+                                  path.debug,
                                   group?.clipMode,
                               )
                             : insetPath;
@@ -141,7 +141,7 @@ export function sortedVisibleInsetPaths(
                     path,
                     clip,
                     clipBounds!,
-                    false,
+                    path.debug,
                     group?.clipMode,
                 )
                     .map((clipped) => pathToInsetPaths(clipped))

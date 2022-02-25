@@ -136,6 +136,12 @@ export const handleHitAmbiguity = ({
             ],
         };
     }
+    if (anglesEqual(one.entry.theta, backAngle(one.exit.theta))) {
+        one.goingInside = null;
+    }
+    if (anglesEqual(two.entry.theta, backAngle(two.exit.theta))) {
+        two.goingInside = null;
+    }
     return { type: 'cross', transitions: [one, two] };
 };
 

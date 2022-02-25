@@ -255,6 +255,7 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactElement } = {
                 {Object.keys(state.paths)
                     .filter(
                         (k) =>
+                            state.paths[k].debug ||
                             (state.selection?.type === 'Path' &&
                                 state.selection.ids.includes(k)) ||
                             state.paths[k].hidden ||

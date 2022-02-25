@@ -56,7 +56,7 @@ export type SegmentWithPrev = { prev: Coord; segment: Segment; shape: number };
  * But, it would be quite nice to reuse this logic from the inset stuff.
  * So, maybe I'll just leave it.
  */
-export const getSomeHits = (segments: SegmentWithPrev[]) => {
+export const getSomeHits = (segments: SegmentWithPrev[], debug = false) => {
     const hits: {
         [key: string]: {
             coord: Coord;
@@ -106,10 +106,35 @@ export const getSomeHits = (segments: SegmentWithPrev[]) => {
             });
         }
     }
+
+    let hasCollision = false;
+    Object.keys(hits).forEach((k) => {
+        if (
+            // It's a crossover
+            hits[k].parties.length !== 2 ||
+            // We're hitting the middle of a segment
+            hits[k].parties.some((p) => p.enter && p.exit)
+        ) {
+            hasCollision = true;
+        }
+    });
+    if (!hasCollision) {
+        return null;
+    }
+
+    const hitPairs: { [key: string]: HitTransitions } = {};
+    Object.keys(hits).forEach((k) => {
+        const pairs = untangleHit(hits[k].parties, debug);
+        if (debug) {
+            console.log(`Untangled`, k, pairs);
+        }
+        hitPairs[k] = pairs;
+    });
+
     entriesBySegment.forEach((list) =>
         list.sort((a, b) => b.entry.distance - a.entry.distance),
     );
-    return { hits, entriesBySegment, exits, entryCoords };
+    return { hits, entriesBySegment, exits, entryCoords, hitPairs };
 };
 
 const calcSI = (
@@ -213,28 +238,9 @@ export const clipPathNew = (
         addPrevsToSegments(clip, 1),
     );
 
-    const { hits, entriesBySegment, exits, entryCoords } =
-        getSomeHits(allSegments);
+    const hitsResults = getSomeHits(allSegments, debug);
 
-    const hitKeys = Object.keys(hits);
-    if (debug) {
-        console.log('by segment', entriesBySegment, hitKeys, hits, allSegments);
-    }
-    // If ... it's all just enter & exit, and nothing has more than 2 entries
-    let hasCollision = false;
-    hitKeys.forEach((k) => {
-        if (
-            // It's a crossover
-            hits[k].parties.length !== 2 ||
-            // We're hitting the middle of a segment
-            hits[k].parties.some((p) => p.enter && p.exit)
-        ) {
-            hasCollision = true;
-        }
-    });
-
-    // All we're getting are endpoints.
-    if (!hasCollision) {
+    if (!hitsResults) {
         if (insidePath(path.origin, pathToPrimitives(clip), clip)) {
             return [path];
         } else {
@@ -243,15 +249,13 @@ export const clipPathNew = (
     } else if (clipMode === 'remove') {
         return [];
     }
+    const { hits, entriesBySegment, exits, entryCoords, hitPairs } =
+        hitsResults;
 
-    const hitPairs: { [key: string]: HitTransitions } = {};
-    hitKeys.forEach((k) => {
-        const pairs = untangleHit(hits[k].parties, debug);
-        if (debug) {
-            console.log(`Untangled`, k, pairs);
-        }
-        hitPairs[k] = pairs;
-    });
+    if (debug) {
+        console.log('by segment', entriesBySegment, hits, allSegments);
+        console.log(JSON.stringify(hitPairs, null, 2));
+    }
 
     // console.log(`Exits to hit ${Object.keys(exits).length}`);
 
@@ -331,7 +335,21 @@ export const clipPathNew = (
         }
         current = exit[0];
         if (exit[1] != null) {
-            region.isInternal = exit[1];
+            if (region.isInternal != null && region.isInternal !== exit[1]) {
+                if (debug) {
+                    console.warn(
+                        `INTERNAL DISAGREEMENT`,
+                        region.isInternal,
+                        exit,
+                    );
+                }
+                // This will exclude this region from the output.
+                // But also, this is a bug!!!
+                // region.isInternal = false;
+                region.isInternal = exit[1];
+            } else {
+                region.isInternal = exit[1];
+            }
         }
         if (!exits[current.id]) {
             if (debug) {
