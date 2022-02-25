@@ -14,6 +14,7 @@ import { addPrevsToSegments, getSomeHits } from '../rendering/clipPathNew';
 import { HitTransitions } from '../rendering/untangleHit';
 
 const point = (
+    back: boolean,
     center: Coord,
     zoom: number,
     theta: number,
@@ -21,12 +22,13 @@ const point = (
     color: string,
     outline = false,
 ) => {
+    center = back ? push(center, theta, -size) : center;
     return (
         <polygon
             fill={color}
             opacity={0.7}
-            stroke={outline ? 'magenta' : color}
-            strokeWidth={size / 10}
+            // stroke={outline ? 'magenta' : color}
+            // strokeWidth={size / 10}
             points={[
                 push(center, theta + Math.PI / 2, size / 3),
                 push(center, theta + Math.PI / 2, -size / 3),
@@ -52,13 +54,21 @@ export const ShowHitIntersection = ({
         case 'ambiguous':
             return (
                 <>
-                    {point(coord, zoom, pair.inside.theta.theta, size, 'red')}
                     {point(
+                        false,
+                        coord,
+                        zoom,
+                        pair.inside.theta.theta,
+                        size,
+                        'magenta',
+                    )}
+                    {point(
+                        false,
                         coord,
                         zoom,
                         pair.outside.theta.theta,
                         size,
-                        'green',
+                        'teal',
                     )}
                 </>
             );
@@ -66,6 +76,7 @@ export const ShowHitIntersection = ({
             return (
                 <>
                     {point(
+                        true,
                         coord,
                         zoom,
                         pair.transitions[0].entry.theta.theta,
@@ -73,14 +84,16 @@ export const ShowHitIntersection = ({
                         'white',
                     )}
                     {point(
+                        false,
                         coord,
                         zoom,
                         pair.transitions[0].exit.theta.theta, // + Math.PI,
-                        size,
+                        size * 0.9,
                         'black',
                         pair.transitions[0].goingInside == true,
                     )}
                     {point(
+                        true,
                         coord,
                         zoom,
                         pair.transitions[1].entry.theta.theta,
@@ -88,6 +101,7 @@ export const ShowHitIntersection = ({
                         'red',
                     )}
                     {point(
+                        false,
                         coord,
                         zoom,
                         pair.transitions[1].exit.theta.theta, // + Math.PI,
@@ -101,6 +115,7 @@ export const ShowHitIntersection = ({
             return (
                 <>
                     {point(
+                        true,
                         coord,
                         zoom,
                         pair.transition.entry.theta.theta,
@@ -108,6 +123,7 @@ export const ShowHitIntersection = ({
                         'blue',
                     )}
                     {point(
+                        false,
                         coord,
                         zoom,
                         pair.transition.exit.theta.theta, // + Math.PI,
