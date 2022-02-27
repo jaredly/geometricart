@@ -16,7 +16,7 @@ export const RenderSegmentBasic = ({
     prev: Coord;
     zoom: number;
     className?: string;
-    inner: React.ComponentProps<'line'>;
+    inner?: React.ComponentProps<'line'>;
 }) => {
     if (segment.type === 'Line') {
         return (
@@ -26,7 +26,7 @@ export const RenderSegmentBasic = ({
                 x2={segment.to.x * zoom}
                 y2={segment.to.y * zoom}
                 {...inner}
-                className={className ?? inner.className}
+                className={className ?? inner?.className}
             />
         );
     } else {
@@ -38,7 +38,7 @@ export const RenderSegmentBasic = ({
                     arcPath(segment, prev, zoom)
                 }
                 {...inner}
-                className={className ?? inner.className}
+                className={className ?? inner?.className}
             />
         );
     }

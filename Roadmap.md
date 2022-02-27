@@ -1,6 +1,23 @@
 
 # Main Gaps in the Clips Stuffs
 
+OK FOUND ANOTHER ONE
+yall
+really stress testing here
+when I could have just unit tested
+but here we are
+
+I want a visual unit test suite for my windingNumber dealio.
+Which means I think it's time to formalize a visual testing framework
+my folks
+
+do we need to give test cases IDs? Yeah, that would be great.
+slugify the name, it's great.
+
+then we have `the-slug.input.json` and `the-slug.expected.json`.
+
+
+
 - [x] track down the source of BAD PREV. Why are we ending up at not the right place?
 - [x] soooo clooooose I think??? 
 	Yeah not handling single-circles well.

@@ -7,7 +7,13 @@ import { pathToPrimitives, segmentToPrimitive } from '../editor/findSelection';
 import { Bounds } from '../editor/GuideElement';
 import { ArcSegment, Coord, Path, PathGroup, Segment } from '../types';
 import { coordKey } from './calcAllIntersections';
-import { angleForSegment, getAngle, insidePath, isInside } from './clipPath';
+import {
+    angleForSegment,
+    getAngle,
+    insidePath,
+    isInside,
+    windingNumber,
+} from './clipPath';
 import { boundsIntersect } from './findInternalRegions';
 import { angleBetween } from './findNextSegments';
 import { angleTo, dist, push } from './getMirrorTransforms';
@@ -409,20 +415,26 @@ export const clipPathNew = (
     if (!hitsResults) {
         if (insidePath(path.origin, pathToPrimitives(clip), clip)) {
             if (debug) {
+                console.log(`Inside clip, all good`);
+                const primitives = pathToPrimitives(clip);
+                const wind = windingNumber(path.origin, primitives, clip);
+                const wcount = wind.reduce((c, w) => (w.up ? 1 : -1) + c, 0);
+                console.log(`Winding check`, path.origin, primitives, clip);
+                console.log(wind, wcount);
+
                 console.groupEnd();
             }
             return [path];
         } else {
             if (debug) {
-                console.log('not inside');
-            }
-            if (debug) {
+                console.log('Not inside clip, no dice');
                 console.groupEnd();
             }
             return [];
         }
     } else if (clipMode === 'remove') {
         if (debug) {
+            console.log('GroupMode = remove');
             console.groupEnd();
         }
         return [];
@@ -634,6 +646,7 @@ export const clipPathNew = (
             origin: segments[segments.length - 1].to,
         }));
     if (debug) {
+        console.log(`All done ${filtered.length} regions found`);
         console.groupEnd();
     }
     return filtered;
