@@ -184,11 +184,20 @@ export const intersections = (
                         if (withinLimit(two.limit, one.limit[1])) {
                             res.push(one.limit[1]);
                         }
-                        return res.map((v) =>
-                            one.m === Infinity
-                                ? { x: one.b, y: v }
-                                : { x: v, y: one.m * v + one.b },
-                        );
+                        const seen: { [key: string]: true } = {};
+                        return res
+                            .filter((v) => {
+                                const k = numKey(v);
+                                if (seen[k]) {
+                                    return false;
+                                }
+                                return (seen[k] = true);
+                            })
+                            .map((v) =>
+                                one.m === Infinity
+                                    ? { x: one.b, y: v }
+                                    : { x: v, y: one.m * v + one.b },
+                            );
                     }
                 }
             }

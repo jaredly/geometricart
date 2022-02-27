@@ -8,3 +8,9 @@ https://twitter.com/DannyDeraney/status/1497709732336791558
 	- so yeah, maybe let's just do one file per fixture now?
 
 - [ ] I kinda want to be able to configure the editor .. for certain fixtures. Like, configure the grid size. Is that weird? am I going to regret this? like, putting in the metadata for the fixture, also the info about what is going skinny? ok but really do I care about custom serializers? I pretty much don't right now. oh but I could use a variable line-break, that's indicated by being the line break after the metadata, which I control.
+
+
+
+It does seem like having some linters / validators could be useful to.
+automated ways to flag things.
+in the react element context, these could be accessibility, etc.

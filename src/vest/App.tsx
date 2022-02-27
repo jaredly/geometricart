@@ -135,26 +135,42 @@ export const App = <I, O>({ config }: { config: Config<I, O> }) => {
             >
                 Add fixture
             </button>
-            {fixtures.map((f, i) => {
-                const output = config.transform(f.input);
-                const isEqual = equal(output, f.output);
-                return (
-                    <div key={i}>
-                        <div>{f.name}</div>
-                        <Output
-                            input={f.input}
-                            previous={{
-                                output: isEqual ? null : output,
-                                isPassing: f.isPassing,
+            <div
+                style={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    flexWrap: 'wrap',
+                }}
+            >
+                {fixtures.map((f, i) => {
+                    const output = config.transform(f.input);
+                    const isEqual = equal(output, f.output);
+                    return (
+                        <div
+                            key={i}
+                            style={{
+                                padding: 16,
+                                margin: 8,
+                                boxShadow: '0 0 5px white',
+                                borderRadius: 4,
                             }}
-                            output={output}
-                        />
-                        <div>
-                            Status: {f.isPassing + ''} {isEqual + ''}
+                        >
+                            <div>{f.name}</div>
+                            <Output
+                                input={f.input}
+                                previous={{
+                                    output: isEqual ? null : output,
+                                    isPassing: f.isPassing,
+                                }}
+                                output={output}
+                            />
+                            <div>
+                                Status: {f.isPassing + ''} {isEqual + ''}
+                            </div>
                         </div>
-                    </div>
-                );
-            })}
+                    );
+                })}
+            </div>
         </div>
     );
 };

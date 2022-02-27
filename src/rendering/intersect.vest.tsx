@@ -144,6 +144,9 @@ const SegmentEditor = ({
             <div>
                 <button
                     // disabled={current.type === 'Line'}
+                    style={
+                        current.type === 'Line' ? { fontWeight: 'bold' } : {}
+                    }
                     onClick={() => {
                         setCurrent({
                             type: 'Line',
@@ -156,6 +159,7 @@ const SegmentEditor = ({
                 </button>
                 <button
                     // disabled={current.type === 'Arc'}
+                    style={current.type === 'Arc' ? { fontWeight: 'bold' } : {}}
                     onClick={() => {
                         setCurrent({
                             type: 'Arc',
@@ -166,6 +170,7 @@ const SegmentEditor = ({
                 >
                     Arc
                 </button>
+                {cursor ? ' (' + cursor.x + ',' + cursor.y + ')' : null}
             </div>
         </div>
     );
@@ -264,7 +269,9 @@ const Input = ({
                                           r={4}
                                           cx={p.x}
                                           cy={p.y}
-                                          fill="white"
+                                          fill="yellow"
+                                          stroke="black"
+                                          strokeWidth={1}
                                       />
                                   ))
                                 : null}
@@ -330,10 +337,18 @@ const Output = ({
                       ))
                     : null}
                 {output.map((p, i) => (
-                    <circle cx={p.x} cy={p.y} r={4} fill="yellow" key={i} />
+                    <circle
+                        cx={p.x}
+                        cy={p.y}
+                        r={4}
+                        stroke="black"
+                        strokeWidth={1}
+                        fill="yellow"
+                        key={i}
+                    />
                 ))}
             </svg>
-            {output.length} points
+            <div>{output.length} points</div>
         </div>
     );
 };
