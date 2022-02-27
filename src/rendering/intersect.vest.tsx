@@ -333,6 +333,7 @@ const Output = ({
                     <circle cx={p.x} cy={p.y} r={4} fill="yellow" key={i} />
                 ))}
             </svg>
+            {output.length} points
         </div>
     );
 };

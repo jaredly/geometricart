@@ -2,6 +2,8 @@ import { closeEnough, isWithinLineLimit, zeroToTwoPi } from './clipPath';
 import { angleBetween, isAngleBetween } from './findNextSegments';
 import { angleTo, dist, push } from './getMirrorTransforms';
 import { Coord } from '../types';
+import { coordsEqual } from './pathsAreIdentical';
+import { numKey } from './calcAllIntersections';
 
 // export const lineLine_ = (
 //     from1: Coord,
@@ -202,6 +204,49 @@ export const intersections = (
 };
 
 export const circleCircle = (one: Circle, two: Circle): Array<Coord> => {
+    if (
+        coordsEqual(one.center, two.center) &&
+        closeEnough(one.radius, two.radius)
+    ) {
+        if (!one.limit && !two.limit) {
+            return [];
+        }
+        // One is a complete circle, give us both endpoints of two
+        if (!one.limit) {
+            return [
+                push(two.center, two.limit![0], two.radius),
+                push(two.center, two.limit![1], two.radius),
+            ];
+        }
+        if (!two.limit) {
+            return [
+                push(one.center, one.limit![0], one.radius),
+                push(one.center, one.limit![1], one.radius),
+            ];
+        }
+        // It's the same circle!
+        // Now we just check for some overlaps
+        const angles = [];
+        if (isAngleBetween(two.limit[0], one.limit[0], two.limit[1], true)) {
+            angles.push(one.limit[0]);
+        }
+        if (isAngleBetween(two.limit[0], one.limit[1], two.limit[1], true)) {
+            angles.push(one.limit[1]);
+        }
+        if (isAngleBetween(one.limit[0], two.limit[0], one.limit[1], true)) {
+            angles.push(two.limit[0]);
+        }
+        if (isAngleBetween(one.limit[0], two.limit[1], one.limit[1], true)) {
+            angles.push(two.limit[1]);
+        }
+        const seen: { [k: string]: true } = {};
+        return angles
+            .filter((a) => {
+                const k = numKey(a);
+                return seen[k] ? false : (seen[k] = true);
+            })
+            .map((angle) => push(one.center, angle, one.radius));
+    }
     // (x - h)^2 + (y - k)^2 = r^2
     // we've got two of these.
     // 0, 1, 2, or all intersections.
