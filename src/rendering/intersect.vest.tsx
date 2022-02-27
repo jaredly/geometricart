@@ -286,7 +286,15 @@ const Input = ({
     );
 };
 
-const Output = ({ input, output }: { input: Pair; output: Array<Coord> }) => {
+const Output = ({
+    input,
+    output,
+    expected,
+}: {
+    input: Pair;
+    output: Array<Coord>;
+    expected: Array<Coord> | null;
+}) => {
     return (
         <div>
             <svg width={300} height={300}>
@@ -294,12 +302,25 @@ const Output = ({ input, output }: { input: Pair; output: Array<Coord> }) => {
                     zoom={1}
                     prev={input[0].prev}
                     segment={input[0].segment}
+                    inner={{
+                        stroke: 'red',
+                        strokeWidth: 4,
+                    }}
                 />
                 <RenderSegmentBasic
                     zoom={1}
                     prev={input[1].prev}
                     segment={input[1].segment}
+                    inner={{
+                        stroke: 'green',
+                        strokeWidth: 4,
+                    }}
                 />
+                {expected
+                    ? expected.map((p, i) => (
+                          <circle cx={p.x} cy={p.y} r={4} fill="red" key={i} />
+                      ))
+                    : null}
                 {output.map((p, i) => (
                     <circle cx={p.x} cy={p.y} r={4} fill="yellow" key={i} />
                 ))}

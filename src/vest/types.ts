@@ -40,6 +40,10 @@ export type Config<Input, Output> = {
         // I'll wait on that.
         // should notes go on the "input" or the "output"?
         // input I think. and that's where skipness would live too.
-        fixture: (props: { input: Input; output: Output }) => JSX.Element;
+        fixture: (props: {
+            input: Input;
+            output: Output;
+            expected: Output | null;
+        }) => JSX.Element;
     };
 };

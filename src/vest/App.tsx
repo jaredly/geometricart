@@ -1,5 +1,6 @@
 // The main deals
 
+import equal from 'fast-deep-equal';
 import * as React from 'react';
 import { render } from 'react-dom';
 import { Config } from './types';
@@ -7,7 +8,12 @@ import { Config } from './types';
 export const App = <I, O>({ config }: { config: Config<I, O> }) => {
     // Here we go
     const [fixtures, setFixtures] = React.useState(
-        [] as Array<{ input: I; expected: O | null }>,
+        [] as Array<{
+            name: string;
+            input: I;
+            expected: O | null;
+            status: 'pass' | 'fail' | 'unknown';
+        }>,
     );
 
     React.useEffect(() => {
@@ -31,7 +37,12 @@ export const App = <I, O>({ config }: { config: Config<I, O> }) => {
                                       fix.expected,
                                   ) ?? JSON.parse(fix.expected)
                                 : null;
-                            return { input, expected };
+                            const status = expected
+                                ? equal(expected, config.transform(input))
+                                    ? 'pass'
+                                    : 'fail'
+                                : 'unknown';
+                            return { name: fix.name, input, expected, status };
                         }),
                     );
                 },
@@ -46,15 +57,58 @@ export const App = <I, O>({ config }: { config: Config<I, O> }) => {
         null as null | I,
     );
 
+    const [name, setName] = React.useState('');
+
     return (
         <div>
             <div> Fixture: {config.id} </div>
             <Editor initial={current} onChange={setCurrent} />
-            {fixtures.map((f, i) =>
-                f.expected ? (
-                    <Output key={i} input={f.input} output={f.expected} />
-                ) : null,
-            )}
+            <input
+                value={name}
+                onChange={(evt) => setName(evt.target.value)}
+                placeholder="Fixture Name"
+            />
+            <button
+                disabled={current == null}
+                onClick={() => {
+                    if (!current) {
+                        return;
+                    }
+                    setCurrent(null);
+                    setName('');
+                    setFixtures(
+                        fixtures.concat([
+                            {
+                                name,
+                                input: current,
+                                expected: null,
+                                status: 'unknown',
+                            },
+                        ]),
+                    );
+                }}
+            >
+                Add fixture
+            </button>
+            {fixtures.map((f, i) => {
+                const output = config.transform(f.input);
+                const status = f.expected
+                    ? equal(output, f.expected)
+                        ? 'pass'
+                        : 'fail'
+                    : 'unknown';
+                return (
+                    <div key={i}>
+                        <div>{f.name}</div>
+                        <Output
+                            input={f.input}
+                            expected={status === 'fail' ? f.expected : null}
+                            output={output}
+                        />
+                        <div>Status: {status}</div>
+                    </div>
+                );
+            })}
         </div>
     );
 };
