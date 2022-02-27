@@ -4,6 +4,7 @@ import { RenderPrimitive } from '../editor/RenderPrimitive';
 import { RenderSegmentBasic } from '../editor/RenderSegment';
 import { Coord } from '../types';
 import { Config } from '../vest/types';
+import { register } from '../vest/vest';
 import { SegmentWithPrev } from './clipPathNew';
 import { angleTo, dist, push } from './getMirrorTransforms';
 import { intersections } from './intersect';
@@ -54,9 +55,11 @@ export const segToPending = (s: SegmentWithPrev | null): Pending =>
               points:
                   s.segment.type === 'Line'
                       ? [s.prev, s.segment.to]
-                      : [s.prev, s.segment.center],
+                      : [s.prev, s.segment.center, s.segment.to],
           }
         : { type: 'Line', clockwise: false, points: [] };
+
+const snap = (v: number, grid: number) => Math.round(v / grid) * grid;
 
 const SegmentEditor = ({
     initial,
@@ -65,8 +68,13 @@ const SegmentEditor = ({
 }: {
     initial: null | SegmentWithPrev;
     onChange: (p: SegmentWithPrev) => void;
-    children: React.ReactNode;
+    children: (
+        current: null | SegmentWithPrev,
+        rendered: React.ReactNode,
+    ) => React.ReactNode;
 }) => {
+    const grid = 5;
+
     const [current, setCurrent] = useInitialState(initial, segToPending);
     const [cursor, setCursor] = React.useState(null as null | Coord);
 
@@ -81,16 +89,16 @@ const SegmentEditor = ({
                 onMouseMove={(evt) => {
                     const box = evt.currentTarget.getBoundingClientRect();
                     setCursor({
-                        x: evt.clientX - box.left,
-                        y: evt.clientY - box.top,
+                        x: snap(evt.clientX - box.left, grid),
+                        y: snap(evt.clientY - box.top, grid),
                     });
                 }}
                 onMouseLeave={() => setCursor(null)}
                 onClick={(evt) => {
                     const box = evt.currentTarget.getBoundingClientRect();
                     const coord = {
-                        x: evt.clientX - box.left,
-                        y: evt.clientY - box.top,
+                        x: snap(evt.clientX - box.left, grid),
+                        y: snap(evt.clientY - box.top, grid),
                     };
                     const max = current.type === 'Line' ? 2 : 3;
                     const changed = {
@@ -99,6 +107,7 @@ const SegmentEditor = ({
                             .slice(0, max - 1)
                             .concat([coord]),
                     };
+                    console.log(max, changed, current);
                     setCurrent(changed);
                     const seg = pendingToSeg(changed);
                     if (seg) {
@@ -106,18 +115,58 @@ const SegmentEditor = ({
                     }
                 }}
             >
-                {children}
-                {seg ? (
-                    <RenderSegmentBasic
-                        zoom={1}
-                        prev={seg.prev}
-                        segment={seg.segment}
-                    />
-                ) : null}
-                {points.map((p, i) => (
-                    <circle key={i} cx={p.x} cy={p.y} fill="red" r={5} />
-                ))}
+                {children(
+                    seg,
+                    <>
+                        {seg ? (
+                            <RenderSegmentBasic
+                                zoom={1}
+                                prev={seg.prev}
+                                segment={seg.segment}
+                                inner={{
+                                    stroke: 'red',
+                                    strokeWidth: 4,
+                                }}
+                            />
+                        ) : null}
+                        {points.map((p, i) => (
+                            <circle
+                                key={i}
+                                cx={p.x}
+                                cy={p.y}
+                                fill="red"
+                                r={5}
+                            />
+                        ))}
+                    </>,
+                )}
             </svg>
+            <div>
+                <button
+                    // disabled={current.type === 'Line'}
+                    onClick={() => {
+                        setCurrent({
+                            type: 'Line',
+                            points: [],
+                            clockwise: false,
+                        });
+                    }}
+                >
+                    Line
+                </button>
+                <button
+                    // disabled={current.type === 'Arc'}
+                    onClick={() => {
+                        setCurrent({
+                            type: 'Arc',
+                            points: [],
+                            clockwise: false,
+                        });
+                    }}
+                >
+                    Arc
+                </button>
+            </div>
         </div>
     );
 };
@@ -158,6 +207,13 @@ const Input = ({
     const first = current ? current[0] : null;
     const second = current ? current[1] : null;
     const other = editSecond ? first : second;
+    // const points =
+    //     first && second
+    //         ? intersections(
+    //               segmentToPrimitive(first.prev, first.segment),
+    //               segmentToPrimitive(second.prev, second.segment),
+    //           )
+    //         : null;
     return (
         <div>
             <SegmentEditor
@@ -169,13 +225,44 @@ const Input = ({
                     });
                 }}
             >
-                {other ? (
-                    <RenderSegmentBasic
-                        zoom={1}
-                        prev={other.prev}
-                        segment={other.segment}
-                    />
-                ) : null}
+                {(pending, rendered) => {
+                    let one = editSecond ? first : pending;
+                    let two = editSecond ? pending : second;
+                    let points =
+                        one && two
+                            ? intersections(
+                                  segmentToPrimitive(one.prev, one.segment),
+                                  segmentToPrimitive(two.prev, two.segment),
+                              )
+                            : null;
+                    return (
+                        <>
+                            {other ? (
+                                <RenderSegmentBasic
+                                    zoom={1}
+                                    prev={other.prev}
+                                    segment={other.segment}
+                                    inner={{
+                                        stroke: 'green',
+                                        strokeWidth: 4,
+                                    }}
+                                />
+                            ) : null}
+                            {rendered}
+                            {points
+                                ? points.map((p, i) => (
+                                      <circle
+                                          key={i}
+                                          r={4}
+                                          cx={p.x}
+                                          cy={p.y}
+                                          fill="white"
+                                      />
+                                  ))
+                                : null}
+                        </>
+                    );
+                }}
             </SegmentEditor>
             <div>
                 <button
@@ -230,9 +317,9 @@ const config: Config<Pair, Array<Coord>> = {
             segmentToPrimitive(two.prev, two.segment),
         ),
     render: {
-        input: Input,
-        output: Output,
+        editor: Input,
+        fixture: Output,
     },
 };
 
-export default config;
+register(config);

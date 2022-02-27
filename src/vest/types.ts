@@ -26,10 +26,10 @@ export type Config<Input, Output> = {
      * UI Configuration!
      */
     render: {
-        input: (props: {
+        editor: (props: {
             initial: Input | null;
             onChange: (changed: Input) => void;
-        }) => React.ReactNode;
+        }) => JSX.Element;
         // TODO: Should I include some linters/validators?
         // Could be cool. But I don't need to right now.
         // Ok I do want a way to store notes about
@@ -40,6 +40,6 @@ export type Config<Input, Output> = {
         // I'll wait on that.
         // should notes go on the "input" or the "output"?
         // input I think. and that's where skipness would live too.
-        output: (props: { input: Input; output: Output }) => React.ReactNode;
+        fixture: (props: { input: Input; output: Output }) => JSX.Element;
     };
 };

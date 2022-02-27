@@ -7,8 +7,9 @@
 import path from 'path';
 import fs from 'fs';
 import { Config } from './types';
+import { run } from './App';
 
-const vests: Array<Config<unknown, unknown>> = [];
+// const vests: Array<Config<unknown, unknown>> = [];
 const suffix = '.input.txt';
 
 export class IncompleteFixture extends Error {}
@@ -52,10 +53,16 @@ export const jestTests = <I, O>(config: Config<I, O>) => {
     });
 };
 
+export const vestUI = <I, O>(config: Config<I, O>) => {
+    run(config as Config<unknown, unknown>);
+};
+
 export const register = <I, O>(config: Config<I, O>) => {
-    if (typeof jest !== undefined) {
+    if (typeof jest !== 'undefined') {
         jestTests(config);
     } else {
-        vests.push(config as Config<unknown, unknown>);
+        // vests.push(config as Config<unknown, unknown>);
+        // OK GO GO GO let's react-dom it up I think???
+        vestUI(config);
     }
 };
