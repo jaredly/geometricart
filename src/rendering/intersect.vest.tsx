@@ -73,7 +73,7 @@ const SegmentEditor = ({
         rendered: React.ReactNode,
     ) => React.ReactNode;
 }) => {
-    const grid = 5;
+    const grid = 15;
 
     const [current, setCurrent] = useInitialState(initial, segToPending);
     const [cursor, setCursor] = React.useState(null as null | Coord);
