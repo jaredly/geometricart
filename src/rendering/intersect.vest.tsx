@@ -289,11 +289,11 @@ const Input = ({
 const Output = ({
     input,
     output,
-    expected,
+    previous,
 }: {
     input: Pair;
     output: Array<Coord>;
-    expected: Array<Coord> | null;
+    previous: { output: Array<Coord> | null; isPassing: boolean };
 }) => {
     return (
         <div>
@@ -316,8 +316,8 @@ const Output = ({
                         strokeWidth: 4,
                     }}
                 />
-                {expected
-                    ? expected.map((p, i) => (
+                {previous.output
+                    ? previous.output.map((p, i) => (
                           <circle cx={p.x} cy={p.y} r={4} fill="red" key={i} />
                       ))
                     : null}

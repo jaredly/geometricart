@@ -14,6 +14,11 @@ const suffix = '.input.txt';
 
 export class IncompleteFixture extends Error {}
 
+export const parseOutput = (raw: string): [string, boolean] => {
+    const firstLine = raw.indexOf('\n');
+    return [raw.slice(firstLine + 1), raw.slice(0, firstLine) === 'pass'];
+};
+
 export const jestTests = <I, O>(config: Config<I, O>) => {
     describe(`Vest ${config.id}`, () => {
         const dir = path.join(config.dir, '__vest__', config.id);
@@ -26,19 +31,20 @@ export const jestTests = <I, O>(config: Config<I, O>) => {
                 // no not really.
                 it(`Fixture ${name}`, () => {
                     const base = name.slice(0, -suffix.length);
-                    const expected = base + '.expected.txt';
-                    if (!fs.existsSync(path.join(dir, expected))) {
-                        throw new IncompleteFixture(
-                            `No .expected.txt found for fixture ${name}`,
-                        );
-                    }
+                    const outputPath = base + '.output.txt';
                     const raw = fs.readFileSync(
-                        path.join(dir, expected),
+                        path.join(dir, outputPath),
                         'utf8',
                     );
+                    const [rawOutput, isPassing] = parseOutput(raw);
+                    if (!isPassing) {
+                        throw new IncompleteFixture(
+                            `No passing output for ${base}`,
+                        );
+                    }
                     const expectedValue: O =
-                        config.serde?.output?.deserialize(raw) ??
-                        JSON.parse(raw);
+                        config.serde?.output?.deserialize(rawOutput) ??
+                        JSON.parse(rawOutput);
                     const rawInput = fs.readFileSync(
                         path.join(dir, name),
                         'utf8',

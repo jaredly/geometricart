@@ -43,7 +43,9 @@ export type Config<Input, Output> = {
         fixture: (props: {
             input: Input;
             output: Output;
-            expected: Output | null;
+            // if null, then it's the same as the produced output
+            // if isPassing
+            previous: { output: null | Output; isPassing: boolean };
         }) => JSX.Element;
     };
 };

@@ -4,6 +4,7 @@ import equal from 'fast-deep-equal';
 import * as React from 'react';
 import { render } from 'react-dom';
 import { Config } from './types';
+import { parseOutput } from './vest';
 
 export const App = <I, O>({ config }: { config: Config<I, O> }) => {
     // Here we go
@@ -11,8 +12,8 @@ export const App = <I, O>({ config }: { config: Config<I, O> }) => {
         [] as Array<{
             name: string;
             input: I;
-            expected: O | null;
-            status: 'pass' | 'fail' | 'unknown';
+            output: O;
+            isPassing: boolean;
         }>,
     );
 
@@ -24,7 +25,7 @@ export const App = <I, O>({ config }: { config: Config<I, O> }) => {
                     fixtures: Array<{
                         name: string;
                         input: string;
-                        expected: string | null;
+                        output: string;
                     }>,
                 ) => {
                     setFixtures(
@@ -32,17 +33,13 @@ export const App = <I, O>({ config }: { config: Config<I, O> }) => {
                             const input =
                                 config.serde?.input?.deserialize(fix.input) ??
                                 JSON.parse(fix.input);
-                            const expected = fix.expected
-                                ? config.serde?.output?.deserialize(
-                                      fix.expected,
-                                  ) ?? JSON.parse(fix.expected)
-                                : null;
-                            const status = expected
-                                ? equal(expected, config.transform(input))
-                                    ? 'pass'
-                                    : 'fail'
-                                : 'unknown';
-                            return { name: fix.name, input, expected, status };
+                            const [outputRaw, isPassing] = parseOutput(
+                                fix.output,
+                            );
+                            const output =
+                                config.serde?.output?.deserialize(outputRaw) ??
+                                JSON.parse(outputRaw);
+                            return { name: fix.name, input, output, isPassing };
                         }),
                     );
                 },
@@ -59,6 +56,8 @@ export const App = <I, O>({ config }: { config: Config<I, O> }) => {
 
     const [name, setName] = React.useState('');
 
+    const [passing, setPassing] = React.useState(false);
+
     return (
         <div>
             <div> Fixture: {config.id} </div>
@@ -68,6 +67,14 @@ export const App = <I, O>({ config }: { config: Config<I, O> }) => {
                 onChange={(evt) => setName(evt.target.value)}
                 placeholder="Fixture Name"
             />
+            <div>
+                <button onClick={() => setPassing(true)} disabled={passing}>
+                    Pass
+                </button>
+                <button onClick={() => setPassing(false)} disabled={!passing}>
+                    Fail
+                </button>
+            </div>
             <button
                 disabled={current == null}
                 onClick={() => {
@@ -76,13 +83,14 @@ export const App = <I, O>({ config }: { config: Config<I, O> }) => {
                     }
                     setCurrent(null);
                     setName('');
+                    setPassing(false);
                     setFixtures(
                         fixtures.concat([
                             {
                                 name,
                                 input: current,
-                                expected: null,
-                                status: 'unknown',
+                                output: config.transform(current),
+                                isPassing: passing,
                             },
                         ]),
                     );
@@ -92,20 +100,21 @@ export const App = <I, O>({ config }: { config: Config<I, O> }) => {
             </button>
             {fixtures.map((f, i) => {
                 const output = config.transform(f.input);
-                const status = f.expected
-                    ? equal(output, f.expected)
-                        ? 'pass'
-                        : 'fail'
-                    : 'unknown';
+                const isEqual = equal(output, f.output);
                 return (
                     <div key={i}>
                         <div>{f.name}</div>
                         <Output
                             input={f.input}
-                            expected={status === 'fail' ? f.expected : null}
+                            previous={{
+                                output: isEqual ? null : output,
+                                isPassing: f.isPassing,
+                            }}
                             output={output}
                         />
-                        <div>Status: {status}</div>
+                        <div>
+                            Status: {f.isPassing + ''} {isEqual + ''}
+                        </div>
                     </div>
                 );
             })}

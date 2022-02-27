@@ -184,11 +184,8 @@ const getFixtures = (sourceFile, id) => {
         .map((name) => {
             const base = name.slice(0, -suffix.length);
             const rawInput = fs.readFileSync(path.join(dir, name), 'utf8');
-            const expected = base + '.expected.txt';
-            let expectedRaw = null;
-            if (fs.existsSync(path.join(dir, expected))) {
-                expectedRaw = fs.readFileSync(path.join(dir, expected), 'utf8');
-            }
-            return { name: base, input: rawInput, expected: expectedRaw };
+            const output = base + '.output.txt';
+            const outputRaw = fs.readFileSync(path.join(dir, output), 'utf8');
+            return { name: base, input: rawInput, output: outputRaw };
         });
 };
