@@ -83,7 +83,7 @@ esbuild
                             res,
                         );
                     }
-                    const fixtures = getFixtures(pathpart, search);
+                    const fixtures = getFixtures(pathpart.slice(1), search);
                     res.writeHead(200, { 'Content-Type': 'application/json' });
                     return res.end(JSON.stringify(fixtures));
                 }
@@ -188,7 +188,7 @@ const getFixtures = (sourceFile, id) => {
     }
     return fs
         .readdirSync(dir)
-        .filter((name) => name.filter(name.endsWith(suffix)))
+        .filter((name) => name.endsWith(suffix))
         .map((name) => {
             const base = name.slice(0, -suffix.length);
             const rawInput = fs.readFileSync(path.join(dir, name), 'utf8');

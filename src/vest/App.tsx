@@ -6,10 +6,12 @@ import { render } from 'react-dom';
 import { Config } from './types';
 import { parseOutput } from './vest';
 
+const initial: Array<unknown> = [];
+
 export const App = <I, O>({ config }: { config: Config<I, O> }) => {
     // Here we go
     const [fixtures, setFixtures] = React.useState(
-        [] as Array<{
+        initial as Array<{
             name: string;
             input: I;
             output: O;
@@ -28,6 +30,7 @@ export const App = <I, O>({ config }: { config: Config<I, O> }) => {
                         output: string;
                     }>,
                 ) => {
+                    console.log(`Got, ok`, fixtures.length);
                     setFixtures(
                         fixtures.map((fix) => {
                             const input =
@@ -47,6 +50,11 @@ export const App = <I, O>({ config }: { config: Config<I, O> }) => {
     }, []);
 
     React.useEffect(() => {
+        if (fixtures === initial) {
+            console.log('bail');
+            return;
+        }
+        console.log('no bail', fixtures);
         fetch(`?${config.id}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

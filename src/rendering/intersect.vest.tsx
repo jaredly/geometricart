@@ -248,6 +248,14 @@ const Input = ({
                                     }}
                                 />
                             ) : null}
+                            {other?.segment.type === 'Arc' ? (
+                                <circle
+                                    r={4}
+                                    cx={other.segment.center.x}
+                                    cy={other.segment.center.y}
+                                    fill="green"
+                                />
+                            ) : null}
                             {rendered}
                             {points
                                 ? points.map((p, i) => (
