@@ -46,6 +46,35 @@ export const App = <I, O>({ config }: { config: Config<I, O> }) => {
             );
     }, []);
 
+    React.useEffect(() => {
+        fetch(`?${config.id}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(
+                fixtures.map((fixture) => {
+                    const input =
+                        config.serde?.input?.serialize(fixture.input) ??
+                        JSON.stringify(fixture.input);
+                    const output =
+                        config.serde?.output?.serialize(fixture.output) ??
+                        JSON.stringify(fixture.output);
+                    return {
+                        name: fixture.name,
+                        input,
+                        output:
+                            (fixture.isPassing ? 'pass\n' : 'fail\n') + output,
+                    };
+                }),
+            ),
+        }).then((res) => {
+            if (res.status !== 204) {
+                console.error(
+                    `Unexpected status ${res.status} when saving fixtures.`,
+                );
+            }
+        });
+    }, [fixtures]);
+
     const Editor = config.render.editor;
     const Output = config.render.fixture;
 

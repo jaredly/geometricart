@@ -75,6 +75,14 @@ esbuild
 
             if (initial.includes(pathpart.slice(1))) {
                 if (search) {
+                    if (req.method === 'POST') {
+                        return writeFixtures(
+                            pathpart.slice(1),
+                            search,
+                            req,
+                            res,
+                        );
+                    }
                     const fixtures = getFixtures(pathpart, search);
                     res.writeHead(200, { 'Content-Type': 'application/json' });
                     return res.end(JSON.stringify(fixtures));
@@ -188,4 +196,45 @@ const getFixtures = (sourceFile, id) => {
             const outputRaw = fs.readFileSync(path.join(dir, output), 'utf8');
             return { name: base, input: rawInput, output: outputRaw };
         });
+};
+
+const writeFixtures = (sourceFile, id, req, res) => {
+    const dir = path.join(path.dirname(sourceFile), '__vest__', id);
+    if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+    }
+
+    let data = '';
+    req.on('data', (chunk) => {
+        data += chunk.toString('utf8');
+    });
+    req.on('end', () => {
+        const parsed = JSON.parse(data);
+
+        let unused = {};
+        fs.readdirSync(dir)
+            .filter((d) => d.endsWith(suffix))
+            .forEach((name) => {
+                const slug = name.slice(0, -suffix.length);
+                unused[slug] = true;
+            });
+
+        parsed.forEach((item) => {
+            const slug = item.name.replace(/[^a-zA-Z0-9_.-]/g, '-');
+            unused[slug] = false;
+            fs.writeFileSync(path.join(dir, slug + suffix), item.input);
+            fs.writeFileSync(path.join(dir, slug + '.output.txt'), item.output);
+        });
+
+        // Remove deleted ones
+        Object.keys(unused).forEach((k) => {
+            if (unused[k]) {
+                fs.unlinkSync(path.join(dir, k + suffix));
+                fs.unlinkSync(path.join(dir, k + '.output.txt'));
+            }
+        });
+
+        res.writeHead(204, {});
+        res.end();
+    });
 };
