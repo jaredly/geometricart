@@ -226,10 +226,6 @@ const calcSI = (
     };
 };
 
-// export const untangleHits = (hits: {[key: string]: {coord: Coord, parties: Array<SegmentIntersection>}}) => {
-
-// }
-
 export const clipPathTry = (
     path: Path,
     clip: Array<Segment>,

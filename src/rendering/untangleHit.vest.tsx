@@ -3,12 +3,26 @@ import { ShowHitIntersection } from '../editor/DebugOrigPath';
 import { RenderSegmentBasic } from '../editor/RenderSegment';
 import { Coord } from '../types';
 import { register } from '../vest';
-import { intersectSegments, SegmentWithPrev } from './clipPathNew';
+import { HitsInfo, intersectSegments, SegmentWithPrev } from './clipPathNew';
 import { SegmentEditor, useInitialState } from './SegmentEditor';
 import { HitTransitions, untangleHit } from './untangleHit';
 
 type Input = Array<SegmentWithPrev>;
 type Output = { pair: HitTransitions; coord: Coord };
+
+const getHit = (hits: HitsInfo['hits']) => {
+    const keys = Object.keys(hits).sort(
+        (a, b) => hits[b].parties.length - hits[a].parties.length,
+    );
+    if (!keys.length) {
+        return null;
+    }
+    try {
+        const hit = hits[keys[0]];
+        return { pair: untangleHit(hit.parties), coord: hit.coord };
+    } catch (e) {}
+    return null;
+};
 
 const Editor = ({
     initial,
@@ -23,7 +37,7 @@ const Editor = ({
     React.useEffect(() => {
         if (!current) return;
         const { hits } = intersectSegments(current);
-        if (Object.keys(hits).length === 1) {
+        if (getHit(hits) != null) {
             onChange(current);
         }
     }, [current]);
@@ -43,13 +57,7 @@ const Editor = ({
                     const { hits } = intersectSegments(
                         (current || []).concat(segment ? [segment] : []),
                     );
-                    let hitt = null;
-                    if (Object.keys(hits).length === 1) {
-                        const k = Object.keys(hits);
-                        try {
-                            hitt = untangleHit(hits[k[0]].parties);
-                        } catch (e) {}
-                    }
+                    let hitt = getHit(hits);
 
                     return (
                         <>
@@ -70,10 +78,10 @@ const Editor = ({
                             {rendered}
                             {hitt ? (
                                 <ShowHitIntersection
-                                    pair={hitt}
+                                    pair={hitt.pair}
                                     zoom={1}
                                     arrowSize={40}
-                                    coord={hits[Object.keys(hits)[0]].coord}
+                                    coord={hitt.coord}
                                 />
                             ) : null}
                         </>
@@ -112,6 +120,7 @@ const Editor = ({
                         </button>
                     </div>
                 ))}
+                <button onClick={() => setCurrent([])}>Clear</button>
             </div>
         </div>
     );
@@ -161,14 +170,11 @@ register({
     dir: __dirname,
     transform: (segments: Input) => {
         const { hits } = intersectSegments(segments);
-        const k = Object.keys(hits);
-        if (k.length !== 1) {
-            throw new Error(`Must have only one intersection`);
+        const hit = getHit(hits);
+        if (!hit) {
+            throw new Error(`No valid intersection`);
         }
-        return {
-            pair: untangleHit(hits[k[0]].parties),
-            coord: hits[k[0]].coord,
-        };
+        return hit;
     },
     render: {
         editor: Editor,

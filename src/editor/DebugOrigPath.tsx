@@ -21,7 +21,7 @@ const point = (
     theta: number,
     size: number,
     color: string,
-    outline = false,
+    inside: boolean | null,
 ) => {
     center = back ? push(center, theta, -size) : center;
     const mid = push(center, theta, size / 2);
@@ -40,12 +40,12 @@ const point = (
                     .map((p) => `${p.x * zoom},${p.y * zoom}`)
                     .join(' ')}
             />
-            {outline ? (
+            {inside != null ? (
                 <circle
                     cx={mid.x * zoom}
                     cy={mid.y * zoom}
                     r={(size / 8) * zoom}
-                    fill="black"
+                    fill={inside ? 'black' : 'white'}
                 />
             ) : null}
         </>
@@ -75,6 +75,7 @@ export const ShowHitIntersection = ({
                         pair.inside.theta.theta,
                         size * 1.2,
                         'magenta',
+                        true,
                     )}
                     {point(
                         false,
@@ -83,6 +84,7 @@ export const ShowHitIntersection = ({
                         pair.outside.theta.theta,
                         size * 0.7,
                         'teal',
+                        false,
                     )}
                 </>
             );
@@ -95,8 +97,8 @@ export const ShowHitIntersection = ({
                         zoom,
                         pair.transitions[0].entry.theta.theta,
                         size * 0.8,
-                        'white',
-                        pair.transitions[0].goingInside == true,
+                        '#f00',
+                        pair.transitions[0].goingInside,
                     )}
                     {point(
                         false,
@@ -104,8 +106,8 @@ export const ShowHitIntersection = ({
                         zoom,
                         pair.transitions[0].exit.theta.theta, // + Math.PI,
                         size * 0.9,
-                        'black',
-                        pair.transitions[0].goingInside == true,
+                        '#f00',
+                        pair.transitions[0].goingInside,
                     )}
                     {point(
                         true,
@@ -113,8 +115,8 @@ export const ShowHitIntersection = ({
                         zoom,
                         pair.transitions[1].entry.theta.theta,
                         size * 0.8,
-                        'red',
-                        pair.transitions[1].goingInside == true,
+                        '#0f0',
+                        pair.transitions[1].goingInside,
                     )}
                     {point(
                         false,
@@ -122,8 +124,8 @@ export const ShowHitIntersection = ({
                         zoom,
                         pair.transitions[1].exit.theta.theta, // + Math.PI,
                         size,
-                        'green',
-                        pair.transitions[1].goingInside == true,
+                        '#0f0',
+                        pair.transitions[1].goingInside,
                     )}
                 </>
             );
@@ -136,7 +138,8 @@ export const ShowHitIntersection = ({
                         zoom,
                         pair.transition.entry.theta.theta,
                         size * 0.8,
-                        'blue',
+                        'orange',
+                        null,
                     )}
                     {point(
                         false,
@@ -145,6 +148,7 @@ export const ShowHitIntersection = ({
                         pair.transition.exit.theta.theta, // + Math.PI,
                         size,
                         'orange',
+                        null,
                     )}
                 </>
             );
