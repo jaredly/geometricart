@@ -8,6 +8,8 @@ import { deserializeFixture, serializeFixture } from './utils';
 
 const initial: Array<unknown> = [];
 
+const slugify = (name: string) => name.replace(/[^a-zA-Z0-9_.-]/g, '-');
+
 export const App = <I, O>({ config }: { config: Config<I, O> }) => {
     // Here we go
     const [fixtures, setFixtures] = React.useState(
@@ -56,7 +58,7 @@ export const App = <I, O>({ config }: { config: Config<I, O> }) => {
 
     const [name, setName] = React.useState('');
 
-    const [passing, setPassing] = React.useState(false);
+    const [passing, setPassing] = React.useState(null as null | boolean);
 
     const updateFixture = (
         name: string,
@@ -81,20 +83,40 @@ export const App = <I, O>({ config }: { config: Config<I, O> }) => {
                 <Editor initial={current} onChange={setCurrent} />
             </div>
             <input
+                style={{ marginLeft: 8, padding: 4 }}
                 value={name}
                 onChange={(evt) => setName(evt.target.value)}
                 placeholder="Fixture Name"
             />
-            <div>
-                <button onClick={() => setPassing(true)} disabled={passing}>
+            <div
+                style={{
+                    display: 'inline-block',
+                    margin: '0 8px',
+                    border: `4px solid ${
+                        passing === null ? 'orange' : passing ? 'green' : 'red'
+                    }`,
+                }}
+            >
+                <button
+                    onClick={() => setPassing(true)}
+                    disabled={passing === true}
+                >
                     Pass
                 </button>
-                <button onClick={() => setPassing(false)} disabled={!passing}>
+                <button
+                    onClick={() => setPassing(false)}
+                    disabled={passing === false}
+                >
                     Fail
                 </button>
             </div>
             <button
-                disabled={current == null}
+                disabled={
+                    current == null ||
+                    passing == null ||
+                    name === '' ||
+                    fixtures.some((f) => slugify(f.name) === slugify(name))
+                }
                 onClick={() => {
                     if (!current) {
                         return;
@@ -108,7 +130,7 @@ export const App = <I, O>({ config }: { config: Config<I, O> }) => {
                                 name,
                                 input: current,
                                 output: config.transform(current),
-                                isPassing: passing,
+                                isPassing: !!passing,
                             },
                         ]),
                     );
@@ -158,7 +180,19 @@ export const App = <I, O>({ config }: { config: Config<I, O> }) => {
                                     }}
                                     output={output}
                                 />
-                                <div>
+                                <div
+                                    style={{
+                                        display: 'inline-block',
+                                        margin: '0 8px',
+                                        border: `4px solid ${
+                                            fixture.isPassing === null
+                                                ? 'orange'
+                                                : fixture.isPassing
+                                                ? 'green'
+                                                : 'red'
+                                        }`,
+                                    }}
+                                >
                                     <button
                                         onClick={() =>
                                             updateFixture(
@@ -189,10 +223,9 @@ export const App = <I, O>({ config }: { config: Config<I, O> }) => {
                                     >
                                         Fail
                                     </button>
-                                    {!isEqual ? 'Different!' : null}
-                                    Status: {fixture.isPassing + ''}{' '}
-                                    {isEqual + ''}
                                 </div>
+                                {!isEqual ? 'Different!' : null}
+                                Status: {fixture.isPassing + ''} {isEqual + ''}
                             </div>
                         );
                     })}
