@@ -4,6 +4,16 @@ import { Coord } from '../types';
 import { SegmentWithPrev } from './clipPathNew';
 import { angleTo, dist, push } from './getMirrorTransforms';
 
+export const useOnChange = <T,>(v: T, fn: (v: T) => void) => {
+    const prev = React.useRef(v);
+    React.useEffect(() => {
+        if (prev.current !== v) {
+            prev.current = v;
+            fn(v);
+        }
+    }, [v]);
+};
+
 export const useInitialState = <T, R = T>(
     v: T,
     transform?: (t: T) => R,
@@ -11,13 +21,7 @@ export const useInitialState = <T, R = T>(
     const [current, set] = React.useState(
         transform ? transform(v) : (v as any as R),
     );
-    const prev = React.useRef(v);
-    React.useEffect(() => {
-        if (prev.current !== v) {
-            prev.current = v;
-            set(transform ? transform(v) : (v as any as R));
-        }
-    }, [v]);
+    useOnChange(v, (v) => set(transform ? transform(v) : (v as any as R)));
     return [current, set];
 };
 

@@ -6,9 +6,16 @@ import { register } from '../vest/vest';
 import { atCircleBottomOrSomething } from './atCircleBottomOrSomething';
 import { atLineBottom } from './clipPath';
 import { SegmentWithPrev } from './clipPathNew';
-import { dist } from './getMirrorTransforms';
-import { Circle, lineLine, lineToSlope, SlopeIntercept } from './intersect';
-import { SegmentEditor, useInitialState } from './SegmentEditor';
+import { angleTo, dist, push } from './getMirrorTransforms';
+import {
+    Circle,
+    lineCircle,
+    lineLine,
+    lineToSlope,
+    SlopeIntercept,
+    withinLimit,
+} from './intersect';
+import { SegmentEditor, useInitialState, useOnChange } from './SegmentEditor';
 
 type Pair = [SegmentWithPrev, Coord];
 type Which = 'segment' | 'coord';
@@ -28,6 +35,9 @@ const Editor = ({
 
     const [edit, setEdit] = React.useState('segment' as Which);
 
+    useOnChange(initial, (initial) =>
+        initial !== current ? setEdit('segment') : null,
+    );
     // React.useEffect(() => {
     //     setEdit('segment');
     // }, [initial]);
@@ -122,7 +132,18 @@ const CoordPlacer = ({
             const int = lineLine(si, other);
             return int;
         }
-        return null;
+        const prim = segmentToPrimitive(
+            segment.prev,
+            segment.segment,
+        ) as Circle;
+        const theta = angleTo(prim.center, coord);
+        const out = push(prim.center, theta, prim.radius * 2);
+        const int = lineCircle(prim, lineToSlope(prim.center, out, true));
+        // if (withinLimit(prim.limit!, theta)) {
+        //     return push(prim.center, theta, prim.radius);
+        // }
+        // return null;
+        return int.length === 1 ? int[0] : null;
     };
 
     return (

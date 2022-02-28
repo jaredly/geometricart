@@ -7,6 +7,15 @@ import { closeEnough } from './clipPath';
 
 // Also returns true if we're at the top or bottom tangent and not on the top endpoint
 
+/*
+
+Ok I'm not sure why we don't want to be doing
+wait, ohhhh so the top of the circle is ALSO ignorable
+because it's a double-touch.
+very interesting.
+
+*/
+
 export const atCircleBottomOrSomething = (coord: Coord, seg: Circle) => {
     const atX = closeEnough(coord.x, seg.center.x);
 
@@ -32,14 +41,14 @@ export const atCircleBottomOrSomething = (coord: Coord, seg: Circle) => {
     // if limit[1] is /less/ than PI past the summit, it is a "bottom" point
     if (
         angleBetween(seg.limit[0], -Math.PI / 2, true) < Math.PI &&
-        coordsEqual(push(seg.center, seg.radius, seg.limit[0]), coord)
+        coordsEqual(push(seg.center, seg.limit[0], seg.radius), coord)
     ) {
         return true;
     }
 
     if (
         angleBetween(-Math.PI / 2, seg.limit[1], true) < Math.PI &&
-        coordsEqual(push(seg.center, seg.radius, seg.limit[1]), coord)
+        coordsEqual(push(seg.center, seg.limit[1], seg.radius), coord)
     ) {
         return true;
     }
