@@ -29,7 +29,6 @@ console.log(initial);
 
 esbuild
     .serve(
-        // { servedir: __dirname },
         {},
         {
             entryPoints: [path.join(__dirname, 'run.tsx')].concat(
@@ -37,7 +36,6 @@ esbuild
             ),
             outbase: cwd,
             entryNames: '[dir]/[name]',
-            // outdir: 'out',
             bundle: true,
             sourcemap: true,
             define: {
@@ -75,18 +73,25 @@ esbuild
 
             if (initial.includes(pathpart.slice(1))) {
                 if (search) {
+                    const dir = path.join(
+                        path.dirname(pathpart.slice(1)),
+                        '__vest__',
+                    );
+                    const filePath = path.join(dir, search + '.txt');
                     if (req.method === 'POST') {
-                        return writeFixtures(
-                            pathpart.slice(1),
-                            search,
-                            req,
-                            res,
-                        );
+                        if (!fs.existsSync(dir)) {
+                            fs.mkdirSync(dir, { recursive: true });
+                        }
+
+                        return getBody(req).then((data) => {
+                            fs.writeFileSync(filePath, data);
+                        });
                     }
-                    const fixtures = getFixtures(pathpart.slice(1), search);
-                    res.writeHead(200, { 'Content-Type': 'application/json' });
-                    return res.end(JSON.stringify(fixtures));
+                    const fixtures = fs.readFileSync(filePath, 'utf8');
+                    res.writeHead(200, { 'Content-Type': 'text/plain' });
+                    return res.end(fixtures);
                 }
+
                 res.writeHead(200, { 'Content-Type': 'text/html' });
                 return res.end(
                     fs
@@ -122,49 +127,17 @@ const makeProxy = (host, port) => (req, res, customPath) => {
     req.pipe(proxyReq, { end: true });
 };
 
-const getFixtures = (sourceFile, id) => {
-    const dir = path.join(path.dirname(sourceFile), '__vest__', id);
-    if (!fs.existsSync(dir)) {
-        return [];
-    }
-    return fs
-        .readdirSync(dir)
-        .sort()
-        .map((name) => fs.readFileSync(path.join(dir, name), 'utf8'));
-};
-
-const writeFixtures = (sourceFile, id, req, res) => {
-    const dir = path.join(path.dirname(sourceFile), '__vest__', id);
-    if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
-    }
-
-    let data = '';
-    req.on('data', (chunk) => {
-        data += chunk.toString('utf8');
-    });
-    req.on('end', () => {
-        const parsed = JSON.parse(data);
-
-        let unused = {};
-        fs.readdirSync(dir).forEach((name) => {
-            unused[name] = true;
+const getBody = (req) => {
+    return new Promise((resolve, reject) => {
+        let data = '';
+        req.on('data', (chunk) => {
+            data += chunk.toString('utf8');
         });
-
-        parsed.forEach((item) => {
-            const slug = item.name.replace(/[^a-zA-Z0-9_.-]/g, '-') + '.txt';
-            unused[slug] = false;
-            fs.writeFileSync(path.join(dir, slug), item.raw);
+        req.on('end', () => {
+            resolve(data);
         });
-
-        // // Remove deleted ones
-        // Object.keys(unused).forEach((k) => {
-        //     if (unused[k]) {
-        //         fs.unlinkSync(path.join(dir, k));
-        //     }
-        // });
-
-        res.writeHead(204, {});
-        res.end();
+        req.on('error', (err) => {
+            reject(err);
+        });
     });
 };

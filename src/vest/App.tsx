@@ -4,7 +4,12 @@ import equal from 'fast-deep-equal';
 import * as React from 'react';
 import { render } from 'react-dom';
 import { Config, Fixture } from './types';
-import { deserializeFixture, serializeFixture } from './utils';
+import {
+    deserializeFixture,
+    deserializeFixtures,
+    serializeFixture,
+    serializeFixtures,
+} from './utils';
 
 const initial: Array<unknown> = [];
 
@@ -18,13 +23,9 @@ export const App = <I, O>({ config }: { config: Config<I, O> }) => {
 
     React.useEffect(() => {
         fetch(`?${config.id}`)
-            .then((res) => res.json())
-            .then((fixtures: Array<string>) => {
-                setFixtures(
-                    fixtures.map((fix) =>
-                        deserializeFixture(fix, config.serde),
-                    ),
-                );
+            .then((res) => res.text())
+            .then((raw: string) => {
+                setFixtures(deserializeFixtures(raw, config.serde));
             });
     }, []);
 
@@ -35,12 +36,7 @@ export const App = <I, O>({ config }: { config: Config<I, O> }) => {
         fetch(`?${config.id}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(
-                fixtures.map((fixture) => ({
-                    name: fixture.name,
-                    raw: serializeFixture(fixture, config.serde),
-                })),
-            ),
+            body: serializeFixtures(fixtures, config.serde),
         }).then((res) => {
             if (res.status !== 204) {
                 console.error(
@@ -155,8 +151,6 @@ export const App = <I, O>({ config }: { config: Config<I, O> }) => {
                         return +a.isEqual - +b.isEqual;
                     })
                     .map(({ fixture, isEqual, output }, i) => {
-                        // const output = config.transform(f.input);
-                        // const isEqual = equal(output, f.output);
                         const color = isEqual
                             ? fixture.isPassing
                                 ? 'green'
