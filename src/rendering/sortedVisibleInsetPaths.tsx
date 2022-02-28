@@ -32,7 +32,7 @@ import {
 } from '../rendering/pathToPoints';
 import { paletteColor } from '../editor/RenderPath';
 import { Coord, Path, PathGroup, Segment } from '../types';
-import { segmentsBounds } from '../editor/Export';
+import { segmentsBounds } from '../editor/Bounds';
 import { clipPathTry } from './clipPathNew';
 
 // This should produce:

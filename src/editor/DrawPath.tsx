@@ -9,7 +9,7 @@ import { RenderPath } from '../editor/RenderPath';
 import { RenderSegment } from '../editor/RenderSegment';
 import { segmentKey, segmentKeyReverse } from '../rendering/segmentKey';
 import { ArcSegment, Id, Intersect, PendingSegment, View } from '../types';
-import { segmentAngle } from '../rendering/findInternalRegions';
+import { segmentAngle } from '../rendering/segmentAngle';
 import { epsilon, Primitive } from '../rendering/intersect';
 
 export type DrawPathState = {

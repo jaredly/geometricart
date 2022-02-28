@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { useCurrent } from '../App';
 import { DrawPathState } from './DrawPath';
-import { adjustBounds, largestDimension, segmentBounds } from './Export';
+import { adjustBounds, largestDimension, segmentBounds } from './Bounds';
 import { angleTo, push } from '../rendering/getMirrorTransforms';
 import { RenderSegment } from './RenderSegment';
 import { Coord } from '../types';

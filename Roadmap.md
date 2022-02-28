@@ -7,6 +7,9 @@ really stress testing here
 when I could have just unit tested
 but here we are
 
+- [x] ahahhaaa yayyy ok fixed that one too!
+	- and now I have those visual tests, gotta love em.
+
 I want a visual unit test suite for my windingNumber dealio.
 Which means I think it's time to formalize a visual testing framework
 my folks

@@ -814,6 +814,9 @@ export const atLineBottom = (coord: Coord, seg: SlopeIntercept) => {
     if (!seg.limit) {
         return false;
     }
+    if (seg.m === 0) {
+        return true;
+    }
     if (seg.m === Infinity) {
         return closeEnough(coord.y, seg.limit[1]);
     }

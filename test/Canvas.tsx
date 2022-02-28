@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { useCurrent } from '../src/App';
 import { windingNumber } from '../src/rendering/windingNumber';
-import { segmentsCenter } from '../src/editor/Export';
+import { segmentsCenter } from '../src/editor/Bounds';
 import {
     cleanUpInsetSegments2,
     findInsidePoint,
@@ -9,8 +9,8 @@ import {
     findRegions,
     removeContainedRegions,
     removeNonWindingRegions,
-    segmentAngle,
 } from '../src/rendering/findInternalRegions';
+import { segmentAngle } from '../src/rendering/segmentAngle';
 import { segmentsToNonIntersectingSegments } from '../src/rendering/segmentsToNonIntersectingSegments';
 import { angleBetween } from '../src/rendering/findNextSegments';
 import { pathToPrimitives } from '../src/editor/findSelection';

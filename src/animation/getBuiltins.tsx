@@ -16,7 +16,7 @@ import {
     translationMatrix,
 } from '../rendering/getMirrorTransforms';
 import { angleBetween } from '../rendering/findNextSegments';
-import { segmentsBounds, segmentsCenter } from '../editor/Export';
+import { segmentsBounds, segmentsCenter } from '../editor/Bounds';
 
 export function getBuiltins(): { [key: string]: Function } {
     return {

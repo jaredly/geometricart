@@ -2,7 +2,9 @@ import { findRegions } from './findInternalRegions';
 import { segmentsToNonIntersectingSegments } from './segmentsToNonIntersectingSegments';
 import { isClockwise } from './pathToPoints';
 
-describe('ok', () => {
+// TODO: Change this to a vest test!
+
+describe.skip('ok', () => {
     it('should work', () => {
         const result = segmentsToNonIntersectingSegments([
             { type: 'Line', to: { x: 1, y: 0 } },

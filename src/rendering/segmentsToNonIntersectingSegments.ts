@@ -1,12 +1,12 @@
+import { segmentToPrimitive } from '../editor/findSelection';
+import { Coord, Segment } from '../types';
 import { coordKey } from './calcAllIntersections';
 import { sortHitsForPrimitive } from './clipPath';
-import { pathToPrimitives, segmentToPrimitive } from '../editor/findSelection';
-import { intersections, Primitive } from './intersect';
+import { segmentAngle } from './segmentAngle';
+import { angleTo } from './getMirrorTransforms';
+import { intersections } from './intersect';
 import { coordsEqual } from './pathsAreIdentical';
 import { Hit } from './pruneInsetPath';
-import { Coord, Segment } from '../types';
-import { angleTo } from './getMirrorTransforms';
-import { segmentAngle } from './findInternalRegions';
 
 export type Intersection = { entering: Array<number>; exiting: Array<number> };
 

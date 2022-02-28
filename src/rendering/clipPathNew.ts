@@ -2,7 +2,7 @@
  * Clipping and stuff
  */
 
-import { segmentsBounds } from '../editor/Export';
+import { segmentsBounds } from '../editor/Bounds';
 import { pathToPrimitives, segmentToPrimitive } from '../editor/findSelection';
 import { Bounds } from '../editor/GuideElement';
 import { ArcSegment, Coord, Path, PathGroup, Segment } from '../types';

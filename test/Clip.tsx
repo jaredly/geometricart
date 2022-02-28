@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { ShowHitIntersection } from '../src/editor/DebugOrigPath';
-import { segmentsBounds } from '../src/editor/Export';
+import { segmentsBounds } from '../src/editor/Bounds';
 import { pathToPrimitives } from '../src/editor/findSelection';
 import { calcPathD, pathSegs } from '../src/editor/RenderPath';
 import { coordKey } from '../src/rendering/calcAllIntersections';

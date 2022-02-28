@@ -59,14 +59,10 @@ export const App = <I, O>({ config }: { config: Config<I, O> }) => {
     const [passing, setPassing] = React.useState(false);
 
     const updateFixture = (
-        i: number,
+        name: string,
         f: (f: Fixture<I, O>) => Fixture<I, O>,
     ) => {
-        setFixtures((fs) => {
-            fs = fs.slice();
-            fs[i] = f(fs[i]);
-            return fs;
-        });
+        setFixtures((fs) => fs.map((fx) => (fx.name === name ? f(fx) : fx)));
     };
 
     const fixturesWithOutputs = fixtures.map((f) => {
@@ -165,11 +161,14 @@ export const App = <I, O>({ config }: { config: Config<I, O> }) => {
                                 <div>
                                     <button
                                         onClick={() =>
-                                            updateFixture(i, (f) => ({
-                                                ...f,
-                                                output,
-                                                isPassing: true,
-                                            }))
+                                            updateFixture(
+                                                fixture.name,
+                                                (f) => ({
+                                                    ...f,
+                                                    output,
+                                                    isPassing: true,
+                                                }),
+                                            )
                                         }
                                         disabled={isEqual && fixture.isPassing}
                                     >
@@ -177,11 +176,14 @@ export const App = <I, O>({ config }: { config: Config<I, O> }) => {
                                     </button>
                                     <button
                                         onClick={() =>
-                                            updateFixture(i, (f) => ({
-                                                ...f,
-                                                output,
-                                                isPassing: false,
-                                            }))
+                                            updateFixture(
+                                                fixture.name,
+                                                (f) => ({
+                                                    ...f,
+                                                    output,
+                                                    isPassing: false,
+                                                }),
+                                            )
                                         }
                                         disabled={isEqual && !fixture.isPassing}
                                     >

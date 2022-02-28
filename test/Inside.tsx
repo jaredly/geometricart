@@ -3,7 +3,7 @@ import { initialState } from '../src/state/initialState';
 import { useDropStateTarget } from '../src/editor/useDropTarget';
 import { sortedVisibleInsetPaths } from '../src/rendering/sortedVisibleInsetPaths';
 import Prando from 'prando';
-import { segmentsBounds } from '../src/editor/Export';
+import { segmentsBounds } from '../src/editor/Bounds';
 import { insidePath } from '../src/rendering/clipPath';
 import { windingNumber } from '../src/rendering/windingNumber';
 import { pathToPrimitives } from '../src/editor/findSelection';
