@@ -9,6 +9,22 @@ https://twitter.com/DannyDeraney/status/1497709732336791558
 
 - [ ] I kinda want to be able to configure the editor .. for certain fixtures. Like, configure the grid size. Is that weird? am I going to regret this? like, putting in the metadata for the fixture, also the info about what is going skinny? ok but really do I care about custom serializers? I pretty much don't right now. oh but I could use a variable line-break, that's indicated by being the line break after the metadata, which I control.
 
+- [ ] HMMMM ok, so maybe I'm thinking we actually want to
+	just have a single file with all the fixtures in it?
+	I think that's what jest snapshots do, and there's some
+	value to it.
+
+And then we'll be alright?
+One question in my mind is: How do you migrate tests,
+when the types of things change?
+Do you just backport the values to the old tests?
+Or write a new .vest.?
+
+ALSO should we allow multiple registrations in a single
+.vest. file?
+Seems like you oughta.
+But maybe it's just "pass in multiple configs to the register fn" and we'll deal with it?
+
 
 
 It does seem like having some linters / validators could be useful to.

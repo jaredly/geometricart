@@ -21,7 +21,9 @@ export const App = <I, O>({ config }: { config: Config<I, O> }) => {
             .then((res) => res.json())
             .then((fixtures: Array<string>) => {
                 setFixtures(
-                    fixtures.map((fix) => deserializeFixture(fix, config)),
+                    fixtures.map((fix) =>
+                        deserializeFixture(fix, config.serde),
+                    ),
                 );
             });
     }, []);
