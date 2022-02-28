@@ -7,6 +7,7 @@ import { angleTo } from './getMirrorTransforms';
 import { intersections } from './intersect';
 import { coordsEqual } from './pathsAreIdentical';
 import { Hit } from './pruneInsetPath';
+import { SegmentWithPrev } from './clipPathNew';
 
 export type Intersection = { entering: Array<number>; exiting: Array<number> };
 
@@ -128,12 +129,11 @@ export type PartialSegment = {
     hitEnd: number | null;
 };
 
-export type SegmentWithPrev = { prev: Coord; segment: Segment };
-
 export function addPrevsToSegments(segments: Segment[]): SegmentWithPrev[] {
     return segments.map((s, i) => ({
         prev: i === 0 ? segments[segments.length - 1].to : segments[i - 1].to,
         segment: s,
+        shape: -1,
     }));
 }
 

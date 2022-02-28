@@ -87,9 +87,13 @@ esbuild
                             fs.writeFileSync(filePath, data);
                         });
                     }
-                    const fixtures = fs.readFileSync(filePath, 'utf8');
                     res.writeHead(200, { 'Content-Type': 'text/plain' });
-                    return res.end(fixtures);
+                    if (fs.existsSync(filePath)) {
+                        const fixtures = fs.readFileSync(filePath, 'utf8');
+                        return res.end(fixtures);
+                    } else {
+                        return res.end('');
+                    }
                 }
 
                 res.writeHead(200, { 'Content-Type': 'text/html' });

@@ -1,0 +1,181 @@
+===
+---
+cross
+---
+pass
+---
+[
+  {
+    "prev": {
+      "x": 60,
+      "y": 120
+    },
+    "segment": {
+      "type": "Line",
+      "to": {
+        "x": 255,
+        "y": 150
+      }
+    },
+    "shape": 0
+  },
+  {
+    "prev": {
+      "x": 90,
+      "y": 180
+    },
+    "segment": {
+      "type": "Line",
+      "to": {
+        "x": 240,
+        "y": 60
+      }
+    },
+    "shape": 1
+  }
+]
+---
+{
+  "pair": {
+    "type": "cross",
+    "transitions": [
+      {
+        "entry": {
+          "id": 0,
+          "segment": 0,
+          "enter": true,
+          "exit": true,
+          "coordKey": "148.0645,133.5484",
+          "shape": 0,
+          "theta": {
+            "type": "flat",
+            "theta": 0.15264932839526518
+          },
+          "distance": 108.1935916671389
+        },
+        "exit": {
+          "id": 1,
+          "segment": 1,
+          "enter": true,
+          "exit": true,
+          "coordKey": "148.0645,133.5484",
+          "shape": 1,
+          "theta": {
+            "type": "flat",
+            "theta": -0.6747409422235527
+          },
+          "distance": 117.73486501086207
+        },
+        "goingInside": false
+      },
+      {
+        "entry": {
+          "id": 1,
+          "segment": 1,
+          "enter": true,
+          "exit": true,
+          "coordKey": "148.0645,133.5484",
+          "shape": 1,
+          "theta": {
+            "type": "flat",
+            "theta": -0.6747409422235527
+          },
+          "distance": 117.73486501086207
+        },
+        "exit": {
+          "id": 0,
+          "segment": 0,
+          "enter": true,
+          "exit": true,
+          "coordKey": "148.0645,133.5484",
+          "shape": 0,
+          "theta": {
+            "type": "flat",
+            "theta": 0.15264932839526518
+          },
+          "distance": 108.1935916671389
+        },
+        "goingInside": true
+      }
+    ]
+  },
+  "coord": {
+    "x": 148.06451612903226,
+    "y": 133.5483870967742
+  }
+}
+===
+---
+continuation
+---
+pass
+---
+[
+  {
+    "prev": {
+      "x": 75,
+      "y": 195
+    },
+    "segment": {
+      "type": "Line",
+      "to": {
+        "x": 135,
+        "y": 135
+      }
+    },
+    "shape": 0
+  },
+  {
+    "prev": {
+      "x": 135,
+      "y": 135
+    },
+    "segment": {
+      "type": "Line",
+      "to": {
+        "x": 225,
+        "y": 90
+      }
+    },
+    "shape": 0
+  }
+]
+---
+{
+  "pair": {
+    "type": "straight",
+    "transition": {
+      "entry": {
+        "id": 0,
+        "segment": 0,
+        "enter": true,
+        "exit": false,
+        "coordKey": "135.0000,135.0000",
+        "shape": 0,
+        "theta": {
+          "type": "flat",
+          "theta": -0.7853981633974483
+        },
+        "distance": 0
+      },
+      "exit": {
+        "id": 1,
+        "segment": 1,
+        "enter": false,
+        "exit": true,
+        "coordKey": "135.0000,135.0000",
+        "shape": 0,
+        "theta": {
+          "type": "flat",
+          "theta": -0.4636476090008061
+        },
+        "distance": 100.62305898749054
+      },
+      "goingInside": null
+    }
+  },
+  "coord": {
+    "x": 135,
+    "y": 135
+  }
+}

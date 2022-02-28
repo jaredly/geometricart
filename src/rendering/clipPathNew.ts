@@ -71,24 +71,13 @@ export type HitsInfo = {
  * ok, we have the basics.
  */
 
-/**
- * Ok, so here I'm not paying attention to the fact that some segments
- * belong to one shape, and some to another.
- *
- * Should I?
- *
- * I could cut down on a lot of collision tests.
- * But, it would be quite nice to reuse this logic from the inset stuff.
- * So, maybe I'll just leave it.
- */
-export const getSomeHits = (
-    segments: SegmentWithPrev[],
+export const intersectSegments = (
+    segments: Array<SegmentWithPrev>,
     debug = false,
-): HitsInfo | null => {
-    if (debug) {
-        console.group('Get Some Hits');
-        console.groupCollapsed(`Intersections`);
-    }
+) => {
+    const primitives = segments.map(({ prev, segment }) =>
+        segmentToPrimitive(prev, segment),
+    );
     const hits: {
         [key: string]: {
             coord: Coord;
@@ -102,60 +91,11 @@ export const getSomeHits = (
         Array<{ coord: Coord; entry: SegmentIntersection }>
     > = new Array(segments.length).fill([]).map(() => []);
 
-    const primitives = segments.map(({ prev, segment }) =>
-        segmentToPrimitive(prev, segment),
-    );
-
     let id = 0;
-
+    if (debug) {
+        console.groupCollapsed(`Intersections`);
+    }
     for (let i = 0; i < segments.length; i++) {
-        // if (
-        //     coordsEqual(segments[i].prev, segments[i].segment.to) &&
-        //     segments[i].segment.type === 'Arc'
-        // ) {
-        //     const arc = segments[i].segment as ArcSegment;
-
-        //     // We have a circle!
-        //     // Add a self-intersection at the to point
-        //     const start: SegmentIntersection = {
-        //         coordKey: coordKey(arc.to, HIGH_PRECISION),
-        //         distance: 0,
-        //         enter: true,
-        //         exit: false,
-        //         id: id++,
-        //         segment: i,
-        //         shape: segments[i].shape,
-        //         theta: angleForSegment(arc.to, arc, arc.to),
-        //     };
-        //     exits[start.id] = start;
-        //     entriesBySegment[i].push({ coord: arc.to, entry: start });
-        //     entryCoords[start.id] = arc.to;
-        //     if (!hits[start.coordKey]) {
-        //         hits[start.coordKey] = { coord: arc.to, parties: [] };
-        //     }
-        //     hits[start.coordKey].parties.push(start);
-
-        //     // We have a circle!
-        //     // Add a self-intersection at the to point
-        //     const end: SegmentIntersection = {
-        //         coordKey: start.coordKey,
-        //         distance: Math.PI * 2,
-        //         enter: false,
-        //         exit: true,
-        //         id: id++,
-        //         segment: i,
-        //         shape: segments[i].shape,
-        //         theta: angleForSegment(arc.to, arc, arc.to),
-        //     };
-        //     exits[end.id] = end;
-        //     entriesBySegment[i].push({ coord: arc.to, entry: end });
-        //     entryCoords[end.id] = arc.to;
-        //     if (!hits[end.coordKey]) {
-        //         hits[end.coordKey] = { coord: arc.to, parties: [] };
-        //     }
-        //     hits[end.coordKey].parties.push(end);
-        // }
-
         for (let j = i + 1; j < segments.length; j++) {
             const found = intersections(primitives[i], primitives[j], debug);
             if (debug) {
@@ -197,18 +137,35 @@ export const getSomeHits = (
         console.groupEnd();
     }
 
-    let hasCollision = false;
-    Object.keys(hits).forEach((k) => {
-        if (
-            // It's a crossover
-            hits[k].parties.length !== 2 ||
-            // We're hitting the middle of a segment
-            hits[k].parties.some((p) => p.enter && p.exit)
-        ) {
-            hasCollision = true;
-        }
-    });
-    if (!hasCollision) {
+    entriesBySegment.forEach((list) =>
+        list.sort((a, b) => b.entry.distance - a.entry.distance),
+    );
+
+    return { hits, entriesBySegment, entryCoords, exits };
+};
+
+/**
+ * Ok, so here I'm not paying attention to the fact that some segments
+ * belong to one shape, and some to another.
+ *
+ * Should I?
+ *
+ * I could cut down on a lot of collision tests.
+ * But, it would be quite nice to reuse this logic from the inset stuff.
+ * So, maybe I'll just leave it.
+ */
+export const getSomeHits = (
+    segments: SegmentWithPrev[],
+    debug = false,
+): HitsInfo | null => {
+    if (debug) {
+        console.group('Get Some Hits');
+    }
+
+    const { hits, entriesBySegment, entryCoords, exits } =
+        intersectSegments(segments);
+
+    if (!hasNonEndpointCollision(hits)) {
         if (debug) {
             console.groupEnd();
         }
@@ -218,6 +175,7 @@ export const getSomeHits = (
     if (debug) {
         console.groupCollapsed('Untangling');
     }
+
     const hitPairs: { [key: string]: HitTransitions } = {};
     Object.keys(hits).forEach((k) => {
         const pairs = untangleHit(hits[k].parties, debug);
@@ -227,9 +185,6 @@ export const getSomeHits = (
         hitPairs[k] = pairs;
     });
 
-    entriesBySegment.forEach((list) =>
-        list.sort((a, b) => b.entry.distance - a.entry.distance),
-    );
     if (debug) {
         console.groupEnd();
         console.groupEnd();
@@ -693,6 +648,22 @@ export const clipPathNew = (
     // I'll just pretend those don't exist for the moment.
 };
 
+export function hasNonEndpointCollision(hits: {
+    [key: string]: { coord: Coord; parties: Array<SegmentIntersection> };
+}) {
+    let hasCollision = false;
+    Object.keys(hits).forEach((k) => {
+        if (
+            // It's a crossover
+            hits[k].parties.length !== 2 ||
+            // We're hitting the middle of a segment
+            hits[k].parties.some((p) => p.enter && p.exit)
+        ) {
+            hasCollision = true;
+        }
+    });
+    return hasCollision;
+}
 // export const segmentForEntries = (
 //     current: SegmentIntersection,
 //     prev: Coord,

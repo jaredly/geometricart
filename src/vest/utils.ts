@@ -29,12 +29,18 @@ export const deserializeFixtures = <I, O>(
     raw: string,
     serde: Config<I, O>['serde'],
 ) => {
+    if (!raw.length) {
+        return [];
+    }
     const chunks = parseDivider(raw);
     return chunks.map((chunk) => deserializeFixture(chunk, serde));
 };
 
 export const parseDivider = (raw: string) => {
     const first = raw.indexOf('\n');
+    if (first === raw.length - 1) {
+        return [];
+    }
     const divider = raw.slice(0, first);
     const parts = raw.slice(first + 1).split(`\n${divider}\n`);
     return parts;
