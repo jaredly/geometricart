@@ -122,8 +122,6 @@ const makeProxy = (host, port) => (req, res, customPath) => {
     req.pipe(proxyReq, { end: true });
 };
 
-const suffix = '.input.txt';
-
 const getFixtures = (sourceFile, id) => {
     const dir = path.join(path.dirname(sourceFile), '__vest__', id);
     if (!fs.existsSync(dir)) {
@@ -132,14 +130,7 @@ const getFixtures = (sourceFile, id) => {
     return fs
         .readdirSync(dir)
         .sort()
-        .filter((name) => name.endsWith(suffix))
-        .map((name) => {
-            const base = name.slice(0, -suffix.length);
-            const rawInput = fs.readFileSync(path.join(dir, name), 'utf8');
-            const output = base + '.output.txt';
-            const outputRaw = fs.readFileSync(path.join(dir, output), 'utf8');
-            return { name: base, input: rawInput, output: outputRaw };
-        });
+        .map((name) => fs.readFileSync(path.join(dir, name), 'utf8'));
 };
 
 const writeFixtures = (sourceFile, id, req, res) => {
@@ -156,27 +147,22 @@ const writeFixtures = (sourceFile, id, req, res) => {
         const parsed = JSON.parse(data);
 
         let unused = {};
-        fs.readdirSync(dir)
-            .filter((d) => d.endsWith(suffix))
-            .forEach((name) => {
-                const slug = name.slice(0, -suffix.length);
-                unused[slug] = true;
-            });
+        fs.readdirSync(dir).forEach((name) => {
+            unused[name] = true;
+        });
 
         parsed.forEach((item) => {
-            const slug = item.name.replace(/[^a-zA-Z0-9_.-]/g, '-');
+            const slug = item.name.replace(/[^a-zA-Z0-9_.-]/g, '-') + '.txt';
             unused[slug] = false;
-            fs.writeFileSync(path.join(dir, slug + suffix), item.input);
-            fs.writeFileSync(path.join(dir, slug + '.output.txt'), item.output);
+            fs.writeFileSync(path.join(dir, slug), item.raw);
         });
 
-        // Remove deleted ones
-        Object.keys(unused).forEach((k) => {
-            if (unused[k]) {
-                fs.unlinkSync(path.join(dir, k + suffix));
-                fs.unlinkSync(path.join(dir, k + '.output.txt'));
-            }
-        });
+        // // Remove deleted ones
+        // Object.keys(unused).forEach((k) => {
+        //     if (unused[k]) {
+        //         fs.unlinkSync(path.join(dir, k));
+        //     }
+        // });
 
         res.writeHead(204, {});
         res.end();

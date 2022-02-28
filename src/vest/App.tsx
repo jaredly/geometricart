@@ -3,76 +3,39 @@
 import equal from 'fast-deep-equal';
 import * as React from 'react';
 import { render } from 'react-dom';
-import { Config } from './types';
-import { parseOutput } from './vest';
+import { Config, Fixture } from './types';
+import { deserializeFixture, serializeFixture } from './utils';
 
 const initial: Array<unknown> = [];
 
 export const App = <I, O>({ config }: { config: Config<I, O> }) => {
     // Here we go
     const [fixtures, setFixtures] = React.useState(
-        initial as Array<{
-            name: string;
-            input: I;
-            output: O;
-            isPassing: boolean;
-        }>,
+        initial as Array<Fixture<I, O>>,
     );
 
     React.useEffect(() => {
         fetch(`?${config.id}`)
             .then((res) => res.json())
-            .then(
-                (
-                    fixtures: Array<{
-                        name: string;
-                        input: string;
-                        output: string;
-                    }>,
-                ) => {
-                    console.log(`Got, ok`, fixtures.length);
-                    setFixtures(
-                        fixtures.map((fix) => {
-                            const input =
-                                config.serde?.input?.deserialize(fix.input) ??
-                                JSON.parse(fix.input);
-                            const [outputRaw, isPassing] = parseOutput(
-                                fix.output,
-                            );
-                            const output =
-                                config.serde?.output?.deserialize(outputRaw) ??
-                                JSON.parse(outputRaw);
-                            return { name: fix.name, input, output, isPassing };
-                        }),
-                    );
-                },
-            );
+            .then((fixtures: Array<string>) => {
+                setFixtures(
+                    fixtures.map((fix) => deserializeFixture(fix, config)),
+                );
+            });
     }, []);
 
     React.useEffect(() => {
         if (fixtures === initial) {
-            console.log('bail');
             return;
         }
-        console.log('no bail', fixtures);
         fetch(`?${config.id}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(
-                fixtures.map((fixture) => {
-                    const input =
-                        config.serde?.input?.serialize(fixture.input) ??
-                        JSON.stringify(fixture.input);
-                    const output =
-                        config.serde?.output?.serialize(fixture.output) ??
-                        JSON.stringify(fixture.output);
-                    return {
-                        name: fixture.name,
-                        input,
-                        output:
-                            (fixture.isPassing ? 'pass\n' : 'fail\n') + output,
-                    };
-                }),
+                fixtures.map((fixture) => ({
+                    name: fixture.name,
+                    raw: serializeFixture(fixture, config.serde),
+                })),
             ),
         }).then((res) => {
             if (res.status !== 204) {
@@ -97,7 +60,7 @@ export const App = <I, O>({ config }: { config: Config<I, O> }) => {
 
     return (
         <div>
-            <div> Fixture: {config.id} </div>
+            <div>Fixture: {config.id}</div>
             <Editor initial={current} onChange={setCurrent} />
             <input
                 value={name}

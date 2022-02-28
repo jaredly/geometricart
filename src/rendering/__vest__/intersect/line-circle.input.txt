@@ -1,1 +1,0 @@
-[{"prev":{"x":45,"y":195},"segment":{"type":"Line","to":{"x":195,"y":75}},"shape":-1},{"prev":{"x":50,"y":165},"shape":-1,"segment":{"type":"Arc","center":{"x":90,"y":95},"to":{"x":167.78174593052023,"y":73.78679656440357},"clockwise":false}}]

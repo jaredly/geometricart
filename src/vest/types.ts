@@ -49,3 +49,11 @@ export type Config<Input, Output> = {
         }) => JSX.Element;
     };
 };
+
+export type Fixture<I, O> = {
+    name: string;
+    options?: unknown;
+    input: I;
+    output: O;
+    isPassing: boolean;
+};
