@@ -123,7 +123,7 @@ export const App = <I, O>({ config }: { config: Config<I, O> }) => {
                     }
                     setCurrent(null);
                     setName('');
-                    setPassing(false);
+                    setPassing(null);
                     setFixtures(
                         fixtures.concat([
                             {
