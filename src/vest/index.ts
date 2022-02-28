@@ -8,23 +8,20 @@ import path from 'path';
 import fs from 'fs';
 import { Config } from './types';
 import { run } from './App';
-import { deserializeFixture } from './utils';
+import { deserializeFixture, deserializeFixtures } from './utils';
 
 export class IncompleteFixture extends Error {}
 
 export const jestTests = <I, O>(config: Config<I, O>) => {
     describe(`Vest ${config.id}`, () => {
-        const dir = path.join(config.dir, '__vest__', config.id);
-        const files = fs.readdirSync(dir);
+        const file = path.join(config.dir, '__vest__', config.id + '.txt');
+        const raw = fs.readFileSync(file, 'utf8');
+        const fixtures = deserializeFixtures(raw, config.serde);
 
-        files.forEach((name) => {
+        fixtures.forEach((fixture) => {
             // Hmm maybe incomplete fixtures are just skips?
             // no not really.
-            it(`Fixture ${name}`, () => {
-                const fixture = deserializeFixture(
-                    fs.readFileSync(path.join(dir, name), 'utf8'),
-                    config,
-                );
+            it(`Fixture ${fixture.name}`, () => {
                 if (!fixture.isPassing) {
                     throw new IncompleteFixture(
                         `No passing output for ${fixture.name}`,
