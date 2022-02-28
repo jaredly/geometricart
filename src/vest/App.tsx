@@ -58,10 +58,32 @@ export const App = <I, O>({ config }: { config: Config<I, O> }) => {
 
     const [passing, setPassing] = React.useState(false);
 
+    const updateFixture = (
+        i: number,
+        f: (f: Fixture<I, O>) => Fixture<I, O>,
+    ) => {
+        setFixtures((fs) => {
+            fs = fs.slice();
+            fs[i] = f(fs[i]);
+            return fs;
+        });
+    };
+
+    const fixturesWithOutputs = fixtures.map((f) => {
+        const output = config.transform(f.input);
+        return {
+            fixture: f,
+            output,
+            isEqual: equal(output, f.output),
+        };
+    });
+
     return (
         <div>
             <div>Fixture: {config.id}</div>
-            <Editor initial={current} onChange={setCurrent} />
+            <div style={{ margin: 8, padding: 8, border: '1px solid white' }}>
+                <Editor initial={current} onChange={setCurrent} />
+            </div>
             <input
                 value={name}
                 onChange={(evt) => setName(evt.target.value)}
@@ -105,34 +127,73 @@ export const App = <I, O>({ config }: { config: Config<I, O> }) => {
                     flexWrap: 'wrap',
                 }}
             >
-                {fixtures.map((f, i) => {
-                    const output = config.transform(f.input);
-                    const isEqual = equal(output, f.output);
-                    return (
-                        <div
-                            key={i}
-                            style={{
-                                padding: 16,
-                                margin: 8,
-                                boxShadow: '0 0 5px white',
-                                borderRadius: 4,
-                            }}
-                        >
-                            <div>{f.name}</div>
-                            <Output
-                                input={f.input}
-                                previous={{
-                                    output: isEqual ? null : output,
-                                    isPassing: f.isPassing,
+                {fixturesWithOutputs
+                    .sort((a, b) => {
+                        if (a.isEqual === b.isEqual) {
+                            return +a.fixture.isPassing - +b.fixture.isPassing;
+                        }
+                        return +a.isEqual - +b.isEqual;
+                    })
+                    .map(({ fixture, isEqual, output }, i) => {
+                        // const output = config.transform(f.input);
+                        // const isEqual = equal(output, f.output);
+                        const color = isEqual
+                            ? fixture.isPassing
+                                ? 'green'
+                                : 'red'
+                            : 'orange';
+                        return (
+                            <div
+                                key={i}
+                                style={{
+                                    padding: 16,
+                                    margin: 8,
+                                    boxShadow: '0 0 5px white',
+                                    borderRadius: 4,
+                                    border: `6px solid ${color}`,
                                 }}
-                                output={output}
-                            />
-                            <div>
-                                Status: {f.isPassing + ''} {isEqual + ''}
+                            >
+                                <div>{fixture.name}</div>
+                                <Output
+                                    input={fixture.input}
+                                    previous={{
+                                        output: isEqual ? null : output,
+                                        isPassing: fixture.isPassing,
+                                    }}
+                                    output={output}
+                                />
+                                <div>
+                                    <button
+                                        onClick={() =>
+                                            updateFixture(i, (f) => ({
+                                                ...f,
+                                                output,
+                                                isPassing: true,
+                                            }))
+                                        }
+                                        disabled={isEqual && fixture.isPassing}
+                                    >
+                                        Pass
+                                    </button>
+                                    <button
+                                        onClick={() =>
+                                            updateFixture(i, (f) => ({
+                                                ...f,
+                                                output,
+                                                isPassing: false,
+                                            }))
+                                        }
+                                        disabled={isEqual && !fixture.isPassing}
+                                    >
+                                        Fail
+                                    </button>
+                                    {!isEqual ? 'Different!' : null}
+                                    Status: {fixture.isPassing + ''}{' '}
+                                    {isEqual + ''}
+                                </div>
                             </div>
-                        </div>
-                    );
-                })}
+                        );
+                    })}
             </div>
         </div>
     );

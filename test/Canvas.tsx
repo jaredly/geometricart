@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useCurrent } from '../src/App';
-import { windingNumber } from '../src/rendering/clipPath';
+import { windingNumber } from '../src/rendering/windingNumber';
 import { segmentsCenter } from '../src/editor/Export';
 import {
     cleanUpInsetSegments2,

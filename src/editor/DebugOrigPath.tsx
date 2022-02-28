@@ -1,5 +1,6 @@
 import * as React from 'react';
-import { insidePath, windingNumber } from '../rendering/clipPath';
+import { insidePath } from '../rendering/clipPath';
+import { windingNumber } from '../rendering/windingNumber';
 import { findInsidePoint, findRegions } from '../rendering/findInternalRegions';
 import { segmentsToNonIntersectingSegments } from '../rendering/segmentsToNonIntersectingSegments';
 import { push } from '../rendering/getMirrorTransforms';

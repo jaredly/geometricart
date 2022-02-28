@@ -7,13 +7,8 @@ import { pathToPrimitives, segmentToPrimitive } from '../editor/findSelection';
 import { Bounds } from '../editor/GuideElement';
 import { ArcSegment, Coord, Path, PathGroup, Segment } from '../types';
 import { coordKey } from './calcAllIntersections';
-import {
-    angleForSegment,
-    getAngle,
-    insidePath,
-    isInside,
-    windingNumber,
-} from './clipPath';
+import { angleForSegment, getAngle, insidePath, isInside } from './clipPath';
+import { windingNumber } from './windingNumber';
 import { boundsIntersect } from './findInternalRegions';
 import { angleBetween } from './findNextSegments';
 import { angleTo, dist, push } from './getMirrorTransforms';

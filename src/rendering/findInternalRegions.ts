@@ -17,7 +17,8 @@
 
 import { coordKey } from './calcAllIntersections';
 import { isClockwise } from './pathToPoints';
-import { insidePath, windingNumber } from './clipPath';
+import { insidePath } from './clipPath';
+import { windingNumber } from './windingNumber';
 import { pathToPrimitives } from '../editor/findSelection';
 import { epsilon, Primitive, withinLimit } from './intersect';
 import { coordsEqual } from './pathsAreIdentical';
