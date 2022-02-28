@@ -2,7 +2,7 @@ import * as React from 'react';
 import { segmentToPrimitive } from '../editor/findSelection';
 import { RenderSegmentBasic } from '../editor/RenderSegment';
 import { Coord } from '../types';
-import { register } from '../vest/vest';
+import { register } from '../vest';
 import { atCircleBottomOrSomething } from './atCircleBottomOrSomething';
 import { atLineBottom } from './clipPath';
 import { SegmentWithPrev } from './clipPathNew';

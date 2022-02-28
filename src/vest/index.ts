@@ -50,9 +50,3 @@ export const register = <I, O>(config: Config<I, O>) => {
         vestUI(config);
     }
 };
-
-if (typeof jest !== 'undefined') {
-    describe('Its ok', () => {
-        it('sok', () => {});
-    });
-}

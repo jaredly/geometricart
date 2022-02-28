@@ -1,0 +1,32 @@
+---
+circle around zenith
+---
+pass
+---
+[
+  {
+    "prev": {
+      "x": 225,
+      "y": 90
+    },
+    "shape": -1,
+    "segment": {
+      "type": "Arc",
+      "center": {
+        "x": 120,
+        "y": 135
+      },
+      "to": {
+        "x": 225,
+        "y": 180
+      },
+      "clockwise": false
+    }
+  },
+  {
+    "x": 120,
+    "y": 249.23659658795862
+  }
+]
+---
+true
