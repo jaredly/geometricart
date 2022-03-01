@@ -1708,7 +1708,7 @@ pass
 ---
 intersect circle
 ---
-pass
+fail
 ---
 [
   [
@@ -1816,7 +1816,7 @@ pass
 ---
 tancent to edge of circle
 ---
-pass
+fail
 ---
 [
   [
@@ -2068,7 +2068,7 @@ pass
       }
     ],
     "isInternal": true,
-    "isClockwise": false
+    "isClockwise": true
   },
   {
     "segments": [

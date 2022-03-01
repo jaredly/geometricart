@@ -11,6 +11,7 @@ import {
     serializeFixture,
     serializeFixtures,
 } from './utils';
+import ReactJson from 'react-json-view';
 
 const initial: Array<unknown> = [];
 
@@ -272,6 +273,10 @@ export const App = <I, O>({ config }: { config: Config<I, O> }) => {
                                             Fail
                                         </button>
                                     </div>
+                                    <MaybeShowJson
+                                        input={fixture.input}
+                                        output={fixture.output}
+                                    />
                                     {!isEqual ? 'Different!' : null}
                                     Status: {fixture.isPassing + ''}{' '}
                                     {isEqual + ''}
@@ -279,6 +284,20 @@ export const App = <I, O>({ config }: { config: Config<I, O> }) => {
                             );
                         })}
                 </div>
+            </div>
+        </div>
+    );
+};
+
+const MaybeShowJson = ({ input, output }: { input: any; output: any }) => {
+    const [show, setShow] = React.useState(false);
+    return (
+        <div>
+            <button onClick={() => setShow(!show)}>Toggle JSON view</button>
+            <div style={{ backgroundColor: 'white' }}>
+                {show ? (
+                    <ReactJson src={{ input, output }} collapsed={true} />
+                ) : null}
             </div>
         </div>
     );
