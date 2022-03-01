@@ -37,7 +37,7 @@ import {
     pathToReversedSegmentKeys,
     pathToSegmentKeys,
 } from '../rendering/pathsAreIdentical';
-import { simplifyPath } from '../rendering/insetPath';
+import { simplifyPath } from '../rendering/simplifyPath';
 import { ensureClockwise } from '../rendering/pathToPoints';
 import { clipPath } from '../rendering/clipPath';
 import { pathToPrimitives } from '../editor/findSelection';

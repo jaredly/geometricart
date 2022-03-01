@@ -66,7 +66,8 @@ and it's called from e.g. sp_selected_path_do_offset in https://gitlab.com/inksc
 */
 
 import { isClockwise, reversePath } from './pathToPoints';
-import { hasReversed, simplifyPath } from './insetPath';
+import { hasReversed } from './insetPath';
+import { simplifyPath } from './simplifyPath';
 import { insetSegment } from './insetSegment';
 import { Coord, Segment } from '../types';
 

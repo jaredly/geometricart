@@ -11,7 +11,7 @@ import {
     getSomeHits,
     HitsInfo,
 } from '../src/rendering/clipPathNew';
-import { simplifyPath } from '../src/rendering/insetPath';
+import { simplifyPath } from '../src/rendering/simplifyPath';
 import { ensureClockwise } from '../src/rendering/pathToPoints';
 import { calculateSortedHitsForSegments } from '../src/rendering/segmentsToNonIntersectingSegments';
 import { IntersectionError } from '../src/rendering/untangleHit';

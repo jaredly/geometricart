@@ -37,29 +37,40 @@ export const UnderlinePath = ({
 };
 
 export const calcPathD = (path: Path, zoom: number): string => {
-    let d = `M ${path.origin.x * zoom} ${path.origin.y * zoom}`;
-    if (path.segments.length === 1 && path.segments[0].type === 'Arc') {
-        const arc = path.segments[0];
+    return calcSegmentsD(path.segments, path.origin, path.open, zoom);
+};
+
+export const calcSegmentsD = (
+    segments: Array<Segment>,
+    origin: Coord,
+    open: boolean | undefined,
+    zoom: number,
+): string => {
+    let d = `M ${origin.x * zoom} ${origin.y * zoom}`;
+    if (segments.length === 1 && segments[0].type === 'Arc') {
+        const arc = segments[0];
         const { center, to } = arc;
         const r = dist(center, to);
         const theta = angleTo(to, center);
         const opposite = push(center, theta, r);
-        return calcPathD(
-            { ...path, segments: [{ ...arc, to: opposite }, arc] },
+        return calcSegmentsD(
+            [{ ...arc, to: opposite }, arc],
+            origin,
+            open,
             zoom,
         );
         // this can only happen if we're a pure cicle
     }
-    path.segments.forEach((seg, i) => {
+    segments.forEach((seg, i) => {
         if (seg.type === 'Line') {
             d += ` L ${seg.to.x * zoom} ${seg.to.y * zoom}`;
         } else {
-            const prev = i === 0 ? path.origin : path.segments[i - 1].to;
+            const prev = i === 0 ? origin : segments[i - 1].to;
             d += arcPath(seg, prev, zoom);
         }
     });
 
-    return d + (path.open ? '' : ' Z');
+    return d + (open ? '' : ' Z');
 };
 
 const RenderPathMemo = ({

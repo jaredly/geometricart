@@ -1,6 +1,6 @@
 import { ensureClockwise } from '../rendering/pathToPoints';
 import { initialState } from './initialState';
-import { simplifyPath } from '../rendering/insetPath';
+import { simplifyPath } from '../rendering/simplifyPath';
 import { combineStyles } from '../editor/Canvas';
 import { State, Path, PathGroup } from '../types';
 

@@ -8,7 +8,7 @@ import { screenToWorld } from './Canvas';
 import { DrawPath, DrawPathState, initialState } from './DrawPath';
 import { pathToPrimitives } from './findSelection';
 import { Bounds } from './GuideElement';
-import { simplifyPath } from '../rendering/insetPath';
+import { simplifyPath } from '../rendering/simplifyPath';
 import { lineToSlope, Primitive } from '../rendering/intersect';
 import { ensureClockwise } from '../rendering/pathToPoints';
 import { geomToPrimitives } from '../rendering/points';

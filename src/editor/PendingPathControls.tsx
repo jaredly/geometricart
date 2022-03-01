@@ -6,7 +6,7 @@ import { PendingPathPair } from './Guides';
 import { Coord, Id, Intersect, Segment } from '../types';
 import { backUp, goForward, goLeft, goRight, isComplete } from './DrawPath';
 import { Primitive } from '../rendering/intersect';
-import { simplifyPath } from '../rendering/insetPath';
+import { simplifyPath } from '../rendering/simplifyPath';
 import { ensureClockwise } from '../rendering/pathToPoints';
 import { PendingPreview } from './PendingPreview';
 import { IconButton, RedoIcon, UndoIcon } from '../icons/Icon';

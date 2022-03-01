@@ -5,7 +5,7 @@ import React from 'react';
 export type Config<Input, Output> = {
     id: string;
     dir: string;
-    transform: (input: Input) => Output;
+    transform: (input: Input, debug?: boolean) => Output;
     /**
      * If you don't want just JSON parse / stringify,
      * You can specify serdes here.

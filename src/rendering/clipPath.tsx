@@ -2,7 +2,7 @@ import { coordKey } from './calcAllIntersections';
 import { angleBetween, isAngleBetween } from './findNextSegments';
 import { pathToPrimitives } from '../editor/findSelection';
 import { angleTo, dist } from './getMirrorTransforms';
-import { simplifyPath } from './insetPath';
+import { simplifyPath } from './simplifyPath';
 import {
     Circle,
     closeEnoughAngle,

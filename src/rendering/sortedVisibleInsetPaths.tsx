@@ -10,7 +10,8 @@ import { segmentsToNonIntersectingSegments } from './segmentsToNonIntersectingSe
 import { angleBetween } from './findNextSegments';
 import { pathToPrimitives } from '../editor/findSelection';
 import { angleTo, dist, push } from './getMirrorTransforms';
-import { insetSegments, insetSegmentsBeta, simplifyPath } from './insetPath';
+import { insetSegments, insetSegmentsBeta } from './insetPath';
+import { simplifyPath } from './simplifyPath';
 import {
     angleIsBetween,
     closeEnoughAngle,

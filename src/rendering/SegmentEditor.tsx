@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { RenderSegmentBasic } from '../editor/RenderSegment';
-import { Coord } from '../types';
+import { Coord, Segment } from '../types';
 import { SegmentWithPrev } from './clipPathNew';
 import { angleTo, dist, push } from './getMirrorTransforms';
 
@@ -30,7 +30,7 @@ export const SegmentEditor = ({
     onChange,
     children,
 }: {
-    initial: null | SegmentWithPrev;
+    initial: null | SegmentWithPrev | JustPrev;
     onChange: (p: SegmentWithPrev) => void;
     children: (
         current: null | SegmentWithPrev,
@@ -175,15 +175,20 @@ export const pendingToSeg = (s: Pending): SegmentWithPrev | null => {
     return null;
 };
 
-export const segToPending = (s: SegmentWithPrev | null): Pending =>
+export type JustPrev = { prev: Coord; shape?: number; segment?: Segment };
+
+export const segToPending = (s: SegmentWithPrev | null | JustPrev): Pending =>
     s
-        ? {
-              type: s.segment.type,
-              clockwise: s.segment.type === 'Arc' ? s.segment.clockwise : false,
-              points:
-                  s.segment.type === 'Line'
-                      ? [s.prev, s.segment.to]
-                      : [s.prev, s.segment.center, s.segment.to],
-          }
+        ? s.segment && s.shape
+            ? {
+                  type: s.segment.type,
+                  clockwise:
+                      s.segment.type === 'Arc' ? s.segment.clockwise : false,
+                  points:
+                      s.segment.type === 'Line'
+                          ? [s.prev, s.segment.to]
+                          : [s.prev, s.segment.center, s.segment.to],
+              }
+            : { type: 'Line', points: [s.prev], clockwise: false }
         : { type: 'Line', clockwise: false, points: [] };
 const snap = (v: number, grid: number) => Math.round(v / grid) * grid;

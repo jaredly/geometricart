@@ -32,7 +32,7 @@ import {
     PartialSegment,
     segmentsToNonIntersectingSegments,
 } from './segmentsToNonIntersectingSegments';
-import { simplifyPath } from './insetPath';
+import { simplifyPath } from './simplifyPath';
 import { insetSegment } from './insetSegment';
 import { isClockwise, reversePath } from './pathToPoints';
 import { Segment } from '../types';

@@ -12,7 +12,7 @@ import { windingNumber } from './windingNumber';
 import { boundsIntersect } from './findInternalRegions';
 import { angleBetween } from './findNextSegments';
 import { angleTo, dist, push } from './getMirrorTransforms';
-import { simplifyPath } from './insetPath';
+import { simplifyPath } from './simplifyPath';
 import { intersections, Primitive } from './intersect';
 import { coordsEqual } from './pathsAreIdentical';
 import { isClockwise } from './pathToPoints';
@@ -249,7 +249,7 @@ export const clipPathNew = (
     groupMode?: PathGroup['clipMode'],
 ): Array<Path> => {
     if (debug) {
-        clip = simplifyPath(clip);
+        // clip = simplifyPath(clip);
         console.groupCollapsed(`Clip path ${path.id}`);
         console.groupCollapsed(`Path & Clip`);
         console.log(path);
@@ -318,6 +318,7 @@ export const clipPathNew = (
             dist(arc.to, arc.center),
         );
         // Make it into two half-circles, it will make things much simpler to think about
+        // ugh or just hack a small line. I don't love it.
         clip = [
             // { ...arc, to: mid1 },
             { type: 'Line', to: mid1 },
@@ -325,29 +326,6 @@ export const clipPathNew = (
             arc,
         ];
     }
-
-    /*
-    so our goal data structure ... is ...
-    a directed segment ...
-    and it's a graph, right?
-    where segments are reified
-    and points are ... hmmmm coords? I mean they could also not be I guess.
-    Unless we have some co-incident things ... in which case it could get weird?
-    so honestly, if we start with non-self-intersecting dealios, we can't have
-    too many things.
-
-    but do I want to support self-intersectings? tbh I might.
-
-    ok but if I ignore that for now...
-
-    ok so the first question to answer is "for each of these primitives, what are the intersections, in order?"
-    right?
-
-    ok, so we have a reliable answer to that question.
-
-    Now: 
-
-    */
 
     const allSegments = addPrevsToSegments(path.segments, 0).concat(
         addPrevsToSegments(clip, 1),
@@ -385,8 +363,8 @@ export const clipPathNew = (
         }
         return [];
     }
-    const { hits, entriesBySegment, exits, entryCoords, hitPairs } =
-        hitsResults;
+
+    const { hits, entriesBySegment, hitPairs } = hitsResults;
 
     if (debug) {
         console.groupCollapsed(`Details`);
@@ -396,163 +374,12 @@ export const clipPathNew = (
     }
 
     // console.log(`Exits to hit ${Object.keys(exits).length}`);
+    const regions = collectRegions(allSegments, hitsResults, debug);
 
     // whereeee to start?
     // like.
     // gotta start somewhere, right?
     // Ok, so current is always an exit. And we're looking for our next enter?
-    let current = entriesBySegment[0][0].entry;
-
-    type Region = {
-        segments: Array<SegmentWithPrev>;
-        isInternal: boolean | null;
-    };
-
-    // oh also we have to search around for things that haven't been hit yet. ok.
-    const regions: Array<Region> = [];
-
-    let region: Region = { isInternal: null, segments: [] };
-
-    const firstExit = findFirstExit(hitPairs[current.coordKey], current.id);
-    if (firstExit != null) {
-        // throw new Error(`No first exit`);
-        region.isInternal = firstExit;
-    }
-    if (debug) {
-        console.group(`Region ${regions.length}`);
-        console.log(
-            `First exit:`,
-            region.isInternal,
-            hitPairs[current.coordKey],
-            current.id,
-        );
-    }
-
-    delete exits[current.id];
-    // if (debug) {
-    //     console.log(`del exit`, current.id);
-    // }
-
-    while (true) {
-        // let next: {coord: Coord, entry: SegmentIntersection};
-
-        const idx = entriesBySegment[current.segment].findIndex(
-            (e) => e.entry.id === current.id,
-        );
-        const next = entriesBySegment[current.segment][idx + 1];
-        if (!next) {
-            console.warn(
-                new IntersectionError(
-                    `WHAT?? how is this an exit, and yet nothing next? ${idx}`,
-                    entriesBySegment[current.segment].map((s) => s.entry),
-                ),
-            );
-            break;
-        }
-
-        const exit = findExit(
-            hitPairs[next.entry.coordKey],
-            next.entry.id,
-            region.isInternal,
-            exits,
-        );
-
-        region.segments.push({
-            prev: entryCoords[current.id],
-            shape: exit ? exit[0].shape : -1,
-            segment: {
-                ...allSegments[current.segment].segment,
-                to: next.coord,
-            },
-        });
-
-        if (debug) {
-            console.log(
-                `Added a segment from ${current.segment} ix ${idx}. From`,
-                entryCoords[current.id],
-                `to`,
-                next.coord,
-                `Exiting:`,
-                exit,
-            );
-            // console.log(
-            //     'at',
-            //     current.segment,
-            //     idx,
-            //     entryCoords[current.id],
-            //     next.coord,
-            //     // pair,
-            //     exit,
-            // );
-            // console.log(
-            //     `Current region status: Internal? ${region.isInternal}. ${region.segments.length} segments.`,
-            // );
-        }
-
-        if (!exit) {
-            console.log(idx, next, hitPairs);
-            console.log(hitPairs[next.entry.coordKey]);
-            throw new IntersectionError(
-                `no pair foind for next ${idx + 1}`,
-                entriesBySegment[current.segment].map((m) => m.entry),
-            );
-        }
-        current = exit[0];
-        if (exit[1] != null) {
-            if (region.isInternal != null && region.isInternal !== exit[1]) {
-                if (debug) {
-                    console.warn(
-                        `INTERNAL DISAGREEMENT`,
-                        region.isInternal,
-                        exit,
-                    );
-                }
-                // This will exclude this region from the output.
-                // But also, this is a bug!!!
-                // region.isInternal = false;
-                region.isInternal = exit[1];
-            } else {
-                region.isInternal = exit[1];
-            }
-        }
-        if (!exits[current.id]) {
-            if (debug) {
-                console.log(
-                    `Finished an ${
-                        {
-                            true: 'internal',
-                            false: 'external',
-                            null: 'unknown',
-                        }[region.isInternal + '']
-                    } region`,
-                );
-                if (
-                    !coordsEqual(
-                        region.segments[region.segments.length - 1].segment.to,
-                        region.segments[0].prev,
-                    )
-                ) {
-                    console.warn(`ERROR endpoints don't match up though`);
-                }
-                console.groupEnd();
-            }
-            regions.push(region);
-            const k = Object.keys(exits)[0];
-            if (!k) {
-                break;
-            }
-            region = { isInternal: null, segments: [] };
-            current = exits[+k];
-            if (debug) {
-                console.group(`Region ${regions.length}`);
-                console.log(`First current:`, current);
-            }
-        }
-        delete exits[current.id];
-        // if (debug) {
-        //     console.log(`del exit`, current.id);
-        // }
-    }
 
     if (debug) {
         console.log('regons', regions);
@@ -596,52 +423,32 @@ export const clipPathNew = (
         console.groupEnd();
     }
     return filtered;
+};
 
-    // const { sorted, allHits } = calculateSortedHitsForSegments(allSegments);
-    // const split = splitSegmentsByIntersections(allSegments, sorted);
-
-    /**
-     * Ok, so now we've done that.
-     *
-     * and now we want to ... examine each intersection ...
-     * ...
-     * ...
-     * hmmm ok, so we do need a list of segments
-     * ...
-     * and then, taking each intersection in turn, we want to figure out
-     * how to connect up the relevant segments.
-     *
-     * like, each intersection has two entering and two exiting segments,
-     * each with their own respective angles. (tangent angle in the case of an arc).
-     * and we connect up each entering segment with an exiting segment.
-     * and at the end of the day, we traverse the map of segments.
-     *
-     * now .. we want to turn these interesctions ... into continuations.
-     * so at the end of the say, each segments has
-     *
-     * so, it is definitely possible for there to be dups.
-     */
-
-    // How to tell if a partialSegment is from the path or the clip?
-    // if the originalIdx < path.segments.length, then it's path!
-
-    // What'st he data structure?
-    // [{in, theta}, {out: theta}, {in: theta}, {out: theta}]
-    // [{in, theta}, {in: theta}, {out: theta}, {out: theta}]
-
-    // {type: 'cross', ins: [theta, theta], outs: [theta, theta]}
-    // {type: 'bounce', ins: [theta, theta], outs: [theta, theta]}
-
-    // {type: 'cross', one: {in: theta, out: theta}, two: {in: theta, out: theta}}
-
-    // hmmmm
-    // ok, so it looks like:
-    // - I can essentially disconnect all these crossovers.
-    // - and then just follow them around.
-    // also, if I see something going /into/ the other, I can disable that crossover.
-    // and paths with disabled parts get ignored.
-    // but, what about more complex joins?
-    // I'll just pretend those don't exist for the moment.
+export const prevSegmentsToShape = (
+    segments: Array<SegmentWithPrev>,
+): null | Array<Segment> => {
+    let bad = false;
+    const singles = segments.map((s, i) => {
+        const prev = segments[i === 0 ? segments.length - 1 : i - 1].segment.to;
+        if (!coordsEqual(s.prev, prev)) {
+            bad = true;
+            console.warn(`BAD PREV`, s.prev, prev, i);
+        }
+        return s.segment;
+    });
+    return bad ? null : singles;
+    // .concat(
+    //     coordsEqual(
+    //         segments[0].prev,
+    //         segments[segments.length - 1].segment.to,
+    //     )
+    //         ? []
+    //         : [
+    //               { type: 'Line', to: { x: 0, y: 0 } },
+    //               { type: 'Line', to: segments[0].prev },
+    //           ],
+    // );
 };
 
 export function hasNonEndpointCollision(hits: {
@@ -660,17 +467,148 @@ export function hasNonEndpointCollision(hits: {
     });
     return hasCollision;
 }
-// export const segmentForEntries = (
-//     current: SegmentIntersection,
-//     prev: Coord,
-//     next: { coord: Coord; entry: SegmentIntersection },
-//     segment: Segment,
-// ): SegmentWithPrev => {
-//     return {
-//         prev,
-//         segment: {
-//             ...segment,
-//             to: next.coord,
-//         },
-//     };
-// };
+
+export const collectRegions = (
+    allSegments: Array<SegmentWithPrev>,
+    hitsResults: HitsInfo,
+    debug = false,
+) => {
+    const { entriesBySegment, exits, entryCoords, hitPairs } = hitsResults;
+
+    let current = entriesBySegment[0][0].entry;
+
+    type Region = {
+        segments: Array<SegmentWithPrev>;
+        isInternal: boolean | null;
+    };
+
+    // oh also we have to search around for things that haven't been hit yet. ok.
+    const regions: Array<Region> = [];
+
+    let region: Region = { isInternal: null, segments: [] };
+
+    const firstExit = findFirstExit(hitPairs[current.coordKey], current.id);
+    if (firstExit != null) {
+        // throw new Error(`No first exit`);
+        region.isInternal = firstExit;
+    }
+    if (debug) {
+        console.group(`Region ${regions.length}`);
+        console.log(
+            `First exit:`,
+            region.isInternal,
+            hitPairs[current.coordKey],
+            current.id,
+        );
+    }
+
+    delete exits[current.id];
+
+    while (true) {
+        const idx = entriesBySegment[current.segment].findIndex(
+            (e) => e.entry.id === current.id,
+        );
+        const next = entriesBySegment[current.segment][idx + 1];
+        if (!next) {
+            console.warn(
+                new IntersectionError(
+                    `WHAT?? how is this an exit, and yet nothing next? ${idx}`,
+                    entriesBySegment[current.segment].map((s) => s.entry),
+                ),
+            );
+            break;
+        }
+
+        const exit = findExit(
+            hitPairs[next.entry.coordKey],
+            next.entry.id,
+            region.isInternal,
+            exits,
+        );
+
+        region.segments.push({
+            prev: entryCoords[current.id],
+            shape: exit ? exit[0].shape : -1,
+            segment: {
+                ...allSegments[current.segment].segment,
+                to: next.coord,
+            },
+        });
+
+        if (debug) {
+            console.log(
+                `Added a segment from ${current.segment} ix ${idx}. From`,
+                entryCoords[current.id],
+                `to`,
+                next.coord,
+                `Exiting:`,
+                exit,
+            );
+        }
+
+        if (!exit) {
+            console.log(idx, next, hitPairs);
+            console.log(hitPairs[next.entry.coordKey]);
+            throw new IntersectionError(
+                `no pair foind for next ${idx + 1}`,
+                entriesBySegment[current.segment].map((m) => m.entry),
+            );
+        }
+        current = exit[0];
+        if (exit[1] != null) {
+            if (region.isInternal != null && region.isInternal !== exit[1]) {
+                if (debug) {
+                    console.warn(
+                        `INTERNAL DISAGREEMENT`,
+                        region.isInternal,
+                        exit,
+                    );
+                }
+                // This will exclude this region from the output.
+                // But also, this is a bug!!!
+                // region.isInternal = false;
+                region.isInternal = exit[1];
+            } else {
+                region.isInternal = exit[1];
+            }
+        }
+        if (!exits[current.id]) {
+            const closed = coordsEqual(
+                region.segments[region.segments.length - 1].segment.to,
+                region.segments[0].prev,
+            );
+            if (debug) {
+                console.log(
+                    `Finished an ${
+                        {
+                            true: 'internal',
+                            false: 'external',
+                            null: 'unknown',
+                        }[region.isInternal + '']
+                    } region`,
+                );
+                if (!closed) {
+                    console.warn(`ERROR endpoints don't match up though`);
+                }
+                console.groupEnd();
+            }
+            // TODO: Should I allow opens via a param?
+            // Could be helpful for debugging.
+            if (closed) {
+                regions.push(region);
+            }
+            const k = Object.keys(exits)[0];
+            if (!k) {
+                break;
+            }
+            region = { isInternal: null, segments: [] };
+            current = exits[+k];
+            if (debug) {
+                console.group(`Region ${regions.length}`);
+                console.log(`First current:`, current);
+            }
+        }
+        delete exits[current.id];
+    }
+    return regions;
+};
