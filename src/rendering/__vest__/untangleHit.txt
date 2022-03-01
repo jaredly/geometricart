@@ -1217,3 +1217,313 @@ pass
     "y": 135
   }
 }
+===
+---
+triple arc
+---
+fail
+---
+[
+  {
+    "prev": {
+      "x": 45,
+      "y": 135
+    },
+    "shape": 0,
+    "segment": {
+      "type": "Arc",
+      "center": {
+        "x": 135,
+        "y": 135
+      },
+      "to": {
+        "x": 225,
+        "y": 135
+      },
+      "clockwise": true
+    }
+  },
+  {
+    "prev": {
+      "x": 225,
+      "y": 135
+    },
+    "shape": 0,
+    "segment": {
+      "type": "Arc",
+      "center": {
+        "x": 165,
+        "y": 135
+      },
+      "to": {
+        "x": 105,
+        "y": 135
+      },
+      "clockwise": false
+    }
+  },
+  {
+    "prev": {
+      "x": 75,
+      "y": 135
+    },
+    "shape": 1,
+    "segment": {
+      "type": "Arc",
+      "center": {
+        "x": 150,
+        "y": 135
+      },
+      "to": {
+        "x": 225,
+        "y": 135
+      },
+      "clockwise": true
+    }
+  },
+  {
+    "prev": {
+      "x": 225,
+      "y": 135
+    },
+    "segment": {
+      "type": "Line",
+      "to": {
+        "x": 135,
+        "y": 135
+      }
+    },
+    "shape": 1
+  }
+]
+---
+{
+  "pair": {
+    "type": "cross",
+    "transitions": [
+      {
+        "entry": {
+          "id": 2,
+          "segment": 2,
+          "enter": true,
+          "exit": false,
+          "coordKey": "225.0000,135.0000",
+          "shape": 1,
+          "theta": {
+            "type": "arc",
+            "clockwise": true,
+            "radius": 75,
+            "theta": 1.5707963267948966
+          },
+          "distance": 0
+        },
+        "exit": {
+          "id": 1,
+          "segment": 1,
+          "enter": false,
+          "exit": true,
+          "coordKey": "225.0000,135.0000",
+          "shape": 0,
+          "theta": {
+            "type": "arc",
+            "clockwise": false,
+            "radius": 60,
+            "theta": -1.5707963267948966
+          },
+          "distance": 3.141592653589793
+        },
+        "goingInside": true
+      },
+      {
+        "entry": {
+          "id": 0,
+          "segment": 0,
+          "enter": true,
+          "exit": false,
+          "coordKey": "225.0000,135.0000",
+          "shape": 0,
+          "theta": {
+            "type": "arc",
+            "clockwise": true,
+            "radius": 90,
+            "theta": 1.5707963267948966
+          },
+          "distance": 0
+        },
+        "exit": {
+          "id": 3,
+          "segment": 3,
+          "enter": false,
+          "exit": true,
+          "coordKey": "225.0000,135.0000",
+          "shape": 1,
+          "theta": {
+            "type": "flat",
+            "theta": 3.141592653589793
+          },
+          "distance": 90
+        },
+        "goingInside": false
+      }
+    ]
+  },
+  "coord": {
+    "x": 225,
+    "y": 135
+  }
+}
+===
+---
+triple arc up
+---
+fail
+---
+[
+  {
+    "prev": {
+      "x": 45,
+      "y": 180
+    },
+    "shape": 0,
+    "segment": {
+      "type": "Arc",
+      "center": {
+        "x": 150,
+        "y": 180
+      },
+      "to": {
+        "x": 255,
+        "y": 180
+      },
+      "clockwise": true
+    }
+  },
+  {
+    "prev": {
+      "x": 255,
+      "y": 180
+    },
+    "shape": 0,
+    "segment": {
+      "type": "Arc",
+      "center": {
+        "x": 180,
+        "y": 180
+      },
+      "to": {
+        "x": 105,
+        "y": 180
+      },
+      "clockwise": false
+    }
+  },
+  {
+    "prev": {
+      "x": 75,
+      "y": 180
+    },
+    "shape": 1,
+    "segment": {
+      "type": "Arc",
+      "center": {
+        "x": 165,
+        "y": 180
+      },
+      "to": {
+        "x": 255,
+        "y": 180
+      },
+      "clockwise": true
+    }
+  },
+  {
+    "prev": {
+      "x": 255,
+      "y": 180
+    },
+    "segment": {
+      "type": "Line",
+      "to": {
+        "x": 180,
+        "y": 150
+      }
+    },
+    "shape": 1
+  }
+]
+---
+{
+  "pair": {
+    "type": "cross",
+    "transitions": [
+      {
+        "entry": {
+          "id": 0,
+          "segment": 0,
+          "enter": true,
+          "exit": false,
+          "coordKey": "255.0000,180.0000",
+          "shape": 0,
+          "theta": {
+            "type": "arc",
+            "clockwise": true,
+            "radius": 105,
+            "theta": 1.5707963267948966
+          },
+          "distance": 0
+        },
+        "exit": {
+          "id": 3,
+          "segment": 3,
+          "enter": false,
+          "exit": true,
+          "coordKey": "255.0000,180.0000",
+          "shape": 1,
+          "theta": {
+            "type": "flat",
+            "theta": -2.761086276477428
+          },
+          "distance": 80.77747210701753
+        },
+        "goingInside": false
+      },
+      {
+        "entry": {
+          "id": 2,
+          "segment": 2,
+          "enter": true,
+          "exit": false,
+          "coordKey": "255.0000,180.0000",
+          "shape": 1,
+          "theta": {
+            "type": "arc",
+            "clockwise": true,
+            "radius": 90,
+            "theta": 1.5707963267948966
+          },
+          "distance": 0
+        },
+        "exit": {
+          "id": 1,
+          "segment": 1,
+          "enter": false,
+          "exit": true,
+          "coordKey": "255.0000,180.0000",
+          "shape": 0,
+          "theta": {
+            "type": "arc",
+            "clockwise": false,
+            "radius": 75,
+            "theta": -1.5707963267948966
+          },
+          "distance": 3.141592653589793
+        },
+        "goingInside": true
+      }
+    ]
+  },
+  "coord": {
+    "x": 255,
+    "y": 180
+  }
+}

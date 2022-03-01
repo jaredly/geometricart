@@ -1,9 +1,14 @@
 import * as React from 'react';
-import { insidePath } from '../rendering/clipPath';
+import {
+    Angle,
+    angleForSegment,
+    anglesEqual,
+    insidePath,
+} from '../rendering/clipPath';
 import { windingNumber } from '../rendering/windingNumber';
 import { findInsidePoint, findRegions } from '../rendering/findInternalRegions';
 import { segmentsToNonIntersectingSegments } from '../rendering/segmentsToNonIntersectingSegments';
-import { push } from '../rendering/getMirrorTransforms';
+import { angleTo, dist, push } from '../rendering/getMirrorTransforms';
 import { insetSegmentsBeta } from '../rendering/insetPath';
 import { simplifyPath } from '../rendering/simplifyPath';
 import { Primitive } from '../rendering/intersect';
@@ -12,11 +17,18 @@ import { Coord, Path, Segment } from '../types';
 import { pathToPrimitives } from './findSelection';
 import { RenderSegmentBasic } from './RenderSegment';
 import { calcPathD, pathSegs, segmentArrow } from './RenderPath';
-import { addPrevsToSegments, getSomeHits } from '../rendering/clipPathNew';
+import {
+    addPrevsToSegments,
+    getSomeHits,
+    SegmentWithPrev,
+} from '../rendering/clipPathNew';
 import { HitTransitions } from '../rendering/untangleHit';
+import { coordsEqual, segmentsEqual } from '../rendering/pathsAreIdentical';
+import { angleBetween } from '../rendering/findNextSegments';
+import { segmentAngle } from '../rendering/segmentAngle';
 
 const point = (
-    back: boolean,
+    back: boolean | 'mid',
     center: Coord,
     zoom: number,
     theta: number,
@@ -24,7 +36,12 @@ const point = (
     color: string,
     inside: boolean | null,
 ) => {
-    center = back ? push(center, theta, -size) : center;
+    center =
+        back === 'mid'
+            ? push(center, theta, -size / 3)
+            : back
+            ? push(center, theta, -size)
+            : center;
     const mid = push(center, theta, size / 2);
     return (
         <>
@@ -53,81 +70,213 @@ const point = (
     );
 };
 
+export const segmentMindpoint = (segment: SegmentWithPrev) => {
+    if (segment.segment.type === 'Line') {
+        return {
+            x: (segment.prev.x + segment.segment.to.x) / 2,
+            y: (segment.prev.y + segment.segment.to.y) / 2,
+        };
+    } else {
+        const t0 = angleTo(segment.segment.center, segment.prev);
+        const t1 = angleTo(segment.segment.center, segment.segment.to);
+        const diff = angleBetween(t0, t1, segment.segment.clockwise);
+        return push(
+            segment.segment.center,
+            t0 + (diff / 2) * (segment.segment.clockwise ? 1 : -1),
+            dist(segment.segment.center, segment.prev),
+        );
+    }
+};
+
+export const segmentAngles = (
+    segments: Array<SegmentWithPrev>,
+    coord: Coord,
+) => {
+    return segments.map((segment) => {
+        // const first = coordsEqual(segment.prev, coord);
+        const mid = segmentMindpoint(segment);
+        return {
+            segment,
+            angle: angleForSegment(segment.prev, segment.segment, coord),
+            // angle: segmentAngle(segment.prev, segment.segment, first),
+            mid,
+            atMid: angleForSegment(segment.prev, segment.segment, mid),
+        };
+    });
+};
+
+export const findSegmentMidpoint = (
+    segments: Array<{
+        segment: SegmentWithPrev;
+        mid: Coord;
+        angle: Angle;
+        atMid: Angle;
+    }>,
+    angle: Angle,
+) => {
+    return segments?.find((s) => anglesEqual(s.angle, angle));
+};
+
+export const midPoint = (
+    segsWithAngles: Array<{
+        segment: SegmentWithPrev;
+        atMid: Angle;
+        angle: Angle;
+        mid: Coord;
+    }>,
+    angle: Angle,
+    size: number,
+    zoom: number,
+    color: string,
+    inside: boolean | null,
+) => {
+    const found = findSegmentMidpoint(segsWithAngles, angle);
+    if (!found) {
+        return null;
+    }
+    return point(
+        'mid',
+        found.mid,
+        zoom,
+        found.atMid.theta,
+        size,
+        color,
+        inside,
+    );
+};
+
 export const ShowHitIntersection = ({
     zoom,
     pair,
     coord,
     arrowSize = 10 / 100,
+    segments,
 }: {
     coord: Coord;
     zoom: number;
     arrowSize?: number;
     pair: HitTransitions;
+    segments?: Array<SegmentWithPrev>;
 }) => {
+    const segsWithAngles = segments ? segmentAngles(segments, coord) : null;
     const size = arrowSize;
     switch (pair.type) {
         case 'ambiguous':
             return (
                 <>
-                    {point(
-                        false,
-                        coord,
-                        zoom,
-                        pair.inside.theta.theta,
-                        size * 1.2,
-                        'magenta',
-                        true,
-                    )}
-                    {point(
-                        false,
-                        coord,
-                        zoom,
-                        pair.outside.theta.theta,
-                        size * 0.7,
-                        'teal',
-                        false,
-                    )}
+                    {segsWithAngles
+                        ? midPoint(
+                              segsWithAngles,
+                              pair.inside.theta,
+                              size * 1.2,
+                              zoom,
+                              'magenta',
+                              true,
+                          )
+                        : point(
+                              false,
+                              coord,
+                              zoom,
+                              pair.inside.theta.theta,
+                              size * 1.2,
+                              'magenta',
+                              true,
+                          )}
+                    {segsWithAngles
+                        ? midPoint(
+                              segsWithAngles,
+                              pair.outside.theta,
+                              size * 0.7,
+                              zoom,
+                              'teal',
+                              false,
+                          )
+                        : point(
+                              false,
+                              coord,
+                              zoom,
+                              pair.outside.theta.theta,
+                              size * 0.7,
+                              'teal',
+                              false,
+                          )}
                 </>
             );
         case 'cross':
             return (
                 <>
-                    {point(
-                        true,
-                        coord,
-                        zoom,
-                        pair.transitions[0].entry.theta.theta,
-                        size * 0.8,
-                        '#f00',
-                        pair.transitions[0].goingInside,
-                    )}
-                    {point(
-                        false,
-                        coord,
-                        zoom,
-                        pair.transitions[0].exit.theta.theta, // + Math.PI,
-                        size * 0.9,
-                        '#f00',
-                        pair.transitions[0].goingInside,
-                    )}
-                    {point(
-                        true,
-                        coord,
-                        zoom,
-                        pair.transitions[1].entry.theta.theta,
-                        size * 0.8,
-                        '#0f0',
-                        pair.transitions[1].goingInside,
-                    )}
-                    {point(
-                        false,
-                        coord,
-                        zoom,
-                        pair.transitions[1].exit.theta.theta, // + Math.PI,
-                        size,
-                        '#0f0',
-                        pair.transitions[1].goingInside,
-                    )}
+                    {segsWithAngles
+                        ? midPoint(
+                              segsWithAngles,
+                              pair.transitions[0].entry.theta,
+                              size * 0.8,
+                              zoom,
+                              '#f00',
+                              pair.transitions[0].goingInside,
+                          )
+                        : point(
+                              true,
+                              coord,
+                              zoom,
+                              pair.transitions[0].entry.theta.theta,
+                              size * 0.8,
+                              '#f00',
+                              pair.transitions[0].goingInside,
+                          )}
+                    {segsWithAngles
+                        ? midPoint(
+                              segsWithAngles,
+                              pair.transitions[0].exit.theta,
+                              size * 0.9,
+                              zoom,
+                              '#f00',
+                              pair.transitions[0].goingInside,
+                          )
+                        : point(
+                              false,
+                              coord,
+                              zoom,
+                              pair.transitions[0].exit.theta.theta, // + Math.PI,
+                              size * 0.9,
+                              '#f00',
+                              pair.transitions[0].goingInside,
+                          )}
+                    {segsWithAngles
+                        ? midPoint(
+                              segsWithAngles,
+                              pair.transitions[1].entry.theta,
+                              size * 0.8,
+                              zoom,
+                              '#0f0',
+                              pair.transitions[1].goingInside,
+                          )
+                        : point(
+                              true,
+                              coord,
+                              zoom,
+                              pair.transitions[1].entry.theta.theta,
+                              size * 0.8,
+                              '#0f0',
+                              pair.transitions[1].goingInside,
+                          )}
+                    {segsWithAngles
+                        ? midPoint(
+                              segsWithAngles,
+                              pair.transitions[1].exit.theta,
+                              size,
+                              zoom,
+                              '#0f0',
+                              pair.transitions[1].goingInside,
+                          )
+                        : point(
+                              true,
+                              coord,
+                              zoom,
+                              pair.transitions[1].exit.theta.theta, // + Math.PI,
+                              size,
+                              '#0f0',
+                              pair.transitions[1].goingInside,
+                          )}
                 </>
             );
         case 'straight':

@@ -159,6 +159,7 @@ const Fixture = ({
                     zoom={1}
                     arrowSize={40}
                     coord={output.coord}
+                    segments={input}
                 />
             </svg>
         </div>

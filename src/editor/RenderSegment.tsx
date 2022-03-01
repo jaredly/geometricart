@@ -4,6 +4,8 @@ import { jsx } from '@emotion/react';
 import { Coord, Segment } from '../types';
 import { arcPath } from './RenderPendingPath';
 import React from 'react';
+import { coordsEqual } from '../rendering/pathsAreIdentical';
+import { dist } from '../rendering/getMirrorTransforms';
 
 export const RenderSegmentBasic = ({
     segment,
@@ -30,6 +32,18 @@ export const RenderSegmentBasic = ({
             />
         );
     } else {
+        if (coordsEqual(prev, segment.to)) {
+            return (
+                <circle
+                    fill="none"
+                    {...inner}
+                    cx={segment.center.x * zoom}
+                    cy={segment.center.y * zoom}
+                    r={dist(segment.center, prev) * zoom}
+                    className={className ?? inner?.className}
+                />
+            );
+        }
         return (
             <path
                 fill="none"

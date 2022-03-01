@@ -472,6 +472,7 @@ export const collectRegions = (
     allSegments: Array<SegmentWithPrev>,
     hitsResults: HitsInfo,
     debug = false,
+    ignoreUnclosed = false,
 ) => {
     const { entriesBySegment, exits, entryCoords, hitPairs } = hitsResults;
 
@@ -510,12 +511,14 @@ export const collectRegions = (
         );
         const next = entriesBySegment[current.segment][idx + 1];
         if (!next) {
-            console.warn(
-                new IntersectionError(
-                    `WHAT?? how is this an exit, and yet nothing next? ${idx}`,
-                    entriesBySegment[current.segment].map((s) => s.entry),
-                ),
-            );
+            if (!ignoreUnclosed) {
+                console.warn(
+                    new IntersectionError(
+                        `WHAT?? how is this an exit, and yet nothing next? ${idx}`,
+                        entriesBySegment[current.segment].map((s) => s.entry),
+                    ),
+                );
+            }
             break;
         }
 

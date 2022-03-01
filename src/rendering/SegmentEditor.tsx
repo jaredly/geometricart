@@ -50,6 +50,7 @@ export const SegmentEditor = ({
             <svg
                 width={300}
                 height={300}
+                style={{ border: '1px solid white' }}
                 onMouseMove={(evt) => {
                     const box = evt.currentTarget.getBoundingClientRect();
                     setCursor({
@@ -93,6 +94,16 @@ export const SegmentEditor = ({
                                 }}
                             />
                         ) : null}
+                        {current?.type === 'Arc' && points.length === 2 ? (
+                            <circle
+                                cx={points[1].x}
+                                cy={points[1].y}
+                                r={dist(points[0], points[1])}
+                                fill="none"
+                                stroke="red"
+                                strokeWidth={2}
+                            />
+                        ) : null}
                         {points.map((p, i) => (
                             <circle
                                 key={i}
@@ -115,7 +126,7 @@ export const SegmentEditor = ({
                         setCurrent({
                             type: 'Line',
                             points: [],
-                            clockwise: false,
+                            clockwise: true,
                         });
                     }}
                 >
@@ -128,12 +139,24 @@ export const SegmentEditor = ({
                         setCurrent({
                             type: 'Arc',
                             points: [],
-                            clockwise: false,
+                            clockwise: true,
                         });
                     }}
                 >
                     Arc
                 </button>
+                {current.type === 'Arc' ? (
+                    <button
+                        onClick={() =>
+                            setCurrent({
+                                ...current,
+                                clockwise: !current.clockwise,
+                            })
+                        }
+                    >
+                        {current.clockwise ? 'Clockwise' : 'Counterclockwise'}
+                    </button>
+                ) : null}
                 {cursor ? ' (' + cursor.x + ',' + cursor.y + ')' : null}
             </div>
         </div>
