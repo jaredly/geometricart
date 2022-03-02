@@ -240,6 +240,17 @@ export const clipPathTry = (
     }
 };
 
+const fixCircle = (shape: Array<Segment>) => {
+    if (shape.length === 1 && shape[0].type === 'Arc') {
+        const opposite = push(
+            shape[0].center,
+            angleTo(shape[0].to, shape[0].center),
+            dist(shape[0].to, shape[0].center),
+        );
+        return [{ ...shape[0], to: opposite }, shape[0]];
+    }
+};
+
 export const clipPathNew = (
     path: Path,
     clip: Array<Segment>,
@@ -270,29 +281,34 @@ export const clipPathNew = (
         return [path];
     }
 
-    // UGH this is a cheating hack, but I don't realy know how to do it better???
-    if (path.segments.length === 1 && path.segments[0].type === 'Arc') {
-        const arc = path.segments[0];
-        const mid1 = push(
-            arc.center,
-            angleTo(arc.center, arc.to) + Math.PI / 1000,
-            dist(arc.to, arc.center),
-        );
-        const mid = push(
-            arc.center,
-            angleTo(arc.to, arc.center),
-            dist(arc.to, arc.center),
-        );
-        path = {
-            ...path,
-            segments: [
-                // {...arc, to: mid1},
-                { type: 'Line', to: mid1 },
-                // { type: 'Line', to: arc.to },
-                arc,
-            ],
-        };
+    let fixedPath = fixCircle(path.segments);
+    if (fixedPath) {
+        path = { ...path, segments: fixedPath };
     }
+
+    // // UGH this is a cheating hack, but I don't realy know how to do it better???
+    // if (path.segments.length === 1 && path.segments[0].type === 'Arc') {
+    //     const arc = path.segments[0];
+    //     const mid1 = push(
+    //         arc.center,
+    //         angleTo(arc.center, arc.to) + Math.PI / 1000,
+    //         dist(arc.to, arc.center),
+    //     );
+    //     const mid = push(
+    //         arc.center,
+    //         angleTo(arc.to, arc.center),
+    //         dist(arc.to, arc.center),
+    //     );
+    //     path = {
+    //         ...path,
+    //         segments: [
+    //             // {...arc, to: mid1},
+    //             { type: 'Line', to: mid1 },
+    //             // { type: 'Line', to: arc.to },
+    //             arc,
+    //         ],
+    //     };
+    // }
 
     const pathBounding = segmentsBounds(path.segments);
     if (!boundsIntersect(pathBounding, clipBounds)) {
@@ -303,28 +319,33 @@ export const clipPathNew = (
         return [];
     }
 
-    // We have a circle!
-    if (clip.length === 1 && clip[0].type === 'Arc') {
-        const arc = clip[0];
-        const mid1 = push(
-            arc.center,
-            angleTo(arc.center, arc.to) + Math.PI / 1000,
-            dist(arc.to, arc.center),
-        );
-        const mid = push(
-            arc.center,
-            angleTo(arc.to, arc.center),
-            dist(arc.to, arc.center),
-        );
-        // Make it into two half-circles, it will make things much simpler to think about
-        // ugh or just hack a small line. I don't love it.
-        clip = [
-            // { ...arc, to: mid1 },
-            { type: 'Line', to: mid1 },
-            // { type: 'Line', to: arc.to },
-            arc,
-        ];
+    let fixedClip = fixCircle(clip);
+    if (fixedClip) {
+        clip = fixedClip;
     }
+
+    // // We have a circle!
+    // if (clip.length === 1 && clip[0].type === 'Arc') {
+    //     const arc = clip[0];
+    //     const mid1 = push(
+    //         arc.center,
+    //         angleTo(arc.center, arc.to) + Math.PI / 1000,
+    //         dist(arc.to, arc.center),
+    //     );
+    //     const mid = push(
+    //         arc.center,
+    //         angleTo(arc.to, arc.center),
+    //         dist(arc.to, arc.center),
+    //     );
+    //     // Make it into two half-circles, it will make things much simpler to think about
+    //     // ugh or just hack a small line. I don't love it.
+    //     clip = [
+    //         // { ...arc, to: mid1 },
+    //         { type: 'Line', to: mid1 },
+    //         // { type: 'Line', to: arc.to },
+    //         arc,
+    //     ];
+    // }
 
     const allSegments = addPrevsToSegments(path.segments, 0).concat(
         addPrevsToSegments(clip, 1),
