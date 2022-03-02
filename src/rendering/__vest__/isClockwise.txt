@@ -1,0 +1,274 @@
+===
+---
+pinch
+---
+pass
+---
+[
+  {
+    "prev": {
+      "x": 45,
+      "y": 180
+    },
+    "shape": -1,
+    "segment": {
+      "type": "Arc",
+      "center": {
+        "x": 150,
+        "y": 180
+      },
+      "to": {
+        "x": 255,
+        "y": 180
+      },
+      "clockwise": true
+    }
+  },
+  {
+    "prev": {
+      "x": 255,
+      "y": 180
+    },
+    "shape": -1,
+    "segment": {
+      "type": "Arc",
+      "center": {
+        "x": 180,
+        "y": 180
+      },
+      "to": {
+        "x": 107.23931248910012,
+        "y": 161.809828122275
+      },
+      "clockwise": false
+    }
+  },
+  {
+    "prev": {
+      "x": 107.23931248910012,
+      "y": 161.809828122275
+    },
+    "segment": {
+      "type": "Line",
+      "to": {
+        "x": 45,
+        "y": 180
+      }
+    },
+    "shape": -1
+  }
+]
+---
+true
+===
+---
+simple
+---
+pass
+---
+[
+  {
+    "prev": {
+      "x": 75,
+      "y": 210
+    },
+    "segment": {
+      "type": "Line",
+      "to": {
+        "x": 45,
+        "y": 135
+      }
+    },
+    "shape": -1
+  },
+  {
+    "prev": {
+      "x": 45,
+      "y": 135
+    },
+    "segment": {
+      "type": "Line",
+      "to": {
+        "x": 120,
+        "y": 60
+      }
+    },
+    "shape": -1
+  },
+  {
+    "prev": {
+      "x": 120,
+      "y": 60
+    },
+    "segment": {
+      "type": "Line",
+      "to": {
+        "x": 210,
+        "y": 75
+      }
+    },
+    "shape": -1
+  },
+  {
+    "prev": {
+      "x": 210,
+      "y": 75
+    },
+    "segment": {
+      "type": "Line",
+      "to": {
+        "x": 210,
+        "y": 195
+      }
+    },
+    "shape": -1
+  },
+  {
+    "prev": {
+      "x": 210,
+      "y": 195
+    },
+    "segment": {
+      "type": "Line",
+      "to": {
+        "x": 75,
+        "y": 210
+      }
+    },
+    "shape": -1
+  }
+]
+---
+true
+===
+---
+simple back
+---
+pass
+---
+[
+  {
+    "prev": {
+      "x": 90,
+      "y": 195
+    },
+    "segment": {
+      "type": "Line",
+      "to": {
+        "x": 240,
+        "y": 195
+      }
+    },
+    "shape": -1
+  },
+  {
+    "prev": {
+      "x": 240,
+      "y": 195
+    },
+    "segment": {
+      "type": "Line",
+      "to": {
+        "x": 240,
+        "y": 75
+      }
+    },
+    "shape": -1
+  },
+  {
+    "prev": {
+      "x": 240,
+      "y": 75
+    },
+    "segment": {
+      "type": "Line",
+      "to": {
+        "x": 75,
+        "y": 75
+      }
+    },
+    "shape": -1
+  },
+  {
+    "prev": {
+      "x": 75,
+      "y": 75
+    },
+    "segment": {
+      "type": "Line",
+      "to": {
+        "x": 90,
+        "y": 195
+      }
+    },
+    "shape": -1
+  }
+]
+---
+false
+===
+---
+cross not a shape
+---
+pass
+---
+[
+  {
+    "prev": {
+      "x": 75,
+      "y": 210
+    },
+    "segment": {
+      "type": "Line",
+      "to": {
+        "x": 210,
+        "y": 45
+      }
+    },
+    "shape": -1
+  },
+  {
+    "prev": {
+      "x": 210,
+      "y": 45
+    },
+    "segment": {
+      "type": "Line",
+      "to": {
+        "x": 45,
+        "y": 60
+      }
+    },
+    "shape": -1
+  },
+  {
+    "prev": {
+      "x": 45,
+      "y": 60
+    },
+    "segment": {
+      "type": "Line",
+      "to": {
+        "x": 225,
+        "y": 210
+      }
+    },
+    "shape": -1
+  },
+  {
+    "prev": {
+      "x": 225,
+      "y": 210
+    },
+    "segment": {
+      "type": "Line",
+      "to": {
+        "x": 75,
+        "y": 210
+      }
+    },
+    "shape": -1
+  }
+]
+---
+false

@@ -1,7 +1,7 @@
 import * as React from 'react';
-import { mergeBounds, segmentsBounds } from '../src/Export';
-import { Text } from '../src/Forms';
-import { calcPathD } from '../src/RenderPath';
+import { mergeBounds, segmentsBounds } from '../src/editor/Bounds';
+import { Text } from '../src/editor/Forms';
+import { calcPathD } from '../src/editor/RenderPath';
 import { Example, getInsets, insetColors, size, pathSegs } from './run';
 
 export const ShowExample = ({

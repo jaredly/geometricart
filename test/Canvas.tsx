@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { useCurrent } from '../src/App';
-import { windingNumber } from '../src/clipPath';
-import { segmentsCenter } from '../src/Export';
+import { windingNumber } from '../src/rendering/windingNumber';
+import { segmentsCenter } from '../src/editor/Bounds';
 import {
     cleanUpInsetSegments2,
     findInsidePoint,
@@ -9,29 +9,43 @@ import {
     findRegions,
     removeContainedRegions,
     removeNonWindingRegions,
-    segmentAngle,
-    segmentsToNonIntersectingSegments,
-} from '../src/findInternalRegions';
-import { angleBetween } from '../src/findNextSegments';
-import { pathToPrimitives } from '../src/findSelection';
-import { BlurInt, Text } from '../src/Forms';
+} from '../src/rendering/findInternalRegions';
+import { segmentAngle } from '../src/rendering/segmentAngle';
+import { segmentsToNonIntersectingSegments } from '../src/rendering/segmentsToNonIntersectingSegments';
+import { angleBetween } from '../src/rendering/findNextSegments';
+import { pathToPrimitives } from '../src/editor/findSelection';
+import { BlurInt, Text } from '../src/editor/Forms';
 import {
     angleTo,
     dist,
     push,
     translationMatrix,
-} from '../src/getMirrorTransforms';
-import { insetSegmentsBeta } from '../src/insetPath';
+} from '../src/rendering/getMirrorTransforms';
+import { insetSegments, insetSegmentsBeta } from '../src/rendering/insetPath';
 import {
     ensureClockwise,
     isClockwise,
     pathToPoints,
-} from '../src/pathToPoints';
-import { transformSegment } from '../src/points';
-import { calcPathD, segmentArrow } from '../src/RenderPath';
+} from '../src/rendering/pathToPoints';
+import { transformSegment } from '../src/rendering/points';
+import { calcPathD, segmentArrow } from '../src/editor/RenderPath';
 import { Coord, Segment } from '../src/types';
 import { fixture } from './fixture';
 import { getInsets, insetColors, pathSegs, size } from './run';
+import { coordKey } from '../src/rendering/calcAllIntersections';
+
+export const maybeSnap = (v: number, snap?: number) =>
+    snap ? Math.round(v / snap) * snap : v;
+
+export const validSegments = (seg: Array<Segment>) => {
+    if (seg.length === 0) {
+        return false;
+    }
+    if (seg.length > 2) {
+        return true;
+    }
+    return seg.some((s) => s.type === 'Arc');
+};
 
 export const Drawing = ({
     segments,
@@ -39,14 +53,14 @@ export const Drawing = ({
     setSegments,
     onComplete,
     render,
+    snap,
 }: {
     zoom: number;
     segments: Array<Segment>;
-    setSegments: (
-        fn: Array<Segment> | ((segments: Array<Segment>) => Array<Segment>),
-    ) => void;
+    setSegments: (fn: (segments: Array<Segment>) => Array<Segment>) => void;
     onComplete: () => void;
     render: (segs: Array<Segment>) => React.ReactNode;
+    snap?: number;
 }) => {
     const [cursor, setCursor] = React.useState(null as Coord | null);
     const origin = segments.length
@@ -134,8 +148,8 @@ export const Drawing = ({
                 onMouseMove={(evt) => {
                     const svg = evt.currentTarget.getBoundingClientRect();
                     setCursor({
-                        x: evt.clientX - svg.left - size / 2,
-                        y: evt.clientY - svg.top - size / 2,
+                        x: maybeSnap(evt.clientX - svg.left - size / 2, snap),
+                        y: maybeSnap(evt.clientY - svg.top - size / 2, snap),
                     });
                 }}
                 onClick={() => {
@@ -226,27 +240,47 @@ export const Drawing = ({
                 >
                     Arc
                 </button>
+                {cursor ? coordKey(cursor) : ''}
             </div>
         </div>
     );
 };
 
 const initialState = (): Array<Segment> => {
-    const center = segmentsCenter(fixture);
-    return fixture.map((seg) =>
-        transformSegment(seg, [
-            translationMatrix({
-                x: -center.x,
-                y: -center.y,
-            }),
-        ]),
-    ); // insetSegmentsBeta(segments, windAt);
+    // const center = segmentsCenter(fixture);
+    // return fixture.map((seg) =>
+    //     transformSegment(seg, [
+    //         translationMatrix({
+    //             x: -center.x,
+    //             y: -center.y,
+    //         }),
+    //     ]),
+    // ); // insetSegmentsBeta(segments, windAt);
 
     // return fixture;
     if (localStorage[KEY]) {
         return JSON.parse(localStorage[KEY]);
     }
     return star();
+};
+
+export const useLocalStorage = <T,>(
+    key: string,
+    initial: T,
+): [T, React.Dispatch<React.SetStateAction<T>>] => {
+    const [value, setValue] = React.useState((): T => {
+        const data = localStorage[key];
+        if (data) {
+            return JSON.parse(data);
+        }
+        return initial;
+    });
+    React.useEffect(() => {
+        if (value !== initial) {
+            localStorage[key] = JSON.stringify(value);
+        }
+    }, [value]);
+    return [value, setValue];
 };
 
 const KEY = 'geo-test-canvas';
@@ -366,8 +400,11 @@ export const Canvas = ({
                     const windAt = debug?.inset ?? 40;
                     if (showWind === 3) {
                         const all = getInsets(segments);
-                        const inset = insetSegmentsBeta(segments, windAt);
-                        const result = cleanUpInsetSegments2(inset);
+                        const [inset, corners] = insetSegments(
+                            segments,
+                            windAt,
+                        );
+                        const result = cleanUpInsetSegments2(inset, corners);
                         // console.log(all, result);
 
                         return result.map((segments, i) => (

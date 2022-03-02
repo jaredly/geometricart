@@ -4,15 +4,17 @@ import { render } from 'react-dom';
 import {
     cleanUpInsetSegments,
     cleanUpInsetSegments2,
-} from '../src/findInternalRegions';
-import { push } from '../src/getMirrorTransforms';
-import { insetSegmentsBeta } from '../src/insetPath';
-import { ensureClockwise } from '../src/pathToPoints';
+} from '../src/rendering/findInternalRegions';
+import { push } from '../src/rendering/getMirrorTransforms';
+import { insetSegmentsBeta } from '../src/rendering/insetPath';
+import { ensureClockwise } from '../src/rendering/pathToPoints';
 import { Path, Segment } from '../src/types';
 import { Canvas } from './Canvas';
 import { ShowExample } from './ShowExample';
 import { fixture } from './fixture';
-import { Timeline } from './Timeline';
+import { Timeline } from './TimelineTest';
+import { Inside } from './Inside';
+import { Clip } from './Clip';
 
 export const size = 500;
 
@@ -167,28 +169,13 @@ export function getInsets(segments: Segment[]) {
         for (let i = -2; i < 3; i++) {
             const inset = i * 20 + 20;
             if (inset != 0) {
-                // const insetted = insetSegmentsBeta(segments, inset);
-                // const result = segmentsToNonIntersectingSegments(insetted);
-                // const regions = findClockwiseRegions(
-                //     result.result,
-                //     result.froms,
-                // );
-                // insets[inset] = {
-                //     paths: insetted.length ? [insetted] : [],
-                //     pass: false,
-                // };
                 insets[inset] = {
                     paths: cleanUpInsetSegments2(
                         insetSegmentsBeta(segments, inset),
+                        segments.map((s) => s.to),
                     ),
                     pass: false,
                 };
-                // insets[inset] = {
-                //     paths: insetted.length
-                //         ? pruneInsetPath(insetted).filter((s) => s.length)
-                //         : [],
-                //     pass: false,
-                // };
             }
         }
     }
@@ -211,5 +198,7 @@ const blankPath: Path = {
     clipMode: 'none',
 };
 
-render(<App />, document.getElementById('root'));
+// render(<Inside />, document.getElementById('root'));
+// render(<App />, document.getElementById('root'));
+render(<Clip />, document.getElementById('root'));
 // render(<Timeline />, document.getElementById('root'));

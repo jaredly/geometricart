@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<meta charset="utf8" />
+<title>Tests for path functions</title>
+<link rel="shortcut icon" href="favicon.png" />
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, user-scalable=no"
+/>
+<style>
+    .hovershow {
+        display: none;
+    }
+    .hover:hover .hovershow {
+        display: block;
+    }
+    html,
+    body {
+        margin: 0;
+        padding: 0;
+        background-color: #1e1e1e;
+        color: white;
+        font-family: system-ui;
+        overscroll-behavior: none;
+    }
+    * {
+        text-decoration-skip-ink: none;
+        box-sizing: border-box;
+    }
+    div {
+        min-height: 0;
+        min-width: 0;
+        flex-shrink: 0;
+    }
+    .hoverBackground {
+        transition: 0.2s ease background-color;
+    }
+    .hoverBackground:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+</style>
+<body>
+    <div id="root"></div>
+    <script>
+        window.cwd = () => '/';
+        window.require = () => {};
+    </script>
+    <script src="run.js"></script>
+</body>

@@ -1,5 +1,5 @@
-import { UndoableAction, UndoAction } from './Action';
-import { Primitive } from './intersect';
+import { UndoableAction, UndoAction } from './state/Action';
+import { Primitive } from './rendering/intersect';
 
 // Should I do polar coords?
 export type Coord = { x: number; y: number };
@@ -179,6 +179,9 @@ export type StyleLine = {
     width?: number;
     dash?: Array<number>;
     joinStyle?: string;
+    colorVariation?: number;
+    opacity?: number;
+    lighten?: number; // negatives for darken. units somewhat arbitrary.
 };
 
 export type Style = {
@@ -366,11 +369,21 @@ export type FloatLerp = {
 export type TimelineSlot = {
     enabled: boolean;
     weight: number;
-    contents: null | {
-        type: 'script';
-        custom: { [vbl: string]: number | Array<Id> | boolean };
-        scriptId: string;
-    };
+    contents:
+        | {
+              type: 'script';
+              custom: { [vbl: string]: number | Array<Id> | boolean };
+              scriptId: string;
+              phase: 'pre-inset' | 'post-inset';
+              selection?: {
+                  type: 'Path' | 'PathGroup';
+                  ids: Array<Id>;
+              };
+          }
+        | {
+              type: 'spacer';
+              still?: null | 'left' | 'right';
+          };
 };
 
 export type TimelineLane = {
@@ -378,37 +391,86 @@ export type TimelineLane = {
     items: Array<TimelineSlot>;
 };
 
+export type Lerp =
+    | FloatLerp
+    | {
+          type: 'float-fn';
+          code: string;
+      };
+
 export type Animations = {
+    config: {
+        fps: number;
+        backgroundAlpha: null | number;
+        increment: number;
+        crop: number;
+        restrictAspectRatio: boolean;
+        zoom: number;
+    };
     steps?: number;
     // yeah I know they're often not linear :P
-    timeline: {
+    lerps: {
         // ooh some vbls might not be floats?
         // like could be nice to interpolate colors, in some cases
         // and positions! Like following a path
-        [vblName: string]:
-            | FloatLerp
-            | {
-                  type: 'float-fn';
-                  code: string;
-              };
+        [vblName: string]: Lerp;
     };
-    // timeline: Array<TimelineLane>;
+
+    timelines: Array<TimelineLane>;
 
     scripts: {
         [name: string]: {
             code: string;
-            enabled: boolean;
-            phase: 'pre-inset' | 'post-inset';
-            selection?: {
-                type: 'Path' | 'PathGroup';
-                ids: Array<Id>;
-            };
         };
     };
 };
 
+export type ScriptVbl =
+    | {
+          type: 'int' | 'float';
+          defaultValue: number;
+          range?: [number, number];
+      }
+    | {
+          type: 'boolean';
+          defaultValue: boolean;
+      }
+    | {
+          type: 'color';
+          defaultValue: string;
+      }
+    | {
+          type: 'coord';
+          defaultValue: Coord;
+      }
+    | {
+          type: 'selection' | 'lerp';
+      };
+
+export type Library = {
+    version: 1;
+    scripts: {
+        [id: string]: {
+            code: string;
+            vbls: {
+                [key: string]: {
+                    kind: ScriptVbl;
+                    description?: string;
+                };
+            };
+        };
+    };
+    lerps: { [id: string]: Lerp };
+};
+
+export const initialLibrary: Library = {
+    version: 1,
+    scripts: {},
+    lerps: {},
+};
+
 export type State = {
-    version: 5;
+    version: 8;
     nextId: number;
     history: History;
     meta: Meta;

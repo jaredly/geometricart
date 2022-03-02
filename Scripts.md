@@ -247,3 +247,93 @@ With acceleration
 };
 
 ```
+
+
+# Concentric dots
+
+`progress` starts slow and speeds up, with a shelf at the end.
+
+```ts
+
+(paths, t, progress) => {
+  const ot = t;
+  t = progress(t);
+  if (t === 1) {
+    Object.keys(paths).forEach((k) => {
+      delete paths[k];
+    });
+
+    if (ot > 0.95) {
+      paths["black"] = pathForSegments([
+        { type: "Line", to: { x: 5, y: 5 } },
+        { type: "Line", to: { x: -5, y: 5 } },
+        { type: "Line", to: { x: -5, y: -5 } },
+        { type: "Line", to: { x: 5, y: -5 } },
+      ]);
+      paths["black"].style = {
+        lines: [],
+        fills: [{ color: "black", opacity: 0.15 }],
+      };
+    }
+
+    return;
+  }
+  t = t * 3;
+  const size = 3;
+  const r = 0.008;
+  Object.keys(paths).forEach((k) => {
+    let path = paths[k];
+    let inset = insetPath(path, size * (0.5 + Math.floor(t * 2)));
+    delete paths[k];
+
+    inset.forEach((path, i) => {
+      const at = followPath(path, t % 1);
+      const c = segmentsCenter(path.segments);
+      const off = { x: c.x - at.x, y: c.y - at.y };
+      const origin = { x: at.x - r, y: at.y };
+      const segments = [{ type: "Arc", center: at, to: origin }];
+      paths[k + i] = {
+        ...paths[k],
+        origin,
+        segments,
+        style: {
+          lines: [], // [{ color: "white", width: 0.1 }],
+
+          fills: [
+            {
+              color: path.style.fills[0].color,
+              lighten: path.style.fills[0].lighten,
+            },
+          ],
+          //fills: [{ color: "aqua" }],
+        },
+      };
+
+      if (true) {
+        const at = followPath(path, 1 - (t % 1));
+        const c = segmentsCenter(path.segments);
+        const off = { x: c.x - at.x, y: c.y - at.y };
+        const origin = { x: at.x - r, y: at.y };
+        const segments = [{ type: "Arc", center: at, to: origin }];
+        paths[k + "second" + i] = {
+          ...paths[k],
+          origin,
+          segments,
+          style: {
+            lines: [],
+            fills: [
+              {
+                color: path.style.fills[0].color,
+                lighten: path.style.fills[0].lighten,
+              },
+            ],
+            //fills: [{ color: "aqua" }],
+          },
+        };
+      }
+    });
+  });
+};
+
+
+```

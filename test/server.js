@@ -12,6 +12,7 @@ esbuild
         {
             entryPoints: ['test/run.tsx'],
             bundle: true,
+            sourcemap: true,
             define: { 'process.env.NODE_ENV': '"development"' },
         },
     )

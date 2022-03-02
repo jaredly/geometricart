@@ -1,4 +1,200 @@
 
+# Main Gaps in the Clips Stuffs
+
+OK FOUND ANOTHER ONE
+yall
+really stress testing here
+when I could have just unit tested
+but here we are
+
+- [x] ahahhaaa yayyy ok fixed that one too!
+	- and now I have those visual tests, gotta love em.
+
+I want a visual unit test suite for my windingNumber dealio.
+Which means I think it's time to formalize a visual testing framework
+my folks
+
+do we need to give test cases IDs? Yeah, that would be great.
+slugify the name, it's great.
+
+then we have `the-slug.input.json` and `the-slug.expected.json`.
+
+
+
+- [x] track down the source of BAD PREV. Why are we ending up at not the right place?
+- [x] soooo clooooose I think??? 
+	Yeah not handling single-circles well.
+- [x] non-intersecting (easy to detect, and then do an is-inside check for any of the points of the shape)
+- [x] arcs with the same tangent as a line (see test case)
+- [x] welp, found another bug (it was my lazy method of seeing if any actual collisions happened)
+- [ ] (low priority) self-intersecting shapes, so that you can have more than 4 participants in a setup.
+
+Lol ok lots more bugs it looks like
+no idea why all these shapes think they're inside the lines.
+- [ ] oh wait maybe all these things are not clockwise? and maybe not simplified? idk
+
+AND THEN
+
+SO the problem is:
+- [x] we're throwing away the info that we have about inside/outside, when getting into the situation.
+	Ok that's fixed.
+
+
+
+we can start using it.
+
+AND THEN
+
+let's do the "path hash", so we only calculate insets for one thing at a time, pleeeeease
+
+
+
+Clips, with arcs!
+
+Ok, I've found some smallish breaking cases.
+yayyy ok arcs work!
+
+--
+
+Ok, filtering outside stuff is working pretty well!!!
+
+Definitely need line-over-line fix.
+
+
+hmmm IF there's a toss-up, bias towrd keeping same-shapes together? maybe??
+
+hmmm no. More like, if you've been inside, stay inside. if you've been outside, stay outside.
+otherwise it won't matter? I think??/
+
+yeah, so I need to be able to return a hitPair result that is "ambiguous", either one inside, one unknown, or one outside, one unknown.
+
+---
+
+CLIP ME UP SCOTTY
+
+yes, wonderful progress!!
+
+now, to filter out the things we don't want, we'll need to:
+
+- keep track of the entries that segments came from? I think
+- examine hit entries, to determine which /exits/ should be excluded
+- then find regions with excluded exits, and drop them!
+
+And THEN I need to thoroughly test out the arc handling, because it might be bogus.
+
+Super stoked, my folks. Gonna be rock solid.
+
+Also maybe I can use this for insets, we'll see. And weaving.
+
+
+BE SURE to test lines that are overlapping, my folks.
+yeah not doing well
+
+
+ALSO not doing well is the corner thats on another line. wows.
+- ok fixed that, nice.
+- but now the lines overlapping is breaking, so gotta figure that out.
+
+
+
+
+
+# Next up:
+
+BUG FIX:
+- replace checkContained's use of insidePath with windingNumber. Pleeeease.
+
+NEXT UP
+let's get variables to scripts going
+and have lerps be just one part of that.
+AND get the library saving to / from working,
+so I can re-use all these lovely scripts.
+
+- ok, so insets are probably in quite good shape.
+- clips are in rather worse shape. I should change it to use the inset algorithm.
+	- basic idea: for boolean AND, both go clockwise.
+	- for boolean NOT, the negative one goes backwards.
+	- for boolean AND, I think you just 'accept all regions'? And then you have to join them, I guess?
+	- oh wait, not it's not quite that simple. because we want ... hmm I guess you could do "split into regions, and then do the winding test"? But the winding test has been a little fritzy.
+	- that might be the best I've got though, without introducing more complexity to the region-finding.
+		like, segments have colors?
+
+		Anyway, I should probably make a test page for clips, tbh. and in the little editor, make it snap to
+		grid points, so I can have some colocated corners to test those edge cases.
+		Yeah I think as far as robustness goes, that's the next step. Get clipping working really well.
+
+		ohhh hmm so what if, after getting all segments going, I just "delete" all clip segments that are obivously "going outside" of the path? Then I can run the normal regions algorithm and it should work fine, starting from any clip segments that remain?
+
+# Newfangled Scripts
+
+Need a way to specify configurables.
+What kinds of things?
+- floats (min/max, step?)
+- ints (min/max, step?)
+- boolean
+honestly that gets you so far
+- colors, sure
+- positions! oh definitely
+	ugh do I just go whole hog on FBP or not
+- selections, gotta have it
+- lerps, oh yeah that makes sense!
+
+default values? Yeah sure.
+
+
+Soooo all scripts have a lerp parameter that's like "how should we modulate t", right?
+
+
+Ok, so: you write out the function, you add variables.
+Those variables get parsed out, and you can then configure them.
+
+
+- [x] basic timeline editor
+	- [x] add slots
+	- [x] edito slots
+	- [x] better editing, below, so small slots arent squished.
+	- [ ] custom variables for scripts pleeease
+- [ ] Library! Yes very much want it.
+	- [ ] "save to library"
+	- [ ] "revert to library version"
+	- [ ] "load new from library"
+
+# [x] AddRemoveEdit action type
+
+Could simplify things a lot.
+Now the critical questoin: Can I do a subset?
+
+# Let's talk about the timeline.
+
+Want a "script library", similar to the palette library I guess, but better concieved.
+So you can copy between them, basically.
+
+Want to be able to export/import as well.
+
+Things that the library contains:
+- scripts (with a readable id) - scripts can reference a lerp explicitly, could be fun
+- lerps, sure thing.
+
+So yeah, I can do that first.
+
+And then I can do timelines.
+
+hmmmmmm I wonder if I need ... the ability to group actions into a single undo-group. That sure would be nice for some of these things.
+
+So the script editor will have a "save to library" button.
+And at that point you give it an id? And if the script is saved to the library already,
+it will ... indicate that.
+Yeah when you give it an ID, it will rename things.
+
+Also a "load from library".
+
+
+# Gotta do a fade out!
+At the end of a fading thing, to clear away paths.
+or a sweep idk
+
+simple, effective
+
 # Layers?
 
 Some of the animations I'm imagining involve having multiple different patterns that we transition between.

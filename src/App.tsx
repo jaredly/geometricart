@@ -1,18 +1,15 @@
 /* @jsx jsx */
 import { jsx } from '@emotion/react';
-import localforage from 'localforage';
 import React from 'react';
-import { Canvas } from './Canvas';
-import { reducer } from './reducer';
-import { Hover, Sidebar } from './Sidebar';
+import { Canvas } from './editor/Canvas';
+import { reducer } from './state/reducer';
+import { Hover, Sidebar } from './editor/Sidebar';
 import { Coord, GuideGeom, Id, State } from './types';
-import { Action, GroupRegroup } from './Action';
-import { initialState } from './initialState';
+import { Action, GroupRegroup } from './state/Action';
 import {
     getStateFromFile,
     useDropStateOrAttachmentTarget,
-    useDropTarget,
-} from './useDropTarget';
+} from './editor/useDropTarget';
 import {
     CogIcon,
     IconButton,
@@ -20,10 +17,9 @@ import {
     RedoIcon,
     UndoIcon,
 } from './icons/Icon';
-import { AnimationEditor } from './AnimationUI';
-import { PendingDuplication } from './Guides';
-
-export const key = `geometric-art`;
+import { AnimationEditor } from './animation/AnimationUI';
+import { PendingDuplication } from './editor/Guides';
+import { saveState } from './state/persistence';
 
 export const useCurrent = <T,>(value: T) => {
     const ref = React.useRef(value);
@@ -126,7 +122,7 @@ export const App = ({ initialState }: { initialState: State }) => {
     const latestState = useCurrent(state);
 
     React.useEffect(() => {
-        localforage.setItem(key, JSON.stringify(state));
+        saveState(state);
     }, [state]);
 
     const [hover, setHover] = React.useState(null as null | Hover);
