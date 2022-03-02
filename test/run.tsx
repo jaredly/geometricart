@@ -199,6 +199,6 @@ const blankPath: Path = {
 };
 
 // render(<Inside />, document.getElementById('root'));
-// render(<App />, document.getElementById('root'));
-render(<Clip />, document.getElementById('root'));
+render(<App />, document.getElementById('root'));
+// render(<Clip />, document.getElementById('root'));
 // render(<Timeline />, document.getElementById('root'));

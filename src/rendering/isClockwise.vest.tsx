@@ -12,51 +12,6 @@ import {
     totalAngle,
 } from './pathToPoints';
 import { ShapeEditor } from './ShapeEditor';
-/**
- * TODO ok folks.
- * got to visual this up in here.
- */
-
-const path: Array<Segment> = [
-    {
-        type: 'Arc',
-        center: {
-            x: 150,
-            y: 180,
-        },
-        to: {
-            x: 224.99999999999997,
-            y: 180,
-        },
-        clockwise: true,
-    },
-    {
-        type: 'Arc',
-        center: {
-            x: 165,
-            y: 180,
-        },
-        to: {
-            x: 106.32273150000437,
-            y: 167.47090739999825,
-        },
-        clockwise: false,
-    },
-    {
-        type: 'Line',
-        to: {
-            x: 75.00000000000001,
-            y: 180,
-        },
-    },
-];
-
-// describe('isClockwise', () => {
-//     it('should work', () => {
-//         console.log(pathToPoints(path));
-//         expect(isClockwise(path)).toBe(true);
-//     });
-// });
 
 type Input = Array<SegmentWithPrev>;
 type Output = boolean;

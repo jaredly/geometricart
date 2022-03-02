@@ -280,6 +280,13 @@ export const App = <I, O>({ config }: { config: Config<I, O> }) => {
                                     {!isEqual ? 'Different!' : null}
                                     Status: {fixture.isPassing + ''}{' '}
                                     {isEqual + ''}
+                                    <button
+                                        onClick={() =>
+                                            setCurrent(fixture.input)
+                                        }
+                                    >
+                                        Use
+                                    </button>
                                 </div>
                             );
                         })}
