@@ -287,6 +287,18 @@ export const App = <I, O>({ config }: { config: Config<I, O> }) => {
                                     >
                                         Use
                                     </button>
+                                    <button
+                                        onClick={() =>
+                                            setFixtures((f) =>
+                                                f.filter(
+                                                    (f) =>
+                                                        f.name !== fixture.name,
+                                                ),
+                                            )
+                                        }
+                                    >
+                                        Delete
+                                    </button>
                                 </div>
                             );
                         })}
