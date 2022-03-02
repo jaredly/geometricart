@@ -36,7 +36,7 @@ export const RenderSegmentBasic = ({
             return (
                 <circle
                     fill="none"
-                    {...inner}
+                    {...(inner as any)}
                     cx={segment.center.x * zoom}
                     cy={segment.center.y * zoom}
                     r={dist(segment.center, prev) * zoom}

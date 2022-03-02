@@ -5,7 +5,10 @@ import { reverseSegment } from './pathsAreIdentical';
 import { Coord, Segment } from '../types';
 import { closeEnough, negPiToPi } from './clipPath';
 
-export const pathToPoints = (segments: Array<Segment>) => {
+export const pathToPoints = (
+    segments: Array<Segment>,
+    accurateArcCorners = false,
+) => {
     let smallestArcLength = Infinity;
     segments.forEach((seg, i) => {
         if (seg.type === 'Arc') {
@@ -22,20 +25,63 @@ export const pathToPoints = (segments: Array<Segment>) => {
         }
     });
 
+    let arcLengths: null | Array<number>;
+    if (accurateArcCorners) {
+        arcLengths = segments.map((seg, i) => {
+            const prev = segments[i === 0 ? segments.length - 1 : i - 1].to;
+            if (seg.type === 'Arc') {
+                const t1 = angleTo(seg.center, prev);
+                const t2 = angleTo(seg.center, seg.to);
+                let bt = angleBetween(t1, t2, seg.clockwise);
+                if (closeEnough(bt, 0)) {
+                    bt = Math.PI * 2;
+                }
+                const r = dist(seg.center, prev);
+                const arcLength = bt * r;
+                return arcLength;
+            } else {
+                return dist(seg.to, prev);
+            }
+        });
+    }
+
     const points: Array<Coord> = [];
-    let prev = segments[segments.length - 1].to;
-    segments.forEach((seg) => {
+    // let prev = segments[segments.length - 1].to;
+    segments.forEach((seg, i) => {
+        const pi = i === 0 ? segments.length - 1 : i - 1;
+        const prev = segments[pi].to;
         if (seg.type === 'Arc') {
             const t1 = angleTo(seg.center, prev);
             const t2 = angleTo(seg.center, seg.to);
-            const bt = angleBetween(t1, t2, seg.clockwise);
             const r = dist(seg.center, prev);
-            const subs = (bt * r) / (smallestArcLength / 10);
-            for (let i = 1; i < subs; i++) {
-                const tm = t1 + (bt / subs) * i * (seg.clockwise ? 1 : -1);
-                const d = dist(seg.center, seg.to);
-                const midp = push(seg.center, tm, d);
-                points.push(midp);
+
+            if (arcLengths) {
+                const smallest =
+                    Math.min(
+                        arcLengths[pi],
+                        arcLengths[i],
+                        // arcLengths[(i + 1) % segments.length],
+                    ) / 4;
+                const smright =
+                    Math.min(
+                        arcLengths[i],
+                        arcLengths[(i + 1) % segments.length],
+                    ) / 4;
+                const sign = seg.clockwise ? 1 : -1;
+                const t1a = t1 + (smallest / r) * sign;
+                const t2a = t2 - (smright / r) * sign;
+                points.push(push(seg.center, t1a, r));
+                points.push(push(seg.center, t2a, r));
+            } else {
+                const bt = angleBetween(t1, t2, seg.clockwise);
+                const subs = 10;
+                // const subs = (bt * r) / (smallestArcLength / 10);
+                for (let i = 1; i < subs; i++) {
+                    const tm = t1 + (bt / subs) * i * (seg.clockwise ? 1 : -1);
+                    const d = dist(seg.center, seg.to);
+                    const midp = push(seg.center, tm, d);
+                    points.push(midp);
+                }
             }
             // const tm = t1 + (bt / 2) * (seg.clockwise ? 1 : -1);
             // const d = dist(seg.center, seg.to);
@@ -44,7 +90,7 @@ export const pathToPoints = (segments: Array<Segment>) => {
         }
         points.push(seg.to);
 
-        prev = seg.to;
+        // prev = seg.to;
     });
     return points;
 };
@@ -64,7 +110,7 @@ export function angleDifferences(angles: number[]) {
 }
 
 export const totalAngle = (segments: Array<Segment>) => {
-    const points = pathToPoints(segments);
+    const points = pathToPoints(segments, true);
     const angles = pointsAngles(points);
     const betweens = angleDifferences(angles);
     const relatives = betweens.map((between) =>

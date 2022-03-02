@@ -69,7 +69,7 @@ const ShowDebug = ({ shape }: { shape: Array<SegmentWithPrev> }) => {
                 ? []
                 : [{ type: 'Line', to: shape[0].prev }],
         );
-    const points = pathToPoints(segs);
+    const points = pathToPoints(segs, true);
     const angles = pointsAngles(points);
     const diffs = angleDifferences(angles);
     return (
