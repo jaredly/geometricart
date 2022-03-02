@@ -11,7 +11,7 @@ import {
     serializeFixture,
     serializeFixtures,
 } from './utils';
-import ReactJson from 'react-json-view';
+// import ReactJson from 'react-json-view';
 
 const initial: Array<unknown> = [];
 
@@ -289,13 +289,34 @@ export const App = <I, O>({ config }: { config: Config<I, O> }) => {
     );
 };
 
+const makeLoader = <T,>(fn: () => Promise<T>) => {
+    let promise: null | Promise<T>;
+    return () => {
+        const [v, setV] = React.useState(null as null | T);
+        React.useEffect(() => {
+            if (!promise) {
+                promise = fn();
+            }
+            promise.then((m) => {
+                setV(() => m);
+            });
+        }, []);
+        return v;
+    };
+};
+
+const useReactJson = makeLoader(() =>
+    import('react-json-view').then((v) => v.default),
+);
+
 const MaybeShowJson = ({ input, output }: { input: any; output: any }) => {
     const [show, setShow] = React.useState(false);
+    const ReactJson = useReactJson();
     return (
         <div>
             <button onClick={() => setShow(!show)}>Toggle JSON view</button>
             <div style={{ backgroundColor: 'white' }}>
-                {show ? (
+                {show && ReactJson ? (
                     <ReactJson src={{ input, output }} collapsed={true} />
                 ) : null}
             </div>
