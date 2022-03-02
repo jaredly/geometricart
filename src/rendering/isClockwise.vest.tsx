@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { calcSegmentsD } from '../editor/RenderPath';
 import { Segment } from '../types';
 import { register } from '../vest';
 import { prevSegmentsToShape, SegmentWithPrev } from './clipPathNew';
@@ -72,11 +73,19 @@ const ShowDebug = ({ shape }: { shape: Array<SegmentWithPrev> }) => {
     const points = pathToPoints(segs, true);
     const angles = pointsAngles(points);
     const diffs = angleDifferences(angles);
+    calcSegmentsD;
     return (
         <>
+            <path
+                d={calcSegmentsD(segs, segs[segs.length - 1].to, undefined, 1)}
+                stroke="white"
+                opacity={0.2}
+                strokeWidth={2}
+                fill="none"
+            />
             <polygon
                 points={points.map((p) => `${p.x},${p.y}`).join(' ')}
-                stroke="white"
+                stroke={isClockwise(segs) ? 'green' : 'red'}
                 strokeWidth={1}
                 fill="none"
             />
