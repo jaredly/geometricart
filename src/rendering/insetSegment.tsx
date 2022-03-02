@@ -241,6 +241,36 @@ export const insetArcLine = (
     return { ...seg, to: target };
 };
 
+// export const insetArcArc2 = (
+//     prev: Coord,
+//     seg: ArcSegment,
+//     next: ArcSegment,
+//     amount: number,
+// ): Array<Segment> => {
+//     // Two arcs can have two intersections.
+//     // If there are no intersections, we deal with that separately.
+//     const between = angleTo(seg.center, next.center)
+//     const toIntersection = angleTo(seg.center, seg.to)
+//     const isLeft = angleBetween(between, toIntersection, true) < Math.PI
+
+//     const r1 = dist(seg.center, seg.to)
+//     const r2 = dist(next.center, seg.to)
+
+//     const newRadius = r1 + amount * (seg.clockwise ? -1 : 1)
+
+//     const intersections = circleCircle(
+//         {center: seg.center, radius: newRadius, type: 'circle'},
+//         {center: next.center, radius: r2 + amount * (next.clockwise ? -1 : 1), type: 'circle'},
+//     )
+//     if (intersections.length === 2) {
+//         const firstLeft = angleBetween(between, angleTo(seg.center, intersections[0]), true) < Math.PI
+//         const newPoint = firstLeft === isLeft ? intersections[0] : intersections[1]
+//         return [{...seg, to: newPoint}]
+//     }
+//     return []
+
+// }
+
 export const insetArcArc = (
     prev: Coord,
     seg: ArcSegment,
@@ -267,41 +297,58 @@ export const insetArcArc = (
         const mid = angleTo(seg.center, next.center) + Math.PI / 2;
         const mp = push(seg.to, mid, amount);
 
-        if (true) {
-            // Go to the tangent point
-            const tangentPoint = push(
-                seg.center,
-                angleTo(seg.center, next.center),
-                radius,
-            );
-            const otherTangent = push(
-                next.center,
-                angleTo(next.center, seg.center),
-                radius2,
-            );
-            const dst = dist(tangentPoint, otherTangent);
-            const between = push(
-                seg.center,
-                angleTo(seg.center, next.center),
-                radius + dst / 2,
-            );
-            return [
-                { ...seg, to: tangentPoint },
-                {
-                    type: 'Arc',
-                    center: between,
-                    to: otherTangent,
-                    clockwise: !seg.clockwise,
-                },
-            ];
+        // NST | STN | SNT
+        let tangentPosition: 'pre-seg' | 'between' | 'post-next' = 'between';
+
+        const centerDist = dist(seg.center, next.center);
+        if (centerDist < Math.max(radius, radius2)) {
+            tangentPosition = radius < radius2 ? 'pre-seg' : 'post-next';
         }
 
+        // Go to the tangent point
+        const tangentPoint = push(
+            seg.center,
+            angleTo(seg.center, next.center) +
+                (tangentPosition === 'pre-seg' ? Math.PI : 0),
+            radius,
+        );
+        const otherTangent = push(
+            next.center,
+            angleTo(next.center, seg.center) +
+                (tangentPosition === 'post-next' ? Math.PI : 0),
+            radius2,
+        );
+        const dst = dist(tangentPoint, otherTangent);
+        const between = push(
+            tangentPoint,
+            angleTo(tangentPoint, otherTangent),
+            dst / 2,
+        );
+        // const between = push(
+        //     seg.center,
+        //     angleTo(seg.center, next.center) +
+        //         (tangentPosition === 'post-next' ? Math.PI : 0),
+        //     radius + dst / 2,
+        // );
         return [
-            { ...seg, to: newTo },
-            // { type: 'Arc', center: mp, to: otherTo, clockwise: !seg.clockwise },
-            { type: 'Line', to: mp },
-            { type: 'Line', to: otherTo },
+            { ...seg, to: tangentPoint },
+            {
+                type: 'Arc',
+                center: between,
+                to: otherTangent,
+                clockwise:
+                    tangentPosition === 'between'
+                        ? !seg.clockwise
+                        : seg.clockwise,
+            },
         ];
+
+        // return [
+        //     { ...seg, to: newTo },
+        //     // { type: 'Arc', center: mp, to: otherTo, clockwise: !seg.clockwise },
+        //     { type: 'Line', to: mp },
+        //     { type: 'Line', to: otherTo },
+        // ];
     }
     // They're tangent!
     if (intersection.length < 2) {

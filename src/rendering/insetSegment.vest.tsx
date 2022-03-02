@@ -16,7 +16,7 @@ import {
 import { ShapeEditor } from './ShapeEditor';
 
 type Input = [Array<SegmentWithPrev>, number];
-type Output = Array<Array<Segment>>;
+type Output = Array<Segment>;
 
 const ShowDebug = ({
     shape,
@@ -29,8 +29,7 @@ const ShowDebug = ({
     if (!seg) {
         return null;
     }
-    const [insetSeg, corners] = insetSegments(seg, inset);
-    const regions = cleanUpInsetSegments2(insetSeg, corners);
+    const insetSeg = insetSegments(seg, inset)[0];
     return (
         <>
             <path
@@ -52,34 +51,20 @@ const ShowDebug = ({
                 strokeWidth={2}
                 fill="none"
             />
-            {regions.map((region, i) => (
-                <path
-                    key={i}
-                    stroke="red"
-                    fill="none"
-                    strokeWidth={2}
-                    d={calcSegmentsD(
-                        region,
-                        region[region.length - 1].to,
-                        false,
-                        1,
-                    )}
-                />
-            ))}
         </>
     );
 };
 
 register({
-    id: 'inset',
+    id: 'insetSegment',
     dir: __dirname,
     transform: ([segments, size]) => {
         const seg = prevSegmentsToShape(segments);
         if (!seg) {
             throw new Error(`Not a shape`);
         }
-        const [inset, corners] = insetSegments(seg, size);
-        return cleanUpInsetSegments2(inset, corners);
+        const [inset] = insetSegments(seg, size);
+        return inset;
     },
     render: {
         editor: ({

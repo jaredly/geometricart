@@ -125,7 +125,10 @@ export const SegmentEditor = ({
                     onClick={() => {
                         setCurrent({
                             type: 'Line',
-                            points: [],
+                            points:
+                                current.type === 'Arc'
+                                    ? current.points.slice(0, 1)
+                                    : [],
                             clockwise: true,
                         });
                     }}
@@ -138,7 +141,10 @@ export const SegmentEditor = ({
                     onClick={() => {
                         setCurrent({
                             type: 'Arc',
-                            points: [],
+                            points:
+                                current.type === 'Line'
+                                    ? current.points.slice(0, 1)
+                                    : [],
                             clockwise: true,
                         });
                     }}
