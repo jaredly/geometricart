@@ -11,6 +11,8 @@ import {
     prevSegmentsToShape,
     SegmentWithPrev,
 } from './clipPathNew';
+import { angleTo, dist, push } from './getMirrorTransforms';
+import { coordsEqual } from './pathsAreIdentical';
 import { ensureClockwise, isClockwise } from './pathToPoints';
 import { useInitialState } from './SegmentEditor';
 import { ShapeEditor } from './ShapeEditor';
@@ -194,8 +196,37 @@ export const Fixture = ({
 
 const colors = ['red', 'green', 'blue', 'orange', 'yellow', 'white'];
 
+const fixCircle = (shape: Array<SegmentWithPrev>) => {
+    const res: Array<SegmentWithPrev> = [];
+    shape.forEach((seg) => {
+        if (
+            seg.segment.type === 'Arc' &&
+            coordsEqual(seg.prev, seg.segment.to)
+        ) {
+            const opposite = push(
+                seg.segment.center,
+                angleTo(seg.prev, seg.segment.center),
+                dist(seg.prev, seg.segment.center),
+            );
+            res.push(
+                {
+                    ...seg,
+                    segment: { ...seg.segment, to: opposite },
+                },
+                {
+                    ...seg,
+                    prev: opposite,
+                },
+            );
+        } else {
+            res.push(seg);
+        }
+    });
+    return res;
+};
+
 const transform = ([shape, clip]: Input, debug?: boolean) => {
-    const allSegments = shape
+    const allSegments = fixCircle(shape)
         .map((s) => ({ ...s, shape: 0 }))
         .concat(clip.map((c) => ({ ...c, shape: 1 })));
     const hitsResults = getSomeHits(allSegments, debug);

@@ -5,15 +5,13 @@
 import { segmentsBounds } from '../editor/Bounds';
 import { pathToPrimitives, segmentToPrimitive } from '../editor/findSelection';
 import { Bounds } from '../editor/GuideElement';
-import { ArcSegment, Coord, Path, PathGroup, Segment } from '../types';
+import { Coord, Path, PathGroup, Segment } from '../types';
 import { coordKey } from './calcAllIntersections';
-import { angleForSegment, getAngle, insidePath, isInside } from './clipPath';
-import { windingNumber } from './windingNumber';
+import { angleForSegment, insidePath } from './clipPath';
 import { boundsIntersect } from './findInternalRegions';
 import { angleBetween } from './findNextSegments';
 import { angleTo, dist, push } from './getMirrorTransforms';
-import { simplifyPath } from './simplifyPath';
-import { intersections, Primitive } from './intersect';
+import { intersections } from './intersect';
 import { coordsEqual } from './pathsAreIdentical';
 import { isClockwise } from './pathToPoints';
 import {
@@ -24,6 +22,7 @@ import {
     SegmentIntersection,
     untangleHit,
 } from './untangleHit';
+import { windingNumber } from './windingNumber';
 
 export function addPrevsToSegments(
     segments: Segment[],
