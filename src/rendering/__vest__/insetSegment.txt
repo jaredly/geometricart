@@ -1287,7 +1287,7 @@ pass
 ---
 pincer grow
 ---
-fail
+pass
 ---
 [
   [
@@ -1413,7 +1413,7 @@ fail
       "x": 198.31127383266082,
       "y": 201.6225476653216
     },
-    "clockwise": false
+    "clockwise": true
   },
   {
     "type": "Arc",
@@ -1453,7 +1453,7 @@ fail
 ---
 pincer shrink
 ---
-fail
+pass
 ---
 [
   [
@@ -1546,16 +1546,18 @@ fail
     "clockwise": true
   },
   {
-    "type": "Arc",
-    "center": {
-      "x": 135,
-      "y": 135
-    },
+    "type": "Line",
     "to": {
-      "x": 190.00000000000006,
-      "y": 197.16108107168014
-    },
-    "clockwise": true
+      "x": 225,
+      "y": 135
+    }
+  },
+  {
+    "type": "Line",
+    "to": {
+      "x": 231.99999999999997,
+      "y": 135
+    }
   },
   {
     "type": "Arc",
@@ -1621,7 +1623,7 @@ fail
 ---
 double pincer in
 ---
-fail
+pass
 ---
 [
   [
@@ -1700,16 +1702,18 @@ fail
     "clockwise": true
   },
   {
-    "type": "Arc",
-    "center": {
-      "x": 90,
-      "y": 150
-    },
+    "type": "Line",
     "to": {
-      "x": 120,
-      "y": 190
-    },
-    "clockwise": true
+      "x": 150,
+      "y": 150
+    }
+  },
+  {
+    "type": "Line",
+    "to": {
+      "x": 160,
+      "y": 150
+    }
   },
   {
     "type": "Arc",
@@ -1750,23 +1754,25 @@ fail
     "clockwise": false
   },
   {
-    "type": "Arc",
-    "center": {
-      "x": 60,
-      "y": 150
-    },
+    "type": "Line",
     "to": {
-      "x": 60,
-      "y": 190
-    },
-    "clockwise": false
+      "x": 30,
+      "y": 150
+    }
+  },
+  {
+    "type": "Line",
+    "to": {
+      "x": 40,
+      "y": 150
+    }
   }
 ]
 ===
 ---
 inverted pincer
 ---
-fail
+pass
 ---
 [
   [
@@ -1991,7 +1997,7 @@ fail
       "x": 265,
       "y": 120
     },
-    "clockwise": true
+    "clockwise": false
   },
   {
     "type": "Arc",
@@ -2129,7 +2135,7 @@ fail
 ---
 inverted pincer out
 ---
-fail
+pass
 ---
 [
   [
@@ -2323,16 +2329,18 @@ fail
     "clockwise": true
   },
   {
-    "type": "Arc",
-    "center": {
-      "x": 120,
-      "y": 120
-    },
+    "type": "Line",
     "to": {
       "x": 165,
-      "y": 153.33166662499792
-    },
-    "clockwise": true
+      "y": 120
+    }
+  },
+  {
+    "type": "Line",
+    "to": {
+      "x": 154,
+      "y": 120
+    }
   },
   {
     "type": "Arc",
