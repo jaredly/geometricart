@@ -1708,7 +1708,7 @@ pass
 ---
 intersect circle
 ---
-fail
+pass
 ---
 [
   [
@@ -1788,11 +1788,62 @@ fail
           "y": 135
         },
         "to": {
-          "x": 68.49076024926362,
-          "y": 201.19096490652615
+          "x": 255,
+          "y": 135
         },
         "clockwise": true
       },
+      {
+        "type": "Arc",
+        "center": {
+          "x": 150,
+          "y": 135
+        },
+        "to": {
+          "x": 128.60176214873533,
+          "y": 237.79647570252934
+        },
+        "clockwise": true
+      },
+      {
+        "type": "Line",
+        "to": {
+          "x": 120,
+          "y": 255
+        }
+      },
+      {
+        "type": "Line",
+        "to": {
+          "x": 45,
+          "y": 210
+        }
+      },
+      {
+        "type": "Line",
+        "to": {
+          "x": 68.49076024926362,
+          "y": 201.19096490652615
+        }
+      },
+      {
+        "type": "Arc",
+        "center": {
+          "x": 150,
+          "y": 135
+        },
+        "to": {
+          "x": 45,
+          "y": 135
+        },
+        "clockwise": true
+      }
+    ],
+    "isInternal": false,
+    "isClockwise": true
+  },
+  {
+    "segments": [
       {
         "type": "Line",
         "to": {
@@ -1806,6 +1857,18 @@ fail
           "x": 128.60176214873533,
           "y": 237.79647570252934
         }
+      },
+      {
+        "type": "Arc",
+        "center": {
+          "x": 150,
+          "y": 135
+        },
+        "to": {
+          "x": 68.49076024926362,
+          "y": 201.19096490652615
+        },
+        "clockwise": true
       }
     ],
     "isInternal": true,
@@ -1816,7 +1879,7 @@ fail
 ---
 tancent to edge of circle
 ---
-fail
+pass
 ---
 [
   [
@@ -1896,11 +1959,43 @@ fail
           "y": 150
         },
         "to": {
-          "x": 270,
-          "y": 150
+          "x": 239.39684712393682,
+          "y": 75.90472931409477
         },
         "clockwise": true
       },
+      {
+        "type": "Line",
+        "to": {
+          "x": 270,
+          "y": 30
+        }
+      },
+      {
+        "type": "Line",
+        "to": {
+          "x": 270,
+          "y": 150
+        }
+      },
+      {
+        "type": "Arc",
+        "center": {
+          "x": 165,
+          "y": 150
+        },
+        "to": {
+          "x": 60,
+          "y": 150
+        },
+        "clockwise": true
+      }
+    ],
+    "isInternal": false,
+    "isClockwise": true
+  },
+  {
+    "segments": [
       {
         "type": "Line",
         "to": {
@@ -1914,6 +2009,18 @@ fail
           "x": 239.39684712393682,
           "y": 75.90472931409477
         }
+      },
+      {
+        "type": "Arc",
+        "center": {
+          "x": 165,
+          "y": 150
+        },
+        "to": {
+          "x": 270,
+          "y": 150
+        },
+        "clockwise": true
       }
     ],
     "isInternal": true,
