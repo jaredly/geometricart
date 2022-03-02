@@ -1221,7 +1221,7 @@ pass
 ---
 triple arc
 ---
-fail
+pass
 ---
 [
   {
@@ -1376,7 +1376,7 @@ fail
 ---
 triple arc up
 ---
-fail
+pass
 ---
 [
   {
