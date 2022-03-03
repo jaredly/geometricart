@@ -34,7 +34,7 @@ import {
 import { paletteColor } from '../editor/RenderPath';
 import { Coord, Path, PathGroup, Segment } from '../types';
 import { segmentsBounds } from '../editor/Bounds';
-import { clipPathTry } from './clipPathNew';
+import { cleanUpInsetSegments3, clipPathTry } from './clipPathNew';
 
 // This should produce:
 // a list of lines
@@ -61,166 +61,24 @@ export function sortedVisibleInsetPaths(
                 !paths[k].hidden &&
                 (!paths[k].group || !pathGroups[paths[k].group!].hide),
         )
-        .sort((a, b) => {
-            const oa = paths[a].group
-                ? pathGroups[paths[a].group!].ordering
-                : paths[a].ordering;
-            const ob = paths[b].group
-                ? pathGroups[paths[b].group!].ordering
-                : paths[b].ordering;
-            if (oa === ob) {
-                return 0;
-            }
-            if (oa == null) {
-                return 1;
-            }
-            if (ob == null) {
-                return -1;
-            }
-            return ob - oa;
-        });
+        .sort(sortByOrdering(paths, pathGroups));
 
     if (hideDuplicatePaths) {
-        const usedPaths: Array<Array<string>> = [];
-        visible = visible.filter((k) => {
-            const path = paths[k];
-            const segments = simplifyPath(ensureClockwise(path.segments));
-            const forward = pathToSegmentKeys(path.origin, segments);
-            const backward = pathToReversedSegmentKeys(path.origin, segments);
-            if (
-                usedPaths.some(
-                    (path) =>
-                        pathsAreIdentical(path, backward) ||
-                        pathsAreIdentical(path, forward),
-                )
-            ) {
-                return false;
-            }
-            usedPaths.push(forward);
-            return true;
-        });
+        visible = removeDuplicatePaths(visible, paths);
     }
 
     /*
     If it's clip first, go through and clip the paths, leaving the styles.
     if it's inset first, go through and inset the paths, ... ok yeah that's fine.
     */
-    // let clipPrims = clip ? pathToPrimitives(clip) : null;
-    const clipBounds = clip ? segmentsBounds(clip) : null;
 
     let processed: Array<Path> = visible
         .map((k) => paths[k])
-        .map((path) => {
-            // if (path.debug) {
-            //     console.log('hi');
-            // }
-            if (!isClockwise(path.segments)) {
-                const segments = reversePath(path.segments);
-                const origin = segments[segments.length - 1].to;
-                path = { ...path, segments, origin };
-            }
-            // path = { ...path, segments: simplifyPath(path.segments) };
-            const group = path.group ? pathGroups[path.group] : null;
-            if (selectedIds[path.id] && styleHover) {
-                path = {
-                    ...path,
-                    style: applyStyleHover(styleHover, path.style),
-                };
-            }
-            if (group?.insetBeforeClip) {
-                return pathToInsetPaths(path)
-                    .map((insetPath) => {
-                        return clip
-                            ? clipPathTry(
-                                  insetPath,
-                                  clip,
-                                  clipBounds!,
-                                  path.debug,
-                                  group?.clipMode,
-                              )
-                            : insetPath;
-                    })
-                    .flat();
-            } else if (clip) {
-                return clipPathTry(
-                    path,
-                    clip,
-                    clipBounds!,
-                    path.debug,
-                    group?.clipMode,
-                )
-                    .map((clipped) => pathToInsetPaths(clipped))
-                    .flat();
-            } else {
-                return pathToInsetPaths(path);
-            }
-        })
+        .map(processOnePath(pathGroups, selectedIds, styleHover, clip))
         .flat();
 
     if (laserCutPalette) {
-        // processed paths are singles at this point
-        let red = processed.filter((path) => {
-            if (path.style.lines.length !== 1) {
-                return;
-            }
-            const color = paletteColor(
-                laserCutPalette,
-                path.style.lines[0]?.color,
-            );
-            return color === 'red';
-        });
-        let blue = processed.filter((path) => {
-            if (path.style.lines.length !== 1) {
-                return;
-            }
-            const color = paletteColor(
-                laserCutPalette,
-                path.style.lines[0]?.color,
-            );
-            return color === 'blue';
-        });
-        let others = processed.filter((path) => {
-            if (path.style.lines.length !== 1) {
-                return true;
-            }
-            const color = paletteColor(
-                laserCutPalette,
-                path.style.lines[0]?.color,
-            );
-            return color !== 'red' && color !== 'blue';
-        });
-
-        let used: { red: Used; blue: Used } = { red: {}, blue: {} };
-        // Register all arc segments.
-        red.forEach((path, pi) => addToUsed(path, used.red, pi));
-        blue.forEach((path, pi) => addToUsed(path, used.blue, pi));
-
-        red = red
-            .map((path, pi) => removeFullOverlaps(path, pi, used.red))
-            .flat();
-        blue = blue
-            .map((path, pi) =>
-                removeFullOverlaps(path, pi, used.blue, used.red),
-            )
-            .flat();
-
-        // reset for the new, reduced paths
-        used = { red: {}, blue: {} };
-        red.forEach((path, pi) => addToUsed(path, used.red, pi));
-        blue.forEach((path, pi) => addToUsed(path, used.blue, pi));
-
-        // console.log(used);
-
-        red = red
-            .map((path, pi) => removePartialOverlaps(path, pi, used.red))
-            .flat();
-        blue = blue
-            .map((path, pi) =>
-                removePartialOverlaps(path, pi, used.blue, used.red),
-            )
-            .flat();
-
-        return others.concat(blue).concat(red);
+        return sortForLaserCutting(processed, laserCutPalette);
     }
 
     return processed;
@@ -299,7 +157,7 @@ export const pathToInsetPaths = (path: Path): Array<Path> => {
                 path.segments,
                 inset / 100,
             );
-            const regions = cleanUpInsetSegments2(segments, corners);
+            const regions = cleanUpInsetSegments3(segments, corners);
             // if (path.debug) {
             //     const result = segmentsToNonIntersectingSegments(
             //         filterTooSmallSegments(segments),
@@ -633,6 +491,159 @@ export const removePartialOverlaps = (
         return [path];
     }
 };
+
+function processOnePath(
+    pathGroups: { [key: string]: PathGroup },
+    selectedIds: { [key: string]: boolean },
+    styleHover: StyleHover | undefined,
+    clip: Segment[] | undefined,
+): (value: Path, index: number, array: Path[]) => Path[] {
+    const clipBounds = clip ? segmentsBounds(clip) : null;
+    return (path) => {
+        // if (path.debug) {
+        //     console.log('hi');
+        // }
+        if (!isClockwise(path.segments)) {
+            const segments = reversePath(path.segments);
+            const origin = segments[segments.length - 1].to;
+            path = { ...path, segments, origin };
+        }
+        // path = { ...path, segments: simplifyPath(path.segments) };
+        const group = path.group ? pathGroups[path.group] : null;
+        if (selectedIds[path.id] && styleHover) {
+            path = {
+                ...path,
+                style: applyStyleHover(styleHover, path.style),
+            };
+        }
+        if (group?.insetBeforeClip) {
+            return pathToInsetPaths(path)
+                .map((insetPath) => {
+                    return clip
+                        ? clipPathTry(
+                              insetPath,
+                              clip,
+                              clipBounds!,
+                              path.debug,
+                              group?.clipMode,
+                          )
+                        : insetPath;
+                })
+                .flat();
+        } else if (clip) {
+            return clipPathTry(
+                path,
+                clip,
+                clipBounds!,
+                path.debug,
+                group?.clipMode,
+            )
+                .map((clipped) => pathToInsetPaths(clipped))
+                .flat();
+        } else {
+            return pathToInsetPaths(path);
+        }
+    };
+}
+
+function sortForLaserCutting(processed: Path[], laserCutPalette: string[]) {
+    // processed paths are singles at this point
+    let red = processed.filter((path) => {
+        if (path.style.lines.length !== 1) {
+            return;
+        }
+        const color = paletteColor(laserCutPalette, path.style.lines[0]?.color);
+        return color === 'red';
+    });
+    let blue = processed.filter((path) => {
+        if (path.style.lines.length !== 1) {
+            return;
+        }
+        const color = paletteColor(laserCutPalette, path.style.lines[0]?.color);
+        return color === 'blue';
+    });
+    let others = processed.filter((path) => {
+        if (path.style.lines.length !== 1) {
+            return true;
+        }
+        const color = paletteColor(laserCutPalette, path.style.lines[0]?.color);
+        return color !== 'red' && color !== 'blue';
+    });
+
+    let used: { red: Used; blue: Used } = { red: {}, blue: {} };
+    // Register all arc segments.
+    red.forEach((path, pi) => addToUsed(path, used.red, pi));
+    blue.forEach((path, pi) => addToUsed(path, used.blue, pi));
+
+    red = red.map((path, pi) => removeFullOverlaps(path, pi, used.red)).flat();
+    blue = blue
+        .map((path, pi) => removeFullOverlaps(path, pi, used.blue, used.red))
+        .flat();
+
+    // reset for the new, reduced paths
+    used = { red: {}, blue: {} };
+    red.forEach((path, pi) => addToUsed(path, used.red, pi));
+    blue.forEach((path, pi) => addToUsed(path, used.blue, pi));
+
+    // console.log(used);
+    red = red
+        .map((path, pi) => removePartialOverlaps(path, pi, used.red))
+        .flat();
+    blue = blue
+        .map((path, pi) => removePartialOverlaps(path, pi, used.blue, used.red))
+        .flat();
+
+    return others.concat(blue).concat(red);
+}
+
+function removeDuplicatePaths(
+    visible: string[],
+    paths: { [key: string]: Path },
+) {
+    const usedPaths: Array<Array<string>> = [];
+    return visible.filter((k) => {
+        const path = paths[k];
+        const segments = simplifyPath(ensureClockwise(path.segments));
+        const forward = pathToSegmentKeys(path.origin, segments);
+        const backward = pathToReversedSegmentKeys(path.origin, segments);
+        if (
+            usedPaths.some(
+                (path) =>
+                    pathsAreIdentical(path, backward) ||
+                    pathsAreIdentical(path, forward),
+            )
+        ) {
+            return false;
+        }
+        usedPaths.push(forward);
+        return true;
+    });
+}
+
+function sortByOrdering(
+    paths: { [key: string]: Path },
+    pathGroups: { [key: string]: PathGroup },
+): ((a: string, b: string) => number) | undefined {
+    return (a, b) => {
+        const oa = paths[a].group
+            ? pathGroups[paths[a].group!].ordering
+            : paths[a].ordering;
+        const ob = paths[b].group
+            ? pathGroups[paths[b].group!].ordering
+            : paths[b].ordering;
+        if (oa === ob) {
+            return 0;
+        }
+        if (oa == null) {
+            return 1;
+        }
+        if (ob == null) {
+            return -1;
+        }
+        return ob - oa;
+    };
+}
+
 function applyColorVariations(
     path: Path,
     rand: { next: (min: number, max: number) => number },

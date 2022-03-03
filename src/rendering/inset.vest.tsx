@@ -10,7 +10,10 @@ import {
     prevSegmentsToShape,
     SegmentWithPrev,
 } from './clipPathNew';
-import { cleanUpInsetSegments2 } from './findInternalRegions';
+import {
+    cleanUpInsetSegments2,
+    removeContainedRegions,
+} from './findInternalRegions';
 import { insetSegments } from './insetPath';
 import { coordsEqual } from './pathsAreIdentical';
 import {
@@ -24,6 +27,54 @@ import { ShapeEditor } from './ShapeEditor';
 
 type Input = [Array<SegmentWithPrev>, number];
 type Output = Array<Array<Segment>>;
+
+const firstMethod = ([shape, inset]: [Array<SegmentWithPrev>, number]) => {
+    const seg = prevSegmentsToShape(shape);
+    if (!seg) {
+        throw new Error('no shape');
+    }
+    const [insetSeg, corners] = insetSegments(seg, inset);
+    return cleanUpInsetSegments2(insetSeg, corners);
+};
+
+const secondMethod = ([shape, inset]: [Array<SegmentWithPrev>, number]) => {
+    const seg = prevSegmentsToShape(shape);
+    if (!seg) {
+        throw new Error('no shape');
+    }
+    const [insetSeg, corners] = insetSegments(seg, inset);
+    const withprev = addPrevsToSegments(insetSeg, -1);
+    const hitsResults = getSomeHits(withprev);
+    const regions = collectRegions(withprev, hitsResults!);
+
+    return removeContainedRegions(
+        regions
+            .map((r) => prevSegmentsToShape(r.segments)!)
+            .filter(isClockwise),
+    );
+};
+
+const testFn = (
+    fx: Array<{ input: Input }>,
+    fn: (i: Input) => unknown,
+    n: number,
+) => {
+    const at = performance.now();
+    for (let i = 0; i < n; i++) {
+        // @ts-ignore
+        fx.forEach((fx, i) => {
+            fn(fx.input);
+        });
+    }
+    console.log((performance.now() - at) / n);
+};
+
+// @ts-ignore
+window.testOne = (n: number, fx: Array<{ input: Input }>) =>
+    testFn(fx, firstMethod, n);
+// @ts-ignore
+window.testTwo = (n: number, fx: Array<{ input: Input }>) =>
+    testFn(fx, secondMethod, n);
 
 const ShowDebug = ({
     shape,
@@ -58,14 +109,16 @@ const ShowDebug = ({
         // between regions. And even know .. whether .... one is obviously
         // internal or external .. to the other. wait. hmmm. wait.
 
-        newInset = regions
-            // .filter((region) => region.isInternal !== true)
-            // .filter(
-            //     (region) =>
-            //         !region.segments.some((s) => corn[coordKey(s.segment.to)]),
-            // )
-            .map((r) => prevSegmentsToShape(r.segments)!)
-            .filter(isClockwise);
+        newInset = removeContainedRegions(
+            regions
+                // .filter((region) => region.isInternal !== true)
+                // .filter(
+                //     (region) =>
+                //         !region.segments.some((s) => corn[coordKey(s.segment.to)]),
+                // )
+                .map((r) => prevSegmentsToShape(r.segments)!)
+                .filter(isClockwise),
+        );
     }
 
     return (

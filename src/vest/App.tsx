@@ -68,6 +68,9 @@ export const App = <I, O>({ config }: { config: Config<I, O> }) => {
             });
     }, []);
 
+    // @ts-ignore
+    window.fixtures = fixtures;
+
     React.useEffect(() => {
         if (fixtures === initial) {
             return;

@@ -1,4 +1,9 @@
 
+CAN I REUSE the clip stuff for the inset stuff?
+
+I THINK SO!
+And it looks like it's faster, which is rad.
+
 # Main Gaps in the Clips Stuffs
 
 OK FOUND ANOTHER ONE

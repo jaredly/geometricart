@@ -454,29 +454,30 @@ export const Canvas = ({
     const rand = React.useRef(new Prando('ok'));
     rand.current.reset();
 
-    let pathsToShow = React.useMemo(
-        () =>
-            sortedVisibleInsetPaths(
-                animatedPaths,
-                state.pathGroups,
-                rand.current,
-                clip,
-                state.view.hideDuplicatePaths,
-                state.view.laserCutMode
-                    ? state.palettes[state.activePalette]
-                    : undefined,
-                undefined,
-                selectedIds,
-            ),
-        [
+    let pathsToShow = React.useMemo(() => {
+        const now = performance.now();
+        const res = sortedVisibleInsetPaths(
             animatedPaths,
             state.pathGroups,
+            rand.current,
             clip,
             state.view.hideDuplicatePaths,
-            state.view.laserCutMode,
+            state.view.laserCutMode
+                ? state.palettes[state.activePalette]
+                : undefined,
+            undefined,
             selectedIds,
-        ],
-    );
+        );
+        console.log(`Path calc`, performance.now() - now);
+        return res;
+    }, [
+        animatedPaths,
+        state.pathGroups,
+        clip,
+        state.view.hideDuplicatePaths,
+        state.view.laserCutMode,
+        selectedIds,
+    ]);
     if (styleHover) {
         pathsToShow = pathsToShow.map((path) => {
             if (selectedIds[path.id]) {

@@ -8,7 +8,7 @@ import { Bounds } from '../editor/GuideElement';
 import { Coord, Path, PathGroup, Segment } from '../types';
 import { coordKey } from './calcAllIntersections';
 import { angleForSegment, insidePath } from './clipPath';
-import { boundsIntersect } from './findInternalRegions';
+import { boundsIntersect, removeContainedRegions } from './findInternalRegions';
 import { angleBetween } from './findNextSegments';
 import { angleTo, dist, push } from './getMirrorTransforms';
 import { intersections } from './intersect';
@@ -145,6 +145,21 @@ export const intersectSegments = (
     );
 
     return { hits, entriesBySegment, entryCoords, exits };
+};
+
+export const cleanUpInsetSegments3 = (
+    segments: Array<Segment>,
+    originalCorners: Array<Coord>,
+) => {
+    const withprev = addPrevsToSegments(segments, -1);
+    const hitsResults = getSomeHits(withprev);
+    const regions = collectRegions(withprev, hitsResults!);
+
+    return removeContainedRegions(
+        regions
+            .map((r) => prevSegmentsToShape(r.segments)!)
+            .filter(isClockwise),
+    );
 };
 
 /**
