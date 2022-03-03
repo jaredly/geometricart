@@ -9,7 +9,15 @@ import {
 import { segmentsToNonIntersectingSegments } from './segmentsToNonIntersectingSegments';
 import { angleBetween } from './findNextSegments';
 import { pathToPrimitives } from '../editor/findSelection';
-import { angleTo, dist, push } from './getMirrorTransforms';
+import {
+    angleTo,
+    dist,
+    Matrix,
+    push,
+    rotationMatrix,
+    transformsToMatrices,
+    translationMatrix,
+} from './getMirrorTransforms';
 import { insetSegments, insetSegmentsBeta } from './insetPath';
 import { simplifyPath } from './simplifyPath';
 import {
@@ -35,11 +43,44 @@ import { paletteColor } from '../editor/RenderPath';
 import { Coord, Path, PathGroup, Segment } from '../types';
 import { segmentsBounds } from '../editor/Bounds';
 import { cleanUpInsetSegments3, clipPathTry } from './clipPathNew';
+import { transformSegment } from './points';
 
 // This should produce:
 // a list of lines
 // and a list of fills
 // lines come after fills? maybe? idk, that would make some things harder.
+
+/**
+ * Rotated so s[0].to - s[1].to is at the origin heading along the positive x axis.
+ * Returns the reverse transform matrix as well.
+ *
+ * NOTE That I'm not messing with scaling at the moment.
+ */
+const normalizedPath = (
+    segments: Array<Segment>,
+): [Array<Segment>, Array<Matrix>] | null => {
+    if (segments.length < 2) {
+        return null;
+    }
+    const p1 = segments[0].to;
+    const theta = angleTo(p1, segments[1].to);
+    const forward = [
+        translationMatrix({ x: -p1.x, y: -p1.y }),
+        rotationMatrix(-theta),
+    ];
+    // console.log(p1);
+    const backward = [rotationMatrix(theta), translationMatrix(p1)];
+    const normalized = segments.map((s) => transformSegment(s, forward));
+    return [normalized, backward];
+};
+type InsetCache = {
+    [key: string]: {
+        segments: Array<Segment>;
+        insets: {
+            [k: number]: Array<Array<Segment>>;
+        };
+    };
+};
 
 export function sortedVisibleInsetPaths(
     paths: { [key: string]: Path },
@@ -52,9 +93,29 @@ export function sortedVisibleInsetPaths(
     selectedIds: { [key: string]: boolean } = {},
 ): Array<Path> {
     paths = { ...paths };
+
+    const insetCache: InsetCache = {};
+
+    const now = performance.now();
     Object.keys(paths).forEach((k) => {
         paths[k] = applyColorVariations(paths[k], rand);
+        const norm = normalizedPath(paths[k].segments);
+        if (norm) {
+            const key = pathToSegmentKeys(
+                norm[0][norm[0].length - 1].to,
+                norm[0],
+            ).join(':');
+            if (!insetCache[key]) {
+                insetCache[key] = { segments: norm[0], insets: {} };
+            }
+            paths[k].normalized = {
+                key: key,
+                transform: norm[1],
+            };
+        }
     });
+    console.log(performance.now() - now);
+
     let visible = Object.keys(paths)
         .filter(
             (k) =>
@@ -74,7 +135,15 @@ export function sortedVisibleInsetPaths(
 
     let processed: Array<Path> = visible
         .map((k) => paths[k])
-        .map(processOnePath(pathGroups, selectedIds, styleHover, clip))
+        .map(
+            processOnePath(
+                pathGroups,
+                selectedIds,
+                styleHover,
+                clip,
+                insetCache,
+            ),
+        )
         .flat();
 
     if (laserCutPalette) {
@@ -109,7 +178,10 @@ export const addToUsed = (path: Path, used: Used, pi: number) => {
 type Uses = Array<[[number, number], number]>;
 type Used = { [centerRad: string]: Uses };
 
-export const pathToInsetPaths = (path: Path): Array<Path> => {
+export const pathToInsetPaths = (
+    path: Path,
+    insetCache: InsetCache,
+): Array<Path> => {
     const singles: Array<[Path, number | undefined]> = [];
     path.style.fills.forEach((fill, i) => {
         if (!fill) {
@@ -148,57 +220,44 @@ export const pathToInsetPaths = (path: Path): Array<Path> => {
             if (!inset || Math.abs(inset) < 0.005) {
                 return [path];
             }
-            // if (path.debug) {
-            //     console.log('ok single', path, inset);
-            // }
-            // console.log('INSETS');
+
+            if (path.normalized && insetCache[path.normalized.key]) {
+                if (!insetCache[path.normalized.key].insets[inset / 100]) {
+                    const [segments, corners] = insetSegments(
+                        insetCache[path.normalized.key].segments,
+                        inset / 100,
+                    );
+                    const regions = cleanUpInsetSegments3(segments, corners);
+                    insetCache[path.normalized.key].insets[inset / 100] =
+                        regions;
+                }
+                const transform = path.normalized.transform;
+                return insetCache[path.normalized.key].insets[inset / 100].map(
+                    (region) => {
+                        // const segments = region;
+                        const segments = region.map((seg) =>
+                            transformSegment(seg, transform),
+                        );
+                        return {
+                            ...path,
+                            segments,
+                            origin: segments[segments.length - 1].to,
+                        };
+                    },
+                );
+            }
 
             const [segments, corners] = insetSegments(
                 path.segments,
                 inset / 100,
             );
             const regions = cleanUpInsetSegments3(segments, corners);
-            // if (path.debug) {
-            //     const result = segmentsToNonIntersectingSegments(
-            //         filterTooSmallSegments(segments),
-            //     );
-            //     const regions = findRegions(result.result, result.froms).filter(
-            //         isClockwise,
-            //     );
-
-            //     return regions.map((segments) => ({
-            //         ...path,
-            //         segments,
-            //         origin: segments[segments.length - 1].to,
-            //     }));
-            // }
-            // if (path.debug) {
-            //     console.log('seg', segments);
-            //     console.log('regions', regions);
-            // }
-            // // console.log('insets', regions.length);
-            // if (path.debug && !regions.length) {
-            //     console.log(inset, 'dropping debug path, no regions');
-            //     console.log(segments);
-            // }
 
             return regions.map((segments) => ({
                 ...path,
                 segments,
                 origin: segments[segments.length - 1].to,
             }));
-
-            // const result = insetPath(path, inset / 100);
-            // if (!result) {
-            //     return [];
-            // }
-            // return pruneInsetPath(result.segments, path.debug)
-            //     .filter((s) => s.length)
-            //     .map((segments) => ({
-            //         ...result,
-            //         segments,
-            //         origin: segments[segments.length - 1].to,
-            //     }));
         })
         .flat();
 };
@@ -497,6 +556,7 @@ function processOnePath(
     selectedIds: { [key: string]: boolean },
     styleHover: StyleHover | undefined,
     clip: Segment[] | undefined,
+    insetCache: InsetCache,
 ): (value: Path, index: number, array: Path[]) => Path[] {
     const clipBounds = clip ? segmentsBounds(clip) : null;
     return (path) => {
@@ -516,8 +576,9 @@ function processOnePath(
                 style: applyStyleHover(styleHover, path.style),
             };
         }
+
         if (group?.insetBeforeClip) {
-            return pathToInsetPaths(path)
+            return pathToInsetPaths(path, insetCache)
                 .map((insetPath) => {
                     return clip
                         ? clipPathTry(
@@ -538,10 +599,10 @@ function processOnePath(
                 path.debug,
                 group?.clipMode,
             )
-                .map((clipped) => pathToInsetPaths(clipped))
+                .map((clipped) => pathToInsetPaths(clipped, insetCache))
                 .flat();
         } else {
-            return pathToInsetPaths(path);
+            return pathToInsetPaths(path, insetCache);
         }
     };
 }

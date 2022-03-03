@@ -1,5 +1,6 @@
 import { UndoableAction, UndoAction } from './state/Action';
 import { Primitive } from './rendering/intersect';
+import { Matrix } from './rendering/getMirrorTransforms';
 
 // Should I do polar coords?
 export type Coord = { x: number; y: number };
@@ -207,6 +208,10 @@ export type Path = {
     open?: boolean;
     hidden: boolean;
     debug?: boolean;
+    normalized?: {
+        key: string;
+        transform: Array<Matrix>;
+    };
 };
 
 export type ArcSegment = {

@@ -302,7 +302,7 @@ export const clipPathNew = (
 
     let fixedPath = fixCircle(path.segments);
     if (fixedPath) {
-        path = { ...path, segments: fixedPath };
+        path = { ...path, segments: fixedPath, normalized: undefined };
     }
 
     // // UGH this is a cheating hack, but I don't realy know how to do it better???
@@ -456,6 +456,7 @@ export const clipPathNew = (
             ...path,
             segments,
             origin: segments[segments.length - 1].to,
+            normalized: undefined,
         }));
     if (debug) {
         console.log(`All done ${filtered.length} regions found`);
