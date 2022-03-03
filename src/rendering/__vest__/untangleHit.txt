@@ -1527,3 +1527,137 @@ pass
     "y": 180
   }
 }
+===
+---
+same shape
+---
+pass
+---
+[
+  {
+    "prev": {
+      "x": 75,
+      "y": 75
+    },
+    "segment": {
+      "type": "Line",
+      "to": {
+        "x": 135,
+        "y": 150
+      }
+    },
+    "shape": 0
+  },
+  {
+    "prev": {
+      "x": 135,
+      "y": 150
+    },
+    "segment": {
+      "type": "Line",
+      "to": {
+        "x": 195,
+        "y": 75
+      }
+    },
+    "shape": 0
+  },
+  {
+    "prev": {
+      "x": 60,
+      "y": 225
+    },
+    "segment": {
+      "type": "Line",
+      "to": {
+        "x": 135,
+        "y": 150
+      }
+    },
+    "shape": 0
+  },
+  {
+    "prev": {
+      "x": 135,
+      "y": 150
+    },
+    "segment": {
+      "type": "Line",
+      "to": {
+        "x": 195,
+        "y": 210
+      }
+    },
+    "shape": 0
+  }
+]
+---
+{
+  "pair": {
+    "type": "cross",
+    "transitions": [
+      {
+        "entry": {
+          "id": 0,
+          "segment": 0,
+          "enter": true,
+          "exit": false,
+          "coordKey": "135.0000,150.0000",
+          "shape": 0,
+          "theta": {
+            "type": "flat",
+            "theta": 0.8960553845713439
+          },
+          "distance": 0
+        },
+        "exit": {
+          "id": 1,
+          "segment": 1,
+          "enter": false,
+          "exit": true,
+          "coordKey": "135.0000,150.0000",
+          "shape": 0,
+          "theta": {
+            "type": "flat",
+            "theta": -0.8960553845713439
+          },
+          "distance": 96.04686356149273
+        },
+        "goingInside": false
+      },
+      {
+        "entry": {
+          "id": 2,
+          "segment": 2,
+          "enter": true,
+          "exit": false,
+          "coordKey": "135.0000,150.0000",
+          "shape": 0,
+          "theta": {
+            "type": "flat",
+            "theta": -0.7853981633974483
+          },
+          "distance": 0
+        },
+        "exit": {
+          "id": 3,
+          "segment": 3,
+          "enter": false,
+          "exit": true,
+          "coordKey": "135.0000,150.0000",
+          "shape": 0,
+          "theta": {
+            "type": "flat",
+            "theta": 0.7853981633974483
+          },
+          "distance": 84.8528137423857
+        },
+        "goingInside": true
+      }
+    ]
+  },
+  "coord": {
+    "x": 135,
+    "y": 150
+  }
+}

@@ -2,11 +2,12 @@ import {
     Angle,
     anglesEqual,
     backAngle,
+    isAngleBetweenAngles,
     isInside,
     negPiToPi,
     sortAngles,
 } from './clipPath';
-import { closeEnoughAngle } from './intersect';
+import { angleIsBetween, closeEnoughAngle } from './intersect';
 
 export class IntersectionError extends Error {
     basic: string;
@@ -139,6 +140,30 @@ export type Transition = {
 export const handleHitAmbiguity = ({
     transitions: [one, two],
 }: Cross): HitTransitions => {
+    // ok,
+    // so actually once we have this cross,
+    // we can just know inside and outside.
+    // the [shape] doesn't actually matter I don't think?
+    // if (angleIsBetween(one.))
+    // const oneBack = backAngle(one.entry.theta);
+    // const twoBack = backAngle(two.entry.theta);
+    // if (one.goingInside === null) {
+    //     one.goingInside = isAngleBetweenAngles(
+    //         twoBack,
+    //         one.exit.theta,
+    //         two.exit.theta,
+    //         false,
+    //     );
+    // }
+    // if (two.goingInside === null) {
+    //     two.goingInside = isAngleBetweenAngles(
+    //         oneBack,
+    //         two.exit.theta,
+    //         one.exit.theta,
+    //         false,
+    //     );
+    // }
+
     // Same entrance! You should pick the exit that keeps with your inside/outside status
     if (anglesEqual(one.entry.theta, two.entry.theta)) {
         // soo .... it seems like we might possibly encounter a place
@@ -274,6 +299,24 @@ export const untangleHit = (
     /// ooof ok I'll need the whole compareAngles setup, because arcs might be tangent, but also
     // have a definite side they fall out on.
     const [a, b, c, d] = sides;
+
+    // if (a.kind.type === 'exit' && b.kind.type === 'exit') {
+    //     a.kind.goingInside = true;
+    //     b.kind.goingInside = false;
+    // }
+    // if (b.kind.type === 'exit' && c.kind.type === 'exit') {
+    //     b.kind.goingInside = false;
+    //     c.kind.goingInside = true;
+    // }
+    // if (c.kind.type === 'exit' && d.kind.type === 'exit') {
+    //     c.kind.goingInside = false;
+    //     d.kind.goingInside = true;
+    // }
+    // if (d.kind.type === 'exit' && a.kind.type === 'exit') {
+    //     d.kind.goingInside = false;
+    //     a.kind.goingInside = true;
+    // }
+
     if (
         (a.kind.type === 'exit' && b.kind.type === 'enter') ||
         (a.kind.type === 'enter' &&

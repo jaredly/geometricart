@@ -2,7 +2,14 @@ import * as React from 'react';
 import { calcSegmentsD } from '../editor/RenderPath';
 import { Segment } from '../types';
 import { register } from '../vest';
-import { prevSegmentsToShape, SegmentWithPrev } from './clipPathNew';
+import { coordKey } from './calcAllIntersections';
+import {
+    addPrevsToSegments,
+    collectRegions,
+    getSomeHits,
+    prevSegmentsToShape,
+    SegmentWithPrev,
+} from './clipPathNew';
 import { cleanUpInsetSegments2 } from './findInternalRegions';
 import { insetSegments } from './insetPath';
 import { coordsEqual } from './pathsAreIdentical';
@@ -31,6 +38,36 @@ const ShowDebug = ({
     }
     const [insetSeg, corners] = insetSegments(seg, inset);
     const regions = cleanUpInsetSegments2(insetSeg, corners);
+
+    const withprev = addPrevsToSegments(insetSeg, -1);
+    const hitsResults = getSomeHits(withprev);
+    // TODO: Maybe do the "remove known corners" thing?
+    let newInset = [insetSeg];
+    if (hitsResults) {
+        // const corn: { [key: string]: true } = {};
+        // corners.forEach((k) => (corn[coordKey(k)] = true));
+        const regions = collectRegions(withprev, hitsResults);
+        // OOOH ok, so I think the way to remove internal ones is:
+        // find shared corners between regions, and then it'll be easy to
+        // spot (using isExit between the enter/exit of the other)
+        // which one is the inside one.
+        // Will that be faster than what I'm doing now? Maybe? At least
+        // that doesn't require a collision check all over the place?
+
+        // You know I bet collectRegions could keep a handle on touchpoints
+        // between regions. And even know .. whether .... one is obviously
+        // internal or external .. to the other. wait. hmmm. wait.
+
+        newInset = regions
+            // .filter((region) => region.isInternal !== true)
+            // .filter(
+            //     (region) =>
+            //         !region.segments.some((s) => corn[coordKey(s.segment.to)]),
+            // )
+            .map((r) => prevSegmentsToShape(r.segments)!)
+            .filter(isClockwise);
+    }
+
     return (
         <>
             <path
@@ -58,6 +95,21 @@ const ShowDebug = ({
                     stroke="red"
                     fill="none"
                     strokeWidth={2}
+                    d={calcSegmentsD(
+                        region,
+                        region[region.length - 1].to,
+                        false,
+                        1,
+                    )}
+                />
+            ))}
+            {newInset?.map((region, i) => (
+                <path
+                    key={i}
+                    stroke="white"
+                    fill="none"
+                    strokeWidth={1}
+                    strokeDasharray={'1 5'}
                     d={calcSegmentsD(
                         region,
                         region[region.length - 1].to,

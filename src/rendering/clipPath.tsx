@@ -74,11 +74,12 @@ export const epsilonToZero = (value: number) =>
     Math.abs(value) < epsilon ? 0 : value;
 
 // Yo definitely need tests for this
+/** given two angles with the same theta, is one "more clockwise" than the other?
+// -1 for "first is less clockwise"
+// 0 for "same amount of clockwise"
+// 1 for "first is more clockwise"
+*/
 export const sortAnglesWithSameTheta = (first: Angle, second: Angle) => {
-    // given two angles with the same theta, is one "more clockwise" than the other?
-    // -1 for "first is less clockwise"
-    // 0 for "same amount of clockwise"
-    // 1 for "first is more clockwise"
     if (first.type === 'flat') {
         return second.type === 'flat' ? 0 : second.clockwise ? -1 : 1;
     }
@@ -113,6 +114,42 @@ export const sortAnglesWithSameTheta = (first: Angle, second: Angle) => {
 //     }
 // }
 
+/**
+ * When going clockwise from first to second, do you pass middle?
+ */
+export const isAngleBetweenAngles = (
+    first: Angle,
+    middle: Angle,
+    second: Angle,
+    clockwise: boolean,
+) => {
+    // Can't know
+    if (anglesEqual(first, middle) || anglesEqual(middle, second)) {
+        return null;
+    }
+    const sorted = [first, middle, second].sort(sortAngles);
+    const fi = sorted.indexOf(first);
+    const mi = sorted.indexOf(middle);
+    const si = sorted.indexOf(second);
+
+    const between = mi === (fi + 1) % 3;
+
+    return clockwise ? between : !between;
+
+    // if (closeEnoughAngle(first.theta, middle.theta)) {
+    //     const sort = sortAnglesWithSameTheta(first, second);
+    //     return clockwise ? sort === -1 : sort === 1;
+    // }
+    // if (closeEnoughAngle(middle.theta, second.theta)) {
+    //     const sort = sortAnglesWithSameTheta(middle, second);
+    //     return clockwise ? sort === -1 : sort === 1;
+    // }
+    // return isAngleBetween(first.theta, middle.theta, second.theta, clockwise);
+};
+
+/**
+ * Clockwise sort
+ */
 export const sortAngles = (first: Angle, second: Angle) => {
     const diff = epsilonToZero(first.theta - second.theta);
     if (diff == 0 || Math.abs(Math.abs(diff) - Math.PI * 2) < epsilon) {
