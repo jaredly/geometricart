@@ -20,8 +20,10 @@ export const ShapeEditor = ({
     initial,
     onChange,
     children,
+    allowOpen,
 }: {
     initial: null | Array<SegmentWithPrev>;
+    allowOpen?: boolean;
     onChange: (p: Array<SegmentWithPrev>) => void;
     children: (
         current: null | Array<SegmentWithPrev>,
@@ -41,7 +43,7 @@ export const ShapeEditor = ({
                 onChange={(seg) => {
                     const next = current.concat([seg]);
                     setCurrent(next);
-                    if (validSegments(next)) {
+                    if (allowOpen || validSegments(next)) {
                         onChange(next);
                     }
                 }}

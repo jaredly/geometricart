@@ -10,6 +10,7 @@ import {
 } from './intersect';
 import { angleBetween } from './findNextSegments';
 import { anglesEqual } from './clipPath';
+import { coordsEqual } from './pathsAreIdentical';
 
 export const insetLineLine = (
     prev: Coord,
@@ -278,15 +279,20 @@ export const insetArcArc = (
     amount: number,
     onlyExtend?: boolean,
 ): Segment | Array<Segment> => {
-    const radius = dist(seg.center, seg.to) + amount * (seg.clockwise ? -1 : 1);
+    const r1 = dist(seg.center, seg.to);
+    const radius = r1 + amount * (seg.clockwise ? -1 : 1);
     const angle = angleTo(seg.center, seg.to);
 
-    const radius2 =
-        dist(next.center, next.to) + amount * (next.clockwise ? -1 : 1);
+    const r2 = dist(next.center, next.to);
+    const radius2 = r2 + amount * (next.clockwise ? -1 : 1);
     const intersection = circleCircle(
         { center: next.center, radius: radius2, type: 'circle' },
         { center: seg.center, radius: radius, type: 'circle' },
     );
+    // It's a continuation
+    if (coordsEqual(next.center, seg.center)) {
+        return { ...seg, to: push(seg.center, angle, radius) };
+    }
     if (intersection.length === 0) {
         const newTo = push(seg.center, angle, radius);
         const otherTo = push(
@@ -304,6 +310,12 @@ export const insetArcArc = (
         if (centerDist < Math.max(radius, radius2)) {
             tangentPosition = radius < radius2 ? 'pre-seg' : 'post-next';
         }
+
+        /**
+         * OOOHK HERE
+         * So iff the relative sizes have SWITCHED
+         * then we're in a straight-across situation.
+         */
 
         // Go to the tangent point
         const tangentPoint = push(
@@ -324,6 +336,16 @@ export const insetArcArc = (
             angleTo(tangentPoint, otherTangent),
             dst / 2,
         );
+
+        // We've switched!
+        if (r1 > r2 !== radius > radius2) {
+            return [
+                { ...seg, to: newTo },
+                // { type: 'Line', to: between },
+                { type: 'Line', to: otherTo },
+            ];
+        }
+
         // const between = push(
         //     seg.center,
         //     angleTo(seg.center, next.center) +
@@ -337,21 +359,42 @@ export const insetArcArc = (
                 center: between,
                 to: otherTangent,
                 clockwise:
-                    tangentPosition === 'between'
+                    seg.clockwise === next.clockwise
                         ? !seg.clockwise
-                        : seg.clockwise,
+                        : seg.clockwise
+                        ? r1 > r2
+                        : r2 > r1,
+                // tangentPosition === 'between'
+                //     ? !seg.clockwise
+                //     : seg.clockwise,
+                // false,
             },
         ];
 
         // return [
-        //     { ...seg, to: newTo },
+        //     { ...seg, to: tangentPoint },
         //     // { type: 'Arc', center: mp, to: otherTo, clockwise: !seg.clockwise },
-        //     { type: 'Line', to: mp },
-        //     { type: 'Line', to: otherTo },
+        //     // { type: 'Line', to: mp },
+        //     { type: 'Line', to: otherTangent },
         // ];
     }
     // They're tangent!
     if (intersection.length < 2) {
+        // We've switched!
+        if (r1 > r2 !== radius > radius2) {
+            const newTo = push(seg.center, angle, radius);
+            const otherTo = push(
+                next.center,
+                angleTo(next.center, seg.to),
+                radius2,
+            );
+            return [
+                { ...seg, to: newTo },
+                // { type: 'Line', to: between },
+                { type: 'Line', to: otherTo },
+            ];
+        }
+
         const newTo = push(seg.center, angle, radius);
         return { ...seg, to: newTo };
     }
@@ -362,7 +405,19 @@ export const insetArcArc = (
     // And so we want the new intersection to match that.
     const between = angleTo(seg.center, next.center);
 
-    const isTop = angleBetween(between, angle, true) > Math.PI;
+    let isTop =
+        closeEnoughAngle(between, angle) ||
+        closeEnoughAngle(between, angle + Math.PI)
+            ? seg.clockwise === next.clockwise
+                ? seg.clockwise
+                : seg.clockwise
+                ? r1 > r2
+                : r2 > r1
+            : angleBetween(between, angle, true) > Math.PI;
+
+    // if (!seg.clockwise && next.clockwise) {
+    //     isTop = r1 < r2;
+    // }
 
     const firstTop =
         angleBetween(between, angleTo(seg.center, intersection[0]), true) >
