@@ -10,36 +10,36 @@ import { simplifyPath } from './simplifyPath';
 
 type Pos = HitLocation;
 
-export const segmentStart = (segments: Array<Segment>, idx: number) =>
-    idx === 0 ? segments[segments.length - 1].to : segments[idx - 1].to;
+// export const segmentStart = (segments: Array<Segment>, idx: number) =>
+//     idx === 0 ? segments[segments.length - 1].to : segments[idx - 1].to;
 
-export const notMe = (idx: number, hit: Hit) => {
-    return hit.first === idx ? hit.second : hit.first;
-};
-export const nextForPos = (
-    idx: number,
-    hit: Hit,
-    sorted: Array<Array<Hit>>,
-): Pos => {
-    const hitAt = sorted[idx].indexOf(hit);
-    if (hitAt < sorted[idx].length - 1) {
-        return { segment: idx, intersection: hitAt + 1 };
-    } else {
-        return { intersection: -1, segment: (idx + 1) % sorted.length };
-    }
-};
+// export const notMe = (idx: number, hit: Hit) => {
+//     return hit.first === idx ? hit.second : hit.first;
+// };
+// export const nextForPos = (
+//     idx: number,
+//     hit: Hit,
+//     sorted: Array<Array<Hit>>,
+// ): Pos => {
+//     const hitAt = sorted[idx].indexOf(hit);
+//     if (hitAt < sorted[idx].length - 1) {
+//         return { segment: idx, intersection: hitAt + 1 };
+//     } else {
+//         return { intersection: -1, segment: (idx + 1) % sorted.length };
+//     }
+// };
 
-export const coordForPos = (
-    pos: Pos,
-    sorted: Array<Array<Hit>>,
-    segments: Array<Segment>,
-) => {
-    if (pos.intersection !== -1) {
-        return sorted[pos.segment][pos.intersection].coord;
-    }
-    let prev = pos.segment === 0 ? segments.length - 1 : pos.segment - 1;
-    return segments[prev].to;
-};
+// export const coordForPos = (
+//     pos: Pos,
+//     sorted: Array<Array<Hit>>,
+//     segments: Array<Segment>,
+// ) => {
+//     if (pos.intersection !== -1) {
+//         return sorted[pos.segment][pos.intersection].coord;
+//     }
+//     let prev = pos.segment === 0 ? segments.length - 1 : pos.segment - 1;
+//     return segments[prev].to;
+// };
 
 // export const travelPath = (
 //     sorted: Array<Array<Hit>>,
@@ -144,28 +144,28 @@ export const hasReversed = (
     return false;
 };
 
-export const getToFromMaybeArray = (segments: Array<Segment> | Segment) => {
-    if (Array.isArray(segments)) {
-        return segments[segments.length - 1].to;
-    }
-    return segments.to;
-};
+// export const getToFromMaybeArray = (segments: Array<Segment> | Segment) => {
+//     if (Array.isArray(segments)) {
+//         return segments[segments.length - 1].to;
+//     }
+//     return segments.to;
+// };
 
-export const differentDirection = (
-    oldPrev: Coord,
-    old: Segment,
-    newPrev: Coord,
-    seg: Segment,
-): boolean => {
-    if (old.type === 'Line' && seg.type === 'Line') {
-        return !closeEnoughAngle(
-            angleTo(oldPrev, old.to),
-            angleTo(newPrev, seg.to),
-        );
-    }
-    // TODO handle arcs
-    return false;
-};
+// export const differentDirection = (
+//     oldPrev: Coord,
+//     old: Segment,
+//     newPrev: Coord,
+//     seg: Segment,
+// ): boolean => {
+//     if (old.type === 'Line' && seg.type === 'Line') {
+//         return !closeEnoughAngle(
+//             angleTo(oldPrev, old.to),
+//             angleTo(newPrev, seg.to),
+//         );
+//     }
+//     // TODO handle arcs
+//     return false;
+// };
 
 export const insetSegments = (
     segments: Array<Segment>,

@@ -85,11 +85,11 @@ export const lineLine = (one: SlopeIntercept, two: SlopeIntercept) => {
 
 const sq = (x: number) => x * x;
 
-export const convertCircle = (p1: Coord, p2: Coord): Circle => ({
-    type: 'circle',
-    center: p1,
-    radius: dist(p1, p2),
-});
+// export const convertCircle = (p1: Coord, p2: Coord): Circle => ({
+//     type: 'circle',
+//     center: p1,
+//     radius: dist(p1, p2),
+// });
 
 export const epsilon = 0.000001;
 

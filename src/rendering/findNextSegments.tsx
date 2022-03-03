@@ -164,16 +164,16 @@ export const calcPendingSegments = (
     }
 };
 
-export const angleDiff = (one: number, two: number) => {
-    const diff = one - two;
-    if (diff < -Math.PI) {
-        return diff + Math.PI * 2;
-    }
-    if (diff > Math.PI) {
-        return diff - Math.PI * 2;
-    }
-    return diff;
-};
+// export const angleDiff = (one: number, two: number) => {
+//     const diff = one - two;
+//     if (diff < -Math.PI) {
+//         return diff + Math.PI * 2;
+//     }
+//     if (diff > Math.PI) {
+//         return diff - Math.PI * 2;
+//     }
+//     return diff;
+// };
 
 // true if middle is between left and right, going from left to right around the circle {clockwise/or not}
 // if middle is equal to left or right, also return true

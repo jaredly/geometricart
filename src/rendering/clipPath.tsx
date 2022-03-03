@@ -860,12 +860,12 @@ export const atLineBottom = (coord: Coord, seg: SlopeIntercept) => {
     return closeEnough(coord.x, seg.m > 0 ? seg.limit[1] : seg.limit[0]);
 };
 
-export const isOnLine = (coord: Coord, line: SlopeIntercept) => {
-    if (line.m === Infinity) {
-        return closeEnough(line.b, coord.x);
-    }
-    return closeEnough(line.m * coord.x + line.b, coord.y);
-};
+// export const isOnLine = (coord: Coord, line: SlopeIntercept) => {
+//     if (line.m === Infinity) {
+//         return closeEnough(line.b, coord.x);
+//     }
+//     return closeEnough(line.m * coord.x + line.b, coord.y);
+// };
 export const isWithinLineLimit = (coord: Coord, line: SlopeIntercept) => {
     if (!line.limit) {
         return true;
@@ -876,28 +876,28 @@ export const isWithinLineLimit = (coord: Coord, line: SlopeIntercept) => {
     return withinLimit(line.limit, coord.x);
 };
 
-export const isOnCircle = (coord: Coord, seg: Circle) => {
-    if (closeEnough(coord.x, seg.center.x)) {
-        if (
-            closeEnough(coord.y, seg.center.y + seg.radius) ||
-            closeEnough(coord.y, seg.center.y - seg.radius)
-        ) {
-            return true;
-        }
-        return false;
-    }
-    if (closeEnough(coord.y, seg.center.y)) {
-        if (
-            closeEnough(coord.x, seg.center.x + seg.radius) ||
-            closeEnough(coord.x, seg.center.x - seg.radius)
-        ) {
-            return true;
-        }
-        return false;
-    }
-    const d = dist(coord, seg.center);
-    return closeEnough(d, seg.radius);
-};
+// export const isOnCircle = (coord: Coord, seg: Circle) => {
+//     if (closeEnough(coord.x, seg.center.x)) {
+//         if (
+//             closeEnough(coord.y, seg.center.y + seg.radius) ||
+//             closeEnough(coord.y, seg.center.y - seg.radius)
+//         ) {
+//             return true;
+//         }
+//         return false;
+//     }
+//     if (closeEnough(coord.y, seg.center.y)) {
+//         if (
+//             closeEnough(coord.x, seg.center.x + seg.radius) ||
+//             closeEnough(coord.x, seg.center.x - seg.radius)
+//         ) {
+//             return true;
+//         }
+//         return false;
+//     }
+//     const d = dist(coord, seg.center);
+//     return closeEnough(d, seg.radius);
+// };
 
 // prims are the primitives of segments.
 // Segments are expected to be CLOCKWISE
@@ -911,134 +911,134 @@ export const insidePath = (
     return wcount > 0;
 };
 
-// excludes points that line /on/ the path.
-// segs *need not be ordered or contiguous*
-export const insidePathBADNEWS = (
-    coord: Coord,
-    segs: Array<Primitive>,
-    debug?: Array<string>,
-) => {
-    const ray: Primitive = {
-        type: 'line',
-        m: 0,
-        b: coord.y,
-        limit: [coord.x, Infinity],
-    };
-    let isOnEdge = false;
-    const hits: Array<Coord> = [];
-    segs.forEach((seg, i) => {
-        if (isOnEdge) {
-            // bail fast
-            return;
-        }
+// // excludes points that line /on/ the path.
+// // segs *need not be ordered or contiguous*
+// export const insidePathBADNEWS = (
+//     coord: Coord,
+//     segs: Array<Primitive>,
+//     debug?: Array<string>,
+// ) => {
+//     const ray: Primitive = {
+//         type: 'line',
+//         m: 0,
+//         b: coord.y,
+//         limit: [coord.x, Infinity],
+//     };
+//     let isOnEdge = false;
+//     const hits: Array<Coord> = [];
+//     segs.forEach((seg, i) => {
+//         if (isOnEdge) {
+//             // bail fast
+//             return;
+//         }
 
-        if (seg.type === 'line') {
-            if (isOnLine(coord, seg)) {
-                debug?.push(`On line ${i}`);
-                if (isWithinLineLimit(coord, seg)) {
-                    debug?.push(`On edge ${i}`);
-                    isOnEdge = true;
-                }
-                // if it's not within limit, we also won't intersect, so skip this seg
-                return;
-            }
+//         if (seg.type === 'line') {
+//             if (isOnLine(coord, seg)) {
+//                 debug?.push(`On line ${i}`);
+//                 if (isWithinLineLimit(coord, seg)) {
+//                     debug?.push(`On edge ${i}`);
+//                     isOnEdge = true;
+//                 }
+//                 // if it's not within limit, we also won't intersect, so skip this seg
+//                 return;
+//             }
 
-            // tangent case
-            // we can do exact equal because `lineToSlope()` takes care of epsilon
-            if (seg.m === 0) {
-                // Don't count any intersections, whether it's the same line or just parallel
-                return;
-            }
-        } else {
-            if (isOnCircle(coord, seg)) {
-                debug?.push(`On circle ${i}`);
-                if (
-                    !seg.limit ||
-                    isAngleBetween(
-                        seg.limit[0],
-                        angleTo(seg.center, coord),
-                        seg.limit[1],
-                        true,
-                    )
-                ) {
-                    debug?.push(`On edge ${i}`);
-                    isOnEdge = true;
-                }
-                return;
-            }
-        }
+//             // tangent case
+//             // we can do exact equal because `lineToSlope()` takes care of epsilon
+//             if (seg.m === 0) {
+//                 // Don't count any intersections, whether it's the same line or just parallel
+//                 return;
+//             }
+//         } else {
+//             if (isOnCircle(coord, seg)) {
+//                 debug?.push(`On circle ${i}`);
+//                 if (
+//                     !seg.limit ||
+//                     isAngleBetween(
+//                         seg.limit[0],
+//                         angleTo(seg.center, coord),
+//                         seg.limit[1],
+//                         true,
+//                     )
+//                 ) {
+//                     debug?.push(`On edge ${i}`);
+//                     isOnEdge = true;
+//                 }
+//                 return;
+//             }
+//         }
 
-        intersections(seg, ray).forEach((coord) => {
-            if (seg.type === 'line') {
-                // ignore intersections with the "bottom point" of a line
-                if (atLineBottom(coord, seg)) {
-                    debug?.push(`At bottom ${i}`);
-                    return;
-                }
-            } else {
-                if (atCircleBottomOrSomething(coord, seg)) {
-                    debug?.push(`At circle bottom or something ${i}`);
-                    return;
-                }
-            }
-            debug?.push(
-                `Got an intersection I guess ${i} ${JSON.stringify({
-                    seg,
-                    ray,
-                    coord,
-                })}`,
-            );
-            // if (debug) {
-            //     console.log(`🤞 intersection`, seg, ray, coord);
-            // }
-            hits.push(coord);
-        });
-    });
-    if (isOnEdge) {
-        return false;
-    }
-    // if (debug) {
-    //     console.log(hits, coord);
-    // }
-    return Object.keys(hits).length % 2 === 1;
-};
+//         intersections(seg, ray).forEach((coord) => {
+//             if (seg.type === 'line') {
+//                 // ignore intersections with the "bottom point" of a line
+//                 if (atLineBottom(coord, seg)) {
+//                     debug?.push(`At bottom ${i}`);
+//                     return;
+//                 }
+//             } else {
+//                 if (atCircleBottomOrSomething(coord, seg)) {
+//                     debug?.push(`At circle bottom or something ${i}`);
+//                     return;
+//                 }
+//             }
+//             debug?.push(
+//                 `Got an intersection I guess ${i} ${JSON.stringify({
+//                     seg,
+//                     ray,
+//                     coord,
+//                 })}`,
+//             );
+//             // if (debug) {
+//             //     console.log(`🤞 intersection`, seg, ray, coord);
+//             // }
+//             hits.push(coord);
+//         });
+//     });
+//     if (isOnEdge) {
+//         return false;
+//     }
+//     // if (debug) {
+//     //     console.log(hits, coord);
+//     // }
+//     return Object.keys(hits).length % 2 === 1;
+// };
 
-export const insidePathBad = (
-    coord: Coord,
-    segs: Array<Primitive>,
-    debug: boolean = false,
-) => {
-    const ray: Primitive = {
-        type: 'line',
-        m: 0.0,
-        b: coord.y,
-        limit: [coord.x, Infinity],
-    };
-    let hits: { [key: string]: true } = {};
-    segs.forEach((seg) => {
-        intersections(seg, ray).forEach((coord) => {
-            hits[coordKey(coord)] = true;
-        });
-    });
-    if (debug) {
-        console.log(hits, coord);
-    }
-    return Object.keys(hits).length % 2 === 1;
-};
+// export const insidePathBad = (
+//     coord: Coord,
+//     segs: Array<Primitive>,
+//     debug: boolean = false,
+// ) => {
+//     const ray: Primitive = {
+//         type: 'line',
+//         m: 0.0,
+//         b: coord.y,
+//         limit: [coord.x, Infinity],
+//     };
+//     let hits: { [key: string]: true } = {};
+//     segs.forEach((seg) => {
+//         intersections(seg, ray).forEach((coord) => {
+//             hits[coordKey(coord)] = true;
+//         });
+//     });
+//     if (debug) {
+//         console.log(hits, coord);
+//     }
+//     return Object.keys(hits).length % 2 === 1;
+// };
 
-export const insidePathMulti = (
-    coord: Coord,
-    segs: Array<Primitive>,
-    debug: boolean = false,
-) => {
-    return (
-        insidePathBad(coord, segs, debug) &&
-        insidePathBad({ x: coord.x, y: coord.y + epsilon * 2 }, segs) &&
-        insidePathBad({ x: coord.x, y: coord.y - epsilon * 2 }, segs) &&
-        insidePathBad({ x: coord.x - epsilon * 2, y: coord.y }, segs) &&
-        insidePathBad({ x: coord.x + epsilon * 2, y: coord.y }, segs)
-    );
-};
+// export const insidePathMulti = (
+//     coord: Coord,
+//     segs: Array<Primitive>,
+//     debug: boolean = false,
+// ) => {
+//     return (
+//         insidePathBad(coord, segs, debug) &&
+//         insidePathBad({ x: coord.x, y: coord.y + epsilon * 2 }, segs) &&
+//         insidePathBad({ x: coord.x, y: coord.y - epsilon * 2 }, segs) &&
+//         insidePathBad({ x: coord.x - epsilon * 2, y: coord.y }, segs) &&
+//         insidePathBad({ x: coord.x + epsilon * 2, y: coord.y }, segs)
+//     );
+// };
 
 /**
  * Finds the {index} of the {Segment} whose /start/ position (not to) is inside the clip.

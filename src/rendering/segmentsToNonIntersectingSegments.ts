@@ -9,7 +9,7 @@ import { coordsEqual } from './pathsAreIdentical';
 import { Hit } from './pruneInsetPath';
 import { SegmentWithPrev } from './clipPathNew';
 
-export type Intersection = { entering: Array<number>; exiting: Array<number> };
+// export type Intersection = { entering: Array<number>; exiting: Array<number> };
 
 export const splitSegmentsByIntersections = (
     segments: Array<Segment>,

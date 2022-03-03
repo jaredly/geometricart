@@ -140,7 +140,7 @@ export const isClockwise = (segments: Array<Segment>) => {
     return totalAngle(segments) >= Math.PI - epsilon;
 };
 
-export const toDegrees = (x: number) => Math.floor((x / Math.PI) * 180);
+// export const toDegrees = (x: number) => Math.floor((x / Math.PI) * 180);
 
 export const ensureClockwise = (segments: Array<Segment>) => {
     if (segments.length === 1 && segments[0].type === 'Arc') {
