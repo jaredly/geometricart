@@ -10,6 +10,7 @@ import {
 } from './intersect';
 import { angleBetween } from './findNextSegments';
 import { anglesEqual } from './clipPath';
+import { coordsEqual } from './pathsAreIdentical';
 
 export const insetLineLine = (
     prev: Coord,
@@ -288,6 +289,10 @@ export const insetArcArc = (
         { center: next.center, radius: radius2, type: 'circle' },
         { center: seg.center, radius: radius, type: 'circle' },
     );
+    // It's a continuation
+    if (coordsEqual(next.center, seg.center)) {
+        return { ...seg, to: push(seg.center, angle, radius) };
+    }
     if (intersection.length === 0) {
         const newTo = push(seg.center, angle, radius);
         const otherTo = push(
@@ -305,6 +310,12 @@ export const insetArcArc = (
         if (centerDist < Math.max(radius, radius2)) {
             tangentPosition = radius < radius2 ? 'pre-seg' : 'post-next';
         }
+
+        /**
+         * OOOHK HERE
+         * So iff the relative sizes have SWITCHED
+         * then we're in a straight-across situation.
+         */
 
         // Go to the tangent point
         const tangentPoint = push(
@@ -325,6 +336,16 @@ export const insetArcArc = (
             angleTo(tangentPoint, otherTangent),
             dst / 2,
         );
+
+        // We've switched!
+        if (r1 > r2 !== radius > radius2) {
+            return [
+                { ...seg, to: newTo },
+                // { type: 'Line', to: between },
+                { type: 'Line', to: otherTo },
+            ];
+        }
+
         // const between = push(
         //     seg.center,
         //     angleTo(seg.center, next.center) +
@@ -351,14 +372,29 @@ export const insetArcArc = (
         ];
 
         // return [
-        //     { ...seg, to: newTo },
+        //     { ...seg, to: tangentPoint },
         //     // { type: 'Arc', center: mp, to: otherTo, clockwise: !seg.clockwise },
-        //     { type: 'Line', to: mp },
-        //     { type: 'Line', to: otherTo },
+        //     // { type: 'Line', to: mp },
+        //     { type: 'Line', to: otherTangent },
         // ];
     }
     // They're tangent!
     if (intersection.length < 2) {
+        // We've switched!
+        if (r1 > r2 !== radius > radius2) {
+            const newTo = push(seg.center, angle, radius);
+            const otherTo = push(
+                next.center,
+                angleTo(next.center, seg.to),
+                radius2,
+            );
+            return [
+                { ...seg, to: newTo },
+                // { type: 'Line', to: between },
+                { type: 'Line', to: otherTo },
+            ];
+        }
+
         const newTo = push(seg.center, angle, radius);
         return { ...seg, to: newTo };
     }

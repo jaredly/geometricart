@@ -1,10 +1,18 @@
 import * as React from 'react';
 import { calcSegmentsD } from '../editor/RenderPath';
-import { Segment } from '../types';
+import { RenderSegmentBasic } from '../editor/RenderSegment';
+import { Coord, Segment } from '../types';
 import { register } from '../vest';
-import { prevSegmentsToShape, SegmentWithPrev } from './clipPathNew';
+import { angleForSegment } from './clipPath';
+import {
+    addPrevsToSegments,
+    prevSegmentsToShape,
+    SegmentWithPrev,
+} from './clipPathNew';
 import { cleanUpInsetSegments2 } from './findInternalRegions';
+import { angleTo, dist, push } from './getMirrorTransforms';
 import { insetSegments } from './insetPath';
+import { insetSegment } from './insetSegment';
 import { coordsEqual } from './pathsAreIdentical';
 import {
     angleDifferences,
@@ -15,41 +23,120 @@ import {
 } from './pathToPoints';
 import { ShapeEditor } from './ShapeEditor';
 
-type Input = [Array<SegmentWithPrev>, number];
+type Input = [SegmentWithPrev, SegmentWithPrev, number];
 type Output = Array<Segment>;
 
+const asArray = <T,>(m: T | Array<T>): Array<T> => (Array.isArray(m) ? m : [m]);
+
+const insetPrev = (prev: Coord, segment: Segment, amount: number) => {
+    const angle = angleForSegment(prev, segment, prev);
+    return push(prev, angle.theta + Math.PI / 2, amount);
+};
+
+const naiveInset = (seg: SegmentWithPrev, inset: number): SegmentWithPrev => {
+    if (seg.segment.type === 'Line') {
+        const t = angleTo(seg.prev, seg.segment.to) + Math.PI / 2;
+        return {
+            shape: seg.shape,
+            prev: push(seg.prev, t, inset),
+            segment: {
+                type: 'Line',
+                to: push(seg.segment.to, t, inset),
+            },
+        };
+    } else {
+        const r =
+            dist(seg.segment.center, seg.prev) +
+            inset * (seg.segment.clockwise ? -1 : 1);
+        return {
+            shape: seg.shape,
+            prev: push(
+                seg.segment.center,
+                angleTo(seg.segment.center, seg.prev),
+                r,
+            ),
+            segment: {
+                ...seg.segment,
+                to: push(
+                    seg.segment.center,
+                    angleTo(seg.segment.center, seg.segment.to),
+                    r,
+                ),
+            },
+        };
+    }
+};
+
 const ShowDebug = ({
-    shape,
     inset,
+    one,
+    two,
 }: {
     inset: number;
-    shape: Array<SegmentWithPrev>;
+    one: SegmentWithPrev;
+    two: SegmentWithPrev;
 }) => {
-    const seg = prevSegmentsToShape(shape);
-    if (!seg) {
-        return null;
-    }
-    const insetSeg = insetSegments(seg, inset)[0];
+    const res = asArray(
+        insetSegment(one.prev, one.segment, two.segment, inset, true),
+    );
+    const withPrevs = addPrevsToSegments(
+        res,
+        -1,
+        insetPrev(one.prev, one.segment, inset),
+    );
+    const ione = naiveInset(one, inset);
+    const itwo = naiveInset(two, inset);
     return (
         <>
-            <path
-                d={calcSegmentsD(seg, seg[seg.length - 1].to, undefined, 1)}
-                stroke="white"
-                opacity={0.2}
-                strokeWidth={2}
-                fill="none"
+            <RenderSegmentBasic
+                prev={one.prev}
+                segment={one.segment}
+                inner={{
+                    stroke: 'green',
+                    strokeWidth: 2,
+                }}
+                zoom={1}
             />
-            <path
-                d={calcSegmentsD(
-                    insetSeg,
-                    insetSeg[insetSeg.length - 1].to,
-                    undefined,
-                    1,
-                )}
-                stroke="green"
-                opacity={0.2}
-                strokeWidth={2}
-                fill="none"
+            <RenderSegmentBasic
+                prev={two.prev}
+                segment={two.segment}
+                inner={{
+                    stroke: 'blue',
+                    strokeWidth: 2,
+                }}
+                zoom={1}
+            />
+            {withPrevs.map((s, i) => (
+                <RenderSegmentBasic
+                    key={i}
+                    prev={s.prev}
+                    segment={s.segment}
+                    inner={{
+                        stroke: 'red',
+                        strokeWidth: 2,
+                    }}
+                    zoom={1}
+                />
+            ))}
+            <RenderSegmentBasic
+                prev={ione.prev}
+                segment={ione.segment}
+                inner={{
+                    stroke: 'white',
+                    strokeDasharray: '1 5',
+                    strokeWidth: 1,
+                }}
+                zoom={1}
+            />
+            <RenderSegmentBasic
+                prev={itwo.prev}
+                segment={itwo.segment}
+                inner={{
+                    stroke: 'white',
+                    strokeDasharray: '1 5',
+                    strokeWidth: 1,
+                }}
+                zoom={1}
             />
         </>
     );
@@ -58,13 +145,10 @@ const ShowDebug = ({
 register({
     id: 'insetSegment',
     dir: __dirname,
-    transform: ([segments, size]) => {
-        const seg = prevSegmentsToShape(segments);
-        if (!seg) {
-            throw new Error(`Not a shape`);
-        }
-        const [inset] = insetSegments(seg, size);
-        return inset;
+    transform: ([one, two, size]) => {
+        return asArray(
+            insetSegment(one.prev, one.segment, two.segment, size, true),
+        );
     },
     render: {
         editor: ({
@@ -78,15 +162,35 @@ register({
             return (
                 <div>
                     <ShapeEditor
-                        initial={initial ? initial[0] : null}
-                        onChange={(v) =>
-                            onChange([v, initial ? initial[1] : 10])
-                        }
+                        initial={initial ? [initial[0], initial[1]] : null}
+                        allowOpen
+                        onChange={(v) => {
+                            if (v.length === 2) {
+                                onChange([
+                                    v[0],
+                                    v[1],
+                                    initial ? initial[2] : 10,
+                                ]);
+                            }
+                        }}
                     >
                         {(shape, rendered) => (
                             <>
                                 {rendered}
-                                {shape?.length ? (
+                                {shape?.length === 2 ? (
+                                    <ShowDebug
+                                        inset={
+                                            inset != null
+                                                ? inset
+                                                : initial
+                                                ? initial[2]
+                                                : 10
+                                        }
+                                        one={shape[0]}
+                                        two={shape[1]}
+                                    />
+                                ) : null}
+                                {/* {shape?.length ? (
                                     <ShowDebug
                                         inset={
                                             inset != null
@@ -97,27 +201,33 @@ register({
                                         }
                                         shape={shape}
                                     />
-                                ) : null}
+                                ) : null} */}
                             </>
                         )}
                     </ShapeEditor>
-                    <button onClick={() => onChange([[], 10])}>Clear</button>
+                    {/* <button onClick={() => onChange(null)}>Clear</button> */}
                     {initial != null ? (
                         <>
                             <input
                                 type="range"
                                 min={-100}
                                 max={100}
-                                value={inset || initial[1]}
+                                value={inset || initial[2]}
                                 onChange={(evt) => {
                                     setInset(+evt.target.value);
                                 }}
                                 onMouseUp={() => {
-                                    onChange([initial![0], inset!]);
-                                    setInset(null);
+                                    if (inset != null) {
+                                        onChange([
+                                            initial![0],
+                                            initial![1],
+                                            inset!,
+                                        ]);
+                                        setInset(null);
+                                    }
                                 }}
                             />
-                            {inset || initial[1]}
+                            {inset || initial[2]}
                         </>
                     ) : null}
                 </div>
@@ -127,7 +237,11 @@ register({
             return (
                 <div>
                     <svg width={300} height={300}>
-                        <ShowDebug inset={input[1]} shape={input[0]} />
+                        <ShowDebug
+                            inset={input[2]}
+                            one={input[0]}
+                            two={input[1]}
+                        />
                     </svg>
                 </div>
             );
