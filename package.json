@@ -5,8 +5,8 @@
     "main": "index.js",
     "license": "MIT",
     "scripts": {
-        "deploy": "yarn run build && cp index.html docs && cd docs && surge . geometric-art.surge.sh",
-        "build": "esbuild src/run.tsx --loader:.jd=text --bundle --define:process.env=\"{}\" --define:process.env.NODE_ENV=\\\"production\\\" --minify --sourcemap --platform=browser --outdir=./docs",
+        "deploy": "yarn run build && cp index.html build && cd build && surge . geometric-art.surge.sh",
+        "build": "esbuild src/run.tsx --loader:.jd=text --bundle --define:process.env=\"{}\" --define:process.env.NODE_ENV=\\\"production\\\" --minify --sourcemap --platform=browser --outdir=./build",
         "start": "esbuild src/run.tsx --loader:.jd=text --define:process.cwd=\"cwd\" --bundle --define:process.env=\"{}\" --define:process.env.NODE_ENV=\\\"development\\\" --sourcemap --platform=browser --servedir=. --outdir=. --serve=:4353 --external:fs --external:events --external:constants",
         "vest": "node src/vest/run.js",
         "test": "jest"
