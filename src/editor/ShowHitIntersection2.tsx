@@ -4,6 +4,7 @@ import {
     angleForSegment,
     anglesEqual,
     backAngle,
+    isAngleBetweenAngles,
 } from '../rendering/clipPath';
 import { angleTo, dist, push } from '../rendering/getMirrorTransforms';
 import { Coord } from '../types';
@@ -20,21 +21,40 @@ export const arrow = (coord: Coord, theta: number, size: number) => [
     push(coord, theta - (Math.PI * 2) / 3, size),
 ];
 
+const isInner = (
+    enter: Angle,
+    exit: Angle,
+    other: { entry: Angle; exit: Angle },
+) => {
+    const back = backAngle(enter);
+    if (
+        isAngleBetweenAngles(back, backAngle(other.entry), exit, true) ||
+        isAngleBetweenAngles(back, other.exit, exit, true)
+    ) {
+        return true;
+    }
+    return false;
+};
+
 const Corner = ({
     coord,
     enter,
     exit,
     isInside,
-    inner,
+    other,
+    // inner,
     size,
 }: {
     coord: Coord;
     enter: Angle;
     exit: Angle;
+    other: null | { entry: Angle; exit: Angle };
     isInside: boolean | null;
-    inner: boolean;
+    // inner: boolean;
     size: number;
 }) => {
+    const inner = other ? isInner(enter, exit, other) : true;
+
     const back = backAngle(enter);
     const between = angleBetween(back.theta, exit.theta, true);
     // const innerAngle =
@@ -64,17 +84,12 @@ export const ShowHitIntersection2 = ({
     pair,
     coord,
     arrowSize = 10 / 100,
-}: // segments,
-{
+}: {
     coord: Coord;
     zoom: number;
     arrowSize?: number;
     pair: HitTransitions;
-    // segments: Array<SegmentWithPrev>;
 }) => {
-    // iff hmmm segments is somehow different um
-    // so maybe I can just have a flag on the config of the fixture?
-    // yeah that sounds nice.
     switch (pair.type) {
         case 'straight':
             return (
@@ -82,7 +97,7 @@ export const ShowHitIntersection2 = ({
                     coord={coord}
                     enter={pair.transition.entry.theta}
                     exit={pair.transition.exit.theta}
-                    inner
+                    other={null}
                     isInside={null}
                     size={arrowSize}
                 />
@@ -94,7 +109,7 @@ export const ShowHitIntersection2 = ({
                         coord={coord}
                         enter={pair.back}
                         exit={pair.inside.theta}
-                        inner
+                        other={{ entry: pair.back, exit: pair.outside.theta }}
                         isInside
                         size={arrowSize}
                     />
@@ -102,7 +117,7 @@ export const ShowHitIntersection2 = ({
                         coord={coord}
                         enter={pair.back}
                         exit={pair.outside.theta}
-                        inner={false}
+                        other={{ entry: pair.back, exit: pair.inside.theta }}
                         isInside={false}
                         size={arrowSize}
                     />
@@ -110,55 +125,26 @@ export const ShowHitIntersection2 = ({
             );
         case 'cross': {
             const [one, two] = pair.transitions;
-            if (one.goingInside != true && two.goingInside != true) {
-                // ugh how do I know which goes which way
-                return (
-                    <>
-                        <Corner
-                            coord={coord}
-                            enter={one.entry.theta}
-                            exit={one.exit.theta}
-                            inner={
-                                one.goingInside === null &&
-                                two.goingInside === null
-                                    ? !!two.goingInside
-                                    : !one.goingInside
-                            }
-                            isInside={one.goingInside}
-                            size={arrowSize}
-                        />
-                        <Corner
-                            coord={coord}
-                            enter={two.entry.theta}
-                            exit={two.exit.theta}
-                            inner={!two.goingInside}
-                            isInside={two.goingInside}
-                            size={arrowSize}
-                        />
-                    </>
-                );
-            } else {
-                return (
-                    <>
-                        <Corner
-                            coord={coord}
-                            enter={one.entry.theta}
-                            exit={one.exit.theta}
-                            inner={!!one.goingInside}
-                            isInside={one.goingInside}
-                            size={arrowSize}
-                        />
-                        <Corner
-                            coord={coord}
-                            enter={two.entry.theta}
-                            exit={two.exit.theta}
-                            inner={!!two.goingInside}
-                            isInside={two.goingInside}
-                            size={arrowSize}
-                        />
-                    </>
-                );
-            }
+            return (
+                <>
+                    <Corner
+                        coord={coord}
+                        enter={one.entry.theta}
+                        exit={one.exit.theta}
+                        other={{ entry: two.entry.theta, exit: two.exit.theta }}
+                        isInside={one.goingInside}
+                        size={arrowSize}
+                    />
+                    <Corner
+                        coord={coord}
+                        enter={two.entry.theta}
+                        exit={two.exit.theta}
+                        other={{ entry: one.entry.theta, exit: one.exit.theta }}
+                        isInside={two.goingInside}
+                        size={arrowSize}
+                    />
+                </>
+            );
         }
     }
     return null;
