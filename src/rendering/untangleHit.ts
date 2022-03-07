@@ -125,10 +125,13 @@ type Cross = {
 export type HitTransitions =
     | { type: 'straight'; transition: Transition }
     | Cross
+    // We don't know which entry is associated with which exit,
+    // because the entries are the same.
     | {
           type: 'ambiguous';
           inside: SegmentIntersection;
           outside: SegmentIntersection;
+          back: Angle;
       };
 
 export type Transition = {
@@ -183,6 +186,7 @@ export const handleHitAmbiguity = ({
             type: 'ambiguous',
             inside: one.goingInside ? one.exit : two.exit,
             outside: one.goingInside ? two.exit : one.exit,
+            back: one.entry.theta,
         };
     }
     // Same exit! Both are now ambiguous, we can't know inside/outside from here.

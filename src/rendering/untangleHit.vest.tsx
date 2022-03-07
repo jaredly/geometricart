@@ -1,11 +1,18 @@
 import * as React from 'react';
-import { ShowHitIntersection } from '../editor/DebugOrigPath';
+import { ShowHitIntersection } from '../editor/ShowHitIntersection';
 import { RenderSegmentBasic } from '../editor/RenderSegment';
 import { Coord } from '../types';
 import { register } from '../vest';
 import { HitsInfo, intersectSegments, SegmentWithPrev } from './clipPathNew';
 import { SegmentEditor, useInitialState } from './SegmentEditor';
 import { HitTransitions, untangleHit } from './untangleHit';
+import {
+    arrow,
+    pointsList,
+    ShowHitIntersection2,
+} from '../editor/ShowHitIntersection2';
+import { coordsEqual } from './pathsAreIdentical';
+import { angleForSegment } from './clipPath';
 
 type Input = Array<SegmentWithPrev>;
 type Output = { pair: HitTransitions; coord: Coord };
@@ -62,27 +69,46 @@ const Editor = ({
                     return (
                         <>
                             {current?.map((current, i) => (
-                                <RenderSegmentBasic
-                                    key={i}
-                                    prev={current.prev}
-                                    segment={current.segment}
-                                    inner={{
-                                        stroke: ['red', 'green', 'blue'][
-                                            current.shape
-                                        ],
-                                        strokeWidth: 2,
-                                    }}
-                                    zoom={1}
-                                />
+                                <React.Fragment key={i}>
+                                    <RenderSegmentBasic
+                                        prev={current.prev}
+                                        segment={current.segment}
+                                        inner={{
+                                            stroke: ['red', 'green', 'blue'][
+                                                current.shape
+                                            ],
+                                            strokeWidth: 2,
+                                        }}
+                                        zoom={1}
+                                    />
+                                    <SegmentArrows
+                                        color={
+                                            ['red', 'green', 'blue'][
+                                                current.shape
+                                            ]
+                                        }
+                                        size={10}
+                                        segment={current}
+                                        coord={hitt?.coord || { x: 0, y: 0 }}
+                                    />
+                                </React.Fragment>
                             ))}
                             {rendered}
                             {hitt ? (
-                                <ShowHitIntersection
-                                    pair={hitt.pair}
-                                    zoom={1}
-                                    arrowSize={40}
-                                    coord={hitt.coord}
-                                />
+                                <>
+                                    {/* <ShowHitIntersection
+                                        pair={hitt.pair}
+                                        zoom={1}
+                                        arrowSize={40}
+                                        coord={hitt.coord}
+                                    /> */}
+                                    <ShowHitIntersection2
+                                        pair={hitt.pair}
+                                        zoom={1}
+                                        arrowSize={40}
+                                        coord={hitt.coord}
+                                    />
+                                </>
                             ) : null}
                         </>
                     );
@@ -143,26 +169,88 @@ const Fixture = ({
             Fixture
             <svg width={300} height={300}>
                 {input.map((current, i) => (
-                    <RenderSegmentBasic
-                        key={i}
-                        prev={current.prev}
-                        segment={current.segment}
-                        inner={{
-                            stroke: ['red', 'green', 'blue'][current.shape],
-                            strokeWidth: 2,
-                        }}
-                        zoom={1}
-                    />
+                    <React.Fragment key={i}>
+                        <RenderSegmentBasic
+                            prev={current.prev}
+                            segment={current.segment}
+                            inner={{
+                                stroke: ['red', 'green', 'blue'][current.shape],
+                                strokeWidth: 2,
+                            }}
+                            zoom={1}
+                        />
+                        <SegmentArrows
+                            color={['red', 'green', 'blue'][current.shape]}
+                            size={10}
+                            segment={current}
+                            coord={output.coord}
+                        />
+                    </React.Fragment>
                 ))}
-                <ShowHitIntersection
+                {/* <ShowHitIntersection
                     pair={output.pair}
                     zoom={1}
                     arrowSize={40}
                     coord={output.coord}
                     segments={input}
+                /> */}
+                <ShowHitIntersection2
+                    pair={output.pair}
+                    zoom={1}
+                    arrowSize={40}
+                    coord={output.coord}
                 />
             </svg>
         </div>
+    );
+};
+
+const SegmentArrows = ({
+    coord,
+    segment,
+    size,
+    color,
+}: {
+    color: string;
+    size: number;
+    coord: Coord;
+    segment: SegmentWithPrev;
+}) => {
+    return (
+        <>
+            {coordsEqual(coord, segment.prev) ? null : (
+                <polygon
+                    points={pointsList(
+                        arrow(
+                            segment.prev,
+                            angleForSegment(
+                                segment.prev,
+                                segment.segment,
+                                segment.prev,
+                            ).theta,
+                            size,
+                        ),
+                    )}
+                    fill={color}
+                />
+            )}
+            {coordsEqual(coord, segment.segment.to) ? null : (
+                <polygon
+                    points={pointsList(
+                        arrow(
+                            segment.segment.to,
+                            angleForSegment(
+                                segment.prev,
+                                segment.segment,
+                                segment.segment.to,
+                            ).theta,
+                            size,
+                        ),
+                    )}
+                    fill={color}
+                />
+            )}
+        </>
     );
 };
 

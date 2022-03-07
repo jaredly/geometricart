@@ -1623,7 +1623,7 @@ pass
           },
           "distance": 96.04686356149273
         },
-        "goingInside": false
+        "goingInside": null
       },
       {
         "entry": {
@@ -1652,12 +1652,146 @@ pass
           },
           "distance": 84.8528137423857
         },
-        "goingInside": true
+        "goingInside": null
       }
     ]
   },
   "coord": {
     "x": 135,
     "y": 150
+  }
+}
+===
+---
+inner corner
+---
+pass
+---
+[
+  {
+    "prev": {
+      "x": 60,
+      "y": 165
+    },
+    "segment": {
+      "type": "Line",
+      "to": {
+        "x": 120,
+        "y": 90
+      }
+    },
+    "shape": 0
+  },
+  {
+    "prev": {
+      "x": 120,
+      "y": 90
+    },
+    "segment": {
+      "type": "Line",
+      "to": {
+        "x": 210,
+        "y": 90
+      }
+    },
+    "shape": 0
+  },
+  {
+    "prev": {
+      "x": 120,
+      "y": 180
+    },
+    "segment": {
+      "type": "Line",
+      "to": {
+        "x": 120,
+        "y": 90
+      }
+    },
+    "shape": 1
+  },
+  {
+    "prev": {
+      "x": 120,
+      "y": 90
+    },
+    "segment": {
+      "type": "Line",
+      "to": {
+        "x": 210,
+        "y": 150
+      }
+    },
+    "shape": 1
+  }
+]
+---
+{
+  "pair": {
+    "type": "cross",
+    "transitions": [
+      {
+        "entry": {
+          "id": 0,
+          "segment": 0,
+          "enter": true,
+          "exit": false,
+          "coordKey": "120.0000,90.0000",
+          "shape": 0,
+          "theta": {
+            "type": "flat",
+            "theta": -0.8960553845713439
+          },
+          "distance": 0
+        },
+        "exit": {
+          "id": 1,
+          "segment": 1,
+          "enter": false,
+          "exit": true,
+          "coordKey": "120.0000,90.0000",
+          "shape": 0,
+          "theta": {
+            "type": "flat",
+            "theta": 0
+          },
+          "distance": 90
+        },
+        "goingInside": false
+      },
+      {
+        "entry": {
+          "id": 2,
+          "segment": 2,
+          "enter": true,
+          "exit": false,
+          "coordKey": "120.0000,90.0000",
+          "shape": 1,
+          "theta": {
+            "type": "flat",
+            "theta": -1.5707963267948966
+          },
+          "distance": 0
+        },
+        "exit": {
+          "id": 3,
+          "segment": 3,
+          "enter": false,
+          "exit": true,
+          "coordKey": "120.0000,90.0000",
+          "shape": 1,
+          "theta": {
+            "type": "flat",
+            "theta": 0.5880026035475675
+          },
+          "distance": 108.16653826391968
+        },
+        "goingInside": true
+      }
+    ]
+  },
+  "coord": {
+    "x": 120,
+    "y": 90
   }
 }

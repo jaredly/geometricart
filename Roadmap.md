@@ -1,8 +1,21 @@
 
+- [ ] ooh should I do "join shapes" now? could be fun. I think I can just do the clipping alg but only keep the outside shapes.
+
 CAN I REUSE the clip stuff for the inset stuff?
 
 I THINK SO!
 And it looks like it's faster, which is rad.
+
+ok, done with that.
+
+
+## BEZIERS?
+
+The big question mark is offsetting:
+- https://microbians.com/math/Gabriel_Suchowolski_Quadratic_bezier_offsetting_with_selective_subdivision.pdf
+- https://web.archive.org/web/20061202151511/http://www.fho-emden.de/~hoffmann/bezier18122002.pdf
+
+There's also intersecting, but I think that's more of a solved problem.
 
 # Main Gaps in the Clips Stuffs
 
@@ -50,7 +63,7 @@ we can start using it.
 
 AND THEN
 
-let's do the "path hash", so we only calculate insets for one thing at a time, pleeeeease
+- [x] let's do the "path hash", so we only calculate insets for one thing at a time, pleeeeease
 
 
 

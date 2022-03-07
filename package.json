@@ -9,7 +9,8 @@
         "build": "esbuild src/run.tsx --loader:.jd=text --bundle --define:process.env=\"{}\" --define:process.env.NODE_ENV=\\\"production\\\" --minify --sourcemap --platform=browser --outdir=./build",
         "start": "esbuild src/run.tsx --loader:.jd=text --define:process.cwd=\"cwd\" --bundle --define:process.env=\"{}\" --define:process.env.NODE_ENV=\\\"development\\\" --sourcemap --platform=browser --servedir=. --outdir=. --serve=:4353 --external:fs --external:events --external:constants",
         "vest": "node src/vest/run.js",
-        "test": "jest"
+        "test": "jest",
+        "build-docs": "node docs-src/build.js"
     },
     "dependencies": {
         "@babel/parser": "^7.16.12",
@@ -49,6 +50,7 @@
         "@babel/preset-react": "^7.14.5",
         "@babel/preset-typescript": "^7.16.7",
         "@babel/types": "^7.12.13",
+        "@mdx-js/esbuild": "^2.0.0",
         "@testing-library/dom": "^8.1.0",
         "@testing-library/jest-dom": "^5.14.1",
         "@testing-library/react": "^12.0.0",
