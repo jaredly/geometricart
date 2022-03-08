@@ -78,6 +78,14 @@ export function RenderDebugInsetSegment({
                 }}
                 zoom={1}
             />
+            {one.segment.type === 'Arc' ? (
+                <circle
+                    cx={one.segment.center.x}
+                    cy={one.segment.center.y}
+                    fill={'green'}
+                    r={4}
+                />
+            ) : null}
             <RenderSegmentBasic
                 prev={two.prev}
                 segment={two.segment}
@@ -87,6 +95,14 @@ export function RenderDebugInsetSegment({
                 }}
                 zoom={1}
             />
+            {two.segment.type === 'Arc' ? (
+                <circle
+                    cx={two.segment.center.x}
+                    cy={two.segment.center.y}
+                    fill={'blue'}
+                    r={4}
+                />
+            ) : null}
             {withPrevs.map((s, i) => (
                 <RenderSegmentBasic
                     key={i}

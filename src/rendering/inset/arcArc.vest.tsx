@@ -1,28 +1,57 @@
 import * as React from 'react';
-// import { RenderSegmentBasic } from '../../editor/RenderSegment';
+import { arrow, pointsList } from '../../editor/ShowHitIntersection2';
 import { ArcSegment, Coord, Segment } from '../../types';
 import { register } from '../../vest';
-import { addPrevsToSegments, SegmentWithPrev } from '../clipPathNew';
+import { zeroToTwoPi } from '../clipPath';
+import { angleBetween } from '../findNextSegments';
+import { angleTo, push } from '../getMirrorTransforms';
 import { useInitialState } from '../SegmentEditor';
 import { ShapeEditor } from '../ShapeEditor';
-// import { ShapeEditor } from '../ShapeEditor';
 import { RenderDebugInsetSegment } from '../ShowDebugInsetSegment';
 import { insetArcArc } from './arcArc';
-import { CoordPicker } from './CoordPicker';
-import { insetLineLine } from './lineLine';
 import { SvgGrid } from './SvgGrid';
 
 type Input = [[Coord, ArcSegment, ArcSegment], number];
 type Output = Array<Segment>;
 
-const ShowDebug = ({ input: [[prev, one, two], inset] }: { input: Input }) => {
+const vector = (coord: Coord, theta: number, size: number, color = 'red') => {
+    const p = push(coord, theta, size);
     return (
-        <RenderDebugInsetSegment
-            one={{ prev, segment: one, shape: -1 }}
-            two={{ prev: one.to, segment: two, shape: -1 }}
-            inset={inset}
-            segments={insetArcArc(prev, one, two, inset)}
-        />
+        <>
+            <line
+                stroke={color}
+                x1={coord.x}
+                y1={coord.y}
+                x2={p.x}
+                y2={p.y}
+                strokeWidth={size / 8}
+            />
+            <polygon
+                points={pointsList(arrow(p, theta, size / 4))}
+                fill={color}
+            />
+        </>
+    );
+};
+
+const ShowDebug = ({ input: [[prev, seg, next], inset] }: { input: Input }) => {
+    const t0 = angleTo(seg.center, seg.to);
+    const tan0 = t0 + (Math.PI / 2) * (seg.clockwise ? 1 : -1);
+    const t1 = angleTo(next.center, seg.to);
+    const tan1 = t1 - (Math.PI / 2) * (next.clockwise ? 1 : -1);
+    const between = zeroToTwoPi(angleBetween(tan0, tan1, false));
+
+    return (
+        <>
+            <RenderDebugInsetSegment
+                one={{ prev, segment: seg, shape: -1 }}
+                two={{ prev: seg.to, segment: next, shape: -1 }}
+                inset={inset}
+                segments={insetArcArc(prev, seg, next, inset)}
+            />
+            {vector(seg.to, tan0, 30, 'yellow')}
+            {vector(seg.to, tan1, 30, 'purple')}
+        </>
     );
 };
 

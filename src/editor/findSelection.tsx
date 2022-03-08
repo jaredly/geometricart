@@ -1,11 +1,12 @@
 import { angleTo, dist } from '../rendering/getMirrorTransforms';
 import {
+    Circle,
     lineCircle,
     lineLine,
     lineToSlope,
     Primitive,
 } from '../rendering/intersect';
-import { Coord, Id, Path, PathGroup, Segment } from '../types';
+import { ArcSegment, Coord, Id, Path, PathGroup, Segment } from '../types';
 
 export const findSelection = (
     paths: { [key: string]: Path },
@@ -115,11 +116,7 @@ export function pathToPrimitives(segments: Array<Segment>) {
     });
 }
 
-export const segmentToPrimitive = (prev: Coord, seg: Segment): Primitive => {
-    if (seg.type === 'Line') {
-        return lineToSlope(prev, seg.to, true);
-    }
-    // TODO: need to define the limit!
+export const arcToCircle = (prev: Coord, seg: ArcSegment): Circle => {
     const t0 = angleTo(seg.center, prev);
     const t1 = angleTo(seg.center, seg.to);
     return {
@@ -128,4 +125,11 @@ export const segmentToPrimitive = (prev: Coord, seg: Segment): Primitive => {
         radius: dist(seg.center, seg.to),
         limit: t0 !== t1 ? (seg.clockwise ? [t0, t1] : [t1, t0]) : undefined,
     };
+};
+
+export const segmentToPrimitive = (prev: Coord, seg: Segment): Primitive => {
+    if (seg.type === 'Line') {
+        return lineToSlope(prev, seg.to, true);
+    }
+    return arcToCircle(prev, seg);
 };
