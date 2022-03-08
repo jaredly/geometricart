@@ -10,6 +10,7 @@ import { zeroToTwoPi } from '../clipPath';
 import { angleBetween } from '../findNextSegments';
 import { angleTo, dist, push } from '../getMirrorTransforms';
 import { circleCircle, closeEnoughAngle } from '../intersect';
+import { coordsEqual } from '../pathsAreIdentical';
 
 const isLeftSide = (c1: Coord, c2: Coord, hit: Coord) => {
     const t = angleTo(c1, c2);
@@ -126,11 +127,17 @@ export const insetArcArc = (
         ];
     }
 
-    console.error('Not good, somehow multiple hits?');
-    return [
-        { ...seg, to: push(seg.center, t0, r0a) },
-        { type: 'Line', to: push(next.center, t1, r1a) },
-    ];
+    const nto = push(seg.center, t0, r0a);
+    const sto = push(next.center, t1, r1a);
+    if (coordsEqual(nto, sto)) {
+        return [{ ...seg, to: nto }];
+    } else {
+        console.error('Not good, somehow multiple hits?');
+        return [
+            { ...seg, to: nto },
+            { type: 'Line', to: sto },
+        ];
+    }
 };
 
 export const midPoint = (c1: Coord, c2: Coord) => {
