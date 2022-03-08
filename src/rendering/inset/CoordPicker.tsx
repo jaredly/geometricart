@@ -10,7 +10,7 @@ export const CoordPicker = ({
 }: {
     coords: Array<Coord>;
     onSet: (coord: Array<Coord>) => void;
-    children: (rendered: React.ReactChild, coords: Array<Coord>) => JSX.Element;
+    children: (rendered: JSX.Element, coords: Array<Coord>) => JSX.Element;
     constrain?: (coord: Coord) => Coord;
 }) => {
     const [cursor, setCursor] = React.useState(null as null | Coord);

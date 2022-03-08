@@ -1,18 +1,37 @@
+import equal from 'fast-deep-equal';
 import * as React from 'react';
 import { arrow, pointsList } from '../../editor/ShowHitIntersection2';
 import { ArcSegment, Coord, Segment } from '../../types';
 import { register } from '../../vest';
 import { zeroToTwoPi } from '../clipPath';
 import { angleBetween } from '../findNextSegments';
-import { angleTo, push } from '../getMirrorTransforms';
-import { useInitialState } from '../SegmentEditor';
+import { angleTo, dist, push } from '../getMirrorTransforms';
+import { SegmentEditor, useInitialState } from '../SegmentEditor';
 import { ShapeEditor } from '../ShapeEditor';
 import { RenderDebugInsetSegment } from '../ShowDebugInsetSegment';
 import { insetArcArc } from './arcArc';
+import { CoordPicker } from './CoordPicker';
 import { SvgGrid } from './SvgGrid';
 
 type Input = [[Coord, ArcSegment, ArcSegment], number];
 type Output = Array<Segment>;
+
+function makeNext(state: State): null | ArcSegment {
+    if (!state.arc || !state.next.center) {
+        return null;
+    }
+    return {
+        type: 'Arc',
+        center: state.next.center,
+        clockwise: state.next.clockwise,
+        to: push(
+            state.next.center,
+            angleTo(state.arc.segment.to, state.next.center) +
+                (state.next.clockwise ? -1 : 1) * Math.PI * 0.75,
+            dist(state.next.center, state.arc.segment.to),
+        ),
+    };
+}
 
 const vector = (coord: Coord, theta: number, size: number, color = 'red') => {
     const p = push(coord, theta, size);
@@ -55,6 +74,172 @@ const ShowDebug = ({ input: [[prev, seg, next], inset] }: { input: Input }) => {
     );
 };
 
+type State = {
+    inset: number;
+    arc: null | { prev: Coord; segment: ArcSegment; shape: number };
+    next: { center: null | Coord; clockwise: boolean };
+};
+
+const stateToInput = (state: State): Input | null => {
+    const next = makeNext(state);
+    if (!state.arc || !next) {
+        return null;
+    }
+    return [[state.arc.prev, state.arc.segment, next], state.inset];
+};
+
+const Editor2 = ({
+    initial,
+    onChange,
+}: {
+    initial: Input | null;
+    onChange: (i: Input) => void;
+}) => {
+    const [state, setState] = useInitialState(
+        initial ? initial : null,
+        (input: Input | null): State => {
+            if (!input) {
+                return {
+                    arc: null,
+                    next: { center: null, clockwise: true },
+                    inset: 10,
+                };
+            }
+            return {
+                arc: { prev: input[0][0], segment: input[0][1], shape: -1 },
+                next: {
+                    center: input[0][2].center,
+                    clockwise: input[0][2].clockwise,
+                },
+                inset: input[1],
+            };
+        },
+    );
+    React.useEffect(() => {
+        const t = setTimeout(() => {
+            const input = stateToInput(state);
+            if (input && !equal(input, initial)) {
+                onChange(input);
+            }
+        }, 200);
+        return () => clearTimeout(t);
+    }, [state]);
+    const [editSecond, setEditSecond] = React.useState(false);
+    return (
+        <div>
+            {editSecond ? (
+                <CoordPicker
+                    coords={[]}
+                    onSet={(coords) => {
+                        console.log(coords[coords.length - 1]);
+                        setState((s) => ({
+                            ...s,
+                            next: {
+                                center: coords[coords.length - 1],
+                                clockwise: s.next.clockwise,
+                            },
+                        }));
+                    }}
+                >
+                    {(rendered, coords) => {
+                        const coord = coords.length
+                            ? coords[coords.length - 1]
+                            : null;
+                        const next = coord
+                            ? {
+                                  ...state,
+                                  next: { ...state.next, center: coord },
+                              }
+                            : state;
+                        const input = stateToInput(next);
+                        return (
+                            <>
+                                {input ? <ShowDebug input={input} /> : null}
+                                {rendered}
+                            </>
+                        );
+                    }}
+                </CoordPicker>
+            ) : (
+                <SegmentEditor
+                    restrict="Arc"
+                    initial={state.arc}
+                    onChange={(seg) =>
+                        seg.segment.type === 'Arc'
+                            ? setState((s) => ({
+                                  ...s,
+                                  arc: seg as State['arc'],
+                              }))
+                            : null
+                    }
+                >
+                    {(seg, rendered) => {
+                        const input = stateToInput(
+                            seg
+                                ? { ...state, arc: seg as State['arc'] }
+                                : state,
+                        );
+                        return (
+                            <>
+                                {input ? <ShowDebug input={input} /> : null}
+                                {rendered}
+                            </>
+                        );
+                    }}
+                </SegmentEditor>
+            )}
+            <div>
+                <button
+                    onClick={() => setEditSecond(false)}
+                    disabled={!editSecond}
+                >
+                    First
+                </button>
+                <button
+                    onClick={() => setEditSecond(true)}
+                    disabled={editSecond}
+                >
+                    Second
+                </button>
+                <button
+                    onClick={() =>
+                        setState((s) => ({
+                            ...s,
+                            next: { ...s.next, clockwise: !s.next.clockwise },
+                        }))
+                    }
+                >
+                    Second{' '}
+                    {state.next.clockwise ? 'clockwise' : 'counterclockwise'}
+                </button>
+            </div>
+            <div>
+                <button
+                    onClick={() => {
+                        setState({
+                            inset: state.inset,
+                            arc: null,
+                            next: { center: null, clockwise: true },
+                        });
+                    }}
+                >
+                    Clear
+                </button>
+                <input
+                    type="range"
+                    min={-100}
+                    max={100}
+                    value={state.inset}
+                    onChange={(evt) => {
+                        setState((s) => ({ ...s, inset: +evt.target.value }));
+                    }}
+                />
+                {state.inset}
+            </div>
+        </div>
+    );
+};
+
 register({
     id: 'arcArc',
     dir: __dirname,
@@ -62,106 +247,7 @@ register({
         return insetArcArc(prev, one, two, size);
     },
     render: {
-        editor: ({
-            initial,
-            onChange,
-        }: {
-            initial: Input | null;
-            onChange: (i: Input) => void;
-        }) => {
-            const [inset, setInset] = useInitialState(
-                initial ? initial[1] : 10,
-            );
-            const [coords, setCoords] = React.useState(
-                initial ? (initial[0] as Coord[]) : [],
-            );
-            React.useEffect(() => {
-                if (coords.length === 3) {
-                    onChange([coords as Input[0], inset ?? 10]);
-                }
-            }, [coords]);
-            return (
-                <div>
-                    <ShapeEditor
-                        initial={
-                            initial
-                                ? [
-                                      {
-                                          prev: initial[0][0],
-                                          segment: initial[0][1],
-                                          shape: -1,
-                                      },
-                                      {
-                                          prev: initial[0][1].to,
-                                          segment: initial[0][2],
-                                          shape: -1,
-                                      },
-                                  ]
-                                : null
-                        }
-                        allowOpen
-                        onChange={(v) => {
-                            if (
-                                v.length === 2 &&
-                                v[0].segment.type === 'Arc' &&
-                                v[1].segment.type === 'Arc'
-                            ) {
-                                onChange([
-                                    [v[0].prev, v[0].segment, v[1].segment],
-                                    initial ? initial[1] : 10,
-                                ]);
-                            }
-                        }}
-                    >
-                        {(shape, rendered) => (
-                            <>
-                                {rendered}
-                                {shape?.length === 2 &&
-                                shape[0].segment.type === 'Arc' &&
-                                shape[1].segment.type === 'Arc' ? (
-                                    <ShowDebug
-                                        input={[
-                                            [
-                                                shape[0].prev,
-                                                shape[0].segment,
-                                                shape[1].segment,
-                                            ],
-                                            inset,
-                                            // initial ? initial[1] : 10,
-                                        ]}
-                                    />
-                                ) : null}
-                            </>
-                        )}
-                    </ShapeEditor>
-
-                    <button onClick={() => setCoords((c) => c.slice(0, -1))}>
-                        Back
-                    </button>
-                    {initial != null ? (
-                        <>
-                            <input
-                                type="range"
-                                min={-100}
-                                max={100}
-                                value={inset || initial[1]}
-                                onChange={(evt) => {
-                                    setInset(+evt.target.value);
-                                }}
-                                onMouseUp={() => {
-                                    if (inset != null) {
-                                        onChange([initial[0]!, inset!]);
-                                        // setInset(null);
-                                    } else {
-                                    }
-                                }}
-                            />
-                            {inset || initial[1]}
-                        </>
-                    ) : null}
-                </div>
-            );
-        },
+        editor: Editor2,
         fixture: ({ input, output }: { input: Input; output: Output }) => {
             return (
                 <div>
