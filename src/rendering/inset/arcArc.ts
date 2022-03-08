@@ -34,15 +34,18 @@ export const insetArcArc = (
     const r0a = r0 + amount * (seg.clockwise ? -1 : 1);
     const r1a = r1 + amount * (next.clockwise ? -1 : 1);
 
-    if (r0a < 0) {
-        return [
-            { type: 'Line', to: push(seg.center, t0, r0a) },
-            { type: 'Line', to: seg.center },
-            { type: 'Line', to: seg.to },
-            { type: 'Line', to: push(next.center, t1, r1a) },
-        ];
-    }
+    // This circle turned inside out! Nothing good can come of it.
+    // if (r0a < 0) {
+    //     return [
+    //         { type: 'Line', to: push(seg.center, t0, r0a) },
+    //         { type: 'Line', to: seg.center },
+    //         { type: 'Line', to: seg.to },
+    //         { type: 'Line', to: push(next.center, t1, r1a) },
+    //     ];
+    // }
 
+    // If we're "shrinking" this corner, then we don't need to
+    // do anything fancy.
     const contract = amount < 0 ? between > Math.PI : between < Math.PI;
     if (contract) {
         return [
@@ -90,5 +93,46 @@ export const insetArcArc = (
         return [{ ...seg, to: hits[0] }];
     }
 
-    return [seg];
+    if (hits.length === 0) {
+        const centerD = dist(seg.center, next.center);
+        // One is contained within the other!
+        if (centerD < r0a || centerD < r1a) {
+            const direction = r0a < r1a ? centerT + Math.PI : centerT;
+            const sto = push(seg.center, direction, r0a);
+            const nto = push(next.center, direction, r1a);
+            return [
+                { ...seg, to: sto },
+                {
+                    type: 'Arc',
+                    clockwise: r0a < r1a ? !seg.clockwise : seg.clockwise,
+                    center: midPoint(sto, nto),
+                    to: nto,
+                },
+                // { type: 'Line', to: push(next.center, direction, r1a) },
+            ];
+        }
+        // They're separate
+        const sto = push(seg.center, centerT, r0a);
+        const nto = push(next.center, centerT + Math.PI, r1a);
+        return [
+            { ...seg, to: sto },
+            {
+                type: 'Arc',
+                clockwise: !seg.clockwise,
+                center: midPoint(sto, nto),
+                to: nto,
+            },
+            // { type: 'Line', to: nto },
+        ];
+    }
+
+    console.error('Not good, somehow multiple hits?');
+    return [
+        { ...seg, to: push(seg.center, t0, r0a) },
+        { type: 'Line', to: push(next.center, t1, r1a) },
+    ];
+};
+
+export const midPoint = (c1: Coord, c2: Coord) => {
+    return { x: (c1.x + c2.x) / 2, y: (c1.y + c2.y) / 2 };
 };
