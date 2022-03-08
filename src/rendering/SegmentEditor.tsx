@@ -3,6 +3,7 @@ import { RenderSegmentBasic } from '../editor/RenderSegment';
 import { Coord, Segment } from '../types';
 import { SegmentWithPrev } from './clipPathNew';
 import { angleTo, dist, push } from './getMirrorTransforms';
+import { SvgGrid } from './inset/SvgGrid';
 
 export const useOnChange = <T,>(v: T, fn: (v: T) => void) => {
     const prev = React.useRef(v);
@@ -80,6 +81,7 @@ export const SegmentEditor = ({
                     }
                 }}
             >
+                <SvgGrid size={grid} />
                 {children(
                     seg,
                     <>
