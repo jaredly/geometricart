@@ -12,12 +12,6 @@ import { angleTo, dist, push } from '../getMirrorTransforms';
 import { circleCircle, closeEnoughAngle } from '../intersect';
 import { coordsEqual } from '../pathsAreIdentical';
 
-const isLeftSide = (c1: Coord, c2: Coord, hit: Coord) => {
-    const t = angleTo(c1, c2);
-    const th = angleTo(c1, hit);
-    return angleBetween(t, th, true) < Math.PI;
-};
-
 export const insetArcArc = (
     prev: Coord,
     seg: ArcSegment,

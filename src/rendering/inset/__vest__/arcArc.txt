@@ -920,7 +920,7 @@ pass
 ---
 continue
 ---
-fail
+pass
 ---
 [
   [
@@ -968,12 +968,5 @@ fail
       "y": 135
     },
     "clockwise": false
-  },
-  {
-    "type": "Line",
-    "to": {
-      "x": 162.63961030678928,
-      "y": 135
-    }
   }
 ]
