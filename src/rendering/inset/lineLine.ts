@@ -23,16 +23,8 @@ export const insetLineLine = (
             { type: 'Line', to: push(seg.to, t1 + Math.PI / 2, amount) },
         ];
     } else {
-        if (amount < 0) {
-            const t = (Math.PI - between) / 2;
-            const dist = -amount / Math.cos(Math.PI / 2 - t);
-            return [{ type: 'Line', to: push(seg.to, t0 - t, dist) }];
-        } else {
-            // Expand, find the intersection
-            const t = (between - Math.PI) / 2;
-            const tn = Math.PI / 2 - t;
-            const dist = amount / Math.cos(tn);
-            return [{ type: 'Line', to: push(seg.to, t0 + t, dist) }];
-        }
+        const t = (between - Math.PI) / 2;
+        const dist = amount / Math.cos(Math.PI / 2 - t);
+        return [{ type: 'Line', to: push(seg.to, t0 + t, dist) }];
     }
 };
