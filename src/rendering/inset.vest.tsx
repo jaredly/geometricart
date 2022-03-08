@@ -28,53 +28,53 @@ import { ShapeEditor } from './ShapeEditor';
 type Input = [Array<SegmentWithPrev>, number];
 type Output = Array<Array<Segment>>;
 
-const firstMethod = ([shape, inset]: [Array<SegmentWithPrev>, number]) => {
-    const seg = prevSegmentsToShape(shape);
-    if (!seg) {
-        throw new Error('no shape');
-    }
-    const [insetSeg, corners] = insetSegments(seg, inset);
-    return cleanUpInsetSegments2(insetSeg, corners);
-};
+// const firstMethod = ([shape, inset]: [Array<SegmentWithPrev>, number]) => {
+//     const seg = prevSegmentsToShape(shape);
+//     if (!seg) {
+//         throw new Error('no shape');
+//     }
+//     const [insetSeg, corners] = insetSegments(seg, inset);
+//     return cleanUpInsetSegments2(insetSeg, corners);
+// };
 
-const secondMethod = ([shape, inset]: [Array<SegmentWithPrev>, number]) => {
-    const seg = prevSegmentsToShape(shape);
-    if (!seg) {
-        throw new Error('no shape');
-    }
-    const [insetSeg, corners] = insetSegments(seg, inset);
-    const withprev = addPrevsToSegments(insetSeg, -1);
-    const hitsResults = getSomeHits(withprev);
-    const regions = collectRegions(withprev, hitsResults!);
+// const secondMethod = ([shape, inset]: [Array<SegmentWithPrev>, number]) => {
+//     const seg = prevSegmentsToShape(shape);
+//     if (!seg) {
+//         throw new Error('no shape');
+//     }
+//     const [insetSeg, corners] = insetSegments(seg, inset);
+//     const withprev = addPrevsToSegments(insetSeg, -1);
+//     const hitsResults = getSomeHits(withprev);
+//     const regions = collectRegions(withprev, hitsResults!);
 
-    return removeContainedRegions(
-        regions
-            .map((r) => prevSegmentsToShape(r.segments)!)
-            .filter(isClockwise),
-    );
-};
+//     return removeContainedRegions(
+//         regions
+//             .map((r) => prevSegmentsToShape(r.segments)!)
+//             .filter(isClockwise),
+//     );
+// };
 
-const testFn = (
-    fx: Array<{ input: Input }>,
-    fn: (i: Input) => unknown,
-    n: number,
-) => {
-    const at = performance.now();
-    for (let i = 0; i < n; i++) {
-        // @ts-ignore
-        fx.forEach((fx, i) => {
-            fn(fx.input);
-        });
-    }
-    console.log((performance.now() - at) / n);
-};
+// const testFn = (
+//     fx: Array<{ input: Input }>,
+//     fn: (i: Input) => unknown,
+//     n: number,
+// ) => {
+//     const at = performance.now();
+//     for (let i = 0; i < n; i++) {
+//         // @ts-ignore
+//         fx.forEach((fx, i) => {
+//             fn(fx.input);
+//         });
+//     }
+//     console.log((performance.now() - at) / n);
+// };
 
-// @ts-ignore
-window.testOne = (n: number, fx: Array<{ input: Input }>) =>
-    testFn(fx, firstMethod, n);
-// @ts-ignore
-window.testTwo = (n: number, fx: Array<{ input: Input }>) =>
-    testFn(fx, secondMethod, n);
+// // @ts-ignore
+// window.testOne = (n: number, fx: Array<{ input: Input }>) =>
+//     testFn(fx, firstMethod, n);
+// // @ts-ignore
+// window.testTwo = (n: number, fx: Array<{ input: Input }>) =>
+//     testFn(fx, secondMethod, n);
 
 const ShowDebug = ({
     shape,
@@ -123,6 +123,18 @@ const ShowDebug = ({
 
     return (
         <>
+            {shape.map((seg, i) =>
+                seg.segment.type === 'Arc' ? (
+                    <circle
+                        key={i}
+                        r={4}
+                        fill="white"
+                        opacity={0.5}
+                        cx={seg.segment.center.x}
+                        cy={seg.segment.center.y}
+                    />
+                ) : null,
+            )}
             <path
                 d={calcSegmentsD(seg, seg[seg.length - 1].to, undefined, 1)}
                 stroke="white"
