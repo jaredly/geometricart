@@ -65,6 +65,9 @@ export const insetArcArc = (
 
     const ptop = push(seg.center, centerT, r0a);
     const pbottom = push(seg.center, centerT, -r0a);
+    // We constrain one of the circles
+    // to only be on the "valid" half.
+    // Very neat.
     const hits = circleCircle(
         isLeft
             ? arcToCircle(ptop, {
