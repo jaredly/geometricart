@@ -3,6 +3,7 @@
 import traverse from '@babel/traverse';
 import babel from '@babel/core';
 import t from '@babel/types';
+import generate from '@babel/generator';
 
 const hasComment = (node) =>
     node.leadingComments &&
@@ -12,7 +13,51 @@ const fns = ['ArrowFunctionExpression', 'FunctionDeclaration'];
 
 const ensureStmt = (n) => (t.isStatement(n) ? n : t.expressionStatement(n));
 
-export default function (contents) {
+export const addFunctionMeta = (contents, filePath) => {
+    const parsed = babel.parseSync(contents, {
+        parserOpts: {
+            plugins: ['typescript', 'jsx'],
+        },
+    });
+    const found = [];
+
+    parsed.program.body.forEach((node) => {
+        if (node.type === 'ExportNamedDeclaration') {
+            if (!node.declaration.declarations) {
+                return;
+            }
+            node.declaration.declarations.forEach((decl) => {
+                if (fns.includes(decl.init.type)) {
+                    found.push(
+                        t.expressionStatement(
+                            t.assignmentExpression(
+                                '=',
+                                t.memberExpression(
+                                    t.identifier(decl.id.name),
+                                    t.identifier('meta'),
+                                ),
+                                t.objectExpression([
+                                    t.objectProperty(
+                                        t.identifier('name'),
+                                        t.stringLiteral(decl.id.name),
+                                    ),
+                                    t.objectProperty(
+                                        t.identifier('filePath'),
+                                        t.stringLiteral(filePath),
+                                    ),
+                                ]),
+                            ),
+                        ),
+                    );
+                }
+            });
+        }
+    });
+
+    return found;
+};
+
+export default function (contents, filePath) {
     const parsed = babel.parseSync(contents, {
         parserOpts: {
             plugins: ['typescript', 'jsx'],
@@ -26,6 +71,7 @@ export default function (contents) {
             if (node.type === 'ExportNamedDeclaration') {
                 node.declaration.declarations.forEach((decl) => {
                     if (fns.includes(decl.init.type)) {
+                        const name = decl.id.name;
                         decl.id.name += 'Trace';
                         traverse.default(
                             t.file(t.program([ensureStmt(decl.init)])),
@@ -36,6 +82,26 @@ export default function (contents) {
                                 t.variableDeclaration('const', [decl]),
                             ),
                         );
+                        // found.push(
+                        //     t.expressionStatement(
+                        //         t.assignmentExpression(
+                        //             t.memberExpression(
+                        //                 t.identifier(name),
+                        //                 t.identifier('meta'),
+                        //             ),
+                        //             t.objectExpression([
+                        //                 t.objectProperty(
+                        //                     t.identifier('name'),
+                        //                     t.stringLiteral(name),
+                        //                 ),
+                        //                 t.objectProperty(
+                        //                     t.identifier('filePath'),
+                        //                     t.stringLiteral(filePath),
+                        //                 ),
+                        //             ]),
+                        //         ),
+                        //     ),
+                        // );
                     }
                 });
             }
@@ -59,7 +125,18 @@ export default function (contents) {
         }
     });
 
-    return t.program(found);
+    found.push(
+        t.exportNamedDeclaration(
+            t.variableDeclaration('const', [
+                t.variableDeclarator(
+                    t.identifier('rawSource'),
+                    t.stringLiteral(contents),
+                ),
+            ]),
+        ),
+    );
+
+    return t.program(found.concat(addFunctionMeta(contents, filePath)));
 }
 
 function annotateFunctionBody(toplevel) {
@@ -105,10 +182,10 @@ function annotateFunctionBody(toplevel) {
         },
         Expression: {
             exit(path) {
-                if (path.node.type.startsWith('TS')) {
-                    return;
-                }
                 if (isTS(path)) return;
+                // if (path.node.type === 'NumericLiteral') return;
+                // if (path.node.type === 'StringLiteral') return;
+                // if (path.node.type === 'BoolLiteral') return;
                 if (seen.has(path.node)) return;
                 const num = i++;
                 const n = t.callExpression(t.identifier('trace'), [

@@ -1,4 +1,13 @@
-import { insetLineLineTrace } from '../src/rendering/inset/lineLine.ts';
+import {
+    insetLineLineTrace,
+    rawSource,
+} from '../src/rendering/inset/lineLine.ts';
+import { Fixtures } from './Fixtures';
+import fixtures from './lineLine.json';
+import { insetPrev, naiveInset } from '../src/rendering/ShowDebugInsetSegment';
+import { RenderSegmentBasic } from '../src/editor/RenderSegment';
+import { Arrow } from '../src/editor/ShowHitIntersection2';
+import { angleTo, dist, push } from '../src/rendering/getMirrorTransforms';
 
 # Playing with Polygons! (and more)
 
@@ -14,4 +23,70 @@ and
 
 -   offsetting a shape! this will re-use some of the work from clipping a shape.
 
-Hello {insetLineLineTrace + ''}
+<Fixtures
+    fixtures={fixtures}
+    renderInput={([[p1, p2, p3], inset]) => (
+        <>
+            <polyline
+                points={`${p1.x},${p1.y} ${p2.x},${p2.y} ${p3.x},${p3.y}`}
+                stroke="red"
+                fill="none"
+                strokeWidth={2}
+            />
+            <circle cx={p2.x} cy={p2.y} fill="red" r={3} />
+            <Arrow point={p3} theta={angleTo(p2, p3)} size={10} color="red" />
+            <text x={0} y={20}>
+                inset: {inset}
+            </text>
+        </>
+    )}
+    renderOutput={(segments, [[p1, p2, p3], inset]) => {
+        const naive = naiveInset(
+            { prev: p2, segment: { type: 'Line', to: p3 } },
+            inset,
+        );
+        return (
+            <>
+                {
+                    <RenderSegmentBasic
+                        prev={segments[segments.length - 1].to}
+                        segment={naive.segment}
+                        zoom={1}
+                        inner={{
+                            stroke: 'green',
+                            strokeWidth: 1,
+                            strokeDasharray: '5 5',
+                        }}
+                    />
+                }
+                {segments.map((seg, i) => (
+                    <RenderSegmentBasic
+                        key={i}
+                        prev={
+                            i === 0
+                                ? insetPrev(p1, { type: 'Line', to: p2 }, inset)
+                                : segments[i - 1].to
+                        }
+                        segment={seg}
+                        zoom={1}
+                        inner={{ stroke: 'green', strokeWidth: 3 }}
+                    />
+                ))}
+            </>
+        );
+    }}
+    source={rawSource}
+    trace={([[p1, p2, p3], inset], trace) => {
+        insetLineLineTrace(
+            p1,
+            { type: 'Line', to: p2 },
+            { type: 'Line', to: p3 },
+            inset,
+            trace,
+        );
+    }}
+/>
+
+Ok so how was that?
+
+<div style={{ height: 200 }} />
