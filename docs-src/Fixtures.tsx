@@ -54,6 +54,13 @@ const getWidget = (id: number, trace: TraceOutput) => {
     return widgets[info.fn.meta.name](info.args, trace[id].values[0]);
 };
 
+type ByStart = {
+    [key: number]: Array<{
+        id: number;
+        end: number;
+    }>;
+};
+
 export const Fixtures = <I, O>({
     fixtures,
     renderInput,
@@ -71,7 +78,7 @@ export const Fixtures = <I, O>({
     const [selected, setSelected] = React.useState(null as null | number);
     const [traceOutput, byStart] = React.useMemo((): [
         TraceOutput | null,
-        { [key: number]: Array<number> },
+        ByStart,
     ] => {
         if (selected === null) {
             return [null, {}];
@@ -86,13 +93,16 @@ export const Fixtures = <I, O>({
             }
             return value;
         });
-        const byStart: { [key: number]: Array<number> } = {};
+
+        const byStart: ByStart = {};
         Object.keys(data).forEach((k) => {
             const start = data[+k].loc.start;
-            byStart[start] = (byStart[start] || []).concat([+k]);
+            byStart[start] = (byStart[start] || []).concat([
+                { id: +k, end: data[+k].loc.end },
+            ]);
         });
         Object.keys(byStart).forEach((start) => {
-            byStart[+start].sort((a, b) => data[b].loc.end - data[a].loc.end);
+            byStart[+start].sort((a, b) => b.end - a.end);
         });
         return [data, byStart];
     }, [selected]);
@@ -120,41 +130,52 @@ export const Fixtures = <I, O>({
                     {({
                         className,
                         style,
-                        tokens,
+                        tokens: lines,
                         getLineProps,
                         getTokenProps,
                     }) => {
-                        let at = 0;
+                        // let at = 0;
+                        const organized = organizeTokens(lines, byStart);
                         return (
                             <pre className={className} style={style}>
-                                {tokens.map((line, i) => {
-                                    const broken: typeof line = [];
-                                    line.forEach((token) => {
-                                        const m = token.content.match(/^\s+/);
-                                        if (
-                                            m &&
-                                            m[0].length < token.content.length
-                                        ) {
-                                            broken.push({
-                                                ...token,
-                                                content: m[0],
-                                            });
-                                            broken.push({
-                                                ...token,
-                                                content: token.content.slice(
-                                                    m[0].length,
-                                                ),
-                                            });
-                                        } else {
-                                            broken.push(token);
-                                        }
-                                    });
+                                {organized.map(({ line, broken }, i) => {
+                                    // const broken: typeof line = [];
+                                    // line.forEach((token) => {
+                                    //     const m = token.content.match(/^\s+/);
+                                    //     if (
+                                    //         m &&
+                                    //         m[0].length < token.content.length
+                                    //     ) {
+                                    //         broken.push({
+                                    //             ...token,
+                                    //             content: m[0],
+                                    //         });
+                                    //         broken.push({
+                                    //             ...token,
+                                    //             content: token.content.slice(
+                                    //                 m[0].length,
+                                    //             ),
+                                    //         });
+                                    //     } else {
+                                    //         broken.push(token);
+                                    //     }
+                                    // });
                                     // at += 1; // newline
                                     const res = (
                                         <div
                                             {...getLineProps({ line, key: i })}
                                         >
-                                            {broken.map((token, key) => {
+                                            {broken.map((token, i) =>
+                                                renderFull(
+                                                    token,
+                                                    getTokenProps,
+                                                    byStart,
+                                                    traceOutput!,
+                                                    i + '',
+                                                    (id) => setHover(id),
+                                                ),
+                                            )}
+                                            {/* {broken.map((token, key) => {
                                                 const rendered = (
                                                     <span
                                                         {...getTokenProps({
@@ -171,7 +192,7 @@ export const Fixtures = <I, O>({
                                                             key={key + 'ok'}
                                                         >
                                                             {byStart[start].map(
-                                                                (id, i) => {
+                                                                ({ id }, i) => {
                                                                     if (
                                                                         !traceOutput ||
                                                                         !traceOutput[
@@ -208,10 +229,10 @@ export const Fixtures = <I, O>({
                                                 } else {
                                                     return rendered;
                                                 }
-                                            })}
+                                            })} */}
                                         </div>
                                     );
-                                    at += 1;
+                                    // at += 1;
                                     return res;
                                 })}
                             </pre>
@@ -249,4 +270,122 @@ export const Fixtures = <I, O>({
             </div>
         </div>
     );
+};
+
+const renderFull = (
+    token: FullToken,
+    getTokenProps: Highlight['getTokenProps'],
+    byStart: ByStart,
+    traceOutput: TraceOutput,
+    key: string,
+    onHover: (i: number) => void,
+) => {
+    return (
+        <span
+            key={key}
+            data-at={token.at}
+            data-id={token.id}
+            data-widgets={JSON.stringify(token.widgets)}
+            className={token.id ? 'hover-underline' : ''}
+            // style={
+            //     token.id
+            //         ? { textDecoration: 'underline', backgroundColor: '#aaa' }
+            //         : undefined
+            // }
+            onMouseEnter={
+                token.id != null
+                    ? () => {
+                          onHover(token.id!);
+                      }
+                    : undefined
+            }
+        >
+            {token.widgets.map((id) => getWidget(id.id, traceOutput))}
+            {Array.isArray(token.content) ? (
+                token.content.map((inner, i) =>
+                    renderFull(
+                        inner,
+                        getTokenProps,
+                        byStart,
+                        traceOutput,
+                        key + ':' + i,
+                        onHover,
+                    ),
+                )
+            ) : (
+                <span {...getTokenProps({ token: token.content })} />
+            )}
+        </span>
+    );
+};
+
+type Token = Parameters<Highlight['getTokenProps']>[0]['token'];
+type FullToken = {
+    content: Token; // | Array<FullToken>;
+    id: null | number;
+    at: number;
+    widgets: Array<Item>;
+};
+type Item = {
+    id: number;
+    start: number;
+    end: number;
+};
+
+export const organizeTokens = (
+    lines: Array<Array<Token>>,
+    byStart: ByStart,
+) => {
+    let current: Array<Item> = [];
+    let at = -1;
+    let added: Array<Item> = [];
+
+    const advance = (n: number) => {
+        if (current.some((t) => t.end <= at + n)) {
+            current = current.filter((t) => t.end > at + n);
+        }
+        let added = [];
+        for (let i = 0; i < n; i++) {
+            at += 1;
+            if (byStart[at]) {
+                current.push(...byStart[at].map((m) => ({ ...m, start: at })));
+                added.push(...byStart[at].map((m) => ({ ...m, start: at })));
+            }
+        }
+        current.sort((a, b) => a.end - b.end);
+        return added;
+    };
+
+    added = advance(0);
+
+    return lines.map((line, i) => {
+        const broken: Array<FullToken> = [];
+        line.forEach((token) => {
+            let content = token.content;
+            const m = content.match(/^\s+/);
+            if (m && m[0].length < content.length) {
+                broken.push({
+                    at,
+                    content: {
+                        ...token,
+                        content: m[0],
+                    },
+                    id: current.length ? current[0].id : null,
+                    widgets: added,
+                });
+                added = advance(m[0].length);
+                content = content.slice(m[0].length);
+            }
+            broken.push({
+                at,
+                content: { ...token, content },
+                // id: current.length ? current[0].id : null,
+                id: current.length ? current[0].id : null,
+                widgets: added,
+            });
+            added = advance(content.length);
+        });
+        added = advance(1);
+        return { broken, line };
+    });
 };

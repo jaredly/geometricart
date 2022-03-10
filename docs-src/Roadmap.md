@@ -1,4 +1,7 @@
 
+ok, now I really need to do the hover-token instead of just hover-whatever
+
+
 So, to allow function-specific visualizations,
 I want a processor that annotates exported functions, with
 .meta = {name, filePath}
