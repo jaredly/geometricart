@@ -1,4 +1,41 @@
 
+# Hmmm what about visual debug statements?
+
+Like,
+actually in the implementation
+have console.log but it's visual.log
+and you give it SVG whatsits
+but it's behind a __dev__ or whatever
+so it'll be compiled out in non-debug?
+might have to do a fancy compiler pass
+to remove them? idk.
+
+
+hmmm actually even fancier is just trace everything?
+so, maybe it's like
+do a transform that also exports a `insetLineLineTraced` function?
+
+(but would that do tracing of inner functions? no it wouldn't really
+but maybe thats fine.)
+
+And then I can call that in my mdx dealio?
+
+yeah, but then
+we'd keep track of like the parse locations
+that we're tracing for
+and then
+when I render out the stuff, include parse locations
+in the generated html nodes.
+
+
+ok prism-react-renderer looks like the right call
+
+so, I want to do a ... babel transform ... as part of the esbuild, I think?
+
+
+
+# hmmm
+
 - [ ] ooh should I do "join shapes" now? could be fun. I think I can just do the clipping alg but only keep the outside shapes.
 
 CAN I REUSE the clip stuff for the inset stuff?

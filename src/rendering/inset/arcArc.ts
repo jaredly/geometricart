@@ -67,19 +67,18 @@ export const insetArcArc = (
     // to only be on the "valid" half.
     // Very neat.
     const hits = circleCircle(
-        isLeft
-            ? arcToCircle(ptop, {
-                  type: 'Arc',
-                  to: pbottom,
-                  clockwise: true,
-                  center: seg.center,
-              })
-            : arcToCircle(pbottom, {
-                  type: 'Arc',
-                  to: ptop,
-                  clockwise: true,
-                  center: seg.center,
-              }),
+        arcToCircle(ptop, {
+            type: 'Arc',
+            to: pbottom,
+            clockwise: isLeft,
+            center: seg.center,
+        }),
+        // : arcToCircle(pbottom, {
+        //       type: 'Arc',
+        //       to: ptop,
+        //       clockwise: true,
+        //       center: seg.center,
+        //   }),
         // { type: 'circle', center: seg.center, radius: r0a },
         { type: 'circle', center: next.center, radius: r1a },
     );
