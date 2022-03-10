@@ -67,6 +67,10 @@ function annotateFunctionBody(toplevel) {
     let i = 0;
 
     function captureArguments(path) {
+        if (seen.has(path.node)) {
+            return;
+        }
+        seen.set(path.node, -1);
         path.node.params.forEach((param) => {
             if (param.type === 'Identifier') {
                 const num = i++;
@@ -82,6 +86,7 @@ function annotateFunctionBody(toplevel) {
                 path.node.body.body.unshift(n);
             }
         });
+        path.node.params.push(t.identifier('trace'));
     }
 
     return {
