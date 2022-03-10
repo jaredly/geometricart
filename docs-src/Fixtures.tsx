@@ -135,35 +135,17 @@ export const Fixtures = <I, O>({
                         getTokenProps,
                     }) => {
                         // let at = 0;
-                        const organized = organizeTokens(lines, byStart);
+                        const organized = organize2(lines, byStart);
                         return (
-                            <pre className={className} style={style}>
+                            <pre
+                                className={className}
+                                style={{ ...style, whiteSpace: 'pre-wrap' }}
+                            >
                                 {organized.map(({ line, broken }, i) => {
-                                    // const broken: typeof line = [];
-                                    // line.forEach((token) => {
-                                    //     const m = token.content.match(/^\s+/);
-                                    //     if (
-                                    //         m &&
-                                    //         m[0].length < token.content.length
-                                    //     ) {
-                                    //         broken.push({
-                                    //             ...token,
-                                    //             content: m[0],
-                                    //         });
-                                    //         broken.push({
-                                    //             ...token,
-                                    //             content: token.content.slice(
-                                    //                 m[0].length,
-                                    //             ),
-                                    //         });
-                                    //     } else {
-                                    //         broken.push(token);
-                                    //     }
-                                    // });
-                                    // at += 1; // newline
                                     const res = (
-                                        <div
-                                            {...getLineProps({ line, key: i })}
+                                        <React.Fragment
+                                            key={i}
+                                            // {...getLineProps({ line, key: i })}
                                         >
                                             {broken.map((token, i) =>
                                                 renderFull(
@@ -175,62 +157,7 @@ export const Fixtures = <I, O>({
                                                     (id) => setHover(id),
                                                 ),
                                             )}
-                                            {/* {broken.map((token, key) => {
-                                                const rendered = (
-                                                    <span
-                                                        {...getTokenProps({
-                                                            token,
-                                                            key,
-                                                        })}
-                                                    />
-                                                );
-                                                const start = at - 1;
-                                                at += token.content.length;
-                                                if (byStart[start]) {
-                                                    return (
-                                                        <React.Fragment
-                                                            key={key + 'ok'}
-                                                        >
-                                                            {byStart[start].map(
-                                                                ({ id }, i) => {
-                                                                    if (
-                                                                        !traceOutput ||
-                                                                        !traceOutput[
-                                                                            id
-                                                                        ]
-                                                                    ) {
-                                                                        return;
-                                                                    }
-                                                                    return (
-                                                                        <span
-                                                                            style={{
-                                                                                cursor: 'pointer',
-                                                                            }}
-                                                                            key={
-                                                                                id
-                                                                            }
-                                                                            onMouseEnter={() => {
-                                                                                setHover(
-                                                                                    id,
-                                                                                );
-                                                                            }}
-                                                                        >
-                                                                            {getWidget(
-                                                                                id,
-                                                                                traceOutput,
-                                                                            )}
-                                                                        </span>
-                                                                    );
-                                                                },
-                                                            )}
-                                                            {rendered}
-                                                        </React.Fragment>
-                                                    );
-                                                } else {
-                                                    return rendered;
-                                                }
-                                            })} */}
-                                        </div>
+                                        </React.Fragment>
                                     );
                                     // at += 1;
                                     return res;
@@ -321,7 +248,7 @@ const renderFull = (
 
 type Token = Parameters<Highlight['getTokenProps']>[0]['token'];
 type FullToken = {
-    content: Token; // | Array<FullToken>;
+    content: Token | Array<FullToken>;
     id: null | number;
     at: number;
     widgets: Array<Item>;
@@ -330,6 +257,80 @@ type Item = {
     id: number;
     start: number;
     end: number;
+};
+
+export const organize2 = (
+    lines: Array<Array<Token>>,
+    byStart: ByStart,
+): Array<{ broken: Array<FullToken>; line: Array<Token> }> => {
+    // first split tokens
+    // then annotate with ides
+    const split = lines.map((line) => {
+        const res: Array<Token> = [];
+        line.forEach((token) => {
+            if (!token.content.length) {
+                console.log('empty token?');
+                return;
+            }
+            let content = token.content;
+            const m = content.match(/^\s+/);
+            if (m && m[0].length < content.length) {
+                res.push({ ...token, content: m[0] });
+                content = content.slice(m[0].length);
+            }
+            const end = content.match(/\s+$/);
+            if (end && end[0].length < content.length) {
+                res.push({
+                    ...token,
+                    content: content.slice(0, -end[0].length),
+                });
+                res.push({ ...token, content: end[0] });
+            } else {
+                res.push({ ...token, content });
+            }
+        });
+        res.push({ content: '\n', types: [] });
+        return res;
+    });
+
+    // we need recursion probably?
+
+    // consume ... things ...
+    // waht about multiline? I don't really care about line highlighting.
+    // so maybe we just do inline-block everything, with newlines. let's do it.
+
+    let at = 0;
+
+    let current: Array<Item> = [];
+    const advance = (tok: Token) => {
+        const num = tok.content.length;
+        if (current.some((t) => t.end <= at + num)) {
+            current = current.filter((t) => t.end > at + num);
+        }
+
+        for (let i = 0; i < num; i++) {
+            at += 1;
+            if (byStart[at - 1]) {
+                current.push(
+                    ...byStart[at - 1].map((m) => ({ ...m, start: at })),
+                );
+                // added.push(...byStart[at].map((m) => ({ ...m, start: at })));
+            }
+        }
+
+        // at += num;
+        return {
+            content: tok,
+            at: at - num,
+            id: null,
+            widgets: current.filter((c) => c.start === at - num),
+        };
+    };
+
+    return split.map((line) => ({
+        broken: line.map((tok) => advance(tok)),
+        line,
+    }));
 };
 
 export const organizeTokens = (
@@ -361,6 +362,10 @@ export const organizeTokens = (
     return lines.map((line, i) => {
         const broken: Array<FullToken> = [];
         line.forEach((token) => {
+            if (!token.content.length) {
+                console.log('empty token?');
+                return;
+            }
             let content = token.content;
             const m = content.match(/^\s+/);
             if (m && m[0].length < content.length) {
