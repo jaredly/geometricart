@@ -2,7 +2,7 @@ import esbuild from 'esbuild';
 import mdx from '@mdx-js/esbuild';
 import babel from '@babel/core';
 import generate from '@babel/generator';
-// import babel from 'esbuild-plugin-babel';
+import annotate from './annotate-trace.mjs';
 import { fileURLToPath } from 'url';
 import path from 'path';
 import fs from 'fs';
@@ -26,16 +26,10 @@ const myFancyPlugin = {
                 };
             }
 
-            contents = contents.replace(' => {', ' => {console.log("HI");');
-
-            const parsed = babel.parseSync(contents, {
-                parserOpts: {
-                    plugins: ['typescript', 'jsx'],
-                },
-            });
-            console.log('parsed');
+            const found = annotate(contents);
+            console.log(found);
             return {
-                contents: generate.default(parsed).code,
+                contents: contents + '\n\n' + generate.default(found).code,
                 loader: 'ts',
             };
         });
