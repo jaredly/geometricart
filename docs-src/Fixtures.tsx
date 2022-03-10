@@ -39,7 +39,17 @@ const getCallInfo = (id: number, trace: TraceOutput) => {
 const getWidget = (id: number, trace: TraceOutput) => {
     const info = getCallInfo(id, trace);
     if (!info || !info.fn.meta || !widgets[info.fn.meta.name]) {
-        return '🔎';
+        return (
+            <div
+                style={{
+                    display: 'inline-block',
+                    backgroundColor: 'red',
+                    width: 4,
+                    height: 4,
+                    margin: 1,
+                }}
+            />
+        );
     }
     return widgets[info.fn.meta.name](info.args, trace[id].values[0]);
 };
@@ -91,7 +101,13 @@ export const Fixtures = <I, O>({
         <div>
             <div style={{ display: 'flex', flexWrap: 'wrap' }}>
                 {fixtures.map((fix, i) => (
-                    <div key={i} onClick={() => setSelected(i)}>
+                    <div
+                        key={i}
+                        onClick={() => {
+                            setSelected(i);
+                            setHover(null);
+                        }}
+                    >
                         <svg width={300} height={300}>
                             {renderInput(fix.input)}
                             {renderOutput(fix.output, fix.input)}
@@ -99,7 +115,7 @@ export const Fixtures = <I, O>({
                     </div>
                 ))}
             </div>
-            <div>
+            <div style={{ position: 'relative' }}>
                 <Highlight {...defaultProps} code={source} language="tsx">
                     {({
                         className,
@@ -166,6 +182,9 @@ export const Fixtures = <I, O>({
                                                                     }
                                                                     return (
                                                                         <span
+                                                                            style={{
+                                                                                cursor: 'pointer',
+                                                                            }}
                                                                             key={
                                                                                 id
                                                                             }
@@ -199,28 +218,35 @@ export const Fixtures = <I, O>({
                         );
                     }}
                 </Highlight>
+                {hover != null && traceOutput != null ? (
+                    <div
+                        style={{
+                            whiteSpace: 'pre-wrap',
+                            fontFamily: 'monospace',
+                            position: 'absolute',
+                            right: 20,
+                            top: 20,
+                            backgroundColor: 'white',
+                        }}
+                    >
+                        {JSON.stringify(
+                            traceOutput[hover].values.map((f) =>
+                                typeof f === 'function' ? f.meta : f,
+                            ),
+                            null,
+                            2,
+                        )}
+                        {traceOutput[hover].call
+                            ? '\n' +
+                              JSON.stringify(
+                                  traceOutput[hover].call?.map(
+                                      (id) => traceOutput[id].values,
+                                  ),
+                              )
+                            : null}
+                    </div>
+                ) : null}
             </div>
-            {hover != null && traceOutput != null ? (
-                <div
-                    style={{ whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}
-                >
-                    {JSON.stringify(
-                        traceOutput[hover].values.map((f) =>
-                            typeof f === 'function' ? f.meta : f,
-                        ),
-                        null,
-                        2,
-                    )}
-                    {traceOutput[hover].call
-                        ? '\n' +
-                          JSON.stringify(
-                              traceOutput[hover].call?.map(
-                                  (id) => traceOutput[id].values,
-                              ),
-                          )
-                        : null}
-                </div>
-            ) : null}
         </div>
     );
 };

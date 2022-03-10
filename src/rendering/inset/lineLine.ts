@@ -12,13 +12,13 @@ export const insetLineLine = (
 ): Array<Segment> => {
     const t0 = angleTo(prev, seg.to);
     const t1 = angleTo(seg.to, next.to);
-    const between = zeroToTwoPi(angleBetween(t0, t1, true));
+    const between = zeroToTwoPi(angleBetween(t0, t1, amount > 0));
     // It's a straight continuation!
     if (between === 0) {
         return [{ type: 'Line', to: push(seg.to, t0 + Math.PI / 2, amount) }];
     }
     // We're "contracting" a corner
-    if (amount > 0 ? between < Math.PI : between > Math.PI) {
+    if (between < Math.PI) {
         return [
             { type: 'Line', to: push(seg.to, t0 + Math.PI / 2, amount) },
             { type: 'Line', to: seg.to },
