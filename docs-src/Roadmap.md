@@ -1,10 +1,22 @@
 
-ok, now I really need to do the hover-token instead of just hover-whatever
 
 
-So, to allow function-specific visualizations,
-I want a processor that annotates exported functions, with
-.meta = {name, filePath}
+
+I want to keep info about a variable through it's uses, so I can e.g. show an angle
+arrow in the places it's used. Seems like it ought to be doable.
+
+I'm assuming immutability, which, might be fraught idk.
+I guess I can always keep both if I want?
+we'll see.
+
+
+
+- [x] ok, now I really need to do the hover-token instead of just hover-whatever
+
+
+- [x] So, to allow function-specific visualizations,
+  I want a processor that annotates exported functions, with
+  .meta = {name, filePath}
 
 
 

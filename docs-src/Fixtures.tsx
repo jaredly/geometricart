@@ -76,7 +76,7 @@ export const Fixtures = <I, O>({
     source: string;
 }) => {
     console.log(typeof trace);
-    const [selected, setSelected] = React.useState(null as null | number);
+    const [selected, setSelected] = React.useState(0);
     const [traceOutput, byStart] = React.useMemo((): [
         TraceOutput | null,
         ByStart,
@@ -108,6 +108,14 @@ export const Fixtures = <I, O>({
         return [data, byStart];
     }, [selected]);
     const [hover, setHover] = React.useState(null as null | number);
+    const [cursor, setCursor] = React.useState({ x: 0, y: 0 });
+    React.useEffect(() => {
+        const fn = (evt: MouseEvent) => {
+            setCursor({ x: evt.clientX, y: evt.clientY });
+        };
+        document.addEventListener('mousemove', fn);
+        return () => document.removeEventListener('mousemove', fn);
+    }, []);
     return (
         <div>
             <div style={{ display: 'flex', flexWrap: 'wrap' }}>
@@ -116,15 +124,18 @@ export const Fixtures = <I, O>({
                         key={i}
                         style={
                             selected === i
-                                ? { outline: '1px solid magenta' }
-                                : undefined
+                                ? {
+                                      outline: '1px solid magenta',
+                                      cursor: 'pointer',
+                                  }
+                                : { cursor: 'pointer' }
                         }
                         onClick={() => {
                             setSelected(i);
                             setHover(null);
                         }}
                     >
-                        <svg width={300} height={300}>
+                        <svg width={150} height={150} viewBox="0 0 300 300">
                             {renderInput(fix.input)}
                             {renderOutput(fix.output, fix.input)}
                         </svg>
@@ -140,7 +151,6 @@ export const Fixtures = <I, O>({
                         getLineProps,
                         getTokenProps,
                     }) => {
-                        // let at = 0;
                         const organized = organize2(
                             lines,
                             byStart,
@@ -188,25 +198,43 @@ export const Fixtures = <I, O>({
                         );
                     }}
                 </Highlight>
-                {hover != null && traceOutput != null ? (
+                {selected != null && fixtures[selected] ? (
                     <div
                         style={{
-                            whiteSpace: 'pre-wrap',
-                            fontFamily: 'monospace',
                             position: 'absolute',
-                            right: 20,
-                            top: 20,
+                            top: 8,
+                            right: 8,
                             backgroundColor: 'white',
                         }}
                     >
-                        <ShowValues
-                            values={traceOutput[hover].values.map((f) =>
-                                typeof f === 'function' ? f.meta : f,
+                        <svg width={300} height={300} viewBox="0 0 300 300">
+                            {renderInput(fixtures[selected].input)}
+                            {renderOutput(
+                                fixtures[selected].output,
+                                fixtures[selected].input,
                             )}
-                        />
+                        </svg>
                     </div>
                 ) : null}
             </div>
+            {hover != null && traceOutput != null ? (
+                <div
+                    style={{
+                        whiteSpace: 'pre-wrap',
+                        fontFamily: 'monospace',
+                        position: 'absolute',
+                        left: cursor.x + 8,
+                        top: cursor.y + 16,
+                        backgroundColor: 'white',
+                    }}
+                >
+                    <ShowValues
+                        values={traceOutput[hover].values.map((f) =>
+                            typeof f === 'function' ? f.meta : f,
+                        )}
+                    />
+                </div>
+            ) : null}
         </div>
     );
 };
@@ -237,7 +265,7 @@ const renderFull = (
     byStart: ByStart,
     traceOutput: TraceOutput,
     key: string,
-    onHover: (i: number) => void,
+    onHover: (i: number | null) => void,
 ) => {
     return (
         <span
@@ -266,6 +294,14 @@ const renderFull = (
                     ? (evt) => {
                           evt.stopPropagation();
                           onHover(token.id!);
+                      }
+                    : undefined
+            }
+            onMouseOut={
+                token.id != null
+                    ? (evt) => {
+                          evt.stopPropagation();
+                          onHover(null);
                       }
                     : undefined
             }

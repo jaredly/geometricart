@@ -85,7 +85,11 @@ export const widgets: {
                 viewBox="0 0 20 20"
                 style={{ marginBottom: '-.2em' }}
             >
-                <path d={`M10,10 L${p0.x},${p0.y} ` + d} fill="orange" />
+                <path
+                    d={`M10,10 L${p0.x},${p0.y} ` + d}
+                    fill="white"
+                    opacity={0.2}
+                />
                 <path d={`M${p0.x},${p0.y} ` + d} stroke="red" fill="none" />
                 {output === 0 ? (
                     <polyline
