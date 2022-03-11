@@ -28,6 +28,36 @@ export const addFunctionMeta = (contents, filePath) => {
             }
             node.declaration.declarations.forEach((decl) => {
                 if (fns.includes(decl.init.type)) {
+                    let comment;
+                    let argComments = [];
+                    if (node.leadingComments?.length) {
+                        const last =
+                            node.leadingComments[
+                                node.leadingComments.length - 1
+                            ];
+                        if (last.type === 'CommentBlock') {
+                            comment = last.value;
+                        }
+                    }
+                    decl.init.params.forEach((param) => {
+                        if (
+                            param.type === 'Identifier' &&
+                            param.loc.start.line > decl.loc.start.line
+                        ) {
+                            const prev = parsed.comments?.find(
+                                (comment) =>
+                                    comment.loc.end.line ===
+                                    param.loc.start.line - 1,
+                            )?.value;
+                            argComments.push({
+                                name: param.name,
+                                comment: prev,
+                            });
+                        } else {
+                            argComments.push(null);
+                        }
+                    });
+
                     found.push(
                         t.expressionStatement(
                             t.assignmentExpression(
@@ -44,6 +74,18 @@ export const addFunctionMeta = (contents, filePath) => {
                                     t.objectProperty(
                                         t.identifier('filePath'),
                                         t.stringLiteral(filePath),
+                                    ),
+                                    t.objectProperty(
+                                        t.identifier('comment'),
+                                        comment
+                                            ? t.stringLiteral(comment)
+                                            : t.nullLiteral(),
+                                    ),
+                                    t.objectProperty(
+                                        t.identifier('argComments'),
+                                        t.identifier(
+                                            JSON.stringify(argComments),
+                                        ),
                                     ),
                                 ]),
                             ),

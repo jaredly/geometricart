@@ -232,8 +232,9 @@ export const Fixtures = <I, O>({
 
 const ShowValues = ({ values }: { values: Array<any> }) => {
     const [selected, setSelected] = React.useState(0);
+    console.log(values[selected]?.meta?.argComments);
     return (
-        <div>
+        <div style={{ whiteSpace: 'pre' }}>
             {values.length > 1 ? (
                 <div>
                     <button onClick={() => setSelected(selected - 1)}>
@@ -246,7 +247,9 @@ const ShowValues = ({ values }: { values: Array<any> }) => {
                 </div>
             ) : null}
             {typeof values[selected] === 'function' && values[selected].meta
-                ? `function ${values[selected].meta.name}`
+                ? `function ${values[selected].meta.name}\n${
+                      values[selected].meta.comment ?? ''
+                  }`
                 : typeof values[selected] === 'number'
                 ? values[selected].toFixed(2)
                 : JSON.stringify(values[selected])}
