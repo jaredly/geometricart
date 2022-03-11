@@ -143,6 +143,8 @@ function annotateFunctionBody(toplevel) {
     const seen = new Map();
     let i = 0;
 
+    const assigns = {};
+
     function captureArguments(path) {
         if (seen.has(path.node)) {
             return;
@@ -167,6 +169,12 @@ function annotateFunctionBody(toplevel) {
     }
 
     return {
+        VariableDeclarator: {
+            exit(path) {
+                const at = seen.get(path.node.init);
+                assigns[path.node.id.name] = at;
+            },
+        },
         ArrowFunctionExpression(path) {
             if (
                 path.node === toplevel &&
@@ -187,6 +195,17 @@ function annotateFunctionBody(toplevel) {
                 // if (path.node.type === 'StringLiteral') return;
                 // if (path.node.type === 'BoolLiteral') return;
                 if (seen.has(path.node)) return;
+
+                // TODO: Need to capture the location somewhere,
+                // otherwise we don't know where to display it.
+                // if (
+                //     path.node.type === 'Identifier' &&
+                //     assigns[path.node.name] != null
+                // ) {
+                //     seen.set(path.node, assigns[path.node.name]);
+                //     return;
+                // }
+
                 const num = i++;
                 const n = t.callExpression(t.identifier('trace'), [
                     path.node,
