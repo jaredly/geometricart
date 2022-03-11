@@ -84,16 +84,19 @@ export const Arrow = ({
     theta,
     size,
     color,
+    inner,
 }: {
     point: Coord;
     theta: number;
     size: number;
     color: string;
+    inner?: React.ComponentProps<'polygon'>;
 }) => {
     return (
         <polygon
             points={pointsList(arrow(point, theta, size / 2, 0.8))}
             fill={color}
+            {...inner}
         />
     );
 };

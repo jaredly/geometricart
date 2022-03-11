@@ -1,6 +1,7 @@
 import * as React from 'react';
 import {
     insetLineLineTrace,
+    insetLineLine,
     rawSource,
 } from '../src/rendering/inset/lineLine.ts';
 import { Fixtures } from './Fixtures';
@@ -105,8 +106,20 @@ and
                     <Arrow
                         point={p3}
                         theta={angleTo(p2, p3)}
-                        size={10}
+                        size={onChange ? 20 : 10}
                         color="red"
+						inner={{
+							style: onChange? {cursor: 'pointer'} : null,
+                        onMouseDown: onChange ? (evt) => {
+							const box = ref.current.parentNode.getBoundingClientRect();
+							const pos = {
+								x: evt.clientX - box.left,
+								y: evt.clientY - box.top,
+							};
+							setMoving({which: 3, pos});
+    					} : null
+
+    					}}
                     />
                     {/* <text x={0} y={20}>
                 inset: {inset}
@@ -122,7 +135,7 @@ and
         );
         return (
             <>
-			<g style={{pointerEvents: 'none'}}>
+    		<g style={{pointerEvents: 'none'}}>
                 {
                     <RenderSegmentBasic
                         prev={segments[segments.length - 1].to}
@@ -148,11 +161,19 @@ and
                         inner={{ stroke: 'green', strokeWidth: 3 }}
                     />
                 ))}
-				</g>
+    			</g>
             </>
         );
     }}
     source={rawSource}
+    run={([[p1,p2,p3],inset]) => {
+        return insetLineLine(
+            p1,
+            { type: 'Line', to: p2 },
+            { type: 'Line', to: p3 },
+            inset,
+        );
+    }}
     trace={([[p1, p2, p3], inset], trace) => {
         return insetLineLineTrace(
             p1,

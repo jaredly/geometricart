@@ -61,11 +61,13 @@ export const Fixtures = <I, O>({
     Output,
     source,
     trace,
+    run,
 }: {
     fixtures: Array<Fixture<I, O>>;
     Input: (props: { input: I; onChange?: (input: I) => void }) => JSX.Element;
     Output: (props: { output: O; input: I }) => JSX.Element;
     trace: (i: I, trace: Trace) => O;
+    run: (i: I) => O;
     source: string;
 }) => {
     const [selected, setSelected] = React.useState(fixtures[0]);
@@ -127,7 +129,7 @@ export const Fixtures = <I, O>({
                     >
                         <svg width={150} height={150} viewBox="0 0 300 300">
                             <Input input={fix.input} />
-                            <Output output={fix.output} input={fix.input} />
+                            <Output output={run(fix.input)} input={fix.input} />
                         </svg>
                     </div>
                 ))}
