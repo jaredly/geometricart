@@ -27,7 +27,7 @@ export type TraceOutput = {
 };
 
 const getCallInfo = (id: number, trace: TraceOutput) => {
-    if (!trace[id].call) {
+    if (!trace[id] || !trace[id].call) {
         return;
     }
     const { fn: fnid, args } = trace[id].call!;
@@ -41,12 +41,15 @@ const getCallInfo = (id: number, trace: TraceOutput) => {
     };
 };
 
+// @ts-ignore
+Math.cos.meta = { name: 'Math.cos' };
+
 export const hasVisual = (id: number, trace: TraceOutput) => {
     const info = getCallInfo(id, trace);
-    if (!info || !info.fn.meta || !visuals[info.fn.meta.name]) {
+    if (!info || !info.fn.meta) {
         return false;
     }
-    return true;
+    return !!visuals[info.fn.meta.name] || !!widgets[info.fn.meta.name];
 };
 
 export const getWidget = (id: number, trace: TraceOutput, size: string) => {
@@ -72,6 +75,7 @@ export type ByStart = {
 };
 
 export type Info = {
+    comments: Array<{ value: string; start: number; end: number }>;
     expressions: {
         [key: number]: {
             start: number;
@@ -188,30 +192,27 @@ export const Fixtures = <I, O>({
                     hover={hover}
                     setHover={setHover}
                 />
-                {selected != null && selected ? (
-                    <div
-                        style={{
-                            position: 'absolute',
-                            top: 8,
-                            right: 8,
-                            backgroundColor: 'white',
-                        }}
-                    >
-                        <RenderMain
-                            editDelay={editDelay}
-                            pins={pins}
-                            setPins={setPins}
-                            run={run}
-                            Input={Input}
-                            setSelected={setSelected}
-                            selected={selected}
-                            Output={Output}
-                            output={output}
-                            hover={hover}
-                            traceOutput={traceOutput}
-                        />
-                    </div>
-                ) : null}
+                <div
+                    style={{
+                        position: 'absolute',
+                        top: 8,
+                        right: 8,
+                    }}
+                >
+                    <RenderMain
+                        editDelay={editDelay}
+                        pins={pins}
+                        setPins={setPins}
+                        run={run}
+                        Input={Input}
+                        setSelected={setSelected}
+                        selected={selected}
+                        Output={Output}
+                        output={output}
+                        hover={hover}
+                        traceOutput={traceOutput}
+                    />
+                </div>
             </div>
             {hover != null ? (
                 <div
@@ -221,7 +222,7 @@ export const Fixtures = <I, O>({
                         position: 'fixed',
                         left: cursor.x + 8,
                         top: cursor.y + 16,
-                        backgroundColor: 'rgba(0,0,0,0.8)',
+                        backgroundColor: 'rgba(0,0,0,0.9)',
                         color: 'white',
                         padding: 4,
                     }}
@@ -237,6 +238,8 @@ export const Fixtures = <I, O>({
 const ShowValues = ({ values }: { values: Array<any> }) => {
     const v = values[0];
     if (typeof v === 'function' && v.meta && v.meta.comment) {
+        const arc: Array<{ name: string; comment?: string }> =
+            v.meta.argComments;
         return (
             <div
                 style={{
@@ -244,7 +247,7 @@ const ShowValues = ({ values }: { values: Array<any> }) => {
                     fontFamily: 'system-ui',
                 }}
             >
-                {v.meta.argComments.some(Boolean) ? (
+                {arc.some(Boolean) ? (
                     <div
                         style={{
                             marginBottom: '1em',
@@ -253,8 +256,7 @@ const ShowValues = ({ values }: { values: Array<any> }) => {
                         }}
                     >
                         <code>
-                            {v.meta.name}(
-                            {v.meta.argComments.map((c) => c.name).join(', ')})
+                            {v.meta.name}({arc.map((c) => c.name).join(', ')})
                         </code>
                     </div>
                 ) : null}
@@ -264,46 +266,39 @@ const ShowValues = ({ values }: { values: Array<any> }) => {
                     rehypePlugins={[rehypeKatex]}
                     className="md"
                 />
-                {v.meta.argComments.some((c) => c && c.comment) ? (
+                {arc.some((c) => c && c.comment) ? (
                     <>
                         <h4 style={{ marginTop: '1em', marginBottom: '.5em' }}>
                             Arguments
                         </h4>
                         <table>
                             <tbody>
-                                {v.meta.argComments.map(
-                                    (arg: {
-                                        name: string;
-                                        comment: string;
-                                    }) => (
-                                        <tr>
-                                            <td
-                                                style={{
-                                                    paddingRight: 8,
-                                                    fontStyle: 'italic',
-                                                }}
-                                            >
-                                                {arg.name}
-                                            </td>
-                                            <td>
-                                                {arg.comment ? (
-                                                    <ReactMarkdown
-                                                        children={arg.comment}
-                                                        remarkPlugins={[
-                                                            remarkMath,
-                                                        ]}
-                                                        rehypePlugins={[
-                                                            rehypeKatex,
-                                                        ]}
-                                                        className="md"
-                                                    />
-                                                ) : (
-                                                    'No documentation'
-                                                )}
-                                            </td>
-                                        </tr>
-                                    ),
-                                )}
+                                {arc.map((arg) => (
+                                    <tr>
+                                        <td
+                                            style={{
+                                                paddingRight: 8,
+                                                fontStyle: 'italic',
+                                            }}
+                                        >
+                                            {arg.name}
+                                        </td>
+                                        <td>
+                                            {arg.comment ? (
+                                                <ReactMarkdown
+                                                    children={arg.comment}
+                                                    remarkPlugins={[remarkMath]}
+                                                    rehypePlugins={[
+                                                        rehypeKatex,
+                                                    ]}
+                                                    className="md"
+                                                />
+                                            ) : (
+                                                'No documentation'
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))}
                             </tbody>
                         </table>
                     </>
@@ -365,50 +360,76 @@ function RenderMain<I, O>({
         }
     }, [edit]);
     return (
-        <svg width={300} height={300} viewBox="0 0 300 300">
-            <Input onChange={setEdit} input={edit} />
-            <Output input={edit} output={myOutput} />
-            <g style={{ pointerEvents: 'none' }}>
+        <div style={{ width: 300 }}>
+            <svg
+                width={300}
+                height={300}
+                viewBox="0 0 300 300"
+                style={{
+                    backgroundColor: 'white',
+                }}
+            >
+                <Input onChange={setEdit} input={edit} />
+                <Output input={edit} output={myOutput} />
+                <g style={{ pointerEvents: 'none' }}>
+                    {Object.keys(pins)
+                        .filter((k) => pins[+k] && +k !== hover)
+                        .map((k) => {
+                            const hover = traceOutput[+k];
+                            if (!hover || !hover.call) {
+                                return;
+                            }
+                            const name =
+                                traceOutput[hover.call.fn].values[0].meta.name;
+                            if (visuals[name]) {
+                                return (
+                                    <React.Fragment key={k}>
+                                        {visuals[name](
+                                            hover.call.args.map(
+                                                (id) =>
+                                                    traceOutput[id].values[0],
+                                            ),
+                                            hover.values[0],
+                                        )}
+                                    </React.Fragment>
+                                );
+                            }
+                        })}
+                    {hover
+                        ? ((hover) => {
+                              if (!hover.call) {
+                                  return;
+                              }
+                              const name =
+                                  traceOutput[hover.call.fn].values[0].meta
+                                      ?.name;
+                              if (name && visuals[name]) {
+                                  return visuals[name](
+                                      hover.call.args.map(
+                                          (id) => traceOutput[id].values[0],
+                                      ),
+                                      hover.values[0],
+                                  );
+                              }
+                          })(traceOutput[hover])
+                        : null}
+                </g>
+            </svg>
+            <div
+                style={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    fontFamily: 'monospace',
+                }}
+            >
                 {Object.keys(pins)
-                    .filter((k) => pins[+k] && +k !== hover)
-                    .map((k) => {
-                        const hover = traceOutput[+k];
-                        if (!hover || !hover.call) {
-                            return;
-                        }
-                        const name =
-                            traceOutput[hover.call.fn].values[0].meta.name;
-                        if (visuals[name]) {
-                            return (
-                                <React.Fragment key={k}>
-                                    {visuals[name](
-                                        hover.call.args.map(
-                                            (id) => traceOutput[id].values[0],
-                                        ),
-                                        hover.values[0],
-                                    )}
-                                </React.Fragment>
-                            );
-                        }
-                    })}
-                {hover
-                    ? ((hover) => {
-                          if (!hover.call) {
-                              return;
-                          }
-                          const name =
-                              traceOutput[hover.call.fn].values[0].meta?.name;
-                          if (name && visuals[name]) {
-                              return visuals[name](
-                                  hover.call.args.map(
-                                      (id) => traceOutput[id].values[0],
-                                  ),
-                                  hover.values[0],
-                              );
-                          }
-                      })(traceOutput[hover])
-                    : null}
-            </g>
-        </svg>
+                    .filter((k) => pins[+k] && !!traceOutput[+k])
+                    .map((k) => (
+                        <div style={{ margin: 8 }} key={k}>
+                            {getWidget(+k, traceOutput, '3em')}
+                        </div>
+                    ))}
+            </div>
+        </div>
     );
 }

@@ -3,6 +3,10 @@ import Highlight, { defaultProps } from 'prism-react-renderer';
 import { FullToken, organizeTokens } from './organizeTokens';
 import { Info, ByStart, TraceOutput, getWidget, hasVisual } from './Fixtures';
 
+import ReactMarkdown from 'react-markdown';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+
 export const RenderCode = React.memo(
     ({
         source,
@@ -46,8 +50,9 @@ export const RenderCode = React.memo(
                             style={{
                                 ...style,
                                 whiteSpace: 'pre-wrap',
-                                fontSize: 20,
+                                // fontSize: 20,
                                 cursor: 'default',
+                                padding: '1em',
                             }}
                         >
                             {renderFull(
@@ -146,6 +151,26 @@ const renderFull = (
                         setPins,
                     ),
                 )
+            ) : token.content.types.includes('doc-comment') ? (
+                <div
+                    style={{
+                        whiteSpace: 'normal',
+                        // backgroundColor: 'rgba(255,255,255,0.5)',
+                        color: '#eee',
+                        lineHeight: 1.5,
+                        padding: '8px 16px',
+                        margin: '8px 0',
+                        // border: '1px solid #aaa',
+                        maxWidth: 800,
+                    }}
+                >
+                    <ReactMarkdown
+                        children={token.content.content.replace(/^\s*\*/gm, '')}
+                        remarkPlugins={[remarkMath]}
+                        rehypePlugins={[rehypeKatex]}
+                        className="md"
+                    />
+                </div>
             ) : (
                 <span {...getTokenProps({ token: token.content })} />
             )}

@@ -124,6 +124,19 @@ export default function (contents, filePath) {
                             expressions: {},
                             calls: {},
                             references: [],
+                            comments: parsed.comments
+                                .filter(
+                                    (comment) =>
+                                        comment.type === 'CommentBlock' &&
+                                        comment.value.startsWith('*') &&
+                                        comment.start > decl.start &&
+                                        comment.end < decl.end,
+                                )
+                                .map((c) => ({
+                                    value: c.value,
+                                    start: c.start,
+                                    end: c.end,
+                                })),
                         };
                         traverse.default(
                             t.file(t.program([ensureStmt(decl.init)])),
@@ -231,6 +244,7 @@ function annotateFunctionBody(toplevel, traceInfo) {
                 seen.set(n.callee, -1);
                 n.arguments.forEach((arg) => seen.set(arg, -1));
                 path.node.body.body.unshift(n);
+                assigns[param.name] = num;
             }
         });
         path.node.params.push(t.identifier('trace'));

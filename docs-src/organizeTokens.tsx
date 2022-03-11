@@ -10,8 +10,26 @@ export const organizeTokens = (
     // first split tokens
     // then annotate with ides
     const tokens: Array<Token & { at: number }> = [];
+    const comments = info.comments.slice();
     let at = -1;
     lines.forEach((line) => {
+        const ll = line.reduce((c, t) => c + t.content.length, 0) + 1;
+        if (comments.length && at + ll >= comments[0].start) {
+            if (at + ll > comments[0].end) {
+                tokens.push({
+                    at: comments[0].start,
+                    content: comments[0].value.trim() + '\n',
+                    types: ['doc-comment'],
+                });
+                comments.shift();
+            }
+            // tokens.push({ content: '\n', types: [], at: at + ll });
+            at += ll;
+            return;
+        }
+        // if (at + ll > comments[0].start) {
+
+        // }
         line.forEach((token) => {
             if (!token.content.length) {
                 // console.log('empty token?');

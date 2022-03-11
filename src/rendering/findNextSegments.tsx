@@ -204,7 +204,7 @@ export const angleBetween = (
     left: number,
     // end 'ending' angle, must be in $[-\pi,\pi]$
     right: number,
-    // which direction to travel around the circle
+    // which direction to travel around the circle, `true` for clockwise
     clockwise: boolean,
 ) => {
     if (!clockwise) {

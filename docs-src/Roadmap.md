@@ -1,7 +1,13 @@
 
 
-- [ ] hmm ok so what about getting docstrings for my functions? Seems doable, right?
+- [x] hmm ok so what about getting docstrings for my functions? Seems doable, right?
 - [x] click a thing to "pin" it in the preview window
+- [x] inline docstrings so gooood
+- [ ] can I get `references` to variables in the docstring to resolve, such that
+  my inline widgets happen there too? That would be so rad.
+- [ ] also, having an end-of-line comment on a variable declaration, indicating
+  what widget I want to use to render the thing (so that I can annotate the
+  angle variables?)
 
 
 I want to keep info about a variable through it's uses, so I can e.g. show an angle

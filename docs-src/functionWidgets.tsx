@@ -36,6 +36,34 @@ const angleArrow = (orig: number, reverse?: boolean) => {
 export const widgets: {
     [key: string]: (args: any, output: any) => JSX.Element;
 } = {
+    'Math.cos': ([angle], output: number) => {
+        const mid = { x: 10, y: 10 };
+        return (
+            <svg
+                width={'100%'}
+                height={'100%'}
+                viewBox="0 0 20 20"
+                style={{ marginBottom: '-.2em' }}
+            >
+                <polyline
+                    points={pointsList([mid, push(mid, angle, 10)])}
+                    stroke="red"
+                    strokeDasharray={'1 1'}
+                    strokeWidth={1}
+                    fill="none"
+                />
+                <polyline
+                    points={pointsList([mid, push(mid, 0, 10 * output)])}
+                    stroke="red"
+                    strokeWidth={1}
+                    fill="none"
+                />
+                <text x={20} y={20} fill="white" fontSize={6} textAnchor="end">
+                    {(angle / Math.PI).toFixed(2)}π
+                </text>
+            </svg>
+        );
+    },
     push: ([coord, theta, dist], output: Coord) => {
         return (
             <svg
