@@ -159,6 +159,7 @@ export const visuals: {
                     points={pointsList([p1, p2])}
                     stroke="black"
                     strokeWidth={3}
+                    strokeDasharray="3 3"
                     fill="none"
                 />
                 <circle cx={p2.x} cy={p2.y} r={5} fill="black" />

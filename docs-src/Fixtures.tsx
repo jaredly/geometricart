@@ -61,12 +61,14 @@ export const Fixtures = <I, O>({
     Input,
     Output,
     source,
+    editDelay,
     trace,
     run,
 }: {
     fixtures: Array<Fixture<I, O>>;
     Input: (props: { input: I; onChange?: (input: I) => void }) => JSX.Element;
     Output: (props: { output: O; input: I }) => JSX.Element;
+    editDelay?: number;
     trace: (i: I, trace: Trace) => O;
     run: (i: I) => O;
     source: string;
@@ -152,6 +154,7 @@ export const Fixtures = <I, O>({
                         }}
                     >
                         <RenderMain
+                            editDelay={editDelay}
                             run={run}
                             Input={Input}
                             setSelected={setSelected}
@@ -510,8 +513,10 @@ function RenderMain<I, O>({
     output,
     hover,
     traceOutput,
+    editDelay,
     run,
 }: {
+    editDelay?: number;
     Input: (props: {
         input: I;
         onChange?: ((input: I) => void) | undefined;
@@ -527,10 +532,12 @@ function RenderMain<I, O>({
     const [edit, setEdit] = useInitialState(selected.input);
     const myOutput = React.useMemo(() => run(edit), [edit]);
     React.useEffect(() => {
-        // const tid = setTimeout(() => {
-        //     setSelected((s) => ({ ...s, input: edit }));
-        // }, 40);
-        // return () => clearTimeout(tid);
+        if (editDelay) {
+            const tid = setTimeout(() => {
+                setSelected((s) => ({ ...s, input: edit }));
+            }, editDelay);
+            return () => clearTimeout(tid);
+        }
         if (edit !== selected.input) {
             setSelected((s) => ({ ...s, input: edit }));
         }
@@ -539,23 +546,25 @@ function RenderMain<I, O>({
         <svg width={300} height={300} viewBox="0 0 300 300">
             <Input onChange={setEdit} input={edit} />
             <Output input={edit} output={myOutput} />
-            {hover
-                ? ((hover) => {
-                      if (!hover.call) {
-                          return;
-                      }
-                      const name =
-                          traceOutput[hover.call[0]].values[0].meta.name;
-                      if (visuals[name]) {
-                          return visuals[name](
-                              hover.call
-                                  .slice(1)
-                                  .map((id) => traceOutput[id].values[0]),
-                              hover.values[0],
-                          );
-                      }
-                  })(traceOutput[hover])
-                : null}
+            <g style={{ pointerEvents: 'none' }}>
+                {hover
+                    ? ((hover) => {
+                          if (!hover.call) {
+                              return;
+                          }
+                          const name =
+                              traceOutput[hover.call[0]].values[0].meta.name;
+                          if (visuals[name]) {
+                              return visuals[name](
+                                  hover.call
+                                      .slice(1)
+                                      .map((id) => traceOutput[id].values[0]),
+                                  hover.values[0],
+                              );
+                          }
+                      })(traceOutput[hover])
+                    : null}
+            </g>
         </svg>
     );
 }

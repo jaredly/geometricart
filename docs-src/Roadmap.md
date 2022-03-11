@@ -1,5 +1,6 @@
 
 
+- [ ] hmm ok so what about getting docstrings for my functions? Seems doable, right?
 
 
 I want to keep info about a variable through it's uses, so I can e.g. show an angle

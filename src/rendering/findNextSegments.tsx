@@ -210,5 +210,9 @@ export const angleBetween = (
     if (right >= left) {
         return right - left;
     }
-    return right + Math.PI * 2 - left;
+    const res = right + Math.PI * 2 - left;
+    if (res < 0) {
+        return res + Math.PI * 2;
+    }
+    return res;
 };

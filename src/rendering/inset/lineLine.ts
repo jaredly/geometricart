@@ -26,11 +26,12 @@ export const insetLineLine = (
         ];
         // We're "expanding" a corner
     } else {
-        const angle = angleBetween(t1, t0 + Math.PI, false);
+        const angle =
+            angleBetween(t0 + Math.PI, t1, amount < 0) * (amount > 0 ? -1 : 1);
         const t = (between - Math.PI) / 2;
-        const dist = amount / Math.cos(Math.PI / 2 - t);
+        const dist = Math.abs(amount / Math.cos(Math.PI / 2 - t));
         return [
-            { type: 'Line', to: push(seg.to, t1 - angle / 2 + Math.PI, dist) },
+            { type: 'Line', to: push(seg.to, t0 - Math.PI + angle / 2, dist) },
         ];
     }
 };
