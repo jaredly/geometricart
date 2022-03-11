@@ -53,6 +53,11 @@ export const addFunctionMeta = (contents, filePath) => {
                                 name: param.name,
                                 comment: prev,
                             });
+                        } else if (param.type === 'Identifier') {
+                            argComments.push({
+                                name: param.name,
+                                comment: null,
+                            });
                         } else {
                             argComments.push(null);
                         }

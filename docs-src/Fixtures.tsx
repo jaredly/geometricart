@@ -4,6 +4,10 @@ import { visuals, widgets } from './functionWidgets';
 import { useInitialState } from '../src/rendering/SegmentEditor';
 import { RenderCode } from './RenderCode';
 
+import ReactMarkdown from 'react-markdown';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+
 type Trace = <V>(
     value: V,
     id: number,
@@ -231,28 +235,91 @@ export const Fixtures = <I, O>({
 };
 
 const ShowValues = ({ values }: { values: Array<any> }) => {
-    const [selected, setSelected] = React.useState(0);
-    console.log(values[selected]?.meta?.argComments);
+    const v = values[0];
+    if (typeof v === 'function' && v.meta && v.meta.comment) {
+        return (
+            <div
+                style={{
+                    padding: 16,
+                    fontFamily: 'system-ui',
+                }}
+            >
+                {v.meta.argComments.some(Boolean) ? (
+                    <div
+                        style={{
+                            marginBottom: '1em',
+                            padding: '8px 16px',
+                            backgroundColor: 'rgba(255,255,255,0.2)',
+                        }}
+                    >
+                        <code>
+                            {v.meta.name}(
+                            {v.meta.argComments.map((c) => c.name).join(', ')})
+                        </code>
+                    </div>
+                ) : null}
+                <ReactMarkdown
+                    children={v.meta.comment.replace(/^\s*\*/gm, '')}
+                    remarkPlugins={[remarkMath]}
+                    rehypePlugins={[rehypeKatex]}
+                    className="md"
+                />
+                {v.meta.argComments.some((c) => c && c.comment) ? (
+                    <>
+                        <h4 style={{ marginTop: '1em', marginBottom: '.5em' }}>
+                            Arguments
+                        </h4>
+                        <table>
+                            <tbody>
+                                {v.meta.argComments.map(
+                                    (arg: {
+                                        name: string;
+                                        comment: string;
+                                    }) => (
+                                        <tr>
+                                            <td
+                                                style={{
+                                                    paddingRight: 8,
+                                                    fontStyle: 'italic',
+                                                }}
+                                            >
+                                                {arg.name}
+                                            </td>
+                                            <td>
+                                                {arg.comment ? (
+                                                    <ReactMarkdown
+                                                        children={arg.comment}
+                                                        remarkPlugins={[
+                                                            remarkMath,
+                                                        ]}
+                                                        rehypePlugins={[
+                                                            rehypeKatex,
+                                                        ]}
+                                                        className="md"
+                                                    />
+                                                ) : (
+                                                    'No documentation'
+                                                )}
+                                            </td>
+                                        </tr>
+                                    ),
+                                )}
+                            </tbody>
+                        </table>
+                    </>
+                ) : null}
+            </div>
+        );
+    }
     return (
         <div style={{ whiteSpace: 'pre' }}>
-            {values.length > 1 ? (
-                <div>
-                    <button onClick={() => setSelected(selected - 1)}>
-                        &lt;
-                    </button>
-                    {selected + 1}
-                    <button onClick={() => setSelected(selected + 1)}>
-                        &gt;
-                    </button>
-                </div>
-            ) : null}
-            {typeof values[selected] === 'function' && values[selected].meta
-                ? `function ${values[selected].meta.name}\n${
-                      values[selected].meta.comment ?? ''
-                  }`
-                : typeof values[selected] === 'number'
-                ? values[selected].toFixed(2)
-                : JSON.stringify(values[selected])}
+            {typeof v === 'function' && v.meta
+                ? `function ${v.meta.name}\n${v.meta.comment ?? ''}`
+                : typeof v === 'number'
+                ? v.toFixed(2)
+                : JSON.stringify(v, (k, v) =>
+                      typeof v === 'number' ? Math.round(v * 100) / 100 : v,
+                  )}
         </div>
     );
 };

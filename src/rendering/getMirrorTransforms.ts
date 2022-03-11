@@ -187,12 +187,21 @@ export const transformsToMatrices = (t: Array<Transform>) =>
         [] as Array<Matrix>,
     );
 
+/**
+ * Calculate the point found `mag` units in `theta` direction from `p1`.
+ */
 export const push = (p1: Coord, theta: number, mag: number) => ({
     x: p1.x + Math.cos(theta) * mag,
     y: p1.y + Math.sin(theta) * mag,
 });
+/**
+ * Calculate the angle from `p1`, pointing at `p2`.
+ */
 export const angleTo = (p1: Coord, p2: Coord) =>
     Math.atan2(p2.y - p1.y, p2.x - p1.x);
+/**
+ * Calculate the distance between two points.
+ */
 export const dist = (p1: Coord, p2: Coord) => {
     const dx = p2.x - p1.x;
     const dy = p2.y - p1.y;
