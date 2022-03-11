@@ -73,13 +73,30 @@ export default function (contents, filePath) {
                     if (fns.includes(decl.init.type)) {
                         const name = decl.id.name;
                         decl.id.name += 'Trace';
+                        const traceInfo = {
+                            expressions: {},
+                            calls: {},
+                            references: [],
+                        };
                         traverse.default(
                             t.file(t.program([ensureStmt(decl.init)])),
-                            annotateFunctionBody(decl.init),
+                            annotateFunctionBody(decl.init, traceInfo),
                         );
                         found.push(
                             t.exportNamedDeclaration(
                                 t.variableDeclaration('const', [decl]),
+                            ),
+                        );
+                        found.push(
+                            t.expressionStatement(
+                                t.assignmentExpression(
+                                    '=',
+                                    t.memberExpression(
+                                        t.identifier(decl.id.name),
+                                        t.identifier('traceInfo'),
+                                    ),
+                                    t.identifier(JSON.stringify(traceInfo)),
+                                ),
                             ),
                         );
                         // found.push(
@@ -139,7 +156,7 @@ export default function (contents, filePath) {
     return t.program(found.concat(addFunctionMeta(contents, filePath)));
 }
 
-function annotateFunctionBody(toplevel) {
+function annotateFunctionBody(toplevel, traceInfo) {
     const seen = new Map();
     let i = 0;
 
@@ -153,11 +170,15 @@ function annotateFunctionBody(toplevel) {
         path.node.params.forEach((param) => {
             if (param.type === 'Identifier') {
                 const num = i++;
+                traceInfo.expressions[num] = {
+                    start: param.start,
+                    end: param.end,
+                };
                 const n = t.callExpression(t.identifier('trace'), [
                     t.identifier(param.name),
                     t.numericLiteral(num),
-                    t.numericLiteral(param.start),
-                    t.numericLiteral(param.end),
+                    // t.numericLiteral(param.start),
+                    // t.numericLiteral(param.end),
                 ]);
                 seen.set(n, num);
                 seen.set(n.callee, -1);
@@ -198,30 +219,45 @@ function annotateFunctionBody(toplevel) {
 
                 // TODO: Need to capture the location somewhere,
                 // otherwise we don't know where to display it.
-                // if (
-                //     path.node.type === 'Identifier' &&
-                //     assigns[path.node.name] != null
-                // ) {
-                //     seen.set(path.node, assigns[path.node.name]);
-                //     return;
-                // }
+                if (
+                    path.node.type === 'Identifier' &&
+                    assigns[path.node.name] != null
+                ) {
+                    seen.set(path.node, assigns[path.node.name]);
+                    traceInfo.references.push({
+                        id: assigns[path.node.name],
+                        loc: {
+                            start: path.node.start,
+                            end: path.node.end,
+                        },
+                    });
+                    return;
+                }
 
                 const num = i++;
+                traceInfo.expressions[num] = {
+                    start: path.node.start,
+                    end: path.node.end,
+                };
                 const n = t.callExpression(t.identifier('trace'), [
                     path.node,
                     t.numericLiteral(num),
-                    t.numericLiteral(path.node.start),
-                    t.numericLiteral(path.node.end),
+                    // t.numericLiteral(path.node.start),
+                    // t.numericLiteral(path.node.end),
                 ]);
                 if (path.node.type === 'CallExpression') {
-                    const arr = [
-                        t.numericLiteral(seen.get(path.node.callee)),
-                        ...path.node.arguments.map((arg) =>
-                            t.numericLiteral(seen.get(arg)),
-                        ),
-                    ];
-                    n.arguments.push(t.arrayExpression(arr));
-                    arr.forEach((exp) => seen.set(exp, -1));
+                    traceInfo.calls[num] = {
+                        fn: seen.get(path.node.callee),
+                        args: path.node.arguments.map((arg) => seen.get(arg)),
+                    };
+                    // const arr = [
+                    //     t.numericLiteral(seen.get(path.node.callee)),
+                    //     ...path.node.arguments.map((arg) =>
+                    //         t.numericLiteral(seen.get(arg)),
+                    //     ),
+                    // ];
+                    // n.arguments.push(t.arrayExpression(arr));
+                    // arr.forEach((exp) => seen.set(exp, -1));
                 }
                 seen.set(n, num);
                 seen.set(n.callee, -1);

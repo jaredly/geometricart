@@ -7,9 +7,9 @@ import { useInitialState } from '../src/rendering/SegmentEditor';
 type Trace = <V>(
     value: V,
     id: number,
-    start: number,
-    end: number,
-    call?: Array<number>,
+    // start: number,
+    // end: number,
+    // call?: Array<number>,
 ) => V;
 type TraceOutput = {
     [id: number]: {
@@ -18,7 +18,7 @@ type TraceOutput = {
             end: number;
         };
         values: Array<any>;
-        call?: Array<number>;
+        call?: { fn: number; args: Array<number> };
     };
 };
 
@@ -26,7 +26,7 @@ const getCallInfo = (id: number, trace: TraceOutput) => {
     if (!trace[id].call) {
         return;
     }
-    const [fnid, ...args] = trace[id].call!;
+    const { fn: fnid, args } = trace[id].call!;
     if (!trace[fnid] || args.some((id) => !trace[id])) {
         console.log('hm no fn info', id, trace[id].call);
         return null;
@@ -56,6 +56,22 @@ type ByStart = {
     }>;
 };
 
+type Info = {
+    expressions: {
+        [key: number]: {
+            start: number;
+            end: number;
+        };
+    };
+    calls: {
+        [key: number]: {
+            fn: number;
+            args: Array<number>;
+        };
+    };
+    references: Array<{ id: number; loc: { start: number; end: number } }>;
+};
+
 export const Fixtures = <I, O>({
     fixtures,
     Input,
@@ -63,6 +79,7 @@ export const Fixtures = <I, O>({
     source,
     editDelay,
     trace,
+    info,
     run,
 }: {
     fixtures: Array<Fixture<I, O>>;
@@ -70,6 +87,7 @@ export const Fixtures = <I, O>({
     Output: (props: { output: O; input: I }) => JSX.Element;
     editDelay?: number;
     trace: (i: I, trace: Trace) => O;
+    info: Info;
     run: (i: I) => O;
     source: string;
 }) => {
@@ -79,10 +97,15 @@ export const Fixtures = <I, O>({
         TraceOutput,
         ByStart,
     ] => {
-        const data: TraceOutput = [];
-        const output = trace(selected.input, (value, id, start, end, call) => {
+        const data: TraceOutput = {};
+        const output = trace(selected.input, (value, id) => {
+            const { start, end } = info.expressions[id];
             if (!data[id]) {
-                data[id] = { loc: { start, end }, values: [value], call };
+                data[id] = {
+                    loc: { start, end },
+                    values: [value],
+                    call: info.calls[id],
+                };
             } else {
                 data[id].values.push(value);
             }
@@ -141,6 +164,7 @@ export const Fixtures = <I, O>({
                     source={source}
                     byStart={byStart}
                     traceOutput={traceOutput}
+                    info={info}
                     hover={hover}
                     setHover={setHover}
                 />
@@ -296,7 +320,8 @@ type Item = {
 export const organize2 = (
     lines: Array<Array<Token>>,
     byStart: ByStart,
-    traceOutput: TraceOutput | null,
+    traceOutput: TraceOutput,
+    info: Info,
 ): FullToken => {
     // first split tokens
     // then annotate with ides
@@ -362,16 +387,17 @@ export const organize2 = (
         }
     };
 
-    Object.keys(traceOutput || {})
+    Object.keys(traceOutput)
+        .map((k) => ({ id: +k, loc: traceOutput[+k].loc }))
+        .concat(info.references.filter((t) => !!traceOutput[t.id]))
         .sort((a, b) => {
-            const ka = traceOutput![+a];
-            const kb = traceOutput![+b];
-            return ka.loc.start === kb.loc.start
-                ? kb.loc.end - ka.loc.end
-                : ka.loc.start - kb.loc.start;
+            // const ka = traceOutput[+a];
+            // const kb = traceOutput[+b];
+            return a.loc.start === b.loc.start
+                ? b.loc.end - a.loc.end
+                : a.loc.start - b.loc.start;
         })
-        .forEach((k) => {
-            const v = traceOutput![+k];
+        .forEach((v) => {
             while (v.loc.start >= current.end) {
                 addTokens(current.end);
                 current = current.parent!;
@@ -379,10 +405,10 @@ export const organize2 = (
             addTokens(v.loc.start);
             const token: FullToken = {
                 content: [],
-                id: +k,
+                id: v.id,
                 start: v.loc.start,
                 end: v.loc.end,
-                widgets: [{ id: +k, start: v.loc.start, end: v.loc.end }],
+                widgets: [{ id: v.id, start: v.loc.start, end: v.loc.end }],
                 parent: current,
             };
             (current.content as Array<FullToken>).push(token);
@@ -462,8 +488,10 @@ const RenderCode = React.memo(
         traceOutput,
         hover,
         setHover,
+        info,
     }: {
         source: string;
+        info: Info;
         byStart: ByStart;
         traceOutput: TraceOutput;
         hover: number | null;
@@ -478,7 +506,12 @@ const RenderCode = React.memo(
                     getLineProps,
                     getTokenProps,
                 }) => {
-                    const organized = organize2(lines, byStart, traceOutput);
+                    const organized = organize2(
+                        lines,
+                        byStart,
+                        traceOutput,
+                        info,
+                    );
                     return (
                         <pre
                             className={className}
@@ -553,12 +586,12 @@ function RenderMain<I, O>({
                               return;
                           }
                           const name =
-                              traceOutput[hover.call[0]].values[0].meta.name;
+                              traceOutput[hover.call.fn].values[0].meta.name;
                           if (visuals[name]) {
                               return visuals[name](
-                                  hover.call
-                                      .slice(1)
-                                      .map((id) => traceOutput[id].values[0]),
+                                  hover.call.args.map(
+                                      (id) => traceOutput[id].values[0],
+                                  ),
                                   hover.values[0],
                               );
                           }

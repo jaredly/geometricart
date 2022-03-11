@@ -46,7 +46,8 @@ const myFancyPlugin = {
 await esbuild.build({
     entryPoints: [__dirname + '/run.tsx'],
     watch: true,
-    outfile: __dirname + '/output.js',
+    sourcemap: 'inline',
+    outfile: __dirname + '/build/output.js',
     format: 'esm',
     define: {
         'process.env.NODE_ENV': '"development"',
