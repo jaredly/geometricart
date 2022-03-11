@@ -2,6 +2,7 @@ import * as React from 'react';
 import { Fixture } from '../src/vest/types';
 import Highlight, { defaultProps } from 'prism-react-renderer';
 import { visuals, widgets } from './functionWidgets';
+import { useInitialState } from '../src/rendering/SegmentEditor';
 
 type Trace = <V>(
     value: V,
@@ -101,13 +102,12 @@ export const Fixtures = <I, O>({
     const [hover, setHover] = React.useState(null as null | number);
     const [cursor, setCursor] = React.useState({ x: 0, y: 0 });
     React.useEffect(() => {
-        if (!hover) return;
         const fn = (evt: MouseEvent) => {
             setCursor({ x: evt.clientX, y: evt.clientY });
         };
         document.addEventListener('mousemove', fn);
         return () => document.removeEventListener('mousemove', fn);
-    }, [hover]);
+    }, []);
     return (
         <div>
             <div style={{ display: 'flex', flexWrap: 'wrap' }}>
@@ -135,41 +135,13 @@ export const Fixtures = <I, O>({
                 ))}
             </div>
             <div style={{ position: 'relative', maxWidth: 1200 }}>
-                <Highlight {...defaultProps} code={source} language="tsx">
-                    {({
-                        className,
-                        style,
-                        tokens: lines,
-                        getLineProps,
-                        getTokenProps,
-                    }) => {
-                        const organized = organize2(
-                            lines,
-                            byStart,
-                            traceOutput,
-                        );
-                        return (
-                            <pre
-                                className={className}
-                                style={{
-                                    ...style,
-                                    whiteSpace: 'pre-wrap',
-                                    fontSize: 20,
-                                }}
-                            >
-                                {renderFull(
-                                    organized,
-                                    getTokenProps,
-                                    byStart,
-                                    traceOutput,
-                                    '',
-                                    hover,
-                                    (id) => setHover(id),
-                                )}
-                            </pre>
-                        );
-                    }}
-                </Highlight>
+                <RenderCode
+                    source={source}
+                    byStart={byStart}
+                    traceOutput={traceOutput}
+                    hover={hover}
+                    setHover={setHover}
+                />
                 {selected != null && selected ? (
                     <div
                         style={{
@@ -179,37 +151,16 @@ export const Fixtures = <I, O>({
                             backgroundColor: 'white',
                         }}
                     >
-                        <svg width={300} height={300} viewBox="0 0 300 300">
-                            <Input
-                                onChange={(input) =>
-                                    setSelected({ ...selected, input })
-                                }
-                                input={selected.input}
-                            />
-                            <Output input={selected.input} output={output} />
-                            {hover
-                                ? ((hover) => {
-                                      if (!hover.call) {
-                                          return;
-                                      }
-                                      const name =
-                                          traceOutput[hover.call[0]].values[0]
-                                              .meta.name;
-                                      if (visuals[name]) {
-                                          return visuals[name](
-                                              hover.call
-                                                  .slice(1)
-                                                  .map(
-                                                      (id) =>
-                                                          traceOutput[id]
-                                                              .values[0],
-                                                  ),
-                                              hover.values[0],
-                                          );
-                                      }
-                                  })(traceOutput[hover])
-                                : null}
-                        </svg>
+                        <RenderMain
+                            run={run}
+                            Input={Input}
+                            setSelected={setSelected}
+                            selected={selected}
+                            Output={Output}
+                            output={output}
+                            hover={hover}
+                            traceOutput={traceOutput}
+                        />
                     </div>
                 ) : null}
             </div>
@@ -501,6 +452,113 @@ export const organize2 = (
     return root;
 };
 
+const RenderCode = React.memo(
+    ({
+        source,
+        byStart,
+        traceOutput,
+        hover,
+        setHover,
+    }: {
+        source: string;
+        byStart: ByStart;
+        traceOutput: TraceOutput;
+        hover: number | null;
+        setHover: React.Dispatch<React.SetStateAction<number | null>>;
+    }) => {
+        return (
+            <Highlight {...defaultProps} code={source} language="tsx">
+                {({
+                    className,
+                    style,
+                    tokens: lines,
+                    getLineProps,
+                    getTokenProps,
+                }) => {
+                    const organized = organize2(lines, byStart, traceOutput);
+                    return (
+                        <pre
+                            className={className}
+                            style={{
+                                ...style,
+                                whiteSpace: 'pre-wrap',
+                                fontSize: 20,
+                            }}
+                        >
+                            {renderFull(
+                                organized,
+                                getTokenProps,
+                                byStart,
+                                traceOutput,
+                                '',
+                                hover,
+                                (id) => setHover(id),
+                            )}
+                        </pre>
+                    );
+                }}
+            </Highlight>
+        );
+    },
+);
+
+function RenderMain<I, O>({
+    Input,
+    setSelected,
+    selected,
+    Output,
+    output,
+    hover,
+    traceOutput,
+    run,
+}: {
+    Input: (props: {
+        input: I;
+        onChange?: ((input: I) => void) | undefined;
+    }) => JSX.Element;
+    setSelected: React.Dispatch<React.SetStateAction<Fixture<I, O>>>;
+    selected: Fixture<I, O>;
+    Output: (props: { output: O; input: I }) => JSX.Element;
+    output: O;
+    run: (i: I) => O;
+    hover: number | null;
+    traceOutput: TraceOutput;
+}) {
+    const [edit, setEdit] = useInitialState(selected.input);
+    const myOutput = React.useMemo(() => run(edit), [edit]);
+    React.useEffect(() => {
+        // const tid = setTimeout(() => {
+        //     setSelected((s) => ({ ...s, input: edit }));
+        // }, 40);
+        // return () => clearTimeout(tid);
+        if (edit !== selected.input) {
+            setSelected((s) => ({ ...s, input: edit }));
+        }
+    }, [edit]);
+    return (
+        <svg width={300} height={300} viewBox="0 0 300 300">
+            <Input onChange={setEdit} input={edit} />
+            <Output input={edit} output={myOutput} />
+            {hover
+                ? ((hover) => {
+                      if (!hover.call) {
+                          return;
+                      }
+                      const name =
+                          traceOutput[hover.call[0]].values[0].meta.name;
+                      if (visuals[name]) {
+                          return visuals[name](
+                              hover.call
+                                  .slice(1)
+                                  .map((id) => traceOutput[id].values[0]),
+                              hover.values[0],
+                          );
+                      }
+                  })(traceOutput[hover])
+                : null}
+        </svg>
+    );
+}
 // export const organizeTokens = (
 //     lines: Array<Array<Token>>,
 //     byStart: ByStart,
