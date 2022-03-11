@@ -1,8 +1,8 @@
 import * as React from 'react';
 import { Fixture } from '../src/vest/types';
-import Highlight, { defaultProps } from 'prism-react-renderer';
 import { visuals, widgets } from './functionWidgets';
 import { useInitialState } from '../src/rendering/SegmentEditor';
+import { RenderCode } from './RenderCode';
 
 type Trace = <V>(
     value: V,
@@ -11,7 +11,7 @@ type Trace = <V>(
     // end: number,
     // call?: Array<number>,
 ) => V;
-type TraceOutput = {
+export type TraceOutput = {
     [id: number]: {
         loc: {
             start: number;
@@ -37,26 +37,37 @@ const getCallInfo = (id: number, trace: TraceOutput) => {
     };
 };
 
-const getWidget = (id: number, trace: TraceOutput, size: string) => {
+export const hasVisual = (id: number, trace: TraceOutput) => {
+    const info = getCallInfo(id, trace);
+    if (!info || !info.fn.meta || !visuals[info.fn.meta.name]) {
+        return false;
+    }
+    return true;
+};
+
+export const getWidget = (id: number, trace: TraceOutput, size: string) => {
     const info = getCallInfo(id, trace);
     if (!info || !info.fn.meta || !widgets[info.fn.meta.name]) {
         return null;
     }
     return (
-        <span style={{ width: size, height: size, display: 'inline-block' }}>
+        <span
+            style={{ width: size, height: size, display: 'inline-block' }}
+            key={id}
+        >
             {widgets[info.fn.meta.name](info.args, trace[id].values[0])}
         </span>
     );
 };
 
-type ByStart = {
+export type ByStart = {
     [key: number]: Array<{
         id: number;
         end: number;
     }>;
 };
 
-type Info = {
+export type Info = {
     expressions: {
         [key: number]: {
             start: number;
@@ -124,7 +135,9 @@ export const Fixtures = <I, O>({
         });
         return [output, data, byStart];
     }, [selected]);
+
     const [hover, setHover] = React.useState(null as null | number);
+    const [pins, setPins] = React.useState({} as { [key: number]: boolean });
     const [cursor, setCursor] = React.useState({ x: 0, y: 0 });
     React.useEffect(() => {
         const fn = (evt: MouseEvent) => {
@@ -133,6 +146,7 @@ export const Fixtures = <I, O>({
         document.addEventListener('mousemove', fn);
         return () => document.removeEventListener('mousemove', fn);
     }, []);
+
     return (
         <div>
             <div style={{ display: 'flex', flexWrap: 'wrap' }}>
@@ -164,6 +178,8 @@ export const Fixtures = <I, O>({
                     source={source}
                     byStart={byStart}
                     traceOutput={traceOutput}
+                    pins={pins}
+                    setPins={setPins}
                     info={info}
                     hover={hover}
                     setHover={setHover}
@@ -179,6 +195,8 @@ export const Fixtures = <I, O>({
                     >
                         <RenderMain
                             editDelay={editDelay}
+                            pins={pins}
+                            setPins={setPins}
                             run={run}
                             Input={Input}
                             setSelected={setSelected}
@@ -236,308 +254,6 @@ const ShowValues = ({ values }: { values: Array<any> }) => {
     );
 };
 
-const renderFull = (
-    token: FullToken,
-    getTokenProps: Highlight['getTokenProps'],
-    byStart: ByStart,
-    traceOutput: TraceOutput,
-    key: string,
-    hover: number | null,
-    onHover: (i: number | null) => void,
-) => {
-    return (
-        <span
-            key={key}
-            data-at={token.start}
-            data-end={token.end}
-            data-id={token.id}
-            data-widgets={JSON.stringify(token.widgets)}
-            style={{
-                ...(Array.isArray(token.content) && key !== ''
-                    ? {
-                          backgroundColor: 'rgba(0,0,0,0.3)',
-                      }
-                    : undefined),
-
-                cursor: token.id != null ? 'pointer' : 'default',
-                textDecoration:
-                    token.id != null && token.id === hover
-                        ? 'underline'
-                        : 'none',
-            }}
-            onMouseOver={
-                token.id != null
-                    ? (evt) => {
-                          evt.stopPropagation();
-                          onHover(token.id!);
-                      }
-                    : undefined
-            }
-            onMouseOut={
-                token.id != null
-                    ? (evt) => {
-                          evt.stopPropagation();
-                          onHover(null);
-                      }
-                    : undefined
-            }
-        >
-            {token.widgets.map((id) => getWidget(id.id, traceOutput, '1em'))}
-            {Array.isArray(token.content) ? (
-                token.content.map((inner, i) =>
-                    renderFull(
-                        inner,
-                        getTokenProps,
-                        byStart,
-                        traceOutput,
-                        key + ':' + i,
-                        hover,
-                        onHover,
-                    ),
-                )
-            ) : (
-                <span {...getTokenProps({ token: token.content })} />
-            )}
-        </span>
-    );
-};
-
-type Token = Parameters<Highlight['getTokenProps']>[0]['token'];
-type FullToken = {
-    content: Token | Array<FullToken>;
-    id: null | number;
-    start: number;
-    end: number;
-    widgets: Array<Item>;
-    parent: FullToken | null;
-};
-type Item = {
-    id: number;
-    start: number;
-    end: number;
-};
-
-export const organize2 = (
-    lines: Array<Array<Token>>,
-    byStart: ByStart,
-    traceOutput: TraceOutput,
-    info: Info,
-): FullToken => {
-    // first split tokens
-    // then annotate with ides
-    const tokens: Array<Token & { at: number }> = [];
-    let at = -1;
-    lines.forEach((line) => {
-        line.forEach((token) => {
-            if (!token.content.length) {
-                // console.log('empty token?');
-                return;
-            }
-            let content = token.content;
-            const m = content.match(/^\s+/);
-            if (m && m[0].length < content.length) {
-                tokens.push({ ...token, content: m[0], at });
-                content = content.slice(m[0].length);
-                at += m[0].length;
-            }
-            const end = content.match(/\s+$/);
-            if (end && end[0].length < content.length) {
-                tokens.push({
-                    ...token,
-                    content: content.slice(0, -end[0].length),
-                    at,
-                });
-                at += content.length - end[0].length;
-                tokens.push({ ...token, content: end[0], at });
-                at += end[0].length;
-            } else {
-                tokens.push({ ...token, content, at });
-                at += content.length;
-            }
-        });
-        tokens.push({ content: '\n', types: [], at });
-        at += 1;
-    });
-
-    const root: FullToken = {
-        content: [],
-        id: null,
-        start: 0,
-        end: at,
-        widgets: [],
-        parent: null,
-    };
-
-    let current = root;
-
-    const addTokens = (before: number) => {
-        while (
-            tokens.length &&
-            tokens[0].at < current.end &&
-            tokens[0].at < before
-        ) {
-            (current.content as Array<FullToken>).push({
-                id: null,
-                start: tokens[0].at,
-                end: tokens[0].at + tokens[0].content.length,
-                widgets: [],
-                content: tokens.shift()!,
-                parent: current,
-            });
-        }
-    };
-
-    Object.keys(traceOutput)
-        .map((k) => ({ id: +k, loc: traceOutput[+k].loc }))
-        .concat(info.references.filter((t) => !!traceOutput[t.id]))
-        .sort((a, b) => {
-            // const ka = traceOutput[+a];
-            // const kb = traceOutput[+b];
-            return a.loc.start === b.loc.start
-                ? b.loc.end - a.loc.end
-                : a.loc.start - b.loc.start;
-        })
-        .forEach((v) => {
-            while (v.loc.start >= current.end) {
-                addTokens(current.end);
-                current = current.parent!;
-            }
-            addTokens(v.loc.start);
-            const token: FullToken = {
-                content: [],
-                id: v.id,
-                start: v.loc.start,
-                end: v.loc.end,
-                widgets: [{ id: v.id, start: v.loc.start, end: v.loc.end }],
-                parent: current,
-            };
-            (current.content as Array<FullToken>).push(token);
-            current = token;
-            // addTokens(v.loc.end);
-        });
-    while (current !== root) {
-        addTokens(current.end);
-        current = current.parent!;
-    }
-    addTokens(root.end);
-    // console.log(root);
-
-    /*
-
-	so there's this recursive structure
-	and at each token
-	I need to know the list of active whatsits
-
-	start,
-	end,
-	ids,
-	children: [...]
-
-	*/
-
-    // tokens.forEach((token) => {
-    //     if (byStart[token.at]) {
-    //     }
-    // });
-
-    // // we need recursion probably?
-
-    // // consume ... things ...
-    // // waht about multiline? I don't really care about line highlighting.
-    // // so maybe we just do inline-block everything, with newlines. let's do it.
-
-    // // let at = 0;
-
-    // // let current: Array<Item> = [];
-    // const advance = (tok: Token) => {
-    //     const num = tok.content.length;
-    //     if (current.some((t) => t.end <= at + num)) {
-    //         current = current.filter((t) => t.end > at + num);
-    //     }
-
-    //     for (let i = 0; i < num; i++) {
-    //         at += 1;
-    //         if (byStart[at - 1]) {
-    //             current.push(
-    //                 ...byStart[at - 1].map((m) => ({ ...m, start: at })),
-    //             );
-    //             // added.push(...byStart[at].map((m) => ({ ...m, start: at })));
-    //         }
-    //     }
-
-    //     // at += num;
-    //     return {
-    //         content: tok,
-    //         at: at - num,
-    //         id: null,
-    //         widgets: current.filter((c) => c.start === at - num),
-    //     };
-    // };
-
-    // return split.map((line) => ({
-    //     broken: line.map((tok) => advance(tok)),
-    //     line,
-    // }));
-    return root;
-};
-
-const RenderCode = React.memo(
-    ({
-        source,
-        byStart,
-        traceOutput,
-        hover,
-        setHover,
-        info,
-    }: {
-        source: string;
-        info: Info;
-        byStart: ByStart;
-        traceOutput: TraceOutput;
-        hover: number | null;
-        setHover: React.Dispatch<React.SetStateAction<number | null>>;
-    }) => {
-        return (
-            <Highlight {...defaultProps} code={source} language="tsx">
-                {({
-                    className,
-                    style,
-                    tokens: lines,
-                    getLineProps,
-                    getTokenProps,
-                }) => {
-                    const organized = organize2(
-                        lines,
-                        byStart,
-                        traceOutput,
-                        info,
-                    );
-                    return (
-                        <pre
-                            className={className}
-                            style={{
-                                ...style,
-                                whiteSpace: 'pre-wrap',
-                                fontSize: 20,
-                            }}
-                        >
-                            {renderFull(
-                                organized,
-                                getTokenProps,
-                                byStart,
-                                traceOutput,
-                                '',
-                                hover,
-                                (id) => setHover(id),
-                            )}
-                        </pre>
-                    );
-                }}
-            </Highlight>
-        );
-    },
-);
-
 function RenderMain<I, O>({
     Input,
     setSelected,
@@ -548,6 +264,7 @@ function RenderMain<I, O>({
     traceOutput,
     editDelay,
     run,
+    pins,
 }: {
     editDelay?: number;
     Input: (props: {
@@ -555,6 +272,8 @@ function RenderMain<I, O>({
         onChange?: ((input: I) => void) | undefined;
     }) => JSX.Element;
     setSelected: React.Dispatch<React.SetStateAction<Fixture<I, O>>>;
+    pins: { [key: number]: boolean };
+    setPins: React.Dispatch<React.SetStateAction<{ [key: number]: boolean }>>;
     selected: Fixture<I, O>;
     Output: (props: { output: O; input: I }) => JSX.Element;
     output: O;
@@ -580,14 +299,36 @@ function RenderMain<I, O>({
             <Input onChange={setEdit} input={edit} />
             <Output input={edit} output={myOutput} />
             <g style={{ pointerEvents: 'none' }}>
+                {Object.keys(pins)
+                    .filter((k) => pins[+k] && +k !== hover)
+                    .map((k) => {
+                        const hover = traceOutput[+k];
+                        if (!hover || !hover.call) {
+                            return;
+                        }
+                        const name =
+                            traceOutput[hover.call.fn].values[0].meta.name;
+                        if (visuals[name]) {
+                            return (
+                                <React.Fragment key={k}>
+                                    {visuals[name](
+                                        hover.call.args.map(
+                                            (id) => traceOutput[id].values[0],
+                                        ),
+                                        hover.values[0],
+                                    )}
+                                </React.Fragment>
+                            );
+                        }
+                    })}
                 {hover
                     ? ((hover) => {
                           if (!hover.call) {
                               return;
                           }
                           const name =
-                              traceOutput[hover.call.fn].values[0].meta.name;
-                          if (visuals[name]) {
+                              traceOutput[hover.call.fn].values[0].meta?.name;
+                          if (name && visuals[name]) {
                               return visuals[name](
                                   hover.call.args.map(
                                       (id) => traceOutput[id].values[0],
@@ -601,64 +342,3 @@ function RenderMain<I, O>({
         </svg>
     );
 }
-// export const organizeTokens = (
-//     lines: Array<Array<Token>>,
-//     byStart: ByStart,
-// ) => {
-//     let current: Array<Item> = [];
-//     let at = -1;
-//     let added: Array<Item> = [];
-
-//     const advance = (n: number) => {
-//         if (current.some((t) => t.end <= at + n)) {
-//             current = current.filter((t) => t.end > at + n);
-//         }
-//         let added = [];
-//         for (let i = 0; i < n; i++) {
-//             at += 1;
-//             if (byStart[at]) {
-//                 current.push(...byStart[at].map((m) => ({ ...m, start: at })));
-//                 added.push(...byStart[at].map((m) => ({ ...m, start: at })));
-//             }
-//         }
-//         current.sort((a, b) => a.end - b.end);
-//         return added;
-//     };
-
-//     added = advance(0);
-
-//     return lines.map((line, i) => {
-//         const broken: Array<FullToken> = [];
-//         line.forEach((token) => {
-//             if (!token.content.length) {
-//                 console.log('empty token?');
-//                 return;
-//             }
-//             let content = token.content;
-//             const m = content.match(/^\s+/);
-//             if (m && m[0].length < content.length) {
-//                 broken.push({
-//                     at,
-//                     content: {
-//                         ...token,
-//                         content: m[0],
-//                     },
-//                     id: current.length ? current[0].id : null,
-//                     widgets: added,
-//                 });
-//                 added = advance(m[0].length);
-//                 content = content.slice(m[0].length);
-//             }
-//             broken.push({
-//                 at,
-//                 content: { ...token, content },
-//                 // id: current.length ? current[0].id : null,
-//                 id: current.length ? current[0].id : null,
-//                 widgets: added,
-//             });
-//             added = advance(content.length);
-//         });
-//         added = advance(1);
-//         return { broken, line };
-//     });
-// };

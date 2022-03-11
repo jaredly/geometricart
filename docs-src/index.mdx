@@ -83,6 +83,9 @@ and
         return (
             <>
                 <g ref={(n) => (ref.current = n)}>
+                    {moving
+                    ? <rect x={0} y={0} width={300} height={300} style={{cursor: 'move'}} fill="transparent" />
+                    : null}
                     <polyline
                         points={`${p1.x},${p1.y} ${p2.x},${p2.y} ${p3.x},${p3.y}`}
                         stroke="red"
@@ -94,7 +97,7 @@ and
                         cy={p1.y}
                         fill="red"
                         r={onChange ? 5 : 3}
-                        style={{ cursor: 'pointer' }}
+                        style={{ cursor: 'move' }}
                         onMouseDown={onChange ? (evt) => {
                             evt.preventDefault();
                             const box = ref.current.parentNode.getBoundingClientRect();
@@ -110,7 +113,7 @@ and
                         cy={p2.y}
                         fill="red"
                         r={onChange ? 5 : 3}
-                        style={{ cursor: 'pointer' }}
+                        style={{ cursor: 'move' }}
                         onMouseDown={onChange ? (evt) => {
                             evt.preventDefault();
                             const box = ref.current.parentNode.getBoundingClientRect();
@@ -127,7 +130,7 @@ and
                         size={onChange ? 20 : 10}
                         color="red"
                         inner={{
-                            style: onChange? {cursor: 'pointer'} : null,
+                            style: onChange? {cursor: 'move'} : null,
                         onMouseDown: onChange ? (evt) => {
                             evt.preventDefault();
                             const box = ref.current.parentNode.getBoundingClientRect();
@@ -169,7 +172,7 @@ and
                         cy={280}
                         r={5}
                         fill="black"
-                        style={{ cursor: 'pointer' }}
+                        style={{ cursor: 'move' }}
                         onMouseDown={onChange ? (evt) => {
                             evt.preventDefault();
                             const box = ref.current.parentNode.getBoundingClientRect();

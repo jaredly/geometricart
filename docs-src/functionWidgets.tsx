@@ -111,6 +111,9 @@ export const widgets: {
                         size={7}
                     />
                 ) : null}
+                <text x={20} y={20} fill="white" fontSize={6} textAnchor="end">
+                    {(output / Math.PI).toFixed(2)}π
+                </text>
             </svg>
         );
     },

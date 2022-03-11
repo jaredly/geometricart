@@ -1,6 +1,7 @@
 
 
 - [ ] hmm ok so what about getting docstrings for my functions? Seems doable, right?
+- [x] click a thing to "pin" it in the preview window
 
 
 I want to keep info about a variable through it's uses, so I can e.g. show an angle

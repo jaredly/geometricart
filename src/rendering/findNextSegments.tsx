@@ -194,11 +194,17 @@ export const isAngleBetween = (
     return lm <= lr;
 };
 
-// left & right are assumed to be between -PI and PI
-// The result will always be positive, and between 0 and 2PI
+/**
+ * Calculate the difference between two angles.
+ *
+ * The result will always be positive, in $[0,2\pi]$
+ */
 export const angleBetween = (
+    // the 'starting' angle, must be in $[-\pi,\pi]$
     left: number,
+    // end 'ending' angle, must be in $[-\pi,\pi]$
     right: number,
+    // which direction to travel around the circle
     clockwise: boolean,
 ) => {
     if (!clockwise) {
