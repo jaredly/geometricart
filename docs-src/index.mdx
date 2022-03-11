@@ -1,3 +1,4 @@
+import * as React from 'react';
 import {
     insetLineLineTrace,
     rawSource,
@@ -25,21 +26,95 @@ and
 
 <Fixtures
     fixtures={fixtures}
-    Input={({ input: [[p1, p2, p3], inset] }) => (
-        <>
-            <polyline
-                points={`${p1.x},${p1.y} ${p2.x},${p2.y} ${p3.x},${p3.y}`}
-                stroke="red"
-                fill="none"
-                strokeWidth={2}
-            />
-            <circle cx={p2.x} cy={p2.y} fill="red" r={3} />
-            <Arrow point={p3} theta={angleTo(p2, p3)} size={10} color="red" />
-            {/* <text x={0} y={20}>
+    Input={({ input: [[p1, p2, p3], inset], onChange }) => {
+        const [moving, setMoving] = React.useState(null);
+        const ref = React.useRef(null);
+        React.useEffect(() => {
+            if (!moving || !ref.current) return;
+            const fn = (evt) => {
+                const box = ref.current.parentNode.getBoundingClientRect();
+                const pos = {
+                    x: evt.clientX - box.left,
+                    y: evt.clientY - box.top,
+                };
+                {/* onChange([[p1, pos, p3], inset]); */}
+				setMoving({which: moving.which, pos})
+            };
+            const up = (evt) => {
+                const box = ref.current.parentNode.getBoundingClientRect();
+                const pos = {
+                    x: evt.clientX - box.left,
+                    y: evt.clientY - box.top,
+                };
+                onChange([[
+					moving.which === 1 ? pos: p1,
+					moving.which === 2 ? pos: p2,
+					moving.which === 3 ? pos: p3,
+				], inset]);
+                setMoving(null);
+            };
+            document.addEventListener('mousemove', fn);
+            document.addEventListener('mouseup', up);
+            return () => {
+                document.removeEventListener('mousemove', fn);
+                document.removeEventListener('mouseup', up);
+            };
+        }, [moving ? moving.which : null]);
+		p1 = moving?.which === 1 ? moving.pos : p1
+		p2 = moving?.which === 2 ? moving.pos : p2
+		p3 = moving?.which === 3 ? moving.pos : p3
+        return (
+            <>
+                <g ref={(n) => (ref.current = n)}>
+                    <polyline
+                        points={`${p1.x},${p1.y} ${p2.x},${p2.y} ${p3.x},${p3.y}`}
+                        stroke="red"
+                        fill="none"
+                        strokeWidth={2}
+                    />
+                    <circle
+                        cx={p1.x}
+                        cy={p1.y}
+                        fill="red"
+                        r={onChange ? 5 : 3}
+                        style={{ cursor: 'pointer' }}
+                        onMouseDown={onChange ? (evt) => {
+							const box = ref.current.parentNode.getBoundingClientRect();
+							const pos = {
+								x: evt.clientX - box.left,
+								y: evt.clientY - box.top,
+							};
+							setMoving({which: 1, pos});
+    					} : null}
+                    />
+                    <circle
+                        cx={p2.x}
+                        cy={p2.y}
+                        fill="red"
+                        r={onChange ? 5 : 3}
+                        style={{ cursor: 'pointer' }}
+                        onMouseDown={onChange ? (evt) => {
+							const box = ref.current.parentNode.getBoundingClientRect();
+							const pos = {
+								x: evt.clientX - box.left,
+								y: evt.clientY - box.top,
+							};
+							setMoving({which: 2, pos});
+    					} : null}
+                    />
+                    <Arrow
+                        point={p3}
+                        theta={angleTo(p2, p3)}
+                        size={10}
+                        color="red"
+                    />
+                    {/* <text x={0} y={20}>
                 inset: {inset}
             </text> */}
-        </>
-    )}
+                </g>
+            </>
+        );
+    }}
     Output={({ output: segments, input: [[p1, p2, p3], inset] }) => {
         const naive = naiveInset(
             { prev: p2, segment: { type: 'Line', to: p3 } },
@@ -47,6 +122,7 @@ and
         );
         return (
             <>
+			<g style={{pointerEvents: 'none'}}>
                 {
                     <RenderSegmentBasic
                         prev={segments[segments.length - 1].to}
@@ -72,12 +148,13 @@ and
                         inner={{ stroke: 'green', strokeWidth: 3 }}
                     />
                 ))}
+				</g>
             </>
         );
     }}
     source={rawSource}
     trace={([[p1, p2, p3], inset], trace) => {
-        insetLineLineTrace(
+        return insetLineLineTrace(
             p1,
             { type: 'Line', to: p2 },
             { type: 'Line', to: p3 },
@@ -85,6 +162,7 @@ and
             trace,
         );
     }}
+
 />
 
 Ok so how was that?

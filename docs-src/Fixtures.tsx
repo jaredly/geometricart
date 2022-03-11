@@ -63,22 +63,19 @@ export const Fixtures = <I, O>({
     trace,
 }: {
     fixtures: Array<Fixture<I, O>>;
-    Input: (props: { input: I; focused: boolean }) => JSX.Element;
+    Input: (props: { input: I; onChange?: (input: I) => void }) => JSX.Element;
     Output: (props: { output: O; input: I }) => JSX.Element;
-    trace: (i: I, trace: Trace) => void;
+    trace: (i: I, trace: Trace) => O;
     source: string;
 }) => {
     const [selected, setSelected] = React.useState(fixtures[0]);
-    const [traceOutput, byStart] = React.useMemo((): [
-        TraceOutput | null,
+    const [output, traceOutput, byStart] = React.useMemo((): [
+        O,
+        TraceOutput,
         ByStart,
     ] => {
-        if (selected === null) {
-            return [null, {}];
-        }
-
         const data: TraceOutput = [];
-        trace(selected.input, (value, id, start, end, call) => {
+        const output = trace(selected.input, (value, id, start, end, call) => {
             if (!data[id]) {
                 data[id] = { loc: { start, end }, values: [value], call };
             } else {
@@ -97,17 +94,18 @@ export const Fixtures = <I, O>({
         Object.keys(byStart).forEach((start) => {
             byStart[+start].sort((a, b) => b.end - a.end);
         });
-        return [data, byStart];
+        return [output, data, byStart];
     }, [selected]);
     const [hover, setHover] = React.useState(null as null | number);
     const [cursor, setCursor] = React.useState({ x: 0, y: 0 });
     React.useEffect(() => {
+        if (!hover) return;
         const fn = (evt: MouseEvent) => {
             setCursor({ x: evt.clientX, y: evt.clientY });
         };
         document.addEventListener('mousemove', fn);
         return () => document.removeEventListener('mousemove', fn);
-    }, []);
+    }, [hover]);
     return (
         <div>
             <div style={{ display: 'flex', flexWrap: 'wrap' }}>
@@ -128,7 +126,7 @@ export const Fixtures = <I, O>({
                         }}
                     >
                         <svg width={150} height={150} viewBox="0 0 300 300">
-                            <Input input={fix.input} focused={false} />
+                            <Input input={fix.input} />
                             <Output output={fix.output} input={fix.input} />
                         </svg>
                     </div>
@@ -161,7 +159,7 @@ export const Fixtures = <I, O>({
                                     organized,
                                     getTokenProps,
                                     byStart,
-                                    traceOutput!,
+                                    traceOutput,
                                     '',
                                     hover,
                                     (id) => setHover(id),
@@ -180,12 +178,14 @@ export const Fixtures = <I, O>({
                         }}
                     >
                         <svg width={300} height={300} viewBox="0 0 300 300">
-                            <Input focused input={selected.input} />
-                            <Output
+                            <Input
+                                onChange={(input) =>
+                                    setSelected({ ...selected, input })
+                                }
                                 input={selected.input}
-                                output={selected.output}
                             />
-                            {hover && traceOutput
+                            <Output input={selected.input} output={output} />
+                            {hover
                                 ? ((hover) => {
                                       if (!hover.call) {
                                           return;
@@ -211,7 +211,7 @@ export const Fixtures = <I, O>({
                     </div>
                 ) : null}
             </div>
-            {hover != null && traceOutput != null ? (
+            {hover != null ? (
                 <div
                     style={{
                         whiteSpace: 'pre-wrap',
