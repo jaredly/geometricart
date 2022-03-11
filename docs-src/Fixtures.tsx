@@ -57,18 +57,18 @@ type ByStart = {
 
 export const Fixtures = <I, O>({
     fixtures,
-    renderInput,
-    renderOutput,
+    Input,
+    Output,
     source,
     trace,
 }: {
     fixtures: Array<Fixture<I, O>>;
-    renderInput: (i: I) => JSX.Element;
-    renderOutput: (o: O, i: I) => JSX.Element;
+    Input: (props: { input: I; focused: boolean }) => JSX.Element;
+    Output: (props: { output: O; input: I }) => JSX.Element;
     trace: (i: I, trace: Trace) => void;
     source: string;
 }) => {
-    const [selected, setSelected] = React.useState(0);
+    const [selected, setSelected] = React.useState(fixtures[0]);
     const [traceOutput, byStart] = React.useMemo((): [
         TraceOutput | null,
         ByStart,
@@ -78,7 +78,7 @@ export const Fixtures = <I, O>({
         }
 
         const data: TraceOutput = [];
-        trace(fixtures[selected].input, (value, id, start, end, call) => {
+        trace(selected.input, (value, id, start, end, call) => {
             if (!data[id]) {
                 data[id] = { loc: { start, end }, values: [value], call };
             } else {
@@ -115,7 +115,7 @@ export const Fixtures = <I, O>({
                     <div
                         key={i}
                         style={
-                            selected === i
+                            selected === fix
                                 ? {
                                       outline: '1px solid magenta',
                                       cursor: 'pointer',
@@ -123,13 +123,13 @@ export const Fixtures = <I, O>({
                                 : { cursor: 'pointer' }
                         }
                         onClick={() => {
-                            setSelected(i);
+                            setSelected(fix);
                             setHover(null);
                         }}
                     >
                         <svg width={150} height={150} viewBox="0 0 300 300">
-                            {renderInput(fix.input)}
-                            {renderOutput(fix.output, fix.input)}
+                            <Input input={fix.input} focused={false} />
+                            <Output output={fix.output} input={fix.input} />
                         </svg>
                     </div>
                 ))}
@@ -166,32 +166,11 @@ export const Fixtures = <I, O>({
                                     hover,
                                     (id) => setHover(id),
                                 )}
-                                {/* {organized.map(({ line, broken }, i) => {
-                                    const res = (
-                                        <React.Fragment
-                                            key={i}
-                                            // {...getLineProps({ line, key: i })}
-                                        >
-                                            {broken.map((token, i) =>
-                                                renderFull(
-                                                    token,
-                                                    getTokenProps,
-                                                    byStart,
-                                                    traceOutput!,
-                                                    i + '',
-                                                    (id) => setHover(id),
-                                                ),
-                                            )}
-                                        </React.Fragment>
-                                    );
-                                    // at += 1;
-                                    return res;
-                                })} */}
                             </pre>
                         );
                     }}
                 </Highlight>
-                {selected != null && fixtures[selected] ? (
+                {selected != null && selected ? (
                     <div
                         style={{
                             position: 'absolute',
@@ -201,11 +180,11 @@ export const Fixtures = <I, O>({
                         }}
                     >
                         <svg width={300} height={300} viewBox="0 0 300 300">
-                            {renderInput(fixtures[selected].input)}
-                            {renderOutput(
-                                fixtures[selected].output,
-                                fixtures[selected].input,
-                            )}
+                            <Input focused input={selected.input} />
+                            <Output
+                                input={selected.input}
+                                output={selected.output}
+                            />
                             {hover && traceOutput
                                 ? ((hover) => {
                                       if (!hover.call) {

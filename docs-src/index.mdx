@@ -25,7 +25,7 @@ and
 
 <Fixtures
     fixtures={fixtures}
-    renderInput={([[p1, p2, p3], inset]) => (
+    Input={({ input: [[p1, p2, p3], inset] }) => (
         <>
             <polyline
                 points={`${p1.x},${p1.y} ${p2.x},${p2.y} ${p3.x},${p3.y}`}
@@ -40,7 +40,7 @@ and
             </text> */}
         </>
     )}
-    renderOutput={(segments, [[p1, p2, p3], inset]) => {
+    Output={({ output: segments, input: [[p1, p2, p3], inset] }) => {
         const naive = naiveInset(
             { prev: p2, segment: { type: 'Line', to: p3 } },
             inset,
