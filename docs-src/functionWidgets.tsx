@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { arcPath } from '../src/editor/RenderPendingPath';
 import { Arrow, arrow, pointsList } from '../src/editor/ShowHitIntersection2';
-import { angleTo, push } from '../src/rendering/getMirrorTransforms';
+import { angleTo, dist, push } from '../src/rendering/getMirrorTransforms';
 import { Coord } from '../src/types';
 
 const angleArrow = (angle: number) => {
@@ -11,7 +11,7 @@ const angleArrow = (angle: number) => {
         <>
             <polyline
                 points={pointsList([
-                    push({ x: 10, y: 10 }, angle, 5),
+                    push({ x: 10, y: 10 }, angle, 2),
                     push({ x: 10, y: 10 }, angle, -10),
                 ])}
                 stroke="red"
@@ -19,7 +19,9 @@ const angleArrow = (angle: number) => {
                 fill="none"
             />
             <polyline
-                points={pointsList(arrow({ x: 10, y: 10 }, angle, 5))}
+                points={pointsList(
+                    arrow(push({ x: 10, y: 10 }, angle, 4), angle, 5),
+                )}
                 fill={'red'}
             />
             <text x={20} y={20} fill="white" fontSize={6} textAnchor="end">
@@ -36,8 +38,8 @@ export const widgets: {
     push: ([coord, theta, dist], output: Coord) => {
         return (
             <svg
-                width={'1em'}
-                height={'1em'}
+                width={'100%'}
+                height={'100%'}
                 viewBox="0 0 20 20"
                 style={{ marginBottom: '-.2em' }}
             >
@@ -48,8 +50,8 @@ export const widgets: {
     angleTo: (args: [Coord, Coord], output: number) => {
         return (
             <svg
-                width={'1em'}
-                height={'1em'}
+                width={'100%'}
+                height={'100%'}
                 viewBox="0 0 20 20"
                 style={{ marginBottom: '-.2em' }}
             >
@@ -80,8 +82,8 @@ export const widgets: {
         //     angleTo(mid, p1) + (Math.PI / 2) * (args[2] ? 1 : -1);
         return (
             <svg
-                width={'1em'}
-                height={'1em'}
+                width={'100%'}
+                height={'100%'}
                 viewBox="0 0 20 20"
                 style={{ marginBottom: '-.2em' }}
             >
@@ -114,8 +116,8 @@ export const widgets: {
     zeroToTwoPi: (args: [number], output: number) => {
         return (
             <svg
-                width={'1em'}
-                height={'1em'}
+                width={'100%'}
+                height={'100%'}
                 viewBox="0 0 20 20"
                 style={{ marginBottom: '-.2em' }}
             >
@@ -126,6 +128,48 @@ export const widgets: {
 };
 
 // Big things in the SVG
-export const visuals = {
-    angleTo: (args: [Coord, Coord], output: number) => {},
+export const visuals: {
+    [key: string]: (args: any, output: any) => JSX.Element;
+} = {
+    push: ([coord, theta, distance], output: Coord) => {
+        const off = push(coord, theta, distance / 2);
+        return (
+            <>
+                <circle cx={coord.x} cy={coord.y} r={5} fill="red" />
+                <circle cx={output.x} cy={output.y} r={5} fill="black" />
+                <polyline
+                    points={pointsList([coord, off])}
+                    stroke="black"
+                    strokeWidth={3}
+                    fill="none"
+                />
+                <Arrow
+                    point={off}
+                    theta={theta + (distance < 0 ? Math.PI : 0)}
+                    color="black"
+                    size={15}
+                />
+            </>
+        );
+    },
+    angleTo: ([p1, p2]: [Coord, Coord], output: number) => {
+        return (
+            <>
+                <polyline
+                    points={pointsList([p1, p2])}
+                    stroke="black"
+                    strokeWidth={3}
+                    fill="none"
+                />
+                <circle cx={p2.x} cy={p2.y} r={5} fill="black" />
+                <circle cx={p1.x} cy={p1.y} r={5} fill="black" />
+                <Arrow
+                    point={push(p1, output, dist(p1, p2) / 2)}
+                    theta={output}
+                    color="black"
+                    size={15}
+                />
+            </>
+        );
+    },
 };

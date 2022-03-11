@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { Fixture } from '../src/vest/types';
 import Highlight, { defaultProps } from 'prism-react-renderer';
-import { widgets } from './functionWidgets';
+import { visuals, widgets } from './functionWidgets';
 
 type Trace = <V>(
     value: V,
@@ -36,23 +36,16 @@ const getCallInfo = (id: number, trace: TraceOutput) => {
     };
 };
 
-const getWidget = (id: number, trace: TraceOutput) => {
+const getWidget = (id: number, trace: TraceOutput, size: string) => {
     const info = getCallInfo(id, trace);
     if (!info || !info.fn.meta || !widgets[info.fn.meta.name]) {
         return null;
-        // return (
-        //     <div
-        //         style={{
-        //             display: 'inline-block',
-        //             backgroundColor: 'red',
-        //             width: 4,
-        //             height: 4,
-        //             margin: 1,
-        //         }}
-        //     />
-        // );
     }
-    return widgets[info.fn.meta.name](info.args, trace[id].values[0]);
+    return (
+        <span style={{ width: size, height: size, display: 'inline-block' }}>
+            {widgets[info.fn.meta.name](info.args, trace[id].values[0])}
+        </span>
+    );
 };
 
 type ByStart = {
@@ -75,7 +68,6 @@ export const Fixtures = <I, O>({
     trace: (i: I, trace: Trace) => void;
     source: string;
 }) => {
-    console.log(typeof trace);
     const [selected, setSelected] = React.useState(0);
     const [traceOutput, byStart] = React.useMemo((): [
         TraceOutput | null,
@@ -142,7 +134,7 @@ export const Fixtures = <I, O>({
                     </div>
                 ))}
             </div>
-            <div style={{ position: 'relative' }}>
+            <div style={{ position: 'relative', maxWidth: 1200 }}>
                 <Highlight {...defaultProps} code={source} language="tsx">
                     {({
                         className,
@@ -171,6 +163,7 @@ export const Fixtures = <I, O>({
                                     byStart,
                                     traceOutput!,
                                     '',
+                                    hover,
                                     (id) => setHover(id),
                                 )}
                                 {/* {organized.map(({ line, broken }, i) => {
@@ -213,6 +206,28 @@ export const Fixtures = <I, O>({
                                 fixtures[selected].output,
                                 fixtures[selected].input,
                             )}
+                            {hover && traceOutput
+                                ? ((hover) => {
+                                      if (!hover.call) {
+                                          return;
+                                      }
+                                      const name =
+                                          traceOutput[hover.call[0]].values[0]
+                                              .meta.name;
+                                      if (visuals[name]) {
+                                          return visuals[name](
+                                              hover.call
+                                                  .slice(1)
+                                                  .map(
+                                                      (id) =>
+                                                          traceOutput[id]
+                                                              .values[0],
+                                                  ),
+                                              hover.values[0],
+                                          );
+                                      }
+                                  })(traceOutput[hover])
+                                : null}
                         </svg>
                     </div>
                 ) : null}
@@ -222,17 +237,16 @@ export const Fixtures = <I, O>({
                     style={{
                         whiteSpace: 'pre-wrap',
                         fontFamily: 'monospace',
-                        position: 'absolute',
+                        position: 'fixed',
                         left: cursor.x + 8,
                         top: cursor.y + 16,
-                        backgroundColor: 'white',
+                        backgroundColor: 'rgba(0,0,0,0.8)',
+                        color: 'white',
+                        padding: 4,
                     }}
                 >
-                    <ShowValues
-                        values={traceOutput[hover].values.map((f) =>
-                            typeof f === 'function' ? f.meta : f,
-                        )}
-                    />
+                    <ShowValues values={traceOutput[hover].values} />
+                    {getWidget(hover, traceOutput, '3em')}
                 </div>
             ) : null}
         </div>
@@ -254,7 +268,11 @@ const ShowValues = ({ values }: { values: Array<any> }) => {
                     </button>
                 </div>
             ) : null}
-            {JSON.stringify(values[selected])}
+            {typeof values[selected] === 'function' && values[selected].meta
+                ? `function ${values[selected].meta.name}`
+                : typeof values[selected] === 'number'
+                ? values[selected].toFixed(2)
+                : JSON.stringify(values[selected])}
         </div>
     );
 };
@@ -265,6 +283,7 @@ const renderFull = (
     byStart: ByStart,
     traceOutput: TraceOutput,
     key: string,
+    hover: number | null,
     onHover: (i: number | null) => void,
 ) => {
     return (
@@ -274,21 +293,19 @@ const renderFull = (
             data-end={token.end}
             data-id={token.id}
             data-widgets={JSON.stringify(token.widgets)}
-            className={token.id != null ? 'hover-underline' : ''}
-            style={
-                Array.isArray(token.content) && key !== ''
+            style={{
+                ...(Array.isArray(token.content) && key !== ''
                     ? {
                           backgroundColor: 'rgba(0,0,0,0.3)',
-                          //   outline: '2px solid rgba(0,0,0,1)',
-                          //   margin: 4,
                       }
-                    : undefined
-            }
-            // style={
-            //     token.id
-            //         ? { textDecoration: 'underline', backgroundColor: '#aaa' }
-            //         : undefined
-            // }
+                    : undefined),
+
+                cursor: token.id != null ? 'pointer' : 'default',
+                textDecoration:
+                    token.id != null && token.id === hover
+                        ? 'underline'
+                        : 'none',
+            }}
             onMouseOver={
                 token.id != null
                     ? (evt) => {
@@ -306,7 +323,7 @@ const renderFull = (
                     : undefined
             }
         >
-            {token.widgets.map((id) => getWidget(id.id, traceOutput))}
+            {token.widgets.map((id) => getWidget(id.id, traceOutput, '1em'))}
             {Array.isArray(token.content) ? (
                 token.content.map((inner, i) =>
                     renderFull(
@@ -315,6 +332,7 @@ const renderFull = (
                         byStart,
                         traceOutput,
                         key + ':' + i,
+                        hover,
                         onHover,
                     ),
                 )
@@ -352,7 +370,7 @@ export const organize2 = (
     lines.forEach((line) => {
         line.forEach((token) => {
             if (!token.content.length) {
-                console.log('empty token?');
+                // console.log('empty token?');
                 return;
             }
             let content = token.content;
@@ -437,11 +455,11 @@ export const organize2 = (
             // addTokens(v.loc.end);
         });
     while (current !== root) {
+        addTokens(current.end);
         current = current.parent!;
-        addTokens(root.end);
     }
     addTokens(root.end);
-    console.log(root);
+    // console.log(root);
 
     /*
 
