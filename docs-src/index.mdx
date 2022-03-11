@@ -4,6 +4,7 @@ import {
     insetLineLine,
     rawSource,
 } from '../src/rendering/inset/lineLine.ts';
+import { lineLine, lineToSlope } from '../src/rendering/intersect';
 import { Fixtures } from './Fixtures';
 import fixtures from './lineLine.json';
 import { insetPrev, naiveInset } from '../src/rendering/ShowDebugInsetSegment';
@@ -34,17 +35,27 @@ and
             if (!moving || !ref.current) return;
             const fn = (evt) => {
                 const box = ref.current.parentNode.getBoundingClientRect();
-                const pos = {
+                let pos = {
                     x: evt.clientX - box.left,
                     y: evt.clientY - box.top,
                 };
+                if (moving.which === 2) {
+                    const line = lineToSlope(p1, p3, true)
+                    const cross = lineToSlope(pos, push(pos, angleTo(p1, p3) + Math.PI / 2, 10))
+                    const p = lineLine(line, cross)
+                    if (p && dist(pos, p) < 5) {
+                        pos = p
+                    }
+                }
                 {/* onChange([[p1, pos, p3], inset]); */}
-				{/* setMoving({which: moving.which, pos}) */}
+                {/* setMoving({which: moving.which, pos}) */}
                 onChange([[
-					moving.which === 1 ? pos: p1,
-					moving.which === 2 ? pos: p2,
-					moving.which === 3 ? pos: p3,
-				], inset]);
+                    moving.which === 1 ? pos: p1,
+                    moving.which === 2 ? pos: p2,
+                    moving.which === 3 ? pos: p3,
+                ], 
+                moving.which === 4 ? (pos.x - 150) : inset
+                ]);
             };
             const up = (evt) => {
                 const box = ref.current.parentNode.getBoundingClientRect();
@@ -53,10 +64,10 @@ and
                     y: evt.clientY - box.top,
                 };
                 {/* onChange([[
-					moving.which === 1 ? pos: p1,
-					moving.which === 2 ? pos: p2,
-					moving.which === 3 ? pos: p3,
-				], inset]); */}
+                    moving.which === 1 ? pos: p1,
+                    moving.which === 2 ? pos: p2,
+                    moving.which === 3 ? pos: p3,
+                ], inset]); */}
                 setMoving(null);
             };
             document.addEventListener('mousemove', fn);
@@ -66,9 +77,9 @@ and
                 document.removeEventListener('mouseup', up);
             };
         }, [moving ? moving.which : null]);
-		/* p1 = moving?.which === 1 ? moving.pos : p1
-		p2 = moving?.which === 2 ? moving.pos : p2
-		p3 = moving?.which === 3 ? moving.pos : p3 */
+        /* p1 = moving?.which === 1 ? moving.pos : p1
+        p2 = moving?.which === 2 ? moving.pos : p2
+        p3 = moving?.which === 3 ? moving.pos : p3 */
         return (
             <>
                 <g ref={(n) => (ref.current = n)}>
@@ -85,14 +96,14 @@ and
                         r={onChange ? 5 : 3}
                         style={{ cursor: 'pointer' }}
                         onMouseDown={onChange ? (evt) => {
-							evt.preventDefault();
-							const box = ref.current.parentNode.getBoundingClientRect();
-							const pos = {
-								x: evt.clientX - box.left,
-								y: evt.clientY - box.top,
-							};
-							setMoving({which: 1, pos});
-    					} : null}
+                            evt.preventDefault();
+                            const box = ref.current.parentNode.getBoundingClientRect();
+                            const pos = {
+                                x: evt.clientX - box.left,
+                                y: evt.clientY - box.top,
+                            };
+                            setMoving({which: 1, pos});
+                        } : null}
                     />
                     <circle
                         cx={p2.x}
@@ -101,37 +112,75 @@ and
                         r={onChange ? 5 : 3}
                         style={{ cursor: 'pointer' }}
                         onMouseDown={onChange ? (evt) => {
-							evt.preventDefault();
-							const box = ref.current.parentNode.getBoundingClientRect();
-							const pos = {
-								x: evt.clientX - box.left,
-								y: evt.clientY - box.top,
-							};
-							setMoving({which: 2, pos});
-    					} : null}
+                            evt.preventDefault();
+                            const box = ref.current.parentNode.getBoundingClientRect();
+                            const pos = {
+                                x: evt.clientX - box.left,
+                                y: evt.clientY - box.top,
+                            };
+                            setMoving({which: 2, pos});
+                        } : null}
                     />
                     <Arrow
                         point={p3}
                         theta={angleTo(p2, p3)}
                         size={onChange ? 20 : 10}
                         color="red"
-						inner={{
-							style: onChange? {cursor: 'pointer'} : null,
+                        inner={{
+                            style: onChange? {cursor: 'pointer'} : null,
                         onMouseDown: onChange ? (evt) => {
-							evt.preventDefault();
-							const box = ref.current.parentNode.getBoundingClientRect();
-							const pos = {
-								x: evt.clientX - box.left,
-								y: evt.clientY - box.top,
-							};
-							setMoving({which: 3, pos});
-    					} : null
+                            evt.preventDefault();
+                            const box = ref.current.parentNode.getBoundingClientRect();
+                            const pos = {
+                                x: evt.clientX - box.left,
+                                y: evt.clientY - box.top,
+                            };
+                            setMoving({which: 3, pos});
+                        } : null
 
-    					}}
+                        }}
                     />
-                    {/* <text x={0} y={20}>
-                inset: {inset}
-            </text> */}
+                    {onChange ? <>
+                        <circle
+                            cx={150} cy={280}
+                            r={3}
+                            stroke="black"
+                            strokeWidth="2"
+                            fill="none"
+                        />
+                        <text
+                            x={150} y={295}
+                            textAnchor="middle"
+                            fontFamily="sans-serif"
+                            fontSize={10}
+                            fill="black"
+                        >
+                            {inset.toFixed(0)}
+                        </text>
+                        <line
+                            x1={20} y1={280}
+                            x2={280} y2={280}
+                            stroke="black"
+                            strokeDasharray="1 1"
+                            strokeWidth="1"
+                        />
+                        <circle
+                        cx={150 + (inset )}
+                        cy={280}
+                        r={5}
+                        fill="black"
+                        style={{ cursor: 'pointer' }}
+                        onMouseDown={onChange ? (evt) => {
+                            evt.preventDefault();
+                            const box = ref.current.parentNode.getBoundingClientRect();
+                            const pos = {
+                                x: evt.clientX - box.left,
+                                y: evt.clientY - box.top,
+                            };
+                            setMoving({which: 4, pos});
+                        } : null}
+                        />
+                    </> : null}
                 </g>
             </>
         );
@@ -143,7 +192,7 @@ and
         );
         return (
             <>
-    		<g style={{pointerEvents: 'none'}}>
+            <g style={{pointerEvents: 'none'}}>
                 {
                     <RenderSegmentBasic
                         prev={segments[segments.length - 1].to}
@@ -169,7 +218,7 @@ and
                         inner={{ stroke: 'green', strokeWidth: 3 }}
                     />
                 ))}
-    			</g>
+                </g>
             </>
         );
     }}

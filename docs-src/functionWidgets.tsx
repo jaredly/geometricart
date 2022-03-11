@@ -6,7 +6,8 @@ import { Arrow, arrow, pointsList } from '../src/editor/ShowHitIntersection2';
 import { angleTo, dist, push } from '../src/rendering/getMirrorTransforms';
 import { Coord } from '../src/types';
 
-const angleArrow = (angle: number) => {
+const angleArrow = (orig: number, reverse?: boolean) => {
+    const angle = reverse ? orig + Math.PI : orig;
     return (
         <>
             <polyline
@@ -25,7 +26,7 @@ const angleArrow = (angle: number) => {
                 fill={'red'}
             />
             <text x={20} y={20} fill="white" fontSize={6} textAnchor="end">
-                {(angle / Math.PI).toFixed(2)}π
+                {(orig / Math.PI).toFixed(2)}π
             </text>
         </>
     );
@@ -43,7 +44,7 @@ export const widgets: {
                 viewBox="0 0 20 20"
                 style={{ marginBottom: '-.2em' }}
             >
-                {angleArrow(theta + (dist < 0 ? Math.PI : 0))}
+                {angleArrow(theta, dist < 0)}
             </svg>
         );
     },
