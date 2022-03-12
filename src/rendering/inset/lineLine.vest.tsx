@@ -33,7 +33,7 @@ const ShowDebug = ({
             one={lineWithPrev(a, b)}
             two={lineWithPrev(b, c)}
             inset={inset}
-            segments={insetLineLine(a, one, two, inset)}
+            segments={insetLineLine([a, b, c], inset)}
         />
     );
 };
@@ -41,13 +41,8 @@ const ShowDebug = ({
 register({
     id: 'lineLine',
     dir: __dirname,
-    transform: ([[a, b, c], size]) => {
-        return insetLineLine(
-            a,
-            { type: 'Line', to: b },
-            { type: 'Line', to: c },
-            size,
-        );
+    transform: (args) => {
+        return insetLineLine(...args);
     },
     render: {
         editor: ({

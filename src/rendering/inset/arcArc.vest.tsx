@@ -99,7 +99,7 @@ const ShowDebug = ({ input: [[prev, seg, next], inset] }: { input: Input }) => {
                 one={{ prev, segment: seg, shape: -1 }}
                 two={{ prev: seg.to, segment: next, shape: -1 }}
                 inset={inset}
-                segments={insetArcArc(seg, next, inset)}
+                segments={insetArcArc([prev, seg, next], inset)}
             />
             {vector(seg.to, tan0, 30, 'yellow')}
             {vector(seg.to, tan1, 30, 'purple')}
@@ -328,8 +328,8 @@ const Editor3 = ({
 register({
     id: 'arcArc',
     dir: __dirname,
-    transform: ([[prev, one, two], size]) => {
-        return insetArcArc(one, two, size);
+    transform: (args) => {
+        return insetArcArc(...args);
     },
     render: {
         editor: ({ initial, onChange }) => (
