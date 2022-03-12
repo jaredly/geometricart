@@ -173,30 +173,6 @@ export const Fixtures = <I, O>({
 
     return (
         <div>
-            <div style={{ display: 'flex', flexWrap: 'wrap' }}>
-                {fixtures.map((fix, i) => (
-                    <div
-                        key={i}
-                        style={
-                            selected === fix
-                                ? {
-                                      outline: '1px solid magenta',
-                                      cursor: 'pointer',
-                                  }
-                                : { cursor: 'pointer' }
-                        }
-                        onClick={() => {
-                            setSelected(fix);
-                            setHover(null);
-                        }}
-                    >
-                        <svg width={150} height={150} viewBox="0 0 300 300">
-                            <Input input={fix.input} />
-                            <Output output={run(fix.input)} input={fix.input} />
-                        </svg>
-                    </div>
-                ))}
-            </div>
             <div
                 style={{
                     maxWidth: 1200,
@@ -222,6 +198,44 @@ export const Fixtures = <I, O>({
                             padding: 8,
                         }}
                     >
+                        <div
+                            style={{
+                                display: 'flex',
+                                flexWrap: 'wrap',
+                                width: 300,
+                            }}
+                        >
+                            {fixtures.map((fix, i) => (
+                                <div
+                                    key={i}
+                                    style={
+                                        selected === fix
+                                            ? {
+                                                  outline: '1px solid magenta',
+                                                  cursor: 'pointer',
+                                              }
+                                            : { cursor: 'pointer' }
+                                    }
+                                    onClick={() => {
+                                        setSelected(fix);
+                                        setHover(null);
+                                    }}
+                                >
+                                    <svg
+                                        width={50}
+                                        height={50}
+                                        viewBox="0 0 300 300"
+                                    >
+                                        <Input input={fix.input} />
+                                        <Output
+                                            output={run(fix.input)}
+                                            input={fix.input}
+                                        />
+                                    </svg>
+                                </div>
+                            ))}
+                        </div>
+
                         <RenderMain
                             editDelay={editDelay}
                             pins={pins}
@@ -378,6 +392,9 @@ function RenderMain<I, O>({
     const [showAll, setShowAll] = React.useState(false);
     const myOutput = React.useMemo(() => run(edit), [edit]);
     React.useEffect(() => {
+        if (edit === selected.input) {
+            return;
+        }
         if (editDelay) {
             const tid = setTimeout(() => {
                 setSelected((s) => ({ ...s, input: edit }));
@@ -453,13 +470,16 @@ function RenderMain<I, O>({
                         : null}
                 </g>
             </svg>
-            <div>
-                <input
-                    type="checkbox"
-                    checked={showAll}
-                    onChange={() => setShowAll(!showAll)}
-                />
-                Show all
+            <div
+                style={{
+                    color: 'white',
+                    cursor: 'pointer',
+                    fontFamily: 'system-ui',
+                }}
+                onClick={() => setShowAll(!showAll)}
+            >
+                <input type="checkbox" checked={showAll} onChange={() => {}} />
+                Show all annotations
             </div>
             <div
                 style={{

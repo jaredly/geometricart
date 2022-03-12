@@ -215,10 +215,27 @@ export const widgets: {
         );
     },
     circleCircle: ([c1, c2], output: Array<Coord>, size) => {
-        if (size === '1em') {
-            return <div>{output.length + ''}</div>;
-        }
-        return <div>{JSON.stringify(output)}</div>;
+        // if (size === '1em') {
+        //     return <div>{output.length + ''}</div>;
+        // }
+        // return <div>{JSON.stringify(output)}</div>;
+        return (
+            <svg
+                width={'100%'}
+                height={'100%'}
+                viewBox="0 0 20 20"
+                style={{ marginBottom: '-.2em' }}
+            >
+                <circle cx={7} cy={7} r={5} stroke="currentColor" fill="none" />
+                <circle
+                    cx={13}
+                    cy={13}
+                    r={5}
+                    stroke="currentColor"
+                    fill="none"
+                />
+            </svg>
+        );
     },
 };
 
