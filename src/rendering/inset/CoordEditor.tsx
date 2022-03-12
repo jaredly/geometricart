@@ -71,6 +71,7 @@ export const CoordEditor = ({
             <g ref={(n) => (ref.current = n)}>
                 {coords.map(({ x, y }, i) => (
                     <circle
+                        key={i}
                         cx={x}
                         cy={y}
                         fill={'red'}

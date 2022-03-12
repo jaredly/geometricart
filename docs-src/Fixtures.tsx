@@ -101,39 +101,61 @@ export type Info = {
 
 const colorsRaw =
     '1f77b4ff7f0e2ca02cd627289467bd8c564be377c27f7f7fbcbd2217becf';
-// '8dd3c7ffffb3bebadafb807280b1d3fdb462b3de69fccde5d9d9d9bc80bdccebc5ffed6f';
 const colors: Array<string> = [];
 for (let i = 0; i < colorsRaw.length; i += 6) {
     colors.push('#' + colorsRaw.slice(i, i + 6));
 }
 
-export const Fixtures = <I, O>({
+export const Fixtures = <Fn extends (...args: any) => any>({
     fixtures,
     Input,
     Output,
-    source,
     editDelay,
-    trace,
-    info,
     run,
 }: {
-    fixtures: Array<Fixture<I, O>>;
-    Input: (props: { input: I; onChange?: (input: I) => void }) => JSX.Element;
-    Output: (props: { output: O; input: I }) => JSX.Element;
+    fixtures: Array<Fixture<Fn>>;
+    Input: (props: {
+        input: Parameters<Fn>;
+        onChange?: (input: Parameters<Fn>) => void;
+        scale: number;
+    }) => JSX.Element;
+    Output: (props: {
+        output: ReturnType<Fn>;
+        input: Parameters<Fn>;
+        scale: number;
+    }) => JSX.Element;
     editDelay?: number;
-    trace: (i: I, trace: Trace) => O;
-    info: Info;
-    run: (i: I) => O;
-    source: string;
+    run: Fn;
 }) => {
+    // The func
+    const annotatedRun = run as Fn & {
+        trace: (trace: Trace, ...i: Parameters<Fn>) => ReturnType<Fn>;
+        traceInfo: Info;
+        rawSource: string;
+    };
+    if (
+        typeof annotatedRun.trace !== 'function' ||
+        typeof annotatedRun.rawSource !== 'string'
+    ) {
+        throw new Error(
+            `The function you've passed in hasn't been annotated by \
+			the babel transform! Either you need to add the '// @trace' \
+			comment to it, or you haven't set up the babel transform \
+			correctly.`,
+        );
+    }
+    const source = annotatedRun.rawSource;
+    const trace = annotatedRun.trace;
+    const info = annotatedRun.traceInfo;
+
     const [selected, setSelected] = React.useState(fixtures[0]);
     const [output, traceOutput, byStart] = React.useMemo((): [
-        O,
+        ReturnType<Fn>,
         TraceOutput,
         ByStart,
     ] => {
         const data: TraceOutput = {};
-        const output = trace(selected.input, (value, id) => {
+        const output = trace((value, id) => {
             const { start, end } = info.expressions[id];
             if (!data[id]) {
                 data[id] = {
@@ -145,7 +167,7 @@ export const Fixtures = <I, O>({
                 data[id].values.push(value);
             }
             return value;
-        });
+        }, ...selected.input);
 
         const byStart: ByStart = {};
         Object.keys(data).forEach((k) => {
@@ -168,13 +190,13 @@ export const Fixtures = <I, O>({
 
         fixtures.forEach((fixture, i) => {
             let matched = false;
-            trace(fixture.input, (value, id) => {
+            trace((value, id) => {
                 matched = true;
                 if (examplesMatching[id] && !examplesMatching[id].includes(i)) {
                     examplesMatching[id].push(i);
                 }
                 return value;
-            });
+            }, ...fixture.input);
             if (!matched) {
                 unmatchedFixtures.push(i);
             }
@@ -206,10 +228,11 @@ export const Fixtures = <I, O>({
                             }}
                         >
                             <svg width={50} height={50} viewBox="0 0 300 300">
-                                <Input input={fixtures[idx].input} />
+                                <Input scale={6} input={fixtures[idx].input} />
                                 <Output
-                                    output={run(fixtures[idx].input)}
+                                    output={run(...fixtures[idx].input)}
                                     input={fixtures[idx].input}
+                                    scale={6}
                                 />
                             </svg>
                         </div>
@@ -233,7 +256,7 @@ export const Fixtures = <I, O>({
     }, []);
 
     return (
-        <div>
+        <div style={{ marginBottom: 16 }}>
             <div
                 style={{
                     maxWidth: 1200,
@@ -288,10 +311,14 @@ export const Fixtures = <I, O>({
                                         height={50}
                                         viewBox="0 0 300 300"
                                     >
-                                        <Input input={fixtures[idx].input} />
-                                        <Output
-                                            output={run(fixtures[idx].input)}
+                                        <Input
+                                            scale={6}
                                             input={fixtures[idx].input}
+                                        />
+                                        <Output
+                                            output={run(...fixtures[idx].input)}
+                                            input={fixtures[idx].input}
+                                            scale={6}
                                         />
                                     </svg>
                                 </div>
@@ -420,7 +447,7 @@ const ShowValues = ({ values }: { values: Array<any> }) => {
     );
 };
 
-function RenderMain<I, O>({
+function RenderMain<Fn extends (...args: any) => any>({
     Input,
     setSelected,
     selected,
@@ -436,23 +463,28 @@ function RenderMain<I, O>({
 }: {
     editDelay?: number;
     Input: (props: {
-        input: I;
-        onChange?: ((input: I) => void) | undefined;
+        input: Parameters<Fn>;
+        onChange?: ((input: Parameters<Fn>) => void) | undefined;
+        scale: number;
     }) => JSX.Element;
-    setSelected: React.Dispatch<React.SetStateAction<Fixture<I, O>>>;
+    setSelected: React.Dispatch<React.SetStateAction<Fixture<Fn>>>;
     pins: { [key: number]: boolean };
     setPins: React.Dispatch<React.SetStateAction<{ [key: number]: boolean }>>;
     setHover: React.Dispatch<React.SetStateAction<number | null>>;
-    selected: Fixture<I, O>;
-    Output: (props: { output: O; input: I }) => JSX.Element;
-    output: O;
-    run: (i: I) => O;
+    selected: Fixture<Fn>;
+    Output: (props: {
+        output: ReturnType<Fn>;
+        input: Parameters<Fn>;
+        scale: number;
+    }) => JSX.Element;
+    output: ReturnType<Fn>;
+    run: Fn;
     hover: number | null;
     traceOutput: TraceOutput;
 }) {
     const [edit, setEdit] = useInitialState(selected.input);
     const [showAll, setShowAll] = React.useState(false);
-    const myOutput = React.useMemo(() => run(edit), [edit]);
+    const myOutput = React.useMemo(() => run(...edit), [edit]);
     React.useEffect(() => {
         if (edit === selected.input) {
             return;
@@ -477,8 +509,8 @@ function RenderMain<I, O>({
                     backgroundColor: 'white',
                 }}
             >
-                <Input onChange={setEdit} input={edit} />
-                <Output input={edit} output={myOutput} />
+                <Input onChange={setEdit} input={edit} scale={1} />
+                <Output input={edit} output={myOutput} scale={1} />
                 <g style={{ pointerEvents: 'none' }}>
                     {(showAll
                         ? Object.keys(traceOutput).filter((k) =>

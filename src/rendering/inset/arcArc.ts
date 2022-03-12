@@ -22,8 +22,7 @@ import { coordsEqual } from '../pathsAreIdentical';
  * the two arcs will be connected with a semicircle.
  */
 export const insetArcArc = (
-    seg: ArcSegment,
-    next: ArcSegment,
+    [, seg, next]: [Coord, ArcSegment, ArcSegment],
     amount: number,
 ): Array<Segment> => {
     /**

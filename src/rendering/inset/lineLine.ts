@@ -10,13 +10,14 @@ import { angleTo, push } from '../getMirrorTransforms';
  * Used to calculate the inset for a line segment that's followed by another line segment.
  */
 export const insetLineLine = (
-    prev: Coord,
-    seg: LineSegment,
-    next: LineSegment,
+    [p1, p2, p3]: [Coord, Coord, Coord],
+    // prev: Coord,
+    // seg: LineSegment,
+    // next: LineSegment,
     amount: number,
 ): Array<Segment> => {
-    const t0 = angleTo(prev, seg.to);
-    const t1 = angleTo(seg.to, next.to);
+    const t0 = angleTo(p1, p2);
+    const t1 = angleTo(p2, p3);
     const between = angleBetween(t0, t1, amount > 0);
     /**
      * If `t0` and `t1` are the same, then pushing the endpoint `t0` perpendicular
@@ -24,7 +25,7 @@ export const insetLineLine = (
      */
     if (between === 0) {
         // @list-examples
-        return [{ type: 'Line', to: push(seg.to, t0 + Math.PI / 2, amount) }];
+        return [{ type: 'Line', to: push(p2, t0 + Math.PI / 2, amount) }];
     }
     /**
      * If the angle `between` the first and second segments is less than 180º,
@@ -36,9 +37,9 @@ export const insetLineLine = (
     if (between <= Math.PI) {
         // @list-examples
         return [
-            { type: 'Line', to: push(seg.to, t0 + Math.PI / 2, amount) },
-            { type: 'Line', to: seg.to },
-            { type: 'Line', to: push(seg.to, t1 + Math.PI / 2, amount) },
+            { type: 'Line', to: push(p2, t0 + Math.PI / 2, amount) },
+            { type: 'Line', to: p2 },
+            { type: 'Line', to: push(p2, t1 + Math.PI / 2, amount) },
         ];
         /**
          * Otherwise, we're "expanding" a corner, and we need to find the new shared
@@ -51,8 +52,6 @@ export const insetLineLine = (
         const angle =
             angleBetween(t0 + Math.PI, t1, amount < 0) * (amount > 0 ? -1 : 1);
         const dist = Math.abs(amount / Math.cos(between / 2 - Math.PI));
-        return [
-            { type: 'Line', to: push(seg.to, t0 - Math.PI + angle / 2, dist) },
-        ];
+        return [{ type: 'Line', to: push(p2, t0 - Math.PI + angle / 2, dist) }];
     }
 };

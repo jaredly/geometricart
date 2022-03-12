@@ -127,7 +127,6 @@ export default function (contents, filePath) {
                 node.declaration.declarations.forEach((decl) => {
                     if (fns.includes(decl.init.type)) {
                         const name = decl.id.name;
-                        decl.id.name += 'Trace';
                         const traceInfo = {
                             expressions: {},
                             calls: {},
@@ -161,8 +160,15 @@ export default function (contents, filePath) {
                             annotateFunctionBody(decl.init, traceInfo),
                         );
                         found.push(
-                            t.exportNamedDeclaration(
-                                t.variableDeclaration('const', [decl]),
+                            t.expressionStatement(
+                                t.assignmentExpression(
+                                    '=',
+                                    t.memberExpression(
+                                        t.identifier(decl.id.name),
+                                        t.identifier('trace'),
+                                    ),
+                                    decl.init,
+                                ),
                             ),
                         );
                         found.push(
@@ -177,59 +183,23 @@ export default function (contents, filePath) {
                                 ),
                             ),
                         );
-                        // found.push(
-                        //     t.expressionStatement(
-                        //         t.assignmentExpression(
-                        //             t.memberExpression(
-                        //                 t.identifier(name),
-                        //                 t.identifier('meta'),
-                        //             ),
-                        //             t.objectExpression([
-                        //                 t.objectProperty(
-                        //                     t.identifier('name'),
-                        //                     t.stringLiteral(name),
-                        //                 ),
-                        //                 t.objectProperty(
-                        //                     t.identifier('filePath'),
-                        //                     t.stringLiteral(filePath),
-                        //                 ),
-                        //             ]),
-                        //         ),
-                        //     ),
-                        // );
+                        found.push(
+                            t.expressionStatement(
+                                t.assignmentExpression(
+                                    '=',
+                                    t.memberExpression(
+                                        t.identifier(decl.id.name),
+                                        t.identifier('rawSource'),
+                                    ),
+                                    t.stringLiteral(contents),
+                                ),
+                            ),
+                        );
                     }
                 });
             }
-            // if (node.type === 'VariableDeclaration') {
-            //     // found.push(node);
-            //     node.declaration.declarations.forEach((node) => {
-            //         if (fns.includes(node.init.type)) {
-            //             node.id.name += 'Trace';
-            //             traverse.default(
-            //                 t.program([ensureStmt(node.init)]),
-            //                 annotateFunctionBody(node.init),
-            //             );
-            //             found.push(
-            //                 t.exportNamedDeclaration(
-            //                     t.variableDeclaration('const', [node]),
-            //                 ),
-            //             );
-            //         }
-            //     });
-            // }
         }
     });
-
-    found.push(
-        t.exportNamedDeclaration(
-            t.variableDeclaration('const', [
-                t.variableDeclarator(
-                    t.identifier('rawSource'),
-                    t.stringLiteral(contents),
-                ),
-            ]),
-        ),
-    );
 
     return t.program(found.concat(addFunctionMeta(contents, filePath)));
 }
@@ -265,7 +235,7 @@ function annotateFunctionBody(toplevel, traceInfo) {
                 assigns[param.name] = num;
             }
         });
-        path.node.params.push(t.identifier('trace'));
+        path.node.params.unshift(t.identifier('trace'));
     }
 
     return {

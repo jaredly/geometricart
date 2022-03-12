@@ -101,6 +101,11 @@ esbuild
                 return res.end(
                     fs
                         .readFileSync(__dirname + '/index.html', 'utf8')
+                        // ahhh. ok. so.
+                        // what we want is.
+                        // register loads up the data, which is fine
+                        // and then we have another script that selects
+                        // which one to run.
                         .replace(
                             '"run.js"',
                             `"${pathpart.replace(/\.[jt]sx?$/, '.js')}"`,

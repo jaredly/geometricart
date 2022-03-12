@@ -105,8 +105,7 @@ export const widgets: {
                 <polyline
                     points={pointsList([mid, push(mid, angle, 10)])}
                     stroke="red"
-                    strokeDasharray={'1 1'}
-                    strokeWidth={1}
+                    strokeWidth={0.5}
                     fill="none"
                 />
                 <polyline

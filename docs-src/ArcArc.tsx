@@ -1,11 +1,5 @@
 import * as React from 'react';
-import {
-    // @ts-ignore
-    insetArcArcTrace,
-    insetArcArc,
-    // @ts-ignore
-    rawSource,
-} from '../src/rendering/inset/arcArc';
+import { insetArcArc } from '../src/rendering/inset/arcArc';
 import { lineLine, lineToSlope } from '../src/rendering/intersect';
 import { Fixtures } from './Fixtures';
 import fixtures from './arcArc.json';
@@ -20,13 +14,16 @@ import { Slider } from '../src/rendering/inset/Slider';
 
 type I = [[Coord, Coord, Coord, boolean, boolean], number];
 const Input = ({
-    input: [[p1, p2, p3, c1, c2], inset],
+    input: [[prev, one, two], inset],
     onChange,
+    scale,
 }: {
-    input: I;
-    onChange?: (i: I) => void;
+    input: InputT;
+    scale: number;
+    onChange?: (i: InputT) => void;
 }) => {
-    const [prev, one, two] = newToOld([p1, p2, p3, c1, c2]);
+    // const [prev, one, two] = newToOld([p1, p2, p3, c1, c2]);
+    const [p1, p2, p3, c1, c2] = oldToNew([prev, one, two]);
     return (
         <>
             <RenderSegmentBasic
@@ -34,7 +31,7 @@ const Input = ({
                 segment={one}
                 inner={{
                     stroke: 'red',
-                    strokeWidth: 2,
+                    strokeWidth: 2 * scale,
                     fill: 'none',
                 }}
             />
@@ -43,7 +40,7 @@ const Input = ({
                 segment={two}
                 inner={{
                     stroke: 'red',
-                    strokeWidth: 2,
+                    strokeWidth: 2 * scale,
                     fill: 'none',
                 }}
             />
@@ -54,7 +51,7 @@ const Input = ({
                 y2={150}
                 stroke="black"
                 strokeDasharray={'1 2'}
-                strokeWidth={1}
+                strokeWidth={1 * scale}
             />
             <line
                 y1={0}
@@ -63,7 +60,7 @@ const Input = ({
                 x2={150}
                 stroke="black"
                 strokeDasharray={'1 2'}
-                strokeWidth={1}
+                strokeWidth={1 * scale}
             />
             <CoordEditor
                 coords={[p1, p2, p3]}
@@ -72,9 +69,15 @@ const Input = ({
                     onChange
                         ? (idx, evt) => {
                               if (idx === 0) {
-                                  onChange([[p1, p2, p3, !c1, c2], inset]);
+                                  onChange([
+                                      newToOld([p1, p2, p3, !c1, c2]),
+                                      inset,
+                                  ]);
                               } else if (idx === 2) {
-                                  onChange([[p1, p2, p3, c1, !c2], inset]);
+                                  onChange([
+                                      newToOld([p1, p2, p3, c1, !c2]),
+                                      inset,
+                                  ]);
                               }
                           }
                         : undefined
@@ -84,14 +87,16 @@ const Input = ({
                     y: Math.abs(coord.y - 150) < 10 ? 150 : coord.y,
                 })}
                 onSet={([p1, p2, p3]) =>
-                    onChange ? onChange([[p1, p2, p3, c1, c2], inset]) : null
+                    onChange
+                        ? onChange([newToOld([p1, p2, p3, c1, c2]), inset])
+                        : null
                 }
             />
             {onChange ? (
                 <Slider
                     inset={inset}
                     onChange={(inset) =>
-                        onChange([[p1, p2, p3, c1, c2], inset])
+                        onChange([newToOld([p1, p2, p3, c1, c2]), inset])
                     }
                 />
             ) : null}
@@ -101,12 +106,15 @@ const Input = ({
 
 const Output = ({
     output: segments,
-    input: [coords, inset],
+    input: [[prev, one, two], inset],
+    scale,
 }: {
-    input: I;
+    input: InputT;
     output: Array<Segment>;
+    scale: number;
 }) => {
-    const [prev, one, two] = newToOld(coords);
+    const coords = oldToNew([prev, one, two]);
+    // const [prev, one, two] = newToOld(coords);
     const naive = naiveInset({ prev: one.to, segment: two, shape: -1 }, inset);
     return (
         <>
@@ -116,7 +124,7 @@ const Output = ({
                     segment={naive.segment}
                     inner={{
                         stroke: 'green',
-                        strokeWidth: 1,
+                        strokeWidth: 1 * scale,
                         strokeDasharray: '5 5',
                     }}
                 />
@@ -129,7 +137,7 @@ const Output = ({
                                 : segments[i - 1].to
                         }
                         segment={seg}
-                        inner={{ stroke: 'green', strokeWidth: 3 }}
+                        inner={{ stroke: 'green', strokeWidth: 2 * scale }}
                     />
                 ))}
             </g>
@@ -138,8 +146,8 @@ const Output = ({
 };
 
 type InputI = [[Coord, Coord, Coord, boolean, boolean], number];
-type Input = [[Coord, ArcSegment, ArcSegment], number];
-export const oldToNew = ([, one, two]: Input[0]): InputI[0] => {
+type InputT = [[Coord, ArcSegment, ArcSegment], number];
+export const oldToNew = ([, one, two]: InputT[0]): InputI[0] => {
     return [one.center, one.to, two.center, one.clockwise, two.clockwise];
 };
 
@@ -149,7 +157,7 @@ export const newToOld = ([
     twoCenter,
     oneClock,
     twoClock,
-]: InputI[0]): Input[0] => {
+]: InputI[0]): InputT[0] => {
     const r = dist(center, to);
     const t = angleTo(center, to);
     const prev = push(center, t + ((oneClock ? -1 : 1) * Math.PI) / 2, r);
@@ -168,24 +176,12 @@ export const newToOld = ([
         },
     ];
 };
-console.log(insetArcArcTrace.traceInfo);
 export const ArcArc = () => (
     <Fixtures
-        fixtures={(fixtures as Array<Fixture<Input, Array<Segment>>>).map(
-            (f) => ({ ...f, input: [oldToNew(f.input[0]), f.input[1]] as I }),
-        )}
         Input={Input}
         editDelay={100}
         Output={Output}
-        source={rawSource}
-        run={([coords, inset]) => {
-            const [prev, one, two] = newToOld(coords);
-            return insetArcArc(one, two, inset);
-        }}
-        info={insetArcArcTrace.traceInfo}
-        trace={([coords, inset], trace) => {
-            const [prev, one, two] = newToOld(coords);
-            return insetArcArcTrace(one, two, inset, trace);
-        }}
+        run={insetArcArc}
+        fixtures={fixtures as Array<Fixture<typeof insetArcArc>>}
     />
 );

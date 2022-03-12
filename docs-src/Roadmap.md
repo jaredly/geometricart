@@ -1,7 +1,50 @@
 
 
+ok wht what
+
+so at what point do I do the magic?
+it would be nice not to have to
+ts-ignore the import.
+I mean,
+I guess I could hmmm just
+import the function,
+and have the traced version have attributes.
+tbh that's probably the best method.
+ok I'll do that.
+
+
+
+auto-tracing of the function in question would be nice.
+
+hmm maybe the register can just add something to the page? like it's fine.
+
+and the menu is a separate react root entirely.
+uh maybe. or just, lazily loaded? defends against double-loading.
+yeah. gotta be the same bundle to avoid doing confusing things.
+
+ok, but back to the question of how
+we
+do things right here
+like
+`register`, when we do that ... how do we do a magic
+oh can we say `.trace.tsx`? And then it just goes ahead and
+traces all the functions in there? yeah maybe that's good.
+
+
+
+
 - [ ] go through lineLine and arcArc and clean up variable names, docstrings, etc.
-- [ ] in the mini fixtures, line widths should be much bigger. Add a 'line zoom' variable to the render.
+- [x] in the mini fixtures, line widths should be much bigger. Add a 'line zoom' variable to the render.
+- [ ] allow editing of fixtures (save back to source), so I can clean them up.
+  should be pretty simple? stand up a basic server
+
+- [ ] can I merge in my vest thing? like. .. I really like the idea.
+  I guess I don't really need mdx at this point? funny.
+  - [ ] ok so there will be a mode that has editing, and a mode that's
+    just for public documentation. Some flag or something.
+    
+
+- [ ] ooh can I make this system work for the babel transform source? hmmm
 
 
 
