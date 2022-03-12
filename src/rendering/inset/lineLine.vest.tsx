@@ -1,10 +1,8 @@
 import * as React from 'react';
-// import { RenderSegmentBasic } from '../../editor/RenderSegment';
 import { Coord, Segment } from '../../types';
 import { register } from '../../vest';
 import { addPrevsToSegments, SegmentWithPrev } from '../clipPathNew';
 import { useInitialState } from '../SegmentEditor';
-// import { ShapeEditor } from '../ShapeEditor';
 import { RenderDebugInsetSegment } from '../ShowDebugInsetSegment';
 import { CoordPicker } from './CoordPicker';
 import { insetLineLine } from './lineLine';

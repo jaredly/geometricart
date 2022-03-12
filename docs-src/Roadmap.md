@@ -14,6 +14,15 @@ ok I'll do that.
 
 
 
+ok, why am I trying to load fixtures directly
+
+because in the other setup, I am. and ... um ... maybe it's fine the
+way it is?
+
+
+
+
+
 auto-tracing of the function in question would be nice.
 
 hmm maybe the register can just add something to the page? like it's fine.
