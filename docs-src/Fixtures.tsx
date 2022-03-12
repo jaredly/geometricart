@@ -63,7 +63,6 @@ export const getWidget = (id: number, trace: TraceOutput, size: string) => {
                 width: size,
                 height: size,
                 display: 'inline-block',
-                overflow: 'hidden',
             }}
             key={id}
         >

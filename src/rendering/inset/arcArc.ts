@@ -87,18 +87,27 @@ export const insetArcArc = (
     }
     /**
      * Otherwise, the circles are no longer intersecting, so we need to connect up the
-     * two circles somehow.
+     * two circles with a semicircle.
+     * The endpoint of the current arc and the start point of the following arc will both
+     * lie on the line that passes through the circles' centers, as will the center of the
+     * semicircle that joins the two.
      */
     const centerD = dist(seg.center, next.center);
     let clockwise, sto, nto;
-    // One is contained within the other!
+    /**
+     * If one circle is fully inside the other (indicated by the distance between their
+     * centers being smaller than ther outer circle's radius), the 'tangent points' will
+     * be on one side or the other of both of them.
+     */
     if (centerD < r0a || centerD < r1a) {
         const direction = r0a < r1a ? centerT + Math.PI : centerT;
         clockwise = r0a < r1a ? !seg.clockwise : seg.clockwise;
         sto = push(seg.center, direction, r0a);
         nto = push(next.center, direction, r1a);
+        /**
+         * Otherwise, the tangent points will be between the two centers.
+         */
     } else {
-        // They're separate
         sto = push(seg.center, centerT, r0a);
         nto = push(next.center, centerT + Math.PI, r1a);
         clockwise = !seg.clockwise;
