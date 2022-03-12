@@ -31,6 +31,7 @@ export const insetArcArc = (
      * nothing fancier is required.
      */
     if (coordsEqual(seg.center, next.center)) {
+        // @list-examples
         return [
             { ...seg, to: push(seg.to, angleTo(seg.center, seg.to), amount) },
         ];
@@ -48,10 +49,13 @@ export const insetArcArc = (
     const r0a = r0 + amount * (seg.clockwise ? -1 : 1);
     const r1a = r1 + amount * (next.clockwise ? -1 : 1);
     /**
-     * Next: Are we "contracting" this corner? If so, it's easy to do.
+     * Next: Are we "contracting" this corner? If so, we connect up the
+     * offset endpoints of the two arcs, with lines going through the previous
+     * intersection.
      */
     const contract = amount < 0 ? between > Math.PI : between < Math.PI;
     if (contract) {
+        // @list-examples
         return [
             { ...seg, to: push(seg.center, t0, r0a) },
             { type: 'Line', to: seg.to },
@@ -59,7 +63,7 @@ export const insetArcArc = (
         ];
     }
     /**
-     * Now we need to find the new point of intersection between the newly
+     * Otherwise we need to find the new point of intersection between the newly
      * expanded/contracted circles. In order to save us work later, we
      * constrain one of the circles to be a semicircle -- just on the half
      * that had the initial collision. This way, we remove the possibility
@@ -83,6 +87,7 @@ export const insetArcArc = (
      * If there's a hit, that's the end of it! We've successfully expanded the corner.
      */
     if (hits.length === 1) {
+        // @list-examples
         return [{ ...seg, to: hits[0] }];
     }
     /**
@@ -96,10 +101,11 @@ export const insetArcArc = (
     let clockwise, sto, nto;
     /**
      * If one circle is fully inside the other (indicated by the distance between their
-     * centers being smaller than ther outer circle's radius), the 'tangent points' will
-     * be on one side or the other of both of them.
+     * centers being smaller than the outer circle's radius), the 'tangent points' will
+     * be on one side or the other of both centers.
      */
     if (centerD < r0a || centerD < r1a) {
+        // @list-examples
         const direction = r0a < r1a ? centerT + Math.PI : centerT;
         clockwise = r0a < r1a ? !seg.clockwise : seg.clockwise;
         sto = push(seg.center, direction, r0a);
@@ -108,6 +114,7 @@ export const insetArcArc = (
          * Otherwise, the tangent points will be between the two centers.
          */
     } else {
+        // @list-examples
         sto = push(seg.center, centerT, r0a);
         nto = push(next.center, centerT + Math.PI, r1a);
         clockwise = !seg.clockwise;

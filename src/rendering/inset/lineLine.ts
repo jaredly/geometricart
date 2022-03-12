@@ -4,6 +4,11 @@ import { angleBetween } from '../findNextSegments';
 import { angleTo, push } from '../getMirrorTransforms';
 
 // @trace
+/**
+ * ### `insetLineLine`
+ *
+ * Used to calculate the inset for a line segment that's followed by another line segment.
+ */
 export const insetLineLine = (
     prev: Coord,
     seg: LineSegment,
@@ -18,6 +23,7 @@ export const insetLineLine = (
      * to the direction of the line will get us what we want!
      */
     if (between === 0) {
+        // @list-examples
         return [{ type: 'Line', to: push(seg.to, t0 + Math.PI / 2, amount) }];
     }
     /**
@@ -28,6 +34,7 @@ export const insetLineLine = (
      * and connect them through the previous shared endpoint.
      */
     if (between <= Math.PI) {
+        // @list-examples
         return [
             { type: 'Line', to: push(seg.to, t0 + Math.PI / 2, amount) },
             { type: 'Line', to: seg.to },
@@ -40,6 +47,7 @@ export const insetLineLine = (
          * the new point directly.
          */
     } else {
+        // @list-examples
         const angle =
             angleBetween(t0 + Math.PI, t1, amount < 0) * (amount > 0 ? -1 : 1);
         const dist = Math.abs(amount / Math.cos(between / 2 - Math.PI));

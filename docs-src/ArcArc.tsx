@@ -168,7 +168,7 @@ export const newToOld = ([
         },
     ];
 };
-
+console.log(insetArcArcTrace.traceInfo);
 export const ArcArc = () => (
     <Fixtures
         fixtures={(fixtures as Array<Fixture<Input, Array<Segment>>>).map(

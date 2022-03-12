@@ -1,8 +1,25 @@
 
 
-- [ ] slim down lineline to just take the angles? mayb
+- [ ] go through lineLine and arcArc and clean up variable names, docstrings, etc.
+- [ ] in the mini fixtures, line widths should be much bigger. Add a 'line zoom' variable to the render.
 
-- [ ] let's just junk all the imports. nobody needs them.
+
+
+
+Ok I should also write a whole blog post about the features of this system,
+and things that are cool.
+- [x] @list-examples for coverage checking ;)
+
+
+
+- [ ] hmmmm I should really hook up the server to this, so that I can do editing
+  of fixtures directly in this UI. Because why not? right? when I come across
+  failing examples, I should be able to save them, so that they won't fail
+  in the future!
+
+
+
+- [x] let's just junk all the imports. nobody needs them.
 - [ ] also let's support a docstring on the main function, same dealio.
   - [ ] also comments on the args, let's gooo
 

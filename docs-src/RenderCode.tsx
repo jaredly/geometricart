@@ -1,6 +1,11 @@
 import * as React from 'react';
 import Highlight, { defaultProps } from 'prism-react-renderer';
-import { FullToken, organizeTokens } from './organizeTokens';
+import {
+    DOC_COMMENT,
+    EXAMPLES,
+    FullToken,
+    organizeTokens,
+} from './organizeTokens';
 import { Info, ByStart, TraceOutput, getWidget, hasVisual } from './Fixtures';
 
 import ReactMarkdown from 'react-markdown';
@@ -17,6 +22,7 @@ export const RenderCode = React.memo(
         pins,
         setPins,
         info,
+        examplesMatching,
     }: {
         source: string;
         info: Info;
@@ -28,6 +34,7 @@ export const RenderCode = React.memo(
         traceOutput: TraceOutput;
         hover: number | null;
         setHover: React.Dispatch<React.SetStateAction<number | null>>;
+        examplesMatching: { [key: number]: JSX.Element };
     }) => {
         return (
             <Highlight {...defaultProps} code={source} language="tsx">
@@ -66,6 +73,7 @@ export const RenderCode = React.memo(
                                 (id) => setHover(id),
                                 pins,
                                 setPins,
+                                examplesMatching,
                             )}
                         </pre>
                     );
@@ -84,6 +92,7 @@ const renderFull = (
     onHover: (i: number | null) => void,
     pins: { [key: number]: boolean },
     setPins: React.Dispatch<React.SetStateAction<{ [key: number]: boolean }>>,
+    examplesMatching: { [key: number]: JSX.Element },
 ) => {
     return (
         <span
@@ -150,9 +159,10 @@ const renderFull = (
                         onHover,
                         pins,
                         setPins,
+                        examplesMatching,
                     ),
                 )
-            ) : token.content.types.includes('doc-comment') ? (
+            ) : token.content.types.includes(DOC_COMMENT) ? (
                 <div
                     style={{
                         whiteSpace: 'normal',
@@ -172,6 +182,8 @@ const renderFull = (
                         className="md"
                     />
                 </div>
+            ) : token.content.types.includes(EXAMPLES) ? (
+                examplesMatching[+token.content.content]
             ) : (
                 <span {...getTokenProps({ token: token.content })} />
             )}

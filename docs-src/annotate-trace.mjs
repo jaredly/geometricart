@@ -13,6 +13,9 @@ const fns = ['ArrowFunctionExpression', 'FunctionDeclaration'];
 
 const ensureStmt = (n) => (t.isStatement(n) ? n : t.expressionStatement(n));
 
+const listExamplesComment = `// @list-examples\n`;
+const listExamplesSigil = `LIST_`.padEnd(listExamplesComment.length - 2, 'x'); //  + ';\n';
+
 export const addFunctionMeta = (contents, filePath) => {
     const parsed = babel.parseSync(contents, {
         parserOpts: {
@@ -105,6 +108,11 @@ export const addFunctionMeta = (contents, filePath) => {
 };
 
 export default function (contents, filePath) {
+    // console.log(filePath, contents.includes(listExamplesComment));
+    contents = contents.replace(
+        new RegExp(listExamplesComment, 'g'),
+        listExamplesSigil + ';\n',
+    );
     const parsed = babel.parseSync(contents, {
         parserOpts: {
             plugins: ['typescript', 'jsx'],
@@ -124,6 +132,7 @@ export default function (contents, filePath) {
                             expressions: {},
                             calls: {},
                             references: [],
+                            examples: {},
                             comments: parsed.comments
                                 .filter(
                                     (comment) =>
@@ -265,6 +274,26 @@ function annotateFunctionBody(toplevel, traceInfo) {
                 const at = seen.get(path.node.init);
                 assigns[path.node.id.name] = at;
             },
+        },
+        ExpressionStatement(path) {
+            if (
+                path.node.expression.type === 'Identifier' &&
+                path.node.expression.name === listExamplesSigil
+            ) {
+                const num = i++;
+                const n = t.callExpression(t.identifier('trace'), [
+                    t.nullLiteral(),
+                    t.numericLiteral(num),
+                ]);
+                traceInfo.expressions[num] = traceInfo.examples[num] = {
+                    start: path.node.start,
+                    end: path.node.end,
+                };
+                seen.set(n, num);
+                seen.set(n.callee, -1);
+                n.arguments.forEach((arg) => seen.set(arg, -1));
+                path.replaceWith(t.expressionStatement(n));
+            }
         },
         ArrowFunctionExpression(path) {
             if (

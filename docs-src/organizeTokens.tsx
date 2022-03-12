@@ -1,6 +1,9 @@
 import Highlight from 'prism-react-renderer';
 import { ByStart, TraceOutput, Info } from './Fixtures';
 
+export const DOC_COMMENT = 'doc-comment';
+export const EXAMPLES = 'list-examples';
+
 export const organizeTokens = (
     lines: Array<Array<Token>>,
     byStart: ByStart,
@@ -11,16 +14,21 @@ export const organizeTokens = (
     // then annotate with ides
     const tokens: Array<Token & { at: number }> = [];
     const comments = info.comments.slice();
+    const examples = Object.keys(info.examples)
+        .map((id) => ({ id, loc: info.examples[+id] }))
+        .sort((a, b) => a.loc.start - b.loc.start);
+
     if (info.docs) {
         tokens.push({
             at: info.start,
             content: info.docs.trim() + '\n',
-            types: ['doc-comment'],
+            types: [DOC_COMMENT],
         });
     }
     let at = -1;
     lines.forEach((line) => {
         const ll = line.reduce((c, t) => c + t.content.length, 0) + 1;
+
         if (comments.length && at + ll >= comments[0].start) {
             if (at + ll > comments[0].end) {
                 tokens.push({
@@ -42,6 +50,18 @@ export const organizeTokens = (
                 // console.log('empty token?');
                 return;
             }
+
+            if (
+                token.content === 'LIST_xxxxxxxxxxx' &&
+                examples.length &&
+                at === examples[0].loc.start
+            ) {
+                tokens.push({ at, content: examples[0].id, types: [EXAMPLES] });
+                examples.shift();
+                at += token.content.length;
+                return;
+            }
+
             let content = token.content;
             const m = content.match(/^\s+/);
             if (m && m[0].length < content.length) {
@@ -101,6 +121,7 @@ export const organizeTokens = (
     };
 
     Object.keys(traceOutput)
+        .filter((k) => !info.examples[+k])
         .map((k) => ({ id: +k, loc: traceOutput[+k].loc }))
         .concat(info.references.filter((t) => !!traceOutput[t.id]))
         .sort((a, b) => {

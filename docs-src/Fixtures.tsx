@@ -92,6 +92,7 @@ export type Info = {
             args: Array<number>;
         };
     };
+    examples: { [key: number]: { start: number; end: number } };
     docs: string | null;
     start: number;
     end: number;
@@ -159,6 +160,67 @@ export const Fixtures = <I, O>({
         return [output, data, byStart];
     }, [selected]);
 
+    const { examplesMatching, unmatchedFixtures } = React.useMemo(() => {
+        const examplesMatching: { [key: string]: Array<number> } = {};
+        Object.keys(info.examples).forEach((k) => (examplesMatching[+k] = []));
+
+        const unmatchedFixtures: Array<number> = [];
+
+        fixtures.forEach((fixture, i) => {
+            let matched = false;
+            trace(fixture.input, (value, id) => {
+                matched = true;
+                if (examplesMatching[id] && !examplesMatching[id].includes(i)) {
+                    examplesMatching[id].push(i);
+                }
+                return value;
+            });
+            if (!matched) {
+                unmatchedFixtures.push(i);
+            }
+        });
+
+        const rendered: { [key: number]: JSX.Element } = {};
+
+        Object.keys(examplesMatching).forEach((k) => {
+            rendered[+k] = (
+                <div
+                    style={{
+                        display: 'inline-flex',
+                        flexDirection: 'row',
+                        flexWrap: 'wrap',
+                    }}
+                    onMouseOver={(evt) => evt.stopPropagation()}
+                >
+                    {examplesMatching[+k].map((idx) => (
+                        <div
+                            key={idx}
+                            style={{
+                                cursor: 'pointer',
+                                backgroundColor: 'white',
+                                margin: 4,
+                            }}
+                            onClick={() => {
+                                setSelected(fixtures[idx]);
+                                setHover(null);
+                            }}
+                        >
+                            <svg width={50} height={50} viewBox="0 0 300 300">
+                                <Input input={fixtures[idx].input} />
+                                <Output
+                                    output={run(fixtures[idx].input)}
+                                    input={fixtures[idx].input}
+                                />
+                            </svg>
+                        </div>
+                    ))}
+                </div>
+            );
+        });
+
+        return { examplesMatching: rendered, unmatchedFixtures };
+    }, [fixtures, trace, info.examples]);
+
     const [hover, setHover] = React.useState(null as null | number);
     const [pins, setPins] = React.useState({} as { [key: number]: boolean });
     const [cursor, setCursor] = React.useState({ x: 0, y: 0 });
@@ -188,6 +250,7 @@ export const Fixtures = <I, O>({
                     info={info}
                     hover={hover}
                     setHover={setHover}
+                    examplesMatching={examplesMatching}
                 />
                 <div>
                     <div
@@ -204,11 +267,11 @@ export const Fixtures = <I, O>({
                                 width: 300,
                             }}
                         >
-                            {fixtures.map((fix, i) => (
+                            {unmatchedFixtures.map((idx) => (
                                 <div
-                                    key={i}
+                                    key={idx}
                                     style={
-                                        selected === fix
+                                        selected === fixtures[idx]
                                             ? {
                                                   outline: '1px solid magenta',
                                                   cursor: 'pointer',
@@ -216,7 +279,7 @@ export const Fixtures = <I, O>({
                                             : { cursor: 'pointer' }
                                     }
                                     onClick={() => {
-                                        setSelected(fix);
+                                        setSelected(fixtures[idx]);
                                         setHover(null);
                                     }}
                                 >
@@ -225,10 +288,10 @@ export const Fixtures = <I, O>({
                                         height={50}
                                         viewBox="0 0 300 300"
                                     >
-                                        <Input input={fix.input} />
+                                        <Input input={fixtures[idx].input} />
                                         <Output
-                                            output={run(fix.input)}
-                                            input={fix.input}
+                                            output={run(fixtures[idx].input)}
+                                            input={fixtures[idx].input}
                                         />
                                     </svg>
                                 </div>
