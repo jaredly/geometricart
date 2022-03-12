@@ -30,9 +30,11 @@ export const SegmentEditor = ({
     initial,
     onChange,
     children,
+    restrict,
 }: {
     initial: null | SegmentWithPrev | JustPrev;
     onChange: (p: SegmentWithPrev) => void;
+    restrict?: 'Line' | 'Arc';
     children: (
         current: null | SegmentWithPrev,
         rendered: React.ReactNode,
@@ -40,7 +42,9 @@ export const SegmentEditor = ({
 }) => {
     const grid = 15;
 
-    const [current, setCurrent] = useInitialState(initial, segToPending);
+    const [current, setCurrent] = useInitialState(initial, (s) =>
+        segToPending(s, restrict === 'Arc'),
+    );
     const [cursor, setCursor] = React.useState(null as null | Coord);
 
     const points = cursor ? current.points.concat([cursor]) : current.points;
@@ -119,40 +123,50 @@ export const SegmentEditor = ({
                 )}
             </svg>
             <div>
-                <button
-                    // disabled={current.type === 'Line'}
-                    style={
-                        current.type === 'Line' ? { fontWeight: 'bold' } : {}
-                    }
-                    onClick={() => {
-                        setCurrent({
-                            type: 'Line',
-                            points:
-                                current.type === 'Arc'
-                                    ? current.points.slice(0, 1)
-                                    : [],
-                            clockwise: true,
-                        });
-                    }}
-                >
-                    Line
-                </button>
-                <button
-                    // disabled={current.type === 'Arc'}
-                    style={current.type === 'Arc' ? { fontWeight: 'bold' } : {}}
-                    onClick={() => {
-                        setCurrent({
-                            type: 'Arc',
-                            points:
+                {restrict != null ? null : (
+                    <>
+                        <button
+                            // disabled={current.type === 'Line'}
+                            style={
                                 current.type === 'Line'
-                                    ? current.points.slice(0, 1)
-                                    : [],
-                            clockwise: true,
-                        });
-                    }}
-                >
-                    Arc
-                </button>
+                                    ? { fontWeight: 'bold' }
+                                    : {}
+                            }
+                            onClick={() => {
+                                setCurrent({
+                                    type: 'Line',
+                                    points:
+                                        current.type === 'Arc'
+                                            ? current.points.slice(0, 1)
+                                            : [],
+                                    clockwise: true,
+                                });
+                            }}
+                        >
+                            Line
+                        </button>
+                        <button
+                            // disabled={current.type === 'Arc'}
+                            style={
+                                current.type === 'Arc'
+                                    ? { fontWeight: 'bold' }
+                                    : {}
+                            }
+                            onClick={() => {
+                                setCurrent({
+                                    type: 'Arc',
+                                    points:
+                                        current.type === 'Line'
+                                            ? current.points.slice(0, 1)
+                                            : [],
+                                    clockwise: true,
+                                });
+                            }}
+                        >
+                            Arc
+                        </button>
+                    </>
+                )}
                 {current.type === 'Arc' ? (
                     <button
                         onClick={() =>
@@ -208,7 +222,10 @@ export const pendingToSeg = (s: Pending): SegmentWithPrev | null => {
 
 export type JustPrev = { prev: Coord; shape?: number; segment?: Segment };
 
-export const segToPending = (s: SegmentWithPrev | null | JustPrev): Pending =>
+export const segToPending = (
+    s: SegmentWithPrev | null | JustPrev,
+    justArc: boolean,
+): Pending =>
     s
         ? s.segment && s.shape
             ? {
@@ -220,6 +237,10 @@ export const segToPending = (s: SegmentWithPrev | null | JustPrev): Pending =>
                           ? [s.prev, s.segment.to]
                           : [s.prev, s.segment.center, s.segment.to],
               }
-            : { type: 'Line', points: [s.prev], clockwise: false }
-        : { type: 'Line', clockwise: false, points: [] };
+            : {
+                  type: justArc ? 'Arc' : 'Line',
+                  points: [s.prev],
+                  clockwise: false,
+              }
+        : { type: justArc ? 'Arc' : 'Line', clockwise: false, points: [] };
 const snap = (v: number, grid: number) => Math.round(v / grid) * grid;

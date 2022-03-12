@@ -15,10 +15,10 @@ import { angleBetween } from '../rendering/findNextSegments';
 export const pointsList = (points: Array<Coord>) =>
     points.map(({ x, y }) => `${x},${y}`).join(' ');
 
-export const arrow = (coord: Coord, theta: number, size: number) => [
+export const arrow = (coord: Coord, theta: number, size: number, wsize = 1) => [
     push(coord, theta, size),
-    push(coord, theta + (Math.PI * 2) / 3, size),
-    push(coord, theta - (Math.PI * 2) / 3, size),
+    push(coord, theta + (Math.PI * 2) / 3, size * wsize),
+    push(coord, theta - (Math.PI * 2) / 3, size * wsize),
 ];
 
 const isInner = (
@@ -76,6 +76,28 @@ const Corner = ({
                 fill={color}
             />
         </>
+    );
+};
+
+export const Arrow = ({
+    point,
+    theta,
+    size,
+    color,
+    inner,
+}: {
+    point: Coord;
+    theta: number;
+    size: number;
+    color: string;
+    inner?: React.ComponentProps<'polygon'>;
+}) => {
+    return (
+        <polygon
+            points={pointsList(arrow(point, theta, size / 2, 0.8))}
+            fill={color}
+            {...inner}
+        />
     );
 };
 

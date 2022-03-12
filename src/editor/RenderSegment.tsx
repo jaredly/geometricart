@@ -9,14 +9,14 @@ import { dist } from '../rendering/getMirrorTransforms';
 
 export const RenderSegmentBasic = ({
     segment,
-    zoom,
+    zoom = 1,
     prev,
     inner,
     className,
 }: {
     segment: Segment;
     prev: Coord;
-    zoom: number;
+    zoom?: number;
     className?: string;
     inner?: React.ComponentProps<'line'>;
 }) => {

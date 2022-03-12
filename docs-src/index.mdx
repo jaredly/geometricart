@@ -1,0 +1,37 @@
+import * as React from 'react';
+import {
+    insetLineLineTrace,
+    insetLineLine,
+    rawSource,
+} from '../src/rendering/inset/lineLine.ts';
+import { LineLine } from './LineLine';
+import { ArcArc } from './ArcArc';
+import { lineLine, lineToSlope } from '../src/rendering/intersect';
+import { Fixtures } from './Fixtures';
+import fixtures from './lineLine.json';
+import { insetPrev, naiveInset } from '../src/rendering/ShowDebugInsetSegment';
+import { RenderSegmentBasic } from '../src/editor/RenderSegment';
+import { Arrow } from '../src/editor/ShowHitIntersection2';
+import { angleTo, dist, push } from '../src/rendering/getMirrorTransforms';
+
+# Playing with Polygons! (and more)
+
+So the shapes we're dealing with consist of straight lines and arcs.
+We could generalize this to deal with bezier curves too I think? idk.
+Yeah as long as you give me an offset algorithm, it's fine. Looks like it's pretty computationally expensive, so beware I guess.
+
+Anyway, the things we'll be talking about:
+
+-   clipping one shape by another shape!
+
+and
+
+-   offsetting a shape! this will re-use some of the work from clipping a shape.
+
+<LineLine />
+
+Ok so how was that?
+
+<ArcArc />
+
+<div style={{ height: 200 }} />

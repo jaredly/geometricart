@@ -160,7 +160,6 @@ export const sortAngles = (first: Angle, second: Angle) => {
 
 const sortKey = (num: number) => (num < 0 ? `-1` : num > 0 ? `1` : `0`);
 
-// export const normalize = (angle: number) => angle < -Math.PI ? angle + Math.PI * 2 : (angle > Math.PI ? angle - Math.PI * 2 : angle)
 export const zeroToTwoPi = (angle: number) => {
     if (angle < 0) {
         angle += Math.PI * 2;
@@ -171,9 +170,6 @@ export const zeroToTwoPi = (angle: number) => {
     if (angle < epsilon) {
         return 0;
     }
-    // if (closeEnough(angle, Math.PI * 2)) {
-    //     return 0;
-    // }
     if (Math.abs(Math.PI * 2 - angle) < epsilon) {
         return 0;
     }

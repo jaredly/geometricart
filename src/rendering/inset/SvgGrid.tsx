@@ -14,7 +14,7 @@ export const SvgGrid = ({ size }: { size: number }) => {
                         d={`M ${size} 0 L 0 0 0 ${size}`}
                         fill="none"
                         stroke="gray"
-                        stroke-width="0.5"
+                        strokeWidth="0.5"
                     />
                 </pattern>
                 <pattern
@@ -32,7 +32,7 @@ export const SvgGrid = ({ size }: { size: number }) => {
                         d={`M ${size * 5} 0 L 0 0 0 ${size * 5}`}
                         fill="none"
                         stroke="gray"
-                        stroke-width="1"
+                        strokeWidth="1"
                     />
                 </pattern>
             </defs>
