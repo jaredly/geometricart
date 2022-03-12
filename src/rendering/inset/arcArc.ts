@@ -14,7 +14,7 @@ import { coordsEqual } from '../pathsAreIdentical';
 
 // @trace
 /**
- * # `insetArcArc`
+ * ### `insetArcArc`
  *
  * Used to calculate the inset for an arc, when the next segment is also an arc.
  *

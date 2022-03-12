@@ -375,6 +375,7 @@ function RenderMain<I, O>({
     traceOutput: TraceOutput;
 }) {
     const [edit, setEdit] = useInitialState(selected.input);
+    const [showAll, setShowAll] = React.useState(false);
     const myOutput = React.useMemo(() => run(edit), [edit]);
     React.useEffect(() => {
         if (editDelay) {
@@ -400,34 +401,38 @@ function RenderMain<I, O>({
                 <Input onChange={setEdit} input={edit} />
                 <Output input={edit} output={myOutput} />
                 <g style={{ pointerEvents: 'none' }}>
-                    {Object.keys(pins)
-                        .filter((k) => pins[+k] && !!traceOutput[+k])
-                        .map((k, i) => {
-                            const hover = traceOutput[+k];
-                            if (!hover.call) {
-                                return;
-                            }
-                            const name =
-                                traceOutput[hover.call.fn].values[0].meta.name;
-                            if (visuals[name]) {
-                                return (
-                                    <g
-                                        key={k}
-                                        style={{
-                                            color: colors[i % colors.length],
-                                        }}
-                                    >
-                                        {visuals[name](
-                                            hover.call.args.map(
-                                                (id) =>
-                                                    traceOutput[id].values[0],
-                                            ),
-                                            hover.values[0],
-                                        )}
-                                    </g>
-                                );
-                            }
-                        })}
+                    {(showAll
+                        ? Object.keys(traceOutput).filter((k) =>
+                              hasVisual(+k, traceOutput),
+                          )
+                        : Object.keys(pins).filter(
+                              (k) => pins[+k] && !!traceOutput[+k],
+                          )
+                    ).map((k, i) => {
+                        const hover = traceOutput[+k];
+                        if (!hover.call) {
+                            return;
+                        }
+                        const name =
+                            traceOutput[hover.call.fn].values[0].meta.name;
+                        if (visuals[name]) {
+                            return (
+                                <g
+                                    key={k}
+                                    style={{
+                                        color: colors[i % colors.length],
+                                    }}
+                                >
+                                    {visuals[name](
+                                        hover.call.args.map(
+                                            (id) => traceOutput[id].values[0],
+                                        ),
+                                        hover.values[0],
+                                    )}
+                                </g>
+                            );
+                        }
+                    })}
                     {hover
                         ? ((hover) => {
                               if (!hover.call) {
@@ -448,6 +453,14 @@ function RenderMain<I, O>({
                         : null}
                 </g>
             </svg>
+            <div>
+                <input
+                    type="checkbox"
+                    checked={showAll}
+                    onChange={() => setShowAll(!showAll)}
+                />
+                Show all
+            </div>
             <div
                 style={{
                     display: 'flex',
@@ -455,32 +468,37 @@ function RenderMain<I, O>({
                     fontFamily: 'monospace',
                 }}
             >
-                {Object.keys(pins)
-                    .filter((k) => pins[+k] && !!traceOutput[+k])
-                    .map((k, i) => (
-                        <div
-                            onMouseOut={() => {
-                                setHover(null);
-                            }}
-                            onMouseOver={() => {
-                                setHover(+k);
-                            }}
-                            onClick={() => {
-                                setPins({ ...pins, [+k]: false });
-                                setHover(null);
-                            }}
-                            style={{
-                                cursor: 'pointer',
-                                margin: 8,
-                                color: colors[i % colors.length],
-                                borderBottom: '2px solid currentColor',
-                                paddingBottom: 4,
-                            }}
-                            key={k}
-                        >
-                            {getWidget(+k, traceOutput, '3em')}
-                        </div>
-                    ))}
+                {(showAll
+                    ? Object.keys(traceOutput).filter((k) =>
+                          hasVisual(+k, traceOutput),
+                      )
+                    : Object.keys(pins).filter(
+                          (k) => pins[+k] && !!traceOutput[+k],
+                      )
+                ).map((k, i) => (
+                    <div
+                        onMouseOut={() => {
+                            setHover(null);
+                        }}
+                        onMouseOver={() => {
+                            setHover(+k);
+                        }}
+                        onClick={() => {
+                            setPins({ ...pins, [+k]: false });
+                            setHover(null);
+                        }}
+                        style={{
+                            cursor: 'pointer',
+                            margin: 8,
+                            color: colors[i % colors.length],
+                            borderBottom: '2px solid currentColor',
+                            paddingBottom: 4,
+                        }}
+                        key={k}
+                    >
+                        {getWidget(+k, traceOutput, '3em')}
+                    </div>
+                ))}
             </div>
         </div>
     );
