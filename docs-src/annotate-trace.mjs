@@ -137,6 +137,15 @@ export default function (contents, filePath) {
                                     start: c.start,
                                     end: c.end,
                                 })),
+                            docs: node.leadingComments
+                                .reverse()
+                                .find(
+                                    (x) =>
+                                        x.type === 'CommentBlock' &&
+                                        x.value.startsWith('*'),
+                                )?.value,
+                            start: node.start,
+                            end: node.end,
                         };
                         traverse.default(
                             t.file(t.program([ensureStmt(decl.init)])),

@@ -50,6 +50,7 @@ export const RenderCode = React.memo(
                             style={{
                                 ...style,
                                 whiteSpace: 'pre-wrap',
+                                flex: 1,
                                 // fontSize: 20,
                                 cursor: 'default',
                                 padding: '1em',

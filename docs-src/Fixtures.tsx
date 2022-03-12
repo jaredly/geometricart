@@ -59,10 +59,15 @@ export const getWidget = (id: number, trace: TraceOutput, size: string) => {
     }
     return (
         <span
-            style={{ width: size, height: size, display: 'inline-block' }}
+            style={{
+                width: size,
+                height: size,
+                display: 'inline-block',
+                overflow: 'hidden',
+            }}
             key={id}
         >
-            {widgets[info.fn.meta.name](info.args, trace[id].values[0])}
+            {widgets[info.fn.meta.name](info.args, trace[id].values[0], size)}
         </span>
     );
 };
@@ -88,8 +93,19 @@ export type Info = {
             args: Array<number>;
         };
     };
+    docs: string | null;
+    start: number;
+    end: number;
     references: Array<{ id: number; loc: { start: number; end: number } }>;
 };
+
+const colorsRaw =
+    '1f77b4ff7f0e2ca02cd627289467bd8c564be377c27f7f7fbcbd2217becf';
+// '8dd3c7ffffb3bebadafb807280b1d3fdb462b3de69fccde5d9d9d9bc80bdccebc5ffed6f';
+const colors: Array<string> = [];
+for (let i = 0; i < colorsRaw.length; i += 6) {
+    colors.push('#' + colorsRaw.slice(i, i + 6));
+}
 
 export const Fixtures = <I, O>({
     fixtures,
@@ -181,7 +197,13 @@ export const Fixtures = <I, O>({
                     </div>
                 ))}
             </div>
-            <div style={{ position: 'relative', maxWidth: 1200 }}>
+            <div
+                style={{
+                    maxWidth: 1200,
+                    display: 'flex',
+                    backgroundColor: 'rgb(42, 39, 52)',
+                }}
+            >
                 <RenderCode
                     source={source}
                     byStart={byStart}
@@ -192,26 +214,29 @@ export const Fixtures = <I, O>({
                     hover={hover}
                     setHover={setHover}
                 />
-                <div
-                    style={{
-                        position: 'absolute',
-                        top: 8,
-                        right: 8,
-                    }}
-                >
-                    <RenderMain
-                        editDelay={editDelay}
-                        pins={pins}
-                        setPins={setPins}
-                        run={run}
-                        Input={Input}
-                        setSelected={setSelected}
-                        selected={selected}
-                        Output={Output}
-                        output={output}
-                        hover={hover}
-                        traceOutput={traceOutput}
-                    />
+                <div>
+                    <div
+                        style={{
+                            position: 'sticky',
+                            top: 0,
+                            padding: 8,
+                        }}
+                    >
+                        <RenderMain
+                            editDelay={editDelay}
+                            pins={pins}
+                            setHover={setHover}
+                            setPins={setPins}
+                            run={run}
+                            Input={Input}
+                            setSelected={setSelected}
+                            selected={selected}
+                            Output={Output}
+                            output={output}
+                            hover={hover}
+                            traceOutput={traceOutput}
+                        />
+                    </div>
                 </div>
             </div>
             {hover != null ? (
@@ -330,6 +355,8 @@ function RenderMain<I, O>({
     editDelay,
     run,
     pins,
+    setPins,
+    setHover,
 }: {
     editDelay?: number;
     Input: (props: {
@@ -339,6 +366,7 @@ function RenderMain<I, O>({
     setSelected: React.Dispatch<React.SetStateAction<Fixture<I, O>>>;
     pins: { [key: number]: boolean };
     setPins: React.Dispatch<React.SetStateAction<{ [key: number]: boolean }>>;
+    setHover: React.Dispatch<React.SetStateAction<number | null>>;
     selected: Fixture<I, O>;
     Output: (props: { output: O; input: I }) => JSX.Element;
     output: O;
@@ -373,17 +401,22 @@ function RenderMain<I, O>({
                 <Output input={edit} output={myOutput} />
                 <g style={{ pointerEvents: 'none' }}>
                     {Object.keys(pins)
-                        .filter((k) => pins[+k] && +k !== hover)
-                        .map((k) => {
+                        .filter((k) => pins[+k] && !!traceOutput[+k])
+                        .map((k, i) => {
                             const hover = traceOutput[+k];
-                            if (!hover || !hover.call) {
+                            if (!hover.call) {
                                 return;
                             }
                             const name =
                                 traceOutput[hover.call.fn].values[0].meta.name;
                             if (visuals[name]) {
                                 return (
-                                    <React.Fragment key={k}>
+                                    <g
+                                        key={k}
+                                        style={{
+                                            color: colors[i % colors.length],
+                                        }}
+                                    >
                                         {visuals[name](
                                             hover.call.args.map(
                                                 (id) =>
@@ -391,7 +424,7 @@ function RenderMain<I, O>({
                                             ),
                                             hover.values[0],
                                         )}
-                                    </React.Fragment>
+                                    </g>
                                 );
                             }
                         })}
@@ -424,8 +457,27 @@ function RenderMain<I, O>({
             >
                 {Object.keys(pins)
                     .filter((k) => pins[+k] && !!traceOutput[+k])
-                    .map((k) => (
-                        <div style={{ margin: 8 }} key={k}>
+                    .map((k, i) => (
+                        <div
+                            onMouseOut={() => {
+                                setHover(null);
+                            }}
+                            onMouseOver={() => {
+                                setHover(+k);
+                            }}
+                            onClick={() => {
+                                setPins({ ...pins, [+k]: false });
+                                setHover(null);
+                            }}
+                            style={{
+                                cursor: 'pointer',
+                                margin: 8,
+                                color: colors[i % colors.length],
+                                borderBottom: '2px solid currentColor',
+                                paddingBottom: 4,
+                            }}
+                            key={k}
+                        >
                             {getWidget(+k, traceOutput, '3em')}
                         </div>
                     ))}

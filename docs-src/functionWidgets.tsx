@@ -4,7 +4,8 @@ import * as React from 'react';
 import { arcPath } from '../src/editor/RenderPendingPath';
 import { Arrow, arrow, pointsList } from '../src/editor/ShowHitIntersection2';
 import { angleTo, dist, push } from '../src/rendering/getMirrorTransforms';
-import { Coord } from '../src/types';
+import { Circle } from '../src/rendering/intersect';
+import { ArcSegment, Coord } from '../src/types';
 
 const angleArrow = (orig: number, reverse?: boolean) => {
     const angle = reverse ? orig + Math.PI : orig;
@@ -32,10 +33,66 @@ const angleArrow = (orig: number, reverse?: boolean) => {
     );
 };
 
+const showAmount = (amount: number, max: number) => {
+    let d = '';
+    const single = max / 20;
+    for (let i = 0; i < 20; i++) {
+        const mx = single * (i + 1);
+        if (amount >= mx) {
+            d += `M${i},0 L${i},20 `;
+            continue;
+        }
+        const mn = single * i;
+        if (amount < mn) {
+            break;
+        }
+        d += `M${i},0 L${i},${((amount - mn) / single) * 20} `;
+    }
+    return d;
+};
+
 // Little things inline
 export const widgets: {
-    [key: string]: (args: any, output: any) => JSX.Element;
+    [key: string]: (args: any, output: any, size: string) => JSX.Element;
 } = {
+    dist: ([p1, p2]: [Coord, Coord], output: number, size: string) => {
+        return (
+            <svg
+                width={'100%'}
+                height={'100%'}
+                viewBox="0 0 20 20"
+                style={{ marginBottom: '-.2em' }}
+            >
+                <path
+                    d={showAmount(output, 300)}
+                    stroke="red"
+                    strokeWidth={1}
+                    fill="none"
+                />
+                <text x={20} y={20} fill="white" fontSize={6} textAnchor="end">
+                    {output.toFixed(0)}
+                </text>
+            </svg>
+        );
+        // if (size === '1em') {
+        //     return (
+        //         <div
+        //             style={{
+        //                 fontSize: '.3em',
+        //                 display: 'flex',
+        //                 flexDirection: 'column',
+        //                 textAlign: 'center',
+        //                 alignItems: 'center',
+        //                 justifyContent: 'center',
+        //             }}
+        //         >
+        //             {output.toFixed(2)}
+        //         </div>
+        //     );
+        // } else {
+        //     return <div>{output.toFixed(10)}</div>;
+        // }
+    },
     'Math.cos': ([angle], output: number) => {
         const mid = { x: 10, y: 10 };
         return (
@@ -157,28 +214,99 @@ export const widgets: {
             </svg>
         );
     },
+    circleCircle: ([c1, c2], output: Array<Coord>, size) => {
+        if (size === '1em') {
+            return <div>{output.length + ''}</div>;
+        }
+        return <div>{JSON.stringify(output)}</div>;
+    },
+};
+
+const renderCircle = (
+    circle: Circle,
+    props: React.ComponentProps<'circle'> & React.ComponentProps<'path'>,
+) => {
+    if (!circle.limit) {
+        return (
+            <circle
+                cx={circle.center.x}
+                cy={circle.center.y}
+                r={circle.radius}
+                {...props}
+            />
+        );
+    }
+    const prev = push(circle.center, circle.limit[0], circle.radius);
+    const seg: ArcSegment = {
+        type: 'Arc',
+        center: circle.center,
+        to: push(circle.center, circle.limit[1], circle.radius),
+        clockwise: true,
+    };
+    return (
+        <path d={`M${prev.x},${prev.y} ` + arcPath(seg, prev, 1)} {...props} />
+    );
 };
 
 // Big things in the SVG
 export const visuals: {
     [key: string]: (args: any, output: any) => JSX.Element;
 } = {
+    circleCircle: ([c1, c2]: [Circle, Circle], points: Array<Coord>) => {
+        const shared = {
+            stroke: 'currentColor',
+            fill: 'none',
+            strokeWidth: 1,
+            strokeDasharray: '1 1',
+        };
+        return (
+            <>
+                {renderCircle(c1, shared)}
+                {renderCircle(c2, shared)}
+                {points.map((p, i) => (
+                    <circle
+                        key={i}
+                        cx={p.x}
+                        cy={p.y}
+                        r={4}
+                        fill="currentColor"
+                        stroke="red"
+                        strokeWidth={1}
+                    />
+                ))}
+            </>
+        );
+    },
+    dist: ([c1, c2], length) => {
+        return (
+            <>
+                <circle cx={c1.x} cy={c1.y} r={5} fill="currentColor" />
+                <circle cx={c2.x} cy={c2.y} r={5} fill="currentColor" />
+                <polyline
+                    points={pointsList([c1, c2])}
+                    stroke="currentColor"
+                    strokeWidth={2}
+                    fill="none"
+                />
+            </>
+        );
+    },
     push: ([coord, theta, distance], output: Coord) => {
         const off = push(coord, theta, distance / 2);
         return (
             <>
-                <circle cx={coord.x} cy={coord.y} r={5} fill="red" />
-                <circle cx={output.x} cy={output.y} r={5} fill="black" />
+                <circle cx={coord.x} cy={coord.y} r={5} fill="currentColor" />
+                <circle cx={output.x} cy={output.y} r={5} fill="currentColor" />
                 <polyline
                     points={pointsList([coord, off])}
-                    stroke="black"
+                    stroke="currentColor"
                     strokeWidth={3}
                     fill="none"
                 />
                 <Arrow
                     point={off}
                     theta={theta + (distance < 0 ? Math.PI : 0)}
-                    color="black"
+                    color="currentColor"
                     size={15}
                 />
             </>
@@ -189,17 +317,17 @@ export const visuals: {
             <>
                 <polyline
                     points={pointsList([p1, p2])}
-                    stroke="black"
+                    stroke="currentColor"
                     strokeWidth={3}
                     strokeDasharray="3 3"
                     fill="none"
                 />
-                <circle cx={p2.x} cy={p2.y} r={5} fill="black" />
-                <circle cx={p1.x} cy={p1.y} r={5} fill="black" />
+                <circle cx={p2.x} cy={p2.y} r={5} fill="currentColor" />
+                <circle cx={p1.x} cy={p1.y} r={5} fill="currentColor" />
                 <Arrow
                     point={push(p1, output, dist(p1, p2) / 2)}
                     theta={output}
-                    color="black"
+                    color="currentColor"
                     size={15}
                 />
             </>

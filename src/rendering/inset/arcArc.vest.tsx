@@ -10,11 +10,44 @@ import { SegmentEditor, useInitialState } from '../SegmentEditor';
 import { ShapeEditor } from '../ShapeEditor';
 import { RenderDebugInsetSegment } from '../ShowDebugInsetSegment';
 import { insetArcArc } from './arcArc';
+import { CoordEditor } from './CoordEditor';
 import { CoordPicker } from './CoordPicker';
+import { Slider } from './Slider';
 import { SvgGrid } from './SvgGrid';
 
+type InputI = [[Coord, Coord, Coord, boolean, boolean], number];
 type Input = [[Coord, ArcSegment, ArcSegment], number];
 type Output = Array<Segment>;
+
+export const oldToNew = ([, one, two]: Input[0]): InputI[0] => {
+    return [one.center, one.to, two.center, one.clockwise, two.clockwise];
+};
+
+export const newToOld = ([
+    center,
+    to,
+    twoCenter,
+    oneClock,
+    twoClock,
+]: InputI[0]): Input[0] => {
+    const r = dist(center, to);
+    const t = angleTo(center, to);
+    const prev = push(center, t + ((oneClock ? -1 : 1) * Math.PI) / 2, r);
+    return [
+        prev,
+        { type: 'Arc', clockwise: oneClock, center, to },
+        {
+            type: 'Arc',
+            clockwise: twoClock,
+            center: twoCenter,
+            to: push(
+                twoCenter,
+                angleTo(twoCenter, to) + ((twoClock ? 1 : -1) * Math.PI) / 2,
+                dist(twoCenter, to),
+            ),
+        },
+    ];
+};
 
 function makeNext(state: State): null | ArcSegment {
     if (!state.arc || !state.next.center) {
@@ -66,7 +99,7 @@ const ShowDebug = ({ input: [[prev, seg, next], inset] }: { input: Input }) => {
                 one={{ prev, segment: seg, shape: -1 }}
                 two={{ prev: seg.to, segment: next, shape: -1 }}
                 inset={inset}
-                segments={insetArcArc(prev, seg, next, inset)}
+                segments={insetArcArc(seg, next, inset)}
             />
             {vector(seg.to, tan0, 30, 'yellow')}
             {vector(seg.to, tan1, 30, 'purple')}
@@ -240,14 +273,84 @@ const Editor2 = ({
     );
 };
 
+const Editor3 = ({
+    initial,
+    onChange,
+}: {
+    initial: InputI;
+    onChange: (i: InputI) => void;
+}) => {
+    const [p1, p2, p3, c1, c2] = initial[0];
+
+    return (
+        <div>
+            <svg width={300} height={300}>
+                <line
+                    x1={0}
+                    x2={300}
+                    y1={150}
+                    y2={150}
+                    stroke="white"
+                    strokeDasharray={'1 2'}
+                    strokeWidth={1}
+                />
+                {/* <SvgGrid size={15} /> */}
+                <CoordEditor
+                    constrain={(coord) =>
+                        Math.abs(coord.y - 150) < 10
+                            ? { ...coord, y: 150 }
+                            : coord
+                    }
+                    coords={[p1, p2, p3]}
+                    onSet={([p1, p2, p3]) =>
+                        onChange([[p1, p2, p3, c1, c2], initial[1]])
+                    }
+                    onClick={(idx, evt) => {
+                        if (idx === 0) {
+                            onChange([[p1, p2, p3, !c1, c2], initial[1]]);
+                        } else if (idx === 2) {
+                            onChange([[p1, p2, p3, c1, !c2], initial[1]]);
+                        }
+                    }}
+                />
+                <g style={{ pointerEvents: 'none' }}>
+                    <ShowDebug input={[newToOld(initial[0]), initial[1]]} />
+                </g>
+                <Slider
+                    inset={initial[1]}
+                    onChange={(inset) => onChange([initial[0], inset])}
+                />
+            </svg>
+        </div>
+    );
+};
+
 register({
     id: 'arcArc',
     dir: __dirname,
     transform: ([[prev, one, two], size]) => {
-        return insetArcArc(prev, one, two, size);
+        return insetArcArc(one, two, size);
     },
     render: {
-        editor: Editor2,
+        editor: ({ initial, onChange }) => (
+            <Editor3
+                initial={
+                    initial
+                        ? [oldToNew(initial[0]), initial[1]]
+                        : [
+                              [
+                                  { x: 10, y: 10 },
+                                  { x: 20, y: 20 },
+                                  { x: 40, y: 70 },
+                                  true,
+                                  false,
+                              ],
+                              10,
+                          ]
+                }
+                onChange={(v) => onChange([newToOld(v[0]), v[1]])}
+            />
+        ),
         fixture: ({ input, output }: { input: Input; output: Output }) => {
             return (
                 <div>

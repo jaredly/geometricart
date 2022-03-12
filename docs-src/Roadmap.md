@@ -1,5 +1,15 @@
 
 
+- [ ] slim down lineline to just take the angles? mayb
+
+- [ ] let's just junk all the imports. nobody needs them.
+- [ ] also let's support a docstring on the main function, same dealio.
+  - [ ] also comments on the args, let's gooo
+
+- [ ] need to differentiate between "hover" for the tooltip and "hover" for showing up in the preview.
+  yeah definitely.
+  - [ ] And hover in the preview should count for children too.
+
 - [x] hmm ok so what about getting docstrings for my functions? Seems doable, right?
 - [x] click a thing to "pin" it in the preview window
 - [x] inline docstrings so gooood

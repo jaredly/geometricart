@@ -11,6 +11,13 @@ export const organizeTokens = (
     // then annotate with ides
     const tokens: Array<Token & { at: number }> = [];
     const comments = info.comments.slice();
+    if (info.docs) {
+        tokens.push({
+            at: info.start,
+            content: info.docs.trim() + '\n',
+            types: ['doc-comment'],
+        });
+    }
     let at = -1;
     lines.forEach((line) => {
         const ll = line.reduce((c, t) => c + t.content.length, 0) + 1;
@@ -78,6 +85,10 @@ export const organizeTokens = (
             tokens[0].at < current.end &&
             tokens[0].at < before
         ) {
+            if (tokens[0].at < info.start || tokens[0].at > info.end) {
+                tokens.shift();
+                continue;
+            }
             (current.content as Array<FullToken>).push({
                 id: null,
                 start: tokens[0].at,
