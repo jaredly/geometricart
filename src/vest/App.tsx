@@ -1,16 +1,11 @@
 // The main deals
 
-import equal from 'fast-deep-equal';
 import * as React from 'react';
 import { render } from 'react-dom';
+import { deepEqual } from '../rendering/deepEqual';
 import { hoverBackground } from './styles.css';
 import { Config, Fixture } from './types';
-import {
-    deserializeFixture,
-    deserializeFixtures,
-    serializeFixture,
-    serializeFixtures,
-} from './utils';
+import { deserializeFixtures, serializeFixtures } from './utils';
 // import ReactJson from 'react-json-view';
 
 const initial: Array<unknown> = [];
@@ -112,7 +107,7 @@ export const App = <I, O>({ config }: { config: Config<I, O> }) => {
         return {
             fixture: f,
             output,
-            isEqual: equal(output, f.output),
+            isEqual: deepEqual(output, f.output),
         };
     });
 
