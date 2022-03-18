@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { arcPath } from '../src/editor/RenderPendingPath';
 import { arrow, pointsList } from '../src/editor/ShowHitIntersection2';
 import {
     HitsInfo,
@@ -64,27 +65,76 @@ const ShowSegmentIntersection = ({
             </>
         );
     } else {
-        const center = push(
-            mid,
-            seg.theta.theta + (Math.PI / 2) * (seg.theta.clockwise ? 1 : -1),
-            100,
-        );
+        const centerTo =
+            seg.theta.theta + (Math.PI / 2) * (seg.theta.clockwise ? 1 : -1);
+        const center = push(mid, centerTo, seg.theta.radius);
         return (
             <>
-                {/* {seg.enter
-			? 
-                <path
-                    stroke="currentColor"
-                    strokeWidth={2 * scale}
-                />
-		: null}
-			{seg.exit
-			? 
-                <polyline
-                    stroke="currentColor"
-                    strokeWidth={2 * scale}
-                />
-		: null} */}
+                {seg.enter ? (
+                    <path
+                        stroke={colors[seg.shape]}
+                        strokeWidth={2 * scale}
+                        fill="none"
+                        d={arcPath(
+                            {
+                                type: 'Arc',
+                                center,
+                                clockwise: seg.theta.clockwise,
+                                to: mid,
+                            },
+                            push(
+                                center,
+                                centerTo + Math.PI - Math.PI / 2,
+                                seg.theta.radius,
+                            ),
+                            1,
+                            true,
+                        )}
+                    />
+                ) : null}
+                {seg.exit ? (
+                    <>
+                        <path
+                            stroke={colors[seg.shape]}
+                            strokeWidth={2 * scale}
+                            fill="none"
+                            d={arcPath(
+                                {
+                                    type: 'Arc',
+                                    center,
+                                    clockwise: seg.theta.clockwise,
+                                    to: push(
+                                        center,
+                                        centerTo + Math.PI - Math.PI / 2,
+                                        seg.theta.radius,
+                                    ),
+                                },
+                                mid,
+                                1,
+                                true,
+                            )}
+                        />
+                        <polygon
+                            points={pointsList(
+                                arrow(
+                                    push(
+                                        center,
+                                        centerTo + Math.PI - Math.PI / 2,
+                                        seg.theta.radius,
+                                    ),
+                                    // seg.theta.theta,
+                                    centerTo +
+                                        Math.PI -
+                                        Math.PI / 2 -
+                                        Math.PI / 2,
+                                    5 * scale,
+                                ),
+                            )}
+                            fill={colors[seg.shape]}
+                            strokeWidth={2 * scale}
+                        />
+                    </>
+                ) : null}
             </>
         );
     }

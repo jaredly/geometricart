@@ -50,36 +50,10 @@ export const untangleHit = (
         }
     });
     /**
-     * Then we sort the sides according to their angles.
+     * Then we sort the sides according to their angles, and group
+     * sides with identical angles together.
      */
     sides.sort((a, b) => sortAngles(a.theta, b.theta));
-    // if (sides.length === 2) {
-    //     let [a, b] = sides;
-    //     if (a.kind.type === b.kind.type) {
-    //         throw new IntersectionError(
-    //             `both sides have same entry? ${a.kind.type}`,
-    //             entries,
-    //         );
-    //     }
-    //     if (a.kind.type === 'exit') {
-    //         [a, b] = [b, a];
-    //     }
-    //     return [
-    //         {
-    //             type: 'straight',
-    //             entry: a.entry,
-    //             exit: b.entry,
-    //             goingInside: null,
-    //         },
-    //     ];
-    // }
-    /**
-     * So, going clockwise:
-     * - exit to enter, love it.
-     * - enter to exit, ONLY if the following one is also an exit.
-     * - exit to exit, nope. enter to enter, nope.
-     */
-
     const grouped: Array<Array<Side>> = [];
     sides.forEach((side) => {
         if (
@@ -91,9 +65,12 @@ export const untangleHit = (
             grouped[grouped.length - 1].push(side);
         }
     });
-
-    // Ok, but now we might have entries and exits in the same group.
-    // and we sort "enteries" as "less clockwise" than "exits"
+    /**
+     * Next we form `MultiSide`s, of sides that have the same
+     * angle and the same kind. If there's an entry and an exit
+     * with the same angle, the entry is treated as being
+     * 'less clockwise' for sorting purposes.
+     */
     const regrouped: Array<MultiSide> = [];
     grouped.forEach((group) => {
         if (group.length > 1) {
@@ -107,6 +84,7 @@ export const untangleHit = (
                 }
             });
             if (exit && entry) {
+                // @list-examples
                 const enters = group
                     .filter((s) => s.kind.type === 'enter')
                     .map((s) => s.entry);
@@ -136,50 +114,43 @@ export const untangleHit = (
             shape: getShape(items),
         });
     });
-
-    /**
-     * Ok, now regrouped has only groups consisting of the same kinds of things.
-     * yeah that is nice.
-     */
     /**
      * Going around clockwise from an exit, if you see [enter, exit] from the other shape,
-     * you are going INSIDE
-     * if you see [exit, enter] from the other shape, you are going OUTSIDE.
+     * before you see an enter from your own shape, you are going `inside` the other shape.
+     * But, if you see [exit, enter] from the other shape, you are going `outside`.
      *
-     * So, yeah really we just need to look for the first thing from the other shape.
+     * So assuming there are only two shapes in this picture, the only thing
+     * we need to check the very next side.
      */
     regrouped.forEach((side, i0) => {
-        if (side.kind.type !== 'exit') {
+        if (side.kind.type !== 'exit' || side.shape == null) {
             return;
         }
-        for (let i = 0; i < regrouped.length; i++) {
-            if (side.shape === null) {
-                continue;
-            }
+        outer: for (let i = 0; i < regrouped.length; i++) {
             const j = (i0 + i) % regrouped.length;
-            if (
-                regrouped[j].shape !== null &&
-                regrouped[j].shape !== side.shape
-            ) {
-                side.kind.goingInside = regrouped[j].kind.type === 'enter';
-                break;
+            for (let other of regrouped[j].entries) {
+                if (other.shape !== side.shape) {
+                    side.kind.goingInside = regrouped[j].kind.type === 'enter';
+                    break outer;
+                }
             }
         }
     });
-
-    // TODO: assert that there's an equal number
-    // of entries and exits?
-    // oh wait. no there could be odd.
-    // not sure at what point to detect that.
+    /**
+     * Now we go through the sorted list of multisides to "pick off" the
+     * easily recognizable corners, which we can identify by an `exit` that's
+     * immediately followed by an `enter`.
+     */
     const result: Array<HitTransition> = [];
-
-    // Ok, so at this point, I think we have goingInside taken care of.
-    // Now, I go around and find "exit followed by entry" and remove.
     while (regrouped.length) {
+        /**
+         * If we're left with a trio, then it's either two entrances
+         * that exit the exact same way, or two exits that came from
+         * the same place.
+         */
         if (regrouped.length === 3) {
-            // we're ambiguous here
+            // @list-examples
             result.push({
-                type: 'ambiguous',
                 entries: regrouped
                     .filter((g) => g.kind.type === 'enter')
                     .map((g) => g.entries)
@@ -201,12 +172,14 @@ export const untangleHit = (
             const a = regrouped[i];
             const b = regrouped[j];
             if (a.kind.type === 'exit' && b.kind.type === 'enter') {
+                const doubleBack = anglesEqual(a.theta, b.theta);
                 result.push({
-                    type: 'ambiguous',
                     entries: b.entries,
                     exits: a.entries.map((exit) => ({
                         exit,
-                        goingInside: (a.kind as Exit).goingInside,
+                        goingInside: doubleBack
+                            ? null
+                            : (a.kind as Exit).goingInside,
                     })),
                 });
                 if (j > i) {
@@ -216,10 +189,10 @@ export const untangleHit = (
                     regrouped.splice(i, 1);
                     regrouped.splice(j, 1);
                 }
+                break;
             }
         }
     }
-
     return result;
 };
 
@@ -254,21 +227,13 @@ export const untangleHit = (
 // hmm I guess these two cases could be unified into
 // the second one ...
 
-export type HitTransition =
-    // | {
-    //       type: 'straight';
-    //       entry: SegmentIntersection;
-    //       exit: SegmentIntersection;
-    //       goingInside: boolean | null;
-    //   }
-    {
-        type: 'ambiguous';
-        entries: Array<SegmentIntersection>;
-        exits: Array<{
-            exit: SegmentIntersection;
-            goingInside: null | boolean;
-        }>;
-    };
+export type HitTransition = {
+    entries: Array<SegmentIntersection>;
+    exits: Array<{
+        exit: SegmentIntersection;
+        goingInside: null | boolean;
+    }>;
+};
 
 export type MultiSide = {
     kind: Side['kind'];
