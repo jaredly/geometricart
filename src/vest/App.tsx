@@ -49,10 +49,14 @@ export const Sidebar = () => {
     );
 };
 
-export const App = <I, O>({ config }: { config: Config<I, O> }) => {
+export const App = <Fn extends (...args: any) => any>({
+    config,
+}: {
+    config: Config<Parameters<Fn>, ReturnType<Fn>>;
+}) => {
     // Here we go
     const [fixtures, setFixtures] = React.useState(
-        initial as Array<Fixture<I, O>>,
+        initial as Array<Fixture<Fn>>,
     );
 
     React.useEffect(() => {
@@ -88,7 +92,7 @@ export const App = <I, O>({ config }: { config: Config<I, O> }) => {
 
     const [current, setCurrent] = useLocalStorage(
         `vest-${config.id}`,
-        null as null | I,
+        null as null | Parameters<Fn>,
     );
 
     const [name, setName] = React.useState('');
@@ -97,7 +101,7 @@ export const App = <I, O>({ config }: { config: Config<I, O> }) => {
 
     const updateFixture = (
         name: string,
-        f: (f: Fixture<I, O>) => Fixture<I, O>,
+        f: (f: Fixture<Fn>) => Fixture<Fn>,
     ) => {
         setFixtures((fs) => fs.map((fx) => (fx.name === name ? f(fx) : fx)));
     };
