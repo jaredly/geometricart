@@ -1,4 +1,14 @@
 
+OH NOESSSS
+
+a.forEach(() => {}) is falling afoul!
+maybe I can just ignore .forEach for now.
+lol ok I do need a more robust solution though.
+
+- [ ] render arc segmentintersections
+- [ ] render the outputs
+- [ ] figure out if it works!
+- [ ] figure out how to convert the new output to the old output.
 
 ok wht what
 

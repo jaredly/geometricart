@@ -31,6 +31,9 @@ const getCallInfo = (id: number, trace: TraceOutput) => {
         return;
     }
     const { fn: fnid, args } = trace[id].call!;
+    if (fnid === -1) {
+        return; // builtin probably
+    }
     if (!trace[fnid] || args.some((id) => !trace[id])) {
         console.log('hm no fn info', id, trace[id].call);
         return null;
@@ -191,8 +194,8 @@ export const Fixtures = <Fn extends (...args: any) => any>({
         fixtures.forEach((fixture, i) => {
             let matched = false;
             trace((value, id) => {
-                matched = true;
                 if (examplesMatching[id] && !examplesMatching[id].includes(i)) {
+                    matched = true;
                     examplesMatching[id].push(i);
                 }
                 return value;
@@ -546,7 +549,7 @@ function RenderMain<Fn extends (...args: any) => any>({
                     })}
                     {hover
                         ? ((hover) => {
-                              if (!hover.call) {
+                              if (!hover.call || !traceOutput[hover.call.fn]) {
                                   return;
                               }
                               const name =

@@ -1,6 +1,8 @@
 #!/usr/bin/env yarn -s esbuild --bundle --target=node12 --platform=node
 /**
  * ./docs-src/copy-vest-examples.ts | node - some-fixtures.txt out-fixtures.json
+ *
+ * *MUST* be run from the base directory
  */
 
 // Parse the examples, produce a .js file with them stuffed inside.

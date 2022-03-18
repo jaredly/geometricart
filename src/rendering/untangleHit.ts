@@ -145,21 +145,6 @@ export const findExit = (
  *
  *
  */
-type HitTransition =
-    | {
-          type: 'straight';
-          entry: SegmentIntersection;
-          exit: SegmentIntersection;
-          goingInside: boolean | null;
-      }
-    | {
-          type: 'ambiguous';
-          entries: Array<SegmentIntersection>;
-          exits: Array<{
-              exit: SegmentIntersection;
-              goingInside: null | boolean;
-          }>;
-      };
 // hmm I guess these two cases could be unified into
 // the second one ...
 
@@ -386,7 +371,8 @@ export const untangleHit = (
         transitions: [sidesPair(a, d), sidesPair(b, c)],
     });
 };
-type Exit = {
+
+export type Exit = {
     type: 'exit';
     goingInside: boolean | null;
 };
@@ -394,7 +380,7 @@ type Exit = {
 /**
  * Eh ok untangleHit could really use some unit tests.
  */
-type Side = {
+export type Side = {
     kind: { type: 'enter' } | Exit;
     entry: SegmentIntersection;
     theta: Angle;

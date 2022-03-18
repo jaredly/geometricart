@@ -280,11 +280,28 @@ function annotateFunctionBody(toplevel, traceInfo) {
         },
         Expression: {
             exit(path) {
-                if (isTS(path)) return;
+                if (isTS(path) || isLval(path)) return;
                 // if (path.node.type === 'NumericLiteral') return;
                 // if (path.node.type === 'StringLiteral') return;
                 // if (path.node.type === 'BoolLiteral') return;
                 if (seen.has(path.node)) return;
+                // Ignore forEach folks
+                if (
+                    path.node.type === 'MemberExpression' &&
+                    path.node.property.type === 'Identifier' &&
+                    [
+                        'forEach',
+                        'push',
+                        'sort',
+                        'splice',
+                        'map',
+                        'flat',
+                        'filter',
+                    ].includes(path.node.property.name)
+                ) {
+                    seen.set(path.node, -1);
+                    return;
+                }
 
                 // TODO: Need to capture the location somewhere,
                 // otherwise we don't know where to display it.
@@ -339,6 +356,14 @@ function annotateFunctionBody(toplevel, traceInfo) {
         },
     };
 }
+
+const isLval = (path) => {
+    return (
+        (path.parent.type === 'AssignmentExpression' &&
+            path.parentKey === 'left') ||
+        (path.parentPath && isLval(path.parentPath))
+    );
+};
 
 const isTS = (path) => {
     return (
