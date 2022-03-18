@@ -1,4 +1,16 @@
 
+GET READy for untangleHit that can handle all the things
+at least all even-numbered things.
+
+So
+
+- [ ] make a deepEqual that is nicer to floats
+- [ ] make a new impl of untangleHit, use it in the vest
+- [ ] iterate till it works
+- [ ] make some tests for >4 items.
+
+
+
 # Hmmm what about visual debug statements?
 
 Like,

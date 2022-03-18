@@ -34,6 +34,7 @@ import {
     segmentsToNonIntersectingSegments,
 } from './segmentsToNonIntersectingSegments';
 import { segmentAngle } from './segmentAngle';
+import { cleanUpInsetSegments3 } from './clipPathNew';
 
 /* ok whats the stragety
 
@@ -453,17 +454,19 @@ export const cleanUpInsetSegments2 = (
     segments: Array<Segment>,
     originalCorners: Array<Coord>,
 ) => {
-    const result = segmentsToNonIntersectingSegments(
-        filterTooSmallSegments(segments),
-    );
-    let regions = findRegions(result.result, result.froms).filter(isClockwise);
-    // Hmmmmmmmmm
-    // looks like this was an optimization, that actually doesn't always work.
-    // regions = regions.filter(
-    //     (region) =>
-    //         !region.some((segment) => originalCorners.includes(segment.to)),
-    // );
-    return removeContainedRegions(removeNonWindingRegions(segments, regions));
+    try {
+        return cleanUpInsetSegments3(segments, originalCorners);
+    } catch (err) {
+        const result = segmentsToNonIntersectingSegments(
+            filterTooSmallSegments(segments),
+        );
+        let regions = findRegions(result.result, result.froms).filter(
+            isClockwise,
+        );
+        return removeContainedRegions(
+            removeNonWindingRegions(segments, regions),
+        );
+    }
 };
 
 export const removeNonWindingRegions = (
