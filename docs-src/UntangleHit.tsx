@@ -141,33 +141,6 @@ const ShowTransition = ({
     pos: Coord;
     transition: HitTransition;
 }) => {
-    if (transition.type === 'straight') {
-        return (
-            <>
-                <polyline
-                    points={pointsList([
-                        push(pos, transition.entry.theta.theta, -size / 2),
-                        pos,
-                        push(pos, transition.exit.theta.theta, size / 2),
-                    ])}
-                    stroke={colors[transition.entry.shape]}
-                    strokeWidth={2}
-                    fill="none"
-                />
-                <polygon
-                    points={pointsList(
-                        arrow(
-                            push(pos, transition.exit.theta.theta, size / 2),
-                            transition.exit.theta.theta,
-                            5,
-                        ),
-                    )}
-                    fill={colors[transition.exit.shape]}
-                    strokeWidth={2}
-                />
-            </>
-        );
-    }
     return (
         <>
             {transition.entries.map((entry, i) => (
@@ -199,8 +172,15 @@ const ShowTransition = ({
                                 5,
                             ),
                         )}
-                        fill={colors[exit.exit.shape]}
-                        strokeWidth={2}
+                        fill={
+                            exit.goingInside === null
+                                ? 'orange'
+                                : exit.goingInside
+                                ? 'black'
+                                : 'white'
+                        }
+                        stroke="black"
+                        strokeWidth={1}
                     />
                 </React.Fragment>
             ))}

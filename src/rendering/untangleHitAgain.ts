@@ -53,26 +53,26 @@ export const untangleHit = (
      * Then we sort the sides according to their angles.
      */
     sides.sort((a, b) => sortAngles(a.theta, b.theta));
-    if (sides.length === 2) {
-        let [a, b] = sides;
-        if (a.kind.type === b.kind.type) {
-            throw new IntersectionError(
-                `both sides have same entry? ${a.kind.type}`,
-                entries,
-            );
-        }
-        if (a.kind.type === 'exit') {
-            [a, b] = [b, a];
-        }
-        return [
-            {
-                type: 'straight',
-                entry: a.entry,
-                exit: b.entry,
-                goingInside: null,
-            },
-        ];
-    }
+    // if (sides.length === 2) {
+    //     let [a, b] = sides;
+    //     if (a.kind.type === b.kind.type) {
+    //         throw new IntersectionError(
+    //             `both sides have same entry? ${a.kind.type}`,
+    //             entries,
+    //         );
+    //     }
+    //     if (a.kind.type === 'exit') {
+    //         [a, b] = [b, a];
+    //     }
+    //     return [
+    //         {
+    //             type: 'straight',
+    //             entry: a.entry,
+    //             exit: b.entry,
+    //             goingInside: null,
+    //         },
+    //     ];
+    // }
     /**
      * So, going clockwise:
      * - exit to enter, love it.
@@ -255,20 +255,20 @@ export const untangleHit = (
 // the second one ...
 
 export type HitTransition =
-    | {
-          type: 'straight';
-          entry: SegmentIntersection;
-          exit: SegmentIntersection;
-          goingInside: boolean | null;
-      }
-    | {
-          type: 'ambiguous';
-          entries: Array<SegmentIntersection>;
-          exits: Array<{
-              exit: SegmentIntersection;
-              goingInside: null | boolean;
-          }>;
-      };
+    // | {
+    //       type: 'straight';
+    //       entry: SegmentIntersection;
+    //       exit: SegmentIntersection;
+    //       goingInside: boolean | null;
+    //   }
+    {
+        type: 'ambiguous';
+        entries: Array<SegmentIntersection>;
+        exits: Array<{
+            exit: SegmentIntersection;
+            goingInside: null | boolean;
+        }>;
+    };
 
 export type MultiSide = {
     kind: Side['kind'];
