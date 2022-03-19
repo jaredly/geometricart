@@ -10,8 +10,7 @@ but, we're gettng pretty-printed types for things.
 which, at the very least, I can print out for folks
 
 - [ ] dump the block of types into `thefn.types`
-- [ ] render it out folks, underlining everything that has
-  a type recognized? and show it in the tooltip
+- [ ] render it out folks, and show it in the tooltip
   and then we can do things like render the tooltip value
   based on specific types.
 

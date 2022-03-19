@@ -87,6 +87,14 @@ export type Info = {
         [key: number]: {
             start: number;
             end: number;
+            type?: {
+                type: string;
+                text: string;
+                start: number;
+                end: number;
+                k: number;
+                loc: string;
+            };
         };
     };
     calls: {
@@ -150,6 +158,9 @@ export const Fixtures = <Fn extends (...args: any) => any>({
     const source = annotatedRun.rawSource;
     const trace = annotatedRun.trace;
     const info = annotatedRun.traceInfo;
+    // @ts-ignore
+    window.annotated = annotatedRun;
+    // console.log('window.annotated');
 
     const [selected, setSelected] = React.useState(fixtures[0]);
     const [output, traceOutput, byStart] = React.useMemo((): [
@@ -211,35 +222,60 @@ export const Fixtures = <Fn extends (...args: any) => any>({
             rendered[+k] = (
                 <div
                     style={{
-                        display: 'inline-flex',
-                        flexDirection: 'row',
-                        flexWrap: 'wrap',
+                        display: 'inline-block',
+                        backgroundColor: '#000',
+                        padding: '0 8px 8px',
+                        borderRadius: 3,
                     }}
-                    onMouseOver={(evt) => evt.stopPropagation()}
                 >
-                    {examplesMatching[+k].map((idx) => (
-                        <div
-                            key={idx}
-                            style={{
-                                cursor: 'pointer',
-                                backgroundColor: 'white',
-                                margin: 4,
-                            }}
-                            onClick={() => {
-                                setSelected(fixtures[idx]);
-                                setHover(null);
-                            }}
-                        >
-                            <svg width={50} height={50} viewBox="0 0 300 300">
-                                <Input scale={6} input={fixtures[idx].input} />
-                                <Output
-                                    output={run(...fixtures[idx].input)}
-                                    input={fixtures[idx].input}
-                                    scale={6}
-                                />
-                            </svg>
-                        </div>
-                    ))}
+                    <span
+                        style={{
+                            fontSize: '70%',
+                            color: 'white',
+                        }}
+                    >
+                        Examples that hit this path:
+                    </span>
+                    <div
+                        style={{
+                            display: 'flex',
+                            flexDirection: 'row',
+                            flexWrap: 'wrap',
+                        }}
+                        onMouseOver={(evt) => evt.stopPropagation()}
+                    >
+                        {examplesMatching[+k].map((idx) => (
+                            <div
+                                key={idx}
+                                style={{
+                                    cursor: 'pointer',
+                                    backgroundColor: 'white',
+                                    marginRight: 4,
+                                    marginTop: 4,
+                                }}
+                                onClick={() => {
+                                    setSelected(fixtures[idx]);
+                                    setHover(null);
+                                }}
+                            >
+                                <svg
+                                    width={50}
+                                    height={50}
+                                    viewBox="0 0 300 300"
+                                >
+                                    <Input
+                                        scale={6}
+                                        input={fixtures[idx].input}
+                                    />
+                                    <Output
+                                        output={run(...fixtures[idx].input)}
+                                        input={fixtures[idx].input}
+                                        scale={6}
+                                    />
+                                </svg>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             );
         });
@@ -275,7 +311,16 @@ export const Fixtures = <Fn extends (...args: any) => any>({
                     setPins={setPins}
                     info={info}
                     hover={hover}
-                    setHover={setHover}
+                    setHover={(id) => {
+                        if (
+                            id != null &&
+                            info.expressions[id] &&
+                            info.expressions[id].type?.type === 'void'
+                        ) {
+                            return;
+                        }
+                        setHover(id);
+                    }}
                     examplesMatching={examplesMatching}
                 />
                 <div>
@@ -286,6 +331,21 @@ export const Fixtures = <Fn extends (...args: any) => any>({
                             padding: 8,
                         }}
                     >
+                        <RenderMain
+                            editDelay={editDelay}
+                            pins={pins}
+                            setHover={setHover}
+                            setPins={setPins}
+                            run={run}
+                            Input={Input}
+                            setSelected={setSelected}
+                            selected={selected}
+                            Output={Output}
+                            output={output}
+                            hover={hover}
+                            traceOutput={traceOutput}
+                        />
+
                         <div
                             style={{
                                 display: 'flex',
@@ -293,7 +353,7 @@ export const Fixtures = <Fn extends (...args: any) => any>({
                                 width: 300,
                             }}
                         >
-                            {unmatchedFixtures.map((idx) => (
+                            {fixtures.map((fixture, idx) => (
                                 <div
                                     key={idx}
                                     style={
@@ -327,21 +387,6 @@ export const Fixtures = <Fn extends (...args: any) => any>({
                                 </div>
                             ))}
                         </div>
-
-                        <RenderMain
-                            editDelay={editDelay}
-                            pins={pins}
-                            setHover={setHover}
-                            setPins={setPins}
-                            run={run}
-                            Input={Input}
-                            setSelected={setSelected}
-                            selected={selected}
-                            Output={Output}
-                            output={output}
-                            hover={hover}
-                            traceOutput={traceOutput}
-                        />
                     </div>
                 </div>
             </div>
@@ -358,7 +403,10 @@ export const Fixtures = <Fn extends (...args: any) => any>({
                         padding: 4,
                     }}
                 >
-                    <ShowValues values={traceOutput[hover].values} />
+                    <ShowValues
+                        values={traceOutput[hover].values}
+                        type={info.expressions[hover].type}
+                    />
                     {getWidget(hover, traceOutput, '3em')}
                 </div>
             ) : null}
@@ -366,7 +414,13 @@ export const Fixtures = <Fn extends (...args: any) => any>({
     );
 };
 
-const ShowValues = ({ values }: { values: Array<any> }) => {
+const ShowValues = ({
+    values,
+    type,
+}: {
+    values: Array<any>;
+    type: Info['expressions'][0]['type'];
+}) => {
     const v = values[0];
     if (typeof v === 'function' && v.meta && v.meta.comment) {
         const arc: Array<{ name: string; comment?: string }> =
@@ -439,6 +493,8 @@ const ShowValues = ({ values }: { values: Array<any> }) => {
     }
     return (
         <div style={{ whiteSpace: 'pre' }}>
+            {type ? type.type : '[No type info]'}
+            {'\n'}
             {typeof v === 'function' && v.meta
                 ? `function ${v.meta.name}\n${v.meta.comment ?? ''}`
                 : typeof v === 'number'

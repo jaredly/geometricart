@@ -87,47 +87,13 @@ const myFancyPlugin = {
             });
             console.log(!!sf, 'sf');
             const types = {};
-            const walk = (node) => {
-                const start = node.getStart();
-                const { line, character } =
-                    sf.getLineAndCharacterOfPosition(start);
-
-                const expressionKinds = [
-                    79, 104, 95, 110,
-                    // 6,7,8,9,63,78,87,91,93,110,120,121,123,124,141,142,14
-                ];
-                const exprMin = 202;
-                const exprMax = 227;
-
-                try {
-                    // if (node._expressionBrand) {
-                    if (
-                        expressionKinds.includes(node.kind) ||
-                        (node.kind >= exprMin && node.kind <= exprMax)
-                    ) {
-                        types[start] = {
-                            k: node.kind,
-                            start,
-                            end: start + node.getWidth(),
-                            text: node.getText(),
-                            loc: `${line + 1}:${character}`,
-                            type: checker.typeToString(
-                                checker.getTypeAtLocation(node),
-                            ),
-                        };
-                    }
-                    // }
-                } catch (err) {
-                    console.log('nope', line, character);
-                }
-                node.forEachChild(walk);
-            };
-            ts.forEachChild(sf, walk);
-            fs.writeFileSync(
-                args.path + '.dump',
-                JSON.stringify(types, null, 2),
-            );
-            const found = annotate(contents, rel);
+            ts.forEachChild(sf, makeWalker(checker, sf, types));
+            // fs.writeFileSync(
+            //     args.path + '.dump',
+            //     JSON.stringify(types, null, 2),
+            // );
+            const found = annotate(contents, rel, types);
+            found.body.push();
             return {
                 contents: contents + '\n\n' + generate.default(found).code,
                 loader: 'ts' + (args.path.endsWith('x') ? 'x' : ''),
@@ -138,13 +104,49 @@ const myFancyPlugin = {
 
 await esbuild.build({
     entryPoints: [entry],
-    // watch: true,
+    watch: true,
     sourcemap: 'inline',
     outfile: __dirname + '/build/output.js',
-    // format: 'esm',
     define: {
         'process.env.NODE_ENV': '"development"',
     },
     bundle: true,
     plugins: [myFancyPlugin, mdx({ outputFormat: 'program' })],
 });
+
+function makeWalker(checker, sf, types) {
+    const walk = (node) => {
+        const start = node.getStart();
+        const { line, character } = sf.getLineAndCharacterOfPosition(start);
+
+        const expressionKinds = [
+            79, 104, 95, 110,
+            // 6,7,8,9,63,78,87,91,93,110,120,121,123,124,141,142,14
+        ];
+        const exprMin = 202;
+        const exprMax = 227;
+
+        try {
+            // if (node._expressionBrand) {
+            if (
+                expressionKinds.includes(node.kind) ||
+                (node.kind >= exprMin && node.kind <= exprMax)
+            ) {
+                types[start + ':' + (start + node.getWidth())] = {
+                    k: node.kind,
+                    start,
+                    end: start + node.getWidth(),
+                    text: node.getText(),
+                    loc: `${line + 1}:${character}`,
+                    type: checker.typeToString(checker.getTypeAtLocation(node)),
+                };
+            }
+            // }
+        } catch (err) {
+            console.log('nope', line, character);
+        }
+        node.forEachChild(walk);
+    };
+
+    return walk;
+}

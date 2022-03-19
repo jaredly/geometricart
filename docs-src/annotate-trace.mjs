@@ -107,7 +107,7 @@ export const addFunctionMeta = (contents, filePath) => {
     return found;
 };
 
-export default function (contents, filePath) {
+export default function (contents, filePath, typesInfo) {
     // console.log(filePath, contents.includes(listExamplesComment));
     contents = contents.replace(
         new RegExp(listExamplesComment, 'g'),
@@ -157,7 +157,11 @@ export default function (contents, filePath) {
                         };
                         traverse.default(
                             t.file(t.program([ensureStmt(decl.init)])),
-                            annotateFunctionBody(decl.init, traceInfo),
+                            annotateFunctionBody(
+                                decl.init,
+                                traceInfo,
+                                typesInfo,
+                            ),
                         );
                         found.push(
                             t.expressionStatement(
@@ -204,7 +208,7 @@ export default function (contents, filePath) {
     return t.program(found.concat(addFunctionMeta(contents, filePath)));
 }
 
-function annotateFunctionBody(toplevel, traceInfo) {
+function annotateFunctionBody(toplevel, traceInfo, typesInfo) {
     const seen = new Map();
     let i = 0;
 
@@ -221,6 +225,7 @@ function annotateFunctionBody(toplevel, traceInfo) {
                 traceInfo.expressions[num] = {
                     start: param.start,
                     end: param.end,
+                    type: typesInfo[param.start + ':' + param.end],
                 };
                 const n = t.callExpression(t.identifier('trace'), [
                     t.identifier(param.name),
@@ -231,11 +236,15 @@ function annotateFunctionBody(toplevel, traceInfo) {
                 seen.set(n, num);
                 seen.set(n.callee, -1);
                 n.arguments.forEach((arg) => seen.set(arg, -1));
-                path.node.body.body.unshift(n);
+                if (path.node.body.body) {
+                    path.node.body.body.unshift(n);
+                }
                 assigns[param.name] = num;
             }
         });
-        path.node.params.unshift(t.identifier('trace'));
+        if (path.node === toplevel) {
+            path.node.params.unshift(t.identifier('trace'));
+        }
     }
 
     return {
@@ -258,6 +267,7 @@ function annotateFunctionBody(toplevel, traceInfo) {
                 traceInfo.expressions[num] = traceInfo.examples[num] = {
                     start: path.node.start,
                     end: path.node.end,
+                    type: typesInfo[path.node.start + ':' + path.node.end],
                 };
                 seen.set(n, num);
                 seen.set(n.callee, -1);
@@ -266,17 +276,17 @@ function annotateFunctionBody(toplevel, traceInfo) {
             }
         },
         ArrowFunctionExpression(path) {
-            if (
-                path.node === toplevel &&
-                path.node.body.type === 'BlockStatement'
-            ) {
-                captureArguments(path);
-            }
+            // if (
+            //     path.node === toplevel &&
+            //     path.node.body.type === 'BlockStatement'
+            // ) {
+            captureArguments(path);
+            // }
         },
         FunctionDeclaration(path) {
-            if (path.node === toplevel) {
-                captureArguments(path);
-            }
+            // if (path.node === toplevel) {
+            captureArguments(path);
+            // }
         },
         Expression: {
             exit(path) {
@@ -324,6 +334,7 @@ function annotateFunctionBody(toplevel, traceInfo) {
                 traceInfo.expressions[num] = {
                     start: path.node.start,
                     end: path.node.end,
+                    type: typesInfo[path.node.start + ':' + path.node.end],
                 };
                 const n = t.callExpression(t.identifier('trace'), [
                     path.node,

@@ -171,6 +171,7 @@ const renderFull = (
                         lineHeight: 1.5,
                         padding: '8px 16px',
                         margin: '8px 0',
+                        textDecoration: 'none!important',
                         // border: '1px solid #aaa',
                         maxWidth: 800,
                     }}

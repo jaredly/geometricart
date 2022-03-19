@@ -74,6 +74,14 @@ export const untangleHit = (
     const regrouped: Array<MultiSide> = [];
     grouped.forEach((group) => {
         if (group.length > 1) {
+            /**
+             * We have some duplicate angles! Not that when checking
+             * for angle equality of arcs, we're not just looking at
+             * the tangent angle of the intersection; in order to
+             * be equal, two arc-angles must also have the same radius
+             * and clockwise flag.
+             */
+            // @list-examples
             let exit = false;
             let entry = false;
             group.forEach((side) => {
@@ -83,6 +91,10 @@ export const untangleHit = (
                     entry = true;
                 }
             });
+            /** If a group of segments contains *both* exits and
+             * entrances, we need to split them up, and place the
+             * entraces before (less clockwise) the exits.
+             */
             if (exit && entry) {
                 // @list-examples
                 const enters = group
@@ -119,8 +131,10 @@ export const untangleHit = (
      * before you see an enter from your own shape, you are going `inside` the other shape.
      * But, if you see [exit, enter] from the other shape, you are going `outside`.
      *
-     * So assuming there are only two shapes in this picture, the only thing
-     * we need to check the very next side.
+     * So assuming there are only two shapes in this picture, we just need to find the next
+     * side that is from the other shape. If we wanted to support multiple shapes
+     * at once, we'd probably need to expand the `goingInside` flag into a map of
+     * `{[shapeId]: boolean}`.
      */
     regrouped.forEach((side, i0) => {
         if (side.kind.type !== 'exit' || side.shape == null) {
@@ -172,6 +186,7 @@ export const untangleHit = (
             const a = regrouped[i];
             const b = regrouped[j];
             if (a.kind.type === 'exit' && b.kind.type === 'enter') {
+                // @trace(a, b)
                 const doubleBack = anglesEqual(a.theta, b.theta);
                 result.push({
                     entries: b.entries,
