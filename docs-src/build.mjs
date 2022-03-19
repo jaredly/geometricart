@@ -89,7 +89,7 @@ const myFancyPlugin = {
             const types = {};
             const walk = (node) => {
                 const { line, character } = sf.getLineAndCharacterOfPosition(
-                    node.pos,
+                    node.pos + node.getLeadingTriviaWidth(),
                 );
 
                 const expressionKinds = [
@@ -105,10 +105,10 @@ const myFancyPlugin = {
                         expressionKinds.includes(node.kind) ||
                         (node.kind >= exprMin && node.kind <= exprMax)
                     ) {
-                        types[node.pos] = {
+                        types[node.pos + node.getLeadingTriviaWidth()] = {
                             k: node.kind,
-                            st: node.getFullStart(),
-                            w: node.getFullWidth(),
+                            // st: node.getFullStart(),
+                            // w: node.getFullWidth(),
                             text: node.getText(),
                             loc: `${line + 1}:${character}`,
                             type: checker.typeToString(

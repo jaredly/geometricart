@@ -3,7 +3,7 @@ OH NOESSSS
 
 oooh ok very cool, typescript delivering up the type goodness.
 
-ok some weirdness with positinings, it appears
+ok some weirdness with positinings, it appears (AHH ok getLeadingTriviaWidth fixes.)
 we're including leading whitespace? very strange.
 idk
 but, we're gettng pretty-printed types for things.
