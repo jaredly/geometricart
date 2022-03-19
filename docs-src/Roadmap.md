@@ -5,10 +5,19 @@ a.forEach(() => {}) is falling afoul!
 maybe I can just ignore .forEach for now.
 lol ok I do need a more robust solution though.
 
-- [ ] render arc segmentintersections
-- [ ] render the outputs
-- [ ] figure out if it works!
+- [x] render arc segmentintersections
+- [x] render the outputs
+- [x] figure out if it works!
 - [ ] figure out how to convert the new output to the old output.
+
+
+
+Hmmmm should I try to integrate the typescript checker?
+So that I can get type information of various places?
+Or is it enough to do duck-typed visual plugins?
+tbh that's fine for now.
+
+
 
 ok wht what
 
