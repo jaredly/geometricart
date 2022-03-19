@@ -2,7 +2,7 @@ import {
     Exit,
     IntersectionError,
     SegmentIntersection,
-    Side,
+    HitSegment,
 } from './untangleHit';
 import {
     Angle,
@@ -32,50 +32,50 @@ export const untangleHit = (
      * `enter` sides are entering the intersection,
      * and `exit` sides are issuing from it.
      */
-    const sides: Array<Side> = [];
-    entries.forEach((entry) => {
+    const segments: Array<HitSegment> = [];
+    for (const entry of entries) {
         if (entry.enter) {
-            sides.push({
+            segments.push({
                 kind: { type: 'enter' },
                 entry,
                 theta: backAngle(entry.theta),
             });
         }
         if (entry.exit) {
-            sides.push({
+            segments.push({
                 kind: { type: 'exit', goingInside: null },
                 entry,
                 theta: entry.theta,
             });
         }
-    });
+    }
     /**
      * Then we sort the sides according to their angles, and group
      * sides with identical angles together.
      */
-    sides.sort((a, b) => sortAngles(a.theta, b.theta));
-    const grouped: Array<Array<Side>> = [];
-    sides.forEach((side) => {
+    segments.sort((a, b) => sortAngles(a.theta, b.theta));
+    const sameAngles: Array<Array<HitSegment>> = [];
+    for (const side of segments) {
         if (
-            !grouped.length ||
-            !anglesEqual(side.theta, grouped[grouped.length - 1][0].theta)
+            sameAngles.length &&
+            anglesEqual(side.theta, sameAngles[sameAngles.length - 1][0].theta)
         ) {
-            grouped.push([side]);
+            sameAngles[sameAngles.length - 1].push(side);
         } else {
-            grouped[grouped.length - 1].push(side);
+            sameAngles.push([side]);
         }
-    });
+    }
     /**
      * Next we form `MultiSide`s, of sides that have the same
      * angle and the same kind. If there's an entry and an exit
      * with the same angle, the entry is treated as being
      * 'less clockwise' for sorting purposes.
      */
-    const regrouped: Array<MultiSide> = [];
-    grouped.forEach((group) => {
+    const segmentGroups: Array<SegmentGroup> = [];
+    for (const group of sameAngles) {
         if (group.length > 1) {
             /**
-             * We have some duplicate angles! Not that when checking
+             * We have some duplicate angles! Note that when checking
              * for angle equality of arcs, we're not just looking at
              * the tangent angle of the intersection; in order to
              * be equal, two arc-angles must also have the same radius
@@ -100,7 +100,7 @@ export const untangleHit = (
                 const enters = group
                     .filter((s) => s.kind.type === 'enter')
                     .map((s) => s.entry);
-                regrouped.push({
+                segmentGroups.push({
                     kind: { type: 'enter' },
                     entries: enters,
                     theta: group[0].theta,
@@ -109,23 +109,23 @@ export const untangleHit = (
                 const exits = group
                     .filter((s) => s.kind.type === 'exit')
                     .map((s) => s.entry);
-                regrouped.push({
+                segmentGroups.push({
                     kind: { type: 'exit', goingInside: null },
                     entries: exits,
                     theta: group[0].theta,
                     shape: getShape(exits),
                 });
-                return;
+                continue;
             }
         }
         const items = group.map((s) => s.entry);
-        regrouped.push({
+        segmentGroups.push({
             kind: group[0].kind,
             entries: items,
             theta: group[0].theta,
             shape: getShape(items),
         });
-    });
+    }
     /**
      * Going around clockwise from an exit, if you see [enter, exit] from the other shape,
      * before you see an enter from your own shape, you are going `inside` the other shape.
@@ -136,40 +136,42 @@ export const untangleHit = (
      * at once, we'd probably need to expand the `goingInside` flag into a map of
      * `{[shapeId]: boolean}`.
      */
-    regrouped.forEach((side, i0) => {
+    for (let i0 = 0; i0 < segmentGroups.length; i0++) {
+        const side = segmentGroups[i0];
         if (side.kind.type !== 'exit' || side.shape == null) {
-            return;
+            continue;
         }
-        outer: for (let i = 0; i < regrouped.length; i++) {
-            const j = (i0 + i) % regrouped.length;
-            for (let other of regrouped[j].entries) {
+        outer: for (let i = 0; i < segmentGroups.length; i++) {
+            const j = (i0 + i) % segmentGroups.length;
+            for (let other of segmentGroups[j].entries) {
                 if (other.shape !== side.shape) {
-                    side.kind.goingInside = regrouped[j].kind.type === 'enter';
+                    side.kind.goingInside =
+                        segmentGroups[j].kind.type === 'enter';
                     break outer;
                 }
             }
         }
-    });
+    }
     /**
      * Now we go through the sorted list of multisides to "pick off" the
      * easily recognizable corners, which we can identify by an `exit` that's
      * immediately followed by an `enter`.
      */
     const result: Array<HitTransition> = [];
-    while (regrouped.length) {
+    while (segmentGroups.length) {
         /**
          * If we're left with a trio, then it's either two entrances
          * that exit the exact same way, or two exits that came from
          * the same place.
          */
-        if (regrouped.length === 3) {
+        if (segmentGroups.length === 3) {
             // @list-examples
             result.push({
-                entries: regrouped
+                entries: segmentGroups
                     .filter((g) => g.kind.type === 'enter')
                     .map((g) => g.entries)
                     .flat(),
-                exits: regrouped
+                exits: segmentGroups
                     .filter((g) => g.kind.type === 'exit')
                     .map((g) =>
                         g.entries.map((exit) => ({
@@ -181,10 +183,10 @@ export const untangleHit = (
             });
             break;
         }
-        for (let i = 0; i < regrouped.length; i++) {
-            let j = (i + 1) % regrouped.length;
-            const a = regrouped[i];
-            const b = regrouped[j];
+        for (let i = 0; i < segmentGroups.length; i++) {
+            let j = (i + 1) % segmentGroups.length;
+            const a = segmentGroups[i];
+            const b = segmentGroups[j];
             if (a.kind.type === 'exit' && b.kind.type === 'enter') {
                 // @trace(a, b)
                 const doubleBack = anglesEqual(a.theta, b.theta);
@@ -192,17 +194,23 @@ export const untangleHit = (
                     entries: b.entries,
                     exits: a.entries.map((exit) => ({
                         exit,
+                        /**
+                         * When doubling back (exit at the exact same
+                         * angle as the entrance) it's impossible to know
+                         * whether we're 'inside' or 'outside' the other
+                         * shape, so we ditch that information.
+                         */
                         goingInside: doubleBack
                             ? null
                             : (a.kind as Exit).goingInside,
                     })),
                 });
                 if (j > i) {
-                    regrouped.splice(j, 1);
-                    regrouped.splice(i, 1);
+                    segmentGroups.splice(j, 1);
+                    segmentGroups.splice(i, 1);
                 } else {
-                    regrouped.splice(i, 1);
-                    regrouped.splice(j, 1);
+                    segmentGroups.splice(i, 1);
+                    segmentGroups.splice(j, 1);
                 }
                 break;
             }
@@ -250,8 +258,8 @@ export type HitTransition = {
     }>;
 };
 
-export type MultiSide = {
-    kind: Side['kind'];
+export type SegmentGroup = {
+    kind: HitSegment['kind'];
     theta: Angle;
     entries: SegmentIntersection[];
     shape: null | number;

@@ -253,7 +253,7 @@ export const untangleHit = (
     entries: Array<SegmentIntersection>,
     debug = false,
 ): HitTransitions => {
-    const sides: Array<Side> = [];
+    const sides: Array<HitSegment> = [];
     entries.forEach((entry) => {
         if (entry.enter) {
             sides.push({
@@ -380,13 +380,13 @@ export type Exit = {
 /**
  * Eh ok untangleHit could really use some unit tests.
  */
-export type Side = {
+export type HitSegment = {
     kind: { type: 'enter' } | Exit;
     entry: SegmentIntersection;
     theta: Angle;
     // theta: number;
 };
-const sidesPair = (a: Side, b: Side): Transition =>
+const sidesPair = (a: HitSegment, b: HitSegment): Transition =>
     a.kind.type === 'enter'
         ? {
               entry: a.entry,

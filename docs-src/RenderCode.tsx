@@ -33,7 +33,7 @@ export const RenderCode = React.memo(
         byStart: ByStart;
         traceOutput: TraceOutput;
         hover: number | null;
-        setHover: React.Dispatch<React.SetStateAction<number | null>>;
+        setHover: (id: number | null) => void;
         examplesMatching: { [key: number]: JSX.Element };
     }) => {
         return (
