@@ -142,8 +142,8 @@ export const Fixtures = <Fn extends (...args: any) => any>({
     ) {
         throw new Error(
             `The function you've passed in hasn't been annotated by \
-			the babel transform! Either you need to add the '// @trace' \
-			comment to it, or you haven't set up the babel transform \
+			the babel transform! Either you need to add the '// \
+            @trace' comment to it, or you haven't set up the babel transform \
 			correctly.`,
         );
     }

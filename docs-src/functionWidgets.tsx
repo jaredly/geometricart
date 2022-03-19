@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { arcPath } from '../src/editor/RenderPendingPath';
 import { Arrow, arrow, pointsList } from '../src/editor/ShowHitIntersection2';
+import { Angle } from '../src/rendering/clipPath';
 import { angleTo, dist, push } from '../src/rendering/getMirrorTransforms';
 import { Circle } from '../src/rendering/intersect';
 import { ArcSegment, Coord } from '../src/types';
@@ -129,6 +130,18 @@ export const widgets: {
                 style={{ marginBottom: '-.2em' }}
             >
                 {angleArrow(theta, dist < 0)}
+            </svg>
+        );
+    },
+    backAngle: (args: [Angle], output: Angle) => {
+        return (
+            <svg
+                width={'100%'}
+                height={'100%'}
+                viewBox="0 0 20 20"
+                style={{ marginBottom: '-.2em' }}
+            >
+                {angleArrow(output.theta)}
             </svg>
         );
     },

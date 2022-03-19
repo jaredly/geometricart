@@ -1,6 +1,35 @@
 
 OH NOESSSS
 
+oooh ok very cool, typescript delivering up the type goodness.
+
+ok some weirdness with positinings, it appears
+we're including leading whitespace? very strange.
+idk
+but, we're gettng pretty-printed types for things.
+which, at the very least, I can print out for folks
+
+- [ ] dump the block of types into `thefn.types`
+- [ ] render it out folks, underlining everything that has
+  a type recognized? and show it in the tooltip
+  and then we can do things like render the tooltip value
+  based on specific types.
+
+  I'd really like for function call bodies, if they're called multiple times,
+  to have ... some kind of trace ...
+  so, rendered below if you want, is a carousel of the params
+  from the different invocations.
+  and you click on one, and it loads up that invocation,
+  so all hovers and stuff correspond to that one.
+
+  hmm
+  but a more explicit, and less tricky thing, would be to
+  add a special `// @trace(someexpr)`, which will trace
+  the thing. and then we remember that, on that spot, we
+  want to be rendering the stuff out.
+
+
+
 a.forEach(() => {}) is falling afoul!
 maybe I can just ignore .forEach for now.
 lol ok I do need a more robust solution though.
