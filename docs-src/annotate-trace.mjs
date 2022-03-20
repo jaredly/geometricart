@@ -108,11 +108,11 @@ export const addFunctionMeta = (contents, filePath) => {
 };
 
 export default function (contents, filePath, typesInfo) {
-    // console.log(filePath, contents.includes(listExamplesComment));
     contents = contents.replace(
         new RegExp(listExamplesComment, 'g'),
         listExamplesSigil + ';\n',
     );
+    contents = contents.replace(new RegExp('// @show\\(', 'g'), '____SHOW(');
     const parsed = babel.parseSync(contents, {
         parserOpts: {
             plugins: ['typescript', 'jsx'],
@@ -132,6 +132,7 @@ export default function (contents, filePath, typesInfo) {
                             calls: {},
                             references: [],
                             examples: {},
+                            shows: {},
                             comments: parsed.comments
                                 .filter(
                                     (comment) =>
@@ -222,16 +223,16 @@ function annotateFunctionBody(toplevel, traceInfo, typesInfo) {
         path.node.params.forEach((param) => {
             if (param.type === 'Identifier') {
                 const num = i++;
+                // not using .end to avoid type annotation
+                const end = param.start + param.name.length;
                 traceInfo.expressions[num] = {
                     start: param.start,
-                    end: param.end,
-                    type: typesInfo[param.start + ':' + param.end],
+                    end: end,
+                    type: typesInfo[param.start + ':' + end],
                 };
                 const n = t.callExpression(t.identifier('trace'), [
                     t.identifier(param.name),
                     t.numericLiteral(num),
-                    // t.numericLiteral(param.start),
-                    // t.numericLiteral(param.end),
                 ]);
                 seen.set(n, num);
                 seen.set(n.callee, -1);
@@ -250,11 +251,78 @@ function annotateFunctionBody(toplevel, traceInfo, typesInfo) {
     return {
         VariableDeclarator: {
             exit(path) {
+                if (!seen.has(path.node.init)) {
+                    return;
+                }
                 const at = seen.get(path.node.init);
+                if (path.node.id.type !== 'Identifier') {
+                    // TODO handle better?
+                    return;
+                }
                 assigns[path.node.id.name] = at;
+                seen.set(path.node.id, at);
+                // not using .end here because that might include a
+                // type annotation.
+                const end = path.node.id.start + path.node.id.name.length;
+                const t = typesInfo[path.node.id.start + ':' + end];
+                if (t) {
+                    traceInfo.expressions[at].type = t;
+                }
+                traceInfo.references.push({
+                    id: at,
+                    loc: {
+                        start: path.node.id.start,
+                        end: end,
+                    },
+                });
             },
         },
+        // CallExpression(path) {
+        //     if (
+        //         path.node.callee.type === 'Identifier' &&
+        //         path.node.callee.name === '____SHOW'
+        //     ) {
+        //         path.replaceWith(
+        //             t.callExpression(t.identifier('trace'), [
+        //                 t.nullLiteral(),
+        //                 t.numericLiteral(10),
+        //             ]),
+        //         );
+        //     }
+        // },
         ExpressionStatement(path) {
+            if (path.node.expression.type === 'CallExpression') {
+                const callee = path.node.expression.callee;
+                if (
+                    callee.type === 'Identifier' &&
+                    callee.name === '____SHOW'
+                ) {
+                    // path.replaceWith(
+                    //     t.expressionStatement(
+                    //         t.callExpression(t.identifier('trace'), [
+                    //             t.nullLiteral(),
+                    //             t.numericLiteral(10),
+                    //         ]),
+                    //     ),
+                    // );
+                    const num = i++;
+                    const n = t.callExpression(t.identifier('trace'), [
+                        path.node.expression.arguments[0],
+                        t.numericLiteral(num),
+                    ]);
+                    traceInfo.expressions[num] = traceInfo.shows[num] = {
+                        start: path.node.start,
+                        end: path.node.end,
+                        type: null,
+                    };
+                    seen.set(n, num);
+                    seen.set(n.callee, -1);
+                    n.arguments.forEach((arg) =>
+                        seen.has(arg) ? null : seen.set(arg, -1),
+                    );
+                    path.replaceWith(t.expressionStatement(n));
+                }
+            }
             if (
                 path.node.expression.type === 'Identifier' &&
                 path.node.expression.name === listExamplesSigil

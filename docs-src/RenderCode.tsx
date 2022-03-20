@@ -112,12 +112,17 @@ const renderFull = (
                     token.id != null && hasVisual(token.id, traceOutput)
                         ? 'pointer'
                         : 'unset',
-                textDecorationLine:
-                    token.id != null && (token.id === hover || pins[token.id])
-                        ? 'underline'
-                        : 'none',
-                textDecorationColor: pins[token.id!] ? 'red' : 'unset',
+                // textDecorationLine:
+                //     token.id != null && (token.id === hover || pins[token.id])
+                //         ? 'underline'
+                //         : 'none',
+                // textDecorationColor: pins[token.id!] ? 'red' : 'unset',
             }}
+            className={
+                token.id != null && (token.id === hover || pins[token.id])
+                    ? 'underline-tokens'
+                    : ''
+            }
             onClick={
                 token.id && hasVisual(token.id, traceOutput)
                     ? (evt) => {
@@ -171,7 +176,8 @@ const renderFull = (
                         lineHeight: 1.5,
                         padding: '8px 16px',
                         margin: '8px 0',
-                        textDecoration: 'none!important',
+                        // textDecoration: 'underline',
+                        // textDecorationColor: 'rgb(42, 39, 52)',
                         // border: '1px solid #aaa',
                         maxWidth: 800,
                     }}

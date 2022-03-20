@@ -499,8 +499,11 @@ const ShowValues = ({
                 ? `function ${v.meta.name}\n${v.meta.comment ?? ''}`
                 : typeof v === 'number'
                 ? v.toFixed(2)
-                : JSON.stringify(v, (k, v) =>
-                      typeof v === 'number' ? Math.round(v * 100) / 100 : v,
+                : JSON.stringify(
+                      v,
+                      (k, v) =>
+                          typeof v === 'number' ? Math.round(v * 100) / 100 : v,
+                      2,
                   )}
         </div>
     );

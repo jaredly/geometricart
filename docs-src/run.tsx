@@ -5,6 +5,10 @@ import { LineLine } from './LineLine';
 import { ArcArc } from './ArcArc';
 import { UntangleHit } from './UntangleHit';
 
+window.____SHOW = (what) => {
+    console.log('OK', what);
+};
+
 render(
     <div>
         {/* <LineLine /> */}

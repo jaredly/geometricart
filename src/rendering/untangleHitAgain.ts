@@ -17,20 +17,22 @@ import { angleIsBetween, closeEnoughAngle } from './intersect';
 
 // @trace
 /**
- * ### `untangleHit`
+ * ## `untangleHit`
  *
- * Here's the big deal, untangling a hit, so that we
- * have corners we can piece together.
+ * This method is responsible for taking an intersection of several
+ * line segments and splitting it into "corners", each consisting
+ * of an entrance and an exit, that a final clipped shape will follow.
  */
 export const untangleHit = (
     entries: Array<SegmentIntersection>,
-): Array<HitTransition> => {
+): Array<HitCorner> => {
     /**
-     * So first off, we go through the "intersections",
-     * and split them up (if necessary) into segments
-     * with an endpoint at the intersection, where
-     * `enter` sides are entering the intersection,
-     * and `exit` sides are issuing from it.
+     * #### Preprocessing
+     *
+     * First, we go through the provided segments,
+     * some of which *both* enter and exit the intersection
+     * (meaning the intersection happens in the middle of the
+     * segment), and some just start or end at the intersection.
      */
     const segments: Array<HitSegment> = [];
     for (const entry of entries) {
@@ -50,6 +52,8 @@ export const untangleHit = (
         }
     }
     /**
+     * ##### Handling segments with identicial angles
+     *
      * Then we sort the sides according to their angles, and group
      * sides with identical angles together.
      */
@@ -93,7 +97,7 @@ export const untangleHit = (
             });
             /** If a group of segments contains *both* exits and
              * entrances, we need to split them up, and place the
-             * entraces before (less clockwise) the exits.
+             * entraces before (e.g. less clockwise than) the exits.
              */
             if (exit && entry) {
                 // @list-examples
@@ -127,6 +131,8 @@ export const untangleHit = (
         });
     }
     /**
+     * #### Determining the `goingInside` flag for exit segments
+     *
      * Going around clockwise from an exit, if you see [enter, exit] from the other shape,
      * before you see an enter from your own shape, you are going `inside` the other shape.
      * But, if you see [exit, enter] from the other shape, you are going `outside`.
@@ -153,11 +159,13 @@ export const untangleHit = (
         }
     }
     /**
+     * #### Pairing entrances & exits into corners
+     *
      * Now we go through the sorted list of multisides to "pick off" the
      * easily recognizable corners, which we can identify by an `exit` that's
      * immediately followed by an `enter`.
      */
-    const result: Array<HitTransition> = [];
+    const result: Array<HitCorner> = [];
     while (segmentGroups.length) {
         /**
          * If we're left with a trio, then it's either two entrances
@@ -188,7 +196,7 @@ export const untangleHit = (
             const a = segmentGroups[i];
             const b = segmentGroups[j];
             if (a.kind.type === 'exit' && b.kind.type === 'enter') {
-                // @trace(a, b)
+                // @show(a)
                 const doubleBack = anglesEqual(a.theta, b.theta);
                 result.push({
                     entries: b.entries,
@@ -250,7 +258,7 @@ export const untangleHit = (
 // hmm I guess these two cases could be unified into
 // the second one ...
 
-export type HitTransition = {
+export type HitCorner = {
     entries: Array<SegmentIntersection>;
     exits: Array<{
         exit: SegmentIntersection;
