@@ -6,7 +6,7 @@ import { ArcArc } from './ArcArc';
 import { UntangleHit } from './UntangleHit';
 
 window.____SHOW = (what) => {
-    console.log('OK', what);
+    console.warn('OK', what);
 };
 
 render(

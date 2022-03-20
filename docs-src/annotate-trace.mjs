@@ -297,30 +297,38 @@ function annotateFunctionBody(toplevel, traceInfo, typesInfo) {
                     callee.type === 'Identifier' &&
                     callee.name === '____SHOW'
                 ) {
-                    // path.replaceWith(
-                    //     t.expressionStatement(
-                    //         t.callExpression(t.identifier('trace'), [
-                    //             t.nullLiteral(),
-                    //             t.numericLiteral(10),
-                    //         ]),
-                    //     ),
-                    // );
-                    const num = i++;
-                    const n = t.callExpression(t.identifier('trace'), [
-                        path.node.expression.arguments[0],
-                        t.numericLiteral(num),
-                    ]);
-                    traceInfo.expressions[num] = traceInfo.shows[num] = {
-                        start: path.node.start,
-                        end: path.node.end,
-                        type: null,
-                    };
-                    seen.set(n, num);
-                    seen.set(n.callee, -1);
-                    n.arguments.forEach((arg) =>
-                        seen.has(arg) ? null : seen.set(arg, -1),
+                    console.log('found!');
+                    path.replaceWith(
+                        t.blockStatement(
+                            path.node.expression.arguments.map((arg) => {
+                                const num = i++;
+                                const n = t.callExpression(
+                                    t.identifier('trace'),
+                                    [arg, t.numericLiteral(num)],
+                                );
+                                const argNum = assigns[arg.name];
+                                traceInfo.expressions[num] = traceInfo.shows[
+                                    num
+                                ] = {
+                                    start: arg.start,
+                                    end: arg.end,
+                                    type:
+                                        argNum != null
+                                            ? traceInfo.expressions[argNum]
+                                                  ?.type
+                                            : null,
+                                };
+                                seen.set(n, num);
+                                seen.set(n.callee, -1);
+                                n.arguments.forEach((arg) =>
+                                    seen.has(arg) ? null : seen.set(arg, -1),
+                                );
+                                return t.expressionStatement(n);
+                            }),
+                        ),
                     );
-                    path.replaceWith(t.expressionStatement(n));
+                    return;
+                    // t.expressionStatement(n));
                 }
             }
             if (
@@ -363,6 +371,12 @@ function annotateFunctionBody(toplevel, traceInfo, typesInfo) {
                 // if (path.node.type === 'StringLiteral') return;
                 // if (path.node.type === 'BoolLiteral') return;
                 if (seen.has(path.node)) return;
+                if (
+                    path.node.type === 'Identifier' &&
+                    path.node.name === '____SHOW'
+                ) {
+                    return;
+                }
                 // Ignore forEach folks
                 if (
                     path.node.type === 'MemberExpression' &&
