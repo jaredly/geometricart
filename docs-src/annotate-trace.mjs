@@ -281,7 +281,9 @@ function annotateFunctionBody(toplevel, traceInfo, typesInfo) {
             },
         },
         ForOfStatement: {
-            exit(path) {
+            // enter(path) {
+            // }
+            enter(path) {
                 const id = path.node.left.declarations[0].id;
                 if (id.type !== 'Identifier') {
                     // TODO maybe support
@@ -290,6 +292,7 @@ function annotateFunctionBody(toplevel, traceInfo, typesInfo) {
                 }
 
                 const num = i++;
+                assigns[id.name] = num;
                 const n = t.callExpression(t.identifier('trace'), [
                     t.identifier(id.name),
                     t.numericLiteral(num),

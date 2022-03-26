@@ -60,6 +60,7 @@ export const untangleHit = (
     segments.sort((a, b) => sortAngles(a.theta, b.theta));
     const sameAngles: Array<Array<HitSegment>> = [];
     for (const side of segments) {
+        // @show(side)
         if (
             sameAngles.length &&
             anglesEqual(side.theta, sameAngles[sameAngles.length - 1][0].theta)
@@ -77,6 +78,7 @@ export const untangleHit = (
      */
     const segmentGroups: Array<SegmentGroup> = [];
     for (const group of sameAngles) {
+        // @show(group)
         if (group.length > 1) {
             /**
              * We have some duplicate angles! Note that when checking

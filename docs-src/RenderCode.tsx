@@ -206,7 +206,7 @@ function ShowLog({
     traceOutput: TraceOutput;
 }) {
     const show = info.shows.find((s) => s.start === token.start);
-    const [index, setIndex] = React.useState(0);
+    const [index, setIndex] = React.useState(-1);
     if (!show) return null;
     const counts = show.items
         .filter((id) => traceOutput[id])
@@ -225,48 +225,45 @@ function ShowLog({
                     >
                         &lt;
                     </button>
-                    {index + 1}/{minCount}
+                    {index === -1 ? '-' : index + 1}/{minCount}
                     <button
                         onClick={() =>
-                            setIndex((i) => (i <= 0 ? minCount - 1 : i - 1))
+                            setIndex((i) => (i >= minCount - 1 ? 0 : i + 1))
                         }
                     >
                         &gt;
                     </button>
+                    <button onClick={() => setIndex(-1)}>all</button>
                 </>
             ) : null}
+            <br />
             <div style={{ display: 'inline-flex', flexWrap: 'wrap' }}>
-                {show.items
-                    .filter((id) => traceOutput[id])
-                    .map((id, i) => (
-                        <div
-                            style={{
-                                width: 300,
-                                height: 300,
-                                overflow: 'hidden',
-                                wordWrap: 'break-word',
-                                outline: '1px solid magenta',
-                                margin: 4,
-                            }}
-                        >
-                            {info.expressions[id].type &&
-                            widgets[info.expressions[id].type!.type] ? (
-                                widgets[info.expressions[id].type!.type](
-                                    traceOutput[id].values[index],
-                                    null,
-                                    '300px',
-                                )
-                            ) : (
-                                <>
-                                    {info.expressions[id].type?.type ||
-                                        '[no type info]'}
-                                    {JSON.stringify(
-                                        traceOutput[id].values[index],
-                                    )}
-                                </>
-                            )}
-                        </div>
-                    ))}
+                {index === -1
+                    ? traceOutput[show.items[0]].values
+                          .slice(0, minCount)
+                          .map((_, i) => (
+                              <div key={i}>
+                                  <div
+                                      style={{
+                                          backgroundColor: 'black',
+                                          padding: '4px 8px',
+                                          borderRadius: 3,
+                                          margin: 4,
+                                      }}
+                                  >
+                                      {i + 1}
+                                  </div>
+                                  <div style={{ display: 'flex' }}>
+                                      {renderWidgets(
+                                          show,
+                                          traceOutput,
+                                          info,
+                                          i,
+                                      )}
+                                  </div>
+                              </div>
+                          ))
+                    : renderWidgets(show, traceOutput, info, index)}
             </div>
             {/* {JSON.stringify(
             info.shows
@@ -279,4 +276,39 @@ function ShowLog({
         )}{' '} */}
         </span>
     );
+}
+function renderWidgets(
+    show: { start: number; end: number; items: number[] },
+    traceOutput: TraceOutput,
+    info: Info,
+    index: number,
+): React.ReactNode {
+    return show.items
+        .filter((id) => traceOutput[id])
+        .map((id, i) => (
+            <div
+                style={{
+                    width: 100,
+                    height: 100,
+                    overflow: 'hidden',
+                    wordWrap: 'break-word',
+                    outline: '1px solid magenta',
+                    margin: 4,
+                }}
+            >
+                {info.expressions[id].type &&
+                widgets[info.expressions[id].type!.type] ? (
+                    widgets[info.expressions[id].type!.type](
+                        traceOutput[id].values[index],
+                        null,
+                        '100px',
+                    )
+                ) : (
+                    <>
+                        {info.expressions[id].type?.type || '[no type info]'}
+                        {JSON.stringify(traceOutput[id].values[index])}
+                    </>
+                )}
+            </div>
+        ));
 }

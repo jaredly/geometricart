@@ -6,10 +6,11 @@ import { Arrow, arrow, pointsList } from '../src/editor/ShowHitIntersection2';
 import { Angle } from '../src/rendering/clipPath';
 import { angleTo, dist, push } from '../src/rendering/getMirrorTransforms';
 import { Circle } from '../src/rendering/intersect';
-import { SegmentIntersection } from '../src/rendering/untangleHit';
+import { HitSegment, SegmentIntersection } from '../src/rendering/untangleHit';
 import { SegmentGroup } from '../src/rendering/untangleHitAgain';
 import { ArcSegment, Coord } from '../src/types';
-import { ShowSegmentIntersection } from './UntangleHit';
+import { colors } from './Fixtures';
+import { ShowAngle, ShowSegmentIntersection } from './UntangleHit';
 
 const angleArrow = (orig: number, reverse?: boolean) => {
     const angle = reverse ? orig + Math.PI : orig;
@@ -249,6 +250,47 @@ export const widgets: {
                     stroke="currentColor"
                     fill="none"
                 />
+            </svg>
+        );
+    },
+    HitSegment: (value: HitSegment, _: any, size: string) => {
+        return (
+            <svg
+                width={'100%'}
+                height={'100%'}
+                viewBox="0 0 300 300"
+                style={{ marginBottom: '-.2em' }}
+            >
+                <ShowAngle
+                    angle={value.entry.theta}
+                    enter={value.kind.type === 'enter'}
+                    color={colors[value.entry.shape]}
+                    scale={size === '100px' ? 3 : 1}
+                />
+            </svg>
+        );
+    },
+    'HitSegment[]': (values: HitSegment[], _: any, size: string) => {
+        return (
+            <svg
+                width={'100%'}
+                height={'100%'}
+                viewBox="0 0 300 300"
+                style={{ marginBottom: '-.2em' }}
+            >
+                {values.map((value, i) => (
+                    <ShowAngle
+                        angle={value.entry.theta}
+                        enter={value.kind.type === 'enter'}
+                        color={colors[value.entry.shape]}
+                        center={{
+                            x: 150,
+                            y: 150 + (i - values.length / 2 + 0.5) * 20,
+                        }}
+                        scale={size === '100px' ? 3 : 1}
+                        key={i}
+                    />
+                ))}
             </svg>
         );
     },

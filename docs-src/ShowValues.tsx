@@ -50,20 +50,21 @@ export const ShowValues = ({
             {type ? type.type : '[No type info]'}
             {'\n'}
             {type && widgets[type.type] ? (
-                <div style={{ width: 300, height: 300 }}>
-                    {widgets[type.type](v, null, '300px')}
+                <div style={{ width: 100, height: 100 }}>
+                    {widgets[type.type](v, null, '100px')}
                 </div>
-            ) : null}
-            {typeof v === 'function' && v.meta
-                ? `function ${v.meta.name}\n${v.meta.comment ?? ''}`
-                : typeof v === 'number'
-                ? v.toFixed(2)
-                : JSON.stringify(
-                      v,
-                      (k, v) =>
-                          typeof v === 'number' ? Math.round(v * 100) / 100 : v,
-                      2,
-                  )}
+            ) : typeof v === 'function' && v.meta ? (
+                `function ${v.meta.name}\n${v.meta.comment ?? ''}`
+            ) : typeof v === 'number' ? (
+                v.toFixed(2)
+            ) : (
+                JSON.stringify(
+                    v,
+                    (k, v) =>
+                        typeof v === 'number' ? Math.round(v * 100) / 100 : v,
+                    2,
+                )
+            )}
         </div>
     );
 };
