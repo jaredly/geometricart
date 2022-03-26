@@ -132,7 +132,7 @@ export default function (contents, filePath, typesInfo) {
                             calls: {},
                             references: [],
                             examples: {},
-                            shows: {},
+                            shows: [],
                             comments: parsed.comments
                                 .filter(
                                     (comment) =>
@@ -237,9 +237,12 @@ function annotateFunctionBody(toplevel, traceInfo, typesInfo) {
                 seen.set(n, num);
                 seen.set(n.callee, -1);
                 n.arguments.forEach((arg) => seen.set(arg, -1));
-                if (path.node.body.body) {
-                    path.node.body.body.unshift(n);
+                if (path.node.body.type !== 'BlockStatement') {
+                    path.node.body = t.blockStatement([
+                        t.returnStatement(path.node.body),
+                    ]);
                 }
+                path.node.body.body.unshift(n);
                 assigns[param.name] = num;
             }
         });
@@ -277,6 +280,33 @@ function annotateFunctionBody(toplevel, traceInfo, typesInfo) {
                 });
             },
         },
+        ForOfStatement: {
+            exit(path) {
+                const id = path.node.left.declarations[0].id;
+                if (id.type !== 'Identifier') {
+                    // TODO maybe support
+                    console.log('not id');
+                    return;
+                }
+
+                const num = i++;
+                const n = t.callExpression(t.identifier('trace'), [
+                    t.identifier(id.name),
+                    t.numericLiteral(num),
+                ]);
+                traceInfo.expressions[num] = {
+                    start: id.start,
+                    end: id.end,
+                    type: typesInfo[id.start + ':' + id.end],
+                };
+                console.log(id.start, id.end, num);
+                seen.set(n, num);
+                seen.set(n.callee, -1);
+                n.arguments.forEach((arg) => seen.set(arg, -1));
+
+                path.node.body.body.unshift(t.expressionStatement(n));
+            },
+        },
         // CallExpression(path) {
         //     if (
         //         path.node.callee.type === 'Identifier' &&
@@ -297,7 +327,12 @@ function annotateFunctionBody(toplevel, traceInfo, typesInfo) {
                     callee.type === 'Identifier' &&
                     callee.name === '____SHOW'
                 ) {
-                    console.log('found!');
+                    const items = [];
+                    traceInfo.shows.push({
+                        items,
+                        start: path.node.start,
+                        end: path.node.end,
+                    });
                     path.replaceWith(
                         t.blockStatement(
                             path.node.expression.arguments.map((arg) => {
@@ -306,10 +341,9 @@ function annotateFunctionBody(toplevel, traceInfo, typesInfo) {
                                     t.identifier('trace'),
                                     [arg, t.numericLiteral(num)],
                                 );
+                                items.push(num);
                                 const argNum = assigns[arg.name];
-                                traceInfo.expressions[num] = traceInfo.shows[
-                                    num
-                                ] = {
+                                traceInfo.expressions[num] = {
                                     start: arg.start,
                                     end: arg.end,
                                     type:

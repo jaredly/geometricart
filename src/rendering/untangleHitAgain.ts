@@ -151,6 +151,7 @@ export const untangleHit = (
             const j = (i0 + i) % segmentGroups.length;
             for (let other of segmentGroups[j].entries) {
                 if (other.shape !== side.shape) {
+                    // @show(side, other)
                     side.kind.goingInside =
                         segmentGroups[j].kind.type === 'enter';
                     break outer;

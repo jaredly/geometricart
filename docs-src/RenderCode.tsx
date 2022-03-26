@@ -5,6 +5,7 @@ import {
     EXAMPLES,
     FullToken,
     organizeTokens,
+    SHOW,
 } from './organizeTokens';
 import { Info, ByStart, TraceOutput, getWidget, hasVisual } from './Fixtures';
 
@@ -74,6 +75,7 @@ export const RenderCode = React.memo(
                                 pins,
                                 setPins,
                                 examplesMatching,
+                                info,
                             )}
                         </pre>
                     );
@@ -93,6 +95,7 @@ const renderFull = (
     pins: { [key: number]: boolean },
     setPins: React.Dispatch<React.SetStateAction<{ [key: number]: boolean }>>,
     examplesMatching: { [key: number]: JSX.Element },
+    info: Info,
 ) => {
     return (
         <span
@@ -112,11 +115,6 @@ const renderFull = (
                     token.id != null && hasVisual(token.id, traceOutput)
                         ? 'pointer'
                         : 'unset',
-                // textDecorationLine:
-                //     token.id != null && (token.id === hover || pins[token.id])
-                //         ? 'underline'
-                //         : 'none',
-                // textDecorationColor: pins[token.id!] ? 'red' : 'unset',
             }}
             className={
                 token.id != null && (token.id === hover || pins[token.id])
@@ -165,20 +163,17 @@ const renderFull = (
                         pins,
                         setPins,
                         examplesMatching,
+                        info,
                     ),
                 )
             ) : token.content.types.includes(DOC_COMMENT) ? (
                 <div
                     style={{
                         whiteSpace: 'normal',
-                        // backgroundColor: 'rgba(255,255,255,0.5)',
                         color: '#eee',
                         lineHeight: 1.5,
                         padding: '8px 16px',
                         margin: '8px 0',
-                        // textDecoration: 'underline',
-                        // textDecorationColor: 'rgb(42, 39, 52)',
-                        // border: '1px solid #aaa',
                         maxWidth: 800,
                     }}
                 >
@@ -191,6 +186,15 @@ const renderFull = (
                 </div>
             ) : token.content.types.includes(EXAMPLES) ? (
                 examplesMatching[+token.content.content]
+            ) : token.content.types.includes(SHOW) ? (
+                <span>
+                    SHOW{' '}
+                    {JSON.stringify(
+                        info.shows
+                            .find((s) => s.start === token.start)
+                            ?.items.map((id) => traceOutput[id].values[0]),
+                    )}{' '}
+                </span>
             ) : (
                 <span {...getTokenProps({ token: token.content })} />
             )}

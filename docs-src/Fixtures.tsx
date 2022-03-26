@@ -83,6 +83,7 @@ export type ByStart = {
 
 export type Info = {
     comments: Array<{ value: string; start: number; end: number }>;
+    shows: Array<{ start: number; end: number; items: Array<number> }>;
     expressions: {
         [key: number]: {
             start: number;
@@ -225,6 +226,7 @@ export const Fixtures = <Fn extends (...args: any) => any>({
                         display: 'inline-block',
                         backgroundColor: '#000',
                         padding: '0 8px 8px',
+                        marginTop: 4,
                         borderRadius: 3,
                     }}
                 >

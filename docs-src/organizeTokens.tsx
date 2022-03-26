@@ -3,6 +3,7 @@ import { ByStart, TraceOutput, Info } from './Fixtures';
 
 export const DOC_COMMENT = 'doc-comment';
 export const EXAMPLES = 'list-examples';
+export const SHOW = 'show';
 
 export const organizeTokens = (
     lines: Array<Array<Token>>,
@@ -17,6 +18,7 @@ export const organizeTokens = (
     const examples = Object.keys(info.examples)
         .map((id) => ({ id, loc: info.examples[+id] }))
         .sort((a, b) => a.loc.start - b.loc.start);
+    const shows = info.shows.slice();
 
     if (info.docs) {
         tokens.push({
@@ -45,21 +47,48 @@ export const organizeTokens = (
         // if (at + ll > comments[0].start) {
 
         // }
-        line.forEach((token) => {
+        for (let i = 0; i < line.length; i++) {
+            const token = line[i];
+
+            // line.forEach((token) => {
             if (!token.content.length) {
                 // console.log('empty token?');
-                return;
+                continue;
             }
 
-            if (
-                token.content === 'LIST_xxxxxxxxxxx' &&
-                examples.length &&
-                at === examples[0].loc.start
-            ) {
-                tokens.push({ at, content: examples[0].id, types: [EXAMPLES] });
-                examples.shift();
-                at += token.content.length;
-                return;
+            if (token.content === '____SHOW' && at === shows[0].start) {
+                tokens.push({
+                    at,
+                    content: 'whatt',
+                    types: [SHOW],
+                });
+                shows.shift();
+                while (line[i].content !== ')') {
+                    at += line[i].content.length;
+                    i++;
+                }
+                at += line[i].content.length;
+                i += 1;
+                continue;
+            }
+
+            if (token.content === 'LIST_xxxxxxxxxxx') {
+                if (examples.length && at === examples[0].loc.start) {
+                    tokens.push({
+                        at,
+                        content: examples[0].id,
+                        types: [EXAMPLES],
+                    });
+                    examples.shift();
+                    at += token.content.length;
+                    if (line[i + 1] && line[i + 1].content === ';') {
+                        i += 1;
+                        at += 1;
+                    }
+                    continue;
+                } else {
+                    console.warn(`List token, but bad examples?`, examples, at);
+                }
             }
 
             let content = token.content;
@@ -83,7 +112,8 @@ export const organizeTokens = (
                 tokens.push({ ...token, content, at });
                 at += content.length;
             }
-        });
+            // });
+        }
         tokens.push({ content: '\n', types: [], at });
         at += 1;
     });
