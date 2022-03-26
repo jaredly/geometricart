@@ -188,55 +188,95 @@ const renderFull = (
             ) : token.content.types.includes(EXAMPLES) ? (
                 examplesMatching[+token.content.content]
             ) : token.content.types.includes(SHOW) ? (
-                <span>
-                    SHOW{' '}
-                    <div style={{ display: 'inline-flex', flexWrap: 'wrap' }}>
-                        {info.shows
-                            .find((s) => s.start === token.start)
-                            ?.items.filter((id) => traceOutput[id])
-                            .map((id, i) => (
-                                <div
-                                    style={{
-                                        width: 300,
-                                        height: 300,
-                                        overflow: 'hidden',
-                                        wordWrap: 'break-word',
-                                    }}
-                                >
-                                    {info.expressions[id].type &&
-                                    widgets[info.expressions[id].type!.type] ? (
-                                        widgets[
-                                            info.expressions[id].type!.type
-                                        ](
-                                            traceOutput[id].values[0],
-                                            null,
-                                            '300px',
-                                        )
-                                    ) : (
-                                        <>
-                                            {info.expressions[id].type?.type ||
-                                                '[no type info]'}
-                                            {JSON.stringify(
-                                                traceOutput[id].values[0],
-                                            )}
-                                        </>
-                                    )}
-                                </div>
-                            ))}
-                    </div>
-                    {/* {JSON.stringify(
-                        info.shows
-                            .find((s) => s.start === token.start)
-                            ?.items.map((id) =>
-                                traceOutput[id]
-                                    ? traceOutput[id].values[0]
-                                    : null,
-                            ),
-                    )}{' '} */}
-                </span>
+                <ShowLog info={info} token={token} traceOutput={traceOutput} />
             ) : (
                 <span {...getTokenProps({ token: token.content })} />
             )}
         </span>
     );
 };
+
+function ShowLog({
+    info,
+    token,
+    traceOutput,
+}: {
+    info: Info;
+    token: FullToken;
+    traceOutput: TraceOutput;
+}) {
+    const show = info.shows.find((s) => s.start === token.start);
+    const [index, setIndex] = React.useState(0);
+    if (!show) return null;
+    const counts = show.items
+        .filter((id) => traceOutput[id])
+        .map((id) => traceOutput[id].values.length);
+    if (!counts.length) return null;
+    const minCount = counts.reduce((a, b) => Math.min(a, b));
+    return (
+        <span style={{ display: 'inline-block' }}>
+            // @show
+            {minCount > 1 ? (
+                <>
+                    <button
+                        onClick={() =>
+                            setIndex((i) => (i <= 0 ? minCount - 1 : i - 1))
+                        }
+                    >
+                        &lt;
+                    </button>
+                    {index + 1}/{minCount}
+                    <button
+                        onClick={() =>
+                            setIndex((i) => (i <= 0 ? minCount - 1 : i - 1))
+                        }
+                    >
+                        &gt;
+                    </button>
+                </>
+            ) : null}
+            <div style={{ display: 'inline-flex', flexWrap: 'wrap' }}>
+                {show.items
+                    .filter((id) => traceOutput[id])
+                    .map((id, i) => (
+                        <div
+                            style={{
+                                width: 300,
+                                height: 300,
+                                overflow: 'hidden',
+                                wordWrap: 'break-word',
+                                outline: '1px solid magenta',
+                                margin: 4,
+                            }}
+                        >
+                            {info.expressions[id].type &&
+                            widgets[info.expressions[id].type!.type] ? (
+                                widgets[info.expressions[id].type!.type](
+                                    traceOutput[id].values[index],
+                                    null,
+                                    '300px',
+                                )
+                            ) : (
+                                <>
+                                    {info.expressions[id].type?.type ||
+                                        '[no type info]'}
+                                    {JSON.stringify(
+                                        traceOutput[id].values[index],
+                                    )}
+                                </>
+                            )}
+                        </div>
+                    ))}
+            </div>
+            {/* {JSON.stringify(
+            info.shows
+                .find((s) => s.start === token.start)
+                ?.items.map((id) =>
+                    traceOutput[id]
+                        ? traceOutput[id].values[0]
+                        : null,
+                ),
+        )}{' '} */}
+        </span>
+    );
+}

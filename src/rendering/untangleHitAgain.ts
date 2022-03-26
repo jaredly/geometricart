@@ -197,7 +197,7 @@ export const untangleHit = (
             const a = segmentGroups[i];
             const b = segmentGroups[j];
             if (a.kind.type === 'exit' && b.kind.type === 'enter') {
-                // @show(a, b)
+                // @show(b, a)
                 const doubleBack = anglesEqual(a.theta, b.theta);
                 result.push({
                     entries: b.entries,

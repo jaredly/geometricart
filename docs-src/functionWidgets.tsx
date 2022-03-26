@@ -260,6 +260,7 @@ export const widgets: {
                 viewBox="0 0 300 300"
                 style={{ marginBottom: '-.2em' }}
             >
+                <circle cx={150} cy={150} r={10} fill="black" />
                 {value.entries.map((entry, i) => (
                     <ShowSegmentIntersection
                         key={i}
@@ -273,7 +274,7 @@ export const widgets: {
                             shape: entry.shape,
                             theta: entry.theta,
                         }}
-                        scale={4}
+                        scale={2}
                     />
                 ))}
             </svg>
@@ -287,7 +288,7 @@ export const widgets: {
                 viewBox="0 0 300 300"
                 style={{ marginBottom: '-.2em' }}
             >
-                <ShowSegmentIntersection seg={value} scale={4} />
+                <ShowSegmentIntersection seg={value} scale={2} />
             </svg>
         );
     },

@@ -47,7 +47,8 @@ export const ShowAngle = ({
                             push(center, angle.theta, -size),
                         ])}
                         stroke={color}
-                        strokeWidth={scale}
+                        strokeLinecap="round"
+                        strokeWidth={2 * scale}
                     />
                 ) : (
                     <>
@@ -56,19 +57,20 @@ export const ShowAngle = ({
                                 center,
                                 push(center, angle.theta, size),
                             ])}
+                            strokeLinecap="round"
                             stroke={color}
-                            strokeWidth={scale}
+                            strokeWidth={2 * scale}
                         />
                         <polygon
                             points={pointsList(
                                 arrow(
                                     push(center, angle.theta, size),
                                     angle.theta,
-                                    3 * scale,
+                                    5 * scale,
                                 ),
                             )}
                             fill={headColor ?? color}
-                            strokeWidth={scale}
+                            strokeWidth={2 * scale}
                             stroke={headColor ? 'black' : color}
                         />
                     </>
@@ -85,8 +87,9 @@ export const ShowAngle = ({
                 {enter ? (
                     <path
                         stroke={color}
-                        strokeWidth={scale}
+                        strokeWidth={2 * scale}
                         fill="none"
+                        strokeLinecap="round"
                         d={arcPath(
                             {
                                 type: 'Arc',
@@ -107,8 +110,9 @@ export const ShowAngle = ({
                     <>
                         <path
                             stroke={color}
-                            strokeWidth={scale}
+                            strokeWidth={2 * scale}
                             fill="none"
+                            strokeLinecap="round"
                             d={arcPath(
                                 {
                                     type: 'Arc',
@@ -138,11 +142,11 @@ export const ShowAngle = ({
                                         Math.PI -
                                         Math.PI / 2 -
                                         Math.PI / 2,
-                                    3 * scale,
+                                    5 * scale,
                                 ),
                             )}
                             fill={color}
-                            strokeWidth={scale}
+                            strokeWidth={2 * scale}
                         />
                     </>
                 )}
@@ -210,10 +214,13 @@ const Output = ({
 }) => {
     return (
         <>
-            {output.map((output, i) => (
+            {output.map((corner, i) => (
                 <ShowTransition
-                    transition={output}
-                    pos={{ x: (i + 0.5) * size, y: 300 - size / 2 }}
+                    transition={corner}
+                    pos={{
+                        x: 300 / 2 + (i - output.length / 2 + 0.5) * size,
+                        y: 300 - size / 2,
+                    }}
                     size={size}
                     key={i}
                 />
@@ -233,6 +240,7 @@ const ShowTransition = ({
 }) => {
     return (
         <>
+            <circle cx={pos.x} cy={pos.y} r={size / 10} fill={'black'} />
             {transition.entries.map((entry, i) => (
                 <ShowAngle
                     key={i}
@@ -240,8 +248,8 @@ const ShowTransition = ({
                     enter={true}
                     color={colors[entry.shape]}
                     center={pos}
-                    scale={3}
-                    size={size / 3}
+                    scale={2}
+                    size={size / 2}
                 />
             ))}
             {transition.exits.map((exit, i) => (
@@ -258,37 +266,9 @@ const ShowTransition = ({
                             ? 'black'
                             : 'white'
                     }
-                    scale={3}
-                    size={size / 3}
+                    scale={2}
+                    size={size / 2}
                 />
-                // <React.Fragment key={i}>
-                //     <polyline
-                //         points={pointsList([
-                //             pos,
-                //             push(pos, exit.exit.theta.theta, size / 2),
-                //         ])}
-                //         stroke={colors[exit.exit.shape]}
-                //         strokeWidth={2}
-                //     />
-                //     <polygon
-                //         points={pointsList(
-                //             arrow(
-                //                 push(pos, exit.exit.theta.theta, size / 2),
-                //                 exit.exit.theta.theta,
-                //                 5,
-                //             ),
-                //         )}
-                //         fill={
-                //             exit.goingInside === null
-                //                 ? 'orange'
-                //                 : exit.goingInside
-                //                 ? 'black'
-                //                 : 'white'
-                //         }
-                //         stroke="black"
-                //         strokeWidth={1}
-                //     />
-                // </React.Fragment>
             ))}
         </>
     );
