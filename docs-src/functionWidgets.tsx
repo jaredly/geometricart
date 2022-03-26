@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { arcPath } from '../src/editor/RenderPendingPath';
 import { Arrow, arrow, pointsList } from '../src/editor/ShowHitIntersection2';
-import { Angle } from '../src/rendering/clipPath';
+import { Angle, angleKey } from '../src/rendering/clipPath';
 import { angleTo, dist, push } from '../src/rendering/getMirrorTransforms';
 import { Circle } from '../src/rendering/intersect';
 import { HitSegment, SegmentIntersection } from '../src/rendering/untangleHit';
@@ -271,6 +271,9 @@ export const widgets: {
         );
     },
     'HitSegment[]': (values: HitSegment[], _: any, size: string) => {
+        // If there are coincident angles, I need to offset a little
+        const used: { [key: string]: true } = {};
+        let off = 0;
         return (
             <svg
                 width={'100%'}
@@ -278,19 +281,25 @@ export const widgets: {
                 viewBox="0 0 300 300"
                 style={{ marginBottom: '-.2em' }}
             >
-                {values.map((value, i) => (
-                    <ShowAngle
-                        angle={value.entry.theta}
-                        enter={value.kind.type === 'enter'}
-                        color={colors[value.entry.shape]}
-                        center={{
-                            x: 150,
-                            y: 150 + (i - values.length / 2 + 0.5) * 20,
-                        }}
-                        scale={size === '100px' ? 3 : 1}
-                        key={i}
-                    />
-                ))}
+                {values.map((value, i) => {
+                    const k =
+                        angleKey(value.entry.theta) + ':' + value.kind.type;
+                    const myoff = used[k] ? ++off : 0;
+                    used[k] = true;
+                    return (
+                        <ShowAngle
+                            angle={value.entry.theta}
+                            enter={value.kind.type === 'enter'}
+                            color={colors[value.entry.shape]}
+                            center={{
+                                x: 150,
+                                y: 150 + myoff * 20,
+                            }}
+                            scale={size === '100px' ? 3 : 1}
+                            key={i}
+                        />
+                    );
+                })}
             </svg>
         );
     },

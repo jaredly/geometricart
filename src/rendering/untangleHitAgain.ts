@@ -54,8 +54,8 @@ export const untangleHit = (
     /**
      * ##### Handling segments with identicial angles
      *
-     * Then we sort the sides according to their angles, and group
-     * sides with identical angles together.
+     * Then we sort the segments according to their angles, and group
+     * segments with identical angles together.
      */
     segments.sort((a, b) => sortAngles(a.theta, b.theta));
     const sameAngles: Array<Array<HitSegment>> = [];
@@ -71,7 +71,7 @@ export const untangleHit = (
         }
     }
     /**
-     * Next we form `MultiSide`s, of sides that have the same
+     * Next we form `SegmentGroup`s, of segments that have the same
      * angle and the same kind. If there's an entry and an exit
      * with the same angle, the entry is treated as being
      * 'less clockwise' for sorting purposes.
@@ -164,7 +164,7 @@ export const untangleHit = (
     /**
      * #### Pairing entrances & exits into corners
      *
-     * Now we go through the sorted list of multisides to "pick off" the
+     * Now we go through the sorted list of SegmentGroups to "pick off" the
      * easily recognizable corners, which we can identify by an `exit` that's
      * immediately followed by an `enter`.
      */

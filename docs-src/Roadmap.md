@@ -1,4 +1,14 @@
 
+
+So, how do I deal with 'show' vs 'hover'?
+Like,
+should I have it where you can click anything,
+and have it open in the line below?
+
+I like the idea of being able to pre-indicate that
+some things might be nice to examine together...
+
+
 OH NOESSSS
 
 oooh ok very cool, typescript delivering up the type goodness.
