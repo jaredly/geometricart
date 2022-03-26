@@ -6,7 +6,10 @@ import { Arrow, arrow, pointsList } from '../src/editor/ShowHitIntersection2';
 import { Angle } from '../src/rendering/clipPath';
 import { angleTo, dist, push } from '../src/rendering/getMirrorTransforms';
 import { Circle } from '../src/rendering/intersect';
+import { SegmentIntersection } from '../src/rendering/untangleHit';
+import { SegmentGroup } from '../src/rendering/untangleHitAgain';
 import { ArcSegment, Coord } from '../src/types';
+import { ShowSegmentIntersection } from './UntangleHit';
 
 const angleArrow = (orig: number, reverse?: boolean) => {
     const angle = reverse ? orig + Math.PI : orig;
@@ -246,6 +249,45 @@ export const widgets: {
                     stroke="currentColor"
                     fill="none"
                 />
+            </svg>
+        );
+    },
+    SegmentGroup: (value: SegmentGroup) => {
+        return (
+            <svg
+                width={'100%'}
+                height={'100%'}
+                viewBox="0 0 300 300"
+                style={{ marginBottom: '-.2em' }}
+            >
+                {value.entries.map((entry, i) => (
+                    <ShowSegmentIntersection
+                        key={i}
+                        seg={{
+                            coordKey: '',
+                            distance: 0,
+                            enter: value.kind.type === 'enter',
+                            exit: value.kind.type === 'exit',
+                            id: 0,
+                            segment: entry.segment,
+                            shape: entry.shape,
+                            theta: entry.theta,
+                        }}
+                        scale={4}
+                    />
+                ))}
+            </svg>
+        );
+    },
+    SegmentIntersection: (value: SegmentIntersection) => {
+        return (
+            <svg
+                width={'100%'}
+                height={'100%'}
+                viewBox="0 0 300 300"
+                style={{ marginBottom: '-.2em' }}
+            >
+                <ShowSegmentIntersection seg={value} scale={4} />
             </svg>
         );
     },

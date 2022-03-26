@@ -12,6 +12,7 @@ import { Info, ByStart, TraceOutput, getWidget, hasVisual } from './Fixtures';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
+import { widgets } from './functionWidgets';
 
 export const RenderCode = React.memo(
     ({
@@ -189,7 +190,41 @@ const renderFull = (
             ) : token.content.types.includes(SHOW) ? (
                 <span>
                     SHOW{' '}
-                    {JSON.stringify(
+                    <div style={{ display: 'inline-flex', flexWrap: 'wrap' }}>
+                        {info.shows
+                            .find((s) => s.start === token.start)
+                            ?.items.filter((id) => traceOutput[id])
+                            .map((id, i) => (
+                                <div
+                                    style={{
+                                        width: 300,
+                                        height: 300,
+                                        overflow: 'hidden',
+                                        wordWrap: 'break-word',
+                                    }}
+                                >
+                                    {info.expressions[id].type &&
+                                    widgets[info.expressions[id].type!.type] ? (
+                                        widgets[
+                                            info.expressions[id].type!.type
+                                        ](
+                                            traceOutput[id].values[0],
+                                            null,
+                                            '300px',
+                                        )
+                                    ) : (
+                                        <>
+                                            {info.expressions[id].type?.type ||
+                                                '[no type info]'}
+                                            {JSON.stringify(
+                                                traceOutput[id].values[0],
+                                            )}
+                                        </>
+                                    )}
+                                </div>
+                            ))}
+                    </div>
+                    {/* {JSON.stringify(
                         info.shows
                             .find((s) => s.start === token.start)
                             ?.items.map((id) =>
@@ -197,7 +232,7 @@ const renderFull = (
                                     ? traceOutput[id].values[0]
                                     : null,
                             ),
-                    )}{' '}
+                    )}{' '} */}
                 </span>
             ) : (
                 <span {...getTokenProps({ token: token.content })} />

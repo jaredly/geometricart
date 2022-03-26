@@ -8,7 +8,7 @@ import {
 } from '../src/rendering/clipPathNew';
 import { push } from '../src/rendering/getMirrorTransforms';
 import { SegmentIntersection } from '../src/rendering/untangleHit';
-import { HitTransition, untangleHit } from '../src/rendering/untangleHitAgain';
+import { HitCorner, untangleHit } from '../src/rendering/untangleHitAgain';
 import { Coord } from '../src/types';
 import { Fixture } from '../src/vest/types';
 import { Fixtures } from './Fixtures';
@@ -19,7 +19,7 @@ const mid = { x: 150, y: 150 };
 
 const colors = ['red', 'green', 'blue'];
 
-const ShowSegmentIntersection = ({
+export const ShowSegmentIntersection = ({
     seg,
     scale,
 }: {
@@ -189,7 +189,7 @@ const ShowTransition = ({
 }: {
     size: number;
     pos: Coord;
-    transition: HitTransition;
+    transition: HitCorner;
 }) => {
     return (
         <>
@@ -259,7 +259,7 @@ const fx = fixtures.map((fx): Fixture<typeof untangleHit> => {
     if (!hit) {
         throw new Error(`No valid intersection`);
     }
-    return { ...fx, input: [hit], output: [] as Array<HitTransition> };
+    return { ...fx, input: [hit], output: [] as Array<HitCorner> };
 });
 
 export const UntangleHit = () => (
