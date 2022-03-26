@@ -334,6 +334,20 @@ export const widgets: {
             </svg>
         );
     },
+    'SegmentIntersection[]': (value: SegmentIntersection[]) => {
+        return (
+            <svg
+                width={'100%'}
+                height={'100%'}
+                viewBox="0 0 300 300"
+                style={{ marginBottom: '-.2em' }}
+            >
+                {value.map((v, i) => (
+                    <ShowSegmentIntersection seg={v} key={i} scale={2} />
+                ))}
+            </svg>
+        );
+    },
     SegmentIntersection: (value: SegmentIntersection) => {
         return (
             <svg
