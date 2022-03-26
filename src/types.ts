@@ -474,8 +474,16 @@ export const initialLibrary: Library = {
     lerps: {},
 };
 
+export type GCodePath = {
+    type: 'path';
+    color: string;
+    speed: number;
+    depth: number;
+    passDepth?: number;
+};
+
 export type State = {
-    version: 8;
+    version: 9;
     nextId: number;
     history: History;
     meta: Meta;
@@ -510,6 +518,12 @@ export type State = {
     };
 
     animations: Animations;
+
+    gcode: {
+        clearHeight: number;
+        pauseHeight: number;
+        items: Array<GCodePath | { type: 'pause'; message: string }>;
+    };
 };
 
 /*

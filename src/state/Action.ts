@@ -47,6 +47,7 @@ export type AddRemoveEdit<T, Key> =
     | {
           type: 'add';
           key: Key;
+          value?: T;
       }
     | { type: 'edit'; key: Key; value: Partial<T> }
     | { type: 'remove'; key: Key };
@@ -57,6 +58,17 @@ export type UndoAddRemoveEdit<T, Key> =
       }
     | { type: 'edit'; prev: Partial<T>; key: Key }
     | { type: 'remove'; prev: T; key: Key };
+
+export type GCodeConfig = {
+    type: 'gcode:config';
+    config: Partial<State['gcode']>;
+};
+
+export type UndoGCodeConfig = {
+    type: GCodeConfig['type'];
+    action: GCodeConfig;
+    prev: Partial<State['gcode']>;
+};
 
 export type TimelineLaneARE = {
     type: 'timeline:lane:are';
@@ -78,6 +90,16 @@ export type UndoTimelineSlotARE = {
     type: TimelineSlotARE['type'];
     action: TimelineSlotARE;
     undo: UndoAddRemoveEdit<TimelineSlot, number>;
+};
+
+export type GCodeItemARE = {
+    type: 'gcode:item:are';
+    item: AddRemoveEdit<State['gcode']['items'][0], number>;
+};
+export type UndoGCodeItemARE = {
+    type: GCodeItemARE['type'];
+    action: GCodeItemARE;
+    undo: UndoAddRemoveEdit<State['gcode']['items'][0], number>;
 };
 
 // export type TimelineLaneUpdate = {
@@ -463,7 +485,9 @@ export type UndoableAction =
     | MirrorActive
     | ViewUpdate
     | TimelineLaneARE
+    | GCodeConfig
     | TimelineSlotARE
+    | GCodeItemARE
     | ScriptUpdate
     | ScriptRename
     | TimelineUpdate
@@ -490,6 +514,8 @@ export type UndoAction =
     | UndoTimelineLaneARE
     | UndoTimelineSlotARE
     | UndoOverlayAdd
+    | UndoGCodeItemARE
+    | UndoGCodeConfig
     | UndoScriptUpdate
     | UndoTimelineUpdate
     | UndoOverlayDelete

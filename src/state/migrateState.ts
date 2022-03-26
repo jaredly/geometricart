@@ -93,7 +93,6 @@ export const migrateState = (state: State) => {
         state.animations.config = initialState.animations.config;
     }
     if (state.version < 8) {
-        state.version = 8;
         state.animations.timelines = Object.keys(state.animations.scripts).map(
             (id) => ({
                 enabled: true,
@@ -119,6 +118,10 @@ export const migrateState = (state: State) => {
     if (state.meta.ppi == null) {
         state.meta.ppi = 170;
     }
+    if (state.version < 9) {
+        state.gcode = { items: [], clearHeight: 5, pauseHeight: 30 };
+    }
+    state.version = 9;
     return state;
 };
 function combinedPathStyles(path: Path, groups: { [key: string]: PathGroup }) {

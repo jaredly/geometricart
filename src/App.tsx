@@ -12,8 +12,10 @@ import {
 } from './editor/useDropTarget';
 import {
     CogIcon,
+    DrillIcon,
     IconButton,
     MagicWandIcon,
+    PencilIcon,
     RedoIcon,
     UndoIcon,
 } from './icons/Icon';
@@ -164,7 +166,9 @@ export const App = ({ initialState }: { initialState: State }) => {
     const isTouchScreen = 'ontouchstart' in window;
 
     const [sidebarOverlay, setSidebarOverlay] = React.useState(false);
-    const [animationMode, setAnimationMode] = React.useState(false);
+    const [screen, setScreen] = React.useState(
+        'edit' as 'edit' | 'animate' | 'gcode',
+    );
 
     return (
         <div
@@ -196,8 +200,10 @@ export const App = ({ initialState }: { initialState: State }) => {
                     },
                 }}
             >
-                {animationMode ? (
+                {screen === 'animate' ? (
                     <AnimationEditor state={state} dispatch={dispatch} />
+                ) : screen === 'gcode' ? (
+                    <GCodeEditor state={state} dispatch={dispatch} />
                 ) : (
                     <Canvas
                         state={state}
@@ -260,11 +266,21 @@ export const App = ({ initialState }: { initialState: State }) => {
                     <IconButton onClick={() => setSidebarOverlay((m) => !m)}>
                         <CogIcon />
                     </IconButton>
-                    <IconButton
-                        onClick={() => setAnimationMode(!animationMode)}
-                    >
-                        <MagicWandIcon />
-                    </IconButton>
+                    {screen !== 'animate' ? (
+                        <IconButton onClick={() => setScreen('animate')}>
+                            <MagicWandIcon />
+                        </IconButton>
+                    ) : null}
+                    {screen !== 'edit' ? (
+                        <IconButton onClick={() => setScreen('edit')}>
+                            <PencilIcon />
+                        </IconButton>
+                    ) : null}
+                    {screen !== 'gcode' ? (
+                        <IconButton onClick={() => setScreen('gcode')}>
+                            <DrillIcon />
+                        </IconButton>
+                    ) : null}
                 </div>
             </div>
         </div>
@@ -447,3 +463,5 @@ export const handleKeyboard = (
         }
     };
 };
+
+import { GCodeEditor } from './GCodeEditor';

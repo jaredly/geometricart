@@ -1,4 +1,46 @@
 
+# OK so
+I think I want to move to pathkit
+not sure if it would slow things down
+but it would be better!
+
+I'd love to be able to "merge lines"
+hmmmmmm yeah that's super easy with union
+and then, "interleave" would probably involve
+some amount of difference or difference_reversed.
+
+ohhh ok so what if, for interleave,
+I had some way of selecting intersections?
+and then specifying the behavior.
+(merge, one on top, the other on top)
+
+that would also let me ... relax mye rules
+about not creating self-intersecting tiles?
+andddd it would be really nice to get "paint to fill"
+right?
+
+
+## CNC Gcode, lets goo
+
+> have a screen, that will split things out by color of line
+- and you can "add toolpaths", including multiple passes I guess
+- use the ppi thing as well
+- Toolpath options?
+	- global clearance height
+	- step increment
+
+ALSO: Allow you to generate multiple gcodes
+
+ok yeah so it's
+"File, w/ name"
+and
+
+oh hey, looks like I can do `M0` to "pause execution" and do a tool change.
+So I think I want a "tool change height"...
+
+
+# hm
+
 GET READy for untangleHit that can handle all the things
 at least all even-numbered things.
 

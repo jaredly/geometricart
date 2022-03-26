@@ -693,6 +693,17 @@ export const reduceWithoutUndo = (
                 { type: action.type, action, prev: state.animations.config },
             ];
         }
+        case 'gcode:item:are': {
+            const [items, undo] = handleListARE(
+                action.item,
+                state.gcode.items.slice(),
+                { type: 'path', color: 'black', speed: 200, depth: 1.5 },
+            );
+            return [
+                { ...state, gcode: { ...state.gcode, items: items } },
+                { type: action.type, action, undo },
+            ];
+        }
         case 'timeline:lane:are': {
             const [timelines, undo] = handleListARE(
                 action.action,
@@ -753,6 +764,16 @@ export const reduceWithoutUndo = (
                 { type: action.type, action },
             ];
         }
+        case 'gcode:config':
+            const prev: Partial<State['gcode']> = {};
+            Object.keys(action.config).forEach((k) => {
+                // @ts-ignore
+                prev[k] = state.gcode[k];
+            });
+            return [
+                { ...state, gcode: { ...state.gcode, ...action.config } },
+                { type: action.type, action, prev },
+            ];
         default:
             let _x: never = action;
             console.log(`SKIPPING ${(action as any).type}`);
@@ -762,6 +783,8 @@ export const reduceWithoutUndo = (
 
 export const undo = (state: State, action: UndoAction): State => {
     switch (action.type) {
+        case 'gcode:config':
+            return { ...state, gcode: { ...state.gcode, ...action.prev } };
         case 'script:rename': {
             const scripts = { ...state.animations.scripts };
             scripts[action.action.key] = scripts[action.action.newKey];
@@ -774,6 +797,15 @@ export const undo = (state: State, action: UndoAction): State => {
             return {
                 ...state,
                 animations: { ...state.animations, scripts, timelines },
+            };
+        }
+        case 'gcode:item:are': {
+            return {
+                ...state,
+                gcode: {
+                    ...state.gcode,
+                    items: undoListARE(action.undo, state.gcode.items.slice()),
+                },
             };
         }
         case 'timeline:slot:are': {
@@ -1309,13 +1341,16 @@ export const reifyMirror = (mirrors: { [key: Id]: Mirror }, id: Id): Mirror => {
 export const handleARE = <T, Key, Result>(
     are: AddRemoveEdit<T, Key>,
     handlers: {
-        add: (key: Key) => Result;
+        add: (key: Key, value?: T) => Result;
         edit: (key: Key, value: Partial<T>) => [Result, T];
         remove: (key: Key) => [Result, T];
     },
 ): [Result, UndoAddRemoveEdit<T, Key>] => {
     if (are.type === 'add') {
-        return [handlers.add(are.key), { type: 'add', key: are.key }];
+        return [
+            handlers.add(are.key, are.value),
+            { type: 'add', key: are.key },
+        ];
     } else if (are.type === 'edit') {
         const [state, prev] = handlers.edit(are.key, are.value);
         return [state, { type: 'edit', prev, key: are.key }];
@@ -1347,8 +1382,8 @@ export const handleListARE = <T,>(
     blank: T,
 ) => {
     return handleARE(are, {
-        add: (index) => {
-            list.splice(index, 0, blank);
+        add: (index, value) => {
+            list.splice(index, 0, value ?? blank);
             return list;
         },
         edit: (key, value) => {
