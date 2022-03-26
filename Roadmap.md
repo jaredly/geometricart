@@ -6,7 +6,8 @@ So
 
 - [x] make a deepEqual that is nicer to floats
 	- hm maybe I didn't need that? idk.
-- [ ] make a new impl of untangleHit, use it in the vest
+- [x] make a new impl of untangleHit
+  - [ ] use it in the vest
 - [ ] iterate till it works
 - [ ] make some tests for >4 items.
 

@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { arcPath } from '../src/editor/RenderPendingPath';
 import { arrow, pointsList } from '../src/editor/ShowHitIntersection2';
+import { Angle } from '../src/rendering/clipPath';
 import {
     HitsInfo,
     intersectSegments,
@@ -19,97 +20,107 @@ const mid = { x: 150, y: 150 };
 
 const colors = ['red', 'green', 'blue'];
 
-export const ShowSegmentIntersection = ({
-    seg,
+export const ShowAngle = ({
+    angle,
+    enter,
+    color,
     scale,
+    headColor,
+    size = 100,
+    center = mid,
 }: {
+    color: string;
     scale: number;
-    seg: SegmentIntersection;
+    angle: Angle;
+    enter: boolean;
+    headColor?: string;
+    size?: number;
+    center?: Coord;
 }) => {
-    if (seg.theta.type === 'flat') {
+    if (angle.type === 'flat') {
         return (
             <>
-                {seg.enter ? (
+                {enter ? (
                     <polyline
                         points={pointsList([
-                            mid,
-                            push(mid, seg.theta.theta, -100),
+                            center,
+                            push(center, angle.theta, -size),
                         ])}
-                        stroke={colors[seg.shape]}
-                        strokeWidth={2 * scale}
+                        stroke={color}
+                        strokeWidth={scale}
                     />
-                ) : null}
-                {seg.exit ? (
-                    <polyline
-                        points={pointsList([
-                            mid,
-                            push(mid, seg.theta.theta, 100),
-                        ])}
-                        stroke={colors[seg.shape]}
-                        strokeWidth={2 * scale}
-                    />
-                ) : null}
-                {seg.exit ? (
-                    <polygon
-                        points={pointsList(
-                            arrow(
-                                push(mid, seg.theta.theta, 100),
-                                seg.theta.theta,
-                                5 * scale,
-                            ),
-                        )}
-                        fill={colors[seg.shape]}
-                        strokeWidth={2 * scale}
-                    />
-                ) : null}
+                ) : (
+                    <>
+                        <polyline
+                            points={pointsList([
+                                center,
+                                push(center, angle.theta, size),
+                            ])}
+                            stroke={color}
+                            strokeWidth={scale}
+                        />
+                        <polygon
+                            points={pointsList(
+                                arrow(
+                                    push(center, angle.theta, size),
+                                    angle.theta,
+                                    3 * scale,
+                                ),
+                            )}
+                            fill={headColor ?? color}
+                            strokeWidth={scale}
+                            stroke={headColor ? 'black' : color}
+                        />
+                    </>
+                )}
             </>
         );
     } else {
+        const rad = angle.radius * (1 / scale);
         const centerTo =
-            seg.theta.theta + (Math.PI / 2) * (seg.theta.clockwise ? 1 : -1);
-        const center = push(mid, centerTo, seg.theta.radius);
+            angle.theta + (Math.PI / 2) * (angle.clockwise ? 1 : -1);
+        const arcCenter = push(center, centerTo, rad);
         return (
             <>
-                {seg.enter ? (
+                {enter ? (
                     <path
-                        stroke={colors[seg.shape]}
-                        strokeWidth={2 * scale}
+                        stroke={color}
+                        strokeWidth={scale}
                         fill="none"
                         d={arcPath(
                             {
                                 type: 'Arc',
-                                center,
-                                clockwise: seg.theta.clockwise,
-                                to: mid,
+                                center: arcCenter,
+                                clockwise: angle.clockwise,
+                                to: center,
                             },
                             push(
-                                center,
+                                arcCenter,
                                 centerTo + Math.PI - Math.PI / 2,
-                                seg.theta.radius,
+                                rad,
                             ),
                             1,
                             true,
                         )}
                     />
-                ) : null}
-                {seg.exit ? (
+                ) : (
                     <>
                         <path
-                            stroke={colors[seg.shape]}
-                            strokeWidth={2 * scale}
+                            stroke={color}
+                            strokeWidth={scale}
                             fill="none"
                             d={arcPath(
                                 {
                                     type: 'Arc',
-                                    center,
-                                    clockwise: seg.theta.clockwise,
+                                    center: arcCenter,
+                                    clockwise: angle.clockwise,
                                     to: push(
-                                        center,
+                                        arcCenter,
                                         centerTo + Math.PI - Math.PI / 2,
-                                        seg.theta.radius,
+                                        rad,
                                     ),
                                 },
-                                mid,
+                                center,
                                 1,
                                 true,
                             )}
@@ -118,26 +129,55 @@ export const ShowSegmentIntersection = ({
                             points={pointsList(
                                 arrow(
                                     push(
-                                        center,
+                                        arcCenter,
                                         centerTo + Math.PI - Math.PI / 2,
-                                        seg.theta.radius,
+                                        rad,
                                     ),
-                                    // seg.theta.theta,
+                                    // angle.theta,
                                     centerTo +
                                         Math.PI -
                                         Math.PI / 2 -
                                         Math.PI / 2,
-                                    5 * scale,
+                                    3 * scale,
                                 ),
                             )}
-                            fill={colors[seg.shape]}
-                            strokeWidth={2 * scale}
+                            fill={color}
+                            strokeWidth={scale}
                         />
                     </>
-                ) : null}
+                )}
             </>
         );
     }
+};
+
+export const ShowSegmentIntersection = ({
+    seg,
+    scale,
+}: {
+    scale: number;
+    seg: SegmentIntersection;
+}) => {
+    return (
+        <>
+            {seg.enter ? (
+                <ShowAngle
+                    angle={seg.theta}
+                    enter
+                    color={colors[seg.shape]}
+                    scale={scale}
+                />
+            ) : null}
+            {seg.exit ? (
+                <ShowAngle
+                    angle={seg.theta}
+                    enter={false}
+                    color={colors[seg.shape]}
+                    scale={scale}
+                />
+            ) : null}
+        </>
+    );
 };
 
 const Input = ({
@@ -194,45 +234,61 @@ const ShowTransition = ({
     return (
         <>
             {transition.entries.map((entry, i) => (
-                <polyline
-                    points={pointsList([
-                        pos,
-                        push(pos, entry.theta.theta, -size / 2),
-                    ])}
-                    stroke={colors[entry.shape]}
-                    strokeWidth={2}
+                <ShowAngle
                     key={i}
+                    angle={entry.theta}
+                    enter={true}
+                    color={colors[entry.shape]}
+                    center={pos}
+                    scale={3}
+                    size={size / 3}
                 />
             ))}
             {transition.exits.map((exit, i) => (
-                <React.Fragment key={i}>
-                    <polyline
-                        points={pointsList([
-                            pos,
-                            push(pos, exit.exit.theta.theta, size / 2),
-                        ])}
-                        stroke={colors[exit.exit.shape]}
-                        strokeWidth={2}
-                    />
-                    <polygon
-                        points={pointsList(
-                            arrow(
-                                push(pos, exit.exit.theta.theta, size / 2),
-                                exit.exit.theta.theta,
-                                5,
-                            ),
-                        )}
-                        fill={
-                            exit.goingInside === null
-                                ? 'orange'
-                                : exit.goingInside
-                                ? 'black'
-                                : 'white'
-                        }
-                        stroke="black"
-                        strokeWidth={1}
-                    />
-                </React.Fragment>
+                <ShowAngle
+                    key={i}
+                    angle={exit.exit.theta}
+                    enter={false}
+                    center={pos}
+                    color={colors[exit.exit.shape]}
+                    headColor={
+                        exit.goingInside === null
+                            ? 'orange'
+                            : exit.goingInside
+                            ? 'black'
+                            : 'white'
+                    }
+                    scale={3}
+                    size={size / 3}
+                />
+                // <React.Fragment key={i}>
+                //     <polyline
+                //         points={pointsList([
+                //             pos,
+                //             push(pos, exit.exit.theta.theta, size / 2),
+                //         ])}
+                //         stroke={colors[exit.exit.shape]}
+                //         strokeWidth={2}
+                //     />
+                //     <polygon
+                //         points={pointsList(
+                //             arrow(
+                //                 push(pos, exit.exit.theta.theta, size / 2),
+                //                 exit.exit.theta.theta,
+                //                 5,
+                //             ),
+                //         )}
+                //         fill={
+                //             exit.goingInside === null
+                //                 ? 'orange'
+                //                 : exit.goingInside
+                //                 ? 'black'
+                //                 : 'white'
+                //         }
+                //         stroke="black"
+                //         strokeWidth={1}
+                //     />
+                // </React.Fragment>
             ))}
         </>
     );
