@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { arcPath } from '../src/editor/RenderPendingPath';
 import { Arrow, arrow, pointsList } from '../src/editor/ShowHitIntersection2';
-import { Angle, angleKey } from '../src/rendering/clipPath';
+import { Angle, angleKey, backAngle } from '../src/rendering/clipPath';
 import { angleTo, dist, push } from '../src/rendering/getMirrorTransforms';
 import { Circle } from '../src/rendering/intersect';
 import { HitSegment, SegmentIntersection } from '../src/rendering/untangleHit';
@@ -282,8 +282,11 @@ export const widgets: {
                 style={{ marginBottom: '-.2em' }}
             >
                 {values.map((value, i) => {
-                    const k =
-                        angleKey(value.entry.theta) + ':' + value.kind.type;
+                    const k = angleKey(
+                        value.kind.type === 'enter'
+                            ? backAngle(value.entry.theta)
+                            : value.entry.theta,
+                    );
                     const myoff = used[k] ? ++off : 0;
                     used[k] = true;
                     return (
