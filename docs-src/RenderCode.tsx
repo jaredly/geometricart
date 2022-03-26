@@ -192,7 +192,11 @@ const renderFull = (
                     {JSON.stringify(
                         info.shows
                             .find((s) => s.start === token.start)
-                            ?.items.map((id) => traceOutput[id].values[0]),
+                            ?.items.map((id) =>
+                                traceOutput[id]
+                                    ? traceOutput[id].values[0]
+                                    : null,
+                            ),
                     )}{' '}
                 </span>
             ) : (
