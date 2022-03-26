@@ -57,18 +57,21 @@ export const organizeTokens = (
             }
 
             if (token.content === '____SHOW' && at === shows[0].start) {
-                tokens.push({
-                    at,
-                    content: 'whatt',
-                    types: [SHOW],
-                });
+                const oat = at;
+                let inner = [];
                 shows.shift();
                 while (line[i].content !== ')') {
                     at += line[i].content.length;
                     i++;
+                    inner.push(line[i].content);
                 }
                 at += line[i].content.length;
                 i += 1;
+                tokens.push({
+                    at: oat,
+                    content: '// @show' + inner.join(''),
+                    types: [SHOW],
+                });
                 continue;
             }
 

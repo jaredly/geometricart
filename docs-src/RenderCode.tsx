@@ -188,7 +188,12 @@ const renderFull = (
             ) : token.content.types.includes(EXAMPLES) ? (
                 examplesMatching[+token.content.content]
             ) : token.content.types.includes(SHOW) ? (
-                <ShowLog info={info} token={token} traceOutput={traceOutput} />
+                <ShowLog
+                    text={token.content.content}
+                    info={info}
+                    token={token}
+                    traceOutput={traceOutput}
+                />
             ) : (
                 <span {...getTokenProps({ token: token.content })} />
             )}
@@ -199,9 +204,11 @@ const renderFull = (
 function ShowLog({
     info,
     token,
+    text,
     traceOutput,
 }: {
     info: Info;
+    text: string;
     token: FullToken;
     traceOutput: TraceOutput;
 }) {
@@ -215,7 +222,7 @@ function ShowLog({
     const minCount = counts.reduce((a, b) => Math.min(a, b));
     return (
         <span style={{ display: 'inline-block' }}>
-            // @show
+            {text}
             {minCount > 1 ? (
                 <>
                     <button
