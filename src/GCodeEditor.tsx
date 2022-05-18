@@ -220,11 +220,13 @@ export const GCodeEditor = ({
                         const { time, text } = generateGcode(state);
                         const blob = new Blob(
                             [
-                                text + '\n' + ';; ** STATE **\n;; ',
-                                // + JSON.stringify({
-                                //     ...state,
-                                //     history: initialState.history,
-                                // }),
+                                text +
+                                    '\n' +
+                                    ';; ** STATE **\n;; ' +
+                                    JSON.stringify({
+                                        ...state,
+                                        history: initialState.history,
+                                    }),
                             ],
                             { type: 'text/plain' },
                         );
