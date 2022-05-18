@@ -38,6 +38,64 @@ and
 oh hey, looks like I can do `M0` to "pause execution" and do a tool change.
 So I think I want a "tool change height"...
 
+- [x] we're generating!!! buttttt
+
+what if I also interface directly with GRBL?
+could be cool
+much quicker iteration I feel like.
+
+"send this path"
+
+I'd also want a visualizer, just to gut check things probably.
+
+
+
+What's my ideal workflow? For this stuff
+
+- reliably get close to the wood, and know how deep I want things
+- yeah if I can Z things out (say, get to a contact-probe height ideally) that would be soooo nice. How to do it? hmmm. I'd need a simple circuit, with a lead on the bit, and a lead on a metal plate. put the place (exactly 1mm thick) on top of the wood, and go down by like 0.1 or 0.05mm increments until you hit contact. Then you know how tall things are.
+
+Anyway, then I want to be able to:
+- run a depth test program, and probably speed too
+	that runs a bit through its paces to see how deep things are,
+	how speeds impact things.
+
+A test of resolution and stuff:
+- sin wave? or something?
+- I wonder about doing curvy cuts into wood, as a nice sculpture?
+- but also, topo maps. I'm gonna have to be fancy I think. that'll be a whole gcode bonanza.
+
+- ok but I want to figure out fills, right?
+	- like, doing different dealios at different heights. sounds dope.
+
+
+OK easy test:
+- sin wave, period of like 5mm, random offset.
+- sampled like 100 times.
+- in 5 lines
+- love it, very beautiful, very powerful.
+
+Then the depth test to see if we can rely on things yes
+- 0.1mm increments
+- move 3mm, lower, move 3mm, lower
+
+
+- [ ] umm yeah what's the PPI conversion, and why is it bad
+- [ ] show size & boundaries when exporting gcode
+- [ ] have a ppi field in the gcode stuff
+
+
+
+OK so this has been very fun
+but also
+using an upcut is annoying, whodathunk.
+I want to run some tests with the new bits I got
+to see if I want to keep them
+or something.
+
+
+
+
 
 # hm
 

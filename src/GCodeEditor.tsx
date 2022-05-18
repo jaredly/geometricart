@@ -10,6 +10,7 @@ import { pathToPoints } from './rendering/pathToPoints';
 import { insetPath } from './animation/getBuiltins';
 import { dist } from './rendering/getMirrorTransforms';
 import { sortedVisibleInsetPaths } from './rendering/sortedVisibleInsetPaths';
+import { paletteColor } from './editor/RenderPath';
 
 const findClosest = (shape: Coord[], point: Coord) => {
     let best = null as null | [number, number];
@@ -23,8 +24,6 @@ const findClosest = (shape: Coord[], point: Coord) => {
 };
 
 export const greedyPaths = (paths: Array<{ path: Path; style: StyleLine }>) => {
-    const originalSize = 1000;
-
     const points: Array<Array<Coord>> = [];
     paths.forEach(({ path, style }) => {
         if (style.inset) {
@@ -37,7 +36,9 @@ export const greedyPaths = (paths: Array<{ path: Path; style: StyleLine }>) => {
     });
 
     const ordered: Coord[][] = [];
-    ordered.push(points.shift()!);
+    const first = points.shift()!;
+    first.push(first[0]);
+    ordered.push(first);
     while (points.length) {
         const last = ordered[ordered.length - 1];
         let point = last[last.length - 1];
@@ -50,9 +51,11 @@ export const greedyPaths = (paths: Array<{ path: Path; style: StyleLine }>) => {
         });
         const next = points[best!.idx];
         points.splice(best!.idx, 1);
-        ordered.push(
-            next.slice(best!.subIdx).concat(next.slice(0, best!.subIdx + 1)),
-        );
+        const reordeeed = next
+            .slice(best!.subIdx)
+            .concat(next.slice(0, best!.subIdx));
+        reordeeed.push(reordeeed[0]);
+        ordered.push(reordeeed);
     }
     return ordered;
 };
@@ -63,9 +66,13 @@ const makeDepths = (depth: number, passDepth?: number) => {
     }
     const depths = [];
     for (let i = passDepth; i <= depth; i += passDepth) {
-        depths.push(i);
+        depths.push(Math.min(i, depth));
     }
     return depths;
+};
+
+export const pxToMM = (value: number, ppi: number) => {
+    return (value / ppi) * 250.4 * 6;
 };
 
 export const generateGcode = (state: State) => {
@@ -84,40 +91,13 @@ export const generateGcode = (state: State) => {
         undefined,
     );
 
-    const colors: {
-        [key: string]: Array<{ path: Path; style: StyleLine }>;
-    } = {};
-    insetPaths.forEach((path) => {
-        if (path.style.lines.length === 1) {
-            const line = path.style.lines[0];
-            const color = line?.color!;
-            colors[color] = (colors[color] || []).concat([
-                {
-                    path,
-                    style: line!,
-                },
-            ]);
-        }
-    });
-    Object.keys(state.paths).forEach((k) => {
-        state.paths[k].style.lines.forEach((line) => {
-            const color = line?.color;
-            if (color) {
-                colors[color] = (colors[color] || []).concat([
-                    {
-                        path: state.paths[k],
-                        style: line,
-                    },
-                ]);
-            }
-        });
-    });
+    const colors = findColorPaths(insetPaths);
     const bounds = findBoundingRect(state)!;
 
     const scalePos = ({ x, y }: Coord) => {
         return {
-            x: ((x - bounds.x1) / state.meta.ppi) * 250.4,
-            y: ((y - bounds.y1) / state.meta.ppi) * 250.4,
+            x: pxToMM(x - bounds.x1, state.meta.ppi),
+            y: pxToMM(y - bounds.y1, state.meta.ppi),
         };
     };
 
@@ -207,7 +187,12 @@ export const GCodeEditor = ({
                 ref={canvas}
                 width={w * 2}
                 height={h * 2}
-                style={{ width: w, height: h }}
+                style={{
+                    width: w,
+                    height: h,
+                    maxHeight: '60vh',
+                    objectFit: 'contain',
+                }}
             />
             <div>
                 {url ? (
@@ -242,6 +227,51 @@ export const GCodeEditor = ({
                     </button>
                 )}
                 <div>
+                    PPI:
+                    <BlurInt
+                        value={state.meta.ppi}
+                        onChange={(ppi) =>
+                            ppi
+                                ? dispatch({
+                                      type: 'meta:update',
+                                      meta: { ...state.meta, ppi },
+                                  })
+                                : null
+                        }
+                        label={(ppi) => (
+                            <div style={{ marginTop: 8, marginBottom: 16 }}>
+                                Content Size:{' '}
+                                {bounds
+                                    ? pxToMM(
+                                          bounds.x2 - bounds.x1,
+                                          ppi,
+                                      ).toFixed(1)
+                                    : 'unknown'}
+                                {'mm x '}
+                                {bounds
+                                    ? pxToMM(
+                                          bounds.y2 - bounds.y1,
+                                          ppi,
+                                      ).toFixed(1)
+                                    : 'unknown'}
+                                {'mm  '}
+                                {bounds
+                                    ? (
+                                          pxToMM(bounds.x2 - bounds.x1, ppi) /
+                                          25
+                                      ).toFixed(2)
+                                    : 'unknown'}
+                                {'" x '}
+                                {bounds
+                                    ? (
+                                          pxToMM(bounds.y2 - bounds.y1, ppi) /
+                                          25
+                                      ).toFixed(2)
+                                    : 'unknown'}
+                                "
+                            </div>
+                        )}
+                    />
                     Clear Height:
                     <BlurInt
                         value={state.gcode.clearHeight}
@@ -254,7 +284,6 @@ export const GCodeEditor = ({
                                 : null
                         }
                     />
-                    <br />
                     Pause Height:
                     <BlurInt
                         value={state.gcode.pauseHeight}
@@ -268,55 +297,61 @@ export const GCodeEditor = ({
                         }
                     />
                 </div>
-                {state.gcode.items.map((item, i) => {
-                    return (
-                        <div key={i}>
-                            {item.type === 'pause' ? (
-                                <>
-                                    Pause:
-                                    <Text
-                                        value={item.message}
-                                        onChange={(message) =>
+                <div style={{ margin: 16 }}>
+                    {state.gcode.items.map((item, i) => {
+                        return (
+                            <div key={i} style={{ display: 'flex' }}>
+                                {item.type === 'pause' ? (
+                                    <>
+                                        Pause:
+                                        <Text
+                                            value={item.message}
+                                            onChange={(message) =>
+                                                dispatch({
+                                                    type: 'gcode:item:are',
+                                                    item: {
+                                                        key: i,
+                                                        type: 'edit',
+                                                        value: {
+                                                            ...item,
+                                                            message,
+                                                        },
+                                                    },
+                                                })
+                                            }
+                                        />
+                                    </>
+                                ) : (
+                                    <ItemEdit
+                                        item={item}
+                                        state={state}
+                                        colors={availableColors}
+                                        onChange={(item) =>
                                             dispatch({
                                                 type: 'gcode:item:are',
                                                 item: {
                                                     key: i,
                                                     type: 'edit',
-                                                    value: { ...item, message },
+                                                    value: item,
                                                 },
                                             })
                                         }
                                     />
-                                </>
-                            ) : (
-                                <ItemEdit
-                                    item={item}
-                                    colors={availableColors}
-                                    onChange={(item) =>
+                                )}
+                                <button
+                                    onClick={() =>
                                         dispatch({
                                             type: 'gcode:item:are',
-                                            item: {
-                                                key: i,
-                                                type: 'edit',
-                                                value: item,
-                                            },
+                                            item: { key: i, type: 'remove' },
                                         })
                                     }
-                                />
-                            )}
-                            <button
-                                onClick={() =>
-                                    dispatch({
-                                        type: 'gcode:item:are',
-                                        item: { key: i, type: 'remove' },
-                                    })
-                                }
-                            >
-                                Delete
-                            </button>
-                        </div>
-                    );
-                })}
+                                >
+                                    Delete
+                                </button>
+                            </div>
+                        );
+                    })}
+                </div>
                 <button
                     onClick={() => {
                         dispatch({
@@ -352,13 +387,30 @@ export const GCodeEditor = ({
     );
 };
 
-const findColors = (state: State) => {
-    const colors: { [key: string]: number } = {};
+export type Colors = {
+    [key: string]: {
+        count: number;
+        color: string | number;
+        width: number;
+    };
+};
+
+const findColors = (state: State): Colors => {
+    const colors: {
+        [key: string]: { count: number; color: string | number; width: number };
+    } = {};
     Object.keys(state.paths).forEach((k) => {
         state.paths[k].style.lines.forEach((line) => {
-            const color = line?.color;
-            if (color) {
-                colors[color] = (colors[color] || 0) + 1;
+            if (line && line.color != null && line.width != null) {
+                const key = line.color + ':' + line.width.toFixed(3);
+                if (!colors[key]) {
+                    colors[key] = {
+                        count: 0,
+                        color: line.color!,
+                        width: line.width!,
+                    };
+                }
+                colors[key].count += 1;
             }
         });
     });
@@ -369,10 +421,12 @@ export const ItemEdit = ({
     item,
     onChange,
     colors,
+    state,
 }: {
     item: GCodePath;
     onChange: (item: GCodePath) => void;
-    colors: { [key: string]: number };
+    colors: Colors;
+    state: State;
 }) => {
     const [edited, setEdited] = useState(null as null | GCodePath);
     return (
@@ -382,16 +436,32 @@ export const ItemEdit = ({
                     setEdited({ ...(edited ?? item), color: evt.target.value })
                 }
                 value={edited?.color ?? item.color}
+                style={{ marginRight: 8 }}
             >
                 <option value="">Select a color</option>
-                {Object.keys(colors).map((color) => (
-                    <option value={color + ''} key={color}>
-                        {color} ({colors[color]} paths)
+                {Object.keys(colors).map((key) => (
+                    <option value={key + ''} key={key}>
+                        {paletteColor(
+                            state.palettes[state.activePalette],
+                            colors[key].color,
+                        )}{' '}
+                        ({colors[key].count} paths)
                     </option>
                 ))}
             </select>
-            Speed
+            {pxToMM(
+                colors[edited?.color ?? item.color].width / 100,
+                state.meta.ppi,
+            ).toFixed(2)}
+            mm Bit size
+            <span style={{ marginRight: 8 }} /> Speed
             <input
+                style={{
+                    width: 40,
+                    textAlign: 'center',
+                    marginRight: 16,
+                    marginLeft: 4,
+                }}
                 value={edited?.speed ?? item.speed}
                 placeholder="Speed"
                 onChange={(evt) =>
@@ -400,6 +470,12 @@ export const ItemEdit = ({
             />
             Depth
             <input
+                style={{
+                    width: 40,
+                    textAlign: 'center',
+                    marginRight: 16,
+                    marginLeft: 4,
+                }}
                 value={edited?.depth ?? item.depth}
                 placeholder="Depth"
                 onChange={(evt) =>
@@ -408,6 +484,12 @@ export const ItemEdit = ({
             />
             Pass Depth
             <input
+                style={{
+                    width: 40,
+                    textAlign: 'center',
+                    marginRight: 16,
+                    marginLeft: 4,
+                }}
                 value={edited ? edited.passDepth : item.passDepth}
                 placeholder="Depth"
                 onChange={(evt) =>
@@ -432,3 +514,26 @@ export const ItemEdit = ({
         </div>
     );
 };
+function findColorPaths(insetPaths: Path[]): {
+    [key: string]: Array<{ path: Path; style: StyleLine }>;
+} {
+    const colors: {
+        [key: string]: Array<{ path: Path; style: StyleLine }>;
+    } = {};
+    insetPaths.forEach((path) => {
+        if (path.style.lines.length === 1) {
+            const line = path.style.lines[0];
+            if (!line || line.width == null || line.color == null) {
+                return;
+            }
+            const key = line.color + ':' + line.width.toFixed(3);
+            colors[key] = (colors[key] || []).concat([
+                {
+                    path,
+                    style: line!,
+                },
+            ]);
+        }
+    });
+    return colors;
+}
