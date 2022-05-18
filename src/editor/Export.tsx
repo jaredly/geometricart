@@ -19,7 +19,14 @@ import { State, TextureConfig } from '../types';
 import { closeEnough } from '../rendering/clipPath';
 import { PendingBounds, newPendingBounds, addCoordToBounds } from './Bounds';
 
-export const findBoundingRect = (state: State) => {
+export type Bounds = {
+    x1: number;
+    y1: number;
+    x2: number;
+    y2: number;
+};
+
+export const findBoundingRect = (state: State): Bounds | null => {
     const clip = state.view.activeClip
         ? state.clips[state.view.activeClip]
         : undefined;
