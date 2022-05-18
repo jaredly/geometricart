@@ -114,7 +114,7 @@ export function sortedVisibleInsetPaths(
             };
         }
     });
-    console.log(performance.now() - now);
+    // console.log(performance.now() - now);
 
     let visible = Object.keys(paths)
         .filter(

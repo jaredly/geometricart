@@ -108,6 +108,11 @@ export const generateGcode = (state: State) => {
     ];
     const { clearHeight, pauseHeight } = state.gcode;
 
+    const FAST_SPEED = 500;
+    let time = 0;
+
+    let last = null as null | Coord;
+
     state.gcode.items.forEach((item) => {
         if (item.type === 'pause') {
             lines.push(`g0 z${pauseHeight}`, `M0 ;;; ${item.message}`);
@@ -118,6 +123,7 @@ export const generateGcode = (state: State) => {
                 greedy.forEach((shape) => {
                     shape.forEach((pos, i) => {
                         const { x, y } = scalePos(pos);
+                        let travel = last ? dist({ x, y }, last) : null;
                         if (i == 0) {
                             lines.push(
                                 `g0 z${clearHeight}`,
@@ -125,15 +131,27 @@ export const generateGcode = (state: State) => {
                                 `g0 z0`,
                                 `g1 z${-itemDepth} f${speed}`,
                             );
+                            if (travel) {
+                                time += travel! / speed;
+                            }
                         } else {
-                            lines.push(`g1 x${x.toFixed(3)} y${y.toFixed(3)}`);
+                            if (travel) {
+                                time += travel! / speed;
+                            }
+                            lines.push(
+                                `g1 x${x.toFixed(3)} y${y.toFixed(
+                                    3,
+                                )} f${speed}`,
+                            );
                         }
+                        last = { x, y };
                     });
                 });
             });
         }
     });
-    return lines.join('\n');
+
+    return { time, text: lines.join('\n') };
 };
 
 export const GCodeEditor = ({
@@ -179,7 +197,9 @@ export const GCodeEditor = ({
 
     const availableColors = useMemo(() => findColors(state), [state.paths]);
 
-    const [url, setUrl] = useState(null as null | string);
+    const [url, setUrl] = useState(
+        null as null | { time: number; url: string },
+    );
 
     return (
         <div>
@@ -194,38 +214,40 @@ export const GCodeEditor = ({
                     objectFit: 'contain',
                 }}
             />
-            <div>
+            <div style={{ margin: 8 }}>
+                <button
+                    onClick={() => {
+                        const { time, text } = generateGcode(state);
+                        const blob = new Blob(
+                            [
+                                text + '\n' + ';; ** STATE **\n;; ',
+                                // + JSON.stringify({
+                                //     ...state,
+                                //     history: initialState.history,
+                                // }),
+                            ],
+                            { type: 'text/plain' },
+                        );
+                        setUrl({ time, url: URL.createObjectURL(blob) });
+                    }}
+                >
+                    Generate gcode
+                </button>
                 {url ? (
-                    <a
-                        onClick={() => setUrl(null)}
-                        href={url}
-                        download={
-                            'geo-' + new Date().toISOString() + '-geo.gcode'
-                        }
-                    >
-                        Download the gcode
-                    </a>
-                ) : (
-                    <button
-                        onClick={() => {
-                            const blob = new Blob(
-                                [
-                                    generateGcode(state) +
-                                        '\n' +
-                                        ';; ** STATE **\n;; ',
-                                    // + JSON.stringify({
-                                    //     ...state,
-                                    //     history: initialState.history,
-                                    // }),
-                                ],
-                                { type: 'text/plain' },
-                            );
-                            setUrl(URL.createObjectURL(blob));
-                        }}
-                    >
-                        Generate gcode
-                    </button>
-                )}
+                    <>
+                        <a
+                            onClick={() => setUrl(null)}
+                            href={url.url}
+                            style={{ color: 'white', margin: '0 8px' }}
+                            download={
+                                'geo-' + new Date().toISOString() + '-geo.gcode'
+                            }
+                        >
+                            Download the gcode
+                        </a>
+                        {url.time.toFixed(2)} minutes?
+                    </>
+                ) : null}
                 <div>
                     PPI:
                     <BlurInt
@@ -429,6 +451,7 @@ export const ItemEdit = ({
     state: State;
 }) => {
     const [edited, setEdited] = useState(null as null | GCodePath);
+    const selected = colors[edited?.color ?? item.color];
     return (
         <div>
             <select
@@ -449,10 +472,9 @@ export const ItemEdit = ({
                     </option>
                 ))}
             </select>
-            {pxToMM(
-                colors[edited?.color ?? item.color].width / 100,
-                state.meta.ppi,
-            ).toFixed(2)}
+            {selected
+                ? pxToMM(selected.width / 100, state.meta.ppi).toFixed(2)
+                : 'unknown'}
             mm Bit size
             <span style={{ marginRight: 8 }} /> Speed
             <input
