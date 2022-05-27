@@ -102,9 +102,9 @@ export const generateGcode = (state: State) => {
     };
 
     const lines: Array<string> = [
-        'g21 ; units to mm',
-        'g90 ; absolute positioning',
-        'g17 ; xy plane',
+        'G21 ; units to mm',
+        'G90 ; absolute positioning',
+        'G17 ; xy plane',
     ];
     const { clearHeight, pauseHeight } = state.gcode;
 
@@ -115,7 +115,7 @@ export const generateGcode = (state: State) => {
 
     state.gcode.items.forEach((item) => {
         if (item.type === 'pause') {
-            lines.push(`g0 z${pauseHeight}`, `M0 ;;; ${item.message}`);
+            lines.push(`G0 Z${pauseHeight}`, `M0 ;;; ${item.message}`);
         } else {
             const { color, depth, speed, passDepth } = item;
             const greedy = greedyPaths(colors[color]);
@@ -126,10 +126,10 @@ export const generateGcode = (state: State) => {
                         let travel = last ? dist({ x, y }, last) : null;
                         if (i == 0) {
                             lines.push(
-                                `g0 z${clearHeight}`,
-                                `g0 x${x.toFixed(3)} y${y.toFixed(3)}`,
-                                `g0 z0`,
-                                `g1 z${-itemDepth} f${speed}`,
+                                `G0 Z${clearHeight}`,
+                                `G0 X${x.toFixed(3)} Y${y.toFixed(3)}`,
+                                `G0 Z0`,
+                                `G1 Z${-itemDepth} F${speed}`,
                             );
                             if (travel) {
                                 time += travel! / speed;
@@ -139,9 +139,9 @@ export const generateGcode = (state: State) => {
                                 time += travel! / speed;
                             }
                             lines.push(
-                                `g1 x${x.toFixed(3)} y${y.toFixed(
+                                `G1 X${x.toFixed(3)} Y${y.toFixed(
                                     3,
-                                )} f${speed}`,
+                                )} F${speed}`,
                             );
                         }
                         last = { x, y };

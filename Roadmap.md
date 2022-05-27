@@ -1,4 +1,12 @@
 
+
+
+g92 z0
+g92 x0
+g92 y0
+
+
+
 # OK so
 I think I want to move to pathkit
 not sure if it would slow things down
