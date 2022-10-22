@@ -42,49 +42,43 @@ export const ItemEdit = ({
                 : 'unknown'}
             mm Bit size
             <span style={{ marginRight: 8 }} /> Speed
-            <input
+            <Float
                 style={{
-                    width: 40,
-                    textAlign: 'center',
                     marginRight: 16,
                     marginLeft: 4,
                 }}
                 value={edited?.speed ?? item.speed}
                 placeholder="Speed"
-                onChange={(evt) =>
-                    setEdited({ ...(edited ?? item), speed: +evt.target.value })
+                onChange={(speed) =>
+                    speed != null
+                        ? setEdited({ ...(edited ?? item), speed })
+                        : null
                 }
             />
             Depth
-            <input
+            <Float
                 style={{
-                    width: 40,
-                    textAlign: 'center',
                     marginRight: 16,
                     marginLeft: 4,
                 }}
                 value={edited?.depth ?? item.depth}
                 placeholder="Depth"
-                onChange={(evt) =>
-                    setEdited({ ...(edited ?? item), depth: +evt.target.value })
+                onChange={(depth) =>
+                    depth ? setEdited({ ...(edited ?? item), depth }) : null
                 }
             />
             Pass Depth
-            <input
+            <Float
                 style={{
-                    width: 40,
-                    textAlign: 'center',
                     marginRight: 16,
                     marginLeft: 4,
                 }}
                 value={edited ? edited.passDepth : item.passDepth}
                 placeholder="Depth"
-                onChange={(evt) =>
+                onChange={(passDepth) =>
                     setEdited({
                         ...(edited ?? item),
-                        passDepth: evt.target.value.length
-                            ? +evt.target.value
-                            : undefined,
+                        passDepth,
                     })
                 }
             />
@@ -99,5 +93,37 @@ export const ItemEdit = ({
                 </button>
             ) : null}
         </div>
+    );
+};
+
+export const Float = ({
+    value,
+    onChange,
+    placeholder,
+    style,
+}: {
+    value?: number;
+    onChange: (v?: number) => unknown;
+    placeholder?: string;
+    style?: React.CSSProperties;
+}) => {
+    let [text, setText] = React.useState(null as null | string);
+    return (
+        <input
+            value={text ?? value ?? ''}
+            placeholder={placeholder}
+            onChange={(evt) => {
+                setText(evt.target.value);
+                if (!evt.target.value.trim().length) {
+                    return onChange(undefined);
+                }
+                const value = +evt.target.value;
+                if (!isNaN(value)) {
+                    onChange(value);
+                }
+            }}
+            onBlur={() => setText(null)}
+            style={{ width: 40, textAlign: 'center', ...style }}
+        />
     );
 };

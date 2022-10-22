@@ -480,6 +480,7 @@ export type GCodePath = {
     speed: number;
     depth: number;
     passDepth?: number;
+    fillOver?: number;
 };
 
 export type State = {
