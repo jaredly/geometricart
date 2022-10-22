@@ -1,12 +1,12 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { Bounds, findBoundingRect } from '../editor/Export';
-import { BlurInt, Text } from '../editor/Forms';
-import { paletteColor } from '../editor/RenderPath';
-import { generateGcode, generateLaserInset, pxToMM } from './generateGcode';
+import { Text } from '../editor/Forms';
 import { canvasRender } from '../rendering/CanvasRender';
 import { Action } from '../state/Action';
-import { initialState } from '../state/initialState';
-import { GCodePath, Path, State, StyleLine } from '../types';
+import { Path, State, StyleLine } from '../types';
+import { Toolbar } from './Toolbar';
+import { Settings } from './Settings';
+import { ItemEdit } from './ItemEdit';
 
 export const GCodeEditor = ({
     state,
@@ -51,26 +51,6 @@ export const GCodeEditor = ({
 
     const availableColors = useMemo(() => findColors(state), [state.paths]);
 
-    const [url, setUrl] = useState(
-        null as null | { time: number; url: string },
-    );
-    const [laserUrl, setLaserUrl] = useState(
-        null as null | { svg: string; url: string },
-    );
-
-    // const h =
-    //     crop && boundingRect
-    //         ? (boundingRect.y2 - boundingRect.y1) *
-    //               state.view.zoom +
-    //           (crop / 50) * state.meta.ppi
-    //         : originalSize;
-    // const w =
-    //     crop && boundingRect
-    //         ? (boundingRect.x2 - boundingRect.x1) *
-    //               state.view.zoom +
-    //           (crop / 50) * state.meta.ppi
-    //         : originalSize;
-
     return (
         <div>
             <canvas
@@ -85,135 +65,13 @@ export const GCodeEditor = ({
                 }}
             />
             <div style={{ margin: 8 }}>
-                <button
-                    onClick={() => {
-                        generateLaserInset(state).then((svg) => {
-                            if (!bounds) {
-                                throw new Error('no bounds');
-                            }
-                            const blob = new Blob(
-                                [wrapSvg(bounds, state, w, h, svg)],
-                                { type: 'image/svg+xml' },
-                            );
-                            const url = URL.createObjectURL(blob);
-                            setLaserUrl({ svg, url });
-                        });
-                    }}
-                >
-                    Generate Laser
-                </button>
-                <button
-                    onClick={() => {
-                        const { time, text } = generateGcode(state);
-                        const blob = new Blob(
-                            [
-                                text +
-                                    '\n' +
-                                    ';; ** STATE **\n;; ' +
-                                    JSON.stringify({
-                                        ...state,
-                                        history: initialState.history,
-                                    }),
-                            ],
-                            { type: 'text/plain' },
-                        );
-                        setUrl({ time, url: URL.createObjectURL(blob) });
-                    }}
-                >
-                    Generate gcode
-                </button>
-                {url ? (
-                    <>
-                        <a
-                            onClick={() => setUrl(null)}
-                            href={url.url}
-                            style={{ color: 'white', margin: '0 8px' }}
-                            download={
-                                'geo-' + new Date().toISOString() + '-geo.gcode'
-                            }
-                        >
-                            Download the gcode
-                        </a>
-                        {url.time.toFixed(2)} minutes?
-                    </>
-                ) : null}
-                {laserUrl ? (
-                    <>
-                        <a
-                            onClick={() => setUrl(null)}
-                            href={laserUrl.url}
-                            style={{ color: 'white', margin: '0 8px' }}
-                            download={
-                                'geo-' + new Date().toISOString() + '-geo.svg'
-                            }
-                        >
-                            Download the laser svg
-                        </a>
-                    </>
-                ) : null}
-                <div>
-                    PPI:
-                    <BlurInt
-                        value={state.meta.ppi}
-                        onChange={(ppi) =>
-                            ppi
-                                ? dispatch({
-                                      type: 'meta:update',
-                                      meta: { ...state.meta, ppi },
-                                  })
-                                : null
-                        }
-                        label={(ppi) => showBounds(bounds, ppi)}
-                    />
-                    Clear Height:
-                    <BlurInt
-                        value={state.gcode.clearHeight}
-                        onChange={(clearHeight) =>
-                            clearHeight
-                                ? dispatch({
-                                      type: 'gcode:config',
-                                      config: { clearHeight },
-                                  })
-                                : null
-                        }
-                    />
-                    Pause Height:
-                    <BlurInt
-                        value={state.gcode.pauseHeight}
-                        onChange={(pauseHeight) =>
-                            pauseHeight
-                                ? dispatch({
-                                      type: 'gcode:config',
-                                      config: { pauseHeight },
-                                  })
-                                : null
-                        }
-                    />
-                </div>
+                <Settings state={state} dispatch={dispatch} bounds={bounds} />
                 <div style={{ margin: 16 }}>
                     {state.gcode.items.map((item, i) => {
                         return (
                             <div key={i} style={{ display: 'flex' }}>
                                 {item.type === 'pause' ? (
-                                    <>
-                                        Pause:
-                                        <Text
-                                            value={item.message}
-                                            onChange={(message) =>
-                                                dispatch({
-                                                    type: 'gcode:item:are',
-                                                    item: {
-                                                        key: i,
-                                                        type: 'edit',
-                                                        value: {
-                                                            ...item,
-                                                            message,
-                                                        },
-                                                    },
-                                                })
-                                            }
-                                        />
-                                    </>
+                                    Pause(item, dispatch, i)
                                 ) : (
                                     <ItemEdit
                                         item={item}
@@ -276,30 +134,7 @@ export const GCodeEditor = ({
                     Add Pause
                 </button>
             </div>
-            {laserUrl && bounds ? (
-                // <div dangerouslySetInnerHTML={{ __html: laserUrl.svg }} />
-                <svg
-                    width={
-                        pxToMM(bounds.x2 - bounds.x1, state.meta.ppi).toFixed(
-                            1,
-                        ) + 'mm'
-                    }
-                    height={
-                        pxToMM(bounds.y2 - bounds.y1, state.meta.ppi).toFixed(
-                            1,
-                        ) + 'mm'
-                    }
-                    viewBox={`0 0 ${w} ${h}`}
-                >
-                    <path
-                        d={laserUrl.svg}
-                        stroke="red"
-                        fill="none"
-                        strokeWidth={2}
-                        transform={`translate(${w / 2},${h / 2})`}
-                    />
-                </svg>
-            ) : null}
+            {Toolbar(state, bounds, w, h)}
         </div>
     );
 };
@@ -334,154 +169,31 @@ const findColors = (state: State): Colors => {
     return colors;
 };
 
-export const ItemEdit = ({
-    item,
-    onChange,
-    colors,
-    state,
-}: {
-    item: GCodePath;
-    onChange: (item: GCodePath) => void;
-    colors: Colors;
-    state: State;
-}) => {
-    const [edited, setEdited] = useState(null as null | GCodePath);
-    const selected = colors[edited?.color ?? item.color];
+function Pause(
+    item: { type: 'pause'; message: string },
+    dispatch: React.Dispatch<Action>,
+    i: number,
+): React.ReactNode {
     return (
-        <div>
-            <select
-                onChange={(evt) =>
-                    setEdited({ ...(edited ?? item), color: evt.target.value })
-                }
-                value={edited?.color ?? item.color}
-                style={{ marginRight: 8 }}
-            >
-                <option value="">Select a color</option>
-                {Object.keys(colors).map((key) => (
-                    <option value={key + ''} key={key}>
-                        {paletteColor(
-                            state.palettes[state.activePalette],
-                            colors[key].color,
-                        )}{' '}
-                        ({colors[key].count} paths)
-                    </option>
-                ))}
-            </select>
-            {selected
-                ? pxToMM(selected.width / 100, state.meta.ppi).toFixed(2)
-                : 'unknown'}
-            mm Bit size
-            <span style={{ marginRight: 8 }} /> Speed
-            <input
-                style={{
-                    width: 40,
-                    textAlign: 'center',
-                    marginRight: 16,
-                    marginLeft: 4,
-                }}
-                value={edited?.speed ?? item.speed}
-                placeholder="Speed"
-                onChange={(evt) =>
-                    setEdited({ ...(edited ?? item), speed: +evt.target.value })
-                }
-            />
-            Depth
-            <input
-                style={{
-                    width: 40,
-                    textAlign: 'center',
-                    marginRight: 16,
-                    marginLeft: 4,
-                }}
-                value={edited?.depth ?? item.depth}
-                placeholder="Depth"
-                onChange={(evt) =>
-                    setEdited({ ...(edited ?? item), depth: +evt.target.value })
-                }
-            />
-            Pass Depth
-            <input
-                style={{
-                    width: 40,
-                    textAlign: 'center',
-                    marginRight: 16,
-                    marginLeft: 4,
-                }}
-                value={edited ? edited.passDepth : item.passDepth}
-                placeholder="Depth"
-                onChange={(evt) =>
-                    setEdited({
-                        ...(edited ?? item),
-                        passDepth: evt.target.value.length
-                            ? +evt.target.value
-                            : undefined,
+        <>
+            Pause:
+            <Text
+                value={item.message}
+                onChange={(message) =>
+                    dispatch({
+                        type: 'gcode:item:are',
+                        item: {
+                            key: i,
+                            type: 'edit',
+                            value: {
+                                ...item,
+                                message,
+                            },
+                        },
                     })
                 }
             />
-            {edited != null ? (
-                <button
-                    onClick={() => {
-                        onChange(edited);
-                        setEdited(null);
-                    }}
-                >
-                    Save
-                </button>
-            ) : null}
-        </div>
-    );
-};
-
-function wrapSvg(
-    bounds: Bounds,
-    state: State,
-    w: number,
-    h: number,
-    svg: string,
-): BlobPart {
-    return `<svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                width="${
-                                    pxToMM(
-                                        bounds.x2 - bounds.x1,
-                                        state.meta.ppi,
-                                    ).toFixed(1) + 'mm'
-                                }"
-                                height="${
-                                    pxToMM(
-                                        bounds.y2 - bounds.y1,
-                                        state.meta.ppi,
-                                    ).toFixed(1) + 'mm'
-                                }"
-                                viewBox="0 0 ${w} ${h}"
-                            >
-                                <path
-                                    d="${svg}"
-                                    stroke="red"
-                                    fill="none"
-                                    strokeWidth="2"
-                                    transform="translate(${w / 2},${h / 2})"
-                                />
-                            </svg>`;
-}
-
-function showBounds(bounds: Bounds | null, ppi: number): React.ReactNode {
-    return (
-        <div style={{ marginTop: 8, marginBottom: 16 }}>
-            Content Size:{' '}
-            {bounds ? pxToMM(bounds.x2 - bounds.x1, ppi).toFixed(1) : 'unknown'}
-            {'mm x '}
-            {bounds ? pxToMM(bounds.y2 - bounds.y1, ppi).toFixed(1) : 'unknown'}
-            {'mm  '}
-            {bounds
-                ? (pxToMM(bounds.x2 - bounds.x1, ppi) / 25).toFixed(2)
-                : 'unknown'}
-            {'" x '}
-            {bounds
-                ? (pxToMM(bounds.y2 - bounds.y1, ppi) / 25).toFixed(2)
-                : 'unknown'}
-            "
-        </div>
+        </>
     );
 }
 

@@ -192,5 +192,7 @@ export const generateGcode = (state: State) => {
         }
     });
 
+    lines.push(`G0 Z${clearHeight}`);
+
     return { time, text: lines.join('\n') };
 };
