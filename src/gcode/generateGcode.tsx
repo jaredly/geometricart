@@ -1,12 +1,12 @@
-import { insetPath } from './animation/getBuiltins';
-import { findBoundingRect } from './editor/Export';
+import { insetPath } from '../animation/getBuiltins';
+import { findBoundingRect } from '../editor/Export';
 import { findColorPaths } from './GCodeEditor';
-import { dist } from './rendering/getMirrorTransforms';
-import { pathToPoints } from './rendering/pathToPoints';
-import { sortedVisibleInsetPaths } from './rendering/sortedVisibleInsetPaths';
-import { Coord, Path, State, StyleLine } from './types';
+import { dist } from '../rendering/getMirrorTransforms';
+import { pathToPoints } from '../rendering/pathToPoints';
+import { sortedVisibleInsetPaths } from '../rendering/sortedVisibleInsetPaths';
+import { Coord, Path, State, StyleLine } from '../types';
 import PathKitInit, * as PathKit from 'pathkit-wasm';
-import { calcPathD } from './editor/RenderPath';
+import { calcPathD } from '../editor/RenderPath';
 
 const findClosest = (shape: Coord[], point: Coord) => {
     let best = null as null | [number, number];

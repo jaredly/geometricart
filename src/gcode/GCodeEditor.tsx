@@ -1,12 +1,12 @@
 import React, { useMemo, useState } from 'react';
-import { findBoundingRect } from './editor/Export';
-import { BlurInt, Text } from './editor/Forms';
-import { paletteColor } from './editor/RenderPath';
+import { Bounds, findBoundingRect } from '../editor/Export';
+import { BlurInt, Text } from '../editor/Forms';
+import { paletteColor } from '../editor/RenderPath';
 import { generateGcode, generateLaserInset, pxToMM } from './generateGcode';
-import { canvasRender } from './rendering/CanvasRender';
-import { Action } from './state/Action';
-import { initialState } from './state/initialState';
-import { GCodePath, Path, State, StyleLine } from './types';
+import { canvasRender } from '../rendering/CanvasRender';
+import { Action } from '../state/Action';
+import { initialState } from '../state/initialState';
+import { GCodePath, Path, State, StyleLine } from '../types';
 
 export const GCodeEditor = ({
     state,
@@ -92,35 +92,8 @@ export const GCodeEditor = ({
                                 throw new Error('no bounds');
                             }
                             const blob = new Blob(
-                                [
-                                    `<svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                width="${
-                                    pxToMM(
-                                        bounds.x2 - bounds.x1,
-                                        state.meta.ppi,
-                                    ).toFixed(1) + 'mm'
-                                }"
-                                height="${
-                                    pxToMM(
-                                        bounds.y2 - bounds.y1,
-                                        state.meta.ppi,
-                                    ).toFixed(1) + 'mm'
-                                }"
-                                viewBox="0 0 ${w} ${h}"
-                            >
-                                <path
-                                    d="${svg}"
-                                    stroke="red"
-                                    fill="none"
-                                    strokeWidth="2"
-                                    transform="translate(${w / 2},${h / 2})"
-                                />
-                            </svg>`,
-                                ],
-                                {
-                                    type: 'image/svg+xml',
-                                },
+                                [wrapSvg(bounds, state, w, h, svg)],
+                                { type: 'image/svg+xml' },
                             );
                             const url = URL.createObjectURL(blob);
                             setLaserUrl({ svg, url });
@@ -190,39 +163,7 @@ export const GCodeEditor = ({
                                   })
                                 : null
                         }
-                        label={(ppi) => (
-                            <div style={{ marginTop: 8, marginBottom: 16 }}>
-                                Content Size:{' '}
-                                {bounds
-                                    ? pxToMM(
-                                          bounds.x2 - bounds.x1,
-                                          ppi,
-                                      ).toFixed(1)
-                                    : 'unknown'}
-                                {'mm x '}
-                                {bounds
-                                    ? pxToMM(
-                                          bounds.y2 - bounds.y1,
-                                          ppi,
-                                      ).toFixed(1)
-                                    : 'unknown'}
-                                {'mm  '}
-                                {bounds
-                                    ? (
-                                          pxToMM(bounds.x2 - bounds.x1, ppi) /
-                                          25
-                                      ).toFixed(2)
-                                    : 'unknown'}
-                                {'" x '}
-                                {bounds
-                                    ? (
-                                          pxToMM(bounds.y2 - bounds.y1, ppi) /
-                                          25
-                                      ).toFixed(2)
-                                    : 'unknown'}
-                                "
-                            </div>
-                        )}
+                        label={(ppi) => showBounds(bounds, ppi)}
                     />
                     Clear Height:
                     <BlurInt
@@ -490,6 +431,60 @@ export const ItemEdit = ({
         </div>
     );
 };
+
+function wrapSvg(
+    bounds: Bounds,
+    state: State,
+    w: number,
+    h: number,
+    svg: string,
+): BlobPart {
+    return `<svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="${
+                                    pxToMM(
+                                        bounds.x2 - bounds.x1,
+                                        state.meta.ppi,
+                                    ).toFixed(1) + 'mm'
+                                }"
+                                height="${
+                                    pxToMM(
+                                        bounds.y2 - bounds.y1,
+                                        state.meta.ppi,
+                                    ).toFixed(1) + 'mm'
+                                }"
+                                viewBox="0 0 ${w} ${h}"
+                            >
+                                <path
+                                    d="${svg}"
+                                    stroke="red"
+                                    fill="none"
+                                    strokeWidth="2"
+                                    transform="translate(${w / 2},${h / 2})"
+                                />
+                            </svg>`;
+}
+
+function showBounds(bounds: Bounds | null, ppi: number): React.ReactNode {
+    return (
+        <div style={{ marginTop: 8, marginBottom: 16 }}>
+            Content Size:{' '}
+            {bounds ? pxToMM(bounds.x2 - bounds.x1, ppi).toFixed(1) : 'unknown'}
+            {'mm x '}
+            {bounds ? pxToMM(bounds.y2 - bounds.y1, ppi).toFixed(1) : 'unknown'}
+            {'mm  '}
+            {bounds
+                ? (pxToMM(bounds.x2 - bounds.x1, ppi) / 25).toFixed(2)
+                : 'unknown'}
+            {'" x '}
+            {bounds
+                ? (pxToMM(bounds.y2 - bounds.y1, ppi) / 25).toFixed(2)
+                : 'unknown'}
+            "
+        </div>
+    );
+}
+
 export function findColorPaths(insetPaths: Path[]): {
     [key: string]: Array<{ path: Path; style: StyleLine }>;
 } {

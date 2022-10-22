@@ -464,4 +464,4 @@ export const handleKeyboard = (
     };
 };
 
-import { GCodeEditor } from './GCodeEditor';
+import { GCodeEditor } from './gcode/GCodeEditor';
