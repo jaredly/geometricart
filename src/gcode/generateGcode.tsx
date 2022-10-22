@@ -161,9 +161,13 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
         if (item.type === 'pause') {
             lines.push(`G0 Z${pauseHeight}`, `M0 ;;; ${item.message}`);
         } else {
-            const { color, depth, speed, passDepth, fillOver } = item;
+            const { color, depth, speed, passDepth } = item;
+            if (!colors[color]) {
+                console.warn(`Unknown color ${color}`);
+                return;
+            }
             const greedy = greedyPaths(colors[color]);
-            if (fillOver != null) {
+            if (color.endsWith(':pocket')) {
                 greedy.forEach((shape) => {
                     const pocket = makePocket(PathKit, shape.map(scalePos), 3);
 
@@ -171,7 +175,11 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
                     // lines.push(`G0 X${pocket[0][0].x} Y${pocket[0][0].y}`);
                     // lines.push(`G0 Z0`);
                     makeDepths(depth, passDepth).forEach((itemDepth) => {
-                        lines.push(`G0 X${pocket[0][0].x} Y${pocket[0][0].y}`);
+                        lines.push(
+                            `G0 X${pocket[0][0].x.toFixed(
+                                3,
+                            )} Y${pocket[0][0].y.toFixed(3)}`,
+                        );
                         lines.push(`G0 Z0`);
                         lines.push(`G1 Z${-itemDepth} F${speed}`);
                         pocket.forEach((round) => {
@@ -180,7 +188,11 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
                                 if (travel) {
                                     time += travel! / speed;
                                 }
-                                lines.push(`G1 X${p.x} Y${p.y} F${speed}`);
+                                lines.push(
+                                    `G1 X${p.x.toFixed(3)} Y${p.y.toFixed(
+                                        3,
+                                    )} F${speed}`,
+                                );
                                 last = p;
                             });
                         });

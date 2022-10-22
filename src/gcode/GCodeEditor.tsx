@@ -181,7 +181,7 @@ const findFillColors = (state: State): FillColors => {
     Object.keys(state.paths).forEach((k) => {
         state.paths[k].style.fills.forEach((fill) => {
             if (fill && fill.color != null) {
-                const key = fill.color + ':' + fill.lighten;
+                const key = fill.color + ':' + fill.lighten + ':pocket';
                 if (!colors[key]) {
                     colors[key] = {
                         count: 0,
@@ -264,6 +264,17 @@ export function findColorPaths(insetPaths: Path[]): {
                 },
             ]);
         }
+        path.style.fills.forEach((fill) => {
+            if (fill && fill.color != null) {
+                const key = fill.color + ':' + fill.lighten + ':pocket';
+                colors[key] = (colors[key] || []).concat([
+                    {
+                        path,
+                        style: fill!,
+                    },
+                ]);
+            }
+        });
     });
     return colors;
 }

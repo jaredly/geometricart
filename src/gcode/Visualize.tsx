@@ -139,7 +139,7 @@ export const Visualize = ({ gcode }: { gcode: string }) => {
                 width={data.dims.width * scale}
                 height={data.dims.height * scale}
                 style={{
-                    backgroundColor: 'white',
+                    backgroundColor: 'black',
                     width: (data.dims.width * scale) / 2,
                     height: (data.dims.height * scale) / 2,
                 }}

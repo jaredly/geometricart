@@ -1,6 +1,12 @@
 
 # GCode fill it up
 
+- [x] pockets!
+- [ ] IMPOTANT Figure out TABS please.
+- [ ] reorder things
+- [ ] disable gcodeitems
+- [ ] auto-update the visualization pls
+
 My method for collecting paths leaves some things to be desired.
 
 Fills should be for pockets
@@ -16,6 +22,8 @@ Also, offset please. Might want that.
 
 Anyway, and the pocket calculations should be smarter about straight lines.
 And should be smarter about DPI, for getPointAtDistance
+
+Also, for the pockets, do we decide what bit size we're doing?
 
 #
 

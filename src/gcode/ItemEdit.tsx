@@ -30,12 +30,13 @@ const ColorsSelect = ({
             {show && (
                 <div
                     style={{
+                        padding: 8,
                         position: 'absolute',
                         zIndex: 100,
                         top: 20,
                         left: 0,
                         backgroundColor: '#222',
-                        border: '1px solid black',
+                        border: '2px solid white',
                     }}
                 >
                     {colors.map((c) => (
@@ -82,14 +83,29 @@ export const ItemEdit = ({
             <ColorsSelect
                 onChange={(color) => setEdited({ ...(edited ?? item), color })}
                 value={edited?.color ?? item.color}
-                colors={Object.keys(colors.line).map((c) => ({
-                    key: c,
-                    color: paletteColor(
-                        state.palettes[state.activePalette],
-                        colors.line[c].color,
-                    )!,
-                    title: `(${colors.line[c].count} paths)`,
-                }))}
+                colors={Object.keys(colors.line)
+                    .map((c) => ({
+                        key: c,
+                        color: paletteColor(
+                            state.palettes[state.activePalette],
+                            colors.line[c].color,
+                        )!,
+                        title: `${pxToMM(
+                            colors.line[c].width! / 100,
+                            state.meta.ppi,
+                        ).toFixed(2)} mm (${colors.line[c].count} paths)`,
+                    }))
+                    .concat(
+                        Object.keys(colors.fill).map((c) => ({
+                            key: c,
+                            color: paletteColor(
+                                state.palettes[state.activePalette],
+                                colors.fill[c].color,
+                                colors.fill[c].lighten,
+                            )!,
+                            title: `${colors.fill[c].count} paths, pocket`,
+                        })),
+                    )}
             />
             {selected && selected.width
                 ? pxToMM(selected.width / 100, state.meta.ppi).toFixed(2) +
@@ -131,18 +147,6 @@ export const ItemEdit = ({
                 placeholder="Depth"
                 onChange={(passDepth) =>
                     setEdited({ ...(edited ?? item), passDepth })
-                }
-            />
-            Fill Overlap
-            <Float
-                style={{
-                    marginRight: 16,
-                    marginLeft: 4,
-                }}
-                value={edited ? edited.fillOver : item.fillOver}
-                placeholder="Fill Overlap"
-                onChange={(fillOver) =>
-                    setEdited({ ...(edited ?? item), fillOver })
                 }
             />
             {edited != null ? (
