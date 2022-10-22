@@ -5,7 +5,7 @@ import { dist } from '../rendering/getMirrorTransforms';
 import { pathToPoints } from '../rendering/pathToPoints';
 import { sortedVisibleInsetPaths } from '../rendering/sortedVisibleInsetPaths';
 import { Coord, Path, State, StyleLine } from '../types';
-import PathKitInit, * as PathKit from 'pathkit-wasm';
+import PathKitInit, { PathKit } from 'pathkit-wasm';
 import { calcPathD } from '../editor/RenderPath';
 
 const findClosest = (shape: Coord[], point: Coord) => {
@@ -64,6 +64,9 @@ export const makeDepths = (depth: number, passDepth?: number) => {
     for (let i = passDepth; i <= depth; i += passDepth) {
         depths.push(Math.min(i, depth));
     }
+    if (depths[depths.length - 1] < depth) {
+        depths.push(depth);
+    }
     return depths;
 };
 
@@ -116,7 +119,7 @@ export const generateLaserInset = async (state: State) => {
     return out;
 };
 
-export const generateGcode = (state: State) => {
+export const generateGcode = (state: State, PathKit: PathKit) => {
     const clip = state.view.activeClip
         ? state.clips[state.view.activeClip]
         : undefined;
@@ -158,8 +161,34 @@ export const generateGcode = (state: State) => {
         if (item.type === 'pause') {
             lines.push(`G0 Z${pauseHeight}`, `M0 ;;; ${item.message}`);
         } else {
-            const { color, depth, speed, passDepth } = item;
+            const { color, depth, speed, passDepth, fillOver } = item;
             const greedy = greedyPaths(colors[color]);
+            if (fillOver != null) {
+                greedy.forEach((shape) => {
+                    const pocket = makePocket(PathKit, shape.map(scalePos), 3);
+
+                    lines.push(`G0 Z${clearHeight}`);
+                    // lines.push(`G0 X${pocket[0][0].x} Y${pocket[0][0].y}`);
+                    // lines.push(`G0 Z0`);
+                    makeDepths(depth, passDepth).forEach((itemDepth) => {
+                        lines.push(`G0 X${pocket[0][0].x} Y${pocket[0][0].y}`);
+                        lines.push(`G0 Z0`);
+                        lines.push(`G1 Z${-itemDepth} F${speed}`);
+                        pocket.forEach((round) => {
+                            round.forEach((p) => {
+                                let travel = last ? dist(p, last) : null;
+                                if (travel) {
+                                    time += travel! / speed;
+                                }
+                                lines.push(`G1 X${p.x} Y${p.y} F${speed}`);
+                                last = p;
+                            });
+                        });
+                        lines.push(`G0 Z${clearHeight}`);
+                    });
+                });
+                return;
+            }
             makeDepths(depth, passDepth).forEach((itemDepth) => {
                 greedy.forEach((shape) => {
                     shape.forEach((pos, i) => {
@@ -195,4 +224,109 @@ export const generateGcode = (state: State) => {
     lines.push(`G0 Z${clearHeight}`);
 
     return { time, text: lines.join('\n') };
+};
+
+function makePocket(PathKit: PathKit, shape: Coord[], bitSize: number) {
+    const path = PathKit.NewPath();
+    shape.forEach(({ x, y }, i) => {
+        if (i === 0) {
+            path.moveTo(x, y);
+        } else {
+            path.lineTo(x, y);
+        }
+    });
+    path.close();
+
+    const rounds: Coord[][] = [];
+
+    path.simplify();
+    // const outer = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    // TODO: Consider using https://www.npmjs.com/package/svg-path-properties
+    // or https://www.npmjs.com/package/point-at-length
+    const div = document.createElement('div');
+    div.innerHTML = `
+    <svg xmlns="http://www.w3.org/2000/svg" ></svg>
+    `;
+    const outer = div.firstElementChild as SVGSVGElement; // document.createElement('svg');
+    // outer.setAttributeNS(
+    //     'http://www.w3.org/2000/xmlns/',
+    //     'xmlns:xlink',
+    //     'http://www.w3.org/1999/xlink',
+    // );
+    // outer.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    // document.body.append(outer);
+    while (true) {
+        const stroke = path.copy().stroke({
+            width: bitSize, // * 1.3,
+            cap: PathKit.StrokeCap.ROUND,
+            join: PathKit.StrokeJoin.ROUND,
+        });
+        path.op(stroke, PathKit.PathOp.DIFFERENCE);
+        stroke.delete();
+        path.simplify();
+
+        const cmds = path.toCmds();
+        if (!cmds.length) {
+            console.log('done');
+            break;
+        }
+
+        outer.innerHTML = `<path d="${path.toSVGString()}" fill="red" stroke="black" />`;
+        const svg = outer.firstElementChild as SVGPathElement;
+        const total = svg.getTotalLength();
+        const round = [];
+        // erm, fix straight lines probably
+        for (let i = 0; i < total; i += 0.2) {
+            const point = svg.getPointAtLength(i);
+            round.push({ x: point.x, y: point.y });
+        }
+        const point = svg.getPointAtLength(total);
+        round.push({ x: point.x, y: point.y });
+        rounds.push(round);
+
+        svg.remove();
+
+        // const cmds = path.toCmds();
+        // if (!cmds.length) {
+        //     console.log('done');
+        //     break;
+        // }
+        // rounds.push(cmdsToPoints(cmds, PathKit));
+        if (rounds.length > 100) {
+            throw new Error('too many rounds');
+        }
+    }
+    path.delete();
+    return rounds;
+}
+
+const cmdsToPoints = (cmds: number[][], pk: PathKit): Coord[] => {
+    const points: Coord[] = [];
+
+    for (let cmd of cmds) {
+        if (cmd[0] === pk.MOVE_VERB) {
+            if (points.length) {
+                console.warn(`multiple moves`);
+                break;
+            }
+            // points.push({x: cmd[1], y: cmd[2]})
+        } else if (cmd[0] === pk.LINE_VERB) {
+            points.push({ x: cmd[1], y: cmd[2] });
+        } else if (cmd[0] === pk.CUBIC_VERB) {
+            // points.push({ x: cmd[5], y: cmd[6] });
+            console.warn('cubic');
+        } else if (cmd[0] === pk.QUAD_VERB) {
+            // points.push({ x: cmd[3], y: cmd[4] });
+            console.warn('quad');
+        } else if (cmd[0] === pk.CONIC_VERB) {
+            console.warn('conic');
+            // points.push({ x: cmd[5], y: cmd[6] });
+        } else if (cmd[0] === pk.CLOSE_VERB) {
+            break;
+        } else {
+            throw new Error('unknown cmd ' + cmd[0]);
+        }
+    }
+
+    return points;
 };

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { Bounds, findBoundingRect } from '../editor/Export';
 import { Text } from '../editor/Forms';
 import { canvasRender } from '../rendering/CanvasRender';
@@ -7,6 +7,7 @@ import { Path, State, StyleLine } from '../types';
 import { Toolbar } from './Toolbar';
 import { Settings } from './Settings';
 import { ItemEdit } from './ItemEdit';
+import PathKitInit, { PathKit } from 'pathkit-wasm';
 
 export const GCodeEditor = ({
     state,
@@ -21,6 +22,15 @@ export const GCodeEditor = ({
         () => findBoundingRect(state),
         [state.view, state.paths, state.pathGroups],
     );
+
+    const [pathKit, setPathKit] = React.useState(null as null | PathKit);
+    useEffect(() => {
+        PathKitInit({
+            locateFile: (file) => '/node_modules/pathkit-wasm/bin/' + file,
+        }).then((pk) => {
+            setPathKit(pk);
+        });
+    }, []);
 
     const originalSize = 1000;
 
@@ -49,7 +59,10 @@ export const GCodeEditor = ({
         ctx.restore();
     }, [state.paths, w, h, dx, dy]);
 
-    const availableColors = useMemo(() => findColors(state), [state.paths]);
+    const availableColors = useMemo(
+        () => ({ line: findLineColors(state), fill: findFillColors(state) }),
+        [state.paths],
+    );
 
     return (
         <div>
@@ -134,23 +147,57 @@ export const GCodeEditor = ({
                     Add Pause
                 </button>
             </div>
-            {Toolbar(state, bounds, w, h)}
+            {pathKit ? (
+                <Toolbar
+                    state={state}
+                    bounds={bounds}
+                    w={w}
+                    h={h}
+                    PathKit={pathKit}
+                />
+            ) : null}
         </div>
     );
 };
 
-export type Colors = {
+export type LineColors = {
     [key: string]: {
         count: number;
         color: string | number;
-        width: number;
+        width?: number;
     };
 };
 
-const findColors = (state: State): Colors => {
-    const colors: {
-        [key: string]: { count: number; color: string | number; width: number };
-    } = {};
+export type FillColors = {
+    [key: string]: {
+        count: number;
+        color: string | number;
+        lighten?: number;
+    };
+};
+
+const findFillColors = (state: State): FillColors => {
+    const colors: FillColors = {};
+    Object.keys(state.paths).forEach((k) => {
+        state.paths[k].style.fills.forEach((fill) => {
+            if (fill && fill.color != null) {
+                const key = fill.color + ':' + fill.lighten;
+                if (!colors[key]) {
+                    colors[key] = {
+                        count: 0,
+                        color: fill.color!,
+                        lighten: fill.lighten,
+                    };
+                }
+                colors[key].count += 1;
+            }
+        });
+    });
+    return colors;
+};
+
+const findLineColors = (state: State): LineColors => {
+    const colors: LineColors = {};
     Object.keys(state.paths).forEach((k) => {
         state.paths[k].style.lines.forEach((line) => {
             if (line && line.color != null && line.width != null) {

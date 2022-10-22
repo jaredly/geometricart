@@ -73,7 +73,7 @@ export const Visualize = ({ gcode }: { gcode: string }) => {
             console.error(err);
         }
     }, [gcode]);
-    const scale = 5;
+    const scale = 10;
     const ref = React.useRef<HTMLCanvasElement>(null);
     React.useEffect(() => {
         if (!ref.current || !data) {
@@ -138,7 +138,11 @@ export const Visualize = ({ gcode }: { gcode: string }) => {
                 ref={ref}
                 width={data.dims.width * scale}
                 height={data.dims.height * scale}
-                style={{ backgroundColor: 'white' }}
+                style={{
+                    backgroundColor: 'white',
+                    width: (data.dims.width * scale) / 2,
+                    height: (data.dims.height * scale) / 2,
+                }}
             />
             <div
                 style={{ whiteSpace: 'pre', maxHeight: 400, overflow: 'auto' }}

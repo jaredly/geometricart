@@ -1,4 +1,24 @@
 
+# GCode fill it up
+
+My method for collecting paths leaves some things to be desired.
+
+Fills should be for pockets
+
+Lines should be for contours
+
+"Add Contour"
+"Add Pocket"
+
+Lighten should be taken into account.
+
+Also, offset please. Might want that.
+
+Anyway, and the pocket calculations should be smarter about straight lines.
+And should be smarter about DPI, for getPointAtDistance
+
+#
+
 Hm.
 So there are a couple of things I want.
 

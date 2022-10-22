@@ -4,13 +4,21 @@ import { generateGcode, generateLaserInset, pxToMM } from './generateGcode';
 import { initialState } from '../state/initialState';
 import { State } from '../types';
 import { Visualize } from './Visualize';
+import { PathKit } from 'pathkit-wasm';
 
-export function Toolbar(
-    state: State,
-    bounds: Bounds | null,
-    w: number,
-    h: number,
-): React.ReactNode {
+export function Toolbar({
+    state,
+    bounds,
+    w,
+    h,
+    PathKit,
+}: {
+    state: State;
+    bounds: Bounds | null;
+    w: number;
+    h: number;
+    PathKit: PathKit;
+}) {
     const [url, setUrl] = useState(
         null as null | { time: number; url: string; text: string },
     );
@@ -40,20 +48,24 @@ export function Toolbar(
             </button>
             <button
                 onClick={() => {
-                    const { time, text } = generateGcode(state);
-                    const blob = new Blob(
-                        [
-                            text +
-                                '\n' +
-                                ';; ** STATE **\n;; ' +
-                                JSON.stringify({
-                                    ...state,
-                                    history: initialState.history,
-                                }),
-                        ],
-                        { type: 'text/plain' },
-                    );
-                    setUrl({ time, url: URL.createObjectURL(blob), text });
+                    try {
+                        const { time, text } = generateGcode(state, PathKit);
+                        const blob = new Blob(
+                            [
+                                text +
+                                    '\n' +
+                                    ';; ** STATE **\n;; ' +
+                                    JSON.stringify({
+                                        ...state,
+                                        history: initialState.history,
+                                    }),
+                            ],
+                            { type: 'text/plain' },
+                        );
+                        setUrl({ time, url: URL.createObjectURL(blob), text });
+                    } catch (err) {
+                        console.error(err);
+                    }
                 }}
             >
                 Generate gcode
