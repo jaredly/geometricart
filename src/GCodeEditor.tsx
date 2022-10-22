@@ -1,158 +1,12 @@
-import { jsx } from '@emotion/react';
 import React, { useMemo, useState } from 'react';
-import { Coord, GCodePath, Path, State, Style, StyleLine } from './types';
-import { Action } from './state/Action';
-import { Bounds, findBoundingRect } from './editor/Export';
-import { canvasRender } from './rendering/CanvasRender';
+import { findBoundingRect } from './editor/Export';
 import { BlurInt, Text } from './editor/Forms';
-import { initialState } from './state/initialState';
-import { pathToPoints } from './rendering/pathToPoints';
-import { insetPath } from './animation/getBuiltins';
-import { dist } from './rendering/getMirrorTransforms';
-import { sortedVisibleInsetPaths } from './rendering/sortedVisibleInsetPaths';
 import { paletteColor } from './editor/RenderPath';
-
-const findClosest = (shape: Coord[], point: Coord) => {
-    let best = null as null | [number, number];
-    shape.forEach((p, i) => {
-        const d = dist(p, point);
-        if (best == null || d < best[0]) {
-            best = [d, i];
-        }
-    });
-    return { dist: best![0], idx: best![1] };
-};
-
-export const greedyPaths = (paths: Array<{ path: Path; style: StyleLine }>) => {
-    const points: Array<Array<Coord>> = [];
-    paths.forEach(({ path, style }) => {
-        if (style.inset) {
-            insetPath(path, style.inset).forEach((sub) => {
-                points.push(pathToPoints(sub.segments));
-            });
-        } else {
-            points.push(pathToPoints(path.segments));
-        }
-    });
-
-    const ordered: Coord[][] = [];
-    const first = points.shift()!;
-    first.push(first[0]);
-    ordered.push(first);
-    while (points.length) {
-        const last = ordered[ordered.length - 1];
-        let point = last[last.length - 1];
-        let best = null as null | { dist: number; idx: number; subIdx: number };
-        points.forEach((shape, i) => {
-            const closest = findClosest(shape, point);
-            if (best == null || closest.dist < best.dist) {
-                best = { dist: closest.dist, idx: i, subIdx: closest.idx };
-            }
-        });
-        const next = points[best!.idx];
-        points.splice(best!.idx, 1);
-        const reordeeed = next
-            .slice(best!.subIdx)
-            .concat(next.slice(0, best!.subIdx));
-        reordeeed.push(reordeeed[0]);
-        ordered.push(reordeeed);
-    }
-    return ordered;
-};
-
-const makeDepths = (depth: number, passDepth?: number) => {
-    if (passDepth == null) {
-        return [depth];
-    }
-    const depths = [];
-    for (let i = passDepth; i <= depth; i += passDepth) {
-        depths.push(Math.min(i, depth));
-    }
-    return depths;
-};
-
-export const pxToMM = (value: number, ppi: number) => {
-    return (value / ppi) * 250.4 * 6;
-};
-
-export const generateGcode = (state: State) => {
-    const clip = state.view.activeClip
-        ? state.clips[state.view.activeClip]
-        : undefined;
-
-    const insetPaths = sortedVisibleInsetPaths(
-        state.paths,
-        state.pathGroups,
-        { next: () => 0.5 },
-        clip,
-        state.view.hideDuplicatePaths,
-        undefined,
-        undefined,
-        undefined,
-    );
-
-    const colors = findColorPaths(insetPaths);
-    const bounds = findBoundingRect(state)!;
-
-    const scalePos = ({ x, y }: Coord) => {
-        return {
-            x: pxToMM(x - bounds.x1, state.meta.ppi),
-            y: pxToMM(y - bounds.y1, state.meta.ppi),
-        };
-    };
-
-    const lines: Array<string> = [
-        'G21 ; units to mm',
-        'G90 ; absolute positioning',
-        'G17 ; xy plane',
-    ];
-    const { clearHeight, pauseHeight } = state.gcode;
-
-    const FAST_SPEED = 500;
-    let time = 0;
-
-    let last = null as null | Coord;
-
-    state.gcode.items.forEach((item) => {
-        if (item.type === 'pause') {
-            lines.push(`G0 Z${pauseHeight}`, `M0 ;;; ${item.message}`);
-        } else {
-            const { color, depth, speed, passDepth } = item;
-            const greedy = greedyPaths(colors[color]);
-            makeDepths(depth, passDepth).forEach((itemDepth) => {
-                greedy.forEach((shape) => {
-                    shape.forEach((pos, i) => {
-                        const { x, y } = scalePos(pos);
-                        let travel = last ? dist({ x, y }, last) : null;
-                        if (i == 0) {
-                            lines.push(
-                                `G0 Z${clearHeight}`,
-                                `G0 X${x.toFixed(3)} Y${y.toFixed(3)}`,
-                                `G0 Z0`,
-                                `G1 Z${-itemDepth} F${speed}`,
-                            );
-                            if (travel) {
-                                time += travel! / speed;
-                            }
-                        } else {
-                            if (travel) {
-                                time += travel! / speed;
-                            }
-                            lines.push(
-                                `G1 X${x.toFixed(3)} Y${y.toFixed(
-                                    3,
-                                )} F${speed}`,
-                            );
-                        }
-                        last = { x, y };
-                    });
-                });
-            });
-        }
-    });
-
-    return { time, text: lines.join('\n') };
-};
+import { generateGcode, generateLaserInset, pxToMM } from './generateGcode';
+import { canvasRender } from './rendering/CanvasRender';
+import { Action } from './state/Action';
+import { initialState } from './state/initialState';
+import { GCodePath, Path, State, StyleLine } from './types';
 
 export const GCodeEditor = ({
     state,
@@ -200,6 +54,22 @@ export const GCodeEditor = ({
     const [url, setUrl] = useState(
         null as null | { time: number; url: string },
     );
+    const [laserUrl, setLaserUrl] = useState(
+        null as null | { svg: string; url: string },
+    );
+
+    // const h =
+    //     crop && boundingRect
+    //         ? (boundingRect.y2 - boundingRect.y1) *
+    //               state.view.zoom +
+    //           (crop / 50) * state.meta.ppi
+    //         : originalSize;
+    // const w =
+    //     crop && boundingRect
+    //         ? (boundingRect.x2 - boundingRect.x1) *
+    //               state.view.zoom +
+    //           (crop / 50) * state.meta.ppi
+    //         : originalSize;
 
     return (
         <div>
@@ -215,6 +85,50 @@ export const GCodeEditor = ({
                 }}
             />
             <div style={{ margin: 8 }}>
+                <button
+                    onClick={() => {
+                        generateLaserInset(state).then((svg) => {
+                            if (!bounds) {
+                                throw new Error('no bounds');
+                            }
+                            const blob = new Blob(
+                                [
+                                    `<svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="${
+                                    pxToMM(
+                                        bounds.x2 - bounds.x1,
+                                        state.meta.ppi,
+                                    ).toFixed(1) + 'mm'
+                                }"
+                                height="${
+                                    pxToMM(
+                                        bounds.y2 - bounds.y1,
+                                        state.meta.ppi,
+                                    ).toFixed(1) + 'mm'
+                                }"
+                                viewBox="0 0 ${w} ${h}"
+                            >
+                                <path
+                                    d="${svg}"
+                                    stroke="red"
+                                    fill="none"
+                                    strokeWidth="2"
+                                    transform="translate(${w / 2},${h / 2})"
+                                />
+                            </svg>`,
+                                ],
+                                {
+                                    type: 'image/svg+xml',
+                                },
+                            );
+                            const url = URL.createObjectURL(blob);
+                            setLaserUrl({ svg, url });
+                        });
+                    }}
+                >
+                    Generate Laser
+                </button>
                 <button
                     onClick={() => {
                         const { time, text } = generateGcode(state);
@@ -248,6 +162,20 @@ export const GCodeEditor = ({
                             Download the gcode
                         </a>
                         {url.time.toFixed(2)} minutes?
+                    </>
+                ) : null}
+                {laserUrl ? (
+                    <>
+                        <a
+                            onClick={() => setUrl(null)}
+                            href={laserUrl.url}
+                            style={{ color: 'white', margin: '0 8px' }}
+                            download={
+                                'geo-' + new Date().toISOString() + '-geo.svg'
+                            }
+                        >
+                            Download the laser svg
+                        </a>
                     </>
                 ) : null}
                 <div>
@@ -407,6 +335,30 @@ export const GCodeEditor = ({
                     Add Pause
                 </button>
             </div>
+            {laserUrl && bounds ? (
+                // <div dangerouslySetInnerHTML={{ __html: laserUrl.svg }} />
+                <svg
+                    width={
+                        pxToMM(bounds.x2 - bounds.x1, state.meta.ppi).toFixed(
+                            1,
+                        ) + 'mm'
+                    }
+                    height={
+                        pxToMM(bounds.y2 - bounds.y1, state.meta.ppi).toFixed(
+                            1,
+                        ) + 'mm'
+                    }
+                    viewBox={`0 0 ${w} ${h}`}
+                >
+                    <path
+                        d={laserUrl.svg}
+                        stroke="red"
+                        fill="none"
+                        strokeWidth={2}
+                        transform={`translate(${w / 2},${h / 2})`}
+                    />
+                </svg>
+            ) : null}
         </div>
     );
 };
@@ -538,7 +490,7 @@ export const ItemEdit = ({
         </div>
     );
 };
-function findColorPaths(insetPaths: Path[]): {
+export function findColorPaths(insetPaths: Path[]): {
     [key: string]: Array<{ path: Path; style: StyleLine }>;
 } {
     const colors: {

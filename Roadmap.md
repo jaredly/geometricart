@@ -1,10 +1,20 @@
 
+Hm.
+So there are a couple of things I want.
 
+1) tabs. Autoplacement? I mean sounds fine I guess. As long as they're on a straightaway. Yeah.
+	
+2) automatic laser cut inverse dealio. So using PathKit, do a .stroke() and a .union()
+	so I can laser cut something that will fit as an inset.
 
 g92 z0
 g92 x0
 g92 y0
 
+
+# Laser Inset
+So I want kerf compensation?
+maybe, I don't actually know if I do.
 
 
 # OK so
