@@ -65,103 +65,114 @@ export const GCodeEditor = ({
     );
 
     return (
-        <div>
-            <canvas
-                ref={canvas}
-                width={w * 2}
-                height={h * 2}
-                style={{
-                    width: w,
-                    height: h,
-                    maxHeight: '60vh',
-                    objectFit: 'contain',
-                }}
-            />
-            <div style={{ margin: 8 }}>
-                <Settings state={state} dispatch={dispatch} bounds={bounds} />
-                <div style={{ margin: 16 }}>
-                    {state.gcode.items.map((item, i) => {
-                        return (
-                            <div key={i} style={{ display: 'flex' }}>
-                                <UpDown
-                                    i={i}
-                                    dispatch={dispatch}
-                                    state={state}
-                                />
-                                <div style={{ flexBasis: 8 }} />
-                                {item.type === 'pause' ? (
-                                    Pause(item, dispatch, i)
-                                ) : (
-                                    <ItemEdit
-                                        item={item}
+        <div style={{ display: 'flex' }}>
+            <div>
+                <canvas
+                    ref={canvas}
+                    width={w * 2}
+                    height={h * 2}
+                    style={{
+                        width: w,
+                        height: h,
+                        maxHeight: '60vh',
+                        objectFit: 'contain',
+                    }}
+                />
+                <div style={{ margin: 8 }}>
+                    <Settings
+                        state={state}
+                        dispatch={dispatch}
+                        bounds={bounds}
+                    />
+                    <div style={{ margin: 16 }}>
+                        {state.gcode.items.map((item, i) => {
+                            return (
+                                <div key={i} style={{ display: 'flex' }}>
+                                    <UpDown
+                                        i={i}
+                                        dispatch={dispatch}
                                         state={state}
-                                        colors={availableColors}
-                                        onChange={(item) =>
+                                    />
+                                    <div style={{ flexBasis: 8 }} />
+                                    {item.type === 'pause' ? (
+                                        Pause(item, dispatch, i)
+                                    ) : (
+                                        <ItemEdit
+                                            item={item}
+                                            state={state}
+                                            colors={availableColors}
+                                            onChange={(item) =>
+                                                dispatch({
+                                                    type: 'gcode:item:are',
+                                                    item: {
+                                                        key: i,
+                                                        type: 'edit',
+                                                        value: item,
+                                                    },
+                                                })
+                                            }
+                                        />
+                                    )}
+                                    <button
+                                        onClick={() =>
                                             dispatch({
                                                 type: 'gcode:item:are',
                                                 item: {
                                                     key: i,
-                                                    type: 'edit',
-                                                    value: item,
+                                                    type: 'remove',
                                                 },
                                             })
                                         }
-                                    />
-                                )}
-                                <button
-                                    onClick={() =>
-                                        dispatch({
-                                            type: 'gcode:item:are',
-                                            item: { key: i, type: 'remove' },
-                                        })
-                                    }
-                                >
-                                    Delete
-                                </button>
-                            </div>
-                        );
-                    })}
-                </div>
-                <button
-                    onClick={() => {
-                        dispatch({
-                            type: 'gcode:item:are',
-                            item: {
-                                key: state.gcode.items.length,
-                                type: 'add',
-                            },
-                        });
-                    }}
-                >
-                    Add Path
-                </button>
-                <button
-                    onClick={() => {
-                        dispatch({
-                            type: 'gcode:item:are',
-                            item: {
-                                key: state.gcode.items.length,
-                                type: 'add',
-                                value: {
-                                    type: 'pause',
-                                    message: 'Change tool',
+                                    >
+                                        Delete
+                                    </button>
+                                </div>
+                            );
+                        })}
+                    </div>
+                    <button
+                        onClick={() => {
+                            dispatch({
+                                type: 'gcode:item:are',
+                                item: {
+                                    key: state.gcode.items.length,
+                                    type: 'add',
                                 },
-                            },
-                        });
-                    }}
-                >
-                    Add Pause
-                </button>
+                            });
+                        }}
+                    >
+                        Add Path
+                    </button>
+                    <button
+                        onClick={() => {
+                            dispatch({
+                                type: 'gcode:item:are',
+                                item: {
+                                    key: state.gcode.items.length,
+                                    type: 'add',
+                                    value: {
+                                        type: 'pause',
+                                        message: 'Change tool',
+                                    },
+                                },
+                            });
+                        }}
+                    >
+                        Add Pause
+                    </button>
+                </div>
             </div>
-            {pathKit ? (
-                <Toolbar
-                    state={state}
-                    bounds={bounds}
-                    w={w}
-                    h={h}
-                    PathKit={pathKit}
-                />
-            ) : null}
+            <div style={{ marginTop: 100 }}>
+                {pathKit ? (
+                    <Toolbar
+                        state={state}
+                        bounds={bounds}
+                        w={w}
+                        h={h}
+                        PathKit={pathKit}
+                    />
+                ) : null}
+            </div>
         </div>
     );
 };

@@ -114,7 +114,7 @@ export const Visualize = ({ gcode }: { gcode: string }) => {
                 <button onClick={() => setVisualize(!visualize)}>
                     Visualize
                 </button>
-                {visualize ? <GCode3D canvas={ref} /> : null}
+                {visualize ? <GCode3D data={data} /> : null}
             </div>
 
             <div
@@ -197,7 +197,7 @@ export function renderCutPaths(ctx: CanvasRenderingContext2D, data: GCodeData) {
     ctx.stroke();
 }
 
-function renderCutDepths(
+export function renderCutDepths(
     ctx: CanvasRenderingContext2D,
     bitSize: number,
     data: GCodeData,
@@ -215,9 +215,10 @@ function renderCutDepths(
                 ctx.stroke();
             }
             z = pos.z;
-            ctx.strokeStyle = `hsl(0, 100%, ${Math.round(
-                ((Math.min(0, z) - data.bounds.min.z!) / depth) * 100,
-            )}%)`;
+            const zDepth = (Math.min(0, z) - data.bounds.min.z!) / depth;
+            ctx.strokeStyle = forDepthMap
+                ? `rgb(${Math.round(zDepth * 255)}, 0, 0)`
+                : `hsl(0, 100%, ${Math.round(zDepth * 100)}%)`;
             ctx.beginPath();
             ctx.moveTo(pos.x, pos.y);
         } else {
