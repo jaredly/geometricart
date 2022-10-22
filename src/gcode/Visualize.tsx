@@ -79,54 +79,7 @@ export const Visualize = ({ gcode }: { gcode: string }) => {
         if (!ref.current || !data) {
             return;
         }
-        const bitSize = 3; // mm, 1/8"
-        const ctx = ref.current.getContext('2d')!;
-        ctx.save();
-        ctx.clearRect(0, 0, ref.current.width, ref.current.height);
-        ctx.strokeStyle = 'red';
-        ctx.lineWidth = bitSize;
-        ctx.lineJoin = 'round';
-        ctx.lineCap = 'round';
-        ctx.globalCompositeOperation = 'darken';
-        let z = null as null | number;
-        ctx.scale(scale, scale);
-        const depth = 0 - data.bounds.min.z!;
-        data.positions.forEach((pos, i) => {
-            if (pos.z != z) {
-                if (z != null) {
-                    ctx.stroke();
-                }
-                z = pos.z;
-                ctx.strokeStyle = `rgb(${Math.round(
-                    ((Math.min(0, z) - data.bounds.min.z!) / depth) * 255,
-                )}, 255, 255)`;
-                ctx.beginPath();
-                ctx.moveTo(pos.x, pos.y);
-            } else {
-                ctx.lineTo(pos.x, pos.y);
-            }
-        });
-        ctx.stroke();
-
-        ctx.globalCompositeOperation = 'source-over';
-        ctx.lineWidth = 0.1;
-        ctx.strokeStyle = 'black';
-        let above = false;
-        data.positions.forEach((pos, i) => {
-            if (i === 0 || pos.z >= 0 !== above) {
-                if (i > 0) {
-                    ctx.stroke();
-                }
-                ctx.beginPath();
-                ctx.moveTo(pos.x, pos.y);
-                above = pos.z >= 0;
-                ctx.strokeStyle = above ? 'red' : 'black';
-            } else {
-                ctx.lineTo(pos.x, pos.y);
-            }
-        });
-        ctx.stroke();
-        ctx.restore();
+        drawGCodeToCanvas(ref.current, scale, data);
     }, [data]);
     if (!data) {
         return <div>Analysis failed</div>;
@@ -187,3 +140,67 @@ const findBounds = (
         } as Bound,
     );
 };
+
+function drawGCodeToCanvas(
+    ref: HTMLCanvasElement,
+    scale: number,
+    data: {
+        positions: {
+            x: number;
+            y: number;
+            z: number;
+            f?: number | undefined;
+        }[];
+        bounds: Bound;
+        dims: { width: number; height: number };
+    },
+) {
+    const bitSize = 3; // mm, 1/8"
+    const ctx = ref.getContext('2d')!;
+    ctx.save();
+    ctx.clearRect(0, 0, ref.width, ref.height);
+    ctx.strokeStyle = 'red';
+    ctx.lineWidth = bitSize;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    ctx.globalCompositeOperation = 'darken';
+    let z = null as null | number;
+    ctx.scale(scale, scale);
+    const depth = 0 - data.bounds.min.z!;
+    data.positions.forEach((pos, i) => {
+        if (pos.z != z) {
+            if (z != null) {
+                ctx.stroke();
+            }
+            z = pos.z;
+            ctx.strokeStyle = `rgb(${Math.round(
+                ((Math.min(0, z) - data.bounds.min.z!) / depth) * 255,
+            )}, 255, 255)`;
+            ctx.beginPath();
+            ctx.moveTo(pos.x, pos.y);
+        } else {
+            ctx.lineTo(pos.x, pos.y);
+        }
+    });
+    ctx.stroke();
+
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.lineWidth = 0.1;
+    ctx.strokeStyle = 'black';
+    let above = false;
+    data.positions.forEach((pos, i) => {
+        if (i === 0 || pos.z >= 0 !== above) {
+            if (i > 0) {
+                ctx.stroke();
+            }
+            ctx.beginPath();
+            ctx.moveTo(pos.x, pos.y);
+            above = pos.z >= 0;
+            ctx.strokeStyle = above ? 'red' : 'black';
+        } else {
+            ctx.lineTo(pos.x, pos.y);
+        }
+    });
+    ctx.stroke();
+    ctx.restore();
+}
