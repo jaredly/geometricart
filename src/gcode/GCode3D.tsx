@@ -7,7 +7,7 @@ export const GCode3D = ({
     canvas: React.RefObject<HTMLCanvasElement>;
 }) => {
     return (
-        <div>
+        <div style={{ width: 100, height: 100, border: '1px solid magenta' }}>
             <Canvas>
                 <ambientLight />
                 <pointLight position={[10, 10, 10]} />
@@ -17,6 +17,7 @@ export const GCode3D = ({
         </div>
     );
 };
+
 function Box(props) {
     const mesh = React.useRef(null);
     const [hovered, setHover] = React.useState(false);

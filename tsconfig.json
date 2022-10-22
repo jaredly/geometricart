@@ -2,9 +2,10 @@
     "compilerOptions": {
         "jsx": "react",
         "target": "es2022",
-        "resolveJsonModule": true,
         "noEmit": true,
         "strict": true,
+        "moduleResolution": "Node",
+        "resolveJsonModule": true,
         "esModuleInterop": true,
         "skipLibCheck": true,
         "forceConsistentCasingInFileNames": true

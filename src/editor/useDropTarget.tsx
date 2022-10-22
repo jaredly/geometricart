@@ -4,10 +4,18 @@ import { migrateState } from '../state/migrateState';
 import { readMetadata } from 'png-metadata';
 import { PREFIX, SUFFIX } from './Sidebar';
 
-export const useDropTarget = (onDrop: (file: File) => void) => {
+export const useDropTarget = (
+    onDrop: (file: File) => void,
+): [
+    boolean,
+    {
+        onDragOver: (evt: React.DragEvent) => void;
+        onDrop: (evt: React.DragEvent) => void;
+    },
+] => {
     const [dragging, setDragging] = React.useState(false);
 
-    const tid = React.useRef(null as null | NodeJS.Timeout);
+    const tid = React.useRef(null as null | number);
 
     const callbacks = {
         onDragOver: (evt: React.DragEvent) => {

@@ -61,10 +61,11 @@ const parse = (gcode: string) => {
 };
 
 export const Visualize = ({ gcode }: { gcode: string }) => {
+    const bitSize = 3; // mm, 1/8"
     const data = React.useMemo(() => {
         try {
             const positions = parse(gcode);
-            const bounds = findBounds(positions);
+            const bounds = findBounds(positions, bitSize);
             const dims = {
                 width: bounds.max.x! - bounds.min.x!,
                 height: bounds.max.y! - bounds.min.y!,
@@ -82,11 +83,11 @@ export const Visualize = ({ gcode }: { gcode: string }) => {
             return;
         }
         const ctx = ref.current.getContext('2d')!;
-        const bitSize = 3; // mm, 1/8"
 
         ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
         ctx.save();
         ctx.scale(scale, scale);
+        ctx.translate(-data.bounds.min.x!, -data.bounds.min.y!);
 
         renderCutDepths(ctx, bitSize, data);
         renderCutPaths(ctx, data);
@@ -104,7 +105,7 @@ export const Visualize = ({ gcode }: { gcode: string }) => {
                 width={data.dims.width * scale}
                 height={data.dims.height * scale}
                 style={{
-                    backgroundColor: 'black',
+                    backgroundColor: 'blue',
                     width: (data.dims.width * scale) / 2,
                     height: (data.dims.height * scale) / 2,
                 }}
@@ -140,15 +141,16 @@ const ax = ['x', 'y', 'z'] as const;
 
 const findBounds = (
     positions: { x: number; y: number; z: number; f?: number }[],
+    bitSize: number,
 ) => {
     return positions.reduce(
         (acc, pos) => {
             ax.forEach((k: 'x' | 'y' | 'z') => {
                 if (acc.min[k] == null || pos[k] < acc.min[k]!) {
-                    acc.min[k] = pos[k];
+                    acc.min[k] = pos[k] - bitSize / 2;
                 }
                 if (acc.max[k] == null || pos[k] > acc.max[k]!) {
-                    acc.max[k] = pos[k];
+                    acc.max[k] = pos[k] + bitSize / 2;
                 }
             });
             return acc;
@@ -174,7 +176,7 @@ export type GCodeData = {
     };
 };
 
-function renderCutPaths(ctx: CanvasRenderingContext2D, data: GCodeData) {
+export function renderCutPaths(ctx: CanvasRenderingContext2D, data: GCodeData) {
     ctx.globalCompositeOperation = 'source-over';
     ctx.lineWidth = 0.1;
     ctx.strokeStyle = 'black';
@@ -199,6 +201,7 @@ function renderCutDepths(
     ctx: CanvasRenderingContext2D,
     bitSize: number,
     data: GCodeData,
+    forDepthMap = false,
 ) {
     ctx.lineWidth = bitSize;
     ctx.lineJoin = 'round';
@@ -212,9 +215,9 @@ function renderCutDepths(
                 ctx.stroke();
             }
             z = pos.z;
-            ctx.strokeStyle = `rgb(${Math.round(
-                ((Math.min(0, z) - data.bounds.min.z!) / depth) * 255,
-            )}, 255, 255)`;
+            ctx.strokeStyle = `hsl(0, 100%, ${Math.round(
+                ((Math.min(0, z) - data.bounds.min.z!) / depth) * 100,
+            )}%)`;
             ctx.beginPath();
             ctx.moveTo(pos.x, pos.y);
         } else {
