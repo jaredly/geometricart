@@ -233,6 +233,7 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
         }
     });
 
+    lines.unshift(`; estimated time: ${time.toFixed(2)}s`);
     lines.push(`G0 Z${clearHeight}`);
 
     return { time, text: lines.join('\n') };
@@ -267,6 +268,7 @@ function makePocket(PathKit: PathKit, shape: Coord[], bitSize: number) {
     // );
     // outer.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
     // document.body.append(outer);
+    let last = null;
     while (true) {
         const stroke = path.copy().stroke({
             width: bitSize, // * 1.3,
@@ -279,7 +281,6 @@ function makePocket(PathKit: PathKit, shape: Coord[], bitSize: number) {
 
         const cmds = path.toCmds();
         if (!cmds.length) {
-            console.log('done');
             break;
         }
 
@@ -294,6 +295,12 @@ function makePocket(PathKit: PathKit, shape: Coord[], bitSize: number) {
         }
         const point = svg.getPointAtLength(total);
         round.push({ x: point.x, y: point.y });
+        const string = JSON.stringify(round);
+        // No change 🤔
+        if (string === last) {
+            break;
+        }
+        last = string;
         rounds.push(round);
 
         svg.remove();
@@ -305,7 +312,11 @@ function makePocket(PathKit: PathKit, shape: Coord[], bitSize: number) {
         // }
         // rounds.push(cmdsToPoints(cmds, PathKit));
         if (rounds.length > 100) {
-            throw new Error('too many rounds');
+            console.log(rounds);
+            console.log(cmds);
+            console.error('toom any rounds');
+            // throw new Error('too many rounds');
+            break;
         }
     }
     path.delete();

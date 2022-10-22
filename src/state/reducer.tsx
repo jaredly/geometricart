@@ -697,7 +697,7 @@ export const reduceWithoutUndo = (
             const [items, undo] = handleListARE(
                 action.item,
                 state.gcode.items.slice(),
-                { type: 'path', color: 'black', speed: 200, depth: 1.5 },
+                { type: 'path', color: 'black', speed: 500, depth: 1.5 },
             );
             return [
                 { ...state, gcode: { ...state.gcode, items: items } },
@@ -774,6 +774,15 @@ export const reduceWithoutUndo = (
                 { ...state, gcode: { ...state.gcode, ...action.config } },
                 { type: action.type, action, prev },
             ];
+        case 'gcode:item:order': {
+            const items = state.gcode.items.slice();
+            const item = items.splice(action.oldIndex, 1)[0];
+            items.splice(action.newIndex, 0, item);
+            return [
+                { ...state, gcode: { ...state.gcode, items } },
+                { type: action.type, action },
+            ];
+        }
         default:
             let _x: never = action;
             console.log(`SKIPPING ${(action as any).type}`);
@@ -785,6 +794,12 @@ export const undo = (state: State, action: UndoAction): State => {
     switch (action.type) {
         case 'gcode:config':
             return { ...state, gcode: { ...state.gcode, ...action.prev } };
+        case 'gcode:item:order': {
+            const items = state.gcode.items.slice();
+            const item = items.splice(action.action.newIndex, 1)[0];
+            items.splice(action.action.oldIndex, 0, item);
+            return { ...state, gcode: { ...state.gcode, items } };
+        }
         case 'script:rename': {
             const scripts = { ...state.animations.scripts };
             scripts[action.action.key] = scripts[action.action.newKey];

@@ -108,7 +108,7 @@ export function Toolbar({
                       showLaserSvg(bounds, state, w, h, laserUrl)
                     : null}
             </div>
-            {url && visualize ? <Visualize gcode={url.text} /> : null}
+            {url ? <Visualize gcode={url.text} /> : null}
         </div>
     );
 }

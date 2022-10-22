@@ -179,7 +179,7 @@ export const App = ({ initialState }: { initialState: State }) => {
                 justifyContent: 'center',
                 height: '100vh',
                 width: '100vw',
-                overflow: 'hidden',
+                overflow: 'auto',
                 background: dragging ? 'rgba(255,255,255,0.1)' : '',
                 '@media (max-width: 1400px)': {
                     flexDirection: 'column-reverse',
@@ -193,7 +193,7 @@ export const App = ({ initialState }: { initialState: State }) => {
                 css={{
                     position: 'relative',
                     alignSelf: 'stretch',
-                    overflow: 'auto',
+                    // overflow: 'auto',
                     // padding: 32,
                     '@media (max-width: 1000px)': {
                         padding: 0,

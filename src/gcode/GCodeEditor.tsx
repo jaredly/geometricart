@@ -83,6 +83,12 @@ export const GCodeEditor = ({
                     {state.gcode.items.map((item, i) => {
                         return (
                             <div key={i} style={{ display: 'flex' }}>
+                                <UpDown
+                                    i={i}
+                                    dispatch={dispatch}
+                                    state={state}
+                                />
+                                <div style={{ flexBasis: 8 }} />
                                 {item.type === 'pause' ? (
                                     Pause(item, dispatch, i)
                                 ) : (
@@ -156,6 +162,45 @@ export const GCodeEditor = ({
                     PathKit={pathKit}
                 />
             ) : null}
+        </div>
+    );
+};
+
+export const UpDown = ({
+    i,
+    dispatch,
+    state,
+}: {
+    i: number;
+    dispatch: React.Dispatch<Action>;
+    state: State;
+}) => {
+    return (
+        <div style={{ display: 'flex', flexDirection: 'row' }}>
+            <button
+                disabled={i === 0}
+                onClick={() => {
+                    dispatch({
+                        type: 'gcode:item:order',
+                        oldIndex: i,
+                        newIndex: i - 1,
+                    });
+                }}
+            >
+                ↑
+            </button>
+            <button
+                disabled={i === state.gcode.items.length - 1}
+                onClick={() => {
+                    dispatch({
+                        type: 'gcode:item:order',
+                        oldIndex: i,
+                        newIndex: i + 1,
+                    });
+                }}
+            >
+                ↓
+            </button>
         </div>
     );
 };

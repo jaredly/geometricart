@@ -3,9 +3,16 @@
 
 - [x] pockets!
 - [ ] IMPOTANT Figure out TABS please.
-- [ ] reorder things
+	- I think I can just do like "number of tabs & width & height", and have them equally spaced?
+		I'll want a better "path to points" algo, that lets straight lines be straight.
+		ideally memoize the path-to-points at the top level, so even changing gcode items
+		doesn't re-trigger.
+		Would be nice to cache pocket calculations per path as well, if I can.
+- [x] reorder things
 - [ ] disable gcodeitems
 - [ ] auto-update the visualization pls
+- [ ] render a full 3d model
+	https://github.com/tbfleming/jscut/tree/gh-pages/js
 
 My method for collecting paths leaves some things to be desired.
 

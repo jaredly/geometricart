@@ -92,6 +92,15 @@ export type UndoTimelineSlotARE = {
     undo: UndoAddRemoveEdit<TimelineSlot, number>;
 };
 
+export type GCodeItemOrder = {
+    type: 'gcode:item:order';
+    oldIndex: number;
+    newIndex: number;
+};
+export type UndoGCodeItemOrder = {
+    type: GCodeItemOrder['type'];
+    action: GCodeItemOrder;
+};
 export type GCodeItemARE = {
     type: 'gcode:item:are';
     item: AddRemoveEdit<State['gcode']['items'][0], number>;
@@ -488,6 +497,7 @@ export type UndoableAction =
     | GCodeConfig
     | TimelineSlotARE
     | GCodeItemARE
+    | GCodeItemOrder
     | ScriptUpdate
     | ScriptRename
     | TimelineUpdate
@@ -516,6 +526,7 @@ export type UndoAction =
     | UndoOverlayAdd
     | UndoGCodeItemARE
     | UndoGCodeConfig
+    | UndoGCodeItemOrder
     | UndoScriptUpdate
     | UndoTimelineUpdate
     | UndoOverlayDelete

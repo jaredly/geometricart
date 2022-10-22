@@ -145,7 +145,13 @@ export const Visualize = ({ gcode }: { gcode: string }) => {
                 }}
             />
             <div
-                style={{ whiteSpace: 'pre', maxHeight: 400, overflow: 'auto' }}
+                style={{
+                    whiteSpace: 'pre',
+                    maxHeight: 400,
+                    overflow: 'auto',
+                    border: '1px solid white',
+                    padding: 16,
+                }}
             >
                 {gcode}
             </div>
