@@ -20,6 +20,7 @@ specifiers:
   '@types/react': ^18
   '@types/react-color': ^3.0.6
   '@types/react-dom': ^18
+  '@types/three': ^0.144.0
   '@vanilla-extract/babel-plugin': ^1.1.4
   '@vanilla-extract/css': ^1.6.8
   '@vanilla-extract/esbuild-plugin': ^2.0.2
@@ -59,6 +60,7 @@ dependencies:
   '@emotion/react': 11.10.4_d3zi5agmim5yvele7myolzagti
   '@react-three/drei': 9.37.1_cpod6d3cr76qxhqbh6bdljlrqm
   '@react-three/fiber': 8.8.10_ee34sidbpuk5ebd4phepfgxxdi
+  '@types/three': 0.144.0
   '@vanilla-extract/babel-plugin': 1.2.0
   '@vanilla-extract/css': 1.9.1
   '@vanilla-extract/esbuild-plugin': 2.2.0
@@ -2235,8 +2237,18 @@ packages:
       '@types/jest': 29.2.0
     dev: true
 
+  /@types/three/0.144.0:
+    resolution: {integrity: sha512-psvEs6q5rLN50jUYZ3D4pZMfxTbdt3A243blt0my7/NcL6chaCZpHe2csbCtx0SOD9fI/XnF3wnVUAYZGqCSYg==}
+    dependencies:
+      '@types/webxr': 0.5.0
+    dev: false
+
   /@types/unist/2.0.6:
     resolution: {integrity: sha512-PBjIUxZHOuj0R15/xuwJYjFi+KZdNFrehocChv4g5hu6aFroHue8m0lBP0POdK2nKzbw0cgV1mws8+V/JAcEkQ==}
+
+  /@types/webxr/0.5.0:
+    resolution: {integrity: sha512-IUMDPSXnYIbEO2IereEFcgcqfDREOgmbGqtrMpVPpACTU6pltYLwHgVkrnYv0XhWEcjio9sYEfIEzgn3c7nDqA==}
+    dev: false
 
   /@types/yargs-parser/21.0.0:
     resolution: {integrity: sha512-iO9ZQHkZxHn4mSakYV0vFHAVDyEOIJQrV2uZ06HxEPcx+mt8swXoZHIbaaJ2crJYFfErySgktuTZ3BeLz+XmFA==}

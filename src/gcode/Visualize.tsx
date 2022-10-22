@@ -1,5 +1,6 @@
 // ok
 import * as React from 'react';
+import { GCode3D } from './GCode3D';
 
 const parseCoords = (line: string) => {
     return [...line.matchAll(/([xyzf])(-?[0-9.]+)/g)].reduce((acc, m) => {
@@ -75,11 +76,22 @@ export const Visualize = ({ gcode }: { gcode: string }) => {
     }, [gcode]);
     const scale = 10;
     const ref = React.useRef<HTMLCanvasElement>(null);
+    const [visualize, setVisualize] = React.useState(false);
     React.useEffect(() => {
         if (!ref.current || !data) {
             return;
         }
-        drawGCodeToCanvas(ref.current, scale, data);
+        const ctx = ref.current.getContext('2d')!;
+        const bitSize = 3; // mm, 1/8"
+
+        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        ctx.save();
+        ctx.scale(scale, scale);
+
+        renderCutDepths(ctx, bitSize, data);
+        renderCutPaths(ctx, data);
+
+        ctx.restore();
     }, [data]);
     if (!data) {
         return <div>Analysis failed</div>;
@@ -97,6 +109,13 @@ export const Visualize = ({ gcode }: { gcode: string }) => {
                     height: (data.dims.height * scale) / 2,
                 }}
             />
+            <div>
+                <button onClick={() => setVisualize(!visualize)}>
+                    Visualize
+                </button>
+                {visualize ? <GCode3D canvas={ref} /> : null}
+            </div>
+
             <div
                 style={{
                     whiteSpace: 'pre',
@@ -141,49 +160,21 @@ const findBounds = (
     );
 };
 
-function drawGCodeToCanvas(
-    ref: HTMLCanvasElement,
-    scale: number,
-    data: {
-        positions: {
-            x: number;
-            y: number;
-            z: number;
-            f?: number | undefined;
-        }[];
-        bounds: Bound;
-        dims: { width: number; height: number };
-    },
-) {
-    const bitSize = 3; // mm, 1/8"
-    const ctx = ref.getContext('2d')!;
-    ctx.save();
-    ctx.clearRect(0, 0, ref.width, ref.height);
-    ctx.strokeStyle = 'red';
-    ctx.lineWidth = bitSize;
-    ctx.lineJoin = 'round';
-    ctx.lineCap = 'round';
-    ctx.globalCompositeOperation = 'darken';
-    let z = null as null | number;
-    ctx.scale(scale, scale);
-    const depth = 0 - data.bounds.min.z!;
-    data.positions.forEach((pos, i) => {
-        if (pos.z != z) {
-            if (z != null) {
-                ctx.stroke();
-            }
-            z = pos.z;
-            ctx.strokeStyle = `rgb(${Math.round(
-                ((Math.min(0, z) - data.bounds.min.z!) / depth) * 255,
-            )}, 255, 255)`;
-            ctx.beginPath();
-            ctx.moveTo(pos.x, pos.y);
-        } else {
-            ctx.lineTo(pos.x, pos.y);
-        }
-    });
-    ctx.stroke();
+export type GCodeData = {
+    positions: {
+        x: number;
+        y: number;
+        z: number;
+        f?: number | undefined;
+    }[];
+    bounds: Bound;
+    dims: {
+        width: number;
+        height: number;
+    };
+};
 
+function renderCutPaths(ctx: CanvasRenderingContext2D, data: GCodeData) {
     ctx.globalCompositeOperation = 'source-over';
     ctx.lineWidth = 0.1;
     ctx.strokeStyle = 'black';
@@ -202,5 +193,33 @@ function drawGCodeToCanvas(
         }
     });
     ctx.stroke();
-    ctx.restore();
+}
+
+function renderCutDepths(
+    ctx: CanvasRenderingContext2D,
+    bitSize: number,
+    data: GCodeData,
+) {
+    ctx.lineWidth = bitSize;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    ctx.globalCompositeOperation = 'darken';
+    let z = null as null | number;
+    const depth = 0 - data.bounds.min.z!;
+    data.positions.forEach((pos, i) => {
+        if (pos.z != z) {
+            if (z != null) {
+                ctx.stroke();
+            }
+            z = pos.z;
+            ctx.strokeStyle = `rgb(${Math.round(
+                ((Math.min(0, z) - data.bounds.min.z!) / depth) * 255,
+            )}, 255, 255)`;
+            ctx.beginPath();
+            ctx.moveTo(pos.x, pos.y);
+        } else {
+            ctx.lineTo(pos.x, pos.y);
+        }
+    });
+    ctx.stroke();
 }

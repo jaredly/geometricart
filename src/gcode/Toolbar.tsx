@@ -25,7 +25,6 @@ export function Toolbar({
     const [laserUrl, setLaserUrl] = useState(
         null as null | { svg: string; url: string },
     );
-    const [visualize, setVisualize] = useState(true);
 
     return (
         <div>
@@ -70,9 +69,6 @@ export function Toolbar({
             >
                 Generate gcode
             </button>
-            {url ? (
-                <button onClick={() => setVisualize(true)}>Visualize</button>
-            ) : null}
             {url ? (
                 <>
                     <a

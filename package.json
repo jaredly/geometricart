@@ -18,6 +18,7 @@
         "@emotion/react": "^11.1.5",
         "@react-three/drei": "^9.37.1",
         "@react-three/fiber": "^8.8.10",
+        "@types/three": "^0.144.0",
         "@vanilla-extract/babel-plugin": "^1.1.4",
         "@vanilla-extract/css": "^1.6.8",
         "@vanilla-extract/esbuild-plugin": "^2.0.2",
@@ -27,6 +28,7 @@
         "json-diff-ts": "^1.2.4",
         "kmeans-js": "^0.1.2",
         "localforage": "^1.9.0",
+        "lodash": "^4.17.21",
         "pathkit-wasm": "^1.0.0",
         "png-metadata": "https://github.com/neil-morrison44/png-metadata#1de6be3c50402a188ce06a494c91010f14a297b8",
         "prando": "^6.0.1",
@@ -43,7 +45,6 @@
         "sane": "^5.0.1",
         "three": "^0.145.0",
         "tinytar": "jaredly/tinytar#tinytar-v0.1.0-gitpkg",
-        "lodash": "^4.17.21",
         "typescript": "^4.4.4"
     },
     "jest": {
