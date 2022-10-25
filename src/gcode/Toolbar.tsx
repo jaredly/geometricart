@@ -19,12 +19,39 @@ export function Toolbar({
     h: number;
     PathKit: PathKit;
 }) {
-    const [url, setUrl] = useState(
-        null as null | { time: number; url: string; text: string },
-    );
+    // const [url, setUrl] = useState(
+    //     null as null | { time: number; url: string; text: string },
+    // );
     const [laserUrl, setLaserUrl] = useState(
         null as null | { svg: string; url: string },
     );
+    const [showGcode, setShowGcode] = useState(false);
+
+    const generated = React.useMemo(() => {
+        if (!showGcode) {
+            return null;
+        }
+
+        try {
+            const { time, text } = generateGcode(state, PathKit);
+            const blob = new Blob(
+                [
+                    text +
+                        '\n' +
+                        ';; ** STATE **\n;; ' +
+                        JSON.stringify({
+                            ...state,
+                            history: initialState.history,
+                        }),
+                ],
+                { type: 'text/plain' },
+            );
+            return { time, url: URL.createObjectURL(blob), text };
+        } catch (err) {
+            console.error(err);
+            return null;
+        }
+    }, [state, bounds, w, h, showGcode]);
 
     return (
         <div>
@@ -47,33 +74,30 @@ export function Toolbar({
             </button>
             <button
                 onClick={() => {
-                    try {
-                        const { time, text } = generateGcode(state, PathKit);
-                        const blob = new Blob(
-                            [
-                                text +
-                                    '\n' +
-                                    ';; ** STATE **\n;; ' +
-                                    JSON.stringify({
-                                        ...state,
-                                        history: initialState.history,
-                                    }),
-                            ],
-                            { type: 'text/plain' },
-                        );
-                        setUrl({ time, url: URL.createObjectURL(blob), text });
-                    } catch (err) {
-                        console.error(err);
-                    }
+                    setShowGcode(!showGcode);
+                    // const { time, text } = generateGcode(state, PathKit);
+                    // const blob = new Blob(
+                    //     [
+                    //         text +
+                    //             '\n' +
+                    //             ';; ** STATE **\n;; ' +
+                    //             JSON.stringify({
+                    //                 ...state,
+                    //                 history: initialState.history,
+                    //             }),
+                    //     ],
+                    //     { type: 'text/plain' },
+                    // );
+                    // setUrl({ time, url: URL.createObjectURL(blob), text });
                 }}
             >
                 Generate gcode
             </button>
-            {url ? (
+            {showGcode && generated ? (
                 <>
                     <a
-                        onClick={() => setUrl(null)}
-                        href={url.url}
+                        // onClick={() => setUrl(null)}
+                        href={generated.url}
                         style={{ color: 'white', margin: '0 8px' }}
                         download={
                             'geo-' + new Date().toISOString() + '-geo.gcode'
@@ -81,7 +105,7 @@ export function Toolbar({
                     >
                         Download the gcode
                     </a>
-                    {url.time.toFixed(2)} minutes?
+                    {generated.time.toFixed(2)} minutes?
                 </>
             ) : null}
             {laserUrl ? (
@@ -104,7 +128,9 @@ export function Toolbar({
                       showLaserSvg(bounds, state, w, h, laserUrl)
                     : null}
             </div>
-            {url ? <Visualize gcode={url.text} /> : null}
+            {showGcode && generated ? (
+                <Visualize gcode={generated.text} />
+            ) : null}
         </div>
     );
 }

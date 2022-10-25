@@ -165,6 +165,9 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
         if (item.type === 'pause') {
             lines.push(`G0 Z${pauseHeight}`, `M0 ;;; ${item.message}`);
         } else {
+            if (item.disabled) {
+                return;
+            }
             const { color, start, depth, speed, passDepth } = item;
             if (!colors[color]) {
                 console.warn(`Unknown color ${color}`);
@@ -347,6 +350,25 @@ function makePocket(PathKit: PathKit, shape: Coord[], bitSize: number) {
     return rounds;
 }
 
+const svgPathPoints = (
+    outer: SVGSVGElement,
+    d: string,
+    ppd: number = 0.2,
+): Coord[] => {
+    outer.innerHTML = `<path d="${d}" fill="red" stroke="black" />`;
+    const path = outer.firstElementChild as SVGPathElement;
+    const total = path.getTotalLength();
+    const round = [];
+    for (let i = 0; i < total; i += ppd) {
+        const point = path.getPointAtLength(i);
+        round.push({ x: point.x, y: point.y });
+    }
+    const point = path.getPointAtLength(total);
+    round.push({ x: point.x, y: point.y });
+    path.remove();
+    return round;
+};
+
 // UGH it would be awesome to have access to SkCornerPathEffect
 // for trimming down the corners.
 // https://github.com/google/skia/blob/main/src/effects/SkCornerPathEffect.cpp
@@ -365,15 +387,28 @@ const cmdsToPoints = (
         } else if (cmd[0] === pk.LINE_VERB) {
             points[points.length - 1].push({ x: cmd[1], y: cmd[2] });
         } else if (cmd[0] === pk.CUBIC_VERB) {
-            // const last =
-            points[points.length - 1].push({ x: cmd[5], y: cmd[6] });
-            console.warn('cubic');
+            const current = points[points.length - 1];
+            const last = current[current.length - 1];
+            points[points.length - 1].push(
+                ...svgPathPoints(
+                    outer,
+                    `M${last.x} ${last.y} C${cmd.slice(1).join(' ')}`,
+                ),
+            );
+            // points[points.length - 1].push({ x: cmd[5], y: cmd[6] });
         } else if (cmd[0] === pk.QUAD_VERB) {
-            points[points.length - 1].push({ x: cmd[3], y: cmd[4] });
-            console.warn('quad');
+            // points[points.length - 1].push({ x: cmd[3], y: cmd[4] });
+            const current = points[points.length - 1];
+            const last = current[current.length - 1];
+            points[points.length - 1].push(
+                ...svgPathPoints(
+                    outer,
+                    `M${last.x} ${last.y} Q${cmd.slice(1).join(' ')}`,
+                ),
+            );
         } else if (cmd[0] === pk.CONIC_VERB) {
             console.warn('conic');
-            points[points.length - 1].push({ x: cmd[5], y: cmd[6] });
+            points[points.length - 1].push({ x: cmd[3], y: cmd[4] });
         } else if (cmd[0] === pk.CLOSE_VERB) {
             points[points.length - 1].push({ ...points[points.length - 1][0] });
             continue;

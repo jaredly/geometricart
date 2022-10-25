@@ -69,6 +69,7 @@ export const Visualize = ({ gcode }: { gcode: string }) => {
             const dims = {
                 width: bounds.max.x! - bounds.min.x!,
                 height: bounds.max.y! - bounds.min.y!,
+                depth: -bounds.min.z!,
             };
             return { positions, bounds, dims };
         } catch (err) {
@@ -174,6 +175,7 @@ export type GCodeData = {
     dims: {
         width: number;
         height: number;
+        depth: number;
     };
 };
 

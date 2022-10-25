@@ -482,6 +482,7 @@ export type GCodePath = {
     start: number;
     passDepth?: number;
     fillOver?: number;
+    disabled?: boolean;
 };
 
 export type State = {

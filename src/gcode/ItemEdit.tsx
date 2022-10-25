@@ -80,6 +80,16 @@ export const ItemEdit = ({
     const selected = colors.line[edited?.color ?? item.color];
     return (
         <div>
+            <button
+                onClick={() => onChange({ ...item, disabled: !item.disabled })}
+                style={{
+                    border: 'none',
+                    backgroundColor: item.disabled ? '#aaa' : 'transparent',
+                    cursor: 'pointer',
+                }}
+            >
+                👁
+            </button>
             <ColorsSelect
                 onChange={(color) => setEdited({ ...(edited ?? item), color })}
                 value={edited?.color ?? item.color}

@@ -58,6 +58,7 @@ export const GCode3D = ({
 }) => {
     const scale = 1000 / Math.max(data.dims.width, data.dims.height);
     const tx = React.useMemo(() => {
+        console.log('rerender the canvas');
         const canvas = document.createElement('canvas');
         canvas.width = data.dims.width * scale;
         canvas.height = data.dims.height * scale;
@@ -98,12 +99,15 @@ function VBox({
     scale: number;
 }) {
     const mesh = React.useRef<Mesh>(null);
-    // useFrame((state, delta) => (mesh.current!.rotation.x += 0.01));
+
+    const modelWidth = 5;
+    const modelHeight = (data.dims.height / data.dims.width) * modelWidth;
+    const modelDepth = (data.dims.depth / data.dims.width) * modelWidth;
 
     const mat = React.useMemo(() => {
         const customUniforms = {
             bumpTexture: { type: 't', value: tx },
-            bumpScale: { type: 'f', value: 1.0 },
+            bumpScale: { type: 'f', value: modelDepth },
         };
         const mat = new ShaderMaterial({
             uniforms: customUniforms,
@@ -112,7 +116,7 @@ function VBox({
             side: DoubleSide,
         });
         return mat;
-    }, []);
+    }, [tx, modelDepth]);
 
     return (
         <mesh ref={mesh} material={mat}>
@@ -120,10 +124,8 @@ function VBox({
             {/* <boxGeometry args={[2, 2, 2]} /> */}
             <planeGeometry
                 args={[
-                    5,
-                    5,
-                    // data.dims.width * scale,
-                    // data.dims.height * scale,
+                    modelWidth,
+                    modelHeight,
                     data.dims.width * scale,
                     data.dims.height * scale,
                 ]}
