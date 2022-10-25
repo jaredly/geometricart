@@ -479,6 +479,7 @@ export type GCodePath = {
     color: string;
     speed: number;
     depth: number;
+    start: number;
     passDepth?: number;
     fillOver?: number;
 };

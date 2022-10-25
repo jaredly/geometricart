@@ -269,7 +269,9 @@ export const Fixtures = <Fn extends (...args: any) => any>({
                                         input={fixtures[idx].input}
                                     />
                                     <Output
-                                        output={run(...fixtures[idx].input)}
+                                        output={run(
+                                            ...(fixtures[idx].input as any),
+                                        )}
                                         input={fixtures[idx].input}
                                         scale={6}
                                     />
@@ -380,7 +382,9 @@ export const Fixtures = <Fn extends (...args: any) => any>({
                                             input={fixtures[idx].input}
                                         />
                                         <Output
-                                            output={run(...fixtures[idx].input)}
+                                            output={run(
+                                                ...(fixtures[idx].input as any),
+                                            )}
                                             input={fixtures[idx].input}
                                             scale={6}
                                         />

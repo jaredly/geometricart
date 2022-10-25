@@ -41,7 +41,7 @@ export function RenderSidebar<Fn extends (...args: any) => any>({
 }) {
     const [edit, setEdit] = useInitialState(selected.input);
     const [showAll, setShowAll] = React.useState(false);
-    const myOutput = React.useMemo(() => run(...edit), [edit]);
+    const myOutput = React.useMemo(() => run(...(edit as any)), [edit]);
     React.useEffect(() => {
         if (edit === selected.input) {
             return;

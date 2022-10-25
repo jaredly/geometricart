@@ -245,6 +245,7 @@ const transform = ([shape, clip]: Input, debug?: boolean) => {
 };
 register<Input, Output>({
     id: 'clipPathNew',
+    // @ts-ignore
     dir: __dirname,
     transform: transform,
     render: {

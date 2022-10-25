@@ -56,12 +56,16 @@ export const greedyPaths = (paths: Array<{ path: Path; style: StyleLine }>) => {
     return ordered;
 };
 
-export const makeDepths = (depth: number, passDepth?: number) => {
+export const makeDepths = (
+    start: number,
+    depth: number,
+    passDepth?: number,
+) => {
     if (passDepth == null) {
         return [depth];
     }
     const depths = [];
-    for (let i = passDepth; i <= depth; i += passDepth) {
+    for (let i = start + passDepth; i <= depth; i += passDepth) {
         depths.push(Math.min(i, depth));
     }
     if (depths[depths.length - 1] < depth) {
@@ -161,7 +165,7 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
         if (item.type === 'pause') {
             lines.push(`G0 Z${pauseHeight}`, `M0 ;;; ${item.message}`);
         } else {
-            const { color, depth, speed, passDepth } = item;
+            const { color, start, depth, speed, passDepth } = item;
             if (!colors[color]) {
                 console.warn(`Unknown color ${color}`);
                 return;
@@ -178,34 +182,36 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
                     lines.push(`G0 Z${clearHeight}`);
                     // lines.push(`G0 X${pocket[0][0].x} Y${pocket[0][0].y}`);
                     // lines.push(`G0 Z0`);
-                    makeDepths(depth, passDepth).forEach((itemDepth) => {
-                        lines.push(
-                            `G0 X${pocket[0][0].x.toFixed(
-                                3,
-                            )} Y${pocket[0][0].y.toFixed(3)}`,
-                        );
-                        lines.push(`G0 Z0`);
-                        lines.push(`G1 Z${-itemDepth} F${speed}`);
-                        pocket.forEach((round) => {
-                            round.forEach((p) => {
-                                let travel = last ? dist(p, last) : null;
-                                if (travel) {
-                                    time += travel! / speed;
-                                }
-                                lines.push(
-                                    `G1 X${p.x.toFixed(3)} Y${p.y.toFixed(
-                                        3,
-                                    )} F${speed}`,
-                                );
-                                last = p;
+                    makeDepths(start ?? 0, depth, passDepth).forEach(
+                        (itemDepth) => {
+                            lines.push(
+                                `G0 X${pocket[0][0].x.toFixed(
+                                    3,
+                                )} Y${pocket[0][0].y.toFixed(3)}`,
+                            );
+                            lines.push(`G0 Z0`);
+                            lines.push(`G1 Z${-itemDepth} F${speed}`);
+                            pocket.forEach((round) => {
+                                round.forEach((p) => {
+                                    let travel = last ? dist(p, last) : null;
+                                    if (travel) {
+                                        time += travel! / speed;
+                                    }
+                                    lines.push(
+                                        `G1 X${p.x.toFixed(3)} Y${p.y.toFixed(
+                                            3,
+                                        )} F${speed}`,
+                                    );
+                                    last = p;
+                                });
                             });
-                        });
-                        lines.push(`G0 Z${clearHeight}`);
-                    });
+                            lines.push(`G0 Z${clearHeight}`);
+                        },
+                    );
                 });
                 return;
             }
-            makeDepths(depth, passDepth).forEach((itemDepth) => {
+            makeDepths(start ?? 0, depth, passDepth).forEach((itemDepth) => {
                 greedy.forEach((shape) => {
                     shape.forEach((pos, i) => {
                         const { x, y } = scalePos(pos);
@@ -238,7 +244,7 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
     });
 
     lines.unshift(
-        `; estimated time: ${time.toFixed(2)}s. Commands ${lines.length}`,
+        `; estimated time: ${time.toFixed(2)}m. Commands ${lines.length}`,
     );
     lines.push(`G0 Z${clearHeight}`);
 

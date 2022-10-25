@@ -128,6 +128,22 @@ export const ItemEdit = ({
                         : null
                 }
             />
+            Start
+            <Float
+                style={{
+                    // marginRight: 16,
+                    marginLeft: 4,
+                    fontSize: '80%',
+                    width: 30,
+                }}
+                value={edited?.start ?? item.start ?? 0}
+                placeholder="Start"
+                onChange={(start) =>
+                    start != null
+                        ? setEdited({ ...(edited ?? item), start })
+                        : null
+                }
+            />
             Depth
             <Float
                 style={{
@@ -139,7 +155,9 @@ export const ItemEdit = ({
                 value={edited?.depth ?? item.depth}
                 placeholder="Depth"
                 onChange={(depth) =>
-                    depth ? setEdited({ ...(edited ?? item), depth }) : null
+                    depth != null
+                        ? setEdited({ ...(edited ?? item), depth })
+                        : null
                 }
             />
             /

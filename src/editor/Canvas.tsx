@@ -427,7 +427,7 @@ export const Canvas = ({
         }
     }, [!!state.selection]);
 
-    const clickPath = React.useCallback((shiftKey, id) => {
+    const clickPath = React.useCallback((shiftKey: boolean, id: string) => {
         const path = currentState.current.paths[id];
         handleSelection(
             path,
@@ -539,7 +539,7 @@ export const Canvas = ({
     }, [guidePrimitives, state.paths, state.pathGroups]);
 
     const mirrorHover = React.useCallback(
-        (k) =>
+        (k: string | null) =>
             k
                 ? setHover({ kind: 'Mirror', id: k, type: 'element' })
                 : setHover(null),
