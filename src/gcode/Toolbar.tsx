@@ -129,7 +129,11 @@ export function Toolbar({
                     : null}
             </div>
             {showGcode && generated ? (
-                <Visualize gcode={generated.text} />
+                <Visualize
+                    gcode={generated.text}
+                    time={generated.time}
+                    state={state}
+                />
             ) : null}
         </div>
     );

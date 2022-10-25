@@ -451,16 +451,23 @@ export function renderTexture(
     }
 }
 
-export async function addMetadata(blob: Blob | null, state: State) {
+export async function addMetadata(
+    blob: Blob | null,
+    state: State,
+    gcode?: string,
+) {
     const buffer = await blob!.arrayBuffer();
     const uint8Array = new Uint8Array(buffer);
-    const meta = {
+    const meta: any = {
         tEXt: {
             Source: 'Geometric Art',
             // TODO: Add an option to scrub history, for smaller file size
             GeometricArt: JSON.stringify(state),
         },
     };
+    if (gcode) {
+        meta.tEXt.GCode = gcode;
+    }
 
     const chunks = extractChunks(uint8Array);
     insertMetadata(chunks, meta);

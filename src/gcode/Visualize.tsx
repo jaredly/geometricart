@@ -1,5 +1,6 @@
 // ok
 import * as React from 'react';
+import { State } from '../types';
 import { GCode3D } from './GCode3D';
 
 const parseCoords = (line: string) => {
@@ -60,7 +61,15 @@ const parse = (gcode: string) => {
     return positions;
 };
 
-export const Visualize = ({ gcode }: { gcode: string }) => {
+export const Visualize = ({
+    gcode,
+    state,
+    time,
+}: {
+    gcode: string;
+    state: State;
+    time: number;
+}) => {
     const bitSize = 3; // mm, 1/8"
     const data = React.useMemo(() => {
         try {
@@ -78,7 +87,7 @@ export const Visualize = ({ gcode }: { gcode: string }) => {
     }, [gcode]);
     const scale = 10;
     const ref = React.useRef<HTMLCanvasElement>(null);
-    const [visualize, setVisualize] = React.useState(false);
+    const [visualize, setVisualize] = React.useState(true);
     React.useEffect(() => {
         if (!ref.current || !data) {
             return;
@@ -115,13 +124,26 @@ export const Visualize = ({ gcode }: { gcode: string }) => {
                 <button onClick={() => setVisualize(!visualize)}>
                     Visualize
                 </button>
-                {visualize ? <GCode3D data={data} /> : null}
+                {visualize ? (
+                    <GCode3D
+                        data={data}
+                        gcode={gcode}
+                        state={state}
+                        meta={`Time: ${time.toFixed(0)} min. GCode lines: ${
+                            gcode.split('\n').length
+                        }. ${data.dims.width.toFixed(
+                            1,
+                        )} x ${data.dims.height.toFixed(
+                            1,
+                        )} x ${data.dims.depth.toFixed(1)}mm`}
+                    />
+                ) : null}
             </div>
 
             <div
                 style={{
                     whiteSpace: 'pre',
-                    maxHeight: 400,
+                    maxHeight: 200,
                     overflow: 'auto',
                     border: '1px solid white',
                     padding: 16,
@@ -149,10 +171,12 @@ const findBounds = (
         (acc, pos) => {
             ax.forEach((k: 'x' | 'y' | 'z') => {
                 if (acc.min[k] == null || pos[k] < acc.min[k]!) {
-                    acc.min[k] = pos[k] - bitSize / 2 - margin;
+                    acc.min[k] =
+                        k === 'z' ? pos[k] : pos[k] - bitSize / 2 - margin;
                 }
                 if (acc.max[k] == null || pos[k] > acc.max[k]!) {
-                    acc.max[k] = pos[k] + bitSize / 2 + margin;
+                    acc.max[k] =
+                        k === 'z' ? pos[k] : pos[k] + bitSize / 2 + margin;
                 }
             });
             return acc;

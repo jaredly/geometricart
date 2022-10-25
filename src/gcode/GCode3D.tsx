@@ -1,16 +1,22 @@
 import * as React from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import {
+    Camera,
     CanvasTexture,
     DoubleSide,
     Mesh,
     MeshBasicMaterial,
+    PerspectiveCamera,
     RepeatWrapping,
     ShaderMaterial,
     Texture,
+    Vector3,
 } from 'three';
 import { GCodeData, renderCutDepths } from './Visualize';
 import { OrbitControls } from '@react-three/drei';
+import { addMetadata } from '../editor/Export';
+import { initialHistory } from '../state/initialState';
+import { State } from '../types';
 
 // Based on https://stemkoski.github.io/Three.js/Shader-Heightmap-Textures.html
 const vertext = `
@@ -51,22 +57,29 @@ void main() {
 
 export const GCode3D = ({
     data,
+    gcode,
+    state,
+    meta,
 }: {
     // canvas,
     // canvas: React.RefObject<HTMLCanvasElement>;
     data: GCodeData;
+    gcode: string;
+    state: State;
+    meta: string;
 }) => {
     const scale = 1000 / Math.max(data.dims.width, data.dims.height);
     const tx = React.useMemo(() => {
         console.log('rerender the canvas');
         const canvas = document.createElement('canvas');
-        canvas.width = data.dims.width * scale;
-        canvas.height = data.dims.height * scale;
+        const rscale = scale / 2;
+        canvas.width = data.dims.width * rscale;
+        canvas.height = data.dims.height * rscale;
         const ctx = canvas.getContext('2d')!;
         ctx.fillStyle = 'hsl(0, 100%, 100%)';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.save();
-        ctx.scale(scale, scale);
+        ctx.scale(rscale, rscale);
         ctx.translate(-data.bounds.min.x!, -data.bounds.min.y!);
         renderCutDepths(ctx, 3, data, true);
         ctx.restore();
@@ -77,16 +90,119 @@ export const GCode3D = ({
         return tx;
     }, [data]);
 
+    const cam = React.useRef(null as null | Camera | void);
+    const canv = React.useRef<HTMLCanvasElement>(null);
+    const stateRef = React.useRef(null as null | any);
+    const [download, setDownload] = React.useState(null as null | string);
+    const qsize = 500;
+
     return (
-        <div style={{ width: 500, height: 500, border: '1px solid magenta' }}>
-            <Canvas>
-                <ambientLight />
-                <pointLight position={[10, 10, 10]} />
-                <VBox tx={tx} data={data} scale={scale} />
-                <OrbitControls />
-            </Canvas>
+        <div>
+            <button
+                onClick={() => {
+                    const dest = document.createElement('canvas');
+                    dest.width = dest.height = qsize * 2;
+
+                    const ctx = dest.getContext('2d')!;
+                    const threes = stateRef.current;
+
+                    threes.camera.position.set(0, 0, 5);
+                    threes.camera.lookAt(new Vector3(0, 0, 0));
+                    threes.gl.render(threes.scene, threes.camera);
+                    ctx.drawImage(canv.current!, 0, 0, qsize, qsize);
+
+                    threes.camera.position.x = 2;
+                    threes.camera.position.z = 4;
+                    threes.camera.lookAt(new Vector3(0, 0, 0));
+                    threes.gl.render(threes.scene, threes.camera);
+                    ctx.drawImage(canv.current!, qsize, 0, qsize, qsize);
+
+                    threes.camera.position.z = -2;
+                    threes.camera.position.x = -2;
+                    threes.camera.lookAt(new Vector3(-0.5, 0, 0));
+                    threes.gl.render(threes.scene, threes.camera);
+                    ctx.drawImage(canv.current!, 0, qsize, qsize, qsize);
+
+                    threes.camera.position.x = -2;
+                    threes.camera.position.y = 2;
+                    threes.camera.position.z = 2;
+                    threes.camera.lookAt(new Vector3(0, 0, 0));
+                    threes.gl.render(threes.scene, threes.camera);
+                    ctx.drawImage(canv.current!, qsize, qsize, qsize, qsize);
+
+                    // Reset
+                    threes.camera.position.set(0, 0, 5);
+                    threes.camera.lookAt(new Vector3(0, 0, 0));
+
+                    const textHeight = 15;
+                    const textMargin = 5;
+
+                    ctx.fillStyle = 'white';
+                    ctx.fillRect(
+                        0,
+                        qsize * 2 - textHeight - textMargin,
+                        qsize * 2,
+                        50,
+                    );
+                    ctx.font = `${textHeight}px system-ui`;
+                    ctx.fillStyle = 'black';
+                    ctx.fillText(meta, textMargin, qsize * 2 - textMargin);
+
+                    dest.toBlob(async (blob) => {
+                        if (!blob) {
+                            return alert('Unable to export. Canvas error');
+                        }
+                        blob = await addMetadata(
+                            blob,
+                            { ...state, history: initialHistory },
+                            gcode,
+                        );
+                        setDownload(URL.createObjectURL(blob));
+                    });
+                    // const canvas = canv.current;
+                    // const link = document.createElement('a');
+                    // link.download = 'test.png';
+                    // link.href = canvas!.toDataURL();
+                    // link.click();
+                }}
+            >
+                Download Image
+            </button>
+            {download ? (
+                <div>
+                    <a href={download} download="test.png">
+                        <img
+                            src={download}
+                            style={{ width: qsize, height: qsize }}
+                        />
+                    </a>
+                </div>
+            ) : null}
+            <div
+                style={{ width: 500, height: 500, border: '1px solid magenta' }}
+            >
+                <Canvas ref={canv}>
+                    <ambientLight />
+                    <pointLight position={[10, 10, 10]} />
+                    <VBox tx={tx} data={data} scale={scale} />
+                    <GetState ok={stateRef} />
+                    <OrbitControls
+                        ref={(c) => {
+                            // @ts-ignore
+                            window.cam = c;
+                            cam.current = c?.object;
+                        }}
+                    />
+                </Canvas>
+            </div>
         </div>
     );
+};
+
+const GetState = ({ ok }: { ok: React.MutableRefObject<any> }) => {
+    const state = useThree();
+    ok.current = state;
+    return null;
 };
 
 function VBox({
