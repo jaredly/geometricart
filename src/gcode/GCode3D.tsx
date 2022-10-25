@@ -34,8 +34,18 @@ const fragment = `
 uniform sampler2D bumpTexture;
 varying vec2 vUV;
 
+vec3 hsv2rgb(vec3 c) {
+    vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+    vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
+    return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
+}
+
 void main() {
-	gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0) + texture2D(bumpTexture, vUV);
+	vec4 bumpData = texture2D( bumpTexture, vUV );
+	// gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0) + texture2D(bumpTexture, vUV);
+    float amount = fract(bumpData.r * 2.0);
+	// gl_FragColor = vec4(hsv2rgb(vec3(amount, 1.0, 1.0)), 1.0);
+    gl_FragColor = vec4(vec3(amount), 1.0);
 }  
 `;
 
@@ -46,9 +56,9 @@ export const GCode3D = ({
     // canvas: React.RefObject<HTMLCanvasElement>;
     data: GCodeData;
 }) => {
+    const scale = 1000 / Math.max(data.dims.width, data.dims.height);
     const tx = React.useMemo(() => {
         const canvas = document.createElement('canvas');
-        const scale = 10;
         canvas.width = data.dims.width * scale;
         canvas.height = data.dims.height * scale;
         const ctx = canvas.getContext('2d')!;
@@ -64,22 +74,29 @@ export const GCode3D = ({
         tx.wrapT = RepeatWrapping;
         // tx.repeat.set(1 / width, 1 / height);
         return tx;
-    }, []);
+    }, [data]);
 
     return (
         <div style={{ width: 500, height: 500, border: '1px solid magenta' }}>
             <Canvas>
                 <ambientLight />
                 <pointLight position={[10, 10, 10]} />
-                <VBox tx={tx} data={data} />
+                <VBox tx={tx} data={data} scale={scale} />
                 <OrbitControls />
             </Canvas>
         </div>
     );
 };
 
-function VBox({ tx, data }: { tx: Texture; data: GCodeData }) {
-    const scale = 10;
+function VBox({
+    tx,
+    data,
+    scale,
+}: {
+    tx: Texture;
+    data: GCodeData;
+    scale: number;
+}) {
     const mesh = React.useRef<Mesh>(null);
     // useFrame((state, delta) => (mesh.current!.rotation.x += 0.01));
 

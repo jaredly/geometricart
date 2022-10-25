@@ -11,8 +11,11 @@
 - [x] reorder things
 - [ ] disable gcodeitems
 - [ ] auto-update the visualization pls
-- [ ] render a full 3d model
+- [x] render a full 3d model
 	https://github.com/tbfleming/jscut/tree/gh-pages/js
+- [ ] better path
+- [ ] make a config for Starting level
+- [ ] also a config for "outset" or "inset" by some amount...
 
 My method for collecting paths leaves some things to be desired.
 

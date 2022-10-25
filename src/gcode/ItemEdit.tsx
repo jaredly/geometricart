@@ -107,15 +107,18 @@ export const ItemEdit = ({
                         })),
                     )}
             />
-            {selected && selected.width
-                ? pxToMM(selected.width / 100, state.meta.ppi).toFixed(2) +
-                  'mm Bit size'
-                : null}
-            <span style={{ marginRight: 8 }} /> Speed
+            {selected && selected.width ? (
+                <span style={{ fontSize: '80%', marginLeft: 8 }}>
+                    {pxToMM(selected.width / 100, state.meta.ppi).toFixed(2) +
+                        'mm'}
+                </span>
+            ) : null}
+            <span style={{ marginRight: 8 }} /> F
             <Float
                 style={{
                     marginRight: 16,
                     marginLeft: 4,
+                    fontSize: '80%',
                 }}
                 value={edited?.speed ?? item.speed}
                 placeholder="Speed"
@@ -128,8 +131,10 @@ export const ItemEdit = ({
             Depth
             <Float
                 style={{
-                    marginRight: 16,
+                    // marginRight: 16,
                     marginLeft: 4,
+                    fontSize: '80%',
+                    width: 30,
                 }}
                 value={edited?.depth ?? item.depth}
                 placeholder="Depth"
@@ -137,11 +142,13 @@ export const ItemEdit = ({
                     depth ? setEdited({ ...(edited ?? item), depth }) : null
                 }
             />
-            Pass Depth
+            /
             <Float
                 style={{
                     marginRight: 16,
                     marginLeft: 4,
+                    fontSize: '80%',
+                    width: 30,
                 }}
                 value={edited ? edited.passDepth : item.passDepth}
                 placeholder="Depth"

@@ -65,7 +65,7 @@ export const Visualize = ({ gcode }: { gcode: string }) => {
     const data = React.useMemo(() => {
         try {
             const positions = parse(gcode);
-            const bounds = findBounds(positions, bitSize);
+            const bounds = findBounds(positions, bitSize, 3);
             const dims = {
                 width: bounds.max.x! - bounds.min.x!,
                 height: bounds.max.y! - bounds.min.y!,
@@ -142,15 +142,16 @@ const ax = ['x', 'y', 'z'] as const;
 const findBounds = (
     positions: { x: number; y: number; z: number; f?: number }[],
     bitSize: number,
+    margin: number,
 ) => {
     return positions.reduce(
         (acc, pos) => {
             ax.forEach((k: 'x' | 'y' | 'z') => {
                 if (acc.min[k] == null || pos[k] < acc.min[k]!) {
-                    acc.min[k] = pos[k] - bitSize / 2;
+                    acc.min[k] = pos[k] - bitSize / 2 - margin;
                 }
                 if (acc.max[k] == null || pos[k] > acc.max[k]!) {
-                    acc.max[k] = pos[k] + bitSize / 2;
+                    acc.max[k] = pos[k] + bitSize / 2 + margin;
                 }
             });
             return acc;

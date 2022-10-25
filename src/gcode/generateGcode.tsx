@@ -170,6 +170,10 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
             if (color.endsWith(':pocket')) {
                 greedy.forEach((shape) => {
                     const pocket = makePocket(PathKit, shape.map(scalePos), 3);
+                    if (!pocket.length || !pocket[0].length) {
+                        console.log(pocket);
+                        debugger;
+                    }
 
                     lines.push(`G0 Z${clearHeight}`);
                     // lines.push(`G0 X${pocket[0][0].x} Y${pocket[0][0].y}`);
@@ -233,7 +237,9 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
         }
     });
 
-    lines.unshift(`; estimated time: ${time.toFixed(2)}s`);
+    lines.unshift(
+        `; estimated time: ${time.toFixed(2)}s. Commands ${lines.length}`,
+    );
     lines.push(`G0 Z${clearHeight}`);
 
     return { time, text: lines.join('\n') };
@@ -284,26 +290,38 @@ function makePocket(PathKit: PathKit, shape: Coord[], bitSize: number) {
             break;
         }
 
-        outer.innerHTML = `<path d="${path.toSVGString()}" fill="red" stroke="black" />`;
-        const svg = outer.firstElementChild as SVGPathElement;
-        const total = svg.getTotalLength();
-        const round = [];
-        // erm, fix straight lines probably
-        for (let i = 0; i < total; i += 0.2) {
-            const point = svg.getPointAtLength(i);
+        const ok = false;
+        if (ok) {
+            outer.innerHTML = `<path d="${path.toSVGString()}" fill="red" stroke="black" />`;
+            const svg = outer.firstElementChild as SVGPathElement;
+            const total = svg.getTotalLength();
+            const round = [];
+            // erm, fix straight lines probably
+            for (let i = 0; i < total; i += 0.2) {
+                const point = svg.getPointAtLength(i);
+                round.push({ x: point.x, y: point.y });
+            }
+            const point = svg.getPointAtLength(total);
             round.push({ x: point.x, y: point.y });
-        }
-        const point = svg.getPointAtLength(total);
-        round.push({ x: point.x, y: point.y });
-        const string = JSON.stringify(round);
-        // No change 🤔
-        if (string === last) {
-            break;
-        }
-        last = string;
-        rounds.push(round);
+            svg.remove();
+            const string = JSON.stringify(round);
+            // No change 🤔
+            if (string === last) {
+                break;
+            }
+            last = string;
 
-        svg.remove();
+            rounds.push(round);
+        } else {
+            const round = cmdsToPoints(path.toCmds(), PathKit, outer);
+            const string = JSON.stringify(round);
+            // No change 🤔
+            if (string === last) {
+                break;
+            }
+            last = string;
+            rounds.push(...round);
+        }
 
         // const cmds = path.toCmds();
         // if (!cmds.length) {
@@ -323,33 +341,40 @@ function makePocket(PathKit: PathKit, shape: Coord[], bitSize: number) {
     return rounds;
 }
 
-const cmdsToPoints = (cmds: number[][], pk: PathKit): Coord[] => {
-    const points: Coord[] = [];
+// UGH it would be awesome to have access to SkCornerPathEffect
+// for trimming down the corners.
+// https://github.com/google/skia/blob/main/src/effects/SkCornerPathEffect.cpp
+// https://github.com/google/skia/blob/main/modules/pathkit/pathkit_wasm_bindings.cpp#L358
+
+const cmdsToPoints = (
+    cmds: number[][],
+    pk: PathKit,
+    outer: SVGSVGElement,
+): Coord[][] => {
+    const points: Coord[][] = [];
 
     for (let cmd of cmds) {
         if (cmd[0] === pk.MOVE_VERB) {
-            if (points.length) {
-                console.warn(`multiple moves`);
-                break;
-            }
-            // points.push({x: cmd[1], y: cmd[2]})
+            points.push([{ x: cmd[1], y: cmd[2] }]);
         } else if (cmd[0] === pk.LINE_VERB) {
-            points.push({ x: cmd[1], y: cmd[2] });
+            points[points.length - 1].push({ x: cmd[1], y: cmd[2] });
         } else if (cmd[0] === pk.CUBIC_VERB) {
-            // points.push({ x: cmd[5], y: cmd[6] });
+            // const last =
+            points[points.length - 1].push({ x: cmd[5], y: cmd[6] });
             console.warn('cubic');
         } else if (cmd[0] === pk.QUAD_VERB) {
-            // points.push({ x: cmd[3], y: cmd[4] });
+            points[points.length - 1].push({ x: cmd[3], y: cmd[4] });
             console.warn('quad');
         } else if (cmd[0] === pk.CONIC_VERB) {
             console.warn('conic');
-            // points.push({ x: cmd[5], y: cmd[6] });
+            points[points.length - 1].push({ x: cmd[5], y: cmd[6] });
         } else if (cmd[0] === pk.CLOSE_VERB) {
-            break;
+            points[points.length - 1].push({ ...points[points.length - 1][0] });
+            continue;
         } else {
             throw new Error('unknown cmd ' + cmd[0]);
         }
     }
 
-    return points;
+    return points.filter((m) => m.length);
 };
