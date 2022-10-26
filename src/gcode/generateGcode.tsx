@@ -288,9 +288,6 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
                             } else {
                                 cmds.push(cmd);
                             }
-                            // if (cmd.type === 'cut' && cmd.at != null) {
-                            //     latest = cmd.at;
-                            // }
                         }
                     } else {
                         cmds.push(...shapeCmds);
@@ -350,7 +347,6 @@ function makePocket(PathKit: PathKit, shape: Coord[], bitSize: number) {
     const rounds: Coord[][] = [];
 
     path.simplify();
-    // const outer = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     // TODO: Consider using https://www.npmjs.com/package/svg-path-properties
     // or https://www.npmjs.com/package/point-at-length
     const div = document.createElement('div');
@@ -358,13 +354,6 @@ function makePocket(PathKit: PathKit, shape: Coord[], bitSize: number) {
     <svg xmlns="http://www.w3.org/2000/svg" ></svg>
     `;
     const outer = div.firstElementChild as SVGSVGElement; // document.createElement('svg');
-    // outer.setAttributeNS(
-    //     'http://www.w3.org/2000/xmlns/',
-    //     'xmlns:xlink',
-    //     'http://www.w3.org/1999/xlink',
-    // );
-    // outer.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-    // document.body.append(outer);
     let last = null;
     while (true) {
         const stroke = path.copy().stroke({
@@ -414,17 +403,10 @@ function makePocket(PathKit: PathKit, shape: Coord[], bitSize: number) {
             rounds.push(...round);
         }
 
-        // const cmds = path.toCmds();
-        // if (!cmds.length) {
-        //     console.log('done');
-        //     break;
-        // }
-        // rounds.push(cmdsToPoints(cmds, PathKit));
         if (rounds.length > 100) {
             console.log(rounds);
             console.log(cmds);
             console.error('toom any rounds');
-            // throw new Error('too many rounds');
             break;
         }
     }
@@ -477,9 +459,7 @@ const cmdsToPoints = (
                     `M${last.x} ${last.y} C${cmd.slice(1).join(' ')}`,
                 ),
             );
-            // points[points.length - 1].push({ x: cmd[5], y: cmd[6] });
         } else if (cmd[0] === pk.QUAD_VERB) {
-            // points[points.length - 1].push({ x: cmd[3], y: cmd[4] });
             const current = points[points.length - 1];
             const last = current[current.length - 1];
             points[points.length - 1].push(
@@ -497,8 +477,6 @@ const cmdsToPoints = (
                 ...svgPathPoints(outer, path.toSVGString()),
             );
             path.delete();
-            // console.warn('conic');
-            // points[points.length - 1].push({ x: cmd[3], y: cmd[4] });
         } else if (cmd[0] === pk.CLOSE_VERB) {
             points[points.length - 1].push({ ...points[points.length - 1][0] });
             continue;
