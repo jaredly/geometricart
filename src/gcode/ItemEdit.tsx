@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { paletteColor } from '../editor/RenderPath';
-import { pxToMM } from './generateGcode';
+import { makeDepths, pxToMM } from './generateGcode';
 import { Fill, GCodePath, State } from '../types';
 import { FillColors, LineColors } from './GCodeEditor';
 
@@ -19,7 +19,7 @@ const ColorsSelect = ({
             <div
                 style={{
                     backgroundColor:
-                        colors.find((c) => c.key === value)?.color ?? 'white',
+                        colors.find((c) => c.key === value)?.color ?? 'magenta',
                     width: 20,
                     height: 20,
                     border: '1px solid black',
@@ -173,7 +173,7 @@ export const ItemEdit = ({
             /
             <Float
                 style={{
-                    marginRight: 16,
+                    marginRight: 4,
                     marginLeft: 4,
                     fontSize: '80%',
                     width: 30,
@@ -184,6 +184,20 @@ export const ItemEdit = ({
                     setEdited({ ...(edited ?? item), passDepth })
                 }
             />
+            <span
+                style={{
+                    fontSize: '50%',
+                    marginRight: 8,
+                }}
+            >
+                (
+                {edited
+                    ? makeDepths(edited.start, edited.depth, edited.passDepth)
+                          .length
+                    : makeDepths(item.start, item.depth, item.passDepth)
+                          .length}{' '}
+                p)
+            </span>
             {edited != null ? (
                 <button
                     onClick={() => {

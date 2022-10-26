@@ -116,13 +116,15 @@ export const Visualize = ({
                 height={data.dims.height * scale}
                 style={{
                     backgroundColor: 'blue',
-                    width: (data.dims.width * scale) / 2,
-                    height: (data.dims.height * scale) / 2,
+                    // width: (data.dims.width * scale) / 2,
+                    // height: (data.dims.height * scale) / 2,
+                    width: 500,
+                    height: 500,
                 }}
             />
             <div>
                 <button onClick={() => setVisualize(!visualize)}>
-                    Visualize
+                    {visualize ? `Hide 3d render` : `Show 3d render`}
                 </button>
                 {visualize ? (
                     <GCode3D

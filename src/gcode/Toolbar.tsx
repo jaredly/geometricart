@@ -6,6 +6,13 @@ import { State } from '../types';
 import { Visualize } from './Visualize';
 import { PathKit } from 'pathkit-wasm';
 
+export const gcodeStateSuffix = (state: State) =>
+    '\n;; ** STATE **\n;; ' +
+    JSON.stringify({
+        ...state,
+        history: initialState.history,
+    });
+
 export function Toolbar({
     state,
     bounds,
@@ -34,18 +41,9 @@ export function Toolbar({
 
         try {
             const { time, text } = generateGcode(state, PathKit);
-            const blob = new Blob(
-                [
-                    text +
-                        '\n' +
-                        ';; ** STATE **\n;; ' +
-                        JSON.stringify({
-                            ...state,
-                            history: initialState.history,
-                        }),
-                ],
-                { type: 'text/plain' },
-            );
+            const blob = new Blob([text + gcodeStateSuffix(state)], {
+                type: 'text/plain',
+            });
             return { time, url: URL.createObjectURL(blob), text };
         } catch (err) {
             console.error(err);

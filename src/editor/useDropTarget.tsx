@@ -126,7 +126,30 @@ export const getStateFromFile = (
             }
         };
         reader.readAsText(file);
+    } else if (file.type === 'text/plain' || file.type === 'text/x-gcode') {
+        const reader = new FileReader();
+        reader.onload = () => {
+            // debugger;
+            const lines = (reader.result as string).split(
+                ';; ** STATE **\n;; ',
+            );
+            if (lines.length > 1) {
+                done(JSON.parse(lines[1].split('\n')[0]));
+            } else {
+                console.log('no state sorry');
+                done(null);
+            }
+            // if (last.startsWith(PREFIX) && last.endsWith(SUFFIX)) {
+            //     done(JSON.parse(last.slice(PREFIX.length, -SUFFIX.length)));
+            // } else {
+            //     console.log('not last, bad news');
+            //     console.log(last);
+            //     done(null);
+            // }
+        };
+        reader.readAsText(file);
     }
+    console.log('nopes', file.type);
 };
 
 export function parseAttachment(

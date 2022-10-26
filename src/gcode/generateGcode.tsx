@@ -61,7 +61,7 @@ export const makeDepths = (
     depth: number,
     passDepth?: number,
 ) => {
-    if (passDepth == null) {
+    if (passDepth == null || passDepth < 0.001) {
         return [depth];
     }
     const depths = [];
@@ -178,7 +178,7 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
                 greedy.forEach((shape) => {
                     const pocket = makePocket(PathKit, shape.map(scalePos), 3);
                     if (!pocket.length || !pocket[0].length) {
-                        console.log(pocket);
+                        console.log(pocket, shape);
                         debugger;
                     }
 

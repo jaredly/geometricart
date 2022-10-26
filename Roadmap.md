@@ -13,9 +13,18 @@
 - [ ] auto-update the visualization pls
 - [x] render a full 3d model
 	https://github.com/tbfleming/jscut/tree/gh-pages/js
-- [ ] better path
+- [x] better path
+	- missing conics :( gotta figure that out. Maybe use PathKit to turn it into svg already?
 - [ ] make a config for Starting level
 - [ ] also a config for "outset" or "inset" by some amount...
+
+- [ ] show a preview of the paths involved, for each gcode item
+- [ ] actual drag and drop, gotta have it
+
+- [ ] hmm I'll need a way to indicate tool changes?
+	Probably M00 or M01 or M02? Along with a comment `;` for what should be done next.
+	And my simulator can parse the comment?
+	Open question if I can load another tool without losing alignment.
 
 My method for collecting paths leaves some things to be desired.
 

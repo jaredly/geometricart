@@ -307,8 +307,7 @@ export function findColorPaths(insetPaths: Path[]): {
         [key: string]: Array<{ path: Path; style: StyleLine }>;
     } = {};
     insetPaths.forEach((path) => {
-        if (path.style.lines.length === 1) {
-            const line = path.style.lines[0];
+        path.style.lines.forEach((line) => {
             if (!line || line.width == null || line.color == null) {
                 return;
             }
@@ -319,7 +318,7 @@ export function findColorPaths(insetPaths: Path[]): {
                     style: line!,
                 },
             ]);
-        }
+        });
         path.style.fills.forEach((fill) => {
             if (fill && fill.color != null) {
                 const key = fill.color + ':' + fill.lighten + ':pocket';

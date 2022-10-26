@@ -17,6 +17,7 @@ import { OrbitControls } from '@react-three/drei';
 import { addMetadata } from '../editor/Export';
 import { initialHistory } from '../state/initialState';
 import { State } from '../types';
+import { gcodeStateSuffix } from './Toolbar';
 
 // Based on https://stemkoski.github.io/Three.js/Shader-Heightmap-Textures.html
 const vertext = `
@@ -93,13 +94,19 @@ export const GCode3D = ({
     const cam = React.useRef(null as null | Camera | void);
     const canv = React.useRef<HTMLCanvasElement>(null);
     const stateRef = React.useRef(null as null | any);
-    const [download, setDownload] = React.useState(null as null | string);
+    const [download, setDownload] = React.useState(
+        null as null | { url: string; img: string },
+    );
     const qsize = 500;
 
     return (
         <div>
             <button
                 onClick={() => {
+                    if (download) {
+                        setDownload(null);
+                        return;
+                    }
                     const dest = document.createElement('canvas');
                     dest.width = dest.height = qsize * 2;
 
@@ -148,31 +155,30 @@ export const GCode3D = ({
                     ctx.fillStyle = 'black';
                     ctx.fillText(meta, textMargin, qsize * 2 - textMargin);
 
-                    dest.toBlob(async (blob) => {
-                        if (!blob) {
-                            return alert('Unable to export. Canvas error');
-                        }
-                        blob = await addMetadata(
-                            blob,
-                            { ...state, history: initialHistory },
-                            gcode,
-                        );
-                        setDownload(URL.createObjectURL(blob));
-                    });
-                    // const canvas = canv.current;
-                    // const link = document.createElement('a');
-                    // link.download = 'test.png';
-                    // link.href = canvas!.toDataURL();
-                    // link.click();
+                    const url = dest.toDataURL();
+                    const blob = new Blob(
+                        [
+                            gcode +
+                                gcodeStateSuffix(state) +
+                                `\n;thumbnail: ${url}`,
+                        ],
+                        {
+                            type: 'text/x-gcode',
+                        },
+                    );
+                    setDownload({ url: URL.createObjectURL(blob), img: url });
                 }}
             >
-                Download Image
+                {download ? 'Clear' : 'Download GCode w/ Preview Image'}
             </button>
             {download ? (
                 <div>
-                    <a href={download} download="test.png">
+                    <a
+                        href={download.url}
+                        download={`geometric-${new Date().toISOString()}.nc`}
+                    >
                         <img
-                            src={download}
+                            src={download.img}
                             style={{ width: qsize, height: qsize }}
                         />
                     </a>
