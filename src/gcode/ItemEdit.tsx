@@ -256,6 +256,19 @@ const Tabs = ({
                     depth != null ? onChange({ ...tabs, depth }) : null
                 }
             />
+            <Float
+                style={{
+                    marginRight: 4,
+                    marginLeft: 4,
+                    fontSize: '80%',
+                    width: 30,
+                }}
+                value={tabs.width}
+                placeholder="Width"
+                onChange={(width) =>
+                    width != null ? onChange({ ...tabs, width }) : null
+                }
+            />
         </span>
     );
 };

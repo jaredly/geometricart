@@ -2,20 +2,20 @@
 # GCode fill it up
 
 - [x] pockets!
-- [ ] IMPOTANT Figure out TABS please.
+- [x] IMPOTANT Figure out TABS please.
 	- I think I can just do like "number of tabs & width & height", and have them equally spaced?
 		I'll want a better "path to points" algo, that lets straight lines be straight.
 		ideally memoize the path-to-points at the top level, so even changing gcode items
 		doesn't re-trigger.
 		Would be nice to cache pocket calculations per path as well, if I can.
 - [x] reorder things
-- [ ] disable gcodeitems
-- [ ] auto-update the visualization pls
+- [x] disable gcodeitems
+- [x] auto-update the visualization pls
 - [x] render a full 3d model
 	https://github.com/tbfleming/jscut/tree/gh-pages/js
 - [x] better path
 	- missing conics :( gotta figure that out. Maybe use PathKit to turn it into svg already?
-- [ ] make a config for Starting level
+- [x] make a config for Starting level
 - [ ] also a config for "outset" or "inset" by some amount...
 
 - [ ] show a preview of the paths involved, for each gcode item

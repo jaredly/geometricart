@@ -264,13 +264,19 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
                         last = { x, y };
                     });
                     if (tabs && itemDepth > tabs.depth) {
-                        let latest = 0;
+                        const { x, y } = scalePos(shape[0]);
+                        let latest: {
+                            at: number;
+                            x: number;
+                            y: number;
+                        } = { at: 0, x, y };
                         let nextTabPos = { idx: 0, at: 0 };
                         for (let i = 0; i < shapeCmds.length; i++) {
                             const cmd = shapeCmds[i];
                             if (
-                                cmd &&
                                 cmd.type === 'cut' &&
+                                cmd.x != null &&
+                                cmd.y != null &&
                                 cmd.at != null &&
                                 cmd.at > nextTabPos.at
                             ) {
@@ -280,13 +286,45 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
                                         (distance / tabs.count) *
                                         (nextTabPos.idx + 1),
                                 };
+
+                                // ugh
+                                const size = cmd.at - latest.at;
+                                // const mid = size / 2;
+
+                                const dx = cmd.x - latest.x;
+                                const dy = cmd.y - latest.y;
+
+                                const a = size / 2 - tabs.width / 2;
+                                const b = a + tabs.width;
+                                const da = a / size;
+                                const db = b / size;
+
                                 cmds.push(
+                                    {
+                                        type: 'cut',
+                                        x: latest.x + dx * da,
+                                        y: latest.y + dy * da,
+                                        f: speed,
+                                    },
                                     { type: 'fast', z: -tabs.depth },
-                                    cmd,
+                                    {
+                                        type: 'fast',
+                                        x: latest.x + dx * db,
+                                        y: latest.y + dy * db,
+                                    },
+                                    // cmd,
                                     { type: 'fast', z: -itemDepth },
+                                    cmd,
                                 );
                             } else {
                                 cmds.push(cmd);
+                            }
+                            if (cmd.type === 'cut' && cmd.at != null) {
+                                latest = {
+                                    at: cmd.at,
+                                    x: cmd.x ?? latest.x,
+                                    y: cmd.y ?? latest.y,
+                                };
                             }
                         }
                     } else {
@@ -350,9 +388,7 @@ function makePocket(PathKit: PathKit, shape: Coord[], bitSize: number) {
     // TODO: Consider using https://www.npmjs.com/package/svg-path-properties
     // or https://www.npmjs.com/package/point-at-length
     const div = document.createElement('div');
-    div.innerHTML = `
-    <svg xmlns="http://www.w3.org/2000/svg" ></svg>
-    `;
+    div.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg"></svg>`;
     const outer = div.firstElementChild as SVGSVGElement; // document.createElement('svg');
     let last = null;
     while (true) {
