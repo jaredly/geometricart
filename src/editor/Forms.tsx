@@ -119,13 +119,16 @@ export const Float = ({
 export const Int = ({
     value,
     onChange,
+    placeholder,
 }: {
     value: number | undefined;
+    placeholder?: string;
     onChange: (v: number | undefined) => unknown;
 }) => {
     return (
         <input
             value={value}
+            placeholder={placeholder}
             onChange={(evt) => {
                 const res = +evt.target.value;
                 if (isNaN(res) || !evt.target.value.trim()) {

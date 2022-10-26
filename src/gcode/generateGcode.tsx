@@ -123,6 +123,19 @@ export const generateLaserInset = async (state: State) => {
     return out;
 };
 
+type GCode =
+    | { type: 'fast'; x?: number; y?: number; z?: number }
+    | {
+          type: 'cut';
+          x?: number;
+          y?: number;
+          z?: number;
+          f?: number;
+          at?: number;
+      }
+    | { type: 'M0'; message: string }
+    | { type: 'clear' };
+
 export const generateGcode = (state: State, PathKit: PathKit) => {
     const clip = state.view.activeClip
         ? state.clips[state.view.activeClip]
@@ -154,6 +167,9 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
         'G90 ; absolute positioning',
         'G17 ; xy plane',
     ];
+
+    const cmds: GCode[] = [];
+
     const { clearHeight, pauseHeight } = state.gcode;
 
     const FAST_SPEED = 500;
@@ -163,12 +179,12 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
 
     state.gcode.items.forEach((item) => {
         if (item.type === 'pause') {
-            lines.push(`G0 Z${pauseHeight}`, `M0 ;;; ${item.message}`);
+            cmds.push({ type: 'M0', message: item.message });
         } else {
             if (item.disabled) {
                 return;
             }
-            const { color, start, depth, speed, passDepth } = item;
+            const { color, start, depth, speed, passDepth, tabs } = item;
             if (!colors[color]) {
                 console.warn(`Unknown color ${color}`);
                 return;
@@ -182,33 +198,32 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
                         debugger;
                     }
 
-                    lines.push(`G0 Z${clearHeight}`);
-                    // lines.push(`G0 X${pocket[0][0].x} Y${pocket[0][0].y}`);
-                    // lines.push(`G0 Z0`);
+                    cmds.push({ type: 'clear' });
                     makeDepths(start ?? 0, depth, passDepth).forEach(
                         (itemDepth) => {
-                            lines.push(
-                                `G0 X${pocket[0][0].x.toFixed(
-                                    3,
-                                )} Y${pocket[0][0].y.toFixed(3)}`,
-                            );
-                            lines.push(`G0 Z0`);
-                            lines.push(`G1 Z${-itemDepth} F${speed}`);
+                            cmds.push({
+                                type: 'fast',
+                                x: pocket[0][0].x,
+                                y: pocket[0][0].y,
+                            });
+                            cmds.push({ type: 'fast', z: 0 });
+                            cmds.push({ type: 'cut', z: -itemDepth, f: speed });
                             pocket.forEach((round) => {
                                 round.forEach((p) => {
                                     let travel = last ? dist(p, last) : null;
                                     if (travel) {
                                         time += travel! / speed;
                                     }
-                                    lines.push(
-                                        `G1 X${p.x.toFixed(3)} Y${p.y.toFixed(
-                                            3,
-                                        )} F${speed}`,
-                                    );
+                                    cmds.push({
+                                        type: 'cut',
+                                        x: p.x,
+                                        y: p.y,
+                                        f: speed,
+                                    });
                                     last = p;
                                 });
                             });
-                            lines.push(`G0 Z${clearHeight}`);
+                            cmds.push({ type: 'clear' });
                         },
                     );
                 });
@@ -216,15 +231,20 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
             }
             makeDepths(start ?? 0, depth, passDepth).forEach((itemDepth) => {
                 greedy.forEach((shape) => {
+                    const shapeCmds: GCode[] = [];
+                    let distance = 0;
                     shape.forEach((pos, i) => {
                         const { x, y } = scalePos(pos);
                         let travel = last ? dist({ x, y }, last) : null;
+                        if (travel) {
+                            distance += travel;
+                        }
                         if (i == 0) {
-                            lines.push(
-                                `G0 Z${clearHeight}`,
-                                `G0 X${x.toFixed(3)} Y${y.toFixed(3)}`,
-                                `G0 Z0`,
-                                `G1 Z${-itemDepth} F${speed}`,
+                            shapeCmds.push(
+                                { type: 'clear' },
+                                { type: 'fast', x, y },
+                                { type: 'fast', z: 0 },
+                                { type: 'cut', z: -itemDepth, f: speed },
                             );
                             if (travel) {
                                 time += travel! / speed;
@@ -233,18 +253,80 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
                             if (travel) {
                                 time += travel! / speed;
                             }
-                            lines.push(
-                                `G1 X${x.toFixed(3)} Y${y.toFixed(
-                                    3,
-                                )} F${speed}`,
-                            );
+                            shapeCmds.push({
+                                type: 'cut',
+                                x,
+                                y,
+                                f: speed,
+                                at: distance,
+                            });
                         }
                         last = { x, y };
                     });
+                    if (tabs && itemDepth > tabs.depth) {
+                        let latest = 0;
+                        let nextTabPos = { idx: 0, at: 0 };
+                        for (let i = 0; i < shapeCmds.length; i++) {
+                            const cmd = shapeCmds[i];
+                            if (
+                                cmd &&
+                                cmd.type === 'cut' &&
+                                cmd.at != null &&
+                                cmd.at > nextTabPos.at
+                            ) {
+                                nextTabPos = {
+                                    idx: nextTabPos.idx + 1,
+                                    at:
+                                        (distance / tabs.count) *
+                                        (nextTabPos.idx + 1),
+                                };
+                                cmds.push(
+                                    { type: 'fast', z: -tabs.depth },
+                                    cmd,
+                                    { type: 'fast', z: -itemDepth },
+                                );
+                            } else {
+                                cmds.push(cmd);
+                            }
+                            // if (cmd.type === 'cut' && cmd.at != null) {
+                            //     latest = cmd.at;
+                            // }
+                        }
+                    } else {
+                        cmds.push(...shapeCmds);
+                    }
                 });
             });
         }
     });
+
+    const gcodePos = (x?: number, y?: number, z?: number, f?: number) => {
+        const items: [string, number | void][] = [
+            ['X', x],
+            ['Y', y],
+            ['Z', z],
+            ['F', f],
+        ];
+        return items
+            .filter((x) => x[1] != null)
+            .map(([k, v]) => `${k}${v!.toFixed(3)}`)
+            .join(' ');
+    };
+
+    lines.push(
+        ...cmds.map((cmd) => {
+            switch (cmd.type) {
+                case 'fast':
+                    return `G0 ${gcodePos(cmd.x, cmd.y, cmd.z)}`;
+                case 'cut':
+                    return `G1 ${gcodePos(cmd.x, cmd.y, cmd.z, cmd.f)}`;
+                case 'M0':
+                    return `M0 ;;; ${cmd.message}`;
+                case 'clear':
+                    return `G0 Z${clearHeight}`;
+            }
+        }),
+    );
 
     lines.unshift(
         `; estimated time: ${time.toFixed(2)}m. Commands ${lines.length}`,
@@ -407,8 +489,16 @@ const cmdsToPoints = (
                 ),
             );
         } else if (cmd[0] === pk.CONIC_VERB) {
-            console.warn('conic');
-            points[points.length - 1].push({ x: cmd[3], y: cmd[4] });
+            const current = points[points.length - 1];
+            const last = current[current.length - 1];
+
+            const path = pk.FromCmds([[pk.MOVE_VERB, last.x, last.y], cmd]);
+            points[points.length - 1].push(
+                ...svgPathPoints(outer, path.toSVGString()),
+            );
+            path.delete();
+            // console.warn('conic');
+            // points[points.length - 1].push({ x: cmd[3], y: cmd[4] });
         } else if (cmd[0] === pk.CLOSE_VERB) {
             points[points.length - 1].push({ ...points[points.length - 1][0] });
             continue;

@@ -481,7 +481,11 @@ export type GCodePath = {
     depth: number;
     start: number;
     passDepth?: number;
-    fillOver?: number;
+    tabs?: {
+        count: number;
+        width: number;
+        depth: number;
+    };
     disabled?: boolean;
 };
 
