@@ -1,4 +1,21 @@
 
+# Let's do a "making of" animation.
+
+- go through undo/redo, and screenshot each step.
+	Then see how it goes?
+
+So, I don't think saving a ton of png's is the best way about it.
+This will be creating a dealio for screencapture.
+because, I can do it fast enough.
+and saving pngs is a huge memory hog.
+it would be cool if I could do like the mp4 compression on the fly ...
+but..
+
+OH WAIT WebCodecs to the rescue https://web.dev/webcodecs/
+maybe I just can record video? And have it be ok?
+that would be very cool.
+
+
 # GCode fill it up
 
 - [x] pockets!

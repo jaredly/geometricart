@@ -327,6 +327,7 @@ const makeLoader = <T,>(fn: () => Promise<T>) => {
 };
 
 const useReactJson = makeLoader(() =>
+    // @ts-ignore
     import('react-json-view').then((v) => v.default),
 );
 

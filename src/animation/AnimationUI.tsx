@@ -471,7 +471,8 @@ export const Editable = ({
     );
 };
 
-function tarImages(images: Uint8Array[], fps: number, state: State) {
+export function tarImages(images: Uint8Array[], fps: number, state: State) {
+    // @ts-ignore
     const tar = require('tinytar').tar;
 
     const args = [
@@ -616,7 +617,7 @@ export const TickTock = ({
     );
 };
 
-function convertDataURIToBinary(dataURI: string) {
+export function convertDataURIToBinary(dataURI: string) {
     var base64 = dataURI.replace(/^data[^,]+,/, '');
     var raw = window.atob(base64);
     var rawLength = raw.length;

@@ -13,6 +13,17 @@ export const calcAllIntersections = (
     coords.forEach((c) => (seenCoords[coordKey(c.coord)] = c));
     for (let i = 0; i < primitives.length; i++) {
         for (let j = i + 1; j < primitives.length; j++) {
+            const current = primitives[i];
+            if (current.type === 'circle') {
+                const k = coordKey(current.center);
+                if (!seenCoords[k]) {
+                    seenCoords[k] = {
+                        coord: current.center,
+                        primitives: [],
+                    };
+                    coords.push(seenCoords[k]);
+                }
+            }
             const pair: [number, number] = [i, j];
             coords.push(
                 ...(calculateIntersections(primitives[i], primitives[j])

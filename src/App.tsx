@@ -14,6 +14,7 @@ import {
     CogIcon,
     DrillIcon,
     IconButton,
+    IconHistoryToggle,
     MagicWandIcon,
     PencilIcon,
     RedoIcon,
@@ -167,7 +168,7 @@ export const App = ({ initialState }: { initialState: State }) => {
 
     const [sidebarOverlay, setSidebarOverlay] = React.useState(false);
     const [screen, setScreen] = React.useState(
-        'edit' as 'edit' | 'animate' | 'gcode',
+        'edit' as 'edit' | 'animate' | 'gcode' | 'history',
     );
 
     return (
@@ -204,6 +205,8 @@ export const App = ({ initialState }: { initialState: State }) => {
                     <AnimationEditor state={state} dispatch={dispatch} />
                 ) : screen === 'gcode' ? (
                     <GCodeEditor state={state} dispatch={dispatch} />
+                ) : screen === 'history' ? (
+                    <HistoryPlayback state={state} />
                 ) : (
                     <Canvas
                         state={state}
@@ -281,6 +284,11 @@ export const App = ({ initialState }: { initialState: State }) => {
                             <DrillIcon />
                         </IconButton>
                     ) : null}
+                    {screen !== 'history' ? (
+                        <IconButton onClick={() => setScreen('history')}>
+                            <IconHistoryToggle />
+                        </IconButton>
+                    ) : null}
                 </div>
             </div>
         </div>
@@ -296,7 +304,7 @@ export const handleKeyboard = (
     setPendingDuplication: (d: null | PendingDuplication) => void,
     // setDragSelect: (ds: boolean) => void,
 ) => {
-    let tid: null | NodeJS.Timeout = null;
+    let tid: null | number = null;
     const hoverMirror = (id: Id, quick: boolean) => {
         setHover({ kind: 'Mirror', id, type: 'element' });
         if (tid) {
@@ -320,16 +328,18 @@ export const handleKeyboard = (
         ) {
             return;
         }
-        console.log('key', evt.key);
+        // Duplicate selected shapes across 1 point
         if (evt.key === 'd') {
             // uhm
             setPendingDuplication({ reflect: false, p0: null });
             return;
         }
+        // Duplicate selected shapes across 2 points
         if (evt.key === 'D') {
             setPendingDuplication({ reflect: true, p0: null });
             return;
         }
+        // Cycle through mirrors
         if (evt.key === 'M') {
             const ids = Object.keys(latestState.current.mirrors);
             let id = ids[0];
@@ -341,6 +351,7 @@ export const handleKeyboard = (
             hoverMirror(id, false);
             return;
         }
+        // Toggle current mirror on / off
         if ((evt.key === 'm' || evt.key === 'µ') && evt.altKey) {
             console.log('ok');
             if (latestState.current.activeMirror) {
@@ -360,6 +371,7 @@ export const handleKeyboard = (
             }
             return;
         }
+        // Make a new mirror
         if (evt.key === 'm') {
             setPendingMirror({
                 parent: latestState.current.activeMirror,
@@ -368,6 +380,7 @@ export const handleKeyboard = (
                 center: null,
             });
         }
+        // Select all
         if (evt.key === 'a' && (evt.ctrlKey || evt.metaKey)) {
             evt.preventDefault();
             evt.stopPropagation();
@@ -379,6 +392,7 @@ export const handleKeyboard = (
                 },
             });
         }
+        // Delete selected items
         if (evt.key === 'Delete' || evt.key === 'Backspace') {
             console.log('ok', latestState.current.selection?.type);
             if (latestState.current.selection?.type === 'Guide') {
@@ -465,3 +479,4 @@ export const handleKeyboard = (
 };
 
 import { GCodeEditor } from './gcode/GCodeEditor';
+import { HistoryPlayback } from './history/HistoryPlayback';
