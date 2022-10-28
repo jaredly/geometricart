@@ -109,7 +109,7 @@ export const Visualize = ({
     }
     return (
         <div>
-            <div>{JSON.stringify(data.bounds)}</div>
+            {/* <div>{JSON.stringify(data.bounds)}</div> */}
             <canvas
                 ref={ref}
                 width={data.dims.width * scale}
@@ -118,7 +118,7 @@ export const Visualize = ({
                     backgroundColor: 'blue',
                     // width: (data.dims.width * scale) / 2,
                     // height: (data.dims.height * scale) / 2,
-                    width: 500,
+                    width: 500 / (data.dims.height / data.dims.width),
                     height: 500,
                 }}
             />
