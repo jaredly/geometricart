@@ -94,7 +94,12 @@ export const HistoryPlayback = ({ state }: { state: State }) => {
                 ref={canvas}
                 width={makeEven(w * 2 * zoom)}
                 height={makeEven(h * 2 * zoom)}
-                style={{ width: w * zoom, height: h * zoom }}
+                style={{
+                    width: w * zoom,
+                    height: h * zoom,
+                    outline: '1px solid white',
+                    margin: 16,
+                }}
             />
             <button
                 onClick={() => {
@@ -120,7 +125,7 @@ export const HistoryPlayback = ({ state }: { state: State }) => {
     );
 };
 
-export function getHistoriesList(state: State) {
+export function getHistoriesList(state: State, overrideZoom?: boolean) {
     let states: { state: State; action: Action | null }[] = [];
     let current = state;
     while (true) {
@@ -129,7 +134,15 @@ export function getHistoriesList(state: State) {
             states.unshift({ state: current, action: null });
             break;
         }
-        states.unshift({ state: current, action: action.action });
+        states.unshift({
+            state: overrideZoom
+                ? {
+                      ...current,
+                      view: { ...current.view, zoom: state.view.zoom },
+                  }
+                : current,
+            action: action.action,
+        });
         current = undo({ ...current, history }, action);
     }
     return states;

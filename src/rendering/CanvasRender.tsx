@@ -513,7 +513,9 @@ export function tracePath(
             );
         }
     });
-    ctx.closePath();
+    if (!path.open) {
+        ctx.closePath();
+    }
 }
 
 // This is used for making a "clip" to the line of a path.

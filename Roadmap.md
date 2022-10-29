@@ -15,6 +15,20 @@ OH WAIT WebCodecs to the rescue https://web.dev/webcodecs/
 maybe I just can record video? And have it be ok?
 that would be very cool.
 
+Ok, but regardless, I need to figure out how I want to animate this whole junk.
+
+Yeah I'mve definitely on to something here.
+
+Next nice things:
+- [ ] show mirrors when they get created & toggled
+- [ ] show guides as they're being created
+- [ ] for path:new, I don't need to animate to all the points,
+	I can just animate the line segments popping in.
+	And I can time things so that regardless of the number of segments, it always takes
+	like 0.5 seconds or something?
+- show axis for flipping stuff about.
+- when doing a thing for recording, don't use tmp zoom.
+- 
 
 # GCode fill it up
 

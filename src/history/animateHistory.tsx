@@ -1,10 +1,18 @@
-import { State } from '../types';
+import { Coord, State } from '../types';
 import { getHistoriesList } from './HistoryPlayback';
-import { canvasRender } from '../rendering/CanvasRender';
+import { canvasRender, tracePath } from '../rendering/CanvasRender';
 import { findBoundingRect } from '../editor/Export';
 import { makeEven } from '../animation/AnimationUI';
 import { screenToWorld, worldToScreen } from '../editor/Canvas';
 import { Action } from '../state/Action';
+import { emptyPath, pathSegs } from '../editor/RenderPath';
+import {
+    applyMatrices,
+    getMirrorTransforms,
+    mirrorTransforms,
+    transformsToMatrices,
+} from '../rendering/getMirrorTransforms';
+import { transformSegment } from '../rendering/points';
 
 export const nextFrame = () => new Promise(requestAnimationFrame);
 export const wait = (time: number) =>
@@ -19,7 +27,7 @@ export const animateHistory = async (
     const now = Date.now();
     console.log('hup');
 
-    const histories = getHistoriesList(originalState);
+    const histories = getHistoriesList(originalState, true);
     const {
         crop,
         fps,
@@ -59,47 +67,149 @@ export const animateHistory = async (
 
     let cursor = { x: 0, y: 0 };
 
+    const fromScreen = (point: Coord, state: State) =>
+        screenToWorld(canvas.width, canvas.height, point, {
+            ...state.view,
+            zoom: state.view.zoom * 2,
+        });
+
+    const toScreen = (point: Coord, state: State) =>
+        worldToScreen(canvas.width, canvas.height, point, {
+            ...state.view,
+            zoom: state.view.zoom * 2,
+        });
+
+    const follow = (i: number, point: Coord, extra?: (pos: Coord) => void) =>
+        followPoint(
+            cursor,
+            toScreen(point, histories[i].state),
+            i,
+            ctx,
+            canvas,
+            frames,
+            extra,
+        );
+
     const frames: ImageBitmap[] = [];
     for (let i = 0; i < histories.length; i++) {
         const action = histories[i].action;
-        const points = (action ? actionPoints(action) : []).map((point) =>
-            worldToScreen(canvas.width, canvas.height, point, {
-                ...histories[i].state.view,
-                zoom: histories[i].state.view.zoom * 2,
-            }),
-        );
-        let speed = 5;
-        // cursor = points[0];
-        for (let point of points) {
-            const { x, y } = point;
-            let dx = x - cursor.x;
-            let dy = y - cursor.y;
-            let dist = Math.sqrt(dx * dx + dy * dy);
-            while (dist > 2) {
-                // console.log(dist, cursor, point);
-                // const amt = Math.min(1, speed / dist);
-                // const amt = Math.max(1, dist / 10);
-                const amt = 0.2;
 
-                cursor.x += dx * amt;
-                cursor.y += dy * amt;
+        if (action && i > 0) {
+            const prev = histories[i - 1].state;
 
-                if (i > 0) {
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    ctx.drawImage(frames[i - 1], 0, 0);
+            if (action.type === 'path:create') {
+                await follow(i, action.origin);
+
+                ctx.save();
+                const state = histories[i - 1].state;
+                const zoom = state.view.zoom * 2;
+
+                const xoff = canvas.width / 2 + state.view.center.x * zoom;
+                const yoff = canvas.height / 2 + state.view.center.y * zoom;
+                ctx.translate(xoff, yoff);
+
+                for (let j = 0; j < action.segments.length; j++) {
+                    if (prev.activeMirror) {
+                        const transforms = mirrorTransforms(
+                            prev.mirrors[prev.activeMirror],
+                        );
+                        transforms.forEach((transform) => {
+                            const mx = transformsToMatrices(transform);
+                            ctx.strokeStyle = 'orange';
+                            ctx.lineWidth = 3;
+                            ctx.setLineDash([5, 15]);
+                            ctx.beginPath();
+                            tracePath(
+                                ctx,
+                                {
+                                    ...emptyPath,
+                                    origin: applyMatrices(action.origin, mx),
+                                    segments: action.segments
+                                        .slice(0, j + 1)
+                                        .map((seg) =>
+                                            transformSegment(seg, mx),
+                                        ),
+                                    open: true,
+                                },
+                                state.view.zoom * 2,
+                            );
+                            ctx.stroke();
+                        });
+                    }
+
+                    ctx.setLineDash([]);
+                    ctx.strokeStyle = 'red';
+                    ctx.lineWidth = 10;
+                    ctx.beginPath();
+                    tracePath(
+                        ctx,
+                        {
+                            ...emptyPath,
+                            origin: action.origin,
+                            segments: action.segments.slice(0, j + 1),
+                            open: true,
+                        },
+                        state.view.zoom * 2,
+                    );
+                    ctx.stroke();
+                    await wait(1000 / action.segments.length);
                 }
 
-                ctx.fillStyle = 'red';
-                ctx.beginPath();
-                ctx.arc(cursor.x, cursor.y, 10, 0, Math.PI * 2);
-                ctx.fill();
-                await nextFrame();
-                dx = x - cursor.x;
-                dy = y - cursor.y;
-                dist = Math.sqrt(dx * dx + dy * dy);
+                ctx.restore();
+            } else if (
+                action.type === 'pending:point' &&
+                prev.pending &&
+                prev.pending.type === 'Guide'
+            ) {
+                if (prev.pending.kind === 'Line') {
+                    if (prev.pending.points.length === 1) {
+                        const og = prev.pending.points[0];
+                        const origin = toScreen(og, prev);
+                        await follow(i, action.coord, (pos) => {
+                            if (prev.activeMirror) {
+                                ctx.strokeStyle = 'yellow';
+                                ctx.lineWidth = 5;
+                                ctx.setLineDash([5, 15]);
+                                const back = fromScreen(pos, prev);
+                                const transforms = mirrorTransforms(
+                                    prev.mirrors[prev.activeMirror],
+                                );
+                                transforms.forEach((mirror) => {
+                                    const mx = transformsToMatrices(mirror);
+                                    const mirrorOrigin = applyMatrices(og, mx);
+                                    const mirrorPos = applyMatrices(back, mx);
+                                    const oScreen = toScreen(
+                                        mirrorOrigin,
+                                        prev,
+                                    );
+                                    const pScreen = toScreen(mirrorPos, prev);
+                                    ctx.beginPath();
+                                    ctx.moveTo(oScreen.x, oScreen.y);
+                                    ctx.lineTo(pScreen.x, pScreen.y);
+                                    ctx.stroke();
+                                });
+                            }
+
+                            ctx.setLineDash([]);
+                            ctx.strokeStyle = 'green';
+                            ctx.lineWidth = 10;
+                            ctx.beginPath();
+                            ctx.moveTo(origin.x, origin.y);
+                            ctx.lineTo(pos.x, pos.y);
+                            ctx.stroke();
+                        });
+                    } else {
+                        await follow(i, action.coord);
+                    }
+                }
+            } else {
+                const points = actionPoints(action).map((point) =>
+                    toScreen(point, histories[i].state),
+                );
+                await followPoints(points, cursor, i, ctx, canvas, frames);
             }
-            await wait(100);
         }
+
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         await draw(i);
         frames.push(await createImageBitmap(canvas));
@@ -120,3 +230,61 @@ const actionPoints = (action: Action) => {
     }
     return [];
 };
+
+async function followPoints(
+    points: Coord[],
+    cursor: Coord,
+    i: number,
+    ctx: CanvasRenderingContext2D,
+    canvas: HTMLCanvasElement,
+    frames: ImageBitmap[],
+) {
+    for (let point of points) {
+        await followPoint(cursor, point, i, ctx, canvas, frames);
+        await wait(100);
+    }
+}
+
+async function followPoint(
+    cursor: Coord,
+    { x, y }: Coord,
+    i: number,
+    ctx: CanvasRenderingContext2D,
+    canvas: HTMLCanvasElement,
+    frames: ImageBitmap[],
+    extra?: (v: Coord) => void,
+) {
+    let dx = x - cursor.x;
+    let dy = y - cursor.y;
+    let dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist < 2) {
+        return await wait(300);
+    }
+    while (dist > 2) {
+        // console.log(dist, cursor, point);
+        // const amt = Math.min(1, speed / dist);
+        // const amt = Math.max(1, dist / 10);
+        const amt = 0.2;
+
+        cursor.x += dx * amt;
+        cursor.y += dy * amt;
+
+        if (i > 0) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(frames[i - 1], 0, 0);
+        }
+
+        if (extra) {
+            extra(cursor);
+        }
+
+        ctx.fillStyle = 'red';
+        ctx.beginPath();
+        ctx.arc(cursor.x, cursor.y, 10, 0, Math.PI * 2);
+        ctx.fill();
+        await nextFrame();
+        dx = x - cursor.x;
+        dy = y - cursor.y;
+        dist = Math.sqrt(dx * dx + dy * dy);
+    }
+}

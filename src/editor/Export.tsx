@@ -61,7 +61,6 @@ export const Export = ({
     dispatch: (action: Action) => void;
 }) => {
     // const [name, setName] = React.useState()
-    const name = `image-${Date.now()}.svg`;
     const [url, setUrl] = React.useState(null as null | string);
     const [animationPosition, setAnimationPosition] = React.useState(0);
 
@@ -70,6 +69,7 @@ export const Export = ({
     const [size, setSize] = React.useState(originalSize);
     const [embed, setEmbed] = React.useState(true);
     const [history, setHistory] = React.useState(false);
+    const name = `image-${Date.now()}${history ? '-history' : ''}.svg`;
 
     const [crop, setCrop] = React.useState(10 as null | number);
 
