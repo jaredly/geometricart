@@ -335,6 +335,13 @@ export const animateHistory = async (
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         await draw(i);
         frames.push(await createImageBitmap(canvas));
+
+        // Draw the cursor
+        ctx.fillStyle = 'red';
+        ctx.beginPath();
+        ctx.arc(cursor.x, cursor.y, 10, 0, Math.PI * 2);
+        ctx.fill();
+
         await nextFrame();
     }
 

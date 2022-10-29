@@ -150,6 +150,14 @@ export function getHistoriesList(state: State, overrideZoom?: boolean) {
             action: action.action,
         });
         current = undo({ ...current, history }, action);
+
+        Object.entries(current.paths).forEach(([id, path]) => {
+            path.style.lines.forEach((line) => {
+                if (line?.width === 3) {
+                    line.width = 1;
+                }
+            });
+        });
     }
     return states;
 }
