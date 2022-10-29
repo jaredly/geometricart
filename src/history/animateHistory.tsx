@@ -99,6 +99,9 @@ export const animateHistory = async (
 
     const frames: ImageBitmap[] = [];
     for (let i = 0; i < histories.length; i++) {
+        if (stopped.current) {
+            break;
+        }
         const action = histories[i].action;
 
         if (action && i > 0) {
@@ -174,9 +177,9 @@ export const animateHistory = async (
                         const origin = toScreen(og, prev);
                         await follow(i, action.coord, (pos) => {
                             if (prev.activeMirror) {
-                                ctx.strokeStyle = 'yellow';
-                                ctx.lineWidth = 5;
-                                ctx.setLineDash([5, 15]);
+                                ctx.strokeStyle = '#666';
+                                ctx.lineWidth = 1;
+                                // ctx.setLineDash([5, 15]);
                                 const back = fromScreen(pos, prev);
                                 const transforms = mirrorTransforms(
                                     prev.mirrors[prev.activeMirror],
@@ -198,8 +201,8 @@ export const animateHistory = async (
                             }
 
                             ctx.setLineDash([]);
-                            ctx.strokeStyle = 'green';
-                            ctx.lineWidth = 10;
+                            ctx.strokeStyle = 'yellow';
+                            ctx.lineWidth = 1;
                             ctx.beginPath();
                             ctx.moveTo(origin.x, origin.y);
                             ctx.lineTo(pos.x, pos.y);
@@ -208,6 +211,66 @@ export const animateHistory = async (
                     } else {
                         await follow(i, action.coord);
                     }
+                } else if (prev.pending.kind === 'Circle') {
+                    if (prev.pending.points.length === 1) {
+                        const og = prev.pending.points[0];
+                        const origin = toScreen(og, prev);
+                        await follow(i, action.coord, (pos) => {
+                            if (prev.activeMirror) {
+                                ctx.strokeStyle = '#666';
+                                ctx.lineWidth = 1;
+                                const back = fromScreen(pos, prev);
+                                const transforms = mirrorTransforms(
+                                    prev.mirrors[prev.activeMirror],
+                                );
+
+                                transforms.forEach((mirror) => {
+                                    const mx = transformsToMatrices(mirror);
+                                    const mirrorOrigin = applyMatrices(og, mx);
+                                    const mirrorPos = applyMatrices(back, mx);
+                                    const oScreen = toScreen(
+                                        mirrorOrigin,
+                                        prev,
+                                    );
+                                    const pScreen = toScreen(mirrorPos, prev);
+                                    ctx.beginPath();
+                                    const radius = dist(oScreen, pScreen);
+
+                                    ctx.arc(
+                                        oScreen.x,
+                                        oScreen.y,
+                                        radius,
+                                        0,
+                                        Math.PI * 2,
+                                        false,
+                                    );
+
+                                    ctx.stroke();
+                                });
+                            }
+
+                            ctx.strokeStyle = 'yellow';
+                            ctx.lineWidth = 1;
+                            ctx.beginPath();
+
+                            const radius = dist(origin, pos);
+
+                            ctx.arc(
+                                origin.x,
+                                origin.y,
+                                radius,
+                                0,
+                                Math.PI * 2,
+                                false,
+                            );
+
+                            ctx.stroke();
+                        });
+                    } else {
+                        await follow(i, action.coord);
+                    }
+                } else {
+                    await follow(i, action.coord);
                 }
             } else if (action.type === 'mirror:add') {
                 await follow(i, action.mirror.origin);
@@ -258,10 +321,9 @@ export const animateHistory = async (
             } else if (
                 action.type === 'path:update' ||
                 action.type === 'path:update:many' ||
-                action.type === 'pathGroup:update:many' ||
-                action.type === 'view:update'
+                action.type === 'pathGroup:update:many'
             ) {
-                await wait(100);
+                await wait(500);
             } else {
                 const points = actionPoints(action).map((point) =>
                     toScreen(point, histories[i].state),
@@ -318,6 +380,10 @@ async function followPoint(
     let dy = y - cursor.y;
     let dist = Math.sqrt(dx * dx + dy * dy);
     if (dist < 2) {
+        ctx.fillStyle = 'red';
+        ctx.beginPath();
+        ctx.arc(x, y, 10, 0, Math.PI * 2);
+        ctx.fill();
         return await wait(300);
     }
     while (dist > 2) {

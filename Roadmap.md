@@ -21,14 +21,26 @@ Yeah I'mve definitely on to something here.
 
 Next nice things:
 - [ ] show mirrors when they get created & toggled
-- [ ] show guides as they're being created
-- [ ] for path:new, I don't need to animate to all the points,
+- [x] show guides as they're being created
+- [x] for path:new, I don't need to animate to all the points,
 	I can just animate the line segments popping in.
 	And I can time things so that regardless of the number of segments, it always takes
 	like 0.5 seconds or something?
 - show axis for flipping stuff about.
 - when doing a thing for recording, don't use tmp zoom.
 - 
+
+Wellll this is looking pretty dang awesome.
+Things that would take it to the next level:
+- [ ] animate other guide ('o' circle)
+- [ ] animate pan / zoom???
+	will require making a canvas that's bigger, so we can render the big story
+	and then just pan over that image.
+- [ ] pre-render all state images, so it's smoother. with the larger one,
+	you start to get a noticable lag.
+
+
+
 
 # GCode fill it up
 

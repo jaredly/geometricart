@@ -651,6 +651,13 @@ export const ViewForm = ({
                         onChange({ ...view, center: { ...view.center, y } })
                     }
                 />
+                <button
+                    onClick={() =>
+                        onChange({ ...view, center: { x: 0, y: 0 } })
+                    }
+                >
+                    Reset Center
+                </button>
             </div>
             <div>
                 {['texture1', 'texture2'].map((id, i) => (

@@ -86,7 +86,7 @@ export const HistoryPlayback = ({ state }: { state: State }) => {
         const { state, action } = histories[current];
     }, [state, current]);
 
-    const stopped = useRef(false);
+    const stopped = useRef(true);
 
     return (
         <div style={{}}>
@@ -103,7 +103,12 @@ export const HistoryPlayback = ({ state }: { state: State }) => {
             />
             <button
                 onClick={() => {
-                    animateHistory(state, canvas.current!, stopped);
+                    if (stopped.current) {
+                        stopped.current = false;
+                        animateHistory(state, canvas.current!, stopped);
+                    } else {
+                        stopped.current = true;
+                    }
                 }}
             >
                 Animate it up

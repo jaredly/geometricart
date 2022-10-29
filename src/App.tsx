@@ -15,6 +15,7 @@ import {
     DrillIcon,
     IconButton,
     IconHistoryToggle,
+    IconViewHide,
     MagicWandIcon,
     PencilIcon,
     RedoIcon,
@@ -171,6 +172,8 @@ export const App = ({ initialState }: { initialState: State }) => {
         'edit' as 'edit' | 'animate' | 'gcode' | 'history',
     );
 
+    const [hide, setHide] = React.useState(false);
+
     return (
         <div
             css={{
@@ -257,38 +260,53 @@ export const App = ({ initialState }: { initialState: State }) => {
                         right: 0,
                     }}
                 >
-                    <IconButton onClick={() => dispatch({ type: 'undo' })}>
-                        <UndoIcon />
+                    {hide ? null : (
+                        <React.Fragment>
+                            <IconButton
+                                onClick={() => dispatch({ type: 'undo' })}
+                            >
+                                <UndoIcon />
+                            </IconButton>
+                            <IconButton
+                                onClick={() => dispatch({ type: 'redo' })}
+                                disabled={state.history.undo === 0}
+                            >
+                                <RedoIcon />
+                            </IconButton>
+                            <IconButton
+                                onClick={() => setSidebarOverlay((m) => !m)}
+                            >
+                                <CogIcon />
+                            </IconButton>
+                            {screen !== 'animate' ? (
+                                <IconButton
+                                    onClick={() => setScreen('animate')}
+                                >
+                                    <MagicWandIcon />
+                                </IconButton>
+                            ) : null}
+                            {screen !== 'edit' ? (
+                                <IconButton onClick={() => setScreen('edit')}>
+                                    <PencilIcon />
+                                </IconButton>
+                            ) : null}
+                            {screen !== 'gcode' ? (
+                                <IconButton onClick={() => setScreen('gcode')}>
+                                    <DrillIcon />
+                                </IconButton>
+                            ) : null}
+                            {screen !== 'history' ? (
+                                <IconButton
+                                    onClick={() => setScreen('history')}
+                                >
+                                    <IconHistoryToggle />
+                                </IconButton>
+                            ) : null}
+                        </React.Fragment>
+                    )}
+                    <IconButton onClick={() => setHide(!hide)}>
+                        <IconViewHide />
                     </IconButton>
-                    <IconButton
-                        onClick={() => dispatch({ type: 'redo' })}
-                        disabled={state.history.undo === 0}
-                    >
-                        <RedoIcon />
-                    </IconButton>
-                    <IconButton onClick={() => setSidebarOverlay((m) => !m)}>
-                        <CogIcon />
-                    </IconButton>
-                    {screen !== 'animate' ? (
-                        <IconButton onClick={() => setScreen('animate')}>
-                            <MagicWandIcon />
-                        </IconButton>
-                    ) : null}
-                    {screen !== 'edit' ? (
-                        <IconButton onClick={() => setScreen('edit')}>
-                            <PencilIcon />
-                        </IconButton>
-                    ) : null}
-                    {screen !== 'gcode' ? (
-                        <IconButton onClick={() => setScreen('gcode')}>
-                            <DrillIcon />
-                        </IconButton>
-                    ) : null}
-                    {screen !== 'history' ? (
-                        <IconButton onClick={() => setScreen('history')}>
-                            <IconHistoryToggle />
-                        </IconButton>
-                    ) : null}
                 </div>
             </div>
         </div>
