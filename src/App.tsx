@@ -12,8 +12,12 @@ import {
 } from './editor/useDropTarget';
 import {
     CogIcon,
+    DrillIcon,
     IconButton,
+    IconHistoryToggle,
+    IconViewHide,
     MagicWandIcon,
+    PencilIcon,
     RedoIcon,
     UndoIcon,
 } from './icons/Icon';
@@ -164,7 +168,11 @@ export const App = ({ initialState }: { initialState: State }) => {
     const isTouchScreen = 'ontouchstart' in window;
 
     const [sidebarOverlay, setSidebarOverlay] = React.useState(false);
-    const [animationMode, setAnimationMode] = React.useState(false);
+    const [screen, setScreen] = React.useState(
+        'edit' as 'edit' | 'animate' | 'gcode' | 'history',
+    );
+
+    const [hide, setHide] = React.useState(false);
 
     return (
         <div
@@ -175,7 +183,7 @@ export const App = ({ initialState }: { initialState: State }) => {
                 justifyContent: 'center',
                 height: '100vh',
                 width: '100vw',
-                overflow: 'hidden',
+                overflow: 'auto',
                 background: dragging ? 'rgba(255,255,255,0.1)' : '',
                 '@media (max-width: 1400px)': {
                     flexDirection: 'column-reverse',
@@ -189,15 +197,19 @@ export const App = ({ initialState }: { initialState: State }) => {
                 css={{
                     position: 'relative',
                     alignSelf: 'stretch',
-                    overflow: 'auto',
+                    // overflow: 'auto',
                     // padding: 32,
                     '@media (max-width: 1000px)': {
                         padding: 0,
                     },
                 }}
             >
-                {animationMode ? (
+                {screen === 'animate' ? (
                     <AnimationEditor state={state} dispatch={dispatch} />
+                ) : screen === 'gcode' ? (
+                    <GCodeEditor state={state} dispatch={dispatch} />
+                ) : screen === 'history' ? (
+                    <HistoryPlayback state={state} />
                 ) : (
                     <Canvas
                         state={state}
@@ -248,22 +260,52 @@ export const App = ({ initialState }: { initialState: State }) => {
                         right: 0,
                     }}
                 >
-                    <IconButton onClick={() => dispatch({ type: 'undo' })}>
-                        <UndoIcon />
-                    </IconButton>
-                    <IconButton
-                        onClick={() => dispatch({ type: 'redo' })}
-                        disabled={state.history.undo === 0}
-                    >
-                        <RedoIcon />
-                    </IconButton>
-                    <IconButton onClick={() => setSidebarOverlay((m) => !m)}>
-                        <CogIcon />
-                    </IconButton>
-                    <IconButton
-                        onClick={() => setAnimationMode(!animationMode)}
-                    >
-                        <MagicWandIcon />
+                    {hide ? null : (
+                        <React.Fragment>
+                            <IconButton
+                                onClick={() => dispatch({ type: 'undo' })}
+                            >
+                                <UndoIcon />
+                            </IconButton>
+                            <IconButton
+                                onClick={() => dispatch({ type: 'redo' })}
+                                disabled={state.history.undo === 0}
+                            >
+                                <RedoIcon />
+                            </IconButton>
+                            <IconButton
+                                onClick={() => setSidebarOverlay((m) => !m)}
+                            >
+                                <CogIcon />
+                            </IconButton>
+                            {screen !== 'animate' ? (
+                                <IconButton
+                                    onClick={() => setScreen('animate')}
+                                >
+                                    <MagicWandIcon />
+                                </IconButton>
+                            ) : null}
+                            {screen !== 'edit' ? (
+                                <IconButton onClick={() => setScreen('edit')}>
+                                    <PencilIcon />
+                                </IconButton>
+                            ) : null}
+                            {screen !== 'gcode' ? (
+                                <IconButton onClick={() => setScreen('gcode')}>
+                                    <DrillIcon />
+                                </IconButton>
+                            ) : null}
+                            {screen !== 'history' ? (
+                                <IconButton
+                                    onClick={() => setScreen('history')}
+                                >
+                                    <IconHistoryToggle />
+                                </IconButton>
+                            ) : null}
+                        </React.Fragment>
+                    )}
+                    <IconButton onClick={() => setHide(!hide)}>
+                        <IconViewHide />
                     </IconButton>
                 </div>
             </div>
@@ -280,7 +322,7 @@ export const handleKeyboard = (
     setPendingDuplication: (d: null | PendingDuplication) => void,
     // setDragSelect: (ds: boolean) => void,
 ) => {
-    let tid: null | NodeJS.Timeout = null;
+    let tid: null | number = null;
     const hoverMirror = (id: Id, quick: boolean) => {
         setHover({ kind: 'Mirror', id, type: 'element' });
         if (tid) {
@@ -304,16 +346,18 @@ export const handleKeyboard = (
         ) {
             return;
         }
-        console.log('key', evt.key);
+        // Duplicate selected shapes across 1 point
         if (evt.key === 'd') {
             // uhm
             setPendingDuplication({ reflect: false, p0: null });
             return;
         }
+        // Duplicate selected shapes across 2 points
         if (evt.key === 'D') {
             setPendingDuplication({ reflect: true, p0: null });
             return;
         }
+        // Cycle through mirrors
         if (evt.key === 'M') {
             const ids = Object.keys(latestState.current.mirrors);
             let id = ids[0];
@@ -325,6 +369,7 @@ export const handleKeyboard = (
             hoverMirror(id, false);
             return;
         }
+        // Toggle current mirror on / off
         if ((evt.key === 'm' || evt.key === 'µ') && evt.altKey) {
             console.log('ok');
             if (latestState.current.activeMirror) {
@@ -344,6 +389,7 @@ export const handleKeyboard = (
             }
             return;
         }
+        // Make a new mirror
         if (evt.key === 'm') {
             setPendingMirror({
                 parent: latestState.current.activeMirror,
@@ -352,6 +398,7 @@ export const handleKeyboard = (
                 center: null,
             });
         }
+        // Select all
         if (evt.key === 'a' && (evt.ctrlKey || evt.metaKey)) {
             evt.preventDefault();
             evt.stopPropagation();
@@ -363,6 +410,7 @@ export const handleKeyboard = (
                 },
             });
         }
+        // Delete selected items
         if (evt.key === 'Delete' || evt.key === 'Backspace') {
             console.log('ok', latestState.current.selection?.type);
             if (latestState.current.selection?.type === 'Guide') {
@@ -447,3 +495,6 @@ export const handleKeyboard = (
         }
     };
 };
+
+import { GCodeEditor } from './gcode/GCodeEditor';
+import { HistoryPlayback } from './history/HistoryPlayback';

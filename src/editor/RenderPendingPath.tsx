@@ -16,15 +16,23 @@ import { ArcSegment, Coord, PendingPath, PendingSegment } from '../types';
 //     return res;
 // };
 
-export const arcPath = (segment: ArcSegment, prev: Coord, zoom: number) => {
+export const arcPath = (
+    segment: ArcSegment,
+    prev: Coord,
+    zoom: number,
+    moveTo = false,
+) => {
     const r = dist(segment.to, segment.center);
 
     const largeArc = isLargeArc(segment, prev);
     const sweep = segment.clockwise;
 
-    return `A ${r * zoom} ${r * zoom} 0 ${largeArc ? 1 : 0} ${sweep ? 1 : 0} ${
-        segment.to.x * zoom
-    } ${segment.to.y * zoom}`;
+    return (
+        (moveTo ? `M ${prev.x},${prev.y}` : '') +
+        `A ${r * zoom} ${r * zoom} 0 ${largeArc ? 1 : 0} ${sweep ? 1 : 0} ${
+            segment.to.x * zoom
+        } ${segment.to.y * zoom}`
+    );
 };
 
 export function isLargeArc(segment: ArcSegment, prev: Coord) {

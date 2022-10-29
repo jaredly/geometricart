@@ -427,7 +427,7 @@ export const Canvas = ({
         }
     }, [!!state.selection]);
 
-    const clickPath = React.useCallback((shiftKey, id) => {
+    const clickPath = React.useCallback((shiftKey: boolean, id: string) => {
         const path = currentState.current.paths[id];
         handleSelection(
             path,
@@ -539,7 +539,7 @@ export const Canvas = ({
     }, [guidePrimitives, state.paths, state.pathGroups]);
 
     const mirrorHover = React.useCallback(
-        (k) =>
+        (k: string | null) =>
             k
                 ? setHover({ kind: 'Mirror', id: k, type: 'element' })
                 : setHover(null),
@@ -814,16 +814,36 @@ export const Canvas = ({
                 <div
                     css={{
                         position: 'absolute',
-                        padding: 20,
-                        backgroundColor: 'rgba(255,255,255,0.3)',
                         color: 'black',
                         top: 58,
                         left: 0,
                     }}
-                    onClick={() => setTmpView(null)}
                 >
-                    Reset zoom
-                    {` ${pos.x.toFixed(4)},${pos.y.toFixed(4)}`}
+                    <div
+                        css={{
+                            padding: 20,
+                            backgroundColor: 'rgba(255,255,255,0.3)',
+                        }}
+                        onClick={() => setTmpView(null)}
+                    >
+                        Reset zoom
+                        {` ${pos.x.toFixed(4)},${pos.y.toFixed(4)}`}
+                    </div>
+                    <div
+                        css={{
+                            padding: 20,
+                            backgroundColor: 'rgba(255,255,255,0.3)',
+                        }}
+                        onClick={() => {
+                            dispatch({
+                                type: 'view:update',
+                                view: tmpView!,
+                            });
+                            setTmpView(null);
+                        }}
+                    >
+                        Commit zoom & pan
+                    </div>
                 </div>
             ) : null}
             <MirrorMenu

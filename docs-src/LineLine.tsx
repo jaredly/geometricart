@@ -1,11 +1,5 @@
 import * as React from 'react';
-import {
-    // @ts-ignore
-    insetLineLineTrace,
-    insetLineLine,
-    // @ts-ignore
-    rawSource,
-} from '../src/rendering/inset/lineLine';
+import { insetLineLine } from '../src/rendering/inset/lineLine';
 import { lineLine, lineToSlope } from '../src/rendering/intersect';
 import { Fixtures } from './Fixtures';
 import fixtures from './lineLine.json';
@@ -21,9 +15,11 @@ import { Slider } from '../src/rendering/inset/Slider';
 type I = [[Coord, Coord, Coord], number];
 const Input = ({
     input: [[p1, p2, p3], inset],
+    scale,
     onChange,
 }: {
     input: I;
+    scale: number;
     onChange?: (i: I) => void;
 }) => {
     return (
@@ -32,7 +28,7 @@ const Input = ({
                 points={pointsList([p1, p2, p3])}
                 stroke="red"
                 fill="none"
-                strokeWidth={2}
+                strokeWidth={2 * scale}
             />
             <CoordEditor
                 coords={[p1, p2, p3]}
@@ -69,10 +65,12 @@ const Input = ({
 };
 
 const Output = ({
+    scale,
     output: segments,
     input: [[p1, p2, p3], inset],
 }: {
     input: I;
+    scale: number;
     output: Array<Segment>;
 }) => {
     const naive = naiveInset(
@@ -87,7 +85,7 @@ const Output = ({
                     segment={naive.segment}
                     inner={{
                         stroke: 'green',
-                        strokeWidth: 1,
+                        strokeWidth: 1 * scale,
                         strokeDasharray: '5 5',
                     }}
                 />
@@ -100,7 +98,7 @@ const Output = ({
                                 : segments[i - 1].to
                         }
                         segment={seg}
-                        inner={{ stroke: 'green', strokeWidth: 3 }}
+                        inner={{ stroke: 'green', strokeWidth: 2 * scale }}
                     />
                 ))}
             </g>
@@ -108,29 +106,13 @@ const Output = ({
     );
 };
 
+export const config = {};
+
 export const LineLine = () => (
     <Fixtures
-        fixtures={fixtures as Array<Fixture<I, Array<Segment>>>}
+        fixtures={fixtures as Array<Fixture<typeof insetLineLine>>}
         Input={Input}
         Output={Output}
-        source={rawSource}
-        run={([[p1, p2, p3], inset]) => {
-            return insetLineLine(
-                p1,
-                { type: 'Line', to: p2 },
-                { type: 'Line', to: p3 },
-                inset,
-            );
-        }}
-        info={insetLineLineTrace.traceInfo}
-        trace={([[p1, p2, p3], inset], trace) => {
-            return insetLineLineTrace(
-                p1,
-                { type: 'Line', to: p2 },
-                { type: 'Line', to: p3 },
-                inset,
-                trace,
-            );
-        }}
+        run={insetLineLine}
     />
 );

@@ -9,6 +9,7 @@ import fs from 'fs';
 import { Config } from './types';
 import { run } from './App';
 import { deserializeFixture, deserializeFixtures } from './utils';
+import { deepRoundFloats } from '../rendering/deepEqual';
 
 export class IncompleteFixture extends Error {}
 
@@ -28,7 +29,9 @@ export const jestTests = <I, O>(config: Config<I, O>) => {
                     );
                 }
                 const output: O = config.transform(fixture.input);
-                expect(output).toEqual(fixture.output);
+                expect(deepRoundFloats(output)).toEqual(
+                    deepRoundFloats(fixture.output),
+                );
             });
         });
     });

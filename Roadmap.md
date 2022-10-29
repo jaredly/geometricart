@@ -1,4 +1,226 @@
 
+# Let's do a "making of" animation.
+
+- go through undo/redo, and screenshot each step.
+	Then see how it goes?
+
+So, I don't think saving a ton of png's is the best way about it.
+This will be creating a dealio for screencapture.
+because, I can do it fast enough.
+and saving pngs is a huge memory hog.
+it would be cool if I could do like the mp4 compression on the fly ...
+but..
+
+OH WAIT WebCodecs to the rescue https://web.dev/webcodecs/
+maybe I just can record video? And have it be ok?
+that would be very cool.
+
+Ok, but regardless, I need to figure out how I want to animate this whole junk.
+
+Yeah I'mve definitely on to something here.
+
+Next nice things:
+- [ ] show mirrors when they get created & toggled
+- [x] show guides as they're being created
+- [x] for path:new, I don't need to animate to all the points,
+	I can just animate the line segments popping in.
+	And I can time things so that regardless of the number of segments, it always takes
+	like 0.5 seconds or something?
+- show axis for flipping stuff about.
+- when doing a thing for recording, don't use tmp zoom.
+- 
+
+Wellll this is looking pretty dang awesome.
+Things that would take it to the next level:
+- [ ] animate other guide ('o' circle)
+- [ ] animate pan / zoom???
+	will require making a canvas that's bigger, so we can render the big story
+	and then just pan over that image.
+- [ ] pre-render all state images, so it's smoother. with the larger one,
+	you start to get a noticable lag.
+
+
+
+
+# GCode fill it up
+
+- [x] pockets!
+- [x] IMPOTANT Figure out TABS please.
+	- I think I can just do like "number of tabs & width & height", and have them equally spaced?
+		I'll want a better "path to points" algo, that lets straight lines be straight.
+		ideally memoize the path-to-points at the top level, so even changing gcode items
+		doesn't re-trigger.
+		Would be nice to cache pocket calculations per path as well, if I can.
+- [x] reorder things
+- [x] disable gcodeitems
+- [x] auto-update the visualization pls
+- [x] render a full 3d model
+	https://github.com/tbfleming/jscut/tree/gh-pages/js
+- [x] better path
+	- missing conics :( gotta figure that out. Maybe use PathKit to turn it into svg already?
+- [x] make a config for Starting level
+- [ ] also a config for "outset" or "inset" by some amount...
+
+- [ ] show a preview of the paths involved, for each gcode item
+- [ ] actual drag and drop, gotta have it
+
+- [ ] hmm I'll need a way to indicate tool changes?
+	Probably M00 or M01 or M02? Along with a comment `;` for what should be done next.
+	And my simulator can parse the comment?
+	Open question if I can load another tool without losing alignment.
+
+My method for collecting paths leaves some things to be desired.
+
+Fills should be for pockets
+
+Lines should be for contours
+
+"Add Contour"
+"Add Pocket"
+
+Lighten should be taken into account.
+
+Also, offset please. Might want that.
+
+Anyway, and the pocket calculations should be smarter about straight lines.
+And should be smarter about DPI, for getPointAtDistance
+
+Also, for the pockets, do we decide what bit size we're doing?
+
+#
+
+Hm.
+So there are a couple of things I want.
+
+1) tabs. Autoplacement? I mean sounds fine I guess. As long as they're on a straightaway. Yeah.
+	
+2) automatic laser cut inverse dealio. So using PathKit, do a .stroke() and a .union()
+	so I can laser cut something that will fit as an inset.
+
+g92 z0
+g92 x0
+g92 y0
+
+
+# Laser Inset
+So I want kerf compensation?
+maybe, I don't actually know if I do.
+
+
+# OK so
+I think I want to move to pathkit
+not sure if it would slow things down
+but it would be better!
+
+I'd love to be able to "merge lines"
+hmmmmmm yeah that's super easy with union
+and then, "interleave" would probably involve
+some amount of difference or difference_reversed.
+
+ohhh ok so what if, for interleave,
+I had some way of selecting intersections?
+and then specifying the behavior.
+(merge, one on top, the other on top)
+
+that would also let me ... relax mye rules
+about not creating self-intersecting tiles?
+andddd it would be really nice to get "paint to fill"
+right?
+
+
+## CNC Gcode, lets goo
+
+> have a screen, that will split things out by color of line
+- and you can "add toolpaths", including multiple passes I guess
+- use the ppi thing as well
+- Toolpath options?
+	- global clearance height
+	- step increment
+
+ALSO: Allow you to generate multiple gcodes
+
+ok yeah so it's
+"File, w/ name"
+and
+
+oh hey, looks like I can do `M0` to "pause execution" and do a tool change.
+So I think I want a "tool change height"...
+
+- [x] we're generating!!! buttttt
+
+what if I also interface directly with GRBL?
+could be cool
+much quicker iteration I feel like.
+
+"send this path"
+
+I'd also want a visualizer, just to gut check things probably.
+
+
+
+What's my ideal workflow? For this stuff
+
+- reliably get close to the wood, and know how deep I want things
+- yeah if I can Z things out (say, get to a contact-probe height ideally) that would be soooo nice. How to do it? hmmm. I'd need a simple circuit, with a lead on the bit, and a lead on a metal plate. put the place (exactly 1mm thick) on top of the wood, and go down by like 0.1 or 0.05mm increments until you hit contact. Then you know how tall things are.
+
+Anyway, then I want to be able to:
+- run a depth test program, and probably speed too
+	that runs a bit through its paces to see how deep things are,
+	how speeds impact things.
+
+A test of resolution and stuff:
+- sin wave? or something?
+- I wonder about doing curvy cuts into wood, as a nice sculpture?
+- but also, topo maps. I'm gonna have to be fancy I think. that'll be a whole gcode bonanza.
+
+- ok but I want to figure out fills, right?
+	- like, doing different dealios at different heights. sounds dope.
+
+
+OK easy test:
+- sin wave, period of like 5mm, random offset.
+- sampled like 100 times.
+- in 5 lines
+- love it, very beautiful, very powerful.
+
+Then the depth test to see if we can rely on things yes
+- 0.1mm increments
+- move 3mm, lower, move 3mm, lower
+
+
+- [ ] umm yeah what's the PPI conversion, and why is it bad
+- [ ] show size & boundaries when exporting gcode
+- [ ] have a ppi field in the gcode stuff
+
+
+
+OK so this has been very fun
+but also
+using an upcut is annoying, whodathunk.
+I want to run some tests with the new bits I got
+to see if I want to keep them
+or something.
+
+
+
+
+
+# hm
+
+GET READy for untangleHit that can handle all the things
+at least all even-numbered things.
+
+So
+
+- [x] make a deepEqual that is nicer to floats
+	- hm maybe I didn't need that? idk.
+- [x] make a new impl of untangleHit
+  - [ ] use it in the vest
+- [ ] iterate till it works
+- [ ] make some tests for >4 items.
+
+
+
 # Hmmm what about visual debug statements?
 
 Like,

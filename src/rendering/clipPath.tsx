@@ -1,4 +1,4 @@
-import { coordKey } from './calcAllIntersections';
+import { coordKey, numKey } from './calcAllIntersections';
 import { angleBetween, isAngleBetween } from './findNextSegments';
 import { pathToPrimitives } from '../editor/findSelection';
 import { angleTo, dist } from './getMirrorTransforms';
@@ -38,6 +38,13 @@ export type Angle =
           radius: number;
           clockwise: boolean;
       };
+
+export const angleKey = (angle: Angle) =>
+    angle.type === 'flat'
+        ? numKey(angle.theta)
+        : `${numKey(angle.theta)}:${numKey(angle.radius)}:${
+              angle.clockwise ? 'c' : ''
+          }`;
 
 // export const anglesEqual = (one: Angle, two: Angle): boolean => {
 //     if (one.type !== two.type) {

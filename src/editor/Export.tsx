@@ -19,7 +19,14 @@ import { State, TextureConfig } from '../types';
 import { closeEnough } from '../rendering/clipPath';
 import { PendingBounds, newPendingBounds, addCoordToBounds } from './Bounds';
 
-export const findBoundingRect = (state: State) => {
+export type Bounds = {
+    x1: number;
+    y1: number;
+    x2: number;
+    y2: number;
+};
+
+export const findBoundingRect = (state: State): Bounds | null => {
     const clip = state.view.activeClip
         ? state.clips[state.view.activeClip]
         : undefined;
@@ -54,7 +61,6 @@ export const Export = ({
     dispatch: (action: Action) => void;
 }) => {
     // const [name, setName] = React.useState()
-    const name = `image-${Date.now()}.svg`;
     const [url, setUrl] = React.useState(null as null | string);
     const [animationPosition, setAnimationPosition] = React.useState(0);
 
@@ -63,6 +69,7 @@ export const Export = ({
     const [size, setSize] = React.useState(originalSize);
     const [embed, setEmbed] = React.useState(true);
     const [history, setHistory] = React.useState(false);
+    const name = `image-${Date.now()}${history ? '-history' : ''}.svg`;
 
     const [crop, setCrop] = React.useState(10 as null | number);
 
@@ -444,16 +451,23 @@ export function renderTexture(
     }
 }
 
-export async function addMetadata(blob: Blob | null, state: State) {
+export async function addMetadata(
+    blob: Blob | null,
+    state: State,
+    gcode?: string,
+) {
     const buffer = await blob!.arrayBuffer();
     const uint8Array = new Uint8Array(buffer);
-    const meta = {
+    const meta: any = {
         tEXt: {
             Source: 'Geometric Art',
             // TODO: Add an option to scrub history, for smaller file size
             GeometricArt: JSON.stringify(state),
         },
     };
+    if (gcode) {
+        meta.tEXt.GCode = gcode;
+    }
 
     const chunks = extractChunks(uint8Array);
     insertMetadata(chunks, meta);

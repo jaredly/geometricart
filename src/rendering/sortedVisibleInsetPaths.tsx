@@ -114,7 +114,7 @@ export function sortedVisibleInsetPaths(
             };
         }
     });
-    console.log(performance.now() - now);
+    // console.log(performance.now() - now);
 
     let visible = Object.keys(paths)
         .filter(
@@ -227,7 +227,7 @@ export const pathToInsetPaths = (
                         insetCache[path.normalized.key].segments,
                         inset / 100,
                     );
-                    const regions = cleanUpInsetSegments3(segments, corners);
+                    const regions = cleanUpInsetSegments2(segments, corners);
                     insetCache[path.normalized.key].insets[inset / 100] =
                         regions;
                 }
@@ -251,7 +251,7 @@ export const pathToInsetPaths = (
                 path.segments,
                 inset / 100,
             );
-            const regions = cleanUpInsetSegments3(segments, corners);
+            const regions = cleanUpInsetSegments2(segments, corners);
 
             return regions.map((segments) => ({
                 ...path,

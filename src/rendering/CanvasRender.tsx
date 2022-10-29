@@ -195,6 +195,8 @@ export const canvasRender = async (
                     }
                 }
 
+                ctx.lineJoin = 'round';
+                ctx.lineCap = 'round';
                 ctx.beginPath();
                 tracePath(ctx, myPath, zoom);
 
@@ -270,6 +272,8 @@ export const canvasRender = async (
                 ctx.beginPath();
                 tracePath(ctx, myPath, zoom);
                 ctx.strokeStyle = color;
+                ctx.lineJoin = 'round';
+                ctx.lineCap = 'round';
                 ctx.stroke();
             }
             ctx.globalAlpha = 1;
@@ -509,7 +513,9 @@ export function tracePath(
             );
         }
     });
-    ctx.closePath();
+    if (!path.open) {
+        ctx.closePath();
+    }
 }
 
 // This is used for making a "clip" to the line of a path.

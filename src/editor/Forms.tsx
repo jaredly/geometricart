@@ -119,13 +119,16 @@ export const Float = ({
 export const Int = ({
     value,
     onChange,
+    placeholder,
 }: {
     value: number | undefined;
+    placeholder?: string;
     onChange: (v: number | undefined) => unknown;
 }) => {
     return (
         <input
             value={value}
+            placeholder={placeholder}
             onChange={(evt) => {
                 const res = +evt.target.value;
                 if (isNaN(res) || !evt.target.value.trim()) {
@@ -648,6 +651,13 @@ export const ViewForm = ({
                         onChange({ ...view, center: { ...view.center, y } })
                     }
                 />
+                <button
+                    onClick={() =>
+                        onChange({ ...view, center: { x: 0, y: 0 } })
+                    }
+                >
+                    Reset Center
+                </button>
             </div>
             <div>
                 {['texture1', 'texture2'].map((id, i) => (

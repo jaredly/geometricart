@@ -4,9 +4,8 @@ import { visuals, widgets } from './functionWidgets';
 import { useInitialState } from '../src/rendering/SegmentEditor';
 import { RenderCode } from './RenderCode';
 
-import ReactMarkdown from 'react-markdown';
-import remarkMath from 'remark-math';
-import rehypeKatex from 'rehype-katex';
+import { RenderSidebar } from './RenderSidebar';
+import { ShowValues } from './ShowValues';
 
 type Trace = <V>(
     value: V,
@@ -31,6 +30,9 @@ const getCallInfo = (id: number, trace: TraceOutput) => {
         return;
     }
     const { fn: fnid, args } = trace[id].call!;
+    if (fnid === -1) {
+        return; // builtin probably
+    }
     if (!trace[fnid] || args.some((id) => !trace[id])) {
         console.log('hm no fn info', id, trace[id].call);
         return null;
@@ -80,10 +82,19 @@ export type ByStart = {
 
 export type Info = {
     comments: Array<{ value: string; start: number; end: number }>;
+    shows: Array<{ start: number; end: number; items: Array<number> }>;
     expressions: {
         [key: number]: {
             start: number;
             end: number;
+            type?: {
+                type: string;
+                text: string;
+                start: number;
+                end: number;
+                k: number;
+                loc: string;
+            };
         };
     };
     calls: {
@@ -101,39 +112,64 @@ export type Info = {
 
 const colorsRaw =
     '1f77b4ff7f0e2ca02cd627289467bd8c564be377c27f7f7fbcbd2217becf';
-// '8dd3c7ffffb3bebadafb807280b1d3fdb462b3de69fccde5d9d9d9bc80bdccebc5ffed6f';
-const colors: Array<string> = [];
+export const colors: Array<string> = [];
 for (let i = 0; i < colorsRaw.length; i += 6) {
     colors.push('#' + colorsRaw.slice(i, i + 6));
 }
 
-export const Fixtures = <I, O>({
+export const Fixtures = <Fn extends (...args: any) => any>({
     fixtures,
     Input,
     Output,
-    source,
     editDelay,
-    trace,
-    info,
     run,
 }: {
-    fixtures: Array<Fixture<I, O>>;
-    Input: (props: { input: I; onChange?: (input: I) => void }) => JSX.Element;
-    Output: (props: { output: O; input: I }) => JSX.Element;
+    fixtures: Array<Fixture<Fn>>;
+    Input: (props: {
+        input: Parameters<Fn>;
+        onChange?: (input: Parameters<Fn>) => void;
+        scale: number;
+    }) => JSX.Element;
+    Output: (props: {
+        output: ReturnType<Fn>;
+        input: Parameters<Fn>;
+        scale: number;
+    }) => JSX.Element;
     editDelay?: number;
-    trace: (i: I, trace: Trace) => O;
-    info: Info;
-    run: (i: I) => O;
-    source: string;
+    run: Fn;
 }) => {
+    // The func
+    const annotatedRun = run as Fn & {
+        trace: (trace: Trace, ...i: Parameters<Fn>) => ReturnType<Fn>;
+        traceInfo: Info;
+        rawSource: string;
+    };
+    if (
+        typeof annotatedRun.trace !== 'function' ||
+        typeof annotatedRun.rawSource !== 'string'
+    ) {
+        throw new Error(
+            `The function you've passed in hasn't been annotated by \
+			the babel transform! Either you need to add the '// \
+            @trace' comment to it, or you haven't set up the babel transform \
+			correctly.`,
+        );
+    }
+    const source = annotatedRun.rawSource;
+    const trace = annotatedRun.trace;
+    const info = annotatedRun.traceInfo;
+    // @ts-ignore
+    window.annotated = annotatedRun;
+    // console.log('window.annotated');
+
     const [selected, setSelected] = React.useState(fixtures[0]);
     const [output, traceOutput, byStart] = React.useMemo((): [
-        O,
+        ReturnType<Fn>,
         TraceOutput,
         ByStart,
     ] => {
         const data: TraceOutput = {};
-        const output = trace(selected.input, (value, id) => {
+        const output = trace((value, id) => {
             const { start, end } = info.expressions[id];
             if (!data[id]) {
                 data[id] = {
@@ -145,7 +181,7 @@ export const Fixtures = <I, O>({
                 data[id].values.push(value);
             }
             return value;
-        });
+        }, ...selected.input);
 
         const byStart: ByStart = {};
         Object.keys(data).forEach((k) => {
@@ -168,13 +204,13 @@ export const Fixtures = <I, O>({
 
         fixtures.forEach((fixture, i) => {
             let matched = false;
-            trace(fixture.input, (value, id) => {
-                matched = true;
+            trace((value, id) => {
                 if (examplesMatching[id] && !examplesMatching[id].includes(i)) {
+                    matched = true;
                     examplesMatching[id].push(i);
                 }
                 return value;
-            });
+            }, ...fixture.input);
             if (!matched) {
                 unmatchedFixtures.push(i);
             }
@@ -186,34 +222,63 @@ export const Fixtures = <I, O>({
             rendered[+k] = (
                 <div
                     style={{
-                        display: 'inline-flex',
-                        flexDirection: 'row',
-                        flexWrap: 'wrap',
+                        display: 'inline-block',
+                        backgroundColor: '#000',
+                        padding: '0 8px 8px',
+                        marginTop: 4,
+                        borderRadius: 3,
                     }}
-                    onMouseOver={(evt) => evt.stopPropagation()}
                 >
-                    {examplesMatching[+k].map((idx) => (
-                        <div
-                            key={idx}
-                            style={{
-                                cursor: 'pointer',
-                                backgroundColor: 'white',
-                                margin: 4,
-                            }}
-                            onClick={() => {
-                                setSelected(fixtures[idx]);
-                                setHover(null);
-                            }}
-                        >
-                            <svg width={50} height={50} viewBox="0 0 300 300">
-                                <Input input={fixtures[idx].input} />
-                                <Output
-                                    output={run(fixtures[idx].input)}
-                                    input={fixtures[idx].input}
-                                />
-                            </svg>
-                        </div>
-                    ))}
+                    <span
+                        style={{
+                            fontSize: '70%',
+                            color: 'white',
+                        }}
+                    >
+                        Examples that hit this path:
+                    </span>
+                    <div
+                        style={{
+                            display: 'flex',
+                            flexDirection: 'row',
+                            flexWrap: 'wrap',
+                        }}
+                        onMouseOver={(evt) => evt.stopPropagation()}
+                    >
+                        {examplesMatching[+k].map((idx) => (
+                            <div
+                                key={idx}
+                                style={{
+                                    cursor: 'pointer',
+                                    backgroundColor: 'white',
+                                    marginRight: 4,
+                                    marginTop: 4,
+                                }}
+                                onClick={() => {
+                                    setSelected(fixtures[idx]);
+                                    setHover(null);
+                                }}
+                            >
+                                <svg
+                                    width={50}
+                                    height={50}
+                                    viewBox="0 0 300 300"
+                                >
+                                    <Input
+                                        scale={6}
+                                        input={fixtures[idx].input}
+                                    />
+                                    <Output
+                                        output={run(
+                                            ...(fixtures[idx].input as any),
+                                        )}
+                                        input={fixtures[idx].input}
+                                        scale={6}
+                                    />
+                                </svg>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             );
         });
@@ -233,7 +298,7 @@ export const Fixtures = <I, O>({
     }, []);
 
     return (
-        <div>
+        <div style={{ marginBottom: 16 }}>
             <div
                 style={{
                     maxWidth: 1200,
@@ -249,7 +314,16 @@ export const Fixtures = <I, O>({
                     setPins={setPins}
                     info={info}
                     hover={hover}
-                    setHover={setHover}
+                    setHover={(id) => {
+                        if (
+                            id != null &&
+                            info.expressions[id] &&
+                            info.expressions[id].type?.type === 'void'
+                        ) {
+                            return;
+                        }
+                        setHover(id);
+                    }}
                     examplesMatching={examplesMatching}
                 />
                 <div>
@@ -260,6 +334,21 @@ export const Fixtures = <I, O>({
                             padding: 8,
                         }}
                     >
+                        <RenderSidebar
+                            editDelay={editDelay}
+                            pins={pins}
+                            setHover={setHover}
+                            setPins={setPins}
+                            run={run}
+                            Input={Input}
+                            setSelected={setSelected}
+                            selected={selected}
+                            Output={Output}
+                            output={output}
+                            hover={hover}
+                            traceOutput={traceOutput}
+                        />
+
                         <div
                             style={{
                                 display: 'flex',
@@ -267,7 +356,7 @@ export const Fixtures = <I, O>({
                                 width: 300,
                             }}
                         >
-                            {unmatchedFixtures.map((idx) => (
+                            {fixtures.map((fixture, idx) => (
                                 <div
                                     key={idx}
                                     style={
@@ -288,30 +377,21 @@ export const Fixtures = <I, O>({
                                         height={50}
                                         viewBox="0 0 300 300"
                                     >
-                                        <Input input={fixtures[idx].input} />
-                                        <Output
-                                            output={run(fixtures[idx].input)}
+                                        <Input
+                                            scale={6}
                                             input={fixtures[idx].input}
+                                        />
+                                        <Output
+                                            output={run(
+                                                ...(fixtures[idx].input as any),
+                                            )}
+                                            input={fixtures[idx].input}
+                                            scale={6}
                                         />
                                     </svg>
                                 </div>
                             ))}
                         </div>
-
-                        <RenderMain
-                            editDelay={editDelay}
-                            pins={pins}
-                            setHover={setHover}
-                            setPins={setPins}
-                            run={run}
-                            Input={Input}
-                            setSelected={setSelected}
-                            selected={selected}
-                            Output={Output}
-                            output={output}
-                            hover={hover}
-                            traceOutput={traceOutput}
-                        />
                     </div>
                 </div>
             </div>
@@ -328,260 +408,13 @@ export const Fixtures = <I, O>({
                         padding: 4,
                     }}
                 >
-                    <ShowValues values={traceOutput[hover].values} />
+                    <ShowValues
+                        values={traceOutput[hover].values}
+                        type={info.expressions[hover].type}
+                    />
                     {getWidget(hover, traceOutput, '3em')}
                 </div>
             ) : null}
         </div>
     );
 };
-
-const ShowValues = ({ values }: { values: Array<any> }) => {
-    const v = values[0];
-    if (typeof v === 'function' && v.meta && v.meta.comment) {
-        const arc: Array<{ name: string; comment?: string }> =
-            v.meta.argComments;
-        return (
-            <div
-                style={{
-                    padding: 16,
-                    fontFamily: 'system-ui',
-                }}
-            >
-                {arc.some(Boolean) ? (
-                    <div
-                        style={{
-                            marginBottom: '1em',
-                            padding: '8px 16px',
-                            backgroundColor: 'rgba(255,255,255,0.2)',
-                        }}
-                    >
-                        <code>
-                            {v.meta.name}({arc.map((c) => c.name).join(', ')})
-                        </code>
-                    </div>
-                ) : null}
-                <ReactMarkdown
-                    children={v.meta.comment.replace(/^\s*\*/gm, '')}
-                    remarkPlugins={[remarkMath]}
-                    rehypePlugins={[rehypeKatex]}
-                    className="md"
-                />
-                {arc.some((c) => c && c.comment) ? (
-                    <>
-                        <h4 style={{ marginTop: '1em', marginBottom: '.5em' }}>
-                            Arguments
-                        </h4>
-                        <table>
-                            <tbody>
-                                {arc.map((arg) => (
-                                    <tr>
-                                        <td
-                                            style={{
-                                                paddingRight: 8,
-                                                fontStyle: 'italic',
-                                            }}
-                                        >
-                                            {arg.name}
-                                        </td>
-                                        <td>
-                                            {arg.comment ? (
-                                                <ReactMarkdown
-                                                    children={arg.comment}
-                                                    remarkPlugins={[remarkMath]}
-                                                    rehypePlugins={[
-                                                        rehypeKatex,
-                                                    ]}
-                                                    className="md"
-                                                />
-                                            ) : (
-                                                'No documentation'
-                                            )}
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </>
-                ) : null}
-            </div>
-        );
-    }
-    return (
-        <div style={{ whiteSpace: 'pre' }}>
-            {typeof v === 'function' && v.meta
-                ? `function ${v.meta.name}\n${v.meta.comment ?? ''}`
-                : typeof v === 'number'
-                ? v.toFixed(2)
-                : JSON.stringify(v, (k, v) =>
-                      typeof v === 'number' ? Math.round(v * 100) / 100 : v,
-                  )}
-        </div>
-    );
-};
-
-function RenderMain<I, O>({
-    Input,
-    setSelected,
-    selected,
-    Output,
-    output,
-    hover,
-    traceOutput,
-    editDelay,
-    run,
-    pins,
-    setPins,
-    setHover,
-}: {
-    editDelay?: number;
-    Input: (props: {
-        input: I;
-        onChange?: ((input: I) => void) | undefined;
-    }) => JSX.Element;
-    setSelected: React.Dispatch<React.SetStateAction<Fixture<I, O>>>;
-    pins: { [key: number]: boolean };
-    setPins: React.Dispatch<React.SetStateAction<{ [key: number]: boolean }>>;
-    setHover: React.Dispatch<React.SetStateAction<number | null>>;
-    selected: Fixture<I, O>;
-    Output: (props: { output: O; input: I }) => JSX.Element;
-    output: O;
-    run: (i: I) => O;
-    hover: number | null;
-    traceOutput: TraceOutput;
-}) {
-    const [edit, setEdit] = useInitialState(selected.input);
-    const [showAll, setShowAll] = React.useState(false);
-    const myOutput = React.useMemo(() => run(edit), [edit]);
-    React.useEffect(() => {
-        if (edit === selected.input) {
-            return;
-        }
-        if (editDelay) {
-            const tid = setTimeout(() => {
-                setSelected((s) => ({ ...s, input: edit }));
-            }, editDelay);
-            return () => clearTimeout(tid);
-        }
-        if (edit !== selected.input) {
-            setSelected((s) => ({ ...s, input: edit }));
-        }
-    }, [edit]);
-    return (
-        <div style={{ width: 300 }}>
-            <svg
-                width={300}
-                height={300}
-                viewBox="0 0 300 300"
-                style={{
-                    backgroundColor: 'white',
-                }}
-            >
-                <Input onChange={setEdit} input={edit} />
-                <Output input={edit} output={myOutput} />
-                <g style={{ pointerEvents: 'none' }}>
-                    {(showAll
-                        ? Object.keys(traceOutput).filter((k) =>
-                              hasVisual(+k, traceOutput),
-                          )
-                        : Object.keys(pins).filter(
-                              (k) => pins[+k] && !!traceOutput[+k],
-                          )
-                    ).map((k, i) => {
-                        const hover = traceOutput[+k];
-                        if (!hover.call) {
-                            return;
-                        }
-                        const name =
-                            traceOutput[hover.call.fn].values[0].meta.name;
-                        if (visuals[name]) {
-                            return (
-                                <g
-                                    key={k}
-                                    style={{
-                                        color: colors[i % colors.length],
-                                    }}
-                                >
-                                    {visuals[name](
-                                        hover.call.args.map(
-                                            (id) => traceOutput[id].values[0],
-                                        ),
-                                        hover.values[0],
-                                    )}
-                                </g>
-                            );
-                        }
-                    })}
-                    {hover
-                        ? ((hover) => {
-                              if (!hover.call) {
-                                  return;
-                              }
-                              const name =
-                                  traceOutput[hover.call.fn].values[0].meta
-                                      ?.name;
-                              if (name && visuals[name]) {
-                                  return visuals[name](
-                                      hover.call.args.map(
-                                          (id) => traceOutput[id].values[0],
-                                      ),
-                                      hover.values[0],
-                                  );
-                              }
-                          })(traceOutput[hover])
-                        : null}
-                </g>
-            </svg>
-            <div
-                style={{
-                    color: 'white',
-                    cursor: 'pointer',
-                    fontFamily: 'system-ui',
-                }}
-                onClick={() => setShowAll(!showAll)}
-            >
-                <input type="checkbox" checked={showAll} onChange={() => {}} />
-                Show all annotations
-            </div>
-            <div
-                style={{
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    fontFamily: 'monospace',
-                }}
-            >
-                {(showAll
-                    ? Object.keys(traceOutput).filter((k) =>
-                          hasVisual(+k, traceOutput),
-                      )
-                    : Object.keys(pins).filter(
-                          (k) => pins[+k] && !!traceOutput[+k],
-                      )
-                ).map((k, i) => (
-                    <div
-                        onMouseOut={() => {
-                            setHover(null);
-                        }}
-                        onMouseOver={() => {
-                            setHover(+k);
-                        }}
-                        onClick={() => {
-                            setPins({ ...pins, [+k]: false });
-                            setHover(null);
-                        }}
-                        style={{
-                            cursor: 'pointer',
-                            margin: 8,
-                            color: colors[i % colors.length],
-                            borderBottom: '2px solid currentColor',
-                            paddingBottom: 4,
-                        }}
-                        key={k}
-                    >
-                        {getWidget(+k, traceOutput, '3em')}
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-}

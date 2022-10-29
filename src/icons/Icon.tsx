@@ -452,3 +452,51 @@ export function CheckmarkIcon(props: React.SVGProps<SVGSVGElement>) {
         </svg>
     );
 }
+
+export function DrillIcon(props: React.SVGProps<SVGSVGElement>) {
+    return (
+        <svg
+            data-name="Layer 1"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            height="1em"
+            width="1em"
+            {...props}
+        >
+            <path d="M19 4H9a1 1 0 00-1 1v2H3a1 1 0 000 2h5v4a1 1 0 002 0v-1h4v7a1 1 0 001 1h2a3 3 0 003-3v-5.18A3 3 0 0022 9V7a3 3 0 00-3-3zm-1 13a1 1 0 01-1 1h-1v-6h2zm2-8a1 1 0 01-1 1h-9V6h6v1a1 1 0 002 0V6h1a1 1 0 011 1z" />
+        </svg>
+    );
+}
+
+export function IconHistoryToggle(props: React.SVGProps<SVGSVGElement>) {
+    return (
+        <svg
+            fill="none"
+            stroke="currentColor"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            viewBox="0 0 24 24"
+            height="1em"
+            width="1em"
+            {...props}
+        >
+            <path stroke="none" d="M0 0h24v24H0z" />
+            <path d="M12 8v4l3 3M8.56 3.69a9 9 0 00-2.92 1.95M3.69 8.56A9 9 0 003 12M3.69 15.44a9 9 0 001.95 2.92M8.56 20.31A9 9 0 0012 21M15.44 20.31a9 9 0 002.92-1.95M20.31 15.44A9 9 0 0021 12M20.31 8.56a9 9 0 00-1.95-2.92M15.44 3.69A9 9 0 0012 3" />
+        </svg>
+    );
+}
+
+export function IconViewHide(props: React.SVGProps<SVGSVGElement>) {
+    return (
+        <svg
+            viewBox="0 0 20 20"
+            fill="currentColor"
+            height="1em"
+            width="1em"
+            {...props}
+        >
+            <path d="M12.81 4.36l-1.77 1.78a4 4 0 00-4.9 4.9l-2.76 2.75C2.06 12.79.96 11.49.2 10a11 11 0 0112.6-5.64zm3.8 1.85c1.33 1 2.43 2.3 3.2 3.79a11 11 0 01-12.62 5.64l1.77-1.78a4 4 0 004.9-4.9l2.76-2.75zm-.25-3.99l1.42 1.42L3.64 17.78l-1.42-1.42L16.36 2.22z" />
+        </svg>
+    );
+}

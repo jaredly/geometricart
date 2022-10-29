@@ -107,12 +107,12 @@ export const addFunctionMeta = (contents, filePath) => {
     return found;
 };
 
-export default function (contents, filePath) {
-    // console.log(filePath, contents.includes(listExamplesComment));
+export default function (contents, filePath, typesInfo) {
     contents = contents.replace(
         new RegExp(listExamplesComment, 'g'),
         listExamplesSigil + ';\n',
     );
+    contents = contents.replace(new RegExp('// @show\\(', 'g'), '____SHOW(');
     const parsed = babel.parseSync(contents, {
         parserOpts: {
             plugins: ['typescript', 'jsx'],
@@ -127,12 +127,12 @@ export default function (contents, filePath) {
                 node.declaration.declarations.forEach((decl) => {
                     if (fns.includes(decl.init.type)) {
                         const name = decl.id.name;
-                        decl.id.name += 'Trace';
                         const traceInfo = {
                             expressions: {},
                             calls: {},
                             references: [],
                             examples: {},
+                            shows: [],
                             comments: parsed.comments
                                 .filter(
                                     (comment) =>
@@ -158,11 +158,22 @@ export default function (contents, filePath) {
                         };
                         traverse.default(
                             t.file(t.program([ensureStmt(decl.init)])),
-                            annotateFunctionBody(decl.init, traceInfo),
+                            annotateFunctionBody(
+                                decl.init,
+                                traceInfo,
+                                typesInfo,
+                            ),
                         );
                         found.push(
-                            t.exportNamedDeclaration(
-                                t.variableDeclaration('const', [decl]),
+                            t.expressionStatement(
+                                t.assignmentExpression(
+                                    '=',
+                                    t.memberExpression(
+                                        t.identifier(decl.id.name),
+                                        t.identifier('trace'),
+                                    ),
+                                    decl.init,
+                                ),
                             ),
                         );
                         found.push(
@@ -177,64 +188,28 @@ export default function (contents, filePath) {
                                 ),
                             ),
                         );
-                        // found.push(
-                        //     t.expressionStatement(
-                        //         t.assignmentExpression(
-                        //             t.memberExpression(
-                        //                 t.identifier(name),
-                        //                 t.identifier('meta'),
-                        //             ),
-                        //             t.objectExpression([
-                        //                 t.objectProperty(
-                        //                     t.identifier('name'),
-                        //                     t.stringLiteral(name),
-                        //                 ),
-                        //                 t.objectProperty(
-                        //                     t.identifier('filePath'),
-                        //                     t.stringLiteral(filePath),
-                        //                 ),
-                        //             ]),
-                        //         ),
-                        //     ),
-                        // );
+                        found.push(
+                            t.expressionStatement(
+                                t.assignmentExpression(
+                                    '=',
+                                    t.memberExpression(
+                                        t.identifier(decl.id.name),
+                                        t.identifier('rawSource'),
+                                    ),
+                                    t.stringLiteral(contents),
+                                ),
+                            ),
+                        );
                     }
                 });
             }
-            // if (node.type === 'VariableDeclaration') {
-            //     // found.push(node);
-            //     node.declaration.declarations.forEach((node) => {
-            //         if (fns.includes(node.init.type)) {
-            //             node.id.name += 'Trace';
-            //             traverse.default(
-            //                 t.program([ensureStmt(node.init)]),
-            //                 annotateFunctionBody(node.init),
-            //             );
-            //             found.push(
-            //                 t.exportNamedDeclaration(
-            //                     t.variableDeclaration('const', [node]),
-            //                 ),
-            //             );
-            //         }
-            //     });
-            // }
         }
     });
-
-    found.push(
-        t.exportNamedDeclaration(
-            t.variableDeclaration('const', [
-                t.variableDeclarator(
-                    t.identifier('rawSource'),
-                    t.stringLiteral(contents),
-                ),
-            ]),
-        ),
-    );
 
     return t.program(found.concat(addFunctionMeta(contents, filePath)));
 }
 
-function annotateFunctionBody(toplevel, traceInfo) {
+function annotateFunctionBody(toplevel, traceInfo, typesInfo) {
     const seen = new Map();
     let i = 0;
 
@@ -248,34 +223,151 @@ function annotateFunctionBody(toplevel, traceInfo) {
         path.node.params.forEach((param) => {
             if (param.type === 'Identifier') {
                 const num = i++;
+                // not using .end to avoid type annotation
+                const end = param.start + param.name.length;
                 traceInfo.expressions[num] = {
                     start: param.start,
-                    end: param.end,
+                    end: end,
+                    type: typesInfo[param.start + ':' + end],
                 };
                 const n = t.callExpression(t.identifier('trace'), [
                     t.identifier(param.name),
                     t.numericLiteral(num),
-                    // t.numericLiteral(param.start),
-                    // t.numericLiteral(param.end),
                 ]);
                 seen.set(n, num);
                 seen.set(n.callee, -1);
                 n.arguments.forEach((arg) => seen.set(arg, -1));
+                if (path.node.body.type !== 'BlockStatement') {
+                    path.node.body = t.blockStatement([
+                        t.returnStatement(path.node.body),
+                    ]);
+                }
                 path.node.body.body.unshift(n);
                 assigns[param.name] = num;
             }
         });
-        path.node.params.push(t.identifier('trace'));
+        if (path.node === toplevel) {
+            path.node.params.unshift(t.identifier('trace'));
+        }
     }
 
     return {
         VariableDeclarator: {
             exit(path) {
+                if (!seen.has(path.node.init)) {
+                    return;
+                }
                 const at = seen.get(path.node.init);
+                if (path.node.id.type !== 'Identifier') {
+                    // TODO handle better?
+                    return;
+                }
                 assigns[path.node.id.name] = at;
+                seen.set(path.node.id, at);
+                // not using .end here because that might include a
+                // type annotation.
+                const end = path.node.id.start + path.node.id.name.length;
+                const t = typesInfo[path.node.id.start + ':' + end];
+                if (t) {
+                    traceInfo.expressions[at].type = t;
+                }
+                traceInfo.references.push({
+                    id: at,
+                    loc: {
+                        start: path.node.id.start,
+                        end: end,
+                    },
+                });
             },
         },
+        ForOfStatement: {
+            // enter(path) {
+            // }
+            enter(path) {
+                const id = path.node.left.declarations[0].id;
+                if (id.type !== 'Identifier') {
+                    // TODO maybe support
+                    console.log('not id');
+                    return;
+                }
+
+                const num = i++;
+                assigns[id.name] = num;
+                const n = t.callExpression(t.identifier('trace'), [
+                    t.identifier(id.name),
+                    t.numericLiteral(num),
+                ]);
+                traceInfo.expressions[num] = {
+                    start: id.start,
+                    end: id.end,
+                    type: typesInfo[id.start + ':' + id.end],
+                };
+                console.log(id.start, id.end, num);
+                seen.set(n, num);
+                seen.set(n.callee, -1);
+                n.arguments.forEach((arg) => seen.set(arg, -1));
+
+                path.node.body.body.unshift(t.expressionStatement(n));
+            },
+        },
+        // CallExpression(path) {
+        //     if (
+        //         path.node.callee.type === 'Identifier' &&
+        //         path.node.callee.name === '____SHOW'
+        //     ) {
+        //         path.replaceWith(
+        //             t.callExpression(t.identifier('trace'), [
+        //                 t.nullLiteral(),
+        //                 t.numericLiteral(10),
+        //             ]),
+        //         );
+        //     }
+        // },
         ExpressionStatement(path) {
+            if (path.node.expression.type === 'CallExpression') {
+                const callee = path.node.expression.callee;
+                if (
+                    callee.type === 'Identifier' &&
+                    callee.name === '____SHOW'
+                ) {
+                    const items = [];
+                    traceInfo.shows.push({
+                        items,
+                        start: path.node.start,
+                        end: path.node.end,
+                    });
+                    path.replaceWith(
+                        t.blockStatement(
+                            path.node.expression.arguments.map((arg) => {
+                                const num = i++;
+                                const n = t.callExpression(
+                                    t.identifier('trace'),
+                                    [arg, t.numericLiteral(num)],
+                                );
+                                items.push(num);
+                                const argNum = assigns[arg.name];
+                                traceInfo.expressions[num] = {
+                                    start: arg.start,
+                                    end: arg.end,
+                                    type:
+                                        argNum != null
+                                            ? traceInfo.expressions[argNum]
+                                                  ?.type
+                                            : null,
+                                };
+                                seen.set(n, num);
+                                seen.set(n.callee, -1);
+                                n.arguments.forEach((arg) =>
+                                    seen.has(arg) ? null : seen.set(arg, -1),
+                                );
+                                return t.expressionStatement(n);
+                            }),
+                        ),
+                    );
+                    return;
+                    // t.expressionStatement(n));
+                }
+            }
             if (
                 path.node.expression.type === 'Identifier' &&
                 path.node.expression.name === listExamplesSigil
@@ -288,6 +380,7 @@ function annotateFunctionBody(toplevel, traceInfo) {
                 traceInfo.expressions[num] = traceInfo.examples[num] = {
                     start: path.node.start,
                     end: path.node.end,
+                    type: typesInfo[path.node.start + ':' + path.node.end],
                 };
                 seen.set(n, num);
                 seen.set(n.callee, -1);
@@ -296,25 +389,48 @@ function annotateFunctionBody(toplevel, traceInfo) {
             }
         },
         ArrowFunctionExpression(path) {
-            if (
-                path.node === toplevel &&
-                path.node.body.type === 'BlockStatement'
-            ) {
-                captureArguments(path);
-            }
+            // if (
+            //     path.node === toplevel &&
+            //     path.node.body.type === 'BlockStatement'
+            // ) {
+            captureArguments(path);
+            // }
         },
         FunctionDeclaration(path) {
-            if (path.node === toplevel) {
-                captureArguments(path);
-            }
+            // if (path.node === toplevel) {
+            captureArguments(path);
+            // }
         },
         Expression: {
             exit(path) {
-                if (isTS(path)) return;
+                if (isTS(path) || isLval(path)) return;
                 // if (path.node.type === 'NumericLiteral') return;
                 // if (path.node.type === 'StringLiteral') return;
                 // if (path.node.type === 'BoolLiteral') return;
                 if (seen.has(path.node)) return;
+                if (
+                    path.node.type === 'Identifier' &&
+                    path.node.name === '____SHOW'
+                ) {
+                    return;
+                }
+                // Ignore forEach folks
+                if (
+                    path.node.type === 'MemberExpression' &&
+                    path.node.property.type === 'Identifier' &&
+                    [
+                        'forEach',
+                        'push',
+                        'sort',
+                        'splice',
+                        'map',
+                        'flat',
+                        'filter',
+                    ].includes(path.node.property.name)
+                ) {
+                    seen.set(path.node, -1);
+                    return;
+                }
 
                 // TODO: Need to capture the location somewhere,
                 // otherwise we don't know where to display it.
@@ -337,6 +453,7 @@ function annotateFunctionBody(toplevel, traceInfo) {
                 traceInfo.expressions[num] = {
                     start: path.node.start,
                     end: path.node.end,
+                    type: typesInfo[path.node.start + ':' + path.node.end],
                 };
                 const n = t.callExpression(t.identifier('trace'), [
                     path.node,
@@ -369,6 +486,14 @@ function annotateFunctionBody(toplevel, traceInfo) {
         },
     };
 }
+
+const isLval = (path) => {
+    return (
+        (path.parent.type === 'AssignmentExpression' &&
+            path.parentKey === 'left') ||
+        (path.parentPath && isLval(path.parentPath))
+    );
+};
 
 const isTS = (path) => {
     return (

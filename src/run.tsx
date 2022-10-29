@@ -1,10 +1,10 @@
 // Basic ... ideas ...
 
 import * as React from 'react';
-import { render } from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import { App } from './App';
 import { loadInitialState } from './state/persistence';
 
-loadInitialState().then((state) =>
-    render(<App initialState={state} />, document.getElementById('root')),
-);
+const root = createRoot(document.getElementById('root')!);
+
+loadInitialState().then((state) => root.render(<App initialState={state} />));

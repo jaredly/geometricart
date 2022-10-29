@@ -1,10 +1,8 @@
 import * as React from 'react';
-// import { RenderSegmentBasic } from '../../editor/RenderSegment';
 import { Coord, Segment } from '../../types';
 import { register } from '../../vest';
 import { addPrevsToSegments, SegmentWithPrev } from '../clipPathNew';
 import { useInitialState } from '../SegmentEditor';
-// import { ShapeEditor } from '../ShapeEditor';
 import { RenderDebugInsetSegment } from '../ShowDebugInsetSegment';
 import { CoordPicker } from './CoordPicker';
 import { insetLineLine } from './lineLine';
@@ -33,7 +31,7 @@ const ShowDebug = ({
             one={lineWithPrev(a, b)}
             two={lineWithPrev(b, c)}
             inset={inset}
-            segments={insetLineLine(a, one, two, inset)}
+            segments={insetLineLine([a, b, c], inset)}
         />
     );
 };
@@ -41,13 +39,8 @@ const ShowDebug = ({
 register({
     id: 'lineLine',
     dir: __dirname,
-    transform: ([[a, b, c], size]) => {
-        return insetLineLine(
-            a,
-            { type: 'Line', to: b },
-            { type: 'Line', to: c },
-            size,
-        );
+    transform: (args) => {
+        return insetLineLine(...args);
     },
     render: {
         editor: ({

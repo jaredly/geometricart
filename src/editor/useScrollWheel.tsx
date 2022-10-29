@@ -14,7 +14,7 @@ export function useScrollWheel(
         if (!ref.current) {
             return console.warn('NO REF');
         }
-        let timer = null as null | NodeJS.Timeout;
+        let timer = null as null | number;
         const fn = (evt: WheelEvent) => {
             const rect = ref.current!.getBoundingClientRect();
             const clientX = evt.clientX;

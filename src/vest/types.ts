@@ -50,10 +50,10 @@ export type Config<Input, Output> = {
     };
 };
 
-export type Fixture<I, O> = {
+export type Fixture<Fn extends (...args: any) => any> = {
     name: string;
     options?: unknown;
-    input: I;
-    output: O;
+    input: Parameters<Fn>;
+    output: ReturnType<Fn>;
     isPassing: boolean;
 };

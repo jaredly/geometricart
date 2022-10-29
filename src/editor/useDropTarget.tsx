@@ -4,10 +4,18 @@ import { migrateState } from '../state/migrateState';
 import { readMetadata } from 'png-metadata';
 import { PREFIX, SUFFIX } from './Sidebar';
 
-export const useDropTarget = (onDrop: (file: File) => void) => {
+export const useDropTarget = (
+    onDrop: (file: File) => void,
+): [
+    boolean,
+    {
+        onDragOver: (evt: React.DragEvent) => void;
+        onDrop: (evt: React.DragEvent) => void;
+    },
+] => {
     const [dragging, setDragging] = React.useState(false);
 
-    const tid = React.useRef(null as null | NodeJS.Timeout);
+    const tid = React.useRef(null as null | number);
 
     const callbacks = {
         onDragOver: (evt: React.DragEvent) => {
@@ -118,7 +126,30 @@ export const getStateFromFile = (
             }
         };
         reader.readAsText(file);
+    } else if (file.type === 'text/plain' || file.type === 'text/x-gcode') {
+        const reader = new FileReader();
+        reader.onload = () => {
+            // debugger;
+            const lines = (reader.result as string).split(
+                ';; ** STATE **\n;; ',
+            );
+            if (lines.length > 1) {
+                done(JSON.parse(lines[1].split('\n')[0]));
+            } else {
+                console.log('no state sorry');
+                done(null);
+            }
+            // if (last.startsWith(PREFIX) && last.endsWith(SUFFIX)) {
+            //     done(JSON.parse(last.slice(PREFIX.length, -SUFFIX.length)));
+            // } else {
+            //     console.log('not last, bad news');
+            //     console.log(last);
+            //     done(null);
+            // }
+        };
+        reader.readAsText(file);
     }
+    console.log('nopes', file.type);
 };
 
 export function parseAttachment(

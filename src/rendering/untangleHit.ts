@@ -117,6 +117,37 @@ export const findExit = (
     }
 };
 
+/**
+ * Hmmm.
+ * So in the general case,
+ * I'm not totally sure how to resolve the ambiguous dealio.
+ * Or whether hmmm
+ * ok so the inside/outside determination maybe still just
+ * works, because it doesn't depend on stuff.
+ * And then we've got a general way of picking things out,
+ * where you take any pairs that are adjacent (exit/enter),
+ * connect & remove them from the list, and then keep going
+ * through. Right?
+ *
+ * but we need special care for ambiguous things, right?
+ * Hmm maybe you just
+ * - find dup exits, and if the exits are different (outside),
+ *   make them both null outside
+ * - find duplicate entries, and just group them. right?
+ *   right.
+ *
+ * and then we can go through and do our iterative pruning?
+ * sounds legit to me.
+ * we'll see if I can find any counterexamples. tbh it's
+ * probably not going to impact anything anyway, because
+ * the cases won't have any clockwise sections at that point?
+ * idk.
+ *
+ *
+ */
+// hmm I guess these two cases could be unified into
+// the second one ...
+
 type Cross = {
     type: 'cross';
     transitions: [Transition, Transition];
@@ -222,7 +253,7 @@ export const untangleHit = (
     entries: Array<SegmentIntersection>,
     debug = false,
 ): HitTransitions => {
-    const sides: Array<Side> = [];
+    const sides: Array<HitSegment> = [];
     entries.forEach((entry) => {
         if (entry.enter) {
             sides.push({
@@ -265,8 +296,11 @@ export const untangleHit = (
      * exit to exit, nope. enter to enter, nope.
      */
     if (sides.length !== 4) {
-        // console.log('sides', sides);
-        throw new IntersectionError(`Sides neither 2 nor 4`, entries);
+        console.log('sides', sides);
+        throw new IntersectionError(
+            `Sides neither 2 nor 4 ${sides.length}`,
+            entries,
+        );
     }
 
     /**
@@ -280,8 +314,8 @@ export const untangleHit = (
         if (side.kind.type !== 'exit') {
             return;
         }
-        for (let i = 0; i < 4; i++) {
-            const j = (i0 + i) % 4;
+        for (let i = 0; i < sides.length; i++) {
+            const j = (i0 + i) % sides.length;
             if (sides[j].entry.shape !== side.entry.shape) {
                 side.kind.goingInside = sides[j].kind.type === 'enter';
                 break;
@@ -337,7 +371,8 @@ export const untangleHit = (
         transitions: [sidesPair(a, d), sidesPair(b, c)],
     });
 };
-type Exit = {
+
+export type Exit = {
     type: 'exit';
     goingInside: boolean | null;
 };
@@ -345,13 +380,13 @@ type Exit = {
 /**
  * Eh ok untangleHit could really use some unit tests.
  */
-type Side = {
+export type HitSegment = {
     kind: { type: 'enter' } | Exit;
     entry: SegmentIntersection;
     theta: Angle;
     // theta: number;
 };
-const sidesPair = (a: Side, b: Side): Transition =>
+const sidesPair = (a: HitSegment, b: HitSegment): Transition =>
     a.kind.type === 'enter'
         ? {
               entry: a.entry,

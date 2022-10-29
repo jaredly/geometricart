@@ -1,7 +1,116 @@
 
 
+So, how do I deal with 'show' vs 'hover'?
+Like,
+should I have it where you can click anything,
+and have it open in the line below?
+
+I like the idea of being able to pre-indicate that
+some things might be nice to examine together...
+
+
+OH NOESSSS
+
+oooh ok very cool, typescript delivering up the type goodness.
+
+ok some weirdness with positinings, it appears (AHH ok getLeadingTriviaWidth fixes.)
+we're including leading whitespace? very strange.
+idk
+but, we're gettng pretty-printed types for things.
+which, at the very least, I can print out for folks
+
+- [ ] dump the block of types into `thefn.types`
+- [ ] render it out folks, and show it in the tooltip
+  and then we can do things like render the tooltip value
+  based on specific types.
+
+  I'd really like for function call bodies, if they're called multiple times,
+  to have ... some kind of trace ...
+  so, rendered below if you want, is a carousel of the params
+  from the different invocations.
+  and you click on one, and it loads up that invocation,
+  so all hovers and stuff correspond to that one.
+
+  hmm
+  but a more explicit, and less tricky thing, would be to
+  add a special `// @trace(someexpr)`, which will trace
+  the thing. and then we remember that, on that spot, we
+  want to be rendering the stuff out.
+
+
+
+a.forEach(() => {}) is falling afoul!
+maybe I can just ignore .forEach for now.
+lol ok I do need a more robust solution though.
+
+- [x] render arc segmentintersections
+- [x] render the outputs
+- [x] figure out if it works!
+- [ ] figure out how to convert the new output to the old output.
+
+
+
+Hmmmm should I try to integrate the typescript checker?
+So that I can get type information of various places?
+Or is it enough to do duck-typed visual plugins?
+tbh that's fine for now.
+
+
+
+ok wht what
+
+so at what point do I do the magic?
+it would be nice not to have to
+ts-ignore the import.
+I mean,
+I guess I could hmmm just
+import the function,
+and have the traced version have attributes.
+tbh that's probably the best method.
+ok I'll do that.
+
+
+
+ok, why am I trying to load fixtures directly
+
+because in the other setup, I am. and ... um ... maybe it's fine the
+way it is?
+
+
+
+
+
+auto-tracing of the function in question would be nice.
+
+hmm maybe the register can just add something to the page? like it's fine.
+
+and the menu is a separate react root entirely.
+uh maybe. or just, lazily loaded? defends against double-loading.
+yeah. gotta be the same bundle to avoid doing confusing things.
+
+ok, but back to the question of how
+we
+do things right here
+like
+`register`, when we do that ... how do we do a magic
+oh can we say `.trace.tsx`? And then it just goes ahead and
+traces all the functions in there? yeah maybe that's good.
+
+
+
+
 - [ ] go through lineLine and arcArc and clean up variable names, docstrings, etc.
-- [ ] in the mini fixtures, line widths should be much bigger. Add a 'line zoom' variable to the render.
+- [x] in the mini fixtures, line widths should be much bigger. Add a 'line zoom' variable to the render.
+- [ ] allow editing of fixtures (save back to source), so I can clean them up.
+  should be pretty simple? stand up a basic server
+
+- [ ] can I merge in my vest thing? like. .. I really like the idea.
+  I guess I don't really need mdx at this point? funny.
+  - [ ] ok so there will be a mode that has editing, and a mode that's
+    just for public documentation. Some flag or something.
+    
+
+- [ ] ooh can I make this system work for the babel transform source? hmmm
 
 
 
