@@ -14,16 +14,16 @@ import { undo } from '../state/reducer';
 import { History, State } from '../types';
 import { animateHistory } from './animateHistory';
 
-const historyItems = (history: History) => {
-    let current = history.branches[history.currentBranch];
-    let items = current.items.slice();
-    while (current.parent) {
-        const { branch, idx } = current.parent;
-        current = history.branches[branch];
-        items = current.items.slice(0, idx).concat(items);
-    }
-    return items;
-};
+// const historyItems = (history: History) => {
+//     let current = history.branches[history.currentBranch];
+//     let items = current.items.slice();
+//     while (current.parent) {
+//         const { branch, idx } = current.parent;
+//         current = history.branches[branch];
+//         items = current.items.slice(0, idx).concat(items);
+//     }
+//     return items;
+// };
 
 export const HistoryPlayback = ({ state }: { state: State }) => {
     const canvas = React.useRef<HTMLCanvasElement>(null);
@@ -35,7 +35,7 @@ export const HistoryPlayback = ({ state }: { state: State }) => {
     // const [recording, setRecording] = React.useState(false);
 
     const histories = useMemo(() => {
-        return getHistoriesList(state);
+        return simplifyHistory(getHistoriesList(state));
     }, [state]);
 
     const [current, setCurrent] = React.useState(0);
@@ -152,4 +152,48 @@ export function getHistoriesList(state: State, overrideZoom?: boolean) {
         current = undo({ ...current, history }, action);
     }
     return states;
+}
+type StateAndAction = {
+    state: State;
+    action: Action | null;
+};
+
+function simplifyHistory(history: StateAndAction[]): StateAndAction[] {
+    // Remove pending guides that end up being cancelled.
+    let result: StateAndAction[] = [];
+    for (let i = 0; i < history.length; i++) {
+        const { action } = history[i];
+        if (!action) {
+            result.push(history[i]);
+            continue;
+        }
+        if (action.type === 'pending:type' && action.kind === null) {
+            const toRemove: number[] = [];
+            for (let j = result.length - 1; j >= 0; j--) {
+                const { action } = result[j];
+                if (!action) {
+                    continue;
+                }
+                if (action.type === 'pending:point') {
+                    toRemove.push(j);
+                    continue;
+                }
+                if (action.type === 'pending:type') {
+                    toRemove.push(j);
+                    break;
+                }
+            }
+            result = result.filter((_, j) => !toRemove.includes(j));
+            continue;
+        }
+        // Skip some?
+        if (
+            action.type === 'mirror:active' ||
+            action.type === 'pending:extent'
+        ) {
+            continue;
+        }
+        result.push(history[i]);
+    }
+    return result;
 }
