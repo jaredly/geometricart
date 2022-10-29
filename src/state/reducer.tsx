@@ -697,7 +697,13 @@ export const reduceWithoutUndo = (
             const [items, undo] = handleListARE(
                 action.item,
                 state.gcode.items.slice(),
-                { type: 'path', color: 'black', speed: 500, depth: 1.5 },
+                {
+                    type: 'path',
+                    color: 'black',
+                    speed: 500,
+                    depth: 1.5,
+                    start: 0,
+                },
             );
             return [
                 { ...state, gcode: { ...state.gcode, items: items } },
@@ -1258,7 +1264,7 @@ export function handlePathCreate(
     state = { ...state, paths: { ...state.paths } };
 
     const style: Style = {
-        fills: [{ color: 0 }],
+        fills: [{ color: 1 }],
         lines: [{ color: 'white', width: 3 }],
     };
     groupId = `id-${nextId++}`;

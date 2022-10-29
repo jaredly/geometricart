@@ -7,9 +7,12 @@ import { screenToWorld, worldToScreen } from '../editor/Canvas';
 import { Action } from '../state/Action';
 import { emptyPath, pathSegs } from '../editor/RenderPath';
 import {
+    angleTo,
     applyMatrices,
+    dist,
     getMirrorTransforms,
     mirrorTransforms,
+    push,
     transformsToMatrices,
 } from '../rendering/getMirrorTransforms';
 import { transformSegment } from '../rendering/points';
@@ -79,7 +82,11 @@ export const animateHistory = async (
             zoom: state.view.zoom * 2,
         });
 
-    const follow = (i: number, point: Coord, extra?: (pos: Coord) => void) =>
+    const follow = (
+        i: number,
+        point: Coord,
+        extra?: (pos: Coord) => void | Promise<void>,
+    ) =>
         followPoint(
             cursor,
             toScreen(point, histories[i].state),
@@ -202,6 +209,59 @@ export const animateHistory = async (
                         await follow(i, action.coord);
                     }
                 }
+            } else if (action.type === 'mirror:add') {
+                await follow(i, action.mirror.origin);
+
+                await follow(i, action.mirror.point, async (pos) => {
+                    ctx.save();
+                    const back = fromScreen(pos, prev);
+                    const state = histories[i - 1].state;
+                    const zoom = state.view.zoom * 2;
+
+                    const xoff = canvas.width / 2 + state.view.center.x * zoom;
+                    const yoff = canvas.height / 2 + state.view.center.y * zoom;
+                    ctx.translate(xoff, yoff);
+
+                    // const dx = back.x - action.mirror.origin.x;
+                    // const dy = back.y - action.mirror.origin.y;
+                    const theta = angleTo(back, action.mirror.origin);
+                    const d = dist(action.mirror.origin, back);
+                    const o2 = push(
+                        back,
+                        theta + (action.mirror.reflect ? Math.PI / 6 : 0),
+                        d / 2,
+                    );
+
+                    ctx.setLineDash([5, 15]);
+                    ctx.lineWidth = 5;
+
+                    ctx.strokeStyle = 'magenta';
+                    const tx = mirrorTransforms(action.mirror);
+                    tx.forEach((mirror) => {
+                        const mx = transformsToMatrices(mirror);
+                        const origin = applyMatrices(o2, mx);
+                        const point = applyMatrices(back, mx);
+                        ctx.beginPath();
+                        ctx.moveTo(origin.x * zoom, origin.y * zoom);
+                        ctx.lineTo(point.x * zoom, point.y * zoom);
+                        ctx.stroke();
+                    });
+
+                    ctx.beginPath();
+                    ctx.moveTo(back.x * zoom, back.y * zoom);
+                    ctx.lineTo(o2.x * zoom, o2.y * zoom);
+                    ctx.stroke();
+
+                    ctx.setLineDash([]);
+                    ctx.restore();
+                });
+            } else if (
+                action.type === 'path:update' ||
+                action.type === 'path:update:many' ||
+                action.type === 'pathGroup:update:many' ||
+                action.type === 'view:update'
+            ) {
+                await wait(100);
             } else {
                 const points = actionPoints(action).map((point) =>
                     toScreen(point, histories[i].state),
@@ -252,7 +312,7 @@ async function followPoint(
     ctx: CanvasRenderingContext2D,
     canvas: HTMLCanvasElement,
     frames: ImageBitmap[],
-    extra?: (v: Coord) => void,
+    extra?: (v: Coord) => void | Promise<void>,
 ) {
     let dx = x - cursor.x;
     let dy = y - cursor.y;
@@ -275,7 +335,7 @@ async function followPoint(
         }
 
         if (extra) {
-            extra(cursor);
+            await extra(cursor);
         }
 
         ctx.fillStyle = 'red';

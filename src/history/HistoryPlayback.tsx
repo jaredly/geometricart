@@ -114,6 +114,7 @@ export const HistoryPlayback = ({ state }: { state: State }) => {
                 <input
                     type="range"
                     value={current}
+                    max={histories.length - 1}
                     onChange={(e) => setCurrent(parseInt(e.target.value))}
                     style={{ width: '500px' }}
                 />
