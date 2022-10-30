@@ -238,6 +238,59 @@ async function animateAction(
                 action.view.center.x !== prev.view.center.x ||
                 action.view.center.y !== prev.view.center.y
             ) {
+                /*
+                const zoomLevel = Math.max(action.view.zoom, prev.view.zoom);
+                const ptl = fromScreen({ x: 0, y: 0 }, prev);
+                const pbr = fromScreen(
+                    { x: canvas.width, y: canvas.height },
+                    prev,
+                );
+                const ntl = fromScreen(
+                    { x: 0, y: 0 },
+                    { ...prev, view: action.view },
+                );
+                const nbr = fromScreen(
+                    { x: canvas.width, y: canvas.height },
+                    { ...prev, view: action.view },
+                );
+
+                const x0 = Math.min(ptl.x, pbr.x);
+                const x1 = Math.max(ptl.x, pbr.x);
+                const y0 = Math.min(ptl.y, pbr.y);
+                const y1 = Math.max(ptl.y, pbr.y);
+                const dx = x1 - x0;
+                const dy = y1 - y0;
+
+                const width = dx * zoomLevel;
+                const height = dy * zoomLevel;
+                console.log(`desired`, width, height, dx, dy, zoomLevel);
+
+                const c2 = document.createElement('canvas');
+                c2.width = width;
+                c2.height = height;
+                const ct2 = c2.getContext('2d')!;
+                await canvasRender(
+                    ct2,
+                    // prev,
+                    {
+                        ...prev,
+                        overlays: {},
+                        view: {
+                            ...action.view,
+                            zoom: zoomLevel,
+                            center: { x: x0 + dx / 2, y: y0 + dy / 2 },
+                        },
+                    },
+                    width,
+                    width,
+                    1,
+                    {},
+                    0,
+                    null,
+                );
+                document.body.appendChild(c2);
+				*/
+
                 await wait(500);
             }
         } else {

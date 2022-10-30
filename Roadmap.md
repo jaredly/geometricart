@@ -47,6 +47,10 @@ Next nice things:
 
 		then pan / zoom it around?
 
+		... whattt is up with my auto bounding box madness?
+		it is definintely not bounding correctly, for what I want.
+		Although, for the real dealios it was working fine.
+
 
 
 
