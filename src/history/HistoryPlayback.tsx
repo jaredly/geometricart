@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
     convertDataURIToBinary,
     makeEven,
@@ -33,6 +33,9 @@ export const HistoryPlayback = ({ state }: { state: State }) => {
         [state.view, state.paths, state.pathGroups],
     );
     // const [recording, setRecording] = React.useState(false);
+
+    const [preimage, setPreimage] = useState(false);
+    const log = useRef<HTMLDivElement>(null);
 
     const histories = useMemo(() => {
         return simplifyHistory(getHistoriesList(state));
@@ -101,18 +104,28 @@ export const HistoryPlayback = ({ state }: { state: State }) => {
                     margin: 16,
                 }}
             />
-            <button
-                onClick={() => {
-                    if (stopped.current) {
-                        stopped.current = false;
-                        animateHistory(state, canvas.current!, stopped);
-                    } else {
-                        stopped.current = true;
-                    }
-                }}
-            >
-                Animate it up
-            </button>
+            <div>
+                <div ref={log} />
+                <button
+                    onClick={() => {
+                        if (stopped.current) {
+                            stopped.current = false;
+                            animateHistory(
+                                state,
+                                canvas.current!,
+                                stopped,
+                                current,
+                                preimage,
+                                log,
+                            );
+                        } else {
+                            stopped.current = true;
+                        }
+                    }}
+                >
+                    Animate it up
+                </button>
+            </div>
             <div>
                 {current}
 
@@ -127,6 +140,11 @@ export const HistoryPlayback = ({ state }: { state: State }) => {
             <div style={{ maxWidth: 500 }}>
                 {JSON.stringify(histories[current].action)}
             </div>
+            <button onClick={() => setPreimage(!preimage)}>
+                {!preimage
+                    ? 'Image everything in advance'
+                    : "Don't image everything in advance"}
+            </button>
         </div>
     );
 };
@@ -166,7 +184,7 @@ type StateAndAction = {
     action: Action | null;
 };
 
-function simplifyHistory(history: StateAndAction[]): StateAndAction[] {
+export function simplifyHistory(history: StateAndAction[]): StateAndAction[] {
     // Remove pending guides that end up being cancelled.
     let result: StateAndAction[] = [];
     for (let i = 0; i < history.length; i++) {

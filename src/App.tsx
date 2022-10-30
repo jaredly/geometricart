@@ -255,7 +255,8 @@ export const App = ({ initialState }: { initialState: State }) => {
 
                 <div
                     css={{
-                        position: 'absolute',
+                        position:
+                            screen === 'history' ? 'relative' : 'absolute',
                         top: 0,
                         right: 0,
                     }}

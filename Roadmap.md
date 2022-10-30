@@ -20,7 +20,8 @@ Ok, but regardless, I need to figure out how I want to animate this whole junk.
 Yeah I'mve definitely on to something here.
 
 Next nice things:
-- [ ] show mirrors when they get created & toggled
+- [x] show mirrors when they get created
+	- [-] & toggled (um skipping)
 - [x] show guides as they're being created
 - [x] for path:new, I don't need to animate to all the points,
 	I can just animate the line segments popping in.
@@ -29,6 +30,25 @@ Next nice things:
 - show axis for flipping stuff about.
 - when doing a thing for recording, don't use tmp zoom.
 - 
+
+- [x] show something for duplicating things across lines
+	'path:multiply'
+	- oh, so the one thing is `id: 'tmp'`.
+	- the other thing is multiplying around an existing trap
+- [x] at the very least, pause before pan.
+
+- [ ] PANNNN
+	- ugh this will be annoying I think?
+		so, max(zoomLevels)
+		and, union(boundingBoxes)
+		and then do a render for that.
+
+		and ...
+
+		then pan / zoom it around?
+
+
+
 
 Wellll this is looking pretty dang awesome.
 Things that would take it to the next level:
