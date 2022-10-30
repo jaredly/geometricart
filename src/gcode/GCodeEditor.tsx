@@ -8,15 +8,18 @@ import { Toolbar } from './Toolbar';
 import { Settings } from './Settings';
 import { ItemEdit } from './ItemEdit';
 import PathKitInit, { PathKit } from 'pathkit-wasm';
+import { Canvas } from '../editor/Canvas';
 
 export const GCodeEditor = ({
     state,
     dispatch,
+    canvasProps,
 }: {
     state: State;
     dispatch: React.Dispatch<Action>;
+    canvasProps: React.ComponentProps<typeof Canvas>;
 }) => {
-    const canvas = React.useRef(null as null | HTMLCanvasElement);
+    // const canvas = React.useRef(null as null | HTMLCanvasElement);
 
     const bounds = React.useMemo(
         () => findBoundingRect(state),
@@ -39,25 +42,24 @@ export const GCodeEditor = ({
     let dx = bounds ? (bounds.x1 + bounds.x2) / 2 : 0;
     let dy = bounds ? (bounds.y1 + bounds.y2) / 2 : 0;
 
-    React.useEffect(() => {
-        if (!canvas.current) {
-            return;
-        }
-
-        const ctx = canvas.current.getContext('2d')!;
-        ctx.save();
-        canvasRender(
-            ctx,
-            { ...state, view: { ...state.view, center: { x: -dx, y: -dy } } },
-            w * 2,
-            h * 2,
-            2,
-            {},
-            0,
-            null,
-        );
-        ctx.restore();
-    }, [state.paths, w, h, dx, dy]);
+    // React.useEffect(() => {
+    //     if (!canvas.current) {
+    //         return;
+    //     }
+    //     const ctx = canvas.current.getContext('2d')!;
+    //     ctx.save();
+    //     canvasRender(
+    //         ctx,
+    //         { ...state, view: { ...state.view, center: { x: -dx, y: -dy } } },
+    //         w * 2,
+    //         h * 2,
+    //         2,
+    //         {},
+    //         0,
+    //         null,
+    //     );
+    //     ctx.restore();
+    // }, [state.paths, w, h, dx, dy]);
 
     const availableColors = useMemo(
         () => ({ line: findLineColors(state), fill: findFillColors(state) }),
@@ -67,6 +69,7 @@ export const GCodeEditor = ({
     return (
         <div style={{ display: 'flex' }}>
             <div>
+                {/* 
                 <canvas
                     ref={canvas}
                     width={w * 2}
@@ -77,7 +80,10 @@ export const GCodeEditor = ({
                         maxHeight: '60vh',
                         objectFit: 'contain',
                     }}
-                />
+                /> */}
+
+                <Canvas {...canvasProps} width={w} height={h} />
+
                 <div style={{ margin: 8 }}>
                     <Settings
                         state={state}

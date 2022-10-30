@@ -207,7 +207,23 @@ export const App = ({ initialState }: { initialState: State }) => {
                 {screen === 'animate' ? (
                     <AnimationEditor state={state} dispatch={dispatch} />
                 ) : screen === 'gcode' ? (
-                    <GCodeEditor state={state} dispatch={dispatch} />
+                    <GCodeEditor
+                        state={state}
+                        dispatch={dispatch}
+                        canvasProps={{
+                            hover,
+                            setHover,
+                            pendingDuplication,
+                            setPendingDuplication,
+                            isTouchScreen,
+                            pendingMirror,
+                            setPendingMirror,
+                            state,
+                            dispatch,
+                            width: 100,
+                            height: 100,
+                        }}
+                    />
                 ) : screen === 'history' ? (
                     <HistoryPlayback state={state} />
                 ) : (

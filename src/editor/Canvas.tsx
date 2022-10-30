@@ -76,7 +76,7 @@ export type Props = {
     isTouchScreen: boolean;
     width: number;
     height: number;
-    innerRef: (node: SVGSVGElement | null) => unknown;
+    innerRef?: (node: SVGSVGElement | null) => unknown;
     pendingMirror: PendingMirror | null;
     pendingDuplication: null | PendingDuplication;
     setPendingDuplication: (b: null | PendingDuplication) => void;
@@ -563,7 +563,9 @@ export const Canvas = ({
             viewBox={`0 0 ${width} ${height}`}
             xmlns="http://www.w3.org/2000/svg"
             ref={(node) => {
-                innerRef(node);
+                if (innerRef) {
+                    innerRef(node);
+                }
                 ref.current = node;
             }}
             {...mouseHandlers}
