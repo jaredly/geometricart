@@ -382,7 +382,7 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
         ...cmds.map((cmd) => {
             switch (cmd.type) {
                 case 'tool':
-                    return `M0 ; tool ${cmd.diameter?.toFixed(2)}${
+                    return `G0Z30\nM0 ; tool ${cmd.diameter?.toFixed(2)}${
                         cmd.vbitAngle ? `v${cmd.vbitAngle.toFixed(2)}` : ''
                     }`;
                 case 'fast':

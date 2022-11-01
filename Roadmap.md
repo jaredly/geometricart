@@ -7,6 +7,12 @@
 - [x] 3d render, please add lighting!
 	- ok I need to calculate normals, should be fine.
 
+- [ ] allow specify the tool size for infils
+- [ ] anddddd then do an svg diff on the fills, so we can do carve-outs!
+
+- have a setting that is "I'm generating this for snapmaker"
+	that does M3P100 and M3P0 around M0 tool changes.
+
 # Let's do a "making of" animation.
 
 - go through undo/redo, and screenshot each step.
