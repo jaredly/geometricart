@@ -212,16 +212,10 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
             }
 
             if (
-                lastTool !== null &&
-                (lastTool.diameter !== diameter ||
-                    lastTool.vbitAngle !== vbitAngle)
+                lastTool === null ||
+                lastTool.diameter !== diameter ||
+                lastTool.vbitAngle !== vbitAngle
             ) {
-                console.log(
-                    color,
-                    diameter,
-                    state.meta.ppi,
-                    +color.split(':')[1],
-                );
                 cmds.push({ type: 'tool', diameter, vbitAngle });
             }
             lastTool = { diameter, vbitAngle };

@@ -75,6 +75,10 @@ void main() {
     float amount = fract(bumpData.r * 1.0);
     vec4 depthColor = vec4(vec3(amount), 1.0);
 
+    if (bumpData.r == 0.0) {
+        discard;
+    }
+
     // vec4 normalColor = vec4(vNormalColor.z, 0.0, 0.0, 1.0);
 
     float off = 0.001;
@@ -88,11 +92,11 @@ void main() {
     float dzdx = abs(p5.r - p1.r);
     float dzdy = abs(p7.r - p3.r);
 
-    vec4 angleColor = vec4(vec3(max(dzdx, dzdy) * 10.0), 1.0);
+    vec4 angleColor = vec4(vec3(1.0 - max(dzdx, dzdy) * 10.0), 1.0);
 
-    vec4 normalColor = mix(vNormalColor, angleColor, 0.2);
+    vec4 normalColor = mix(vNormalColor, angleColor, 1.0);
 
-    gl_FragColor = mix(depthColor, normalColor, 0.8);
+    gl_FragColor = mix(depthColor, normalColor, 0.5);
 }  
 `;
 
@@ -198,7 +202,7 @@ export const GCode3D = ({
             <div
                 style={{ width: 500, height: 500, border: '1px solid magenta' }}
             >
-                <Canvas ref={canv}>
+                <Canvas ref={canv} style={{ backgroundColor: '#00ffca' }}>
                     <ambientLight />
                     <pointLight position={[10, 10, 10]} />
                     <VBox tx={tx} data={data} scale={scale} />
