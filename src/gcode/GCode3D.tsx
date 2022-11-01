@@ -5,8 +5,6 @@ import {
     CanvasTexture,
     DoubleSide,
     Mesh,
-    MeshBasicMaterial,
-    PerspectiveCamera,
     RepeatWrapping,
     ShaderMaterial,
     Texture,
@@ -26,13 +24,6 @@ uniform float bumpScale;
 
 varying vec2 vUV;
 varying vec3 vNormal;
-
-// vec3 cross(vec3 a, vec3 b) {
-//     return vec3(
-//         a.y * b.z - a.z * b.y, 
-//         a.z * b.x - a.x * b.z, 
-//         a.x * b.y - a.y * b.x);
-// }
 
 void main() { 
 	vUV = uv;
@@ -73,9 +64,6 @@ vec3 hsv2rgb(vec3 c) {
 }
 
 void main() {
-	// gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0) + texture2D(bumpTexture, vUV);
-	// gl_FragColor = vec4(hsv2rgb(vec3(amount, 1.0, 1.0)), 1.0);
-
 	vec4 bumpData = texture2D( bumpTexture, vUV );
     float amount = fract(bumpData.r * 1.0);
     vec4 depthColor = vec4(vec3(amount), 1.0);
@@ -92,8 +80,6 @@ export const GCode3D = ({
     state,
     meta,
 }: {
-    // canvas,
-    // canvas: React.RefObject<HTMLCanvasElement>;
     data: GCodeData;
     gcode: string;
     state: State;
@@ -117,7 +103,6 @@ export const GCode3D = ({
         const tx = new CanvasTexture(canvas);
         tx.wrapS = RepeatWrapping;
         tx.wrapT = RepeatWrapping;
-        // tx.repeat.set(1 / width, 1 / height);
         return tx;
     }, [data]);
 
@@ -143,33 +128,7 @@ export const GCode3D = ({
                     const ctx = dest.getContext('2d')!;
                     const threes = stateRef.current;
 
-                    threes.camera.position.set(0, 0, 5);
-                    threes.camera.lookAt(new Vector3(0, 0, 0));
-                    threes.gl.render(threes.scene, threes.camera);
-                    ctx.drawImage(canv.current!, 0, 0, qsize, qsize);
-
-                    threes.camera.position.x = 2;
-                    threes.camera.position.z = 4;
-                    threes.camera.lookAt(new Vector3(0, 0, 0));
-                    threes.gl.render(threes.scene, threes.camera);
-                    ctx.drawImage(canv.current!, qsize, 0, qsize, qsize);
-
-                    threes.camera.position.z = -2;
-                    threes.camera.position.x = -2;
-                    threes.camera.lookAt(new Vector3(-0.5, 0, 0));
-                    threes.gl.render(threes.scene, threes.camera);
-                    ctx.drawImage(canv.current!, 0, qsize, qsize, qsize);
-
-                    threes.camera.position.x = -2;
-                    threes.camera.position.y = 2;
-                    threes.camera.position.z = 2;
-                    threes.camera.lookAt(new Vector3(0, 0, 0));
-                    threes.gl.render(threes.scene, threes.camera);
-                    ctx.drawImage(canv.current!, qsize, qsize, qsize, qsize);
-
-                    // Reset
-                    threes.camera.position.set(0, 0, 5);
-                    threes.camera.lookAt(new Vector3(0, 0, 0));
+                    takePerspectivePictures(threes, ctx, canv, qsize);
 
                     const textHeight = 15;
                     const textMargin = 5;
@@ -240,6 +199,41 @@ const GetState = ({ ok }: { ok: React.MutableRefObject<any> }) => {
     ok.current = state;
     return null;
 };
+
+export function takePerspectivePictures(
+    threes: any,
+    ctx: CanvasRenderingContext2D,
+    canv: React.RefObject<HTMLCanvasElement>,
+    qsize: number,
+) {
+    threes.camera.position.set(0, 0, 5);
+    threes.camera.lookAt(new Vector3(0, 0, 0));
+    threes.gl.render(threes.scene, threes.camera);
+    ctx.drawImage(canv.current!, 0, 0, qsize, qsize);
+
+    threes.camera.position.x = 2;
+    threes.camera.position.z = 4;
+    threes.camera.lookAt(new Vector3(0, 0, 0));
+    threes.gl.render(threes.scene, threes.camera);
+    ctx.drawImage(canv.current!, qsize, 0, qsize, qsize);
+
+    threes.camera.position.z = -2;
+    threes.camera.position.x = -2;
+    threes.camera.lookAt(new Vector3(-0.5, 0, 0));
+    threes.gl.render(threes.scene, threes.camera);
+    ctx.drawImage(canv.current!, 0, qsize, qsize, qsize);
+
+    threes.camera.position.x = -2;
+    threes.camera.position.y = 2;
+    threes.camera.position.z = 2;
+    threes.camera.lookAt(new Vector3(0, 0, 0));
+    threes.gl.render(threes.scene, threes.camera);
+    ctx.drawImage(canv.current!, qsize, qsize, qsize, qsize);
+
+    // Reset
+    threes.camera.position.set(0, 0, 5);
+    threes.camera.lookAt(new Vector3(0, 0, 0));
+}
 
 function VBox({
     tx,

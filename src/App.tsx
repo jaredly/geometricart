@@ -197,8 +197,6 @@ export const App = ({ initialState }: { initialState: State }) => {
                 css={{
                     position: 'relative',
                     alignSelf: 'stretch',
-                    // overflow: 'auto',
-                    // padding: 32,
                     '@media (max-width: 1000px)': {
                         padding: 0,
                     },

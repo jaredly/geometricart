@@ -10,6 +10,14 @@ import { ItemEdit } from './ItemEdit';
 import PathKitInit, { PathKit } from 'pathkit-wasm';
 import { Canvas } from '../editor/Canvas';
 
+const many = (value: string, m: number) => {
+    const values: string[] = [];
+    for (let i = 0; i < m; i++) {
+        values.push(value);
+    }
+    return values;
+};
+
 export const GCodeEditor = ({
     state,
     dispatch,
@@ -90,10 +98,18 @@ export const GCodeEditor = ({
                         dispatch={dispatch}
                         bounds={bounds}
                     />
-                    <div style={{ margin: 16 }}>
+                    <div
+                        style={{
+                            margin: 16,
+                            display: 'grid',
+                            gridTemplateColumns: many('max-content', 17).join(
+                                ' ',
+                            ),
+                        }}
+                    >
                         {state.gcode.items.map((item, i) => {
                             return (
-                                <div key={i} style={{ display: 'flex' }}>
+                                <div key={i} style={{ display: 'contents' }}>
                                     <UpDown
                                         i={i}
                                         dispatch={dispatch}

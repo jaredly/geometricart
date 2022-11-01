@@ -26,13 +26,10 @@ export function Toolbar({
     h: number;
     PathKit: PathKit;
 }) {
-    // const [url, setUrl] = useState(
-    //     null as null | { time: number; url: string; text: string },
-    // );
     const [laserUrl, setLaserUrl] = useState(
         null as null | { svg: string; url: string },
     );
-    const [showGcode, setShowGcode] = useState(false);
+    const [showGcode, setShowGcode] = useState(true);
 
     const generated = React.useMemo(() => {
         if (!showGcode) {
@@ -70,31 +67,12 @@ export function Toolbar({
             >
                 Generate Laser
             </button>
-            <button
-                onClick={() => {
-                    setShowGcode(!showGcode);
-                    // const { time, text } = generateGcode(state, PathKit);
-                    // const blob = new Blob(
-                    //     [
-                    //         text +
-                    //             '\n' +
-                    //             ';; ** STATE **\n;; ' +
-                    //             JSON.stringify({
-                    //                 ...state,
-                    //                 history: initialState.history,
-                    //             }),
-                    //     ],
-                    //     { type: 'text/plain' },
-                    // );
-                    // setUrl({ time, url: URL.createObjectURL(blob), text });
-                }}
-            >
+            <button onClick={() => setShowGcode(!showGcode)}>
                 Generate gcode
             </button>
             {showGcode && generated ? (
                 <>
                     <a
-                        // onClick={() => setUrl(null)}
                         href={generated.url}
                         style={{ color: 'white', margin: '0 8px' }}
                         download={
@@ -122,8 +100,7 @@ export function Toolbar({
             ) : null}
             <div>
                 {laserUrl && bounds
-                    ? // <div dangerouslySetInnerHTML={{ __html: laserUrl.svg }} />
-                      showLaserSvg(bounds, state, w, h, laserUrl)
+                    ? showLaserSvg(bounds, state, w, h, laserUrl)
                     : null}
             </div>
             {showGcode && generated ? (

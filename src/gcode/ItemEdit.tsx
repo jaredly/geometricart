@@ -4,6 +4,14 @@ import { makeDepths, pxToMM } from './generateGcode';
 import { Fill, GCodePath, State } from '../types';
 import { FillColors, LineColors } from './GCodeEditor';
 import { Int } from '../editor/Forms';
+import {
+    IconEye,
+    IconEyeInvisible,
+    IconSpeedtest,
+    IconVerticalAlignBottom,
+    IconVerticalAlignMiddle,
+    IconVerticalAlignTop,
+} from '../icons/Icon';
 
 const ColorsSelect = ({
     value,
@@ -82,16 +90,17 @@ export const ItemEdit = ({
     const selected = colors.line[current.color];
 
     return (
-        <div>
+        <>
             <button
                 onClick={() => onChange({ ...item, disabled: !item.disabled })}
                 style={{
                     border: 'none',
-                    backgroundColor: item.disabled ? '#aaa' : 'transparent',
+                    backgroundColor: 'transparent',
                     cursor: 'pointer',
+                    color: 'inherit',
                 }}
             >
-                👁
+                {item.disabled ? <IconEyeInvisible /> : <IconEye />}
             </button>
             <ColorsSelect
                 onChange={(color) => setEdited({ ...current, color })}
@@ -125,12 +134,15 @@ export const ItemEdit = ({
                     {pxToMM(selected.width / 100, state.meta.ppi).toFixed(2) +
                         'mm'}
                 </span>
-            ) : null}
-            <span style={{ marginRight: 8 }} /> F
+            ) : (
+                <span />
+            )}
+            <span style={{ marginRight: 8 }} />
+            <IconSpeedtest />
             <Float
                 style={{
                     marginRight: 16,
-                    marginLeft: 4,
+                    marginLeft: -8,
                     fontSize: '80%',
                 }}
                 value={current.speed}
@@ -139,11 +151,11 @@ export const ItemEdit = ({
                     speed != null ? setEdited({ ...current, speed }) : null
                 }
             />
-            Start
+            <IconVerticalAlignTop />
             <Float
                 style={{
                     // marginRight: 16,
-                    marginLeft: 4,
+                    marginLeft: -8,
                     fontSize: '80%',
                     width: 30,
                 }}
@@ -153,30 +165,30 @@ export const ItemEdit = ({
                     start != null ? setEdited({ ...current, start }) : null
                 }
             />
-            Depth
+            <IconVerticalAlignBottom />
             <Float
                 style={{
                     // marginRight: 16,
-                    marginLeft: 4,
+                    marginLeft: -8,
                     fontSize: '80%',
                     width: 30,
                 }}
                 value={current.depth}
-                placeholder="Depth"
+                // placeholder="Depth"
                 onChange={(depth) =>
                     depth != null ? setEdited({ ...current, depth }) : null
                 }
             />
-            /
+            <IconVerticalAlignMiddle />
             <Float
                 style={{
                     marginRight: 4,
-                    marginLeft: 4,
+                    marginLeft: -4,
                     fontSize: '80%',
                     width: 30,
                 }}
                 value={current.passDepth}
-                placeholder="Depth"
+                // placeholder="Depth"
                 onChange={(passDepth) => setEdited({ ...current, passDepth })}
             />
             <span
@@ -210,7 +222,9 @@ export const ItemEdit = ({
                         Tabs
                     </button>
                 )
-            ) : null}
+            ) : (
+                <span />
+            )}
             {edited != null ? (
                 <button
                     onClick={() => {
@@ -221,7 +235,7 @@ export const ItemEdit = ({
                     Save
                 </button>
             ) : null}
-        </div>
+        </>
     );
 };
 
@@ -300,7 +314,15 @@ export const Float = ({
                 }
             }}
             onBlur={() => setText(null)}
-            style={{ width: 40, textAlign: 'center', ...style }}
+            style={{
+                width: 40,
+                background: 'transparent',
+                color: 'inherit',
+                border: 'none',
+                padding: 0,
+                textAlign: 'center',
+                ...style,
+            }}
         />
     );
 };
