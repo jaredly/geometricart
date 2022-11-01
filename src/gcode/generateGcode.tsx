@@ -323,8 +323,11 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
                                 const dx = cmd.x - latest.x;
                                 const dy = cmd.y - latest.y;
 
-                                const a = size / 2 - tabs.width / 2;
-                                const b = a + tabs.width;
+                                const fullWidth =
+                                    tabs.width + (lastTool?.diameter ?? 3);
+
+                                const a = size / 2 - fullWidth / 2;
+                                const b = a + fullWidth;
                                 const da = a / size;
                                 const db = b / size;
 
@@ -335,7 +338,10 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
                                         y: latest.y + dy * da,
                                         f: speed,
                                     },
-                                    { type: 'fast', z: -tabs.depth },
+                                    {
+                                        type: 'fast',
+                                        z: -itemDepth + tabs.depth,
+                                    },
                                     {
                                         type: 'fast',
                                         x: latest.x + dx * db,

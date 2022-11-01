@@ -1,17 +1,22 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { paletteColor } from '../editor/RenderPath';
 import { makeDepths, pxToMM } from './generateGcode';
 import { GCodePath, State } from '../types';
 import { FillColors, LineColors } from './GCodeEditor';
 import { Int } from '../editor/Forms';
 import {
+    CheckmarkIcon,
+    IconAngleAcute,
     IconEye,
     IconEyeInvisible,
     IconSpeedtest,
+    IconTabUnselected,
+    IconUndo,
     IconVerticalAlignBottom,
     IconVerticalAlignMiddle,
     IconVerticalAlignTop,
 } from '../icons/Icon';
+import { Tooltip } from '../utils/Tooltip';
 
 const ColorsSelect = ({
     value,
@@ -90,7 +95,12 @@ export const ItemEdit = ({
     const selected = colors.line[current.color];
 
     return (
-        <>
+        <div
+            style={{
+                display: 'contents',
+                color: item.disabled ? '#777' : 'white',
+            }}
+        >
             <button
                 onClick={() => onChange({ ...item, disabled: !item.disabled })}
                 style={{
@@ -227,87 +237,122 @@ export const ItemEdit = ({
                 }
             />
             {selected?.width ? (
-                current.tabs ? (
-                    <Tabs
-                        tabs={current.tabs}
-                        onChange={(tabs) => setEdited({ ...current, tabs })}
-                    />
-                ) : (
-                    <button
-                        onClick={() =>
-                            setEdited({
-                                ...current,
-                                tabs: { count: 3, depth: 1, width: 3 },
-                            })
-                        }
-                    >
-                        Tabs
-                    </button>
-                )
+                <ButtonToggle
+                    button={(_, toggle) => <IconAngleAcute onClick={toggle} />}
+                    startOpen={item.vbitAngle != null}
+                    body={
+                        <Float
+                            style={{
+                                marginRight: 4,
+                                marginLeft: -4,
+                                fontSize: '80%',
+                                width: 30,
+                            }}
+                            value={current.vbitAngle}
+                            onChange={(vbitAngle) =>
+                                setEdited({ ...current, vbitAngle })
+                            }
+                        />
+                    }
+                />
+            ) : (
+                <span />
+            )}
+            {selected?.width ? (
+                <ButtonToggle
+                    button={(_, toggle) => (
+                        <IconTabUnselected onClick={toggle} />
+                    )}
+                    startOpen={current.tabs != null}
+                    body={
+                        <Tabs
+                            tabs={current.tabs}
+                            onChange={(tabs) => setEdited({ ...current, tabs })}
+                        />
+                    }
+                />
             ) : (
                 <span />
             )}
             {edited != null ? (
-                <button
-                    onClick={() => {
-                        onChange(edited);
-                        setEdited(null);
-                    }}
-                >
-                    Save
-                </button>
+                <span>
+                    <CheckmarkIcon
+                        style={{ cursor: 'pointer', margin: 2 }}
+                        onClick={() => {
+                            onChange(edited);
+                            setEdited(null);
+                        }}
+                    />
+                    <IconUndo
+                        style={{ cursor: 'pointer', margin: 2 }}
+                        onClick={() => {
+                            setEdited(null);
+                        }}
+                    />
+                </span>
             ) : (
                 <span />
             )}
-        </>
+        </div>
     );
 };
+
+const tabsToString = (tabs?: Tabs) =>
+    tabs ? `${tabs.count},${tabs.depth},${tabs.width}` : ',,';
 
 type Tabs = NonNullable<GCodePath['tabs']>;
 const Tabs = ({
     tabs,
     onChange,
 }: {
-    tabs: Tabs;
-    onChange: (tabs: Tabs) => void;
+    tabs?: Tabs;
+    onChange: (tabs?: Tabs) => void;
 }) => {
+    const [text, setText] = useState(tabsToString(tabs));
+    useEffect(() => {
+        if (tabsToString(tabs) !== text) {
+            setText(tabsToString(tabs));
+        }
+    }, [tabs]);
+    const commit = () => {
+        if (text.trim() === '' && tabs) {
+            onChange(undefined);
+            return;
+        }
+        const [count, depth, width] = text.split(',').map(Number);
+        if (
+            !isNaN(count) &&
+            !isNaN(depth) &&
+            !isNaN(width) &&
+            (count !== tabs?.count ||
+                depth !== tabs?.depth ||
+                width !== tabs?.width)
+        ) {
+            onChange({ count, depth, width });
+        }
+    };
     return (
-        <span>
-            <span style={{ fontSize: '50%' }}>Tabs</span>
-            <Int
-                value={tabs.count}
-                placeholder={'Count'}
-                onChange={(count) =>
-                    count != null ? onChange({ ...tabs, count }) : null
-                }
-            />
-            <Float
+        <Tooltip text="Count, Height, Width">
+            <input
+                value={text}
+                onChange={(e) => setText(e.target.value)}
                 style={{
-                    marginRight: 4,
-                    marginLeft: 4,
-                    fontSize: '80%',
-                    width: 30,
+                    background: 'none',
+                    border: 'none',
+                    borderBottom: '1px solid #aaa',
+                    color: 'inherit',
+                    width: 40,
                 }}
-                value={tabs.depth}
-                placeholder="Depth"
-                onChange={(depth) =>
-                    depth != null ? onChange({ ...tabs, depth }) : null
-                }
-            />
-            <Float
-                style={{
-                    marginRight: 4,
-                    marginLeft: 4,
-                    fontSize: '80%',
-                    width: 30,
+                onKeyDown={(evt) => {
+                    if (evt.key === 'Enter') {
+                        commit();
+                    }
                 }}
-                value={tabs.width}
-                placeholder="Width"
-                onChange={(width) =>
-                    width != null ? onChange({ ...tabs, width }) : null
-                }
+                onBlur={() => {
+                    commit();
+                }}
             />
-        </span>
+        </Tooltip>
     );
 };
 
@@ -363,9 +408,9 @@ const ButtonToggle = ({
 }) => {
     const [show, setShow] = React.useState(!!startOpen);
     return (
-        <>
+        <span>
             {button(show, () => setShow(!show))}
-            {show ? body : <span />}
-        </>
+            {show ? body : null}
+        </span>
     );
 };

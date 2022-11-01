@@ -599,3 +599,48 @@ export function IconDelete(props: React.SVGProps<SVGSVGElement>) {
         </svg>
     );
 }
+
+export function IconAngleAcute(props: React.SVGProps<SVGSVGElement>) {
+    return (
+        <svg
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            height="1em"
+            width="1em"
+            {...props}
+        >
+            <path d="M20 19H4.09L14.18 4.43l1.64 1.14-4.54 6.56c1.61.83 2.72 2.49 2.72 4.41 0 .16 0 .31-.03.46H20v2M7.91 17h4.05c.04-.15.04-.3.04-.46 0-1.26-.76-2.32-1.86-2.76L7.91 17z" />
+        </svg>
+    );
+}
+
+export function IconTabUnselected(props: React.SVGProps<SVGSVGElement>) {
+    return (
+        <svg
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            height="1em"
+            width="1em"
+            {...props}
+        >
+            <path d="M1 9h2V7H1v2m0 4h2v-2H1v2m0-8h2V3a2 2 0 00-2 2m8 16h2v-2H9v2m-8-4h2v-2H1v2m2 4v-2H1a2 2 0 002 2M21 3h-8v6h10V5a2 2 0 00-2-2m0 14h2v-2h-2v2M9 5h2V3H9v2M5 21h2v-2H5v2M5 5h2V3H5v2m16 16a2 2 0 002-2h-2v2m0-8h2v-2h-2v2m-8 8h2v-2h-2v2m4 0h2v-2h-2v2z" />
+        </svg>
+    );
+}
+
+export function IconUndo(props: React.SVGProps<SVGSVGElement>) {
+    return (
+        <svg
+            fill="none"
+            viewBox="0 0 24 24"
+            height="1em"
+            width="1em"
+            {...props}
+        >
+            <path
+                fill="currentColor"
+                d="M5.34 4.468h2v2.557a7 7 0 11-1.037 10.011l1.619-1.185a5 5 0 10.826-7.384h2.591v2h-6v-6z"
+            />
+        </svg>
+    );
+}

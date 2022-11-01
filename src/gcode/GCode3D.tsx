@@ -10,7 +10,8 @@ import {
     Texture,
     Vector3,
 } from 'three';
-import { GCodeData, renderCutDepths } from './Visualize';
+import { GCodeData } from './Visualize';
+import { renderCutDepths } from './renderCutDepths';
 import { OrbitControls } from '@react-three/drei';
 import { addMetadata } from '../editor/Export';
 import { initialHistory } from '../state/initialState';

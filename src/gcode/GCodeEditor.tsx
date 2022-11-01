@@ -71,7 +71,7 @@ export const GCodeEditor = ({
                         style={{
                             margin: 16,
                             display: 'grid',
-                            gridTemplateColumns: many('max-content', 17).join(
+                            gridTemplateColumns: many('max-content', 16).join(
                                 ' ',
                             ),
                         }}
@@ -108,8 +108,8 @@ export const GCodeEditor = ({
                                         style={{
                                             background: 'none',
                                             border: 'none',
-                                            color: 'inherit',
                                             cursor: 'pointer',
+                                            color: 'red',
                                         }}
                                         onClick={() =>
                                             dispatch({
