@@ -25,10 +25,34 @@ uniform sampler2D bumpTexture;
 uniform float bumpScale;
 
 varying vec2 vUV;
+varying vec3 vNormal;
+
+// vec3 cross(vec3 a, vec3 b) {
+//     return vec3(
+//         a.y * b.z - a.z * b.y, 
+//         a.z * b.x - a.x * b.z, 
+//         a.x * b.y - a.y * b.x);
+// }
 
 void main() { 
 	vUV = uv;
 	vec4 bumpData = texture2D( bumpTexture, uv );
+ 
+    float off = 0.001;
+
+	vec4 p1 = texture2D( bumpTexture, uv + vec2(off, 0.0) );
+	vec4 p5 = texture2D( bumpTexture, uv + vec2(-off, 0.0) );
+
+	vec4 p3 = texture2D( bumpTexture, uv + vec2(0.0, off) );
+	vec4 p7 = texture2D( bumpTexture, uv + vec2(0.0, -off) );
+
+    float dzdx = (p5.r - p1.r);
+    float dzdy = (p7.r - p3.r);
+
+    vec3 tx = vec3(1.0, 0.0, dzdx);
+    vec3 ty = vec3(0.0, 1.0, dzdy);
+    // Calculate the normal
+    vNormal = cross(tx, ty);
 	
 	// move the position along the normal
     vec3 newPosition = position + normal * bumpScale * bumpData.r;
@@ -40,6 +64,7 @@ void main() {
 const fragment = `
 uniform sampler2D bumpTexture;
 varying vec2 vUV;
+varying vec3 vNormal;
 
 vec3 hsv2rgb(vec3 c) {
     vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
@@ -48,11 +73,16 @@ vec3 hsv2rgb(vec3 c) {
 }
 
 void main() {
-	vec4 bumpData = texture2D( bumpTexture, vUV );
 	// gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0) + texture2D(bumpTexture, vUV);
-    float amount = fract(bumpData.r * 2.0);
 	// gl_FragColor = vec4(hsv2rgb(vec3(amount, 1.0, 1.0)), 1.0);
-    gl_FragColor = vec4(vec3(amount), 1.0);
+
+	vec4 bumpData = texture2D( bumpTexture, vUV );
+    float amount = fract(bumpData.r * 1.0);
+    vec4 depthColor = vec4(vec3(amount), 1.0);
+
+    vec4 normalColor = vec4(vNormal, 1.0);
+
+    gl_FragColor = mix(depthColor, normalColor, 0.5);
 }  
 `;
 

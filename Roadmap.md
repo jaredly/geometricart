@@ -1,4 +1,12 @@
 
+# VBITT
+
+- [ ] make tools, so you can have different paths with different tools
+	- I think I want to just use selections directly, instead of colors & widths?
+- [ ] I want a way to indicate that the diameter of the tool you've selected doesn't match the line width.
+- [ ] 3d render, please add lighting!
+	- ok I need to calculate normals, should be fine.
+
 # Let's do a "making of" animation.
 
 - go through undo/redo, and screenshot each step.

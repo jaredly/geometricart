@@ -487,6 +487,8 @@ export type GCodePath = {
         depth: number;
     };
     disabled?: boolean;
+    diameter?: number;
+    vbitAngle?: string;
 };
 
 export type State = {
