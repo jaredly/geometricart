@@ -285,6 +285,11 @@ export function renderCutDepths(
             } else {
                 ctx.lineTo(pos.x, pos.y);
             }
+            if (pos.tool) {
+                tool = pos.tool;
+                console.log('tool', tool.diameter);
+                ctx.lineWidth = tool.diameter;
+            }
         });
         ctx.stroke();
         return;

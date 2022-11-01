@@ -9,6 +9,7 @@ import { Settings } from './Settings';
 import { ItemEdit } from './ItemEdit';
 import PathKitInit, { PathKit } from 'pathkit-wasm';
 import { Canvas } from '../editor/Canvas';
+import { IconDelete } from '../icons/Icon';
 
 const many = (value: string, m: number) => {
     const values: string[] = [];
@@ -70,7 +71,7 @@ export const GCodeEditor = ({
                         style={{
                             margin: 16,
                             display: 'grid',
-                            gridTemplateColumns: many('max-content', 17).join(
+                            gridTemplateColumns: many('max-content', 18).join(
                                 ' ',
                             ),
                         }}
@@ -104,6 +105,12 @@ export const GCodeEditor = ({
                                         />
                                     )}
                                     <button
+                                        style={{
+                                            background: 'none',
+                                            border: 'none',
+                                            color: 'inherit',
+                                            cursor: 'pointer',
+                                        }}
                                         onClick={() =>
                                             dispatch({
                                                 type: 'gcode:item:are',
@@ -114,7 +121,7 @@ export const GCodeEditor = ({
                                             })
                                         }
                                     >
-                                        Delete
+                                        <IconDelete />
                                     </button>
                                 </div>
                             );

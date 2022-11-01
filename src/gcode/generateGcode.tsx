@@ -125,7 +125,7 @@ export const generateLaserInset = async (state: State) => {
 
 type GCode =
     | { type: 'fast'; x?: number; y?: number; z?: number }
-    | { type: 'tool'; diameter?: number; vbitAngle?: number }
+    | { type: 'tool'; diameter: number; vbitAngle?: number }
     | {
           type: 'cut';
           x?: number;
@@ -181,7 +181,7 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
     let last = null as null | Coord;
     console.log(`B ${Date.now() - now}ms`);
 
-    let lastTool = null as null | { diameter?: number; vbitAngle?: number };
+    let lastTool = null as null | { diameter: number; vbitAngle?: number };
 
     state.gcode.items.forEach((item) => {
         if (item.type === 'pause') {
@@ -200,7 +200,7 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
                 item.diameter ??
                 (color.endsWith(':pocket')
                     ? 3
-                    : pxToMM(+color.split(':')[1], state.meta.ppi));
+                    : pxToMM(+color.split(':')[1] / 100, state.meta.ppi));
             const cv = colors[color];
 
             if (
@@ -208,6 +208,12 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
                 (lastTool.diameter !== diameter ||
                     lastTool.vbitAngle !== vbitAngle)
             ) {
+                console.log(
+                    color,
+                    diameter,
+                    state.meta.ppi,
+                    +color.split(':')[1],
+                );
                 cmds.push({ type: 'tool', diameter, vbitAngle });
             }
             lastTool = { diameter, vbitAngle };
@@ -376,8 +382,8 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
         ...cmds.map((cmd) => {
             switch (cmd.type) {
                 case 'tool':
-                    return `M0 ; tool ${cmd.diameter}${
-                        cmd.vbitAngle ? `v${cmd.vbitAngle}` : ''
+                    return `M0 ; tool ${cmd.diameter?.toFixed(2)}${
+                        cmd.vbitAngle ? `v${cmd.vbitAngle.toFixed(2)}` : ''
                     }`;
                 case 'fast':
                     return `G0 ${gcodePos(cmd.x, cmd.y, cmd.z)}`;

@@ -234,7 +234,9 @@ export const ItemEdit = ({
                 >
                     Save
                 </button>
-            ) : null}
+            ) : (
+                <span />
+            )}
         </>
     );
 };
