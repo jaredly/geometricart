@@ -159,7 +159,7 @@ export const Visualize = ({
                 width={data.dims.width * scale}
                 height={data.dims.height * scale}
                 style={{
-                    backgroundColor: 'blue',
+                    backgroundColor: 'white',
                     // width: (data.dims.width * scale) / 2,
                     // height: (data.dims.height * scale) / 2,
                     width: 500 / (data.dims.height / data.dims.width),

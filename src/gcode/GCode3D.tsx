@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber';
 import {
     Camera,
     CanvasTexture,
@@ -9,6 +9,7 @@ import {
     RepeatWrapping,
     ShaderMaterial,
     Texture,
+    TextureLoader,
     Vector3,
 } from 'three';
 import { GCodeData } from './Visualize';
@@ -61,6 +62,7 @@ void main() {
 
 const fragment = `
 uniform sampler2D bumpTexture;
+uniform sampler2D backgroundTexture;
 varying vec2 vUV;
 varying vec3 vNormal;
 varying vec4 vNormalColor;
@@ -92,13 +94,14 @@ void main() {
     float dzdy = abs(p7.r - p3.r);
 
     float angle = 1.0 - max(dzdx, dzdy) * 10.0;
-    vec4 angleColor = vec4(1.0, 1.0, 0.0, 1.0 - angle);
+    vec4 angleColor = vec4(vec3(angle), 1.0);
 
-    vec4 normalColor = mix(vNormalColor, angleColor, 0.3);
+    vec4 normalColor = mix(vNormalColor, angleColor, 0.8);
 
-    vec4 backgroundColor = vec4(241.0 / 255.0, 178.0 / 255.0, 92.0 / 255.0, 1.0);
+	vec4 backgroundColor = texture2D( backgroundTexture, vUV );
+    // vec4 backgroundColor = vec4(123.0 / 255.0, 50.0 / 255.0, 0.0 / 255.0, 1.0);
 
-    gl_FragColor = mix(backgroundColor, mix(depthColor, normalColor, 0.4), 0.5);
+    gl_FragColor = mix(backgroundColor, mix(depthColor, normalColor, 0.2), 0.7);
 }  
 `;
 
@@ -288,6 +291,7 @@ function VBox({
     scale: number;
 }) {
     const mesh = React.useRef<Mesh>(null);
+    const wood = useLoader(TextureLoader, 'wood.jpg');
 
     const modelWidth = 5;
     const modelHeight = (data.dims.height / data.dims.width) * modelWidth;
@@ -295,6 +299,7 @@ function VBox({
 
     const mat = React.useMemo(() => {
         const customUniforms = {
+            backgroundTexture: { type: 't', value: wood },
             bumpTexture: { type: 't', value: tx },
             bumpScale: { type: 'f', value: modelDepth },
         };
