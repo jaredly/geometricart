@@ -141,7 +141,6 @@ export const ItemEdit = ({
             <IconSpeedtest />
             <Float
                 style={{
-                    marginRight: 16,
                     marginLeft: -8,
                     fontSize: '80%',
                 }}
@@ -151,18 +150,27 @@ export const ItemEdit = ({
                     speed != null ? setEdited({ ...current, speed }) : null
                 }
             />
-            <IconVerticalAlignTop />
-            <Float
-                style={{
-                    // marginRight: 16,
-                    marginLeft: -8,
-                    fontSize: '80%',
-                    width: 30,
-                }}
-                value={current.start ?? 0}
-                placeholder="Start"
-                onChange={(start) =>
-                    start != null ? setEdited({ ...current, start }) : null
+            <ButtonToggle
+                button={(_, toggle) => (
+                    <IconVerticalAlignTop onClick={toggle} />
+                )}
+                startOpen={current.start != null && current.start !== 0}
+                body={
+                    <Float
+                        style={{
+                            // marginRight: 16,
+                            marginLeft: -8,
+                            fontSize: '80%',
+                            width: 30,
+                        }}
+                        value={current.start ?? 0}
+                        placeholder="Start"
+                        onChange={(start) =>
+                            start != null
+                                ? setEdited({ ...current, start })
+                                : null
+                        }
+                    />
                 }
             />
             <IconVerticalAlignBottom />
@@ -179,31 +187,45 @@ export const ItemEdit = ({
                     depth != null ? setEdited({ ...current, depth }) : null
                 }
             />
-            <IconVerticalAlignMiddle />
-            <Float
-                style={{
-                    marginRight: 4,
-                    marginLeft: -4,
-                    fontSize: '80%',
-                    width: 30,
-                }}
-                value={current.passDepth}
-                // placeholder="Depth"
-                onChange={(passDepth) => setEdited({ ...current, passDepth })}
+            <ButtonToggle
+                button={(_, toggle) => (
+                    <IconVerticalAlignMiddle onClick={toggle} />
+                )}
+                startOpen={current.passDepth != null && current.passDepth !== 0}
+                body={
+                    <span>
+                        <Float
+                            style={{
+                                marginRight: 4,
+                                marginLeft: -4,
+                                fontSize: '80%',
+                                width: 30,
+                            }}
+                            value={current.passDepth}
+                            // placeholder="Depth"
+                            onChange={(passDepth) =>
+                                setEdited({ ...current, passDepth })
+                            }
+                        />
+                        <span
+                            style={{
+                                fontSize: '50%',
+                                marginRight: 8,
+                            }}
+                        >
+                            (
+                            {
+                                makeDepths(
+                                    current.start,
+                                    current.depth,
+                                    current.passDepth,
+                                ).length
+                            }{' '}
+                            p)
+                        </span>
+                    </span>
+                }
             />
-            <span
-                style={{
-                    fontSize: '50%',
-                    marginRight: 8,
-                }}
-            >
-                (
-                {
-                    makeDepths(current.start, current.depth, current.passDepth)
-                        .length
-                }{' '}
-                p)
-            </span>
             {selected?.width ? (
                 current.tabs ? (
                     <Tabs
@@ -323,8 +345,27 @@ export const Float = ({
                 border: 'none',
                 padding: 0,
                 textAlign: 'center',
+                borderBottom: '1px solid #aaa',
                 ...style,
             }}
         />
+    );
+};
+
+const ButtonToggle = ({
+    button,
+    body,
+    startOpen,
+}: {
+    button: (show: boolean, toggle: () => void) => JSX.Element;
+    body: React.ReactNode;
+    startOpen?: boolean;
+}) => {
+    const [show, setShow] = React.useState(!!startOpen);
+    return (
+        <>
+            {button(show, () => setShow(!show))}
+            {show ? body : <span />}
+        </>
     );
 };

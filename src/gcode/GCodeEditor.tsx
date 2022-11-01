@@ -71,7 +71,7 @@ export const GCodeEditor = ({
                         style={{
                             margin: 16,
                             display: 'grid',
-                            gridTemplateColumns: many('max-content', 18).join(
+                            gridTemplateColumns: many('max-content', 17).join(
                                 ' ',
                             ),
                         }}
