@@ -3,11 +3,9 @@ import { GCodeData, Tool } from './Visualize';
 
 export function renderCutDepths(
     ctx: CanvasRenderingContext2D,
-    bitSize: number,
     data: GCodeData,
     forDepthMap = false,
 ) {
-    ctx.lineWidth = bitSize;
     ctx.lineJoin = 'round';
     ctx.lineCap = 'round';
     ctx.globalCompositeOperation = 'darken';
@@ -20,6 +18,8 @@ export function renderCutDepths(
     data.toolPaths.forEach(({ tool, positions }) => {
         ctx.lineWidth = tool.diameter;
         if (!tool.vbit) {
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
             positions.forEach((pos, i) => {
                 if (pos.z != z) {
                     if (z != null) {
@@ -40,12 +40,15 @@ export function renderCutDepths(
             ctx.stroke();
         }
 
+        const vbit = tool.vbit;
+
         positions.forEach((pos, i) => {
             if (i == 0) {
                 return;
             }
 
             const zDepth = (Math.min(0, pos.z) - data.bounds.min.z!) / depth;
+
             // const color = zColor(forDepthMap, zDepth);
             const last = positions[i - 1];
 
@@ -59,6 +62,8 @@ export function renderCutDepths(
             const gradient = ctx.createLinearGradient(p1.x, p1.y, p2.x, p2.y);
             // const gradient = ctx.createLinearGradient(last.x, last.y, pos.x, pos.y);
             const bottom = zColor(forDepthMap, zDepth);
+
+            // Hmmmmmm I think top should be the "start" of the path instead?
             const top = zColor(forDepthMap, 1);
 
             // Add three color stops

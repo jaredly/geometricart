@@ -644,3 +644,22 @@ export function IconUndo(props: React.SVGProps<SVGSVGElement>) {
         </svg>
     );
 }
+
+export function IconArrowAutofitWidth(props: React.SVGProps<SVGSVGElement>) {
+    return (
+        <svg
+            fill="none"
+            stroke="currentColor"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            viewBox="0 0 24 24"
+            height="1em"
+            width="1em"
+            {...props}
+        >
+            <path stroke="none" d="M0 0h24v24H0z" />
+            <path d="M4 12V6a2 2 0 012-2h12a2 2 0 012 2v6M10 18H3M21 18h-7M6 15l-3 3 3 3M18 15l3 3-3 3" />
+        </svg>
+    );
+}

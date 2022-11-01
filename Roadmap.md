@@ -1,13 +1,15 @@
 
 # VBITT
 
-- [ ] make tools, so you can have different paths with different tools
-	- I think I want to just use selections directly, instead of colors & widths?
-- [ ] I want a way to indicate that the diameter of the tool you've selected doesn't match the line width.
+- [x] make tools, so you can have different paths with different tools
+	- [-] I think I want to just use selections directly, instead of colors & widths?
+		- eh, maybe some time.
+- [-] I want a way to indicate that the diameter of the tool you've selected doesn't match the line width.
+	don't need this?
 - [x] 3d render, please add lighting!
 	- ok I need to calculate normals, should be fine.
 
-- [ ] allow specify the tool size for infils
+- [x] allow specify the tool size for infils
 - [ ] anddddd then do an svg diff on the fills, so we can do carve-outs!
 
 - have a setting that is "I'm generating this for snapmaker"

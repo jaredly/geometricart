@@ -222,7 +222,11 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
             const greedy = greedyPaths(colors[color]);
             if (color.endsWith(':pocket')) {
                 greedy.forEach((shape) => {
-                    const pocket = makePocket(PathKit, shape.map(scalePos), 3);
+                    const pocket = makePocket(
+                        PathKit,
+                        shape.map(scalePos),
+                        diameter,
+                    );
                     if (!pocket.length || !pocket[0].length) {
                         console.log(pocket, shape);
                         debugger;

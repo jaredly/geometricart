@@ -143,7 +143,7 @@ export const Visualize = ({
         ctx.scale(scale, scale);
         ctx.translate(-data.bounds.min.x!, -data.bounds.min.y!);
 
-        renderCutDepths(ctx, bitSize, data);
+        renderCutDepths(ctx, data);
         renderCutPaths(ctx, data);
 
         ctx.restore();

@@ -4,6 +4,7 @@ import {
     Camera,
     CanvasTexture,
     DoubleSide,
+    LinearFilter,
     Mesh,
     RepeatWrapping,
     ShaderMaterial,
@@ -72,14 +73,12 @@ vec3 hsv2rgb(vec3 c) {
 
 void main() {
 	vec4 bumpData = texture2D( bumpTexture, vUV );
-    float amount = fract(bumpData.r * 1.0);
+    float amount = bumpData.r;
     vec4 depthColor = vec4(vec3(amount), 1.0);
 
     if (bumpData.r < 0.001) {
         discard;
     }
-
-    // vec4 normalColor = vec4(vNormalColor.z, 0.0, 0.0, 1.0);
 
     float off = 0.001;
 
@@ -92,11 +91,12 @@ void main() {
     float dzdx = abs(p5.r - p1.r);
     float dzdy = abs(p7.r - p3.r);
 
-    vec4 angleColor = vec4(vec3(1.0 - max(dzdx, dzdy) * 10.0), 1.0);
+    float angle = 1.0 - max(dzdx, dzdy) * 10.0;
+    vec4 angleColor = vec4(1.0, 1.0, 0.0, 1.0 - angle);
 
-    vec4 normalColor = mix(vNormalColor, angleColor, 1.0);
+    vec4 normalColor = mix(vNormalColor, angleColor, 0.3);
 
-    gl_FragColor = mix(depthColor, normalColor, 0.5);
+    gl_FragColor = mix(depthColor, normalColor, 0.4);
 }  
 `;
 
@@ -111,26 +111,27 @@ export const GCode3D = ({
     state: State;
     meta: string;
 }) => {
-    const scale = 1000 / Math.max(data.dims.width, data.dims.height);
+    const [scaleBase, setScaleBase] = React.useState(500);
+    const scale = scaleBase / Math.max(data.dims.width, data.dims.height);
     const tx = React.useMemo(() => {
         console.log('rerender the canvas');
         const canvas = document.createElement('canvas');
-        const rscale = scale / 2;
+        const rscale = scale;
         canvas.width = data.dims.width * rscale;
         canvas.height = data.dims.height * rscale;
         const ctx = canvas.getContext('2d')!;
-        ctx.fillStyle = 'hsl(0, 100%, 100%)';
+        ctx.fillStyle = 'rgb(255, 0, 0)';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.save();
         ctx.scale(rscale, rscale);
         ctx.translate(-data.bounds.min.x!, -data.bounds.min.y!);
-        renderCutDepths(ctx, 3, data, true);
+        renderCutDepths(ctx, data, true);
         ctx.restore();
         const tx = new CanvasTexture(canvas);
         tx.wrapS = RepeatWrapping;
         tx.wrapT = RepeatWrapping;
         return tx;
-    }, [data]);
+    }, [data, scale]);
 
     const cam = React.useRef(null as null | Camera | void);
     const canv = React.useRef<HTMLCanvasElement>(null);
@@ -202,6 +203,17 @@ export const GCode3D = ({
                     </a>
                 </div>
             ) : null}
+            <div>
+                {[500, 1000, 2000, 5000].map((num) => (
+                    <button
+                        key={num}
+                        onClick={() => setScaleBase(num)}
+                        disabled={scaleBase === num}
+                    >
+                        {num}
+                    </button>
+                ))}
+            </div>
             <div
                 style={{ width: 500, height: 500, border: '1px solid magenta' }}
             >
@@ -305,26 +317,6 @@ function VBox({
                     data.dims.height * scale,
                 ]}
             />
-        </mesh>
-    );
-}
-
-function Box(props: JSX.IntrinsicElements['mesh']) {
-    const mesh = React.useRef<Mesh>(null);
-    const [hovered, setHover] = React.useState(false);
-    const [active, setActive] = React.useState(false);
-    useFrame((state, delta) => (mesh.current!.rotation.x += 0.01));
-    return (
-        <mesh
-            {...props}
-            ref={mesh}
-            scale={active ? 1.5 : 1}
-            onClick={(event) => setActive(!active)}
-            onPointerOver={(event) => setHover(true)}
-            onPointerOut={(event) => setHover(false)}
-        >
-            <boxGeometry args={[1, 1, 1]} />
-            <meshStandardMaterial color={hovered ? 'hotpink' : 'orange'} />
         </mesh>
     );
 }

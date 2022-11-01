@@ -7,6 +7,7 @@ import { Int } from '../editor/Forms';
 import {
     CheckmarkIcon,
     IconAngleAcute,
+    IconArrowAutofitWidth,
     IconEye,
     IconEyeInvisible,
     IconSpeedtest,
@@ -145,7 +146,26 @@ export const ItemEdit = ({
                         'mm'}
                 </span>
             ) : (
-                <span />
+                <ButtonToggle
+                    button={(_, toggle) => (
+                        <IconArrowAutofitWidth onClick={toggle} />
+                    )}
+                    startOpen
+                    body={
+                        <Float
+                            style={{
+                                marginLeft: -8,
+                                fontSize: '80%',
+                            }}
+                            value={current.diameter}
+                            onChange={(diameter) =>
+                                diameter != null
+                                    ? setEdited({ ...current, diameter })
+                                    : null
+                            }
+                        />
+                    }
+                />
             )}
             <span style={{ marginRight: 8 }} />
             <IconSpeedtest />
