@@ -96,7 +96,9 @@ void main() {
 
     vec4 normalColor = mix(vNormalColor, angleColor, 0.3);
 
-    gl_FragColor = mix(depthColor, normalColor, 0.4);
+    vec4 backgroundColor = vec4(241.0 / 255.0, 178.0 / 255.0, 92.0 / 255.0, 1.0);
+
+    gl_FragColor = mix(backgroundColor, mix(depthColor, normalColor, 0.4), 0.5);
 }  
 `;
 
