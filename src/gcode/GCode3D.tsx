@@ -75,7 +75,7 @@ void main() {
     float amount = fract(bumpData.r * 1.0);
     vec4 depthColor = vec4(vec3(amount), 1.0);
 
-    if (bumpData.r == 0.0) {
+    if (bumpData.r < 0.001) {
         discard;
     }
 
@@ -216,17 +216,7 @@ export const GCode3D = ({
                         position={[0, 0, 10]}
                         args={[30, 1, 1, 1000]}
                     />
-                    <OrbitControls
-                        camera={virtualCamera.current}
-                        ref={(c) => {
-                            // @ts-ignore
-                            window.cam = c;
-                            cam.current = c?.object;
-                            // c!.object.fov = 30;
-                            // c.fov = 90;
-                            // c!.object.updateProjectionMatrix();
-                        }}
-                    />
+                    <OrbitControls camera={virtualCamera.current} />
                 </Canvas>
             </div>
         </div>

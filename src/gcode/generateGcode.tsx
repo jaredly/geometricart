@@ -201,7 +201,6 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
                 (color.endsWith(':pocket')
                     ? 3
                     : pxToMM(+color.split(':')[1] / 100, state.meta.ppi));
-            const cv = colors[color];
 
             if (vbitAngle != null) {
                 depth = calculateDepthForVBit(
@@ -415,13 +414,16 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
 
 const calculateDepthForVBit = (
     start: number,
-    diameter: number,
     angle: number,
+    diameter: number,
 ) => {
+    // tan(angle) = diameter / depth
+    // depth = diameter / tan(angle)
+    return start + diameter / 2 / Math.tan(angle / 2);
     // const depth = diameter / 2 / Math.sin(angle / 2);
     // return start + depth;
     // return start + diameter * 8;
-    return 3;
+    // return 3;
 };
 
 function makePocket(PathKit: PathKit, shape: Coord[], bitSize: number) {

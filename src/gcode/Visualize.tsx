@@ -49,14 +49,6 @@ export const parse = (gcode: string): GCodeData['toolPaths'] => {
             console.warn('bad gcode line', line);
             return;
         }
-        if (!toolPaths.length) {
-            console.warn('No initial tool');
-            toolPaths.push({
-                positions: [],
-                tool: { diameter: 3 },
-            });
-        }
-        const positions = toolPaths[toolPaths.length - 1].positions;
         switch (g[1]) {
             case '21':
                 settings.units = 'mm';
@@ -69,6 +61,13 @@ export const parse = (gcode: string): GCodeData['toolPaths'] => {
             case '91':
                 throw new Error(`relative, cant do it`);
             case '0': {
+                if (!toolPaths.length) {
+                    toolPaths.push({
+                        positions: [],
+                        tool: { diameter: 3 },
+                    });
+                }
+                const positions = toolPaths[toolPaths.length - 1].positions;
                 const coords = parseCoords(good);
                 pos = { ...pos, ...coords };
                 if (pos.x != null && pos.y != null && pos.z != null) {
@@ -82,6 +81,14 @@ export const parse = (gcode: string): GCodeData['toolPaths'] => {
                 break;
             }
             case '1': {
+                if (!toolPaths.length) {
+                    console.warn('No initial tool');
+                    toolPaths.push({
+                        positions: [],
+                        tool: { diameter: 3 },
+                    });
+                }
+                const positions = toolPaths[toolPaths.length - 1].positions;
                 const coords = parseCoords(good);
                 pos = { ...pos, ...coords };
                 if (pos.x != null && pos.y != null && pos.z != null) {
