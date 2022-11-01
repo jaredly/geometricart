@@ -4,10 +4,13 @@ export const Tooltip = ({
     text,
     children,
 }: {
-    text: string;
-    children: React.ReactNode;
-}) => {
+    text?: string | null;
+    children: React.ReactElement;
+}): React.ReactElement => {
     const [show, setShow] = React.useState(false);
+    if (!text) {
+        return children;
+    }
     return (
         <span
             style={{ position: 'relative' }}

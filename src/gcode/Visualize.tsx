@@ -13,17 +13,18 @@ const parseCoords = (line: string) => {
 
 export type Tool = { diameter: number; vbit?: number };
 
-export const parse = (gcode: string) => {
+export const parse = (gcode: string): GCodeData['toolPaths'] => {
     const settings = { units: 'in' };
     let pos: { x?: number; y?: number; z?: number; f?: number } = {};
     // if f === -1, then it's a rapid move
-    const positions: {
-        x: number;
-        y: number;
-        z: number;
-        f?: number;
-        tool?: Tool;
-    }[] = [];
+    const toolPaths: GCodeData['toolPaths'] = [];
+    // const positions: {
+    //     x: number;
+    //     y: number;
+    //     z: number;
+    //     f?: number;
+    //     tool?: Tool;
+    // }[] = [];
     let tool: Tool | undefined = undefined;
     gcode.split('\n').forEach((line) => {
         const good = line.split(';')[0].trim().toLowerCase();
@@ -37,6 +38,10 @@ export const parse = (gcode: string) => {
                 diameter: parseFloat(diameter),
                 vbit: vbit ? parseFloat(vbit) : undefined,
             };
+            toolPaths.push({
+                positions: [],
+                tool,
+            });
             return;
         }
         const g = good.match(/^g([0-9]+)/);
@@ -44,6 +49,14 @@ export const parse = (gcode: string) => {
             console.warn('bad gcode line', line);
             return;
         }
+        if (!toolPaths.length) {
+            console.warn('No initial tool');
+            toolPaths.push({
+                positions: [],
+                tool: { diameter: 3 },
+            });
+        }
+        const positions = toolPaths[toolPaths.length - 1].positions;
         switch (g[1]) {
             case '21':
                 settings.units = 'mm';
@@ -64,7 +77,6 @@ export const parse = (gcode: string) => {
                         y: pos.y,
                         z: pos.z,
                         f: -1,
-                        tool,
                     });
                 }
                 break;
@@ -78,13 +90,12 @@ export const parse = (gcode: string) => {
                         y: pos.y,
                         z: pos.z,
                         f: pos.f,
-                        tool,
                     });
                 }
             }
         }
     });
-    return positions;
+    return toolPaths;
 };
 
 export const Visualize = ({
@@ -99,14 +110,14 @@ export const Visualize = ({
     const bitSize = 3; // mm, 1/8"
     const data = React.useMemo(() => {
         try {
-            const positions = parse(gcode);
-            const bounds = findBounds(positions, bitSize, 3);
+            const toolPaths = parse(gcode);
+            const bounds = findBounds(toolPaths, bitSize, 3);
             const dims = {
                 width: bounds.max.x! - bounds.min.x!,
                 height: bounds.max.y! - bounds.min.y!,
                 depth: -bounds.min.z!,
             };
-            return { positions, bounds, dims };
+            return { toolPaths, bounds, dims };
         } catch (err) {
             console.error(err);
         }
@@ -191,24 +202,25 @@ type Bound = {
 const ax = ['x', 'y', 'z'] as const;
 
 const findBounds = (
-    positions: { x: number; y: number; z: number; f?: number }[],
+    toolPaths: GCodeData['toolPaths'],
     bitSize: number,
     margin: number,
 ) => {
-    return positions.reduce(
-        (acc, pos) => {
-            ax.forEach((k: 'x' | 'y' | 'z') => {
-                if (acc.min[k] == null || pos[k] < acc.min[k]!) {
-                    acc.min[k] =
-                        k === 'z' ? pos[k] : pos[k] - bitSize / 2 - margin;
-                }
-                if (acc.max[k] == null || pos[k] > acc.max[k]!) {
-                    acc.max[k] =
-                        k === 'z' ? pos[k] : pos[k] + bitSize / 2 + margin;
-                }
-            });
-            return acc;
-        },
+    return toolPaths.reduce(
+        (acc, { positions }) =>
+            positions.reduce((acc, pos) => {
+                ax.forEach((k: 'x' | 'y' | 'z') => {
+                    if (acc.min[k] == null || pos[k] < acc.min[k]!) {
+                        acc.min[k] =
+                            k === 'z' ? pos[k] : pos[k] - bitSize / 2 - margin;
+                    }
+                    if (acc.max[k] == null || pos[k] > acc.max[k]!) {
+                        acc.max[k] =
+                            k === 'z' ? pos[k] : pos[k] + bitSize / 2 + margin;
+                    }
+                });
+                return acc;
+            }, acc),
         {
             min: { x: null, y: null, z: null },
             max: { x: null, y: null, z: null },
@@ -217,12 +229,14 @@ const findBounds = (
 };
 
 export type GCodeData = {
-    positions: {
-        x: number;
-        y: number;
-        z: number;
-        f?: number | undefined;
-        tool?: Tool;
+    toolPaths: {
+        tool: Tool;
+        positions: {
+            x: number;
+            y: number;
+            z: number;
+            f?: number | undefined;
+        }[];
     }[];
     bounds: Bound;
     dims: {
@@ -237,18 +251,20 @@ export function renderCutPaths(ctx: CanvasRenderingContext2D, data: GCodeData) {
     ctx.lineWidth = 0.1;
     ctx.strokeStyle = 'black';
     let above = false;
-    data.positions.forEach((pos, i) => {
-        if (i === 0 || pos.z >= 0 !== above) {
-            if (i > 0) {
-                ctx.stroke();
+    data.toolPaths.forEach(({ positions }) => {
+        positions.forEach((pos, i) => {
+            if (i === 0 || pos.z >= 0 !== above) {
+                if (i > 0) {
+                    ctx.stroke();
+                }
+                ctx.beginPath();
+                ctx.moveTo(pos.x, pos.y);
+                above = pos.z >= 0;
+                ctx.strokeStyle = above ? 'red' : 'black';
+            } else {
+                ctx.lineTo(pos.x, pos.y);
             }
-            ctx.beginPath();
-            ctx.moveTo(pos.x, pos.y);
-            above = pos.z >= 0;
-            ctx.strokeStyle = above ? 'red' : 'black';
-        } else {
-            ctx.lineTo(pos.x, pos.y);
-        }
+        });
     });
     ctx.stroke();
 }

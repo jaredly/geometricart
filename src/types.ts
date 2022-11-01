@@ -478,7 +478,13 @@ export type GCodePath = {
     type: 'path';
     color: string;
     speed: number;
+
+    // So, if we're doing a straight cut, depth is the deal.
+    // But for a v-bit, we don't specify depth manually.
+    // That should be calculated based on the angle.
     depth: number;
+    vbitAngle?: number;
+
     start: number;
     passDepth?: number;
     tabs?: {
@@ -488,7 +494,6 @@ export type GCodePath = {
     };
     disabled?: boolean;
     diameter?: number;
-    vbitAngle?: number;
 };
 
 export type State = {

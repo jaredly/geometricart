@@ -25,6 +25,7 @@ uniform float bumpScale;
 
 varying vec2 vUV;
 varying vec3 vNormal;
+varying vec4 vNormalColor;
 
 void main() { 
 	vUV = uv;
@@ -44,7 +45,11 @@ void main() {
     vec3 tx = vec3(1.0, 0.0, dzdx);
     vec3 ty = vec3(0.0, 1.0, dzdy);
     // Calculate the normal
-    vNormal = cross(tx, ty);
+    vNormal = normalize(cross(tx, ty));
+    vNormalColor = vec4(vNormal * 0.5 + 0.5, 1.0);
+
+    // Hmm I wonder if I could 
+
 	
 	// move the position along the normal
     vec3 newPosition = position + normal * bumpScale * bumpData.r;
@@ -57,6 +62,7 @@ const fragment = `
 uniform sampler2D bumpTexture;
 varying vec2 vUV;
 varying vec3 vNormal;
+varying vec4 vNormalColor;
 
 vec3 hsv2rgb(vec3 c) {
     vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
@@ -69,9 +75,24 @@ void main() {
     float amount = fract(bumpData.r * 1.0);
     vec4 depthColor = vec4(vec3(amount), 1.0);
 
-    vec4 normalColor = vec4(vNormal, 1.0);
+    // vec4 normalColor = vec4(vNormalColor.z, 0.0, 0.0, 1.0);
 
-    gl_FragColor = mix(depthColor, normalColor, 0.5);
+    float off = 0.001;
+
+	vec4 p1 = texture2D( bumpTexture, vUV + vec2(off, 0.0) );
+	vec4 p5 = texture2D( bumpTexture, vUV + vec2(-off, 0.0) );
+
+	vec4 p3 = texture2D( bumpTexture, vUV + vec2(0.0, off) );
+	vec4 p7 = texture2D( bumpTexture, vUV + vec2(0.0, -off) );
+
+    float dzdx = abs(p5.r - p1.r);
+    float dzdy = abs(p7.r - p3.r);
+
+    vec4 angleColor = vec4(vec3(max(dzdx, dzdy) * 10.0), 1.0);
+
+    vec4 normalColor = mix(vNormalColor, angleColor, 0.2);
+
+    gl_FragColor = mix(depthColor, normalColor, 0.8);
 }  
 `;
 

@@ -190,7 +190,7 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
             if (item.disabled) {
                 return;
             }
-            const { color, start, depth, speed, passDepth, tabs, vbitAngle } =
+            let { color, start, depth, speed, passDepth, tabs, vbitAngle } =
                 item;
             if (!colors[color]) {
                 console.warn(`Unknown color ${color}`);
@@ -202,6 +202,14 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
                     ? 3
                     : pxToMM(+color.split(':')[1] / 100, state.meta.ppi));
             const cv = colors[color];
+
+            if (vbitAngle != null) {
+                depth = calculateDepthForVBit(
+                    start,
+                    (vbitAngle / 180) * Math.PI,
+                    diameter,
+                );
+            }
 
             if (
                 lastTool !== null &&
@@ -409,6 +417,17 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
     lines.push(`G0 Z${clearHeight}`);
 
     return { time, text: lines.join('\n') };
+};
+
+const calculateDepthForVBit = (
+    start: number,
+    diameter: number,
+    angle: number,
+) => {
+    // const depth = diameter / 2 / Math.sin(angle / 2);
+    // return start + depth;
+    // return start + diameter * 8;
+    return 3;
 };
 
 function makePocket(PathKit: PathKit, shape: Coord[], bitSize: number) {

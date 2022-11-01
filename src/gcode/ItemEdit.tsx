@@ -183,20 +183,32 @@ export const ItemEdit = ({
                     />
                 }
             />
-            <IconVerticalAlignBottom />
-            <Float
+            <IconVerticalAlignBottom
                 style={{
-                    // marginRight: 16,
-                    marginLeft: -8,
-                    fontSize: '80%',
-                    width: 30,
+                    color: current.vbitAngle ? '#a77' : 'inherit',
                 }}
-                value={current.depth}
-                // placeholder="Depth"
-                onChange={(depth) =>
-                    depth != null ? setEdited({ ...current, depth }) : null
-                }
             />
+            <Tooltip
+                text={
+                    current.vbitAngle
+                        ? `Depth is auto-calculated based on width & vbit angle`
+                        : null
+                }
+            >
+                <Float
+                    style={{
+                        marginLeft: -8,
+                        fontSize: '80%',
+                        width: 30,
+                        color: current.vbitAngle ? '#a77' : 'inherit',
+                    }}
+                    value={current.depth}
+                    // placeholder="Depth"
+                    onChange={(depth) =>
+                        depth != null ? setEdited({ ...current, depth }) : null
+                    }
+                />
+            </Tooltip>
             <ButtonToggle
                 button={(_, toggle) => (
                     <IconVerticalAlignMiddle onClick={toggle} />
@@ -212,7 +224,6 @@ export const ItemEdit = ({
                                 width: 30,
                             }}
                             value={current.passDepth}
-                            // placeholder="Depth"
                             onChange={(passDepth) =>
                                 setEdited({ ...current, passDepth })
                             }
