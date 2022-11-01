@@ -12,7 +12,7 @@ import {
 } from 'three';
 import { GCodeData } from './Visualize';
 import { renderCutDepths } from './renderCutDepths';
-import { OrbitControls } from '@react-three/drei';
+import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 import { addMetadata } from '../editor/Export';
 import { initialHistory } from '../state/initialState';
 import { State } from '../types';
@@ -139,6 +139,7 @@ export const GCode3D = ({
         null as null | { url: string; img: string },
     );
     const qsize = 500;
+    const virtualCamera = React.useRef<Camera>();
 
     return (
         <div>
@@ -153,6 +154,8 @@ export const GCode3D = ({
 
                     const ctx = dest.getContext('2d')!;
                     const threes = stateRef.current;
+                    ctx.fillStyle = '#00ffca';
+                    ctx.fillRect(0, 0, dest.width, dest.height);
 
                     takePerspectivePictures(threes, ctx, canv, qsize);
 
@@ -207,11 +210,21 @@ export const GCode3D = ({
                     <pointLight position={[10, 10, 10]} />
                     <VBox tx={tx} data={data} scale={scale} />
                     <GetState ok={stateRef} />
+                    <PerspectiveCamera
+                        makeDefault
+                        ref={virtualCamera}
+                        position={[0, 0, 10]}
+                        args={[30, 1, 1, 1000]}
+                    />
                     <OrbitControls
+                        camera={virtualCamera.current}
                         ref={(c) => {
                             // @ts-ignore
                             window.cam = c;
                             cam.current = c?.object;
+                            // c!.object.fov = 30;
+                            // c.fov = 90;
+                            // c!.object.updateProjectionMatrix();
                         }}
                     />
                 </Canvas>
@@ -232,32 +245,32 @@ export function takePerspectivePictures(
     canv: React.RefObject<HTMLCanvasElement>,
     qsize: number,
 ) {
-    threes.camera.position.set(0, 0, 5);
+    threes.camera.position.set(0, 0, 10);
     threes.camera.lookAt(new Vector3(0, 0, 0));
     threes.gl.render(threes.scene, threes.camera);
     ctx.drawImage(canv.current!, 0, 0, qsize, qsize);
 
-    threes.camera.position.x = 2;
-    threes.camera.position.z = 4;
+    threes.camera.position.x = 4;
+    threes.camera.position.z = 7;
     threes.camera.lookAt(new Vector3(0, 0, 0));
     threes.gl.render(threes.scene, threes.camera);
     ctx.drawImage(canv.current!, qsize, 0, qsize, qsize);
 
-    threes.camera.position.z = -2;
-    threes.camera.position.x = -2;
+    threes.camera.position.z = -3;
+    threes.camera.position.x = -5;
     threes.camera.lookAt(new Vector3(-0.5, 0, 0));
     threes.gl.render(threes.scene, threes.camera);
     ctx.drawImage(canv.current!, 0, qsize, qsize, qsize);
 
-    threes.camera.position.x = -2;
-    threes.camera.position.y = 2;
-    threes.camera.position.z = 2;
+    threes.camera.position.x = -4;
+    threes.camera.position.y = 4;
+    threes.camera.position.z = 4;
     threes.camera.lookAt(new Vector3(0, 0, 0));
     threes.gl.render(threes.scene, threes.camera);
     ctx.drawImage(canv.current!, qsize, qsize, qsize, qsize);
 
     // Reset
-    threes.camera.position.set(0, 0, 5);
+    threes.camera.position.set(0, 0, 10);
     threes.camera.lookAt(new Vector3(0, 0, 0));
 }
 
