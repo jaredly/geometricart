@@ -11,14 +11,32 @@ const parseCoords = (line: string) => {
     }, {} as { x?: number; y?: number; z?: number; f?: number });
 };
 
-const parse = (gcode: string) => {
+export type Tool = { diameter: number; vbit?: number };
+
+export const parse = (gcode: string) => {
     const settings = { units: 'in' };
     let pos: { x?: number; y?: number; z?: number; f?: number } = {};
     // if f === -1, then it's a rapid move
-    const positions: { x: number; y: number; z: number; f?: number }[] = [];
+    const positions: {
+        x: number;
+        y: number;
+        z: number;
+        f?: number;
+        tool?: Tool;
+    }[] = [];
+    let tool: Tool | undefined = undefined;
     gcode.split('\n').forEach((line) => {
         const good = line.split(';')[0].trim().toLowerCase();
         if (!good.length) {
+            return;
+        }
+        const toolPrefix = `M0 ; tool `;
+        if (line.startsWith(toolPrefix)) {
+            const [diameter, vbit] = line.slice(toolPrefix.length).split('v');
+            tool = {
+                diameter: parseFloat(diameter),
+                vbit: vbit ? parseFloat(vbit) : undefined,
+            };
             return;
         }
         const g = good.match(/^g([0-9]+)/);
@@ -41,7 +59,13 @@ const parse = (gcode: string) => {
                 const coords = parseCoords(good);
                 pos = { ...pos, ...coords };
                 if (pos.x != null && pos.y != null && pos.z != null) {
-                    positions.push({ x: pos.x, y: pos.y, z: pos.z, f: -1 });
+                    positions.push({
+                        x: pos.x,
+                        y: pos.y,
+                        z: pos.z,
+                        f: -1,
+                        tool,
+                    });
                 }
                 break;
             }
@@ -54,6 +78,7 @@ const parse = (gcode: string) => {
                         y: pos.y,
                         z: pos.z,
                         f: pos.f,
+                        tool,
                     });
                 }
             }
@@ -88,7 +113,7 @@ export const Visualize = ({
     }, [gcode]);
     const scale = 10;
     const ref = React.useRef<HTMLCanvasElement>(null);
-    const [visualize, setVisualize] = React.useState(true);
+    const [visualize, setVisualize] = React.useState(false);
     React.useEffect(() => {
         if (!ref.current || !data) {
             return;
@@ -197,6 +222,7 @@ export type GCodeData = {
         y: number;
         z: number;
         f?: number | undefined;
+        tool?: Tool;
     }[];
     bounds: Bound;
     dims: {
@@ -241,6 +267,7 @@ export function renderCutDepths(
     const depth = 0 - data.bounds.min.z!;
 
     const vBit = false;
+    let tool: Tool = { diameter: 3 };
 
     if (!vBit) {
         data.positions.forEach((pos, i) => {
@@ -260,24 +287,17 @@ export function renderCutDepths(
             }
         });
         ctx.stroke();
+        return;
     }
 
     data.positions.forEach((pos, i) => {
-        if (i === 0) {
-            const zDepth = (Math.min(0, pos.z) - data.bounds.min.z!) / depth;
-            const bottom = zColor(forDepthMap, zDepth);
-            const top = zColor(forDepthMap, 1);
-            const g2 = circleGradient(ctx, pos, bitSize / 2);
-            g2.addColorStop(0, bottom);
-            g2.addColorStop(1, top);
-            ctx.fillStyle = g2;
-
-            ctx.beginPath();
-            ctx.arc(pos.x, pos.y, bitSize / 2, 0, 2 * Math.PI);
-            ctx.fill();
-
+        if (pos.tool) {
+            tool = pos.tool;
+        }
+        if (i == 0) {
             return;
         }
+
         const zDepth = (Math.min(0, pos.z) - data.bounds.min.z!) / depth;
         // const color = zColor(forDepthMap, zDepth);
         const last = data.positions[i - 1];

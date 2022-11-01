@@ -50,25 +50,6 @@ export const GCodeEditor = ({
     let dx = bounds ? (bounds.x1 + bounds.x2) / 2 : 0;
     let dy = bounds ? (bounds.y1 + bounds.y2) / 2 : 0;
 
-    // React.useEffect(() => {
-    //     if (!canvas.current) {
-    //         return;
-    //     }
-    //     const ctx = canvas.current.getContext('2d')!;
-    //     ctx.save();
-    //     canvasRender(
-    //         ctx,
-    //         { ...state, view: { ...state.view, center: { x: -dx, y: -dy } } },
-    //         w * 2,
-    //         h * 2,
-    //         2,
-    //         {},
-    //         0,
-    //         null,
-    //     );
-    //     ctx.restore();
-    // }, [state.paths, w, h, dx, dy]);
-
     const availableColors = useMemo(
         () => ({ line: findLineColors(state), fill: findFillColors(state) }),
         [state.paths],
@@ -77,19 +58,6 @@ export const GCodeEditor = ({
     return (
         <div style={{ display: 'flex' }}>
             <div>
-                {/* 
-                <canvas
-                    ref={canvas}
-                    width={w * 2}
-                    height={h * 2}
-                    style={{
-                        width: w,
-                        height: h,
-                        maxHeight: '60vh',
-                        objectFit: 'contain',
-                    }}
-                /> */}
-
                 <Canvas {...canvasProps} width={w} height={h} />
 
                 <div style={{ margin: 8 }}>

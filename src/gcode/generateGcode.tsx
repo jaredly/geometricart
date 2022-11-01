@@ -125,6 +125,7 @@ export const generateLaserInset = async (state: State) => {
 
 type GCode =
     | { type: 'fast'; x?: number; y?: number; z?: number }
+    | { type: 'tool'; diameter?: number; vbitAngle?: number }
     | {
           type: 'cut';
           x?: number;
@@ -141,6 +142,7 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
         ? state.clips[state.view.activeClip]
         : undefined;
 
+    const now = Date.now();
     const insetPaths = sortedVisibleInsetPaths(
         state.paths,
         state.pathGroups,
@@ -151,6 +153,7 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
         undefined,
         undefined,
     );
+    console.log(`A ${Date.now() - now}ms`);
 
     const colors = findColorPaths(insetPaths);
     const bounds = findBoundingRect(state)!;
@@ -176,6 +179,9 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
     let time = 0;
 
     let last = null as null | Coord;
+    console.log(`B ${Date.now() - now}ms`);
+
+    let lastTool = null as null | { diameter?: number; vbitAngle?: number };
 
     state.gcode.items.forEach((item) => {
         if (item.type === 'pause') {
@@ -184,11 +190,28 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
             if (item.disabled) {
                 return;
             }
-            const { color, start, depth, speed, passDepth, tabs } = item;
+            const { color, start, depth, speed, passDepth, tabs, vbitAngle } =
+                item;
             if (!colors[color]) {
                 console.warn(`Unknown color ${color}`);
                 return;
             }
+            const diameter =
+                item.diameter ??
+                (color.endsWith(':pocket')
+                    ? 3
+                    : pxToMM(+color.split(':')[1], state.meta.ppi));
+            const cv = colors[color];
+
+            if (
+                lastTool !== null &&
+                (lastTool.diameter !== diameter ||
+                    lastTool.vbitAngle !== vbitAngle)
+            ) {
+                cmds.push({ type: 'tool', diameter, vbitAngle });
+            }
+            lastTool = { diameter, vbitAngle };
+
             const greedy = greedyPaths(colors[color]);
             if (color.endsWith(':pocket')) {
                 greedy.forEach((shape) => {
@@ -334,6 +357,7 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
             });
         }
     });
+    console.log(`C ${Date.now() - now}ms`);
 
     const gcodePos = (x?: number, y?: number, z?: number, f?: number) => {
         const items: [string, number | void][] = [
@@ -351,6 +375,10 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
     lines.push(
         ...cmds.map((cmd) => {
             switch (cmd.type) {
+                case 'tool':
+                    return `M0 ; tool ${cmd.diameter}${
+                        cmd.vbitAngle ? `v${cmd.vbitAngle}` : ''
+                    }`;
                 case 'fast':
                     return `G0 ${gcodePos(cmd.x, cmd.y, cmd.z)}`;
                 case 'cut':

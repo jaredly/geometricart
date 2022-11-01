@@ -37,7 +37,13 @@ export function Toolbar({
         }
 
         try {
+            const now = Date.now();
             const { time, text } = generateGcode(state, PathKit);
+            console.log(
+                `Gcode generation, ${((Date.now() - now) / 1000).toFixed(
+                    2,
+                )}sec`,
+            );
             const blob = new Blob([text + gcodeStateSuffix(state)], {
                 type: 'text/plain',
             });
@@ -46,7 +52,17 @@ export function Toolbar({
             console.error(err);
             return null;
         }
-    }, [state, bounds, w, h, showGcode]);
+    }, [
+        state.view,
+        state.paths,
+        state.pathGroups,
+        state.gcode,
+        state.meta,
+        bounds,
+        w,
+        h,
+        showGcode,
+    ]);
 
     return (
         <div>

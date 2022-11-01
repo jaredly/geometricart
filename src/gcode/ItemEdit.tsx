@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { paletteColor } from '../editor/RenderPath';
 import { makeDepths, pxToMM } from './generateGcode';
-import { Fill, GCodePath, State } from '../types';
+import { GCodePath, State } from '../types';
 import { FillColors, LineColors } from './GCodeEditor';
 import { Int } from '../editor/Forms';
 import {

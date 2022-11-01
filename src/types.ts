@@ -488,7 +488,7 @@ export type GCodePath = {
     };
     disabled?: boolean;
     diameter?: number;
-    vbitAngle?: string;
+    vbitAngle?: number;
 };
 
 export type State = {
