@@ -204,7 +204,7 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
 
             if (vbitAngle != null) {
                 depth = calculateDepthForVBit(
-                    start,
+                    start ?? 0,
                     (vbitAngle / 180) * Math.PI,
                     diameter,
                 );

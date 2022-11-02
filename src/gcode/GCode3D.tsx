@@ -199,6 +199,7 @@ export const GCode3D = ({
                 <div>
                     <a
                         href={download.url}
+                        style={{ cursor: 'pointer' }}
                         download={`geometric-${new Date().toISOString()}.nc`}
                     >
                         <img
