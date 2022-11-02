@@ -222,7 +222,7 @@ export const GCode3D = ({
             <div
                 style={{ width: 500, height: 500, border: '1px solid magenta' }}
             >
-                <Canvas ref={canv} style={{ backgroundColor: '#00ffca' }}>
+                <Canvas ref={canv} style={{ backgroundColor: 'black' }}>
                     <ambientLight />
                     <pointLight position={[10, 10, 10]} />
                     <VBox tx={tx} data={data} scale={scale} />

@@ -59,8 +59,6 @@ export function Toolbar({
         state.gcode,
         state.meta,
         bounds,
-        w,
-        h,
         showGcode,
     ]);
 
@@ -72,10 +70,9 @@ export function Toolbar({
                         if (!bounds) {
                             throw new Error('no bounds');
                         }
-                        const blob = new Blob(
-                            [wrapSvg(bounds, state, w, h, svg)],
-                            { type: 'image/svg+xml' },
-                        );
+                        const blob = new Blob([wrapSvg(bounds, state, svg)], {
+                            type: 'image/svg+xml',
+                        });
                         const url = URL.createObjectURL(blob);
                         setLaserUrl({ svg, url });
                     });
@@ -158,13 +155,7 @@ export function showLaserSvg(
     );
 }
 
-export function wrapSvg(
-    bounds: Bounds,
-    state: State,
-    w: number,
-    h: number,
-    svg: string,
-): BlobPart {
+export function wrapSvg(bounds: Bounds, state: State, svg: string): BlobPart {
     return `<svg
         xmlns="http://www.w3.org/2000/svg"
         width="${
@@ -173,14 +164,16 @@ export function wrapSvg(
         height="${
             pxToMM(bounds.y2 - bounds.y1, state.meta.ppi).toFixed(1) + 'mm'
         }"
-        viewBox="0 0 ${w} ${h}"
+        viewBox="0 0 ${bounds.x2 - bounds.x1} ${bounds.y2 - bounds.y1}"
     >
         <path
             d="${svg}"
             stroke="red"
             fill="none"
             strokeWidth="2"
-            transform="translate(${w / 2},${h / 2})"
+            transform="translate(${(bounds.x2 - bounds.x1) / 2},${
+        (bounds.y2 - bounds.y1) / 2
+    })"
         />
     </svg>`;
 }

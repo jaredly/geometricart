@@ -228,8 +228,8 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
                         diameter,
                     );
                     if (!pocket.length || !pocket[0].length) {
-                        console.log(pocket, shape);
-                        debugger;
+                        console.warn('empty pocket', pocket, shape);
+                        return;
                     }
 
                     cmds.push({ type: 'clear' });

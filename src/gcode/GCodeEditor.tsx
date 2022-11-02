@@ -44,12 +44,18 @@ export const GCodeEditor = ({
         });
     }, []);
 
-    const originalSize = 1000;
+    const originalSize = 700;
 
-    let h = bounds ? (bounds.y2 - bounds.y1) * state.view.zoom : originalSize;
-    let w = bounds ? (bounds.x2 - bounds.x1) * state.view.zoom : originalSize;
-    let dx = bounds ? (bounds.x1 + bounds.x2) / 2 : 0;
-    let dy = bounds ? (bounds.y1 + bounds.y2) / 2 : 0;
+    const aspect = bounds
+        ? (bounds.y2 - bounds.y1) / (bounds.x2 - bounds.x1)
+        : 1;
+
+    let h = aspect > 0 ? originalSize : originalSize / aspect;
+    let w = aspect > 0 ? originalSize * aspect : originalSize;
+    // let h = bounds ? (bounds.y2 - bounds.y1) * state.view.zoom : originalSize;
+    // let w = bounds ? (bounds.x2 - bounds.x1) * state.view.zoom : originalSize;
+    // let dx = bounds ? (bounds.x1 + bounds.x2) / 2 : 0;
+    // let dy = bounds ? (bounds.y1 + bounds.y2) / 2 : 0;
 
     const availableColors = useMemo(
         () => ({ line: findLineColors(state), fill: findFillColors(state) }),
