@@ -181,7 +181,11 @@ export const Visualize = ({
                             1,
                         )} x ${data.dims.height.toFixed(
                             1,
-                        )} x ${data.dims.depth.toFixed(1)}mm`}
+                        )} x ${data.dims.depth.toFixed(1)}mm ; ${(
+                            data.dims.width / 25.4
+                        ).toFixed(1)}" x ${(data.dims.height / 25.4).toFixed(
+                            1,
+                        )}" x ${(data.dims.depth / 25.4).toFixed(1)}"`}
                     />
                 ) : null}
             </div>

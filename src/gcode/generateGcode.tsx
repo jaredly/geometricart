@@ -165,12 +165,6 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
         };
     };
 
-    const lines: Array<string> = [
-        'G21 ; units to mm',
-        'G90 ; absolute positioning',
-        'G17 ; xy plane',
-    ];
-
     const cmds: GCode[] = [];
 
     const { clearHeight, pauseHeight } = state.gcode;
@@ -389,6 +383,15 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
             .join(' ');
     };
 
+    const realBounds = cmdBounds(cmds);
+
+    const lines: Array<string> = [
+        '; Bounds: ' + JSON.stringify(realBounds),
+        'G21 ; units to mm',
+        'G90 ; absolute positioning',
+        'G17 ; xy plane',
+    ];
+
     lines.push(
         ...cmds.map((cmd) => {
             switch (cmd.type) {
@@ -414,6 +417,34 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
     lines.push(`G0 Z${clearHeight}`);
 
     return { time, text: lines.join('\n') };
+};
+
+export const cmdBounds = (cmds: GCode[]) => {
+    return cmds.reduce(
+        (bounds, cmd) => {
+            switch (cmd.type) {
+                case 'fast':
+                case 'cut':
+                    return {
+                        min: {
+                            x: Math.min(bounds.min.x, cmd.x ?? bounds.min.x),
+                            y: Math.min(bounds.min.y, cmd.y ?? bounds.min.y),
+                            z: Math.min(bounds.min.z, cmd.z ?? bounds.min.z),
+                        },
+                        max: {
+                            x: Math.max(bounds.max.x, cmd.x ?? bounds.max.x),
+                            y: Math.max(bounds.max.y, cmd.y ?? bounds.max.y),
+                            z: Math.max(bounds.max.z, cmd.z ?? bounds.max.z),
+                        },
+                    };
+            }
+            return bounds;
+        },
+        {
+            min: { x: Infinity, y: Infinity, z: Infinity },
+            max: { x: -Infinity, y: -Infinity, z: -Infinity },
+        },
+    );
 };
 
 const calculateDepthForVBit = (

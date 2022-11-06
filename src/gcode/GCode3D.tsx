@@ -314,7 +314,7 @@ function VBox({
     }, [tx, modelDepth]);
 
     return (
-        <mesh ref={mesh} material={mat}>
+        <mesh ref={mesh} material={mat} position={[0, 0, -modelDepth]}>
             {/* <meshBasicMaterial material={tx} toneMapped={false} /> */}
             {/* <boxGeometry args={[2, 2, 2]} /> */}
             <planeGeometry

@@ -19,6 +19,8 @@ const many = (value: string, m: number) => {
     return values;
 };
 
+declare let process: any;
+
 export const GCodeEditor = ({
     state,
     dispatch,
@@ -38,7 +40,10 @@ export const GCodeEditor = ({
     const [pathKit, setPathKit] = React.useState(null as null | PathKit);
     useEffect(() => {
         PathKitInit({
-            locateFile: (file) => '/node_modules/pathkit-wasm/bin/' + file,
+            locateFile: (file) =>
+                (process.env.NODE_ENV === 'development'
+                    ? '/node_modules/pathkit-wasm/bin/'
+                    : '/') + file,
         }).then((pk) => {
             setPathKit(pk);
         });
