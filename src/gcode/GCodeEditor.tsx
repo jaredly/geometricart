@@ -55,8 +55,8 @@ export const GCodeEditor = ({
         ? (bounds.y2 - bounds.y1) / (bounds.x2 - bounds.x1)
         : 1;
 
-    let h = aspect > 0 ? originalSize : originalSize / aspect;
-    let w = aspect > 0 ? originalSize * aspect : originalSize;
+    let h = aspect > 0 ? originalSize : originalSize * aspect;
+    let w = aspect > 0 ? originalSize / aspect : originalSize;
     // let h = bounds ? (bounds.y2 - bounds.y1) * state.view.zoom : originalSize;
     // let w = bounds ? (bounds.x2 - bounds.x1) * state.view.zoom : originalSize;
     // let dx = bounds ? (bounds.x1 + bounds.x2) / 2 : 0;

@@ -386,7 +386,11 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
     const realBounds = cmdBounds(cmds);
 
     const lines: Array<string> = [
-        '; Bounds: ' + JSON.stringify(realBounds),
+        `; Bounds: ${realBounds.min.x.toFixed(2)} ${realBounds.min.y.toFixed(
+            2,
+        )} ${realBounds.min.z.toFixed(2)} - ${realBounds.max.x.toFixed(
+            2,
+        )} ${realBounds.max.y.toFixed(2)} ${realBounds.max.z.toFixed(2)}`,
         'G21 ; units to mm',
         'G90 ; absolute positioning',
         'G17 ; xy plane',
