@@ -6,7 +6,7 @@ import { segmentsBounds } from '../editor/Bounds';
 import { pathToPrimitives, segmentToPrimitive } from '../editor/findSelection';
 import { Bounds } from '../editor/GuideElement';
 import { Coord, Path, PathGroup, Segment } from '../types';
-import { coordKey } from './calcAllIntersections';
+import { coordKey } from './coordKey';
 import { angleForSegment, insidePath } from './clipPath';
 import { boundsIntersect, removeContainedRegions } from './findInternalRegions';
 import { angleBetween } from './findNextSegments';

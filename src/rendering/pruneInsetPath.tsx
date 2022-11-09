@@ -12,7 +12,7 @@ import {
     isInside,
     sortHitsForPrimitive,
 } from './clipPath';
-import { coordKey } from './calcAllIntersections';
+import { coordKey } from './coordKey';
 
 /*
 

@@ -1,7 +1,7 @@
 import React from 'react';
 import { useCurrent } from '../App';
 import { transformSegment } from '../rendering/points';
-import { coordKey } from '../rendering/calcAllIntersections';
+import { coordKey } from '../rendering/coordKey';
 import { angleBetween, findNextSegments } from '../rendering/findNextSegments';
 import { applyMatrices, Matrix } from '../rendering/getMirrorTransforms';
 import { coordsEqual, segmentsEqual } from '../rendering/pathsAreIdentical';

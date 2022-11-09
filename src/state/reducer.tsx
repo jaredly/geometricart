@@ -1,5 +1,5 @@
 import { pendingGuide } from '../editor/RenderPendingGuide';
-import { coordKey } from '../rendering/calcAllIntersections';
+import { coordKey } from '../rendering/coordKey';
 import {
     applyMatrices,
     getTransformsForMirror,

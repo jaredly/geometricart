@@ -1,4 +1,4 @@
-import { coordKey, numKey } from './calcAllIntersections';
+import { coordKey, numKey } from './coordKey';
 import { angleBetween, isAngleBetween } from './findNextSegments';
 import { pathToPrimitives } from '../editor/findSelection';
 import { angleTo, dist } from './getMirrorTransforms';

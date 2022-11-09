@@ -3,7 +3,7 @@ import { angleBetween, isAngleBetween } from './findNextSegments';
 import { angleTo, dist, push } from './getMirrorTransforms';
 import { Coord } from '../types';
 import { coordsEqual } from './pathsAreIdentical';
-import { numKey } from './calcAllIntersections';
+import { numKey } from './coordKey';
 
 // export const lineLine_ = (
 //     from1: Coord,

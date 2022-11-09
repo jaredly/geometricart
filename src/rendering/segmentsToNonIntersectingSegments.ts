@@ -1,6 +1,6 @@
 import { segmentToPrimitive } from '../editor/findSelection';
 import { Coord, Segment } from '../types';
-import { coordKey } from './calcAllIntersections';
+import { coordKey } from './coordKey';
 import { sortHitsForPrimitive } from './clipPath';
 import { segmentAngle } from './segmentAngle';
 import { angleTo } from './getMirrorTransforms';
