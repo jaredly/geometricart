@@ -421,7 +421,7 @@ function debugPath(path: Path, ctx: CanvasRenderingContext2D, zoom: number) {
     ctx.stroke();
 }
 
-function renderPrimitive(
+export function renderPrimitive(
     ctx: CanvasRenderingContext2D,
     prim: Primitive,
     zoom: number,

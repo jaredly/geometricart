@@ -205,12 +205,21 @@ async function animateAction(
             await animateGuide(
                 prev,
                 prev.pending,
-                toScreen,
                 follow,
                 i,
                 action,
                 ctx,
                 fromScreen,
+                (fn) => {
+                    ctx.save();
+                    const zoom = prev.view.zoom * 2;
+
+                    const xoff = canvas.width / 2 + prev.view.center.x * zoom;
+                    const yoff = canvas.height / 2 + prev.view.center.y * zoom;
+                    ctx.translate(xoff, yoff);
+                    fn(zoom, canvas.width, canvas.height);
+                    ctx.restore();
+                },
             );
         } else if (action.type === 'mirror:add') {
             await animateMirror(

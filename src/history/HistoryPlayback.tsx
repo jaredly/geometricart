@@ -104,7 +104,7 @@ export const HistoryPlayback = ({ state }: { state: State }) => {
                 style={{
                     width: w * zoom,
                     height: h * zoom,
-                    outline: '1px solid white',
+                    outline: '1px solid #333',
                     margin: 16,
                 }}
             />

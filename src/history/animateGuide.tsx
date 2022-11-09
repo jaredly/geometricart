@@ -4,13 +4,17 @@ import {
     applyMatrices,
     dist,
     mirrorTransforms,
+    push,
     transformsToMatrices,
 } from '../rendering/getMirrorTransforms';
+import { pendingGuide } from '../editor/RenderPendingGuide';
+import { geomToPrimitives } from '../rendering/points';
+import { renderPrimitive } from '../rendering/CanvasRender';
+import { transformGuideGeom } from '../rendering/calculateGuideElements';
 
 export async function animateGuide(
     prev: State,
     pending: PendingGuide,
-    toScreen: (point: Coord, state: State) => { x: number; y: number },
     follow: (
         i: number,
         point: Coord,
@@ -20,135 +24,78 @@ export async function animateGuide(
     action: PendingPoint,
     ctx: CanvasRenderingContext2D,
     fromScreen: (point: Coord, state: State) => { x: number; y: number },
+    withScreen: (
+        fn: (zoom: number, width: number, height: number) => void,
+    ) => void,
 ) {
-    if (pending.kind === 'Line') {
-        if (pending.points.length === 1) {
-            await lineGuide(
-                pending,
-                toScreen,
-                prev,
-                follow,
-                i,
-                action,
-                ctx,
-                fromScreen,
-            );
-        } else {
-            await follow(i, action.coord);
-        }
-    } else if (pending.kind === 'Circle') {
-        if (pending.points.length === 1) {
-            await circleGuide(
-                pending,
-                toScreen,
-                prev,
-                follow,
-                i,
-                action,
-                ctx,
-                fromScreen,
-            );
-        } else {
-            await follow(i, action.coord);
-        }
-    } else if (pending.kind === 'CircumCircle') {
-        if (pending.points.length < 1) {
-            await follow(i, action.coord);
-        } else {
-        }
-    } else {
+    if (pending.points.length === 0) {
         await follow(i, action.coord);
+        return;
     }
-}
+    let offsets = [
+        { x: -1, y: 1 },
+        { x: 2, y: 1 },
+    ];
 
-async function circleGuide(
-    pending: PendingGuide,
-    toScreen: (point: Coord, state: State) => { x: number; y: number },
-    prev: State,
-    follow: (
-        i: number,
-        point: Coord,
-        extra?: ((pos: Coord) => void | Promise<void>) | undefined,
-    ) => Promise<unknown>,
-    i: number,
-    action: PendingPoint,
-    ctx: CanvasRenderingContext2D,
-    fromScreen: (point: Coord, state: State) => { x: number; y: number },
-) {
-    const og = pending.points[0];
+    const transforms = prev.activeMirror
+        ? mirrorTransforms(prev.mirrors[prev.activeMirror])
+        : null;
+
     await follow(i, action.coord, (pos) => {
-        drawWithMirror(
-            prev,
-            fromScreen,
-            toScreen,
-            og,
-            pos,
-            (origin, pos, isMirrored) => {
-                ctx.strokeStyle = isMirrored ? '#666' : 'yellow';
-                ctx.lineWidth = 1;
-                ctx.beginPath();
-                const radius = dist(origin, pos);
-                ctx.arc(origin.x, origin.y, radius, 0, Math.PI * 2, false);
-                ctx.stroke();
-            },
-        );
-    });
-}
+        withScreen((zoom, width, height) => {
+            const points = pending.points.concat([fromScreen(pos, prev)]);
 
-async function lineGuide(
-    pending: PendingGuide,
-    toScreen: (point: Coord, state: State) => { x: number; y: number },
-    prev: State,
-    follow: (
-        i: number,
-        point: Coord,
-        extra?: ((pos: Coord) => void | Promise<void>) | undefined,
-    ) => Promise<unknown>,
-    i: number,
-    action: PendingPoint,
-    ctx: CanvasRenderingContext2D,
-    fromScreen: (point: Coord, state: State) => { x: number; y: number },
-) {
-    const og = pending.points[0];
-    await follow(i, action.coord, (pos) => {
-        drawWithMirror(
-            prev,
-            fromScreen,
-            toScreen,
-            og,
-            pos,
-            (origin, pos, isMirrored) => {
-                ctx.strokeStyle = isMirrored ? '#666' : 'yellow';
-                ctx.lineWidth = 1;
-                ctx.beginPath();
-                ctx.moveTo(origin.x, origin.y);
-                ctx.lineTo(pos.x, pos.y);
-                ctx.stroke();
-            },
-        );
-    });
-}
+            if (points.length === 2) {
+                const dx = points[1].x - points[0].x;
+                const dy = points[1].y - points[0].y;
+                const theta = Math.atan2(dy, dx);
+                const mag = dist(points[0], points[1]);
+                const p3 = push(
+                    points[0],
+                    theta + Math.PI / 4,
+                    mag / Math.sqrt(2),
+                );
+                points.push(p3);
+            }
 
-function drawWithMirror(
-    state: State,
-    fromScreen: (point: Coord, state: State) => { x: number; y: number },
-    toScreen: (point: Coord, state: State) => { x: number; y: number },
-    origin: Coord,
-    posScreen: Coord,
-    draw: (origin: Coord, pos: Coord, isMirrored: boolean) => void,
-) {
-    if (state.activeMirror) {
-        const back = fromScreen(posScreen, state);
-        const transforms = mirrorTransforms(state.mirrors[state.activeMirror]);
-        transforms.forEach((mirror) => {
-            const mx = transformsToMatrices(mirror);
-            const mirrorOrigin = applyMatrices(origin, mx);
-            const mirrorPos = applyMatrices(back, mx);
-            const oScreen = toScreen(mirrorOrigin, state);
-            const pScreen = toScreen(mirrorPos, state);
-            draw(oScreen, pScreen, true);
+            offsets.slice(pending.points.length).forEach((off) => {
+                points.push({ x: pos.x + off.x, y: pos.y + off.y });
+            });
+
+            const geom = pendingGuide(
+                pending.kind,
+                points,
+                false,
+                pending.extent,
+            );
+            const guidePrimitives = geomToPrimitives(geom, true);
+
+            if (transforms) {
+                ctx.strokeStyle = '#666';
+                transforms.forEach((mirror) => {
+                    const mx = transformsToMatrices(mirror);
+                    const gx = transformGuideGeom(geom, (pos) =>
+                        applyMatrices(pos, mx),
+                    );
+                    geomToPrimitives(gx, true).forEach((prim) => {
+                        renderPrimitive(ctx, prim, zoom, width, height);
+                    });
+                });
+            }
+
+            ctx.strokeStyle = 'yellow';
+            guidePrimitives.forEach((prim) => {
+                renderPrimitive(ctx, prim, zoom, width, height);
+            });
+
+            pending.points.forEach((poing) => {
+                ctx.fillStyle = 'red';
+                ctx.beginPath();
+                ctx.arc(poing.x * zoom, poing.y * zoom, 10, 0, 2 * Math.PI);
+                ctx.fill();
+            });
         });
-    }
+    });
 
-    draw(toScreen(origin, state), posScreen, false);
+    return;
 }
