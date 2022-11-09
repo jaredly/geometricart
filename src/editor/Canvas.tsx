@@ -7,7 +7,10 @@ import { RoughGenerator } from 'roughjs/bin/generator';
 import { Action } from '../state/Action';
 import { PendingMirror, useCurrent } from '../App';
 import { calcAllIntersections } from '../rendering/calcAllIntersections';
-import { calculateGuideElements } from '../rendering/calculateGuideElements';
+import {
+    calculateGuideElements,
+    geomPoints,
+} from '../rendering/calculateGuideElements';
 import { DrawPathState } from './DrawPath';
 import { findSelection, pathToPrimitives } from './findSelection';
 import { getMirrorTransforms, scale } from '../rendering/getMirrorTransforms';
@@ -518,22 +521,28 @@ export const Canvas = ({
     const pendingPath = React.useState(null as null | DrawPathState);
 
     const guidePrimitives = React.useMemo(() => {
-        return primitivesForElementsAndPaths(
-            calculateGuideElements(state.guides, mirrorTransforms),
-            Object.keys(state.paths)
-                .filter(
-                    (k) =>
-                        !state.paths[k].hidden &&
-                        (!state.paths[k].group ||
-                            !state.pathGroups[state.paths[k].group!].hide),
-                )
-                .map((k) => state.paths[k]),
-        );
+        const elements = calculateGuideElements(state.guides, mirrorTransforms);
+        const points = elements.flatMap((el) => geomPoints(el.geom));
+        return {
+            primitives: primitivesForElementsAndPaths(
+                elements,
+                Object.keys(state.paths)
+                    .filter(
+                        (k) =>
+                            !state.paths[k].hidden &&
+                            (!state.paths[k].group ||
+                                !state.pathGroups[state.paths[k].group!].hide),
+                    )
+                    .map((k) => state.paths[k]),
+            ),
+            points,
+        };
     }, [state.guides, state.paths, state.pathGroups, mirrorTransforms]);
 
     const allIntersections = React.useMemo(() => {
         const { coords: fromGuides, seenCoords } = calcAllIntersections(
-            guidePrimitives.map((p) => p.prim),
+            guidePrimitives.primitives.map((p) => p.prim),
+            guidePrimitives.points,
         );
         return fromGuides;
     }, [guidePrimitives, state.paths, state.pathGroups]);
@@ -698,7 +707,7 @@ export const Canvas = ({
                         width={width}
                         height={height}
                         allIntersections={allIntersections}
-                        guidePrimitives={guidePrimitives}
+                        guidePrimitives={guidePrimitives.primitives}
                         zooming={zooming}
                         view={view}
                         disableGuides={!!pendingMirror}
@@ -967,7 +976,7 @@ export const Canvas = ({
                     <PendingPathControls
                         pendingPath={pendingPath}
                         allIntersections={allIntersections}
-                        guidePrimitives={guidePrimitives}
+                        guidePrimitives={guidePrimitives.primitives}
                         onComplete={(
                             isClip: boolean,
                             origin: Coord,

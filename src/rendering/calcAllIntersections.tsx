@@ -1,10 +1,11 @@
 import { Primitive } from './intersect';
 import { calculateIntersections } from './points';
-import { Intersect } from '../types';
+import { Coord, Intersect } from '../types';
 import { coordKey } from './coordKey';
 
 export const calcAllIntersections = (
     primitives: Array<Primitive>,
+    points?: Array<Coord>,
 ): { coords: Array<Intersect>; seenCoords: { [key: string]: Intersect } } => {
     const seenCoords: { [k: string]: Intersect } = {};
     const coords: Array<Intersect> = [
@@ -40,5 +41,15 @@ export const calcAllIntersections = (
             );
         }
     }
+    points?.forEach((coord) => {
+        const k = coordKey(coord);
+        if (!seenCoords[k]) {
+            seenCoords[k] = {
+                coord,
+                primitives: [],
+            };
+            coords.push(seenCoords[k]);
+        }
+    });
     return { coords, seenCoords };
 };

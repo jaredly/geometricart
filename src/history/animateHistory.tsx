@@ -1,16 +1,10 @@
-import { Coord, Mirror, PendingGuide, State } from '../types';
+import { Coord, Mirror, State } from '../types';
 import { getHistoriesList, simplifyHistory } from './HistoryPlayback';
 import { canvasRender, tracePath } from '../rendering/CanvasRender';
 import { findBoundingRect } from '../editor/Export';
 import { makeEven } from '../animation/AnimationUI';
 import { screenToWorld, worldToScreen } from '../editor/Canvas';
-import {
-    Action,
-    MirrorAdd,
-    PathCreate,
-    PathMultiply,
-    PendingPoint,
-} from '../state/Action';
+import { Action, MirrorAdd, PathCreate, PathMultiply } from '../state/Action';
 import { emptyPath, pathSegs } from '../editor/RenderPath';
 import {
     angleTo,
@@ -23,6 +17,7 @@ import {
 } from '../rendering/getMirrorTransforms';
 import { transformSegment } from '../rendering/points';
 import React from 'react';
+import { animateGuide } from './animateGuide';
 
 export const nextFrame = () => new Promise(requestAnimationFrame);
 export const wait = (time: number) =>
@@ -54,12 +49,14 @@ export const animateHistory = async (
     const bounds = findBoundingRect(originalState);
     const originalSize = 1000;
 
-    let h = bounds
-        ? makeEven((bounds.y2 - bounds.y1) * originalState.view.zoom + crop * 2)
-        : originalSize;
-    let w = bounds
-        ? makeEven((bounds.x2 - bounds.x1) * originalState.view.zoom + crop * 2)
-        : originalSize;
+    // let h = bounds
+    //     ? makeEven((bounds.y2 - bounds.y1) * originalState.view.zoom + crop * 2)
+    //     : originalSize;
+    // let w = bounds
+    //     ? makeEven((bounds.x2 - bounds.x1) * originalState.view.zoom + crop * 2)
+    //     : originalSize;
+    let h = originalSize;
+    let w = originalSize;
 
     const draw = async (current: number) => {
         ctx.save();
@@ -478,110 +475,6 @@ async function animateMirror(
         ctx.setLineDash([]);
         ctx.restore();
     });
-}
-
-async function animateGuide(
-    prev: State,
-    pending: PendingGuide,
-    toScreen: (point: Coord, state: State) => { x: number; y: number },
-    follow: (
-        i: number,
-        point: Coord,
-        extra?: ((pos: Coord) => void | Promise<void>) | undefined,
-    ) => Promise<unknown>,
-    i: number,
-    action: PendingPoint,
-    ctx: CanvasRenderingContext2D,
-    fromScreen: (point: Coord, state: State) => { x: number; y: number },
-) {
-    if (pending.kind === 'Line') {
-        if (pending.points.length === 1) {
-            const og = pending.points[0];
-            const origin = toScreen(og, prev);
-            await follow(i, action.coord, (pos) => {
-                if (prev.activeMirror) {
-                    ctx.strokeStyle = '#666';
-                    ctx.lineWidth = 1;
-                    // ctx.setLineDash([5, 15]);
-                    const back = fromScreen(pos, prev);
-                    const transforms = mirrorTransforms(
-                        prev.mirrors[prev.activeMirror],
-                    );
-                    transforms.forEach((mirror) => {
-                        const mx = transformsToMatrices(mirror);
-                        const mirrorOrigin = applyMatrices(og, mx);
-                        const mirrorPos = applyMatrices(back, mx);
-                        const oScreen = toScreen(mirrorOrigin, prev);
-                        const pScreen = toScreen(mirrorPos, prev);
-                        ctx.beginPath();
-                        ctx.moveTo(oScreen.x, oScreen.y);
-                        ctx.lineTo(pScreen.x, pScreen.y);
-                        ctx.stroke();
-                    });
-                }
-
-                ctx.setLineDash([]);
-                ctx.strokeStyle = 'yellow';
-                ctx.lineWidth = 1;
-                ctx.beginPath();
-                ctx.moveTo(origin.x, origin.y);
-                ctx.lineTo(pos.x, pos.y);
-                ctx.stroke();
-            });
-        } else {
-            await follow(i, action.coord);
-        }
-    } else if (pending.kind === 'Circle') {
-        if (pending.points.length === 1) {
-            const og = pending.points[0];
-            const origin = toScreen(og, prev);
-            await follow(i, action.coord, (pos) => {
-                if (prev.activeMirror) {
-                    ctx.strokeStyle = '#666';
-                    ctx.lineWidth = 1;
-                    const back = fromScreen(pos, prev);
-                    const transforms = mirrorTransforms(
-                        prev.mirrors[prev.activeMirror],
-                    );
-
-                    transforms.forEach((mirror) => {
-                        const mx = transformsToMatrices(mirror);
-                        const mirrorOrigin = applyMatrices(og, mx);
-                        const mirrorPos = applyMatrices(back, mx);
-                        const oScreen = toScreen(mirrorOrigin, prev);
-                        const pScreen = toScreen(mirrorPos, prev);
-                        ctx.beginPath();
-                        const radius = dist(oScreen, pScreen);
-
-                        ctx.arc(
-                            oScreen.x,
-                            oScreen.y,
-                            radius,
-                            0,
-                            Math.PI * 2,
-                            false,
-                        );
-
-                        ctx.stroke();
-                    });
-                }
-
-                ctx.strokeStyle = 'yellow';
-                ctx.lineWidth = 1;
-                ctx.beginPath();
-
-                const radius = dist(origin, pos);
-
-                ctx.arc(origin.x, origin.y, radius, 0, Math.PI * 2, false);
-
-                ctx.stroke();
-            });
-        } else {
-            await follow(i, action.coord);
-        }
-    } else {
-        await follow(i, action.coord);
-    }
 }
 
 async function followPoints(

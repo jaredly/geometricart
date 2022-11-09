@@ -53,15 +53,19 @@ export const HistoryPlayback = ({ state }: { state: State }) => {
     } = state.animations.config;
 
     const originalSize = 1000;
-    let h = bounds
-        ? makeEven((bounds.y2 - bounds.y1) * state.view.zoom + crop * 2)
-        : originalSize;
-    let w = bounds
-        ? makeEven((bounds.x2 - bounds.x1) * state.view.zoom + crop * 2)
-        : originalSize;
+    // let h = bounds
+    //     ? makeEven((bounds.y2 - bounds.y1) * state.view.zoom + crop * 2)
+    //     : originalSize;
+    // let w = bounds
+    //     ? makeEven((bounds.x2 - bounds.x1) * state.view.zoom + crop * 2)
+    //     : originalSize;
+    let h = originalSize;
+    let w = originalSize;
 
-    let dx = bounds ? (bounds.x1 + bounds.x2) / 2 : 0;
-    let dy = bounds ? (bounds.y1 + bounds.y2) / 2 : 0;
+    // let dx = bounds ? (bounds.x1 + bounds.x2) / 2 : 0;
+    // let dy = bounds ? (bounds.y1 + bounds.y2) / 2 : 0;
+    let dx = -originalSize / 2;
+    let dy = -originalSize / 2;
 
     React.useEffect(() => {
         if (!canvas.current) {
