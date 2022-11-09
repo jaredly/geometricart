@@ -74,6 +74,7 @@ export const transformGuideGeom = (
                 p2: transform(geom.p2),
                 p3: transform(geom.p3),
             };
+        case 'Split':
         case 'Line':
         case 'PerpendicularBisector':
         case 'Perpendicular':

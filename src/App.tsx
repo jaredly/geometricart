@@ -35,6 +35,7 @@ export const useCurrent = <T,>(value: T) => {
 
 export const toType: { [key: string]: GuideGeom['type'] } = {
     l: 'Line',
+    s: 'Split',
     c: 'Circle',
     a: 'AngleBisector',
     b: 'PerpendicularBisector',

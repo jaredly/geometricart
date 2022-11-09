@@ -254,6 +254,7 @@ const SegmentArrows = ({
     );
 };
 
+declare const __dirname: string;
 register({
     id: 'untangleHit',
     dir: __dirname,

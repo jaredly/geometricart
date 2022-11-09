@@ -120,6 +120,9 @@ export const geomToPrimitives = (geom: GuideGeom): Array<Primitive> => {
             const p2 = push(geom.p1, t1, 1);
             return [lineToSlope(geom.p1, p2, false)];
         }
+        case 'Split': {
+            return [lineToSlope(geom.p1, geom.p2, true)];
+        }
         case 'Line': {
             if (geom.extent) {
                 const mid = {

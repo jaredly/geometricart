@@ -214,3 +214,5 @@ declare module 'pathkit-wasm' {
     function PathKitInit(config: Config): Promise<PathKit>;
     export default PathKitInit;
 }
+
+declare const __dirname: string;

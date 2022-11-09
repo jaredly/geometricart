@@ -6,10 +6,11 @@
  */
 
 // Parse the examples, produce a .js file with them stuffed inside.
-import path from 'path';
+// @ts-ignore
 import fs from 'fs';
 import { deserializeFixtures } from '../src/vest/utils';
 
+// @ts-ignore
 const [_, __, input, output] = process.argv;
 
 const fixtures = deserializeFixtures(fs.readFileSync(input, 'utf8'), {});

@@ -53,8 +53,16 @@ export type Line = {
     extent?: number;
 };
 
+export type Split = {
+    type: 'Split';
+    p1: Coord;
+    p2: Coord;
+    count: number;
+};
+
 export type GuideGeom =
     | Line
+    | Split
     | Circle
     | AngleBisector
     | PerpendicularBisector
@@ -84,6 +92,7 @@ export type CircumCircle = {
 
 export const guideTypes: Array<GuideGeom['type']> = [
     'Line',
+    'Split',
     'AngleBisector',
     'Circle',
     'PerpendicularBisector',
@@ -101,6 +110,7 @@ export const guidePoints: {
     Perpendicular: 2,
     Circle: 2,
     Line: 2,
+    Split: 2,
     PerpendicularBisector: 2,
 };
 

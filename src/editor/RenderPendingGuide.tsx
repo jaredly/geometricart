@@ -94,6 +94,13 @@ export const pendingGuide = (
     extent?: number,
 ): GuideGeom => {
     switch (type) {
+        case 'Split':
+            return {
+                type,
+                p1: points[0],
+                p2: points[1],
+                count: extent ?? 2,
+            };
         case 'Line':
             return {
                 type,

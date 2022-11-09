@@ -1,4 +1,9 @@
 
+So, I think I want another guide type, and it's
+"split". Like, make N points equally dividing the two anchor points.
+Can use "extent" as the dealio.
+
+
 # VBITT
 
 - [x] make tools, so you can have different paths with different tools
