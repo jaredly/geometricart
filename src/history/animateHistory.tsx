@@ -1,7 +1,7 @@
 import { Coord, State } from '../types';
 import { getHistoriesList, simplifyHistory } from './HistoryPlayback';
 import { canvasRender } from '../rendering/CanvasRender';
-import { findBoundingRect } from '../editor/Export';
+import { findBoundingRect, renderTexture } from '../editor/Export';
 import { screenToWorld, worldToScreen } from '../editor/Canvas';
 import { Action } from '../state/Action';
 import React from 'react';
@@ -73,6 +73,10 @@ export const animateHistory = async (
             null,
         );
         ctx.restore();
+        if (state.view.texture) {
+            const size = Math.max(w * 2 * zoom, h * 2 * zoom);
+            renderTexture(state.view.texture, size, size, ctx);
+        }
     };
 
     const state: AnimateState = {

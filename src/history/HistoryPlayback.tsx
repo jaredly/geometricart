@@ -87,6 +87,10 @@ export const HistoryPlayback = ({ state }: { state: State }) => {
             null,
         ).then(() => {
             ctx.restore();
+            if (state.view.texture) {
+                const size = Math.max(w * 2 * zoom, h * 2 * zoom);
+                renderTexture(state.view.texture, size, size, ctx);
+            }
         });
     }, [state, w, h, dx, dy, zoom, backgroundAlpha, current]);
 
@@ -145,9 +149,9 @@ export const HistoryPlayback = ({ state }: { state: State }) => {
                     style={{ width: '500px' }}
                 />
             </div>
-            <div style={{ maxWidth: 500 }}>
+            {/* <div style={{ maxWidth: 500 }}>
                 {JSON.stringify(histories[current].action)}
-            </div>
+            </div> */}
             <button onClick={() => setPreimage(!preimage)}>
                 {!preimage
                     ? 'Image everything in advance'
