@@ -197,10 +197,48 @@ async function animateAction(
     if (action && i > 0) {
         const prev = histories[i - 1].state;
 
+        const withScreen = async (
+            fn: (
+                zoom: number,
+                width: number,
+                height: number,
+            ) => Promise<void> | void,
+        ): Promise<void> => {
+            ctx.save();
+            const zoom = prev.view.zoom * 2;
+
+            const xoff = canvas.width / 2 + prev.view.center.x * zoom;
+            const yoff = canvas.height / 2 + prev.view.center.y * zoom;
+            ctx.translate(xoff, yoff);
+            await fn(zoom, canvas.width, canvas.height);
+            ctx.restore();
+        };
+
         if (action.type === 'path:create') {
             await animatePath(follow, i, action, ctx, histories, canvas, prev);
         } else if (action.type === 'path:multiply') {
             await animateMultiply(action, prev, follow, i, ctx, canvas);
+        } else if (action.type === 'clip:add') {
+            const clip = action.clip;
+            await withScreen(async (zoom, width, height) => {
+                for (let j = 0; j < clip.length; j++) {
+                    ctx.strokeStyle = 'magenta';
+                    ctx.lineWidth = 10;
+                    ctx.beginPath();
+                    tracePath(
+                        ctx,
+                        {
+                            ...emptyPath,
+                            origin: clip[clip.length - 1].to,
+                            segments: clip.slice(0, j + 1),
+                            open: true,
+                        },
+                        zoom,
+                    );
+                    ctx.stroke();
+                    await wait(1000 / clip.length);
+                }
+            });
         } else if (
             action.type === 'pending:point' &&
             prev.pending &&
@@ -214,16 +252,7 @@ async function animateAction(
                 action,
                 ctx,
                 fromScreen,
-                (fn) => {
-                    ctx.save();
-                    const zoom = prev.view.zoom * 2;
-
-                    const xoff = canvas.width / 2 + prev.view.center.x * zoom;
-                    const yoff = canvas.height / 2 + prev.view.center.y * zoom;
-                    ctx.translate(xoff, yoff);
-                    fn(zoom, canvas.width, canvas.height);
-                    ctx.restore();
-                },
+                withScreen,
             );
         } else if (action.type === 'mirror:add') {
             await animateMirror(

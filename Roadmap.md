@@ -8,8 +8,9 @@ Things I would want:
 - would allow explicit ordering, "send to back" etc.
 - reified multiples of guides, sure.
 - use pathkit for everything
-- [ ] default line width is "0", which is a special thing meaning
+- [x] default line width is "0", which is a special thing meaning
 	we're zoom-independent
+- [ ] make a "get palette colors from image" dealio.
 
 eh I guess that doesn't necessarily mean I have to rewrite everything.
 

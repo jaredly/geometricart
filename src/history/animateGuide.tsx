@@ -25,8 +25,12 @@ export async function animateGuide(
     ctx: CanvasRenderingContext2D,
     fromScreen: (point: Coord, state: State) => { x: number; y: number },
     withScreen: (
-        fn: (zoom: number, width: number, height: number) => void,
-    ) => void,
+        fn: (
+            zoom: number,
+            width: number,
+            height: number,
+        ) => Promise<void> | void,
+    ) => Promise<void>,
 ) {
     if (pending.points.length === 0) {
         await follow(i, action.coord);

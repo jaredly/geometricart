@@ -221,7 +221,7 @@ export const canvasRender = async (
         });
 
         style.lines.forEach((line, i) => {
-            if (!line || line.color == null || !line.width) {
+            if (!line || line.color == null || line.width == null) {
                 return;
             }
 
@@ -229,7 +229,7 @@ export const canvasRender = async (
                 ctx.globalAlpha = line.opacity;
             }
 
-            ctx.lineWidth = (line.width / 100) * zoom;
+            ctx.lineWidth = line.width === 0 ? 2 : (line.width / 100) * zoom;
             ctx.lineJoin = 'bevel';
             ctx.lineCap = 'square';
 
