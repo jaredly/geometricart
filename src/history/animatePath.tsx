@@ -8,22 +8,21 @@ import {
     transformsToMatrices,
 } from '../rendering/getMirrorTransforms';
 import { transformSegment } from '../rendering/points';
-import { wait } from './animateHistory';
+import { AnimateState, wait } from './animateHistory';
 
 export async function animatePath(
+    { i, ctx, histories, canvas, frames }: AnimateState,
     follow: (
         i: number,
         point: Coord,
         extra?: ((pos: Coord) => void | Promise<void>) | undefined,
     ) => Promise<unknown>,
-    i: number,
     action: PathCreate,
-    ctx: CanvasRenderingContext2D,
-    histories: { state: State; action: Action | null }[],
-    canvas: HTMLCanvasElement,
     prev: State,
 ) {
     await follow(i, action.origin);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(frames[i - 1], 0, 0);
 
     ctx.save();
     const state = histories[i - 1].state;

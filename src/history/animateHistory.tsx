@@ -1,5 +1,9 @@
 import { Coord, State } from '../types';
-import { getHistoriesList, simplifyHistory } from './HistoryPlayback';
+import {
+    getHistoriesList,
+    simplifyHistory,
+    StateAndAction,
+} from './HistoryPlayback';
 import { canvasRender } from '../rendering/CanvasRender';
 import { findBoundingRect, renderTexture } from '../editor/Export';
 import { screenToWorld, worldToScreen } from '../editor/Canvas';
@@ -21,6 +25,7 @@ export type AnimateState = {
     frames: ImageBitmap[];
     fromScreen: (point: Coord, state: State) => Coord;
     toScreen: (point: Coord, state: State) => Coord;
+    histories: StateAndAction[];
 };
 
 export const animateHistory = async (
@@ -79,12 +84,15 @@ export const animateHistory = async (
         }
     };
 
+    startAt = startAt < histories.length - 1 ? startAt : 0;
+
     const state: AnimateState = {
         ctx,
         i: startAt,
         cursor: { x: 0, y: 0 },
         canvas,
         frames: [],
+        histories,
         fromScreen: (point: Coord, state: State) =>
             screenToWorld(canvas.width, canvas.height, point, {
                 ...state.view,

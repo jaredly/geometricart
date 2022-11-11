@@ -42,7 +42,7 @@ export async function animateAction(
         };
 
         if (action.type === 'path:create') {
-            await animatePath(follow, i, action, ctx, histories, canvas, prev);
+            await animatePath(state, follow, action, prev);
         } else if (action.type === 'path:multiply') {
             await animateMultiply(action, prev, follow, i, ctx, canvas);
         } else if (action.type === 'clip:add') {

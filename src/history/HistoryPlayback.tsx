@@ -191,7 +191,7 @@ export function getHistoriesList(state: State, overrideZoom?: boolean) {
     }
     return states;
 }
-type StateAndAction = {
+export type StateAndAction = {
     state: State;
     action: Action | null;
 };
