@@ -830,20 +830,47 @@ export const Canvas = ({
                         left: 0,
                     }}
                 >
-                    <div
-                        css={{
-                            padding: 20,
-                            backgroundColor: 'rgba(255,255,255,0.3)',
-                        }}
-                        onClick={() => setTmpView(null)}
-                    >
-                        Reset zoom
-                        {` ${pos.x.toFixed(4)},${pos.y.toFixed(4)}`}
+                    <div css={{ display: 'flex' }}>
+                        <div
+                            css={{
+                                padding: 10,
+                                backgroundColor: 'rgba(255,255,255,0.3)',
+                                cursor: 'pointer',
+                                ':hover': {
+                                    backgroundColor: 'rgba(255,255,255,0.5)',
+                                },
+                            }}
+                            onClick={() => setTmpView(null)}
+                        >
+                            Reset z/p
+                        </div>
+                        <div
+                            css={{
+                                padding: 10,
+                                backgroundColor: 'rgba(255,255,255,0.3)',
+                                cursor: 'pointer',
+                                ':hover': {
+                                    backgroundColor: 'rgba(255,255,255,0.5)',
+                                },
+                            }}
+                            onClick={() => {
+                                setTmpView({
+                                    ...state.view,
+                                    zoom: tmpView.zoom,
+                                });
+                            }}
+                        >
+                            Just pan
+                        </div>
                     </div>
                     <div
                         css={{
-                            padding: 20,
+                            padding: 10,
                             backgroundColor: 'rgba(255,255,255,0.3)',
+                            cursor: 'pointer',
+                            ':hover': {
+                                backgroundColor: 'rgba(255,255,255,0.5)',
+                            },
                         }}
                         onClick={() => {
                             dispatch({
@@ -853,7 +880,7 @@ export const Canvas = ({
                             setTmpView(null);
                         }}
                     >
-                        Commit zoom & pan
+                        Commit
                     </div>
                 </div>
             ) : null}

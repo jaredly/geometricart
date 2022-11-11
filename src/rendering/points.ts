@@ -120,8 +120,18 @@ export const geomToPrimitives = (
         }
         case 'Perpendicular': {
             const t1 = angleTo(geom.p1, geom.p2) + Math.PI / 2;
+            if (limit) {
+                const mag = dist(geom.p1, geom.p2);
+                return [
+                    lineToSlope(
+                        push(geom.p1, t1, mag),
+                        push(geom.p1, t1, -mag),
+                        true,
+                    ),
+                ];
+            }
             const p2 = push(geom.p1, t1, 1);
-            return [lineToSlope(geom.p1, p2, limit)];
+            return [lineToSlope(geom.p1, p2, false)];
         }
         case 'Split': {
             return [lineToSlope(geom.p1, geom.p2, true)];

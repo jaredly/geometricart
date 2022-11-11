@@ -31,18 +31,19 @@ export const animateHistory = async (
     startAt: number,
     preimage: boolean,
     log: React.RefObject<HTMLDivElement>,
+    inputRef?: HTMLInputElement | null,
 ) => {
     const now = Date.now();
     console.log('hup');
 
     const histories = simplifyHistory(getHistoriesList(originalState));
     const {
-        crop,
-        fps,
+        // crop,
+        // fps,
         zoom,
-        increment,
-        restrictAspectRatio: lockAspectRatio,
-        backgroundAlpha,
+        // increment,
+        // restrictAspectRatio: lockAspectRatio,
+        // backgroundAlpha,
     } = originalState.animations.config;
     const ctx = canvas.getContext('2d')!;
 
@@ -125,6 +126,9 @@ export const animateHistory = async (
     for (let i = startAt; i < histories.length; i++) {
         if (stopped.current) {
             break;
+        }
+        if (inputRef) {
+            inputRef.value = i + '';
         }
         await animateAction(
             histories,
@@ -339,6 +343,9 @@ async function animateMultiply(
     const yoff = canvas.height / 2 + prev.view.center.y * zoom;
     ctx.translate(xoff, yoff);
 
+    let j = 0;
+    const minWait = 20;
+    const by = Math.min(100, 500 / pathIds.length);
     for (let id of pathIds) {
         ctx.beginPath();
         tracePath(ctx, prev.paths[id], zoom);
@@ -348,7 +355,14 @@ async function animateMultiply(
         ctx.lineCap = 'round';
         ctx.stroke();
 
-        await wait(Math.min(100, 1000 / pathIds.length));
+        if (by < minWait) {
+            const skip = Math.floor(minWait / by);
+            if (j++ % skip === 0) {
+                await wait(minWait);
+            }
+        } else {
+            await wait(by);
+        }
     }
 
     ctx.restore();

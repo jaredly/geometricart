@@ -67,6 +67,8 @@ export const HistoryPlayback = ({ state }: { state: State }) => {
     let dx = -originalSize / 2;
     let dy = -originalSize / 2;
 
+    let inputRef = useRef<HTMLInputElement>(null);
+
     React.useEffect(() => {
         if (!canvas.current) {
             return;
@@ -121,6 +123,7 @@ export const HistoryPlayback = ({ state }: { state: State }) => {
                                 current,
                                 preimage,
                                 log,
+                                inputRef.current,
                             );
                         } else {
                             stopped.current = true;
@@ -135,6 +138,7 @@ export const HistoryPlayback = ({ state }: { state: State }) => {
 
                 <input
                     type="range"
+                    ref={inputRef}
                     value={current}
                     max={histories.length - 1}
                     onChange={(e) => setCurrent(parseInt(e.target.value))}
@@ -173,13 +177,13 @@ export function getHistoriesList(state: State, overrideZoom?: boolean) {
         });
         current = undo({ ...current, history }, action);
 
-        Object.entries(current.paths).forEach(([id, path]) => {
-            path.style.lines.forEach((line) => {
-                if (line?.width === 3) {
-                    line.width = 1;
-                }
-            });
-        });
+        // Object.entries(current.paths).forEach(([id, path]) => {
+        //     path.style.lines.forEach((line) => {
+        //         if (line?.width === 3) {
+        //             // line.width = 1;
+        //         }
+        //     });
+        // });
     }
     return states;
 }
@@ -222,6 +226,14 @@ export function simplifyHistory(history: StateAndAction[]): StateAndAction[] {
             action.type === 'pending:extent'
         ) {
             continue;
+        }
+        // Collapse all view updates.
+        if (action.type === 'view:update' && result.length) {
+            const last = result[result.length - 1];
+            if (last.action?.type === 'view:update') {
+                result[result.length - 1] = history[i];
+                continue;
+            }
         }
         result.push(history[i]);
     }

@@ -1,7 +1,41 @@
 
+Soooo what if I rewrote it all?
+Would that be any good?
+
+Things I would want:
+
+- right sidebar with list of all elements, in their groups I guess
+- would allow explicit ordering, "send to back" etc.
+- reified multiples of guides, sure.
+- use pathkit for everything
+- [ ] default line width is "0", which is a special thing meaning
+	we're zoom-independent
+
+eh I guess that doesn't necessarily mean I have to rewrite everything.
+
+
+
+
+# Digital Watercolor
+
+right
+https://trang.io/watercolor/
+
+
+
+
+
+
+
+### 
+
+
 So, I think I want another guide type, and it's
 "split". Like, make N points equally dividing the two anchor points.
 Can use "extent" as the dealio.
+
+So I did it a little bit, and I don't even know if I like it all that much?
+We'll see.
 
 
 # VBITT

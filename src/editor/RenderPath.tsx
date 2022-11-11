@@ -206,6 +206,7 @@ const RenderPathMemo = ({
         const common = {
             key: `line-${i}`,
             stroke: color,
+            opacity: line.opacity,
             strokeDasharray: line.dash
                 ? line.dash.map((d) => ((d / 100) * zoom).toFixed(2)).join(' ')
                 : undefined,
