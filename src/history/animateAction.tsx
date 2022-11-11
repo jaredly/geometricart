@@ -41,16 +41,23 @@ export async function animateAction(
             ctx.restore();
         };
 
+        if (
+            action.type !== 'path:multiply' &&
+            action.type !== 'path:update:many'
+        ) {
+            state.lastSelection = undefined;
+        }
+
         if (action.type === 'path:create') {
             await animatePath(state, follow, action, prev);
         } else if (action.type === 'path:multiply') {
-            await animateMultiply(action, prev, follow, i, ctx, canvas);
+            await animateMultiply(state, action, prev, follow);
         } else if (action.type === 'clip:add') {
             const clip = action.clip;
             await withScreen(async (zoom, width, height) => {
                 for (let j = 0; j < clip.length; j++) {
                     ctx.strokeStyle = 'magenta';
-                    ctx.lineWidth = 10;
+                    ctx.lineWidth = 5;
                     ctx.beginPath();
                     tracePath(
                         ctx,

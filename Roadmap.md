@@ -11,6 +11,10 @@ Things I would want:
 - [x] default line width is "0", which is a special thing meaning
 	we're zoom-independent
 - [ ] make a "get palette colors from image" dealio.
+- [ ] animate multiple; show the mirror
+- [x] have the cursor look more cursor like
+- [ ] selection should like radiate from an initial point
+- [x] when selection is the same, don't re-select.
 
 eh I guess that doesn't necessarily mean I have to rewrite everything.
 

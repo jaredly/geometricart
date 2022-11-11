@@ -26,6 +26,7 @@ export type AnimateState = {
     fromScreen: (point: Coord, state: State) => Coord;
     toScreen: (point: Coord, state: State) => Coord;
     histories: StateAndAction[];
+    lastSelection?: { type: 'Path' | 'PathGroup'; ids: string[] };
 };
 
 export const animateHistory = async (

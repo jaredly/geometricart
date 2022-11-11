@@ -1,9 +1,10 @@
 import { Coord, Mirror, State } from '../types';
 import { tracePath } from '../rendering/CanvasRender';
 import { PathMultiply } from '../state/Action';
-import { wait } from './animateHistory';
+import { AnimateState, wait } from './animateHistory';
 
 export async function animateMultiply(
+    state: AnimateState,
     action: PathMultiply,
     prev: State,
     follow: (
@@ -11,15 +12,15 @@ export async function animateMultiply(
         point: Coord,
         extra?: ((pos: Coord) => void | Promise<void>) | undefined,
     ) => Promise<unknown>,
-    i: number,
-    ctx: CanvasRenderingContext2D,
-    canvas: HTMLCanvasElement,
 ) {
-    const mirror: Mirror =
-        typeof action.mirror === 'string'
-            ? prev.mirrors[action.mirror]
-            : action.mirror;
-    await follow(i, mirror.origin);
+    const { i, ctx, canvas } = state;
+    const zoom = prev.view.zoom * 2;
+    const noWait =
+        state.lastSelection &&
+        state.lastSelection.type === action.selection.type &&
+        state.lastSelection.ids.every(
+            (id, j) => id === action.selection.ids[j],
+        );
     const pathIds =
         action.selection.type === 'Path'
             ? action.selection.ids
@@ -27,13 +28,39 @@ export async function animateMultiply(
                   action.selection.ids.includes(prev.paths[id].group!),
               );
 
+    if (noWait) {
+        await highlightPaths(pathIds, ctx, prev, zoom, noWait, canvas);
+    }
+
+    const mirror: Mirror =
+        typeof action.mirror === 'string'
+            ? prev.mirrors[action.mirror]
+            : action.mirror;
+    await follow(i, mirror.origin, () => {
+        if (noWait) {
+            highlightPaths(pathIds, ctx, prev, zoom, noWait, canvas);
+        }
+    });
+
+    if (!noWait) {
+        await highlightPaths(pathIds, ctx, prev, zoom, noWait, canvas);
+    }
+    state.lastSelection = action.selection;
+}
+
+async function highlightPaths(
+    pathIds: string[],
+    ctx: CanvasRenderingContext2D,
+    prev: State,
+    zoom: number,
+    noWait: boolean | undefined,
+    canvas: HTMLCanvasElement,
+) {
     ctx.save();
-    const zoom = prev.view.zoom * 2;
 
     const xoff = canvas.width / 2 + prev.view.center.x * zoom;
     const yoff = canvas.height / 2 + prev.view.center.y * zoom;
     ctx.translate(xoff, yoff);
-
     let j = 0;
     const minWait = 20;
     const by = Math.min(100, 500 / pathIds.length);
@@ -45,6 +72,9 @@ export async function animateMultiply(
         ctx.lineWidth = 3;
         ctx.lineCap = 'round';
         ctx.stroke();
+        if (noWait) {
+            continue;
+        }
 
         if (by < minWait) {
             const skip = Math.floor(minWait / by);
@@ -55,6 +85,5 @@ export async function animateMultiply(
             await wait(by);
         }
     }
-
     ctx.restore();
 }
