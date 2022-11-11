@@ -421,7 +421,7 @@ export const MultiStyleForm = ({
                             for (let i = lines.length; i < maxNum; i++) {
                                 lines.push(null);
                             }
-                            lines.push({ color: 0, inset, width: 3 });
+                            lines.push({ color: 0, inset, width: 0 });
                             return { ...style, lines };
                         }),
                     );

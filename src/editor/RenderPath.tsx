@@ -225,7 +225,7 @@ const RenderPathMemo = ({
                   }
                 : {},
             ...handlers(null),
-            strokeWidth: line.width ? (line.width / 100) * zoom : 0,
+            strokeWidth: line.width ? (line.width / 100) * zoom : 2,
             onMouseDown: onClick
                 ? (evt: React.MouseEvent) => evt.preventDefault()
                 : undefined,
