@@ -17,6 +17,7 @@ export const findDivider = (chunks: Array<string>) => {
 };
 
 export const serializeFixtures = <I, O>(
+    // @ts-ignore
     fixtures: Array<Fixture<I, O>>,
     serde: Config<I, O>['serde'],
 ) => {
@@ -47,6 +48,7 @@ export const parseDivider = (raw: string) => {
 };
 
 export const serializeFixture = <I, O>(
+    // @ts-ignore
     fixture: Fixture<I, O>,
     serde: Config<I, O>['serde'],
 ) => {
@@ -68,6 +70,7 @@ export const serializeFixture = <I, O>(
 export const deserializeFixture = <I, O>(
     raw: string,
     serde: Config<I, O>['serde'],
+    // @ts-ignore
 ): Fixture<I, O> => {
     const parts = parseDivider(raw);
     const [name, passing, input, output, options] = parts;

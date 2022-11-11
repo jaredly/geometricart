@@ -4,7 +4,9 @@ import { isClockwise } from './pathToPoints';
 
 // TODO: Change this to a vest test!
 
+// @ts-ignore
 describe.skip('ok', () => {
+    // @ts-ignore
     it('should work', () => {
         const result = segmentsToNonIntersectingSegments([
             { type: 'Line', to: { x: 1, y: 0 } },
@@ -14,6 +16,7 @@ describe.skip('ok', () => {
         ]);
         debugger;
         // whyyyy are the x zeroes negative? ???
+        // @ts-ignore
         expect(result).toEqual({
             result: [
                 {
@@ -63,6 +66,7 @@ describe.skip('ok', () => {
         });
     });
 
+    // @ts-ignore
     it('should preserve a square', () => {
         const result = segmentsToNonIntersectingSegments([
             { type: 'Line', to: { x: 1, y: 0 } },
@@ -73,6 +77,7 @@ describe.skip('ok', () => {
         const regions = findRegions(result.result, result.froms).filter(
             isClockwise,
         );
+        // @ts-ignore
         expect(regions).toEqual([
             [
                 { type: 'Line', to: { x: 1, y: 0 } },
@@ -83,6 +88,7 @@ describe.skip('ok', () => {
         ]);
     });
 
+    // @ts-ignore
     it('should find the correct triangle', () => {
         const result = segmentsToNonIntersectingSegments([
             { type: 'Line', to: { x: 1, y: 0 } },
@@ -93,6 +99,7 @@ describe.skip('ok', () => {
         const regions = findRegions(result.result, result.froms).filter(
             isClockwise,
         );
+        // @ts-ignore
         expect(regions).toEqual([
             [
                 { to: { x: 1, y: 0 }, type: 'Line' },

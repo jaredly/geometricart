@@ -1,26 +1,16 @@
 import { Coord } from '../types';
-import { wait, nextFrame } from './animateHistory';
+import { wait, nextFrame, AnimateState } from './animateHistory';
 
-export async function followPoints(
-    points: Coord[],
-    cursor: Coord,
-    i: number,
-    ctx: CanvasRenderingContext2D,
-    canvas: HTMLCanvasElement,
-    frames: ImageBitmap[],
-) {
+export async function followPoints(state: AnimateState, points: Coord[]) {
     for (let point of points) {
-        await followPoint(cursor, point, i, ctx, canvas, frames);
+        await followPoint(state, point);
         await wait(100);
     }
 }
+
 export async function followPoint(
-    cursor: Coord,
+    { cursor, ctx, i, canvas, frames }: AnimateState,
     { x, y }: Coord,
-    i: number,
-    ctx: CanvasRenderingContext2D,
-    canvas: HTMLCanvasElement,
-    frames: ImageBitmap[],
     extra?: (v: Coord) => void | Promise<void>,
 ) {
     let dx = x - cursor.x;

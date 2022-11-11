@@ -7,23 +7,18 @@ import { followPoints } from './followPoint';
 import { animateMirror } from './animateMirror';
 import { animatePath } from './animatePath';
 import { animateMultiply } from './animateMultiply';
-import { wait, actionPoints } from './animateHistory';
+import { wait, actionPoints, AnimateState } from './animateHistory';
 
 export async function animateAction(
+    state: AnimateState,
     histories: { state: State; action: Action | null }[],
-    i: number,
     follow: (
         i: number,
         point: Coord,
         extra?: ((pos: Coord) => void | Promise<void>) | undefined,
     ) => Promise<unknown>,
-    ctx: CanvasRenderingContext2D,
-    canvas: HTMLCanvasElement,
-    toScreen: (point: Coord, state: State) => { x: number; y: number },
-    fromScreen: (point: Coord, state: State) => { x: number; y: number },
-    cursor: { x: number; y: number },
-    frames: ImageBitmap[],
 ) {
+    const { i, ctx, canvas } = state;
     const action = histories[i].action;
 
     if (action && i > 0) {
@@ -83,7 +78,7 @@ export async function animateAction(
                 i,
                 action,
                 ctx,
-                fromScreen,
+                state.fromScreen,
                 withScreen,
             );
         } else if (action.type === 'mirror:add') {
@@ -92,7 +87,7 @@ export async function animateAction(
                 i,
                 action,
                 ctx,
-                fromScreen,
+                state.fromScreen,
                 prev,
                 histories,
                 canvas,
@@ -164,10 +159,12 @@ export async function animateAction(
                 await wait(500);
             }
         } else {
-            const points = actionPoints(action).map((point) =>
-                toScreen(point, histories[i].state),
+            await followPoints(
+                state,
+                actionPoints(action).map((point) =>
+                    state.toScreen(point, histories[i].state),
+                ),
             );
-            await followPoints(points, cursor, i, ctx, canvas, frames);
         }
     }
 }

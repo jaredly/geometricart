@@ -12,6 +12,16 @@ export const nextFrame = () => new Promise(requestAnimationFrame);
 export const wait = (time: number) =>
     new Promise((res) => setTimeout(res, time));
 
+export type AnimateState = {
+    ctx: CanvasRenderingContext2D;
+    canvas: HTMLCanvasElement;
+    i: number;
+    cursor: Coord;
+    frames: ImageBitmap[];
+    fromScreen: (point: Coord, state: State) => Coord;
+    toScreen: (point: Coord, state: State) => Coord;
+};
+
 export const animateHistory = async (
     originalState: State,
     canvas: HTMLCanvasElement,
@@ -64,40 +74,35 @@ export const animateHistory = async (
         ctx.restore();
     };
 
-    let cursor = { x: 0, y: 0 };
+    const state: AnimateState = {
+        ctx,
+        i: startAt,
+        cursor: { x: 0, y: 0 },
+        canvas,
+        frames: [],
+        fromScreen: (point: Coord, state: State) =>
+            screenToWorld(canvas.width, canvas.height, point, {
+                ...state.view,
+                zoom: state.view.zoom * 2,
+            }),
 
-    const fromScreen = (point: Coord, state: State) =>
-        screenToWorld(canvas.width, canvas.height, point, {
-            ...state.view,
-            zoom: state.view.zoom * 2,
-        });
-
-    const toScreen = (point: Coord, state: State) =>
-        worldToScreen(canvas.width, canvas.height, point, {
-            ...state.view,
-            zoom: state.view.zoom * 2,
-        });
+        toScreen: (point: Coord, state: State) =>
+            worldToScreen(canvas.width, canvas.height, point, {
+                ...state.view,
+                zoom: state.view.zoom * 2,
+            }),
+    };
 
     const follow = (
         i: number,
         point: Coord,
         extra?: (pos: Coord) => void | Promise<void>,
-    ) =>
-        followPoint(
-            cursor,
-            toScreen(point, histories[i].state),
-            i,
-            ctx,
-            canvas,
-            frames,
-            extra,
-        );
+    ) => followPoint(state, state.toScreen(point, histories[i].state), extra);
 
-    const frames: ImageBitmap[] = [];
     if (preimage) {
         for (let i = 0; i < histories.length; i++) {
             await draw(i);
-            frames.push(await createImageBitmap(canvas));
+            state.frames.push(await createImageBitmap(canvas));
             if (i % 5 === 0) {
                 log.current!.textContent = `Frame ${i} of ${histories.length}`;
                 await nextFrame();
@@ -108,48 +113,38 @@ export const animateHistory = async (
     if (!preimage && startAt > 0) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         await draw(startAt - 1);
-        frames[startAt - 1] = await createImageBitmap(canvas);
+        state.frames[startAt - 1] = await createImageBitmap(canvas);
     }
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    for (let i = startAt; i < histories.length; i++) {
+    for (; state.i < histories.length; state.i++) {
         if (stopped.current) {
             break;
         }
         if (inputRef) {
-            inputRef.value = i + '';
+            inputRef.value = state.i + '';
         }
-        await animateAction(
-            histories,
-            i,
-            follow,
-            ctx,
-            canvas,
-            toScreen,
-            fromScreen,
-            cursor,
-            frames,
-        );
+        await animateAction(state, histories, follow);
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         if (preimage) {
-            ctx.drawImage(frames[i], 0, 0);
+            ctx.drawImage(state.frames[state.i], 0, 0);
         } else {
-            await draw(i);
-            frames.push(await createImageBitmap(canvas));
+            await draw(state.i);
+            state.frames.push(await createImageBitmap(canvas));
         }
 
         // Draw the cursor
         ctx.fillStyle = 'red';
         ctx.beginPath();
-        ctx.arc(cursor.x, cursor.y, 10, 0, Math.PI * 2);
+        ctx.arc(state.cursor.x, state.cursor.y, 10, 0, Math.PI * 2);
         ctx.fill();
 
         await nextFrame();
     }
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(frames[frames.length - 1], 0, 0);
+    ctx.drawImage(state.frames[state.frames.length - 1], 0, 0);
 
     console.log('ok', Date.now() - now);
 };
