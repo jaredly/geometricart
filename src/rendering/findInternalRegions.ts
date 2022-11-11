@@ -15,7 +15,7 @@
  * with respect to the entry line.
  */
 
-import { coordKey } from './calcAllIntersections';
+import { coordKey } from './coordKey';
 import { isClockwise } from './pathToPoints';
 import { insidePath } from './clipPath';
 import { windingNumber } from './windingNumber';

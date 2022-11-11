@@ -1,5 +1,5 @@
 import { pendingGuide } from '../editor/RenderPendingGuide';
-import { coordKey } from '../rendering/calcAllIntersections';
+import { coordKey } from '../rendering/coordKey';
 import {
     applyMatrices,
     getTransformsForMirror,
@@ -1265,7 +1265,7 @@ export function handlePathCreate(
 
     const style: Style = {
         fills: [{ color: 1 }],
-        lines: [{ color: 'white', width: 3 }],
+        lines: [{ color: 'white', width: 0 }],
     };
     groupId = `id-${nextId++}`;
 

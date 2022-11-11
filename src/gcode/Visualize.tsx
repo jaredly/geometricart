@@ -2,6 +2,7 @@
 import * as React from 'react';
 import { State } from '../types';
 import { GCode3D } from './GCode3D';
+import { renderCutDepths } from './renderCutDepths';
 
 const parseCoords = (line: string) => {
     return [...line.matchAll(/([xyzf])(-?[0-9.]+)/g)].reduce((acc, m) => {
@@ -10,14 +11,37 @@ const parseCoords = (line: string) => {
     }, {} as { x?: number; y?: number; z?: number; f?: number });
 };
 
-const parse = (gcode: string) => {
+export type Tool = { diameter: number; vbit?: number };
+
+export const parse = (gcode: string): GCodeData['toolPaths'] => {
     const settings = { units: 'in' };
     let pos: { x?: number; y?: number; z?: number; f?: number } = {};
     // if f === -1, then it's a rapid move
-    const positions: { x: number; y: number; z: number; f?: number }[] = [];
+    const toolPaths: GCodeData['toolPaths'] = [];
+    // const positions: {
+    //     x: number;
+    //     y: number;
+    //     z: number;
+    //     f?: number;
+    //     tool?: Tool;
+    // }[] = [];
+    let tool: Tool | undefined = undefined;
     gcode.split('\n').forEach((line) => {
         const good = line.split(';')[0].trim().toLowerCase();
         if (!good.length) {
+            return;
+        }
+        const toolPrefix = `M0 ; tool `;
+        if (line.startsWith(toolPrefix)) {
+            const [diameter, vbit] = line.slice(toolPrefix.length).split('v');
+            tool = {
+                diameter: parseFloat(diameter),
+                vbit: vbit ? parseFloat(vbit) : undefined,
+            };
+            toolPaths.push({
+                positions: [],
+                tool,
+            });
             return;
         }
         const g = good.match(/^g([0-9]+)/);
@@ -37,14 +61,34 @@ const parse = (gcode: string) => {
             case '91':
                 throw new Error(`relative, cant do it`);
             case '0': {
+                if (!toolPaths.length) {
+                    toolPaths.push({
+                        positions: [],
+                        tool: { diameter: 3 },
+                    });
+                }
+                const positions = toolPaths[toolPaths.length - 1].positions;
                 const coords = parseCoords(good);
                 pos = { ...pos, ...coords };
                 if (pos.x != null && pos.y != null && pos.z != null) {
-                    positions.push({ x: pos.x, y: pos.y, z: pos.z, f: -1 });
+                    positions.push({
+                        x: pos.x,
+                        y: pos.y,
+                        z: pos.z,
+                        f: -1,
+                    });
                 }
                 break;
             }
             case '1': {
+                if (!toolPaths.length) {
+                    console.warn('No initial tool');
+                    toolPaths.push({
+                        positions: [],
+                        tool: { diameter: 3 },
+                    });
+                }
+                const positions = toolPaths[toolPaths.length - 1].positions;
                 const coords = parseCoords(good);
                 pos = { ...pos, ...coords };
                 if (pos.x != null && pos.y != null && pos.z != null) {
@@ -58,7 +102,7 @@ const parse = (gcode: string) => {
             }
         }
     });
-    return positions;
+    return toolPaths;
 };
 
 export const Visualize = ({
@@ -73,21 +117,21 @@ export const Visualize = ({
     const bitSize = 3; // mm, 1/8"
     const data = React.useMemo(() => {
         try {
-            const positions = parse(gcode);
-            const bounds = findBounds(positions, bitSize, 3);
+            const toolPaths = parse(gcode);
+            const bounds = findBounds(toolPaths, bitSize, 3);
             const dims = {
                 width: bounds.max.x! - bounds.min.x!,
                 height: bounds.max.y! - bounds.min.y!,
                 depth: -bounds.min.z!,
             };
-            return { positions, bounds, dims };
+            return { toolPaths, bounds, dims };
         } catch (err) {
             console.error(err);
         }
     }, [gcode]);
     const scale = 10;
     const ref = React.useRef<HTMLCanvasElement>(null);
-    const [visualize, setVisualize] = React.useState(true);
+    const [visualize, setVisualize] = React.useState(false);
     React.useEffect(() => {
         if (!ref.current || !data) {
             return;
@@ -99,7 +143,7 @@ export const Visualize = ({
         ctx.scale(scale, scale);
         ctx.translate(-data.bounds.min.x!, -data.bounds.min.y!);
 
-        renderCutDepths(ctx, bitSize, data);
+        renderCutDepths(ctx, data);
         renderCutPaths(ctx, data);
 
         ctx.restore();
@@ -115,7 +159,7 @@ export const Visualize = ({
                 width={data.dims.width * scale}
                 height={data.dims.height * scale}
                 style={{
-                    backgroundColor: 'blue',
+                    backgroundColor: 'white',
                     // width: (data.dims.width * scale) / 2,
                     // height: (data.dims.height * scale) / 2,
                     width: 500 / (data.dims.height / data.dims.width),
@@ -137,7 +181,11 @@ export const Visualize = ({
                             1,
                         )} x ${data.dims.height.toFixed(
                             1,
-                        )} x ${data.dims.depth.toFixed(1)}mm`}
+                        )} x ${data.dims.depth.toFixed(1)}mm ; ${(
+                            data.dims.width / 25.4
+                        ).toFixed(1)}" x ${(data.dims.height / 25.4).toFixed(
+                            1,
+                        )}" x ${(data.dims.depth / 25.4).toFixed(1)}"`}
                     />
                 ) : null}
             </div>
@@ -165,24 +213,25 @@ type Bound = {
 const ax = ['x', 'y', 'z'] as const;
 
 const findBounds = (
-    positions: { x: number; y: number; z: number; f?: number }[],
+    toolPaths: GCodeData['toolPaths'],
     bitSize: number,
     margin: number,
 ) => {
-    return positions.reduce(
-        (acc, pos) => {
-            ax.forEach((k: 'x' | 'y' | 'z') => {
-                if (acc.min[k] == null || pos[k] < acc.min[k]!) {
-                    acc.min[k] =
-                        k === 'z' ? pos[k] : pos[k] - bitSize / 2 - margin;
-                }
-                if (acc.max[k] == null || pos[k] > acc.max[k]!) {
-                    acc.max[k] =
-                        k === 'z' ? pos[k] : pos[k] + bitSize / 2 + margin;
-                }
-            });
-            return acc;
-        },
+    return toolPaths.reduce(
+        (acc, { positions }) =>
+            positions.reduce((acc, pos) => {
+                ax.forEach((k: 'x' | 'y' | 'z') => {
+                    if (acc.min[k] == null || pos[k] < acc.min[k]!) {
+                        acc.min[k] =
+                            k === 'z' ? pos[k] : pos[k] - bitSize / 2 - margin;
+                    }
+                    if (acc.max[k] == null || pos[k] > acc.max[k]!) {
+                        acc.max[k] =
+                            k === 'z' ? pos[k] : pos[k] + bitSize / 2 + margin;
+                    }
+                });
+                return acc;
+            }, acc),
         {
             min: { x: null, y: null, z: null },
             max: { x: null, y: null, z: null },
@@ -191,11 +240,14 @@ const findBounds = (
 };
 
 export type GCodeData = {
-    positions: {
-        x: number;
-        y: number;
-        z: number;
-        f?: number | undefined;
+    toolPaths: {
+        tool: Tool;
+        positions: {
+            x: number;
+            y: number;
+            z: number;
+            f?: number | undefined;
+        }[];
     }[];
     bounds: Bound;
     dims: {
@@ -210,49 +262,20 @@ export function renderCutPaths(ctx: CanvasRenderingContext2D, data: GCodeData) {
     ctx.lineWidth = 0.1;
     ctx.strokeStyle = 'black';
     let above = false;
-    data.positions.forEach((pos, i) => {
-        if (i === 0 || pos.z >= 0 !== above) {
-            if (i > 0) {
-                ctx.stroke();
+    data.toolPaths.forEach(({ positions }) => {
+        positions.forEach((pos, i) => {
+            if (i === 0 || pos.z >= 0 !== above) {
+                if (i > 0) {
+                    ctx.stroke();
+                }
+                ctx.beginPath();
+                ctx.moveTo(pos.x, pos.y);
+                above = pos.z >= 0;
+                ctx.strokeStyle = above ? 'red' : 'black';
+            } else {
+                ctx.lineTo(pos.x, pos.y);
             }
-            ctx.beginPath();
-            ctx.moveTo(pos.x, pos.y);
-            above = pos.z >= 0;
-            ctx.strokeStyle = above ? 'red' : 'black';
-        } else {
-            ctx.lineTo(pos.x, pos.y);
-        }
-    });
-    ctx.stroke();
-}
-
-export function renderCutDepths(
-    ctx: CanvasRenderingContext2D,
-    bitSize: number,
-    data: GCodeData,
-    forDepthMap = false,
-) {
-    ctx.lineWidth = bitSize;
-    ctx.lineJoin = 'round';
-    ctx.lineCap = 'round';
-    ctx.globalCompositeOperation = 'darken';
-    let z = null as null | number;
-    const depth = 0 - data.bounds.min.z!;
-    data.positions.forEach((pos, i) => {
-        if (pos.z != z) {
-            if (z != null) {
-                ctx.stroke();
-            }
-            z = pos.z;
-            const zDepth = (Math.min(0, z) - data.bounds.min.z!) / depth;
-            ctx.strokeStyle = forDepthMap
-                ? `rgb(${Math.round(zDepth * 255)}, 0, 0)`
-                : `hsl(0, 100%, ${Math.round(zDepth * 100)}%)`;
-            ctx.beginPath();
-            ctx.moveTo(pos.x, pos.y);
-        } else {
-            ctx.lineTo(pos.x, pos.y);
-        }
+        });
     });
     ctx.stroke();
 }

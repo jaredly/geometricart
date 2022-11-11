@@ -421,7 +421,7 @@ export const MultiStyleForm = ({
                             for (let i = lines.length; i < maxNum; i++) {
                                 lines.push(null);
                             }
-                            lines.push({ color: 0, inset, width: 3 });
+                            lines.push({ color: 0, inset, width: 0 });
                             return { ...style, lines };
                         }),
                     );
@@ -586,6 +586,26 @@ export const MultiNumber = ({
     onChange: (value: number | null) => void;
 }) => {
     const [text, setText] = React.useState(null as null | string);
+    const commit = React.useCallback(() => {
+        if (text != null && !text.includes(',')) {
+            const num = parseFloat(text);
+            if (value.length === 1) {
+                if (value[0] == null && text.trim() == '') {
+                    return;
+                }
+                if (num == value[0]) {
+                    return;
+                }
+            }
+            if (text.trim() == '') {
+                return onChange(null);
+            }
+            if (!isNaN(num)) {
+                onChange(num);
+            }
+        }
+        setText(null);
+    }, [text, value]);
     return (
         <input
             value={
@@ -595,26 +615,12 @@ export const MultiNumber = ({
             css={{
                 width: 50,
             }}
-            onBlur={() => {
-                if (text != null && !text.includes(',')) {
-                    const num = parseFloat(text);
-                    if (value.length === 1) {
-                        if (value[0] == null && text.trim() == '') {
-                            return;
-                        }
-                        if (num == value[0]) {
-                            return;
-                        }
-                    }
-                    if (text.trim() == '') {
-                        return onChange(null);
-                    }
-                    if (!isNaN(num)) {
-                        onChange(num);
-                    }
+            onKeyDown={(evt) => {
+                if (evt.key === 'Enter') {
+                    commit();
                 }
-                setText(null);
             }}
+            onBlur={() => commit()}
         />
     );
 };

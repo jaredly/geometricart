@@ -140,6 +140,44 @@ export const GuideElement = ({
                 </>
             );
         }
+        case 'Split': {
+            const dx = geom.p2.x - geom.p1.x;
+            const dy = geom.p2.y - geom.p1.y;
+            const circles = [];
+            const count = Math.max(2, geom.count);
+            const bx = dx / count;
+            const by = dy / count;
+            const theta = angleTo(geom.p1, geom.p2);
+            for (let i = 1; i < count; i++) {
+                const mid = { x: geom.p1.x + bx * i, y: geom.p1.y + by * i };
+                const p1 = push(mid, theta + Math.PI / 2, 10 / zoom);
+                const p2 = push(mid, theta - Math.PI / 2, 10 / zoom);
+                circles.push(
+                    <line
+                        key={i}
+                        stroke={original ? '#ff0' : 'rgba(255,255,0,0.1)'}
+                        strokeWidth={1}
+                        x1={p1.x * zoom}
+                        y1={p1.y * zoom}
+                        x2={p2.x * zoom}
+                        y2={p2.y * zoom}
+                    />,
+                );
+            }
+            return (
+                <>
+                    <line
+                        x1={geom.p1.x * zoom}
+                        y1={geom.p1.y * zoom}
+                        x2={geom.p2.x * zoom}
+                        y2={geom.p2.y * zoom}
+                        stroke={original ? '#ff0' : 'rgba(255,255,0,0.1)'}
+                        strokeWidth={1}
+                    />
+                    {circles}
+                </>
+            );
+        }
         case 'Line': {
             const t1 = angleTo(geom.p1, geom.p2);
             const d = dist(geom.p1, geom.p2);

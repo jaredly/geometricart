@@ -125,6 +125,7 @@ export const generateLaserInset = async (state: State) => {
 
 type GCode =
     | { type: 'fast'; x?: number; y?: number; z?: number }
+    | { type: 'tool'; diameter: number; vbitAngle?: number }
     | {
           type: 'cut';
           x?: number;
@@ -141,6 +142,7 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
         ? state.clips[state.view.activeClip]
         : undefined;
 
+    const now = Date.now();
     const insetPaths = sortedVisibleInsetPaths(
         state.paths,
         state.pathGroups,
@@ -151,6 +153,7 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
         undefined,
         undefined,
     );
+    console.log(`A ${Date.now() - now}ms`);
 
     const colors = findColorPaths(insetPaths);
     const bounds = findBoundingRect(state)!;
@@ -162,12 +165,6 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
         };
     };
 
-    const lines: Array<string> = [
-        'G21 ; units to mm',
-        'G90 ; absolute positioning',
-        'G17 ; xy plane',
-    ];
-
     const cmds: GCode[] = [];
 
     const { clearHeight, pauseHeight } = state.gcode;
@@ -176,6 +173,9 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
     let time = 0;
 
     let last = null as null | Coord;
+    console.log(`B ${Date.now() - now}ms`);
+
+    let lastTool = null as null | { diameter: number; vbitAngle?: number };
 
     state.gcode.items.forEach((item) => {
         if (item.type === 'pause') {
@@ -184,18 +184,46 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
             if (item.disabled) {
                 return;
             }
-            const { color, start, depth, speed, passDepth, tabs } = item;
+            let { color, start, depth, speed, passDepth, tabs, vbitAngle } =
+                item;
             if (!colors[color]) {
                 console.warn(`Unknown color ${color}`);
                 return;
             }
+            const diameter =
+                item.diameter ??
+                (color.endsWith(':pocket')
+                    ? 3
+                    : pxToMM(+color.split(':')[1] / 100, state.meta.ppi));
+
+            if (vbitAngle != null) {
+                depth = calculateDepthForVBit(
+                    start ?? 0,
+                    (vbitAngle / 180) * Math.PI,
+                    diameter,
+                );
+            }
+
+            if (
+                lastTool === null ||
+                lastTool.diameter !== diameter ||
+                lastTool.vbitAngle !== vbitAngle
+            ) {
+                cmds.push({ type: 'tool', diameter, vbitAngle });
+            }
+            lastTool = { diameter, vbitAngle };
+
             const greedy = greedyPaths(colors[color]);
             if (color.endsWith(':pocket')) {
                 greedy.forEach((shape) => {
-                    const pocket = makePocket(PathKit, shape.map(scalePos), 3);
+                    const pocket = makePocket(
+                        PathKit,
+                        shape.map(scalePos),
+                        diameter,
+                    );
                     if (!pocket.length || !pocket[0].length) {
-                        console.log(pocket, shape);
-                        debugger;
+                        console.warn('empty pocket', pocket, shape);
+                        return;
                     }
 
                     cmds.push({ type: 'clear' });
@@ -294,8 +322,11 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
                                 const dx = cmd.x - latest.x;
                                 const dy = cmd.y - latest.y;
 
-                                const a = size / 2 - tabs.width / 2;
-                                const b = a + tabs.width;
+                                const fullWidth =
+                                    tabs.width + (lastTool?.diameter ?? 3);
+
+                                const a = size / 2 - fullWidth / 2;
+                                const b = a + fullWidth;
                                 const da = a / size;
                                 const db = b / size;
 
@@ -306,7 +337,10 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
                                         y: latest.y + dy * da,
                                         f: speed,
                                     },
-                                    { type: 'fast', z: -tabs.depth },
+                                    {
+                                        type: 'fast',
+                                        z: -itemDepth + tabs.depth,
+                                    },
                                     {
                                         type: 'fast',
                                         x: latest.x + dx * db,
@@ -334,6 +368,7 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
             });
         }
     });
+    console.log(`C ${Date.now() - now}ms`);
 
     const gcodePos = (x?: number, y?: number, z?: number, f?: number) => {
         const items: [string, number | void][] = [
@@ -348,9 +383,26 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
             .join(' ');
     };
 
+    const realBounds = cmdBounds(cmds);
+
+    const lines: Array<string> = [
+        `; Bounds: ${realBounds.min.x.toFixed(2)} ${realBounds.min.y.toFixed(
+            2,
+        )} ${realBounds.min.z.toFixed(2)} - ${realBounds.max.x.toFixed(
+            2,
+        )} ${realBounds.max.y.toFixed(2)} ${realBounds.max.z.toFixed(2)}`,
+        'G21 ; units to mm',
+        'G90 ; absolute positioning',
+        'G17 ; xy plane',
+    ];
+
     lines.push(
         ...cmds.map((cmd) => {
             switch (cmd.type) {
+                case 'tool':
+                    return `G0Z30\nM0 ; tool ${cmd.diameter?.toFixed(2)}${
+                        cmd.vbitAngle ? `v${cmd.vbitAngle.toFixed(2)}` : ''
+                    }`;
                 case 'fast':
                     return `G0 ${gcodePos(cmd.x, cmd.y, cmd.z)}`;
                 case 'cut':
@@ -369,6 +421,48 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
     lines.push(`G0 Z${clearHeight}`);
 
     return { time, text: lines.join('\n') };
+};
+
+export const cmdBounds = (cmds: GCode[]) => {
+    return cmds.reduce(
+        (bounds, cmd) => {
+            switch (cmd.type) {
+                case 'fast':
+                case 'cut':
+                    return {
+                        min: {
+                            x: Math.min(bounds.min.x, cmd.x ?? bounds.min.x),
+                            y: Math.min(bounds.min.y, cmd.y ?? bounds.min.y),
+                            z: Math.min(bounds.min.z, cmd.z ?? bounds.min.z),
+                        },
+                        max: {
+                            x: Math.max(bounds.max.x, cmd.x ?? bounds.max.x),
+                            y: Math.max(bounds.max.y, cmd.y ?? bounds.max.y),
+                            z: Math.max(bounds.max.z, cmd.z ?? bounds.max.z),
+                        },
+                    };
+            }
+            return bounds;
+        },
+        {
+            min: { x: Infinity, y: Infinity, z: Infinity },
+            max: { x: -Infinity, y: -Infinity, z: -Infinity },
+        },
+    );
+};
+
+const calculateDepthForVBit = (
+    start: number,
+    angle: number,
+    diameter: number,
+) => {
+    // tan(angle) = diameter / depth
+    // depth = diameter / tan(angle)
+    return start + diameter / 2 / Math.tan(angle / 2);
+    // const depth = diameter / 2 / Math.sin(angle / 2);
+    // return start + depth;
+    // return start + diameter * 8;
+    // return 3;
 };
 
 function makePocket(PathKit: PathKit, shape: Coord[], bitSize: number) {

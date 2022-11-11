@@ -500,3 +500,166 @@ export function IconViewHide(props: React.SVGProps<SVGSVGElement>) {
         </svg>
     );
 }
+
+export function IconVerticalAlignTop(props: React.SVGProps<SVGSVGElement>) {
+    return (
+        <svg
+            viewBox="0 0 1024 1024"
+            fill="currentColor"
+            height="1em"
+            width="1em"
+            {...props}
+        >
+            <path d="M859.9 168H164.1c-4.5 0-8.1 3.6-8.1 8v60c0 4.4 3.6 8 8.1 8h695.8c4.5 0 8.1-3.6 8.1-8v-60c0-4.4-3.6-8-8.1-8zM518.3 355a8 8 0 00-12.6 0l-112 141.7a7.98 7.98 0 006.3 12.9h73.9V848c0 4.4 3.6 8 8 8h60c4.4 0 8-3.6 8-8V509.7H624c6.7 0 10.4-7.7 6.3-12.9L518.3 355z" />
+        </svg>
+    );
+}
+
+export function IconVerticalAlignBottom(props: React.SVGProps<SVGSVGElement>) {
+    return (
+        <svg
+            viewBox="0 0 1024 1024"
+            fill="currentColor"
+            height="1em"
+            width="1em"
+            {...props}
+        >
+            <path d="M859.9 780H164.1c-4.5 0-8.1 3.6-8.1 8v60c0 4.4 3.6 8 8.1 8h695.8c4.5 0 8.1-3.6 8.1-8v-60c0-4.4-3.6-8-8.1-8zM505.7 669a8 8 0 0012.6 0l112-141.7c4.1-5.2.4-12.9-6.3-12.9h-74.1V176c0-4.4-3.6-8-8-8h-60c-4.4 0-8 3.6-8 8v338.3H400c-6.7 0-10.4 7.7-6.3 12.9l112 141.8z" />
+        </svg>
+    );
+}
+
+export function IconSpeedtest(props: React.SVGProps<SVGSVGElement>) {
+    return (
+        <svg
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            height="1em"
+            width="1em"
+            {...props}
+        >
+            <path d="M11.628 16.186l-2.047-2.14 6.791-5.953 1.21 1.302zm8.837 6.047c2.14-2.14 3.535-5.117 3.535-8.466 0-6.604-5.395-12-12-12s-12 5.396-12 12c0 3.35 1.302 6.326 3.535 8.466l1.674-1.675c-1.767-1.767-2.79-4.093-2.79-6.79A9.568 9.568 0 0112 4.185a9.568 9.568 0 019.581 9.581c0 2.605-1.116 5.024-2.79 6.791z" />
+        </svg>
+    );
+}
+
+export function IconVerticalAlignMiddle(props: React.SVGProps<SVGSVGElement>) {
+    return (
+        <svg
+            viewBox="0 0 1024 1024"
+            fill="currentColor"
+            height="1em"
+            width="1em"
+            {...props}
+        >
+            <path d="M859.9 474H164.1c-4.5 0-8.1 3.6-8.1 8v60c0 4.4 3.6 8 8.1 8h695.8c4.5 0 8.1-3.6 8.1-8v-60c0-4.4-3.6-8-8.1-8zm-353.6-74.7c2.9 3.7 8.5 3.7 11.3 0l100.8-127.5c3.7-4.7.4-11.7-5.7-11.7H550V104c0-4.4-3.6-8-8-8h-60c-4.4 0-8 3.6-8 8v156h-62.8c-6 0-9.4 7-5.7 11.7l100.8 127.6zm11.4 225.4a7.14 7.14 0 00-11.3 0L405.6 752.3a7.23 7.23 0 005.7 11.7H474v156c0 4.4 3.6 8 8 8h60c4.4 0 8-3.6 8-8V764h62.8c6 0 9.4-7 5.7-11.7L517.7 624.7z" />
+        </svg>
+    );
+}
+
+export function IconEye(props: React.SVGProps<SVGSVGElement>) {
+    return (
+        <svg
+            viewBox="0 0 1024 1024"
+            fill="currentColor"
+            height="1em"
+            width="1em"
+            {...props}
+        >
+            <path d="M396 512a112 112 0 10224 0 112 112 0 10-224 0zm546.2-25.8C847.4 286.5 704.1 186 512 186c-192.2 0-335.4 100.5-430.2 300.3a60.3 60.3 0 000 51.5C176.6 737.5 319.9 838 512 838c192.2 0 335.4-100.5 430.2-300.3 7.7-16.2 7.7-35 0-51.5zM508 688c-97.2 0-176-78.8-176-176s78.8-176 176-176 176 78.8 176 176-78.8 176-176 176z" />
+        </svg>
+    );
+}
+
+export function IconEyeInvisible(props: React.SVGProps<SVGSVGElement>) {
+    return (
+        <svg
+            viewBox="0 0 1024 1024"
+            fill="currentColor"
+            height="1em"
+            width="1em"
+            {...props}
+        >
+            <path d="M508 624a112 112 0 00112-112c0-3.28-.15-6.53-.43-9.74L498.26 623.57c3.21.28 6.45.43 9.74.43zm370.72-458.44L836 122.88a8 8 0 00-11.31 0L715.37 232.23Q624.91 186 512 186q-288.3 0-430.2 300.3a60.3 60.3 0 000 51.5q56.7 119.43 136.55 191.45L112.56 835a8 8 0 000 11.31L155.25 889a8 8 0 0011.31 0l712.16-712.12a8 8 0 000-11.32zM332 512a176 176 0 01258.88-155.28l-48.62 48.62a112.08 112.08 0 00-140.92 140.92l-48.62 48.62A175.09 175.09 0 01332 512z" />
+            <path d="M942.2 486.2Q889.4 375 816.51 304.85L672.37 449A176.08 176.08 0 01445 676.37L322.74 798.63Q407.82 838 512 838q288.3 0 430.2-300.3a60.29 60.29 0 000-51.5z" />
+        </svg>
+    );
+}
+
+export function IconDelete(props: React.SVGProps<SVGSVGElement>) {
+    return (
+        <svg
+            viewBox="0 0 1024 1024"
+            fill="currentColor"
+            height="1em"
+            width="1em"
+            {...props}
+        >
+            <path d="M360 184h-8c4.4 0 8-3.6 8-8v8h304v-8c0 4.4 3.6 8 8 8h-8v72h72v-80c0-35.3-28.7-64-64-64H352c-35.3 0-64 28.7-64 64v80h72v-72zm504 72H160c-17.7 0-32 14.3-32 32v32c0 4.4 3.6 8 8 8h60.4l24.7 523c1.6 34.1 29.8 61 63.9 61h454c34.2 0 62.3-26.8 63.9-61l24.7-523H888c4.4 0 8-3.6 8-8v-32c0-17.7-14.3-32-32-32zM731.3 840H292.7l-24.2-512h487l-24.2 512z" />
+        </svg>
+    );
+}
+
+export function IconAngleAcute(props: React.SVGProps<SVGSVGElement>) {
+    return (
+        <svg
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            height="1em"
+            width="1em"
+            {...props}
+        >
+            <path d="M20 19H4.09L14.18 4.43l1.64 1.14-4.54 6.56c1.61.83 2.72 2.49 2.72 4.41 0 .16 0 .31-.03.46H20v2M7.91 17h4.05c.04-.15.04-.3.04-.46 0-1.26-.76-2.32-1.86-2.76L7.91 17z" />
+        </svg>
+    );
+}
+
+export function IconTabUnselected(props: React.SVGProps<SVGSVGElement>) {
+    return (
+        <svg
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            height="1em"
+            width="1em"
+            {...props}
+        >
+            <path d="M1 9h2V7H1v2m0 4h2v-2H1v2m0-8h2V3a2 2 0 00-2 2m8 16h2v-2H9v2m-8-4h2v-2H1v2m2 4v-2H1a2 2 0 002 2M21 3h-8v6h10V5a2 2 0 00-2-2m0 14h2v-2h-2v2M9 5h2V3H9v2M5 21h2v-2H5v2M5 5h2V3H5v2m16 16a2 2 0 002-2h-2v2m0-8h2v-2h-2v2m-8 8h2v-2h-2v2m4 0h2v-2h-2v2z" />
+        </svg>
+    );
+}
+
+export function IconUndo(props: React.SVGProps<SVGSVGElement>) {
+    return (
+        <svg
+            fill="none"
+            viewBox="0 0 24 24"
+            height="1em"
+            width="1em"
+            {...props}
+        >
+            <path
+                fill="currentColor"
+                d="M5.34 4.468h2v2.557a7 7 0 11-1.037 10.011l1.619-1.185a5 5 0 10.826-7.384h2.591v2h-6v-6z"
+            />
+        </svg>
+    );
+}
+
+export function IconArrowAutofitWidth(props: React.SVGProps<SVGSVGElement>) {
+    return (
+        <svg
+            fill="none"
+            stroke="currentColor"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            viewBox="0 0 24 24"
+            height="1em"
+            width="1em"
+            {...props}
+        >
+            <path stroke="none" d="M0 0h24v24H0z" />
+            <path d="M4 12V6a2 2 0 012-2h12a2 2 0 012 2v6M10 18H3M21 18h-7M6 15l-3 3 3 3M18 15l3 3-3 3" />
+        </svg>
+    );
+}

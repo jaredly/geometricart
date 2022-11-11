@@ -206,6 +206,7 @@ const RenderPathMemo = ({
         const common = {
             key: `line-${i}`,
             stroke: color,
+            opacity: line.opacity,
             strokeDasharray: line.dash
                 ? line.dash.map((d) => ((d / 100) * zoom).toFixed(2)).join(' ')
                 : undefined,
@@ -224,7 +225,7 @@ const RenderPathMemo = ({
                   }
                 : {},
             ...handlers(null),
-            strokeWidth: line.width ? (line.width / 100) * zoom : 0,
+            strokeWidth: line.width ? (line.width / 100) * zoom : 2,
             onMouseDown: onClick
                 ? (evt: React.MouseEvent) => evt.preventDefault()
                 : undefined,

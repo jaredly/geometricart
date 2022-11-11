@@ -53,15 +53,21 @@ export const HistoryPlayback = ({ state }: { state: State }) => {
     } = state.animations.config;
 
     const originalSize = 1000;
-    let h = bounds
-        ? makeEven((bounds.y2 - bounds.y1) * state.view.zoom + crop * 2)
-        : originalSize;
-    let w = bounds
-        ? makeEven((bounds.x2 - bounds.x1) * state.view.zoom + crop * 2)
-        : originalSize;
+    // let h = bounds
+    //     ? makeEven((bounds.y2 - bounds.y1) * state.view.zoom + crop * 2)
+    //     : originalSize;
+    // let w = bounds
+    //     ? makeEven((bounds.x2 - bounds.x1) * state.view.zoom + crop * 2)
+    //     : originalSize;
+    let h = originalSize;
+    let w = originalSize;
 
-    let dx = bounds ? (bounds.x1 + bounds.x2) / 2 : 0;
-    let dy = bounds ? (bounds.y1 + bounds.y2) / 2 : 0;
+    // let dx = bounds ? (bounds.x1 + bounds.x2) / 2 : 0;
+    // let dy = bounds ? (bounds.y1 + bounds.y2) / 2 : 0;
+    let dx = -originalSize / 2;
+    let dy = -originalSize / 2;
+
+    let inputRef = useRef<HTMLInputElement>(null);
 
     React.useEffect(() => {
         if (!canvas.current) {
@@ -81,6 +87,10 @@ export const HistoryPlayback = ({ state }: { state: State }) => {
             null,
         ).then(() => {
             ctx.restore();
+            if (state.view.texture) {
+                const size = Math.max(w * 2 * zoom, h * 2 * zoom);
+                renderTexture(state.view.texture, size, size, ctx);
+            }
         });
     }, [state, w, h, dx, dy, zoom, backgroundAlpha, current]);
 
@@ -100,7 +110,7 @@ export const HistoryPlayback = ({ state }: { state: State }) => {
                 style={{
                     width: w * zoom,
                     height: h * zoom,
-                    outline: '1px solid white',
+                    outline: '1px solid #333',
                     margin: 16,
                 }}
             />
@@ -117,6 +127,7 @@ export const HistoryPlayback = ({ state }: { state: State }) => {
                                 current,
                                 preimage,
                                 log,
+                                inputRef.current,
                             );
                         } else {
                             stopped.current = true;
@@ -131,15 +142,16 @@ export const HistoryPlayback = ({ state }: { state: State }) => {
 
                 <input
                     type="range"
+                    ref={inputRef}
                     value={current}
                     max={histories.length - 1}
                     onChange={(e) => setCurrent(parseInt(e.target.value))}
                     style={{ width: '500px' }}
                 />
             </div>
-            <div style={{ maxWidth: 500 }}>
+            {/* <div style={{ maxWidth: 500 }}>
                 {JSON.stringify(histories[current].action)}
-            </div>
+            </div> */}
             <button onClick={() => setPreimage(!preimage)}>
                 {!preimage
                     ? 'Image everything in advance'
@@ -169,13 +181,13 @@ export function getHistoriesList(state: State, overrideZoom?: boolean) {
         });
         current = undo({ ...current, history }, action);
 
-        Object.entries(current.paths).forEach(([id, path]) => {
-            path.style.lines.forEach((line) => {
-                if (line?.width === 3) {
-                    line.width = 1;
-                }
-            });
-        });
+        // Object.entries(current.paths).forEach(([id, path]) => {
+        //     path.style.lines.forEach((line) => {
+        //         if (line?.width === 3) {
+        //             // line.width = 1;
+        //         }
+        //     });
+        // });
     }
     return states;
 }
@@ -218,6 +230,14 @@ export function simplifyHistory(history: StateAndAction[]): StateAndAction[] {
             action.type === 'pending:extent'
         ) {
             continue;
+        }
+        // Collapse all view updates.
+        if (action.type === 'view:update' && result.length) {
+            const last = result[result.length - 1];
+            if (last.action?.type === 'view:update') {
+                result[result.length - 1] = history[i];
+                continue;
+            }
         }
         result.push(history[i]);
     }

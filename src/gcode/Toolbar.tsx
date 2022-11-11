@@ -26,13 +26,10 @@ export function Toolbar({
     h: number;
     PathKit: PathKit;
 }) {
-    // const [url, setUrl] = useState(
-    //     null as null | { time: number; url: string; text: string },
-    // );
     const [laserUrl, setLaserUrl] = useState(
         null as null | { svg: string; url: string },
     );
-    const [showGcode, setShowGcode] = useState(false);
+    const [showGcode, setShowGcode] = useState(true);
 
     const generated = React.useMemo(() => {
         if (!showGcode) {
@@ -40,7 +37,13 @@ export function Toolbar({
         }
 
         try {
+            const now = Date.now();
             const { time, text } = generateGcode(state, PathKit);
+            console.log(
+                `Gcode generation, ${((Date.now() - now) / 1000).toFixed(
+                    2,
+                )}sec`,
+            );
             const blob = new Blob([text + gcodeStateSuffix(state)], {
                 type: 'text/plain',
             });
@@ -49,7 +52,15 @@ export function Toolbar({
             console.error(err);
             return null;
         }
-    }, [state, bounds, w, h, showGcode]);
+    }, [
+        state.view,
+        state.paths,
+        state.pathGroups,
+        state.gcode,
+        state.meta,
+        bounds,
+        showGcode,
+    ]);
 
     return (
         <div>
@@ -59,10 +70,9 @@ export function Toolbar({
                         if (!bounds) {
                             throw new Error('no bounds');
                         }
-                        const blob = new Blob(
-                            [wrapSvg(bounds, state, w, h, svg)],
-                            { type: 'image/svg+xml' },
-                        );
+                        const blob = new Blob([wrapSvg(bounds, state, svg)], {
+                            type: 'image/svg+xml',
+                        });
                         const url = URL.createObjectURL(blob);
                         setLaserUrl({ svg, url });
                     });
@@ -70,31 +80,12 @@ export function Toolbar({
             >
                 Generate Laser
             </button>
-            <button
-                onClick={() => {
-                    setShowGcode(!showGcode);
-                    // const { time, text } = generateGcode(state, PathKit);
-                    // const blob = new Blob(
-                    //     [
-                    //         text +
-                    //             '\n' +
-                    //             ';; ** STATE **\n;; ' +
-                    //             JSON.stringify({
-                    //                 ...state,
-                    //                 history: initialState.history,
-                    //             }),
-                    //     ],
-                    //     { type: 'text/plain' },
-                    // );
-                    // setUrl({ time, url: URL.createObjectURL(blob), text });
-                }}
-            >
+            <button onClick={() => setShowGcode(!showGcode)}>
                 Generate gcode
             </button>
             {showGcode && generated ? (
                 <>
                     <a
-                        // onClick={() => setUrl(null)}
                         href={generated.url}
                         style={{ color: 'white', margin: '0 8px' }}
                         download={
@@ -122,8 +113,7 @@ export function Toolbar({
             ) : null}
             <div>
                 {laserUrl && bounds
-                    ? // <div dangerouslySetInnerHTML={{ __html: laserUrl.svg }} />
-                      showLaserSvg(bounds, state, w, h, laserUrl)
+                    ? showLaserSvg(bounds, state, w, h, laserUrl)
                     : null}
             </div>
             {showGcode && generated ? (
@@ -165,13 +155,7 @@ export function showLaserSvg(
     );
 }
 
-export function wrapSvg(
-    bounds: Bounds,
-    state: State,
-    w: number,
-    h: number,
-    svg: string,
-): BlobPart {
+export function wrapSvg(bounds: Bounds, state: State, svg: string): BlobPart {
     return `<svg
         xmlns="http://www.w3.org/2000/svg"
         width="${
@@ -180,14 +164,16 @@ export function wrapSvg(
         height="${
             pxToMM(bounds.y2 - bounds.y1, state.meta.ppi).toFixed(1) + 'mm'
         }"
-        viewBox="0 0 ${w} ${h}"
+        viewBox="0 0 ${bounds.x2 - bounds.x1} ${bounds.y2 - bounds.y1}"
     >
         <path
             d="${svg}"
             stroke="red"
             fill="none"
             strokeWidth="2"
-            transform="translate(${w / 2},${h / 2})"
+            transform="translate(${(bounds.x2 - bounds.x1) / 2},${
+        (bounds.y2 - bounds.y1) / 2
+    })"
         />
     </svg>`;
 }

@@ -1,9 +1,23 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { paletteColor } from '../editor/RenderPath';
 import { makeDepths, pxToMM } from './generateGcode';
-import { Fill, GCodePath, State } from '../types';
+import { GCodePath, State } from '../types';
 import { FillColors, LineColors } from './GCodeEditor';
 import { Int } from '../editor/Forms';
+import {
+    CheckmarkIcon,
+    IconAngleAcute,
+    IconArrowAutofitWidth,
+    IconEye,
+    IconEyeInvisible,
+    IconSpeedtest,
+    IconTabUnselected,
+    IconUndo,
+    IconVerticalAlignBottom,
+    IconVerticalAlignMiddle,
+    IconVerticalAlignTop,
+} from '../icons/Icon';
+import { Tooltip } from '../utils/Tooltip';
 
 const ColorsSelect = ({
     value,
@@ -82,16 +96,22 @@ export const ItemEdit = ({
     const selected = colors.line[current.color];
 
     return (
-        <div>
+        <div
+            style={{
+                display: 'contents',
+                color: item.disabled ? '#777' : 'white',
+            }}
+        >
             <button
                 onClick={() => onChange({ ...item, disabled: !item.disabled })}
                 style={{
                     border: 'none',
-                    backgroundColor: item.disabled ? '#aaa' : 'transparent',
+                    backgroundColor: 'transparent',
                     cursor: 'pointer',
+                    color: 'inherit',
                 }}
             >
-                👁
+                {item.disabled ? <IconEyeInvisible /> : <IconEye />}
             </button>
             <ColorsSelect
                 onChange={(color) => setEdited({ ...current, color })}
@@ -125,12 +145,33 @@ export const ItemEdit = ({
                     {pxToMM(selected.width / 100, state.meta.ppi).toFixed(2) +
                         'mm'}
                 </span>
-            ) : null}
-            <span style={{ marginRight: 8 }} /> F
+            ) : (
+                <ButtonToggle
+                    button={(_, toggle) => (
+                        <IconArrowAutofitWidth onClick={toggle} />
+                    )}
+                    startOpen
+                    body={
+                        <Float
+                            style={{
+                                marginLeft: -8,
+                                fontSize: '80%',
+                            }}
+                            value={current.diameter}
+                            onChange={(diameter) =>
+                                diameter != null
+                                    ? setEdited({ ...current, diameter })
+                                    : null
+                            }
+                        />
+                    }
+                />
+            )}
+            <span style={{ marginRight: 8 }} />
+            <IconSpeedtest />
             <Float
                 style={{
-                    marginRight: 16,
-                    marginLeft: 4,
+                    marginLeft: -8,
                     fontSize: '80%',
                 }}
                 value={current.speed}
@@ -139,137 +180,210 @@ export const ItemEdit = ({
                     speed != null ? setEdited({ ...current, speed }) : null
                 }
             />
-            Start
-            <Float
-                style={{
-                    // marginRight: 16,
-                    marginLeft: 4,
-                    fontSize: '80%',
-                    width: 30,
-                }}
-                value={current.start ?? 0}
-                placeholder="Start"
-                onChange={(start) =>
-                    start != null ? setEdited({ ...current, start }) : null
-                }
-            />
-            Depth
-            <Float
-                style={{
-                    // marginRight: 16,
-                    marginLeft: 4,
-                    fontSize: '80%',
-                    width: 30,
-                }}
-                value={current.depth}
-                placeholder="Depth"
-                onChange={(depth) =>
-                    depth != null ? setEdited({ ...current, depth }) : null
-                }
-            />
-            /
-            <Float
-                style={{
-                    marginRight: 4,
-                    marginLeft: 4,
-                    fontSize: '80%',
-                    width: 30,
-                }}
-                value={current.passDepth}
-                placeholder="Depth"
-                onChange={(passDepth) => setEdited({ ...current, passDepth })}
-            />
-            <span
-                style={{
-                    fontSize: '50%',
-                    marginRight: 8,
-                }}
-            >
-                (
-                {
-                    makeDepths(current.start, current.depth, current.passDepth)
-                        .length
-                }{' '}
-                p)
-            </span>
-            {selected?.width ? (
-                current.tabs ? (
-                    <Tabs
-                        tabs={current.tabs}
-                        onChange={(tabs) => setEdited({ ...current, tabs })}
-                    />
-                ) : (
-                    <button
-                        onClick={() =>
-                            setEdited({
-                                ...current,
-                                tabs: { count: 3, depth: 1, width: 3 },
-                            })
+            <ButtonToggle
+                button={(_, toggle) => (
+                    <IconVerticalAlignTop onClick={toggle} />
+                )}
+                startOpen={current.start != null && current.start !== 0}
+                body={
+                    <Float
+                        style={{
+                            // marginRight: 16,
+                            marginLeft: -8,
+                            fontSize: '80%',
+                            width: 30,
+                        }}
+                        value={current.start ?? 0}
+                        placeholder="Start"
+                        onChange={(start) =>
+                            start != null
+                                ? setEdited({ ...current, start })
+                                : null
                         }
-                    >
-                        Tabs
-                    </button>
-                )
-            ) : null}
-            {edited != null ? (
-                <button
-                    onClick={() => {
-                        onChange(edited);
-                        setEdited(null);
+                    />
+                }
+            />
+            <IconVerticalAlignBottom
+                style={{
+                    color: current.vbitAngle ? '#a77' : 'inherit',
+                }}
+            />
+            <Tooltip
+                text={
+                    current.vbitAngle
+                        ? `Depth is auto-calculated based on width & vbit angle`
+                        : null
+                }
+            >
+                <Float
+                    style={{
+                        marginLeft: -8,
+                        fontSize: '80%',
+                        width: 30,
+                        color: current.vbitAngle ? '#a77' : 'inherit',
                     }}
-                >
-                    Save
-                </button>
-            ) : null}
+                    value={current.depth}
+                    // placeholder="Depth"
+                    onChange={(depth) =>
+                        depth != null ? setEdited({ ...current, depth }) : null
+                    }
+                />
+            </Tooltip>
+            <ButtonToggle
+                button={(_, toggle) => (
+                    <IconVerticalAlignMiddle onClick={toggle} />
+                )}
+                startOpen={current.passDepth != null && current.passDepth !== 0}
+                body={
+                    <span>
+                        <Float
+                            style={{
+                                marginRight: 4,
+                                marginLeft: -4,
+                                fontSize: '80%',
+                                width: 30,
+                            }}
+                            value={current.passDepth}
+                            onChange={(passDepth) =>
+                                setEdited({ ...current, passDepth })
+                            }
+                        />
+                        <span
+                            style={{
+                                fontSize: '50%',
+                                marginRight: 8,
+                            }}
+                        >
+                            (
+                            {
+                                makeDepths(
+                                    current.start,
+                                    current.depth,
+                                    current.passDepth,
+                                ).length
+                            }{' '}
+                            p)
+                        </span>
+                    </span>
+                }
+            />
+            {selected?.width ? (
+                <ButtonToggle
+                    button={(_, toggle) => <IconAngleAcute onClick={toggle} />}
+                    startOpen={item.vbitAngle != null}
+                    body={
+                        <Float
+                            style={{
+                                marginRight: 4,
+                                marginLeft: -4,
+                                fontSize: '80%',
+                                width: 30,
+                            }}
+                            value={current.vbitAngle}
+                            onChange={(vbitAngle) =>
+                                setEdited({ ...current, vbitAngle })
+                            }
+                        />
+                    }
+                />
+            ) : (
+                <span />
+            )}
+            {selected?.width ? (
+                <ButtonToggle
+                    button={(_, toggle) => (
+                        <IconTabUnselected onClick={toggle} />
+                    )}
+                    startOpen={current.tabs != null}
+                    body={
+                        <Tabs
+                            tabs={current.tabs}
+                            onChange={(tabs) => setEdited({ ...current, tabs })}
+                        />
+                    }
+                />
+            ) : (
+                <span />
+            )}
+            {edited != null ? (
+                <span>
+                    <CheckmarkIcon
+                        style={{ cursor: 'pointer', margin: 2 }}
+                        onClick={() => {
+                            onChange(edited);
+                            setEdited(null);
+                        }}
+                    />
+                    <IconUndo
+                        style={{ cursor: 'pointer', margin: 2 }}
+                        onClick={() => {
+                            setEdited(null);
+                        }}
+                    />
+                </span>
+            ) : (
+                <span />
+            )}
         </div>
     );
 };
+
+const tabsToString = (tabs?: Tabs) =>
+    tabs ? `${tabs.count},${tabs.depth},${tabs.width}` : ',,';
 
 type Tabs = NonNullable<GCodePath['tabs']>;
 const Tabs = ({
     tabs,
     onChange,
 }: {
-    tabs: Tabs;
-    onChange: (tabs: Tabs) => void;
+    tabs?: Tabs;
+    onChange: (tabs?: Tabs) => void;
 }) => {
+    const [text, setText] = useState(tabsToString(tabs));
+    useEffect(() => {
+        if (tabsToString(tabs) !== text) {
+            setText(tabsToString(tabs));
+        }
+    }, [tabs]);
+    const commit = () => {
+        if (text.trim() === '' && tabs) {
+            onChange(undefined);
+            return;
+        }
+        const [count, depth, width] = text.split(',').map(Number);
+        if (
+            !isNaN(count) &&
+            !isNaN(depth) &&
+            !isNaN(width) &&
+            (count !== tabs?.count ||
+                depth !== tabs?.depth ||
+                width !== tabs?.width)
+        ) {
+            onChange({ count, depth, width });
+        }
+    };
     return (
-        <span>
-            <span style={{ fontSize: '50%' }}>Tabs</span>
-            <Int
-                value={tabs.count}
-                placeholder={'Count'}
-                onChange={(count) =>
-                    count != null ? onChange({ ...tabs, count }) : null
-                }
-            />
-            <Float
+        <Tooltip text="Count, Height, Width">
+            <input
+                value={text}
+                onChange={(e) => setText(e.target.value)}
                 style={{
-                    marginRight: 4,
-                    marginLeft: 4,
-                    fontSize: '80%',
-                    width: 30,
+                    background: 'none',
+                    border: 'none',
+                    borderBottom: '1px solid #aaa',
+                    color: 'inherit',
+                    width: 40,
                 }}
-                value={tabs.depth}
-                placeholder="Depth"
-                onChange={(depth) =>
-                    depth != null ? onChange({ ...tabs, depth }) : null
-                }
-            />
-            <Float
-                style={{
-                    marginRight: 4,
-                    marginLeft: 4,
-                    fontSize: '80%',
-                    width: 30,
+                onKeyDown={(evt) => {
+                    if (evt.key === 'Enter') {
+                        commit();
+                    }
                 }}
-                value={tabs.width}
-                placeholder="Width"
-                onChange={(width) =>
-                    width != null ? onChange({ ...tabs, width }) : null
-                }
+                onBlur={() => {
+                    commit();
+                }}
             />
-        </span>
+        </Tooltip>
     );
 };
 
@@ -300,7 +414,34 @@ export const Float = ({
                 }
             }}
             onBlur={() => setText(null)}
-            style={{ width: 40, textAlign: 'center', ...style }}
+            style={{
+                width: 40,
+                background: 'transparent',
+                color: 'inherit',
+                border: 'none',
+                padding: 0,
+                textAlign: 'center',
+                borderBottom: '1px solid #aaa',
+                ...style,
+            }}
         />
+    );
+};
+
+const ButtonToggle = ({
+    button,
+    body,
+    startOpen,
+}: {
+    button: (show: boolean, toggle: () => void) => JSX.Element;
+    body: React.ReactNode;
+    startOpen?: boolean;
+}) => {
+    const [show, setShow] = React.useState(!!startOpen);
+    return (
+        <span>
+            {button(show, () => setShow(!show))}
+            {show ? body : null}
+        </span>
     );
 };

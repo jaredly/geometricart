@@ -1,4 +1,60 @@
 
+Soooo what if I rewrote it all?
+Would that be any good?
+
+Things I would want:
+
+- right sidebar with list of all elements, in their groups I guess
+- would allow explicit ordering, "send to back" etc.
+- reified multiples of guides, sure.
+- use pathkit for everything
+- [x] default line width is "0", which is a special thing meaning
+	we're zoom-independent
+- [ ] make a "get palette colors from image" dealio.
+
+eh I guess that doesn't necessarily mean I have to rewrite everything.
+
+
+
+
+# Digital Watercolor
+
+right
+https://trang.io/watercolor/
+
+
+
+
+
+
+
+### 
+
+
+So, I think I want another guide type, and it's
+"split". Like, make N points equally dividing the two anchor points.
+Can use "extent" as the dealio.
+
+So I did it a little bit, and I don't even know if I like it all that much?
+We'll see.
+
+
+# VBITT
+
+- [x] make tools, so you can have different paths with different tools
+	- [-] I think I want to just use selections directly, instead of colors & widths?
+		- eh, maybe some time.
+- [-] I want a way to indicate that the diameter of the tool you've selected doesn't match the line width.
+	don't need this?
+- [x] 3d render, please add lighting!
+	- ok I need to calculate normals, should be fine.
+
+- [x] allow specify the tool size for infils
+- [ ] anddddd then do an svg diff on the fills, so we can do carve-outs!
+
+- have a setting that is "I'm generating this for snapmaker"
+	that does M3P100 and M3P0 around M0 tool changes.
+
 # Let's do a "making of" animation.
 
 - go through undo/redo, and screenshot each step.

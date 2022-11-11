@@ -7,7 +7,10 @@ import { RoughGenerator } from 'roughjs/bin/generator';
 import { Action } from '../state/Action';
 import { PendingMirror, useCurrent } from '../App';
 import { calcAllIntersections } from '../rendering/calcAllIntersections';
-import { calculateGuideElements } from '../rendering/calculateGuideElements';
+import {
+    calculateGuideElements,
+    geomPoints,
+} from '../rendering/calculateGuideElements';
 import { DrawPathState } from './DrawPath';
 import { findSelection, pathToPrimitives } from './findSelection';
 import { getMirrorTransforms, scale } from '../rendering/getMirrorTransforms';
@@ -76,7 +79,7 @@ export type Props = {
     isTouchScreen: boolean;
     width: number;
     height: number;
-    innerRef: (node: SVGSVGElement | null) => unknown;
+    innerRef?: (node: SVGSVGElement | null) => unknown;
     pendingMirror: PendingMirror | null;
     pendingDuplication: null | PendingDuplication;
     setPendingDuplication: (b: null | PendingDuplication) => void;
@@ -518,22 +521,28 @@ export const Canvas = ({
     const pendingPath = React.useState(null as null | DrawPathState);
 
     const guidePrimitives = React.useMemo(() => {
-        return primitivesForElementsAndPaths(
-            calculateGuideElements(state.guides, mirrorTransforms),
-            Object.keys(state.paths)
-                .filter(
-                    (k) =>
-                        !state.paths[k].hidden &&
-                        (!state.paths[k].group ||
-                            !state.pathGroups[state.paths[k].group!].hide),
-                )
-                .map((k) => state.paths[k]),
-        );
+        const elements = calculateGuideElements(state.guides, mirrorTransforms);
+        const points = elements.flatMap((el) => geomPoints(el.geom));
+        return {
+            primitives: primitivesForElementsAndPaths(
+                elements,
+                Object.keys(state.paths)
+                    .filter(
+                        (k) =>
+                            !state.paths[k].hidden &&
+                            (!state.paths[k].group ||
+                                !state.pathGroups[state.paths[k].group!].hide),
+                    )
+                    .map((k) => state.paths[k]),
+            ),
+            points,
+        };
     }, [state.guides, state.paths, state.pathGroups, mirrorTransforms]);
 
     const allIntersections = React.useMemo(() => {
         const { coords: fromGuides, seenCoords } = calcAllIntersections(
-            guidePrimitives.map((p) => p.prim),
+            guidePrimitives.primitives.map((p) => p.prim),
+            guidePrimitives.points,
         );
         return fromGuides;
     }, [guidePrimitives, state.paths, state.pathGroups]);
@@ -563,7 +572,9 @@ export const Canvas = ({
             viewBox={`0 0 ${width} ${height}`}
             xmlns="http://www.w3.org/2000/svg"
             ref={(node) => {
-                innerRef(node);
+                if (innerRef) {
+                    innerRef(node);
+                }
                 ref.current = node;
             }}
             {...mouseHandlers}
@@ -696,7 +707,7 @@ export const Canvas = ({
                         width={width}
                         height={height}
                         allIntersections={allIntersections}
-                        guidePrimitives={guidePrimitives}
+                        guidePrimitives={guidePrimitives.primitives}
                         zooming={zooming}
                         view={view}
                         disableGuides={!!pendingMirror}
@@ -819,20 +830,47 @@ export const Canvas = ({
                         left: 0,
                     }}
                 >
-                    <div
-                        css={{
-                            padding: 20,
-                            backgroundColor: 'rgba(255,255,255,0.3)',
-                        }}
-                        onClick={() => setTmpView(null)}
-                    >
-                        Reset zoom
-                        {` ${pos.x.toFixed(4)},${pos.y.toFixed(4)}`}
+                    <div css={{ display: 'flex' }}>
+                        <div
+                            css={{
+                                padding: 10,
+                                backgroundColor: 'rgba(255,255,255,0.3)',
+                                cursor: 'pointer',
+                                ':hover': {
+                                    backgroundColor: 'rgba(255,255,255,0.5)',
+                                },
+                            }}
+                            onClick={() => setTmpView(null)}
+                        >
+                            Reset z/p
+                        </div>
+                        <div
+                            css={{
+                                padding: 10,
+                                backgroundColor: 'rgba(255,255,255,0.3)',
+                                cursor: 'pointer',
+                                ':hover': {
+                                    backgroundColor: 'rgba(255,255,255,0.5)',
+                                },
+                            }}
+                            onClick={() => {
+                                setTmpView({
+                                    ...state.view,
+                                    zoom: tmpView.zoom,
+                                });
+                            }}
+                        >
+                            Just pan
+                        </div>
                     </div>
                     <div
                         css={{
-                            padding: 20,
+                            padding: 10,
                             backgroundColor: 'rgba(255,255,255,0.3)',
+                            cursor: 'pointer',
+                            ':hover': {
+                                backgroundColor: 'rgba(255,255,255,0.5)',
+                            },
                         }}
                         onClick={() => {
                             dispatch({
@@ -842,7 +880,7 @@ export const Canvas = ({
                             setTmpView(null);
                         }}
                     >
-                        Commit zoom & pan
+                        Commit
                     </div>
                 </div>
             ) : null}
@@ -965,7 +1003,7 @@ export const Canvas = ({
                     <PendingPathControls
                         pendingPath={pendingPath}
                         allIntersections={allIntersections}
-                        guidePrimitives={guidePrimitives}
+                        guidePrimitives={guidePrimitives.primitives}
                         onComplete={(
                             isClip: boolean,
                             origin: Coord,

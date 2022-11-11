@@ -99,7 +99,10 @@ export const getInCircle = (p1: Coord, p2: Coord, p3: Coord) => {
     return { center: mid, r };
 };
 
-export const geomToPrimitives = (geom: GuideGeom): Array<Primitive> => {
+export const geomToPrimitives = (
+    geom: GuideGeom,
+    limit?: boolean,
+): Array<Primitive> => {
     switch (geom.type) {
         case 'CircumCircle': {
             const got = getCircumCircle(geom.p1, geom.p2, geom.p3);
@@ -117,8 +120,21 @@ export const geomToPrimitives = (geom: GuideGeom): Array<Primitive> => {
         }
         case 'Perpendicular': {
             const t1 = angleTo(geom.p1, geom.p2) + Math.PI / 2;
+            if (limit) {
+                const mag = dist(geom.p1, geom.p2);
+                return [
+                    lineToSlope(
+                        push(geom.p1, t1, mag),
+                        push(geom.p1, t1, -mag),
+                        true,
+                    ),
+                ];
+            }
             const p2 = push(geom.p1, t1, 1);
             return [lineToSlope(geom.p1, p2, false)];
+        }
+        case 'Split': {
+            return [lineToSlope(geom.p1, geom.p2, true)];
         }
         case 'Line': {
             if (geom.extent) {

@@ -8,15 +8,29 @@ import { Toolbar } from './Toolbar';
 import { Settings } from './Settings';
 import { ItemEdit } from './ItemEdit';
 import PathKitInit, { PathKit } from 'pathkit-wasm';
+import { Canvas } from '../editor/Canvas';
+import { IconDelete } from '../icons/Icon';
+
+const many = (value: string, m: number) => {
+    const values: string[] = [];
+    for (let i = 0; i < m; i++) {
+        values.push(value);
+    }
+    return values;
+};
+
+declare let process: any;
 
 export const GCodeEditor = ({
     state,
     dispatch,
+    canvasProps,
 }: {
     state: State;
     dispatch: React.Dispatch<Action>;
+    canvasProps: React.ComponentProps<typeof Canvas>;
 }) => {
-    const canvas = React.useRef(null as null | HTMLCanvasElement);
+    // const canvas = React.useRef(null as null | HTMLCanvasElement);
 
     const bounds = React.useMemo(
         () => findBoundingRect(state),
@@ -26,38 +40,27 @@ export const GCodeEditor = ({
     const [pathKit, setPathKit] = React.useState(null as null | PathKit);
     useEffect(() => {
         PathKitInit({
-            locateFile: (file) => '/node_modules/pathkit-wasm/bin/' + file,
+            locateFile: (file) =>
+                (process.env.NODE_ENV === 'development'
+                    ? '/node_modules/pathkit-wasm/bin/'
+                    : '/') + file,
         }).then((pk) => {
             setPathKit(pk);
         });
     }, []);
 
-    const originalSize = 1000;
+    const originalSize = 700;
 
-    let h = bounds ? (bounds.y2 - bounds.y1) * state.view.zoom : originalSize;
-    let w = bounds ? (bounds.x2 - bounds.x1) * state.view.zoom : originalSize;
-    let dx = bounds ? (bounds.x1 + bounds.x2) / 2 : 0;
-    let dy = bounds ? (bounds.y1 + bounds.y2) / 2 : 0;
+    const aspect = bounds
+        ? (bounds.y2 - bounds.y1) / (bounds.x2 - bounds.x1)
+        : 1;
 
-    React.useEffect(() => {
-        if (!canvas.current) {
-            return;
-        }
-
-        const ctx = canvas.current.getContext('2d')!;
-        ctx.save();
-        canvasRender(
-            ctx,
-            { ...state, view: { ...state.view, center: { x: -dx, y: -dy } } },
-            w * 2,
-            h * 2,
-            2,
-            {},
-            0,
-            null,
-        );
-        ctx.restore();
-    }, [state.paths, w, h, dx, dy]);
+    let h = aspect > 0 ? originalSize : originalSize * aspect;
+    let w = aspect > 0 ? originalSize / aspect : originalSize;
+    // let h = bounds ? (bounds.y2 - bounds.y1) * state.view.zoom : originalSize;
+    // let w = bounds ? (bounds.x2 - bounds.x1) * state.view.zoom : originalSize;
+    // let dx = bounds ? (bounds.x1 + bounds.x2) / 2 : 0;
+    // let dy = bounds ? (bounds.y1 + bounds.y2) / 2 : 0;
 
     const availableColors = useMemo(
         () => ({ line: findLineColors(state), fill: findFillColors(state) }),
@@ -67,27 +70,26 @@ export const GCodeEditor = ({
     return (
         <div style={{ display: 'flex' }}>
             <div>
-                <canvas
-                    ref={canvas}
-                    width={w * 2}
-                    height={h * 2}
-                    style={{
-                        width: w,
-                        height: h,
-                        maxHeight: '60vh',
-                        objectFit: 'contain',
-                    }}
-                />
+                <Canvas {...canvasProps} width={w} height={h} />
+
                 <div style={{ margin: 8 }}>
                     <Settings
                         state={state}
                         dispatch={dispatch}
                         bounds={bounds}
                     />
-                    <div style={{ margin: 16 }}>
+                    <div
+                        style={{
+                            margin: 16,
+                            display: 'grid',
+                            gridTemplateColumns: many('max-content', 16).join(
+                                ' ',
+                            ),
+                        }}
+                    >
                         {state.gcode.items.map((item, i) => {
                             return (
-                                <div key={i} style={{ display: 'flex' }}>
+                                <div key={i} style={{ display: 'contents' }}>
                                     <UpDown
                                         i={i}
                                         dispatch={dispatch}
@@ -114,6 +116,12 @@ export const GCodeEditor = ({
                                         />
                                     )}
                                     <button
+                                        style={{
+                                            background: 'none',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            color: 'red',
+                                        }}
                                         onClick={() =>
                                             dispatch({
                                                 type: 'gcode:item:are',
@@ -124,7 +132,7 @@ export const GCodeEditor = ({
                                             })
                                         }
                                     >
-                                        Delete
+                                        <IconDelete />
                                     </button>
                                 </div>
                             );

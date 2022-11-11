@@ -1,4 +1,4 @@
-import { coordKey } from './calcAllIntersections';
+import { coordKey } from './coordKey';
 import { segmentKey } from './segmentKey';
 import { Coord, Segment } from '../types';
 

@@ -12,7 +12,7 @@ import { simplifyPath } from '../rendering/simplifyPath';
 import { lineToSlope, Primitive } from '../rendering/intersect';
 import { ensureClockwise } from '../rendering/pathToPoints';
 import { geomToPrimitives } from '../rendering/points';
-import { primitiveKey } from '../rendering/calcAllIntersections';
+import { primitiveKey } from '../rendering/coordKey';
 import { calculateInactiveGuideElements } from '../rendering/calculateGuideElements';
 import { dedupString } from '../rendering/findNextSegments';
 import { angleTo, dist, Matrix } from '../rendering/getMirrorTransforms';

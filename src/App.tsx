@@ -35,6 +35,7 @@ export const useCurrent = <T,>(value: T) => {
 
 export const toType: { [key: string]: GuideGeom['type'] } = {
     l: 'Line',
+    s: 'Split',
     c: 'Circle',
     a: 'AngleBisector',
     b: 'PerpendicularBisector',
@@ -197,8 +198,6 @@ export const App = ({ initialState }: { initialState: State }) => {
                 css={{
                     position: 'relative',
                     alignSelf: 'stretch',
-                    // overflow: 'auto',
-                    // padding: 32,
                     '@media (max-width: 1000px)': {
                         padding: 0,
                     },
@@ -207,7 +206,23 @@ export const App = ({ initialState }: { initialState: State }) => {
                 {screen === 'animate' ? (
                     <AnimationEditor state={state} dispatch={dispatch} />
                 ) : screen === 'gcode' ? (
-                    <GCodeEditor state={state} dispatch={dispatch} />
+                    <GCodeEditor
+                        state={state}
+                        dispatch={dispatch}
+                        canvasProps={{
+                            hover,
+                            setHover,
+                            pendingDuplication,
+                            setPendingDuplication,
+                            isTouchScreen,
+                            pendingMirror,
+                            setPendingMirror,
+                            state,
+                            dispatch,
+                            width: 100,
+                            height: 100,
+                        }}
+                    />
                 ) : screen === 'history' ? (
                     <HistoryPlayback state={state} />
                 ) : (

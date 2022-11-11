@@ -1,4 +1,4 @@
-import { coordKey } from './calcAllIntersections';
+import { coordKey } from './coordKey';
 import { closeEnough } from './clipPath';
 import { segmentKey } from './segmentKey';
 import { angleTo } from './getMirrorTransforms';

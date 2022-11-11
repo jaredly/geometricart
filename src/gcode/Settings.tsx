@@ -75,7 +75,7 @@ export function showBounds(
             {bounds
                 ? (pxToMM(bounds.y2 - bounds.y1, ppi) / 25).toFixed(2)
                 : 'unknown'}
-            "
+            " WARNING: Not final size
         </div>
     );
 }

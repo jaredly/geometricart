@@ -2,7 +2,7 @@ import * as React from 'react';
 import { calcSegmentsD } from '../editor/RenderPath';
 import { Segment } from '../types';
 import { register } from '../vest';
-import { coordKey } from './calcAllIntersections';
+import { coordKey } from './coordKey';
 import {
     addPrevsToSegments,
     collectRegions,

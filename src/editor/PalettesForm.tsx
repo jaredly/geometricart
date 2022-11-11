@@ -292,7 +292,7 @@ export function PalettesForm({
                             .map((m) => `#` + m);
                     } else {
                         parts = data
-                            .split(',')
+                            .split(/[,-\s]/g)
                             .map((m) =>
                                 m.trim().match(/^[0-9a-fA-F]{6}$/)
                                     ? '#' + m.trim()

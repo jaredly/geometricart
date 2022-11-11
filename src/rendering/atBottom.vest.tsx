@@ -249,6 +249,8 @@ const isAtBottom = (segment: SegmentWithPrev, coord: Coord) => {
           );
 };
 
+declare const __dirname: string;
+
 register<Pair, boolean>({
     id: 'atBottom',
     dir: __dirname,

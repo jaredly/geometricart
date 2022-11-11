@@ -1,4 +1,4 @@
-import { coordKey, numKey } from './calcAllIntersections';
+import { coordKey, numKey } from './coordKey';
 import { closeEnough } from './clipPath';
 import {
     cleanUpInsetSegments2,
