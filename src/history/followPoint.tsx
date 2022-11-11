@@ -1,5 +1,6 @@
 import { Coord } from '../types';
 import { wait, nextFrame, AnimateState } from './animateHistory';
+import { drawCursor } from './cursor';
 
 export async function followPoints(state: AnimateState, points: Coord[]) {
     for (let point of points) {
@@ -17,10 +18,7 @@ export async function followPoint(
     let dy = y - cursor.y;
     let dist = Math.sqrt(dx * dx + dy * dy);
     if (dist < 2) {
-        ctx.fillStyle = 'red';
-        ctx.beginPath();
-        ctx.arc(x, y, 10, 0, Math.PI * 2);
-        ctx.fill();
+        drawCursor(ctx, x, y);
         return await wait(300);
     }
     while (dist > 2) {
@@ -41,10 +39,8 @@ export async function followPoint(
             await extra(cursor);
         }
 
-        ctx.fillStyle = 'red';
-        ctx.beginPath();
-        ctx.arc(cursor.x, cursor.y, 10, 0, Math.PI * 2);
-        ctx.fill();
+        drawCursor(ctx, cursor.x, cursor.y);
+
         await nextFrame();
         dx = x - cursor.x;
         dy = y - cursor.y;

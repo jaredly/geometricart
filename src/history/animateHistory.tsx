@@ -7,6 +7,7 @@ import { Action } from '../state/Action';
 import React from 'react';
 import { followPoint } from './followPoint';
 import { animateAction } from './animateAction';
+import { drawCursor } from './cursor';
 
 export const nextFrame = () => new Promise(requestAnimationFrame);
 export const wait = (time: number) =>
@@ -135,10 +136,7 @@ export const animateHistory = async (
         }
 
         // Draw the cursor
-        ctx.fillStyle = 'red';
-        ctx.beginPath();
-        ctx.arc(state.cursor.x, state.cursor.y, 10, 0, Math.PI * 2);
-        ctx.fill();
+        drawCursor(ctx, state.cursor.x, state.cursor.y);
 
         await nextFrame();
     }

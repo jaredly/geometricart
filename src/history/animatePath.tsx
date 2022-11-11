@@ -61,7 +61,7 @@ export async function animatePath(
         }
 
         ctx.setLineDash([]);
-        ctx.strokeStyle = 'red';
+        ctx.strokeStyle = 'white';
         ctx.lineWidth = 10;
         ctx.beginPath();
         tracePath(

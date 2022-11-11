@@ -11,6 +11,7 @@ import { pendingGuide } from '../editor/RenderPendingGuide';
 import { geomToPrimitives } from '../rendering/points';
 import { renderPrimitive } from '../rendering/CanvasRender';
 import { transformGuideGeom } from '../rendering/calculateGuideElements';
+import { drawPastCursor } from './cursor';
 
 export async function animateGuide(
     prev: State,
@@ -93,10 +94,7 @@ export async function animateGuide(
             });
 
             pending.points.forEach((poing) => {
-                ctx.fillStyle = 'red';
-                ctx.beginPath();
-                ctx.arc(poing.x * zoom, poing.y * zoom, 10, 0, 2 * Math.PI);
-                ctx.fill();
+                drawPastCursor(ctx, poing.x * zoom, poing.y * zoom);
             });
         });
     });
