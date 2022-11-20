@@ -1,4 +1,51 @@
 
+## Making it really usable and such
+
+- "File" idea?
+  - So, you can have multiple files open
+  - saved to localForage, along with periodic screenshot updates?
+		- at least (every x seconds), at least (x seconds apart)
+		- low resolution tho
+- URLs, with react router dontchaknow.
+	- /id/[screen: edit | cnc | animate? | history]
+
+- For history playback, have explicit control over the zoom, at different moments.
+	- and also over the final "crop". So the size of the ~editing window has less to do with it.
+
+- at that point, does "zoom" really factor in?
+	- hmm I guess in the "export" window. Yeah like defining the export range
+		maybe it would be a visible element honestly. You can define w & height ..
+		or autofit w/ margins.
+
+- Sidebar, with list of paths, and groups, and such.
+	- so, guides happen on their own layer, and there's no ordering about them.
+	- however, guides can be grouped. Aand maybe selected individually?
+		welll let's just represent them as their guidy selves, with a mirror.
+		so not split out.
+		Also not really editable.
+
+So, whether or not the guides are shown ... seems like it doesn't necessarily have to
+be tracked in the undo stack? hmmm. I guess it doesn't super hurt.
+
+RIGHT SIDEBAR:
+- mirrors
+- clips
+- shapes
+- guides
+- undo/redo stack
+
+Left ... floading toolbar?
+undo/redo, the guides,
+and an "add shape" button.
+
+WHEN ADDING: Select the number of mirror.
+
+ALSO: ppi is a real deal. Show a scale in the bottom,
+with content boundaries in units.
+
+
+####
+
 Soooo what if I rewrote it all?
 Would that be any good?
 

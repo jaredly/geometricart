@@ -8,7 +8,7 @@ import { guideTypes, State, Tab, Id, Path, PathGroup } from '../types';
 import { Action, PathMultiply, UndoAction } from '../state/Action';
 import { initialState } from '../state/initialState';
 import { Export } from './Export';
-import { PendingMirror, toTypeRev } from '../App';
+import { PendingMirror } from '../App';
 import {
     getStateFromFile,
     useDropStateOrAttachmentTarget,

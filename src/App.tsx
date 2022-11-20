@@ -32,20 +32,6 @@ export const useCurrent = <T,>(value: T) => {
     return ref;
 };
 
-export const toType: { [key: string]: GuideGeom['type'] } = {
-    l: 'Line',
-    s: 'Split',
-    c: 'Circle',
-    a: 'AngleBisector',
-    b: 'PerpendicularBisector',
-    p: 'Perpendicular',
-    i: 'InCircle',
-    o: 'CircumCircle',
-};
-
-export const toTypeRev: { [key: string]: string } = {};
-Object.keys(toType).forEach((k) => (toTypeRev[toType[k]] = k));
-
 export type PendingMirror = {
     rotations: number;
     center: Coord | null;
