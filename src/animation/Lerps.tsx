@@ -1,7 +1,9 @@
 import React, { useMemo } from 'react';
+import prettier from 'prettier';
+import babel from 'prettier/parser-babel';
 import { BlurInt } from '../editor/Forms';
 import { Action } from '../state/Action';
-import { FloatLerp, ScriptLerp, LerpPoint, State } from '../types';
+import { FloatLerp, ScriptLerp, LerpPoint, State, PosScript } from '../types';
 import { PointsEditor, pointsPathD } from './PointsEditor';
 import { AddVbl } from './AnimationUI';
 import { functionWithBuiltins } from './getAnimatedPaths';
@@ -51,7 +53,7 @@ function ScriptLerp({
     dispatch,
 }: {
     id: string;
-    vbl: ScriptLerp;
+    vbl: ScriptLerp | PosScript;
     dispatch: (action: Action) => unknown;
 }): JSX.Element {
     const [code, setCode] = React.useState(vbl.code);
@@ -76,16 +78,35 @@ function ScriptLerp({
             <textarea
                 value={code}
                 style={{ width: 400 }}
-                onChange={(evt) => setCode(evt.target.value)}
-                onBlur={() =>
+                onChange={(evt) => {
+                    setCode(evt.target.value);
+                }}
+                onBlur={() => {
+                    const formatted = prettier.format(code, {
+                        plugins: [babel],
+                        parser: 'babel',
+                        printWidth: 60,
+                    });
+                    setCode(formatted);
+                    if (formatted.trim() === vbl.code.trim()) {
+                        return;
+                    }
+
                     dispatch({
                         type: 'timeline:update',
                         key,
-                        vbl: { ...vbl, code },
-                    })
-                }
+                        vbl: { ...vbl, code: formatted },
+                    });
+                }}
             />
-            <FnViewer fn={fn} />
+            <FnViewer fn={fn} kind={vbl.type} />
+            <button
+                onClick={() => {
+                    dispatch({ type: 'timeline:update', key, vbl: null });
+                }}
+            >
+                Delete
+            </button>
         </div>
     );
 }
@@ -206,18 +227,28 @@ function FloatLerp({
     );
 }
 
-export const FnViewer = ({ fn }: { fn: (n: number) => number }) => {
+export const FnViewer = ({
+    fn,
+    kind,
+}: {
+    fn: (n: number) => number;
+    kind: 'float-fn' | 'pos-fn';
+}) => {
     const width = 150;
-    const height = 50;
+    const height = kind === 'float-fn' ? 50 : 150;
     const margin = 5;
 
     const points = useMemo(() => {
         try {
             const points = [];
             for (let i = 0; i <= width; i++) {
-                const x = i / width;
-                const y = fn(x);
-                points.push({ x, y });
+                if (kind === 'pos-fn') {
+                    points.push(fn(i / width) as any);
+                } else {
+                    const x = i / width;
+                    const y = fn(x);
+                    points.push({ x, y });
+                }
             }
             return points;
         } catch (err) {

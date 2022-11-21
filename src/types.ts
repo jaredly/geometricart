@@ -406,10 +406,15 @@ export type TimelineLane = {
     items: Array<TimelineSlot>;
 };
 
-export type Lerp = FloatLerp | ScriptLerp;
+export type Lerp = FloatLerp | ScriptLerp | PosScript;
 
 export type ScriptLerp = {
     type: 'float-fn';
+    code: string;
+};
+
+export type PosScript = {
+    type: 'pos-fn';
     code: string;
 };
 

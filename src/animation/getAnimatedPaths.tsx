@@ -136,7 +136,7 @@ export function getAnimationScripts(state: State): {
 }
 
 export function functionWithBuiltins(code: string) {
-    const builtins: { [key: string]: Function } = getBuiltins();
+    const builtins: { [key: string]: Function | number } = getBuiltins();
     const fn = new Function(Object.keys(builtins).join(','), 'return ' + code)(
         ...Object.keys(builtins).map((k) => builtins[k]),
     );

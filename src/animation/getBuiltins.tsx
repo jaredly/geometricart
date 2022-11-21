@@ -18,7 +18,7 @@ import {
 import { angleBetween } from '../rendering/findNextSegments';
 import { segmentsBounds, segmentsCenter } from '../editor/Bounds';
 
-export function getBuiltins(): { [key: string]: Function } {
+export function getBuiltins(): { [key: string]: Function | number } {
     return {
         dist,
         push,
@@ -28,6 +28,11 @@ export function getBuiltins(): { [key: string]: Function } {
         sin: Math.sin,
         cos: Math.cos,
         tan: Math.tan,
+        PI: Math.PI,
+        translate: (p1: Coord, p2: Coord) => ({
+            x: p1.x + p2.x,
+            y: p1.y + p2.y,
+        }),
         limit: (t: number, min: number, max: number) =>
             Math.min(Math.max(t, min), max),
         segmentsBounds,

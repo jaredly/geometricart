@@ -531,7 +531,9 @@ export const AddVbl = ({
     const [key, setKey] = React.useState('vbl');
     const [low, setLow] = React.useState(0);
     const [high, setHigh] = React.useState(1);
-    const [kind, setKind] = React.useState('float' as 'float' | 'float-fn');
+    const [kind, setKind] = React.useState(
+        'float' as 'float' | 'float-fn' | 'pos-fn',
+    );
     return (
         <div
             style={{
@@ -562,7 +564,13 @@ export const AddVbl = ({
                     onClick={() => setKind('float-fn')}
                     disabled={kind === 'float-fn'}
                 >
-                    Script
+                    Float
+                </button>
+                <button
+                    onClick={() => setKind('pos-fn')}
+                    disabled={kind === 'pos-fn'}
+                >
+                    Pos
                 </button>
             </span>
             {kind === 'float' ? (
@@ -593,9 +601,14 @@ export const AddVbl = ({
                                   range: [low, high],
                                   points: [],
                               }
-                            : {
+                            : kind === 'float-fn'
+                            ? {
                                   type: 'float-fn',
                                   code: '(t) => sin(t)',
+                              }
+                            : {
+                                  type: 'pos-fn',
+                                  code: '(t) => ({x: sin(t), y: cos(t)})',
                               },
                     );
                 }}
