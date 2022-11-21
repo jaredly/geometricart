@@ -71,6 +71,7 @@ import {
 } from '../types';
 import { useDragSelect, useMouseDrag } from './useMouseDrag';
 import { useScrollWheel } from './useScrollWheel';
+import { functionWithBuiltins } from '../animation/getAnimatedPaths';
 
 export type Props = {
     state: State;
@@ -265,12 +266,13 @@ export const getAnimatedFunctions = (
             fn[key] = timelineFunction(vbl);
         } else {
             try {
-                const k = new Function(
-                    'x',
-                    vbl.code.includes('\n') || vbl.code.startsWith('return')
-                        ? vbl.code
-                        : `return ${vbl.code}`,
-                );
+                const k = functionWithBuiltins(vbl.code);
+                // const k = new Function(
+                //     'x',
+                //     vbl.code.includes('\n') || vbl.code.startsWith('return')
+                //         ? vbl.code
+                //         : `return ${vbl.code}`,
+                // );
                 fn[key] = k as (n: number) => number;
             } catch (err) {
                 console.warn(

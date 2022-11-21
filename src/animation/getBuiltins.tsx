@@ -25,12 +25,32 @@ export function getBuiltins(): { [key: string]: Function } {
         scale,
         angleTo,
         angleBetween,
+        sin: Math.sin,
+        cos: Math.cos,
+        tan: Math.tan,
         limit: (t: number, min: number, max: number) =>
             Math.min(Math.max(t, min), max),
         segmentsBounds,
         segmentsCenter,
         transformSegment,
         applyMatrices,
+        lerp: (a: number, b: number, between: number) => a + (b - a) * between,
+        crossFade: (t: number, mid: number) =>
+            t < 0.5 - mid ? 0 : t > 0.5 + mid ? 1 : ((t - 0.5) / mid + 1) / 2,
+        squishSine: (t: number, mid: number) => {
+            if (t < mid) {
+                return Math.sin(((t / mid) * Math.PI) / 2);
+            }
+            if (t < 0.5 - mid) {
+                return 1;
+            }
+            if (t > 0.5 + mid) {
+                return 0;
+            }
+            if (t < 1 - mid) {
+                return Math.sin((((1 - t) / mid) * Math.PI) / 2);
+            }
+        },
         scaleMatrix,
         translationMatrix,
         rotationMatrix,

@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { BlurInt } from '../editor/Forms';
 import { Action } from '../state/Action';
-import { FloatLerp, LerpPoint, State } from '../types';
+import { FloatLerp, ScriptLerp, LerpPoint, State } from '../types';
 import { PointsEditor, pointsPathD } from './PointsEditor';
 import { AddVbl } from './AnimationUI';
+import { functionWithBuiltins } from './getAnimatedPaths';
 
 export function Lerps({
     dispatch,
@@ -22,7 +23,14 @@ export function Lerps({
             {Object.keys(state.animations.lerps).map((key) => {
                 const vbl = state.animations.lerps[key];
                 if (vbl.type !== 'float') {
-                    return 'Not a float, not yet supported';
+                    return (
+                        <ScriptLerp
+                            key={key}
+                            id={key}
+                            vbl={vbl}
+                            dispatch={dispatch}
+                        />
+                    );
                 }
                 return (
                     <FloatLerp
@@ -36,6 +44,52 @@ export function Lerps({
         </div>
     );
 }
+
+function ScriptLerp({
+    id: key,
+    vbl,
+    dispatch,
+}: {
+    id: string;
+    vbl: ScriptLerp;
+    dispatch: (action: Action) => unknown;
+}): JSX.Element {
+    const [code, setCode] = React.useState(vbl.code);
+
+    const fn = useMemo(() => {
+        try {
+            return functionWithBuiltins(vbl.code);
+        } catch (e) {
+            return () => 0;
+        }
+    }, [vbl.code]);
+
+    return (
+        <div
+            style={{
+                padding: 8,
+                margin: 8,
+                border: '1px solid #aaa',
+            }}
+        >
+            <div style={{ marginBottom: 4 }}>{key}</div>
+            <textarea
+                value={code}
+                style={{ width: 400 }}
+                onChange={(evt) => setCode(evt.target.value)}
+                onBlur={() =>
+                    dispatch({
+                        type: 'timeline:update',
+                        key,
+                        vbl: { ...vbl, code },
+                    })
+                }
+            />
+            <FnViewer fn={fn} />
+        </div>
+    );
+}
+
 function FloatLerp({
     id: key,
     vbl,
@@ -151,6 +205,48 @@ function FloatLerp({
         </div>
     );
 }
+
+export const FnViewer = ({ fn }: { fn: (n: number) => number }) => {
+    const width = 150;
+    const height = 50;
+    const margin = 5;
+
+    const points = useMemo(() => {
+        try {
+            const points = [];
+            for (let i = 0; i < width; i++) {
+                const x = i / width;
+                const y = fn(x);
+                points.push({ x, y });
+            }
+            return points;
+        } catch (err) {
+            return [];
+        }
+    }, [fn]);
+
+    return (
+        <svg
+            width={width + margin * 2}
+            height={height + margin * 2}
+            viewBox={`${-margin} ${-margin} ${width + margin * 2} ${
+                height + margin * 2
+            }`}
+            style={{
+                border: '1px solid #333',
+            }}
+        >
+            <polyline
+                points={points
+                    .map((m) => `${m.x * width},${m.y * height}`)
+                    .join(' ')}
+                stroke="red"
+                strokeWidth={2}
+                fill="none"
+            />
+        </svg>
+    );
+};
 
 export const PointsViewer = ({
     points,

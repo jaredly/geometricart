@@ -406,12 +406,12 @@ export type TimelineLane = {
     items: Array<TimelineSlot>;
 };
 
-export type Lerp =
-    | FloatLerp
-    | {
-          type: 'float-fn';
-          code: string;
-      };
+export type Lerp = FloatLerp | ScriptLerp;
+
+export type ScriptLerp = {
+    type: 'float-fn';
+    code: string;
+};
 
 export type Animations = {
     config: {

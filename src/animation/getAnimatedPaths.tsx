@@ -117,13 +117,8 @@ export function getAnimationScripts(state: State): {
                 return null;
             }
 
-            const builtins: { [key: string]: Function } = getBuiltins();
-
             try {
-                const fn = new Function(
-                    Object.keys(builtins).join(','),
-                    'return ' + script.code,
-                )(...Object.keys(builtins).map((k) => builtins[k]));
+                const fn = functionWithBuiltins(script.code);
                 scripts[key] = {
                     key,
                     fn,
@@ -138,4 +133,12 @@ export function getAnimationScripts(state: State): {
             }
         });
     return scripts;
+}
+
+export function functionWithBuiltins(code: string) {
+    const builtins: { [key: string]: Function } = getBuiltins();
+    const fn = new Function(Object.keys(builtins).join(','), 'return ' + code)(
+        ...Object.keys(builtins).map((k) => builtins[k]),
+    );
+    return fn;
 }

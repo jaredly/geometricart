@@ -218,7 +218,7 @@ export const AnimationEditor = ({
     };
 
     return (
-        <div style={{}}>
+        <div style={{ paddingBottom: 50 }}>
             <canvas
                 ref={canvas}
                 width={makeEven(w * 2 * zoom)}
@@ -531,6 +531,7 @@ export const AddVbl = ({
     const [key, setKey] = React.useState('vbl');
     const [low, setLow] = React.useState(0);
     const [high, setHigh] = React.useState(1);
+    const [kind, setKind] = React.useState('float' as 'float' | 'float-fn');
     return (
         <div
             style={{
@@ -540,7 +541,7 @@ export const AddVbl = ({
                 marginBottom: 16,
             }}
         >
-            <span>
+            <span style={{ marginRight: 8 }}>
                 Vbl name:{' '}
                 <input
                     value={key}
@@ -549,27 +550,54 @@ export const AddVbl = ({
                     placeholder="vbl name"
                 />
             </span>
-            <span>
-                Low:{' '}
-                <BlurInt
-                    value={low}
-                    onChange={(v) => (v != null ? setLow(v) : null)}
-                />
+            <span style={{ marginRight: 8 }}>
+                Kind:{' '}
+                <button
+                    onClick={() => setKind('float')}
+                    disabled={kind === 'float'}
+                >
+                    Lines
+                </button>
+                <button
+                    onClick={() => setKind('float-fn')}
+                    disabled={kind === 'float-fn'}
+                >
+                    Script
+                </button>
             </span>
-            <span>
-                High:{' '}
-                <BlurInt
-                    value={high}
-                    onChange={(v) => (v != null ? setHigh(v) : null)}
-                />
-            </span>
+            {kind === 'float' ? (
+                <>
+                    <span>
+                        Low:{' '}
+                        <BlurInt
+                            value={low}
+                            onChange={(v) => (v != null ? setLow(v) : null)}
+                        />
+                    </span>
+                    <span>
+                        High:{' '}
+                        <BlurInt
+                            value={high}
+                            onChange={(v) => (v != null ? setHigh(v) : null)}
+                        />
+                    </span>
+                </>
+            ) : null}
             <button
                 onClick={() => {
-                    onAdd(key, {
-                        type: 'float',
-                        range: [low, high],
-                        points: [],
-                    });
+                    onAdd(
+                        key,
+                        kind === 'float'
+                            ? {
+                                  type: 'float',
+                                  range: [low, high],
+                                  points: [],
+                              }
+                            : {
+                                  type: 'float-fn',
+                                  code: '(t) => sin(t)',
+                              },
+                    );
                 }}
             >
                 Add New Vbl
