@@ -269,7 +269,7 @@ export const FnViewer = ({
         >
             <polyline
                 points={points
-                    .map((m) => `${m.x * width},${m.y * height}`)
+                    .map((m) => `${m.x * width},${(1 - m.y) * height}`)
                     .join(' ')}
                 stroke="red"
                 strokeWidth={2}

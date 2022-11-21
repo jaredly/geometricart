@@ -18,6 +18,8 @@ import {
 import { angleBetween } from '../rendering/findNextSegments';
 import { segmentsBounds, segmentsCenter } from '../editor/Bounds';
 
+const clamp = (v: number, min = 0, max = 1) => Math.max(min, Math.min(max, v));
+
 export function getBuiltins(): { [key: string]: Function | number } {
     return {
         dist,
@@ -28,7 +30,17 @@ export function getBuiltins(): { [key: string]: Function | number } {
         sin: Math.sin,
         cos: Math.cos,
         tan: Math.tan,
+        clamp,
         PI: Math.PI,
+        sineStep: (t: number, steps: number, smooth: number) => {
+            const perc = 1 - smooth;
+            const mid =
+                Math.sin((((t * steps) % 1) - 0.5) * Math.PI * perc) /
+                    2 /
+                    Math.sin((perc * Math.PI) / 2) +
+                0.5;
+            return mid / steps + Math.floor(t * steps) / steps;
+        },
         translate: (p1: Coord, p2: Coord) => ({
             x: p1.x + p2.x,
             y: p1.y + p2.y,
