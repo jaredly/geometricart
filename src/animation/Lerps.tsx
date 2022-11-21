@@ -214,7 +214,7 @@ export const FnViewer = ({ fn }: { fn: (n: number) => number }) => {
     const points = useMemo(() => {
         try {
             const points = [];
-            for (let i = 0; i < width; i++) {
+            for (let i = 0; i <= width; i++) {
                 const x = i / width;
                 const y = fn(x);
                 points.push({ x, y });

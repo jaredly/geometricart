@@ -39,7 +39,10 @@ export function getBuiltins(): { [key: string]: Function } {
             t < 0.5 - mid ? 0 : t > 0.5 + mid ? 1 : ((t - 0.5) / mid + 1) / 2,
         squishSine: (t: number, mid: number) => {
             if (t < mid) {
-                return Math.sin(((t / mid) * Math.PI) / 2);
+                return Math.sin(((t / mid) * Math.PI) / 2) / 2 + 0.5;
+            }
+            if (t > 1 - mid) {
+                return 0.5 - Math.sin((((1 - t) / mid) * Math.PI) / 2) / 2;
             }
             if (t < 0.5 - mid) {
                 return 1;
@@ -48,7 +51,10 @@ export function getBuiltins(): { [key: string]: Function } {
                 return 0;
             }
             if (t < 1 - mid) {
-                return Math.sin((((1 - t) / mid) * Math.PI) / 2);
+                return (
+                    1 - (Math.sin((((t - 0.5) / mid) * Math.PI) / 2) / 2 + 0.5)
+                );
+                // return Math.sin((((1 - t) / mid) * Math.PI) / 2);
             }
         },
         scaleMatrix,
