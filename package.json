@@ -33,6 +33,7 @@
         "png-metadata": "https://github.com/neil-morrison44/png-metadata#1de6be3c50402a188ce06a494c91010f14a297b8",
         "prando": "^6.0.1",
         "prettier": "^2.5.1",
+        "primeflex": "^3.3.0",
         "primeicons": "^6.0.1",
         "primereact": "^8.7.2",
         "react": "^18",
