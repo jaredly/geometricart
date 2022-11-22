@@ -6,6 +6,14 @@ import { Button } from 'primereact/button';
 import { Accordion, AccordionTab } from 'primereact/accordion';
 import { Hover } from './editor/Sidebar';
 
+import type * as CSS from 'csstype';
+
+declare module 'csstype' {
+    interface Properties {
+        '--hover-color'?: string;
+    }
+}
+
 export const NewSidebar = ({
     state,
     dispatch,
@@ -144,7 +152,7 @@ export const NewSidebar = ({
                                 alignItems: 'center',
                             }}
                         >
-                            <Button
+                            {/* <Button
                                 className="p-button-sm p-button-rounded p-button-text"
                                 icon={
                                     'pi pi-eye' + (guide.active ? '' : '-slash')
@@ -156,7 +164,7 @@ export const NewSidebar = ({
                                     });
                                 }}
                                 style={{ marginRight: 8 }}
-                            />
+                            /> */}
                             {guide.geom.type}
                         </div>
                     ))}

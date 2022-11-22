@@ -338,16 +338,16 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
                                         f: speed,
                                     },
                                     {
-                                        type: 'fast',
+                                        type: 'cut',
                                         z: -itemDepth + tabs.depth,
                                     },
                                     {
-                                        type: 'fast',
+                                        type: 'cut',
                                         x: latest.x + dx * db,
                                         y: latest.y + dy * db,
                                     },
                                     // cmd,
-                                    { type: 'fast', z: -itemDepth },
+                                    { type: 'cut', z: -itemDepth },
                                     cmd,
                                 );
                             } else {
