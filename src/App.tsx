@@ -310,6 +310,7 @@ export const App = ({ initialState }: { initialState: State }) => {
                     </IconButton>
                 </div>
             </div>
+            <NewSidebar state={state} dispatch={dispatch} />
         </div>
     );
 };
@@ -317,3 +318,4 @@ export const App = ({ initialState }: { initialState: State }) => {
 import { GCodeEditor } from './gcode/GCodeEditor';
 import { HistoryPlayback } from './history/HistoryPlayback';
 import { handleKeyboard } from './handleKeyboard';
+import { NewSidebar } from './NewSidebar';

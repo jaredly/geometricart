@@ -16,6 +16,7 @@
 	- hmm I guess in the "export" window. Yeah like defining the export range
 		maybe it would be a visible element honestly. You can define w & height ..
 		or autofit w/ margins.
+	- anyway, default initial zoom will be the zoom and stuff.
 
 - Sidebar, with list of paths, and groups, and such.
 	- so, guides happen on their own layer, and there's no ordering about them.
