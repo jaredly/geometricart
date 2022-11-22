@@ -16,9 +16,6 @@
         "@babel/parser": "^7.16.12",
         "@emotion/css": "^11.7.1",
         "@emotion/react": "^11.1.5",
-        "@mantine/core": "^5.8.2",
-        "@mantine/hooks": "^5.8.2",
-        "@mantine/styles": "^5.8.2",
         "@react-three/drei": "^9.37.1",
         "@react-three/fiber": "^8.8.10",
         "@types/three": "^0.144.0",
@@ -36,6 +33,8 @@
         "png-metadata": "https://github.com/neil-morrison44/png-metadata#1de6be3c50402a188ce06a494c91010f14a297b8",
         "prando": "^6.0.1",
         "prettier": "^2.5.1",
+        "primeicons": "^6.0.1",
+        "primereact": "^8.7.2",
         "react": "^18",
         "react-color": "^2.19.3",
         "react-colorful": "^5.2.2",
@@ -48,7 +47,8 @@
         "sane": "^5.0.1",
         "three": "^0.145.0",
         "tinytar": "jaredly/tinytar#tinytar-v0.1.0-gitpkg",
-        "typescript": "^4.4.4"
+        "typescript": "^4.4.4",
+        "vite": "^3.2.4"
     },
     "jest": {
         "verbose": true,
