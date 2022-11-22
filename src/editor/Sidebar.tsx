@@ -4,7 +4,15 @@ import { jsx } from '@emotion/react';
 import React from 'react';
 import { GuideForm, PathForm, PathGroupForm, ViewForm } from './Forms';
 import { MirrorForm } from './MirrorForm';
-import { guideTypes, State, Tab, Id, Path, PathGroup } from '../types';
+import {
+    guideTypes,
+    State,
+    Tab,
+    Id,
+    Path,
+    PathGroup,
+    Selection,
+} from '../types';
 import { Action, PathMultiply, UndoAction } from '../state/Action';
 import { initialState } from '../state/initialState';
 import { Export } from './Export';

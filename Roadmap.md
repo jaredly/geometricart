@@ -1,4 +1,9 @@
 
+## SIDEBAR
+
+- guide - click to select
+- the eye is probably more confusing than not.
+
 ## Making it really usable and such
 
 - "File" idea?

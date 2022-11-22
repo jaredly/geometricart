@@ -310,7 +310,12 @@ export const App = ({ initialState }: { initialState: State }) => {
                     </IconButton>
                 </div>
             </div>
-            <NewSidebar state={state} dispatch={dispatch} />
+            <NewSidebar
+                state={state}
+                dispatch={dispatch}
+                hover={hover}
+                setHover={setHover}
+            />
         </div>
     );
 };
