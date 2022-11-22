@@ -1,7 +1,7 @@
 import { applyMatrices, dist, Matrix } from '../rendering/getMirrorTransforms';
 import { Coord, Path, Segment } from '../types';
 import { transformSegment } from '../rendering/points';
-import { pathToPoints } from '../rendering/pathToPoints';
+import { pathToPoints, rasterSegPoints } from '../rendering/pathToPoints';
 import { insetSegments, insetSegmentsBeta } from '../rendering/insetPath';
 import { cleanUpInsetSegments2 } from '../rendering/findInternalRegions';
 import { pathSegs } from '../editor/RenderPath';
@@ -138,7 +138,7 @@ const lerpPos = (p1: Coord, p2: Coord, percent: number) => {
 
 export const closestPoint = (center: Coord, segments: Array<Segment>) => {
     let best = null as null | [number, Coord];
-    pathToPoints(segments).forEach((point) => {
+    rasterSegPoints(pathToPoints(segments)).forEach((point) => {
         const d = dist(point, center);
         if (best == null || best[0] > d) {
             best = [d, point];
@@ -150,7 +150,7 @@ export const closestPoint = (center: Coord, segments: Array<Segment>) => {
 
 export const farthestPoint = (center: Coord, segments: Array<Segment>) => {
     let best = null as null | [number, Coord];
-    pathToPoints(segments).forEach((point) => {
+    rasterSegPoints(pathToPoints(segments)).forEach((point) => {
         const d = dist(point, center);
         if (best == null || best[0] < d) {
             best = [d, point];
@@ -190,7 +190,7 @@ export const animationTimer = (
 const followPath = (path: Array<Coord> | Path, percent: number) => {
     let points;
     if (!Array.isArray(path)) {
-        points = pathToPoints(path.segments);
+        points = rasterSegPoints(pathToPoints(path.segments));
         points = points.concat([points[0]]);
     } else {
         points = path;

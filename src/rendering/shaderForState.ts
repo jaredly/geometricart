@@ -1,5 +1,5 @@
 import { sortedVisibleInsetPaths } from './sortedVisibleInsetPaths';
-import { pathToPoints } from './pathToPoints';
+import { pathToPoints, rasterSegPoints } from './pathToPoints';
 import { hslToRgb, rgbToHsl } from './colorConvert';
 import { pathToPrimitives } from '../editor/findSelection';
 import { Primitive } from './intersect';
@@ -317,7 +317,7 @@ function strokeToSdf(
     color: Rgb,
     stroke: StyleLine,
 ): string {
-    const points = pathToPoints(path.segments);
+    const points = rasterSegPoints(pathToPoints(path.segments));
     const last = points[points.length - 1];
 
     return `{ // path ${path.id}
@@ -370,7 +370,7 @@ function pathToSdf(
     strokeWidth?: number,
     stroke?: Rgb | null,
 ): string {
-    const points = pathToPoints(path.segments);
+    const points = rasterSegPoints(pathToPoints(path.segments));
     const last = points[points.length - 1];
 
     return `{ // path ${path.id}

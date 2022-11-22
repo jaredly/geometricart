@@ -1,4 +1,13 @@
 
+## URGENT
+
+Deduplicate lines for CNC cuts.
+Plan =
+	- go through, mark segments as duplicates (IN EXECUTION ORDER I think)
+	- remove any shapes where everything is a duplicate
+	- for shapes where only some are duplicates, fast travel along duplicate lines.
+	- also, filter out up/down's that are the same.
+
 ## SIDEBAR
 
 - guide - click to select

@@ -9,6 +9,7 @@ import {
     isClockwise,
     pathToPoints,
     pointsAngles,
+    rasterSegPoints,
     totalAngle,
 } from './pathToPoints';
 import { ShapeEditor } from './ShapeEditor';
@@ -25,7 +26,7 @@ const ShowDebug = ({ shape }: { shape: Array<SegmentWithPrev> }) => {
                 ? []
                 : [{ type: 'Line', to: shape[0].prev }],
         );
-    const points = pathToPoints(segs, true);
+    const points = rasterSegPoints(pathToPoints(segs, true));
     const angles = pointsAngles(points);
     const diffs = angleDifferences(angles);
     calcSegmentsD;

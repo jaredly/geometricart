@@ -2,51 +2,57 @@ import { insetPath } from '../animation/getBuiltins';
 import { findBoundingRect } from '../editor/Export';
 import { findColorPaths } from './GCodeEditor';
 import { dist } from '../rendering/getMirrorTransforms';
-import { pathToPoints } from '../rendering/pathToPoints';
+import {
+    pathToPoints,
+    RasterSeg,
+    rasterSegPoints,
+} from '../rendering/pathToPoints';
 import { sortedVisibleInsetPaths } from '../rendering/sortedVisibleInsetPaths';
 import { Coord, Path, State, StyleLine } from '../types';
 import PathKitInit, { PathKit } from 'pathkit-wasm';
 import { calcPathD } from '../editor/RenderPath';
 
-const findClosest = (shape: Coord[], point: Coord) => {
+const findClosest = (shape: RasterSeg[], point: Coord) => {
     let best = null as null | [number, number];
-    shape.forEach((p, i) => {
-        const d = dist(p, point);
-        if (best == null || d < best[0]) {
-            best = [d, i];
-        }
+    shape.forEach((seg, i) => {
+        seg.points.forEach((p) => {
+            const d = dist(p, point);
+            if (best == null || d < best[0]) {
+                best = [d, i];
+            }
+        });
     });
     return { dist: best![0], idx: best![1] };
 };
 
 export const greedyPaths = (paths: Array<{ path: Path; style: StyleLine }>) => {
-    const points: Array<Array<Coord>> = [];
+    const pathPoints: Array<Array<RasterSeg>> = [];
     paths.forEach(({ path, style }) => {
         if (style.inset) {
             insetPath(path, style.inset).forEach((sub) => {
-                points.push(pathToPoints(sub.segments));
+                pathPoints.push(pathToPoints(sub.segments));
             });
         } else {
-            points.push(pathToPoints(path.segments));
+            pathPoints.push(pathToPoints(path.segments));
         }
     });
 
-    const ordered: Coord[][] = [];
-    const first = points.shift()!;
+    const ordered: RasterSeg[][] = [];
+    const first = pathPoints.shift()!;
     first.push(first[0]);
     ordered.push(first);
-    while (points.length) {
+    while (pathPoints.length) {
         const last = ordered[ordered.length - 1];
-        let point = last[last.length - 1];
+        let point = last[last.length - 1].to;
         let best = null as null | { dist: number; idx: number; subIdx: number };
-        points.forEach((shape, i) => {
+        pathPoints.forEach((shape, i) => {
             const closest = findClosest(shape, point);
             if (best == null || closest.dist < best.dist) {
                 best = { dist: closest.dist, idx: i, subIdx: closest.idx };
             }
         });
-        const next = points[best!.idx];
-        points.splice(best!.idx, 1);
+        const next = pathPoints[best!.idx];
+        pathPoints.splice(best!.idx, 1);
         const reordeeed = next
             .slice(best!.subIdx)
             .concat(next.slice(0, best!.subIdx));
@@ -218,7 +224,7 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
                 greedy.forEach((shape) => {
                     const pocket = makePocket(
                         PathKit,
-                        shape.map(scalePos),
+                        rasterSegPoints(shape).map(scalePos),
                         diameter,
                     );
                     if (!pocket.length || !pocket[0].length) {
@@ -261,7 +267,7 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
                 greedy.forEach((shape) => {
                     const shapeCmds: GCode[] = [];
                     let distance = 0;
-                    shape.forEach((pos, i) => {
+                    rasterSegPoints(shape).forEach((pos, i) => {
                         const { x, y } = scalePos(pos);
                         let travel = last ? dist({ x, y }, last) : null;
                         if (travel) {
@@ -292,7 +298,7 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
                         last = { x, y };
                     });
                     if (tabs && itemDepth > tabs.depth) {
-                        const { x, y } = scalePos(shape[0]);
+                        const { x, y } = scalePos(shape[0].points[0]);
                         let latest: {
                             at: number;
                             x: number;
