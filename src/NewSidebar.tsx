@@ -172,6 +172,11 @@ export const NewSidebar = ({
                                 display: 'flex',
                                 flexDirection: 'row',
                                 alignItems: 'center',
+                                backgroundColor:
+                                    state.selection?.type === 'Guide' &&
+                                    state.selection.ids.includes(k)
+                                        ? '#aaa'
+                                        : 'transparent',
                             }}
                             onMouseEnter={() =>
                                 setHover({
@@ -180,7 +185,15 @@ export const NewSidebar = ({
                                     id: k,
                                 })
                             }
-                            onClick={() => {}}
+                            onClick={() => {
+                                dispatch({
+                                    type: 'selection:set',
+                                    selection: {
+                                        type: 'Guide',
+                                        ids: [k],
+                                    },
+                                });
+                            }}
                             onMouseLeave={() => setHover(null)}
                         >
                             {guide.geom.type}
