@@ -23,7 +23,7 @@ import { guideTypes, Line, State } from '../types';
 import { PendingDuplication } from './Guides';
 import { Hover } from './Sidebar';
 
-export const idsToStyle = (state: State) => {
+export const selectedPathIds = (state: State) => {
     if (
         state.selection?.type === 'PathGroup' ||
         state.selection?.type === 'Path'
@@ -65,29 +65,6 @@ export function GuideSection({
     }
     return (
         <div key="guide-section">
-            <IconButton
-                onClick={() => {
-                    dispatch({
-                        type: 'view:update',
-                        view: {
-                            ...state.view,
-                            guides: !state.view.guides,
-                        },
-                    });
-                    setHover(null);
-                    tap.current = true;
-                }}
-                onMouseOut={() => setHover(null)}
-                onMouseOver={() => {
-                    if (tap.current) {
-                        tap.current = false;
-                        return;
-                    }
-                    setHover({ type: 'guides' });
-                }}
-            >
-                {state.view.guides ? <EyeIcon /> : <EyeInvisibleIcon />}
-            </IconButton>
             <IconButton
                 selected={dragSelect}
                 onClick={() => {

@@ -6,9 +6,10 @@ import { Tree } from 'primereact/tree';
 import { Button } from 'primereact/button';
 import { Accordion, AccordionTab } from 'primereact/accordion';
 import { Hover } from '../editor/Sidebar';
+import { Clips } from '../editor/Clips';
 
 import type * as CSS from 'csstype';
-import { idsToStyle } from '../editor/touchscreenControls';
+import { selectedPathIds } from '../editor/touchscreenControls';
 import { MultiStyleForm, StyleHover } from '../editor/MultiStyleForm';
 import { Export } from '../editor/Export';
 import { Screen } from '../App';
@@ -43,7 +44,7 @@ export const NewSidebar = ({
     screen: Screen;
     setScreen: (s: Screen) => void;
 }): JSX.Element => {
-    const styleIds = idsToStyle(state);
+    const styleIds = selectedPathIds(state);
     return (
         <div
             style={{
@@ -166,6 +167,9 @@ export const NewSidebar = ({
                     ) : (
                         'Select some shapes'
                     )}
+                </AccordionTab>
+                <AccordionTab header="Clips">
+                    <Clips state={state} dispatch={dispatch} />
                 </AccordionTab>
                 <AccordionTab header="Export">
                     <Export
@@ -474,7 +478,7 @@ function MirrorItems({
     );
 }
 
-function itemStyle(selected: boolean): React.CSSProperties | undefined {
+export function itemStyle(selected: boolean): React.CSSProperties | undefined {
     return {
         padding: 8,
         cursor: 'pointer',

@@ -54,7 +54,7 @@ import { Hover } from './Sidebar';
 import { sortedVisibleInsetPaths } from '../rendering/sortedVisibleInsetPaths';
 import {
     GuideSection,
-    idsToStyle,
+    selectedPathIds,
     mirrorControls,
     selectionSection,
 } from './touchscreenControls';
@@ -784,7 +784,7 @@ export const Canvas = ({
         return inner;
     }
 
-    const styleIds = idsToStyle(state);
+    const styleIds = selectedPathIds(state);
 
     return (
         <div
@@ -886,23 +886,10 @@ export const Canvas = ({
                     </div>
                 </div>
             ) : null}
-            <MirrorMenu
-                onHover={mirrorHover}
-                onAdd={mirrorAdd}
-                state={state}
-                dispatch={dispatch}
-                transforms={mirrorTransforms}
-            />
             <OverlayMenu
                 state={state}
                 dispatch={dispatch}
                 setHover={setHover}
-            />
-            <ClipMenu
-                state={state}
-                pendingPath={pendingPath}
-                dispatch={dispatch}
-                // setHover={setHover}
             />
 
             <div

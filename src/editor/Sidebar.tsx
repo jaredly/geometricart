@@ -25,6 +25,7 @@ import { PalettesForm } from './PalettesForm';
 import { MultiStyleForm, mergeStyles } from './MultiStyleForm';
 import { OverlaysForm } from './OverlaysForm';
 import { diff } from 'json-diff-ts';
+import { Clips } from './Clips';
 
 export const PREFIX = `<!-- STATE:`;
 export const SUFFIX = '-->';
@@ -410,10 +411,9 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactElement } = {
             </div>
         );
     },
-    Export: ({ state, canvasRef, dispatch, width, height }) => (
+    Export: ({ state, dispatch, width, height }) => (
         <Export
             state={state}
-            canvasRef={canvasRef}
             dispatch={dispatch}
             originalSize={Math.max(width, height)}
         />
@@ -423,56 +423,7 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactElement } = {
     ),
     Overlays: OverlaysForm,
     Clips: ({ state, dispatch }) => {
-        return (
-            <div>
-                Clips!
-                {state.view.activeClip ? (
-                    <button
-                        onClick={() => {
-                            dispatch({
-                                type: 'clip:cut',
-                                clip: state.view.activeClip!,
-                            });
-                        }}
-                    >
-                        Cut to active clip
-                    </button>
-                ) : null}
-                {Object.keys(state.clips).map((id) => (
-                    <div
-                        key={id}
-                        onClick={() => {
-                            dispatch({
-                                type: 'view:update',
-                                view: {
-                                    ...state.view,
-                                    activeClip:
-                                        state.view.activeClip === id
-                                            ? null
-                                            : id,
-                                },
-                            });
-                        }}
-                        css={{
-                            cursor: 'pointer',
-                            padding: 8,
-                            ':hover': {
-                                background: '#555',
-                            },
-                        }}
-                        style={
-                            state.view.activeClip === id
-                                ? {
-                                      border: '1px solid #aaa',
-                                  }
-                                : {}
-                        }
-                    >
-                        Clip {id}
-                    </div>
-                ))}
-            </div>
-        );
+        return Clips({ state, dispatch });
     },
     Undo: ({ state, dispatch }) => {
         const [branch, setBranch] = React.useState(state.history.currentBranch);

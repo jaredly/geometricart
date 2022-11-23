@@ -44,7 +44,7 @@ export const OverlayMenu = ({
             css={{
                 position: 'absolute',
                 top: 0,
-                left: 58,
+                left: 0,
             }}
         >
             <IconButton
