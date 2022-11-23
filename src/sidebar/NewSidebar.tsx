@@ -60,34 +60,22 @@ export const NewSidebar = ({
                 style={{ display: 'flex', flexDirection: 'row' }}
                 className="mb-2"
             >
-                <Button
-                    className="p-button-text"
-                    onClick={() => setScreen('animate')}
-                    disabled={screen === 'animate'}
-                >
-                    <MagicWandIcon />
-                </Button>
-                <Button
-                    className="p-button-text"
-                    onClick={() => setScreen('edit')}
-                    disabled={screen === 'edit'}
-                >
-                    <PencilIcon />
-                </Button>
-                <Button
-                    className="p-button-text"
-                    onClick={() => setScreen('gcode')}
-                    disabled={screen === 'gcode'}
-                >
-                    <DrillIcon />
-                </Button>
-                <Button
-                    className="p-button-text"
-                    onClick={() => setScreen('history')}
-                    disabled={screen === 'history'}
-                >
-                    <IconHistoryToggle />
-                </Button>
+                {[
+                    { name: 'edit', icon: PencilIcon },
+                    { name: 'animate', icon: MagicWandIcon },
+                    { name: 'gcode', icon: DrillIcon },
+                    { name: 'history', icon: IconHistoryToggle },
+                ].map((Config) => (
+                    <Button
+                        className={
+                            screen === Config.name ? '' : 'p-button-text'
+                        }
+                        onClick={() => setScreen(Config.name as Screen)}
+                        disabled={screen === Config.name}
+                    >
+                        <Config.icon />
+                    </Button>
+                ))}
             </div>
             <Accordion
                 multiple
