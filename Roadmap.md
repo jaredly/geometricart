@@ -1,17 +1,27 @@
 
 ## URGENT
 
-Deduplicate lines for CNC cuts.
-Plan =
+- [x] Deduplicate lines for CNC cuts.
 	- go through, mark segments as duplicates (IN EXECUTION ORDER I think)
 	- remove any shapes where everything is a duplicate
 	- for shapes where only some are duplicates, fast travel along duplicate lines.
 	- also, filter out up/down's that are the same.
 
+
 ## SIDEBAR
 
-- guide - click to select
-- the eye is probably more confusing than not.
+- [x] guide - click to select
+- [x] the eye is probably more confusing than not.
+- [x] Color & Fill!
+  - [ ] if no path selected, it shows the "default color & fill", which I should
+		keep track of.
+	- otherwise, go to town!
+	- [ ] would be very nice to have much better stroke & fill UI
+- [ ] put the "view switcher" dealios into the sidebar
+- [ ] add react router, use query string for routes.
+- [ ] anddddd allow for multiple projects to be open at once!
+- [ ] thenn allow for syncing with github gists.
+	- orr github issues
 
 ## Making it really usable and such
 

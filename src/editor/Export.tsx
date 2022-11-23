@@ -50,14 +50,12 @@ export const findBoundingRect = (state: State): Bounds | null => {
 };
 
 export const Export = ({
-    canvasRef,
     state,
     dispatch,
     originalSize,
 }: {
     state: State;
     originalSize: number;
-    canvasRef: { current: null | SVGSVGElement };
     dispatch: (action: Action) => void;
 }) => {
     // const [name, setName] = React.useState()
@@ -278,6 +276,8 @@ export const Export = ({
                                 : originalSize;
                         ReactDOM.render(
                             <Canvas
+                                styleHover={null}
+                                setStyleHover={() => {}}
                                 // Clear out background in laser cut mode
                                 pendingDuplication={null}
                                 setPendingDuplication={() => null}

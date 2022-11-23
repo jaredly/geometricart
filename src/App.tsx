@@ -38,6 +38,7 @@ export type PendingMirror = {
     reflect: boolean;
     parent: Id | null;
 };
+export type Screen = 'edit' | 'animate' | 'gcode' | 'history';
 
 export const App = ({ initialState }: { initialState: State }) => {
     const [state, dispatch] = React.useReducer(reducer, initialState);
@@ -117,6 +118,10 @@ export const App = ({ initialState }: { initialState: State }) => {
 
     const [hover, setHover] = React.useState(null as null | Hover);
 
+    const [styleHover, setStyleHover] = React.useState(
+        null as null | StyleHover,
+    );
+
     const [pendingMirror, setPendingMirror] = React.useState(
         null as null | PendingMirror,
     );
@@ -154,9 +159,8 @@ export const App = ({ initialState }: { initialState: State }) => {
     const isTouchScreen = 'ontouchstart' in window;
 
     const [sidebarOverlay, setSidebarOverlay] = React.useState(false);
-    const [screen, setScreen] = React.useState(
-        'edit' as 'edit' | 'animate' | 'gcode' | 'history',
-    );
+
+    const [screen, setScreen] = React.useState('edit' as Screen);
 
     const [hide, setHide] = React.useState(false);
 
@@ -170,7 +174,9 @@ export const App = ({ initialState }: { initialState: State }) => {
                 height: '100vh',
                 width: '100vw',
                 overflow: 'auto',
-                background: dragging ? 'rgba(255,255,255,0.1)' : '',
+                background: dragging
+                    ? 'rgba(255,255,255,0.1)'
+                    : 'var(--surface-ground)',
                 '@media (max-width: 1400px)': {
                     flexDirection: 'column-reverse',
                     overflow: 'visible',
@@ -206,6 +212,8 @@ export const App = ({ initialState }: { initialState: State }) => {
                             dispatch,
                             width: 100,
                             height: 100,
+                            styleHover,
+                            setStyleHover,
                         }}
                     />
                 ) : screen === 'history' ? (
@@ -224,6 +232,8 @@ export const App = ({ initialState }: { initialState: State }) => {
                         setPendingMirror={setPendingMirror}
                         width={width}
                         height={height}
+                        styleHover={styleHover}
+                        setStyleHover={setStyleHover}
                     />
                 )}
                 {sidebarOverlay ? (
@@ -279,30 +289,6 @@ export const App = ({ initialState }: { initialState: State }) => {
                             >
                                 <CogIcon />
                             </IconButton>
-                            {screen !== 'animate' ? (
-                                <IconButton
-                                    onClick={() => setScreen('animate')}
-                                >
-                                    <MagicWandIcon />
-                                </IconButton>
-                            ) : null}
-                            {screen !== 'edit' ? (
-                                <IconButton onClick={() => setScreen('edit')}>
-                                    <PencilIcon />
-                                </IconButton>
-                            ) : null}
-                            {screen !== 'gcode' ? (
-                                <IconButton onClick={() => setScreen('gcode')}>
-                                    <DrillIcon />
-                                </IconButton>
-                            ) : null}
-                            {screen !== 'history' ? (
-                                <IconButton
-                                    onClick={() => setScreen('history')}
-                                >
-                                    <IconHistoryToggle />
-                                </IconButton>
-                            ) : null}
                         </React.Fragment>
                     )}
                     <IconButton onClick={() => setHide(!hide)}>
@@ -314,7 +300,10 @@ export const App = ({ initialState }: { initialState: State }) => {
                 state={state}
                 dispatch={dispatch}
                 hover={hover}
+                screen={screen}
+                setScreen={setScreen}
                 setHover={setHover}
+                setStyleHover={setStyleHover}
             />
         </div>
     );
@@ -324,3 +313,4 @@ import { GCodeEditor } from './gcode/GCodeEditor';
 import { HistoryPlayback } from './history/HistoryPlayback';
 import { handleKeyboard } from './handleKeyboard';
 import { NewSidebar } from './sidebar/NewSidebar';
+import { StyleHover } from './editor/MultiStyleForm';

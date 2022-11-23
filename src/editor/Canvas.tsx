@@ -93,6 +93,8 @@ export type Props = {
     hover: Hover | null;
     setHover: (hover: Hover | null) => void;
     ppi?: number;
+    styleHover: StyleHover | null;
+    setStyleHover: (styleHover: StyleHover | null) => void;
 };
 
 export const worldToScreen = (
@@ -327,6 +329,8 @@ export const Canvas = ({
     isTouchScreen,
     // cancelDragSelect,
     ppi,
+    styleHover,
+    setStyleHover,
 }: Props) => {
     const mirrorTransforms = React.useMemo(
         () => getMirrorTransforms(state.mirrors),
@@ -445,10 +449,6 @@ export const Canvas = ({
     const clip = state.view.activeClip
         ? state.clips[state.view.activeClip]
         : undefined;
-
-    const [styleHover, setStyleHover] = React.useState(
-        null as null | StyleHover,
-    );
 
     const selectedIds = React.useMemo(() => {
         return getSelectedIds(state.paths, state.selection);

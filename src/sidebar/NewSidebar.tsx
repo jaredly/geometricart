@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { Action } from '../state/Action';
-import { Mirror, PathGroup, State } from '../types';
+import { Mirror, Path, PathGroup, State } from '../types';
 import { Checkbox } from 'primereact/checkbox';
 import { Tree } from 'primereact/tree';
 import { Button } from 'primereact/button';
@@ -8,6 +8,17 @@ import { Accordion, AccordionTab } from 'primereact/accordion';
 import { Hover } from '../editor/Sidebar';
 
 import type * as CSS from 'csstype';
+import { idsToStyle } from '../editor/touchscreenControls';
+import { MultiStyleForm, StyleHover } from '../editor/MultiStyleForm';
+import { Export } from '../editor/Export';
+import { Screen } from '../App';
+import {
+    DrillIcon,
+    IconButton,
+    IconHistoryToggle,
+    MagicWandIcon,
+    PencilIcon,
+} from '../icons/Icon';
 
 declare module 'csstype' {
     interface Properties {
@@ -20,22 +31,64 @@ export const NewSidebar = ({
     dispatch,
     hover,
     setHover,
+    setStyleHover,
+    screen,
+    setScreen,
 }: {
     state: State;
     dispatch: React.Dispatch<Action>;
     hover: Hover | null;
     setHover: (hover: Hover | null) => void;
+    setStyleHover: (hover: StyleHover | null) => void;
+    screen: Screen;
+    setScreen: (s: Screen) => void;
 }): JSX.Element => {
+    const styleIds = idsToStyle(state);
     return (
         <div
             style={{
                 minWidth: 300,
                 padding: 16,
                 alignSelf: 'stretch',
+                background: 'var(--surface-ground)',
                 display: 'flex',
+                flexDirection: 'column',
                 overflow: 'auto',
             }}
         >
+            <div
+                style={{ display: 'flex', flexDirection: 'row' }}
+                className="mb-2"
+            >
+                <Button
+                    className="p-button-text"
+                    onClick={() => setScreen('animate')}
+                    disabled={screen === 'animate'}
+                >
+                    <MagicWandIcon />
+                </Button>
+                <Button
+                    className="p-button-text"
+                    onClick={() => setScreen('edit')}
+                    disabled={screen === 'edit'}
+                >
+                    <PencilIcon />
+                </Button>
+                <Button
+                    className="p-button-text"
+                    onClick={() => setScreen('gcode')}
+                    disabled={screen === 'gcode'}
+                >
+                    <DrillIcon />
+                </Button>
+                <Button
+                    className="p-button-text"
+                    onClick={() => setScreen('history')}
+                    disabled={screen === 'history'}
+                >
+                    <IconHistoryToggle />
+                </Button>
+            </div>
             <Accordion
                 multiple
                 activeIndex={[0]}
@@ -90,7 +143,49 @@ export const NewSidebar = ({
                         dispatch={dispatch}
                     />
                 </AccordionTab>
-                <AccordionTab header="Export"></AccordionTab>
+                <AccordionTab
+                    header="Stroke & Fill"
+                    contentStyle={{
+                        maxWidth: 268,
+                    }}
+                >
+                    {styleIds.length ? (
+                        <MultiStyleForm
+                            palette={state.palettes[state.activePalette]}
+                            styles={styleIds.map((k) => state.paths[k].style)}
+                            onHover={(hover) => {
+                                setStyleHover(hover);
+                            }}
+                            onChange={(styles) => {
+                                const changed: {
+                                    [key: string]: Path;
+                                } = {};
+                                styles.forEach((style, i) => {
+                                    if (style != null) {
+                                        const id = styleIds[i];
+                                        changed[id] = {
+                                            ...state.paths[id],
+                                            style,
+                                        };
+                                    }
+                                });
+                                dispatch({
+                                    type: 'path:update:many',
+                                    changed,
+                                });
+                            }}
+                        />
+                    ) : (
+                        'Select some shapes'
+                    )}
+                </AccordionTab>
+                <AccordionTab header="Export">
+                    <Export
+                        state={state}
+                        dispatch={dispatch}
+                        originalSize={1000}
+                    />
+                </AccordionTab>
                 <AccordionTab header="Palette"></AccordionTab>
             </Accordion>
         </div>

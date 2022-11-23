@@ -117,12 +117,12 @@ export const MultiStyleForm = ({
 }) => {
     const { fills, lines } = collectMultiStyles(styles);
     return (
-        <div css={{ border: '1px solid magenta', padding: 8 }}>
-            Change {styles.length} styles.
+        <div css={{}}>
+            <div className="mb-2 text-xs">{styles.length} shapes selected.</div>
             <div>Fills</div>
             {fills.map((fill, i) => (
                 <div key={i} css={{ marginBottom: 8 }}>
-                    <div css={{ display: 'flex' }}>
+                    <div css={{ display: 'flex', flexWrap: 'wrap' }}>
                         <div key={`inset-${i}`}>
                             inset:
                             <MultiNumber
@@ -188,7 +188,13 @@ export const MultiStyleForm = ({
                             />
                         </div>
                     </div>
-                    <div css={{ display: 'flex' }}>
+                    <div
+                        css={{
+                            display: 'flex',
+                            flexWrap: 'wrap',
+                            flexShrink: 1,
+                        }}
+                    >
                         <div key={`variation-${i}`}>
                             variation:
                             <MultiNumber
@@ -449,7 +455,14 @@ export const LightDark = ({
     const options = [-3, -2, -1.5, -1, -0.5, 0, 0.5, 1, 1.5, 2, 3];
     const allSame = lighten.length === 1 ? lighten[0] : null;
     return (
-        <div css={{ display: 'flex', marginBottom: 2 }}>
+        <div
+            css={{
+                display: 'flex',
+                marginBottom: 2,
+                flexWrap: 'wrap',
+                flexShrink: 1,
+            }}
+        >
             {options.map((value, i) => (
                 <div key={i}>
                     {color
@@ -639,7 +652,15 @@ export const MultiColor = ({
     const options = ['black', 'white', 'transparent'];
     const highlight = color.length === 1 ? 'white' : '#faa';
     return (
-        <div css={{ marginBottom: 4, marginTop: 2, display: 'flex' }}>
+        <div
+            css={{
+                marginBottom: 4,
+                marginTop: 2,
+                display: 'flex',
+                flexWrap: 'wrap',
+                flexShrink: 1,
+            }}
+        >
             {palette.map((item, i) => (
                 <button
                     key={i}
