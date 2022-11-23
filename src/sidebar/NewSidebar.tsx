@@ -155,15 +155,15 @@ function PathGroupItem({
     pathKeys: string[];
 }): JSX.Element {
     const [open, setOpen] = React.useState(false);
+    const isSelected =
+        state.selection?.type === 'PathGroup' &&
+        state.selection.ids.includes(k);
     return (
         <>
             <div
                 className="hover"
                 style={{
-                    ...itemStyle(
-                        state.selection?.type === 'PathGroup' &&
-                            state.selection.ids.includes(k),
-                    ),
+                    ...itemStyle(isSelected),
                     padding: '8px 0',
                 }}
                 onMouseEnter={() =>
@@ -176,11 +176,14 @@ function PathGroupItem({
                 onClick={() => {
                     dispatch({
                         type: 'selection:set',
-                        selection: {
-                            type: 'PathGroup',
-                            ids: [k],
-                        },
+                        selection: isSelected
+                            ? null
+                            : {
+                                  type: 'PathGroup',
+                                  ids: [k],
+                              },
                     });
+                    setOpen(!open);
                 }}
                 onMouseLeave={() => setHover(null)}
             >
