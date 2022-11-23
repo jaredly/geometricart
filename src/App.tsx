@@ -323,4 +323,4 @@ export const App = ({ initialState }: { initialState: State }) => {
 import { GCodeEditor } from './gcode/GCodeEditor';
 import { HistoryPlayback } from './history/HistoryPlayback';
 import { handleKeyboard } from './handleKeyboard';
-import { NewSidebar } from './NewSidebar';
+import { NewSidebar } from './sidebar/NewSidebar';
