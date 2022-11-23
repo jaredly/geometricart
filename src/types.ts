@@ -347,14 +347,11 @@ export type Selection = {
 
 export type Tab =
     | 'Guides'
-    | 'Mirrors'
     | 'Paths'
     | 'PathGroups'
     | 'Palette'
-    | 'Export'
     | 'Overlays'
-    | 'Undo'
-    | 'Clips';
+    | 'Undo';
 
 export type Attachment = {
     id: Id;

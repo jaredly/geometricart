@@ -52,7 +52,7 @@ export const NewSidebar = ({
     return (
         <div
             style={{
-                minWidth: 300,
+                width: 400,
                 padding: 16,
                 alignSelf: 'stretch',
                 background: 'var(--surface-ground)',
@@ -88,7 +88,7 @@ export const NewSidebar = ({
                 style={{ padding: 0, flex: 1 }}
                 onTabOpen={(evt) => {}}
                 onTabChange={(evt) => {
-                    setOpenSidebars(evt.index);
+                    setOpenSidebars(evt.index as any);
                 }}
             >
                 <AccordionTab
@@ -132,12 +132,7 @@ export const NewSidebar = ({
                         dispatch={dispatch}
                     />
                 </AccordionTab>
-                <AccordionTab
-                    header="Stroke & Fill"
-                    contentStyle={{
-                        maxWidth: 268,
-                    }}
-                >
+                <AccordionTab header="Stroke & Fill" contentStyle={{}}>
                     {styleIds.length ? (
                         <MultiStyleForm
                             palette={state.palettes[state.activePalette]}

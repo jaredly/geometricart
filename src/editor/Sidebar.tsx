@@ -305,126 +305,10 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactElement } = {
             </div>
         </div>
     ),
-    Mirrors: ({ state, dispatch, setHover, setPendingMirror }) => {
-        return (
-            <div
-                css={{
-                    overflow: 'auto',
-                    flexShrink: 1,
-                    flex: 1,
-                    display: 'flex',
-                    flexDirection: 'row',
-                    flexWrap: 'wrap',
-                    alignItems: 'flex-start',
-                    alignContent: 'flex-start',
-                    justifyContent: 'flex-start',
-                    // minHeight: 100,
-                }}
-                // onClick={() => {
-                //     dispatch({ type: 'selection:set', selection: null });
-                // }}
-            >
-                {(state.selection?.type === 'Path' ||
-                    state.selection?.type === 'PathGroup') &&
-                state.activeMirror ? (
-                    <button
-                        onClick={() => {
-                            dispatch({
-                                type: 'path:multiply',
-                                selection:
-                                    state.selection as PathMultiply['selection'],
-                                mirror: state.activeMirror!,
-                            });
-                        }}
-                    >
-                        Multiply selection around active mirror
-                    </button>
-                ) : null}
-                {Object.keys(state.mirrors).map((k) => (
-                    <MirrorForm
-                        key={k}
-                        mirrors={state.mirrors}
-                        selected={
-                            state.selection?.type === 'Mirror' &&
-                            state.selection.ids.includes(k)
-                        }
-                        // setSelected={(sel) => {
-                        //     if (sel) {
-                        //         dispatch({
-                        //             type: 'selection:set',
-                        //             selection: { type: 'Mirror', ids: [k] },
-                        //         });
-                        //     } else {
-                        //         dispatch({
-                        //             type: 'selection:set',
-                        //             selection: null,
-                        //         });
-                        //     }
-                        // }}
-                        onMouseOut={() => setHover(null)}
-                        onMouseOver={() =>
-                            setHover({ kind: 'Mirror', id: k, type: 'element' })
-                        }
-                        isActive={state.activeMirror === k}
-                        onDuplicate={() => {
-                            dispatch({
-                                type: 'mirror:add',
-                                mirror: state.mirrors[k],
-                            });
-                        }}
-                        onChild={() => {
-                            setPendingMirror({
-                                parent: k,
-                                rotations: 3,
-                                reflect: true,
-                                center: null,
-                            });
-                        }}
-                        onSelect={() => {
-                            dispatch({
-                                type: 'mirror:active',
-                                id: state.activeMirror === k ? null : k,
-                            });
-                        }}
-                        mirror={state.mirrors[k]}
-                        onChange={(mirror) =>
-                            dispatch({
-                                type: 'mirror:change',
-                                mirror,
-                                id: k,
-                            })
-                        }
-                    />
-                ))}
-                <button
-                    onClick={() => {
-                        setPendingMirror({
-                            parent: null,
-                            rotations: 3,
-                            reflect: true,
-                            center: null,
-                        });
-                    }}
-                >
-                    Create new mirror
-                </button>
-            </div>
-        );
-    },
-    Export: ({ state, dispatch, width, height }) => (
-        <Export
-            state={state}
-            dispatch={dispatch}
-            originalSize={Math.max(width, height)}
-        />
-    ),
     Palette: ({ state, dispatch }) => (
         <PalettesForm state={state} dispatch={dispatch} />
     ),
     Overlays: OverlaysForm,
-    Clips: ({ state, dispatch }) => {
-        return Clips({ state, dispatch, setHover: () => {} });
-    },
     Undo: ({ state, dispatch }) => {
         const [branch, setBranch] = React.useState(state.history.currentBranch);
         const current = state.history.branches[+branch];
@@ -664,7 +548,7 @@ export function Sidebar({
                 }}
             />
             <Tabs
-                current={state.tab}
+                current={tabs[state.tab] ? state.tab : Object.keys(tabs)[0]}
                 props={{
                     state,
                     width,
