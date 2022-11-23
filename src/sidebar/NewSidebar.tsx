@@ -20,6 +20,7 @@ import {
     MagicWandIcon,
     PencilIcon,
 } from '../icons/Icon';
+import { useLocalStorage } from '../vest/App';
 
 declare module 'csstype' {
     interface Properties {
@@ -45,6 +46,9 @@ export const NewSidebar = ({
     setScreen: (s: Screen) => void;
 }): JSX.Element => {
     const styleIds = selectedPathIds(state);
+    const [openSidebars, setOpenSidebars] = useLocalStorage('openSidebars', [
+        0,
+    ]);
     return (
         <div
             style={{
@@ -80,15 +84,11 @@ export const NewSidebar = ({
             </div>
             <Accordion
                 multiple
-                activeIndex={[0]}
+                activeIndex={openSidebars}
                 style={{ padding: 0, flex: 1 }}
-                onTabOpen={(evt) => {
-                    if (evt.index === 1 && !state.view.guides) {
-                        dispatch({
-                            type: 'view:update',
-                            view: { ...state.view, guides: true },
-                        });
-                    }
+                onTabOpen={(evt) => {}}
+                onTabChange={(evt) => {
+                    setOpenSidebars(evt.index);
                 }}
             >
                 <AccordionTab
