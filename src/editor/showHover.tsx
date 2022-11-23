@@ -11,7 +11,7 @@ import { geomToPrimitives } from '../rendering/points';
 import { Mirror, State } from '../types';
 import { Bounds } from './GuideElement';
 import { RenderMirror } from './RenderMirror';
-import { UnderlinePath } from './RenderPath';
+import { emptyPath, UnderlinePath } from './RenderPath';
 import { RenderPrimitive } from './RenderPrimitive';
 import { Hover } from './Sidebar';
 
@@ -103,6 +103,21 @@ export const showHover = (
                         key={`${key}:${j}:${i}`}
                     />
                 )),
+            );
+        }
+        case 'Clip': {
+            const clip = state.clips[hover.id];
+            return (
+                <UnderlinePath
+                    path={{
+                        ...emptyPath,
+                        segments: clip,
+                        origin: clip[clip.length - 1].to,
+                    }}
+                    zoom={zoom}
+                    color={color}
+                    key={key}
+                />
             );
         }
     }

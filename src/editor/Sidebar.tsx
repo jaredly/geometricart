@@ -423,7 +423,7 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactElement } = {
     ),
     Overlays: OverlaysForm,
     Clips: ({ state, dispatch }) => {
-        return Clips({ state, dispatch });
+        return Clips({ state, dispatch, setHover: () => {} });
     },
     Undo: ({ state, dispatch }) => {
         const [branch, setBranch] = React.useState(state.history.currentBranch);

@@ -7,53 +7,31 @@ import { Action } from '../state/Action';
 import { selectedPathIds } from './touchscreenControls';
 import { itemStyle } from '../sidebar/NewSidebar';
 import { Checkbox } from 'primereact/checkbox';
+import { Hover } from './Sidebar';
+import { Button } from 'primereact/button';
+import { ScissorsCuttingIcon } from '../icons/Icon';
 
 export function Clips({
     state,
     dispatch,
+    setHover,
 }: {
+    setHover: (hover: Hover | null) => void;
     state: State;
     dispatch: (action: Action) => unknown;
 }): React.ReactElement<any, string | React.JSXElementConstructor<any>> {
     const ids = selectedPathIds(state);
     return (
         <div>
-            {state.view.activeClip ? (
-                <button
-                    onClick={() => {
-                        dispatch({
-                            type: 'clip:cut',
-                            clip: state.view.activeClip!,
-                        });
-                    }}
-                >
-                    Cut to active clip
-                </button>
-            ) : null}
             {Object.keys(state.clips).map((id) => (
                 <div
                     key={id}
                     className="field-radiobutton hover"
                     style={itemStyle(false)}
-                    // onMouseEnter={() =>
-                    //     setHover({
-                    //         type: 'element',
-                    //         kind: 'Mirror',
-                    //         id: k,
-                    //     })
-                    // }
+                    onMouseEnter={() =>
+                        setHover({ type: 'element', kind: 'Clip', id })
+                    }
                     onClick={() => {
-                        // if (state.activeMirror !== k) {
-                        //     dispatch({
-                        //         type: 'mirror:active',
-                        //         id: k,
-                        //     });
-                        // } else {
-                        //     dispatch({
-                        //         type: 'mirror:active',
-                        //         id: null,
-                        //     });
-                        // }
                         dispatch({
                             type: 'view:update',
                             view: {
@@ -63,7 +41,7 @@ export function Clips({
                             },
                         });
                     }}
-                    // onMouseLeave={() => setHover(null)}
+                    onMouseLeave={() => setHover(null)}
                 >
                     <Checkbox
                         checked={state.view.activeClip === id}
@@ -96,39 +74,27 @@ export function Clips({
                     >
                         Clip {id}
                     </label>
+                    {state.view.activeClip === id ? (
+                        <Button
+                            tooltip="Cut to current clip"
+                            onClick={() => {
+                                dispatch({
+                                    type: 'clip:cut',
+                                    clip: state.view.activeClip!,
+                                });
+                            }}
+                            className="p-button-text"
+                            style={{
+                                marginTop: -7,
+                                marginBottom: -7,
+                            }}
+                        >
+                            <ScissorsCuttingIcon />
+                        </Button>
+                    ) : null}
                 </div>
-
-                // <div
-                //     key={id}
-                //     onClick={() => {
-                //         dispatch({
-                //             type: 'view:update',
-                //             view: {
-                //                 ...state.view,
-                //                 activeClip:
-                //                     state.view.activeClip === id ? null : id,
-                //             },
-                //         });
-                //     }}
-                //     css={{
-                //         cursor: 'pointer',
-                //         padding: 8,
-                //         ':hover': {
-                //             background: '#555',
-                //         },
-                //     }}
-                //     style={
-                //         state.view.activeClip === id
-                //             ? {
-                //                   border: '1px solid #aaa',
-                //               }
-                //             : {}
-                //     }
-                // >
-                //     Clip {id}
-                // </div>
             ))}
-            <div>Select a single shape to clip to it.</div>
+            <div className="p-2">Select a single shape to clip to it.</div>
             {ids.length === 1 ? (
                 <button
                     className="mt-2"

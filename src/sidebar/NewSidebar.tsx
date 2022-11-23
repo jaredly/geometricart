@@ -169,7 +169,11 @@ export const NewSidebar = ({
                     )}
                 </AccordionTab>
                 <AccordionTab header="Clips">
-                    <Clips state={state} dispatch={dispatch} />
+                    <Clips
+                        state={state}
+                        dispatch={dispatch}
+                        setHover={setHover}
+                    />
                 </AccordionTab>
                 <AccordionTab header="Export">
                     <Export
