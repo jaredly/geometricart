@@ -58,13 +58,7 @@ export const NewSidebar = ({
                         <div
                             key={k}
                             className="field-radiobutton hover"
-                            style={{
-                                padding: 8,
-                                cursor: 'pointer',
-                                marginBottom: 0,
-                                '--hover-color': 'rgba(255, 255, 255, 0.1)',
-                                display: 'flex',
-                            }}
+                            style={itemStyle(false)}
                             onMouseEnter={() =>
                                 setHover({
                                     type: 'element',
@@ -164,20 +158,10 @@ export const NewSidebar = ({
                         <div
                             key={k}
                             className="hover"
-                            style={{
-                                padding: 8,
-                                cursor: 'pointer',
-                                marginBottom: 0,
-                                '--hover-color': 'rgba(255, 255, 255, 0.1)',
-                                display: 'flex',
-                                flexDirection: 'row',
-                                alignItems: 'center',
-                                backgroundColor:
-                                    state.selection?.type === 'Guide' &&
-                                    state.selection.ids.includes(k)
-                                        ? '#aaa'
-                                        : 'transparent',
-                            }}
+                            style={itemStyle(
+                                state.selection?.type === 'Guide' &&
+                                    state.selection.ids.includes(k),
+                            )}
                             onMouseEnter={() =>
                                 setHover({
                                     type: 'element',
@@ -204,7 +188,37 @@ export const NewSidebar = ({
                     ))}
                 </AccordionTab>
                 {/* hmm ok so shapes ... grouped ... hm */}
-                <AccordionTab header="Shapes"></AccordionTab>
+                <AccordionTab header="Shapes">
+                    {Object.entries(state.paths).map(([k, path]) => (
+                        <div
+                            key={k}
+                            className="hover"
+                            style={itemStyle(
+                                state.selection?.type === 'Path' &&
+                                    state.selection.ids.includes(k),
+                            )}
+                            onMouseEnter={() =>
+                                setHover({
+                                    type: 'element',
+                                    kind: 'Path',
+                                    id: k,
+                                })
+                            }
+                            onClick={() => {
+                                dispatch({
+                                    type: 'selection:set',
+                                    selection: {
+                                        type: 'Path',
+                                        ids: [k],
+                                    },
+                                });
+                            }}
+                            onMouseLeave={() => setHover(null)}
+                        >
+                            {path.segments.length}
+                        </div>
+                    ))}
+                </AccordionTab>
                 <AccordionTab header="Export"></AccordionTab>
                 <AccordionTab header="Palette"></AccordionTab>
             </Accordion>
@@ -223,3 +237,16 @@ const showMirror = (
         </span>
     );
 };
+
+function itemStyle(selected: boolean): React.CSSProperties | undefined {
+    return {
+        padding: 8,
+        cursor: 'pointer',
+        marginBottom: 0,
+        '--hover-color': 'rgba(255, 255, 255, 0.1)',
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: selected ? '#aaa' : '',
+    };
+}
