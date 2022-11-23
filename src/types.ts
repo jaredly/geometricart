@@ -345,13 +345,7 @@ export type Selection = {
     ids: Array<string>;
 };
 
-export type Tab =
-    | 'Guides'
-    | 'Paths'
-    | 'PathGroups'
-    | 'Palette'
-    | 'Overlays'
-    | 'Undo';
+export type Tab = 'Guides' | 'Paths' | 'PathGroups' | 'Undo';
 
 export type Attachment = {
     id: Id;

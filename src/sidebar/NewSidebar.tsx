@@ -22,6 +22,7 @@ import {
 } from '../icons/Icon';
 import { useLocalStorage } from '../vest/App';
 import { PalettesForm } from '../editor/PalettesForm';
+import { OverlaysForm } from '../editor/OverlaysForm';
 
 declare module 'csstype' {
     interface Properties {
@@ -65,7 +66,7 @@ export const NewSidebar = ({
         >
             <div
                 style={{ display: 'flex', flexDirection: 'row' }}
-                className="mb-2"
+                className="mb-3"
             >
                 {[
                     { name: 'edit', icon: PencilIcon },
@@ -140,7 +141,7 @@ export const NewSidebar = ({
                         key: 'fill',
                         header: 'Stroke & Fill',
                         content: () => (
-                            <>
+                            <div className="p-3">
                                 {styleIds.length ? (
                                     <MultiStyleForm
                                         palette={
@@ -174,7 +175,7 @@ export const NewSidebar = ({
                                 ) : (
                                     'Select some shapes'
                                 )}
-                            </>
+                            </div>
                         ),
                     },
                     {
@@ -204,6 +205,13 @@ export const NewSidebar = ({
                         header: 'Palette',
                         content: () => (
                             <PalettesForm state={state} dispatch={dispatch} />
+                        ),
+                    },
+                    {
+                        key: 'overlays',
+                        header: 'Overlays',
+                        content: () => (
+                            <OverlaysForm state={state} dispatch={dispatch} />
                         ),
                     },
                 ]}
@@ -288,17 +296,29 @@ function PathGroupItem({
                         id: k,
                     })
                 }
-                onClick={() => {
-                    dispatch({
-                        type: 'selection:set',
-                        selection: isSelected
-                            ? null
-                            : {
-                                  type: 'PathGroup',
-                                  ids: [k],
-                              },
-                    });
-                    setOpen(!open);
+                onMouseDown={(evt) => evt.preventDefault()}
+                onClick={(evt) => {
+                    if (evt.shiftKey && state.selection?.type === 'PathGroup') {
+                        dispatch({
+                            type: 'selection:set',
+                            selection: {
+                                type: 'PathGroup',
+                                ids: state.selection.ids.includes(k)
+                                    ? state.selection.ids.filter((i) => i !== k)
+                                    : state.selection.ids.concat([k]),
+                            },
+                        });
+                    } else {
+                        dispatch({
+                            type: 'selection:set',
+                            selection: isSelected
+                                ? null
+                                : {
+                                      type: 'PathGroup',
+                                      ids: [k],
+                                  },
+                        });
+                    }
                 }}
                 onMouseLeave={() => setHover(null)}
             >
@@ -338,14 +358,35 @@ function PathGroupItem({
                                     id: k,
                                 })
                             }
-                            onClick={() => {
-                                dispatch({
-                                    type: 'selection:set',
-                                    selection: {
-                                        type: 'Path',
-                                        ids: [k],
-                                    },
-                                });
+                            onMouseDown={(evt) => evt.preventDefault()}
+                            onClick={(evt) => {
+                                evt.preventDefault();
+                                if (
+                                    evt.shiftKey &&
+                                    state.selection?.type === 'Path'
+                                ) {
+                                    dispatch({
+                                        type: 'selection:set',
+                                        selection: {
+                                            type: 'Path',
+                                            ids: state.selection.ids.includes(k)
+                                                ? state.selection.ids.filter(
+                                                      (i) => i !== k,
+                                                  )
+                                                : state.selection.ids.concat([
+                                                      k,
+                                                  ]),
+                                        },
+                                    });
+                                } else {
+                                    dispatch({
+                                        type: 'selection:set',
+                                        selection: {
+                                            type: 'Path',
+                                            ids: [k],
+                                        },
+                                    });
+                                }
                             }}
                             onMouseLeave={() => setHover(null)}
                         >

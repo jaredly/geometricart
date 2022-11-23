@@ -305,10 +305,6 @@ const tabs: { [key in Tab]: (props: TabProps) => React.ReactElement } = {
             </div>
         </div>
     ),
-    Palette: ({ state, dispatch }) => (
-        <PalettesForm state={state} dispatch={dispatch} />
-    ),
-    Overlays: OverlaysForm,
     Undo: ({ state, dispatch }) => {
         const [branch, setBranch] = React.useState(state.history.currentBranch);
         const current = state.history.branches[+branch];

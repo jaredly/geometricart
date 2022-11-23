@@ -19,6 +19,12 @@ export const Accordion = ({
     activeIds: ActiveIds;
     setActiveIds: (ids: ActiveIds) => void;
 }) => {
+    const cache = React.useMemo(() => ({} as { [key: string]: boolean }), []);
+    Object.entries(activeIds).forEach(([key, active]) => {
+        if (active) {
+            cache[key] = true;
+        }
+    });
     return (
         <div
             className="p-accordion p-component"
@@ -78,10 +84,11 @@ export const Accordion = ({
                         />
                         {tab.header}
                     </div>
-                    {activeIds[tab.key] ? (
+                    {activeIds[tab.key] || cache[tab.key] ? (
                         <div
                             style={{
                                 borderBottom: '1px solid var(--surface-border)',
+                                display: activeIds[tab.key] ? 'block' : 'none',
                             }}
                         >
                             {tab.content()}

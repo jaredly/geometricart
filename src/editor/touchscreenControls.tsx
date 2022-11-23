@@ -137,16 +137,6 @@ export function selectionSection(
             >
                 <SelectDragIcon />
             </IconButton>
-            {styleIds.length ? (
-                <IconButton
-                    onClick={() => {
-                        setStyleOpen((s) => !s);
-                    }}
-                    selected={styleOpen}
-                >
-                    <PaintFillIcon />
-                </IconButton>
-            ) : null}
             {state.selection.type === 'Guide' &&
             state.selection.ids.length === 1 &&
             state.guides[state.selection.ids[0]].geom.type === 'Line' ? (

@@ -50,7 +50,6 @@ export const OverlaysForm = ({
                 transition: '.3s ease background',
             }}
         >
-            Overlays!
             <div css={{}}>
                 {Object.keys(state.overlays).map((id) => (
                     <div

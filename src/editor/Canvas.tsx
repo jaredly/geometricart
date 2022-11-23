@@ -698,7 +698,7 @@ export const Canvas = ({
                         );
                     })}
 
-                {maybeReverse(view.guides, hover?.type === 'guides') ? (
+                {view.guides || hover?.type === 'guides' ? (
                     <Guides
                         state={state}
                         bounds={bounds}
