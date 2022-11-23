@@ -78,6 +78,7 @@ export const Export = ({
 
     return (
         <div
+            className="p-2"
             css={{
                 marginTop: 16,
             }}

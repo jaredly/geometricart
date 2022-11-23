@@ -4,7 +4,7 @@ import { Mirror, Path, PathGroup, State } from '../types';
 import { Checkbox } from 'primereact/checkbox';
 import { Tree } from 'primereact/tree';
 import { Button } from 'primereact/button';
-import { Accordion, AccordionTab } from 'primereact/accordion';
+import { Accordion as MyAccordion } from './Accordion';
 import { Hover } from '../editor/Sidebar';
 import { Clips } from '../editor/Clips';
 
@@ -21,6 +21,7 @@ import {
     PencilIcon,
 } from '../icons/Icon';
 import { useLocalStorage } from '../vest/App';
+import { PalettesForm } from '../editor/PalettesForm';
 
 declare module 'csstype' {
     interface Properties {
@@ -46,9 +47,10 @@ export const NewSidebar = ({
     setScreen: (s: Screen) => void;
 }): JSX.Element => {
     const styleIds = selectedPathIds(state);
-    const [openSidebars, setOpenSidebars] = useLocalStorage('openSidebars', [
-        0,
-    ]);
+    const [openSidebars, setOpenSidebars] = useLocalStorage(
+        'openSidebarIds',
+        {} as { [key: string]: boolean },
+    );
     return (
         <div
             style={{
@@ -82,103 +84,130 @@ export const NewSidebar = ({
                     </Button>
                 ))}
             </div>
-            <Accordion
-                multiple
-                activeIndex={openSidebars}
-                style={{ padding: 0, flex: 1 }}
-                onTabOpen={(evt) => {}}
-                onTabChange={(evt) => {
-                    setOpenSidebars(evt.index as any);
+            {/* <Accordion>
+                <AccordionTab header="Yes please">Ok folks</AccordionTab>
+            </Accordion> */}
+            <MyAccordion
+                activeIds={openSidebars}
+                setActiveIds={(ids) => {
+                    setOpenSidebars(ids);
                 }}
-            >
-                <AccordionTab
-                    header="Mirrors"
-                    contentStyle={{
-                        padding: 0,
-                    }}
-                >
-                    <MirrorItems
-                        state={state}
-                        setHover={setHover}
-                        dispatch={dispatch}
-                    />
-                </AccordionTab>
-                <AccordionTab
-                    headerStyle={{ flex: 1 }}
-                    header={
-                        <div
-                            style={{
-                                flexDirection: 'row',
-                                display: 'flex',
-                                alignItems: 'center',
-                            }}
-                        >
-                            Guides
-                            <div style={{ flex: 1 }} />
-                            {toggleViewGuides(state, dispatch)}
-                        </div>
-                    }
-                >
-                    <GuideItems
-                        state={state}
-                        setHover={setHover}
-                        dispatch={dispatch}
-                    />
-                </AccordionTab>
-                <AccordionTab header="Shapes">
-                    <ShapeItems
-                        state={state}
-                        setHover={setHover}
-                        dispatch={dispatch}
-                    />
-                </AccordionTab>
-                <AccordionTab header="Stroke & Fill" contentStyle={{}}>
-                    {styleIds.length ? (
-                        <MultiStyleForm
-                            palette={state.palettes[state.activePalette]}
-                            styles={styleIds.map((k) => state.paths[k].style)}
-                            onHover={(hover) => {
-                                setStyleHover(hover);
-                            }}
-                            onChange={(styles) => {
-                                const changed: {
-                                    [key: string]: Path;
-                                } = {};
-                                styles.forEach((style, i) => {
-                                    if (style != null) {
-                                        const id = styleIds[i];
-                                        changed[id] = {
-                                            ...state.paths[id],
-                                            style,
-                                        };
-                                    }
-                                });
-                                dispatch({
-                                    type: 'path:update:many',
-                                    changed,
-                                });
-                            }}
-                        />
-                    ) : (
-                        'Select some shapes'
-                    )}
-                </AccordionTab>
-                <AccordionTab header="Clips">
-                    <Clips
-                        state={state}
-                        dispatch={dispatch}
-                        setHover={setHover}
-                    />
-                </AccordionTab>
-                <AccordionTab header="Export">
-                    <Export
-                        state={state}
-                        dispatch={dispatch}
-                        originalSize={1000}
-                    />
-                </AccordionTab>
-                <AccordionTab header="Palette"></AccordionTab>
-            </Accordion>
+                tabs={[
+                    {
+                        key: 'mirrors',
+                        header: 'Mirrors',
+                        content: () => (
+                            <MirrorItems
+                                state={state}
+                                setHover={setHover}
+                                dispatch={dispatch}
+                            />
+                        ),
+                    },
+                    {
+                        key: 'guides',
+                        header: (
+                            <div>
+                                Guides
+                                {toggleViewGuides(state, dispatch)}
+                            </div>
+                        ),
+                        onHover(hovered) {
+                            setHover(hovered ? { type: 'guides' } : null);
+                        },
+                        content: () => {
+                            return (
+                                <GuideItems
+                                    state={state}
+                                    setHover={setHover}
+                                    dispatch={dispatch}
+                                />
+                            );
+                        },
+                    },
+                    {
+                        key: 'shapes',
+                        header: 'Shapes',
+                        content: () => (
+                            <ShapeItems
+                                state={state}
+                                setHover={setHover}
+                                dispatch={dispatch}
+                            />
+                        ),
+                    },
+                    {
+                        key: 'fill',
+                        header: 'Stroke & Fill',
+                        content: () => (
+                            <>
+                                {styleIds.length ? (
+                                    <MultiStyleForm
+                                        palette={
+                                            state.palettes[state.activePalette]
+                                        }
+                                        styles={styleIds.map(
+                                            (k) => state.paths[k].style,
+                                        )}
+                                        onHover={(hover) => {
+                                            setStyleHover(hover);
+                                        }}
+                                        onChange={(styles) => {
+                                            const changed: {
+                                                [key: string]: Path;
+                                            } = {};
+                                            styles.forEach((style, i) => {
+                                                if (style != null) {
+                                                    const id = styleIds[i];
+                                                    changed[id] = {
+                                                        ...state.paths[id],
+                                                        style,
+                                                    };
+                                                }
+                                            });
+                                            dispatch({
+                                                type: 'path:update:many',
+                                                changed,
+                                            });
+                                        }}
+                                    />
+                                ) : (
+                                    'Select some shapes'
+                                )}
+                            </>
+                        ),
+                    },
+                    {
+                        key: 'clips',
+                        header: 'Clips',
+                        content: () => (
+                            <Clips
+                                state={state}
+                                dispatch={dispatch}
+                                setHover={setHover}
+                            />
+                        ),
+                    },
+                    {
+                        key: 'export',
+                        header: 'Export',
+                        content: () => (
+                            <Export
+                                state={state}
+                                dispatch={dispatch}
+                                originalSize={1000}
+                            />
+                        ),
+                    },
+                    {
+                        key: 'palette',
+                        header: 'Palette',
+                        content: () => (
+                            <PalettesForm state={state} dispatch={dispatch} />
+                        ),
+                    },
+                ]}
+            />
         </div>
     );
 };
