@@ -10,16 +10,22 @@ export type RasterSeg = {
     from: Coord;
     to: Coord;
     points: Array<Coord>;
-    key: string;
+    skipped?: boolean;
+    seg: Segment;
 };
 
 export const rasterSegPoints = (segs: RasterSeg[]) => {
     return segs.flatMap((seg) => seg.points);
 };
 
+export const pxToMM = (value: number, ppi: number) => {
+    return (value / ppi) * 250.4 * 6;
+};
+
 export const pathToPoints = (
     segments: Array<Segment>,
     accurateArcCorners = false,
+    ppi?: number,
 ): RasterSeg[] => {
     let smallestArcLength = Infinity;
     segments.forEach((seg, i) => {
@@ -90,17 +96,23 @@ export const pathToPoints = (
                         push(seg.center, t2a, r),
                         seg.to,
                     ],
-                    key: segmentKey(prev, seg),
+                    seg,
                 });
             } else {
-                const bt = angleBetween(t1, t2, seg.clockwise);
-                const subs = 10;
+                let bt = angleBetween(t1, t2, seg.clockwise);
+                if (closeEnough(bt, 0)) {
+                    bt = Math.PI * 2;
+                    console.log('AK', t1, t2, r);
+                }
+                // const subs = 10;
+                const radius = dist(seg.center, seg.to);
+                const distance = bt * radius;
                 const points: Coord[] = [];
+                const subs = ppi ? pxToMM(distance, ppi) : 10;
                 // const subs = (bt * r) / (smallestArcLength / 10);
                 for (let i = 1; i < subs; i++) {
                     const tm = t1 + (bt / subs) * i * (seg.clockwise ? 1 : -1);
-                    const d = dist(seg.center, seg.to);
-                    const midp = push(seg.center, tm, d);
+                    const midp = push(seg.center, tm, radius);
                     points.push(midp);
                 }
                 points.push(seg.to);
@@ -108,7 +120,7 @@ export const pathToPoints = (
                     from: prev,
                     to: seg.to,
                     points,
-                    key: segmentKey(prev, seg),
+                    seg,
                 });
             }
             // const tm = t1 + (bt / 2) * (seg.clockwise ? 1 : -1);
@@ -120,12 +132,15 @@ export const pathToPoints = (
                 from: prev,
                 to: seg.to,
                 points: [seg.to],
-                key: segmentKey(prev, seg),
+                seg,
             });
         }
 
         // prev = seg.to;
     });
+    if (!segmentPoints.length) {
+        console.warn('wat', segments);
+    }
     return segmentPoints;
 };
 

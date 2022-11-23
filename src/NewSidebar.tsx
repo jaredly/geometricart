@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { Action } from './state/Action';
-import { State } from './types';
+import { Mirror, State } from './types';
 import { Checkbox } from 'primereact/checkbox';
 import { Button } from 'primereact/button';
 import { Accordion, AccordionTab } from 'primereact/accordion';
@@ -39,10 +39,22 @@ export const NewSidebar = ({
                 multiple
                 activeIndex={[0]}
                 style={{ padding: 0, flex: 1 }}
+                onTabOpen={(evt) => {
+                    if (evt.index === 1 && !state.view.guides) {
+                        dispatch({
+                            type: 'view:update',
+                            view: { ...state.view, guides: true },
+                        });
+                    }
+                }}
             >
-                <AccordionTab header="Mirrors">
+                <AccordionTab
+                    header="Mirrors"
+                    contentStyle={{
+                        padding: 0,
+                    }}
+                >
                     {Object.entries(state.mirrors).map(([k, mirror]) => (
-                        // TODO: Hoverrrrrrrr to show it
                         <div
                             key={k}
                             className="field-radiobutton hover"
@@ -130,6 +142,10 @@ export const NewSidebar = ({
                                     'pi pi-eye' +
                                     (state.view.guides ? '' : '-slash')
                                 }
+                                style={{
+                                    marginTop: -10,
+                                    marginBottom: -12,
+                                }}
                                 onClick={(evt) => {
                                     evt.stopPropagation();
                                     dispatch({
@@ -146,26 +162,31 @@ export const NewSidebar = ({
                 >
                     {Object.entries(state.guides).map(([k, guide]) => (
                         <div
+                            key={k}
+                            className="hover"
                             style={{
+                                padding: 8,
+                                cursor: 'pointer',
+                                marginBottom: 0,
+                                '--hover-color': 'rgba(255, 255, 255, 0.1)',
                                 display: 'flex',
                                 flexDirection: 'row',
                                 alignItems: 'center',
                             }}
+                            onMouseEnter={() =>
+                                setHover({
+                                    type: 'element',
+                                    kind: 'Guide',
+                                    id: k,
+                                })
+                            }
+                            onClick={() => {}}
+                            onMouseLeave={() => setHover(null)}
                         >
-                            {/* <Button
-                                className="p-button-sm p-button-rounded p-button-text"
-                                icon={
-                                    'pi pi-eye' + (guide.active ? '' : '-slash')
-                                }
-                                onClick={() => {
-                                    dispatch({
-                                        type: 'guide:toggle',
-                                        id: k,
-                                    });
-                                }}
-                                style={{ marginRight: 8 }}
-                            /> */}
                             {guide.geom.type}
+                            {guide.mirror
+                                ? showMirror(guide.mirror, state.mirrors)
+                                : null}
                         </div>
                     ))}
                 </AccordionTab>
@@ -175,5 +196,17 @@ export const NewSidebar = ({
                 <AccordionTab header="Palette"></AccordionTab>
             </Accordion>
         </div>
+    );
+};
+
+const showMirror = (
+    id: string | Mirror,
+    mirrors: { [key: string]: Mirror },
+): JSX.Element => {
+    const mirror = typeof id === 'string' ? mirrors[id] : id;
+    return (
+        <span style={{ fontSize: '80%', marginLeft: 16, opacity: 0.7 }}>
+            {(mirror.rotational.length + 1) * (mirror.reflect ? 2 : 1)}x
+        </span>
     );
 };

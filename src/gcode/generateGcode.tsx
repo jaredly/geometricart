@@ -11,6 +11,7 @@ import { sortedVisibleInsetPaths } from '../rendering/sortedVisibleInsetPaths';
 import { Coord, Path, State, StyleLine } from '../types';
 import PathKitInit, { PathKit } from 'pathkit-wasm';
 import { calcPathD } from '../editor/RenderPath';
+import { segmentKey, segmentKeyReverse } from '../rendering/segmentKey';
 
 const findClosest = (shape: RasterSeg[], point: Coord) => {
     let best = null as null | [number, number];
@@ -25,15 +26,18 @@ const findClosest = (shape: RasterSeg[], point: Coord) => {
     return { dist: best![0], idx: best![1] };
 };
 
-export const greedyPaths = (paths: Array<{ path: Path; style: StyleLine }>) => {
+export const greedyPaths = (
+    paths: Array<{ path: Path; style: StyleLine }>,
+    ppi: number,
+) => {
     const pathPoints: Array<Array<RasterSeg>> = [];
     paths.forEach(({ path, style }) => {
         if (style.inset) {
             insetPath(path, style.inset).forEach((sub) => {
-                pathPoints.push(pathToPoints(sub.segments));
+                pathPoints.push(pathToPoints(sub.segments, false, ppi));
             });
         } else {
-            pathPoints.push(pathToPoints(path.segments));
+            pathPoints.push(pathToPoints(path.segments, false, ppi));
         }
     });
 
@@ -59,7 +63,23 @@ export const greedyPaths = (paths: Array<{ path: Path; style: StyleLine }>) => {
         reordeeed.push(reordeeed[0]);
         ordered.push(reordeeed);
     }
-    return ordered;
+
+    const seen: { [key: string]: true } = {};
+    const res = ordered.map((shape) => {
+        return shape.map((seg) => {
+            const k = segmentKey(seg.from, seg.seg);
+            const bk = segmentKeyReverse(seg.from, seg.seg);
+            const already = seen[k] || seen[bk];
+            if (already) {
+                console.log('saww');
+            }
+            seen[k] = seen[bk] = true;
+            return already ? { ...seg, skipped: true } : seg;
+        });
+    });
+
+    // return res.filter((shape) => shape.some((seg) => !seg.skipped));
+    return res;
 };
 
 export const makeDepths = (
@@ -219,7 +239,7 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
             }
             lastTool = { diameter, vbitAngle };
 
-            const greedy = greedyPaths(colors[color]);
+            const greedy = greedyPaths(colors[color], state.meta.ppi);
             if (color.endsWith(':pocket')) {
                 greedy.forEach((shape) => {
                     const pocket = makePocket(
@@ -264,29 +284,43 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
                 return;
             }
             makeDepths(start ?? 0, depth, passDepth).forEach((itemDepth) => {
-                greedy.forEach((shape) => {
+                const good = greedy.filter((shape) =>
+                    shape.some((seg) => !seg.skipped),
+                );
+                good.forEach((shape) => {
                     const shapeCmds: GCode[] = [];
                     let distance = 0;
-                    rasterSegPoints(shape).forEach((pos, i) => {
-                        const { x, y } = scalePos(pos);
-                        let travel = last ? dist({ x, y }, last) : null;
-                        if (travel) {
-                            distance += travel;
-                        }
-                        if (i == 0) {
+                    let init = false;
+                    shape.forEach((segment, i) => {
+                        if (!init) {
+                            if (segment.skipped) {
+                                return;
+                            }
+                            init = true;
+                            const { x, y } = scalePos(segment.from);
+                            let travel = last ? dist({ x, y }, last) : null;
+                            if (travel) {
+                                distance += travel;
+                                time += travel / FAST_SPEED;
+                            }
                             shapeCmds.push(
                                 { type: 'clear' },
                                 { type: 'fast', x, y },
                                 { type: 'fast', z: 0 },
                                 { type: 'cut', z: -itemDepth, f: speed },
                             );
-                            if (travel) {
-                                time += travel! / speed;
-                            }
-                        } else {
-                            if (travel) {
-                                time += travel! / speed;
-                            }
+                            last = { x, y };
+                        }
+                        if (segment.skipped) {
+                            init = false;
+                            return;
+                        }
+                        segment.points.forEach((pos) => {
+                            const { x, y } = scalePos(pos);
+                            const travel = dist({ x, y }, last!);
+                            distance += travel;
+                            time += travel / speed;
+                            last = { x, y };
                             shapeCmds.push({
                                 type: 'cut',
                                 x,
@@ -294,9 +328,40 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
                                 f: speed,
                                 at: distance,
                             });
-                        }
-                        last = { x, y };
+                        });
                     });
+                    // rasterSegPoints(shape.filter((s) => !s.skipped)).forEach(
+                    //     (pos, i) => {
+                    //         const { x, y } = scalePos(pos);
+                    //         let travel = last ? dist({ x, y }, last) : null;
+                    //         if (travel) {
+                    //             distance += travel;
+                    //         }
+                    //         if (i == 0) {
+                    //             shapeCmds.push(
+                    //                 { type: 'clear' },
+                    //                 { type: 'fast', x, y },
+                    //                 { type: 'fast', z: 0 },
+                    //                 { type: 'cut', z: -itemDepth, f: speed },
+                    //             );
+                    //             if (travel) {
+                    //                 time += travel! / speed;
+                    //             }
+                    //         } else {
+                    //             if (travel) {
+                    //                 time += travel! / speed;
+                    //             }
+                    //             shapeCmds.push({
+                    //                 type: 'cut',
+                    //                 x,
+                    //                 y,
+                    //                 f: speed,
+                    //                 at: distance,
+                    //             });
+                    //         }
+                    //         last = { x, y };
+                    //     },
+                    // );
                     if (tabs && itemDepth > tabs.depth) {
                         const { x, y } = scalePos(shape[0].points[0]);
                         let latest: {
