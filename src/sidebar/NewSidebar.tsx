@@ -137,40 +137,6 @@ function ShapeItems({
             ))}
         </>
     );
-
-    // return (
-    //     <>
-    //         {Object.entries(state.paths).map(([k, path]) => (
-    //             <div
-    //                 key={k}
-    //                 className="hover"
-    //                 style={itemStyle(
-    //                     state.selection?.type === 'Path' &&
-    //                         state.selection.ids.includes(k),
-    //                 )}
-    //                 onMouseEnter={() =>
-    //                     setHover({
-    //                         type: 'element',
-    //                         kind: 'Path',
-    //                         id: k,
-    //                     })
-    //                 }
-    //                 onClick={() => {
-    //                     dispatch({
-    //                         type: 'selection:set',
-    //                         selection: {
-    //                             type: 'Path',
-    //                             ids: [k],
-    //                         },
-    //                     });
-    //                 }}
-    //                 onMouseLeave={() => setHover(null)}
-    //             >
-    //                 {path.segments.length}
-    //             </div>
-    //         ))}
-    //     </>
-    // );
 }
 
 function PathGroupItem({
@@ -190,50 +156,87 @@ function PathGroupItem({
 }): JSX.Element {
     const [open, setOpen] = React.useState(false);
     return (
-        <div
-            key={k}
-            className="hover"
-            style={{
-                ...itemStyle(
-                    state.selection?.type === 'PathGroup' &&
-                        state.selection.ids.includes(k),
-                ),
-                padding: '8px 0',
-            }}
-            onMouseEnter={() =>
-                setHover({
-                    type: 'element',
-                    kind: 'PathGroup',
-                    id: k,
-                })
-            }
-            onClick={() => {
-                dispatch({
-                    type: 'selection:set',
-                    selection: {
-                        type: 'PathGroup',
-                        ids: [k],
-                    },
-                });
-            }}
-            onMouseLeave={() => setHover(null)}
-        >
-            <Button
-                className="p-button-sm p-button-rounded p-button-text"
-                icon={`p-accordion-toggle-icon pi pi-chevron-${
-                    open ? 'down' : 'right'
-                }`}
+        <>
+            <div
+                className="hover"
                 style={{
-                    marginTop: -10,
-                    marginBottom: -12,
+                    ...itemStyle(
+                        state.selection?.type === 'PathGroup' &&
+                            state.selection.ids.includes(k),
+                    ),
+                    padding: '8px 0',
                 }}
-                onClick={(evt) => {
-                    evt.stopPropagation();
-                    setOpen(!open);
+                onMouseEnter={() =>
+                    setHover({
+                        type: 'element',
+                        kind: 'PathGroup',
+                        id: k,
+                    })
+                }
+                onClick={() => {
+                    dispatch({
+                        type: 'selection:set',
+                        selection: {
+                            type: 'PathGroup',
+                            ids: [k],
+                        },
+                    });
                 }}
-            />
-            {group.group ? 'Nested group' : 'Toplevel group'}
-        </div>
+                onMouseLeave={() => setHover(null)}
+            >
+                <Button
+                    className="p-button-sm p-button-rounded p-button-text"
+                    icon={`p-accordion-toggle-icon pi pi-chevron-${
+                        open ? 'down' : 'right'
+                    }`}
+                    style={{
+                        marginTop: -10,
+                        marginBottom: -12,
+                    }}
+                    onClick={(evt) => {
+                        evt.stopPropagation();
+                        setOpen(!open);
+                    }}
+                />
+                Group of {pathKeys.length} shapes
+            </div>
+            {open ? (
+                <div className="pl-5">
+                    {pathKeys.map((k) => (
+                        <div
+                            key={k}
+                            className="hover"
+                            style={{
+                                ...itemStyle(
+                                    state.selection?.type === 'Path' &&
+                                        state.selection.ids.includes(k),
+                                ),
+                                // padding: '8px 0',
+                            }}
+                            onMouseEnter={() =>
+                                setHover({
+                                    type: 'element',
+                                    kind: 'Path',
+                                    id: k,
+                                })
+                            }
+                            onClick={() => {
+                                dispatch({
+                                    type: 'selection:set',
+                                    selection: {
+                                        type: 'Path',
+                                        ids: [k],
+                                    },
+                                });
+                            }}
+                            onMouseLeave={() => setHover(null)}
+                        >
+                            {state.paths[k].segments.length} segments
+                        </div>
+                    ))}
+                </div>
+            ) : null}
+        </>
     );
 }
 
