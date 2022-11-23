@@ -1,7 +1,8 @@
 import * as React from 'react';
 import { Action } from '../state/Action';
-import { Mirror, State } from '../types';
+import { Mirror, PathGroup, State } from '../types';
 import { Checkbox } from 'primereact/checkbox';
+import { Tree } from 'primereact/tree';
 import { Button } from 'primereact/button';
 import { Accordion, AccordionTab } from 'primereact/accordion';
 import { Hover } from '../editor/Sidebar';
@@ -82,37 +83,12 @@ export const NewSidebar = ({
                         dispatch={dispatch}
                     />
                 </AccordionTab>
-                {/* hmm ok so shapes ... grouped ... hm */}
                 <AccordionTab header="Shapes">
-                    {Object.entries(state.paths).map(([k, path]) => (
-                        <div
-                            key={k}
-                            className="hover"
-                            style={itemStyle(
-                                state.selection?.type === 'Path' &&
-                                    state.selection.ids.includes(k),
-                            )}
-                            onMouseEnter={() =>
-                                setHover({
-                                    type: 'element',
-                                    kind: 'Path',
-                                    id: k,
-                                })
-                            }
-                            onClick={() => {
-                                dispatch({
-                                    type: 'selection:set',
-                                    selection: {
-                                        type: 'Path',
-                                        ids: [k],
-                                    },
-                                });
-                            }}
-                            onMouseLeave={() => setHover(null)}
-                        >
-                            {path.segments.length}
-                        </div>
-                    ))}
+                    <ShapeItems
+                        state={state}
+                        setHover={setHover}
+                        dispatch={dispatch}
+                    />
                 </AccordionTab>
                 <AccordionTab header="Export"></AccordionTab>
                 <AccordionTab header="Palette"></AccordionTab>
@@ -132,6 +108,134 @@ const showMirror = (
         </span>
     );
 };
+
+function ShapeItems({
+    state,
+    setHover,
+    dispatch,
+}: {
+    state: State;
+    setHover: (hover: Hover | null) => void;
+    dispatch: React.Dispatch<Action>;
+}): JSX.Element {
+    const groups: { [key: string]: string[] } = {};
+    Object.entries(state.paths).forEach(([id, path]) => {
+        groups[path.group ?? ''] = (groups[path.group ?? ''] ?? []).concat(id);
+    });
+    return (
+        <>
+            {Object.entries(state.pathGroups).map(([k, group]) => (
+                <PathGroupItem
+                    key={k}
+                    k={k}
+                    state={state}
+                    setHover={setHover}
+                    dispatch={dispatch}
+                    group={group}
+                    pathKeys={groups[k]}
+                />
+            ))}
+        </>
+    );
+
+    // return (
+    //     <>
+    //         {Object.entries(state.paths).map(([k, path]) => (
+    //             <div
+    //                 key={k}
+    //                 className="hover"
+    //                 style={itemStyle(
+    //                     state.selection?.type === 'Path' &&
+    //                         state.selection.ids.includes(k),
+    //                 )}
+    //                 onMouseEnter={() =>
+    //                     setHover({
+    //                         type: 'element',
+    //                         kind: 'Path',
+    //                         id: k,
+    //                     })
+    //                 }
+    //                 onClick={() => {
+    //                     dispatch({
+    //                         type: 'selection:set',
+    //                         selection: {
+    //                             type: 'Path',
+    //                             ids: [k],
+    //                         },
+    //                     });
+    //                 }}
+    //                 onMouseLeave={() => setHover(null)}
+    //             >
+    //                 {path.segments.length}
+    //             </div>
+    //         ))}
+    //     </>
+    // );
+}
+
+function PathGroupItem({
+    k,
+    state,
+    setHover,
+    dispatch,
+    group,
+    pathKeys,
+}: {
+    k: string;
+    state: State;
+    setHover: (hover: Hover | null) => void;
+    dispatch: React.Dispatch<Action>;
+    group: PathGroup;
+    pathKeys: string[];
+}): JSX.Element {
+    const [open, setOpen] = React.useState(false);
+    return (
+        <div
+            key={k}
+            className="hover"
+            style={{
+                ...itemStyle(
+                    state.selection?.type === 'PathGroup' &&
+                        state.selection.ids.includes(k),
+                ),
+                padding: '8px 0',
+            }}
+            onMouseEnter={() =>
+                setHover({
+                    type: 'element',
+                    kind: 'PathGroup',
+                    id: k,
+                })
+            }
+            onClick={() => {
+                dispatch({
+                    type: 'selection:set',
+                    selection: {
+                        type: 'PathGroup',
+                        ids: [k],
+                    },
+                });
+            }}
+            onMouseLeave={() => setHover(null)}
+        >
+            <Button
+                className="p-button-sm p-button-rounded p-button-text"
+                icon={`p-accordion-toggle-icon pi pi-chevron-${
+                    open ? 'down' : 'right'
+                }`}
+                style={{
+                    marginTop: -10,
+                    marginBottom: -12,
+                }}
+                onClick={(evt) => {
+                    evt.stopPropagation();
+                    setOpen(!open);
+                }}
+            />
+            {group.group ? 'Nested group' : 'Toplevel group'}
+        </div>
+    );
+}
 
 function GuideItems({
     state,
@@ -290,6 +394,6 @@ function itemStyle(selected: boolean): React.CSSProperties | undefined {
         display: 'flex',
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: selected ? '#aaa' : '',
+        backgroundColor: selected ? '#555' : '',
     };
 }
