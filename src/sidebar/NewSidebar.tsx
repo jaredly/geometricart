@@ -30,6 +30,8 @@ import { OverlaysForm } from '../editor/OverlaysForm';
 import { PathForm, PathGroupForm, ViewForm } from '../editor/Forms';
 import { initialState } from '../state/initialState';
 import { getStateFromFile } from '../editor/useDropTarget';
+import { ShowMirror } from '../editor/MirrorForm';
+import { getMirrorTransforms } from '../rendering/getMirrorTransforms';
 
 declare module 'csstype' {
     interface Properties {
@@ -58,6 +60,10 @@ export const NewSidebar = ({
     const [openSidebars, setOpenSidebars] = useLocalStorage(
         'openSidebarIds',
         {} as { [key: string]: boolean },
+    );
+    const mirrorTransforms = React.useMemo(
+        () => getMirrorTransforms(state.mirrors),
+        [state.mirrors],
     );
     return (
         <div
@@ -155,7 +161,42 @@ export const NewSidebar = ({
                     },
                     {
                         key: 'mirrors',
-                        header: 'Mirrors',
+                        header: (
+                            <div
+                                style={{
+                                    display: 'flex',
+                                    flexDirection: 'row',
+                                    alignItems: 'center',
+                                    flex: 1,
+                                }}
+                            >
+                                Mirrors
+                                <div style={{ flex: 1 }} />
+                                {state.activeMirror ? (
+                                    <div
+                                        style={{
+                                            marginLeft: 8,
+                                            marginTop: -11,
+                                            marginBottom: -10,
+                                        }}
+                                    >
+                                        <ShowMirror
+                                            mirror={
+                                                state.mirrors[
+                                                    state.activeMirror
+                                                ]
+                                            }
+                                            transforms={
+                                                mirrorTransforms[
+                                                    state.activeMirror
+                                                ]
+                                            }
+                                            size={40}
+                                        />
+                                    </div>
+                                ) : null}
+                            </div>
+                        ),
                         content: () => (
                             <MirrorItems
                                 state={state}
