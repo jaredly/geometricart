@@ -4,7 +4,7 @@ import * as React from 'react';
 import { jsx } from '@emotion/react';
 import { transparent } from './Icons';
 import { Style, Fill, StyleLine } from '../types';
-import { lightenedColor, paletteColor } from './RenderPath';
+import { paletteColor } from './RenderPath';
 
 // I want to be able to communicate:
 // - all have same (one thing selected)
@@ -119,9 +119,8 @@ export const MultiStyleForm = ({
     return (
         <div css={{}}>
             <div className="mb-2 text-xs">{styles.length} shapes selected.</div>
-            <div>Fills</div>
             {fills.map((fill, i) => (
-                <div key={i} css={{ marginBottom: 8 }}>
+                <div key={i} className="py-3">
                     <div css={{ display: 'flex', flexWrap: 'wrap' }}>
                         <div key={`inset-${i}`}>
                             inset:
@@ -271,10 +270,11 @@ export const MultiStyleForm = ({
             >
                 Add inset fill
             </button>
-            <div>Lines</div>
+            {/* <div>Lines</div> */}
             {lines.map((line, i) => (
                 <div
                     key={i}
+                    className="py-3"
                     css={{
                         display: 'flex',
                         alignItems: 'center',

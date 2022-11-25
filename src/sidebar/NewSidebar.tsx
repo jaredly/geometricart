@@ -5,8 +5,10 @@ import { Checkbox } from 'primereact/checkbox';
 import { Tree } from 'primereact/tree';
 import { Button } from 'primereact/button';
 import { Accordion as MyAccordion } from './Accordion';
-import { Hover } from '../editor/Sidebar';
+import { Hover, ReallyButton } from '../editor/Sidebar';
+import { UndoPanel } from '../editor/UndoPanel';
 import { Clips } from '../editor/Clips';
+import { OverlayPanel } from 'primereact/overlaypanel';
 
 import type * as CSS from 'csstype';
 import { selectedPathIds } from '../editor/touchscreenControls';
@@ -19,10 +21,15 @@ import {
     IconHistoryToggle,
     MagicWandIcon,
     PencilIcon,
+    RedoIcon,
+    UndoIcon,
 } from '../icons/Icon';
 import { useLocalStorage } from '../vest/App';
 import { PalettesForm } from '../editor/PalettesForm';
 import { OverlaysForm } from '../editor/OverlaysForm';
+import { PathForm, PathGroupForm, ViewForm } from '../editor/Forms';
+import { initialState } from '../state/initialState';
+import { getStateFromFile } from '../editor/useDropTarget';
 
 declare module 'csstype' {
     interface Properties {
@@ -94,6 +101,58 @@ export const NewSidebar = ({
                     setOpenSidebars(ids);
                 }}
                 tabs={[
+                    {
+                        key: 'file',
+                        header: 'File',
+                        content: () => (
+                            <div className="p-3">
+                                <ReallyButton
+                                    label="Clear all"
+                                    className="mb-2"
+                                    onClick={() => {
+                                        dispatch({
+                                            type: 'reset',
+                                            state: initialState,
+                                        });
+                                    }}
+                                />
+                                <div>
+                                    Import:{' '}
+                                    <input
+                                        type="file"
+                                        placeholder="Select a file to import"
+                                        onChange={(evt) => {
+                                            if (
+                                                evt.target.files?.length !== 1
+                                            ) {
+                                                return;
+                                            }
+                                            getStateFromFile(
+                                                evt.target.files[0],
+                                                (state) => {
+                                                    if (state) {
+                                                        dispatch({
+                                                            type: 'reset',
+                                                            state,
+                                                        });
+                                                    } else {
+                                                        alert(
+                                                            "Unable to parse state from image. Maybe this wasn't saved with project metadata?",
+                                                        );
+                                                    }
+                                                },
+                                                null,
+                                                (err) => {
+                                                    console.log(err);
+                                                    alert(err);
+                                                },
+                                            );
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                        ),
+                    },
                     {
                         key: 'mirrors',
                         header: 'Mirrors',
@@ -190,6 +249,22 @@ export const NewSidebar = ({
                         ),
                     },
                     {
+                        key: 'view',
+                        header: 'View',
+                        content: () => (
+                            <ViewForm
+                                view={state.view}
+                                palette={state.palettes[state.activePalette]}
+                                onChange={(view) => {
+                                    dispatch({
+                                        type: 'view:update',
+                                        view,
+                                    });
+                                }}
+                            />
+                        ),
+                    },
+                    {
                         key: 'export',
                         header: 'Export',
                         content: () => (
@@ -212,6 +287,50 @@ export const NewSidebar = ({
                         header: 'Overlays',
                         content: () => (
                             <OverlaysForm state={state} dispatch={dispatch} />
+                        ),
+                    },
+                    {
+                        key: 'history',
+                        header: (
+                            <div
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    flex: 1,
+                                }}
+                            >
+                                History
+                                <div style={{ flex: 1 }} />
+                                <Button
+                                    className="p-button-sm p-button-rounded p-button-text"
+                                    style={{
+                                        marginTop: -10,
+                                        marginBottom: -12,
+                                    }}
+                                    onClick={(evt) => {
+                                        evt.stopPropagation();
+                                        dispatch({ type: 'undo' });
+                                    }}
+                                >
+                                    <UndoIcon />
+                                </Button>
+                                <Button
+                                    className="p-button-sm p-button-rounded p-button-text"
+                                    style={{
+                                        marginTop: -10,
+                                        marginBottom: -12,
+                                    }}
+                                    onClick={(evt) => {
+                                        evt.stopPropagation();
+                                        dispatch({ type: 'redo' });
+                                    }}
+                                >
+                                    <RedoIcon />
+                                </Button>
+                            </div>
+                        ),
+                        content: () => (
+                            <UndoPanel state={state} dispatch={dispatch} />
                         ),
                     },
                 ]}
@@ -247,17 +366,19 @@ function ShapeItems({
     });
     return (
         <>
-            {Object.entries(state.pathGroups).map(([k, group]) => (
-                <PathGroupItem
-                    key={k}
-                    k={k}
-                    state={state}
-                    setHover={setHover}
-                    dispatch={dispatch}
-                    group={group}
-                    pathKeys={groups[k]}
-                />
-            ))}
+            {Object.entries(state.pathGroups)
+                .filter((k) => groups[k[0]])
+                .map(([k, group]) => (
+                    <PathGroupItem
+                        key={k}
+                        k={k}
+                        state={state}
+                        setHover={setHover}
+                        dispatch={dispatch}
+                        group={group}
+                        pathKeys={groups[k] ?? []}
+                    />
+                ))}
         </>
     );
 }
@@ -281,6 +402,8 @@ function PathGroupItem({
     const isSelected =
         state.selection?.type === 'PathGroup' &&
         state.selection.ids.includes(k);
+    const op = React.useRef<OverlayPanel>(null);
+
     return (
         <>
             <div
@@ -337,65 +460,135 @@ function PathGroupItem({
                     }}
                 />
                 Group of {pathKeys.length} shapes
+                <div style={{ flex: 1 }} />
+                <Button
+                    icon="pi pi-cog"
+                    className="p-button-text"
+                    onClick={(e) => {
+                        op.current?.toggle(e);
+                        e.stopPropagation();
+                    }}
+                />
+                <OverlayPanel ref={op}>
+                    <PathGroupForm
+                        group={state.pathGroups[k]}
+                        selected={false}
+                        onChange={(group) =>
+                            dispatch({
+                                type: 'group:update',
+                                id: k,
+                                group,
+                            })
+                        }
+                        onDelete={() => {
+                            dispatch({ type: 'group:delete', id: k });
+                        }}
+                        onMouseOver={() => {}}
+                        onMouseOut={() => {}}
+                    />
+                </OverlayPanel>
             </div>
             {open ? (
                 <div className="pl-5">
                     {pathKeys.map((k) => (
-                        <div
+                        <PathItem
                             key={k}
-                            className="hover"
-                            style={{
-                                ...itemStyle(
-                                    state.selection?.type === 'Path' &&
-                                        state.selection.ids.includes(k),
-                                ),
-                                // padding: '8px 0',
-                            }}
-                            onMouseEnter={() =>
-                                setHover({
-                                    type: 'element',
-                                    kind: 'Path',
-                                    id: k,
-                                })
-                            }
-                            onMouseDown={(evt) => evt.preventDefault()}
-                            onClick={(evt) => {
-                                evt.preventDefault();
-                                if (
-                                    evt.shiftKey &&
-                                    state.selection?.type === 'Path'
-                                ) {
-                                    dispatch({
-                                        type: 'selection:set',
-                                        selection: {
-                                            type: 'Path',
-                                            ids: state.selection.ids.includes(k)
-                                                ? state.selection.ids.filter(
-                                                      (i) => i !== k,
-                                                  )
-                                                : state.selection.ids.concat([
-                                                      k,
-                                                  ]),
-                                        },
-                                    });
-                                } else {
-                                    dispatch({
-                                        type: 'selection:set',
-                                        selection: {
-                                            type: 'Path',
-                                            ids: [k],
-                                        },
-                                    });
-                                }
-                            }}
-                            onMouseLeave={() => setHover(null)}
-                        >
-                            {state.paths[k].segments.length} segments
-                        </div>
+                            k={k}
+                            state={state}
+                            setHover={setHover}
+                            dispatch={dispatch}
+                        />
                     ))}
                 </div>
             ) : null}
         </>
+    );
+}
+
+function PathItem({
+    k,
+    state,
+    setHover,
+    dispatch,
+}: {
+    k: string;
+    state: State;
+    setHover: (hover: Hover | null) => void;
+    dispatch: React.Dispatch<Action>;
+}): JSX.Element {
+    const op = React.useRef<OverlayPanel>(null);
+    return (
+        <div
+            key={k}
+            className="hover"
+            style={{
+                ...itemStyle(
+                    state.selection?.type === 'Path' &&
+                        state.selection.ids.includes(k),
+                ),
+                // padding: '8px 0',
+            }}
+            onMouseEnter={() =>
+                setHover({
+                    type: 'element',
+                    kind: 'Path',
+                    id: k,
+                })
+            }
+            onMouseDown={(evt) => evt.preventDefault()}
+            onClick={(evt) => {
+                evt.preventDefault();
+                if (evt.shiftKey && state.selection?.type === 'Path') {
+                    dispatch({
+                        type: 'selection:set',
+                        selection: {
+                            type: 'Path',
+                            ids: state.selection.ids.includes(k)
+                                ? state.selection.ids.filter((i) => i !== k)
+                                : state.selection.ids.concat([k]),
+                        },
+                    });
+                } else {
+                    dispatch({
+                        type: 'selection:set',
+                        selection: {
+                            type: 'Path',
+                            ids: [k],
+                        },
+                    });
+                }
+            }}
+            onMouseLeave={() => setHover(null)}
+        >
+            {state.paths[k].segments.length} segments
+            <div style={{ flex: 1 }} />
+            <Button
+                icon="pi pi-cog"
+                className="p-button-text pl-2"
+                style={{
+                    marginTop: -8,
+                    marginBottom: -8,
+                }}
+                onClick={(e) => {
+                    op.current?.toggle(e);
+                    e.stopPropagation();
+                }}
+            />
+            <OverlayPanel ref={op}>
+                <PathForm
+                    path={state.paths[k]}
+                    selected={false}
+                    onChange={(path) =>
+                        dispatch({ type: 'path:update', id: k, path })
+                    }
+                    onDelete={() => {
+                        dispatch({ type: 'path:delete', id: k });
+                    }}
+                    onMouseOver={() => {}}
+                    onMouseOut={() => {}}
+                />
+            </OverlayPanel>
+        </div>
     );
 }
 

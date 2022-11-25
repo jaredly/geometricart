@@ -251,7 +251,6 @@ export const Toggle = ({
 
 export const PathGroupForm = ({
     group,
-    palette,
     selected,
     onChange,
     onMouseOver,
@@ -259,7 +258,7 @@ export const PathGroupForm = ({
     onDelete,
 }: {
     group: PathGroup;
-    palette: Array<string>;
+    palette?: Array<string>;
     selected: boolean;
     onChange: (group: PathGroup) => unknown;
     onMouseOver: () => void;
@@ -370,7 +369,6 @@ export const hasNonBodyScrollParent = (node: HTMLElement) => {
 
 export const PathForm = ({
     path,
-    palette,
     onChange,
     onDelete,
     onMouseOver,
@@ -381,7 +379,6 @@ export const PathForm = ({
     onMouseOut: () => void;
     path: Path;
     selected: boolean;
-    palette: Array<string>;
     onChange: (path: Path) => unknown;
     onDelete: () => void;
 }) => {
@@ -600,21 +597,7 @@ export const ViewForm = ({
 }) => {
     const backgrounds = ['#1e1e1e', 'white', 'black', 'transparent'];
     return (
-        <div
-            css={{
-                padding: 8,
-                border: '1px solid #ccc',
-                margin: '4px 0',
-            }}
-        >
-            <div>View</div>
-
-            <Toggle
-                label="Show guides"
-                value={view.guides}
-                onChange={(guides) => onChange({ ...view, guides })}
-            />
-
+        <div className="p-3">
             <Toggle
                 label="Laser Cut Mode"
                 value={!!view.laserCutMode}
@@ -739,6 +722,7 @@ export const ViewForm = ({
                     flexDirection: 'row',
                     alignItems: 'center',
                     marginTop: 8,
+                    flexWrap: 'wrap',
                 }}
             >
                 <div css={{ marginRight: 8 }}>Background</div>

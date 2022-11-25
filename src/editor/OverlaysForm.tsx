@@ -6,6 +6,8 @@ import { State } from '../types';
 import { Action } from '../state/Action';
 import { useDropTarget } from './useDropTarget';
 import { Float, Int, Toggle } from './Forms';
+import { Button } from 'primereact/button';
+import { DeleteForeverIcon } from '../icons/Icon';
 
 export const OverlaysForm = ({
     state,
@@ -60,6 +62,7 @@ export const OverlaysForm = ({
                             display: 'flex',
                             flexDirection: 'row',
                             alignItems: 'flex-start',
+                            borderBottom: '1px solid var(--surface-border)',
                         }}
                         style={
                             state.selection?.type === 'Overlay' &&
@@ -83,7 +86,7 @@ export const OverlaysForm = ({
                             }
                             style={{ maxWidth: 200, maxHeight: 200 }}
                         />
-                        <div>
+                        <div className="p-2">
                             <Toggle
                                 value={!!state.overlays[id].hide}
                                 onChange={(hide) =>
@@ -110,7 +113,7 @@ export const OverlaysForm = ({
                                 }
                                 label="Over?"
                             />
-                            <div>
+                            <div className="p-1">
                                 Opacity:{' '}
                                 <Float
                                     value={state.overlays[id].opacity}
@@ -125,6 +128,17 @@ export const OverlaysForm = ({
                                     }
                                 />
                             </div>
+                            <Button
+                                onClick={() => {
+                                    dispatch({
+                                        type: 'overlay:delete',
+                                        id,
+                                    });
+                                }}
+                                className="p-button-danger p-button-lg mt-1 m-1"
+                            >
+                                <DeleteForeverIcon />
+                            </Button>
                         </div>
                     </div>
                 ))}

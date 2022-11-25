@@ -77,27 +77,13 @@ export const Export = ({
     );
 
     return (
-        <div
-            className="p-2"
-            css={{
-                marginTop: 16,
-            }}
-        >
+        <div className="p-2" css={{}}>
             <div
                 css={{
                     padding: 4,
                     marginBottom: 16,
                 }}
             >
-                <div
-                    css={{
-                        fontSize: '80%',
-                        fontWeight: 'bold',
-                        marginBottom: 8,
-                    }}
-                >
-                    Metadata
-                </div>
                 Title:{' '}
                 <Text
                     value={state.meta.title}

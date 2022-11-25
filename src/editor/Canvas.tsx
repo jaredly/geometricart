@@ -886,12 +886,6 @@ export const Canvas = ({
                     </div>
                 </div>
             ) : null}
-            <OverlayMenu
-                state={state}
-                dispatch={dispatch}
-                setHover={setHover}
-            />
-
             <div
                 css={{
                     position: 'absolute',

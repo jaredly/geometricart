@@ -236,65 +236,6 @@ export const App = ({ initialState }: { initialState: State }) => {
                         setStyleHover={setStyleHover}
                     />
                 )}
-                {sidebarOverlay ? (
-                    <div
-                        css={{
-                            position: 'absolute',
-                            top: 0,
-                            left: 0,
-                            bottom: 0,
-                            right: 0,
-                            display: 'flex',
-                            flexDirection: 'column',
-                            overflow: 'auto',
-                            background: 'rgba(0,0,0,0.5)',
-                        }}
-                    >
-                        <Sidebar
-                            hover={hover}
-                            setHover={setHover}
-                            dispatch={dispatch}
-                            state={state}
-                            canvasRef={ref}
-                            setPendingMirror={setPendingMirror}
-                            width={width}
-                            height={height}
-                        />
-                    </div>
-                ) : null}
-
-                <div
-                    css={{
-                        position:
-                            screen === 'history' ? 'relative' : 'absolute',
-                        top: 0,
-                        right: 0,
-                    }}
-                >
-                    {hide ? null : (
-                        <React.Fragment>
-                            <IconButton
-                                onClick={() => dispatch({ type: 'undo' })}
-                            >
-                                <UndoIcon />
-                            </IconButton>
-                            <IconButton
-                                onClick={() => dispatch({ type: 'redo' })}
-                                disabled={state.history.undo === 0}
-                            >
-                                <RedoIcon />
-                            </IconButton>
-                            <IconButton
-                                onClick={() => setSidebarOverlay((m) => !m)}
-                            >
-                                <CogIcon />
-                            </IconButton>
-                        </React.Fragment>
-                    )}
-                    <IconButton onClick={() => setHide(!hide)}>
-                        <IconViewHide />
-                    </IconButton>
-                </div>
             </div>
             <NewSidebar
                 state={state}
