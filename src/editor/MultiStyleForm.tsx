@@ -4,7 +4,8 @@ import * as React from 'react';
 import { jsx } from '@emotion/react';
 import { transparent } from './Icons';
 import { Style, Fill, StyleLine } from '../types';
-import { paletteColor } from './RenderPath';
+import { colorSquare, paletteColor } from './RenderPath';
+import { Button } from 'primereact/button';
 
 // I want to be able to communicate:
 // - all have same (one thing selected)
@@ -119,122 +120,147 @@ export const MultiStyleForm = ({
     return (
         <div css={{}}>
             <div className="mb-2 text-xs">{styles.length} shapes selected.</div>
+            <h4 className="mb-2">Fills</h4>
             {fills.map((fill, i) => (
-                <div key={i} className="py-3">
-                    <div css={{ display: 'flex', flexWrap: 'wrap' }}>
-                        <div key={`inset-${i}`}>
-                            inset:
-                            <MultiNumber
-                                value={fill.inset}
-                                onChange={(inset) => {
-                                    onChange(
-                                        updateFill(
-                                            styles,
-                                            i,
-                                            inset ?? undefined,
-                                            'inset',
-                                        ),
-                                    );
-                                }}
-                            />
-                        </div>
-                        <div style={{ flexBasis: 16 }} />
-                        <MultiColor
-                            color={fill.color}
-                            onChange={(color) => {
-                                onChange(updateFill(styles, i, color, 'color'));
-                                // ok
-                            }}
-                            onHover={(color) =>
-                                color != null
-                                    ? onHover({
-                                          type: 'fill-color',
-                                          idx: i,
-                                          color,
-                                      })
-                                    : onHover(null)
-                            }
-                            palette={palette}
-                            key={i}
-                        />
-                        <div style={{ flexBasis: 16 }} />
-                        <div key={`lighten-${i}`}>
-                            <LightDark
-                                lighten={fill.lighten}
-                                palette={palette}
-                                color={fill.color}
-                                onHover={(lighten) =>
-                                    onHover(
-                                        lighten != null
-                                            ? {
-                                                  type: 'fill-lightness',
-                                                  lighten,
+                <div
+                    key={i}
+                    className="p-3 py-2 mb-2 border-solid surface-border"
+                >
+                    <div key={`inset-${i}`}>
+                        <details style={{ display: 'inline' }}>
+                            <summary style={{ cursor: 'pointer' }}>
+                                {fill.color.map((color) =>
+                                    colorSquare(paletteColor(palette, color)),
+                                )}
+                                inset
+                                <span
+                                    style={{
+                                        width: 8,
+                                        display: 'inline-block',
+                                    }}
+                                />
+                                <MultiNumber
+                                    value={fill.inset}
+                                    onChange={(inset) => {
+                                        onChange(
+                                            updateFill(
+                                                styles,
+                                                i,
+                                                inset ?? undefined,
+                                                'inset',
+                                            ),
+                                        );
+                                    }}
+                                />
+                                <span
+                                    style={{
+                                        width: 16,
+                                        display: 'inline-block',
+                                    }}
+                                />
+                                <Button
+                                    onClick={() => {
+                                        onChange(removeFill(styles, i));
+                                    }}
+                                    icon="pi pi-trash"
+                                    className=" p-button-sm p-button-text p-button-danger"
+                                    style={{ marginTop: -5, marginBottom: -6 }}
+                                />
+                            </summary>
+                            <div css={{ display: 'flex', flexWrap: 'wrap' }}>
+                                <MultiColor
+                                    color={fill.color}
+                                    onChange={(color) => {
+                                        onChange(
+                                            updateFill(
+                                                styles,
+                                                i,
+                                                color,
+                                                'color',
+                                            ),
+                                        );
+                                        // ok
+                                    }}
+                                    onHover={(color) =>
+                                        color != null
+                                            ? onHover({
+                                                  type: 'fill-color',
                                                   idx: i,
-                                              }
-                                            : null,
-                                    )
-                                }
-                                onChange={(lighten) => {
-                                    onChange(
-                                        updateFill(
-                                            styles,
-                                            i,
-                                            lighten ?? undefined,
-                                            'lighten',
-                                        ),
-                                    );
-                                }}
-                            />
-                        </div>
-                    </div>
-                    <div
-                        css={{
-                            display: 'flex',
-                            flexWrap: 'wrap',
-                            flexShrink: 1,
-                        }}
-                    >
-                        <div key={`variation-${i}`}>
-                            variation:
-                            <MultiNumber
-                                value={fill.colorVariation}
-                                onChange={(colorVariation) => {
-                                    onChange(
-                                        updateFill(
-                                            styles,
-                                            i,
-                                            colorVariation ?? undefined,
-                                            'colorVariation',
-                                        ),
-                                    );
-                                }}
-                            />
-                        </div>
-                        <div style={{ flexBasis: 16 }} />
-                        <div key={`opacity-${i}`}>
-                            opacity:
-                            <MultiNumber
-                                value={fill.opacity}
-                                onChange={(opacity) => {
-                                    onChange(
-                                        updateFill(
-                                            styles,
-                                            i,
-                                            opacity ?? undefined,
-                                            'opacity',
-                                        ),
-                                    );
-                                }}
-                            />
-                        </div>
-                        <div style={{ flexBasis: 16 }} />
-                        <button
-                            onClick={() => {
-                                onChange(removeFill(styles, i));
-                            }}
-                        >
-                            Delete fill
-                        </button>
+                                                  color,
+                                              })
+                                            : onHover(null)
+                                    }
+                                    palette={palette}
+                                    key={i}
+                                />
+                                <div style={{ flexBasis: 16 }} />
+                                <div key={`lighten-${i}`}>
+                                    <LightDark
+                                        lighten={fill.lighten}
+                                        palette={palette}
+                                        color={fill.color}
+                                        onHover={(lighten) =>
+                                            onHover(
+                                                lighten != null
+                                                    ? {
+                                                          type: 'fill-lightness',
+                                                          lighten,
+                                                          idx: i,
+                                                      }
+                                                    : null,
+                                            )
+                                        }
+                                        onChange={(lighten) => {
+                                            onChange(
+                                                updateFill(
+                                                    styles,
+                                                    i,
+                                                    lighten ?? undefined,
+                                                    'lighten',
+                                                ),
+                                            );
+                                        }}
+                                    />
+                                    <div style={{ display: 'flex' }}>
+                                        <div key={`variation-${i}`}>
+                                            variation:
+                                            <MultiNumber
+                                                value={fill.colorVariation}
+                                                onChange={(colorVariation) => {
+                                                    onChange(
+                                                        updateFill(
+                                                            styles,
+                                                            i,
+                                                            colorVariation ??
+                                                                undefined,
+                                                            'colorVariation',
+                                                        ),
+                                                    );
+                                                }}
+                                            />
+                                        </div>
+                                        <div style={{ flexBasis: 16 }} />
+                                        <div key={`opacity-${i}`}>
+                                            opacity:
+                                            <MultiNumber
+                                                value={fill.opacity}
+                                                onChange={(opacity) => {
+                                                    onChange(
+                                                        updateFill(
+                                                            styles,
+                                                            i,
+                                                            opacity ??
+                                                                undefined,
+                                                            'opacity',
+                                                        ),
+                                                    );
+                                                }}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </details>
                     </div>
                 </div>
             ))}
@@ -270,137 +296,159 @@ export const MultiStyleForm = ({
             >
                 Add inset fill
             </button>
+            <h4 className="mb-2">Lines</h4>
             {/* <div>Lines</div> */}
             {lines.map((line, i) => (
                 <div
                     key={i}
-                    className="py-3"
+                    className="p-3 py-2 mb-2 border-solid surface-border"
                     css={{
                         display: 'flex',
                         alignItems: 'center',
                         flexWrap: 'wrap',
                     }}
                 >
-                    <MultiColor
-                        color={line.color}
-                        onChange={(color) => {
-                            onChange(updateLine(styles, i, color, 'color'));
-                            // ok
-                        }}
-                        onHover={(color) =>
-                            color != null
-                                ? onHover({ type: 'line-color', idx: i, color })
-                                : onHover(null)
-                        }
-                        palette={palette}
-                        key={i}
-                    />
-                    <div style={{ flexBasis: 16 }} />
-                    <div key={`lighten-${i}`}>
-                        <LightDark
-                            lighten={line.lighten}
-                            palette={palette}
+                    <details>
+                        <summary style={{ cursor: 'pointer' }}>
+                            {line.color.map((color) =>
+                                colorSquare(paletteColor(palette, color)),
+                            )}
+                            inset
+                            <span
+                                style={{ width: 8, display: 'inline-block' }}
+                            />
+                            <MultiNumber
+                                value={line.inset}
+                                onChange={(inset) => {
+                                    onChange(
+                                        updateLine(
+                                            styles,
+                                            i,
+                                            inset ?? undefined,
+                                            'inset',
+                                        ),
+                                    );
+                                }}
+                            />
+                            <span
+                                style={{ width: 8, display: 'inline-block' }}
+                            />
+                            width
+                            <span
+                                style={{ width: 8, display: 'inline-block' }}
+                            />
+                            <MultiNumber
+                                value={line.width}
+                                onChange={(width) => {
+                                    onChange(
+                                        updateLine(
+                                            styles,
+                                            i,
+                                            width ?? undefined,
+                                            'width',
+                                        ),
+                                    );
+                                }}
+                            />
+                            <span
+                                style={{ width: 16, display: 'inline-block' }}
+                            />
+                            <Button
+                                onClick={() => {
+                                    onChange(removeLine(styles, i));
+                                }}
+                                icon="pi pi-trash"
+                                className=" p-button-sm p-button-text p-button-danger"
+                                style={{ marginTop: -5, marginBottom: -6 }}
+                            />
+                        </summary>
+                        <MultiColor
                             color={line.color}
-                            onHover={(lighten) =>
-                                onHover(
-                                    lighten != null
-                                        ? {
-                                              type: 'line-lightness',
-                                              lighten,
-                                              idx: i,
-                                          }
-                                        : null,
-                                )
+                            onChange={(color) => {
+                                onChange(updateLine(styles, i, color, 'color'));
+                                // ok
+                            }}
+                            onHover={(color) =>
+                                color != null
+                                    ? onHover({
+                                          type: 'line-color',
+                                          idx: i,
+                                          color,
+                                      })
+                                    : onHover(null)
                             }
-                            onChange={(lighten) => {
-                                onChange(
-                                    updateLine(
-                                        styles,
-                                        i,
-                                        lighten ?? undefined,
-                                        'lighten',
-                                    ),
-                                );
-                            }}
+                            palette={palette}
+                            key={i}
                         />
-                    </div>
-                    <div style={{ flexBasis: 16 }} />
-                    <div key={`stroke-${i}`}>
-                        width:
-                        <MultiNumber
-                            value={line.width}
-                            onChange={(width) => {
-                                onChange(
-                                    updateLine(
-                                        styles,
-                                        i,
-                                        width ?? undefined,
-                                        'width',
-                                    ),
-                                );
-                            }}
-                        />
-                    </div>
-                    <div style={{ flexBasis: 16 }} />
-                    <div key={`inset-${i}`}>
-                        inset:
-                        <MultiNumber
-                            value={line.inset}
-                            onChange={(inset) => {
-                                onChange(
-                                    updateLine(
-                                        styles,
-                                        i,
-                                        inset ?? undefined,
-                                        'inset',
-                                    ),
-                                );
-                            }}
-                        />
-                    </div>
-                    <div>
-                        <div key={`variation-${i}`}>
-                            variation:
-                            <MultiNumber
-                                value={line.colorVariation}
-                                onChange={(colorVariation) => {
+                        <div style={{ flexBasis: 16 }} />
+                        <div key={`lighten-${i}`}>
+                            <LightDark
+                                lighten={line.lighten}
+                                palette={palette}
+                                color={line.color}
+                                onHover={(lighten) =>
+                                    onHover(
+                                        lighten != null
+                                            ? {
+                                                  type: 'line-lightness',
+                                                  lighten,
+                                                  idx: i,
+                                              }
+                                            : null,
+                                    )
+                                }
+                                onChange={(lighten) => {
                                     onChange(
                                         updateLine(
                                             styles,
                                             i,
-                                            colorVariation ?? undefined,
-                                            'colorVariation',
+                                            lighten ?? undefined,
+                                            'lighten',
                                         ),
                                     );
                                 }}
                             />
                         </div>
                         <div style={{ flexBasis: 16 }} />
-                        <div key={`opacity-${i}`}>
-                            opacity:
-                            <MultiNumber
-                                value={line.opacity}
-                                onChange={(opacity) => {
-                                    onChange(
-                                        updateLine(
-                                            styles,
-                                            i,
-                                            opacity ?? undefined,
-                                            'opacity',
-                                        ),
-                                    );
-                                }}
-                            />
-                        </div>
+                        <div key={`stroke-${i}`}></div>
                         <div style={{ flexBasis: 16 }} />
-                        <button
-                            onClick={() => {
-                                onChange(removeLine(styles, i));
-                            }}
-                        >
-                            Delete line
-                        </button>
-                    </div>
+                        <div key={`inset-${i}`}></div>
+                        <div style={{ display: 'flex', alignItems: 'center' }}>
+                            <div key={`variation-${i}`}>
+                                variation:
+                                <MultiNumber
+                                    value={line.colorVariation}
+                                    onChange={(colorVariation) => {
+                                        onChange(
+                                            updateLine(
+                                                styles,
+                                                i,
+                                                colorVariation ?? undefined,
+                                                'colorVariation',
+                                            ),
+                                        );
+                                    }}
+                                />
+                            </div>
+                            <div style={{ flexBasis: 16 }} />
+                            <div key={`opacity-${i}`}>
+                                opacity:
+                                <MultiNumber
+                                    value={line.opacity}
+                                    onChange={(opacity) => {
+                                        onChange(
+                                            updateLine(
+                                                styles,
+                                                i,
+                                                opacity ?? undefined,
+                                                'opacity',
+                                            ),
+                                        );
+                                    }}
+                                />
+                            </div>
+                        </div>
+                    </details>
                 </div>
             ))}
             <button

@@ -274,7 +274,6 @@ export const PathGroupForm = ({
     return (
         <div
             // ref={(node) => (ref.current = node)}
-            css={{ padding: 4, borderBottom: '1px solid #aaa', margin: 4 }}
             style={{
                 backgroundColor: selected ? 'rgba(255,255,255,0.1)' : undefined,
             }}
@@ -392,7 +391,6 @@ export const PathForm = ({
     return (
         <div
             ref={(node) => (ref.current = node)}
-            css={{ padding: 4, borderBottom: '1px solid #aaa', margin: 4 }}
             style={{
                 backgroundColor: selected ? 'rgba(255,255,255,0.1)' : undefined,
             }}

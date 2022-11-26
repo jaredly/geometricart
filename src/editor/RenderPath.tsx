@@ -475,7 +475,7 @@ export const lightenedColor = (
 
 export const paletteColor = (
     palette: Array<string>,
-    color: string | number | undefined,
+    color: string | number | undefined | null,
     lighten?: number,
 ) => {
     if (color == null) {
@@ -496,7 +496,7 @@ export const idSeed = (id: string) => {
     return num;
 };
 
-function colorSquare(full: string | undefined) {
+export function colorSquare(full: string | undefined) {
     return (
         <div
             style={{

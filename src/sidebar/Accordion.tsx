@@ -44,10 +44,9 @@ export const Accordion = ({
                     )}
                 >
                     <div
-                        className="hover py-3 px-2"
+                        className="hover py-3 px-2 hover:surface-hover"
                         style={{
                             cursor: 'pointer',
-                            '--hover-color': 'rgba(255, 255, 255, 0.1)',
                             borderBottom: '1px solid var(--surface-border)',
                             display: 'flex',
                             alignItems: 'center',

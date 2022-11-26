@@ -83,6 +83,7 @@ export function Clips({
                                     clip: state.view.activeClip!,
                                 });
                             }}
+                            tooltipOptions={{ position: 'left' }}
                             className="p-button-text"
                             style={{
                                 marginTop: -7,

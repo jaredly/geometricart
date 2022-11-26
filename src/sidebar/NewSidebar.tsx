@@ -786,7 +786,7 @@ export function itemStyle(selected: boolean): React.CSSProperties | undefined {
         padding: 8,
         cursor: 'pointer',
         marginBottom: 0,
-        '--hover-color': 'rgba(255, 255, 255, 0.1)',
+        '--hover-color': 'var(--surface-hover)',
         display: 'flex',
         flexDirection: 'row',
         alignItems: 'center',
