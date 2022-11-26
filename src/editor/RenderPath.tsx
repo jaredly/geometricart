@@ -5,11 +5,13 @@ import { rgbToHsl } from '../rendering/colorConvert';
 import { angleBetween } from '../rendering/findNextSegments';
 import { angleTo, dist, push } from '../rendering/getMirrorTransforms';
 import { Primitive } from '../rendering/intersect';
-import { Coord, Path, PathGroup, Segment } from '../types';
+import { Coord, Path, PathGroup, Segment, State } from '../types';
 import { StyleHover } from './MultiStyleForm';
 import { useTouchClick } from './RenderIntersections';
 import { arcPath } from './RenderPendingPath';
 import { DebugOrigPath } from './DebugOrigPath';
+import { MenuItem } from './Canvas';
+import { Action } from '../state/Action';
 
 export const UnderlinePath = ({
     path,
@@ -84,13 +86,19 @@ const RenderPathMemo = ({
     generator,
     rand,
     clip,
+    showMenu,
     styleHover,
+    state,
+    dispatch,
 }: {
-    rand?: Prando;
-    generator?: RoughGenerator;
+    state: State;
+    dispatch: (action: Action) => void;
     path: Path;
-    styleHover: StyleHover | null;
+    rand?: Prando;
     origPath?: Path;
+    generator?: RoughGenerator;
+    styleHover: StyleHover | null;
+    showMenu: (evt: React.MouseEvent, items: MenuItem[]) => void;
     clip?: { prims: Array<Primitive>; segments: Array<Segment> } | null;
     zoom: number;
     sketchiness: number | undefined;
@@ -175,8 +183,13 @@ const RenderPathMemo = ({
                         stroke={info.stroke}
                         fill={info.fill != 'none' ? info.fill : common.fill}
                         strokeWidth={info.strokeWidth}
-                        // onClick={common.onClick}
-                        // onMouseDown={common.onMouseDown}
+                        onContextMenu={(evt) => {
+                            evt.preventDefault();
+                            showMenu(
+                                evt,
+                                itemsForPath(path, i, state, dispatch),
+                            );
+                        }}
                         style={common.style}
                     />
                 ));
@@ -185,8 +198,15 @@ const RenderPathMemo = ({
             return (
                 <React.Fragment key={`info-${i}-${k}`}>
                     <path
-                        data-id={path.id}
                         d={raw}
+                        data-id={path.id}
+                        onContextMenu={(evt) => {
+                            evt.preventDefault();
+                            showMenu(
+                                evt,
+                                itemsForPath(path, i, state, dispatch),
+                            );
+                        }}
                         {...common}
                         key={`info-${i}-${k}`}
                     />
@@ -300,6 +320,64 @@ const RenderPathMemo = ({
             ) : null}
         </>
     );
+};
+
+export const itemsForPath = (
+    path: Path,
+    i: number,
+    state: State,
+    dispatch: (action: Action) => void,
+) => {
+    const items: MenuItem[] = [];
+    path.style.fills.forEach((fill) => {
+        if (fill) {
+            const color = fill.color;
+            items.push({
+                label: 'Select by fill ' + color,
+                command() {
+                    const ids = Object.entries(state.paths).filter(
+                        ([id, path]) =>
+                            path.style.fills.find(
+                                (fill) => fill && fill.color === color,
+                            ),
+                    );
+                    dispatch({
+                        type: 'selection:set',
+                        selection: {
+                            type: 'Path',
+                            ids: ids.map(([id]) => id),
+                        },
+                    });
+                },
+            });
+        }
+    });
+
+    path.style.lines.forEach((line) => {
+        if (line) {
+            const color = line.color;
+            items.push({
+                label: 'Line ' + color,
+                command() {
+                    const ids = Object.entries(state.paths).filter(
+                        ([id, path]) =>
+                            path.style.lines.find(
+                                (line) => line && line.color === color,
+                            ),
+                    );
+                    dispatch({
+                        type: 'selection:set',
+                        selection: {
+                            type: 'Path',
+                            ids: ids.map(([id]) => id),
+                        },
+                    });
+                },
+            });
+        }
+    });
+
+    return items;
 };
 
 export const emptyPath: Path = {

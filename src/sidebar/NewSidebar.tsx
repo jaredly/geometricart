@@ -273,7 +273,7 @@ export const NewSidebar = ({
                                         }}
                                     />
                                 ) : (
-                                    'Select some shapes'
+                                    'Select some shapes to edit their style'
                                 )}
                             </div>
                         ),

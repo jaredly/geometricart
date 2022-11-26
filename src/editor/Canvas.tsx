@@ -72,6 +72,7 @@ import {
 import { useDragSelect, useMouseDrag } from './useMouseDrag';
 import { useScrollWheel } from './useScrollWheel';
 import { functionWithBuiltins } from '../animation/getAnimatedPaths';
+import { Menu } from 'primereact/menu';
 
 export type Props = {
     state: State;
@@ -290,6 +291,12 @@ export const getAnimatedFunctions = (
     return fn;
 };
 
+export type MenuItem = {
+    label: string;
+    icon?: string;
+    command: () => void;
+};
+
 export const evaluateAnimatedValues = (
     animatedFunctions: AnimatedFunctions,
     // animations: Animations,
@@ -337,6 +344,28 @@ export const Canvas = ({
         [state.mirrors],
     );
     const [tmpView, setTmpView] = React.useState(null as null | View);
+
+    const menu = React.useRef<Menu>(null);
+
+    const [items, setItems] = React.useState([] as Array<MenuItem>);
+
+    const showMenu = React.useCallback(
+        (evt: React.MouseEvent, items: MenuItem[]) => {
+            evt.preventDefault();
+            evt.stopPropagation();
+            console.log('ok', menu, items);
+            menu.current!.show(evt);
+            setItems(items);
+            const { clientX, clientY } = evt;
+            setTimeout(() => {
+                const el = menu.current!.getElement();
+                el.style.top = evt.clientY + 'px';
+                el.style.left = evt.clientX + 'px';
+                console.log('ok', el);
+            }, 10);
+        },
+        [],
+    );
 
     const [pos, setPos] = React.useState({ x: 0, y: 0 });
 
@@ -653,18 +682,17 @@ export const Canvas = ({
                         groups={state.pathGroups}
                         rand={rand.current}
                         clip={clipPrimitives}
+                        showMenu={showMenu}
                         path={path}
+                        dispatch={dispatch}
+                        state={state}
                         zoom={view.zoom}
                         sketchiness={view.sketchiness}
                         palette={state.palettes[state.activePalette]}
                         styleHover={selectedIds[path.id] ? styleHover : null}
                         onClick={
                             // TODO: Disable path clickies if we're doing guides, folks.
-                            pendingPath[0]
-                                ? undefined
-                                : // pathOrigin
-                                  //     ? undefined :
-                                  clickPath
+                            pendingPath[0] ? undefined : clickPath
                         }
                     />
                 ))}
@@ -1008,6 +1036,7 @@ export const Canvas = ({
                     />
                 ) : null}
             </div>
+            <Menu model={items} popup ref={menu} />
         </div>
     );
 };
