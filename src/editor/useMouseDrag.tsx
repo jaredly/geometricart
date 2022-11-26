@@ -59,6 +59,9 @@ export function useMouseDrag(
                 }
             },
             onMouseDown: (evt: React.MouseEvent) => {
+                if (evt.button !== 0) {
+                    return;
+                }
                 const rect = evt.currentTarget.getBoundingClientRect();
                 const coord = screenToWorld(
                     width,

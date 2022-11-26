@@ -292,9 +292,10 @@ export const getAnimatedFunctions = (
 };
 
 export type MenuItem = {
-    label: string;
+    label: React.ReactNode;
     icon?: string;
-    command: () => void;
+    command?: () => void;
+    items?: MenuItem[];
 };
 
 export const evaluateAnimatedValues = (
@@ -1036,7 +1037,7 @@ export const Canvas = ({
                     />
                 ) : null}
             </div>
-            <Menu model={items} popup ref={menu} />
+            <Menu model={items as any} popup ref={menu} />
         </div>
     );
 };

@@ -187,7 +187,7 @@ const RenderPathMemo = ({
                             evt.preventDefault();
                             showMenu(
                                 evt,
-                                itemsForPath(path, i, state, dispatch),
+                                itemsForPath(origPath ?? path, state, dispatch),
                             );
                         }}
                         style={common.style}
@@ -204,7 +204,7 @@ const RenderPathMemo = ({
                             evt.preventDefault();
                             showMenu(
                                 evt,
-                                itemsForPath(path, i, state, dispatch),
+                                itemsForPath(origPath ?? path, state, dispatch),
                             );
                         }}
                         {...common}
@@ -239,6 +239,10 @@ const RenderPathMemo = ({
                       onClick(evt.shiftKey, path.id);
                   }
                 : undefined,
+            onContextMenu: (evt: React.MouseEvent) => {
+                evt.preventDefault();
+                showMenu(evt, itemsForPath(origPath ?? path, state, dispatch));
+            },
             style: onClick
                 ? {
                       cursor: 'pointer',
@@ -291,6 +295,7 @@ const RenderPathMemo = ({
                         strokeWidth={info.strokeWidth}
                         onClick={common.onClick}
                         onMouseDown={common.onMouseDown}
+                        onContextMenu={common.onContextMenu}
                         style={common.style}
                     />
                 ));
@@ -324,16 +329,26 @@ const RenderPathMemo = ({
 
 export const itemsForPath = (
     path: Path,
-    i: number,
     state: State,
     dispatch: (action: Action) => void,
 ) => {
-    const items: MenuItem[] = [];
+    console.log('ok', path);
+    const select: MenuItem[] = [];
     path.style.fills.forEach((fill) => {
         if (fill) {
             const color = fill.color;
-            items.push({
-                label: 'Select by fill ' + color,
+            const full = paletteColor(
+                state.palettes[state.activePalette],
+                fill.color,
+                fill.lighten,
+            );
+            select.push({
+                label: (
+                    <span>
+                        {colorSquare(full)}
+                        by fill
+                    </span>
+                ),
                 command() {
                     const ids = Object.entries(state.paths).filter(
                         ([id, path]) =>
@@ -356,8 +371,18 @@ export const itemsForPath = (
     path.style.lines.forEach((line) => {
         if (line) {
             const color = line.color;
-            items.push({
-                label: 'Line ' + color,
+            const full = paletteColor(
+                state.palettes[state.activePalette],
+                line.color,
+                line.lighten,
+            );
+            select.push({
+                label: (
+                    <span>
+                        {colorSquare(full)}
+                        by line
+                    </span>
+                ),
                 command() {
                     const ids = Object.entries(state.paths).filter(
                         ([id, path]) =>
@@ -377,6 +402,11 @@ export const itemsForPath = (
         }
     });
 
+    const items: MenuItem[] = [];
+    items.push({
+        label: 'Select',
+        items: select,
+    });
     return items;
 };
 
@@ -465,6 +495,22 @@ export const idSeed = (id: string) => {
     }
     return num;
 };
+
+function colorSquare(full: string | undefined) {
+    return (
+        <div
+            style={{
+                width: '1em',
+                height: '1em',
+                marginBottom: -2,
+                backgroundColor: full,
+                border: '1px solid white',
+                display: 'inline-block',
+                marginRight: 8,
+            }}
+        />
+    );
+}
 
 export function segmentArrow(
     prev: Coord,
