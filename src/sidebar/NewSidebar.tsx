@@ -662,10 +662,14 @@ function GuideItems({
                     onClick={() => {
                         dispatch({
                             type: 'selection:set',
-                            selection: {
-                                type: 'Guide',
-                                ids: [k],
-                            },
+                            selection:
+                                state.selection?.type === 'Guide' &&
+                                state.selection.ids.includes(k)
+                                    ? null
+                                    : {
+                                          type: 'Guide',
+                                          ids: [k],
+                                      },
                         });
                     }}
                     onMouseLeave={() => setHover(null)}
