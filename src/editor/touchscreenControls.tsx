@@ -139,6 +139,7 @@ export function selectionSection(
             </IconButton>
             {state.selection.type === 'Guide' &&
             state.selection.ids.length === 1 &&
+            state.guides[state.selection.ids[0]] &&
             state.guides[state.selection.ids[0]].geom.type === 'Line' ? (
                 <>
                     <IconButton
