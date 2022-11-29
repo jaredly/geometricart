@@ -1,4 +1,9 @@
 
+# DATAS
+
+- [x] path.mirror, remove 'string'
+- [ ] 
+
 ## URGENT
 
 - [x] Deduplicate lines for CNC cuts.
@@ -16,7 +21,7 @@
   - [ ] if no path selected, it shows the "default color & fill", which I should
 		keep track of.
 	- otherwise, go to town!
-	- [ ] would be very nice to have much better stroke & fill UI
+	- [x] would be very nice to have much better stroke & fill UI
 - [x] put the "view switcher" dealios into the sidebar
 - [ ] add react router, use query string for routes.
 - [ ] anddddd allow for multiple projects to be open at once!

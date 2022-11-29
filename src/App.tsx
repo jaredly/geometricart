@@ -213,7 +213,6 @@ export const App = ({ initialState }: { initialState: State }) => {
                             width: 100,
                             height: 100,
                             styleHover,
-                            setStyleHover,
                         }}
                     />
                 ) : screen === 'history' ? (
@@ -233,7 +232,6 @@ export const App = ({ initialState }: { initialState: State }) => {
                         width={width}
                         height={height}
                         styleHover={styleHover}
-                        setStyleHover={setStyleHover}
                     />
                 )}
             </div>
