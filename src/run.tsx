@@ -21,16 +21,20 @@ import {
     useParams,
 } from 'react-router-dom';
 import localforage from 'localforage';
-import { State } from './types';
+import { Mirror, State } from './types';
 import { Accordion } from './sidebar/Accordion';
 import { MirrorPicker } from './MirrorPicker';
 import { setupState } from './setupState';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import { exportPNG } from './editor/Export';
+import { Button } from 'primereact/button';
+import { confirmPopup, ConfirmPopup } from 'primereact/confirmpopup';
 dayjs.extend(relativeTime);
 
 const metaPrefix = 'meta:';
 const keyPrefix = 'geometric-art-';
+const thumbPrefix = 'thumb:';
 const key = (id: string) => keyPrefix + id;
 const meta = (id: string) => metaPrefix + key(id);
 
@@ -39,9 +43,30 @@ export const updateMeta = async (id: string, update: Partial<MetaData>) => {
     return localforage.setItem(meta(id), { ...current, ...update });
 };
 
-export const saveState = (state: State, id: string) => {
+export const newState = async (mirror: Mirror | null) => {
+    const state = setupState(mirror);
+    const id = genid();
+    localforage.setItem<MetaData>(metaPrefix + key(id), {
+        id,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        openedAt: Date.now(),
+        size: JSON.stringify(state).length,
+    });
+    exportPNG(400, state, 1000, false, false, 0).then((blob) => {
+        localforage.setItem(thumbPrefix + key(id), blob);
+    });
+    return localforage.setItem(key(id), state).then(() => id);
+};
+
+export const saveState = async (state: State, id: string) => {
     localforage.setItem(key(id), state);
-    updateMeta(id, { updatedAt: Date.now() });
+    updateMeta(id, {
+        updatedAt: Date.now(),
+        size: JSON.stringify(state).length,
+    });
+    const blob = await exportPNG(400, state, 1000, false, false, 0);
+    localforage.setItem(thumbPrefix + key(id), blob);
 };
 
 export const range = (start: number, end: number) => {
@@ -59,6 +84,7 @@ type MetaData = {
     updatedAt: number;
     openedAt: number;
     id: string;
+    size: number;
 };
 
 const Welcome = () => {
@@ -70,7 +96,7 @@ const Welcome = () => {
     });
     return (
         <div className="flex flex-column justify-content-center align-items-center">
-            <div style={{ width: 800, padding: 24 }}>
+            <div style={{ width: 900, padding: 24 }}>
                 <Accordion
                     activeIds={activeIds}
                     setActiveIds={setActiveIds}
@@ -81,22 +107,9 @@ const Welcome = () => {
                             content: () => (
                                 <MirrorPicker
                                     onClick={(mirror) => {
-                                        const state = setupState(mirror);
-                                        const id = genid();
-                                        localforage.setItem<MetaData>(
-                                            metaPrefix + key(id),
-                                            {
-                                                id,
-                                                createdAt: Date.now(),
-                                                updatedAt: Date.now(),
-                                                openedAt: Date.now(),
-                                            },
-                                        );
-                                        localforage
-                                            .setItem(key(id), state)
-                                            .then(() => {
-                                                window.location.hash = '/' + id;
-                                            });
+                                        newState(mirror).then((id) => {
+                                            window.location.hash = '/' + id;
+                                        });
                                     }}
                                 />
                             ),
@@ -129,8 +142,13 @@ const DesignLoader = () => {
             )
             .then((metas) => setDesigns(metas.filter(Boolean) as MetaData[]));
     }, []);
+    const [tick, setTick] = React.useState(0);
+    React.useEffect(() => {
+        const iv = setInterval(() => setTick(tick + 1), 1000 * 60);
+        return () => clearInterval(iv);
+    });
     return (
-        <div className="flex flex-row flex-wrap justify-content-center align-items-center">
+        <div className="flex flex-row flex-wrap p-3">
             {designs.map((design) => (
                 <div
                     key={design.id}
@@ -145,14 +163,79 @@ const DesignLoader = () => {
                     className="hover:surface-hover surface-base p-4 cursor-pointer"
                 >
                     <div style={{ flex: 1 }}>
+                        <ThumbLoader id={design.id} />
                         <div>{dayjs(design.updatedAt).from(dayjs())}</div>
+                        <div className="flex flex-row justify-content-between">
+                            {mb(design.size)}
+                            <div>
+                                {/* <Button
+                                    onClick={(evt) => {
+                                        evt.stopPropagation();
+                                    }}
+                                    icon="pi pi-download"
+                                    className="p-button-sm p-button-text"
+                                    style={{ marginTop: -5, marginBottom: -6 }}
+                                /> */}
+                                <Button
+                                    onClick={(evt) => {
+                                        evt.stopPropagation();
+                                        const popup = confirmPopup({
+                                            target: evt.currentTarget,
+                                            message:
+                                                'Are you sure you want to delete this design?',
+                                            icon: 'pi pi-exclamation-triangle',
+                                            accept: () => {
+                                                setDesigns(
+                                                    designs.filter(
+                                                        (d) =>
+                                                            d.id !== design.id,
+                                                    ),
+                                                );
+                                                localforage.removeItem(
+                                                    key(design.id),
+                                                );
+                                                localforage.removeItem(
+                                                    meta(design.id),
+                                                );
+                                                localforage.removeItem(
+                                                    thumbPrefix +
+                                                        key(design.id),
+                                                );
+                                            },
+                                            reject: () => {},
+                                        });
+                                        console.log(popup);
+                                        popup.show();
+                                    }}
+                                    icon="pi pi-trash"
+                                    className=" p-button-sm p-button-text p-button-danger"
+                                    style={{ marginTop: -5, marginBottom: -6 }}
+                                />
+                            </div>
+                        </div>
                     </div>
                     <div></div>
                 </div>
             ))}
+            <ConfirmPopup />
         </div>
     );
 };
+
+const ThumbLoader = ({ id }: { id: string }) => {
+    const [data, setData] = React.useState(null as null | string);
+    React.useEffect(() => {
+        localforage
+            .getItem<Blob>(thumbPrefix + key(id))
+            .then((blob) => (blob ? setData(URL.createObjectURL(blob)) : null));
+    }, [id]);
+    return data ? <img src={data} width={200} height={200} /> : null;
+};
+
+const mb = (n: number) =>
+    n > 1024 * 1024
+        ? (n / 1024 / 1024).toFixed(2) + 'mb'
+        : (n / 1024).toFixed(0) + 'kb';
 
 const File = () => {
     const data = useLoaderData();

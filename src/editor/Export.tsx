@@ -146,7 +146,7 @@ export const Export = ({
                 <button
                     css={{ marginTop: 16, display: 'block' }}
                     onClick={async () => {
-                        const url = await exportPNG(
+                        const blob = await exportPNG(
                             size,
                             state,
                             originalSize,
@@ -154,7 +154,7 @@ export const Export = ({
                             history,
                             animationPosition,
                         );
-                        setPng(url);
+                        setPng(URL.createObjectURL(blob));
                     }}
                 >
                     Export PNG
@@ -361,14 +361,14 @@ export const Export = ({
     );
 };
 
-async function exportPNG(
+export async function exportPNG(
     size: number,
     state: State,
     originalSize: number,
     embed: boolean,
     history: boolean,
     animationPosition: number,
-): Promise<string> {
+): Promise<Blob> {
     const canvas = document.createElement('canvas');
     canvas.width = canvas.height = size;
     const ctx = canvas.getContext('2d')!;
@@ -401,7 +401,7 @@ async function exportPNG(
                     history ? state : { ...state, history: initialHistory },
                 );
             }
-            res(URL.createObjectURL(blob));
+            res(blob);
         }, 'image/png'),
     );
 }
