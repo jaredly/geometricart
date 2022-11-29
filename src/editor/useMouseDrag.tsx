@@ -1,18 +1,19 @@
 import React from 'react';
 import { Coord, View } from '../types';
-import { dragView, screenToWorld, viewPos } from './Canvas';
+import { dragView, EditorState, screenToWorld, viewPos } from './Canvas';
 import { dist } from '../rendering/getMirrorTransforms';
 
 export function useMouseDrag(
     dragPos: { view: View; coord: Coord } | null,
-    setTmpView: React.Dispatch<React.SetStateAction<View | null>>,
+    setEditorState: React.Dispatch<React.SetStateAction<EditorState>>,
+    // setTmpView: React.Dispatch<React.SetStateAction<View | null>>,
     width: number,
     height: number,
     view: View,
-    setPos: React.Dispatch<React.SetStateAction<{ x: number; y: number }>>,
-    setDragPos: React.Dispatch<
-        React.SetStateAction<{ view: View; coord: Coord } | null>
-    >,
+    // setPos: React.Dispatch<React.SetStateAction<{ x: number; y: number }>>,
+    // setDragPos: React.Dispatch<
+    //     React.SetStateAction<{ view: View; coord: Coord } | null>
+    // >,
 ) {
     const { x, y } = viewPos(view, width, height);
     const ref = React.useRef(
@@ -32,16 +33,19 @@ export function useMouseDrag(
                     const clientY = evt.clientY;
                     evt.preventDefault();
 
-                    setTmpView((prev) => {
-                        return dragView(
-                            prev,
-                            dragPos,
-                            clientX,
-                            rect,
-                            clientY,
-                            width,
-                            height,
-                        );
+                    setEditorState((prev) => {
+                        return {
+                            ...prev,
+                            tmpView: dragView(
+                                prev.tmpView,
+                                dragPos,
+                                clientX,
+                                rect,
+                                clientY,
+                                width,
+                                height,
+                            ),
+                        };
                     });
                 } else {
                     const rect = evt.currentTarget.getBoundingClientRect();
@@ -49,12 +53,13 @@ export function useMouseDrag(
                         x: (evt.clientX - rect.left - x) / view.zoom,
                         y: (evt.clientY - rect.top - y) / view.zoom,
                     };
-                    setPos(pos);
+                    setEditorState((state) => ({ ...state, pos }));
+                    // setPos(pos);
                 }
             },
             onMouseUpCapture: (evt: React.MouseEvent) => {
                 if (dragPos) {
-                    setDragPos(null);
+                    setEditorState((state) => ({ ...state, dragPos: null }));
                     evt.preventDefault();
                 }
             },
@@ -72,17 +77,17 @@ export function useMouseDrag(
                     },
                     view,
                 );
-                setDragPos({
-                    coord: coord,
-                    view,
-                });
+                setEditorState((state) => ({
+                    ...state,
+                    dragPos: { coord, view },
+                }));
             },
 
             onTouchEnd: (evt: React.TouchEvent) => {
                 evt.preventDefault();
                 if (evt.touches.length === 0) {
                     ref.current = null;
-                    setDragPos(null);
+                    setEditorState((state) => ({ ...state, dragPos: null }));
                 }
             },
             onTouchStart: (evt: React.TouchEvent) => {
@@ -101,10 +106,10 @@ export function useMouseDrag(
                         },
                         view,
                     );
-                    setDragPos({
-                        coord: coord,
-                        view,
-                    });
+                    setEditorState((state) => ({
+                        ...state,
+                        dragPos: { coord, view },
+                    }));
                     ref.current = { type: 'one', coord: coord, view };
                 } else if (ref.current.type === 'one') {
                     const coord = touchToCoord(
@@ -123,7 +128,7 @@ export function useMouseDrag(
                         view: ref.current.view,
                     };
                     // clear out the drag pos
-                    setDragPos(null);
+                    setEditorState((state) => ({ ...state, dragPos: null }));
                 } else {
                     // invalidated
                     ref.current = false;
@@ -142,16 +147,19 @@ export function useMouseDrag(
                     const clientX = touch.clientX;
                     const clientY = touch.clientY;
 
-                    setTmpView((prev) => {
-                        return dragView(
-                            prev,
-                            { coord, view },
-                            clientX,
-                            rect,
-                            clientY,
-                            width,
-                            height,
-                        );
+                    setEditorState((prev) => {
+                        return {
+                            ...prev,
+                            tmpView: dragView(
+                                prev.tmpView,
+                                { coord, view },
+                                clientX,
+                                rect,
+                                clientY,
+                                width,
+                                height,
+                            ),
+                        };
                     });
                 } else if (
                     evt.touches.length === 2 &&
@@ -175,10 +183,13 @@ export function useMouseDrag(
                     const d1 = dist(one, two);
                     const d2 = dist(none, ntwo);
                     const scale = d2 / d1;
-                    setTmpView({
-                        ...view,
-                        zoom: view.zoom * scale,
-                    });
+                    setEditorState((state) => ({
+                        ...state,
+                        tmpView: {
+                            ...view,
+                            zoom: view.zoom * scale,
+                        },
+                    }));
                 }
             },
         }),
@@ -211,8 +222,7 @@ export function useDragSelect(
     width: number,
     height: number,
     view: View,
-    setPos: React.Dispatch<React.SetStateAction<{ x: number; y: number }>>,
-    setDragPos: React.Dispatch<React.SetStateAction<Coord | null>>,
+    setEditorState: React.Dispatch<React.SetStateAction<EditorState>>,
     cancelDragSelect: (shiftKey: boolean) => void,
 ) {
     const { x, y } = viewPos(view, width, height);
@@ -228,12 +238,15 @@ export function useDragSelect(
                     x: (clientX - rect.left - x) / view.zoom,
                     y: (clientY - rect.top - y) / view.zoom,
                 };
-                setPos(pos);
+                setEditorState((state) => ({ ...state, pos }));
             },
             onTouchEnd: (evt: React.TouchEvent) => {
                 evt.preventDefault();
                 if (dragPos) {
-                    setDragPos(null);
+                    setEditorState((state) => ({
+                        ...state,
+                        dragSelectPos: null,
+                    }));
                 }
                 cancelDragSelect(evt.shiftKey);
             },
@@ -251,7 +264,8 @@ export function useDragSelect(
                     },
                     view,
                 );
-                setDragPos(coord);
+                // setDragPos(coord);
+                setEditorState((state) => ({ ...state, dragSelectPos: coord }));
             },
             onMouseMove: (evt: React.MouseEvent) => {
                 const rect = evt.currentTarget.getBoundingClientRect();
@@ -259,11 +273,16 @@ export function useDragSelect(
                     x: (evt.clientX - rect.left - x) / view.zoom,
                     y: (evt.clientY - rect.top - y) / view.zoom,
                 };
-                setPos(pos);
+                // setPos(pos);
+                setEditorState((state) => ({ ...state, pos }));
             },
             onMouseUpCapture: (evt: React.MouseEvent) => {
                 if (dragPos) {
-                    setDragPos(null);
+                    // setDragPos(null);
+                    setEditorState((state) => ({
+                        ...state,
+                        dragSelectPos: null,
+                    }));
                     evt.preventDefault();
                 }
                 cancelDragSelect(evt.shiftKey);
@@ -279,7 +298,7 @@ export function useDragSelect(
                     },
                     view,
                 );
-                setDragPos(coord);
+                setEditorState((state) => ({ ...state, dragSelectPos: coord }));
             },
         }),
         [dragPos, width, height, x, y, view],

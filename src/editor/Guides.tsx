@@ -4,7 +4,7 @@ import { jsx } from '@emotion/react';
 import React from 'react';
 import { PendingMirror, useCurrent } from '../App';
 import { Action, PathMultiply } from '../state/Action';
-import { screenToWorld } from './Canvas';
+import { EditorState, screenToWorld } from './Canvas';
 import { DrawPath, DrawPathState, initialState } from './DrawPath';
 import { pathToPrimitives } from './findSelection';
 import { Bounds } from './GuideElement';
@@ -159,12 +159,14 @@ export const Guides = ({
     setPendingDuplication,
     pendingMirror,
     setPendingMirror,
-    pendingPath,
+    // pendingPath,
     guidePrimitives,
     allIntersections,
     isTouchScreen,
     disableGuides,
     bounds,
+    editorState,
+    setEditorState,
 }: {
     bounds: Bounds;
     state: State;
@@ -178,7 +180,9 @@ export const Guides = ({
     pos: Coord;
     pendingDuplication: null | PendingDuplication;
     setPendingDuplication: (b: null | PendingDuplication) => void;
-    pendingPath: PendingPathPair;
+    // pendingPath: PendingPathPair;
+    editorState: EditorState;
+    setEditorState: React.Dispatch<React.SetStateAction<EditorState>>;
     mirrorTransforms: { [key: string]: Array<Array<Matrix>> };
     pendingMirror: PendingMirror | null;
     guidePrimitives: Array<{ prim: Primitive; guides: Array<Id> }>;
@@ -190,6 +194,14 @@ export const Guides = ({
     ) => void;
     disableGuides: boolean;
 }) => {
+    const pendingPath: PendingPathPair = [
+        editorState.pendingPath,
+        (pp) =>
+            setEditorState((s) => ({
+                ...s,
+                pendingPath: typeof pp === 'function' ? pp(s.pendingPath) : pp,
+            })),
+    ];
     const inactiveGuidePrimitives = React.useMemo(() => {
         return primitivesForElementsAndPaths(
             calculateInactiveGuideElements(state.guides, mirrorTransforms),
@@ -365,10 +377,6 @@ export const Guides = ({
         (guides: string[], shift: boolean): void => {
             if (!shift) {
                 dispatch({
-                    type: 'tab:set',
-                    tab: 'Guides',
-                });
-                dispatch({
                     type: 'selection:set',
                     selection: {
                         type: 'Guide',
@@ -399,10 +407,6 @@ export const Guides = ({
     const clickActive = React.useCallback(
         (guides: string[], shift: boolean): void => {
             if (!shift) {
-                dispatch({
-                    type: 'tab:set',
-                    tab: 'Guides',
-                });
                 dispatch({
                     type: 'selection:set',
                     selection: {

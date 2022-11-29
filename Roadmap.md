@@ -17,11 +17,22 @@
 		keep track of.
 	- otherwise, go to town!
 	- [ ] would be very nice to have much better stroke & fill UI
-- [ ] put the "view switcher" dealios into the sidebar
+- [x] put the "view switcher" dealios into the sidebar
 - [ ] add react router, use query string for routes.
 - [ ] anddddd allow for multiple projects to be open at once!
 - [ ] thenn allow for syncing with github gists.
-	- orr github issues
+
+## Controls / tools
+
+- [ ] ok what
+
+## View Change
+
+- [ ] show the export view, save the current zoom to localstorage
+	- when editing the export view, you can say "fit to content, w/ this margin"
+	- or you can maybe do like a click & drag? idk.
+	- oh also you can say "fit to content, but w/ this margin and this aspect ratio"
+	- honestly that'll probably fit all the use cases.
 
 ## Making it really usable and such
 

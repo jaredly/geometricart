@@ -86,19 +86,19 @@ const RenderPathMemo = ({
     generator,
     rand,
     clip,
-    showMenu,
     styleHover,
-    state,
-    dispatch,
+    contextMenu,
 }: {
-    state: State;
-    dispatch: (action: Action) => void;
+    contextMenu?: {
+        state: State;
+        dispatch: (action: Action) => void;
+        showMenu: (evt: React.MouseEvent, items: MenuItem[]) => void;
+    };
     path: Path;
     rand?: Prando;
     origPath?: Path;
     generator?: RoughGenerator;
     styleHover: StyleHover | null;
-    showMenu: (evt: React.MouseEvent, items: MenuItem[]) => void;
     clip?: { prims: Array<Primitive>; segments: Array<Segment> } | null;
     zoom: number;
     sketchiness: number | undefined;
@@ -183,13 +183,23 @@ const RenderPathMemo = ({
                         stroke={info.stroke}
                         fill={info.fill != 'none' ? info.fill : common.fill}
                         strokeWidth={info.strokeWidth}
-                        onContextMenu={(evt) => {
-                            evt.preventDefault();
-                            showMenu(
-                                evt,
-                                itemsForPath(origPath ?? path, state, dispatch),
-                            );
-                        }}
+                        onContextMenu={
+                            contextMenu
+                                ? (evt) => {
+                                      evt.preventDefault();
+                                      const { state, dispatch, showMenu } =
+                                          contextMenu;
+                                      showMenu(
+                                          evt,
+                                          itemsForPath(
+                                              origPath ?? path,
+                                              state,
+                                              dispatch,
+                                          ),
+                                      );
+                                  }
+                                : undefined
+                        }
                         style={common.style}
                     />
                 ));
@@ -200,13 +210,23 @@ const RenderPathMemo = ({
                     <path
                         d={raw}
                         data-id={path.id}
-                        onContextMenu={(evt) => {
-                            evt.preventDefault();
-                            showMenu(
-                                evt,
-                                itemsForPath(origPath ?? path, state, dispatch),
-                            );
-                        }}
+                        onContextMenu={
+                            contextMenu
+                                ? (evt) => {
+                                      evt.preventDefault();
+                                      const { state, dispatch, showMenu } =
+                                          contextMenu;
+                                      showMenu(
+                                          evt,
+                                          itemsForPath(
+                                              origPath ?? path,
+                                              state,
+                                              dispatch,
+                                          ),
+                                      );
+                                  }
+                                : undefined
+                        }
                         {...common}
                         key={`info-${i}-${k}`}
                     />
@@ -239,10 +259,16 @@ const RenderPathMemo = ({
                       onClick(evt.shiftKey, path.id);
                   }
                 : undefined,
-            onContextMenu: (evt: React.MouseEvent) => {
-                evt.preventDefault();
-                showMenu(evt, itemsForPath(origPath ?? path, state, dispatch));
-            },
+            onContextMenu: contextMenu
+                ? (evt: React.MouseEvent) => {
+                      evt.preventDefault();
+                      const { state, dispatch, showMenu } = contextMenu;
+                      showMenu(
+                          evt,
+                          itemsForPath(origPath ?? path, state, dispatch),
+                      );
+                  }
+                : undefined,
             style: onClick
                 ? {
                       cursor: 'pointer',

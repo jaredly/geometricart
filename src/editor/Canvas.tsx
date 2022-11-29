@@ -2,7 +2,7 @@
 /* @jsxFrag React.Fragment */
 import { jsx } from '@emotion/react';
 import Prando from 'prando';
-import React from 'react';
+import React, { useState } from 'react';
 import { RoughGenerator } from 'roughjs/bin/generator';
 import { Action } from '../state/Action';
 import { PendingMirror, useCurrent } from '../App';
@@ -270,12 +270,6 @@ export const getAnimatedFunctions = (
         } else {
             try {
                 const k = functionWithBuiltins(vbl.code);
-                // const k = new Function(
-                //     'x',
-                //     vbl.code.includes('\n') || vbl.code.startsWith('return')
-                //         ? vbl.code
-                //         : `return ${vbl.code}`,
-                // );
                 fn[key] = k as (n: number) => number;
             } catch (err) {
                 console.warn(
@@ -300,25 +294,34 @@ export type MenuItem = {
 
 export const evaluateAnimatedValues = (
     animatedFunctions: AnimatedFunctions,
-    // animations: Animations,
     position: number,
 ) => {
-    // const values: { [key: string]: number | ((x: number) => number) } = {
-    //     t: position,
-    // };
-    // Object.keys(animations.timeline).forEach((vbl) => {
-    //     if (vbl === 't') {
-    //         console.warn(`Can't have a custom vbl named t. Ignoring`);
-    //         return;
-    //     }
-    //     const t = animations.timeline[vbl];
-    //     if (t.type === 'float') {
-    //         values[vbl] = evaluateTimeline(t, position);
-    //     } else {
-    //         values[vbl] = 0;
-    //     }
-    // });
     return { ...animatedFunctions, t: position };
+};
+
+export type EditorState = {
+    tmpView: null | View;
+    items: Array<MenuItem>;
+    pos: Coord;
+    zooming: boolean;
+    dragPos: null | { view: View; coord: Coord };
+
+    dragSelectPos: null | Coord;
+    isDragSelecting: boolean;
+    multiSelect: boolean;
+    pendingPath: null | DrawPathState;
+};
+
+const initialEditorState: EditorState = {
+    tmpView: null,
+    items: [],
+    pos: { x: 0, y: 0 },
+    zooming: false,
+    dragPos: null,
+    dragSelectPos: null,
+    isDragSelecting: false,
+    multiSelect: false,
+    pendingPath: null,
 };
 
 export const Canvas = ({
@@ -333,9 +336,7 @@ export const Canvas = ({
     setPendingMirror,
     pendingDuplication,
     setPendingDuplication,
-    // dragSelect,
     isTouchScreen,
-    // cancelDragSelect,
     ppi,
     styleHover,
     setStyleHover,
@@ -344,11 +345,34 @@ export const Canvas = ({
         () => getMirrorTransforms(state.mirrors),
         [state.mirrors],
     );
-    const [tmpView, setTmpView] = React.useState(null as null | View);
+
+    // const [tmpView, setTmpView] = React.useState(null as null | View);
+    // const [items, setItems] = React.useState([] as Array<MenuItem>);
+    // const [pos, setPos] = React.useState({ x: 0, y: 0 });
+    // const [zooming, setZooming] = React.useState(false);
+    // const [dragPos, setDragPos] = React.useState(
+    //     null as null | { view: View; coord: Coord },
+    // );
+    // const [dragSelectPos, setDragSelect] = React.useState(null as null | Coord);
+    // const [isDragSelecting, setDragSelecting] = React.useState(false);
+    // const [multiSelect, setMultiSelect] = React.useState(false);
+    // const pendingPath = React.useState(null as null | DrawPathState);
+
+    const [editorState, setEditorState] = useState(initialEditorState);
+
+    const {
+        tmpView,
+        items,
+        pos,
+        zooming,
+        dragPos,
+        dragSelectPos,
+        isDragSelecting,
+        multiSelect,
+        pendingPath,
+    } = editorState;
 
     const menu = React.useRef<Menu>(null);
-
-    const [items, setItems] = React.useState([] as Array<MenuItem>);
 
     const showMenu = React.useCallback(
         (evt: React.MouseEvent, items: MenuItem[]) => {
@@ -356,55 +380,44 @@ export const Canvas = ({
             evt.stopPropagation();
             console.log('ok', menu, items);
             menu.current!.show(evt);
-            setItems(items);
+            setEditorState((state) => ({ ...state, items }));
+            // setItems(items);
             const { clientX, clientY } = evt;
             setTimeout(() => {
                 const el = menu.current!.getElement();
-                el.style.top = evt.clientY + 'px';
-                el.style.left = evt.clientX + 'px';
+                el.style.top = clientY + 'px';
+                el.style.left = clientX + 'px';
                 console.log('ok', el);
             }, 10);
         },
         [],
     );
 
-    const [pos, setPos] = React.useState({ x: 0, y: 0 });
-
     const currentState = React.useRef(state);
     currentState.current = state;
 
     usePalettePreload(state);
 
-    const [zooming, setZooming] = React.useState(false);
-
     let view = React.useMemo(() => {
-        let view = tmpView ?? state.view;
+        let view = editorState.tmpView ?? state.view;
         return { ...state.view, center: view.center, zoom: view.zoom };
-    }, [state.view, tmpView]);
+    }, [state.view, editorState.tmpView]);
 
     const { x, y } = viewPos(view, width, height);
 
     const ref = React.useRef(null as null | SVGSVGElement);
 
-    useScrollWheel(ref, setTmpView, setZooming, currentState, width, height);
+    useScrollWheel(ref, setEditorState, currentState, width, height);
 
     const generator = React.useMemo(() => new RoughGenerator(), []);
 
-    const [dragPos, setDragPos] = React.useState(
-        null as null | { view: View; coord: Coord },
-    );
-
-    const [dragSelectPos, setDragSelect] = React.useState(null as null | Coord);
-
-    const currentDrag = useCurrent({ pos, drag: dragSelectPos });
-
-    const [styleOpen, setStyleOpen] = React.useState(false);
-    React.useEffect(() => {
-        setStyleOpen(false);
-    }, [state.selection != null]);
+    const currentDrag = useCurrent({
+        pos: editorState.pos,
+        drag: editorState.dragSelectPos,
+    });
 
     const finishDrag = React.useCallback((shiftKey: boolean) => {
-        setDragSelecting(false);
+        setEditorState((state) => ({ ...state, isDragSelecting: false }));
         // cancelDragSelect();
         const { pos, drag } = currentDrag.current;
         if (!drag) {
@@ -437,32 +450,26 @@ export const Canvas = ({
         width,
         height,
         view,
-        setPos,
-        setDragSelect,
+        setEditorState,
         finishDrag,
     );
     const mouseDragHandlers = useMouseDrag(
         dragPos,
-        setTmpView,
+        setEditorState,
         width,
         height,
         view,
-        setPos,
-        setDragPos,
     );
-
-    const [isDragSelecting, setDragSelecting] = React.useState(false);
 
     const mouseHandlers = isDragSelecting
         ? dragSelectHandlers
         : mouseDragHandlers;
 
-    const [multiSelect, setMultiSelect] = React.useState(false);
     const multiRef = useCurrent(multiSelect);
 
     React.useEffect(() => {
         if (!state.selection && multiRef.current) {
-            setMultiSelect(false);
+            setEditorState((state) => ({ ...state, multiSelect: false }));
         }
     }, [!!state.selection]);
 
@@ -550,8 +557,6 @@ export const Canvas = ({
         [width, height, dragPos ? null : view],
     );
 
-    const pendingPath = React.useState(null as null | DrawPathState);
-
     const guidePrimitives = React.useMemo(() => {
         const elements = calculateGuideElements(state.guides, mirrorTransforms);
         const points = elements.flatMap((el) => geomPoints(el.geom));
@@ -597,7 +602,7 @@ export const Canvas = ({
         [state.activeMirror],
     );
 
-    const inner = (
+    const svgContents = (
         <svg
             width={ppi != null ? calcPPI(ppi, width, view.zoom) : width}
             height={ppi != null ? calcPPI(ppi, height, view.zoom) : height}
@@ -683,17 +688,15 @@ export const Canvas = ({
                         groups={state.pathGroups}
                         rand={rand.current}
                         clip={clipPrimitives}
-                        showMenu={showMenu}
                         path={path}
-                        dispatch={dispatch}
-                        state={state}
+                        contextMenu={{ showMenu, state, dispatch }}
                         zoom={view.zoom}
                         sketchiness={view.sketchiness}
                         palette={state.palettes[state.activePalette]}
                         styleHover={selectedIds[path.id] ? styleHover : null}
                         onClick={
                             // TODO: Disable path clickies if we're doing guides, folks.
-                            pendingPath[0] ? undefined : clickPath
+                            pendingPath ? undefined : clickPath
                         }
                     />
                 ))}
@@ -743,7 +746,9 @@ export const Canvas = ({
                         view={view}
                         disableGuides={!!pendingMirror}
                         pos={isTouchScreen ? scale(view.center, -1) : pos}
-                        pendingPath={pendingPath}
+                        // pendingPath={[pendingPath, null]}
+                        editorState={editorState}
+                        setEditorState={setEditorState}
                         mirrorTransforms={mirrorTransforms}
                         pendingMirror={pendingMirror}
                         setPendingMirror={setPendingMirror}
@@ -810,10 +815,8 @@ export const Canvas = ({
 
     // This is for rendering only, not interacting.
     if (ppi != null) {
-        return inner;
+        return svgContents;
     }
-
-    const styleIds = selectedPathIds(state);
 
     return (
         <div
@@ -843,7 +846,7 @@ export const Canvas = ({
                 }
             }}
         >
-            {inner}
+            {svgContents}
             {view.texture ? (
                 <RenderWebGL
                     state={state}
@@ -852,69 +855,9 @@ export const Canvas = ({
                     height={height}
                 />
             ) : null}
-            {tmpView ? (
-                <div
-                    css={{
-                        position: 'absolute',
-                        color: 'black',
-                        top: 58,
-                        left: 0,
-                    }}
-                >
-                    <div css={{ display: 'flex' }}>
-                        <div
-                            css={{
-                                padding: 10,
-                                backgroundColor: 'rgba(255,255,255,0.3)',
-                                cursor: 'pointer',
-                                ':hover': {
-                                    backgroundColor: 'rgba(255,255,255,0.5)',
-                                },
-                            }}
-                            onClick={() => setTmpView(null)}
-                        >
-                            Reset z/p
-                        </div>
-                        <div
-                            css={{
-                                padding: 10,
-                                backgroundColor: 'rgba(255,255,255,0.3)',
-                                cursor: 'pointer',
-                                ':hover': {
-                                    backgroundColor: 'rgba(255,255,255,0.5)',
-                                },
-                            }}
-                            onClick={() => {
-                                setTmpView({
-                                    ...state.view,
-                                    zoom: tmpView.zoom,
-                                });
-                            }}
-                        >
-                            Just pan
-                        </div>
-                    </div>
-                    <div
-                        css={{
-                            padding: 10,
-                            backgroundColor: 'rgba(255,255,255,0.3)',
-                            cursor: 'pointer',
-                            ':hover': {
-                                backgroundColor: 'rgba(255,255,255,0.5)',
-                            },
-                        }}
-                        onClick={() => {
-                            dispatch({
-                                type: 'view:update',
-                                view: tmpView!,
-                            });
-                            setTmpView(null);
-                        }}
-                    >
-                        Commit
-                    </div>
-                </div>
-            ) : null}
+            {tmpView
+                ? zoomPanControls(setEditorState, state, tmpView, dispatch)
+                : null}
             <div
                 css={{
                     position: 'absolute',
@@ -925,80 +868,19 @@ export const Canvas = ({
                 }}
                 onClick={(evt) => evt.stopPropagation()}
             >
-                {styleIds.length && styleOpen ? (
-                    <div
-                        css={{
-                            backgroundColor: 'rgba(0,0,0,0.8)',
-                        }}
-                    >
-                        <MultiStyleForm
-                            palette={state.palettes[state.activePalette]}
-                            styles={styleIds.map((k) => state.paths[k].style)}
-                            onHover={(hover) => {
-                                setStyleHover(hover);
-                            }}
-                            onChange={(styles) => {
-                                const changed: {
-                                    [key: string]: Path;
-                                } = {};
-                                styles.forEach((style, i) => {
-                                    if (style != null) {
-                                        const id = styleIds[i];
-                                        changed[id] = {
-                                            ...state.paths[id],
-                                            style,
-                                        };
-                                    }
-                                });
-                                dispatch({
-                                    type: 'path:update:many',
-                                    changed,
-                                });
-                            }}
-                        />
-                    </div>
-                ) : null}
                 {pendingMirror ? (
                     mirrorControls(setPendingMirror, pendingMirror)
                 ) : pendingDuplication ? (
-                    <div>
-                        <IconButton
-                            onClick={() => {
-                                setPendingDuplication(null);
-                            }}
-                        >
-                            <CancelIcon />
-                        </IconButton>
-                        <IconButton
-                            selected={pendingDuplication.reflect}
-                            onClick={() => {
-                                pendingDuplication.reflect
-                                    ? setPendingDuplication({
-                                          reflect: false,
-                                          p0: null,
-                                      })
-                                    : setPendingDuplication({
-                                          reflect: true,
-                                          p0: null,
-                                      });
-                            }}
-                        >
-                            <MirrorIcon />
-                        </IconButton>
-                        {pendingDuplication.reflect
-                            ? 'Click two points to reflect across'
-                            : `Click a point to duplicate around`}
-                    </div>
+                    duplicationControls(
+                        setPendingDuplication,
+                        pendingDuplication,
+                    )
                 ) : state.selection ? (
                     selectionSection(
                         dispatch,
                         isDragSelecting,
-                        setDragSelecting,
-                        styleIds,
-                        setStyleOpen,
-                        styleOpen,
+                        setEditorState,
                         state,
-                        setMultiSelect,
                         multiSelect,
                         setPendingDuplication,
                     )
@@ -1006,14 +888,20 @@ export const Canvas = ({
                     <GuideSection
                         state={state}
                         dispatch={dispatch}
-                        setDragSelect={setDragSelecting}
+                        setDragSelect={(fn) =>
+                            setEditorState((state) => ({
+                                ...state,
+                                isDragSelecting: fn(state.isDragSelecting),
+                            }))
+                        }
                         dragSelect={isDragSelecting}
                         setHover={setHover}
                     />
                 )}
-                {pendingPath[0] ? (
+                {pendingPath ? (
                     <PendingPathControls
-                        pendingPath={pendingPath}
+                        editorState={editorState}
+                        setEditorState={setEditorState}
                         allIntersections={allIntersections}
                         guidePrimitives={guidePrimitives.primitives}
                         onComplete={(
@@ -1104,6 +992,118 @@ export const dragView = (
     };
     return res;
 };
+
+function duplicationControls(
+    setPendingDuplication: (b: null | PendingDuplication) => void,
+    pendingDuplication: PendingDuplication,
+): React.ReactNode {
+    return (
+        <div>
+            <IconButton
+                onClick={() => {
+                    setPendingDuplication(null);
+                }}
+            >
+                <CancelIcon />
+            </IconButton>
+            <IconButton
+                selected={pendingDuplication.reflect}
+                onClick={() => {
+                    pendingDuplication.reflect
+                        ? setPendingDuplication({
+                              reflect: false,
+                              p0: null,
+                          })
+                        : setPendingDuplication({
+                              reflect: true,
+                              p0: null,
+                          });
+                }}
+            >
+                <MirrorIcon />
+            </IconButton>
+            {pendingDuplication.reflect
+                ? 'Click two points to reflect across'
+                : `Click a point to duplicate around`}
+        </div>
+    );
+}
+
+function zoomPanControls(
+    setEditorState: React.Dispatch<React.SetStateAction<EditorState>>,
+    state: State,
+    tmpView: View,
+    dispatch: (action: Action) => unknown,
+): React.ReactNode {
+    return (
+        <div
+            css={{
+                position: 'absolute',
+                color: 'black',
+                top: 58,
+                left: 0,
+            }}
+        >
+            <div css={{ display: 'flex' }}>
+                <div
+                    css={{
+                        padding: 10,
+                        backgroundColor: 'rgba(255,255,255,0.3)',
+                        cursor: 'pointer',
+                        ':hover': {
+                            backgroundColor: 'rgba(255,255,255,0.5)',
+                        },
+                    }}
+                    onClick={() =>
+                        setEditorState((state) => ({ ...state, tmpView: null }))
+                    }
+                >
+                    Reset z/p
+                </div>
+                <div
+                    css={{
+                        padding: 10,
+                        backgroundColor: 'rgba(255,255,255,0.3)',
+                        cursor: 'pointer',
+                        ':hover': {
+                            backgroundColor: 'rgba(255,255,255,0.5)',
+                        },
+                    }}
+                    onClick={() => {
+                        setEditorState((estate) => ({
+                            ...estate,
+                            tmpView: {
+                                ...state.view,
+                                zoom: tmpView.zoom,
+                            },
+                        }));
+                    }}
+                >
+                    Just pan
+                </div>
+            </div>
+            <div
+                css={{
+                    padding: 10,
+                    backgroundColor: 'rgba(255,255,255,0.3)',
+                    cursor: 'pointer',
+                    ':hover': {
+                        backgroundColor: 'rgba(255,255,255,0.5)',
+                    },
+                }}
+                onClick={() => {
+                    dispatch({
+                        type: 'view:update',
+                        view: tmpView!,
+                    });
+                    setEditorState((state) => ({ ...state, tmpView: null }));
+                }}
+            >
+                Commit
+            </div>
+        </div>
+    );
+}
 
 export function timelineSegments(timeline: FloatLerp) {
     const segments: Array<TLSegment> = [];

@@ -14,7 +14,7 @@ export const migrateState = (state: State) => {
         }
         if (!state.palettes) {
             state.palettes = {};
-            state.tab = 'Guides';
+            state.tab = 'Undo';
             state.selection = null;
         }
         if (!state.activePalette) {

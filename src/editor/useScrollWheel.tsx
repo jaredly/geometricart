@@ -1,11 +1,10 @@
 import React from 'react';
 import { State, View } from '../types';
-import { screenToWorld } from './Canvas';
+import { EditorState, screenToWorld } from './Canvas';
 
 export function useScrollWheel(
     ref: React.MutableRefObject<SVGSVGElement | null>,
-    setTmpView: React.Dispatch<React.SetStateAction<View | null>>,
-    setZooming: (zooming: boolean) => void,
+    setEditorState: React.Dispatch<React.SetStateAction<EditorState>>,
     currentState: React.MutableRefObject<State>,
     width: number,
     height: number,
@@ -22,16 +21,15 @@ export function useScrollWheel(
             const dy = -evt.deltaY;
             evt.preventDefault();
 
-            setZooming(true);
             if (timer) {
                 clearTimeout(timer);
             }
             timer = setTimeout(() => {
-                setZooming(false);
+                setEditorState((state) => ({ ...state, zooming: false }));
             }, 50);
 
-            setTmpView((past) => {
-                let view = past || currentState.current.view;
+            setEditorState((past) => {
+                let view = past.tmpView || currentState.current.view;
 
                 const screenPos = {
                     x: clientX - rect.left,
@@ -50,12 +48,16 @@ export function useScrollWheel(
                     zoom: newZoom,
                 });
                 return {
-                    ...view,
-                    zoom: newZoom,
-                    center: {
-                        x: view.center.x + (newPos.x - pos.x),
-                        y: view.center.y + (newPos.y - pos.y),
+                    ...past,
+                    tmpView: {
+                        ...view,
+                        zoom: newZoom,
+                        center: {
+                            x: view.center.x + (newPos.x - pos.x),
+                            y: view.center.y + (newPos.y - pos.y),
+                        },
                     },
+                    zooming: true,
                 };
             });
         };
@@ -63,7 +65,7 @@ export function useScrollWheel(
         return () => {
             if (timer != null) {
                 clearTimeout(timer);
-                setZooming(false);
+                setEditorState((state) => ({ ...state, zooming: false }));
             }
             ref.current?.removeEventListener('wheel', fn);
         };

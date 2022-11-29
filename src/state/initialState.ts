@@ -94,7 +94,7 @@ export const initialState: State = {
     },
     clips: {},
     selection: null,
-    tab: 'Guides',
+    tab: 'Undo',
     palettes: {
         default: [
             '#001219',

@@ -20,6 +20,7 @@ import {
 } from '../icons/Icon';
 import { Action, PathMultiply, PendingType } from '../state/Action';
 import { guideTypes, Line, State } from '../types';
+import { EditorState } from './Canvas';
 import { PendingDuplication } from './Guides';
 import { Hover } from './Sidebar';
 
@@ -105,12 +106,8 @@ export function GuideSection({
 export function selectionSection(
     dispatch: (action: Action) => unknown,
     dragSelect: boolean,
-    setDragSelect: (fn: (select: boolean) => boolean) => void,
-    styleIds: string[],
-    setStyleOpen: (fn: (select: boolean) => boolean) => void,
-    styleOpen: boolean,
+    setEditorState: React.Dispatch<React.SetStateAction<EditorState>>,
     state: State,
-    setMultiSelect: React.Dispatch<React.SetStateAction<boolean>>,
     multiSelect: boolean,
     setPendingDuplication: (b: null | PendingDuplication) => void,
 ): React.ReactNode {
@@ -132,7 +129,10 @@ export function selectionSection(
             <IconButton
                 selected={dragSelect}
                 onClick={() => {
-                    setDragSelect((current) => !current);
+                    setEditorState((state) => ({
+                        ...state,
+                        isDragSelecting: !state.isDragSelecting,
+                    }));
                 }}
             >
                 <SelectDragIcon />
@@ -194,7 +194,10 @@ export function selectionSection(
             state.selection.type === 'Path' ? (
                 <IconButton
                     onClick={() => {
-                        setMultiSelect((s) => !s);
+                        setEditorState((state) => ({
+                            ...state,
+                            multiSelect: !state.multiSelect,
+                        }));
                     }}
                     selected={multiSelect}
                 >
