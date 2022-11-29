@@ -256,6 +256,7 @@ export const reduceWithoutUndo = (
                         },
                     },
                     nextId,
+                    activeMirror: action.activate ? id : state.activeMirror,
                 },
                 {
                     type: action.type,

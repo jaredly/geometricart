@@ -7,14 +7,9 @@ import { viewPos } from './SVGCanvas';
 export function useMouseDrag(
     dragPos: { view: View; coord: Coord } | null,
     setEditorState: React.Dispatch<React.SetStateAction<EditorState>>,
-    // setTmpView: React.Dispatch<React.SetStateAction<View | null>>,
     width: number,
     height: number,
     view: View,
-    // setPos: React.Dispatch<React.SetStateAction<{ x: number; y: number }>>,
-    // setDragPos: React.Dispatch<
-    //     React.SetStateAction<{ view: View; coord: Coord } | null>
-    // >,
 ) {
     const { x, y } = viewPos(view, width, height);
     const ref = React.useRef(

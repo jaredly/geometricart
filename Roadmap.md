@@ -1,7 +1,16 @@
 
+# New DSEsign screen
+
+- [x] pick the symmetry type!
+- [-] ok let's not get too complicated
+	- [ ] why not give the option to upload an image at this point too!
+	- [ ] andddd maybe palette? hmm idk maybe that's too much.
+
 # DATAS
 
-- [x] path.mirror, remove 'string'
+- [-] path.mirror, remove 'string'
+	Hmmmmm I'd have to mess with ... the history too?
+	Don't want to play too fast and loose with that just yet.
 - [ ] 
 
 ## URGENT

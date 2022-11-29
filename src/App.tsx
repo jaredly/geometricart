@@ -11,13 +11,13 @@ import {
 } from './editor/useDropTarget';
 import { AnimationEditor } from './animation/AnimationUI';
 import { PendingDuplication } from './editor/Guides';
-import { saveState } from './state/persistence';
 
 import { GCodeEditor } from './gcode/GCodeEditor';
 import { HistoryPlayback } from './history/HistoryPlayback';
 import { handleKeyboard } from './handleKeyboard';
 import { NewSidebar } from './sidebar/NewSidebar';
 import { StyleHover } from './editor/MultiStyleForm';
+import { saveState } from './run';
 
 export const useCurrent = <T,>(value: T) => {
     const ref = React.useRef(value);
@@ -35,7 +35,13 @@ export type PendingMirror = {
 };
 export type Screen = 'edit' | 'animate' | 'gcode' | 'history';
 
-export const App = ({ initialState }: { initialState: State }) => {
+export const App = ({
+    initialState,
+    id,
+}: {
+    initialState: State;
+    id: string;
+}) => {
     const [state, dispatch] = React.useReducer(reducer, initialState);
 
     React.useEffect(() => {
@@ -108,7 +114,7 @@ export const App = ({ initialState }: { initialState: State }) => {
     const latestState = useCurrent(state);
 
     React.useEffect(() => {
-        saveState(state);
+        saveState(state, id);
     }, [state]);
 
     const [hover, setHover] = React.useState(null as null | Hover);

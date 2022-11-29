@@ -112,16 +112,9 @@ export const NewSidebar = ({
                         header: 'File',
                         content: () => (
                             <div className="p-3">
-                                <ReallyButton
-                                    label="Clear all"
-                                    className="mb-2"
-                                    onClick={() => {
-                                        dispatch({
-                                            type: 'reset',
-                                            state: initialState,
-                                        });
-                                    }}
-                                />
+                                <Button onClick={() => (location.hash = '/')}>
+                                    Close File
+                                </Button>
                                 <div>
                                     Import:{' '}
                                     <input

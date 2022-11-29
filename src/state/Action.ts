@@ -423,6 +423,7 @@ export type UndoMirrorAdd = {
 export type MirrorAdd = {
     type: 'mirror:add';
     mirror: Mirror;
+    activate?: boolean;
 };
 
 export type UndoMirrorActive = {
