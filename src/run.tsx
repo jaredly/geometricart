@@ -25,6 +25,9 @@ import { State } from './types';
 import { Accordion } from './sidebar/Accordion';
 import { MirrorPicker } from './MirrorPicker';
 import { setupState } from './setupState';
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
+dayjs.extend(relativeTime);
 
 const metaPrefix = 'meta:';
 const keyPrefix = 'geometric-art-';
@@ -133,14 +136,16 @@ const DesignLoader = () => {
                     key={design.id}
                     // style={{ width: 300, height: 300 }}
                     onClick={() => {
-                        window.location.hash = '/' + design.id;
+                        updateMeta(design.id, { openedAt: Date.now() }).then(
+                            () => {
+                                window.location.hash = '/' + design.id;
+                            },
+                        );
                     }}
                     className="hover:surface-hover surface-base p-4 cursor-pointer"
                 >
                     <div style={{ flex: 1 }}>
-                        <div>
-                            {new Date(design.openedAt).toLocaleDateString()}
-                        </div>
+                        <div>{dayjs(design.updatedAt).from(dayjs())}</div>
                     </div>
                     <div></div>
                 </div>

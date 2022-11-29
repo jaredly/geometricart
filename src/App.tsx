@@ -113,8 +113,12 @@ export const App = ({
 
     const latestState = useCurrent(state);
 
+    let firstChange = React.useRef(false);
     React.useEffect(() => {
-        saveState(state, id);
+        if (firstChange.current || state !== initialState) {
+            saveState(state, id);
+            firstChange.current = true;
+        }
     }, [state]);
 
     const [hover, setHover] = React.useState(null as null | Hover);
