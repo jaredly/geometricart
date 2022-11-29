@@ -264,7 +264,6 @@ export const Export = ({
                         ReactDOM.render(
                             <Canvas
                                 styleHover={null}
-                                setStyleHover={() => {}}
                                 // Clear out background in laser cut mode
                                 pendingDuplication={null}
                                 setPendingDuplication={() => null}

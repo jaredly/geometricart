@@ -3,26 +3,21 @@ import { jsx } from '@emotion/react';
 import React from 'react';
 import { Canvas } from './editor/Canvas';
 import { reducer } from './state/reducer';
-import { Hover, Sidebar } from './editor/Sidebar';
-import { Coord, GuideGeom, Id, State } from './types';
+import { Hover } from './editor/Sidebar';
+import { Coord, Id, State } from './types';
 import {
     getStateFromFile,
     useDropStateOrAttachmentTarget,
 } from './editor/useDropTarget';
-import {
-    CogIcon,
-    DrillIcon,
-    IconButton,
-    IconHistoryToggle,
-    IconViewHide,
-    MagicWandIcon,
-    PencilIcon,
-    RedoIcon,
-    UndoIcon,
-} from './icons/Icon';
 import { AnimationEditor } from './animation/AnimationUI';
 import { PendingDuplication } from './editor/Guides';
 import { saveState } from './state/persistence';
+
+import { GCodeEditor } from './gcode/GCodeEditor';
+import { HistoryPlayback } from './history/HistoryPlayback';
+import { handleKeyboard } from './handleKeyboard';
+import { NewSidebar } from './sidebar/NewSidebar';
+import { StyleHover } from './editor/MultiStyleForm';
 
 export const useCurrent = <T,>(value: T) => {
     const ref = React.useRef(value);
@@ -247,9 +242,3 @@ export const App = ({ initialState }: { initialState: State }) => {
         </div>
     );
 };
-
-import { GCodeEditor } from './gcode/GCodeEditor';
-import { HistoryPlayback } from './history/HistoryPlayback';
-import { handleKeyboard } from './handleKeyboard';
-import { NewSidebar } from './sidebar/NewSidebar';
-import { StyleHover } from './editor/MultiStyleForm';

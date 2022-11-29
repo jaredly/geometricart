@@ -1,4 +1,4 @@
-import { getSelectedIds } from '../editor/Canvas';
+import { getSelectedIds } from '../editor/SVGCanvas';
 import { animationTimer, getBuiltins } from './getBuiltins';
 import { State } from '../types';
 

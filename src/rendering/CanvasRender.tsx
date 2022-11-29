@@ -5,11 +5,7 @@ import {
     calculateGuideElements,
     calculateInactiveGuideElements,
 } from './calculateGuideElements';
-import {
-    AnimatedFunctions,
-    evaluateAnimatedValues,
-    imageCache,
-} from '../editor/Canvas';
+import { AnimatedFunctions, evaluateAnimatedValues } from '../editor/Canvas';
 import { pathToPrimitives } from '../editor/findSelection';
 import {
     getAnimatedPaths,
@@ -32,6 +28,7 @@ import {
 import { calcPathD, idSeed, lightenedColor } from '../editor/RenderPath';
 import { sortedVisibleInsetPaths } from './sortedVisibleInsetPaths';
 import { ArcSegment, Overlay, Path, State } from '../types';
+import { imageCache } from '../editor/SVGCanvas';
 
 export const makeImage = (href: string): Promise<HTMLImageElement> => {
     return new Promise((res, rej) => {

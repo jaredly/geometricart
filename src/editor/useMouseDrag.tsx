@@ -1,7 +1,8 @@
 import React from 'react';
 import { Coord, View } from '../types';
-import { dragView, EditorState, screenToWorld, viewPos } from './Canvas';
+import { dragView, EditorState, screenToWorld } from './Canvas';
 import { dist } from '../rendering/getMirrorTransforms';
+import { viewPos } from './SVGCanvas';
 
 export function useMouseDrag(
     dragPos: { view: View; coord: Coord } | null,
