@@ -331,9 +331,7 @@ export const Guides = ({
                         mirror: {
                             id: '',
                             origin: mirror.center,
-                            parent: mirror.parent
-                                ? currentState.current.mirrors[mirror.parent]
-                                : null,
+                            parent: mirror.parent,
                             point: coord.coord,
                             reflect: mirror.reflect,
                             rotational,

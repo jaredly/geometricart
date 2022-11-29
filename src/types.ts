@@ -157,7 +157,7 @@ export type Guide = {
     active: boolean;
     geom: GuideGeom;
     basedOn: Array<Id>;
-    mirror: null | Mirror;
+    mirror: Id | null | Mirror;
 };
 
 export type Mirror = {
@@ -171,7 +171,7 @@ export type Mirror = {
     // line between origin and point.
     rotational: Array<boolean>;
     reflect: boolean;
-    parent: null | Mirror;
+    parent: Id | null | Mirror;
 };
 
 export type Fill = {
@@ -503,7 +503,7 @@ export type GCodePath = {
 };
 
 export type State = {
-    version: 10;
+    version: 9;
     nextId: number;
     history: History;
     meta: Meta;

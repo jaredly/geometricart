@@ -77,7 +77,9 @@ export const showHover = (
             }
             return geomsForGiude(
                 state.guides[hover.id],
-                state.guides[hover.id].mirror
+                typeof state.guides[hover.id].mirror === 'string'
+                    ? mirrorTransforms[state.guides[hover.id].mirror as string]
+                    : state.guides[hover.id].mirror
                     ? getTransformsForNewMirror(
                           state.guides[hover.id].mirror as Mirror,
                       )

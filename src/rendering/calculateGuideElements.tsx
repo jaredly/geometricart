@@ -21,7 +21,9 @@ export const calculateInactiveGuideElements = (
         elements.push(
             ...geomsForGiude(
                 guides[k],
-                guides[k].mirror
+                typeof guides[k].mirror === 'string'
+                    ? mirrorTransforms[guides[k].mirror as string]
+                    : guides[k].mirror
                     ? getTransformsForNewMirror(guides[k].mirror as Mirror)
                     : null,
             ),
@@ -67,7 +69,9 @@ export const calculateGuideElements = (
         elements.push(
             ...geomsForGiude(
                 guides[k],
-                guides[k].mirror
+                typeof guides[k].mirror === 'string'
+                    ? mirrorTransforms[guides[k].mirror as string]
+                    : guides[k].mirror
                     ? getTransformsForNewMirror(guides[k].mirror as Mirror)
                     : null,
             ),
