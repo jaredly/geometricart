@@ -2,7 +2,7 @@ import { ensureClockwise } from '../rendering/pathToPoints';
 import { initialState } from './initialState';
 import { simplifyPath } from '../rendering/simplifyPath';
 import { combineStyles } from '../editor/Canvas';
-import { State, Path, PathGroup } from '../types';
+import { State, Path, PathGroup, Mirror } from '../types';
 
 export const migrateState = (state: State) => {
     if (!state.version) {
@@ -121,9 +121,25 @@ export const migrateState = (state: State) => {
     if (state.version < 9) {
         state.gcode = { items: [], clearHeight: 5, pauseHeight: 30 };
     }
-    state.version = 9;
+    // Removed "id" for guide.mirror and mirror.mirror
+    if (state.version < 10) {
+        Object.keys(state.guides).forEach((id) => {
+            const guide = state.guides[id];
+            if (typeof guide.mirror === 'string') {
+                guide.mirror = state.mirrors[guide.mirror];
+            }
+        });
+        Object.keys(state.mirrors).forEach((id) => {
+            const mirror = state.mirrors[id];
+            if (typeof mirror.parent === 'string') {
+                mirror.parent = state.mirrors[mirror.parent];
+            }
+        });
+    }
+    state.version = 10;
     return state;
 };
+
 function combinedPathStyles(path: Path, groups: { [key: string]: PathGroup }) {
     const styles = [path.style];
     if (path.group) {
