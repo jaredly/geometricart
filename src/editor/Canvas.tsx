@@ -11,7 +11,7 @@ import {
 } from '../rendering/calculateGuideElements';
 import { DrawPathState } from './DrawPath';
 import { findSelection } from './findSelection';
-import { getMirrorTransforms } from '../rendering/getMirrorTransforms';
+import { getMirrorTransforms, push } from '../rendering/getMirrorTransforms';
 import {
     PendingDuplication,
     PendingPathPair,
@@ -59,10 +59,12 @@ import {
     LerpPoint,
     View,
     TextureConfig,
+    GuideGeom,
 } from '../types';
 import { functionWithBuiltins } from '../animation/getAnimatedPaths';
 import { Menu } from 'primereact/menu';
 import { SVGCanvas } from './SVGCanvas';
+import { Button } from 'primereact/button';
 
 export type Props = {
     state: State;
@@ -304,7 +306,7 @@ const initialEditorState: EditorState = {
     zooming: false,
     dragPos: null,
     dragSelectPos: null,
-    isDragSelecting: false,
+    isDragSelecting: true,
     multiSelect: false,
     pendingPath: null,
 };
@@ -458,6 +460,183 @@ export const Canvas = ({
                       dispatch,
                   )
                 : null}
+            <div
+                css={{
+                    position: 'absolute',
+                    left: 0,
+                    top: 0,
+                }}
+                className="p-2 flex flex-column"
+            >
+                <Button
+                    className={
+                        'pi p-button-icon-only ' +
+                        (state.pending == null && editorState.isDragSelecting
+                            ? 'p-button-outlined'
+                            : '')
+                    }
+                    onClick={() => {
+                        if (state.pending != null) {
+                            dispatch({ type: 'pending:type', kind: null });
+                            setEditorState((es) => ({
+                                ...es,
+                                isDragSelecting: true,
+                            }));
+                        } else {
+                            setEditorState((es) => ({
+                                ...es,
+                                isDragSelecting: !es.isDragSelecting,
+                            }));
+                        }
+                    }}
+                >
+                    <ToolIcon
+                        lines={[
+                            [
+                                { x: 2, y: 0 },
+                                push({ x: 2, y: 0 }, Math.PI / 4, 10),
+                                push({ x: 2, y: 0 }, Math.PI / 2, 10),
+                                { x: 2, y: 0 },
+                            ],
+                        ]}
+                    />
+                </Button>
+                <Button
+                    icon="pi pi-arrows-alt"
+                    className={
+                        'mt-2 ' +
+                        (state.pending == null && !editorState.isDragSelecting
+                            ? 'p-button-outlined'
+                            : '')
+                    }
+                    onClick={() => {
+                        if (state.pending != null) {
+                            dispatch({ type: 'pending:type', kind: null });
+                            setEditorState((es) => ({
+                                ...es,
+                                isDragSelecting: false,
+                            }));
+                        } else {
+                            setEditorState((es) => ({
+                                ...es,
+                                isDragSelecting: !es.isDragSelecting,
+                            }));
+                        }
+                    }}
+                />
+                {Object.entries({
+                    Line: (
+                        <ToolIcon
+                            points={[
+                                { x: 0, y: 0 },
+                                { x: 10, y: 10 },
+                            ]}
+                            lines={[
+                                [
+                                    { x: 0, y: 0 },
+                                    { x: 10, y: 10 },
+                                ],
+                            ]}
+                        />
+                    ),
+                    Perpendicular: (
+                        <ToolIcon
+                            points={[
+                                { x: 5, y: 2 },
+                                { x: 5, y: 10 },
+                            ]}
+                            lines={[
+                                [
+                                    { x: -2, y: 2 },
+                                    { x: 12, y: 2 },
+                                ],
+                            ]}
+                        />
+                    ),
+                    PerpendicularBisector: (
+                        <ToolIcon
+                            points={[
+                                { x: 0, y: 5 },
+                                { x: 10, y: 5 },
+                            ]}
+                            lines={[
+                                [
+                                    { x: 5, y: -2 },
+                                    { x: 5, y: 12 },
+                                ],
+                            ]}
+                        />
+                    ),
+                    AngleBisector: (
+                        <ToolIcon
+                            points={[
+                                { x: 0, y: 0 },
+                                { x: 10, y: 10 },
+                                { x: 0, y: 10 },
+                            ]}
+                            lines={[
+                                [
+                                    { x: 10, y: 0 },
+                                    { x: 0, y: 10 },
+                                ],
+                            ]}
+                        />
+                    ),
+                    Circle: (
+                        <ToolIcon
+                            circles={[[{ x: 5, y: 5 }, 5]]}
+                            points={[
+                                { x: 5, y: 0 },
+                                { x: 5, y: 5 },
+                            ]}
+                        />
+                    ),
+                    CircumCircle: (
+                        <ToolIcon
+                            circles={[[{ x: 5, y: 5 }, 5]]}
+                            points={[
+                                push({ x: 5, y: 5 }, Math.PI / 4, 5),
+                                push({ x: 5, y: 5 }, -Math.PI / 4, 5),
+                                push({ x: 5, y: 5 }, Math.PI, 5),
+                            ]}
+                        />
+                    ),
+                    InCircle: (
+                        <ToolIcon
+                            circles={[[{ x: 3, y: 5 }, 3]]}
+                            points={[
+                                { x: 0, y: 0 },
+                                { x: 0, y: 10 },
+                                { x: 10, y: 5 },
+                            ]}
+                        />
+                    ),
+                }).map(([kind, icon]) => (
+                    <Button
+                        key={kind}
+                        icon={
+                            typeof icon === 'string' ? `pi ${icon}` : undefined
+                        }
+                        className={
+                            'mt-2 p-button-icon-only ' +
+                            (state.pending?.type === 'Guide' &&
+                            state.pending.kind === kind
+                                ? 'p-button-outlined'
+                                : '')
+                        }
+                        onClick={() => {
+                            state.pending?.type === 'Guide' &&
+                            state.pending.kind === kind
+                                ? dispatch({ type: 'pending:type', kind: null })
+                                : dispatch({
+                                      type: 'pending:type',
+                                      kind: kind as GuideGeom['type'],
+                                  });
+                        }}
+                        children={typeof icon === 'string' ? undefined : icon}
+                    />
+                ))}
+            </div>
             <div
                 css={{
                     position: 'absolute',
@@ -745,5 +924,41 @@ export const ClipMenu = ({
                 <ScissorsCuttingIcon />
             </IconButton>
         </div>
+    );
+};
+
+export const ToolIcon = ({
+    points,
+    lines,
+    circles,
+}: {
+    points?: Coord[];
+    lines?: Coord[][];
+    circles?: [Coord, number][];
+}) => {
+    return (
+        <svg width={16} height={16} viewBox="-2 -2 14 14">
+            {points?.map((p, i) => (
+                <circle key={i} cx={p.x} cy={p.y} r={1.5} fill="currentColor" />
+            ))}
+            {lines?.map((points, i) => (
+                <polyline
+                    key={i}
+                    points={points.map((p) => `${p.x},${p.y}`).join(' ')}
+                    stroke="currentColor"
+                    fill="none"
+                />
+            ))}
+            {circles?.map(([p, r], i) => (
+                <circle
+                    key={i}
+                    cx={p.x}
+                    cy={p.y}
+                    r={r}
+                    fill="none"
+                    stroke="currentColor"
+                />
+            ))}
+        </svg>
     );
 };

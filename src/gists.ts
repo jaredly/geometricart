@@ -4,6 +4,8 @@ import { State } from './types';
 import http from 'isomorphic-git/http/web';
 import { fs } from 'memfs-browser';
 import { Buffer } from 'buffer';
+import localforage from 'localforage';
+import { gistCache, SmallGist } from './useGists';
 
 const blobToBuffer = (blob: Blob): Promise<Buffer> => {
     return new Promise((resolve, reject) => {
@@ -40,13 +42,14 @@ export const updateGitRepo = async (
         fs.writeFileSync(dir + '/' + stateFileName, JSON.stringify(state));
         await git.add({ fs, dir, filepath: stateFileName });
     }
-    await git.commit({
+    const sha = await git.commit({
         fs,
         dir,
         message: 'update preview' + (state ? ' and state' : ''),
         author: { name: 'geometric-art', email: '' },
     });
     await git.push(args);
+    return sha;
 };
 
 export const loadGist = async (id: string, token: string) => {
@@ -88,11 +91,24 @@ export const newGist = async (state: State, blob: Blob, token: string) => {
     return data.id;
 };
 
-export const saveGist = (
+export const saveGist = async (
     id: string,
     state: State,
     blob: Blob,
     token: string,
 ) => {
-    return updateGitRepo(id, token, blob, state);
+    // Ok I need to use this sha to update the preview_url
+    const preview_sha = await updateGitRepo(id, token, blob, state);
+    const data = await localforage.getItem<{
+        time: number;
+        gists: SmallGist[];
+    }>(gistCache);
+    const found = data?.gists.find((gist) => gist.id === id);
+    if (found) {
+        found.preview_sha = preview_sha;
+        found.updated = new Date().toISOString();
+        await localforage.setItem(gistCache, data);
+    } else {
+        console.warn('Could not find gist in cache', id, data);
+    }
 };

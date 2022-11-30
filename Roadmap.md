@@ -1,9 +1,28 @@
 
 # GISTSSS
 
-- [ ] when adding a gist, update my gistcache
-  - [ ] also, strip down the gistCache to just be like "id + previewUrl" or something
+- [x] when adding a gist, update my gistcache
+  - [x] also, strip down the gistCache to just be like "id + username (to calc previewurl)"
 - [x] add an onbeforeunload if you're done dirty.
+- [x] while saving, show mea looooooading indicator please
+	- dirty should be "true" in that case, not the fn anymore.
+- [-] honestly, saving should skip over non-critical things, like selection changes
+		  and guide visibility
+			I'll solve this by just not putting those into state/history
+
+# Google Drive maybe? Probably??
+
+Yeah sure
+
+# Sidebar TOOLS
+
+- [x] all the guide types
+- [ ] a button to switch to normal cursor mode
+- [ ] The pointer's default behavior should be "SELECT" (& drag select), NOT PAN
+	- and it shouldn't select points
+- [ ] have a "pan" tool
+- [ ] also allow like "shift + zoom" to do panning
+
 
 # So, snapshots / versions or something
 
@@ -11,6 +30,30 @@ Like, when iterating on a dealio, I want a way to "save multiple screenshots" fr
 Can this just be, like "checkpoints in the history"? Yeah, I like that.
 And then, in the gist scenario, the photos / etc. could be labeled to indicate the checkpoint (place in history).
 That would mean I don't even need a separate "list of checkpoints", I could just look at the filenames of the saved images 😎
+
+Ok, so when I'm doing like ... local browser saving.
+Should the Metadata have a list of the checkpoint images? Yeah seems reasonable.
+
+Sidebar has a list of snapshots.
+
+OH FIXXX THE PALETTE STUFF
+anddddd the solution is ... 
+
+## Things to remove from HISTORY and deprecate from state
+
+- [ ] pending guides, it's fine
+- [ ] guides visibility
+- [ ] selection
+
+I should keep the reducer handlers and such so I don't break old things probably.
+
+## Things to heavily optimise
+
+- [ ] changing multiple paths at once maybe? I should audit the history of a thing.
+
+## Things to think about
+
+Ok so I feel like my use of 'nextId' isn't ... super rigorous? maybe? hm but maybe it's fine.
 
 # New DSEsign screen
 

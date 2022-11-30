@@ -50,7 +50,11 @@ export const NewSidebar = ({
     setScreen,
     lastSaved,
 }: {
-    lastSaved: { when: number; dirty: null | (() => void); id: string } | null;
+    lastSaved: {
+        when: number;
+        dirty: null | true | (() => void);
+        id: string;
+    } | null;
     state: State;
     dispatch: React.Dispatch<Action>;
     hover: Hover | null;
@@ -124,20 +128,26 @@ export const NewSidebar = ({
                                 {lastSaved ? (
                                     <div>
                                         {lastSaved.dirty ? (
-                                            <div
-                                                onClick={(evt) => {
-                                                    evt.stopPropagation();
-                                                    lastSaved.dirty!();
-                                                }}
-                                                style={{
-                                                    cursor: 'pointer',
-                                                }}
-                                            >
-                                                Last saved{' '}
-                                                {dayjs(
-                                                    lastSaved.when,
-                                                ).fromNow()}
-                                            </div>
+                                            lastSaved.dirty === true ? (
+                                                'Saving...'
+                                            ) : (
+                                                <div
+                                                    onClick={(evt) => {
+                                                        evt.stopPropagation();
+                                                        const dirty =
+                                                            lastSaved.dirty as () => void;
+                                                        dirty();
+                                                    }}
+                                                    style={{
+                                                        cursor: 'pointer',
+                                                    }}
+                                                >
+                                                    Last saved{' '}
+                                                    {dayjs(
+                                                        lastSaved.when,
+                                                    ).fromNow()}
+                                                </div>
+                                            )
                                         ) : (
                                             'Saved'
                                         )}

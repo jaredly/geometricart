@@ -302,6 +302,13 @@ export type HistoryItem = {
     // parent: number;
 };
 
+// This should ... hypothetically be enough to uniquely identify a point in history
+export type Checkpoint = {
+    branchId: number;
+    branchLength: number;
+    undo: number;
+};
+
 export type History = {
     nextId: number;
     // current: Array<HistoryItem>;

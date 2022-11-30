@@ -1,5 +1,6 @@
 import * as React from 'react';
 import localforage from 'localforage';
+import { stateFileName } from './gists';
 
 export const useGists = () => {
     const urlToken = new URLSearchParams(window.location.search).get(
@@ -13,16 +14,16 @@ export const useGists = () => {
         localStorage.github_access_token = token;
         localforage.removeItem(gistCache);
     }
-    const [gists, setGists] = React.useState(null as null | Array<Gist>);
+    const [gists, setGists] = React.useState(null as null | Array<SmallGist>);
 
     React.useEffect(() => {
         if (urlToken) {
             history.pushState({}, '', window.location.pathname);
         }
         localforage.getItem(gistCache).then((data) => {
-            const cached = data as null | { time: number; gists: Gist[] };
+            const cached = data as null | { time: number; gists: SmallGist[] };
             if (cached && cached.time > Date.now() - 1000 * 60 * 60) {
-                setGists(cached.gists as Gist[]);
+                setGists(cached.gists);
             } else {
                 fetch('https://api.github.com/gists?per_page=100', {
                     headers: {
@@ -31,8 +32,27 @@ export const useGists = () => {
                     },
                 })
                     .then((res) => res.json())
-                    .then((gists) => {
-                        localforage.setItem(gistCache, {
+                    .then((gists) =>
+                        gists
+                            .filter(
+                                (gist: Gist) =>
+                                    gist.files['preview.png'] &&
+                                    gist.files[stateFileName],
+                            )
+                            .map((gist: Gist) => ({
+                                id: gist.id,
+                                user: gist.owner.login,
+                                updated: gist.updated_at,
+                                preview_sha: gist.files['preview.png'].raw_url
+                                    .split('/')
+                                    .slice(-2)[0],
+                            })),
+                    )
+                    .then((gists: SmallGist[]) => {
+                        localforage.setItem<{
+                            time: number;
+                            gists: SmallGist[];
+                        }>(gistCache, {
                             time: Date.now(),
                             gists,
                         });
@@ -43,6 +63,13 @@ export const useGists = () => {
     }, []);
 
     return { token, gists };
+};
+
+export type SmallGist = {
+    id: string;
+    user: string;
+    updated: string;
+    preview_sha: string;
 };
 
 export type Gist = {

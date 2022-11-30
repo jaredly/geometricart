@@ -49,7 +49,7 @@ export const App = ({
     const [state, dispatch] = React.useReducer(reducer, initialState);
     const [lastSaved, setLastSaved] = React.useState({
         when: Date.now(),
-        dirty: null as null | (() => void),
+        dirty: null as null | true | (() => void),
         id,
     });
 
@@ -147,6 +147,7 @@ export const App = ({
             firstChange.current = true;
             if (dest.type === 'gist') {
                 const force = debounce(() => {
+                    setLastSaved((s) => ({ ...s, dirty: true }));
                     return saveState(state, id, dest).then(() => {
                         setLastSaved({ when: Date.now(), dirty: null, id });
                     });

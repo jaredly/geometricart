@@ -18,7 +18,7 @@ import {
     useParams,
 } from 'react-router-dom';
 import localforage from 'localforage';
-import { Mirror, State } from './types';
+import { Checkpoint, Meta, Mirror, State } from './types';
 import { Accordion } from './sidebar/Accordion';
 import { MirrorPicker, SaveDest } from './MirrorPicker';
 import { setupState } from './setupState';
@@ -34,12 +34,24 @@ dayjs.extend(relativeTime);
 export const metaPrefix = 'meta:';
 export const keyPrefix = 'geometric-art-';
 export const thumbPrefix = 'thumb:';
+export const snapshotPrefix = 'snapshot:';
 export const key = (id: string) => keyPrefix + id;
 export const meta = (id: string) => metaPrefix + key(id);
+export const snapshotKey = (id: string, checkpoint: Checkpoint) =>
+    snapshotPrefix + key(id) + ':' + checkpointToString(checkpoint);
 
-export const updateMeta = async (id: string, update: Partial<MetaData>) => {
+export const updateMeta = async (
+    id: string,
+    update: Partial<MetaData> | ((v: MetaData) => Partial<MetaData>),
+) => {
     const current = await localforage.getItem<MetaData>(meta(id));
-    return localforage.setItem(meta(id), { ...current, ...update });
+    if (!current) {
+        return;
+    }
+    return localforage.setItem(meta(id), {
+        ...current,
+        ...(typeof update === 'function' ? update(current) : update),
+    });
 };
 
 export const newState = async (mirror: Mirror | null, dest: SaveDest) => {
@@ -58,6 +70,20 @@ export const newState = async (mirror: Mirror | null, dest: SaveDest) => {
     }
 };
 
+export const addSnapshot = async (id: string, state: State) => {
+    const checkpoint: Checkpoint = {
+        branchId: state.history.currentBranch,
+        undo: state.history.undo,
+        branchLength:
+            state.history.branches[state.history.currentBranch].items.length,
+    };
+    const blob = await exportPNG(400, state, 1000, false, false, 0);
+    updateMeta(id, (meta) => ({
+        checkpoints: [...(meta.checkpoints || []), checkpoint],
+    }));
+    localforage.setItem(snapshotKey(id, checkpoint), blob);
+};
+
 export const saveState = async (state: State, id: string, dest: SaveDest) => {
     const blob = await exportPNG(400, state, 1000, false, false, 0);
     if (dest.type === 'local') {
@@ -68,7 +94,7 @@ export const saveState = async (state: State, id: string, dest: SaveDest) => {
         });
         localforage.setItem(thumbPrefix + key(id), blob);
     } else {
-        await saveGist(id, state, blob, dest.token);
+        return await saveGist(id, state, blob, dest.token);
     }
 };
 
@@ -88,6 +114,18 @@ export type MetaData = {
     openedAt: number;
     id: string;
     size: number;
+    checkpoints?: Array<Checkpoint>;
+};
+
+export const checkpointToString = (c: Checkpoint) =>
+    `${c.branchId}-${c.branchLength}-${c.undo}`;
+export const stringToCheckpoint = (s: string) => {
+    const [branchId, branchLength, undo] = s.split('-');
+    return {
+        branchId: parseInt(branchId),
+        branchLength: parseInt(branchLength),
+        undo: parseInt(undo),
+    };
 };
 
 const Welcome = () => {
@@ -173,39 +211,33 @@ const GistLoader = () => {
                 Refresh
             </Button>
             <div className="flex flex-row flex-wrap">
-                {gists
-                    .filter(
-                        (gist) =>
-                            gist.files['preview.png'] &&
-                            gist.files[stateFileName],
-                    )
-                    .map((gist) => (
-                        <div
-                            className="mt-3 flex flex-column hover:surface-hover surface-base p-4 cursor-pointer"
-                            onClick={() => {
-                                window.location.hash = '/gist/' + gist.id;
-                            }}
-                        >
-                            <img
-                                width={200}
-                                height={200}
-                                src={gist.files['preview.png'].raw_url}
-                            />
-                            <div>
-                                {dayjs(gist.updated_at).fromNow()}
-                                <a
-                                    target="_blank"
-                                    href={gist.html_url}
-                                    onClick={(evt) => evt.stopPropagation()}
-                                    style={{
-                                        textDecoration: 'none',
-                                        color: 'inherit',
-                                    }}
-                                    className="pi pi-external-link pi-button pi-button-text m-1"
-                                ></a>
-                            </div>
+                {gists.map((gist) => (
+                    <div
+                        className="mt-3 flex flex-column hover:surface-hover surface-base p-4 cursor-pointer"
+                        onClick={() => {
+                            window.location.hash = '/gist/' + gist.id;
+                        }}
+                    >
+                        <img
+                            width={200}
+                            height={200}
+                            src={`https://gist.githubusercontent.com/${gist.user}/${gist.id}/raw/${gist.preview_sha}/preview.png`}
+                        />
+                        <div>
+                            {dayjs(gist.updated).fromNow()}
+                            <a
+                                target="_blank"
+                                href={`https://gist.github.com/${gist.id}`}
+                                onClick={(evt) => evt.stopPropagation()}
+                                style={{
+                                    textDecoration: 'none',
+                                    color: 'inherit',
+                                }}
+                                className="pi pi-external-link pi-button pi-button-text m-1"
+                            ></a>
                         </div>
-                    ))}
+                    </div>
+                ))}
             </div>
         </div>
     );

@@ -74,31 +74,6 @@ export function GuideSection({
             >
                 <SelectDragIcon />
             </IconButton>
-
-            {state.view.guides ? (
-                <select
-                    css={{
-                        width: 140,
-                        fontSize: 30,
-                    }}
-                    onChange={(evt) => {
-                        dispatch({
-                            type: 'pending:type',
-                            kind: evt.target.value as PendingType['kind'],
-                        });
-                    }}
-                    value={0}
-                >
-                    <option value={0} disabled>
-                        + Guide
-                    </option>
-                    {guideTypes.map((kind) => (
-                        <option key={kind} value={kind}>
-                            {kind}
-                        </option>
-                    ))}
-                </select>
-            ) : null}
         </div>
     );
 }

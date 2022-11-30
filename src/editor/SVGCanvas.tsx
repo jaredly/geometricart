@@ -493,7 +493,7 @@ export function finishDragFn(
     dispatch: (action: Action) => unknown,
 ): (shiftKey: boolean) => void {
     return (shiftKey: boolean) => {
-        setEditorState((state) => ({ ...state, isDragSelecting: false }));
+        // setEditorState((state) => ({ ...state, isDragSelecting: false }));
         // cancelDragSelect();
         const { pos, drag } = currentDrag.current;
         if (!drag) {
