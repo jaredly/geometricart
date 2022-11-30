@@ -56,7 +56,7 @@ import { transformSegment } from './points';
  *
  * NOTE That I'm not messing with scaling at the moment.
  */
-const normalizedPath = (
+export const normalizedPath = (
     segments: Array<Segment>,
 ): [Array<Segment>, Array<Matrix>] | null => {
     if (segments.length < 2) {

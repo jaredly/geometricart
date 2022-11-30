@@ -12,6 +12,8 @@ import { arcPath } from './RenderPendingPath';
 import { DebugOrigPath } from './DebugOrigPath';
 import { MenuItem } from './Canvas';
 import { Action } from '../state/Action';
+import { normalizedPath } from '../rendering/sortedVisibleInsetPaths';
+import { pathToSegmentKeys } from '../rendering/pathsAreIdentical';
 
 export const UnderlinePath = ({
     path,
@@ -353,6 +355,15 @@ const RenderPathMemo = ({
     );
 };
 
+const normalizedKey = (path: Path) => {
+    const norm = normalizedPath(path.segments);
+    if (!norm) {
+        console.warn('unable to normalize?');
+        return null;
+    }
+    return pathToSegmentKeys(norm[0][norm[0].length - 1].to, norm[0]).join(':');
+};
+
 export const itemsForPath = (
     path: Path,
     state: State,
@@ -360,6 +371,26 @@ export const itemsForPath = (
 ) => {
     console.log('ok', path);
     const select: MenuItem[] = [];
+
+    const key = normalizedKey(path);
+    if (key) {
+        select.push({
+            label: 'By shape',
+            command() {
+                const ids = Object.keys(state.paths).filter(
+                    (k) => normalizedKey(state.paths[k]) === key,
+                );
+                dispatch({
+                    type: 'selection:set',
+                    selection: {
+                        type: 'Path',
+                        ids,
+                    },
+                });
+            },
+        });
+    }
+
     path.style.fills.forEach((fill) => {
         if (fill) {
             const color = fill.color;
