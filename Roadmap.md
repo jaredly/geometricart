@@ -5,6 +5,7 @@
 - [-] ok let's not get too complicated
 	- [ ] why not give the option to upload an image at this point too!
 	- [ ] andddd maybe palette? hmm idk maybe that's too much.
+- [x] thumbnails!! Should probably aggresively debounce the thumbnail updating though.
 
 # DATAS
 

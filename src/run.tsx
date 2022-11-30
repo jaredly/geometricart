@@ -89,7 +89,7 @@ type MetaData = {
 
 const Welcome = () => {
     const [activeIds, setActiveIds] = React.useState({
-        new: true,
+        new: false,
         open: true,
     } as {
         [key: string]: boolean;
@@ -140,7 +140,13 @@ const DesignLoader = () => {
                         ),
                 ),
             )
-            .then((metas) => setDesigns(metas.filter(Boolean) as MetaData[]));
+            .then((metas) =>
+                setDesigns(
+                    (metas.filter(Boolean) as MetaData[]).sort(
+                        (a, b) => b.updatedAt - a.updatedAt,
+                    ),
+                ),
+            );
     }, []);
     const [tick, setTick] = React.useState(0);
     React.useEffect(() => {
