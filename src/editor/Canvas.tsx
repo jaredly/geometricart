@@ -270,7 +270,10 @@ export const getAnimatedFunctions = (
 export type MenuItem = {
     label: React.ReactNode;
     icon?: string;
-    command?: () => void;
+    command?: (event: {
+        originalEvent: React.MouseEvent;
+        item: MenuItem;
+    }) => void;
     items?: MenuItem[];
 };
 

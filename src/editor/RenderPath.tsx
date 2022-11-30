@@ -364,6 +364,23 @@ const normalizedKey = (path: Path) => {
     return pathToSegmentKeys(norm[0][norm[0].length - 1].to, norm[0]).join(':');
 };
 
+const selectPathIds = (
+    state: State,
+    event: React.MouseEvent,
+    ids: string[],
+): Action => {
+    return {
+        type: 'selection:set',
+        selection: {
+            type: 'Path',
+            ids:
+                event.shiftKey && state.selection?.type === 'Path'
+                    ? [...state.selection.ids, ...ids]
+                    : ids,
+        },
+    };
+};
+
 export const itemsForPath = (
     path: Path,
     state: State,
@@ -376,17 +393,11 @@ export const itemsForPath = (
     if (key) {
         select.push({
             label: 'By shape',
-            command() {
+            command({ originalEvent }) {
                 const ids = Object.keys(state.paths).filter(
                     (k) => normalizedKey(state.paths[k]) === key,
                 );
-                dispatch({
-                    type: 'selection:set',
-                    selection: {
-                        type: 'Path',
-                        ids,
-                    },
-                });
+                dispatch(selectPathIds(state, originalEvent, ids));
             },
         });
     }
@@ -406,20 +417,13 @@ export const itemsForPath = (
                         by fill
                     </span>
                 ),
-                command() {
-                    const ids = Object.entries(state.paths).filter(
-                        ([id, path]) =>
-                            path.style.fills.find(
-                                (fill) => fill && fill.color === color,
-                            ),
+                command({ originalEvent }) {
+                    const ids = Object.keys(state.paths).filter((id) =>
+                        state.paths[id].style.fills.find(
+                            (fill) => fill && fill.color === color,
+                        ),
                     );
-                    dispatch({
-                        type: 'selection:set',
-                        selection: {
-                            type: 'Path',
-                            ids: ids.map(([id]) => id),
-                        },
-                    });
+                    dispatch(selectPathIds(state, originalEvent, ids));
                 },
             });
         }
@@ -440,20 +444,13 @@ export const itemsForPath = (
                         by line
                     </span>
                 ),
-                command() {
-                    const ids = Object.entries(state.paths).filter(
-                        ([id, path]) =>
-                            path.style.lines.find(
-                                (line) => line && line.color === color,
-                            ),
+                command({ originalEvent }) {
+                    const ids = Object.keys(state.paths).filter((id) =>
+                        state.paths[id].style.lines.find(
+                            (line) => line && line.color === color,
+                        ),
                     );
-                    dispatch({
-                        type: 'selection:set',
-                        selection: {
-                            type: 'Path',
-                            ids: ids.map(([id]) => id),
-                        },
-                    });
+                    dispatch(selectPathIds(state, originalEvent, ids));
                 },
             });
         }
