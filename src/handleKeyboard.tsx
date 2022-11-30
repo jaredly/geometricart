@@ -26,7 +26,7 @@ export const handleKeyboard = (
     pendingDuplication: { current: null | PendingDuplication },
     setPendingDuplication: (d: null | PendingDuplication) => void,
 ) => {
-    let tid: null | number = null;
+    let tid: null | NodeJS.Timeout = null;
     const hoverMirror = (id: Id, quick: boolean) => {
         setHover({ kind: 'Mirror', id, type: 'element' });
         if (tid) {

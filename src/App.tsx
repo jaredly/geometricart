@@ -18,6 +18,8 @@ import { handleKeyboard } from './handleKeyboard';
 import { NewSidebar } from './sidebar/NewSidebar';
 import { StyleHover } from './editor/MultiStyleForm';
 import { saveState } from './run';
+import { SaveDest } from './MirrorPicker';
+import dayjs from 'dayjs';
 
 export const useCurrent = <T,>(value: T) => {
     const ref = React.useRef(value);
@@ -37,12 +39,19 @@ export type Screen = 'edit' | 'animate' | 'gcode' | 'history';
 
 export const App = ({
     initialState,
+    dest,
     id,
 }: {
+    dest: SaveDest;
     initialState: State;
     id: string;
 }) => {
     const [state, dispatch] = React.useReducer(reducer, initialState);
+    const [lastSaved, setLastSaved] = React.useState({
+        when: Date.now(),
+        dirty: null as null | (() => void),
+        id,
+    });
 
     React.useEffect(() => {
         const fn = (evt: ClipboardEvent) => {
@@ -116,8 +125,17 @@ export const App = ({
     let firstChange = React.useRef(false);
     React.useEffect(() => {
         if (firstChange.current || state !== initialState) {
-            saveState(state, id);
             firstChange.current = true;
+            if (dest.type === 'gist') {
+                const force = debounce(() => {
+                    return saveState(state, id, dest).then(() => {
+                        setLastSaved({ when: Date.now(), dirty: null, id });
+                    });
+                }, 10000);
+                setLastSaved((s) => ({ ...s, dirty: force }));
+            } else {
+                saveState(state, id, dest);
+            }
         }
     }, [state]);
 
@@ -243,6 +261,7 @@ export const App = ({
             <NewSidebar
                 state={state}
                 dispatch={dispatch}
+                lastSaved={dest.type === 'gist' ? lastSaved : null}
                 hover={hover}
                 screen={screen}
                 setScreen={setScreen}
@@ -251,4 +270,39 @@ export const App = ({
             />
         </div>
     );
+};
+
+/**
+ * Debounce a function.
+ */
+let tid: NodeJS.Timeout | null = null;
+export const debounce = (
+    fn: () => Promise<void>,
+    time: number,
+): (() => void) => {
+    if (tid != null) {
+        clearTimeout(tid);
+    }
+    tid = setTimeout(() => {
+        tid = null;
+        fn();
+    }, time);
+    return () => {
+        if (tid != null) {
+            clearTimeout(tid);
+            tid = null;
+            fn();
+        }
+    };
+    // lol
+    // if (!bounce) {
+    //     setTimeout(() => {
+    //         bounce && bounce();
+    //         bounce = null;
+    //     }, time);
+    // }
+    // bounce = () => {
+    //     bounce = null;
+    //     fn();
+    // };
 };

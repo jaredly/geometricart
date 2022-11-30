@@ -28,7 +28,7 @@ import { exportPNG } from './editor/Export';
 import { DesignLoader } from './DesignLoader';
 import { Button } from 'primereact/button';
 import { useGists, gistCache } from './useGists';
-import { newGist } from './gists';
+import { loadGist, newGist, saveGist, stateFileName } from './gists';
 dayjs.extend(relativeTime);
 
 export const metaPrefix = 'meta:';
@@ -41,20 +41,6 @@ export const updateMeta = async (id: string, update: Partial<MetaData>) => {
     const current = await localforage.getItem<MetaData>(meta(id));
     return localforage.setItem(meta(id), { ...current, ...update });
 };
-
-type GistFiles = {
-    'preview.png': { content: string };
-    'state.json': { content: string };
-    // snapshot .png's, or .nc's, or .svg's can go here
-};
-
-const blobToString = (blob: Blob) =>
-    new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsBinaryString(blob);
-    });
 
 export const newState = async (mirror: Mirror | null, dest: SaveDest) => {
     const state = setupState(mirror);
@@ -72,14 +58,18 @@ export const newState = async (mirror: Mirror | null, dest: SaveDest) => {
     }
 };
 
-export const saveState = async (state: State, id: string) => {
-    localforage.setItem(key(id), state);
-    updateMeta(id, {
-        updatedAt: Date.now(),
-        size: JSON.stringify(state).length,
-    });
+export const saveState = async (state: State, id: string, dest: SaveDest) => {
     const blob = await exportPNG(400, state, 1000, false, false, 0);
-    localforage.setItem(thumbPrefix + key(id), blob);
+    if (dest.type === 'local') {
+        localforage.setItem(key(id), state);
+        updateMeta(id, {
+            updatedAt: Date.now(),
+            size: JSON.stringify(state).length,
+        });
+        localforage.setItem(thumbPrefix + key(id), blob);
+    } else {
+        await saveGist(id, state, blob, dest.token);
+    }
 };
 
 export const range = (start: number, end: number) => {
@@ -153,7 +143,7 @@ const GistLoader = () => {
     if (token == null) {
         return (
             <a
-                href={`https://github.com/login/oauth/authorize?state=http://127.0.0.1:5173&client_id=ba94f2f91d600ee580be&redirect_uri=https://geometric-art-login.jaredly.workers.dev/&scope=gist`}
+                href={`https://github.com/login/oauth/authorize?state=${location.protocol}//${location.host}&client_id=ba94f2f91d600ee580be&redirect_uri=https://geometric-art-login.jaredly.workers.dev/&scope=gist`}
                 className="p-button p-button-primary m-5"
             >
                 Authenticate with Github
@@ -174,40 +164,60 @@ const GistLoader = () => {
             >
                 Logout of Github
             </Button>
-            {gists.map((gist) => (
-                <div className="mt-3">
-                    {gist.description || '[no description]'} : {gist.url}
-                    <div
-                        className="m-3"
-                        style={{
-                            display: 'grid',
-                            gridTemplateColumns: 'max-content max-content',
-                            // gridTemplateColumns:
-                            //     'repeat(auto-fill, minmax(200px, 1fr))',
-                        }}
-                    >
-                        {Object.keys(gist.files).map((name) => (
-                            <div style={{ display: 'contents' }}>
-                                <span className="p-1">{name}</span>
-                                <span className="p-1">
-                                    {gist.files[name].size}
-                                </span>
+            <Button
+                onClick={() => {
+                    localforage.removeItem(gistCache);
+                    location.reload();
+                }}
+            >
+                Refresh
+            </Button>
+            <div className="flex flex-row flex-wrap">
+                {gists
+                    .filter(
+                        (gist) =>
+                            gist.files['preview.png'] &&
+                            gist.files[stateFileName],
+                    )
+                    .map((gist) => (
+                        <div
+                            className="mt-3 flex flex-column hover:surface-hover surface-base p-4 cursor-pointer"
+                            onClick={() => {
+                                window.location.hash = '/gist/' + gist.id;
+                            }}
+                        >
+                            <img
+                                width={200}
+                                height={200}
+                                src={gist.files['preview.png'].raw_url}
+                            />
+                            <div>
+                                {dayjs(gist.updated_at).fromNow()}
+                                <a
+                                    target="_blank"
+                                    href={gist.html_url}
+                                    onClick={(evt) => evt.stopPropagation()}
+                                    style={{
+                                        textDecoration: 'none',
+                                        color: 'inherit',
+                                    }}
+                                    className="pi pi-external-link pi-button pi-button-text m-1"
+                                ></a>
                             </div>
-                        ))}
-                    </div>
-                </div>
-            ))}
+                        </div>
+                    ))}
+            </div>
         </div>
     );
 };
 
-const File = () => {
+const File = ({ gist, dest }: { gist?: boolean; dest: SaveDest }) => {
     const data = useLoaderData();
     const params = useParams();
     if (!data) {
         return <div>No loaded data?</div>;
     }
-    return <App initialState={data as State} id={params.id!} />;
+    return <App initialState={data as State} id={params.id!} dest={dest} />;
 };
 
 /* then we can do useOutletContext() for state & dispatch ... is that it? */
@@ -215,8 +225,23 @@ const router = createHashRouter(
     createRoutesFromElements([
         <Route index element={<Welcome />} />,
         <Route
+            path="gist/:id"
+            element={
+                <File
+                    gist
+                    dest={{
+                        type: 'gist',
+                        token: localStorage.github_access_token,
+                    }}
+                />
+            }
+            loader={({ params }) =>
+                loadGist(params.id!, localStorage.github_access_token)
+            }
+        />,
+        <Route
             path=":id"
-            element={<File />}
+            element={<File dest={{ type: 'local' }} />}
             loader={({ params }) => localforage.getItem(key(params.id!))}
         />,
     ]),

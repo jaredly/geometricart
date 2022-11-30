@@ -32,6 +32,7 @@ import { getStateFromFile } from '../editor/useDropTarget';
 import { ShowMirror } from '../editor/MirrorForm';
 import { getMirrorTransforms } from '../rendering/getMirrorTransforms';
 import { MirrorItems } from './MirrorItems';
+import dayjs from 'dayjs';
 
 declare module 'csstype' {
     interface Properties {
@@ -47,7 +48,9 @@ export const NewSidebar = ({
     setStyleHover,
     screen,
     setScreen,
+    lastSaved,
 }: {
+    lastSaved: { when: number; dirty: null | (() => void); id: string } | null;
     state: State;
     dispatch: React.Dispatch<Action>;
     hover: Hover | null;
@@ -109,7 +112,51 @@ export const NewSidebar = ({
                 tabs={[
                     {
                         key: 'file',
-                        header: 'File',
+                        header: (
+                            <div
+                                className="flex flex-row align-items-center"
+                                style={{
+                                    flex: 1,
+                                    justifyContent: 'space-between',
+                                }}
+                            >
+                                File
+                                {lastSaved ? (
+                                    <div>
+                                        {lastSaved.dirty ? (
+                                            <div
+                                                onClick={(evt) => {
+                                                    evt.stopPropagation();
+                                                    lastSaved.dirty!();
+                                                }}
+                                                style={{
+                                                    cursor: 'pointer',
+                                                }}
+                                            >
+                                                Last saved{' '}
+                                                {dayjs(
+                                                    lastSaved.when,
+                                                ).fromNow()}
+                                            </div>
+                                        ) : (
+                                            'Saved'
+                                        )}
+                                        <a
+                                            target="_blank"
+                                            href={`https://gist.github.com/${lastSaved.id}`}
+                                            className="pi pi-external-link pi-button pi-button-text m-1"
+                                            onClick={(evt) =>
+                                                evt.stopPropagation()
+                                            }
+                                            style={{
+                                                textDecoration: 'none',
+                                                color: 'inherit',
+                                            }}
+                                        ></a>
+                                    </div>
+                                ) : null}
+                            </div>
+                        ),
                         content: () => (
                             <div className="p-3">
                                 <Button onClick={() => (location.hash = '/')}>
