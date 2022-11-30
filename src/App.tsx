@@ -53,6 +53,25 @@ export const App = ({
         id,
     });
 
+    // const lastLast = useCurrent(lastSaved);
+
+    React.useEffect(() => {
+        if (lastSaved.dirty) {
+            const fn = (evt: BeforeUnloadEvent) => {
+                // if (lastLast.current.dirty) {
+                evt.preventDefault();
+                evt.stopPropagation();
+                return (evt.returnValue = 'Are you sure?');
+                // }
+            };
+            window.addEventListener('beforeunload', fn, { capture: true });
+            return () =>
+                window.removeEventListener('beforeunload', fn, {
+                    capture: true,
+                });
+        }
+    }, [lastSaved.dirty]);
+
     React.useEffect(() => {
         const fn = (evt: ClipboardEvent) => {
             if (document.activeElement !== document.body) {

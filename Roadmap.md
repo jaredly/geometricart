@@ -1,4 +1,10 @@
 
+# GISTSSS
+
+- [ ] when adding a gist, update my gistcache
+  - [ ] also, strip down the gistCache to just be like "id + previewUrl" or something
+- [x] add an onbeforeunload if you're done dirty.
+
 # So, snapshots / versions or something
 
 Like, when iterating on a dealio, I want a way to "save multiple screenshots" from a single design.
