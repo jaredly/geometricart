@@ -65,6 +65,7 @@ import { functionWithBuiltins } from '../animation/getAnimatedPaths';
 import { Menu } from 'primereact/menu';
 import { SVGCanvas } from './SVGCanvas';
 import { Button } from 'primereact/button';
+import { toTypeRev } from '../handleKeyboard';
 
 export type Props = {
     state: State;
@@ -475,6 +476,7 @@ export const Canvas = ({
                             ? 'p-button-outlined'
                             : '')
                     }
+                    tooltip="Select"
                     onClick={() => {
                         if (state.pending != null) {
                             dispatch({ type: 'pending:type', kind: null });
@@ -502,6 +504,7 @@ export const Canvas = ({
                     />
                 </Button>
                 <Button
+                    tooltip="Pan (or shift+scroll)"
                     icon="pi pi-arrows-alt"
                     className={
                         'mt-2 ' +
@@ -614,6 +617,7 @@ export const Canvas = ({
                 }).map(([kind, icon]) => (
                     <Button
                         key={kind}
+                        tooltip={kind + ` (${toTypeRev[kind]})`}
                         icon={
                             typeof icon === 'string' ? `pi ${icon}` : undefined
                         }
@@ -816,8 +820,8 @@ function zoomPanControls(
             css={{
                 position: 'absolute',
                 color: 'black',
-                top: 58,
-                left: 0,
+                top: 0,
+                right: 0,
             }}
         >
             <div css={{ display: 'flex' }}>

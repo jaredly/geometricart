@@ -17,11 +17,11 @@ Yeah sure
 # Sidebar TOOLS
 
 - [x] all the guide types
-- [ ] a button to switch to normal cursor mode
-- [ ] The pointer's default behavior should be "SELECT" (& drag select), NOT PAN
+- [x] a button to switch to normal cursor mode
+- [x] The pointer's default behavior should be "SELECT" (& drag select), NOT PAN
 	- and it shouldn't select points
-- [ ] have a "pan" tool
 - [ ] also allow like "shift + zoom" to do panning
+- [ ] have a "pan" tool
 
 
 # So, snapshots / versions or something

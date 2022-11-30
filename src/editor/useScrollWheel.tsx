@@ -13,12 +13,13 @@ export function useScrollWheel(
         if (!ref.current) {
             return console.warn('NO REF');
         }
-        let timer = null as null | number;
+        let timer = null as null | NodeJS.Timeout;
         const fn = (evt: WheelEvent) => {
             const rect = ref.current!.getBoundingClientRect();
             const clientX = evt.clientX;
             const clientY = evt.clientY;
             const dy = -evt.deltaY;
+            const dx = -evt.deltaX;
             evt.preventDefault();
 
             if (timer) {
@@ -27,6 +28,25 @@ export function useScrollWheel(
             timer = setTimeout(() => {
                 setEditorState((state) => ({ ...state, zooming: false }));
             }, 50);
+
+            if (evt.shiftKey) {
+                setEditorState((past) => {
+                    let view = past.tmpView || currentState.current.view;
+
+                    return {
+                        ...past,
+                        tmpView: {
+                            ...view,
+                            center: {
+                                x: view.center.x + dx / view.zoom,
+                                y: view.center.y + dy / view.zoom,
+                            },
+                        },
+                        zooming: true,
+                    };
+                });
+                return;
+            }
 
             setEditorState((past) => {
                 let view = past.tmpView || currentState.current.view;
