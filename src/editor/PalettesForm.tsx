@@ -12,9 +12,11 @@ import {
 import { useDropTarget } from './useDropTarget';
 import { createPortal } from 'react-dom';
 import { hslToRgb, rgbToHsl } from '../rendering/colorConvert';
-import { SwatchesPicker } from 'react-color';
+import { SliderPicker, SketchPicker } from 'react-color';
 // @ts-ignore
 import kMeans from 'kmeans-js';
+
+import { ColorPicker } from 'primereact/colorpicker';
 
 export const averageAt = (data: ImageData, pos: Coord): Rgb => {
     const colors = [
@@ -511,16 +513,20 @@ export const ColorEditor = ({
                         position: 'absolute',
                         zIndex: 10,
                         top: '100%',
-                        marginTop: 16,
+                        width: 200,
                     }}
                 >
-                    <SwatchesPicker
-                        color={text ?? undefined}
+                    <SketchPicker
+                        color={text ?? color}
                         onChange={(change) => {
-                            // setText(change.hex);
                             onChange(change.hex);
                         }}
                     />
+                    {/* <ColorPicker
+                        inline
+                        color={text?.slice(1) ?? color.slice(1)}
+                        onChange={(e) => onChange('#' + e.value)}
+                    /> */}
                 </div>
             ) : null}
         </div>

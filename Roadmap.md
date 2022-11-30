@@ -1,4 +1,11 @@
 
+# So, snapshots / versions or something
+
+Like, when iterating on a dealio, I want a way to "save multiple screenshots" from a single design.
+Can this just be, like "checkpoints in the history"? Yeah, I like that.
+And then, in the gist scenario, the photos / etc. could be labeled to indicate the checkpoint (place in history).
+That would mean I don't even need a separate "list of checkpoints", I could just look at the filenames of the saved images 😎
+
 # New DSEsign screen
 
 - [x] pick the symmetry type!
@@ -6,6 +13,8 @@
 	- [ ] why not give the option to upload an image at this point too!
 	- [ ] andddd maybe palette? hmm idk maybe that's too much.
 - [x] thumbnails!! Should probably aggresively debounce the thumbnail updating though.
+- [ ] ohhh wait palettes ... need to be coverend by undo/redo.. but this will be a major change.
+  - [ ] 
 
 # DATAS
 

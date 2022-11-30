@@ -5,26 +5,50 @@ import { getTransformsForNewMirror } from './rendering/getMirrorTransforms';
 import { SelectButton } from 'primereact/selectbutton';
 import { range } from './run';
 
+export type SaveDest = { type: 'local' } | { type: 'gist'; token: string };
+
 export function MirrorPicker({
     onClick,
+    githubToken,
 }: {
-    onClick: (mirror: Mirror | null) => void;
+    onClick: (mirror: Mirror | null, dest: SaveDest) => void;
+    githubToken: string | null;
 }) {
     const [reflect, setReflect] = React.useState(true);
+    const [save, setSave] = React.useState<SaveDest>({ type: 'local' });
     return (
         <div className="flex flex-column align-items-center p-5">
-            <SelectButton
-                options={[
-                    { label: 'Reflect', value: true },
-                    {
-                        label: 'No reflection',
-                        value: false,
-                    },
-                ]}
-                color="primary"
-                value={reflect}
-                onChange={(e) => setReflect(e.value)}
-            />
+            <div className="flex flex-row align-items-center">
+                <SelectButton
+                    options={[
+                        { label: 'Reflect', value: true },
+                        {
+                            label: 'No reflection',
+                            value: false,
+                        },
+                    ]}
+                    color="primary"
+                    value={reflect}
+                    onChange={(e) => setReflect(e.value)}
+                />
+                {githubToken ? (
+                    <>
+                        <span className="ml-5 mr-2">Save Destination:</span>
+                        <SelectButton
+                            options={[
+                                { label: 'Local', value: { type: 'local' } },
+                                {
+                                    label: 'Gist',
+                                    value: { type: 'gist', token: githubToken },
+                                },
+                            ]}
+                            color="primary"
+                            value={save}
+                            onChange={(e) => setSave(e.value)}
+                        />
+                    </>
+                ) : null}
+            </div>
             <div
                 style={{
                     display: 'flex',
@@ -70,7 +94,7 @@ export function MirrorPicker({
                                         position: 'relative',
                                         cursor: 'pointer',
                                     }}
-                                    onClick={() => onClick(mirror)}
+                                    onClick={() => onClick(mirror, save)}
                                 >
                                     {mirror ? (
                                         <ShowMirror

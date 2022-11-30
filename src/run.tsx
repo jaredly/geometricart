@@ -1,19 +1,16 @@
 // Basic ... ideas ...
 
 // import { MantineProvider } from '@mantine/core';
+import './polyfill';
 import * as React from 'react';
 import { createRoot, Root } from 'react-dom/client';
 import { App } from './App';
-import { loadInitialState } from './state/persistence';
 import 'primereact/resources/themes/bootstrap4-dark-blue/theme.css';
 import 'primereact/resources/primereact.min.css';
 import 'primeicons/primeicons.css';
 import 'primeflex/primeflex.css';
 import {
-    HashRouter,
-    Routes,
     Route,
-    createBrowserRouter,
     createRoutesFromElements,
     RouterProvider,
     useLoaderData,
@@ -23,40 +20,56 @@ import {
 import localforage from 'localforage';
 import { Mirror, State } from './types';
 import { Accordion } from './sidebar/Accordion';
-import { MirrorPicker } from './MirrorPicker';
+import { MirrorPicker, SaveDest } from './MirrorPicker';
 import { setupState } from './setupState';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { exportPNG } from './editor/Export';
+import { DesignLoader } from './DesignLoader';
 import { Button } from 'primereact/button';
-import { confirmPopup, ConfirmPopup } from 'primereact/confirmpopup';
+import { useGists, gistCache } from './useGists';
+import { newGist } from './gists';
 dayjs.extend(relativeTime);
 
-const metaPrefix = 'meta:';
-const keyPrefix = 'geometric-art-';
-const thumbPrefix = 'thumb:';
-const key = (id: string) => keyPrefix + id;
-const meta = (id: string) => metaPrefix + key(id);
+export const metaPrefix = 'meta:';
+export const keyPrefix = 'geometric-art-';
+export const thumbPrefix = 'thumb:';
+export const key = (id: string) => keyPrefix + id;
+export const meta = (id: string) => metaPrefix + key(id);
 
 export const updateMeta = async (id: string, update: Partial<MetaData>) => {
     const current = await localforage.getItem<MetaData>(meta(id));
     return localforage.setItem(meta(id), { ...current, ...update });
 };
 
-export const newState = async (mirror: Mirror | null) => {
+type GistFiles = {
+    'preview.png': { content: string };
+    'state.json': { content: string };
+    // snapshot .png's, or .nc's, or .svg's can go here
+};
+
+const blobToString = (blob: Blob) =>
+    new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsBinaryString(blob);
+    });
+
+export const newState = async (mirror: Mirror | null, dest: SaveDest) => {
     const state = setupState(mirror);
-    const id = genid();
-    localforage.setItem<MetaData>(metaPrefix + key(id), {
-        id,
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-        openedAt: Date.now(),
-        size: JSON.stringify(state).length,
-    });
-    exportPNG(400, state, 1000, false, false, 0).then((blob) => {
+    const blob = await exportPNG(400, state, 1000, false, false, 0);
+    if (dest.type === 'local') {
+        const id = genid();
         localforage.setItem(thumbPrefix + key(id), blob);
-    });
-    return localforage.setItem(key(id), state).then(() => id);
+        localforage.setItem<MetaData>(
+            metaPrefix + key(id),
+            newMetaData(id, state),
+        );
+        return localforage.setItem(key(id), state).then(() => '/' + id);
+    } else {
+        return newGist(state, blob, dest.token).then((id) => '/gist/' + id);
+    }
 };
 
 export const saveState = async (state: State, id: string) => {
@@ -79,7 +92,7 @@ export const range = (start: number, end: number) => {
 
 const genid = () => Math.random().toString(36).substring(2, 15);
 
-type MetaData = {
+export type MetaData = {
     createdAt: number;
     updatedAt: number;
     openedAt: number;
@@ -91,6 +104,7 @@ const Welcome = () => {
     const [activeIds, setActiveIds] = React.useState({
         new: false,
         open: true,
+        gists: true,
     } as {
         [key: string]: boolean;
     });
@@ -106,11 +120,14 @@ const Welcome = () => {
                             header: 'New Design',
                             content: () => (
                                 <MirrorPicker
-                                    onClick={(mirror) => {
-                                        newState(mirror).then((id) => {
-                                            window.location.hash = '/' + id;
+                                    onClick={(mirror, dest) => {
+                                        newState(mirror, dest).then((id) => {
+                                            window.location.hash = id;
                                         });
                                     }}
+                                    githubToken={
+                                        localStorage.github_access_token
+                                    }
                                 />
                             ),
                         },
@@ -119,6 +136,11 @@ const Welcome = () => {
                             header: 'Open Design',
                             content: () => <DesignLoader />,
                         },
+                        {
+                            key: 'gists',
+                            header: 'Github Gists',
+                            content: () => <GistLoader />,
+                        },
                     ]}
                 />
             </div>
@@ -126,122 +148,58 @@ const Welcome = () => {
     );
 };
 
-const DesignLoader = () => {
-    const [designs, setDesigns] = React.useState<MetaData[]>([]);
-    React.useEffect(() => {
-        localforage
-            .keys()
-            .then((keys) =>
-                Promise.all(
-                    keys
-                        .filter((k) => k.startsWith(keyPrefix))
-                        .map((k) =>
-                            localforage.getItem<MetaData>(metaPrefix + k),
-                        ),
-                ),
-            )
-            .then((metas) =>
-                setDesigns(
-                    (metas.filter(Boolean) as MetaData[]).sort(
-                        (a, b) => b.updatedAt - a.updatedAt,
-                    ),
-                ),
-            );
-    }, []);
-    const [tick, setTick] = React.useState(0);
-    React.useEffect(() => {
-        const iv = setInterval(() => setTick(tick + 1), 1000 * 60);
-        return () => clearInterval(iv);
-    });
+const GistLoader = () => {
+    const { gists, token } = useGists();
+    if (token == null) {
+        return (
+            <a
+                href={`https://github.com/login/oauth/authorize?state=http://127.0.0.1:5173&client_id=ba94f2f91d600ee580be&redirect_uri=https://geometric-art-login.jaredly.workers.dev/&scope=gist`}
+                className="p-button p-button-primary m-5"
+            >
+                Authenticate with Github
+            </a>
+        );
+    }
+    if (gists == null) {
+        return <div className="p-5">Loading...</div>;
+    }
     return (
-        <div className="flex flex-row flex-wrap p-3">
-            {designs.map((design) => (
-                <div
-                    key={design.id}
-                    // style={{ width: 300, height: 300 }}
-                    onClick={() => {
-                        updateMeta(design.id, { openedAt: Date.now() }).then(
-                            () => {
-                                window.location.hash = '/' + design.id;
-                            },
-                        );
-                    }}
-                    className="hover:surface-hover surface-base p-4 cursor-pointer"
-                >
-                    <div style={{ flex: 1 }}>
-                        <ThumbLoader id={design.id} />
-                        <div>{dayjs(design.updatedAt).from(dayjs())}</div>
-                        <div className="flex flex-row justify-content-between">
-                            {mb(design.size)}
-                            <div>
-                                {/* <Button
-                                    onClick={(evt) => {
-                                        evt.stopPropagation();
-                                    }}
-                                    icon="pi pi-download"
-                                    className="p-button-sm p-button-text"
-                                    style={{ marginTop: -5, marginBottom: -6 }}
-                                /> */}
-                                <Button
-                                    onClick={(evt) => {
-                                        evt.stopPropagation();
-                                        const popup = confirmPopup({
-                                            target: evt.currentTarget,
-                                            message:
-                                                'Are you sure you want to delete this design?',
-                                            icon: 'pi pi-exclamation-triangle',
-                                            accept: () => {
-                                                setDesigns(
-                                                    designs.filter(
-                                                        (d) =>
-                                                            d.id !== design.id,
-                                                    ),
-                                                );
-                                                localforage.removeItem(
-                                                    key(design.id),
-                                                );
-                                                localforage.removeItem(
-                                                    meta(design.id),
-                                                );
-                                                localforage.removeItem(
-                                                    thumbPrefix +
-                                                        key(design.id),
-                                                );
-                                            },
-                                            reject: () => {},
-                                        });
-                                        console.log(popup);
-                                        popup.show();
-                                    }}
-                                    icon="pi pi-trash"
-                                    className=" p-button-sm p-button-text p-button-danger"
-                                    style={{ marginTop: -5, marginBottom: -6 }}
-                                />
+        <div className="p-3">
+            <Button
+                onClick={() => {
+                    localforage.removeItem(gistCache);
+                    localStorage.removeItem('github_access_token');
+                    location.reload();
+                }}
+            >
+                Logout of Github
+            </Button>
+            {gists.map((gist) => (
+                <div className="mt-3">
+                    {gist.description || '[no description]'} : {gist.url}
+                    <div
+                        className="m-3"
+                        style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'max-content max-content',
+                            // gridTemplateColumns:
+                            //     'repeat(auto-fill, minmax(200px, 1fr))',
+                        }}
+                    >
+                        {Object.keys(gist.files).map((name) => (
+                            <div style={{ display: 'contents' }}>
+                                <span className="p-1">{name}</span>
+                                <span className="p-1">
+                                    {gist.files[name].size}
+                                </span>
                             </div>
-                        </div>
+                        ))}
                     </div>
-                    <div></div>
                 </div>
             ))}
-            <ConfirmPopup />
         </div>
     );
 };
-
-const ThumbLoader = ({ id }: { id: string }) => {
-    const [data, setData] = React.useState(null as null | string);
-    React.useEffect(() => {
-        localforage
-            .getItem<Blob>(thumbPrefix + key(id))
-            .then((blob) => (blob ? setData(URL.createObjectURL(blob)) : null));
-    }, [id]);
-    return data ? <img src={data} width={200} height={200} /> : null;
-};
-
-const mb = (n: number) =>
-    n > 1024 * 1024
-        ? (n / 1024 / 1024).toFixed(2) + 'mb'
-        : (n / 1024).toFixed(0) + 'kb';
 
 const File = () => {
     const data = useLoaderData();
@@ -274,3 +232,12 @@ const root = (window._reactRoot =
     window._reactRoot || createRoot(document.getElementById('root')!));
 
 root.render(<RouterProvider router={router} />);
+function newMetaData(id: string, state: State): MetaData {
+    return {
+        id,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        openedAt: Date.now(),
+        size: JSON.stringify(state).length,
+    };
+}
