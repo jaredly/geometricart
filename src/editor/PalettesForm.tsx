@@ -349,7 +349,10 @@ function PaletteForm({
                 border: `1px solid transparent`,
             }}
             onClick={() => {
-                // dispatch({ type: 'library:palette:select', name })
+                dispatch({
+                    type: 'palette:update',
+                    colors: state.palettes[name],
+                });
             }}
         >
             {name}

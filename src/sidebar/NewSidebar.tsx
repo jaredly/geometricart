@@ -33,6 +33,8 @@ import { ShowMirror } from '../editor/MirrorForm';
 import { getMirrorTransforms } from '../rendering/getMirrorTransforms';
 import { MirrorItems } from './MirrorItems';
 import dayjs from 'dayjs';
+import { SketchPicker } from 'react-color';
+import { paletteColor } from '../editor/RenderPath';
 
 declare module 'csstype' {
     interface Properties {
@@ -49,12 +51,14 @@ export const NewSidebar = ({
     screen,
     setScreen,
     lastSaved,
+    setPreviewActions,
 }: {
     lastSaved: {
         when: number;
         dirty: null | true | (() => void);
         id: string;
     } | null;
+    setPreviewActions: React.Dispatch<React.SetStateAction<Action[]>>;
     state: State;
     dispatch: React.Dispatch<Action>;
     hover: Hover | null;
@@ -108,9 +112,6 @@ export const NewSidebar = ({
                     </Button>
                 ))}
             </div>
-            {/* <Accordion>
-                <AccordionTab header="Yes please">Ok folks</AccordionTab>
-            </Accordion> */}
             <MyAccordion
                 activeIds={openSidebars}
                 setActiveIds={(ids) => {
@@ -371,7 +372,11 @@ export const NewSidebar = ({
                         key: 'palette',
                         header: 'Palette',
                         content: () => (
-                            <PalettesForm state={state} dispatch={dispatch} />
+                            <NewPalettesForm
+                                setPreviewActions={setPreviewActions}
+                                state={state}
+                                dispatch={dispatch}
+                            />
                         ),
                     },
                     {
@@ -782,3 +787,93 @@ export function itemStyle(selected: boolean): React.CSSProperties | undefined {
         backgroundColor: selected ? '#555' : '',
     };
 }
+
+export const NewPalettesForm = ({
+    state,
+    dispatch,
+    setPreviewActions,
+}: {
+    setPreviewActions: React.Dispatch<React.SetStateAction<Action[]>>;
+    state: State;
+    dispatch: React.Dispatch<Action>;
+}) => {
+    const [detail, setDetail] = React.useState(false);
+    const op = React.useRef<OverlayPanel>(null);
+    const [tmp, setTmp] = React.useState(state.palette);
+    const [editing, setEditing] = React.useState(0);
+
+    const modified =
+        tmp.length !== state.palette.length ||
+        tmp.some((t, i) => t !== state.palette[i]);
+
+    return (
+        <div className="m-3">
+            <div className="flex flex-row my-2">
+                {tmp.map((_, i) => (
+                    <div
+                        key={i}
+                        onClick={(evt) => {
+                            op.current!.toggle(evt);
+                            setEditing(i);
+                        }}
+                        style={{
+                            backgroundColor: paletteColor(tmp, i),
+                            width: 20,
+                            height: 20,
+                            marginRight: 8,
+                        }}
+                    />
+                ))}
+                {modified ? (
+                    <>
+                        <Button
+                            icon="pi pi-check"
+                            className="p-button-sm p-button-text"
+                            onClick={() => {
+                                dispatch({
+                                    type: 'palette:update',
+                                    colors: tmp,
+                                });
+                                setPreviewActions([]);
+                            }}
+                        />
+                        <Button
+                            icon="pi pi-times"
+                            className="p-button-sm p-button-text"
+                            onClick={() => {
+                                setTmp(state.palette);
+                                setPreviewActions([]);
+                            }}
+                        />
+                    </>
+                ) : null}
+            </div>
+            <Button
+                onClick={() => setDetail(!detail)}
+                className="p-button-sm mt-2"
+                icon="pi pi-book"
+            ></Button>
+            {detail ? <PalettesForm state={state} dispatch={dispatch} /> : null}
+            <OverlayPanel ref={op}>
+                {editing != null ? (
+                    <SketchPicker
+                        color={tmp[editing]}
+                        onChange={(change) => {
+                            setTmp((t) => {
+                                t = t.slice();
+                                t[editing] = change.hex;
+                                setPreviewActions([
+                                    {
+                                        type: 'palette:update',
+                                        colors: t.slice(),
+                                    },
+                                ]);
+                                return t;
+                            });
+                        }}
+                    />
+                ) : null}
+            </OverlayPanel>
+        </div>
+    );
+};

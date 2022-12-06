@@ -1,7 +1,7 @@
 /* @jsx jsx */
 /* @jsxFrag React.Fragment */
 import { jsx } from '@emotion/react';
-import React from 'react';
+import React, { useState } from 'react';
 import { State } from '../types';
 import { Action } from '../state/Action';
 import { UndoItem } from './Sidebar';
@@ -13,6 +13,7 @@ export function UndoPanel({
     state: State;
     dispatch: (action: Action) => unknown;
 }) {
+    const [tick, setTick] = useState(0);
     const [branch, setBranch] = React.useState(state.history.currentBranch);
     const current = state.history.branches[+branch];
     return (
@@ -23,17 +24,20 @@ export function UndoPanel({
                 flexDirection: 'column',
             }}
         >
-            <select
-                css={{ display: 'block' }}
-                value={branch}
-                onChange={(evt) => setBranch(+evt.target.value)}
-            >
-                {Object.keys(state.history.branches).map((k) => (
-                    <option value={k} key={k}>
-                        Branch {k}
-                    </option>
-                ))}
-            </select>
+            <div className="flex flex-row">
+                <select
+                    css={{ display: 'block', flex: 1 }}
+                    value={branch}
+                    onChange={(evt) => setBranch(+evt.target.value)}
+                >
+                    {Object.keys(state.history.branches).map((k) => (
+                        <option value={k} key={k}>
+                            Branch {k}
+                        </option>
+                    ))}
+                </select>
+                <button onClick={() => setTick(tick + 1)}>Refresh</button>
+            </div>
             <div>{current.items.length} items</div>
             {current.parent ? (
                 <div

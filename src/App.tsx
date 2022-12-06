@@ -1,6 +1,6 @@
 /* @jsx jsx */
 import { jsx } from '@emotion/react';
-import React from 'react';
+import React, { useState } from 'react';
 import { Canvas } from './editor/Canvas';
 import { reducer } from './state/reducer';
 import { Hover } from './editor/Sidebar';
@@ -20,6 +20,7 @@ import { StyleHover } from './editor/MultiStyleForm';
 import { saveState } from './run';
 import { SaveDest } from './MirrorPicker';
 import dayjs from 'dayjs';
+import { Action } from './state/Action';
 
 export const useCurrent = <T,>(value: T) => {
     const ref = React.useRef(value);
@@ -37,6 +38,13 @@ export type PendingMirror = {
 };
 export type Screen = 'edit' | 'animate' | 'gcode' | 'history';
 
+export const applyActions = (actions: Action[], state: State) => {
+    for (let action of actions) {
+        state = reducer(state, action);
+    }
+    return state;
+};
+
 export const App = ({
     initialState,
     dest,
@@ -46,12 +54,16 @@ export const App = ({
     initialState: State;
     id: string;
 }) => {
-    const [state, dispatch] = React.useReducer(reducer, initialState);
+    const [trueState, dispatch] = React.useReducer(reducer, initialState);
     const [lastSaved, setLastSaved] = React.useState({
         when: Date.now(),
         dirty: null as null | true | (() => void),
         id,
     });
+
+    const [previewActions, setPreviewActions] = useState([] as Action[]);
+
+    const state = applyActions(previewActions, trueState);
 
     // const lastLast = useCurrent(lastSaved);
 
@@ -279,9 +291,10 @@ export const App = ({
                 )}
             </div>
             <NewSidebar
-                state={state}
+                state={trueState}
                 dispatch={dispatch}
                 lastSaved={dest.type === 'gist' ? lastSaved : null}
+                setPreviewActions={setPreviewActions}
                 hover={hover}
                 screen={screen}
                 setScreen={setScreen}
