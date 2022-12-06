@@ -97,9 +97,9 @@ export const reducer = (state: State, action: Action): State => {
             palettes: { ...state.palettes, [action.name]: action.colors },
         };
     }
-    if (action.type === 'library:palette:select') {
-        return { ...state, activePalette: action.name };
-    }
+    // if (action.type === 'library:palette:select') {
+    //     return { ...state, activePalette: action.name };
+    // }
 
     const [newState, newAction] = reduceWithoutUndo(
         state,
@@ -790,6 +790,12 @@ export const reduceWithoutUndo = (
                 { type: action.type, action },
             ];
         }
+        case 'palette:update': {
+            return [
+                { ...state, palette: action.colors },
+                { type: action.type, action, prev: state.palette },
+            ];
+        }
         default:
             let _x: never = action;
             console.log(`SKIPPING ${(action as any).type}`);
@@ -799,6 +805,8 @@ export const reduceWithoutUndo = (
 
 export const undo = (state: State, action: UndoAction): State => {
     switch (action.type) {
+        case 'palette:update':
+            return { ...state, palette: action.prev };
         case 'gcode:config':
             return { ...state, gcode: { ...state.gcode, ...action.prev } };
         case 'gcode:item:order': {

@@ -54,7 +54,7 @@ export const shaderForState = (state: State): [number, string] => {
         clip,
         state.view.hideDuplicatePaths,
     );
-    const palette = state.palettes[state.activePalette];
+    const palette = state.palette;
 
     let backgroundColor = { r: 0, g: 0, b: 0 };
     if (state.view.background) {

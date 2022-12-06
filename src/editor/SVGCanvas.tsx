@@ -161,9 +161,7 @@ export function SVGCanvas({
             rand.current,
             clip,
             state.view.hideDuplicatePaths,
-            state.view.laserCutMode
-                ? state.palettes[state.activePalette]
-                : undefined,
+            state.view.laserCutMode ? state.palette : undefined,
             undefined,
             selectedIds,
         );
@@ -204,7 +202,7 @@ export function SVGCanvas({
 
     const backgroundColor =
         view.background != null
-            ? paletteColor(state.palettes[state.activePalette], view.background)
+            ? paletteColor(state.palette, view.background)
             : null;
 
     // Ok, so what I want is:
@@ -229,7 +227,7 @@ export function SVGCanvas({
             {...mouseHandlers}
         >
             <defs>
-                {state.palettes[state.activePalette].map((color, i) =>
+                {state.palette.map((color, i) =>
                     color.startsWith('http') && imageCache[color] ? (
                         <pattern
                             key={`palette-${i}`}
@@ -304,7 +302,7 @@ export function SVGCanvas({
                         contextMenu={{ showMenu, state, dispatch }}
                         zoom={view.zoom}
                         sketchiness={view.sketchiness}
-                        palette={state.palettes[state.activePalette]}
+                        palette={state.palette}
                         styleHover={selectedIds[path.id] ? styleHover : null}
                         onClick={
                             // TODO: Disable path clickies if we're doing guides, folks.
@@ -532,7 +530,7 @@ export function usePalettePreload(state: State) {
     const [, setTick] = React.useState(0);
 
     React.useEffect(() => {
-        state.palettes[state.activePalette].forEach((color) => {
+        state.palette.forEach((color) => {
             if (color.startsWith('http')) {
                 if (imageCache[color] != null) {
                     return;
@@ -555,5 +553,5 @@ export function usePalettePreload(state: State) {
                     });
             }
         });
-    }, [state.palettes[state.activePalette]]);
+    }, [state.palette]);
 }

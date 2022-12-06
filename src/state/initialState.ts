@@ -24,7 +24,7 @@ export const initialHistory: History = {
 };
 
 export const initialState: State = {
-    version: 9,
+    version: 10,
     meta: {
         title: '',
         description: '',
@@ -95,6 +95,18 @@ export const initialState: State = {
     clips: {},
     selection: null,
     tab: 'Undo',
+    palette: [
+        '#001219',
+        '#005f73',
+        '#0a9396',
+        '#94d2bd',
+        '#e9d8a6',
+        '#ee9b00',
+        '#ca6702',
+        '#bb3e03',
+        '#ae2012',
+        '#9b2226',
+    ],
     palettes: {
         default: [
             '#001219',
@@ -144,7 +156,7 @@ export const initialState: State = {
             '#ffff3f',
         ],
     },
-    activePalette: 'default',
+    // activePalette: 'default',
     attachments: {},
     overlays: {},
 };

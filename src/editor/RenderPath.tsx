@@ -405,11 +405,7 @@ export const itemsForPath = (
     path.style.fills.forEach((fill) => {
         if (fill) {
             const color = fill.color;
-            const full = paletteColor(
-                state.palettes[state.activePalette],
-                fill.color,
-                fill.lighten,
-            );
+            const full = paletteColor(state.palette, fill.color, fill.lighten);
             select.push({
                 label: (
                     <span>
@@ -432,11 +428,7 @@ export const itemsForPath = (
     path.style.lines.forEach((line) => {
         if (line) {
             const color = line.color;
-            const full = paletteColor(
-                state.palettes[state.activePalette],
-                line.color,
-                line.lighten,
-            );
+            const full = paletteColor(state.palette, line.color, line.lighten);
             select.push({
                 label: (
                     <span>

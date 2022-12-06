@@ -490,7 +490,7 @@ export const Guides = ({
                 : null}
             {pendingPath[0] ? (
                 <DrawPath
-                    palette={state.palettes[state.activePalette]}
+                    palette={state.palette}
                     mirror={
                         state.activeMirror && !pendingPath[0].isClip
                             ? mirrorTransforms[state.activeMirror]

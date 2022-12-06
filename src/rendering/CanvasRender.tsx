@@ -51,7 +51,7 @@ export const canvasRender = async (
     animationPosition: number,
     backgroundAlpha?: number | null,
 ) => {
-    const palette = state.palettes[state.activePalette];
+    const palette = state.palette;
 
     const images = await Promise.all(
         palette.map((c) =>

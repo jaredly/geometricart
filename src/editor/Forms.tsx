@@ -167,6 +167,9 @@ export const Color = ({
     palette: Array<string>;
     extra?: Array<string>;
 }) => {
+    if (!palette) {
+        debugger;
+    }
     return (
         <div>
             {palette.map((item, i) => (

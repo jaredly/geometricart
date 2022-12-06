@@ -40,8 +40,8 @@ export type Action =
     | { type: 'tab:set'; tab: Tab }
     | { type: 'attachment:add'; id: string; attachment: Attachment }
     | { type: 'library:palette:rename'; old: string; new: string }
-    | { type: 'library:palette:update'; name: string; colors: Array<string> }
-    | { type: 'library:palette:select'; name: string };
+    | { type: 'library:palette:update'; name: string; colors: Array<string> };
+// | { type: 'library:palette:select'; name: string };
 
 export type AddRemoveEdit<T, Key> =
     | {
@@ -477,7 +477,18 @@ export type GuideToggle = {
     id: Id;
 };
 
+export type PaletteUpdate = {
+    type: 'palette:update';
+    colors: string[];
+};
+export type UndoPaletteUpdate = {
+    type: PaletteUpdate['type'];
+    action: PaletteUpdate;
+    prev: string[];
+};
+
 export type UndoableAction =
+    | PaletteUpdate
     | GuideAdd
     | GuideUpdate
     | MirrorAdd
@@ -519,6 +530,7 @@ export type UndoableAction =
     | GuideToggle;
 
 export type UndoAction =
+    | UndoPaletteUpdate
     | UndoGuideAdd
     | UndoAnimationConfig
     | UndoScriptRename

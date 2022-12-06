@@ -346,12 +346,11 @@ function PaletteForm({
     return (
         <div
             style={{
-                border:
-                    state.activePalette === name
-                        ? `1px solid white`
-                        : `1px solid transparent`,
+                border: `1px solid transparent`,
             }}
-            onClick={() => dispatch({ type: 'library:palette:select', name })}
+            onClick={() => {
+                // dispatch({ type: 'library:palette:select', name })
+            }}
         >
             {name}
             <div

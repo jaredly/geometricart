@@ -29,6 +29,7 @@ import { DesignLoader } from './DesignLoader';
 import { Button } from 'primereact/button';
 import { useGists, gistCache } from './useGists';
 import { loadGist, newGist, saveGist, stateFileName } from './gists';
+import { maybeMigrate } from './state/migrateState';
 dayjs.extend(relativeTime);
 
 export const metaPrefix = 'meta:';
@@ -268,13 +269,19 @@ const router = createHashRouter(
                 />
             }
             loader={({ params }) =>
-                loadGist(params.id!, localStorage.github_access_token)
+                loadGist(params.id!, localStorage.github_access_token).then(
+                    (state) => maybeMigrate(state as State),
+                )
             }
         />,
         <Route
             path=":id"
             element={<File dest={{ type: 'local' }} />}
-            loader={({ params }) => localforage.getItem(key(params.id!))}
+            loader={({ params }) =>
+                localforage
+                    .getItem(key(params.id!))
+                    .then((state) => maybeMigrate(state as State))
+            }
         />,
     ]),
 );

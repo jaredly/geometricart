@@ -4,6 +4,14 @@ import { simplifyPath } from '../rendering/simplifyPath';
 import { combineStyles } from '../editor/Canvas';
 import { State, Path, PathGroup } from '../types';
 
+export const maybeMigrate = (state: State | undefined): State | undefined => {
+    if (!state) {
+        return state;
+    }
+    migrateState(state);
+    return state;
+};
+
 export const migrateState = (state: State) => {
     if (!state.version) {
         // @ts-ignore
@@ -17,8 +25,10 @@ export const migrateState = (state: State) => {
             state.tab = 'Undo';
             state.selection = null;
         }
+        // @ts-ignore
         if (!state.activePalette) {
             state.palettes['default'] = initialState.palettes['default'];
+            // @ts-ignore
             state.activePalette = 'default';
         }
         if (!state.meta) {
@@ -121,7 +131,13 @@ export const migrateState = (state: State) => {
     if (state.version < 9) {
         state.gcode = { items: [], clearHeight: 5, pauseHeight: 30 };
     }
-    state.version = 9;
+    if (state.version < 10) {
+        // @ts-ignore
+        state.palette = state.palettes[state.activePalette];
+        // @ts-ignore
+        delete state.activePalette;
+    }
+    state.version = 10;
     return state;
 };
 function combinedPathStyles(path: Path, groups: { [key: string]: PathGroup }) {

@@ -72,6 +72,9 @@ export const NewSidebar = ({
         () => getMirrorTransforms(state.mirrors),
         [state.mirrors],
     );
+    if (!state.palette) {
+        debugger;
+    }
     return (
         <div
             style={{
@@ -294,9 +297,7 @@ export const NewSidebar = ({
                             <div className="p-3">
                                 {styleIds.length ? (
                                     <MultiStyleForm
-                                        palette={
-                                            state.palettes[state.activePalette]
-                                        }
+                                        palette={state.palette}
                                         styles={styleIds.map(
                                             (k) => state.paths[k].style,
                                         )}
@@ -345,7 +346,7 @@ export const NewSidebar = ({
                         content: () => (
                             <ViewForm
                                 view={state.view}
-                                palette={state.palettes[state.activePalette]}
+                                palette={state.palette}
                                 onChange={(view) => {
                                     dispatch({
                                         type: 'view:update',

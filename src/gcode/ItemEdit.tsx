@@ -120,7 +120,7 @@ export const ItemEdit = ({
                     .map((c) => ({
                         key: c,
                         color: paletteColor(
-                            state.palettes[state.activePalette],
+                            state.palette,
                             colors.line[c].color,
                         )!,
                         title: `${pxToMM(
@@ -132,7 +132,7 @@ export const ItemEdit = ({
                         Object.keys(colors.fill).map((c) => ({
                             key: c,
                             color: paletteColor(
-                                state.palettes[state.activePalette],
+                                state.palette,
                                 colors.fill[c].color,
                                 colors.fill[c].lighten,
                             )!,

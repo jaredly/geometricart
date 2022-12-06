@@ -510,7 +510,7 @@ export type GCodePath = {
 };
 
 export type State = {
-    version: 9;
+    version: 10;
     nextId: number;
     history: History;
     meta: Meta;
@@ -539,7 +539,8 @@ export type State = {
     tab: Tab;
 
     palettes: { [name: string]: Array<string> };
-    activePalette: string;
+    // activePalette: string;
+    palette: string[];
     attachments: {
         [key: Id]: Attachment;
     };
