@@ -85,19 +85,19 @@ export const reducer = (state: State, action: Action): State => {
             },
         };
     }
-    if (action.type === 'palette:rename') {
+    if (action.type === 'library:palette:rename') {
         const palettes = { ...state.palettes };
         palettes[action.new] = palettes[action.old];
         delete palettes[action.old];
         return { ...state, palettes };
     }
-    if (action.type === 'palette:update') {
+    if (action.type === 'library:palette:update') {
         return {
             ...state,
             palettes: { ...state.palettes, [action.name]: action.colors },
         };
     }
-    if (action.type === 'palette:select') {
+    if (action.type === 'library:palette:select') {
         return { ...state, activePalette: action.name };
     }
 

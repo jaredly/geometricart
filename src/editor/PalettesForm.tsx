@@ -273,7 +273,7 @@ export function PalettesForm({
                     }
                     let newName = `palette${num}`;
                     dispatch({
-                        type: 'palette:update',
+                        type: 'library:palette:update',
                         name: newName,
                         colors: ['red', 'green', 'blue'],
                     });
@@ -315,7 +315,7 @@ export function PalettesForm({
                     }
                     let newName = `palette${num}`;
                     dispatch({
-                        type: 'palette:update',
+                        type: 'library:palette:update',
                         name: newName,
                         colors: parts,
                     });
@@ -351,7 +351,7 @@ function PaletteForm({
                         ? `1px solid white`
                         : `1px solid transparent`,
             }}
-            onClick={() => dispatch({ type: 'palette:select', name })}
+            onClick={() => dispatch({ type: 'library:palette:select', name })}
         >
             {name}
             <div
@@ -370,7 +370,7 @@ function PaletteForm({
                                 const palette = state.palettes[name].slice();
                                 palette[i] = color;
                                 dispatch({
-                                    type: 'palette:update',
+                                    type: 'library:palette:update',
                                     name,
                                     colors: palette,
                                 });
@@ -398,7 +398,7 @@ function PaletteForm({
                             const palette = state.palettes[name].slice();
                             palette.push(color);
                             dispatch({
-                                type: 'palette:update',
+                                type: 'library:palette:update',
                                 name,
                                 colors: palette,
                             });
@@ -424,7 +424,7 @@ function PaletteForm({
                         }
                         let newName = `palette${num}`;
                         dispatch({
-                            type: 'palette:update',
+                            type: 'library:palette:update',
                             name: newName,
                             colors: state.palettes[name],
                         });
@@ -445,7 +445,7 @@ function PaletteForm({
                         const colors = state.palettes[name].slice();
                         colors[i] = rgbToHex(color);
                         dispatch({
-                            type: 'palette:update',
+                            type: 'library:palette:update',
                             name,
                             colors,
                         });

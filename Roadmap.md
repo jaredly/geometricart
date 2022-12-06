@@ -1,4 +1,30 @@
 
+# NEXT uppp
+
+- [ ] audo guides mode
+  - when creating a path, guides are visible, but they disappear after it's made
+  - when creating a guide, guides are visible, and stay visible.
+
+- [ ] reified palettes thanks
+	ok but what does this look like?
+	palette:update {newpalette}
+	yeah just toss in the whole palette. or a single dealio. idc
+	- ok yeah, so activePalette becomes a string[], not a string name.
+	- Ok, so the "library" can have named palettes, and you can like update the named palette
+  	with the current palette. That's fine.
+	- palette:new:update <=> string[] ? Yeah. And maybe a palette:new:single idx, color
+
+- [ ] ALL the previews,
+  - what if I had a "pendingAction" or something (probably pendingActions[]), where we're rendering
+		as if that action had already been applied?
+		Sounds legit.
+- [ ] snapshotsss
+
+# App?
+
+https://neutralino.js.org/docs/getting-started/your-first-neutralinojs-app/
+could be nice
+
 # GISTSSS
 
 - [x] when adding a gist, update my gistcache
@@ -20,8 +46,10 @@ Yeah sure
 - [x] a button to switch to normal cursor mode
 - [x] The pointer's default behavior should be "SELECT" (& drag select), NOT PAN
 	- and it shouldn't select points
-- [ ] also allow like "shift + zoom" to do panning
-- [ ] have a "pan" tool
+- [x] also allow like "shift + zoom" to do panning
+- [x] have a "pan" tool
+
+- [ ] hide dots unless we're in 'shape' mode.
 
 
 # So, snapshots / versions or something

@@ -15,7 +15,7 @@ export const useDropTarget = (
 ] => {
     const [dragging, setDragging] = React.useState(false);
 
-    const tid = React.useRef(null as null | number);
+    const tid = React.useRef(null as null | NodeJS.Timeout);
 
     const callbacks = {
         onDragOver: (evt: React.DragEvent) => {

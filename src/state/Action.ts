@@ -39,9 +39,9 @@ export type Action =
     | { type: 'selection:set'; selection: Selection | null }
     | { type: 'tab:set'; tab: Tab }
     | { type: 'attachment:add'; id: string; attachment: Attachment }
-    | { type: 'palette:rename'; old: string; new: string }
-    | { type: 'palette:update'; name: string; colors: Array<string> }
-    | { type: 'palette:select'; name: string };
+    | { type: 'library:palette:rename'; old: string; new: string }
+    | { type: 'library:palette:update'; name: string; colors: Array<string> }
+    | { type: 'library:palette:select'; name: string };
 
 export type AddRemoveEdit<T, Key> =
     | {
