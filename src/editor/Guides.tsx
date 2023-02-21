@@ -277,12 +277,17 @@ export const Guides = ({
 
     const onClickIntersection = React.useCallback(
         (coord: Intersect, shiftKey: boolean) => {
+            console.log(`click intersection`, currentDuplication, coord);
             if (currentDuplication.current) {
                 if (
                     !['Path', 'PathGroup'].includes(
                         currentState.current.selection?.type ?? '',
                     )
                 ) {
+                    console.log(
+                        'um selection idk what',
+                        currentState.current.selection,
+                    );
                     return;
                 }
                 if (

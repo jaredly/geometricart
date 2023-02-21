@@ -326,24 +326,25 @@ const makeLoader = <T,>(fn: () => Promise<T>) => {
     };
 };
 
-const useReactJson = makeLoader(() =>
-    // @ts-ignore
-    import('react-json-view').then((v) => v.default),
-);
+// const useReactJson = makeLoader(() =>
+//     // @ts-ignore
+//     import('react-json-view').then((v) => v.default),
+// );
 
 const MaybeShowJson = ({ input, output }: { input: any; output: any }) => {
     const [show, setShow] = React.useState(false);
-    const ReactJson = useReactJson();
-    return (
-        <div>
-            <button onClick={() => setShow(!show)}>Toggle JSON view</button>
-            <div style={{ backgroundColor: 'white' }}>
-                {show && ReactJson ? (
-                    <ReactJson src={{ input, output }} collapsed={true} />
-                ) : null}
-            </div>
-        </div>
-    );
+    // const ReactJson = useReactJson();
+    // return (
+    //     <div>
+    //         <button onClick={() => setShow(!show)}>Toggle JSON view</button>
+    //         <div style={{ backgroundColor: 'white' }}>
+    //             {show && ReactJson ? (
+    //                 <ReactJson src={{ input, output }} collapsed={true} />
+    //             ) : null}
+    //         </div>
+    //     </div>
+    // );
+    return null;
 };
 
 export const useLocalStorage = <T,>(

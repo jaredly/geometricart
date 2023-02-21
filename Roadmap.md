@@ -1,20 +1,26 @@
 
 # NEXT uppp
 
+- [x] fix the "it deselects imeediately" thing in dragToSelect mode
 - [ ] audo guides mode
   - when creating a path, guides are visible, but they disappear after it's made
+    - ALSO you need to explicitly say "i'm going to create a path now"
+      and then all the starting points show up.
+      wellll or we just do all the hard math to let you color by number? idk
   - when creating a guide, guides are visible, and stay visible.
+  - when duplicating or creating a mirror, just points are visible
 
-- [ ] reified palettes thanks
+- [x] reified palettes thanks
 	ok but what does this look like?
 	palette:update {newpalette}
 	yeah just toss in the whole palette. or a single dealio. idc
 	- ok yeah, so activePalette becomes a string[], not a string name.
 	- Ok, so the "library" can have named palettes, and you can like update the named palette
   	with the current palette. That's fine.
-	- palette:new:update <=> string[] ? Yeah. And maybe a palette:new:single idx, color
+	- [x] palette:update <=> string[] 
+	- [ ] And maybe a palette:single idx, color
 
-- [ ] ALL the previews,
+- [x] ALL the previews,
   - what if I had a "pendingAction" or something (probably pendingActions[]), where we're rendering
 		as if that action had already been applied?
 		Sounds legit.

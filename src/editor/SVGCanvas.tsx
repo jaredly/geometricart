@@ -19,6 +19,7 @@ import { Coord, State, Intersect, View } from '../types';
 import { useDragSelect, useMouseDrag } from './useMouseDrag';
 import { useScrollWheel } from './useScrollWheel';
 import { EditorState, MenuItem } from './Canvas';
+import { coordsEqual } from '../rendering/pathsAreIdentical';
 
 export function SVGCanvas({
     state,
@@ -494,7 +495,7 @@ export function finishDragFn(
         // setEditorState((state) => ({ ...state, isDragSelecting: false }));
         // cancelDragSelect();
         const { pos, drag } = currentDrag.current;
-        if (!drag) {
+        if (!drag || pos === drag || coordsEqual(pos, drag)) {
             return;
         }
         const rect = rectForCorners(pos, drag);
@@ -513,6 +514,7 @@ export function finishDragFn(
                 ),
             );
         }
+        console.log('ok selected', selected);
         dispatch({
             type: 'selection:set',
             selection: { type: 'Path', ids: selected },
