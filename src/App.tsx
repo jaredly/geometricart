@@ -54,31 +54,99 @@ export type UIState = {
     previewActions: Action[];
 };
 
-export const useUIState = (trueState: State) => {
-    const [screen, setScreen] = React.useState('edit' as Screen);
-    const [hover, setHover] = React.useState(null as null | Hover);
-    const [styleHover, setStyleHover] = React.useState(
-        null as null | StyleHover,
-    );
-    const [pendingMirror, setPendingMirror] = React.useState(
-        null as null | PendingMirror,
-    );
-    const [pendingDuplication, setPendingDuplication] = React.useState(
-        null as null | PendingDuplication,
-    );
-    const [previewActions, setPreviewActions] = useState([] as Action[]);
+type UIAction =
+    | { type: 'screen'; screen: UIState['screen'] }
+    | { type: 'hover'; hover: UIState['hover'] }
+    | { type: 'styleHover'; styleHover: UIState['styleHover'] }
+    | { type: 'pendingMirror'; pendingMirror: UIState['pendingMirror'] }
+    | {
+          type: 'pendingDuplication';
+          pendingDuplication: UIState['pendingDuplication'];
+      }
+    | { type: 'previewActions'; previewActions: UIState['previewActions'] };
 
-    const state = applyActions(previewActions, trueState);
+const reduceUIState = (state: UIState, action: UIAction) => {
+    switch (action.type) {
+        case 'screen':
+            return { ...state, screen: action.screen };
+        case 'hover':
+            return { ...state, hover: action.hover };
+        case 'styleHover':
+            return { ...state, styleHover: action.styleHover };
+        case 'pendingMirror':
+            return { ...state, pendingMirror: action.pendingMirror };
+        case 'pendingDuplication':
+            return { ...state, pendingDuplication: action.pendingDuplication };
+        case 'previewActions':
+            return { ...state, previewActions: action.previewActions };
+    }
+};
+
+export const useUIState = (trueState: State) => {
+    const [uiState, setUiState] = React.useState<UIState>({
+        screen: 'edit',
+        hover: null,
+        styleHover: null,
+        pendingMirror: null,
+        pendingDuplication: null,
+        previewActions: [],
+    });
+
+    const updateUIState = <T,>(
+        attr: keyof UIState,
+    ): React.Dispatch<React.SetStateAction<T>> => {
+        return (value: T | ((v: T) => T)) => {
+            if (typeof value === 'function') {
+                return setUiState((current) => ({
+                    ...current,
+                    [attr]: (value as (v: any) => T)(current[attr]),
+                }));
+            } else {
+                return setUiState((current) => ({ ...current, [attr]: value }));
+            }
+        };
+    };
+
+    const setScreen = React.useCallback(
+        updateUIState<UIState['screen']>('screen'),
+        [],
+    );
+    const setHover = React.useCallback(
+        updateUIState<UIState['hover']>('hover'),
+        [],
+    );
+    const setStyleHover = React.useCallback(
+        updateUIState<UIState['styleHover']>('styleHover'),
+        [],
+    );
+    const setPendingMirror = React.useCallback(
+        updateUIState<UIState['pendingMirror']>('pendingMirror'),
+        [],
+    );
+    const setPendingDuplication = React.useCallback(
+        updateUIState<UIState['pendingDuplication']>('pendingDuplication'),
+        [],
+    );
+    const setPreviewActions = React.useCallback(
+        updateUIState<UIState['previewActions']>('previewActions'),
+        [],
+    );
+    const state = applyActions(uiState.previewActions, trueState);
+
+    // Reset when state changes
+    React.useEffect(() => {
+        setPendingMirror(null);
+    }, [state.mirrors, state.guides]);
+
+    if (
+        uiState.pendingMirror &&
+        uiState.pendingMirror.parent !== state.activeMirror
+    ) {
+        uiState.pendingMirror.parent = state.activeMirror;
+    }
 
     return {
-        uiState: {
-            screen,
-            hover,
-            styleHover,
-            pendingMirror,
-            pendingDuplication,
-            previewActions,
-        },
+        uiState,
         uiSetters: {
             setScreen,
             setHover,
@@ -87,6 +155,7 @@ export const useUIState = (trueState: State) => {
             setPendingDuplication,
             setPreviewActions,
         },
+        uiDispatch,
         state,
     };
 };
@@ -151,10 +220,6 @@ export const App = ({
 
     useSaveState(state, initialState, dest, setLastSaved, id);
 
-    if (pendingMirror && pendingMirror.parent !== state.activeMirror) {
-        pendingMirror.parent = state.activeMirror;
-    }
-
     const latestState = useCurrent(state);
     const currentPendingDuplication = useCurrent(pendingDuplication);
     React.useEffect(() => {
@@ -171,11 +236,6 @@ export const App = ({
     }, []);
 
     const ref = React.useRef(null as null | SVGSVGElement);
-
-    // Reset when state changes
-    React.useEffect(() => {
-        setPendingMirror(null);
-    }, [state.mirrors, state.guides]);
 
     const width = Math.min(1000, window.innerWidth);
     const height = Math.min(1000, window.innerHeight);
