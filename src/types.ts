@@ -150,6 +150,7 @@ export type StyleLine = {
     originalIdx?: number;
     inset?: number;
     color?: string | number;
+    overshoot?: number | string; // yeah? like 10% or pixelsss
     width?: number;
     dash?: Array<number>;
     joinStyle?: string;

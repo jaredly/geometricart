@@ -109,6 +109,9 @@ const RenderPathMemo = ({
     palette: Array<string>;
 }) => {
     const d = calcPathD(path, zoom);
+    if (path.debug) {
+        console.log('DEBUG', path, d);
+    }
     const style = path.style;
     const handlers = useTouchClick<null>(() =>
         onClick ? onClick(false, path.id) : null,

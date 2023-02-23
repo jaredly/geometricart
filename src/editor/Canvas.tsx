@@ -2,16 +2,21 @@
 /* @jsxFrag React.Fragment */
 import { jsx } from '@emotion/react';
 import React, { useEffect, useState } from 'react';
-import { Action } from '../state/Action';
+import { Action, PathCreateMany } from '../state/Action';
 import { PendingMirror } from '../useUIState';
 import { calcAllIntersections } from '../rendering/calcAllIntersections';
 import {
     calculateGuideElements,
     geomPoints,
+    geomsForGiude,
 } from '../rendering/calculateGuideElements';
 import { DrawPathState } from './DrawPath';
 import { findSelection } from './findSelection';
-import { getMirrorTransforms, push } from '../rendering/getMirrorTransforms';
+import {
+    getMirrorTransforms,
+    getTransformsForNewMirror,
+    push,
+} from '../rendering/getMirrorTransforms';
 import {
     PendingDuplication,
     PendingPathPair,
@@ -60,12 +65,14 @@ import {
     View,
     TextureConfig,
     GuideGeom,
+    Mirror,
 } from '../types';
 import { functionWithBuiltins } from '../animation/getAnimatedPaths';
 import { Menu } from 'primereact/menu';
 import { SVGCanvas } from './SVGCanvas';
 import { Button } from 'primereact/button';
 import { toTypeRev } from '../handleKeyboard';
+import { useCurrent } from '../App';
 
 export type Props = {
     state: State;
@@ -338,10 +345,56 @@ export const Canvas = ({
     const [editorState, setEditorState] = useState(initialEditorState);
 
     const menu = React.useRef<Menu>(null);
+    const currentState = useCurrent(state);
 
     const startPath = () => {
+        const state = currentState.current;
         if (state.selection?.type === 'Guide') {
             const ids = state.selection.ids;
+            const create = ids
+                .flatMap((id): PathCreateMany['paths'] => {
+                    const guide = state.guides[id];
+                    const geoms = geomsForGiude(
+                        guide,
+                        typeof guide.mirror === 'string'
+                            ? mirrorTransforms[guide.mirror as string]
+                            : guide.mirror
+                            ? getTransformsForNewMirror(guide.mirror as Mirror)
+                            : null,
+                    );
+                    return geoms
+                        .map(({ geom }): PathCreateMany['paths'][0] | null =>
+                            geom.type === 'Circle'
+                                ? {
+                                      origin: geom.radius,
+                                      segments: [
+                                          {
+                                              type: 'Arc',
+                                              center: geom.center,
+                                              to: geom.radius,
+                                              clockwise: true,
+                                          },
+                                      ],
+                                  }
+                                : geom.type === 'Line'
+                                ? {
+                                      origin: geom.p1,
+                                      segments: [{ type: 'Line', to: geom.p2 }],
+                                      open: true,
+                                  }
+                                : null,
+                        )
+                        .filter(Boolean) as PathCreateMany['paths'];
+                })
+                .filter(Boolean);
+            console.log(create);
+            dispatch({
+                type: 'path:create:many',
+                paths: create as PathCreateMany['paths'],
+                withMirror: false,
+                trace: true,
+            });
+            return;
         }
         setEditorState((es) => ({
             ...es,
@@ -362,7 +415,7 @@ export const Canvas = ({
             if (evt.key === 'n') {
                 evt.preventDefault();
                 evt.stopPropagation();
-                setEditorState((es) => ({ ...es, pendingPath: false }));
+                startPath();
             }
             if (evt.key === 'Escape') {
                 console.log('no pending path now');
@@ -502,6 +555,7 @@ export const Canvas = ({
                 editorState={editorState}
                 dispatch={dispatch}
                 setEditorState={setEditorState}
+                startPath={startPath}
             />
             <div
                 css={{
@@ -561,7 +615,7 @@ export const Canvas = ({
                                 });
                             } else {
                                 dispatch({
-                                    type: 'path:create',
+                                    type: 'path:create:many',
                                     paths: [{ segments, origin }],
                                     withMirror: true,
                                 });
@@ -640,11 +694,13 @@ function ToolIcons({
     editorState,
     dispatch,
     setEditorState,
+    startPath,
 }: {
     state: State;
     editorState: EditorState;
     dispatch: (action: Action) => unknown;
     setEditorState: React.Dispatch<React.SetStateAction<EditorState>>;
+    startPath: () => void;
 }) {
     return (
         <div
@@ -721,11 +777,10 @@ function ToolIcons({
                         ? 'p-button-outlined'
                         : '')
                 }
-                onClick={() => {
-                    setEditorState((es) => ({
-                        ...es,
-                        pendingPath: es.pendingPath === null ? false : null,
-                    }));
+                onClick={(evt) => {
+                    evt.preventDefault();
+                    evt.stopPropagation();
+                    startPath();
                 }}
                 children={
                     <ToolIcon

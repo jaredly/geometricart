@@ -263,7 +263,7 @@ export const Guides = ({
                 });
             } else {
                 dispatch({
-                    type: 'path:create',
+                    type: 'path:create:many',
                     paths: [
                         {
                             segments: parts.map((s) => s.segment),

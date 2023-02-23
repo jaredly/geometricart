@@ -31,6 +31,7 @@ import {
     AddRemoveEdit,
     UndoAddRemoveEdit,
     ScriptRename,
+    PathCreateMany,
 } from './Action';
 import {
     pathsAreIdentical,
@@ -119,6 +120,7 @@ export const reduceWithoutUndo = (
     state: State,
     action: UndoableAction,
 ): [State, UndoAction | null] => {
+    console.log('🤔 an action', action);
     switch (action.type) {
         case 'mirror:change':
             return [
@@ -155,6 +157,7 @@ export const reduceWithoutUndo = (
                         ...state,
                         nextId: state.nextId + 1,
                         pending: null,
+                        selection: { type: 'Guide', ids: [id] },
                         guides: {
                             ...state.guides,
                             [id]: {
@@ -201,10 +204,15 @@ export const reduceWithoutUndo = (
             ];
         }
         case 'guide:add':
+            console.log('select it up', action.id);
             return [
                 {
                     ...state,
                     guides: { ...state.guides, [action.id]: action.guide },
+                    selection: {
+                        type: 'Guide',
+                        ids: [action.id],
+                    },
                 },
                 { type: action.type, action },
             ];
@@ -269,7 +277,8 @@ export const reduceWithoutUndo = (
         case 'path:multiply': {
             return handlePathMultiply(state, action);
         }
-        case 'path:create': {
+        case 'path:create':
+        case 'path:create:many': {
             return handlePathCreate(state, action);
         }
         case 'view:update':
@@ -1071,7 +1080,8 @@ export const undo = (state: State, action: UndoAction): State => {
             return state;
         }
 
-        case 'path:create': {
+        case 'path:create':
+        case 'path:create:many': {
             state = {
                 ...state,
                 paths: {
@@ -1265,8 +1275,26 @@ export function handlePathMultiply(
 
 export function handlePathCreate(
     state: State,
-    action: PathCreate,
+    origAction: PathCreateMany | PathCreate,
 ): [State, UndoAction | null] {
+    const action: PathCreateMany =
+        origAction.type === 'path:create:many'
+            ? origAction
+            : {
+                  type: 'path:create:many',
+                  paths: [
+                      {
+                          origin: origAction.origin,
+                          segments: origAction.segments,
+                      },
+                  ],
+                  withMirror: true,
+              };
+
+    if (!action.paths.length) {
+        return [state, null];
+    }
+    console.log('creating', action.paths);
     state = {
         ...state,
         paths: { ...state.paths },
@@ -1282,12 +1310,12 @@ export function handlePathCreate(
         id: groupId,
     };
 
-    action.paths.forEach(({ origin, segments }) => {
+    action.paths.forEach(({ origin, segments, open }) => {
         const id = `id-${nextId++}`;
         ids.push(id);
 
         const style: Style = {
-            fills: [{ color: 1 }],
+            fills: action.trace ? [] : [{ color: 1 }],
             lines: [{ color: 'white', width: 0 }],
         };
 
@@ -1298,12 +1326,13 @@ export function handlePathCreate(
             ordering: 0,
             hidden: false,
             origin,
+            open,
             // simplify it up y'all
             segments: simplifyPath(ensureClockwise(segments)),
             style,
         };
 
-        if (state.activeMirror) {
+        if (state.activeMirror && action.withMirror) {
             const transforms = getTransformsForMirror(
                 state.activeMirror,
                 state.mirrors,
@@ -1337,15 +1366,18 @@ export function handlePathCreate(
                     group: groupId,
                     ordering: 0,
                     hidden: false,
+                    open: main.open,
                     created: 0,
                     origin,
                     segments,
                     style,
                 };
+                console.log(state.paths[nid]);
                 ids.push(nid);
             });
         }
         state.paths[id] = main;
+        console.log(state.paths[id]);
     });
     return [
         {

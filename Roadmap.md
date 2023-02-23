@@ -1,6 +1,10 @@
 
 # NEXT uppp
 
+- [ ] I want overshoot <-> as a line setting
+- [ ] make a thing to "select all shapes with this"
+- [ ] select after createing, my goodness
+
 - [ ] ok, so let's do viewable guides.
   - circles, right? With ... potentially a start & end angle.
   - lines, with an overextension-amount?

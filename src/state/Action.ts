@@ -364,8 +364,9 @@ export type UndoMetaUpdate = {
 
 export type PathCreateMany = {
     type: 'path:create:many';
-    origin: Coord;
-    segments: Array<Segment>;
+    paths: { origin: Coord; segments: Segment[]; open?: boolean }[];
+    withMirror: boolean;
+    trace?: boolean;
 };
 
 export type UndoPathCreateMany = {
@@ -376,8 +377,8 @@ export type UndoPathCreateMany = {
 
 export type PathCreate = {
     type: 'path:create';
-    paths: { origin: Coord; segments: Segment[] }[];
-    withMirror: boolean;
+    origin: Coord;
+    segments: Array<Segment>;
 };
 
 export type UndoPathCreate = {
@@ -536,6 +537,7 @@ export type UndoableAction =
     | OverlayUpdate
     | PathGroupUpdateMany
     | PathCreate
+    | PathCreateMany
     | GroupRegroup
     | ClipCut
     | PathMultiply
@@ -556,6 +558,7 @@ export type UndoAction =
     | UndoTimelineUpdate
     | UndoOverlayDelete
     | UndoClipAdd
+    | UndoPathCreateMany
     | UndoGroupUpdate
     | UndoGroupRegroup
     | UndoPathUpdate
