@@ -460,7 +460,8 @@ export const Guides = ({
                     disableGuides || pendingPath[0] ? undefined : clickActive
                 }
             />
-            {editorState.pendingPath === false && !zooming ? (
+            {(editorState.pendingPath === false || state.pending != null) &&
+            !zooming ? (
                 <RenderIntersections
                     zoom={view.zoom}
                     highlight={state.pending != null}

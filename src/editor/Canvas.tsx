@@ -349,9 +349,7 @@ export const Canvas = ({
                 return;
             }
 
-            console.log('aa', evt, evt.target);
-            console.log('um', evt.key);
-            if (evt.key === 's') {
+            if (evt.key === 'n') {
                 evt.preventDefault();
                 evt.stopPropagation();
                 setEditorState((es) => ({ ...es, pendingPath: false }));
@@ -706,7 +704,7 @@ function ToolIcons({
                 }}
             />
             <Button
-                tooltip={'Create shape (s)'}
+                tooltip={'New shape (n)'}
                 className={
                     'mt-2 p-button-icon-only ' +
                     (editorState.pendingPath !== null
