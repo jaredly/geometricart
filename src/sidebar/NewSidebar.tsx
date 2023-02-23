@@ -13,7 +13,7 @@ import type * as CSS from 'csstype';
 import { selectedPathIds } from '../editor/touchscreenControls';
 import { MultiStyleForm, StyleHover } from '../editor/MultiStyleForm';
 import { Export } from '../editor/Export';
-import { Screen } from '../useUIState';
+import { Screen, UIDispatch, UIState } from '../useUIState';
 import {
     DrillIcon,
     IconButton,
@@ -45,27 +45,21 @@ declare module 'csstype' {
 export const NewSidebar = ({
     state,
     dispatch,
-    hover,
-    setHover,
-    setStyleHover,
-    screen,
-    setScreen,
     lastSaved,
-    setPreviewActions,
+
+    uiState,
+    uiDispatch,
 }: {
     lastSaved: {
         when: number;
         dirty: null | true | (() => void);
         id: string;
     } | null;
-    setPreviewActions: React.Dispatch<React.SetStateAction<Action[]>>;
     state: State;
     dispatch: React.Dispatch<Action>;
-    hover: Hover | null;
-    setHover: (hover: Hover | null) => void;
-    setStyleHover: (hover: StyleHover | null) => void;
-    screen: Screen;
-    setScreen: (s: Screen) => void;
+
+    uiDispatch: UIDispatch;
+    uiState: UIState;
 }): JSX.Element => {
     const styleIds = selectedPathIds(state);
     const [openSidebars, setOpenSidebars] = useLocalStorage(
@@ -76,9 +70,16 @@ export const NewSidebar = ({
         () => getMirrorTransforms(state.mirrors),
         [state.mirrors],
     );
+
+    const setHover = React.useCallback(
+        (hover: UIState['hover']) => uiDispatch({ type: 'hover', hover }),
+        [],
+    );
+
     if (!state.palette) {
         debugger;
     }
+
     return (
         <div
             style={{
@@ -103,10 +104,17 @@ export const NewSidebar = ({
                 ].map((Config) => (
                     <Button
                         className={
-                            screen === Config.name ? '' : 'p-button-text'
+                            uiState.screen === Config.name
+                                ? ''
+                                : 'p-button-text'
                         }
-                        onClick={() => setScreen(Config.name as Screen)}
-                        disabled={screen === Config.name}
+                        onClick={() =>
+                            uiDispatch({
+                                type: 'screen',
+                                screen: Config.name as Screen,
+                            })
+                        }
+                        disabled={uiState.screen === Config.name}
                     >
                         <Config.icon />
                     </Button>
@@ -303,7 +311,10 @@ export const NewSidebar = ({
                                             (k) => state.paths[k].style,
                                         )}
                                         onHover={(hover) => {
-                                            setStyleHover(hover);
+                                            uiDispatch({
+                                                type: 'styleHover',
+                                                styleHover: hover,
+                                            });
                                         }}
                                         onChange={(styles) => {
                                             const changed: {
@@ -373,7 +384,7 @@ export const NewSidebar = ({
                         header: 'Palette',
                         content: () => (
                             <NewPalettesForm
-                                setPreviewActions={setPreviewActions}
+                                uiDispatch={uiDispatch}
                                 state={state}
                                 dispatch={dispatch}
                             />
@@ -791,9 +802,9 @@ export function itemStyle(selected: boolean): React.CSSProperties | undefined {
 export const NewPalettesForm = ({
     state,
     dispatch,
-    setPreviewActions,
+    uiDispatch,
 }: {
-    setPreviewActions: React.Dispatch<React.SetStateAction<Action[]>>;
+    uiDispatch: UIDispatch;
     state: State;
     dispatch: React.Dispatch<Action>;
 }) => {
@@ -834,7 +845,10 @@ export const NewPalettesForm = ({
                                     type: 'palette:update',
                                     colors: tmp,
                                 });
-                                setPreviewActions([]);
+                                uiDispatch({
+                                    type: 'previewActions',
+                                    previewActions: [],
+                                });
                             }}
                         />
                         <Button
@@ -842,7 +856,10 @@ export const NewPalettesForm = ({
                             className="p-button-sm p-button-text"
                             onClick={() => {
                                 setTmp(state.palette);
-                                setPreviewActions([]);
+                                uiDispatch({
+                                    type: 'previewActions',
+                                    previewActions: [],
+                                });
                             }}
                         />
                     </>
@@ -862,12 +879,15 @@ export const NewPalettesForm = ({
                             setTmp((t) => {
                                 t = t.slice();
                                 t[editing] = change.hex;
-                                setPreviewActions([
-                                    {
-                                        type: 'palette:update',
-                                        colors: t.slice(),
-                                    },
-                                ]);
+                                uiDispatch({
+                                    type: 'previewActions',
+                                    previewActions: [
+                                        {
+                                            type: 'palette:update',
+                                            colors: t.slice(),
+                                        },
+                                    ],
+                                });
                                 return t;
                             });
                         }}

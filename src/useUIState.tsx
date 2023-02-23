@@ -83,6 +83,7 @@ const reduceUIState = (state: UIState, action: UIAction): UIState => {
     }
     return state;
 };
+export type UIDispatch = React.Dispatch<UIAction>;
 
 export const useUIState = (trueState: State) => {
     const [uiState, uiDispatch] = React.useReducer(reduceUIState, {
@@ -150,14 +151,17 @@ export const useUIState = (trueState: State) => {
 
     return {
         uiState,
-        uiSetters: {
-            setScreen,
-            setHover,
-            setStyleHover,
-            setPendingMirror,
-            setPendingDuplication,
-            setPreviewActions,
-        },
+        uiSetters: React.useMemo(
+            () => ({
+                setScreen,
+                setHover,
+                setStyleHover,
+                setPendingMirror,
+                setPendingDuplication,
+                setPreviewActions,
+            }),
+            [],
+        ),
         uiDispatch,
         state,
     };

@@ -16,7 +16,6 @@ import { handleKeyboard } from './handleKeyboard';
 import { NewSidebar } from './sidebar/NewSidebar';
 import { saveState } from './run';
 import { SaveDest } from './MirrorPicker';
-import dayjs from 'dayjs';
 import { Action } from './state/Action';
 import { useUIState } from './useUIState';
 
@@ -44,19 +43,12 @@ export const App = ({
         id,
     });
 
-    const { uiState, uiSetters, state } = useUIState(trueState);
+    const { uiState, uiSetters, uiDispatch, state } = useUIState(trueState);
 
     const { screen, hover, styleHover, pendingMirror, pendingDuplication } =
         uiState;
 
-    const {
-        setScreen,
-        setHover,
-        setStyleHover,
-        setPendingMirror,
-        setPendingDuplication,
-        setPreviewActions,
-    } = uiSetters;
+    const { setHover, setPendingMirror, setPendingDuplication } = uiSetters;
 
     // @ts-ignore
     window.state = state;
@@ -146,18 +138,20 @@ export const App = ({
                         state={state}
                         dispatch={dispatch}
                         canvasProps={{
+                            // TODO replace with uiState & uiDispatch
                             hover,
-                            setHover,
                             pendingDuplication,
-                            setPendingDuplication,
-                            isTouchScreen,
                             pendingMirror,
+                            styleHover,
+                            setHover,
+                            setPendingDuplication,
                             setPendingMirror,
+
+                            isTouchScreen,
                             state,
                             dispatch,
                             width: 100,
                             height: 100,
-                            styleHover,
                         }}
                     />
                 ) : screen === 'history' ? (
@@ -184,12 +178,8 @@ export const App = ({
                 state={trueState}
                 dispatch={dispatch}
                 lastSaved={dest.type === 'gist' ? lastSaved : null}
-                setPreviewActions={setPreviewActions}
-                hover={hover}
-                screen={screen}
-                setScreen={setScreen}
-                setHover={setHover}
-                setStyleHover={setStyleHover}
+                uiDispatch={uiDispatch}
+                uiState={uiState}
             />
         </div>
     );
@@ -229,6 +219,7 @@ export const debounce = (
     //     fn();
     // };
 };
+
 function useHandlePaste(dispatch: React.Dispatch<Action>) {
     React.useEffect(() => {
         const fn = (evt: ClipboardEvent) => {

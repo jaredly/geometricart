@@ -9,7 +9,7 @@
   - so maybe this is a copy/paste? could be cool tbh.
     - for now, just do circles
 
-- [ ] lol ok, refactoring UI state to be a single dispatch. b/c why not amirite
+- [x] lol ok, refactoring UI state to be a single dispatch. b/c why not amirite
 
 - [ ] For animating the history, let's allow you to specify zoom and such!
   - so like, go to a key frame, allow you to pan/zoom around until it's perfect
