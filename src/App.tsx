@@ -45,6 +45,52 @@ export const applyActions = (actions: Action[], state: State) => {
     return state;
 };
 
+export type UIState = {
+    screen: Screen;
+    hover: null | Hover;
+    styleHover: null | StyleHover;
+    pendingMirror: null | PendingMirror;
+    pendingDuplication: null | PendingDuplication;
+    previewActions: Action[];
+};
+
+export const useUIState = (trueState: State) => {
+    const [screen, setScreen] = React.useState('edit' as Screen);
+    const [hover, setHover] = React.useState(null as null | Hover);
+    const [styleHover, setStyleHover] = React.useState(
+        null as null | StyleHover,
+    );
+    const [pendingMirror, setPendingMirror] = React.useState(
+        null as null | PendingMirror,
+    );
+    const [pendingDuplication, setPendingDuplication] = React.useState(
+        null as null | PendingDuplication,
+    );
+    const [previewActions, setPreviewActions] = useState([] as Action[]);
+
+    const state = applyActions(previewActions, trueState);
+
+    return {
+        uiState: {
+            screen,
+            hover,
+            styleHover,
+            pendingMirror,
+            pendingDuplication,
+            previewActions,
+        },
+        uiSetters: {
+            setScreen,
+            setHover,
+            setStyleHover,
+            setPendingMirror,
+            setPendingDuplication,
+            setPreviewActions,
+        },
+        state,
+    };
+};
+
 export const App = ({
     initialState,
     dest,
@@ -61,70 +107,25 @@ export const App = ({
         id,
     });
 
-    const [previewActions, setPreviewActions] = useState([] as Action[]);
+    const { uiState, uiSetters, state } = useUIState(trueState);
 
-    const state = applyActions(previewActions, trueState);
+    const { screen, hover, styleHover, pendingMirror, pendingDuplication } =
+        uiState;
 
-    // const lastLast = useCurrent(lastSaved);
+    const {
+        setScreen,
+        setHover,
+        setStyleHover,
+        setPendingMirror,
+        setPendingDuplication,
+        setPreviewActions,
+    } = uiSetters;
 
-    React.useEffect(() => {
-        if (lastSaved.dirty) {
-            const fn = (evt: BeforeUnloadEvent) => {
-                // if (lastLast.current.dirty) {
-                evt.preventDefault();
-                evt.stopPropagation();
-                return (evt.returnValue = 'Are you sure?');
-                // }
-            };
-            window.addEventListener('beforeunload', fn, { capture: true });
-            return () =>
-                window.removeEventListener('beforeunload', fn, {
-                    capture: true,
-                });
-        }
-    }, [lastSaved.dirty]);
+    // @ts-ignore
+    window.state = state;
 
-    React.useEffect(() => {
-        const fn = (evt: ClipboardEvent) => {
-            if (document.activeElement !== document.body) {
-                return;
-            }
-            if (evt.clipboardData?.files.length) {
-                getStateFromFile(
-                    evt.clipboardData.files[0],
-                    (state) => {
-                        if (state) {
-                            dispatch({ type: 'reset', state });
-                        }
-                    },
-                    (name, src, width, height) => {
-                        const id = Math.random().toString(36).slice(2);
-                        dispatch({
-                            type: 'attachment:add',
-                            attachment: {
-                                id,
-                                contents: src,
-                                height,
-                                width,
-                                name,
-                            },
-                            id,
-                        });
-                        dispatch({
-                            type: 'overlay:add',
-                            attachment: id,
-                        });
-                    },
-                    (err) => {
-                        console.log(err);
-                        alert(err);
-                    },
-                );
-            }
-        };
-        document.addEventListener('paste', fn);
-        return () => document.removeEventListener('paste', fn);
-    });
+    usePreventNavAway(lastSaved);
+    useHandlePaste(dispatch);
 
     const [dragging, callbacks] = useDropStateOrAttachmentTarget(
         (state) => dispatch({ type: 'reset', state }),
@@ -148,46 +149,13 @@ export const App = ({
         },
     );
 
-    // @ts-ignore
-    window.state = state;
+    useSaveState(state, initialState, dest, setLastSaved, id);
 
-    const latestState = useCurrent(state);
-
-    let firstChange = React.useRef(false);
-    React.useEffect(() => {
-        if (firstChange.current || state !== initialState) {
-            firstChange.current = true;
-            if (dest.type === 'gist') {
-                const force = debounce(() => {
-                    setLastSaved((s) => ({ ...s, dirty: true }));
-                    return saveState(state, id, dest).then(() => {
-                        setLastSaved({ when: Date.now(), dirty: null, id });
-                    });
-                }, 10000);
-                setLastSaved((s) => ({ ...s, dirty: force }));
-            } else {
-                saveState(state, id, dest);
-            }
-        }
-    }, [state]);
-
-    const [hover, setHover] = React.useState(null as null | Hover);
-
-    const [styleHover, setStyleHover] = React.useState(
-        null as null | StyleHover,
-    );
-
-    const [pendingMirror, setPendingMirror] = React.useState(
-        null as null | PendingMirror,
-    );
     if (pendingMirror && pendingMirror.parent !== state.activeMirror) {
         pendingMirror.parent = state.activeMirror;
     }
 
-    const [pendingDuplication, setPendingDuplication] = React.useState(
-        null as null | PendingDuplication,
-    );
-
+    const latestState = useCurrent(state);
     const currentPendingDuplication = useCurrent(pendingDuplication);
     React.useEffect(() => {
         const fn = handleKeyboard(
@@ -212,12 +180,6 @@ export const App = ({
     const width = Math.min(1000, window.innerWidth);
     const height = Math.min(1000, window.innerHeight);
     const isTouchScreen = 'ontouchstart' in window;
-
-    const [sidebarOverlay, setSidebarOverlay] = React.useState(false);
-
-    const [screen, setScreen] = React.useState('edit' as Screen);
-
-    const [hide, setHide] = React.useState(false);
 
     return (
         <div
@@ -339,3 +301,99 @@ export const debounce = (
     //     fn();
     // };
 };
+function useHandlePaste(dispatch: React.Dispatch<Action>) {
+    React.useEffect(() => {
+        const fn = (evt: ClipboardEvent) => {
+            if (document.activeElement !== document.body) {
+                return;
+            }
+            if (evt.clipboardData?.files.length) {
+                getStateFromFile(
+                    evt.clipboardData.files[0],
+                    (state) => {
+                        if (state) {
+                            dispatch({ type: 'reset', state });
+                        }
+                    },
+                    (name, src, width, height) => {
+                        const id = Math.random().toString(36).slice(2);
+                        dispatch({
+                            type: 'attachment:add',
+                            attachment: {
+                                id,
+                                contents: src,
+                                height,
+                                width,
+                                name,
+                            },
+                            id,
+                        });
+                        dispatch({
+                            type: 'overlay:add',
+                            attachment: id,
+                        });
+                    },
+                    (err) => {
+                        console.log(err);
+                        alert(err);
+                    },
+                );
+            }
+        };
+        document.addEventListener('paste', fn);
+        return () => document.removeEventListener('paste', fn);
+    });
+}
+
+function usePreventNavAway(lastSaved: {
+    when: number;
+    dirty: true | (() => void) | null;
+    id: string;
+}) {
+    React.useEffect(() => {
+        if (lastSaved.dirty) {
+            const fn = (evt: BeforeUnloadEvent) => {
+                evt.preventDefault();
+                evt.stopPropagation();
+                return (evt.returnValue = 'Are you sure?');
+            };
+            window.addEventListener('beforeunload', fn, { capture: true });
+            return () =>
+                window.removeEventListener('beforeunload', fn, {
+                    capture: true,
+                });
+        }
+    }, [lastSaved.dirty]);
+}
+
+function useSaveState(
+    state: State,
+    initialState: State,
+    dest: SaveDest,
+    setLastSaved: React.Dispatch<
+        React.SetStateAction<{
+            when: number;
+            dirty: true | (() => void) | null;
+            id: string;
+        }>
+    >,
+    id: string,
+) {
+    let firstChange = React.useRef(false);
+    React.useEffect(() => {
+        if (firstChange.current || state !== initialState) {
+            firstChange.current = true;
+            if (dest.type === 'gist') {
+                const force = debounce(() => {
+                    setLastSaved((s) => ({ ...s, dirty: true }));
+                    return saveState(state, id, dest).then(() => {
+                        setLastSaved({ when: Date.now(), dirty: null, id });
+                    });
+                }, 10000);
+                setLastSaved((s) => ({ ...s, dirty: force }));
+            } else {
+                saveState(state, id, dest);
+            }
+        }
+    }, [state]);
+}
