@@ -1,7 +1,7 @@
 /* @jsx jsx */
 /* @jsxFrag React.Fragment */
 import { jsx } from '@emotion/react';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Action } from '../state/Action';
 import { PendingMirror } from '../useUIState';
 import { calcAllIntersections } from '../rendering/calcAllIntersections';
@@ -290,14 +290,16 @@ export const evaluateAnimatedValues = (
 export type EditorState = {
     tmpView: null | View;
     items: Array<MenuItem>;
-    pos: Coord;
     zooming: boolean;
+
+    // mouse pos
+    pos: Coord;
     dragPos: null | { view: View; coord: Coord };
 
     dragSelectPos: null | Coord;
     isDragSelecting: boolean;
     multiSelect: boolean;
-    pendingPath: null | DrawPathState;
+    pendingPath: null | false | DrawPathState;
 };
 
 const initialEditorState: EditorState = {
@@ -336,6 +338,32 @@ export const Canvas = ({
     const [editorState, setEditorState] = useState(initialEditorState);
 
     const menu = React.useRef<Menu>(null);
+
+    useEffect(() => {
+        const fn = (evt: KeyboardEvent) => {
+            if (
+                evt.target !== document.body &&
+                (evt.target instanceof HTMLInputElement ||
+                    evt.target instanceof HTMLTextAreaElement)
+            ) {
+                return;
+            }
+
+            console.log('aa', evt, evt.target);
+            console.log('um', evt.key);
+            if (evt.key === 's') {
+                evt.preventDefault();
+                evt.stopPropagation();
+                setEditorState((es) => ({ ...es, pendingPath: false }));
+            }
+            if (evt.key === 'Escape') {
+                console.log('no pending path now');
+                setEditorState((es) => ({ ...es, pendingPath: null }));
+            }
+        };
+        document.addEventListener('keydown', fn);
+        return () => document.removeEventListener('keydown', fn);
+    }, []);
 
     const showMenu = React.useCallback(
         (evt: React.MouseEvent, items: MenuItem[]) => {
@@ -681,10 +709,15 @@ function ToolIcons({
                 tooltip={'Create shape (s)'}
                 className={
                     'mt-2 p-button-icon-only ' +
-                    (false ? 'p-button-outlined' : '')
+                    (editorState.pendingPath !== null
+                        ? 'p-button-outlined'
+                        : '')
                 }
                 onClick={() => {
-                    // uiDispatch({type: 'pending:shape'})
+                    setEditorState((es) => ({
+                        ...es,
+                        pendingPath: es.pendingPath === null ? false : null,
+                    }));
                 }}
                 children={
                     <ToolIcon
@@ -805,6 +838,25 @@ function ToolIcons({
                             { x: 0, y: 10 },
                             { x: 10, y: 5 },
                         ]}
+                    />
+                ),
+                Split: (
+                    <ToolIcon
+                        // circles={[[{ x: 3, y: 5 }, 3]]}
+                        points={[
+                            { x: 0, y: 0 },
+                            { x: 3.33, y: 3.33 },
+                            { x: 6.66, y: 6.66 },
+                            { x: 10, y: 10 },
+                        ]}
+                        lines={
+                            [
+                                // [
+                                //     { x: 0, y: 0 },
+                                //     { x: 10, y: 10 },
+                                // ],
+                            ]
+                        }
                     />
                 ),
             }).map(([kind, icon]) => (
@@ -986,7 +1038,7 @@ export const ClipMenu = ({
             }}
         >
             <IconButton
-                selected={pendingPath?.isClip}
+                selected={pendingPath ? pendingPath.isClip : false}
                 onClick={() =>
                     setPendingPath((p) => (p ? { ...p, isClip: !p.isClip } : p))
                 }

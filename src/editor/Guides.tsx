@@ -132,12 +132,13 @@ export function primitivesForElementsAndPaths(
 }
 
 export type PendingPathPair = [
-    null | DrawPathState,
+    EditorState['pendingPath'],
     (
         fn:
-            | DrawPathState
-            | null
-            | ((state: DrawPathState | null) => DrawPathState | null),
+            | EditorState['pendingPath']
+            | ((
+                  state: EditorState['pendingPath'],
+              ) => EditorState['pendingPath']),
     ) => void,
 ];
 
@@ -459,7 +460,7 @@ export const Guides = ({
                     disableGuides || pendingPath[0] ? undefined : clickActive
                 }
             />
-            {!pendingPath[0] && !zooming ? (
+            {editorState.pendingPath === false && !zooming ? (
                 <RenderIntersections
                     zoom={view.zoom}
                     highlight={state.pending != null}
@@ -605,12 +606,13 @@ function keyHandler(
     currentState: React.MutableRefObject<State>,
     currentPathOrigin: React.MutableRefObject<
         [
-            DrawPathState | null,
+            EditorState['pendingPath'],
             (
                 v:
-                    | DrawPathState
-                    | null
-                    | ((state: DrawPathState | null) => DrawPathState | null),
+                    | EditorState['pendingPath']
+                    | ((
+                          state: EditorState['pendingPath'],
+                      ) => EditorState['pendingPath']),
             ) => void,
         ]
     >,

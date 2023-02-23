@@ -362,7 +362,6 @@ export function SVGCanvas({
                                 ? scale(view.center, -1)
                                 : editorState.pos
                         }
-                        // pendingPath={[pendingPath, null]}
                         editorState={editorState}
                         setEditorState={setEditorState}
                         mirrorTransforms={mirrorTransforms}

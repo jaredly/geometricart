@@ -41,7 +41,7 @@ export const PendingPathControls = ({
         return null;
     }
     const setState = (
-        pp: (path: DrawPathState | null) => DrawPathState | null,
+        pp: (path: EditorState['pendingPath']) => EditorState['pendingPath'],
     ) => setEditorState((s) => ({ ...s, pendingPath: pp(s.pendingPath) }));
     return (
         <div
