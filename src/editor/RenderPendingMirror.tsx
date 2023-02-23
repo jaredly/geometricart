@@ -2,7 +2,7 @@
 /* @jsxFrag React.Fragment */
 import React from 'react';
 import { jsx } from '@emotion/react';
-import { PendingMirror } from '../App';
+import { PendingMirror } from '../useUIState';
 import {
     angleTo,
     applyMatrices,

@@ -2,7 +2,7 @@
 /* @jsxFrag React.Fragment */
 import { jsx } from '@emotion/react';
 import React from 'react';
-import { PendingMirror } from '../App';
+import { PendingMirror } from '../useUIState';
 import { EyeIcon, EyeInvisibleIcon } from '../icons/Eyes';
 import {
     AddIcon,

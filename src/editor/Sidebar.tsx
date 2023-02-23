@@ -3,7 +3,7 @@
 import { jsx } from '@emotion/react';
 import { diff } from 'json-diff-ts';
 import React from 'react';
-import { PendingMirror } from '../App';
+import { PendingMirror } from '../useUIState';
 import { Action, UndoAction } from '../state/Action';
 import { initialState } from '../state/initialState';
 import { Id, Selection, State } from '../types';

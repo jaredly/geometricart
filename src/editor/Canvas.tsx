@@ -3,7 +3,7 @@
 import { jsx } from '@emotion/react';
 import React, { useState } from 'react';
 import { Action } from '../state/Action';
-import { PendingMirror } from '../App';
+import { PendingMirror } from '../useUIState';
 import { calcAllIntersections } from '../rendering/calcAllIntersections';
 import {
     calculateGuideElements,

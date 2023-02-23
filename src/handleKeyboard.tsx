@@ -2,7 +2,7 @@ import { Hover } from './editor/Sidebar';
 import { GuideGeom, Id, State } from './types';
 import { Action, GroupRegroup } from './state/Action';
 import { PendingDuplication } from './editor/Guides';
-import { PendingMirror } from './App';
+import { PendingMirror } from './useUIState';
 
 export const toType: { [key: string]: GuideGeom['type'] } = {
     l: 'Line',

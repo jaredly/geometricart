@@ -13,7 +13,7 @@ import type * as CSS from 'csstype';
 import { selectedPathIds } from '../editor/touchscreenControls';
 import { MultiStyleForm, StyleHover } from '../editor/MultiStyleForm';
 import { Export } from '../editor/Export';
-import { Screen } from '../App';
+import { Screen } from '../useUIState';
 import {
     DrillIcon,
     IconButton,
