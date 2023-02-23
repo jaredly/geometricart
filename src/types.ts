@@ -7,43 +7,6 @@ export type Coord = { x: number; y: number };
 
 export type Id = string;
 
-// export type Shape = {
-//     id: Id;
-//     geom: ShapeGeom;
-//     basedOn: Array<Id>;
-//     mirrors: Array<Id>;
-// };
-
-// Hmmmmmm
-/*
-
-So, what do I mean by "shapes"?
-
-Should I go straight to "paths"?
-like
-
-I'm laying down the guides
-
-and then, in a layer over them,
-I ink out the paths.
-
-these paths can be filled, or not,
-closed, or not.
-They can be inset, etc.
-
-ALSO
-They can be grouped, and the style attributes (incl inset) can be set at the group level.
-
-INSET is a list of numbers, 0 means "line without inset", so you could have "0 2" for adding a line at 2 inset
-OR like "-2 2" to have a line on either side of the normal, while not drawing the normal.
-
-FILL
-STROKE
-
-the normal stuff folks.
-
-
-*/
 export type Line = {
     type: 'Line';
     p1: Coord;

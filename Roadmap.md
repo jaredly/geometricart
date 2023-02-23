@@ -4,6 +4,8 @@
 - [ ] ok, so let's do viewable guides.
   - circles, right? With ... potentially a start & end angle.
   - lines, with an overextension-amount?
+  - hmmmm wait, what about just ... making open "path"s?
+    - yeah so I do have that capacity
 
 - [ ] hmm one thing that a compass can do, is *transfer* distances.
   - so maybe this is a copy/paste? could be cool tbh.

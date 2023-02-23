@@ -8,6 +8,13 @@ import { Action } from './state/Action';
 
 export type UIState = {
     screen: Screen;
+    clipboard?:
+        | { type: 'circle'; radius: number }
+        | {
+              type: 'line';
+              dx: number;
+              dy: number;
+          }; // ooh I could do whole shapes here folks
     hover: null | Hover;
     styleHover: null | StyleHover;
     pendingMirror: null | PendingMirror;
