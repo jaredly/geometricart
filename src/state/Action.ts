@@ -362,10 +362,22 @@ export type UndoMetaUpdate = {
     prev: Meta;
 };
 
-export type PathCreate = {
-    type: 'path:create';
+export type PathCreateMany = {
+    type: 'path:create:many';
     origin: Coord;
     segments: Array<Segment>;
+};
+
+export type UndoPathCreateMany = {
+    type: PathCreateMany['type'];
+    action: PathCreateMany;
+    added: [Array<Id>, Id | null, number];
+};
+
+export type PathCreate = {
+    type: 'path:create';
+    paths: { origin: Coord; segments: Segment[] }[];
+    withMirror: boolean;
 };
 
 export type UndoPathCreate = {

@@ -264,8 +264,13 @@ export const Guides = ({
             } else {
                 dispatch({
                     type: 'path:create',
-                    segments: parts.map((s) => s.segment),
-                    origin: pendingPath[0].origin.coord,
+                    paths: [
+                        {
+                            segments: parts.map((s) => s.segment),
+                            origin: pendingPath[0].origin.coord,
+                        },
+                    ],
+                    withMirror: true,
                 });
             }
             pendingPath[1]((_) => null);

@@ -339,6 +339,16 @@ export const Canvas = ({
 
     const menu = React.useRef<Menu>(null);
 
+    const startPath = () => {
+        if (state.selection?.type === 'Guide') {
+            const ids = state.selection.ids;
+        }
+        setEditorState((es) => ({
+            ...es,
+            pendingPath: es.pendingPath === null ? false : null,
+        }));
+    };
+
     useEffect(() => {
         const fn = (evt: KeyboardEvent) => {
             if (
@@ -552,8 +562,8 @@ export const Canvas = ({
                             } else {
                                 dispatch({
                                     type: 'path:create',
-                                    segments,
-                                    origin,
+                                    paths: [{ segments, origin }],
+                                    withMirror: true,
                                 });
                             }
                         }}

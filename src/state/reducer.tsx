@@ -1070,6 +1070,7 @@ export const undo = (state: State, action: UndoAction): State => {
 
             return state;
         }
+
         case 'path:create': {
             state = {
                 ...state,
@@ -1266,90 +1267,91 @@ export function handlePathCreate(
     state: State,
     action: PathCreate,
 ): [State, UndoAction | null] {
+    state = {
+        ...state,
+        paths: { ...state.paths },
+        pathGroups: { ...state.pathGroups },
+    };
     let nextId = state.nextId;
-    const id = `id-${nextId++}`;
-    const ids = [id];
-    let groupId: string | null = null;
-    state = { ...state, paths: { ...state.paths } };
 
-    const style: Style = {
-        fills: [{ color: 1 }],
-        lines: [{ color: 'white', width: 0 }],
-    };
-    groupId = `id-${nextId++}`;
+    const ids: string[] = [];
 
-    let main: Path = {
-        id,
-        created: 0,
-        group: groupId,
-        ordering: 0,
-        hidden: false,
-        origin: action.origin,
-        // simplify it up y'all
-        segments: simplifyPath(ensureClockwise(action.segments)),
-        style,
+    let groupId: string = `id-${nextId++}`;
+    state.pathGroups[groupId] = {
+        group: null,
+        id: groupId,
     };
 
-    state.pathGroups = {
-        ...state.pathGroups,
-        [groupId]: {
-            group: null,
-            id: groupId,
-        },
-    };
+    action.paths.forEach(({ origin, segments }) => {
+        const id = `id-${nextId++}`;
+        ids.push(id);
 
-    if (state.activeMirror) {
-        const transforms = getTransformsForMirror(
-            state.activeMirror,
-            state.mirrors,
-        );
+        const style: Style = {
+            fills: [{ color: 1 }],
+            lines: [{ color: 'white', width: 0 }],
+        };
 
-        const usedPaths = [pathToSegmentKeys(main.origin, main.segments)];
+        let main: Path = {
+            id,
+            created: 0,
+            group: groupId,
+            ordering: 0,
+            hidden: false,
+            origin,
+            // simplify it up y'all
+            segments: simplifyPath(ensureClockwise(segments)),
+            style,
+        };
 
-        transforms.forEach((matrices) => {
-            const origin = applyMatrices(main.origin, matrices);
-            const segments = main.segments.map((seg) =>
-                transformSegment(seg, matrices),
+        if (state.activeMirror) {
+            const transforms = getTransformsForMirror(
+                state.activeMirror,
+                state.mirrors,
             );
-            // TOOD: should I check each prev against my forward & backward,
-            // or put both forward & backward into the list?
-            // Are they equivalent?
-            const forward = pathToSegmentKeys(origin, segments);
-            const backward = pathToReversedSegmentKeys(origin, segments);
-            if (
-                usedPaths.some(
-                    (path) =>
-                        pathsAreIdentical(path, backward) ||
-                        pathsAreIdentical(path, forward),
-                )
-            ) {
-                return;
-            }
-            usedPaths.push(forward);
-            let nid = `id-${nextId++}`;
-            state.paths[nid] = {
-                id: nid,
-                group: groupId,
-                ordering: 0,
-                hidden: false,
-                created: 0,
-                origin,
-                segments,
-                style,
-            };
-            ids.push(nid);
-        });
-    }
-    state.paths[id] = main;
+
+            const usedPaths = [pathToSegmentKeys(main.origin, main.segments)];
+
+            transforms.forEach((matrices) => {
+                const origin = applyMatrices(main.origin, matrices);
+                const segments = main.segments.map((seg) =>
+                    transformSegment(seg, matrices),
+                );
+                // TOOD: should I check each prev against my forward & backward,
+                // or put both forward & backward into the list?
+                // Are they equivalent?
+                const forward = pathToSegmentKeys(origin, segments);
+                const backward = pathToReversedSegmentKeys(origin, segments);
+                if (
+                    usedPaths.some(
+                        (path) =>
+                            pathsAreIdentical(path, backward) ||
+                            pathsAreIdentical(path, forward),
+                    )
+                ) {
+                    return;
+                }
+                usedPaths.push(forward);
+                let nid = `id-${nextId++}`;
+                state.paths[nid] = {
+                    id: nid,
+                    group: groupId,
+                    ordering: 0,
+                    hidden: false,
+                    created: 0,
+                    origin,
+                    segments,
+                    style,
+                };
+                ids.push(nid);
+            });
+        }
+        state.paths[id] = main;
+    });
     return [
         {
             ...state,
             nextId,
             selection: { type: 'PathGroup', ids: [groupId] },
-            paths: {
-                ...state.paths,
-                [id]: main,
-            },
             pending: null,
         },
         {
