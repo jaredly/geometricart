@@ -1,6 +1,26 @@
 
 # NEXT uppp
 
+- [ ] ok, so let's do viewable guides.
+  - circles, right? With ... potentially a start & end angle.
+  - lines, with an overextension-amount?
+
+- [ ] hmm one thing that a compass can do, is *transfer* distances.
+  - so maybe this is a copy/paste? could be cool tbh.
+    - for now, just do circles
+
+- [ ] For animating the history, let's allow you to specify zoom and such!
+  - so like, go to a key frame, allow you to pan/zoom around until it's perfect
+  - "pre-seed" it with the committed views I guesssss of what is there
+  - but allow you to override. right?
+  - also have a button to "zoom to fit w/ xyz margin"
+
+- [x] BUG when committing pan/zoom, it reset the background color somehow?
+  - oh it resets to the view when you last reset it.
+- [ ] exporting should totally have an option to auto-center things, with a padding.
+  and it should be the default.
+- [ ] BUG exporting to SVG has things like off center? idk
+
 - [x] fix the "it deselects imeediately" thing in dragToSelect mode
 - [ ] audo guides mode
   - when creating a path, guides are visible, but they disappear after it's made

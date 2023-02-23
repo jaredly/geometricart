@@ -874,7 +874,11 @@ function zoomPanControls(
                 onClick={() => {
                     dispatch({
                         type: 'view:update',
-                        view: tmpView!,
+                        view: {
+                            ...state.view,
+                            center: tmpView.center,
+                            zoom: tmpView.zoom,
+                        },
                     });
                     setEditorState((state) => ({ ...state, tmpView: null }));
                 }}

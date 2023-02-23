@@ -27,7 +27,6 @@ export function MirrorPicker({
                             value: false,
                         },
                     ]}
-                    color="primary"
                     value={reflect}
                     onChange={(e) => setReflect(e.value)}
                 />
@@ -42,7 +41,6 @@ export function MirrorPicker({
                                     value: { type: 'gist', token: githubToken },
                                 },
                             ]}
-                            color="primary"
                             value={save}
                             onChange={(e) => setSave(e.value)}
                         />
