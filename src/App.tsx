@@ -58,14 +58,28 @@ type UIAction =
     | { type: 'screen'; screen: UIState['screen'] }
     | { type: 'hover'; hover: UIState['hover'] }
     | { type: 'styleHover'; styleHover: UIState['styleHover'] }
-    | { type: 'pendingMirror'; pendingMirror: UIState['pendingMirror'] }
+    | {
+          type: 'pendingMirror';
+          pendingMirror:
+              | UIState['pendingMirror']
+              | ((
+                    previous: UIState['pendingMirror'],
+                ) => UIState['pendingMirror']);
+      }
     | {
           type: 'pendingDuplication';
           pendingDuplication: UIState['pendingDuplication'];
       }
-    | { type: 'previewActions'; previewActions: UIState['previewActions'] };
+    | {
+          type: 'previewActions';
+          previewActions:
+              | UIState['previewActions']
+              | ((
+                    previous: UIState['previewActions'],
+                ) => UIState['previewActions']);
+      };
 
-const reduceUIState = (state: UIState, action: UIAction) => {
+const reduceUIState = (state: UIState, action: UIAction): UIState => {
     switch (action.type) {
         case 'screen':
             return { ...state, screen: action.screen };
@@ -74,16 +88,29 @@ const reduceUIState = (state: UIState, action: UIAction) => {
         case 'styleHover':
             return { ...state, styleHover: action.styleHover };
         case 'pendingMirror':
-            return { ...state, pendingMirror: action.pendingMirror };
+            return {
+                ...state,
+                pendingMirror:
+                    typeof action.pendingMirror === 'function'
+                        ? action.pendingMirror(state.pendingMirror)
+                        : action.pendingMirror,
+            };
         case 'pendingDuplication':
             return { ...state, pendingDuplication: action.pendingDuplication };
         case 'previewActions':
-            return { ...state, previewActions: action.previewActions };
+            return {
+                ...state,
+                previewActions:
+                    typeof action.previewActions === 'function'
+                        ? action.previewActions(state.previewActions)
+                        : action.previewActions,
+            };
     }
+    return state;
 };
 
 export const useUIState = (trueState: State) => {
-    const [uiState, setUiState] = React.useState<UIState>({
+    const [uiState, uiDispatch] = React.useReducer(reduceUIState, {
         screen: 'edit',
         hover: null,
         styleHover: null,
@@ -92,18 +119,9 @@ export const useUIState = (trueState: State) => {
         previewActions: [],
     });
 
-    const updateUIState = <T,>(
-        attr: keyof UIState,
-    ): React.Dispatch<React.SetStateAction<T>> => {
-        return (value: T | ((v: T) => T)) => {
-            if (typeof value === 'function') {
-                return setUiState((current) => ({
-                    ...current,
-                    [attr]: (value as (v: any) => T)(current[attr]),
-                }));
-            } else {
-                return setUiState((current) => ({ ...current, [attr]: value }));
-            }
+    const updateUIState = <T,>(attr: keyof UIState): ((value: T) => void) => {
+        return (value: T) => {
+            uiDispatch({ type: attr, [attr]: value } as any);
         };
     };
 
@@ -120,7 +138,12 @@ export const useUIState = (trueState: State) => {
         [],
     );
     const setPendingMirror = React.useCallback(
-        updateUIState<UIState['pendingMirror']>('pendingMirror'),
+        (
+            pendingMirror: Extract<
+                UIAction,
+                { type: 'pendingMirror' }
+            >['pendingMirror'],
+        ) => uiDispatch({ type: 'pendingMirror', pendingMirror }),
         [],
     );
     const setPendingDuplication = React.useCallback(
@@ -128,7 +151,12 @@ export const useUIState = (trueState: State) => {
         [],
     );
     const setPreviewActions = React.useCallback(
-        updateUIState<UIState['previewActions']>('previewActions'),
+        (
+            previewActions: Extract<
+                UIAction,
+                { type: 'previewActions' }
+            >['previewActions'],
+        ) => uiDispatch({ type: 'previewActions', previewActions }),
         [],
     );
     const state = applyActions(uiState.previewActions, trueState);
