@@ -6,6 +6,7 @@ import { transparent } from './Icons';
 import { Style, Fill, StyleLine } from '../types';
 import { colorSquare, paletteColor } from './RenderPath';
 import { Button } from 'primereact/button';
+import { Action } from '../state/Action';
 
 // I want to be able to communicate:
 // - all have same (one thing selected)
@@ -110,11 +111,13 @@ export const MultiStyleForm = ({
     onChange,
     palette,
     onHover,
+    dispatch,
 }: {
     styles: Array<Style>;
     onChange: (updated: Array<Style | null>) => void;
     palette: Array<string>;
     onHover: (hover: StyleHover | null) => void;
+    dispatch: React.Dispatch<Action>;
 }) => {
     const { fills, lines } = collectMultiStyles(styles);
     return (
@@ -297,160 +300,199 @@ export const MultiStyleForm = ({
                 Add inset fill
             </button>
             <h4 className="mb-2">Lines</h4>
-            {/* <div>Lines</div> */}
-            {lines.map((line, i) => (
-                <div
-                    key={i}
-                    className="p-3 py-2 mb-2 border-solid surface-border"
-                    css={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        flexWrap: 'wrap',
-                    }}
-                >
-                    <details>
-                        <summary style={{ cursor: 'pointer' }}>
-                            {line.color.map((color) =>
-                                colorSquare(paletteColor(palette, color)),
-                            )}
-                            inset
-                            <span
-                                style={{ width: 8, display: 'inline-block' }}
-                            />
-                            <MultiNumber
-                                value={line.inset}
-                                onChange={(inset) => {
-                                    onChange(
-                                        updateLine(
-                                            styles,
-                                            i,
-                                            inset ?? undefined,
-                                            'inset',
-                                        ),
-                                    );
-                                }}
-                            />
-                            <span
-                                style={{ width: 8, display: 'inline-block' }}
-                            />
-                            width
-                            <span
-                                style={{ width: 8, display: 'inline-block' }}
-                            />
-                            <MultiNumber
-                                value={line.width}
-                                onChange={(width) => {
-                                    onChange(
-                                        updateLine(
-                                            styles,
-                                            i,
-                                            width ?? undefined,
-                                            'width',
-                                        ),
-                                    );
-                                }}
-                            />
-                            <span
-                                style={{ width: 16, display: 'inline-block' }}
-                            />
-                            <Button
-                                onClick={() => {
-                                    onChange(removeLine(styles, i));
-                                }}
-                                icon="pi pi-trash"
-                                className=" p-button-sm p-button-text p-button-danger"
-                                style={{ marginTop: -5, marginBottom: -6 }}
-                            />
-                        </summary>
-                        <MultiColor
-                            color={line.color}
-                            onChange={(color) => {
-                                onChange(updateLine(styles, i, color, 'color'));
-                                // ok
-                            }}
-                            onHover={(color) =>
-                                color != null
-                                    ? onHover({
-                                          type: 'line-color',
-                                          idx: i,
-                                          color,
-                                      })
-                                    : onHover(null)
-                            }
-                            palette={palette}
-                            key={i}
-                        />
-                        <div style={{ flexBasis: 16 }} />
-                        <div key={`lighten-${i}`}>
-                            <LightDark
-                                lighten={line.lighten}
-                                palette={palette}
-                                color={line.color}
-                                onHover={(lighten) =>
-                                    onHover(
-                                        lighten != null
-                                            ? {
-                                                  type: 'line-lightness',
-                                                  lighten,
-                                                  idx: i,
-                                              }
-                                            : null,
-                                    )
-                                }
-                                onChange={(lighten) => {
-                                    onChange(
-                                        updateLine(
-                                            styles,
-                                            i,
-                                            lighten ?? undefined,
-                                            'lighten',
-                                        ),
-                                    );
-                                }}
-                            />
-                        </div>
-                        <div style={{ flexBasis: 16 }} />
-                        <div key={`stroke-${i}`}></div>
-                        <div style={{ flexBasis: 16 }} />
-                        <div key={`inset-${i}`}></div>
-                        <div style={{ display: 'flex', alignItems: 'center' }}>
-                            <div key={`variation-${i}`}>
-                                variation:
+            {lines.map((line, i) => {
+                const single = getSingularLine(line);
+                return (
+                    <div
+                        key={i}
+                        className="py-2 mb-2 surface-border"
+                        css={{
+                            borderTop: '1px solid',
+                            borderBottom: '1px solid',
+                            display: 'flex',
+                            alignItems: 'center',
+                            flexWrap: 'wrap',
+                        }}
+                    >
+                        <details>
+                            <summary style={{ cursor: 'pointer' }}>
+                                {line.color.map((color) =>
+                                    colorSquare(paletteColor(palette, color)),
+                                )}
+                                inset
+                                <span
+                                    style={{
+                                        width: 8,
+                                        display: 'inline-block',
+                                    }}
+                                />
                                 <MultiNumber
-                                    value={line.colorVariation}
-                                    onChange={(colorVariation) => {
+                                    value={line.inset}
+                                    onChange={(inset) => {
                                         onChange(
                                             updateLine(
                                                 styles,
                                                 i,
-                                                colorVariation ?? undefined,
-                                                'colorVariation',
+                                                inset ?? undefined,
+                                                'inset',
+                                            ),
+                                        );
+                                    }}
+                                />
+                                <span
+                                    style={{
+                                        width: 8,
+                                        display: 'inline-block',
+                                    }}
+                                />
+                                width
+                                <span
+                                    style={{
+                                        width: 8,
+                                        display: 'inline-block',
+                                    }}
+                                />
+                                <MultiNumber
+                                    value={line.width}
+                                    onChange={(width) => {
+                                        onChange(
+                                            updateLine(
+                                                styles,
+                                                i,
+                                                width ?? undefined,
+                                                'width',
+                                            ),
+                                        );
+                                    }}
+                                />
+                                <span
+                                    style={{
+                                        width: 16,
+                                        display: 'inline-block',
+                                    }}
+                                />
+                                <Button
+                                    onClick={() => {
+                                        onChange(removeLine(styles, i));
+                                    }}
+                                    icon="pi pi-trash"
+                                    className=" p-button-sm p-button-text p-button-danger"
+                                    style={{ marginTop: -5, marginBottom: -6 }}
+                                />
+                                {single ? (
+                                    <Button
+                                        onClick={() => {
+                                            dispatch({
+                                                type: 'select:same',
+                                                line: single,
+                                            });
+                                        }}
+                                        icon="pi pi-pencil"
+                                        className=" p-button-sm p-button-text"
+                                        style={{
+                                            marginTop: -5,
+                                            marginBottom: -6,
+                                        }}
+                                    />
+                                ) : null}
+                            </summary>
+                            <MultiColor
+                                color={line.color}
+                                onChange={(color) => {
+                                    onChange(
+                                        updateLine(styles, i, color, 'color'),
+                                    );
+                                    // ok
+                                }}
+                                onHover={(color) =>
+                                    color != null
+                                        ? onHover({
+                                              type: 'line-color',
+                                              idx: i,
+                                              color,
+                                          })
+                                        : onHover(null)
+                                }
+                                palette={palette}
+                                key={i}
+                            />
+                            <div style={{ flexBasis: 16 }} />
+                            <div key={`lighten-${i}`}>
+                                <LightDark
+                                    lighten={line.lighten}
+                                    palette={palette}
+                                    color={line.color}
+                                    onHover={(lighten) =>
+                                        onHover(
+                                            lighten != null
+                                                ? {
+                                                      type: 'line-lightness',
+                                                      lighten,
+                                                      idx: i,
+                                                  }
+                                                : null,
+                                        )
+                                    }
+                                    onChange={(lighten) => {
+                                        onChange(
+                                            updateLine(
+                                                styles,
+                                                i,
+                                                lighten ?? undefined,
+                                                'lighten',
                                             ),
                                         );
                                     }}
                                 />
                             </div>
                             <div style={{ flexBasis: 16 }} />
-                            <div key={`opacity-${i}`}>
-                                opacity:
-                                <MultiNumber
-                                    value={line.opacity}
-                                    onChange={(opacity) => {
-                                        onChange(
-                                            updateLine(
-                                                styles,
-                                                i,
-                                                opacity ?? undefined,
-                                                'opacity',
-                                            ),
-                                        );
-                                    }}
-                                />
+                            <div key={`stroke-${i}`}></div>
+                            <div style={{ flexBasis: 16 }} />
+                            <div key={`inset-${i}`}></div>
+                            <div
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                }}
+                            >
+                                <div key={`variation-${i}`}>
+                                    variation:
+                                    <MultiNumber
+                                        value={line.colorVariation}
+                                        onChange={(colorVariation) => {
+                                            onChange(
+                                                updateLine(
+                                                    styles,
+                                                    i,
+                                                    colorVariation ?? undefined,
+                                                    'colorVariation',
+                                                ),
+                                            );
+                                        }}
+                                    />
+                                </div>
+                                <div style={{ flexBasis: 16 }} />
+                                <div key={`opacity-${i}`}>
+                                    opacity:
+                                    <MultiNumber
+                                        value={line.opacity}
+                                        onChange={(opacity) => {
+                                            onChange(
+                                                updateLine(
+                                                    styles,
+                                                    i,
+                                                    opacity ?? undefined,
+                                                    'opacity',
+                                                ),
+                                            );
+                                        }}
+                                    />
+                                </div>
                             </div>
-                        </div>
-                    </details>
-                </div>
-            ))}
+                        </details>
+                    </div>
+                );
+            })}
             <button
                 onClick={() => {
                     const maxNum = styles.reduce(
@@ -578,6 +620,41 @@ export type MultiLine = {
     joinStyle: Array<null | string>;
     colorVariation: Array<number | null>;
     lighten: Array<number | null>;
+};
+
+export const styleMatches = (one: StyleLine, two: StyleLine): boolean => {
+    return (
+        (one.inset ?? 0) === (two.inset ?? 0) &&
+        one.color === two.color &&
+        one.width === two.width &&
+        one.dash === two.dash &&
+        one.opacity === two.opacity &&
+        one.joinStyle === two.joinStyle &&
+        one.colorVariation === two.colorVariation &&
+        one.lighten === two.lighten
+    );
+};
+
+export const getSingularLine = (line: MultiLine): StyleLine | null => {
+    const style: StyleLine = {};
+    if (line.inset.length > 1) return null;
+    if (line.inset.length) style.inset = line.inset[0] ?? undefined;
+    if (line.color.length > 1) return null;
+    if (line.color.length) style.color = line.color[0] ?? undefined;
+    if (line.width.length > 1) return null;
+    if (line.width.length) style.width = line.width[0] ?? undefined;
+    if (line.dash.length > 1) return null;
+    if (line.dash.length) style.dash = line.dash[0] ?? undefined;
+    if (line.opacity.length > 1) return null;
+    if (line.opacity.length) style.opacity = line.opacity[0] ?? undefined;
+    if (line.joinStyle.length > 1) return null;
+    if (line.joinStyle.length) style.joinStyle = line.joinStyle[0] ?? undefined;
+    if (line.colorVariation.length > 1) return null;
+    if (line.colorVariation.length)
+        style.colorVariation = line.colorVariation[0] ?? undefined;
+    if (line.lighten.length > 1) return null;
+    if (line.lighten.length) style.lighten = line.lighten[0] ?? undefined;
+    return style;
 };
 
 export type MultiFill = {

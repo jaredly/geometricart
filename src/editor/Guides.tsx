@@ -3,7 +3,7 @@
 import { jsx } from '@emotion/react';
 import React from 'react';
 import { useCurrent } from '../App';
-import { PendingMirror } from '../useUIState';
+import { PendingMirror, UIState } from '../useUIState';
 import { Action, PathMultiply } from '../state/Action';
 import { EditorState, screenToWorld } from './Canvas';
 import { DrawPath, DrawPathState, initialState } from './DrawPath';
@@ -168,8 +168,10 @@ export const Guides = ({
     disableGuides,
     bounds,
     editorState,
+    uiState,
     setEditorState,
 }: {
+    uiState: UIState;
     bounds: Bounds;
     state: State;
     isTouchScreen: boolean;
@@ -465,7 +467,10 @@ export const Guides = ({
                     disableGuides || pendingPath[0] ? undefined : clickActive
                 }
             />
-            {(editorState.pendingPath === false || state.pending != null) &&
+            {(editorState.pendingPath === false ||
+                state.pending != null ||
+                uiState.pendingMirror ||
+                uiState.pendingDuplication) &&
             !zooming ? (
                 <RenderIntersections
                     zoom={view.zoom}

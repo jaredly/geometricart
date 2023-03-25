@@ -306,6 +306,7 @@ export const NewSidebar = ({
                             <div className="p-3">
                                 {styleIds.length ? (
                                     <MultiStyleForm
+                                        dispatch={dispatch}
                                         palette={state.palette}
                                         styles={styleIds.map(
                                             (k) => state.paths[k].style,

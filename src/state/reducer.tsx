@@ -42,6 +42,7 @@ import { simplifyPath } from '../rendering/simplifyPath';
 import { ensureClockwise } from '../rendering/pathToPoints';
 import { clipPath } from '../rendering/clipPath';
 import { pathToPrimitives } from '../editor/findSelection';
+import { styleMatches } from '../editor/MultiStyleForm';
 
 export const reducer = (state: State, action: Action): State => {
     if (action.type === 'undo') {
@@ -98,6 +99,23 @@ export const reducer = (state: State, action: Action): State => {
             palettes: { ...state.palettes, [action.name]: action.colors },
         };
     }
+    if (action.type === 'select:same') {
+        const ids = Object.keys(state.paths).filter((id) => {
+            const path = state.paths[id];
+            if (action.line) {
+                if (
+                    path.style.lines.find(
+                        (line) => line && styleMatches(line, action.line!),
+                    ) != null
+                ) {
+                    return true;
+                }
+            }
+        });
+        return ids.length
+            ? { ...state, selection: { type: 'Path', ids } }
+            : state;
+    }
     // if (action.type === 'library:palette:select') {
     //     return { ...state, activePalette: action.name };
     // }
@@ -120,7 +138,7 @@ export const reduceWithoutUndo = (
     state: State,
     action: UndoableAction,
 ): [State, UndoAction | null] => {
-    console.log('🤔 an action', action);
+    // console.log('🤔 an action', action);
     switch (action.type) {
         case 'mirror:change':
             return [

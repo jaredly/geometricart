@@ -263,6 +263,14 @@ export const Export = ({
                                 : originalSize;
                         ReactDOM.render(
                             <Canvas
+                                uiState={{
+                                    hover: null,
+                                    pendingDuplication: null,
+                                    pendingMirror: null,
+                                    previewActions: [],
+                                    screen: 'edit',
+                                    styleHover: null,
+                                }}
                                 styleHover={null}
                                 // Clear out background in laser cut mode
                                 pendingDuplication={null}

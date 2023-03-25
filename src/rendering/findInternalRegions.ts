@@ -454,6 +454,9 @@ export const cleanUpInsetSegments2 = (
     segments: Array<Segment>,
     originalCorners: Array<Coord>,
 ) => {
+    if (segments.length === 1) {
+        return [segments];
+    }
     try {
         return cleanUpInsetSegments3(segments, originalCorners);
     } catch (err) {

@@ -18,6 +18,8 @@ import {
     Animations,
     TimelineLane,
     TimelineSlot,
+    StyleLine,
+    Fill,
 } from '../types';
 
 /*
@@ -37,6 +39,7 @@ export type Action =
     | { type: 'redo' }
     | { type: 'reset'; state: State }
     | { type: 'selection:set'; selection: Selection | null }
+    | { type: 'select:same'; line?: StyleLine; fill?: Fill }
     | { type: 'tab:set'; tab: Tab }
     | { type: 'attachment:add'; id: string; attachment: Attachment }
     | { type: 'library:palette:rename'; old: string; new: string }

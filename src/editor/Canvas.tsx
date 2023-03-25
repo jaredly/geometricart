@@ -3,7 +3,7 @@
 import { jsx } from '@emotion/react';
 import React, { useEffect, useState } from 'react';
 import { Action, PathCreateMany } from '../state/Action';
-import { PendingMirror } from '../useUIState';
+import { PendingMirror, UIState } from '../useUIState';
 import { calcAllIntersections } from '../rendering/calcAllIntersections';
 import {
     calculateGuideElements,
@@ -95,6 +95,7 @@ export type Props = {
     setHover: (hover: Hover | null) => void;
     ppi?: number;
     styleHover: StyleHover | null;
+    uiState: UIState;
 };
 
 export const worldToScreen = (
@@ -336,6 +337,7 @@ export const Canvas = ({
     isTouchScreen,
     ppi,
     styleHover,
+    uiState,
 }: Props) => {
     const mirrorTransforms = React.useMemo(
         () => getMirrorTransforms(state.mirrors),
@@ -478,6 +480,7 @@ export const Canvas = ({
     }, [guidePrimitives, state.paths, state.pathGroups]);
 
     const svgContents = SVGCanvas({
+        uiState,
         state,
         view,
         width,

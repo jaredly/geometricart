@@ -494,6 +494,19 @@ export const insetSegment = (
         }
     }
     if (seg.type === 'Arc') {
+        console.log('insetting an arc', seg === next);
+        if (next === seg) {
+            const pushed = push(
+                seg.center,
+                angleTo(seg.center, seg.to),
+                dist(seg.center, seg.to) - amount,
+            );
+            console.log('ok', seg.to, pushed);
+            return {
+                ...seg,
+                to: pushed,
+            };
+        }
         if (next.type === 'Line') {
             return insetArcLine(prev, seg, next, amount, onlyExtend);
         } else {

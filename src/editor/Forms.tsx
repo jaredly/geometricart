@@ -320,7 +320,7 @@ export const PathGroupForm = ({
             />
             <div>
                 Clip Mode:
-                {['none', 'remove', 'normal'].map((name) => (
+                {['none', 'remove', 'normal', 'fills'].map((name) => (
                     <button
                         key={name}
                         style={
@@ -425,7 +425,7 @@ export const PathForm = ({
             />
             <div>
                 Clip Mode:
-                {['none', 'remove', 'normal'].map((name) => (
+                {['none', 'remove', 'normal', 'fills'].map((name) => (
                     <button
                         key={name}
                         style={

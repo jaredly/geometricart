@@ -4,7 +4,7 @@ import React from 'react';
 import { RoughGenerator } from 'roughjs/bin/generator';
 import { Action } from '../state/Action';
 import { useCurrent } from '../App';
-import { PendingMirror } from '../useUIState';
+import { PendingMirror, UIState } from '../useUIState';
 import { findSelection, pathToPrimitives } from './findSelection';
 import { Matrix, scale } from '../rendering/getMirrorTransforms';
 import { calculateBounds, Guides, PendingDuplication } from './Guides';
@@ -43,8 +43,10 @@ export function SVGCanvas({
     pendingMirror,
     mirrorTransforms,
     setPendingMirror,
+    uiState,
 }: {
     state: State;
+    uiState: UIState;
     dispatch: (action: Action) => unknown;
     view: State['view'];
     width: number;
@@ -344,6 +346,7 @@ export function SVGCanvas({
 
                 {view.guides || hover?.type === 'guides' ? (
                     <Guides
+                        uiState={uiState}
                         state={state}
                         bounds={bounds}
                         isTouchScreen={isTouchScreen}

@@ -138,6 +138,7 @@ export const App = ({
                         state={state}
                         dispatch={dispatch}
                         canvasProps={{
+                            uiState,
                             // TODO replace with uiState & uiDispatch
                             hover,
                             pendingDuplication,
@@ -171,6 +172,7 @@ export const App = ({
                         width={width}
                         height={height}
                         styleHover={styleHover}
+                        uiState={uiState}
                     />
                 )}
             </div>

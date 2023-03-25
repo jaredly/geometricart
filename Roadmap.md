@@ -3,7 +3,14 @@
 
 - [ ] I want overshoot <-> as a line setting
 - [ ] make a thing to "select all shapes with this"
-- [ ] select after createing, my goodness
+  - [x] stroke
+  - [ ] fill
+  - [ ] no fill
+  - [ ] no stroke
+- [x] select after createing a guide, my goodness
+  - [ ] dedup shapes created from guides oof
+- [ ] huh maybe clipMode be different for fill vs stroke? 🤔
+  - hmm yeah, it should be on the individual line or file style dealio.
 
 - [ ] ok, so let's do viewable guides.
   - circles, right? With ... potentially a start & end angle.

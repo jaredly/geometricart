@@ -255,6 +255,9 @@ export const pathToInsetPaths = (
                 inset / 100,
             );
             const regions = cleanUpInsetSegments2(segments, corners);
+            if (path.segments.length === 1) {
+                console.log('regions', path.segments, regions);
+            }
 
             return regions.map((segments) => ({
                 ...path,
