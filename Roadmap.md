@@ -1,4 +1,6 @@
 
+- [x] right-click, "center on this shape"
+
 # NEXT uppp
 
 - [ ] I want overshoot <-> as a line setting
@@ -52,7 +54,7 @@
 	- ok yeah, so activePalette becomes a string[], not a string name.
 	- Ok, so the "library" can have named palettes, and you can like update the named palette
   	with the current palette. That's fine.
-	- [x] palette:update <=> string[] 
+	- [x] palette:update <=> string[]
 	- [ ] And maybe a palette:single idx, color
 
 - [x] ALL the previews,
@@ -106,7 +108,7 @@ Should the Metadata have a list of the checkpoint images? Yeah seems reasonable.
 Sidebar has a list of snapshots.
 
 OH FIXXX THE PALETTE STUFF
-anddddd the solution is ... 
+anddddd the solution is ...
 
 ## Things to remove from HISTORY and deprecate from state
 
@@ -132,14 +134,14 @@ Ok so I feel like my use of 'nextId' isn't ... super rigorous? maybe? hm but may
 	- [ ] andddd maybe palette? hmm idk maybe that's too much.
 - [x] thumbnails!! Should probably aggresively debounce the thumbnail updating though.
 - [ ] ohhh wait palettes ... need to be coverend by undo/redo.. but this will be a major change.
-  - [ ] 
+  - [ ]
 
 # DATAS
 
 - [-] path.mirror, remove 'string'
 	Hmmmmm I'd have to mess with ... the history too?
 	Don't want to play too fast and loose with that just yet.
-- [ ] 
+- [ ]
 
 ## URGENT
 
@@ -257,7 +259,7 @@ https://trang.io/watercolor/
 
 
 
-### 
+###
 
 
 So, I think I want another guide type, and it's
@@ -314,7 +316,7 @@ Next nice things:
 	like 0.5 seconds or something?
 - show axis for flipping stuff about.
 - when doing a thing for recording, don't use tmp zoom.
-- 
+-
 
 - [x] show something for duplicating things across lines
 	'path:multiply'
@@ -402,7 +404,7 @@ Hm.
 So there are a couple of things I want.
 
 1) tabs. Autoplacement? I mean sounds fine I guess. As long as they're on a straightaway. Yeah.
-	
+
 2) automatic laser cut inverse dealio. So using PathKit, do a .stroke() and a .union()
 	so I can laser cut something that will fit as an inset.
 
@@ -608,7 +610,7 @@ then we have `the-slug.input.json` and `the-slug.expected.json`.
 
 
 - [x] track down the source of BAD PREV. Why are we ending up at not the right place?
-- [x] soooo clooooose I think??? 
+- [x] soooo clooooose I think???
 	Yeah not handling single-circles well.
 - [x] non-intersecting (easy to detect, and then do an is-inside check for any of the points of the shape)
 - [x] arcs with the same tangent as a line (see test case)
@@ -1193,7 +1195,7 @@ Better path creation
 
 
 - [x] so, I guess I've got image fills now! Which is very cool
-- [x] also, made my own canvas renderer, because svg->canvas was buggy 🤷‍♂️. 
+- [x] also, made my own canvas renderer, because svg->canvas was buggy 🤷‍♂️.
 
 - [x] get colors from an overlay!! maybe I should do an average? At any rate, I reeally want to be rendering more fancily...
 
@@ -1213,7 +1215,7 @@ Better path creation
 
 - [ ] FIX MULTIFILL/merge - first, allow me to "remove the custom", but also allow me to just nix the custom color, or inset, or whatever.
 
-## [ ] CLIP PLease, would be very nice. How to define? 
+## [ ] CLIP PLease, would be very nice. How to define?
 	- I could just use normal DrawPath ... would that make clipping very complex? I would definitely want to do path simpliciation yes very much.
 
 - [x] SOOO waht about having the default "extent" for lines be something like 2x or 3x? And then have a toggle for "go forever"?

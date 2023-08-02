@@ -452,11 +452,12 @@ export async function addMetadata(
 ) {
     const buffer = await blob!.arrayBuffer();
     const uint8Array = new Uint8Array(buffer);
+    const raw = JSON.stringify(state).replaceAll(/[^\u0000-\u007f]/g, '*');
     const meta: any = {
         tEXt: {
             Source: 'Geometric Art',
             // TODO: Add an option to scrub history, for smaller file size
-            GeometricArt: JSON.stringify(state),
+            GeometricArt: raw,
         },
     };
     if (gcode) {
@@ -464,7 +465,11 @@ export async function addMetadata(
     }
 
     const chunks = extractChunks(uint8Array);
-    insertMetadata(chunks, meta);
+    try {
+        insertMetadata(chunks, meta);
+    } catch (err) {
+        alert("Unable to add metadata: " + (err as Error).message)
+    }
     const newBuffer = new Uint8Array(encodeChunks(chunks));
 
     const newBlob = new Blob([newBuffer], {

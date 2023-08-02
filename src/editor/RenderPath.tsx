@@ -14,6 +14,7 @@ import { MenuItem } from './Canvas';
 import { Action } from '../state/Action';
 import { normalizedPath } from '../rendering/sortedVisibleInsetPaths';
 import { pathToSegmentKeys } from '../rendering/pathsAreIdentical';
+import { segmentsCenter } from './Bounds';
 
 export const UnderlinePath = ({
     path,
@@ -452,6 +453,16 @@ export const itemsForPath = (
     });
 
     const items: MenuItem[] = [];
+    items.push({
+        label: 'Center on this shape',
+        command({originalEvent}) {
+            const center = segmentsCenter(path.segments);
+            dispatch({
+                type: 'view:update',
+                view: { ...state.view, center: {x: -center.x, y: -center.y}, }
+            });
+        },
+    })
     items.push({
         label: 'Select',
         items: select,
