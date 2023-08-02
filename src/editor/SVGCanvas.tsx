@@ -7,7 +7,7 @@ import { useCurrent } from '../App';
 import { PendingMirror, UIState } from '../useUIState';
 import { findSelection, pathToPrimitives } from './findSelection';
 import { Matrix, scale } from '../rendering/getMirrorTransforms';
-import { calculateBounds, Guides, PendingDuplication } from './Guides';
+import { calculateBounds, Guides, handleDuplicationIntersection, PendingDuplication } from './Guides';
 import { handleSelection } from './handleSelection';
 import { Primitive } from '../rendering/intersect';
 import { applyStyleHover, StyleHover } from './MultiStyleForm';
@@ -21,6 +21,7 @@ import { useDragSelect, useMouseDrag } from './useMouseDrag';
 import { useScrollWheel } from './useScrollWheel';
 import { EditorState, MenuItem } from './Canvas';
 import { coordsEqual } from '../rendering/pathsAreIdentical';
+import { RenderIntersections } from './RenderIntersections';
 
 export function SVGCanvas({
     state,
@@ -372,7 +373,19 @@ export function SVGCanvas({
                         setPendingMirror={setPendingMirror}
                         hover={hover}
                     />
-                ) : null}
+                ) : uiState.pendingDuplication
+                ?
+                <RenderIntersections
+                    zoom={view.zoom}
+                    highlight={state.pending != null}
+                    intersections={allIntersections}
+                    onClick={(coord, shiftKey) => {
+                        if (uiState.pendingDuplication) {
+                            handleDuplicationIntersection(coord, currentState.current, uiState.pendingDuplication, setPendingDuplication, dispatch)
+                        }
+                    }}
+                />
+            : null}
                 {state.selection && !styleHover
                     ? state.selection.ids.map((id) =>
                           showHover(

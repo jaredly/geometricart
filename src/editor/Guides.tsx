@@ -288,47 +288,7 @@ export const Guides = ({
         (coord: Intersect, shiftKey: boolean) => {
             console.log(`click intersection`, currentDuplication, coord);
             if (currentDuplication.current) {
-                if (
-                    !['Path', 'PathGroup'].includes(
-                        currentState.current.selection?.type ?? '',
-                    )
-                ) {
-                    console.log(
-                        'um selection idk what',
-                        currentState.current.selection,
-                    );
-                    return;
-                }
-                if (
-                    currentDuplication.current.reflect &&
-                    !currentDuplication.current.p0
-                ) {
-                    console.log('got a p0', coord.coord);
-                    setPendingDuplication({
-                        reflect: true,
-                        p0: coord.coord,
-                    });
-                    return;
-                }
-                setPendingDuplication(null);
-                dispatch({
-                    type: 'path:multiply',
-                    selection: currentState.current
-                        .selection as PathMultiply['selection'],
-                    mirror: {
-                        id: 'tmp',
-                        origin: coord.coord,
-                        parent: null,
-                        point: currentDuplication.current.p0 ?? {
-                            x: 100,
-                            y: 0,
-                        },
-                        reflect: currentDuplication.current.reflect,
-                        rotational: currentDuplication.current.reflect
-                            ? []
-                            : [true],
-                    },
-                });
+                handleDuplicationIntersection(coord, currentState.current, currentDuplication.current, setPendingDuplication, dispatch)
                 return;
             }
             if (currentPendingMirror.current) {
@@ -778,4 +738,51 @@ export function calculateBounds(width: number, height: number, view: View) {
     );
 
     return { x0, y0, x1, y1 };
+}
+
+export const handleDuplicationIntersection = (coord: Intersect, state: State, duplication: PendingDuplication,
+    setPendingDuplication: (pd: PendingDuplication | null) => void,
+    dispatch: React.Dispatch<Action>
+    ) => {
+    if (
+        !['Path', 'PathGroup'].includes(
+            state.selection?.type ?? '',
+        )
+    ) {
+        console.log(
+            'um selection idk what',
+            state.selection,
+        );
+        return;
+    }
+    if (
+        duplication.reflect &&
+        !duplication.p0
+    ) {
+        console.log('got a p0', coord.coord);
+        setPendingDuplication({
+            reflect: true,
+            p0: coord.coord,
+        });
+        return;
+    }
+    setPendingDuplication(null);
+    dispatch({
+        type: 'path:multiply',
+        selection: state
+            .selection as PathMultiply['selection'],
+        mirror: {
+            id: 'tmp',
+            origin: coord.coord,
+            parent: null,
+            point: duplication.p0 ?? {
+                x: 100,
+                y: 0,
+            },
+            reflect: duplication.reflect,
+            rotational: duplication.reflect
+                ? []
+                : [true],
+        },
+    });
 }
