@@ -1,5 +1,7 @@
 
-- [ ] a range slider to select from the center by radius
+- [x] Select Adjacents
+- [ ] adjacent doesn't work for lines that are ... multiple ones long
+- [x] a range slider to select from the center by radius
 - [ ] path select
 - [x] right-click, "center on this shape"
 - [ ] right-click "set origin to the center" pls idk might be too much
