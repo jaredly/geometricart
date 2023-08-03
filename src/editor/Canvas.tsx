@@ -15,7 +15,6 @@ import { findSelection } from './findSelection';
 import {
     getMirrorTransforms,
     getTransformsForNewMirror,
-    push,
 } from '../rendering/getMirrorTransforms';
 import {
     PendingDuplication,
@@ -52,6 +51,7 @@ import {
     selectedPathIds,
     mirrorControls,
     selectionSection,
+    RadiusSelector,
 } from './touchscreenControls';
 import {
     Animations,
@@ -64,15 +64,13 @@ import {
     LerpPoint,
     View,
     TextureConfig,
-    GuideGeom,
     Mirror,
 } from '../types';
 import { functionWithBuiltins } from '../animation/getAnimatedPaths';
 import { Menu } from 'primereact/menu';
 import { SVGCanvas } from './SVGCanvas';
-import { Button } from 'primereact/button';
-import { toTypeRev } from '../handleKeyboard';
 import { useCurrent } from '../App';
+import { ToolIcons } from './ToolIcons';
 
 export type Props = {
     state: State;
@@ -243,9 +241,9 @@ export const evaluateTimeline = (timeline: FloatLerp, position: number) => {
 
 export type AnimatedFunctions = {
     [key: string]:
-        | ((n: number) => number)
-        | ((n: Coord) => Coord)
-        | ((n: number) => Coord);
+    | ((n: number) => number)
+    | ((n: Coord) => Coord)
+    | ((n: number) => Coord);
 };
 
 export const getAnimatedFunctions = (
@@ -295,6 +293,8 @@ export const evaluateAnimatedValues = (
     return { ...animatedFunctions, t: position };
 };
 
+export type SelectMode = boolean | 'radius' | 'path';
+
 export type EditorState = {
     tmpView: null | View;
     items: Array<MenuItem>;
@@ -305,7 +305,7 @@ export type EditorState = {
     dragPos: null | { view: View; coord: Coord };
 
     dragSelectPos: null | Coord;
-    isDragSelecting: boolean;
+    selectMode: SelectMode;
     multiSelect: boolean;
     pendingPath: null | false | DrawPathState;
 };
@@ -317,7 +317,7 @@ const initialEditorState: EditorState = {
     zooming: false,
     dragPos: null,
     dragSelectPos: null,
-    isDragSelecting: true,
+    selectMode: true,
     multiSelect: false,
     pendingPath: null,
 };
@@ -361,30 +361,30 @@ export const Canvas = ({
                         typeof guide.mirror === 'string'
                             ? mirrorTransforms[guide.mirror as string]
                             : guide.mirror
-                            ? getTransformsForNewMirror(guide.mirror as Mirror)
-                            : null,
+                                ? getTransformsForNewMirror(guide.mirror as Mirror)
+                                : null,
                     );
                     return geoms
                         .map(({ geom }): PathCreateMany['paths'][0] | null =>
                             geom.type === 'Circle'
                                 ? {
-                                      origin: geom.radius,
-                                      segments: [
-                                          {
-                                              type: 'Arc',
-                                              center: geom.center,
-                                              to: geom.radius,
-                                              clockwise: true,
-                                          },
-                                      ],
-                                  }
+                                    origin: geom.radius,
+                                    segments: [
+                                        {
+                                            type: 'Arc',
+                                            center: geom.center,
+                                            to: geom.radius,
+                                            clockwise: true,
+                                        },
+                                    ],
+                                }
                                 : geom.type === 'Line'
-                                ? {
-                                      origin: geom.p1,
-                                      segments: [{ type: 'Line', to: geom.p2 }],
-                                      open: true,
-                                  }
-                                : null,
+                                    ? {
+                                        origin: geom.p1,
+                                        segments: [{ type: 'Line', to: geom.p2 }],
+                                        open: true,
+                                    }
+                                    : null,
                         )
                         .filter(Boolean) as PathCreateMany['paths'];
                 })
@@ -547,11 +547,11 @@ export const Canvas = ({
             ) : null}
             {editorState.tmpView
                 ? zoomPanControls(
-                      setEditorState,
-                      state,
-                      editorState.tmpView,
-                      dispatch,
-                  )
+                    setEditorState,
+                    state,
+                    editorState.tmpView,
+                    dispatch,
+                )
                 : null}
             <ToolIcons
                 state={state}
@@ -565,7 +565,7 @@ export const Canvas = ({
                     position: 'absolute',
                     bottom: 0,
                     left: 0,
-                    // right: 0,
+                    right: editorState.pendingPath ? 0 : undefined,
                     overflow: 'auto',
                 }}
                 onClick={(evt) => evt.stopPropagation()}
@@ -580,26 +580,26 @@ export const Canvas = ({
                 ) : state.selection ? (
                     selectionSection(
                         dispatch,
-                        editorState.isDragSelecting,
+                        editorState.selectMode,
                         setEditorState,
                         state,
                         editorState.multiSelect,
                         setPendingDuplication,
                     )
-                ) : (
-                    <GuideSection
-                        state={state}
-                        dispatch={dispatch}
-                        setDragSelect={(fn) =>
-                            setEditorState((state) => ({
-                                ...state,
-                                isDragSelecting: fn(state.isDragSelecting),
-                            }))
-                        }
-                        dragSelect={editorState.isDragSelecting}
-                        setHover={setHover}
-                    />
-                )}
+                ) :
+                    state.pending
+                        ?
+                        <button
+                            css={{
+                                fontSize: 30,
+                            }}
+                            onClick={() => dispatch({ type: 'pending:type', kind: null })}
+                        >
+                            Cancel guide
+                        </button>
+                        : (
+                            null
+                        )}
                 {editorState.pendingPath ? (
                     <PendingPathControls
                         editorState={editorState}
@@ -626,6 +626,10 @@ export const Canvas = ({
                         }}
                     />
                 ) : null}
+                <div>
+                    {editorState.selectMode === 'radius'
+                        ? <RadiusSelector state={state} dispatch={dispatch} /> : null}
+                </div>
             </div>
             <Menu model={editorState.items as any} popup ref={menu} />
         </div>
@@ -692,267 +696,6 @@ export const dragView = (
     return res;
 };
 
-function ToolIcons({
-    state,
-    editorState,
-    dispatch,
-    setEditorState,
-    startPath,
-}: {
-    state: State;
-    editorState: EditorState;
-    dispatch: (action: Action) => unknown;
-    setEditorState: React.Dispatch<React.SetStateAction<EditorState>>;
-    startPath: () => void;
-}) {
-    return (
-        <div
-            css={{
-                position: 'absolute',
-                left: 0,
-                top: 0,
-            }}
-            className="p-2 flex flex-column"
-        >
-            <Button
-                className={
-                    'pi p-button-icon-only ' +
-                    (state.pending == null && editorState.isDragSelecting
-                        ? 'p-button-outlined'
-                        : '')
-                }
-                tooltip="Select"
-                onClick={() => {
-                    if (state.pending != null) {
-                        dispatch({ type: 'pending:type', kind: null });
-                        setEditorState((es) => ({
-                            ...es,
-                            isDragSelecting: true,
-                        }));
-                    } else {
-                        setEditorState((es) => ({
-                            ...es,
-                            isDragSelecting: !es.isDragSelecting,
-                        }));
-                    }
-                }}
-            >
-                <ToolIcon
-                    lines={[
-                        [
-                            { x: 2, y: 0 },
-                            push({ x: 2, y: 0 }, Math.PI / 4, 10),
-                            push({ x: 2, y: 0 }, Math.PI / 2, 10),
-                            { x: 2, y: 0 },
-                        ],
-                    ]}
-                />
-            </Button>
-            <Button
-                tooltip="Pan (or shift+scroll)"
-                icon="pi pi-arrows-alt"
-                className={
-                    'mt-2 ' +
-                    (state.pending == null && !editorState.isDragSelecting
-                        ? 'p-button-outlined'
-                        : '')
-                }
-                onClick={() => {
-                    if (state.pending != null) {
-                        dispatch({ type: 'pending:type', kind: null });
-                        setEditorState((es) => ({
-                            ...es,
-                            isDragSelecting: false,
-                        }));
-                    } else {
-                        setEditorState((es) => ({
-                            ...es,
-                            isDragSelecting: !es.isDragSelecting,
-                        }));
-                    }
-                }}
-            />
-            <Button
-                tooltip={'New shape (n)'}
-                className={
-                    'mt-2 p-button-icon-only ' +
-                    (editorState.pendingPath !== null
-                        ? 'p-button-outlined'
-                        : '')
-                }
-                onClick={(evt) => {
-                    evt.preventDefault();
-                    evt.stopPropagation();
-                    startPath();
-                }}
-                children={
-                    <ToolIcon
-                        points={[
-                            { x: 0, y: 0 },
-                            { x: 10, y: 0 },
-                            { x: 5, y: 5 },
-                            { x: 10, y: 10 },
-                            { x: 0, y: 10 },
-                        ]}
-                        lines={[
-                            [
-                                { x: 0, y: 0 },
-                                { x: 10, y: 0 },
-                            ],
-                            [
-                                { x: 10, y: 0 },
-                                { x: 5, y: 5 },
-                            ],
-                            [
-                                { x: 5, y: 5 },
-                                { x: 10, y: 10 },
-                            ],
-                            [
-                                { x: 10, y: 10 },
-                                { x: 0, y: 10 },
-                            ],
-                            [
-                                { x: 0, y: 0 },
-                                { x: 0, y: 10 },
-                            ],
-                        ]}
-                    />
-                }
-            />
-            {Object.entries({
-                Line: (
-                    <ToolIcon
-                        points={[
-                            { x: 0, y: 0 },
-                            { x: 10, y: 10 },
-                        ]}
-                        lines={[
-                            [
-                                { x: 0, y: 0 },
-                                { x: 10, y: 10 },
-                            ],
-                        ]}
-                    />
-                ),
-                Perpendicular: (
-                    <ToolIcon
-                        points={[
-                            { x: 5, y: 2 },
-                            { x: 5, y: 10 },
-                        ]}
-                        lines={[
-                            [
-                                { x: -2, y: 2 },
-                                { x: 12, y: 2 },
-                            ],
-                        ]}
-                    />
-                ),
-                PerpendicularBisector: (
-                    <ToolIcon
-                        points={[
-                            { x: 0, y: 5 },
-                            { x: 10, y: 5 },
-                        ]}
-                        lines={[
-                            [
-                                { x: 5, y: -2 },
-                                { x: 5, y: 12 },
-                            ],
-                        ]}
-                    />
-                ),
-                AngleBisector: (
-                    <ToolIcon
-                        points={[
-                            { x: 0, y: 0 },
-                            { x: 10, y: 10 },
-                            { x: 0, y: 10 },
-                        ]}
-                        lines={[
-                            [
-                                { x: 10, y: 0 },
-                                { x: 0, y: 10 },
-                            ],
-                        ]}
-                    />
-                ),
-                Circle: (
-                    <ToolIcon
-                        circles={[[{ x: 5, y: 5 }, 5]]}
-                        points={[
-                            { x: 5, y: 0 },
-                            { x: 5, y: 5 },
-                        ]}
-                    />
-                ),
-                CircumCircle: (
-                    <ToolIcon
-                        circles={[[{ x: 5, y: 5 }, 5]]}
-                        points={[
-                            push({ x: 5, y: 5 }, Math.PI / 4, 5),
-                            push({ x: 5, y: 5 }, -Math.PI / 4, 5),
-                            push({ x: 5, y: 5 }, Math.PI, 5),
-                        ]}
-                    />
-                ),
-                InCircle: (
-                    <ToolIcon
-                        circles={[[{ x: 3, y: 5 }, 3]]}
-                        points={[
-                            { x: 0, y: 0 },
-                            { x: 0, y: 10 },
-                            { x: 10, y: 5 },
-                        ]}
-                    />
-                ),
-                Split: (
-                    <ToolIcon
-                        // circles={[[{ x: 3, y: 5 }, 3]]}
-                        points={[
-                            { x: 0, y: 0 },
-                            { x: 3.33, y: 3.33 },
-                            { x: 6.66, y: 6.66 },
-                            { x: 10, y: 10 },
-                        ]}
-                        lines={
-                            [
-                                // [
-                                //     { x: 0, y: 0 },
-                                //     { x: 10, y: 10 },
-                                // ],
-                            ]
-                        }
-                    />
-                ),
-            }).map(([kind, icon]) => (
-                <Button
-                    key={kind}
-                    tooltip={kind + ` (${toTypeRev[kind]})`}
-                    icon={typeof icon === 'string' ? `pi ${icon}` : undefined}
-                    className={
-                        'mt-2 p-button-icon-only ' +
-                        (state.pending?.type === 'Guide' &&
-                        state.pending.kind === kind
-                            ? 'p-button-outlined'
-                            : '')
-                    }
-                    onClick={() => {
-                        state.pending?.type === 'Guide' &&
-                        state.pending.kind === kind
-                            ? dispatch({ type: 'pending:type', kind: null })
-                            : dispatch({
-                                  type: 'pending:type',
-                                  kind: kind as GuideGeom['type'],
-                              });
-                    }}
-                    children={typeof icon === 'string' ? undefined : icon}
-                />
-            ))}
-        </div>
-    );
-}
-
 function duplicationControls(
     setPendingDuplication: (b: null | PendingDuplication) => void,
     pendingDuplication: PendingDuplication,
@@ -971,13 +714,13 @@ function duplicationControls(
                 onClick={() => {
                     pendingDuplication.reflect
                         ? setPendingDuplication({
-                              reflect: false,
-                              p0: null,
-                          })
+                            reflect: false,
+                            p0: null,
+                        })
                         : setPendingDuplication({
-                              reflect: true,
-                              p0: null,
-                          });
+                            reflect: true,
+                            p0: null,
+                        });
                 }}
             >
                 <MirrorIcon />

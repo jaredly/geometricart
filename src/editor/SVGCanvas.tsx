@@ -127,7 +127,7 @@ export function SVGCanvas({
         view,
     );
 
-    const mouseHandlers = editorState.isDragSelecting
+    const mouseHandlers = editorState.selectMode
         ? dragSelectHandlers
         : mouseDragHandlers;
 
@@ -199,10 +199,10 @@ export function SVGCanvas({
 
     const dragged = editorState.dragSelectPos
         ? findSelection(
-              currentState.current.paths,
-              currentState.current.pathGroups,
-              rectForCorners(editorState.pos, editorState.dragSelectPos),
-          )
+            currentState.current.paths,
+            currentState.current.pathGroups,
+            rectForCorners(editorState.pos, editorState.dragSelectPos),
+        )
         : null;
 
     const backgroundColor =
@@ -256,7 +256,7 @@ export function SVGCanvas({
             </defs>
             <g transform={`translate(${x} ${y})`}>
                 {backgroundColor != null &&
-                backgroundColor !== 'transparent' ? (
+                    backgroundColor !== 'transparent' ? (
                     <rect
                         width={width}
                         height={height}
@@ -272,8 +272,8 @@ export function SVGCanvas({
                             maybeReverse(
                                 !state.overlays[id].hide,
                                 hover?.type === 'element' &&
-                                    hover?.kind === 'Overlay' &&
-                                    hover?.id === id,
+                                hover?.kind === 'Overlay' &&
+                                hover?.id === id,
                             ) && !state.overlays[id].over,
                     )
                     .map((id) => {
@@ -322,8 +322,8 @@ export function SVGCanvas({
                             maybeReverse(
                                 !state.overlays[id].hide,
                                 hover?.type === 'element' &&
-                                    hover?.kind === 'Overlay' &&
-                                    hover?.id === id,
+                                hover?.kind === 'Overlay' &&
+                                hover?.id === id,
                             ) && state.overlays[id].over,
                     )
                     .map((id) => {
@@ -374,47 +374,47 @@ export function SVGCanvas({
                         hover={hover}
                     />
                 ) : uiState.pendingDuplication
-                ?
-                <RenderIntersections
-                    zoom={view.zoom}
-                    highlight={state.pending != null}
-                    intersections={allIntersections}
-                    onClick={(coord, shiftKey) => {
-                        if (uiState.pendingDuplication) {
-                            handleDuplicationIntersection(coord, currentState.current, uiState.pendingDuplication, setPendingDuplication, dispatch)
-                        }
-                    }}
-                />
-            : null}
+                    ?
+                    <RenderIntersections
+                        zoom={view.zoom}
+                        highlight={state.pending != null}
+                        intersections={allIntersections}
+                        onClick={(coord, shiftKey) => {
+                            if (uiState.pendingDuplication) {
+                                handleDuplicationIntersection(coord, currentState.current, uiState.pendingDuplication, setPendingDuplication, dispatch)
+                            }
+                        }}
+                    />
+                    : null}
                 {state.selection && !styleHover
                     ? state.selection.ids.map((id) =>
-                          showHover(
-                              id,
-                              {
-                                  kind: state.selection!.type,
-                                  id,
-                                  type: 'element',
-                              },
-                              state,
-                              mirrorTransforms,
-                              view.zoom,
-                              bounds,
-                              true,
-                          ),
-                      )
+                        showHover(
+                            id,
+                            {
+                                kind: state.selection!.type,
+                                id,
+                                type: 'element',
+                            },
+                            state,
+                            mirrorTransforms,
+                            view.zoom,
+                            bounds,
+                            true,
+                        ),
+                    )
                     : null}
                 {dragged
                     ? dragged.map((id) =>
-                          showHover(
-                              id,
-                              { kind: 'Path', id, type: 'element' },
-                              state,
-                              mirrorTransforms,
-                              view.zoom,
-                              bounds,
-                              false,
-                          ),
-                      )
+                        showHover(
+                            id,
+                            { kind: 'Path', id, type: 'element' },
+                            state,
+                            mirrorTransforms,
+                            view.zoom,
+                            bounds,
+                            false,
+                        ),
+                    )
                     : null}
                 {hover ? (
                     <>
@@ -508,7 +508,7 @@ export function finishDragFn(
     dispatch: (action: Action) => unknown,
 ): (shiftKey: boolean) => void {
     return (shiftKey: boolean) => {
-        // setEditorState((state) => ({ ...state, isDragSelecting: false }));
+        // setEditorState((state) => ({ ...state, selectMode: false }));
         // cancelDragSelect();
         const { pos, drag } = currentDrag.current;
         if (!drag || pos === drag || coordsEqual(pos, drag)) {

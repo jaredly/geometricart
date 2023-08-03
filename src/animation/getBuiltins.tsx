@@ -36,8 +36,8 @@ export function getBuiltins(): { [key: string]: Function | number } {
             const perc = 1 - smooth;
             const mid =
                 Math.sin((((t * steps) % 1) - 0.5) * Math.PI * perc) /
-                    2 /
-                    Math.sin((perc * Math.PI) / 2) +
+                2 /
+                Math.sin((perc * Math.PI) / 2) +
                 0.5;
             return mid / steps + Math.floor(t * steps) / steps;
         },
@@ -136,7 +136,7 @@ const lerpPos = (p1: Coord, p2: Coord, percent: number) => {
     };
 };
 
-export const closestPoint = (center: Coord, segments: Array<Segment>) => {
+export const closestPoint = (center: Coord, segments: Array<Segment>): [number, Coord] => {
     let best = null as null | [number, Coord];
     rasterSegPoints(pathToPoints(segments)).forEach((point) => {
         const d = dist(point, center);
@@ -145,7 +145,7 @@ export const closestPoint = (center: Coord, segments: Array<Segment>) => {
         }
     });
 
-    return best;
+    return best!;
 };
 
 export const farthestPoint = (center: Coord, segments: Array<Segment>) => {
@@ -227,17 +227,17 @@ const modInsets = (
             fills: path.style.fills.map((f) =>
                 f
                     ? {
-                          ...f,
-                          inset: mod(f.inset),
-                      }
+                        ...f,
+                        inset: mod(f.inset),
+                    }
                     : f,
             ),
             lines: path.style.lines.map((f) =>
                 f
                     ? {
-                          ...f,
-                          inset: mod(f.inset),
-                      }
+                        ...f,
+                        inset: mod(f.inset),
+                    }
                     : f,
             ),
         },
