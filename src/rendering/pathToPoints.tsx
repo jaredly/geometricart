@@ -4,11 +4,29 @@ import { epsilon } from './intersect';
 import { reverseSegment } from './pathsAreIdentical';
 import { Coord, Segment } from '../types';
 import { closeEnough, negPiToPi } from './clipPath';
+import { segmentKey } from './segmentKey';
+
+export type RasterSeg = {
+    from: Coord;
+    to: Coord;
+    points: Array<Coord>;
+    skipped?: boolean;
+    seg: Segment;
+};
+
+export const rasterSegPoints = (segs: RasterSeg[]) => {
+    return segs.flatMap((seg) => seg.points);
+};
+
+export const pxToMM = (value: number, ppi: number) => {
+    return (value / ppi) * 250.4 * 6;
+};
 
 export const pathToPoints = (
     segments: Array<Segment>,
     accurateArcCorners = false,
-) => {
+    ppi?: number,
+): RasterSeg[] => {
     let smallestArcLength = Infinity;
     segments.forEach((seg, i) => {
         if (seg.type === 'Arc') {
@@ -45,7 +63,7 @@ export const pathToPoints = (
         });
     }
 
-    const points: Array<Coord> = [];
+    const segmentPoints: Array<RasterSeg> = [];
     // let prev = segments[segments.length - 1].to;
     segments.forEach((seg, i) => {
         const pi = i === 0 ? segments.length - 1 : i - 1;
@@ -70,29 +88,60 @@ export const pathToPoints = (
                 const sign = seg.clockwise ? 1 : -1;
                 const t1a = t1 + (smallest / r) * sign;
                 const t2a = t2 - (smright / r) * sign;
-                points.push(push(seg.center, t1a, r));
-                points.push(push(seg.center, t2a, r));
+                segmentPoints.push({
+                    from: prev,
+                    to: seg.to,
+                    points: [
+                        push(seg.center, t1a, r),
+                        push(seg.center, t2a, r),
+                        seg.to,
+                    ],
+                    seg,
+                });
             } else {
-                const bt = angleBetween(t1, t2, seg.clockwise);
-                const subs = 10;
+                let bt = angleBetween(t1, t2, seg.clockwise);
+                if (closeEnough(bt, 0)) {
+                    bt = Math.PI * 2;
+                    console.log('AK', t1, t2, r);
+                }
+                // const subs = 10;
+                const radius = dist(seg.center, seg.to);
+                const distance = bt * radius;
+                const points: Coord[] = [];
+                const subs = ppi ? pxToMM(distance, ppi) : 10;
                 // const subs = (bt * r) / (smallestArcLength / 10);
                 for (let i = 1; i < subs; i++) {
                     const tm = t1 + (bt / subs) * i * (seg.clockwise ? 1 : -1);
-                    const d = dist(seg.center, seg.to);
-                    const midp = push(seg.center, tm, d);
+                    const midp = push(seg.center, tm, radius);
                     points.push(midp);
                 }
+                points.push(seg.to);
+                segmentPoints.push({
+                    from: prev,
+                    to: seg.to,
+                    points,
+                    seg,
+                });
             }
             // const tm = t1 + (bt / 2) * (seg.clockwise ? 1 : -1);
             // const d = dist(seg.center, seg.to);
             // const midp = push(seg.center, tm, d);
             // points.push(midp);
+        } else {
+            segmentPoints.push({
+                from: prev,
+                to: seg.to,
+                points: [seg.to],
+                seg,
+            });
         }
-        points.push(seg.to);
 
         // prev = seg.to;
     });
-    return points;
+    if (!segmentPoints.length) {
+        console.warn('wat', segments);
+    }
+    return segmentPoints;
 };
 
 export function pointsAngles(points: Coord[]) {
@@ -111,7 +160,7 @@ export function angleDifferences(angles: number[]) {
 
 export const totalAngle = (segments: Array<Segment>) => {
     const points = pathToPoints(segments, true);
-    const angles = pointsAngles(points);
+    const angles = pointsAngles(rasterSegPoints(points));
     const betweens = angleDifferences(angles);
     const relatives = betweens.map((between) =>
         between > Math.PI ? between - Math.PI * 2 : between,
@@ -121,7 +170,7 @@ export const totalAngle = (segments: Array<Segment>) => {
 };
 
 export const isMaybeClockwise = (segments: Array<Segment>) => {
-    const points = pathToPoints(segments);
+    const points = rasterSegPoints(pathToPoints(segments));
     const angles = points.map((point, i) => {
         const prev = i === 0 ? points[points.length - 1] : points[i - 1];
         return angleTo(prev, point);

@@ -7,43 +7,6 @@ export type Coord = { x: number; y: number };
 
 export type Id = string;
 
-// export type Shape = {
-//     id: Id;
-//     geom: ShapeGeom;
-//     basedOn: Array<Id>;
-//     mirrors: Array<Id>;
-// };
-
-// Hmmmmmm
-/*
-
-So, what do I mean by "shapes"?
-
-Should I go straight to "paths"?
-like
-
-I'm laying down the guides
-
-and then, in a layer over them,
-I ink out the paths.
-
-these paths can be filled, or not,
-closed, or not.
-They can be inset, etc.
-
-ALSO
-They can be grouped, and the style attributes (incl inset) can be set at the group level.
-
-INSET is a list of numbers, 0 means "line without inset", so you could have "0 2" for adding a line at 2 inset
-OR like "-2 2" to have a line on either side of the normal, while not drawing the normal.
-
-FILL
-STROKE
-
-the normal stuff folks.
-
-
-*/
 export type Line = {
     type: 'Line';
     p1: Coord;
@@ -187,6 +150,7 @@ export type StyleLine = {
     originalIdx?: number;
     inset?: number;
     color?: string | number;
+    overshoot?: number | string; // yeah? like 10% or pixelsss
     width?: number;
     dash?: Array<number>;
     joinStyle?: string;
@@ -240,7 +204,7 @@ export type PathGroup = {
     // style: Style;
     group: Id | null;
     hide?: boolean;
-    clipMode?: 'none' | 'remove' | 'normal';
+    clipMode?: 'none' | 'remove' | 'normal' | 'fills';
     insetBeforeClip?: boolean;
     ordering?: number;
 };
@@ -302,6 +266,13 @@ export type HistoryItem = {
     // parent: number;
 };
 
+// This should ... hypothetically be enough to uniquely identify a point in history
+export type Checkpoint = {
+    branchId: number;
+    branchLength: number;
+    undo: number;
+};
+
 export type History = {
     nextId: number;
     // current: Array<HistoryItem>;
@@ -345,16 +316,7 @@ export type Selection = {
     ids: Array<string>;
 };
 
-export type Tab =
-    | 'Guides'
-    | 'Mirrors'
-    | 'Paths'
-    | 'PathGroups'
-    | 'Palette'
-    | 'Export'
-    | 'Overlays'
-    | 'Undo'
-    | 'Clips';
+export type Tab = 'Undo';
 
 export type Attachment = {
     id: Id;
@@ -406,12 +368,17 @@ export type TimelineLane = {
     items: Array<TimelineSlot>;
 };
 
-export type Lerp =
-    | FloatLerp
-    | {
-          type: 'float-fn';
-          code: string;
-      };
+export type Lerp = FloatLerp | ScriptLerp | PosScript;
+
+export type ScriptLerp = {
+    type: 'float-fn';
+    code: string;
+};
+
+export type PosScript = {
+    type: 'pos-fn';
+    code: string;
+};
 
 export type Animations = {
     config: {
@@ -507,7 +474,7 @@ export type GCodePath = {
 };
 
 export type State = {
-    version: 9;
+    version: 10;
     nextId: number;
     history: History;
     meta: Meta;
@@ -536,7 +503,8 @@ export type State = {
     tab: Tab;
 
     palettes: { [name: string]: Array<string> };
-    activePalette: string;
+    // activePalette: string;
+    palette: string[];
     attachments: {
         [key: Id]: Attachment;
     };

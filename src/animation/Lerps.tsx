@@ -1,9 +1,12 @@
-import React from 'react';
+import React, { useMemo } from 'react';
+import prettier from 'prettier';
+import babel from 'prettier/parser-babel';
 import { BlurInt } from '../editor/Forms';
 import { Action } from '../state/Action';
-import { FloatLerp, LerpPoint, State } from '../types';
+import { FloatLerp, ScriptLerp, LerpPoint, State, PosScript } from '../types';
 import { PointsEditor, pointsPathD } from './PointsEditor';
 import { AddVbl } from './AnimationUI';
+import { functionWithBuiltins } from './getAnimatedPaths';
 
 export function Lerps({
     dispatch,
@@ -22,7 +25,14 @@ export function Lerps({
             {Object.keys(state.animations.lerps).map((key) => {
                 const vbl = state.animations.lerps[key];
                 if (vbl.type !== 'float') {
-                    return 'Not a float, not yet supported';
+                    return (
+                        <ScriptLerp
+                            key={key}
+                            id={key}
+                            vbl={vbl}
+                            dispatch={dispatch}
+                        />
+                    );
                 }
                 return (
                     <FloatLerp
@@ -36,6 +46,71 @@ export function Lerps({
         </div>
     );
 }
+
+function ScriptLerp({
+    id: key,
+    vbl,
+    dispatch,
+}: {
+    id: string;
+    vbl: ScriptLerp | PosScript;
+    dispatch: (action: Action) => unknown;
+}): JSX.Element {
+    const [code, setCode] = React.useState(vbl.code);
+
+    const fn = useMemo(() => {
+        try {
+            return functionWithBuiltins(vbl.code);
+        } catch (e) {
+            return () => 0;
+        }
+    }, [vbl.code]);
+
+    return (
+        <div
+            style={{
+                padding: 8,
+                margin: 8,
+                border: '1px solid #aaa',
+            }}
+        >
+            <div style={{ marginBottom: 4 }}>{key}</div>
+            <textarea
+                value={code}
+                style={{ width: 400 }}
+                onChange={(evt) => {
+                    setCode(evt.target.value);
+                }}
+                onBlur={() => {
+                    const formatted = prettier.format(code, {
+                        plugins: [babel],
+                        parser: 'babel',
+                        printWidth: 60,
+                    });
+                    setCode(formatted);
+                    if (formatted.trim() === vbl.code.trim()) {
+                        return;
+                    }
+
+                    dispatch({
+                        type: 'timeline:update',
+                        key,
+                        vbl: { ...vbl, code: formatted },
+                    });
+                }}
+            />
+            <FnViewer fn={fn} kind={vbl.type} />
+            <button
+                onClick={() => {
+                    dispatch({ type: 'timeline:update', key, vbl: null });
+                }}
+            >
+                Delete
+            </button>
+        </div>
+    );
+}
+
 function FloatLerp({
     id: key,
     vbl,
@@ -151,6 +226,58 @@ function FloatLerp({
         </div>
     );
 }
+
+export const FnViewer = ({
+    fn,
+    kind,
+}: {
+    fn: (n: number) => number;
+    kind: 'float-fn' | 'pos-fn';
+}) => {
+    const width = 150;
+    const height = kind === 'float-fn' ? 50 : 150;
+    const margin = 5;
+
+    const points = useMemo(() => {
+        try {
+            const points = [];
+            for (let i = 0; i <= width; i++) {
+                if (kind === 'pos-fn') {
+                    points.push(fn(i / width) as any);
+                } else {
+                    const x = i / width;
+                    const y = fn(x);
+                    points.push({ x, y });
+                }
+            }
+            return points;
+        } catch (err) {
+            return [];
+        }
+    }, [fn]);
+
+    return (
+        <svg
+            width={width + margin * 2}
+            height={height + margin * 2}
+            viewBox={`${-margin} ${-margin} ${width + margin * 2} ${
+                height + margin * 2
+            }`}
+            style={{
+                border: '1px solid #333',
+            }}
+        >
+            <polyline
+                points={points
+                    .map((m) => `${m.x * width},${(1 - m.y) * height}`)
+                    .join(' ')}
+                stroke="red"
+                strokeWidth={2}
+                fill="none"
+            />
+        </svg>
+    );
+};
 
 export const PointsViewer = ({
     points,

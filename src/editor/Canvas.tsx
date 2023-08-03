@@ -1,27 +1,26 @@
 /* @jsx jsx */
 /* @jsxFrag React.Fragment */
 import { jsx } from '@emotion/react';
-import Prando from 'prando';
-import React from 'react';
-import { RoughGenerator } from 'roughjs/bin/generator';
-import { Action } from '../state/Action';
-import { PendingMirror, useCurrent } from '../App';
+import React, { useEffect, useState } from 'react';
+import { Action, PathCreateMany } from '../state/Action';
+import { PendingMirror, UIState } from '../useUIState';
 import { calcAllIntersections } from '../rendering/calcAllIntersections';
 import {
     calculateGuideElements,
     geomPoints,
+    geomsForGiude,
 } from '../rendering/calculateGuideElements';
 import { DrawPathState } from './DrawPath';
-import { findSelection, pathToPrimitives } from './findSelection';
-import { getMirrorTransforms, scale } from '../rendering/getMirrorTransforms';
+import { findSelection } from './findSelection';
 import {
-    calculateBounds,
-    Guides,
+    getMirrorTransforms,
+    getTransformsForNewMirror,
+} from '../rendering/getMirrorTransforms';
+import {
     PendingDuplication,
     PendingPathPair,
     primitivesForElementsAndPaths,
 } from './Guides';
-import { handleSelection } from './handleSelection';
 import {
     CancelIcon,
     IconButton,
@@ -38,25 +37,21 @@ import {
 } from '../lerp';
 import { MirrorMenu } from './MirrorMenu';
 import {
-    applyStyleHover,
     mergeFills,
     mergeStyleLines,
     MultiStyleForm,
     StyleHover,
 } from './MultiStyleForm';
-import { Overlay } from '../editor/Overlay';
 import { OverlayMenu } from './OverlayMenu';
 import { PendingPathControls } from './PendingPathControls';
-import { paletteColor, RenderPath } from './RenderPath';
 import { RenderWebGL } from './RenderWebGL';
-import { showHover } from './showHover';
 import { Hover } from './Sidebar';
-import { sortedVisibleInsetPaths } from '../rendering/sortedVisibleInsetPaths';
 import {
     GuideSection,
-    idsToStyle,
+    selectedPathIds,
     mirrorControls,
     selectionSection,
+    RadiusSelector,
 } from './touchscreenControls';
 import {
     Animations,
@@ -68,9 +63,14 @@ import {
     Style,
     LerpPoint,
     View,
+    TextureConfig,
+    Mirror,
 } from '../types';
-import { useDragSelect, useMouseDrag } from './useMouseDrag';
-import { useScrollWheel } from './useScrollWheel';
+import { functionWithBuiltins } from '../animation/getAnimatedPaths';
+import { Menu } from 'primereact/menu';
+import { SVGCanvas } from './SVGCanvas';
+import { useCurrent } from '../App';
+import { ToolIcons } from './ToolIcons';
 
 export type Props = {
     state: State;
@@ -92,6 +92,8 @@ export type Props = {
     hover: Hover | null;
     setHover: (hover: Hover | null) => void;
     ppi?: number;
+    styleHover: StyleHover | null;
+    uiState: UIState;
 };
 
 export const worldToScreen = (
@@ -113,9 +115,6 @@ export const screenToWorld = (
     y: (pos.y - height / 2) / view.zoom - view.center.y,
 });
 
-// base64
-export const imageCache: { [href: string]: string | false } = {};
-
 /*
 
 Kinds of state:
@@ -133,10 +132,6 @@ Kinds of state:
         - it just goes through all paths, and swaps things out where it sees them.
 
 */
-
-export const calcPPI = (ppi: number, pixels: number, zoom: number) => {
-    return `${(pixels / ppi).toFixed(3)}in`;
-};
 
 export type TLSegmentCurve = {
     type: 'curve';
@@ -246,9 +241,9 @@ export const evaluateTimeline = (timeline: FloatLerp, position: number) => {
 
 export type AnimatedFunctions = {
     [key: string]:
-        | ((n: number) => number)
-        | ((n: Coord) => Coord)
-        | ((n: number) => Coord);
+    | ((n: number) => number)
+    | ((n: Coord) => Coord)
+    | ((n: number) => Coord);
 };
 
 export const getAnimatedFunctions = (
@@ -265,12 +260,7 @@ export const getAnimatedFunctions = (
             fn[key] = timelineFunction(vbl);
         } else {
             try {
-                const k = new Function(
-                    'x',
-                    vbl.code.includes('\n') || vbl.code.startsWith('return')
-                        ? vbl.code
-                        : `return ${vbl.code}`,
-                );
+                const k = functionWithBuiltins(vbl.code);
                 fn[key] = k as (n: number) => number;
             } catch (err) {
                 console.warn(
@@ -286,27 +276,50 @@ export const getAnimatedFunctions = (
     return fn;
 };
 
+export type MenuItem = {
+    label: React.ReactNode;
+    icon?: string;
+    command?: (event: {
+        originalEvent: React.MouseEvent;
+        item: MenuItem;
+    }) => void;
+    items?: MenuItem[];
+};
+
 export const evaluateAnimatedValues = (
     animatedFunctions: AnimatedFunctions,
-    // animations: Animations,
     position: number,
 ) => {
-    // const values: { [key: string]: number | ((x: number) => number) } = {
-    //     t: position,
-    // };
-    // Object.keys(animations.timeline).forEach((vbl) => {
-    //     if (vbl === 't') {
-    //         console.warn(`Can't have a custom vbl named t. Ignoring`);
-    //         return;
-    //     }
-    //     const t = animations.timeline[vbl];
-    //     if (t.type === 'float') {
-    //         values[vbl] = evaluateTimeline(t, position);
-    //     } else {
-    //         values[vbl] = 0;
-    //     }
-    // });
     return { ...animatedFunctions, t: position };
+};
+
+export type SelectMode = boolean | 'radius' | 'path';
+
+export type EditorState = {
+    tmpView: null | View;
+    items: Array<MenuItem>;
+    zooming: boolean;
+
+    // mouse pos
+    pos: Coord;
+    dragPos: null | { view: View; coord: Coord };
+
+    dragSelectPos: null | Coord;
+    selectMode: SelectMode;
+    multiSelect: boolean;
+    pendingPath: null | false | DrawPathState;
+};
+
+const initialEditorState: EditorState = {
+    tmpView: null,
+    items: [],
+    pos: { x: 0, y: 0 },
+    zooming: false,
+    dragPos: null,
+    dragSelectPos: null,
+    selectMode: true,
+    multiSelect: false,
+    pendingPath: null,
 };
 
 export const Canvas = ({
@@ -321,204 +334,123 @@ export const Canvas = ({
     setPendingMirror,
     pendingDuplication,
     setPendingDuplication,
-    // dragSelect,
     isTouchScreen,
-    // cancelDragSelect,
     ppi,
+    styleHover,
+    uiState,
 }: Props) => {
     const mirrorTransforms = React.useMemo(
         () => getMirrorTransforms(state.mirrors),
         [state.mirrors],
     );
-    const [tmpView, setTmpView] = React.useState(null as null | View);
 
-    const [pos, setPos] = React.useState({ x: 0, y: 0 });
+    const [editorState, setEditorState] = useState(initialEditorState);
 
-    const currentState = React.useRef(state);
-    currentState.current = state;
+    const menu = React.useRef<Menu>(null);
+    const currentState = useCurrent(state);
 
-    usePalettePreload(state);
-
-    const [zooming, setZooming] = React.useState(false);
-
-    let view = React.useMemo(() => {
-        let view = tmpView ?? state.view;
-        return { ...state.view, center: view.center, zoom: view.zoom };
-    }, [state.view, tmpView]);
-
-    const { x, y } = viewPos(view, width, height);
-
-    const ref = React.useRef(null as null | SVGSVGElement);
-
-    useScrollWheel(ref, setTmpView, setZooming, currentState, width, height);
-
-    const generator = React.useMemo(() => new RoughGenerator(), []);
-
-    const [dragPos, setDragPos] = React.useState(
-        null as null | { view: View; coord: Coord },
-    );
-
-    const [dragSelectPos, setDragSelect] = React.useState(null as null | Coord);
-
-    const currentDrag = useCurrent({ pos, drag: dragSelectPos });
-
-    const [styleOpen, setStyleOpen] = React.useState(false);
-    React.useEffect(() => {
-        setStyleOpen(false);
-    }, [state.selection != null]);
-
-    const finishDrag = React.useCallback((shiftKey: boolean) => {
-        setDragSelecting(false);
-        // cancelDragSelect();
-        const { pos, drag } = currentDrag.current;
-        if (!drag) {
+    const startPath = () => {
+        const state = currentState.current;
+        if (state.selection?.type === 'Guide') {
+            const ids = state.selection.ids;
+            const create = ids
+                .flatMap((id): PathCreateMany['paths'] => {
+                    const guide = state.guides[id];
+                    const geoms = geomsForGiude(
+                        guide,
+                        typeof guide.mirror === 'string'
+                            ? mirrorTransforms[guide.mirror as string]
+                            : guide.mirror
+                                ? getTransformsForNewMirror(guide.mirror as Mirror)
+                                : null,
+                    );
+                    return geoms
+                        .map(({ geom }): PathCreateMany['paths'][0] | null =>
+                            geom.type === 'Circle'
+                                ? {
+                                    origin: geom.radius,
+                                    segments: [
+                                        {
+                                            type: 'Arc',
+                                            center: geom.center,
+                                            to: geom.radius,
+                                            clockwise: true,
+                                        },
+                                    ],
+                                }
+                                : geom.type === 'Line'
+                                    ? {
+                                        origin: geom.p1,
+                                        segments: [{ type: 'Line', to: geom.p2 }],
+                                        open: true,
+                                    }
+                                    : null,
+                        )
+                        .filter(Boolean) as PathCreateMany['paths'];
+                })
+                .filter(Boolean);
+            console.log(create);
+            dispatch({
+                type: 'path:create:many',
+                paths: create as PathCreateMany['paths'],
+                withMirror: false,
+                trace: true,
+            });
             return;
         }
-        const rect = rectForCorners(pos, drag);
-        const selected = findSelection(
-            currentState.current.paths,
-            currentState.current.pathGroups,
-            rect,
-        );
-        if (
-            (shiftKey || multiRef.current) &&
-            currentState.current.selection?.type === 'Path'
-        ) {
-            selected.push(
-                ...currentState.current.selection.ids.filter(
-                    (id) => !selected.includes(id),
-                ),
-            );
-        }
-        dispatch({
-            type: 'selection:set',
-            selection: { type: 'Path', ids: selected },
-        });
-    }, []);
+        setEditorState((es) => ({
+            ...es,
+            pendingPath: es.pendingPath === null ? false : null,
+        }));
+    };
 
-    const dragSelectHandlers = useDragSelect(
-        dragSelectPos,
-        width,
-        height,
-        view,
-        setPos,
-        setDragSelect,
-        finishDrag,
-    );
-    const mouseDragHandlers = useMouseDrag(
-        dragPos,
-        setTmpView,
-        width,
-        height,
-        view,
-        setPos,
-        setDragPos,
-    );
-
-    const [isDragSelecting, setDragSelecting] = React.useState(false);
-
-    const mouseHandlers = isDragSelecting
-        ? dragSelectHandlers
-        : mouseDragHandlers;
-
-    const [multiSelect, setMultiSelect] = React.useState(false);
-    const multiRef = useCurrent(multiSelect);
-
-    React.useEffect(() => {
-        if (!state.selection && multiRef.current) {
-            setMultiSelect(false);
-        }
-    }, [!!state.selection]);
-
-    const clickPath = React.useCallback((shiftKey: boolean, id: string) => {
-        const path = currentState.current.paths[id];
-        handleSelection(
-            path,
-            currentState.current,
-            dispatch,
-            shiftKey || multiRef.current,
-        );
-    }, []);
-
-    const clip = state.view.activeClip
-        ? state.clips[state.view.activeClip]
-        : undefined;
-
-    const [styleHover, setStyleHover] = React.useState(
-        null as null | StyleHover,
-    );
-
-    const selectedIds = React.useMemo(() => {
-        return getSelectedIds(state.paths, state.selection);
-    }, [state.selection, state.paths]);
-
-    const animatedPaths = state.paths;
-
-    const rand = React.useRef(new Prando('ok'));
-    rand.current.reset();
-
-    let pathsToShow = React.useMemo(() => {
-        const now = performance.now();
-        const res = sortedVisibleInsetPaths(
-            animatedPaths,
-            state.pathGroups,
-            rand.current,
-            clip,
-            state.view.hideDuplicatePaths,
-            state.view.laserCutMode
-                ? state.palettes[state.activePalette]
-                : undefined,
-            undefined,
-            selectedIds,
-        );
-        console.log(`Path calc`, performance.now() - now);
-        return res;
-    }, [
-        animatedPaths,
-        state.pathGroups,
-        clip,
-        state.view.hideDuplicatePaths,
-        state.view.laserCutMode,
-        selectedIds,
-    ]);
-    if (styleHover) {
-        pathsToShow = pathsToShow.map((path) => {
-            if (selectedIds[path.id]) {
-                return {
-                    ...path,
-                    style: applyStyleHover(styleHover, path.style),
-                };
+    useEffect(() => {
+        const fn = (evt: KeyboardEvent) => {
+            if (
+                evt.target !== document.body &&
+                (evt.target instanceof HTMLInputElement ||
+                    evt.target instanceof HTMLTextAreaElement)
+            ) {
+                return;
             }
-            return path;
-        });
-    }
 
-    const clipPrimitives = React.useMemo(
-        () => (clip ? { prims: pathToPrimitives(clip), segments: clip } : null),
-        [clip],
+            if (evt.key === 'n') {
+                evt.preventDefault();
+                evt.stopPropagation();
+                startPath();
+            }
+            if (evt.key === 'Escape') {
+                console.log('no pending path now');
+                setEditorState((es) => ({ ...es, pendingPath: null }));
+            }
+        };
+        document.addEventListener('keydown', fn);
+        return () => document.removeEventListener('keydown', fn);
+    }, []);
+
+    const showMenu = React.useCallback(
+        (evt: React.MouseEvent, items: MenuItem[]) => {
+            evt.preventDefault();
+            evt.stopPropagation();
+            console.log('ok', menu, items);
+            menu.current!.show(evt);
+            setEditorState((state) => ({ ...state, items }));
+            // setItems(items);
+            const { clientX, clientY } = evt;
+            setTimeout(() => {
+                const el = menu.current!.getElement();
+                el.style.top = clientY + 'px';
+                el.style.left = clientX + 'px';
+                console.log('ok', el);
+            }, 10);
+        },
+        [],
     );
 
-    const dragged = dragSelectPos
-        ? findSelection(
-              currentState.current.paths,
-              currentState.current.pathGroups,
-              rectForCorners(pos, dragSelectPos),
-          )
-        : null;
-
-    const backgroundColor =
-        view.background != null
-            ? paletteColor(state.palettes[state.activePalette], view.background)
-            : null;
-
-    // Ok, so what I want is:
-    // while dragging, freeze the bounds.
-    const bounds = React.useMemo(
-        () => calculateBounds(width, height, view),
-        [width, height, dragPos ? null : view],
-    );
-
-    const pendingPath = React.useState(null as null | DrawPathState);
+    let view = React.useMemo(() => {
+        let view = editorState.tmpView ?? state.view;
+        return { ...state.view, center: view.center, zoom: view.zoom };
+    }, [state.view, editorState.tmpView]);
 
     const guidePrimitives = React.useMemo(() => {
         const elements = calculateGuideElements(state.guides, mirrorTransforms);
@@ -547,242 +479,34 @@ export const Canvas = ({
         return fromGuides;
     }, [guidePrimitives, state.paths, state.pathGroups]);
 
-    const mirrorHover = React.useCallback(
-        (k: string | null) =>
-            k
-                ? setHover({ kind: 'Mirror', id: k, type: 'element' })
-                : setHover(null),
-        [],
-    );
-    const mirrorAdd = React.useCallback(
-        () =>
-            setPendingMirror({
-                parent: state.activeMirror,
-                rotations: 3,
-                reflect: true,
-                center: null,
-            }),
-        [state.activeMirror],
-    );
-
-    const inner = (
-        <svg
-            width={ppi != null ? calcPPI(ppi, width, view.zoom) : width}
-            height={ppi != null ? calcPPI(ppi, height, view.zoom) : height}
-            viewBox={`0 0 ${width} ${height}`}
-            xmlns="http://www.w3.org/2000/svg"
-            ref={(node) => {
-                if (innerRef) {
-                    innerRef(node);
-                }
-                ref.current = node;
-            }}
-            {...mouseHandlers}
-        >
-            <defs>
-                {state.palettes[state.activePalette].map((color, i) =>
-                    color.startsWith('http') && imageCache[color] ? (
-                        <pattern
-                            key={`palette-${i}`}
-                            id={`palette-${i}`}
-                            x={-x}
-                            y={-y}
-                            width={width}
-                            height={height}
-                            patternUnits="userSpaceOnUse"
-                            preserveAspectRatio="xMidYMid slice"
-                        >
-                            <image
-                                width={width}
-                                height={height}
-                                preserveAspectRatio="xMidYMid slice"
-                                href={imageCache[color] as string}
-                            />
-                        </pattern>
-                    ) : null,
-                )}
-            </defs>
-            <g transform={`translate(${x} ${y})`}>
-                {backgroundColor != null &&
-                backgroundColor !== 'transparent' ? (
-                    <rect
-                        width={width}
-                        height={height}
-                        x={-x}
-                        y={-y}
-                        stroke="none"
-                        fill={backgroundColor}
-                    />
-                ) : null}
-                {Object.keys(state.overlays)
-                    .filter(
-                        (id) =>
-                            maybeReverse(
-                                !state.overlays[id].hide,
-                                hover?.type === 'element' &&
-                                    hover?.kind === 'Overlay' &&
-                                    hover?.id === id,
-                            ) && !state.overlays[id].over,
-                    )
-                    .map((id) => {
-                        return (
-                            <Overlay
-                                state={state}
-                                id={id}
-                                view={view}
-                                key={id}
-                                width={width}
-                                height={height}
-                                onUpdate={(overlay) =>
-                                    dispatch({
-                                        type: 'overlay:update',
-                                        overlay,
-                                    })
-                                }
-                            />
-                        );
-                    })}
-
-                {pathsToShow.map((path, i) => (
-                    <RenderPath
-                        key={path.id + '-' + i}
-                        generator={generator}
-                        origPath={state.paths[path.id]}
-                        groups={state.pathGroups}
-                        rand={rand.current}
-                        clip={clipPrimitives}
-                        path={path}
-                        zoom={view.zoom}
-                        sketchiness={view.sketchiness}
-                        palette={state.palettes[state.activePalette]}
-                        styleHover={selectedIds[path.id] ? styleHover : null}
-                        onClick={
-                            // TODO: Disable path clickies if we're doing guides, folks.
-                            pendingPath[0]
-                                ? undefined
-                                : // pathOrigin
-                                  //     ? undefined :
-                                  clickPath
-                        }
-                    />
-                ))}
-
-                {Object.keys(state.overlays)
-                    .filter(
-                        (id) =>
-                            maybeReverse(
-                                !state.overlays[id].hide,
-                                hover?.type === 'element' &&
-                                    hover?.kind === 'Overlay' &&
-                                    hover?.id === id,
-                            ) && state.overlays[id].over,
-                    )
-                    .map((id) => {
-                        return (
-                            <Overlay
-                                state={state}
-                                id={id}
-                                view={view}
-                                key={id}
-                                width={width}
-                                height={height}
-                                onUpdate={(overlay) =>
-                                    dispatch({
-                                        type: 'overlay:update',
-                                        overlay,
-                                    })
-                                }
-                            />
-                        );
-                    })}
-
-                {maybeReverse(view.guides, hover?.type === 'guides') ? (
-                    <Guides
-                        state={state}
-                        bounds={bounds}
-                        isTouchScreen={isTouchScreen}
-                        pendingDuplication={pendingDuplication}
-                        setPendingDuplication={setPendingDuplication}
-                        dispatch={dispatch}
-                        width={width}
-                        height={height}
-                        allIntersections={allIntersections}
-                        guidePrimitives={guidePrimitives.primitives}
-                        zooming={zooming}
-                        view={view}
-                        disableGuides={!!pendingMirror}
-                        pos={isTouchScreen ? scale(view.center, -1) : pos}
-                        pendingPath={pendingPath}
-                        mirrorTransforms={mirrorTransforms}
-                        pendingMirror={pendingMirror}
-                        setPendingMirror={setPendingMirror}
-                        hover={hover}
-                    />
-                ) : null}
-                {state.selection && !styleHover
-                    ? state.selection.ids.map((id) =>
-                          showHover(
-                              id,
-                              {
-                                  kind: state.selection!.type,
-                                  id,
-                                  type: 'element',
-                              },
-                              state,
-                              mirrorTransforms,
-                              view.zoom,
-                              bounds,
-                              true,
-                          ),
-                      )
-                    : null}
-                {dragged
-                    ? dragged.map((id) =>
-                          showHover(
-                              id,
-                              { kind: 'Path', id, type: 'element' },
-                              state,
-                              mirrorTransforms,
-                              view.zoom,
-                              bounds,
-                              false,
-                          ),
-                      )
-                    : null}
-                {hover ? (
-                    <>
-                        {showHover(
-                            `hover`,
-                            hover,
-                            state,
-                            mirrorTransforms,
-                            view.zoom,
-                            bounds,
-                            false,
-                        )}
-                    </>
-                ) : null}
-                {dragSelectPos ? (
-                    <rect
-                        x={Math.min(dragSelectPos.x, pos.x) * view.zoom}
-                        y={Math.min(dragSelectPos.y, pos.y) * view.zoom}
-                        width={Math.abs(dragSelectPos.x - pos.x) * view.zoom}
-                        height={Math.abs(dragSelectPos.y - pos.y) * view.zoom}
-                        fill="rgba(255,255,255,0.2)"
-                        stroke="red"
-                        strokeWidth="2"
-                    />
-                ) : null}
-            </g>
-        </svg>
-    );
+    const svgContents = SVGCanvas({
+        uiState,
+        state,
+        view,
+        width,
+        height,
+        setEditorState,
+        editorState,
+        dispatch,
+        styleHover,
+        ppi,
+        innerRef,
+        hover,
+        showMenu,
+        isTouchScreen,
+        pendingDuplication,
+        setPendingDuplication,
+        allIntersections,
+        guidePrimitives,
+        pendingMirror,
+        mirrorTransforms,
+        setPendingMirror,
+    });
 
     // This is for rendering only, not interacting.
     if (ppi != null) {
-        return inner;
+        return svgContents;
     }
-
-    const styleIds = idsToStyle(state);
 
     return (
         <div
@@ -812,7 +536,7 @@ export const Canvas = ({
                 }
             }}
         >
-            {inner}
+            {svgContents}
             {view.texture ? (
                 <RenderWebGL
                     state={state}
@@ -821,187 +545,65 @@ export const Canvas = ({
                     height={height}
                 />
             ) : null}
-            {tmpView ? (
-                <div
-                    css={{
-                        position: 'absolute',
-                        color: 'black',
-                        top: 58,
-                        left: 0,
-                    }}
-                >
-                    <div css={{ display: 'flex' }}>
-                        <div
-                            css={{
-                                padding: 10,
-                                backgroundColor: 'rgba(255,255,255,0.3)',
-                                cursor: 'pointer',
-                                ':hover': {
-                                    backgroundColor: 'rgba(255,255,255,0.5)',
-                                },
-                            }}
-                            onClick={() => setTmpView(null)}
-                        >
-                            Reset z/p
-                        </div>
-                        <div
-                            css={{
-                                padding: 10,
-                                backgroundColor: 'rgba(255,255,255,0.3)',
-                                cursor: 'pointer',
-                                ':hover': {
-                                    backgroundColor: 'rgba(255,255,255,0.5)',
-                                },
-                            }}
-                            onClick={() => {
-                                setTmpView({
-                                    ...state.view,
-                                    zoom: tmpView.zoom,
-                                });
-                            }}
-                        >
-                            Just pan
-                        </div>
-                    </div>
-                    <div
-                        css={{
-                            padding: 10,
-                            backgroundColor: 'rgba(255,255,255,0.3)',
-                            cursor: 'pointer',
-                            ':hover': {
-                                backgroundColor: 'rgba(255,255,255,0.5)',
-                            },
-                        }}
-                        onClick={() => {
-                            dispatch({
-                                type: 'view:update',
-                                view: tmpView!,
-                            });
-                            setTmpView(null);
-                        }}
-                    >
-                        Commit
-                    </div>
-                </div>
-            ) : null}
-            <MirrorMenu
-                onHover={mirrorHover}
-                onAdd={mirrorAdd}
+            {editorState.tmpView
+                ? zoomPanControls(
+                    setEditorState,
+                    state,
+                    editorState.tmpView,
+                    dispatch,
+                )
+                : null}
+            <ToolIcons
                 state={state}
+                editorState={editorState}
                 dispatch={dispatch}
-                transforms={mirrorTransforms}
+                setEditorState={setEditorState}
+                startPath={startPath}
             />
-            <OverlayMenu
-                state={state}
-                dispatch={dispatch}
-                setHover={setHover}
-            />
-            <ClipMenu
-                state={state}
-                pendingPath={pendingPath}
-                dispatch={dispatch}
-                // setHover={setHover}
-            />
-
             <div
                 css={{
                     position: 'absolute',
                     bottom: 0,
                     left: 0,
-                    right: 0,
+                    right: editorState.pendingPath ? 0 : undefined,
                     overflow: 'auto',
                 }}
                 onClick={(evt) => evt.stopPropagation()}
             >
-                {styleIds.length && styleOpen ? (
-                    <div
-                        css={{
-                            backgroundColor: 'rgba(0,0,0,0.8)',
-                        }}
-                    >
-                        <MultiStyleForm
-                            palette={state.palettes[state.activePalette]}
-                            styles={styleIds.map((k) => state.paths[k].style)}
-                            onHover={(hover) => {
-                                setStyleHover(hover);
-                            }}
-                            onChange={(styles) => {
-                                const changed: {
-                                    [key: string]: Path;
-                                } = {};
-                                styles.forEach((style, i) => {
-                                    if (style != null) {
-                                        const id = styleIds[i];
-                                        changed[id] = {
-                                            ...state.paths[id],
-                                            style,
-                                        };
-                                    }
-                                });
-                                dispatch({
-                                    type: 'path:update:many',
-                                    changed,
-                                });
-                            }}
-                        />
-                    </div>
-                ) : null}
                 {pendingMirror ? (
                     mirrorControls(setPendingMirror, pendingMirror)
                 ) : pendingDuplication ? (
-                    <div>
-                        <IconButton
-                            onClick={() => {
-                                setPendingDuplication(null);
-                            }}
-                        >
-                            <CancelIcon />
-                        </IconButton>
-                        <IconButton
-                            selected={pendingDuplication.reflect}
-                            onClick={() => {
-                                pendingDuplication.reflect
-                                    ? setPendingDuplication({
-                                          reflect: false,
-                                          p0: null,
-                                      })
-                                    : setPendingDuplication({
-                                          reflect: true,
-                                          p0: null,
-                                      });
-                            }}
-                        >
-                            <MirrorIcon />
-                        </IconButton>
-                        {pendingDuplication.reflect
-                            ? 'Click two points to reflect across'
-                            : `Click a point to duplicate around`}
-                    </div>
+                    duplicationControls(
+                        setPendingDuplication,
+                        pendingDuplication,
+                    )
                 ) : state.selection ? (
                     selectionSection(
                         dispatch,
-                        isDragSelecting,
-                        setDragSelecting,
-                        styleIds,
-                        setStyleOpen,
-                        styleOpen,
+                        editorState.selectMode,
+                        setEditorState,
                         state,
-                        setMultiSelect,
-                        multiSelect,
+                        editorState.multiSelect,
                         setPendingDuplication,
                     )
-                ) : (
-                    <GuideSection
-                        state={state}
-                        dispatch={dispatch}
-                        setDragSelect={setDragSelecting}
-                        dragSelect={isDragSelecting}
-                        setHover={setHover}
-                    />
-                )}
-                {pendingPath[0] ? (
+                ) :
+                    state.pending
+                        ?
+                        <button
+                            css={{
+                                fontSize: 30,
+                            }}
+                            onClick={() => dispatch({ type: 'pending:type', kind: null })}
+                        >
+                            Cancel guide
+                        </button>
+                        : (
+                            null
+                        )}
+                {editorState.pendingPath ? (
                     <PendingPathControls
-                        pendingPath={pendingPath}
+                        editorState={editorState}
+                        setEditorState={setEditorState}
                         allIntersections={allIntersections}
                         guidePrimitives={guidePrimitives.primitives}
                         onComplete={(
@@ -1016,21 +618,23 @@ export const Canvas = ({
                                 });
                             } else {
                                 dispatch({
-                                    type: 'path:create',
-                                    segments,
-                                    origin,
+                                    type: 'path:create:many',
+                                    paths: [{ segments, origin }],
+                                    withMirror: true,
                                 });
                             }
                         }}
                     />
                 ) : null}
+                <div>
+                    {editorState.selectMode === 'radius'
+                        ? <RadiusSelector state={state} dispatch={dispatch} /> : null}
+                </div>
             </div>
+            <Menu model={editorState.items as any} popup ref={menu} />
         </div>
     );
 };
-
-export const maybeReverse = (v: boolean, reverse: boolean) =>
-    reverse ? !v : v;
 
 export const combineStyles = (styles: Array<Style>): Style => {
     const result: Style = {
@@ -1092,6 +696,122 @@ export const dragView = (
     return res;
 };
 
+function duplicationControls(
+    setPendingDuplication: (b: null | PendingDuplication) => void,
+    pendingDuplication: PendingDuplication,
+): React.ReactNode {
+    return (
+        <div>
+            <IconButton
+                onClick={() => {
+                    setPendingDuplication(null);
+                }}
+            >
+                <CancelIcon />
+            </IconButton>
+            <IconButton
+                selected={pendingDuplication.reflect}
+                onClick={() => {
+                    pendingDuplication.reflect
+                        ? setPendingDuplication({
+                            reflect: false,
+                            p0: null,
+                        })
+                        : setPendingDuplication({
+                            reflect: true,
+                            p0: null,
+                        });
+                }}
+            >
+                <MirrorIcon />
+            </IconButton>
+            {pendingDuplication.reflect
+                ? 'Click two points to reflect across'
+                : `Click a point to duplicate around`}
+        </div>
+    );
+}
+
+function zoomPanControls(
+    setEditorState: React.Dispatch<React.SetStateAction<EditorState>>,
+    state: State,
+    tmpView: View,
+    dispatch: (action: Action) => unknown,
+): React.ReactNode {
+    return (
+        <div
+            css={{
+                position: 'absolute',
+                color: 'black',
+                top: 0,
+                right: 0,
+            }}
+        >
+            <div css={{ display: 'flex' }}>
+                <div
+                    css={{
+                        padding: 10,
+                        backgroundColor: 'rgba(255,255,255,0.3)',
+                        cursor: 'pointer',
+                        ':hover': {
+                            backgroundColor: 'rgba(255,255,255,0.5)',
+                        },
+                    }}
+                    onClick={() =>
+                        setEditorState((state) => ({ ...state, tmpView: null }))
+                    }
+                >
+                    Reset z/p
+                </div>
+                <div
+                    css={{
+                        padding: 10,
+                        backgroundColor: 'rgba(255,255,255,0.3)',
+                        cursor: 'pointer',
+                        ':hover': {
+                            backgroundColor: 'rgba(255,255,255,0.5)',
+                        },
+                    }}
+                    onClick={() => {
+                        setEditorState((estate) => ({
+                            ...estate,
+                            tmpView: {
+                                ...state.view,
+                                zoom: tmpView.zoom,
+                            },
+                        }));
+                    }}
+                >
+                    Just pan
+                </div>
+            </div>
+            <div
+                css={{
+                    padding: 10,
+                    backgroundColor: 'rgba(255,255,255,0.3)',
+                    cursor: 'pointer',
+                    ':hover': {
+                        backgroundColor: 'rgba(255,255,255,0.5)',
+                    },
+                }}
+                onClick={() => {
+                    dispatch({
+                        type: 'view:update',
+                        view: {
+                            ...state.view,
+                            center: tmpView.center,
+                            zoom: tmpView.zoom,
+                        },
+                    });
+                    setEditorState((state) => ({ ...state, tmpView: null }));
+                }}
+            >
+                Commit
+            </div>
+        </div>
+    );
+}
+
 export function timelineSegments(timeline: FloatLerp) {
     const segments: Array<TLSegment> = [];
     const points = timeline.points.slice();
@@ -1107,68 +827,6 @@ export function timelineSegments(timeline: FloatLerp) {
         segments.push(segmentForPoints(prev, now));
     }
     return segments;
-}
-
-export function getSelectedIds(
-    paths: State['paths'],
-    selection: State['selection'],
-) {
-    const selectedIds: { [key: string]: boolean } = {};
-    if (selection?.type === 'Path') {
-        selection.ids.forEach((id) => (selectedIds[id] = true));
-    } else if (selection?.type === 'PathGroup') {
-        Object.keys(paths).forEach((id) => {
-            if (selection!.ids.includes(paths[id].group!)) {
-                selectedIds[id] = true;
-            }
-        });
-    }
-    return selectedIds;
-}
-
-function rectForCorners(pos: { x: number; y: number }, drag: Coord) {
-    return {
-        x1: Math.min(pos.x, drag.x),
-        y1: Math.min(pos.y, drag.y),
-        x2: Math.max(pos.x, drag.x),
-        y2: Math.max(pos.y, drag.y),
-    };
-}
-
-export function viewPos(view: View, width: number, height: number) {
-    const x = view.center.x * view.zoom + width / 2;
-    const y = view.center.y * view.zoom + height / 2;
-    return { x, y };
-}
-
-export function usePalettePreload(state: State) {
-    const [, setTick] = React.useState(0);
-
-    React.useEffect(() => {
-        state.palettes[state.activePalette].forEach((color) => {
-            if (color.startsWith('http')) {
-                if (imageCache[color] != null) {
-                    return;
-                }
-                imageCache[color] = false;
-                fetch(
-                    `https://get-page.jaredly.workers.dev/?url=${encodeURIComponent(
-                        color,
-                    )}`,
-                )
-                    .then((data) => data.blob())
-                    .then((blob) => {
-                        var reader = new FileReader();
-                        reader.readAsDataURL(blob);
-                        reader.onloadend = function () {
-                            var base64data = reader.result;
-                            imageCache[color] = base64data as string;
-                            setTick((t) => t + 1);
-                        };
-                    });
-            }
-        });
-    }, [state.palettes[state.activePalette]]);
 }
 
 export const ClipMenu = ({
@@ -1189,7 +847,7 @@ export const ClipMenu = ({
             }}
         >
             <IconButton
-                selected={pendingPath?.isClip}
+                selected={pendingPath ? pendingPath.isClip : false}
                 onClick={() =>
                     setPendingPath((p) => (p ? { ...p, isClip: !p.isClip } : p))
                 }
@@ -1197,5 +855,41 @@ export const ClipMenu = ({
                 <ScissorsCuttingIcon />
             </IconButton>
         </div>
+    );
+};
+
+export const ToolIcon = ({
+    points,
+    lines,
+    circles,
+}: {
+    points?: Coord[];
+    lines?: Coord[][];
+    circles?: [Coord, number][];
+}) => {
+    return (
+        <svg width={16} height={16} viewBox="-2 -2 14 14">
+            {points?.map((p, i) => (
+                <circle key={i} cx={p.x} cy={p.y} r={1.5} fill="currentColor" />
+            ))}
+            {lines?.map((points, i) => (
+                <polyline
+                    key={i}
+                    points={points.map((p) => `${p.x},${p.y}`).join(' ')}
+                    stroke="currentColor"
+                    fill="none"
+                />
+            ))}
+            {circles?.map(([p, r], i) => (
+                <circle
+                    key={i}
+                    cx={p.x}
+                    cy={p.y}
+                    r={r}
+                    fill="none"
+                    stroke="currentColor"
+                />
+            ))}
+        </svg>
     );
 };

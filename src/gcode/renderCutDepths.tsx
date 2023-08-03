@@ -9,6 +9,7 @@ export function renderCutDepths(
     ctx.lineJoin = 'round';
     ctx.lineCap = 'round';
     ctx.globalCompositeOperation = 'darken';
+    // ctx.globalCompositeOperation = forDepthMap ? 'darken' : 'source-over';
     let z = null as null | number;
     const depth = 0 - data.bounds.min.z!;
 
@@ -31,6 +32,9 @@ export function renderCutDepths(
                     ctx.strokeStyle = forDepthMap
                         ? `rgb(${Math.round(zDepth * 255)}, 0, 0)`
                         : `hsl(0, 100%, ${Math.round(zDepth * 100)}%)`;
+                    if (!forDepthMap && zDepth > 0.999) {
+                        ctx.strokeStyle = 'rgba(0,0,0,0)';
+                    }
                     ctx.beginPath();
                     ctx.moveTo(pos.x, pos.y);
                 } else {
@@ -38,6 +42,7 @@ export function renderCutDepths(
                 }
             });
             ctx.stroke();
+            return;
         }
 
         const vbit = tool.vbit;

@@ -1,5 +1,5 @@
 import { sortedVisibleInsetPaths } from './sortedVisibleInsetPaths';
-import { pathToPoints } from './pathToPoints';
+import { pathToPoints, rasterSegPoints } from './pathToPoints';
 import { hslToRgb, rgbToHsl } from './colorConvert';
 import { pathToPrimitives } from '../editor/findSelection';
 import { Primitive } from './intersect';
@@ -54,7 +54,7 @@ export const shaderForState = (state: State): [number, string] => {
         clip,
         state.view.hideDuplicatePaths,
     );
-    const palette = state.palettes[state.activePalette];
+    const palette = state.palette;
 
     let backgroundColor = { r: 0, g: 0, b: 0 };
     if (state.view.background) {
@@ -317,7 +317,7 @@ function strokeToSdf(
     color: Rgb,
     stroke: StyleLine,
 ): string {
-    const points = pathToPoints(path.segments);
+    const points = rasterSegPoints(pathToPoints(path.segments));
     const last = points[points.length - 1];
 
     return `{ // path ${path.id}
@@ -370,7 +370,7 @@ function pathToSdf(
     strokeWidth?: number,
     stroke?: Rgb | null,
 ): string {
-    const points = pathToPoints(path.segments);
+    const points = rasterSegPoints(pathToPoints(path.segments));
     const last = points[points.length - 1];
 
     return `{ // path ${path.id}

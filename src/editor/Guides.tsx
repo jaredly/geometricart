@@ -2,9 +2,10 @@
 /* @jsxFrag React.Fragment */
 import { jsx } from '@emotion/react';
 import React from 'react';
-import { PendingMirror, useCurrent } from '../App';
+import { useCurrent } from '../App';
+import { PendingMirror, UIState } from '../useUIState';
 import { Action, PathMultiply } from '../state/Action';
-import { screenToWorld } from './Canvas';
+import { EditorState, screenToWorld } from './Canvas';
 import { DrawPath, DrawPathState, initialState } from './DrawPath';
 import { pathToPrimitives } from './findSelection';
 import { Bounds } from './GuideElement';
@@ -131,12 +132,13 @@ export function primitivesForElementsAndPaths(
 }
 
 export type PendingPathPair = [
-    null | DrawPathState,
+    EditorState['pendingPath'],
     (
         fn:
-            | DrawPathState
-            | null
-            | ((state: DrawPathState | null) => DrawPathState | null),
+            | EditorState['pendingPath']
+            | ((
+                  state: EditorState['pendingPath'],
+              ) => EditorState['pendingPath']),
     ) => void,
 ];
 
@@ -159,13 +161,17 @@ export const Guides = ({
     setPendingDuplication,
     pendingMirror,
     setPendingMirror,
-    pendingPath,
+    // pendingPath,
     guidePrimitives,
     allIntersections,
     isTouchScreen,
     disableGuides,
     bounds,
+    editorState,
+    uiState,
+    setEditorState,
 }: {
+    uiState: UIState;
     bounds: Bounds;
     state: State;
     isTouchScreen: boolean;
@@ -178,7 +184,9 @@ export const Guides = ({
     pos: Coord;
     pendingDuplication: null | PendingDuplication;
     setPendingDuplication: (b: null | PendingDuplication) => void;
-    pendingPath: PendingPathPair;
+    // pendingPath: PendingPathPair;
+    editorState: EditorState;
+    setEditorState: React.Dispatch<React.SetStateAction<EditorState>>;
     mirrorTransforms: { [key: string]: Array<Array<Matrix>> };
     pendingMirror: PendingMirror | null;
     guidePrimitives: Array<{ prim: Primitive; guides: Array<Id> }>;
@@ -190,6 +198,14 @@ export const Guides = ({
     ) => void;
     disableGuides: boolean;
 }) => {
+    const pendingPath: PendingPathPair = [
+        editorState.pendingPath,
+        (pp) =>
+            setEditorState((s) => ({
+                ...s,
+                pendingPath: typeof pp === 'function' ? pp(s.pendingPath) : pp,
+            })),
+    ];
     const inactiveGuidePrimitives = React.useMemo(() => {
         return primitivesForElementsAndPaths(
             calculateInactiveGuideElements(state.guides, mirrorTransforms),
@@ -249,9 +265,14 @@ export const Guides = ({
                 });
             } else {
                 dispatch({
-                    type: 'path:create',
-                    segments: parts.map((s) => s.segment),
-                    origin: pendingPath[0].origin.coord,
+                    type: 'path:create:many',
+                    paths: [
+                        {
+                            segments: parts.map((s) => s.segment),
+                            origin: pendingPath[0].origin.coord,
+                        },
+                    ],
+                    withMirror: true,
                 });
             }
             pendingPath[1]((_) => null);
@@ -265,44 +286,9 @@ export const Guides = ({
 
     const onClickIntersection = React.useCallback(
         (coord: Intersect, shiftKey: boolean) => {
+            console.log(`click intersection`, currentDuplication, coord);
             if (currentDuplication.current) {
-                if (
-                    !['Path', 'PathGroup'].includes(
-                        currentState.current.selection?.type ?? '',
-                    )
-                ) {
-                    return;
-                }
-                if (
-                    currentDuplication.current.reflect &&
-                    !currentDuplication.current.p0
-                ) {
-                    console.log('got a p0', coord.coord);
-                    setPendingDuplication({
-                        reflect: true,
-                        p0: coord.coord,
-                    });
-                    return;
-                }
-                setPendingDuplication(null);
-                dispatch({
-                    type: 'path:multiply',
-                    selection: currentState.current
-                        .selection as PathMultiply['selection'],
-                    mirror: {
-                        id: 'tmp',
-                        origin: coord.coord,
-                        parent: null,
-                        point: currentDuplication.current.p0 ?? {
-                            x: 100,
-                            y: 0,
-                        },
-                        reflect: currentDuplication.current.reflect,
-                        rotational: currentDuplication.current.reflect
-                            ? []
-                            : [true],
-                    },
-                });
+                handleDuplicationIntersection(coord, currentState.current, currentDuplication.current, setPendingDuplication, dispatch)
                 return;
             }
             if (currentPendingMirror.current) {
@@ -365,10 +351,6 @@ export const Guides = ({
         (guides: string[], shift: boolean): void => {
             if (!shift) {
                 dispatch({
-                    type: 'tab:set',
-                    tab: 'Guides',
-                });
-                dispatch({
                     type: 'selection:set',
                     selection: {
                         type: 'Guide',
@@ -399,10 +381,6 @@ export const Guides = ({
     const clickActive = React.useCallback(
         (guides: string[], shift: boolean): void => {
             if (!shift) {
-                dispatch({
-                    type: 'tab:set',
-                    tab: 'Guides',
-                });
                 dispatch({
                     type: 'selection:set',
                     selection: {
@@ -449,7 +427,11 @@ export const Guides = ({
                     disableGuides || pendingPath[0] ? undefined : clickActive
                 }
             />
-            {!pendingPath[0] && !zooming ? (
+            {(editorState.pendingPath === false ||
+                state.pending != null ||
+                uiState.pendingMirror ||
+                uiState.pendingDuplication) &&
+            !zooming ? (
                 <RenderIntersections
                     zoom={view.zoom}
                     highlight={state.pending != null}
@@ -486,7 +468,7 @@ export const Guides = ({
                 : null}
             {pendingPath[0] ? (
                 <DrawPath
-                    palette={state.palettes[state.activePalette]}
+                    palette={state.palette}
                     mirror={
                         state.activeMirror && !pendingPath[0].isClip
                             ? mirrorTransforms[state.activeMirror]
@@ -595,12 +577,13 @@ function keyHandler(
     currentState: React.MutableRefObject<State>,
     currentPathOrigin: React.MutableRefObject<
         [
-            DrawPathState | null,
+            EditorState['pendingPath'],
             (
                 v:
-                    | DrawPathState
-                    | null
-                    | ((state: DrawPathState | null) => DrawPathState | null),
+                    | EditorState['pendingPath']
+                    | ((
+                          state: EditorState['pendingPath'],
+                      ) => EditorState['pendingPath']),
             ) => void,
         ]
     >,
@@ -755,4 +738,51 @@ export function calculateBounds(width: number, height: number, view: View) {
     );
 
     return { x0, y0, x1, y1 };
+}
+
+export const handleDuplicationIntersection = (coord: Intersect, state: State, duplication: PendingDuplication,
+    setPendingDuplication: (pd: PendingDuplication | null) => void,
+    dispatch: React.Dispatch<Action>
+    ) => {
+    if (
+        !['Path', 'PathGroup'].includes(
+            state.selection?.type ?? '',
+        )
+    ) {
+        console.log(
+            'um selection idk what',
+            state.selection,
+        );
+        return;
+    }
+    if (
+        duplication.reflect &&
+        !duplication.p0
+    ) {
+        console.log('got a p0', coord.coord);
+        setPendingDuplication({
+            reflect: true,
+            p0: coord.coord,
+        });
+        return;
+    }
+    setPendingDuplication(null);
+    dispatch({
+        type: 'path:multiply',
+        selection: state
+            .selection as PathMultiply['selection'],
+        mirror: {
+            id: 'tmp',
+            origin: coord.coord,
+            parent: null,
+            point: duplication.p0 ?? {
+                x: 100,
+                y: 0,
+            },
+            reflect: duplication.reflect,
+            rotational: duplication.reflect
+                ? []
+                : [true],
+        },
+    });
 }

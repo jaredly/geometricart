@@ -1,8 +1,8 @@
 /* @jsx jsx */
 /* @jsxFrag React.Fragment */
 import { jsx } from '@emotion/react';
-import React from 'react';
-import { PendingMirror } from '../App';
+import React, { useMemo } from 'react';
+import { PendingMirror } from '../useUIState';
 import { EyeIcon, EyeInvisibleIcon } from '../icons/Eyes';
 import {
     AddIcon,
@@ -19,121 +19,101 @@ import {
     VectorSelectionIcon,
 } from '../icons/Icon';
 import { Action, PathMultiply, PendingType } from '../state/Action';
-import { guideTypes, Line, State } from '../types';
+import { Coord, guideTypes, Line, State } from '../types';
+import { EditorState, SelectMode } from './Canvas';
 import { PendingDuplication } from './Guides';
 import { Hover } from './Sidebar';
+import { closestPoint } from '../animation/getBuiltins';
 
-export const idsToStyle = (state: State) => {
+export const selectedPathIds = (state: State) => {
     if (
         state.selection?.type === 'PathGroup' ||
         state.selection?.type === 'Path'
     ) {
         return state.selection.type === 'PathGroup'
             ? Object.keys(state.paths).filter((k) =>
-                  state.selection!.ids.includes(state.paths[k].group!),
-              )
+                state.selection!.ids.includes(state.paths[k].group!),
+            )
             : state.selection.ids;
     }
     return [];
 };
 
-export function GuideSection({
-    state,
-    dispatch,
-    setDragSelect,
-    dragSelect,
-    setHover,
+export const RadiusSelector = ({
+    state, dispatch,
 }: {
     state: State;
     dispatch: (action: Action) => unknown;
-    setDragSelect: (fn: (select: boolean) => boolean) => void;
-    dragSelect: boolean;
-    setHover: (hover: Hover | null) => void;
-}) {
-    const tap = React.useRef(false);
-    if (state.pending) {
-        return (
-            <button
-                css={{
-                    fontSize: 30,
-                }}
-                onClick={() => dispatch({ type: 'pending:type', kind: null })}
-            >
-                Cancel guide
-            </button>
-        );
-    }
-    return (
-        <div key="guide-section">
-            <IconButton
-                onClick={() => {
-                    dispatch({
-                        type: 'view:update',
-                        view: {
-                            ...state.view,
-                            guides: !state.view.guides,
-                        },
-                    });
-                    setHover(null);
-                    tap.current = true;
-                }}
-                onMouseOut={() => setHover(null)}
-                onMouseOver={() => {
-                    if (tap.current) {
-                        tap.current = false;
-                        return;
-                    }
-                    setHover({ type: 'guides' });
-                }}
-            >
-                {state.view.guides ? <EyeIcon /> : <EyeInvisibleIcon />}
-            </IconButton>
-            <IconButton
-                selected={dragSelect}
-                onClick={() => {
-                    setDragSelect((current) => !current);
-                }}
-            >
-                <SelectDragIcon />
-            </IconButton>
+    // setDragSelect: (fn: (select: SelectMode) => boolean) => void;
+    // dragSelect: SelectMode;
+    // setHover: (hover: Hover | null) => void;
+}) => {
+    const closestPoints = useMemo(() => {
+        const points: { [key: string]: [number, Coord] } = {};
+        let max = 0;
+        Object.entries(state.paths).forEach(([key, path]) => {
+            points[key] = closestPoint(state.view.center, path.segments)
+            max = Math.max(max, points[key][0]);
+        })
+        return { max, map: points };
+    }, [state.paths, state.view.center])
 
-            {state.view.guides ? (
-                <select
-                    css={{
-                        width: 140,
-                        fontSize: 30,
-                    }}
-                    onChange={(evt) => {
-                        dispatch({
-                            type: 'pending:type',
-                            kind: evt.target.value as PendingType['kind'],
-                        });
-                    }}
-                    value={0}
-                >
-                    <option value={0} disabled>
-                        + Guide
-                    </option>
-                    {guideTypes.map((kind) => (
-                        <option key={kind} value={kind}>
-                            {kind}
-                        </option>
-                    ))}
-                </select>
-            ) : null}
-        </div>
-    );
+    return (
+        <input
+            type="range"
+            min="0"
+            style={{ width: 500 }}
+            max={closestPoints.max}
+            step={closestPoints.max / 100}
+            onInput={evt => {
+                console.log(evt.currentTarget.value)
+                dispatch({
+                    type: 'selection:set',
+                    selection: {
+                        type: 'Path',
+                        ids: Object.keys(closestPoints.map).filter(k => closestPoints.map[k][0] < +evt.currentTarget.value)
+                    }
+                })
+            }}
+        />
+    )
 }
+
+// export function GuideSection({
+//     state,
+//     dispatch,
+//     setDragSelect,
+//     dragSelect,
+//     setHover,
+// }: {
+//     state: State;
+//     dispatch: (action: Action) => unknown;
+//     setDragSelect: (fn: (select: SelectMode) => boolean) => void;
+//     dragSelect: SelectMode;
+//     setHover: (hover: Hover | null) => void;
+// }) {
+//     // const tap = React.useRef(false);
+//     if (state.pending) {
+//         return (
+//             <button
+//                 css={{
+//                     fontSize: 30,
+//                 }}
+//                 onClick={() => dispatch({ type: 'pending:type', kind: null })}
+//             >
+//                 Cancel guide
+//             </button>
+//         );
+//     }
+
+//     return null
+// }
 
 export function selectionSection(
     dispatch: (action: Action) => unknown,
-    dragSelect: boolean,
-    setDragSelect: (fn: (select: boolean) => boolean) => void,
-    styleIds: string[],
-    setStyleOpen: (fn: (select: boolean) => boolean) => void,
-    styleOpen: boolean,
+    selectMode: SelectMode,
+    setEditorState: React.Dispatch<React.SetStateAction<EditorState>>,
     state: State,
-    setMultiSelect: React.Dispatch<React.SetStateAction<boolean>>,
     multiSelect: boolean,
     setPendingDuplication: (b: null | PendingDuplication) => void,
 ): React.ReactNode {
@@ -153,26 +133,20 @@ export function selectionSection(
                 <CancelIcon />
             </IconButton>
             <IconButton
-                selected={dragSelect}
+                selected={selectMode === true}
                 onClick={() => {
-                    setDragSelect((current) => !current);
+                    setEditorState((state) => ({
+                        ...state,
+                        selectMode: !state.selectMode,
+                    }));
                 }}
             >
                 <SelectDragIcon />
             </IconButton>
-            {styleIds.length ? (
-                <IconButton
-                    onClick={() => {
-                        setStyleOpen((s) => !s);
-                    }}
-                    selected={styleOpen}
-                >
-                    <PaintFillIcon />
-                </IconButton>
-            ) : null}
             {state.selection.type === 'Guide' &&
-            state.selection.ids.length === 1 &&
-            state.guides[state.selection.ids[0]].geom.type === 'Line' ? (
+                state.selection.ids.length === 1 &&
+                state.guides[state.selection.ids[0]] &&
+                state.guides[state.selection.ids[0]].geom.type === 'Line' ? (
                 <>
                     <IconButton
                         onClick={() => {
@@ -223,10 +197,13 @@ export function selectionSection(
                 </>
             ) : null}
             {state.selection.type === 'PathGroup' ||
-            state.selection.type === 'Path' ? (
+                state.selection.type === 'Path' ? (
                 <IconButton
                     onClick={() => {
-                        setMultiSelect((s) => !s);
+                        setEditorState((state) => ({
+                            ...state,
+                            multiSelect: !state.multiSelect,
+                        }));
                     }}
                     selected={multiSelect}
                 >
@@ -262,8 +239,8 @@ export function selectionSection(
                 <DeleteForeverIcon />
             </IconButton>
             {state.activeMirror &&
-            (state.selection.type === 'Path' ||
-                state.selection.type === 'PathGroup') ? (
+                (state.selection.type === 'Path' ||
+                    state.selection.type === 'PathGroup') ? (
                 <IconButton
                     onClick={() => {
                         dispatch({
@@ -280,7 +257,7 @@ export function selectionSection(
             ) : null}
             {(state.selection.type === 'Path' ||
                 state.selection.type === 'PathGroup') &&
-            state.view.guides ? (
+                state.view.guides ? (
                 <IconButton
                     onClick={() => {
                         setPendingDuplication({ reflect: false, p0: null });
@@ -320,9 +297,9 @@ export function mirrorControls(
                     setPendingMirror((mirror) =>
                         mirror
                             ? {
-                                  ...mirror,
-                                  rotations: mirror.rotations + 1,
-                              }
+                                ...mirror,
+                                rotations: mirror.rotations + 1,
+                            }
                             : null,
                     );
                 }}
@@ -337,9 +314,9 @@ export function mirrorControls(
                     setPendingMirror((mirror) =>
                         mirror
                             ? {
-                                  ...mirror,
-                                  rotations: Math.max(1, mirror.rotations - 1),
-                              }
+                                ...mirror,
+                                rotations: Math.max(1, mirror.rotations - 1),
+                            }
                             : null,
                     );
                 }}
@@ -354,9 +331,9 @@ export function mirrorControls(
                     setPendingMirror((mirror) =>
                         mirror
                             ? {
-                                  ...mirror,
-                                  reflect: !mirror.reflect,
-                              }
+                                ...mirror,
+                                reflect: !mirror.reflect,
+                            }
                             : null,
                     );
                 }}

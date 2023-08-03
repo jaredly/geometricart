@@ -5,11 +5,7 @@ import {
     calculateGuideElements,
     calculateInactiveGuideElements,
 } from './calculateGuideElements';
-import {
-    AnimatedFunctions,
-    evaluateAnimatedValues,
-    imageCache,
-} from '../editor/Canvas';
+import { AnimatedFunctions, evaluateAnimatedValues } from '../editor/Canvas';
 import { pathToPrimitives } from '../editor/findSelection';
 import {
     getAnimatedPaths,
@@ -23,10 +19,16 @@ import {
 } from './getMirrorTransforms';
 import { primitivesForElementsAndPaths } from '../editor/Guides';
 import { Primitive } from './intersect';
-import { isClockwise, pathToPoints, reversePath } from './pathToPoints';
+import {
+    isClockwise,
+    pathToPoints,
+    rasterSegPoints,
+    reversePath,
+} from './pathToPoints';
 import { calcPathD, idSeed, lightenedColor } from '../editor/RenderPath';
 import { sortedVisibleInsetPaths } from './sortedVisibleInsetPaths';
 import { ArcSegment, Overlay, Path, State } from '../types';
+import { imageCache } from '../editor/SVGCanvas';
 
 export const makeImage = (href: string): Promise<HTMLImageElement> => {
     return new Promise((res, rej) => {
@@ -49,7 +51,7 @@ export const canvasRender = async (
     animationPosition: number,
     backgroundAlpha?: number | null,
 ) => {
-    const palette = state.palettes[state.activePalette];
+    const palette = state.palette;
 
     const images = await Promise.all(
         palette.map((c) =>
@@ -391,7 +393,7 @@ function drawCenteredImage(
 }
 
 function debugPath(path: Path, ctx: CanvasRenderingContext2D, zoom: number) {
-    pathToPoints(path.segments).forEach((point) => {
+    rasterSegPoints(pathToPoints(path.segments)).forEach((point) => {
         ctx.beginPath();
         ctx.ellipse(point.x * zoom, point.y * zoom, 10, 10, 0, Math.PI * 2, 0);
         ctx.fillStyle = 'blue';

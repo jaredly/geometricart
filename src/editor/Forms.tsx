@@ -167,6 +167,9 @@ export const Color = ({
     palette: Array<string>;
     extra?: Array<string>;
 }) => {
+    if (!palette) {
+        debugger;
+    }
     return (
         <div>
             {palette.map((item, i) => (
@@ -251,7 +254,6 @@ export const Toggle = ({
 
 export const PathGroupForm = ({
     group,
-    palette,
     selected,
     onChange,
     onMouseOver,
@@ -259,7 +261,7 @@ export const PathGroupForm = ({
     onDelete,
 }: {
     group: PathGroup;
-    palette: Array<string>;
+    palette?: Array<string>;
     selected: boolean;
     onChange: (group: PathGroup) => unknown;
     onMouseOver: () => void;
@@ -275,7 +277,6 @@ export const PathGroupForm = ({
     return (
         <div
             // ref={(node) => (ref.current = node)}
-            css={{ padding: 4, borderBottom: '1px solid #aaa', margin: 4 }}
             style={{
                 backgroundColor: selected ? 'rgba(255,255,255,0.1)' : undefined,
             }}
@@ -319,7 +320,7 @@ export const PathGroupForm = ({
             />
             <div>
                 Clip Mode:
-                {['none', 'remove', 'normal'].map((name) => (
+                {['none', 'remove', 'normal', 'fills'].map((name) => (
                     <button
                         key={name}
                         style={
@@ -370,7 +371,6 @@ export const hasNonBodyScrollParent = (node: HTMLElement) => {
 
 export const PathForm = ({
     path,
-    palette,
     onChange,
     onDelete,
     onMouseOver,
@@ -381,7 +381,6 @@ export const PathForm = ({
     onMouseOut: () => void;
     path: Path;
     selected: boolean;
-    palette: Array<string>;
     onChange: (path: Path) => unknown;
     onDelete: () => void;
 }) => {
@@ -395,7 +394,6 @@ export const PathForm = ({
     return (
         <div
             ref={(node) => (ref.current = node)}
-            css={{ padding: 4, borderBottom: '1px solid #aaa', margin: 4 }}
             style={{
                 backgroundColor: selected ? 'rgba(255,255,255,0.1)' : undefined,
             }}
@@ -427,7 +425,7 @@ export const PathForm = ({
             />
             <div>
                 Clip Mode:
-                {['none', 'remove', 'normal'].map((name) => (
+                {['none', 'remove', 'normal', 'fills'].map((name) => (
                     <button
                         key={name}
                         style={
@@ -600,21 +598,7 @@ export const ViewForm = ({
 }) => {
     const backgrounds = ['#1e1e1e', 'white', 'black', 'transparent'];
     return (
-        <div
-            css={{
-                padding: 8,
-                border: '1px solid #ccc',
-                margin: '4px 0',
-            }}
-        >
-            <div>View</div>
-
-            <Toggle
-                label="Show guides"
-                value={view.guides}
-                onChange={(guides) => onChange({ ...view, guides })}
-            />
-
+        <div className="p-3">
             <Toggle
                 label="Laser Cut Mode"
                 value={!!view.laserCutMode}
@@ -739,6 +723,7 @@ export const ViewForm = ({
                     flexDirection: 'row',
                     alignItems: 'center',
                     marginTop: 8,
+                    flexWrap: 'wrap',
                 }}
             >
                 <div css={{ marginRight: 8 }}>Background</div>

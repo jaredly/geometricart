@@ -56,7 +56,7 @@ import { transformSegment } from './points';
  *
  * NOTE That I'm not messing with scaling at the moment.
  */
-const normalizedPath = (
+export const normalizedPath = (
     segments: Array<Segment>,
 ): [Array<Segment>, Array<Matrix>] | null => {
     if (segments.length < 2) {
@@ -220,6 +220,9 @@ export const pathToInsetPaths = (
             if (!inset || Math.abs(inset) < 0.005) {
                 return [path];
             }
+            if (path.debug) {
+                console.log('insetting', path, inset);
+            }
 
             if (path.normalized && insetCache[path.normalized.key]) {
                 if (!insetCache[path.normalized.key].insets[inset / 100]) {
@@ -252,6 +255,9 @@ export const pathToInsetPaths = (
                 inset / 100,
             );
             const regions = cleanUpInsetSegments2(segments, corners);
+            if (path.segments.length === 1) {
+                console.log('regions', path.segments, regions);
+            }
 
             return regions.map((segments) => ({
                 ...path,
@@ -560,15 +566,11 @@ function processOnePath(
 ): (value: Path, index: number, array: Path[]) => Path[] {
     const clipBounds = clip ? segmentsBounds(clip) : null;
     return (path) => {
-        // if (path.debug) {
-        //     console.log('hi');
-        // }
-        if (!isClockwise(path.segments)) {
+        if (!isClockwise(path.segments) && !path.open) {
             const segments = reversePath(path.segments);
             const origin = segments[segments.length - 1].to;
             path = { ...path, segments, origin };
         }
-        // path = { ...path, segments: simplifyPath(path.segments) };
         const group = path.group ? pathGroups[path.group] : null;
         if (selectedIds[path.id] && styleHover) {
             path = {

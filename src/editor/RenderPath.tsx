@@ -5,11 +5,16 @@ import { rgbToHsl } from '../rendering/colorConvert';
 import { angleBetween } from '../rendering/findNextSegments';
 import { angleTo, dist, push } from '../rendering/getMirrorTransforms';
 import { Primitive } from '../rendering/intersect';
-import { Coord, Path, PathGroup, Segment } from '../types';
+import { Coord, Path, PathGroup, Segment, State } from '../types';
 import { StyleHover } from './MultiStyleForm';
 import { useTouchClick } from './RenderIntersections';
 import { arcPath } from './RenderPendingPath';
 import { DebugOrigPath } from './DebugOrigPath';
+import { MenuItem } from './Canvas';
+import { Action } from '../state/Action';
+import { normalizedPath } from '../rendering/sortedVisibleInsetPaths';
+import { pathToSegmentKeys } from '../rendering/pathsAreIdentical';
+import { segmentsCenter } from './Bounds';
 
 export const UnderlinePath = ({
     path,
@@ -85,12 +90,18 @@ const RenderPathMemo = ({
     rand,
     clip,
     styleHover,
+    contextMenu,
 }: {
-    rand?: Prando;
-    generator?: RoughGenerator;
+    contextMenu?: {
+        state: State;
+        dispatch: (action: Action) => void;
+        showMenu: (evt: React.MouseEvent, items: MenuItem[]) => void;
+    };
     path: Path;
-    styleHover: StyleHover | null;
+    rand?: Prando;
     origPath?: Path;
+    generator?: RoughGenerator;
+    styleHover: StyleHover | null;
     clip?: { prims: Array<Primitive>; segments: Array<Segment> } | null;
     zoom: number;
     sketchiness: number | undefined;
@@ -99,6 +110,9 @@ const RenderPathMemo = ({
     palette: Array<string>;
 }) => {
     const d = calcPathD(path, zoom);
+    if (path.debug) {
+        console.log('DEBUG', path, d);
+    }
     const style = path.style;
     const handlers = useTouchClick<null>(() =>
         onClick ? onClick(false, path.id) : null,
@@ -175,8 +189,23 @@ const RenderPathMemo = ({
                         stroke={info.stroke}
                         fill={info.fill != 'none' ? info.fill : common.fill}
                         strokeWidth={info.strokeWidth}
-                        // onClick={common.onClick}
-                        // onMouseDown={common.onMouseDown}
+                        onContextMenu={
+                            contextMenu
+                                ? (evt) => {
+                                      evt.preventDefault();
+                                      const { state, dispatch, showMenu } =
+                                          contextMenu;
+                                      showMenu(
+                                          evt,
+                                          itemsForPath(
+                                              origPath ?? path,
+                                              state,
+                                              dispatch,
+                                          ),
+                                      );
+                                  }
+                                : undefined
+                        }
                         style={common.style}
                     />
                 ));
@@ -185,8 +214,25 @@ const RenderPathMemo = ({
             return (
                 <React.Fragment key={`info-${i}-${k}`}>
                     <path
-                        data-id={path.id}
                         d={raw}
+                        data-id={path.id}
+                        onContextMenu={
+                            contextMenu
+                                ? (evt) => {
+                                      evt.preventDefault();
+                                      const { state, dispatch, showMenu } =
+                                          contextMenu;
+                                      showMenu(
+                                          evt,
+                                          itemsForPath(
+                                              origPath ?? path,
+                                              state,
+                                              dispatch,
+                                          ),
+                                      );
+                                  }
+                                : undefined
+                        }
                         {...common}
                         key={`info-${i}-${k}`}
                     />
@@ -217,6 +263,16 @@ const RenderPathMemo = ({
                       evt.stopPropagation();
                       evt.preventDefault();
                       onClick(evt.shiftKey, path.id);
+                  }
+                : undefined,
+            onContextMenu: contextMenu
+                ? (evt: React.MouseEvent) => {
+                      evt.preventDefault();
+                      const { state, dispatch, showMenu } = contextMenu;
+                      showMenu(
+                          evt,
+                          itemsForPath(origPath ?? path, state, dispatch),
+                      );
                   }
                 : undefined,
             style: onClick
@@ -271,6 +327,7 @@ const RenderPathMemo = ({
                         strokeWidth={info.strokeWidth}
                         onClick={common.onClick}
                         onMouseDown={common.onMouseDown}
+                        onContextMenu={common.onContextMenu}
                         style={common.style}
                     />
                 ));
@@ -300,6 +357,117 @@ const RenderPathMemo = ({
             ) : null}
         </>
     );
+};
+
+const normalizedKey = (path: Path) => {
+    const norm = normalizedPath(path.segments);
+    if (!norm) {
+        console.warn('unable to normalize?');
+        return null;
+    }
+    return pathToSegmentKeys(norm[0][norm[0].length - 1].to, norm[0]).join(':');
+};
+
+const selectPathIds = (
+    state: State,
+    event: React.MouseEvent,
+    ids: string[],
+): Action => {
+    return {
+        type: 'selection:set',
+        selection: {
+            type: 'Path',
+            ids:
+                event.shiftKey && state.selection?.type === 'Path'
+                    ? [...state.selection.ids, ...ids]
+                    : ids,
+        },
+    };
+};
+
+export const itemsForPath = (
+    path: Path,
+    state: State,
+    dispatch: (action: Action) => void,
+) => {
+    console.log('ok', path);
+    const select: MenuItem[] = [];
+
+    const key = normalizedKey(path);
+    if (key) {
+        select.push({
+            label: 'By shape',
+            command({ originalEvent }) {
+                const ids = Object.keys(state.paths).filter(
+                    (k) => normalizedKey(state.paths[k]) === key,
+                );
+                dispatch(selectPathIds(state, originalEvent, ids));
+            },
+        });
+    }
+
+    path.style.fills.forEach((fill) => {
+        if (fill) {
+            const color = fill.color;
+            const full = paletteColor(state.palette, fill.color, fill.lighten);
+            select.push({
+                label: (
+                    <span>
+                        {colorSquare(full)}
+                        by fill
+                    </span>
+                ),
+                command({ originalEvent }) {
+                    const ids = Object.keys(state.paths).filter((id) =>
+                        state.paths[id].style.fills.find(
+                            (fill) => fill && fill.color === color,
+                        ),
+                    );
+                    dispatch(selectPathIds(state, originalEvent, ids));
+                },
+            });
+        }
+    });
+
+    path.style.lines.forEach((line) => {
+        if (line) {
+            const color = line.color;
+            const full = paletteColor(state.palette, line.color, line.lighten);
+            select.push({
+                label: (
+                    <span>
+                        {colorSquare(full)}
+                        by line
+                    </span>
+                ),
+                command({ originalEvent }) {
+                    const ids = Object.keys(state.paths).filter((id) =>
+                        state.paths[id].style.lines.find(
+                            (line) => line && line.color === color,
+                        ),
+                    );
+                    dispatch(selectPathIds(state, originalEvent, ids));
+                },
+            });
+        }
+    });
+
+    const items: MenuItem[] = [];
+    items.push({
+        label: 'Center on this shape',
+        command({originalEvent}) {
+            const center = segmentsCenter(path.segments);
+            dispatch({
+                type: 'view:update',
+                view: { ...state.view, center: {x: -center.x, y: -center.y}, }
+            });
+        },
+    })
+    items.push({
+        label: 'Select',
+        items: select,
+    });
+    return items;
 };
 
 export const emptyPath: Path = {
@@ -367,7 +535,7 @@ export const lightenedColor = (
 
 export const paletteColor = (
     palette: Array<string>,
-    color: string | number | undefined,
+    color: string | number | undefined | null,
     lighten?: number,
 ) => {
     if (color == null) {
@@ -387,6 +555,22 @@ export const idSeed = (id: string) => {
     }
     return num;
 };
+
+export function colorSquare(full: string | undefined) {
+    return (
+        <div
+            style={{
+                width: '1em',
+                height: '1em',
+                marginBottom: -2,
+                backgroundColor: full,
+                border: '1px solid white',
+                display: 'inline-block',
+                marginRight: 8,
+            }}
+        />
+    );
+}
 
 export function segmentArrow(
     prev: Coord,

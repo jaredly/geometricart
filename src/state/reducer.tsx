@@ -31,6 +31,7 @@ import {
     AddRemoveEdit,
     UndoAddRemoveEdit,
     ScriptRename,
+    PathCreateMany,
 } from './Action';
 import {
     pathsAreIdentical,
@@ -41,6 +42,7 @@ import { simplifyPath } from '../rendering/simplifyPath';
 import { ensureClockwise } from '../rendering/pathToPoints';
 import { clipPath } from '../rendering/clipPath';
 import { pathToPrimitives } from '../editor/findSelection';
+import { styleMatches } from '../editor/MultiStyleForm';
 
 export const reducer = (state: State, action: Action): State => {
     if (action.type === 'undo') {
@@ -85,21 +87,38 @@ export const reducer = (state: State, action: Action): State => {
             },
         };
     }
-    if (action.type === 'palette:rename') {
+    if (action.type === 'library:palette:rename') {
         const palettes = { ...state.palettes };
         palettes[action.new] = palettes[action.old];
         delete palettes[action.old];
         return { ...state, palettes };
     }
-    if (action.type === 'palette:update') {
+    if (action.type === 'library:palette:update') {
         return {
             ...state,
             palettes: { ...state.palettes, [action.name]: action.colors },
         };
     }
-    if (action.type === 'palette:select') {
-        return { ...state, activePalette: action.name };
+    if (action.type === 'select:same') {
+        const ids = Object.keys(state.paths).filter((id) => {
+            const path = state.paths[id];
+            if (action.line) {
+                if (
+                    path.style.lines.find(
+                        (line) => line && styleMatches(line, action.line!),
+                    ) != null
+                ) {
+                    return true;
+                }
+            }
+        });
+        return ids.length
+            ? { ...state, selection: { type: 'Path', ids } }
+            : state;
     }
+    // if (action.type === 'library:palette:select') {
+    //     return { ...state, activePalette: action.name };
+    // }
 
     const [newState, newAction] = reduceWithoutUndo(
         state,
@@ -119,6 +138,7 @@ export const reduceWithoutUndo = (
     state: State,
     action: UndoableAction,
 ): [State, UndoAction | null] => {
+    // console.log('🤔 an action', action);
     switch (action.type) {
         case 'mirror:change':
             return [
@@ -155,6 +175,7 @@ export const reduceWithoutUndo = (
                         ...state,
                         nextId: state.nextId + 1,
                         pending: null,
+                        selection: { type: 'Guide', ids: [id] },
                         guides: {
                             ...state.guides,
                             [id]: {
@@ -201,10 +222,15 @@ export const reduceWithoutUndo = (
             ];
         }
         case 'guide:add':
+            console.log('select it up', action.id);
             return [
                 {
                     ...state,
                     guides: { ...state.guides, [action.id]: action.guide },
+                    selection: {
+                        type: 'Guide',
+                        ids: [action.id],
+                    },
                 },
                 { type: action.type, action },
             ];
@@ -256,6 +282,7 @@ export const reduceWithoutUndo = (
                         },
                     },
                     nextId,
+                    activeMirror: action.activate ? id : state.activeMirror,
                 },
                 {
                     type: action.type,
@@ -268,7 +295,8 @@ export const reduceWithoutUndo = (
         case 'path:multiply': {
             return handlePathMultiply(state, action);
         }
-        case 'path:create': {
+        case 'path:create':
+        case 'path:create:many': {
             return handlePathCreate(state, action);
         }
         case 'view:update':
@@ -789,6 +817,12 @@ export const reduceWithoutUndo = (
                 { type: action.type, action },
             ];
         }
+        case 'palette:update': {
+            return [
+                { ...state, palette: action.colors },
+                { type: action.type, action, prev: state.palette },
+            ];
+        }
         default:
             let _x: never = action;
             console.log(`SKIPPING ${(action as any).type}`);
@@ -798,6 +832,8 @@ export const reduceWithoutUndo = (
 
 export const undo = (state: State, action: UndoAction): State => {
     switch (action.type) {
+        case 'palette:update':
+            return { ...state, palette: action.prev };
         case 'gcode:config':
             return { ...state, gcode: { ...state.gcode, ...action.prev } };
         case 'gcode:item:order': {
@@ -1061,7 +1097,9 @@ export const undo = (state: State, action: UndoAction): State => {
 
             return state;
         }
-        case 'path:create': {
+
+        case 'path:create':
+        case 'path:create:many': {
             state = {
                 ...state,
                 paths: {
@@ -1255,92 +1293,115 @@ export function handlePathMultiply(
 
 export function handlePathCreate(
     state: State,
-    action: PathCreate,
+    origAction: PathCreateMany | PathCreate,
 ): [State, UndoAction | null] {
-    let nextId = state.nextId;
-    const id = `id-${nextId++}`;
-    const ids = [id];
-    let groupId: string | null = null;
-    state = { ...state, paths: { ...state.paths } };
+    const action: PathCreateMany =
+        origAction.type === 'path:create:many'
+            ? origAction
+            : {
+                  type: 'path:create:many',
+                  paths: [
+                      {
+                          origin: origAction.origin,
+                          segments: origAction.segments,
+                      },
+                  ],
+                  withMirror: true,
+              };
 
-    const style: Style = {
-        fills: [{ color: 1 }],
-        lines: [{ color: 'white', width: 0 }],
-    };
-    groupId = `id-${nextId++}`;
-
-    let main: Path = {
-        id,
-        created: 0,
-        group: groupId,
-        ordering: 0,
-        hidden: false,
-        origin: action.origin,
-        // simplify it up y'all
-        segments: simplifyPath(ensureClockwise(action.segments)),
-        style,
-    };
-
-    state.pathGroups = {
-        ...state.pathGroups,
-        [groupId]: {
-            group: null,
-            id: groupId,
-        },
-    };
-
-    if (state.activeMirror) {
-        const transforms = getTransformsForMirror(
-            state.activeMirror,
-            state.mirrors,
-        );
-
-        const usedPaths = [pathToSegmentKeys(main.origin, main.segments)];
-
-        transforms.forEach((matrices) => {
-            const origin = applyMatrices(main.origin, matrices);
-            const segments = main.segments.map((seg) =>
-                transformSegment(seg, matrices),
-            );
-            // TOOD: should I check each prev against my forward & backward,
-            // or put both forward & backward into the list?
-            // Are they equivalent?
-            const forward = pathToSegmentKeys(origin, segments);
-            const backward = pathToReversedSegmentKeys(origin, segments);
-            if (
-                usedPaths.some(
-                    (path) =>
-                        pathsAreIdentical(path, backward) ||
-                        pathsAreIdentical(path, forward),
-                )
-            ) {
-                return;
-            }
-            usedPaths.push(forward);
-            let nid = `id-${nextId++}`;
-            state.paths[nid] = {
-                id: nid,
-                group: groupId,
-                ordering: 0,
-                hidden: false,
-                created: 0,
-                origin,
-                segments,
-                style,
-            };
-            ids.push(nid);
-        });
+    if (!action.paths.length) {
+        return [state, null];
     }
-    state.paths[id] = main;
+    console.log('creating', action.paths);
+    state = {
+        ...state,
+        paths: { ...state.paths },
+        pathGroups: { ...state.pathGroups },
+    };
+    let nextId = state.nextId;
+
+    const ids: string[] = [];
+
+    let groupId: string = `id-${nextId++}`;
+    state.pathGroups[groupId] = {
+        group: null,
+        id: groupId,
+    };
+
+    action.paths.forEach(({ origin, segments, open }) => {
+        const id = `id-${nextId++}`;
+        ids.push(id);
+
+        const style: Style = {
+            fills: action.trace ? [] : [{ color: 1 }],
+            lines: [{ color: 'white', width: 0 }],
+        };
+
+        let main: Path = {
+            id,
+            created: 0,
+            group: groupId,
+            ordering: 0,
+            hidden: false,
+            origin,
+            open,
+            // simplify it up y'all
+            segments: simplifyPath(ensureClockwise(segments)),
+            style,
+        };
+
+        if (state.activeMirror && action.withMirror) {
+            const transforms = getTransformsForMirror(
+                state.activeMirror,
+                state.mirrors,
+            );
+
+            const usedPaths = [pathToSegmentKeys(main.origin, main.segments)];
+
+            transforms.forEach((matrices) => {
+                const origin = applyMatrices(main.origin, matrices);
+                const segments = main.segments.map((seg) =>
+                    transformSegment(seg, matrices),
+                );
+                // TOOD: should I check each prev against my forward & backward,
+                // or put both forward & backward into the list?
+                // Are they equivalent?
+                const forward = pathToSegmentKeys(origin, segments);
+                const backward = pathToReversedSegmentKeys(origin, segments);
+                if (
+                    usedPaths.some(
+                        (path) =>
+                            pathsAreIdentical(path, backward) ||
+                            pathsAreIdentical(path, forward),
+                    )
+                ) {
+                    return;
+                }
+                usedPaths.push(forward);
+                let nid = `id-${nextId++}`;
+                state.paths[nid] = {
+                    id: nid,
+                    group: groupId,
+                    ordering: 0,
+                    hidden: false,
+                    open: main.open,
+                    created: 0,
+                    origin,
+                    segments,
+                    style,
+                };
+                console.log(state.paths[nid]);
+                ids.push(nid);
+            });
+        }
+        state.paths[id] = main;
+        console.log(state.paths[id]);
+    });
     return [
         {
             ...state,
             nextId,
             selection: { type: 'PathGroup', ids: [groupId] },
-            paths: {
-                ...state.paths,
-                [id]: main,
-            },
             pending: null,
         },
         {

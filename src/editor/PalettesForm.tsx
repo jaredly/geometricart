@@ -12,9 +12,11 @@ import {
 import { useDropTarget } from './useDropTarget';
 import { createPortal } from 'react-dom';
 import { hslToRgb, rgbToHsl } from '../rendering/colorConvert';
-import { SwatchesPicker } from 'react-color';
+import { SliderPicker, SketchPicker } from 'react-color';
 // @ts-ignore
 import kMeans from 'kmeans-js';
+
+import { ColorPicker } from 'primereact/colorpicker';
 
 export const averageAt = (data: ImageData, pos: Coord): Rgb => {
     const colors = [
@@ -271,7 +273,7 @@ export function PalettesForm({
                     }
                     let newName = `palette${num}`;
                     dispatch({
-                        type: 'palette:update',
+                        type: 'library:palette:update',
                         name: newName,
                         colors: ['red', 'green', 'blue'],
                     });
@@ -313,7 +315,7 @@ export function PalettesForm({
                     }
                     let newName = `palette${num}`;
                     dispatch({
-                        type: 'palette:update',
+                        type: 'library:palette:update',
                         name: newName,
                         colors: parts,
                     });
@@ -344,12 +346,14 @@ function PaletteForm({
     return (
         <div
             style={{
-                border:
-                    state.activePalette === name
-                        ? `1px solid white`
-                        : `1px solid transparent`,
+                border: `1px solid transparent`,
             }}
-            onClick={() => dispatch({ type: 'palette:select', name })}
+            onClick={() => {
+                dispatch({
+                    type: 'palette:update',
+                    colors: state.palettes[name],
+                });
+            }}
         >
             {name}
             <div
@@ -368,7 +372,7 @@ function PaletteForm({
                                 const palette = state.palettes[name].slice();
                                 palette[i] = color;
                                 dispatch({
-                                    type: 'palette:update',
+                                    type: 'library:palette:update',
                                     name,
                                     colors: palette,
                                 });
@@ -396,7 +400,7 @@ function PaletteForm({
                             const palette = state.palettes[name].slice();
                             palette.push(color);
                             dispatch({
-                                type: 'palette:update',
+                                type: 'library:palette:update',
                                 name,
                                 colors: palette,
                             });
@@ -422,7 +426,7 @@ function PaletteForm({
                         }
                         let newName = `palette${num}`;
                         dispatch({
-                            type: 'palette:update',
+                            type: 'library:palette:update',
                             name: newName,
                             colors: state.palettes[name],
                         });
@@ -443,7 +447,7 @@ function PaletteForm({
                         const colors = state.palettes[name].slice();
                         colors[i] = rgbToHex(color);
                         dispatch({
-                            type: 'palette:update',
+                            type: 'library:palette:update',
                             name,
                             colors,
                         });
@@ -511,16 +515,20 @@ export const ColorEditor = ({
                         position: 'absolute',
                         zIndex: 10,
                         top: '100%',
-                        marginTop: 16,
+                        width: 200,
                     }}
                 >
-                    <SwatchesPicker
-                        color={text ?? undefined}
+                    <SketchPicker
+                        color={text ?? color}
                         onChange={(change) => {
-                            // setText(change.hex);
                             onChange(change.hex);
                         }}
                     />
+                    {/* <ColorPicker
+                        inline
+                        color={text?.slice(1) ?? color.slice(1)}
+                        onChange={(e) => onChange('#' + e.value)}
+                    /> */}
                 </div>
             ) : null}
         </div>

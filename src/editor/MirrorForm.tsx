@@ -73,7 +73,7 @@ export const ShowMirror = ({
                 <line
                     key={i}
                     strokeWidth={1}
-                    stroke="red"
+                    stroke="yellow"
                     x1={line.p1.x * scale - xoff}
                     y1={line.p1.y * scale - yoff}
                     x2={line.p2.x * scale - xoff}

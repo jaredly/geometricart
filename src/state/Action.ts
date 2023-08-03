@@ -18,6 +18,8 @@ import {
     Animations,
     TimelineLane,
     TimelineSlot,
+    StyleLine,
+    Fill,
 } from '../types';
 
 /*
@@ -37,11 +39,12 @@ export type Action =
     | { type: 'redo' }
     | { type: 'reset'; state: State }
     | { type: 'selection:set'; selection: Selection | null }
+    | { type: 'select:same'; line?: StyleLine; fill?: Fill }
     | { type: 'tab:set'; tab: Tab }
     | { type: 'attachment:add'; id: string; attachment: Attachment }
-    | { type: 'palette:rename'; old: string; new: string }
-    | { type: 'palette:update'; name: string; colors: Array<string> }
-    | { type: 'palette:select'; name: string };
+    | { type: 'library:palette:rename'; old: string; new: string }
+    | { type: 'library:palette:update'; name: string; colors: Array<string> };
+// | { type: 'library:palette:select'; name: string };
 
 export type AddRemoveEdit<T, Key> =
     | {
@@ -362,6 +365,19 @@ export type UndoMetaUpdate = {
     prev: Meta;
 };
 
+export type PathCreateMany = {
+    type: 'path:create:many';
+    paths: { origin: Coord; segments: Segment[]; open?: boolean }[];
+    withMirror: boolean;
+    trace?: boolean;
+};
+
+export type UndoPathCreateMany = {
+    type: PathCreateMany['type'];
+    action: PathCreateMany;
+    added: [Array<Id>, Id | null, number];
+};
+
 export type PathCreate = {
     type: 'path:create';
     origin: Coord;
@@ -423,6 +439,7 @@ export type UndoMirrorAdd = {
 export type MirrorAdd = {
     type: 'mirror:add';
     mirror: Mirror;
+    activate?: boolean;
 };
 
 export type UndoMirrorActive = {
@@ -476,7 +493,18 @@ export type GuideToggle = {
     id: Id;
 };
 
+export type PaletteUpdate = {
+    type: 'palette:update';
+    colors: string[];
+};
+export type UndoPaletteUpdate = {
+    type: PaletteUpdate['type'];
+    action: PaletteUpdate;
+    prev: string[];
+};
+
 export type UndoableAction =
+    | PaletteUpdate
     | GuideAdd
     | GuideUpdate
     | MirrorAdd
@@ -512,12 +540,14 @@ export type UndoableAction =
     | OverlayUpdate
     | PathGroupUpdateMany
     | PathCreate
+    | PathCreateMany
     | GroupRegroup
     | ClipCut
     | PathMultiply
     | GuideToggle;
 
 export type UndoAction =
+    | UndoPaletteUpdate
     | UndoGuideAdd
     | UndoAnimationConfig
     | UndoScriptRename
@@ -531,6 +561,7 @@ export type UndoAction =
     | UndoTimelineUpdate
     | UndoOverlayDelete
     | UndoClipAdd
+    | UndoPathCreateMany
     | UndoGroupUpdate
     | UndoGroupRegroup
     | UndoPathUpdate

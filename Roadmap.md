@@ -1,4 +1,234 @@
 
+- [ ] a range slider to select from the center by radius
+- [ ] path select
+- [x] right-click, "center on this shape"
+- [ ] right-click "set origin to the center" pls idk might be too much
+
+# NEXT uppp
+
+- [ ] I want overshoot <-> as a line setting
+- [ ] make a thing to "select all shapes with this"
+  - [x] stroke
+  - [ ] fill
+  - [ ] no fill
+  - [ ] no stroke
+- [x] select after createing a guide, my goodness
+  - [ ] dedup shapes created from guides oof
+- [ ] huh maybe clipMode be different for fill vs stroke? 🤔
+  - hmm yeah, it should be on the individual line or file style dealio.
+
+- [ ] ok, so let's do viewable guides.
+  - circles, right? With ... potentially a start & end angle.
+  - lines, with an overextension-amount?
+  - hmmmm wait, what about just ... making open "path"s?
+    - yeah so I do have that capacity
+
+- [ ] hmm one thing that a compass can do, is *transfer* distances.
+  - so maybe this is a copy/paste? could be cool tbh.
+    - for now, just do circles
+
+- [x] lol ok, refactoring UI state to be a single dispatch. b/c why not amirite
+
+- [ ] For animating the history, let's allow you to specify zoom and such!
+  - so like, go to a key frame, allow you to pan/zoom around until it's perfect
+  - "pre-seed" it with the committed views I guesssss of what is there
+  - but allow you to override. right?
+  - also have a button to "zoom to fit w/ xyz margin"
+
+- [x] BUG when committing pan/zoom, it reset the background color somehow?
+  - oh it resets to the view when you last reset it.
+- [ ] exporting should totally have an option to auto-center things, with a padding.
+  and it should be the default.
+- [ ] BUG exporting to SVG has things like off center? idk
+
+- [x] fix the "it deselects imeediately" thing in dragToSelect mode
+- [ ] audo guides mode
+  - when creating a path, guides are visible, but they disappear after it's made
+    - ALSO you need to explicitly say "i'm going to create a path now"
+      and then all the starting points show up.
+      wellll or we just do all the hard math to let you color by number? idk
+  - when creating a guide, guides are visible, and stay visible.
+  - when duplicating or creating a mirror, just points are visible
+
+- [x] reified palettes thanks
+	ok but what does this look like?
+	palette:update {newpalette}
+	yeah just toss in the whole palette. or a single dealio. idc
+	- ok yeah, so activePalette becomes a string[], not a string name.
+	- Ok, so the "library" can have named palettes, and you can like update the named palette
+  	with the current palette. That's fine.
+	- [x] palette:update <=> string[]
+	- [ ] And maybe a palette:single idx, color
+
+- [x] ALL the previews,
+  - what if I had a "pendingAction" or something (probably pendingActions[]), where we're rendering
+		as if that action had already been applied?
+		Sounds legit.
+- [ ] snapshotsss
+
+# App?
+
+https://neutralino.js.org/docs/getting-started/your-first-neutralinojs-app/
+could be nice
+
+# GISTSSS
+
+- [x] when adding a gist, update my gistcache
+  - [x] also, strip down the gistCache to just be like "id + username (to calc previewurl)"
+- [x] add an onbeforeunload if you're done dirty.
+- [x] while saving, show mea looooooading indicator please
+	- dirty should be "true" in that case, not the fn anymore.
+- [-] honestly, saving should skip over non-critical things, like selection changes
+		  and guide visibility
+			I'll solve this by just not putting those into state/history
+
+# Google Drive maybe? Probably??
+
+Yeah sure
+
+# Sidebar TOOLS
+
+- [x] all the guide types
+- [x] a button to switch to normal cursor mode
+- [x] The pointer's default behavior should be "SELECT" (& drag select), NOT PAN
+	- and it shouldn't select points
+- [x] also allow like "shift + zoom" to do panning
+- [x] have a "pan" tool
+
+- [ ] hide dots unless we're in 'shape' mode.
+
+
+# So, snapshots / versions or something
+
+Like, when iterating on a dealio, I want a way to "save multiple screenshots" from a single design.
+Can this just be, like "checkpoints in the history"? Yeah, I like that.
+And then, in the gist scenario, the photos / etc. could be labeled to indicate the checkpoint (place in history).
+That would mean I don't even need a separate "list of checkpoints", I could just look at the filenames of the saved images 😎
+
+Ok, so when I'm doing like ... local browser saving.
+Should the Metadata have a list of the checkpoint images? Yeah seems reasonable.
+
+Sidebar has a list of snapshots.
+
+OH FIXXX THE PALETTE STUFF
+anddddd the solution is ...
+
+## Things to remove from HISTORY and deprecate from state
+
+- [ ] pending guides, it's fine
+- [ ] guides visibility
+- [ ] selection
+
+I should keep the reducer handlers and such so I don't break old things probably.
+
+## Things to heavily optimise
+
+- [ ] changing multiple paths at once maybe? I should audit the history of a thing.
+
+## Things to think about
+
+Ok so I feel like my use of 'nextId' isn't ... super rigorous? maybe? hm but maybe it's fine.
+
+# New DSEsign screen
+
+- [x] pick the symmetry type!
+- [-] ok let's not get too complicated
+	- [ ] why not give the option to upload an image at this point too!
+	- [ ] andddd maybe palette? hmm idk maybe that's too much.
+- [x] thumbnails!! Should probably aggresively debounce the thumbnail updating though.
+- [ ] ohhh wait palettes ... need to be coverend by undo/redo.. but this will be a major change.
+  - [ ]
+
+# DATAS
+
+- [-] path.mirror, remove 'string'
+	Hmmmmm I'd have to mess with ... the history too?
+	Don't want to play too fast and loose with that just yet.
+- [ ]
+
+## URGENT
+
+- [x] Deduplicate lines for CNC cuts.
+	- go through, mark segments as duplicates (IN EXECUTION ORDER I think)
+	- remove any shapes where everything is a duplicate
+	- for shapes where only some are duplicates, fast travel along duplicate lines.
+	- also, filter out up/down's that are the same.
+
+
+## SIDEBAR
+
+- [x] guide - click to select
+- [x] the eye is probably more confusing than not.
+- [x] Color & Fill!
+  - [ ] if no path selected, it shows the "default color & fill", which I should
+		keep track of.
+	- otherwise, go to town!
+	- [x] would be very nice to have much better stroke & fill UI
+- [x] put the "view switcher" dealios into the sidebar
+- [ ] add react router, use query string for routes.
+- [ ] anddddd allow for multiple projects to be open at once!
+- [ ] thenn allow for syncing with github gists.
+
+## Controls / tools
+
+- [ ] ok what
+
+## View Change
+
+- [ ] show the export view, save the current zoom to localstorage
+	- when editing the export view, you can say "fit to content, w/ this margin"
+	- or you can maybe do like a click & drag? idk.
+	- oh also you can say "fit to content, but w/ this margin and this aspect ratio"
+	- honestly that'll probably fit all the use cases.
+
+## Making it really usable and such
+
+- "File" idea?
+  - So, you can have multiple files open
+  - saved to localForage, along with periodic screenshot updates?
+		- at least (every x seconds), at least (x seconds apart)
+		- low resolution tho
+- URLs, with react router dontchaknow.
+	- /id/[screen: edit | cnc | animate? | history]
+
+- For history playback, have explicit control over the zoom, at different moments.
+	- and also over the final "crop". So the size of the ~editing window has less to do with it.
+
+- at that point, does "zoom" really factor in?
+	- hmm I guess in the "export" window. Yeah like defining the export range
+		maybe it would be a visible element honestly. You can define w & height ..
+		or autofit w/ margins.
+	- anyway, default initial zoom will be the zoom and stuff.
+
+- Sidebar, with list of paths, and groups, and such.
+	- so, guides happen on their own layer, and there's no ordering about them.
+	- however, guides can be grouped. Aand maybe selected individually?
+		welll let's just represent them as their guidy selves, with a mirror.
+		so not split out.
+		Also not really editable.
+
+So, whether or not the guides are shown ... seems like it doesn't necessarily have to
+be tracked in the undo stack? hmmm. I guess it doesn't super hurt.
+
+RIGHT SIDEBAR:
+- mirrors
+- clips
+- shapes
+- guides
+- undo/redo stack
+
+Left ... floading toolbar?
+undo/redo, the guides,
+and an "add shape" button.
+
+WHEN ADDING: Select the number of mirror.
+
+ALSO: ppi is a real deal. Show a scale in the bottom,
+with content boundaries in units.
+
+
+####
+
 Soooo what if I rewrote it all?
 Would that be any good?
 
@@ -32,7 +262,7 @@ https://trang.io/watercolor/
 
 
 
-### 
+###
 
 
 So, I think I want another guide type, and it's
@@ -89,7 +319,7 @@ Next nice things:
 	like 0.5 seconds or something?
 - show axis for flipping stuff about.
 - when doing a thing for recording, don't use tmp zoom.
-- 
+-
 
 - [x] show something for duplicating things across lines
 	'path:multiply'
@@ -177,7 +407,7 @@ Hm.
 So there are a couple of things I want.
 
 1) tabs. Autoplacement? I mean sounds fine I guess. As long as they're on a straightaway. Yeah.
-	
+
 2) automatic laser cut inverse dealio. So using PathKit, do a .stroke() and a .union()
 	so I can laser cut something that will fit as an inset.
 
@@ -383,7 +613,7 @@ then we have `the-slug.input.json` and `the-slug.expected.json`.
 
 
 - [x] track down the source of BAD PREV. Why are we ending up at not the right place?
-- [x] soooo clooooose I think??? 
+- [x] soooo clooooose I think???
 	Yeah not handling single-circles well.
 - [x] non-intersecting (easy to detect, and then do an is-inside check for any of the points of the shape)
 - [x] arcs with the same tangent as a line (see test case)
@@ -968,7 +1198,7 @@ Better path creation
 
 
 - [x] so, I guess I've got image fills now! Which is very cool
-- [x] also, made my own canvas renderer, because svg->canvas was buggy 🤷‍♂️. 
+- [x] also, made my own canvas renderer, because svg->canvas was buggy 🤷‍♂️.
 
 - [x] get colors from an overlay!! maybe I should do an average? At any rate, I reeally want to be rendering more fancily...
 
@@ -988,7 +1218,7 @@ Better path creation
 
 - [ ] FIX MULTIFILL/merge - first, allow me to "remove the custom", but also allow me to just nix the custom color, or inset, or whatever.
 
-## [ ] CLIP PLease, would be very nice. How to define? 
+## [ ] CLIP PLease, would be very nice. How to define?
 	- I could just use normal DrawPath ... would that make clipping very complex? I would definitely want to do path simpliciation yes very much.
 
 - [x] SOOO waht about having the default "extent" for lines be something like 2x or 3x? And then have a toggle for "go forever"?

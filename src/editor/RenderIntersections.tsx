@@ -66,6 +66,11 @@ export const RenderIntersections = React.memo(
                                   evt.preventDefault();
                                   evt.stopPropagation();
                                   onClick(intersection, evt.shiftKey);
+                                  console.log('click an intersect');
+                              }}
+                              onMouseUp={(evt) => {
+                                  evt.preventDefault();
+                                  evt.stopPropagation();
                               }}
                               {...handlers(intersection)}
                               r={15}
@@ -84,6 +89,11 @@ export const RenderIntersections = React.memo(
                             evt.preventDefault();
                             evt.stopPropagation();
                             onClick(intersection, evt.shiftKey);
+                            console.log('click an intersect');
+                        }}
+                        onMouseUp={(evt) => {
+                            evt.preventDefault();
+                            evt.stopPropagation();
                         }}
                         {...handlers(intersection)}
                         r={5}

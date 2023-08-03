@@ -1,11 +1,10 @@
 import React from 'react';
 import { State, View } from '../types';
-import { screenToWorld } from './Canvas';
+import { EditorState, screenToWorld } from './Canvas';
 
 export function useScrollWheel(
     ref: React.MutableRefObject<SVGSVGElement | null>,
-    setTmpView: React.Dispatch<React.SetStateAction<View | null>>,
-    setZooming: (zooming: boolean) => void,
+    setEditorState: React.Dispatch<React.SetStateAction<EditorState>>,
     currentState: React.MutableRefObject<State>,
     width: number,
     height: number,
@@ -14,24 +13,43 @@ export function useScrollWheel(
         if (!ref.current) {
             return console.warn('NO REF');
         }
-        let timer = null as null | number;
+        let timer = null as null | NodeJS.Timeout;
         const fn = (evt: WheelEvent) => {
             const rect = ref.current!.getBoundingClientRect();
             const clientX = evt.clientX;
             const clientY = evt.clientY;
             const dy = -evt.deltaY;
+            const dx = -evt.deltaX;
             evt.preventDefault();
 
-            setZooming(true);
             if (timer) {
                 clearTimeout(timer);
             }
             timer = setTimeout(() => {
-                setZooming(false);
+                setEditorState((state) => ({ ...state, zooming: false }));
             }, 50);
 
-            setTmpView((past) => {
-                let view = past || currentState.current.view;
+            if (evt.shiftKey) {
+                setEditorState((past) => {
+                    let view = past.tmpView || currentState.current.view;
+
+                    return {
+                        ...past,
+                        tmpView: {
+                            ...view,
+                            center: {
+                                x: view.center.x + dx / view.zoom,
+                                y: view.center.y + dy / view.zoom,
+                            },
+                        },
+                        zooming: true,
+                    };
+                });
+                return;
+            }
+
+            setEditorState((past) => {
+                let view = past.tmpView || currentState.current.view;
 
                 const screenPos = {
                     x: clientX - rect.left,
@@ -50,12 +68,16 @@ export function useScrollWheel(
                     zoom: newZoom,
                 });
                 return {
-                    ...view,
-                    zoom: newZoom,
-                    center: {
-                        x: view.center.x + (newPos.x - pos.x),
-                        y: view.center.y + (newPos.y - pos.y),
+                    ...past,
+                    tmpView: {
+                        ...view,
+                        zoom: newZoom,
+                        center: {
+                            x: view.center.x + (newPos.x - pos.x),
+                            y: view.center.y + (newPos.y - pos.y),
+                        },
                     },
+                    zooming: true,
                 };
             });
         };
@@ -63,7 +85,7 @@ export function useScrollWheel(
         return () => {
             if (timer != null) {
                 clearTimeout(timer);
-                setZooming(false);
+                setEditorState((state) => ({ ...state, zooming: false }));
             }
             ref.current?.removeEventListener('wheel', fn);
         };

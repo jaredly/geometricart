@@ -11,6 +11,7 @@ import { segmentKey, segmentKeyReverse } from '../rendering/segmentKey';
 import { ArcSegment, Id, Intersect, PendingSegment, View } from '../types';
 import { segmentAngle } from '../rendering/segmentAngle';
 import { epsilon, Primitive } from '../rendering/intersect';
+import { EditorState } from './Canvas';
 
 export type DrawPathState = {
     origin: Intersect;
@@ -48,7 +49,11 @@ export const DrawPath = React.memo(
         isClip: boolean;
         pendingPath: [
             DrawPathState,
-            (fn: (state: DrawPathState | null) => DrawPathState | null) => void,
+            (
+                fn: (
+                    state: EditorState['pendingPath'],
+                ) => EditorState['pendingPath'],
+            ) => void,
         ];
         mirror: null | Array<Array<Matrix>>;
         primitives: Array<{ prim: Primitive; guides: Array<Id> }>;
@@ -284,7 +289,7 @@ export const DrawPath = React.memo(
     },
 );
 
-export const goLeft = (state: DrawPathState | null) =>
+export const goLeft = (state: EditorState['pendingPath']) =>
     state
         ? {
               ...state,
@@ -295,7 +300,9 @@ export const goLeft = (state: DrawPathState | null) =>
           }
         : state;
 
-export const goRight = (state: DrawPathState | null): DrawPathState | null =>
+export const goRight = (
+    state: EditorState['pendingPath'],
+): EditorState['pendingPath'] =>
     state
         ? {
               ...state,
@@ -306,7 +313,7 @@ export const goRight = (state: DrawPathState | null): DrawPathState | null =>
 export function goForward(
     primitives: { prim: Primitive; guides: Array<Id> }[],
     intersections: Intersect[],
-): (state: DrawPathState | null) => DrawPathState | null {
+): (state: EditorState['pendingPath']) => EditorState['pendingPath'] {
     return (state) => {
         if (!state || state.selection >= state.next.length) {
             return state;
@@ -346,7 +353,7 @@ export function backUp(
     origin: Intersect,
     primitives: { prim: Primitive; guides: Array<Id> }[],
     intersections: Intersect[],
-): (state: DrawPathState | null) => DrawPathState | null {
+): (state: EditorState['pendingPath']) => EditorState['pendingPath'] {
     return (state) => {
         if (!state || !state.parts.length) {
             return null;

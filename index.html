@@ -16,11 +16,14 @@
     content="width=device-width, initial-scale=1, user-scalable=no"
 />
 <style>
+    :root {
+        --surface-ground: black;
+    }
     html,
     body {
         margin: 0;
         padding: 0;
-        background-color: #1e1e1e;
+        background-color: var(--surface-gound);
         color: white;
         font-family: system-ui;
         overscroll-behavior: none;
@@ -34,12 +37,21 @@
         min-width: 0;
         flex-shrink: 0;
     }
+    .hover:hover {
+        background-color: var(--hover-color);
+    }
+    .p-accordion-header-text {
+        flex: 1;
+    }
+    .p-accordion .p-toggleable-content .p-accordion-content {
+        padding: 8px;
+    }
 </style>
 <body>
     <div id="root"></div>
     <script>
         window.cwd = () => '/';
     </script>
-    <script src="run.js"></script>
+    <!-- <script src="run.js"></script> -->
     <script src="src/run.tsx" type="module"></script>
 </body>

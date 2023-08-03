@@ -50,14 +50,12 @@ export const findBoundingRect = (state: State): Bounds | null => {
 };
 
 export const Export = ({
-    canvasRef,
     state,
     dispatch,
     originalSize,
 }: {
     state: State;
     originalSize: number;
-    canvasRef: { current: null | SVGSVGElement };
     dispatch: (action: Action) => void;
 }) => {
     // const [name, setName] = React.useState()
@@ -79,26 +77,13 @@ export const Export = ({
     );
 
     return (
-        <div
-            css={{
-                marginTop: 16,
-            }}
-        >
+        <div className="p-2" css={{}}>
             <div
                 css={{
                     padding: 4,
                     marginBottom: 16,
                 }}
             >
-                <div
-                    css={{
-                        fontSize: '80%',
-                        fontWeight: 'bold',
-                        marginBottom: 8,
-                    }}
-                >
-                    Metadata
-                </div>
                 Title:{' '}
                 <Text
                     value={state.meta.title}
@@ -161,7 +146,7 @@ export const Export = ({
                 <button
                     css={{ marginTop: 16, display: 'block' }}
                     onClick={async () => {
-                        const url = await exportPNG(
+                        const blob = await exportPNG(
                             size,
                             state,
                             originalSize,
@@ -169,7 +154,7 @@ export const Export = ({
                             history,
                             animationPosition,
                         );
-                        setPng(url);
+                        setPng(URL.createObjectURL(blob));
                     }}
                 >
                     Export PNG
@@ -278,6 +263,15 @@ export const Export = ({
                                 : originalSize;
                         ReactDOM.render(
                             <Canvas
+                                uiState={{
+                                    hover: null,
+                                    pendingDuplication: null,
+                                    pendingMirror: null,
+                                    previewActions: [],
+                                    screen: 'edit',
+                                    styleHover: null,
+                                }}
+                                styleHover={null}
                                 // Clear out background in laser cut mode
                                 pendingDuplication={null}
                                 setPendingDuplication={() => null}
@@ -375,14 +369,14 @@ export const Export = ({
     );
 };
 
-async function exportPNG(
+export async function exportPNG(
     size: number,
     state: State,
     originalSize: number,
     embed: boolean,
     history: boolean,
     animationPosition: number,
-): Promise<string> {
+): Promise<Blob> {
     const canvas = document.createElement('canvas');
     canvas.width = canvas.height = size;
     const ctx = canvas.getContext('2d')!;
@@ -415,7 +409,7 @@ async function exportPNG(
                     history ? state : { ...state, history: initialHistory },
                 );
             }
-            res(URL.createObjectURL(blob));
+            res(blob);
         }, 'image/png'),
     );
 }
@@ -458,11 +452,12 @@ export async function addMetadata(
 ) {
     const buffer = await blob!.arrayBuffer();
     const uint8Array = new Uint8Array(buffer);
+    const raw = JSON.stringify(state).replaceAll(/[^\u0000-\u007f]/g, '*');
     const meta: any = {
         tEXt: {
             Source: 'Geometric Art',
             // TODO: Add an option to scrub history, for smaller file size
-            GeometricArt: JSON.stringify(state),
+            GeometricArt: raw,
         },
     };
     if (gcode) {
@@ -470,7 +465,11 @@ export async function addMetadata(
     }
 
     const chunks = extractChunks(uint8Array);
-    insertMetadata(chunks, meta);
+    try {
+        insertMetadata(chunks, meta);
+    } catch (err) {
+        alert("Unable to add metadata: " + (err as Error).message)
+    }
     const newBuffer = new Uint8Array(encodeChunks(chunks));
 
     const newBlob = new Blob([newBuffer], {

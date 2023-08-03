@@ -277,6 +277,7 @@ export const clipPathNew = (
     debug = false,
     groupMode?: PathGroup['clipMode'],
 ): Array<Path> => {
+    const clipMode = path.clipMode ?? groupMode;
     if (debug) {
         // clip = simplifyPath(clip);
         console.groupCollapsed(`Clip path ${path.id}`);
@@ -285,19 +286,39 @@ export const clipPathNew = (
         console.log(clip);
         console.groupEnd();
     }
-    if (!isClockwise(path.segments)) {
-        throw new Error(`non-clockwise path`);
-    }
-    if (!isClockwise(clip)) {
-        throw new Error(`non-clockwise clip`);
-    }
-    const clipMode = path.clipMode ?? groupMode;
 
-    if (clipMode === 'none') {
+    if (clipMode === 'fills') {
+        if (path.style.lines.length && path.style.fills.length) {
+            return [
+                { ...path, style: { lines: path.style.lines, fills: [] } },
+                ...clipPathNew(
+                    { ...path, style: { lines: [], fills: path.style.fills } },
+                    clip,
+                    clipBounds,
+                    debug,
+                    groupMode,
+                ),
+            ];
+        } else if (path.style.lines.length) {
+            return [path];
+        }
+    }
+
+    if (
+        clipMode === 'none' ||
+        (clipMode === 'fills' && path.style.lines.length)
+    ) {
         if (debug) {
             console.groupEnd();
         }
         return [path];
+    }
+
+    if (!path.open && !isClockwise(path.segments)) {
+        throw new Error(`non-clockwise path`);
+    }
+    if (!isClockwise(clip)) {
+        throw new Error(`non-clockwise clip`);
     }
 
     let fixedPath = fixCircle(path.segments);

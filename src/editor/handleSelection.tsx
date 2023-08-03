@@ -66,10 +66,6 @@ export const handleSelection = (
         )
     ) {
         dispatch({
-            type: 'tab:set',
-            tab: 'PathGroups',
-        });
-        dispatch({
             type: 'selection:set',
             selection: {
                 type: 'PathGroup',
@@ -77,10 +73,6 @@ export const handleSelection = (
             },
         });
     } else {
-        dispatch({
-            type: 'tab:set',
-            tab: 'Paths',
-        });
         dispatch({
             type: 'selection:set',
             selection: {

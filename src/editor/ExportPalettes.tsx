@@ -126,7 +126,7 @@ export function importPalettes(
             name = name + num;
         }
         dispatch({
-            type: 'palette:update',
+            type: 'library:palette:update',
             name,
             colors: data[name],
         });

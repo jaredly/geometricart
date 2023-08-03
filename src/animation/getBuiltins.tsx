@@ -1,7 +1,7 @@
 import { applyMatrices, dist, Matrix } from '../rendering/getMirrorTransforms';
 import { Coord, Path, Segment } from '../types';
 import { transformSegment } from '../rendering/points';
-import { pathToPoints } from '../rendering/pathToPoints';
+import { pathToPoints, rasterSegPoints } from '../rendering/pathToPoints';
 import { insetSegments, insetSegmentsBeta } from '../rendering/insetPath';
 import { cleanUpInsetSegments2 } from '../rendering/findInternalRegions';
 import { pathSegs } from '../editor/RenderPath';
@@ -18,19 +18,62 @@ import {
 import { angleBetween } from '../rendering/findNextSegments';
 import { segmentsBounds, segmentsCenter } from '../editor/Bounds';
 
-export function getBuiltins(): { [key: string]: Function } {
+const clamp = (v: number, min = 0, max = 1) => Math.max(min, Math.min(max, v));
+
+export function getBuiltins(): { [key: string]: Function | number } {
     return {
         dist,
         push,
         scale,
         angleTo,
         angleBetween,
+        sin: Math.sin,
+        cos: Math.cos,
+        tan: Math.tan,
+        clamp,
+        PI: Math.PI,
+        sineStep: (t: number, steps: number, smooth: number) => {
+            const perc = 1 - smooth;
+            const mid =
+                Math.sin((((t * steps) % 1) - 0.5) * Math.PI * perc) /
+                2 /
+                Math.sin((perc * Math.PI) / 2) +
+                0.5;
+            return mid / steps + Math.floor(t * steps) / steps;
+        },
+        translate: (p1: Coord, p2: Coord) => ({
+            x: p1.x + p2.x,
+            y: p1.y + p2.y,
+        }),
         limit: (t: number, min: number, max: number) =>
             Math.min(Math.max(t, min), max),
         segmentsBounds,
         segmentsCenter,
         transformSegment,
         applyMatrices,
+        lerp: (a: number, b: number, between: number) => a + (b - a) * between,
+        crossFade: (t: number, mid: number) =>
+            t < 0.5 - mid ? 0 : t > 0.5 + mid ? 1 : ((t - 0.5) / mid + 1) / 2,
+        squishSine: (t: number, mid: number) => {
+            if (t < mid) {
+                return Math.sin(((t / mid) * Math.PI) / 2) / 2 + 0.5;
+            }
+            if (t > 1 - mid) {
+                return 0.5 - Math.sin((((1 - t) / mid) * Math.PI) / 2) / 2;
+            }
+            if (t < 0.5 - mid) {
+                return 1;
+            }
+            if (t > 0.5 + mid) {
+                return 0;
+            }
+            if (t < 1 - mid) {
+                return (
+                    1 - (Math.sin((((t - 0.5) / mid) * Math.PI) / 2) / 2 + 0.5)
+                );
+                // return Math.sin((((1 - t) / mid) * Math.PI) / 2);
+            }
+        },
         scaleMatrix,
         translationMatrix,
         rotationMatrix,
@@ -93,21 +136,21 @@ const lerpPos = (p1: Coord, p2: Coord, percent: number) => {
     };
 };
 
-export const closestPoint = (center: Coord, segments: Array<Segment>) => {
+export const closestPoint = (center: Coord, segments: Array<Segment>): [number, Coord] => {
     let best = null as null | [number, Coord];
-    pathToPoints(segments).forEach((point) => {
+    rasterSegPoints(pathToPoints(segments)).forEach((point) => {
         const d = dist(point, center);
         if (best == null || best[0] > d) {
             best = [d, point];
         }
     });
 
-    return best;
+    return best!;
 };
 
 export const farthestPoint = (center: Coord, segments: Array<Segment>) => {
     let best = null as null | [number, Coord];
-    pathToPoints(segments).forEach((point) => {
+    rasterSegPoints(pathToPoints(segments)).forEach((point) => {
         const d = dist(point, center);
         if (best == null || best[0] < d) {
             best = [d, point];
@@ -147,7 +190,7 @@ export const animationTimer = (
 const followPath = (path: Array<Coord> | Path, percent: number) => {
     let points;
     if (!Array.isArray(path)) {
-        points = pathToPoints(path.segments);
+        points = rasterSegPoints(pathToPoints(path.segments));
         points = points.concat([points[0]]);
     } else {
         points = path;
@@ -184,17 +227,17 @@ const modInsets = (
             fills: path.style.fills.map((f) =>
                 f
                     ? {
-                          ...f,
-                          inset: mod(f.inset),
-                      }
+                        ...f,
+                        inset: mod(f.inset),
+                    }
                     : f,
             ),
             lines: path.style.lines.map((f) =>
                 f
                     ? {
-                          ...f,
-                          inset: mod(f.inset),
-                      }
+                        ...f,
+                        inset: mod(f.inset),
+                    }
                     : f,
             ),
         },
