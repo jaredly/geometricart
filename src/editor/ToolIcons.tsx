@@ -8,6 +8,7 @@ import { State, GuideGeom } from '../types';
 import { Button } from 'primereact/button';
 import { toTypeRev } from '../handleKeyboard';
 import { EditorState, ToolIcon } from './Canvas';
+import { adjacentWhatsits } from '../animation/getBuiltins';
 
 export function ToolIcons({
     state, editorState, dispatch, setEditorState, startPath,
@@ -61,9 +62,9 @@ export function ToolIcons({
                         ]} />
                 </Button>
 
-                <div style={{ position: 'absolute', left: '100%', top: 0, paddingLeft: 8, }}>
+                <div style={{ position: 'absolute', left: '100%', top: 0, paddingLeft: 8, display: 'flex' }}>
                     <Button
-                        className={'pi p-button-icon-only ' +
+                        className={'pi mr-2 p-button-icon-only ' +
                             (state.pending == null && editorState.selectMode === 'radius'
                                 ? 'p-button-outlined'
                                 : '')}
@@ -79,6 +80,34 @@ export function ToolIcons({
                         }}
                     >
                         <ToolIcon circles={[[{ x: 5, y: 5 }, 5]]} />
+                    </Button>
+                    <Button
+                        className={'pi p-button-icon-only ' +
+                            (state.pending == null && editorState.selectMode === 'radius'
+                                ? 'p-button-outlined'
+                                : '')}
+                        tooltip="Expand All The Things"
+                        onClick={() => {
+                            if (state.selection?.type === 'Path') {
+                                const more = adjacentWhatsits(state.selection.ids, state.paths);
+                                dispatch({
+                                    type: 'selection:set',
+                                    selection: {
+                                        type: 'Path',
+                                        ids: state.selection.ids.concat(more)
+                                    }
+                                })
+                            }
+                            // if (state.pending != null) {
+                            //     dispatch({ type: 'pending:type', kind: null });
+                            // }
+                            // setEditorState((es) => ({
+                            //     ...es,
+                            //     selectMode: 'radius'
+                            // }));
+                        }}
+                    >
+                        Ex
                     </Button>
                 </div>
 

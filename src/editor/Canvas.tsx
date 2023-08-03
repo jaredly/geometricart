@@ -11,7 +11,6 @@ import {
     geomsForGiude,
 } from '../rendering/calculateGuideElements';
 import { DrawPathState } from './DrawPath';
-import { findSelection } from './findSelection';
 import {
     getMirrorTransforms,
     getTransformsForNewMirror,
@@ -35,20 +34,15 @@ import {
     evaluateLookUpTable,
     LookUpTable,
 } from '../lerp';
-import { MirrorMenu } from './MirrorMenu';
 import {
     mergeFills,
     mergeStyleLines,
-    MultiStyleForm,
     StyleHover,
 } from './MultiStyleForm';
-import { OverlayMenu } from './OverlayMenu';
 import { PendingPathControls } from './PendingPathControls';
 import { RenderWebGL } from './RenderWebGL';
 import { Hover } from './Sidebar';
 import {
-    GuideSection,
-    selectedPathIds,
     mirrorControls,
     selectionSection,
     RadiusSelector,
@@ -57,13 +51,11 @@ import {
     Animations,
     Coord,
     FloatLerp,
-    Path,
     Segment,
     State,
     Style,
     LerpPoint,
     View,
-    TextureConfig,
     Mirror,
 } from '../types';
 import { functionWithBuiltins } from '../animation/getAnimatedPaths';

@@ -170,7 +170,7 @@ export function SVGCanvas({
             undefined,
             selectedIds,
         );
-        console.log(`Path calc`, performance.now() - now);
+        // console.log(`Path calc`, performance.now() - now);
         return res;
     }, [
         state.paths,

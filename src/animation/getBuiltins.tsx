@@ -1,5 +1,5 @@
 import { applyMatrices, dist, Matrix } from '../rendering/getMirrorTransforms';
-import { Coord, Path, Segment } from '../types';
+import { Coord, Path, Segment, State } from '../types';
 import { transformSegment } from '../rendering/points';
 import { pathToPoints, rasterSegPoints } from '../rendering/pathToPoints';
 import { insetSegments, insetSegmentsBeta } from '../rendering/insetPath';
@@ -17,6 +17,7 @@ import {
 } from '../rendering/getMirrorTransforms';
 import { angleBetween } from '../rendering/findNextSegments';
 import { segmentsBounds, segmentsCenter } from '../editor/Bounds';
+import { segmentKey, segmentKeyReverse } from '../rendering/segmentKey';
 
 const clamp = (v: number, min = 0, max = 1) => Math.max(min, Math.min(max, v));
 
@@ -159,6 +160,7 @@ export const farthestPoint = (center: Coord, segments: Array<Segment>) => {
 
     return best;
 };
+
 // Returns 'idx', 'percent through it'
 export const animationTimer = (
     t: number,
@@ -216,6 +218,30 @@ const followPath = (path: Array<Coord> | Path, percent: number) => {
 const scaleInsets = (path: Path, scale: number): Path => {
     return modInsets(path, (i) => (i ? i * scale : i));
 };
+
+export const adjacentWhatsits = (ids: string[], paths: State['paths']) => {
+    const segMap: { [key: string]: boolean } = {};
+    ids.forEach(id => {
+        const path = paths[id];
+        path.segments.forEach((seg, i) => {
+            const prev = i === 0 ? path.segments[path.segments.length - 1] : path.segments[i - 1];
+            const key = segmentKey(prev.to, seg);
+            const rkey = segmentKeyReverse(prev.to, seg);
+            segMap[key] = true;
+            segMap[rkey] = true;
+        })
+    });
+
+    return Object.keys(paths).filter(id => (
+        !ids.includes(id) &&
+        paths[id].segments.some((seg, i) => {
+            const prev = i === 0 ? paths[id].segments[paths[id].segments.length - 1] : paths[id].segments[i - 1];
+            const key = segmentKey(prev.to, seg);
+            const rkey = segmentKeyReverse(prev.to, seg);
+            return segMap[key] || segMap[rkey];
+        })
+    ));
+}
 
 const modInsets = (
     path: Path,
