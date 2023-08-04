@@ -63,7 +63,7 @@ import { Menu } from 'primereact/menu';
 import { SVGCanvas } from './SVGCanvas';
 import { useCurrent } from '../App';
 import { ToolIcons } from './ToolIcons';
-import { produceJointPaths } from '../animation/getBuiltins';
+import { findAdjacentPaths, produceJointPaths } from '../animation/getBuiltins';
 import { coordsEqual } from '../rendering/pathsAreIdentical';
 
 export type Props = {
@@ -409,6 +409,22 @@ export const Canvas = ({
                     evt.target instanceof HTMLTextAreaElement)
             ) {
                 return;
+            }
+
+            if (evt.key === 'x') {
+                const state = currentState.current
+                if (state.selection?.type === 'Path') {
+                    evt.preventDefault();
+                    evt.stopPropagation();
+                    const more = findAdjacentPaths(state.selection.ids, state.paths);
+                    dispatch({
+                        type: 'selection:set',
+                        selection: {
+                            type: 'Path',
+                            ids: state.selection.ids.concat(more)
+                        }
+                    })
+                }
             }
 
             if (evt.key === 'n') {

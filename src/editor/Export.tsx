@@ -2,7 +2,7 @@
 /* @jsxFrag React.Fragment */
 import { jsx } from '@emotion/react';
 import { encodeChunks, extractChunks, insertMetadata } from 'png-metadata';
-import React from 'react';
+import React, { useState } from 'react';
 import * as ReactDOM from 'react-dom';
 import { Canvas } from './Canvas';
 import { canvasRender } from '../rendering/CanvasRender';
@@ -18,6 +18,8 @@ import { texture1, texture2 } from '../rendering/textures';
 import { State, TextureConfig } from '../types';
 import { closeEnough } from '../rendering/clipPath';
 import { PendingBounds, newPendingBounds, addCoordToBounds } from './Bounds';
+import { MultiColor } from './MultiStyleForm';
+import { UIState } from '../useUIState';
 
 export type Bounds = {
     x1: number;
@@ -61,6 +63,13 @@ export const Export = ({
     // const [name, setName] = React.useState()
     const [url, setUrl] = React.useState(null as null | string);
     const [animationPosition, setAnimationPosition] = React.useState(0);
+
+    const [multi, setMulti] = useState(
+        null as null | {
+            outline: number | string;
+            shape: number | string;
+        },
+    );
 
     const [png, setPng] = React.useState(null as null | string);
 
@@ -244,75 +253,71 @@ export const Export = ({
                     onChange={(crop) => setCrop(crop ?? null)}
                 />
                 <br />
+                {multi ? (
+                    <div
+                        css={{
+                            border: '1px solid #aaa',
+                            padding: 8,
+                            marginTop: 8,
+                        }}
+                    >
+                        Multi SVG Settings
+                        <div css={{ marginTop: 8 }}>
+                            Outline Color:
+                            <MultiColor
+                                palette={state.palette}
+                                color={[multi.outline]}
+                                onHover={() => {}}
+                                onChange={(color) => {
+                                    setMulti((m) =>
+                                        m ? { ...m, outline: color } : m,
+                                    );
+                                }}
+                            />
+                        </div>
+                        <div css={{ marginTop: 8 }}>
+                            Shape line Color:
+                            <MultiColor
+                                palette={state.palette}
+                                color={[multi.shape]}
+                                onHover={() => {}}
+                                onChange={(color) => {
+                                    setMulti((m) =>
+                                        m ? { ...m, shape: color } : m,
+                                    );
+                                }}
+                            />
+                        </div>
+                        <button
+                            css={{ marginTop: 16, display: 'block' }}
+                            onClick={() => setMulti(null)}
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                ) : (
+                    <button
+                        css={{ marginTop: 16, display: 'block' }}
+                        onClick={() => setMulti({ outline: 0, shape: 1 })}
+                    >
+                        Multi SVG
+                    </button>
+                )}
+                <br />
                 <button
                     css={{ marginTop: 16, display: 'block' }}
-                    onClick={async () => {
-                        let svgNode: SVGElement | null = null;
-                        const dest = document.createElement('div');
-                        const h =
-                            crop && boundingRect
-                                ? (boundingRect.y2 - boundingRect.y1) *
-                                      state.view.zoom +
-                                  (crop / 50) * state.meta.ppi
-                                : originalSize;
-                        const w =
-                            crop && boundingRect
-                                ? (boundingRect.x2 - boundingRect.x1) *
-                                      state.view.zoom +
-                                  (crop / 50) * state.meta.ppi
-                                : originalSize;
-                        ReactDOM.render(
-                            <Canvas
-                                uiState={{
-                                    hover: null,
-                                    pendingDuplication: null,
-                                    pendingMirror: null,
-                                    previewActions: [],
-                                    screen: 'edit',
-                                    styleHover: null,
-                                }}
-                                styleHover={null}
-                                // Clear out background in laser cut mode
-                                pendingDuplication={null}
-                                setPendingDuplication={() => null}
-                                state={
-                                    state.view.laserCutMode
-                                        ? {
-                                              ...state,
-                                              view: {
-                                                  ...state.view,
-                                                  background: undefined,
-                                              },
-                                          }
-                                        : state
-                                }
-                                isTouchScreen={false}
-                                width={w}
-                                height={h}
-                                innerRef={(node) => (svgNode = node)}
-                                pendingMirror={null}
-                                setPendingMirror={(_) => {}}
-                                dispatch={(_) => {}}
-                                hover={null}
-                                setHover={(_) => {}}
-                                ppi={state.meta.ppi}
-                            />,
-                            dest,
-                        );
-                        // let text = canvasRef.current!.outerHTML;
-                        let text = svgNode!.outerHTML;
-                        if (embed) {
-                            text += `\n\n${PREFIX}${JSON.stringify(
-                                history
-                                    ? state
-                                    : { ...state, history: initialHistory },
-                            )}${SUFFIX}`;
-                        }
-                        const blob = new Blob([text], {
-                            type: 'image/svg+xml',
-                        });
-                        setUrl(URL.createObjectURL(blob));
-                    }}
+                    onClick={() =>
+                        runSVGExport({
+                            crop,
+                            boundingRect,
+                            state,
+                            originalSize,
+                            embed,
+                            history,
+                            setUrl,
+                            multi,
+                        })
+                    }
                 >
                     Export SVG
                 </button>
@@ -368,6 +373,100 @@ export const Export = ({
         </div>
     );
 };
+
+const blankUIState: UIState = {
+    hover: null,
+    pendingDuplication: null,
+    pendingMirror: null,
+    previewActions: [],
+    screen: 'edit',
+    styleHover: null,
+};
+
+const blankCanvasProps = {
+    pendingMirror: null,
+    setPendingMirror: (_: any) => {},
+    dispatch: (_: any) => {},
+    hover: null,
+    setHover: (_: any) => {},
+    uiState: blankUIState,
+    styleHover: null,
+    // Clear out background in laser cut mode
+    pendingDuplication: null,
+    setPendingDuplication: () => null,
+    isTouchScreen: false,
+} as const;
+
+async function runSVGExport({
+    crop,
+    boundingRect,
+    state,
+    originalSize,
+    embed,
+    history,
+    setUrl,
+    multi,
+}: {
+    crop: number | null;
+    boundingRect: Bounds | null;
+    state: State;
+    originalSize: number;
+    embed: boolean;
+    history: boolean;
+    setUrl: React.Dispatch<React.SetStateAction<string | null>>;
+    multi: null | { outline: number | string; shape: number | string };
+}) {
+    let svgNode: SVGElement | null = null;
+    const dest = document.createElement('div');
+    const size = calcSVGSize(crop, boundingRect, state, originalSize);
+
+    ReactDOM.render(
+        <Canvas
+            {...blankCanvasProps}
+            {...size}
+            innerRef={(node) => (svgNode = node)}
+            ppi={state.meta.ppi}
+            state={
+                state.view.laserCutMode
+                    ? {
+                          ...state,
+                          view: { ...state.view, background: undefined },
+                      }
+                    : state
+            }
+        />,
+        dest,
+    );
+
+    let text = svgNode!.outerHTML;
+    if (embed) {
+        text += `\n\n${PREFIX}${JSON.stringify(
+            history ? state : { ...state, history: initialHistory },
+        )}${SUFFIX}`;
+    }
+    const blob = new Blob([text], { type: 'image/svg+xml' });
+    setUrl(URL.createObjectURL(blob));
+}
+
+function calcSVGSize(
+    crop: number | null,
+    boundingRect: Bounds | null,
+    state: State,
+    originalSize: number,
+) {
+    const h =
+        crop && boundingRect
+            ? (boundingRect.y2 - boundingRect.y1) * state.view.zoom +
+              (crop / 50) * state.meta.ppi
+            : originalSize;
+    const w =
+        crop && boundingRect
+            ? (boundingRect.x2 - boundingRect.x1) * state.view.zoom +
+              (crop / 50) * state.meta.ppi
+            : originalSize;
+    const size = { width: w, height: h };
+    return size;
+}
 
 export async function exportPNG(
     size: number,
@@ -468,7 +567,7 @@ export async function addMetadata(
     try {
         insertMetadata(chunks, meta);
     } catch (err) {
-        alert("Unable to add metadata: " + (err as Error).message)
+        alert('Unable to add metadata: ' + (err as Error).message);
     }
     const newBuffer = new Uint8Array(encodeChunks(chunks));
 

@@ -370,7 +370,7 @@ function resolveOverlaps(borders: PSeg[]): PSeg[] {
 
     console.log('OVERPALS')
     console.log()
-    console.log(points.map(coordKey))
+    console.log(points.map(x => coordKey(x)))
     console.log()
 
     points.forEach(point => {
@@ -392,11 +392,11 @@ function resolveOverlaps(borders: PSeg[]): PSeg[] {
                 break;
             }
             if (prim.type === 'circle' && pointCircle(point, prim)) {
+                const p1: PSeg = maybeReverseSegment(prev, { ...segment, to: point });
+                const p2: PSeg = maybeReverseSegment(point, segment);
                 // consoleSegment({ prev, segment }, point)
                 // consoleSegment(p1)
                 // consoleSegment(p2)
-                const p1: PSeg = { prev, segment: { ...segment, to: point } };
-                const p2: PSeg = { prev: point, segment };
                 borders[i] = p1;
                 borders.splice(i + 1, 0, p2);
                 prims[i] = segmentToPrimitive(p1.prev, p1.segment);

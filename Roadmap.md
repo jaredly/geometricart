@@ -1,4 +1,16 @@
 
+IN ORDER TO
+laser cut
+I need
+to be able to ~bulk export some svgs
+
+- Under Export, have a couple of sub-heads
+  - Export PNG
+  - Export SVG
+  - Export multi svg
+
+----
+
 So, what's the best way to go about this
 
 1. I could look for colinear whatsits
