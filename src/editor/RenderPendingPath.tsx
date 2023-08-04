@@ -4,6 +4,7 @@ import { angleBetween } from '../rendering/findNextSegments';
 import { angleTo, dist } from '../rendering/getMirrorTransforms';
 import { RenderSegment } from './RenderSegment';
 import { ArcSegment, Coord, PendingPath, PendingSegment } from '../types';
+import { coordsEqual } from '../rendering/pathsAreIdentical';
 
 // export const angleDiff = (angle: number, base: number) => {
 //     const res = angle - base;
@@ -29,8 +30,7 @@ export const arcPath = (
 
     return (
         (moveTo ? `M ${prev.x},${prev.y}` : '') +
-        `A ${r * zoom} ${r * zoom} 0 ${largeArc ? 1 : 0} ${sweep ? 1 : 0} ${
-            segment.to.x * zoom
+        `A ${r * zoom} ${r * zoom} 0 ${largeArc ? 1 : 0} ${sweep ? 1 : 0} ${segment.to.x * zoom
         } ${segment.to.y * zoom}`
     );
 };

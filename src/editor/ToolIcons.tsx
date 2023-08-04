@@ -8,7 +8,7 @@ import { State, GuideGeom } from '../types';
 import { Button } from 'primereact/button';
 import { toTypeRev } from '../handleKeyboard';
 import { EditorState, ToolIcon } from './Canvas';
-import { adjacentWhatsits } from '../animation/getBuiltins';
+import { findAdjacentPaths } from '../animation/getBuiltins';
 
 export function ToolIcons({
     state, editorState, dispatch, setEditorState, startPath,
@@ -89,7 +89,7 @@ export function ToolIcons({
                         tooltip="Expand All The Things"
                         onClick={() => {
                             if (state.selection?.type === 'Path') {
-                                const more = adjacentWhatsits(state.selection.ids, state.paths);
+                                const more = findAdjacentPaths(state.selection.ids, state.paths);
                                 dispatch({
                                     type: 'selection:set',
                                     selection: {

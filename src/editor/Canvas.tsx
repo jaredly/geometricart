@@ -421,11 +421,11 @@ export const Canvas = ({
                     dispatch({
                         type: 'path:create:many',
                         paths: joinedSegments
-                            .filter(s => coordsEqual(s[0].prev, s[s.length - 1].seg.to))
+                            // .filter(s => coordsEqual(s[0].prev, s[s.length - 1].segment.to))
                             .map(segs => ({
                                 origin: segs[0].prev,
-                                segments: segs.map(s => s.seg),
-                                open: !coordsEqual(segs[0].prev, segs[segs.length - 1].seg.to)
+                                segments: segs.map(s => s.segment),
+                                open: !coordsEqual(segs[0].prev, segs[segs.length - 1].segment.to)
                             })),
                         withMirror: false,
                         trace: true
