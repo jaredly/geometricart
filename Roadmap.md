@@ -1,4 +1,27 @@
 
+So, what's the best way to go about this
+
+1. I could look for colinear whatsits
+  and then ... break them against each other?
+  > this doesn't ... necessarily work ... in the general case
+2. I could do a boxified thing
+  where I say "here are the boxes that this segment touches"
+  and then for all the points, in the boxes, see if it bisects a segment
+  and if so, schedule it for a split.
+  > this is the more thorough way
+  > and maybe easier to do? idk
+
+-----
+
+- [ ] UGHGH OK so this is happening sooner than I would have liked
+  I guesssss I need to find any points that lie along any segment??? AND then split them up????
+  yeah that's a riot.
+  like
+  that's a ton of comparisons.
+  I guess I can do like binning or something
+
+rect binning and such
+
 - [x] Select Adjacents
 - [ ] adjacent doesn't work for lines that are ... multiple ones long
 - [x] a range slider to select from the center by radius

@@ -36,6 +36,26 @@ export const withinLimit = ([low, high]: [number, number], value: number) => {
     return low - epsilon <= value && value <= high + epsilon;
 };
 
+export const pointLine = (coord: Coord, line: SlopeIntercept) => {
+    if (line.m === Infinity) {
+        return (
+            closeEnough(line.b, coord.x) &&
+            (!line.limit || withinLimit(line.limit, coord.y))
+        );
+    }
+    if (line.m === 0) {
+        return (
+            closeEnough(line.b, coord.y) &&
+            (!line.limit || withinLimit(line.limit, coord.x))
+        );
+    }
+    const y = line.m * coord.x + line.b;
+    return (
+        closeEnough(y, coord.y) &&
+        (!line.limit || withinLimit(line.limit, coord.x))
+    );
+};
+
 export const lineLine = (one: SlopeIntercept, two: SlopeIntercept) => {
     if (closeEnough(one.m, two.m)) {
         return null;
@@ -146,8 +166,10 @@ export const lineToSlope = (
 
 export type SlopeIntercept = {
     type: 'line';
+    // If m === Infinity, b is the x coord. otherwise it's the normal b
     m: number;
     b: number;
+    // if m === Infinity, limit is on the y axis, otherwise it's on the x axis
     limit?: null | [number, number];
 };
 // the limit is two thetas, in clockwise direction.
@@ -346,6 +368,24 @@ export const angleIsBetween = (
     const one = angleBetween(lower, angle, true);
     const two = angleBetween(lower, upper, true);
     return one <= two + epsilon;
+};
+
+export const pointCircle = (point: Coord, circle: Circle) => {
+    if (
+        !withinLimit(
+            [-circle.radius, circle.radius],
+            point.x - circle.center.x,
+        ) ||
+        !withinLimit([-circle.radius, circle.radius], point.y - circle.center.y)
+    ) {
+        return false;
+    }
+    const d = dist(point, circle.center);
+    return (
+        closeEnough(d, circle.radius) &&
+        (!circle.limit ||
+            angleIsBetween(angleTo(circle.center, point), circle.limit))
+    );
 };
 
 // TODO: what to do about inf slope, no y intercept

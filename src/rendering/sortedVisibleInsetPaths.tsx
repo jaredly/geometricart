@@ -256,7 +256,7 @@ export const pathToInsetPaths = (
             );
             const regions = cleanUpInsetSegments2(segments, corners);
             if (path.segments.length === 1) {
-                console.log('regions', path.segments, regions);
+                // console.log('regions', path.segments, regions);
             }
 
             return regions.map((segments) => ({
@@ -584,12 +584,12 @@ function processOnePath(
                 .map((insetPath) => {
                     return clip
                         ? clipPathTry(
-                              insetPath,
-                              clip,
-                              clipBounds!,
-                              path.debug,
-                              group?.clipMode,
-                          )
+                            insetPath,
+                            clip,
+                            clipBounds!,
+                            path.debug,
+                            group?.clipMode,
+                        )
                         : insetPath;
                 })
                 .flat();

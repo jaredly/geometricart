@@ -17,7 +17,8 @@ import {
 } from '../rendering/getMirrorTransforms';
 import { angleBetween } from '../rendering/findNextSegments';
 import { segmentsBounds, segmentsCenter } from '../editor/Bounds';
-import { segmentKey, segmentKeyReverse } from '../rendering/segmentKey';
+import { maybeReverseSegment, orderedSegmentKey, segmentKey, segmentKeyReverse, shouldReverseSegment } from '../rendering/segmentKey';
+import { coordsEqual, reverseSegment } from '../rendering/pathsAreIdentical';
 
 const clamp = (v: number, min = 0, max = 1) => Math.max(min, Math.min(max, v));
 
@@ -219,26 +220,98 @@ const scaleInsets = (path: Path, scale: number): Path => {
     return modInsets(path, (i) => (i ? i * scale : i));
 };
 
+export const produceJointPaths = (ids: string[], paths: State['paths']) => {
+    const segMap: { [key: string]: { prev: Coord, seg: Segment, count: number } } = {};
+    ids.forEach(id => {
+        const path = paths[id];
+        path.segments.forEach((seg, i) => {
+            const prev = i === 0 ? path.segments[path.segments.length - 1] : path.segments[i - 1];
+            const rs = maybeReverseSegment(prev.to, seg);
+            const key = segmentKey(rs.prev, rs.segment)
+            if (!segMap[key]) {
+                segMap[key] = { prev: rs.prev, seg: rs.segment, count: 1 }
+            } else {
+                segMap[key].count++;
+            }
+        })
+    });
+
+    const orphans = Object.entries(segMap).filter(s => s[1].count === 1).map(([k, { count, ...v }]) => v);
+
+    const result = [[orphans.shift()!]];
+    while (orphans.length) {
+        const prev = orphans.length;
+        top: for (let i = 0; i < orphans.length; i++) {
+            const or = orphans[i];
+            for (let j = 0; j < result.length; j++) {
+                const p = result[j];
+                const left = p[0].prev;
+                const right = p[p.length - 1].seg.to;
+
+                if (coordsEqual(or.prev, left)) {
+                    p.unshift({ prev: or.seg.to, seg: reverseSegment(or.prev, or.seg) })
+                } else if (coordsEqual(or.seg.to, left)) {
+                    p.unshift(or)
+                } else if (coordsEqual(or.prev, right)) {
+                    p.push(or)
+                } else if (coordsEqual(or.seg.to, right)) {
+                    p.push({ prev: or.seg.to, seg: reverseSegment(or.prev, or.seg) })
+                } else {
+                    continue
+                }
+                orphans.splice(i, 1);
+                break top;
+            }
+        }
+        if (orphans.length === prev) {
+            result.push([orphans.shift()!])
+            // console.error('Unable to reduce')
+            // break
+        }
+    }
+
+    // console.log(result)
+    // console.log('orgphans', orphans)
+    if (orphans.length) {
+        console.error('Still have orphans', orphans);
+    }
+
+    return result
+    // segments.map(([k, { prev, seg }]) => {
+    //     // 123
+    //     //
+    // });
+    // return Object.keys(paths).filter(id => (
+    //     !ids.includes(id) &&
+    //     paths[id].segments.some((seg, i) => {
+    //         const prev = i === 0 ? paths[id].segments[paths[id].segments.length - 1] : paths[id].segments[i - 1];
+    //         const rs = maybeReverseSegment(prev.to, seg);
+    //         const key = segmentKey(rs.prev, rs.segment)
+    //         return segMap[key]
+    //     })
+    // ));
+}
+
 export const adjacentWhatsits = (ids: string[], paths: State['paths']) => {
     const segMap: { [key: string]: boolean } = {};
     ids.forEach(id => {
         const path = paths[id];
         path.segments.forEach((seg, i) => {
             const prev = i === 0 ? path.segments[path.segments.length - 1] : path.segments[i - 1];
-            const key = segmentKey(prev.to, seg);
-            const rkey = segmentKeyReverse(prev.to, seg);
+            const rs = maybeReverseSegment(prev.to, seg);
+            const key = segmentKey(rs.prev, rs.segment)
             segMap[key] = true;
-            segMap[rkey] = true;
         })
     });
 
     return Object.keys(paths).filter(id => (
         !ids.includes(id) &&
+        paths[id].style.fills.length &&
         paths[id].segments.some((seg, i) => {
             const prev = i === 0 ? paths[id].segments[paths[id].segments.length - 1] : paths[id].segments[i - 1];
-            const key = segmentKey(prev.to, seg);
-            const rkey = segmentKeyReverse(prev.to, seg);
-            return segMap[key] || segMap[rkey];
+            const rs = maybeReverseSegment(prev.to, seg);
+            const key = segmentKey(rs.prev, rs.segment)
+            return segMap[key]
         })
     ));
 }

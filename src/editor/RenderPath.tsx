@@ -30,12 +30,13 @@ export const UnderlinePath = ({
     return (
         <path
             d={d}
-            strokeWidth={2}
-            // strokeWidth={4}
+            // strokeWidth={2}
+            strokeWidth={4}
             stroke={color}
             style={{ pointerEvents: 'none' }}
-            fill="white"
-            // strokeDasharray="5 10"
+            // fill="white"
+            fill="none"
+            strokeDasharray="5 10"
             strokeLinecap="square"
             strokeLinejoin="round"
         />

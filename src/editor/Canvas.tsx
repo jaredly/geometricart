@@ -63,6 +63,8 @@ import { Menu } from 'primereact/menu';
 import { SVGCanvas } from './SVGCanvas';
 import { useCurrent } from '../App';
 import { ToolIcons } from './ToolIcons';
+import { produceJointPaths } from '../animation/getBuiltins';
+import { coordsEqual } from '../rendering/pathsAreIdentical';
 
 export type Props = {
     state: State;
@@ -394,6 +396,9 @@ export const Canvas = ({
             ...es,
             pendingPath: es.pendingPath === null ? false : null,
         }));
+        if (state.selection) {
+            dispatch({ type: 'selection:set', selection: null })
+        }
     };
 
     useEffect(() => {
@@ -409,6 +414,27 @@ export const Canvas = ({
             if (evt.key === 'n') {
                 evt.preventDefault();
                 evt.stopPropagation();
+
+                if (currentState.current.selection?.type === 'Path') {
+                    const ids = currentState.current.selection.ids;
+                    const joinedSegments = produceJointPaths(ids, currentState.current.paths)
+                    dispatch({
+                        type: 'path:create:many',
+                        paths: joinedSegments
+                            .filter(s => coordsEqual(s[0].prev, s[s.length - 1].seg.to))
+                            .map(segs => ({
+                                origin: segs[0].prev,
+                                segments: segs.map(s => s.seg),
+                                open: !coordsEqual(segs[0].prev, segs[segs.length - 1].seg.to)
+                            })),
+                        withMirror: false,
+                        trace: true
+                    });
+                    dispatch({ type: 'selection:set', selection: currentState.current.selection })
+                    // console.log('ok', ok)
+                    return
+                }
+
                 startPath();
             }
             if (evt.key === 'Escape') {
