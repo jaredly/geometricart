@@ -9,6 +9,9 @@ to be able to ~bulk export some svgs
   - Export SVG
   - Export multi svg
 
+
+Restrict the color chooser to things that are actually available?
+
 ----
 
 So, what's the best way to go about this

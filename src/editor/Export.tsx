@@ -15,11 +15,12 @@ import { sortedVisibleInsetPaths } from '../rendering/sortedVisibleInsetPaths';
 import { Action } from '../state/Action';
 import { initialHistory } from '../state/initialState';
 import { texture1, texture2 } from '../rendering/textures';
-import { State, TextureConfig } from '../types';
+import { Path, State, TextureConfig } from '../types';
 import { closeEnough } from '../rendering/clipPath';
 import { PendingBounds, newPendingBounds, addCoordToBounds } from './Bounds';
 import { MultiColor } from './MultiStyleForm';
 import { UIState } from '../useUIState';
+import { calcPPI } from './SVGCanvas';
 
 export type Bounds = {
     x1: number;
@@ -51,6 +52,13 @@ export const findBoundingRect = (state: State): Bounds | null => {
     return { x1: bounds.x0!, y1: bounds.y0!, x2: bounds.x1!, y2: bounds.y1! };
 };
 
+export type Multi = {
+    outline: number | string;
+    shape: number | string;
+    rows: number;
+    columns: number;
+};
+
 export const Export = ({
     state,
     dispatch,
@@ -61,15 +69,10 @@ export const Export = ({
     dispatch: (action: Action) => void;
 }) => {
     // const [name, setName] = React.useState()
-    const [url, setUrl] = React.useState(null as null | string);
+    const [url, setUrl] = React.useState(null as null | string[]);
     const [animationPosition, setAnimationPosition] = React.useState(0);
 
-    const [multi, setMulti] = useState(
-        null as null | {
-            outline: number | string;
-            shape: number | string;
-        },
-    );
+    const [multi, setMulti] = useState(null as null | Multi);
 
     const [png, setPng] = React.useState(null as null | string);
 
@@ -288,6 +291,41 @@ export const Export = ({
                                 }}
                             />
                         </div>
+                        <div>
+                            Columns
+                            <input
+                                type="number"
+                                min="0"
+                                max="100"
+                                style={{ width: 50 }}
+                                value={multi.columns}
+                                onChange={(evt) =>
+                                    setMulti((m) =>
+                                        m
+                                            ? {
+                                                  ...m,
+                                                  columns: +evt.target.value,
+                                              }
+                                            : m,
+                                    )
+                                }
+                            />
+                            Rows
+                            <input
+                                type="number"
+                                min="0"
+                                max="100"
+                                style={{ width: 50 }}
+                                value={multi.rows}
+                                onChange={(evt) =>
+                                    setMulti((m) =>
+                                        m
+                                            ? { ...m, rows: +evt.target.value }
+                                            : m,
+                                    )
+                                }
+                            />
+                        </div>
                         <button
                             css={{ marginTop: 16, display: 'block' }}
                             onClick={() => setMulti(null)}
@@ -298,7 +336,14 @@ export const Export = ({
                 ) : (
                     <button
                         css={{ marginTop: 16, display: 'block' }}
-                        onClick={() => setMulti({ outline: 0, shape: 1 })}
+                        onClick={() =>
+                            setMulti({
+                                outline: 0,
+                                shape: 1,
+                                rows: 1,
+                                columns: 1,
+                            })
+                        }
                     >
                         Multi SVG
                     </button>
@@ -333,31 +378,20 @@ export const Export = ({
                             justifyContent: 'center',
                         }}
                     >
-                        <a
-                            href={url}
-                            download={name}
-                            css={{
-                                color: 'white',
-                                background: '#666',
-                                borderRadius: 6,
-                                padding: '4px 8px',
-                                display: 'block',
-                                textDecoration: 'none',
-                                cursor: 'pointer',
-                                marginBottom: 16,
-                            }}
-                        >
-                            Download {name}
-                        </a>
-                        <div
-                            style={{
-                                backgroundImage: `url("${transparent}")`,
-                                backgroundRepeat: 'repeat',
-                                backgroundSize: 40,
-                            }}
-                        >
-                            <img src={url} css={{ maxHeight: 400 }} />
-                        </div>
+                        {url.length === 1 ? (
+                            <DL url={url[0]} name={name} />
+                        ) : (
+                            url.map((url, i) => (
+                                <DL
+                                    url={url}
+                                    name={name.replace(
+                                        '.svg',
+                                        `-${(i + '').padStart(2, '0')}.svg`,
+                                    )}
+                                    key={i}
+                                />
+                            ))
+                        )}
                     </div>
                 ) : null}
             </div>
@@ -413,39 +447,124 @@ async function runSVGExport({
     originalSize: number;
     embed: boolean;
     history: boolean;
-    setUrl: React.Dispatch<React.SetStateAction<string | null>>;
-    multi: null | { outline: number | string; shape: number | string };
+    setUrl: React.Dispatch<React.SetStateAction<null | string[]>>;
+    multi: null | Multi;
 }) {
-    let svgNode: SVGElement | null = null;
-    const dest = document.createElement('div');
     const size = calcSVGSize(crop, boundingRect, state, originalSize);
 
-    ReactDOM.render(
-        <Canvas
-            {...blankCanvasProps}
-            {...size}
-            innerRef={(node) => (svgNode = node)}
-            ppi={state.meta.ppi}
-            state={
-                state.view.laserCutMode
-                    ? {
-                          ...state,
-                          view: { ...state.view, background: undefined },
-                      }
-                    : state
+    if (multi) {
+        const outlines: Path[] = [];
+        const pathsToRender: Path[][] = [[]];
+        const byGroup: { [key: string]: Path[] } = {};
+        Object.keys(state.paths).forEach((k) => {
+            let path = state.paths[k];
+            if (path.style.fills.length) {
+                return;
             }
-        />,
-        dest,
-    );
+            const out = path.style.lines.find(
+                (s) => s && s.color === multi.outline,
+            );
+            if (out) {
+                outlines.push({ ...path, style: { fills: [], lines: [out] } });
+                return;
+            }
+            const line = path.style.lines.find(
+                (s) => s && s.color === multi.shape,
+            );
+            if (!line) return;
+            path = { ...path, style: { fills: [], lines: [line] } };
+            const group = path.group;
+            if (group) {
+                if (!byGroup[group]) {
+                    byGroup[group] = [];
+                }
+                byGroup[group].push(path);
+            } else {
+                pathsToRender.push([path]);
+            }
+        });
+        pathsToRender.push(...Object.values(byGroup));
 
-    let text = svgNode!.outerHTML;
+        const urls = [];
+        const perImage = multi.rows * multi.columns;
+        for (let i = 0; i < pathsToRender.length; i += perImage) {
+            let contents = pathsToRender
+                .slice(i, i + perImage)
+                .map((paths, i) => {
+                    const map: State['paths'] = {};
+                    outlines.forEach((path) => (map[path.id] = path));
+                    paths.forEach((path) => (map[path.id] = path));
+
+                    const r = (i / multi.columns) | 0;
+                    const c = i % multi.columns;
+
+                    return `<g transform="translate(${size.width * c}, ${
+                        size.height * r
+                    })">${getSVGText(
+                        { ...state, paths: map },
+                        size,
+                        true,
+                    )}</g>`;
+                });
+            const full = `
+            <svg
+                width="${calcPPI(
+                    state.meta.ppi,
+                    size.width * multi.columns,
+                    state.view.zoom,
+                )}"
+                height="${calcPPI(
+                    state.meta.ppi,
+                    size.height * multi.rows,
+                    state.view.zoom,
+                )}"
+                viewBox="0 0 ${size.width * multi.columns} ${
+                size.height * multi.rows
+            }"
+                xmlns="http://www.w3.org/2000/svg"
+            >${contents.join('')}</svg>
+            `;
+            const blob = new Blob([full], { type: 'image/svg+xml' });
+            urls.push(URL.createObjectURL(blob));
+        }
+
+        setUrl(urls);
+        return;
+    }
+
+    let text = getSVGText(state, size);
+
     if (embed) {
         text += `\n\n${PREFIX}${JSON.stringify(
             history ? state : { ...state, history: initialHistory },
         )}${SUFFIX}`;
     }
     const blob = new Blob([text], { type: 'image/svg+xml' });
-    setUrl(URL.createObjectURL(blob));
+    setUrl([URL.createObjectURL(blob)]);
+}
+
+function getSVGText(
+    state: State,
+    size: { width: number; height: number },
+    inner = false,
+) {
+    const dest = document.createElement('div');
+    let svgNode: SVGElement | null = null;
+    const rstate = state.view.laserCutMode
+        ? { ...state, view: { ...state.view, background: undefined } }
+        : state;
+    ReactDOM.render(
+        <Canvas
+            {...blankCanvasProps}
+            {...size}
+            innerRef={(node) => (svgNode = node)}
+            ppi={state.meta.ppi}
+            state={rstate}
+        />,
+        dest,
+    );
+
+    return inner ? svgNode!.innerHTML : svgNode!.outerHTML;
 }
 
 function calcSVGSize(
@@ -576,3 +695,35 @@ export async function addMetadata(
     });
     return newBlob;
 }
+
+export const DL = ({ url, name }: { url: string; name: string }) => {
+    return (
+        <>
+            <a
+                href={url}
+                download={name}
+                css={{
+                    color: 'white',
+                    background: '#666',
+                    borderRadius: 6,
+                    padding: '4px 8px',
+                    display: 'block',
+                    textDecoration: 'none',
+                    cursor: 'pointer',
+                    marginBottom: 16,
+                }}
+            >
+                Download {name}
+            </a>
+            <div
+                style={{
+                    backgroundImage: `url("${transparent}")`,
+                    backgroundRepeat: 'repeat',
+                    backgroundSize: 40,
+                }}
+            >
+                <img src={url} css={{ maxHeight: 400 }} />
+            </div>
+        </>
+    );
+};
