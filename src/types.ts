@@ -309,6 +309,12 @@ export type View = {
     background?: string | number;
     sketchiness?: number;
     texture?: TextureConfig;
+    multi?: {
+        outline: string | number | null;
+        shapes: (string | number | null | undefined)[];
+        columns: number;
+        rows: number;
+    };
 };
 
 export type Selection = {

@@ -18,7 +18,7 @@ import { texture1, texture2 } from '../rendering/textures';
 import { Path, State, TextureConfig } from '../types';
 import { closeEnough } from '../rendering/clipPath';
 import { PendingBounds, newPendingBounds, addCoordToBounds } from './Bounds';
-import { MultiColor } from './MultiStyleForm';
+import { MultiColor, constantColors, maybeUrlColor } from './MultiStyleForm';
 import { UIState } from '../useUIState';
 import { calcPPI } from './SVGCanvas';
 
@@ -52,12 +52,7 @@ export const findBoundingRect = (state: State): Bounds | null => {
     return { x1: bounds.x0!, y1: bounds.y0!, x2: bounds.x1!, y2: bounds.y1! };
 };
 
-export type Multi = {
-    outline: number | string;
-    shape: number | string;
-    rows: number;
-    columns: number;
-};
+export type Multi = NonNullable<State['view']['multi']>;
 
 export const Export = ({
     state,
@@ -69,10 +64,12 @@ export const Export = ({
     dispatch: (action: Action) => void;
 }) => {
     // const [name, setName] = React.useState()
-    const [url, setUrl] = React.useState(null as null | string[]);
+    const [url, setUrl] = React.useState(
+        null as null | { url: string; info: string }[],
+    );
     const [animationPosition, setAnimationPosition] = React.useState(0);
 
-    const [multi, setMulti] = useState(null as null | Multi);
+    // const [multi, setMulti] = useState(null as null | Multi);
 
     const [png, setPng] = React.useState(null as null | string);
 
@@ -256,92 +253,23 @@ export const Export = ({
                     onChange={(crop) => setCrop(crop ?? null)}
                 />
                 <br />
-                {multi ? (
-                    <div
-                        css={{
-                            border: '1px solid #aaa',
-                            padding: 8,
-                            marginTop: 8,
-                        }}
-                    >
-                        Multi SVG Settings
-                        <div css={{ marginTop: 8 }}>
-                            Outline Color:
-                            <MultiColor
-                                palette={state.palette}
-                                color={[multi.outline]}
-                                onHover={() => {}}
-                                onChange={(color) => {
-                                    setMulti((m) =>
-                                        m ? { ...m, outline: color } : m,
-                                    );
-                                }}
-                            />
-                        </div>
-                        <div css={{ marginTop: 8 }}>
-                            Shape line Color:
-                            <MultiColor
-                                palette={state.palette}
-                                color={[multi.shape]}
-                                onHover={() => {}}
-                                onChange={(color) => {
-                                    setMulti((m) =>
-                                        m ? { ...m, shape: color } : m,
-                                    );
-                                }}
-                            />
-                        </div>
-                        <div>
-                            Columns
-                            <input
-                                type="number"
-                                min="0"
-                                max="100"
-                                style={{ width: 50 }}
-                                value={multi.columns}
-                                onChange={(evt) =>
-                                    setMulti((m) =>
-                                        m
-                                            ? {
-                                                  ...m,
-                                                  columns: +evt.target.value,
-                                              }
-                                            : m,
-                                    )
-                                }
-                            />
-                            Rows
-                            <input
-                                type="number"
-                                min="0"
-                                max="100"
-                                style={{ width: 50 }}
-                                value={multi.rows}
-                                onChange={(evt) =>
-                                    setMulti((m) =>
-                                        m
-                                            ? { ...m, rows: +evt.target.value }
-                                            : m,
-                                    )
-                                }
-                            />
-                        </div>
-                        <button
-                            css={{ marginTop: 16, display: 'block' }}
-                            onClick={() => setMulti(null)}
-                        >
-                            Cancel
-                        </button>
-                    </div>
+                {state.view.multi ? (
+                    multiForm(state, state.view.multi, dispatch)
                 ) : (
                     <button
                         css={{ marginTop: 16, display: 'block' }}
                         onClick={() =>
-                            setMulti({
-                                outline: 0,
-                                shape: 1,
-                                rows: 1,
-                                columns: 1,
+                            dispatch({
+                                type: 'view:update',
+                                view: {
+                                    ...state.view,
+                                    multi: {
+                                        outline: null,
+                                        shapes: [null],
+                                        columns: 1,
+                                        rows: 1,
+                                    },
+                                },
                             })
                         }
                     >
@@ -360,7 +288,7 @@ export const Export = ({
                             embed,
                             history,
                             setUrl,
-                            multi,
+                            multi: state.view.multi,
                         })
                     }
                 >
@@ -379,11 +307,16 @@ export const Export = ({
                         }}
                     >
                         {url.length === 1 ? (
-                            <DL url={url[0]} name={name} />
+                            <DL
+                                url={url[0].url}
+                                subtitle={url[0].info}
+                                name={name}
+                            />
                         ) : (
                             url.map((url, i) => (
                                 <DL
-                                    url={url}
+                                    url={url.url}
+                                    subtitle={url.info}
                                     name={name.replace(
                                         '.svg',
                                         `-${(i + '').padStart(2, '0')}.svg`,
@@ -431,6 +364,146 @@ const blankCanvasProps = {
     isTouchScreen: false,
 } as const;
 
+function multiForm(
+    state: State,
+    multi: NonNullable<State['view']['multi']>,
+    dispatch: React.Dispatch<Action>,
+): React.ReactNode {
+    const colors: { [key: string | number]: number } = {};
+
+    Object.entries(state.paths).forEach(([k, path]) => {
+        path.style.lines.forEach((line) => {
+            if (line && line.color != null) {
+                colors[line.color] = (colors[line.color] || 0) + 1;
+            }
+        });
+    });
+
+    return (
+        <div
+            css={{
+                border: '1px solid #aaa',
+                padding: 8,
+                marginTop: 8,
+            }}
+        >
+            Multi SVG Settings
+            <div css={{ marginTop: 8 }}>
+                Outline Color:
+                <Select
+                    current={multi.outline}
+                    state={state}
+                    colors={colors}
+                    onChange={(color) => {
+                        dispatch({
+                            type: 'view:update',
+                            view: {
+                                ...state.view,
+                                multi: {
+                                    ...multi,
+                                    outline: color,
+                                },
+                            },
+                        });
+                    }}
+                />
+            </div>
+            <div css={{ marginTop: 8 }}>
+                Shape line Color:
+                {multi.shapes.map((color, i) => (
+                    <Select
+                        key={i}
+                        current={color}
+                        state={state}
+                        colors={colors}
+                        onChange={(color) => {
+                            const shapes = multi.shapes.slice();
+                            if (color == null) {
+                                shapes.splice(1, i);
+                            } else {
+                                shapes[i] = color;
+                            }
+                            dispatch({
+                                type: 'view:update',
+                                view: {
+                                    ...state.view,
+                                    multi: { ...multi, shapes },
+                                },
+                            });
+                        }}
+                    />
+                ))}
+                <button
+                    onClick={() => {
+                        dispatch({
+                            type: 'view:update',
+                            view: {
+                                ...state.view,
+                                multi: {
+                                    ...multi,
+                                    shapes: multi.shapes.concat([null]),
+                                },
+                            },
+                        });
+                    }}
+                >
+                    Add a shape color
+                </button>
+            </div>
+            <div>
+                Columns
+                <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    style={{ width: 50 }}
+                    value={multi.columns}
+                    onChange={(evt) =>
+                        dispatch({
+                            type: 'view:update',
+                            view: {
+                                ...state.view,
+                                multi: { ...multi, columns: +evt.target.value },
+                            },
+                        })
+                    }
+                />
+                Rows
+                <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    style={{ width: 50 }}
+                    value={multi.rows}
+                    onChange={(evt) =>
+                        dispatch({
+                            type: 'view:update',
+                            view: {
+                                ...state.view,
+                                multi: { ...multi, rows: +evt.target.value },
+                            },
+                        })
+                    }
+                />
+            </div>
+            <button
+                css={{ marginTop: 16, display: 'block' }}
+                onClick={() =>
+                    dispatch({
+                        type: 'view:update',
+                        view: {
+                            ...state.view,
+                            multi: undefined,
+                        },
+                    })
+                }
+            >
+                Cancel
+            </button>
+        </div>
+    );
+}
+
 async function runSVGExport({
     crop,
     boundingRect,
@@ -447,8 +520,10 @@ async function runSVGExport({
     originalSize: number;
     embed: boolean;
     history: boolean;
-    setUrl: React.Dispatch<React.SetStateAction<null | string[]>>;
-    multi: null | Multi;
+    setUrl: React.Dispatch<
+        React.SetStateAction<null | { url: string; info: string }[]>
+    >;
+    multi?: null | Multi;
 }) {
     const size = calcSVGSize(crop, boundingRect, state, originalSize);
 
@@ -456,6 +531,7 @@ async function runSVGExport({
         const outlines: Path[] = [];
         const pathsToRender: Path[][] = [[]];
         const byGroup: { [key: string]: Path[] } = {};
+        console.log('mshapes', multi.shapes);
         Object.keys(state.paths).forEach((k) => {
             let path = state.paths[k];
             if (path.style.fills.length) {
@@ -468,32 +544,41 @@ async function runSVGExport({
                 outlines.push({ ...path, style: { fills: [], lines: [out] } });
                 return;
             }
-            const line = path.style.lines.find(
-                (s) => s && s.color === multi.shape,
-            );
-            if (!line) return;
-            path = { ...path, style: { fills: [], lines: [line] } };
-            const group = path.group;
-            if (group) {
-                if (!byGroup[group]) {
-                    byGroup[group] = [];
+            multi.shapes.forEach((shape) => {
+                if (shape == null) return;
+
+                const line = path.style.lines.find(
+                    (s) => s && s.color === shape,
+                );
+                if (!line) return;
+                // path =
+                const oneLine = {
+                    ...path,
+                    style: { fills: [], lines: [line] },
+                };
+                const group = path.group;
+                if (group) {
+                    if (!byGroup[group + ':' + shape]) {
+                        byGroup[group + ':' + shape] = [];
+                    }
+                    byGroup[group + ':' + shape].push(oneLine);
+                } else {
+                    pathsToRender.push([oneLine]);
                 }
-                byGroup[group].push(path);
-            } else {
-                pathsToRender.push([path]);
-            }
+            });
         });
+        console.log('hi', byGroup);
         pathsToRender.push(...Object.values(byGroup));
 
-        const urls = [];
+        const urls: { url: string; info: string }[] = [];
         const perImage = multi.rows * multi.columns;
         for (let i = 0; i < pathsToRender.length; i += perImage) {
             let contents = pathsToRender
                 .slice(i, i + perImage)
                 .map((paths, i) => {
                     const map: State['paths'] = {};
-                    outlines.forEach((path) => (map[path.id] = path));
                     paths.forEach((path) => (map[path.id] = path));
+                    outlines.forEach((path) => (map[path.id] = path));
 
                     const r = (i / multi.columns) | 0;
                     const c = i % multi.columns;
@@ -506,7 +591,16 @@ async function runSVGExport({
                         true,
                     )}</g>`;
                 });
-            const full = `
+            const info = `${calcPPI(
+                state.meta.ppi,
+                size.width * multi.columns,
+                state.view.zoom,
+            )}x${calcPPI(
+                state.meta.ppi,
+                size.height * multi.rows,
+                state.view.zoom,
+            )}`;
+            let full = `
             <svg
                 width="${calcPPI(
                     state.meta.ppi,
@@ -524,8 +618,13 @@ async function runSVGExport({
                 xmlns="http://www.w3.org/2000/svg"
             >${contents.join('')}</svg>
             `;
+            if (embed) {
+                full += `\n\n${PREFIX}${JSON.stringify(
+                    history ? state : { ...state, history: initialHistory },
+                )}${SUFFIX}`;
+            }
             const blob = new Blob([full], { type: 'image/svg+xml' });
-            urls.push(URL.createObjectURL(blob));
+            urls.push({ url: URL.createObjectURL(blob), info });
         }
 
         setUrl(urls);
@@ -540,7 +639,7 @@ async function runSVGExport({
         )}${SUFFIX}`;
     }
     const blob = new Blob([text], { type: 'image/svg+xml' });
-    setUrl([URL.createObjectURL(blob)]);
+    setUrl([{ url: URL.createObjectURL(blob), info: 'no info sry' }]);
 }
 
 function getSVGText(
@@ -696,7 +795,15 @@ export async function addMetadata(
     return newBlob;
 }
 
-export const DL = ({ url, name }: { url: string; name: string }) => {
+export const DL = ({
+    url,
+    name,
+    subtitle,
+}: {
+    url: string;
+    name: string;
+    subtitle: string;
+}) => {
     return (
         <>
             <a
@@ -715,6 +822,7 @@ export const DL = ({ url, name }: { url: string; name: string }) => {
             >
                 Download {name}
             </a>
+            {subtitle}
             <div
                 style={{
                     backgroundImage: `url("${transparent}")`,
@@ -725,5 +833,133 @@ export const DL = ({ url, name }: { url: string; name: string }) => {
                 <img src={url} css={{ maxHeight: 400 }} />
             </div>
         </>
+    );
+};
+
+const Select = ({
+    current,
+    state,
+    colors,
+    onChange,
+}: {
+    current: string | number | null | undefined;
+    state: State;
+    colors: { [key: string | number]: number };
+    onChange: (color: string | number | null) => void;
+}) => {
+    const [open, setOpen] = useState(false);
+
+    return (
+        <div css={{ position: 'relative' }}>
+            <div
+                css={{
+                    border: '1px solid #777',
+                    borderRadius: 4,
+                    margin: '8px 0',
+                }}
+            >
+                <Line
+                    color={
+                        typeof current === 'number'
+                            ? state.palette[current]
+                            : current
+                    }
+                    count={current != null ? colors[current] : null}
+                    onClick={() => setOpen(!open)}
+                />
+                <button onClick={() => onChange(null)}>&times;</button>
+            </div>
+
+            {open ? (
+                <div
+                    css={{
+                        position: 'absolute',
+                        top: '100%',
+                        left: 0,
+                        backgroundColor: '#000',
+                        zIndex: 1000,
+                    }}
+                >
+                    {state.palette
+                        .map((color, i) => (
+                            <Line
+                                key={i}
+                                color={color}
+                                count={colors[i]}
+                                onClick={() => {
+                                    onChange(i);
+                                    setOpen(false);
+                                }}
+                            />
+                        ))
+                        .filter((_, i) => colors[i] != null)}
+                    {constantColors
+                        .filter((color) => colors[color] != null)
+                        .map((color) => (
+                            <Line
+                                key={color}
+                                color={color}
+                                count={colors[color]}
+                                onClick={() => {
+                                    onChange(color);
+                                    setOpen(false);
+                                }}
+                            />
+                        ))}
+                </div>
+            ) : null}
+        </div>
+    );
+};
+
+const Line = ({
+    color,
+    count,
+    onClick,
+}: {
+    color: string | null | undefined;
+    count: number | null;
+    onClick?: () => void;
+}) => {
+    return (
+        <div
+            css={{
+                display: 'flex',
+                flexDirection: 'row',
+                padding: '4px 16px',
+                cursor: 'pointer',
+            }}
+            onClick={onClick}
+        >
+            <div
+                // onClick={() => onChange(i)}
+                // onMouseOver={() => onHover(i)}
+                // onMouseOut={() => onHover(null)}
+                // style={{
+                //     boxShadow: color.includes(i)
+                //         ? `0 3px 0 ${highlight}`
+                //         : 'none',
+                //     // border: `2px solid ${
+                //     //     color.includes(i) ? highlight : '#444'
+                //     // }`,
+                // }}
+                css={{
+                    background:
+                        color != null ? maybeUrlColor(color) : undefined,
+                    width: 20,
+                    height: 20,
+                    cursor: 'pointer',
+                    border: 'none',
+                    ':hover': {
+                        outline: '1px solid magenta',
+                        zIndex: 10,
+                        position: 'relative',
+                        borderBottom: 'none',
+                    },
+                }}
+            />
+            {color != null ? color : 'Select a color'}
+            {count != null ? ' ' + count : null}
+        </div>
     );
 };

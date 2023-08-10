@@ -763,6 +763,8 @@ export const MultiNumber = ({
     );
 };
 
+export const constantColors = ['black', 'white', 'transparent'];
+
 export const MultiColor = ({
     color,
     onChange,
@@ -774,7 +776,6 @@ export const MultiColor = ({
     palette: Array<string>;
     onHover: (color: string | number | null) => void;
 }) => {
-    const options = ['black', 'white', 'transparent'];
     const highlight = color.length === 1 ? 'white' : '#faa';
     return (
         <div
@@ -818,7 +819,7 @@ export const MultiColor = ({
                     }}
                 />
             ))}
-            {options.map((name, i) => (
+            {constantColors.map((name, i) => (
                 <button
                     key={name + i}
                     onClick={() => onChange(name)}

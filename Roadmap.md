@@ -1,4 +1,9 @@
 
+Ok, so I want the multi-svg stuff to be part of state
+
+
+----
+
 IN ORDER TO
 laser cut
 I need
