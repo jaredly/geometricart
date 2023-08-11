@@ -314,6 +314,7 @@ export type View = {
         shapes: (string | number | null | undefined)[];
         columns: number;
         rows: number;
+        combineGroups?: boolean;
     };
 };
 

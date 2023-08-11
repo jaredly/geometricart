@@ -120,7 +120,7 @@ export function sortedVisibleInsetPaths(
         .filter(
             (k) =>
                 !paths[k].hidden &&
-                (!paths[k].group || !pathGroups[paths[k].group!].hide),
+                (!paths[k].group || !pathGroups[paths[k].group!]?.hide),
         )
         .sort(sortByOrdering(paths, pathGroups));
 
@@ -689,10 +689,10 @@ function sortByOrdering(
 ): ((a: string, b: string) => number) | undefined {
     return (a, b) => {
         const oa = paths[a].group
-            ? pathGroups[paths[a].group!].ordering
+            ? pathGroups[paths[a].group!]?.ordering
             : paths[a].ordering;
         const ob = paths[b].group
-            ? pathGroups[paths[b].group!].ordering
+            ? pathGroups[paths[b].group!]?.ordering
             : paths[b].ordering;
         if (oa === ob) {
             return 0;

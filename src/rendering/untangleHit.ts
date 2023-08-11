@@ -296,7 +296,7 @@ export const untangleHit = (
      * exit to exit, nope. enter to enter, nope.
      */
     if (sides.length !== 4) {
-        console.log('sides', sides);
+        // console.log('sides', sides);
         throw new IntersectionError(
             `Sides neither 2 nor 4 ${sides.length}`,
             entries,

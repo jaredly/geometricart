@@ -69,8 +69,6 @@ export const Export = ({
     );
     const [animationPosition, setAnimationPosition] = React.useState(0);
 
-    // const [multi, setMulti] = useState(null as null | Multi);
-
     const [png, setPng] = React.useState(null as null | string);
 
     const [size, setSize] = React.useState(originalSize);
@@ -177,6 +175,7 @@ export const Export = ({
                             justifyContent: 'center',
                         }}
                     >
+                        <button onClick={() => setPng(null)}>Close</button>
                         <a
                             href={png}
                             download={name.replace('.svg', '.png')}
@@ -486,6 +485,25 @@ function multiForm(
                     }
                 />
             </div>
+            <label>
+                <input
+                    type="checkbox"
+                    checked={!!multi.combineGroups}
+                    onChange={(evt) =>
+                        dispatch({
+                            type: 'view:update',
+                            view: {
+                                ...state.view,
+                                multi: {
+                                    ...multi,
+                                    combineGroups: !multi.combineGroups,
+                                },
+                            },
+                        })
+                    }
+                />
+                Combine groups?
+            </label>
             <button
                 css={{ marginTop: 16, display: 'block' }}
                 onClick={() =>
@@ -542,7 +560,6 @@ async function runSVGExport({
             );
             if (out) {
                 outlines.push({ ...path, style: { fills: [], lines: [out] } });
-                return;
             }
             multi.shapes.forEach((shape) => {
                 if (shape == null) return;
@@ -556,7 +573,7 @@ async function runSVGExport({
                     ...path,
                     style: { fills: [], lines: [line] },
                 };
-                const group = path.group;
+                const group = multi.combineGroups ? 'aa' : path.group;
                 if (group) {
                     if (!byGroup[group + ':' + shape]) {
                         byGroup[group + ':' + shape] = [];
@@ -577,8 +594,9 @@ async function runSVGExport({
                 .slice(i, i + perImage)
                 .map((paths, i) => {
                     const map: State['paths'] = {};
-                    paths.forEach((path) => (map[path.id] = path));
-                    outlines.forEach((path) => (map[path.id] = path));
+                    let aa = 0;
+                    paths.forEach((path) => (map[aa++] = path));
+                    outlines.forEach((path) => (map[aa++] = path));
 
                     const r = (i / multi.columns) | 0;
                     const c = i % multi.columns;

@@ -117,8 +117,9 @@ export const NewSidebar = ({
                     { name: 'animate', icon: MagicWandIcon },
                     { name: 'gcode', icon: DrillIcon },
                     { name: 'history', icon: IconHistoryToggle },
-                ].map((Config) => (
+                ].map((Config, i) => (
                     <Button
+                        key={i}
                         className={
                             uiState.screen === Config.name
                                 ? ''
@@ -555,7 +556,24 @@ function TransformPanel({
                             return;
                         }
                         const clip = state.clips[state.view.activeClip];
-                        const clipBounds = segmentsBounds(clip);
+
+                        let [segments, corners] = insetSegments(
+                            clip,
+                            inset / 100,
+                        );
+                        const regions = cleanUpInsetSegments2(
+                            segments,
+                            corners,
+                        );
+                        const insetClip = regions[0];
+                        if (regions.length !== 1) {
+                            console.error('nope bad clip inset');
+                            return;
+                        }
+                        // insetClip = ensureClockwise(insetClip);
+                        // let insetClip = clip;
+
+                        const clipBounds = segmentsBounds(insetClip);
 
                         let nextId = state.nextId;
 
@@ -566,7 +584,7 @@ function TransformPanel({
                                     ...path,
                                     segments: ensureClockwise(path.segments),
                                 },
-                                clip,
+                                insetClip,
                                 clipBounds!,
                                 false,
                             );
