@@ -367,15 +367,22 @@ export const reduceWithoutUndo = (
         case 'path:update:many': {
             const prev: { [key: string]: Path } = {};
             Object.keys(action.changed).forEach((id) => {
-                prev[id] = state.paths[id];
+                if (state.paths[id]) {
+                    prev[id] = state.paths[id];
+                }
+            });
+            const paths = { ...state.paths };
+            Object.keys(action.changed).forEach((id) => {
+                const ch = action.changed[id];
+                if (ch == null) {
+                    delete paths[id];
+                } else {
+                    paths[id] = ch;
+                }
             });
             return [
-                { ...state, paths: { ...state.paths, ...action.changed } },
-                {
-                    type: action.type,
-                    action,
-                    prev,
-                },
+                { ...state, paths, nextId: action.nextId ?? state.nextId },
+                { type: action.type, action, prev, prevNextId: state.nextId },
             ];
         }
         case 'meta:update': {
@@ -1011,8 +1018,19 @@ export const undo = (state: State, action: UndoAction): State => {
         }
         case 'path:delete:many':
             return { ...state, paths: { ...state.paths, ...action.prev } };
-        case 'path:update:many':
-            return { ...state, paths: { ...state.paths, ...action.prev } };
+        case 'path:update:many': {
+            const paths = { ...state.paths };
+            Object.keys(action.prev).forEach((id) => {
+                if (action.prev[id]) {
+                    paths[id] = action.prev[id];
+                }
+            });
+            return {
+                ...state,
+                paths,
+                nextId: action.prevNextId ?? state.nextId,
+            };
+        }
         case 'pathGroup:update:many':
             return {
                 ...state,

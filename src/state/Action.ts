@@ -259,10 +259,12 @@ export type UndoPathUpdateMany = {
     type: PathUpdateMany['type'];
     action: PathUpdateMany;
     prev: { [key: string]: Path };
+    prevNextId?: number;
 };
 export type PathUpdateMany = {
     type: 'path:update:many';
-    changed: { [key: string]: Path };
+    changed: { [key: string]: Path | null };
+    nextId?: number;
 };
 
 export type UndoPathUpdate = {

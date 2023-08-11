@@ -41,6 +41,7 @@ import { SketchPicker } from 'react-color';
 import { paletteColor } from '../editor/RenderPath';
 import {
     boundsMidpoint,
+    segmentBounds,
     segmentsBounds,
     segmentsCenter,
 } from '../editor/Bounds';
@@ -48,6 +49,8 @@ import { transformPath } from '../rendering/points';
 import { scalePos } from '../editor/PendingPreview';
 import { insetSegments } from '../rendering/insetPath';
 import { cleanUpInsetSegments2 } from '../rendering/findInternalRegions';
+import { clipPathTry } from '../rendering/clipPathNew';
+import { ensureClockwise } from '../rendering/pathToPoints';
 
 declare module 'csstype' {
     interface Properties {
@@ -492,7 +495,7 @@ function TransformPanel({
     state: State;
     dispatch: React.Dispatch<Action>;
 }) {
-    const [inset, setInset] = React.useState(0);
+    const [inset, setInset] = React.useState(18);
     const pathIds = selectedPathIds(state);
     if (!pathIds.length) {
         return <div>Select a thing</div>;
@@ -528,15 +531,13 @@ function TransformPanel({
                             .flat();
                         const newBounds = segmentsBounds(smaller);
 
-                        // insetSegments
                         const center = boundsMidpoint(bounds);
                         const w = bounds.x1 - bounds.x0;
                         const newW = newBounds.x1 - newBounds.x0;
                         const scale = newW / w;
-                        // const scale = (w - inset / 100) / w;
-                        const paths = { ...state.paths };
+                        const paths: State['paths'] = {};
                         state.selection?.ids.forEach((id) => {
-                            paths[id] = transformPath(paths[id], [
+                            paths[id] = transformPath(state.paths[id], [
                                 translationMatrix(scalePos(center, -1)),
                                 scaleMatrix(scale, scale),
                                 translationMatrix(center),
@@ -546,6 +547,79 @@ function TransformPanel({
                     }}
                 >
                     Scale
+                </button>
+                <button
+                    onClick={() => {
+                        const paths: { [key: string]: Path | null } = {};
+                        if (state.view.activeClip == null) {
+                            return;
+                        }
+                        const clip = state.clips[state.view.activeClip];
+                        const clipBounds = segmentsBounds(clip);
+
+                        let nextId = state.nextId;
+
+                        pathIds.forEach((id) => {
+                            const path = state.paths[id];
+                            const clipped = clipPathTry(
+                                {
+                                    ...path,
+                                    segments: ensureClockwise(path.segments),
+                                },
+                                clip,
+                                clipBounds!,
+                                false,
+                            );
+                            if (!clipped.length) {
+                                paths[id] = null;
+                                return;
+                            }
+                            paths[id] = clipped[0];
+                            for (let i = 1; i < clipped.length; i++) {
+                                const pt = clipped[i];
+                                paths[nextId] = pt;
+                                nextId += 1;
+                            }
+                        });
+
+                        dispatch({
+                            type: 'path:update:many',
+                            changed: paths,
+                            nextId,
+                        });
+
+                        // const bounds = segmentsBounds(
+                        //     pathIds.flatMap((id) => state.paths[id].segments),
+                        // );
+                        // const smaller = pathIds
+                        //     .flatMap((id) => {
+                        //         const [segments, corners] = insetSegments(
+                        //             state.paths[id].segments,
+                        //             inset / 100,
+                        //         );
+                        //         const regions = cleanUpInsetSegments2(
+                        //             segments,
+                        //             corners,
+                        //         );
+                        //         return regions;
+                        //     })
+                        //     .flat();
+                        // const newBounds = segmentsBounds(smaller);
+                        // const center = boundsMidpoint(bounds);
+                        // const w = bounds.x1 - bounds.x0;
+                        // const newW = newBounds.x1 - newBounds.x0;
+                        // const scale = newW / w;
+                        // const paths = { ...state.paths };
+                        // state.selection?.ids.forEach((id) => {
+                        //     paths[id] = transformPath(paths[id], [
+                        //         translationMatrix(scalePos(center, -1)),
+                        //         scaleMatrix(scale, scale),
+                        //         translationMatrix(center),
+                        //     ]);
+                        // });
+                    }}
+                >
+                    Clippp
                 </button>
             </div>
         </div>

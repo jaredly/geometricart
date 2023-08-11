@@ -584,12 +584,12 @@ function processOnePath(
                 .map((insetPath) => {
                     return clip
                         ? clipPathTry(
-                            insetPath,
-                            clip,
-                            clipBounds!,
-                            path.debug,
-                            group?.clipMode,
-                        )
+                              insetPath,
+                              clip,
+                              clipBounds!,
+                              path.debug,
+                              group?.clipMode,
+                          )
                         : insetPath;
                 })
                 .flat();
@@ -711,6 +711,9 @@ function applyColorVariations(
     path: Path,
     rand: { next: (min: number, max: number) => number },
 ) {
+    if (!path) {
+        debugger;
+    }
     path = {
         ...path,
         style: {
