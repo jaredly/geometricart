@@ -30,11 +30,24 @@ import { PathForm, PathGroupForm, ViewForm } from '../editor/Forms';
 import { initialState } from '../state/initialState';
 import { getStateFromFile } from '../editor/useDropTarget';
 import { ShowMirror } from '../editor/MirrorForm';
-import { getMirrorTransforms } from '../rendering/getMirrorTransforms';
+import {
+    getMirrorTransforms,
+    scaleMatrix,
+    translationMatrix,
+} from '../rendering/getMirrorTransforms';
 import { MirrorItems } from './MirrorItems';
 import dayjs from 'dayjs';
 import { SketchPicker } from 'react-color';
 import { paletteColor } from '../editor/RenderPath';
+import {
+    boundsMidpoint,
+    segmentsBounds,
+    segmentsCenter,
+} from '../editor/Bounds';
+import { transformPath } from '../rendering/points';
+import { scalePos } from '../editor/PendingPreview';
+import { insetSegments } from '../rendering/insetPath';
+import { cleanUpInsetSegments2 } from '../rendering/findInternalRegions';
 
 declare module 'csstype' {
     interface Properties {
@@ -442,6 +455,18 @@ export const NewSidebar = ({
                             <UndoPanel state={state} dispatch={dispatch} />
                         ),
                     },
+                    {
+                        key: 'transform',
+                        header: 'Transform',
+                        content() {
+                            return (
+                                <TransformPanel
+                                    state={state}
+                                    dispatch={dispatch}
+                                />
+                            );
+                        },
+                    },
                 ]}
             />
         </div>
@@ -459,6 +484,73 @@ const showMirror = (
         </span>
     );
 };
+
+function TransformPanel({
+    state,
+    dispatch,
+}: {
+    state: State;
+    dispatch: React.Dispatch<Action>;
+}) {
+    const [inset, setInset] = React.useState(0);
+    const pathIds = selectedPathIds(state);
+    if (!pathIds.length) {
+        return <div>Select a thing</div>;
+    }
+    return (
+        <div>
+            <div>
+                Inset:{' '}
+                <input
+                    value={inset}
+                    onChange={(evt) => setInset(+evt.target.value)}
+                    type="number"
+                />
+            </div>
+            <div>
+                <button
+                    onClick={() => {
+                        const bounds = segmentsBounds(
+                            pathIds.flatMap((id) => state.paths[id].segments),
+                        );
+                        const smaller = pathIds
+                            .flatMap((id) => {
+                                const [segments, corners] = insetSegments(
+                                    state.paths[id].segments,
+                                    inset / 100,
+                                );
+                                const regions = cleanUpInsetSegments2(
+                                    segments,
+                                    corners,
+                                );
+                                return regions;
+                            })
+                            .flat();
+                        const newBounds = segmentsBounds(smaller);
+
+                        // insetSegments
+                        const center = boundsMidpoint(bounds);
+                        const w = bounds.x1 - bounds.x0;
+                        const newW = newBounds.x1 - newBounds.x0;
+                        const scale = newW / w;
+                        // const scale = (w - inset / 100) / w;
+                        const paths = { ...state.paths };
+                        state.selection?.ids.forEach((id) => {
+                            paths[id] = transformPath(paths[id], [
+                                translationMatrix(scalePos(center, -1)),
+                                scaleMatrix(scale, scale),
+                                translationMatrix(center),
+                            ]);
+                        });
+                        dispatch({ type: 'path:update:many', changed: paths });
+                    }}
+                >
+                    Scale
+                </button>
+            </div>
+        </div>
+    );
+}
 
 function ShapeItems({
     state,

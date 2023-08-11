@@ -1,5 +1,15 @@
 
+Transform Operators
+
+# Scale
+
+Actually, first inset the paths by the given amount, and then scale to the new size.
+
+---
+
 Ok, so I want the multi-svg stuff to be part of state
+
+
 
 
 ----

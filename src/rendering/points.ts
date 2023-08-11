@@ -20,6 +20,7 @@ import { Coord, GuideGeom, Path, Segment } from '../types';
 export const transformPath = (path: Path, matrices: Array<Matrix>): Path => ({
     ...path,
     origin: applyMatrices(path.origin, matrices),
+    segments: path.segments.map((s) => transformSegment(s, matrices)),
 });
 
 export const transformSegment = (

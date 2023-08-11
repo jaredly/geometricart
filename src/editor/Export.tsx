@@ -650,7 +650,19 @@ function getSVGText(
     const dest = document.createElement('div');
     let svgNode: SVGElement | null = null;
     const rstate = state.view.laserCutMode
-        ? { ...state, view: { ...state.view, background: undefined } }
+        ? {
+              ...state,
+              pending: null,
+              overlays: {},
+              view: {
+                  ...state.view,
+                  background: undefined,
+                  guides: false,
+                  sketchiness: undefined,
+                  texture: undefined,
+              },
+              selection: null,
+          }
         : state;
     ReactDOM.render(
         <Canvas
