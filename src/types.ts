@@ -315,6 +315,7 @@ export type View = {
         columns: number;
         rows: number;
         combineGroups?: boolean;
+        skipBacking?: boolean;
     };
 };
 

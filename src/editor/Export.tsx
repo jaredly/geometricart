@@ -242,6 +242,7 @@ export const Export = ({
                                       state.view.zoom
                                   ).toFixed(2)}in`
                                 : null}
+                            <FullLength state={state} />
                         </div>
                     )}
                 />
@@ -489,7 +490,7 @@ function multiForm(
                 <input
                     type="checkbox"
                     checked={!!multi.combineGroups}
-                    onChange={(evt) =>
+                    onChange={() =>
                         dispatch({
                             type: 'view:update',
                             view: {
@@ -503,6 +504,25 @@ function multiForm(
                     }
                 />
                 Combine groups?
+            </label>
+            <label>
+                <input
+                    type="checkbox"
+                    checked={!!multi.skipBacking}
+                    onChange={() =>
+                        dispatch({
+                            type: 'view:update',
+                            view: {
+                                ...state.view,
+                                multi: {
+                                    ...multi,
+                                    skipBacking: !multi.skipBacking,
+                                },
+                            },
+                        })
+                    }
+                />
+                Skip backing?
             </label>
             <button
                 css={{ marginTop: 16, display: 'block' }}
@@ -547,7 +567,10 @@ async function runSVGExport({
 
     if (multi) {
         const outlines: Path[] = [];
-        const pathsToRender: Path[][] = [[]];
+        const pathsToRender: Path[][] = [];
+        if (!multi.skipBacking) {
+            pathsToRender.push([]);
+        }
         const byGroup: { [key: string]: Path[] } = {};
         console.log('mshapes', multi.shapes);
         Object.keys(state.paths).forEach((k) => {
@@ -584,7 +607,6 @@ async function runSVGExport({
                 }
             });
         });
-        console.log('hi', byGroup);
         pathsToRender.push(...Object.values(byGroup));
 
         const urls: { url: string; info: string }[] = [];
@@ -990,6 +1012,23 @@ const Line = ({
             />
             {color != null ? color : 'Select a color'}
             {count != null ? ' ' + count : null}
+        </div>
+    );
+};
+
+export const FullLength = ({ state }: { state: State }) => {
+    const [ok, setOk] = useState(null as null | number);
+
+    return (
+        <div>
+            {ok ? ok + 'mm' : 'Not calculated'}
+            <button
+                onClick={() => {
+                    // hm
+                }}
+            >
+                Calculate full cut length
+            </button>
         </div>
     );
 };

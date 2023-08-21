@@ -1,16 +1,29 @@
 
-Transform Operators
+# Multiple Layers
 
-# Scale
+and external/reverse crop(s) (can be from the transform crop deal idk)
+so I can have one pattern inside of
+another pattern.
+
+
+# Transform Operators
+
+## Scale
 
 Actually, first inset the paths by the given amount, and then scale to the new size.
+
+## Crop
+
+Can crop to a thing, but also inset a given amount.
+yay inset crop. good news.
+
 
 ---
 
 Ok, so I want the multi-svg stuff to be part of state
 
 
-
+# Report total # of milimeters of travel
 
 ----
 
