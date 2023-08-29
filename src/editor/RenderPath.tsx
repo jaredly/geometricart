@@ -113,7 +113,7 @@ const RenderPathMemo = ({
 }) => {
     const d = calcPathD(path, zoom);
     if (path.debug) {
-        console.log('DEBUG', path, d);
+        // console.log('DEBUG', path, d);
     }
     const style = path.style;
     const handlers = useTouchClick<null>(() =>

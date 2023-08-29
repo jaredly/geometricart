@@ -12,6 +12,7 @@ import { Coord, Path, Segment, State, StyleLine } from '../types';
 import PathKitInit, { PathKit } from 'pathkit-wasm';
 import { calcPathD } from '../editor/RenderPath';
 import { segmentKey, segmentKeyReverse } from '../rendering/segmentKey';
+import { coordsEqual } from '../rendering/pathsAreIdentical';
 
 const findClosest = (shape: RasterSeg[], point: Coord) => {
     let best = null as null | [number, number];
@@ -694,27 +695,35 @@ export const cmdsToSegments = (
     pk: PathKit,
     // outer: SVGSVGElement,
 ): { segments: Segment[]; origin: Coord }[] => {
-    const points: { segments: Segment[]; origin: Coord }[] = [];
+    const points: { segments: Segment[]; origin: Coord; open: boolean }[] = [];
 
     for (let cmd of cmds) {
+        const latest = points[points.length - 1];
         if (cmd[0] === pk.MOVE_VERB) {
             const [_, x, y] = cmd;
-            points.push({ segments: [], origin: { x, y } });
+            points.push({ segments: [], origin: { x, y }, open: true });
         } else if (cmd[0] === pk.LINE_VERB) {
             const [_, x, y] = cmd;
-            points[points.length - 1].segments.push({
+            const to = { x, y };
+            if (
+                latest.segments.length === 0 &&
+                coordsEqual(to, latest.origin)
+            ) {
+                continue;
+            }
+            latest.segments.push({
                 type: 'Line',
-                to: { x, y },
+                to,
             });
         } else if (cmd[0] === pk.CUBIC_VERB) {
             const [_, cx1, cy1, cx2, cy2, x, y] = cmd;
-            points[points.length - 1].segments.push({
+            latest.segments.push({
                 type: 'Line',
                 to: { x, y },
             });
-            // const current = points[points.length - 1].segs;
+            // const current = latest.segs;
             // const last = current[current.length - 1];
-            // points[points.length - 1].push(
+            // latest.push(
             //     ...svgPathPoints(
             //         outer,
             //         `M${last.x} ${last.y} C${cmd.slice(1).join(' ')}`,
@@ -722,33 +731,44 @@ export const cmdsToSegments = (
             // );
         } else if (cmd[0] === pk.QUAD_VERB) {
             const [_, cx1, cy1, x, y] = cmd;
-            points[points.length - 1].segments.push({
+            latest.segments.push({
                 type: 'Line',
                 to: { x, y },
             });
-            // const current = points[points.length - 1];
+            // const current = latest;
             // const last = current[current.length - 1];
-            // points[points.length - 1].push(
+            // latest.push(
             //     ...svgPathPoints(
             //         outer,
             //         `M${last.x} ${last.y} Q${cmd.slice(1).join(' ')}`,
             //     ),
             // );
         } else if (cmd[0] === pk.CONIC_VERB) {
-            console.warn('Ignoring conic, sorry');
-            // const current = points[points.length - 1];
+            console.warn('Ignoring conic, sorry', cmd);
+            const [_, a, b, x, y, c] = cmd;
+            latest.segments.push({
+                type: 'Line',
+                to: { x: a, y: b },
+            });
+            latest.segments.push({
+                type: 'Line',
+                to: { x, y },
+            });
+            // const current = latest;
             // const last = current[current.length - 1];
 
             // const path = pk.FromCmds([[pk.MOVE_VERB, last.x, last.y], cmd]);
-            // points[points.length - 1].push(
+            // latest.push(
             //     ...svgPathPoints(outer, path.toSVGString()),
             // );
             // path.delete();
         } else if (cmd[0] === pk.CLOSE_VERB) {
-            points[points.length - 1].segments.push({
-                type: 'Line',
-                to: points[points.length - 1].origin,
-            });
+            latest.open = false;
+            // Don't need this,
+            // latest.segments.push({
+            //     type: 'Line',
+            //     to: latest.origin,
+            // });
             continue;
         } else {
             throw new Error('unknown cmd ' + cmd[0]);

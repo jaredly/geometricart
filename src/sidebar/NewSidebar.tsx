@@ -53,6 +53,7 @@ import { clipPathTry } from '../rendering/clipPathNew';
 import { ensureClockwise } from '../rendering/pathToPoints';
 import PathKitInit, { PathKit, Path as PKPath } from 'pathkit-wasm';
 import { cmdsToSegments } from '../gcode/generateGcode';
+import { coordsEqual } from '../rendering/pathsAreIdentical';
 
 declare module 'csstype' {
     interface Properties {
@@ -1101,6 +1102,18 @@ const pkClipPaths = async (
             paths[id] = null;
             return;
         }
+        clipped.forEach((region) => {
+            const { segments, origin } = region;
+            if (!coordsEqual(segments[segments.length - 1].to, origin)) {
+                console.warn('NO BADS clipped idk', segments, origin);
+            }
+            const segs = ensureClockwise(segments);
+            region.segments = segs;
+            region.origin = segs[segs.length - 1].to;
+        });
+
+        console.log(`Path ${id} clip`);
+        console.log(clipped);
 
         // TODO: Ensure clockwise, right?
         paths[id] = { ...path, ...clipped[0] };

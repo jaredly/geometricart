@@ -47,7 +47,7 @@ export const DebugOrigPath = ({
         const primitives = pathToPrimitives(insetSegments);
         const parts = segmentsToNonIntersectingSegments(insetSegments);
         const regions = findRegions(parts.result, parts.froms); //.filter(isClockwise);
-        console.log(parts);
+        // console.log(parts);
         const colors = ['#0f0', '#00f', '#ff0', '#f0f', '#0ff', '#aaa', '#555'];
         let mode = 0;
         if (mode === 0) {
