@@ -418,6 +418,17 @@ export const itemsForPath = (
         },
     });
 
+    select.push({
+        label: 'Debug Path',
+        command(event) {
+            dispatch({
+                type: 'path:update',
+                id: path.id,
+                path: { ...path, debug: !path.debug },
+            });
+        },
+    });
+
     path.style.fills.forEach((fill) => {
         if (fill) {
             const color = fill.color;

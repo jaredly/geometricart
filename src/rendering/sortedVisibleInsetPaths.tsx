@@ -44,6 +44,7 @@ import { Coord, Path, PathGroup, Segment } from '../types';
 import { segmentsBounds } from '../editor/Bounds';
 import { cleanUpInsetSegments3, clipPathTry } from './clipPathNew';
 import { transformSegment } from './points';
+import { pkSortedVisibleInsetPaths } from './pkInsetPaths';
 
 // This should produce:
 // a list of lines
@@ -73,7 +74,8 @@ export const normalizedPath = (
     const normalized = segments.map((s) => transformSegment(s, forward));
     return [normalized, backward];
 };
-type InsetCache = {
+
+export type InsetCache = {
     [key: string]: {
         segments: Array<Segment>;
         insets: {
@@ -82,7 +84,7 @@ type InsetCache = {
     };
 };
 
-export function sortedVisibleInsetPaths(
+export function _oldsortedVisibleInsetPaths(
     paths: { [key: string]: Path },
     pathGroups: { [key: string]: PathGroup },
     rand: { next: (min: number, max: number) => number },
@@ -178,10 +180,7 @@ export const addToUsed = (path: Path, used: Used, pi: number) => {
 type Uses = Array<[[number, number], number]>;
 type Used = { [centerRad: string]: Uses };
 
-export const pathToInsetPaths = (
-    path: Path,
-    insetCache: InsetCache,
-): Array<Path> => {
+export const pathToSingles = (path: Path) => {
     const singles: Array<[Path, number | undefined]> = [];
     path.style.fills.forEach((fill, i) => {
         if (!fill) {
@@ -214,8 +213,15 @@ export const pathToInsetPaths = (
             line.inset,
         ]);
     });
+    return singles;
+};
+
+export const pathToInsetPaths = (
+    path: Path,
+    insetCache: InsetCache,
+): Array<Path> => {
     // const result = insetPath(path)
-    return singles
+    return pathToSingles(path)
         .map(([path, inset]) => {
             if (!inset || Math.abs(inset) < 0.005) {
                 return [path];
@@ -557,7 +563,7 @@ export const removePartialOverlaps = (
     }
 };
 
-function processOnePath(
+export function processOnePath(
     pathGroups: { [key: string]: PathGroup },
     selectedIds: { [key: string]: boolean },
     styleHover: StyleHover | undefined,
@@ -609,7 +615,10 @@ function processOnePath(
     };
 }
 
-function sortForLaserCutting(processed: Path[], laserCutPalette: string[]) {
+export function sortForLaserCutting(
+    processed: Path[],
+    laserCutPalette: string[],
+) {
     // processed paths are singles at this point
     let red = processed.filter((path) => {
         if (path.style.lines.length !== 1) {
@@ -659,7 +668,7 @@ function sortForLaserCutting(processed: Path[], laserCutPalette: string[]) {
     return others.concat(blue).concat(red);
 }
 
-function removeDuplicatePaths(
+export function removeDuplicatePaths(
     visible: string[],
     paths: { [key: string]: Path },
 ) {
@@ -683,7 +692,7 @@ function removeDuplicatePaths(
     });
 }
 
-function sortByOrdering(
+export function sortByOrdering(
     paths: { [key: string]: Path },
     pathGroups: { [key: string]: PathGroup },
 ): ((a: string, b: string) => number) | undefined {
@@ -707,7 +716,7 @@ function sortByOrdering(
     };
 }
 
-function applyColorVariations(
+export function applyColorVariations(
     path: Path,
     rand: { next: (min: number, max: number) => number },
 ) {
@@ -752,3 +761,9 @@ function applyColorVariations(
     };
     return path;
 }
+
+const NEW = true;
+// export const sortedVisibleInsetPaths = _oldsortedVisibleInsetPaths;
+export const sortedVisibleInsetPaths = NEW
+    ? pkSortedVisibleInsetPaths
+    : _oldsortedVisibleInsetPaths;

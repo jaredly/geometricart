@@ -1047,7 +1047,7 @@ export const NewPalettesForm = ({
     );
 };
 
-const pkPath = (PK: PathKit, segments: Segment[], origin?: Coord) => {
+export const pkPath = (PK: PathKit, segments: Segment[], origin?: Coord) => {
     const d = calcSegmentsD(
         segments,
         origin ?? segments[segments.length - 1].to,
@@ -1057,22 +1057,46 @@ const pkPath = (PK: PathKit, segments: Segment[], origin?: Coord) => {
     return PK.FromSVGString(d);
 };
 
-const pkInset = (PK: PathKit, path: PKPath, inset: number) => {
-    // const path = pkPath(pk, segments)
+export const pkInset = (PK: PathKit, path: PKPath, inset: number) => {
     const line = path.copy();
     line.stroke({
         width: inset,
-        join: PK.StrokeJoin.BEVEL,
+        join: PK.StrokeJoin.MITER,
         cap: PK.StrokeCap.SQUARE,
     });
     path.op(line, PK.PathOp.DIFFERENCE);
     line.delete();
-    // const svg = path.toCmds()
-    // full.op(pkpath, PK.PathOp.UNION);
     return path;
 };
 
-const pkClipPaths = async (
+export const pkClipPath = (
+    PK: PathKit,
+    pkp: PKPath,
+    pkClip: PKPath,
+    outside = false,
+): { segments: Segment[]; origin: Coord }[] => {
+    pkp.op(pkClip, outside ? PK.PathOp.DIFFERENCE : PK.PathOp.INTERSECT);
+
+    return pkPathToSegments(PK, pkp);
+};
+
+export const pkPathToSegments = (PK: PathKit, pkp: PKPath) => {
+    const clipped = cmdsToSegments(pkp.toCmds(), PK);
+
+    clipped.forEach((region) => {
+        const { segments, origin } = region;
+        if (!coordsEqual(segments[segments.length - 1].to, origin)) {
+            console.error('NO BADS clipped idk', segments, origin);
+        }
+        const segs = ensureClockwise(segments);
+        region.segments = segs;
+        region.origin = segs[segs.length - 1].to;
+    });
+
+    return clipped;
+};
+
+export const pkClipPaths = async (
     state: State,
     clip: Segment[],
     inset: number,
@@ -1095,27 +1119,13 @@ const pkClipPaths = async (
     pathIds.forEach((id) => {
         const path = state.paths[id];
         const pkp = pkPath(PK, path.segments, path.origin);
-        pkp.op(pkClip, outside ? PK.PathOp.DIFFERENCE : PK.PathOp.INTERSECT);
 
-        const clipped = cmdsToSegments(pkp.toCmds(), PK);
-        if (!clipped.length) {
-            paths[id] = null;
-            return;
-        }
-        clipped.forEach((region) => {
-            const { segments, origin } = region;
-            if (!coordsEqual(segments[segments.length - 1].to, origin)) {
-                console.warn('NO BADS clipped idk', segments, origin);
-            }
-            const segs = ensureClockwise(segments);
-            region.segments = segs;
-            region.origin = segs[segs.length - 1].to;
-        });
+        const clipped = pkClipPath(PK, pkp, pkClip, outside);
 
         console.log(`Path ${id} clip`);
-        console.log(clipped);
+        console.log('Started as', path.segments);
+        console.log('Became', clipped);
 
-        // TODO: Ensure clockwise, right?
         paths[id] = { ...path, ...clipped[0] };
         for (let i = 1; i < clipped.length; i++) {
             const pt = clipped[i];
