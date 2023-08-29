@@ -137,8 +137,8 @@ const RenderPathMemo = ({
             stroke: 'none',
             style: onClick
                 ? {
-                    cursor: 'pointer',
-                }
+                      cursor: 'pointer',
+                  }
                 : {},
             onMouseDown: onClick
                 ? (evt: React.MouseEvent) => evt.preventDefault()
@@ -146,10 +146,10 @@ const RenderPathMemo = ({
             fill: color,
             onClick: onClick
                 ? (evt: React.MouseEvent) => {
-                    evt.stopPropagation();
-                    evt.preventDefault();
-                    onClick(evt.shiftKey, path.id);
-                }
+                      evt.stopPropagation();
+                      evt.preventDefault();
+                      onClick(evt.shiftKey, path.id);
+                  }
                 : undefined,
             ...handlers(null),
         };
@@ -194,18 +194,18 @@ const RenderPathMemo = ({
                         onContextMenu={
                             contextMenu
                                 ? (evt) => {
-                                    evt.preventDefault();
-                                    const { state, dispatch, showMenu } =
-                                        contextMenu;
-                                    showMenu(
-                                        evt,
-                                        itemsForPath(
-                                            origPath ?? path,
-                                            state,
-                                            dispatch,
-                                        ),
-                                    );
-                                }
+                                      evt.preventDefault();
+                                      const { state, dispatch, showMenu } =
+                                          contextMenu;
+                                      showMenu(
+                                          evt,
+                                          itemsForPath(
+                                              origPath ?? path,
+                                              state,
+                                              dispatch,
+                                          ),
+                                      );
+                                  }
                                 : undefined
                         }
                         style={common.style}
@@ -221,18 +221,18 @@ const RenderPathMemo = ({
                         onContextMenu={
                             contextMenu
                                 ? (evt) => {
-                                    evt.preventDefault();
-                                    const { state, dispatch, showMenu } =
-                                        contextMenu;
-                                    showMenu(
-                                        evt,
-                                        itemsForPath(
-                                            origPath ?? path,
-                                            state,
-                                            dispatch,
-                                        ),
-                                    );
-                                }
+                                      evt.preventDefault();
+                                      const { state, dispatch, showMenu } =
+                                          contextMenu;
+                                      showMenu(
+                                          evt,
+                                          itemsForPath(
+                                              origPath ?? path,
+                                              state,
+                                              dispatch,
+                                          ),
+                                      );
+                                  }
                                 : undefined
                         }
                         {...common}
@@ -262,25 +262,25 @@ const RenderPathMemo = ({
             strokeLinejoin: 'round' as 'round',
             onClick: onClick
                 ? (evt: React.MouseEvent) => {
-                    evt.stopPropagation();
-                    evt.preventDefault();
-                    onClick(evt.shiftKey, path.id);
-                }
+                      evt.stopPropagation();
+                      evt.preventDefault();
+                      onClick(evt.shiftKey, path.id);
+                  }
                 : undefined,
             onContextMenu: contextMenu
                 ? (evt: React.MouseEvent) => {
-                    evt.preventDefault();
-                    const { state, dispatch, showMenu } = contextMenu;
-                    showMenu(
-                        evt,
-                        itemsForPath(origPath ?? path, state, dispatch),
-                    );
-                }
+                      evt.preventDefault();
+                      const { state, dispatch, showMenu } = contextMenu;
+                      showMenu(
+                          evt,
+                          itemsForPath(origPath ?? path, state, dispatch),
+                      );
+                  }
                 : undefined,
             style: onClick
                 ? {
-                    cursor: 'pointer',
-                }
+                      cursor: 'pointer',
+                  }
                 : {},
             ...handlers(null),
             strokeWidth: line.width ? (line.width / 100) * zoom : 2,
@@ -408,6 +408,16 @@ export const itemsForPath = (
         });
     }
 
+    select.push({
+        label: 'Clip to shape',
+        command(event) {
+            dispatch({
+                type: 'clip:add',
+                clip: path.segments,
+            });
+        },
+    });
+
     path.style.fills.forEach((fill) => {
         if (fill) {
             const color = fill.color;
@@ -461,10 +471,10 @@ export const itemsForPath = (
             const center = segmentsCenter(path.segments);
             dispatch({
                 type: 'view:update',
-                view: { ...state.view, center: { x: -center.x, y: -center.y }, }
+                view: { ...state.view, center: { x: -center.x, y: -center.y } },
             });
         },
-    })
+    });
     items.push({
         label: 'Select',
         items: select,
@@ -526,8 +536,9 @@ export const lightenedColor = (
                 const g = parseInt(raw.slice(3, 5), 16);
                 const b = parseInt(raw.slice(5), 16);
                 let [h, s, l] = rgbToHsl(r, g, b);
-                return `hsl(${h * 360}, ${s * 100}%, ${(l + lighten * 0.1) * 100
-                    }%)`;
+                return `hsl(${h * 360}, ${s * 100}%, ${
+                    (l + lighten * 0.1) * 100
+                }%)`;
             }
         }
     }

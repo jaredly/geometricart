@@ -8,7 +8,7 @@ import {
     rasterSegPoints,
 } from '../rendering/pathToPoints';
 import { sortedVisibleInsetPaths } from '../rendering/sortedVisibleInsetPaths';
-import { Coord, Path, State, StyleLine } from '../types';
+import { Coord, Path, Segment, State, StyleLine } from '../types';
 import PathKitInit, { PathKit } from 'pathkit-wasm';
 import { calcPathD } from '../editor/RenderPath';
 import { segmentKey, segmentKeyReverse } from '../rendering/segmentKey';
@@ -639,7 +639,7 @@ const svgPathPoints = (
 // https://github.com/google/skia/blob/main/src/effects/SkCornerPathEffect.cpp
 // https://github.com/google/skia/blob/main/modules/pathkit/pathkit_wasm_bindings.cpp#L358
 
-const cmdsToPoints = (
+export const cmdsToPoints = (
     cmds: number[][],
     pk: PathKit,
     outer: SVGSVGElement,
@@ -687,4 +687,73 @@ const cmdsToPoints = (
     }
 
     return points.filter((m) => m.length);
+};
+
+export const cmdsToSegments = (
+    cmds: number[][],
+    pk: PathKit,
+    // outer: SVGSVGElement,
+): { segments: Segment[]; origin: Coord }[] => {
+    const points: { segments: Segment[]; origin: Coord }[] = [];
+
+    for (let cmd of cmds) {
+        if (cmd[0] === pk.MOVE_VERB) {
+            const [_, x, y] = cmd;
+            points.push({ segments: [], origin: { x, y } });
+        } else if (cmd[0] === pk.LINE_VERB) {
+            const [_, x, y] = cmd;
+            points[points.length - 1].segments.push({
+                type: 'Line',
+                to: { x, y },
+            });
+        } else if (cmd[0] === pk.CUBIC_VERB) {
+            const [_, cx1, cy1, cx2, cy2, x, y] = cmd;
+            points[points.length - 1].segments.push({
+                type: 'Line',
+                to: { x, y },
+            });
+            // const current = points[points.length - 1].segs;
+            // const last = current[current.length - 1];
+            // points[points.length - 1].push(
+            //     ...svgPathPoints(
+            //         outer,
+            //         `M${last.x} ${last.y} C${cmd.slice(1).join(' ')}`,
+            //     ),
+            // );
+        } else if (cmd[0] === pk.QUAD_VERB) {
+            const [_, cx1, cy1, x, y] = cmd;
+            points[points.length - 1].segments.push({
+                type: 'Line',
+                to: { x, y },
+            });
+            // const current = points[points.length - 1];
+            // const last = current[current.length - 1];
+            // points[points.length - 1].push(
+            //     ...svgPathPoints(
+            //         outer,
+            //         `M${last.x} ${last.y} Q${cmd.slice(1).join(' ')}`,
+            //     ),
+            // );
+        } else if (cmd[0] === pk.CONIC_VERB) {
+            console.warn('Ignoring conic, sorry');
+            // const current = points[points.length - 1];
+            // const last = current[current.length - 1];
+
+            // const path = pk.FromCmds([[pk.MOVE_VERB, last.x, last.y], cmd]);
+            // points[points.length - 1].push(
+            //     ...svgPathPoints(outer, path.toSVGString()),
+            // );
+            // path.delete();
+        } else if (cmd[0] === pk.CLOSE_VERB) {
+            points[points.length - 1].segments.push({
+                type: 'Line',
+                to: points[points.length - 1].origin,
+            });
+            continue;
+        } else {
+            throw new Error('unknown cmd ' + cmd[0]);
+        }
+    }
+
+    return points.filter((m) => m.segments.length);
 };

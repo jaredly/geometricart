@@ -9,7 +9,7 @@ import { itemStyle } from '../sidebar/NewSidebar';
 import { Checkbox } from 'primereact/checkbox';
 import { Hover } from './Sidebar';
 import { Button } from 'primereact/button';
-import { ScissorsCuttingIcon } from '../icons/Icon';
+import { MagicWandIcon, ScissorsCuttingIcon } from '../icons/Icon';
 
 export function Clips({
     state,
@@ -75,23 +75,43 @@ export function Clips({
                         Clip {id}
                     </label>
                     {state.view.activeClip === id ? (
-                        <Button
-                            tooltip="Cut to current clip"
-                            onClick={() => {
-                                dispatch({
-                                    type: 'clip:cut',
-                                    clip: state.view.activeClip!,
-                                });
-                            }}
-                            tooltipOptions={{ position: 'left' }}
-                            className="p-button-text"
-                            style={{
-                                marginTop: -7,
-                                marginBottom: -7,
-                            }}
-                        >
-                            <ScissorsCuttingIcon />
-                        </Button>
+                        <>
+                            <Button
+                                tooltip="Make a shape for clip"
+                                onClick={(evt) => {
+                                    evt.preventDefault();
+                                    const segments = state.clips[id];
+                                    dispatch({
+                                        type: 'path:create',
+                                        segments,
+                                        origin: segments[segments.length - 1]
+                                            .to,
+                                    });
+                                }}
+                                tooltipOptions={{ position: 'left' }}
+                                className="p-button-text"
+                                style={{
+                                    marginTop: -7,
+                                    marginBottom: -7,
+                                }}
+                            >
+                                <MagicWandIcon />
+                            </Button>
+                            <Button
+                                tooltip="Cut to current clip"
+                                onClick={() => {
+                                    dispatch({ type: 'clip:cut', clip: id });
+                                }}
+                                tooltipOptions={{ position: 'left' }}
+                                className="p-button-text"
+                                style={{
+                                    marginTop: -7,
+                                    marginBottom: -7,
+                                }}
+                            >
+                                <ScissorsCuttingIcon />
+                            </Button>
+                        </>
                     ) : null}
                 </div>
             ))}

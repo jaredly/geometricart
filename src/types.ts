@@ -204,7 +204,7 @@ export type PathGroup = {
     // style: Style;
     group: Id | null;
     hide?: boolean;
-    clipMode?: 'none' | 'remove' | 'normal' | 'fills';
+    clipMode?: 'none' | 'remove' | 'normal' | 'fills' | 'outside';
     insetBeforeClip?: boolean;
     ordering?: number;
 };
