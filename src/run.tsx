@@ -30,6 +30,7 @@ import { Button } from 'primereact/button';
 import { useGists, gistCache } from './useGists';
 import { loadGist, newGist, saveGist, stateFileName } from './gists';
 import { maybeMigrate } from './state/migrateState';
+import { PK } from './editor/pk';
 dayjs.extend(relativeTime);
 
 export const metaPrefix = 'meta:';
@@ -253,6 +254,50 @@ const File = ({ gist, dest }: { gist?: boolean; dest: SaveDest }) => {
     return <App initialState={data as State} id={params.id!} dest={dest} />;
 };
 
+const PkDebug = () => {
+    const [text, setText] = React.useState(
+        `L10 10L5 0Z`,
+        // `p.lineTo(10, 10)\np.conicTo(0, 0, 0, 10, 0.2)\np.close()`,
+    );
+    const d = React.useMemo(() => {
+        try {
+            const p = PK.FromSVGString(text);
+            // const fn = new Function('p', text);
+            // fn(p);
+            const d = p.toSVGString();
+            const cmds = p.toCmds();
+            p.delete();
+            return { d, cmds };
+        } catch (err) {
+            console.error(err);
+            return null;
+        }
+    }, [text]);
+    return (
+        <div>
+            <textarea
+                value={text}
+                style={{ width: 1000, height: 300 }}
+                onChange={(evt) => setText(evt.target.value)}
+            />
+            {d ? (
+                <div>
+                    <svg
+                        style={{ background: 'white', width: 400, height: 400 }}
+                        viewBox="-10 -10 50 50"
+                    >
+                        <path d={d.d} />
+                    </svg>
+                    <pre>{d.cmds.map((m) => JSON.stringify(m)).join('\n')}</pre>
+                    <pre>{d.d.split(/(?=[MLQ])/g).join('\n')}</pre>
+                </div>
+            ) : (
+                'Failed I guess'
+            )}
+        </div>
+    );
+};
+
 /* then we can do useOutletContext() for state & dispatch ... is that it? */
 const router = createHashRouter(
     createRoutesFromElements([
@@ -283,6 +328,7 @@ const router = createHashRouter(
                     .then((state) => maybeMigrate(state as State))
             }
         />,
+        <Route path="pk" element={<PkDebug />} />,
     ]),
 );
 

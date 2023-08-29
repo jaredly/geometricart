@@ -1,7 +1,7 @@
 import { insetPath } from '../animation/getBuiltins';
 import { findBoundingRect } from '../editor/Export';
 import { findColorPaths } from './GCodeEditor';
-import { dist } from '../rendering/getMirrorTransforms';
+import { angleTo, dist, push } from '../rendering/getMirrorTransforms';
 import {
     pathToPoints,
     RasterSeg,
@@ -13,6 +13,7 @@ import PathKitInit, { PathKit } from 'pathkit-wasm';
 import { calcPathD } from '../editor/RenderPath';
 import { segmentKey, segmentKeyReverse } from '../rendering/segmentKey';
 import { coordsEqual } from '../rendering/pathsAreIdentical';
+import { angleBetween } from '../rendering/findNextSegments';
 
 const findClosest = (shape: RasterSeg[], point: Coord) => {
     let best = null as null | [number, number];
@@ -745,23 +746,40 @@ export const cmdsToSegments = (
             // );
         } else if (cmd[0] === pk.CONIC_VERB) {
             console.warn('Ignoring conic, sorry', cmd);
-            const [_, a, b, x, y, c] = cmd;
+            const [_, ctrlx, ctrly, x, y, w] = cmd;
+
+            // From the Skia source, the way weight is calculated when converting an Arc
+            // SkScalar w = SkScalarSqrt(SK_ScalarHalf + SkScalarCos(thetaWidth) * SK_ScalarHalf);
+            const dt = Math.acos((w * w - 0.5) / 0.5);
+
+            const prev =
+                latest.segments.length > 0
+                    ? latest.segments[latest.segments.length - 1].to
+                    : latest.origin;
+            const ctrl = { x: ctrlx, y: ctrly };
+            const to = { x, y };
+
+            const cp = angleTo(to, ctrl);
+            const prev_to = angleTo(to, prev);
+
+            const midp = { x: (prev.x + to.x) / 2, y: (prev.y + to.y) / 2 };
+
+            const d_between = dist(prev, to);
+            const r = (d_between / 2 / Math.sin(dt / 2)) * Math.cos(dt / 2);
+
+            const ab = angleBetween(cp, prev_to, true);
+            const center = push(
+                midp,
+                prev_to + (Math.PI / 2) * (ab > Math.PI ? -1 : 1),
+                r,
+            );
+
             latest.segments.push({
-                type: 'Line',
-                to: { x: a, y: b },
-            });
-            latest.segments.push({
-                type: 'Line',
+                type: 'Arc',
+                center: center,
+                clockwise: ab > Math.PI,
                 to: { x, y },
             });
-            // const current = latest;
-            // const last = current[current.length - 1];
-
-            // const path = pk.FromCmds([[pk.MOVE_VERB, last.x, last.y], cmd]);
-            // latest.push(
-            //     ...svgPathPoints(outer, path.toSVGString()),
-            // );
-            // path.delete();
         } else if (cmd[0] === pk.CLOSE_VERB) {
             latest.open = false;
             // Don't need this,

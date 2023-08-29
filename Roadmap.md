@@ -1,4 +1,18 @@
 
+# Multiple Clips
+
+Not enough to be able to reify a clip; because I
+want "inset before clip", and you can't reify that,
+unless you also reify the inset,
+which is not what I want actually.
+ALSO I want clips to have optional ... insets? idk
+don't need that just yet.
+
+oof but that means my data format has to change?
+I mean the layers thing is also a deal.
+
+Good thing I version things. Should be easy to migrate.
+
 # Multiple Layers
 
 and external/reverse crop(s) (can be from the transform crop deal idk)
