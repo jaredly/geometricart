@@ -1,4 +1,17 @@
 
+# Use PathKit for clipping & insets
+
+yasss love it, now things really work.
+
+Ok, so multiple clips is easy
+but what about multiple layers?
+I think I want layers to be independently resizable?
+ugh do I actually need this?
+or can I just compose in inkscape 🤔
+
+- [x] much more clever clips. outside clips, inset-before clips
+
+
 # Multiple Clips
 
 Not enough to be able to reify a clip; because I

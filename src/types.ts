@@ -204,7 +204,7 @@ export type PathGroup = {
     // style: Style;
     group: Id | null;
     hide?: boolean;
-    clipMode?: 'none' | 'remove' | 'normal' | 'fills' | 'outside';
+    clipMode?: 'none' | 'remove' | 'normal' | 'fills';
     insetBeforeClip?: boolean;
     ordering?: number;
 };
@@ -299,11 +299,17 @@ export type TextureConfig = {
     intensity: number;
 };
 
+export type Clip = {
+    shape: Segment[];
+    active: boolean;
+    outside: boolean;
+    defaultInsetBefore?: boolean;
+};
+
 export type View = {
     center: Coord;
     zoom: number;
     guides: boolean;
-    activeClip: Id | null;
     hideDuplicatePaths?: boolean;
     laserCutMode?: boolean;
     background?: string | number;
@@ -482,7 +488,7 @@ export type GCodePath = {
 };
 
 export type State = {
-    version: 10;
+    version: 11;
     nextId: number;
     history: History;
     meta: Meta;
@@ -502,7 +508,7 @@ export type State = {
     activeMirror: Id | null;
     view: View;
 
-    clips: { [key: Id]: Array<Segment> };
+    clips: { [key: Id]: Clip };
 
     overlays: { [key: Id]: Overlay };
 

@@ -558,15 +558,17 @@ export const reduceWithoutUndo = (
                     ...state,
                     clips: {
                         ...state.clips,
-                        [id]: action.clip,
+                        [id]: {
+                            shape: action.clip,
+                            active: true,
+                            outside: false,
+                        },
                     },
-                    view: { ...state.view, activeClip: id },
                     nextId,
                 },
                 {
                     type: action.type,
                     action,
-                    prevActive: state.view.activeClip,
                     added: [id, state.nextId],
                 },
             ];
@@ -615,13 +617,18 @@ export const reduceWithoutUndo = (
         case 'clip:cut': {
             const paths: State['paths'] = {};
             const clip = state.clips[action.clip];
-            let clipPrims = pathToPrimitives(clip);
+            let clipPrims = pathToPrimitives(clip.shape);
             const added: Array<Id> = [];
             const previous: State['paths'] = {};
             Object.keys(state.paths).forEach((k) => {
                 const path = state.paths[k];
                 const group = path.group ? state.pathGroups[path.group] : null;
-                const result = clipPath(path, clip, clipPrims, group?.clipMode);
+                const result = clipPath(
+                    path,
+                    clip.shape,
+                    clipPrims,
+                    group?.clipMode,
+                );
                 // TODO: figure out if the result is the same...
                 if (result.length > 0) {
                     paths[k] = result[0];
@@ -645,7 +652,17 @@ export const reduceWithoutUndo = (
                 }
             });
             return [
-                { ...state, paths, view: { ...state.view, activeClip: null } },
+                {
+                    ...state,
+                    paths,
+                    clips: {
+                        ...state.clips,
+                        [action.clip]: {
+                            ...state.clips[action.clip],
+                            active: false,
+                        },
+                    },
+                },
                 { type: action.type, action, paths: previous, added },
             ];
         }
@@ -830,6 +847,15 @@ export const reduceWithoutUndo = (
                 { type: action.type, action, prev: state.palette },
             ];
         }
+        case 'clip:update': {
+            return [
+                {
+                    ...state,
+                    clips: { ...state.clips, [action.id]: action.clip },
+                },
+                { type: action.type, action, prev: state.clips[action.id] },
+            ];
+        }
         default:
             let _x: never = action;
             console.log(`SKIPPING ${(action as any).type}`);
@@ -839,6 +865,11 @@ export const reduceWithoutUndo = (
 
 export const undo = (state: State, action: UndoAction): State => {
     switch (action.type) {
+        case 'clip:update':
+            return {
+                ...state,
+                clips: { ...state.clips, [action.action.id]: action.prev },
+            };
         case 'palette:update':
             return { ...state, palette: action.prev };
         case 'gcode:config':
@@ -955,9 +986,12 @@ export const undo = (state: State, action: UndoAction): State => {
             });
             return {
                 ...state,
-                view: {
-                    ...state.view,
-                    activeClip: action.action.clip,
+                clips: {
+                    ...state.clips,
+                    [action.action.clip]: {
+                        ...state.clips[action.action.clip],
+                        active: true,
+                    },
                 },
                 paths,
             };
@@ -999,7 +1033,6 @@ export const undo = (state: State, action: UndoAction): State => {
                 clips: {
                     ...state.clips,
                 },
-                view: { ...state.view, activeClip: action.prevActive },
                 nextId: action.added[1],
             };
             delete state.clips[action.added[0]];

@@ -29,6 +29,7 @@ import { calcPathD, idSeed, lightenedColor } from '../editor/RenderPath';
 import { sortedVisibleInsetPaths } from './sortedVisibleInsetPaths';
 import { ArcSegment, Overlay, Path, State } from '../types';
 import { imageCache } from '../editor/SVGCanvas';
+import { getClips } from './pkInsetPaths';
 
 export const makeImage = (href: string): Promise<HTMLImageElement> => {
     return new Promise((res, rej) => {
@@ -108,9 +109,7 @@ export const canvasRender = async (
         await renderOverlay(state, overlay, ctx);
     }
 
-    const clip = state.view.activeClip
-        ? state.clips[state.view.activeClip]
-        : undefined;
+    const clip = getClips(state);
 
     const currentAnimatedValues = evaluateAnimatedValues(
         animatedFunctions,
@@ -344,8 +343,10 @@ export const canvasRender = async (
         ctx.strokeStyle = 'magenta';
         ctx.setLineDash([5, 15]);
         ctx.lineWidth = 10;
-        pathToPrimitives(clip).forEach((prim) => {
-            renderPrimitive(ctx, prim, zoom, sourceHeight, sourceWidth);
+        clip.forEach((c) => {
+            pathToPrimitives(c.shape).forEach((prim) => {
+                renderPrimitive(ctx, prim, zoom, sourceHeight, sourceWidth);
+            });
         });
     }
 };

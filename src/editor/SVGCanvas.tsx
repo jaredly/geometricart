@@ -21,12 +21,13 @@ import { paletteColor, RenderPath } from './RenderPath';
 import { showHover } from './showHover';
 import { Hover } from './Sidebar';
 import { sortedVisibleInsetPaths } from '../rendering/sortedVisibleInsetPaths';
-import { Coord, State, Intersect, View } from '../types';
+import { Coord, State, Intersect, View, Segment } from '../types';
 import { useDragSelect, useMouseDrag } from './useMouseDrag';
 import { useScrollWheel } from './useScrollWheel';
 import { EditorState, MenuItem } from './Canvas';
 import { coordsEqual } from '../rendering/pathsAreIdentical';
 import { RenderIntersections } from './RenderIntersections';
+import { getClips } from '../rendering/pkInsetPaths';
 
 export function SVGCanvas({
     state,
@@ -152,9 +153,7 @@ export function SVGCanvas({
         );
     }, []);
 
-    const clip = state.view.activeClip
-        ? state.clips[state.view.activeClip]
-        : undefined;
+    const clip = getClips(state);
 
     const selectedIds = React.useMemo(() => {
         return getSelectedIds(state.paths, state.selection);
@@ -180,7 +179,7 @@ export function SVGCanvas({
     }, [
         state.paths,
         state.pathGroups,
-        clip,
+        state.clips,
         state.view.hideDuplicatePaths,
         state.view.laserCutMode,
         selectedIds,
@@ -197,10 +196,21 @@ export function SVGCanvas({
         });
     }
 
-    const clipPrimitives = React.useMemo(
-        () => (clip ? { prims: pathToPrimitives(clip), segments: clip } : null),
-        [clip],
-    );
+    const clipPrimitives = React.useMemo(() => {
+        if (clip.length) {
+            const res = { prims: [] as Primitive[], segments: [] as Segment[] };
+            clip.forEach((c) => {
+                res.segments.push(...c.shape);
+                res.prims.push(...pathToPrimitives(c.shape));
+            });
+            return res;
+        } else {
+            return null;
+        }
+        // clip
+        //     ? { prims: pathToPrimitives(clip.shape), segments: clip.shape }
+        //     : null,
+    }, [state.clips]);
 
     const dragged = editorState.dragSelectPos
         ? findSelection(

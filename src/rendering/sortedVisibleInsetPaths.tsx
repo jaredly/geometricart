@@ -40,7 +40,7 @@ import {
     reversePath,
 } from '../rendering/pathToPoints';
 import { paletteColor } from '../editor/RenderPath';
-import { Coord, Path, PathGroup, Segment } from '../types';
+import { Coord, Path, PathGroup, Segment, State } from '../types';
 import { segmentsBounds } from '../editor/Bounds';
 import { cleanUpInsetSegments3, clipPathTry } from './clipPathNew';
 import { transformSegment } from './points';
@@ -84,76 +84,76 @@ export type InsetCache = {
     };
 };
 
-export function _oldsortedVisibleInsetPaths(
-    paths: { [key: string]: Path },
-    pathGroups: { [key: string]: PathGroup },
-    rand: { next: (min: number, max: number) => number },
-    clip?: Array<Segment>,
-    hideDuplicatePaths?: boolean,
-    laserCutPalette?: Array<string>,
-    styleHover?: StyleHover,
-    selectedIds: { [key: string]: boolean } = {},
-): Array<Path> {
-    paths = { ...paths };
+// export function _oldsortedVisibleInsetPaths(
+//     paths: { [key: string]: Path },
+//     pathGroups: { [key: string]: PathGroup },
+//     rand: { next: (min: number, max: number) => number },
+//     clips: State['clips'][''][],
+//     hideDuplicatePaths?: boolean,
+//     laserCutPalette?: Array<string>,
+//     styleHover?: StyleHover,
+//     selectedIds: { [key: string]: boolean } = {},
+// ): Array<Path> {
+//     paths = { ...paths };
 
-    const insetCache: InsetCache = {};
+//     const insetCache: InsetCache = {};
 
-    const now = performance.now();
-    Object.keys(paths).forEach((k) => {
-        paths[k] = applyColorVariations(paths[k], rand);
-        const norm = normalizedPath(paths[k].segments);
-        if (norm) {
-            const key = pathToSegmentKeys(
-                norm[0][norm[0].length - 1].to,
-                norm[0],
-            ).join(':');
-            if (!insetCache[key]) {
-                insetCache[key] = { segments: norm[0], insets: {} };
-            }
-            paths[k].normalized = {
-                key: key,
-                transform: norm[1],
-            };
-        }
-    });
-    // console.log(performance.now() - now);
+//     const now = performance.now();
+//     Object.keys(paths).forEach((k) => {
+//         paths[k] = applyColorVariations(paths[k], rand);
+//         const norm = normalizedPath(paths[k].segments);
+//         if (norm) {
+//             const key = pathToSegmentKeys(
+//                 norm[0][norm[0].length - 1].to,
+//                 norm[0],
+//             ).join(':');
+//             if (!insetCache[key]) {
+//                 insetCache[key] = { segments: norm[0], insets: {} };
+//             }
+//             paths[k].normalized = {
+//                 key: key,
+//                 transform: norm[1],
+//             };
+//         }
+//     });
+//     // console.log(performance.now() - now);
 
-    let visible = Object.keys(paths)
-        .filter(
-            (k) =>
-                !paths[k].hidden &&
-                (!paths[k].group || !pathGroups[paths[k].group!]?.hide),
-        )
-        .sort(sortByOrdering(paths, pathGroups));
+//     let visible = Object.keys(paths)
+//         .filter(
+//             (k) =>
+//                 !paths[k].hidden &&
+//                 (!paths[k].group || !pathGroups[paths[k].group!]?.hide),
+//         )
+//         .sort(sortByOrdering(paths, pathGroups));
 
-    if (hideDuplicatePaths) {
-        visible = removeDuplicatePaths(visible, paths);
-    }
+//     if (hideDuplicatePaths) {
+//         visible = removeDuplicatePaths(visible, paths);
+//     }
 
-    /*
-    If it's clip first, go through and clip the paths, leaving the styles.
-    if it's inset first, go through and inset the paths, ... ok yeah that's fine.
-    */
+//     /*
+//     If it's clip first, go through and clip the paths, leaving the styles.
+//     if it's inset first, go through and inset the paths, ... ok yeah that's fine.
+//     */
 
-    let processed: Array<Path> = visible
-        .map((k) => paths[k])
-        .map(
-            processOnePath(
-                pathGroups,
-                selectedIds,
-                styleHover,
-                clip,
-                insetCache,
-            ),
-        )
-        .flat();
+//     let processed: Array<Path> = visible
+//         .map((k) => paths[k])
+//         .map(
+//             processOnePath(
+//                 pathGroups,
+//                 selectedIds,
+//                 styleHover,
+//                 clips,
+//                 insetCache,
+//             ),
+//         )
+//         .flat();
 
-    if (laserCutPalette) {
-        return sortForLaserCutting(processed, laserCutPalette);
-    }
+//     if (laserCutPalette) {
+//         return sortForLaserCutting(processed, laserCutPalette);
+//     }
 
-    return processed;
-}
+//     return processed;
+// }
 
 export const addToUsed = (path: Path, used: Used, pi: number) => {
     path.segments.forEach((seg, i) => {
@@ -763,7 +763,7 @@ export function applyColorVariations(
 }
 
 const NEW = true;
-// export const sortedVisibleInsetPaths = _oldsortedVisibleInsetPaths;
-export const sortedVisibleInsetPaths = NEW
-    ? pkSortedVisibleInsetPaths
-    : _oldsortedVisibleInsetPaths;
+export const sortedVisibleInsetPaths = pkSortedVisibleInsetPaths;
+// export const sortedVisibleInsetPaths = NEW
+//     ? pkSortedVisibleInsetPaths
+//     : _oldsortedVisibleInsetPaths;

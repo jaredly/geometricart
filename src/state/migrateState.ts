@@ -64,11 +64,13 @@ export const migrateState = (state: State) => {
             state.clips = {
                 migrated: (state.view as any).clip,
             };
+            // @ts-ignore
             state.view.activeClip = 'migrated';
             // @ts-ignore
             delete state.view.clip;
         } else {
             state.clips = {};
+            // @ts-ignore
             state.view.activeClip = null;
         }
     }
@@ -137,7 +139,20 @@ export const migrateState = (state: State) => {
         // @ts-ignore
         delete state.activePalette;
     }
-    state.version = 10;
+    if (state.version < 11) {
+        state.version = 11;
+        Object.keys(state.clips).forEach((k) => {
+            const shape = state.clips[k] as any;
+            // @ts-ignore
+            const active = state.view.activeClip;
+            state.clips[k] = {
+                shape,
+                active: active === k,
+                outside: false,
+            };
+        });
+    }
+    state.version = 11;
     return state;
 };
 function combinedPathStyles(path: Path, groups: { [key: string]: PathGroup }) {

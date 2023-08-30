@@ -14,6 +14,7 @@ import { calcPathD } from '../editor/RenderPath';
 import { segmentKey, segmentKeyReverse } from '../rendering/segmentKey';
 import { coordsEqual } from '../rendering/pathsAreIdentical';
 import { angleBetween } from '../rendering/findNextSegments';
+import { getClips } from '../rendering/pkInsetPaths';
 
 const findClosest = (shape: RasterSeg[], point: Coord) => {
     let best = null as null | [number, number];
@@ -111,15 +112,13 @@ export const generateLaserInset = async (state: State) => {
         locateFile: (file) => '/node_modules/pathkit-wasm/bin/' + file,
     });
 
-    const clip = state.view.activeClip
-        ? state.clips[state.view.activeClip]
-        : undefined;
+    const clips = getClips(state);
 
     const insetPaths = sortedVisibleInsetPaths(
         state.paths,
         state.pathGroups,
         { next: () => 0.5 },
-        clip,
+        clips,
         state.view.hideDuplicatePaths,
     );
 
@@ -166,9 +165,7 @@ type GCode =
     | { type: 'clear' };
 
 export const generateGcode = (state: State, PathKit: PathKit) => {
-    const clip = state.view.activeClip
-        ? state.clips[state.view.activeClip]
-        : undefined;
+    const clip = getClips(state);
 
     const now = Date.now();
     const insetPaths = sortedVisibleInsetPaths(

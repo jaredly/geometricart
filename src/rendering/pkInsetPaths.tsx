@@ -1,6 +1,6 @@
 import { PathKit, Path as PKPath } from 'pathkit-wasm';
 import { StyleHover, applyStyleHover } from '../editor/MultiStyleForm';
-import { Path, PathGroup, Segment } from '../types';
+import { Path, PathGroup, Segment, State } from '../types';
 import { pathToSegmentKeys } from './pathsAreIdentical';
 import {
     InsetCache,
@@ -16,11 +16,19 @@ import { transformSegment } from './points';
 import { Bounds } from '../editor/GuideElement';
 import { PK } from '../editor/pk';
 
+export const getClips = (state: State) => {
+    return Object.keys(state.clips)
+        .filter((k) => state.clips[k].active)
+        .map((k) => state.clips[k]);
+};
+
+type PKC = { path: PKPath; outside: boolean; before?: boolean };
+
 export function pkSortedVisibleInsetPaths(
     paths: { [key: string]: Path },
     pathGroups: { [key: string]: PathGroup },
     rand: { next: (min: number, max: number) => number },
-    clip?: Array<Segment>,
+    clips: State['clips']['l'][],
     hideDuplicatePaths?: boolean,
     laserCutPalette?: Array<string>,
     styleHover?: StyleHover,
@@ -30,7 +38,11 @@ export function pkSortedVisibleInsetPaths(
 
     const insetCache: InsetCache = {};
 
-    const pkc = clip ? pkPath(PK, clip) : null;
+    const pkc = clips.map((c) => ({
+        path: pkPath(PK, c.shape),
+        outside: c.outside,
+        before: c.defaultInsetBefore,
+    }));
 
     Object.keys(paths).forEach((k) => {
         paths[k] = applyColorVariations(paths[k], rand);
@@ -74,32 +86,50 @@ export function pkSortedVisibleInsetPaths(
                 };
             }
 
-            if (group?.insetBeforeClip) {
-                return pkPathToInsetPaths(PK, pkp, path, insetCache).flatMap(
-                    ({ path, pkp }) => {
+            const pre = pkc.filter((c) => !c.before);
+            const post = pkc.filter((c) => c.before);
+
+            if (group?.insetBeforeClip != null) {
+                if (group.insetBeforeClip) {
+                    return pkPathToInsetPaths(
+                        PK,
+                        pkp,
+                        path,
+                        insetCache,
+                    ).flatMap(({ path, pkp }) => {
                         return consumePath(
                             PK,
-                            pkc
-                                ? pkClip(PK, pkp, pkc, path, group?.clipMode)
-                                : pkp,
+                            pkClips(PK, pkp, pkc, path, group?.clipMode),
                             path,
                         );
-                    },
-                );
-            } else if (pkc) {
-                const res = pkClip(PK, pkp, pkc, path, group?.clipMode);
+                    });
+                } else {
+                    const res = pkClips(PK, pkp, pkc, path, group?.clipMode);
+                    return res
+                        ? pkPathToInsetPaths(PK, res, path, insetCache).flatMap(
+                              ({ path, pkp }) => consumePath(PK, pkp, path),
+                          )
+                        : [];
+                }
+            } else {
+                const res = pkClips(PK, pkp, pre, path, group?.clipMode);
                 return res
                     ? pkPathToInsetPaths(PK, res, path, insetCache).flatMap(
-                          ({ path, pkp }) => consumePath(PK, pkp, path),
+                          ({ path, pkp }) =>
+                              consumePath(
+                                  PK,
+                                  pkClips(PK, pkp, post, path, group?.clipMode),
+                                  path,
+                              ),
                       )
                     : [];
-            } else {
-                return pkPathToInsetPaths(PK, pkp, path, insetCache).flatMap(
-                    ({ path, pkp }) => consumePath(PK, pkp, path),
-                );
+                // } else {
+                //     return pkPathToInsetPaths(PK, pkp, path, insetCache).flatMap(
+                //         ({ path, pkp }) => consumePath(PK, pkp, path),
+                //     );
             }
         });
-    pkc?.delete();
+    pkc.map((p) => p.path.delete());
 
     if (laserCutPalette) {
         return sortForLaserCutting(processed, laserCutPalette);
@@ -108,10 +138,10 @@ export function pkSortedVisibleInsetPaths(
     return processed;
 }
 
-export const pkClip = (
+export const pkClips = (
     PK: PathKit,
     pkp: PKPath,
-    clip: PKPath,
+    pkclips: PKC[],
     path: Path,
     groupMode?: PathGroup['clipMode'],
 ): null | PKPath => {
@@ -122,31 +152,59 @@ export const pkClip = (
     ) {
         return pkp; //consumePath(PK, pkp, path)
     }
-    if (clipMode === 'remove') {
-        console.warn('No totally doing? idk');
-        const is = pkp.copy();
-        is.op(clip, PK.PathOp.INTERSECT);
-        const cmds = is.toCmds();
-        is.delete();
-        if (cmds.length) {
-            pkp.delete();
-            return null;
+
+    for (let { path, outside } of pkclips) {
+        if (clipMode === 'remove') {
+            if (clipMode === 'remove') {
+                console.warn('No totally doing? idk');
+                const is = pkp.copy();
+                is.op(path, PK.PathOp.INTERSECT);
+                const cmds = is.toCmds();
+                is.delete();
+                if (cmds.length) {
+                    pkp.delete();
+                    return null;
+                }
+                continue;
+            }
         }
-        return pkp; //consumePath(PK, pkp, path)
+
+        pkp.op(path, outside ? PK.PathOp.DIFFERENCE : PK.PathOp.INTERSECT);
     }
 
-    // pkp.op(clip, PK.PathOp.UNION);
-    // pkp.lineTo(0, 0);
-    // pkp.lineTo(1, 1);
-    // pkp.lineTo(1, 0);
-
-    pkp.op(
-        clip,
-        clipMode === 'outside' ? PK.PathOp.DIFFERENCE : PK.PathOp.INTERSECT,
-        // PK.PathOp.DIFFERENCE,
-    );
-    return pkp; //consumePath(PK, pkp, path)
+    return pkp;
 };
+
+// export const pkClip = (
+//     PK: PathKit,
+//     pkp: PKPath,
+//     clip: PKPath,
+//     path: Path,
+//     groupMode?: PathGroup['clipMode'],
+// ): null | PKPath => {
+//     const clipMode = path.clipMode ?? groupMode;
+//     if (
+//         clipMode === 'none' ||
+//         (clipMode === 'fills' && path.style.fills.length)
+//     ) {
+//         return pkp;
+//     }
+//     if (clipMode === 'remove') {
+//         console.warn('No totally doing? idk');
+//         const is = pkp.copy();
+//         is.op(clip, PK.PathOp.INTERSECT);
+//         const cmds = is.toCmds();
+//         is.delete();
+//         if (cmds.length) {
+//             pkp.delete();
+//             return null;
+//         }
+//         return pkp;
+//     }
+
+//     pkp.op( clip, PK.PathOp.INTERSECT);
+//     return pkp;
+// };
 
 export const pkPathToInsetPaths = (
     PK: PathKit,

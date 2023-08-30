@@ -111,8 +111,8 @@ export const showHover = (
                 <UnderlinePath
                     path={{
                         ...emptyPath,
-                        segments: clip,
-                        origin: clip[clip.length - 1].to,
+                        segments: clip.shape,
+                        origin: clip.shape[clip.shape.length - 1].to,
                     }}
                     zoom={zoom}
                     color={color}

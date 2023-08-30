@@ -21,6 +21,7 @@ import { PendingBounds, newPendingBounds, addCoordToBounds } from './Bounds';
 import { MultiColor, constantColors, maybeUrlColor } from './MultiStyleForm';
 import { UIState } from '../useUIState';
 import { calcPPI } from './SVGCanvas';
+import { getClips } from '../rendering/pkInsetPaths';
 
 export type Bounds = {
     x1: number;
@@ -30,9 +31,7 @@ export type Bounds = {
 };
 
 export const findBoundingRect = (state: State): Bounds | null => {
-    const clip = state.view.activeClip
-        ? state.clips[state.view.activeClip]
-        : undefined;
+    const clip = getClips(state);
 
     let bounds: PendingBounds = newPendingBounds();
     // NOTE: This won't totally cover arcs, but that's just too bad folks.
@@ -80,7 +79,7 @@ export const Export = ({
 
     const boundingRect = React.useMemo(
         () => findBoundingRect(state),
-        [state.paths, state.pathGroups, state.clips, state.view.activeClip],
+        [state.paths, state.pathGroups, state.clips],
     );
 
     return (

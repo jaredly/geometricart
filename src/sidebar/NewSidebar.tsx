@@ -568,14 +568,14 @@ function TransformPanel({
                     </select>
                     <button
                         onClick={() => {
-                            const cn = clip ?? state.view.activeClip;
+                            const cn = clip;
                             if (cn == null) {
                                 return;
                             }
 
                             pkClipPaths(
                                 state,
-                                state.clips[cn],
+                                state.clips[cn].shape,
                                 inset,
                                 pathIds,
                                 dispatch,
@@ -586,13 +586,13 @@ function TransformPanel({
                     </button>
                     <button
                         onClick={() => {
-                            const cn = clip ?? state.view.activeClip;
+                            const cn = clip;
                             if (cn == null) {
                                 return;
                             }
                             pkClipPaths(
                                 state,
-                                state.clips[cn],
+                                state.clips[cn].shape,
                                 inset,
                                 pathIds,
                                 dispatch,
@@ -1145,67 +1145,67 @@ export const pkClipPaths = async (
     });
 };
 
-const clipPaths = (
-    state: State,
-    inset: number,
-    pathIds: string[],
-    dispatch: React.Dispatch<Action>,
-    outside = false,
-) => {
-    const paths: { [key: string]: Path | null } = {};
-    if (state.view.activeClip == null) {
-        return;
-    }
-    const clip = state.clips[state.view.activeClip];
+// const clipPaths = (
+//     state: State,
+//     inset: number,
+//     pathIds: string[],
+//     dispatch: React.Dispatch<Action>,
+//     outside = false,
+// ) => {
+//     const paths: { [key: string]: Path | null } = {};
+//     if (state.view.activeClip == null) {
+//         return;
+//     }
+//     const clip = state.clips[state.view.activeClip];
 
-    let insetClip: typeof clip;
-    if (inset === 0) {
-        insetClip = clip;
-    } else {
-        let [segments, corners] = insetSegments(clip, inset / 100);
-        const regions = cleanUpInsetSegments2(segments, corners);
-        insetClip = regions[0];
-        if (regions.length !== 1) {
-            console.error('nope bad clip inset');
-            return;
-        }
-    }
+//     let insetClip: typeof clip;
+//     if (inset === 0) {
+//         insetClip = clip;
+//     } else {
+//         let [segments, corners] = insetSegments(clip, inset / 100);
+//         const regions = cleanUpInsetSegments2(segments, corners);
+//         insetClip = regions[0];
+//         if (regions.length !== 1) {
+//             console.error('nope bad clip inset');
+//             return;
+//         }
+//     }
 
-    const clipBounds = segmentsBounds(insetClip);
+//     const clipBounds = segmentsBounds(insetClip);
 
-    let nextId = state.nextId;
+//     let nextId = state.nextId;
 
-    pathIds.forEach((id) => {
-        const path = state.paths[id];
-        const clipped = clipPathTry(
-            {
-                ...path,
-                segments: ensureClockwise(path.segments),
-            },
-            insetClip,
-            clipBounds!,
-            false,
-            outside ? 'outside' : undefined,
-        );
-        if (!clipped.length) {
-            paths[id] = null;
-            return;
-        }
-        paths[id] = clipped[0];
-        for (let i = 1; i < clipped.length; i++) {
-            const pt = clipped[i];
-            paths[nextId] = pt;
-            nextId += 1;
-        }
-    });
+//     pathIds.forEach((id) => {
+//         const path = state.paths[id];
+//         const clipped = clipPathTry(
+//             {
+//                 ...path,
+//                 segments: ensureClockwise(path.segments),
+//             },
+//             insetClip,
+//             clipBounds!,
+//             false,
+//             outside ? 'outside' : undefined,
+//         );
+//         if (!clipped.length) {
+//             paths[id] = null;
+//             return;
+//         }
+//         paths[id] = clipped[0];
+//         for (let i = 1; i < clipped.length; i++) {
+//             const pt = clipped[i];
+//             paths[nextId] = pt;
+//             nextId += 1;
+//         }
+//     });
 
-    dispatch({
-        type: 'selection:set',
-        selection: null,
-    });
-    dispatch({
-        type: 'path:update:many',
-        changed: paths,
-        nextId,
-    });
-};
+//     dispatch({
+//         type: 'selection:set',
+//         selection: null,
+//     });
+//     dispatch({
+//         type: 'path:update:many',
+//         changed: paths,
+//         nextId,
+//     });
+// };

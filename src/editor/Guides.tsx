@@ -33,6 +33,7 @@ import {
     State,
     View,
 } from '../types';
+import { getClips } from '../rendering/pkInsetPaths';
 
 // This /will/ contain duplicates!
 // export const calculatePathElements = (
@@ -288,7 +289,13 @@ export const Guides = ({
         (coord: Intersect, shiftKey: boolean) => {
             console.log(`click intersection`, currentDuplication, coord);
             if (currentDuplication.current) {
-                handleDuplicationIntersection(coord, currentState.current, currentDuplication.current, setPendingDuplication, dispatch)
+                handleDuplicationIntersection(
+                    coord,
+                    currentState.current,
+                    currentDuplication.current,
+                    setPendingDuplication,
+                    dispatch,
+                );
                 return;
             }
             if (currentPendingMirror.current) {
@@ -345,7 +352,7 @@ export const Guides = ({
         pendingPath[1](null);
     }, [allIntersections]);
 
-    const clip = view.activeClip ? state.clips[view.activeClip] : undefined;
+    const clip = getClips(state);
 
     const clickInactive = React.useCallback(
         (guides: string[], shift: boolean): void => {
@@ -453,19 +460,21 @@ export const Guides = ({
                     shiftKey={!!shiftKey}
                 />
             ) : null}
-            {clip
-                ? pathToPrimitives(clip).map((prim, i) => (
-                      <RenderPrimitive
-                          bounds={bounds}
-                          isImplied
-                          prim={prim}
-                          zoom={view.zoom}
-                          color={'magenta'}
-                          strokeWidth={4}
-                          key={i}
-                      />
-                  ))
-                : null}
+            {clip.map((clip, i) => (
+                <React.Fragment key={i}>
+                    {pathToPrimitives(clip.shape).map((prim, i) => (
+                        <RenderPrimitive
+                            bounds={bounds}
+                            isImplied
+                            prim={prim}
+                            zoom={view.zoom}
+                            color={'magenta'}
+                            strokeWidth={4}
+                            key={i}
+                        />
+                    ))}
+                </React.Fragment>
+            ))}
             {pendingPath[0] ? (
                 <DrawPath
                     palette={state.palette}
@@ -740,25 +749,18 @@ export function calculateBounds(width: number, height: number, view: View) {
     return { x0, y0, x1, y1 };
 }
 
-export const handleDuplicationIntersection = (coord: Intersect, state: State, duplication: PendingDuplication,
+export const handleDuplicationIntersection = (
+    coord: Intersect,
+    state: State,
+    duplication: PendingDuplication,
     setPendingDuplication: (pd: PendingDuplication | null) => void,
-    dispatch: React.Dispatch<Action>
-    ) => {
-    if (
-        !['Path', 'PathGroup'].includes(
-            state.selection?.type ?? '',
-        )
-    ) {
-        console.log(
-            'um selection idk what',
-            state.selection,
-        );
+    dispatch: React.Dispatch<Action>,
+) => {
+    if (!['Path', 'PathGroup'].includes(state.selection?.type ?? '')) {
+        console.log('um selection idk what', state.selection);
         return;
     }
-    if (
-        duplication.reflect &&
-        !duplication.p0
-    ) {
+    if (duplication.reflect && !duplication.p0) {
         console.log('got a p0', coord.coord);
         setPendingDuplication({
             reflect: true,
@@ -769,8 +771,7 @@ export const handleDuplicationIntersection = (coord: Intersect, state: State, du
     setPendingDuplication(null);
     dispatch({
         type: 'path:multiply',
-        selection: state
-            .selection as PathMultiply['selection'],
+        selection: state.selection as PathMultiply['selection'],
         mirror: {
             id: 'tmp',
             origin: coord.coord,
@@ -780,9 +781,7 @@ export const handleDuplicationIntersection = (coord: Intersect, state: State, du
                 y: 0,
             },
             reflect: duplication.reflect,
-            rotational: duplication.reflect
-                ? []
-                : [true],
+            rotational: duplication.reflect ? [] : [true],
         },
     });
-}
+};

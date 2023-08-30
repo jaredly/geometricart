@@ -20,6 +20,7 @@ import {
     TimelineSlot,
     StyleLine,
     Fill,
+    Clip,
 } from '../types';
 
 /*
@@ -143,6 +144,13 @@ export type UndoGCodeItemARE = {
 //     prev: TimelineLane;
 // };
 
+export type ClipUpdate = { type: 'clip:update'; id: string; clip: Clip };
+export type UndoClipUpdate = {
+    type: ClipUpdate['type'];
+    action: ClipUpdate;
+    prev: Clip;
+};
+
 export type ViewUpdate = { type: 'view:update'; view: View };
 export type UndoViewUpdate = {
     type: ViewUpdate['type'];
@@ -196,7 +204,6 @@ export type ClipAdd = { type: 'clip:add'; clip: Array<Segment> };
 export type UndoClipAdd = {
     type: ClipAdd['type'];
     action: ClipAdd;
-    prevActive: Id | null;
     added: [string, number];
 };
 
@@ -523,6 +530,7 @@ export type UndoableAction =
     // | PathPoint
     | MirrorActive
     | ViewUpdate
+    | ClipUpdate
     | TimelineLaneARE
     | GCodeConfig
     | TimelineSlotARE
@@ -574,6 +582,7 @@ export type UndoAction =
     | UndoGuideUpdate
     | UndoOverlayUpdate
     | UndoViewUpdate
+    | UndoClipUpdate
     | UndoMirrorAdd
     | UndoMirrorDelete
     | UndoGroupDelete
