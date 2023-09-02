@@ -1060,11 +1060,11 @@ export const pkPath = (PK: PathKit, segments: Segment[], origin?: Coord) => {
 export const pkInset = (PK: PathKit, path: PKPath, inset: number) => {
     const line = path.copy();
     line.stroke({
-        width: inset,
+        width: inset < 0 ? -inset : inset,
         join: PK.StrokeJoin.MITER,
         cap: PK.StrokeCap.SQUARE,
     });
-    path.op(line, PK.PathOp.DIFFERENCE);
+    path.op(line, inset < 0 ? PK.PathOp.UNION : PK.PathOp.DIFFERENCE);
     line.delete();
     return path;
 };
