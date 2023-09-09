@@ -50,9 +50,7 @@ export const DrawPath = React.memo(
         pendingPath: [
             DrawPathState,
             (
-                fn: (
-                    state: EditorState['pendingPath'],
-                ) => EditorState['pendingPath'],
+                fn: (state: EditorState['pending']) => EditorState['pending'],
             ) => void,
         ];
         mirror: null | Array<Array<Matrix>>;
@@ -289,7 +287,7 @@ export const DrawPath = React.memo(
     },
 );
 
-export const goLeft = (state: EditorState['pendingPath']) =>
+export const goLeft = (state: EditorState['pending']) =>
     state
         ? {
               ...state,
@@ -301,8 +299,8 @@ export const goLeft = (state: EditorState['pendingPath']) =>
         : state;
 
 export const goRight = (
-    state: EditorState['pendingPath'],
-): EditorState['pendingPath'] =>
+    state: EditorState['pending'],
+): EditorState['pending'] =>
     state
         ? {
               ...state,
@@ -313,7 +311,7 @@ export const goRight = (
 export function goForward(
     primitives: { prim: Primitive; guides: Array<Id> }[],
     intersections: Intersect[],
-): (state: EditorState['pendingPath']) => EditorState['pendingPath'] {
+): (state: EditorState['pending']) => EditorState['pending'] {
     return (state) => {
         if (!state || state.selection >= state.next.length) {
             return state;
@@ -353,7 +351,7 @@ export function backUp(
     origin: Intersect,
     primitives: { prim: Primitive; guides: Array<Id> }[],
     intersections: Intersect[],
-): (state: EditorState['pendingPath']) => EditorState['pendingPath'] {
+): (state: EditorState['pending']) => EditorState['pending'] {
     return (state) => {
         if (!state || !state.parts.length) {
             return null;

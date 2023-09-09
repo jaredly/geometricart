@@ -488,7 +488,7 @@ export type GCodePath = {
 };
 
 export type State = {
-    version: 11;
+    version: 12;
     nextId: number;
     history: History;
     meta: Meta;
@@ -507,6 +507,8 @@ export type State = {
     mirrors: { [key: Id]: Mirror };
     activeMirror: Id | null;
     view: View;
+
+    tilings: { [key: Id]: Tiling };
 
     clips: { [key: Id]: Clip };
 
@@ -530,6 +532,12 @@ export type State = {
         pauseHeight: number;
         items: Array<GCodePath | { type: 'pause'; message: string }>;
     };
+};
+
+export type Tiling = {
+    id: Id;
+    // points: Coord[],
+    sides: { from: Coord; kind: 'reflect' | 'rotate' | null }[];
 };
 
 /*

@@ -133,13 +133,11 @@ export function primitivesForElementsAndPaths(
 }
 
 export type PendingPathPair = [
-    EditorState['pendingPath'],
+    EditorState['pending'],
     (
         fn:
-            | EditorState['pendingPath']
-            | ((
-                  state: EditorState['pendingPath'],
-              ) => EditorState['pendingPath']),
+            | EditorState['pending']
+            | ((state: EditorState['pending']) => EditorState['pending']),
     ) => void,
 ];
 
@@ -200,11 +198,11 @@ export const Guides = ({
     disableGuides: boolean;
 }) => {
     const pendingPath: PendingPathPair = [
-        editorState.pendingPath,
+        editorState.pending,
         (pp) =>
             setEditorState((s) => ({
                 ...s,
-                pendingPath: typeof pp === 'function' ? pp(s.pendingPath) : pp,
+                pending: typeof pp === 'function' ? pp(s.pending) : pp,
             })),
     ];
     const inactiveGuidePrimitives = React.useMemo(() => {
@@ -434,13 +432,13 @@ export const Guides = ({
                     disableGuides ||
                     pendingPath[0] ||
                     state.pending != null ||
-                    editorState.pendingPath === false ||
+                    editorState.pending === false ||
                     uiState.pendingDuplication
                         ? undefined
                         : clickActive
                 }
             />
-            {(editorState.pendingPath === false ||
+            {(editorState.pending === false ||
                 state.pending != null ||
                 uiState.pendingMirror ||
                 uiState.pendingDuplication) &&
@@ -592,13 +590,13 @@ function keyHandler(
     currentState: React.MutableRefObject<State>,
     currentPathOrigin: React.MutableRefObject<
         [
-            EditorState['pendingPath'],
+            EditorState['pending'],
             (
                 v:
-                    | EditorState['pendingPath']
+                    | EditorState['pending']
                     | ((
-                          state: EditorState['pendingPath'],
-                      ) => EditorState['pendingPath']),
+                          state: EditorState['pending'],
+                      ) => EditorState['pending']),
             ) => void,
         ]
     >,

@@ -140,7 +140,6 @@ export const migrateState = (state: State) => {
         delete state.activePalette;
     }
     if (state.version < 11) {
-        state.version = 11;
         Object.keys(state.clips).forEach((k) => {
             const shape = state.clips[k] as any;
             // @ts-ignore
@@ -152,7 +151,10 @@ export const migrateState = (state: State) => {
             };
         });
     }
-    state.version = 11;
+    if (state.version < 12) {
+        state.tilings = {};
+    }
+    state.version = 12;
     return state;
 };
 function combinedPathStyles(path: Path, groups: { [key: string]: PathGroup }) {

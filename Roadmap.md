@@ -3,6 +3,7 @@
 
 - [ ] OK so we actually want this on State. Call it "ur-shapes" or something
   (might be triangles or quadrilaterals, or I guess hexagons? yeah could be)
+  oh and actually.. we could have "octagon + square" and "hex + two squares + tri"
 
 
 
