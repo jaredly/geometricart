@@ -364,4 +364,43 @@ export const simpleExport = (state: State, trid: string) => {
     const segs = Object.keys(klines).sort();
     // .map((k) => klines[k]);
     console.log(segs);
+    console.log(segs.map((k) => slopeToLine(klines[k])));
+
+    // const renderSegment = (pseg: PSeg, point?: Coord) => {
+    //     const bounds = segmentBounds(
+    //         pseg.segment.type === 'Arc' ? pseg.segment.to : pseg.prev,
+    //         pseg.segment,
+    //     );
+    //     const w = bounds.x1 - bounds.x0;
+    //     const h = bounds.y1 - bounds.y0;
+    //     let x = w < h ? (h - w) / 2 : 0;
+    //     let y = h < w ? (w - h) / 2 : 0;
+    //     let size = Math.max(w, h);
+    //     x += size * 0.25;
+    //     y += size * 0.25;
+    //     size += size * 0.5;
+    //     const path = segmentPath(pseg);
+    const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="-0.5 -1.5 2 2">
+    <rect x="0" y="-1" width="1" height="1" fill="white" />
+    ${segs
+        .map((k) => {
+            const [p1, p2] = slopeToLine(klines[k]);
+            return `<line x1="${p1.x}" x2="${p2.x}" y1="${p1.y}" y2="${p2.y}" stroke="red" stroke-width="0.05"/>`;
+        })
+        .join('\n')}
+    </svg>
+    `;
+    consoleSvg(svg);
+};
+
+const consoleSvg = (svg: string) => {
+    const bgi = `data:image/svg+xml;base64,${btoa(svg)}`;
+    const img = new Image();
+    img.src = bgi;
+    document.body.append(img);
+    console.log(
+        '%c ',
+        `background-image: url("${bgi}");background-size:cover;padding:40px`,
+    );
 };
