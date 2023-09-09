@@ -1,4 +1,14 @@
 
+- [ ] allow the triangle to not be oriented correctrly
+
+- [ ] OK so we actually want this on State. Call it "ur-shapes" or something
+  (might be triangles or quadrilaterals, or I guess hexagons? yeah could be)
+
+
+
+
+- [ ] show like a preview of it? I guess the svg/png export will have it rite
+
 # Export and such
 - OK What is exported in a "minimal" export?
   - we've got the triangle, with like an indication of the kind it is

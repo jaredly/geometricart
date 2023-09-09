@@ -10,36 +10,40 @@ import { Action } from '../state/Action';
 import { initialHistory } from '../state/initialState';
 import { Path, State } from '../types';
 import { calcPPI } from './SVGCanvas';
-import { Bounds, DL, Multi, blankCanvasProps } from './Export';
+import {
+    Bounds,
+    DL,
+    Multi,
+    blankCanvasProps,
+    findBoundingRect,
+} from './Export';
 import { constantColors, maybeUrlColor } from './MultiStyleForm';
 
 export function ExportSVG({
     state,
     dispatch,
     originalSize,
-    boundingRect,
-    crop,
-    setCrop,
     embed,
     history,
-    setUrl,
-    url,
     name,
 }: {
     state: State;
     dispatch: (action: Action) => void;
     originalSize: number;
-    boundingRect: Bounds | null;
-    crop: number | null;
-    setCrop: React.Dispatch<React.SetStateAction<number | null>>;
     embed: boolean;
     history: boolean;
-    setUrl: React.Dispatch<
-        React.SetStateAction<{ url: string; info: string }[] | null>
-    >;
-    url: { url: string; info: string }[] | null;
     name: string;
 }) {
+    const [url, setUrl] = React.useState(
+        null as null | { url: string; info: string }[],
+    );
+    const boundingRect = React.useMemo(
+        () => findBoundingRect(state),
+        [state.paths, state.pathGroups, state.clips],
+    );
+
+    const [crop, setCrop] = React.useState(10 as null | number);
+
     return (
         <div css={{ marginTop: 16, border: '1px solid #aaa', padding: 8 }}>
             <Toggle

@@ -11,28 +11,24 @@ import { texture1, texture2 } from '../rendering/textures';
 import { State, TextureConfig } from '../types';
 
 export function ExportPng({
-    size,
-    setSize,
     state,
     originalSize,
     embed,
     history,
     animationPosition,
-    setPng,
-    png,
     name,
 }: {
-    size: number;
-    setSize: React.Dispatch<React.SetStateAction<number>>;
     state: State;
     originalSize: number;
     embed: boolean;
     history: boolean;
     animationPosition: number;
-    setPng: React.Dispatch<React.SetStateAction<string | null>>;
-    png: string | null;
     name: string;
 }) {
+    const [png, setPng] = React.useState(null as null | string);
+
+    const [size, setSize] = React.useState(originalSize);
+
     return (
         <div css={{ marginTop: 16, border: '1px solid #aaa', padding: 8 }}>
             Width (px):{' '}

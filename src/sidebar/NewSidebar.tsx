@@ -516,6 +516,14 @@ const transforms: { title: string; action: GlobalTransform }[] = [
         },
     },
     {
+        title: '+30º',
+        action: {
+            type: 'global:transform',
+            rotate: Math.PI / 6,
+            flip: null,
+        },
+    },
+    {
         title: '-X',
         action: {
             type: 'global:transform',

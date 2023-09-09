@@ -7,7 +7,7 @@ import { transparent } from './Icons';
 import { angleBetween } from '../rendering/findNextSegments';
 import { sortedVisibleInsetPaths } from '../rendering/sortedVisibleInsetPaths';
 import { Action } from '../state/Action';
-import { State } from '../types';
+import { Coord, Path, State } from '../types';
 import { closeEnough } from '../rendering/clipPath';
 import { PendingBounds, newPendingBounds, addCoordToBounds } from './Bounds';
 import { MultiColor, constantColors, maybeUrlColor } from './MultiStyleForm';
@@ -31,7 +31,11 @@ import {
 } from '../rendering/intersect';
 import { numKey } from '../rendering/coordKey';
 import {
+    Matrix,
+    applyMatrices,
+    applyMatrix,
     dist,
+    rotationMatrix,
     scaleMatrix,
     translationMatrix,
 } from '../rendering/getMirrorTransforms';
@@ -78,24 +82,11 @@ export const Export = ({
     dispatch: (action: Action) => void;
 }) => {
     // const [name, setName] = React.useState()
-    const [url, setUrl] = React.useState(
-        null as null | { url: string; info: string }[],
-    );
     const [animationPosition, setAnimationPosition] = React.useState(0);
 
-    const [png, setPng] = React.useState(null as null | string);
-
-    const [size, setSize] = React.useState(originalSize);
     const [embed, setEmbed] = React.useState(true);
     const [history, setHistory] = React.useState(false);
     const name = `image-${Date.now()}${history ? '-history' : ''}.svg`;
-
-    const [crop, setCrop] = React.useState(10 as null | number);
-
-    const boundingRect = React.useMemo(
-        () => findBoundingRect(state),
-        [state.paths, state.pathGroups, state.clips],
-    );
 
     return (
         <div className="p-2" css={{}}>
@@ -158,57 +149,22 @@ export const Export = ({
                 />
             </div>
             <ExportPng
-                size={size}
-                setSize={setSize}
                 state={state}
                 originalSize={originalSize}
                 embed={embed}
                 history={history}
                 animationPosition={animationPosition}
-                setPng={setPng}
-                png={png}
                 name={name}
             />
             <ExportSVG
                 state={state}
                 dispatch={dispatch}
                 originalSize={originalSize}
-                boundingRect={boundingRect}
-                crop={crop}
-                setCrop={setCrop}
                 embed={embed}
                 history={history}
-                setUrl={setUrl}
-                url={url}
                 name={name}
             />
-            <button
-                css={{ marginTop: 24, marginBottom: 16 }}
-                onClick={() => {
-                    const ids = Object.entries(
-                        getSelectedIds(state.paths, state.selection),
-                    )
-                        .filter(([k, v]) => v)
-                        .map((k) => k[0]);
-                    if (
-                        ids.length !== 1 ||
-                        state.paths[ids[0]].segments.length !== 3
-                    ) {
-                        console.log('select a triagle');
-                        return;
-                    }
-                    // we gots a triangle
-                    const segs = state.paths[ids[0]].segments;
-                    if (!segs.every((s) => s.type === 'Line')) {
-                        console.log('has arcs');
-                        return;
-                    }
-                    const trid = ids[0];
-                    simpleExport(state, trid);
-                }}
-            >
-                Export a thing
-            </button>
+            <SimpleExport state={state} />
             <div
                 css={{
                     display: 'flex',
@@ -286,56 +242,217 @@ export const DL = ({
     );
 };
 
-export const simpleExport = (state: State, trid: string) => {
-    const paths = getVisiblePaths(state.paths, state.pathGroups).filter(
-        (i) => i !== trid,
-    );
-    const pkc = [
-        {
-            path: pkPath(
-                PK,
-                state.paths[trid].segments,
-                state.paths[trid].origin,
-            ),
-            outside: false,
-        },
-    ];
-    const intersections = paths
-        .map((id) =>
-            consumePath(
-                PK,
-                pkClips(
-                    PK,
-                    pkPath(
-                        PK,
-                        state.paths[id].segments,
-                        state.paths[id].origin,
-                    ),
-                    pkc,
-                    state.paths[id],
-                ),
-                state.paths[id],
-            ),
-        )
-        .flat();
+export const SimpleExport = ({ state }: { state: State }) => {
+    const [flip, setFlip] = useState(false);
+    return (
+        <div>
+            <label>
+                <input
+                    type="checkbox"
+                    checked={flip}
+                    onChange={() => setFlip(!flip)}
+                />
+                Flip
+            </label>
 
-    const pts = state.paths[trid].segments.map((s) => s.to);
+            <button
+                css={{ marginTop: 24, marginBottom: 16 }}
+                onClick={() => {
+                    const ids = Object.entries(
+                        getSelectedIds(state.paths, state.selection),
+                    )
+                        .filter(([k, v]) => v)
+                        .map((k) => k[0]);
+                    if (
+                        ids.length !== 1 ||
+                        state.paths[ids[0]].segments.length !== 3
+                    ) {
+                        console.log('select a triagle');
+                        return;
+                    }
+                    // we gots a triangle
+                    const segs = state.paths[ids[0]].segments;
+                    if (!segs.every((s) => s.type === 'Line')) {
+                        console.log('has arcs');
+                        return;
+                    }
+                    const trid = ids[0];
+                    simpleExport(state, trid, flip);
+                }}
+            >
+                Export a thing
+            </button>
+        </div>
+    );
+};
+
+export const simpleExport = async (
+    state: State,
+    trid: string,
+    flip: boolean,
+) => {
+    const res = getShapesIntersectingTriangle(state, trid);
+    if (!res) {
+        return;
+    }
+    const { klines, shapes, tr } = res;
+    console.log('klins', klines);
+    const segs = Object.keys(klines).sort();
+
+    const hashHex = await hashData(segs.join(','));
+    console.log(hashHex);
+
+    const unique = Object.values(klines).map(slopeToLine);
+
+    let full = unique;
+    if (flip) {
+        full = full.concat(
+            transformLines(full, [
+                rotationMatrix(Math.PI),
+                translationMatrix(tr),
+            ]),
+        );
+        full = replicateStandard(full, tr.y);
+    } else if (closeEnough(tr.y, -1 / Math.sqrt(3))) {
+        full = full.concat(
+            transformLines(full, [
+                scaleMatrix(1, -1),
+                rotationMatrix(-(Math.PI / 3)),
+            ]),
+        );
+        full = full.concat(
+            transformLines(full, [
+                scaleMatrix(1, -1),
+                rotationMatrix(-(Math.PI / 3) * 2),
+            ]),
+            transformLines(full, [
+                scaleMatrix(1, -1),
+                rotationMatrix(-Math.PI),
+            ]),
+        );
+        full = full.concat(transformLines(full, [scaleMatrix(1, -1)]));
+        full = full.concat(
+            ...[0, 1, 2, 3, 4, 5].map((i) =>
+                transformLines(full, [
+                    translationMatrix({ x: 2, y: 0 }),
+                    rotationMatrix((Math.PI / 3) * i),
+                ]),
+            ),
+        );
+    } else {
+        full = full.concat(
+            transformLines(full, [
+                scaleMatrix(1, -1),
+                rotationMatrix(-Math.PI / 2),
+            ]),
+        );
+        full = replicateStandard(full, tr.y);
+    }
+
+    const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="50" style="background:black" height="50" viewBox="-2.5 -2.5 5 5">
+    ${full
+        .map(([p1, p2]) => {
+            return `<line x1="${p1.x}" x2="${p2.x}" y1="${p1.y}" y2="${p2.y}" stroke="yellow" stroke-width="0.02"/>`;
+        })
+        .join('\n')}
+    </svg>
+    `;
+    consoleSvg(svg);
+};
+
+const consoleSvg = (svg: string) => {
+    const bgi = `data:image/svg+xml;base64,${btoa(svg)}`;
+    const img = new Image();
+    img.src = bgi;
+    document.body.append(img);
+    console.log(
+        '%c ',
+        `background-image: url("${bgi}");background-size:cover;padding:80px 85px`,
+    );
+};
+
+const transformLines = (lines: [Coord, Coord][], mx: Matrix[]) =>
+    lines.map(([p1, p2]): [Coord, Coord] => [
+        applyMatrices(p1, mx),
+        applyMatrices(p2, mx),
+    ]);
+
+async function hashData(kk: string) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(kk);
+    const hashBuffer = await window.crypto.subtle.digest('SHA-1', data);
+
+    const hashArray = Array.from(new Uint8Array(hashBuffer)); // convert buffer to byte array
+    const hashHex = hashArray
+        .map((b) => b.toString(16).padStart(2, '0'))
+        .join(''); // convert bytes to hex string
+    return hashHex;
+}
+
+function replicateStandard(full: [Coord, Coord][], ty: number) {
+    full = full.concat(
+        transformLines(full, [
+            scaleMatrix(-1, 1),
+            translationMatrix({ x: 2, y: 0 }),
+        ]),
+    );
+    full = full.concat(
+        transformLines(full, [
+            scaleMatrix(1, -1),
+            translationMatrix({ x: 0, y: ty * 2 }),
+        ]),
+    );
+    full.push(...transformLines(full, [scaleMatrix(1, -1)]));
+    full.push(...transformLines(full, [scaleMatrix(-1, 1)]));
+    return full;
+}
+
+export const getShapesIntersectingTriangle = (state: State, trid: string) => {
+    const tri = state.paths[trid];
+    const pts = tri.segments.map((s) => s.to);
     const mx = Math.min(...pts.map((p) => p.x));
     const bl = pts.find((p) => p.x === mx)!;
     const br = pts.find((p) => p !== bl && closeEnough(p.y, bl.y));
-    if (!br) {
+    const tr = pts.find((p) => p !== bl && !closeEnough(p.y, bl.y));
+    if (!br || !tr) {
         console.error('no bottom right');
         return;
     }
     const scale = 1 / dist(bl, br);
     const translate = scalePos(bl, -1);
     const tx = [translationMatrix(translate), scaleMatrix(scale, scale)];
-    console.log({ translate, scale });
 
     const trilines = addPrevsToSegments(
-        state.paths[trid].segments.map((seg) => transformSegment(seg, tx)),
+        tri.segments.map((seg) => transformSegment(seg, tx)),
     ).map((seg) => lineToSlope(seg.prev, seg.segment.to, true));
     const klines: Record<string, SlopeIntercept> = {};
+
+    const paths = getVisiblePaths(state.paths, state.pathGroups).filter(
+        (i) => i !== tri.id,
+    );
+    const pkc = {
+        path: pkPath(PK, tri.segments, tri.origin),
+        outside: false,
+    };
+    const shapes: Path[] = [];
+    const intersections = paths.flatMap((id) => {
+        const got = consumePath(
+            PK,
+            pkClips(
+                PK,
+                pkPath(PK, state.paths[id].segments, state.paths[id].origin),
+                [pkc],
+                state.paths[id],
+            ),
+            state.paths[id],
+        );
+        if (got.length) {
+            shapes.push(state.paths[id]);
+        }
+        return got;
+    });
+
     intersections
         .flatMap((path) =>
             addPrevsToSegments(
@@ -360,47 +477,5 @@ export const simpleExport = (state: State, trid: string) => {
             )}:${numKey(max)}`;
             klines[key] = sl;
         });
-    console.log('klins', klines);
-    const segs = Object.keys(klines).sort();
-    // .map((k) => klines[k]);
-    console.log(segs);
-    console.log(segs.map((k) => slopeToLine(klines[k])));
-
-    // const renderSegment = (pseg: PSeg, point?: Coord) => {
-    //     const bounds = segmentBounds(
-    //         pseg.segment.type === 'Arc' ? pseg.segment.to : pseg.prev,
-    //         pseg.segment,
-    //     );
-    //     const w = bounds.x1 - bounds.x0;
-    //     const h = bounds.y1 - bounds.y0;
-    //     let x = w < h ? (h - w) / 2 : 0;
-    //     let y = h < w ? (w - h) / 2 : 0;
-    //     let size = Math.max(w, h);
-    //     x += size * 0.25;
-    //     y += size * 0.25;
-    //     size += size * 0.5;
-    //     const path = segmentPath(pseg);
-    const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="-0.5 -1.5 2 2">
-    <rect x="0" y="-1" width="1" height="1" fill="white" />
-    ${segs
-        .map((k) => {
-            const [p1, p2] = slopeToLine(klines[k]);
-            return `<line x1="${p1.x}" x2="${p2.x}" y1="${p1.y}" y2="${p2.y}" stroke="red" stroke-width="0.05"/>`;
-        })
-        .join('\n')}
-    </svg>
-    `;
-    consoleSvg(svg);
-};
-
-const consoleSvg = (svg: string) => {
-    const bgi = `data:image/svg+xml;base64,${btoa(svg)}`;
-    const img = new Image();
-    img.src = bgi;
-    document.body.append(img);
-    console.log(
-        '%c ',
-        `background-image: url("${bgi}");background-size:cover;padding:40px`,
-    );
+    return { shapes, klines, tr: applyMatrices(tr, tx) };
 };
