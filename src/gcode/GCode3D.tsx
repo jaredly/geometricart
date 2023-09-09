@@ -15,7 +15,7 @@ import {
 import { GCodeData } from './Visualize';
 import { renderCutDepths } from './renderCutDepths';
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
-import { addMetadata } from '../editor/Export';
+import { addMetadata } from '../editor/ExportPng';
 import { initialHistory } from '../state/initialState';
 import { State } from '../types';
 import { gcodeStateSuffix } from './Toolbar';
@@ -29,10 +29,10 @@ varying vec2 vUV;
 varying vec3 vNormal;
 varying vec4 vNormalColor;
 
-void main() { 
+void main() {
 	vUV = uv;
 	vec4 bumpData = texture2D( bumpTexture, uv );
- 
+
     float off = 0.001;
 
 	vec4 p1 = texture2D( bumpTexture, uv + vec2(off, 0.0) );
@@ -50,12 +50,12 @@ void main() {
     vNormal = normalize(cross(tx, ty));
     vNormalColor = vec4(vNormal * 0.5 + 0.5, 1.0);
 
-    // Hmm I wonder if I could 
+    // Hmm I wonder if I could
 
-	
+
 	// move the position along the normal
     vec3 newPosition = position + normal * bumpScale * bumpData.r;
-	
+
 	gl_Position = projectionMatrix * modelViewMatrix * vec4( newPosition, 1.0 );
 }
 `;
@@ -102,7 +102,7 @@ void main() {
     // vec4 backgroundColor = vec4(123.0 / 255.0, 50.0 / 255.0, 0.0 / 255.0, 1.0);
 
     gl_FragColor = mix(backgroundColor, mix(depthColor, normalColor, 0.2), 0.7);
-}  
+}
 `;
 
 export const GCode3D = ({

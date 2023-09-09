@@ -5,7 +5,8 @@ import {
     tarImages,
 } from '../animation/AnimationUI';
 import { useCurrent } from '../App';
-import { addMetadata, findBoundingRect, renderTexture } from '../editor/Export';
+import { findBoundingRect } from '../editor/Export';
+import { addMetadata, renderTexture } from '../editor/ExportPng';
 import { undoAction } from '../editor/history';
 import { canvasRender } from '../rendering/CanvasRender';
 import { epsilon } from '../rendering/intersect';

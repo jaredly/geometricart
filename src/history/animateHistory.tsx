@@ -5,7 +5,8 @@ import {
     StateAndAction,
 } from './HistoryPlayback';
 import { canvasRender } from '../rendering/CanvasRender';
-import { findBoundingRect, renderTexture } from '../editor/Export';
+import { findBoundingRect } from '../editor/Export';
+import { renderTexture } from '../editor/ExportPng';
 import { screenToWorld, worldToScreen } from '../editor/Canvas';
 import { Action } from '../state/Action';
 import React from 'react';

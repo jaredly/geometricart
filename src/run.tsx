@@ -24,7 +24,7 @@ import { MirrorPicker, SaveDest } from './MirrorPicker';
 import { setupState } from './setupState';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import { exportPNG } from './editor/Export';
+import { exportPNG } from './editor/ExportPng';
 import { DesignLoader } from './DesignLoader';
 import { Button } from 'primereact/button';
 import { useGists, gistCache } from './useGists';

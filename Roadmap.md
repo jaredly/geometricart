@@ -1,8 +1,16 @@
 
+# Export and such
+- OK What is exported in a "minimal" export?
+  - we've got the triangle, with like an indication of the kind it is
+    - for each side, we can either reflect, rotate, or (nothing?)
+  - we've got the lines inside of the triangle, which are very normalized
+  - and then we've got all of the shapes that overlap the triangle.
+    I'm just gonna dump them all in willy nilly.
+
 # Global Transforms
 
-- FLIP
-- ROT
+- [x] FLIP
+- [x] ROT
 
 # Use PathKit for clipping & insets
 

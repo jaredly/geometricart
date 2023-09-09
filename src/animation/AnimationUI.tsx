@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useCurrent } from '../App';
 import { evaluateAnimatedValues, getAnimatedFunctions } from '../editor/Canvas';
-import { addMetadata, findBoundingRect, renderTexture } from '../editor/Export';
+import { findBoundingRect } from '../editor/Export';
+import { addMetadata, renderTexture } from '../editor/ExportPng';
 import { BlurInt, Toggle } from '../editor/Forms';
 import { CancelIcon, CheckmarkIcon, PencilIcon } from '../icons/Icon';
 import { epsilon } from '../rendering/intersect';
