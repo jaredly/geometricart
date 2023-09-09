@@ -12,9 +12,31 @@ import { closeEnough } from '../rendering/clipPath';
 import { PendingBounds, newPendingBounds, addCoordToBounds } from './Bounds';
 import { MultiColor, constantColors, maybeUrlColor } from './MultiStyleForm';
 import { UIState } from '../useUIState';
-import { getClips } from '../rendering/pkInsetPaths';
+import {
+    consumePath,
+    getClips,
+    getVisiblePaths,
+    pkClips,
+} from '../rendering/pkInsetPaths';
 import { ExportSVG } from './ExportSVG';
 import { ExportPng } from './ExportPng';
+import { getSelectedIds } from './SVGCanvas';
+import { PK } from './pk';
+import { pkPath } from '../sidebar/NewSidebar';
+import { addPrevsToSegments } from '../rendering/segmentsToNonIntersectingSegments';
+import {
+    SlopeIntercept,
+    lineToSlope,
+    slopeToLine,
+} from '../rendering/intersect';
+import { numKey } from '../rendering/coordKey';
+import {
+    dist,
+    scaleMatrix,
+    translationMatrix,
+} from '../rendering/getMirrorTransforms';
+import { scalePos } from './PendingPreview';
+import { transformSegment } from '../rendering/points';
 
 export type Bounds = {
     x1: number;
@@ -160,6 +182,33 @@ export const Export = ({
                 url={url}
                 name={name}
             />
+            <button
+                css={{ marginTop: 24, marginBottom: 16 }}
+                onClick={() => {
+                    const ids = Object.entries(
+                        getSelectedIds(state.paths, state.selection),
+                    )
+                        .filter(([k, v]) => v)
+                        .map((k) => k[0]);
+                    if (
+                        ids.length !== 1 ||
+                        state.paths[ids[0]].segments.length !== 3
+                    ) {
+                        console.log('select a triagle');
+                        return;
+                    }
+                    // we gots a triangle
+                    const segs = state.paths[ids[0]].segments;
+                    if (!segs.every((s) => s.type === 'Line')) {
+                        console.log('has arcs');
+                        return;
+                    }
+                    const trid = ids[0];
+                    simpleExport(state, trid);
+                }}
+            >
+                Export a thing
+            </button>
             <div
                 css={{
                     display: 'flex',
@@ -235,4 +284,84 @@ export const DL = ({
             </div>
         </>
     );
+};
+
+export const simpleExport = (state: State, trid: string) => {
+    const paths = getVisiblePaths(state.paths, state.pathGroups).filter(
+        (i) => i !== trid,
+    );
+    const pkc = [
+        {
+            path: pkPath(
+                PK,
+                state.paths[trid].segments,
+                state.paths[trid].origin,
+            ),
+            outside: false,
+        },
+    ];
+    const intersections = paths
+        .map((id) =>
+            consumePath(
+                PK,
+                pkClips(
+                    PK,
+                    pkPath(
+                        PK,
+                        state.paths[id].segments,
+                        state.paths[id].origin,
+                    ),
+                    pkc,
+                    state.paths[id],
+                ),
+                state.paths[id],
+            ),
+        )
+        .flat();
+
+    const pts = state.paths[trid].segments.map((s) => s.to);
+    const mx = Math.min(...pts.map((p) => p.x));
+    const bl = pts.find((p) => p.x === mx)!;
+    const br = pts.find((p) => p !== bl && closeEnough(p.y, bl.y));
+    if (!br) {
+        console.error('no bottom right');
+        return;
+    }
+    const scale = 1 / dist(bl, br);
+    const translate = scalePos(bl, -1);
+    const tx = [translationMatrix(translate), scaleMatrix(scale, scale)];
+    console.log({ translate, scale });
+
+    const trilines = addPrevsToSegments(
+        state.paths[trid].segments.map((seg) => transformSegment(seg, tx)),
+    ).map((seg) => lineToSlope(seg.prev, seg.segment.to, true));
+    const klines: Record<string, SlopeIntercept> = {};
+    intersections
+        .flatMap((path) =>
+            addPrevsToSegments(
+                path.segments.map((seg) => transformSegment(seg, tx)),
+            ),
+        )
+        .map((iline) => lineToSlope(iline.prev, iline.segment.to, true))
+        .filter((sl) => {
+            if (
+                trilines.some(
+                    (tl) => closeEnough(tl.b, sl.b) && closeEnough(tl.m, sl.m),
+                )
+            ) {
+                return false;
+            }
+            return true;
+        })
+        .forEach((sl) => {
+            const [min, max] = sl.limit!;
+            const key = `${numKey(min)}:${numKey(sl.b)}:${numKey(
+                sl.m,
+            )}:${numKey(max)}`;
+            klines[key] = sl;
+        });
+    console.log('klins', klines);
+    const segs = Object.keys(klines).sort();
+    // .map((k) => klines[k]);
+    console.log(segs);
 };

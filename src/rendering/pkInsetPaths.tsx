@@ -62,13 +62,7 @@ export function pkSortedVisibleInsetPaths(
         }
     });
 
-    let visible = Object.keys(paths)
-        .filter(
-            (k) =>
-                !paths[k].hidden &&
-                (!paths[k].group || !pathGroups[paths[k].group!]?.hide),
-        )
-        .sort(sortByOrdering(paths, pathGroups));
+    let visible = getVisiblePaths(paths, pathGroups);
 
     if (hideDuplicatePaths) {
         visible = removeDuplicatePaths(visible, paths);
@@ -268,3 +262,15 @@ export const consumePath = (
     pkp.delete();
     return regions.map((region) => ({ ...path, ...region }));
 };
+export function getVisiblePaths(
+    paths: { [key: string]: Path },
+    pathGroups: { [key: string]: PathGroup },
+) {
+    return Object.keys(paths)
+        .filter(
+            (k) =>
+                !paths[k].hidden &&
+                (!paths[k].group || !pathGroups[paths[k].group!]?.hide),
+        )
+        .sort(sortByOrdering(paths, pathGroups));
+}

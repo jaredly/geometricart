@@ -113,7 +113,7 @@ const sq = (x: number) => x * x;
 
 export const epsilon = 0.000001;
 
-export const slopeToLine = (si: SlopeIntercept) => {
+export const slopeToLine = (si: SlopeIntercept): [Coord, Coord] => {
     if (!si.limit) {
         throw new Error(
             `cannot convert a si that doesn't have a limit back to a line`,
