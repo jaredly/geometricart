@@ -155,20 +155,7 @@ export const MirrorMenu = React.memo(
                                             left: '100%',
                                             top: -4,
                                             marginLeft: 4,
-                                            // width: 58,
-                                            // height: 58,
-                                            // display: 'block',
-                                            // padding: 8,
-                                            // marginLeft: 8,
                                             fontSize: 40,
-                                            // backgroundColor: 'transparent',
-                                            // color: 'white',
-                                            // cursor: 'pointer',
-                                            // border: '1px solid white',
-                                            // ':hover': {
-                                            //     backgroundColor:
-                                            //         'rgba(255,255,255,0.1)',
-                                            // },
                                         }}
                                     >
                                         <DeleteForeverIcon />

@@ -1,12 +1,15 @@
 import { pendingGuide } from '../editor/RenderPendingGuide';
 import { coordKey } from '../rendering/coordKey';
 import {
+    Matrix,
     applyMatrices,
     getTransformsForMirror,
     mirrorTransforms,
+    rotationMatrix,
+    scaleMatrix,
 } from '../rendering/getMirrorTransforms';
 import { addAction, redoAction, undoAction } from '../editor/history';
-import { transformSegment } from '../rendering/points';
+import { transformPath, transformSegment } from '../rendering/points';
 import {
     Guide,
     GuideGeom,
@@ -21,6 +24,7 @@ import {
     PathGroup,
     PendingGuide,
     TimelineLane,
+    Coord,
 } from '../types';
 import {
     Action,
@@ -32,6 +36,7 @@ import {
     UndoAddRemoveEdit,
     ScriptRename,
     PathCreateMany,
+    GlobalTransform,
 } from './Action';
 import {
     pathsAreIdentical,
@@ -43,6 +48,11 @@ import { ensureClockwise } from '../rendering/pathToPoints';
 import { clipPath } from '../rendering/clipPath';
 import { pathToPrimitives } from '../editor/findSelection';
 import { styleMatches } from '../editor/MultiStyleForm';
+import {
+    transformGuide,
+    transformGuideGeom,
+    transformMirror,
+} from '../rendering/calculateGuideElements';
 
 export const reducer = (state: State, action: Action): State => {
     if (action.type === 'undo') {
@@ -856,6 +866,10 @@ export const reduceWithoutUndo = (
                 { type: action.type, action, prev: state.clips[action.id] },
             ];
         }
+        case 'global:transform': {
+            const mx: Matrix[] = transformMatrix(action);
+            return [transformState(state, mx), { type: action.type, action }];
+        }
         default:
             let _x: never = action;
             console.log(`SKIPPING ${(action as any).type}`);
@@ -865,6 +879,10 @@ export const reduceWithoutUndo = (
 
 export const undo = (state: State, action: UndoAction): State => {
     switch (action.type) {
+        case 'global:transform': {
+            const mx: Matrix[] = transformMatrix(action.action, true);
+            return transformState(state, mx);
+        }
         case 'clip:update':
             return {
                 ...state,
@@ -1530,4 +1548,38 @@ export const handleListARE = <T,>(
             return [list, old];
         },
     });
+};
+
+export const transformMatrix = (action: GlobalTransform, reverse?: boolean) => {
+    if (action.flip) {
+        return [action.flip === 'H' ? scaleMatrix(-1, 1) : scaleMatrix(1, -1)];
+    }
+    if (action.rotate) {
+        return [rotationMatrix(action.rotate * (reverse ? -1 : 1))];
+    }
+    return [];
+};
+
+export const transformState = (state: State, mx: Matrix[]) => {
+    const paths = { ...state.paths };
+    const guides = { ...state.guides };
+    const clips = { ...state.clips };
+    const mirrors = { ...state.mirrors };
+    Object.entries(paths).forEach(([key, path]) => {
+        paths[key] = transformPath(path, mx);
+    });
+    const tx = (pos: Coord) => applyMatrices(pos, mx);
+    Object.entries(guides).forEach(([key, guide]) => {
+        guides[key] = transformGuide(guide, tx);
+    });
+    Object.entries(mirrors).forEach(([key, mirror]) => {
+        mirrors[key] = transformMirror(mirror, tx);
+    });
+    Object.entries(clips).forEach(([key, clip]) => {
+        clips[key] = {
+            ...clip,
+            shape: clip.shape.map((seg) => transformSegment(seg, mx)),
+        };
+    });
+    return { ...state, paths, guides, clips, mirrors };
 };

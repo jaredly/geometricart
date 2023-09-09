@@ -87,6 +87,35 @@ export type GuideElement = {
     original: boolean;
 };
 
+export const transformMirror = (
+    mirror: Mirror,
+    transform: (pos: Coord) => Coord,
+): Mirror => {
+    return {
+        ...mirror,
+        origin: transform(mirror.origin),
+        point: transform(mirror.point),
+        parent:
+            typeof mirror.parent === 'object' && mirror.parent
+                ? transformMirror(mirror.parent, transform)
+                : mirror.parent,
+    };
+};
+
+export const transformGuide = (
+    guide: Guide,
+    transform: (pos: Coord) => Coord,
+): Guide => {
+    return {
+        ...guide,
+        geom: transformGuideGeom(guide.geom, transform),
+        mirror:
+            guide.mirror && typeof guide.mirror === 'object'
+                ? transformMirror(guide.mirror, transform)
+                : guide.mirror,
+    };
+};
+
 export const transformGuideGeom = (
     geom: GuideGeom,
     transform: (pos: Coord) => Coord,

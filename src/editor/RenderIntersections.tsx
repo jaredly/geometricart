@@ -8,7 +8,7 @@ const intersectionStyle = css({
     transition: '.2s ease r, .2s ease fill',
     ':hover': {
         r: 7,
-        fill: 'white',
+        fill: 'magenta',
     },
 });
 

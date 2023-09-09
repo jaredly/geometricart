@@ -274,6 +274,16 @@ export type PathUpdateMany = {
     nextId?: number;
 };
 
+export type UndoGlobalTransform = {
+    type: GlobalTransform['type'];
+    action: GlobalTransform;
+};
+export type GlobalTransform = {
+    type: 'global:transform';
+    rotate: number | null;
+    flip: 'V' | 'H' | null;
+};
+
 export type UndoPathUpdate = {
     type: PathUpdate['type'];
     action: PathUpdate;
@@ -541,6 +551,7 @@ export type UndoableAction =
     | TimelineUpdate
     | AnimationConfig
     | PathUpdateMany
+    | GlobalTransform
     | GroupUpdate
     | GuideDelete
     | GroupDelete
@@ -572,6 +583,7 @@ export type UndoAction =
     | UndoOverlayDelete
     | UndoClipAdd
     | UndoPathCreateMany
+    | UndoGlobalTransform
     | UndoGroupUpdate
     | UndoGroupRegroup
     | UndoPathUpdate

@@ -326,7 +326,11 @@ export function SVGCanvas({
                         styleHover={selectedIds[path.id] ? styleHover : null}
                         onClick={
                             // TODO: Disable path clickies if we're doing guides, folks.
-                            editorState.pendingPath ? undefined : clickPath
+                            editorState.pendingPath !== null ||
+                            uiState.pendingDuplication ||
+                            uiState.pendingMirror
+                                ? undefined
+                                : clickPath
                         }
                     />
                 ))}

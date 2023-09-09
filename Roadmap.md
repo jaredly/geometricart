@@ -1,4 +1,9 @@
 
+# Global Transforms
+
+- FLIP
+- ROT
+
 # Use PathKit for clipping & insets
 
 yasss love it, now things really work.

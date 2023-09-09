@@ -431,7 +431,13 @@ export const Guides = ({
                 zoom={view.zoom}
                 bounds={bounds}
                 onClick={
-                    disableGuides || pendingPath[0] ? undefined : clickActive
+                    disableGuides ||
+                    pendingPath[0] ||
+                    state.pending != null ||
+                    editorState.pendingPath === false ||
+                    uiState.pendingDuplication
+                        ? undefined
+                        : clickActive
                 }
             />
             {(editorState.pendingPath === false ||

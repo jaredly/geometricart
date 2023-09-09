@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Action } from '../state/Action';
+import { Action, GlobalTransform } from '../state/Action';
 import { Coord, Mirror, Path, PathGroup, Segment, State } from '../types';
 import { Tree } from 'primereact/tree';
 import { Button } from 'primereact/button';
@@ -467,10 +467,16 @@ export const NewSidebar = ({
                         header: 'Transform',
                         content() {
                             return (
-                                <TransformPanel
-                                    state={state}
-                                    dispatch={dispatch}
-                                />
+                                <>
+                                    <TransformPanel
+                                        state={state}
+                                        dispatch={dispatch}
+                                    />
+                                    <TransformGlobal
+                                        state={state}
+                                        dispatch={dispatch}
+                                    />
+                                </>
                             );
                         },
                     },
@@ -491,6 +497,60 @@ const showMirror = (
         </span>
     );
 };
+
+const transforms: { title: string; action: GlobalTransform }[] = [
+    {
+        title: '+45º',
+        action: {
+            type: 'global:transform',
+            rotate: Math.PI / 4,
+            flip: null,
+        },
+    },
+    {
+        title: '-45º',
+        action: {
+            type: 'global:transform',
+            rotate: -Math.PI / 4,
+            flip: null,
+        },
+    },
+    {
+        title: '-X',
+        action: {
+            type: 'global:transform',
+            rotate: null,
+            flip: 'H',
+        },
+    },
+    {
+        title: '-Y',
+        action: {
+            type: 'global:transform',
+            rotate: null,
+            flip: 'V',
+        },
+    },
+];
+
+function TransformGlobal({
+    state,
+    dispatch,
+}: {
+    state: State;
+    dispatch: React.Dispatch<Action>;
+}) {
+    return (
+        <div>
+            <div>Global Transformations</div>
+            {transforms.map(({ title, action }, i) => (
+                <button key={i} onClick={() => dispatch(action)}>
+                    {title}
+                </button>
+            ))}
+        </div>
+    );
+}
 
 function TransformPanel({
     state,
