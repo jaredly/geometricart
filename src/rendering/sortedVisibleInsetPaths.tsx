@@ -707,10 +707,10 @@ export function sortByOrdering(
             return 0;
         }
         if (oa == null) {
-            return 1;
+            return ob == null ? 0 : ob >= 0 ? 1 : -1;
         }
         if (ob == null) {
-            return -1;
+            return oa >= 0 ? -1 : 1;
         }
         return ob - oa;
     };

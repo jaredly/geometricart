@@ -132,8 +132,11 @@ export const MultiStyleForm = ({
                     <div key={`inset-${i}`}>
                         <details style={{ display: 'inline' }}>
                             <summary style={{ cursor: 'pointer' }}>
-                                {fill.color.map((color) =>
-                                    colorSquare(paletteColor(palette, color)),
+                                {fill.color.map((color, i) =>
+                                    colorSquare(
+                                        paletteColor(palette, color),
+                                        i,
+                                    ),
                                 )}
                                 inset
                                 <span
@@ -316,8 +319,11 @@ export const MultiStyleForm = ({
                     >
                         <details>
                             <summary style={{ cursor: 'pointer' }}>
-                                {line.color.map((color) =>
-                                    colorSquare(paletteColor(palette, color)),
+                                {line.color.map((color, i) =>
+                                    colorSquare(
+                                        paletteColor(palette, color),
+                                        i,
+                                    ),
                                 )}
                                 inset
                                 <span
