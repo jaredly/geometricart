@@ -561,7 +561,7 @@ function TransformPanel({
 }) {
     const [inset, setInset] = React.useState(18);
     const [clip, setClip] = React.useState(null as null | string);
-    console.log('tx', clip);
+    // console.log('tx', clip);
     const pathIds = selectedPathIds(state);
     if (!pathIds.length) {
         return <div>Select a thing</div>;

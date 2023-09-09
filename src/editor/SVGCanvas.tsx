@@ -1,6 +1,6 @@
 import { jsx } from '@emotion/react';
 import Prando from 'prando';
-import React from 'react';
+import React, { useRef } from 'react';
 import { RoughGenerator } from 'roughjs/bin/generator';
 import { Action } from '../state/Action';
 import { useCurrent } from '../App';
@@ -20,14 +20,17 @@ import { Overlay } from '../editor/Overlay';
 import { paletteColor, RenderPath } from './RenderPath';
 import { showHover } from './showHover';
 import { Hover } from './Sidebar';
-import { sortedVisibleInsetPaths } from '../rendering/sortedVisibleInsetPaths';
+import {
+    InsetCache,
+    sortedVisibleInsetPaths,
+} from '../rendering/sortedVisibleInsetPaths';
 import { Coord, State, Intersect, View, Segment } from '../types';
 import { useDragSelect, useMouseDrag } from './useMouseDrag';
 import { useScrollWheel } from './useScrollWheel';
 import { EditorState, MenuItem } from './Canvas';
 import { coordsEqual } from '../rendering/pathsAreIdentical';
 import { RenderIntersections } from './RenderIntersections';
-import { getClips } from '../rendering/pkInsetPaths';
+import { PKInsetCache, getClips } from '../rendering/pkInsetPaths';
 
 export function SVGCanvas({
     state,
@@ -162,6 +165,8 @@ export function SVGCanvas({
     const rand = React.useRef(new Prando('ok'));
     rand.current.reset();
 
+    const insetCache = useRef({} as PKInsetCache);
+
     let pathsToShow = React.useMemo(() => {
         const now = performance.now();
         const res = sortedVisibleInsetPaths(
@@ -173,6 +178,7 @@ export function SVGCanvas({
             state.view.laserCutMode ? state.palette : undefined,
             undefined,
             selectedIds,
+            insetCache.current,
         );
         // console.log(`Path calc`, performance.now() - now);
         return res;
