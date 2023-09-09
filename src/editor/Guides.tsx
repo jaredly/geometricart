@@ -252,7 +252,7 @@ export const Guides = ({
 
     const onCompletePath = React.useCallback(
         (parts: Array<PendingSegment>) => {
-            if (!pendingPath[0]) {
+            if (pendingPath[0]?.type !== 'path') {
                 return;
             }
             if (pendingPath[0].isClip) {
@@ -432,13 +432,14 @@ export const Guides = ({
                     disableGuides ||
                     pendingPath[0] ||
                     state.pending != null ||
-                    editorState.pending === false ||
+                    editorState.pending ||
                     uiState.pendingDuplication
                         ? undefined
                         : clickActive
                 }
             />
-            {(editorState.pending === false ||
+            {(editorState.pending?.type === 'waiting' ||
+                editorState.pending?.type === 'tiling' ||
                 state.pending != null ||
                 uiState.pendingMirror ||
                 uiState.pendingDuplication) &&
@@ -479,7 +480,7 @@ export const Guides = ({
                     ))}
                 </React.Fragment>
             ))}
-            {pendingPath[0] ? (
+            {pendingPath[0]?.type === 'path' ? (
                 <DrawPath
                     palette={state.palette}
                     mirror={
@@ -623,7 +624,9 @@ function keyHandler(
         if (evt.key === 'C' && currentPathOrigin.current) {
             evt.stopPropagation();
             return currentPathOrigin.current[1]((path) =>
-                path ? { ...path, isClip: !path.isClip } : null,
+                path?.type === 'path'
+                    ? { ...path, isClip: !path.isClip }
+                    : null,
             );
         }
         if (evt.key === 'ArrowUp' || evt.key === 'k') {

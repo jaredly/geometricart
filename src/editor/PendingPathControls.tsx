@@ -37,7 +37,7 @@ export const PendingPathControls = ({
     ) => void;
 }) => {
     const state = editorState.pending;
-    if (!state) {
+    if (state?.type !== 'path') {
         return null;
     }
     const setState = (
@@ -131,7 +131,10 @@ export const PendingPathControls = ({
                         <button
                             css={{ fontSize: 40, flex: 1 }}
                             onClick={() => {
-                                if (state && isComplete(state)) {
+                                if (
+                                    state?.type === 'path' &&
+                                    isComplete(state)
+                                ) {
                                     return onComplete(
                                         state.isClip,
                                         state.origin.coord,

@@ -24,13 +24,14 @@ export const initialHistory: History = {
 };
 
 export const initialState: State = {
-    version: 11,
+    version: 12,
     meta: {
         title: '',
         description: '',
         created: 0,
         ppi: 170,
     },
+    tilings: {},
     gcode: {
         clearHeight: 3,
         items: [],

@@ -297,7 +297,14 @@ export type EditorState = {
     dragSelectPos: null | Coord;
     selectMode: SelectMode;
     multiSelect: boolean;
-    pending: null | false | DrawPathState;
+    pending:
+        | null
+        | { type: 'waiting' }
+        | DrawPathState
+        | {
+              type: 'tiling';
+              points: Coord[];
+          };
 };
 
 const initialEditorState: EditorState = {
@@ -390,7 +397,7 @@ export const Canvas = ({
         }
         setEditorState((es) => ({
             ...es,
-            pending: es.pending === null ? false : null,
+            pending: es.pending === null ? { type: 'waiting' } : null,
         }));
         if (state.selection) {
             dispatch({ type: 'selection:set', selection: null });
@@ -888,9 +895,13 @@ export const ClipMenu = ({
             }}
         >
             <IconButton
-                selected={pendingPath ? pendingPath.isClip : false}
+                selected={
+                    pendingPath?.type === 'path' ? pendingPath.isClip : false
+                }
                 onClick={() =>
-                    setPendingPath((p) => (p ? { ...p, isClip: !p.isClip } : p))
+                    setPendingPath((p) =>
+                        p?.type === 'path' ? { ...p, isClip: !p.isClip } : p,
+                    )
                 }
             >
                 <ScissorsCuttingIcon />
