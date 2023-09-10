@@ -41,6 +41,7 @@ import {
 } from '../rendering/getMirrorTransforms';
 import { scalePos } from './PendingPreview';
 import { transformSegment } from '../rendering/points';
+import { EditorState } from './Canvas';
 
 export type Bounds = {
     x1: number;

@@ -370,7 +370,9 @@ export function SVGCanvas({
                         );
                     })}
 
-                {view.guides || hover?.type === 'guides' ? (
+                {view.guides ||
+                hover?.type === 'guides' ||
+                editorState.pending ? (
                     <Guides
                         uiState={uiState}
                         state={state}

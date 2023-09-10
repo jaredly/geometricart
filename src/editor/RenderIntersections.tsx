@@ -1,5 +1,5 @@
 import React from 'react';
-import { Intersect } from '../types';
+import { Coord, Intersect } from '../types';
 import { css } from '@emotion/css';
 
 const intersectionStyle = css({
@@ -44,11 +44,13 @@ export const RenderIntersections = React.memo(
         intersections,
         onClick,
         highlight,
+        colored,
     }: {
         zoom: number;
         highlight: boolean;
         intersections: Array<Intersect>;
         onClick: (item: Intersect, shiftKey: boolean) => unknown;
+        colored?: Coord[];
     }) => {
         const handlers = useTouchClick<Intersect>((intersection) =>
             onClick(intersection, false),
@@ -97,7 +99,13 @@ export const RenderIntersections = React.memo(
                         }}
                         {...handlers(intersection)}
                         r={5}
-                        fill={highlight ? '#faa' : 'rgba(255,255,255,0.1)'}
+                        fill={
+                            colored?.includes(intersection.coord)
+                                ? 'green'
+                                : highlight
+                                ? '#faa'
+                                : 'rgba(255,255,255,0.1)'
+                        }
                         stroke={'black'}
                         className={intersectionStyle}
                     />

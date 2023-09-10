@@ -522,7 +522,18 @@ export type UndoPaletteUpdate = {
     prev: string[];
 };
 
+export type TilingAdd = {
+    type: 'tiling:add';
+    points: Coord[];
+};
+export type UndoTilingAdd = {
+    type: TilingAdd['type'];
+    action: TilingAdd;
+    added: [Id, number];
+};
+
 export type UndoableAction =
+    | TilingAdd
     | PaletteUpdate
     | GuideAdd
     | GuideUpdate
@@ -568,6 +579,7 @@ export type UndoableAction =
     | GuideToggle;
 
 export type UndoAction =
+    | UndoTilingAdd
     | UndoPaletteUpdate
     | UndoGuideAdd
     | UndoAnimationConfig

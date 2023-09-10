@@ -3,6 +3,7 @@ import { GuideGeom, Id, State } from './types';
 import { Action, GroupRegroup } from './state/Action';
 import { PendingDuplication } from './editor/Guides';
 import { PendingMirror } from './useUIState';
+import { EditorState } from './editor/Canvas';
 
 export const toType: { [key: string]: GuideGeom['type'] } = {
     l: 'Line',

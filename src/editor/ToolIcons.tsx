@@ -337,6 +337,43 @@ export function ToolIcons({
                     children={typeof icon === 'string' ? undefined : icon}
                 />
             ))}
+            <Button
+                tooltip="Outline a Tiling"
+                className={
+                    'mt-2 ' +
+                    (editorState.pending?.type === 'tiling'
+                        ? 'p-button-outlined'
+                        : '')
+                }
+                onClick={() => {
+                    if (editorState.pending?.type === 'tiling') {
+                        setEditorState((es) => ({ ...es, pending: null }));
+                    } else {
+                        setEditorState((es) => ({
+                            ...es,
+                            pending: { type: 'tiling', points: [] },
+                        }));
+                    }
+                }}
+                children={
+                    <ToolIcon
+                        lines={[
+                            [
+                                { x: 10, y: 2 },
+                                { x: 0, y: 10 },
+                            ],
+                            [
+                                { x: 0, y: 10 },
+                                { x: 10, y: 10 },
+                            ],
+                            [
+                                { x: 10, y: 10 },
+                                { x: 10, y: 2 },
+                            ],
+                        ]}
+                    />
+                }
+            />
         </div>
     );
 }

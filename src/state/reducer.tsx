@@ -271,6 +271,28 @@ export const reduceWithoutUndo = (
                 },
             ];
 
+        case 'tiling:add': {
+            let nextId = state.nextId + 1;
+            const id = `id-${state.nextId}`;
+            return [
+                {
+                    ...state,
+                    nextId,
+                    tilings: {
+                        ...state.tilings,
+                        [id]: {
+                            sides: action.points.map((from) => ({
+                                from,
+                                kind: 'reflect',
+                            })),
+                            id,
+                        },
+                    },
+                },
+                { type: action.type, action, added: [id, state.nextId] },
+            ];
+        }
+
         case 'mirror:add': {
             let nextId = state.nextId + 1;
             const id = `id-${state.nextId}`;
@@ -1210,6 +1232,11 @@ export const undo = (state: State, action: UndoAction): State => {
                 ...state,
                 mirrors: { ...state.mirrors, [action.action.id]: action.prev },
             };
+        case 'tiling:add': {
+            const tilings = { ...state.tilings };
+            delete tilings[action.added[0]];
+            return { ...state, tilings, nextId: action.added[1] };
+        }
         case 'mirror:add': {
             const mirrors = { ...state.mirrors };
             delete mirrors[action.added[0]];

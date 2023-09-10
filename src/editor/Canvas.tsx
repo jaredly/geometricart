@@ -345,6 +345,26 @@ export const Canvas = ({
 
     const menu = React.useRef<Menu>(null);
     const currentState = useCurrent(state);
+    const ces = useCurrent(editorState);
+
+    React.useEffect(() => {
+        const fn = (evt: KeyboardEvent) => {
+            if (evt.key === 't') {
+                setEditorState((es) => ({
+                    ...es,
+                    pending: { type: 'tiling', points: [] },
+                }));
+                evt.preventDefault();
+                evt.stopImmediatePropagation();
+                return;
+            }
+            if (evt.key === 'Enter' && ces.current.pending?.type === 'tiling') {
+                setEditorState((es) => ({ ...es, pending: null }));
+            }
+        };
+        document.addEventListener('keydown', fn);
+        return () => document.removeEventListener('keydown', fn);
+    }, []);
 
     const startPath = () => {
         const state = currentState.current;
@@ -395,6 +415,7 @@ export const Canvas = ({
             });
             return;
         }
+        console.log('startpath');
         setEditorState((es) => ({
             ...es,
             pending: es.pending === null ? { type: 'waiting' } : null,

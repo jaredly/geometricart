@@ -1,7 +1,7 @@
 /* @jsx jsx */
 /* @jsxFrag React.Fragment */
 import { jsx } from '@emotion/react';
-import React from 'react';
+import React, { useRef } from 'react';
 import { useCurrent } from '../App';
 import { PendingMirror, UIState } from '../useUIState';
 import { Action, PathMultiply } from '../state/Action';
@@ -282,6 +282,7 @@ export const Guides = ({
     const primsAndStuff = useCurrent({ guidePrimitives, allIntersections });
 
     const currentDuplication = useCurrent(pendingDuplication);
+    const currentEditorState = useCurrent(editorState);
 
     const onClickIntersection = React.useCallback(
         (coord: Intersect, shiftKey: boolean) => {
@@ -325,6 +326,20 @@ export const Guides = ({
                     });
                 }
             }
+            const editorState = currentEditorState.current;
+            if (editorState.pending?.type === 'tiling') {
+                return setEditorState((es) =>
+                    es.pending?.type === 'tiling'
+                        ? {
+                              ...es,
+                              pending: {
+                                  ...es.pending,
+                                  points: es.pending.points.concat(coord.coord),
+                              },
+                          }
+                        : es,
+                );
+            }
             const state = currentState.current;
             if (!state.pending) {
                 const { guidePrimitives, allIntersections } =
@@ -346,7 +361,12 @@ export const Guides = ({
     );
 
     // When intersections change, cancel pending stuffs
+    const first = useRef(true);
     React.useEffect(() => {
+        if (first.current) {
+            first.current = false;
+            return;
+        }
         pendingPath[1](null);
     }, [allIntersections]);
 
@@ -449,6 +469,11 @@ export const Guides = ({
                     highlight={state.pending != null}
                     intersections={allIntersections}
                     onClick={onClickIntersection}
+                    colored={
+                        editorState.pending?.type === 'tiling'
+                            ? editorState.pending.points
+                            : undefined
+                    }
                 />
             ) : null}
             {state.pending && state.pending.type === 'Guide' ? (
