@@ -281,10 +281,7 @@ export const reduceWithoutUndo = (
                     tilings: {
                         ...state.tilings,
                         [id]: {
-                            sides: action.points.map((from) => ({
-                                from,
-                                kind: 'reflect',
-                            })),
+                            shape: action.shape,
                             id,
                         },
                     },

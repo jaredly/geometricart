@@ -12,6 +12,7 @@ import {
 } from '../rendering/calculateGuideElements';
 import { DrawPathState } from './DrawPath';
 import {
+    angleTo,
     getMirrorTransforms,
     getTransformsForNewMirror,
 } from '../rendering/getMirrorTransforms';
@@ -53,6 +54,7 @@ import {
     LerpPoint,
     View,
     Mirror,
+    Tiling,
 } from '../types';
 import { functionWithBuiltins } from '../animation/getAnimatedPaths';
 import { Menu } from 'primereact/menu';
@@ -61,6 +63,8 @@ import { useCurrent } from '../App';
 import { ToolIcons } from './ToolIcons';
 import { findAdjacentPaths, produceJointPaths } from '../animation/getBuiltins';
 import { coordsEqual } from '../rendering/pathsAreIdentical';
+import { angleBetween } from '../rendering/findNextSegments';
+import { closeEnough, negPiToPi } from '../rendering/clipPath';
 
 export type Props = {
     state: State;
@@ -359,6 +363,11 @@ export const Canvas = ({
                 return;
             }
             if (evt.key === 'Enter' && ces.current.pending?.type === 'tiling') {
+                const shape = determineTilingShape(ces.current.pending.points);
+                if (!shape) {
+                    return;
+                }
+                dispatch({ type: 'tiling:add', shape });
                 setEditorState((es) => ({ ...es, pending: null }));
             }
         };
@@ -966,3 +975,80 @@ export const ToolIcon = ({
         </svg>
     );
 };
+function determineTilingShape(points: Coord[]): Tiling['shape'] | void {
+    if (points.length === 3) {
+        const [a, b, c] = points;
+        const ab = angleTo(a, b);
+        const ac = angleTo(a, c);
+        const bc = angleTo(b, c);
+        let abc = angleBetween(negPiToPi(ab + Math.PI), bc, true);
+        let bca = angleBetween(
+            negPiToPi(bc + Math.PI),
+            negPiToPi(ac + Math.PI),
+            true,
+        );
+        let cab = angleBetween(ac, ab, true);
+
+        // If one is > π, they all will be.
+        // I've made my measurements assuming they are arranged in anti-clockwise order.
+        let rev = abc > Math.PI;
+        if (rev) {
+            abc -= Math.PI;
+            bca -= Math.PI;
+            cab -= Math.PI;
+        }
+        if (closeEnough(abc, Math.PI / 2)) {
+            // B is our right angle!
+            return {
+                type: 'right-triangle',
+                start: a,
+                corner: b,
+                end: c,
+                rotateHypotenuse: false,
+            };
+        }
+        if (closeEnough(bca, Math.PI / 2)) {
+            return {
+                type: 'right-triangle',
+                start: a,
+                corner: c,
+                end: b,
+                rotateHypotenuse: false,
+            };
+        }
+        if (closeEnough(cab, Math.PI / 2)) {
+            return {
+                type: 'right-triangle',
+                start: c,
+                corner: a,
+                end: b,
+                rotateHypotenuse: false,
+            };
+        }
+        if (closeEnough(abc, bca)) {
+            return {
+                type: 'isocelese',
+                first: a,
+                second: b,
+                third: c,
+            };
+        }
+        if (closeEnough(abc, cab)) {
+            return {
+                type: 'isocelese',
+                first: c,
+                second: b,
+                third: a,
+            };
+        }
+        if (closeEnough(bca, cab)) {
+            return {
+                type: 'isocelese',
+                first: b,
+                second: c,
+                third: a,
+            };
+        }
+    }
+    return;
+}

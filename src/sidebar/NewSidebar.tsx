@@ -13,6 +13,7 @@ import type * as CSS from 'csstype';
 import { selectedPathIds } from '../editor/touchscreenControls';
 import { MultiStyleForm, StyleHover } from '../editor/MultiStyleForm';
 import { Export } from '../editor/Export';
+import { Tilings } from '../editor/Tilings';
 import { Screen, UIDispatch, UIState } from '../useUIState';
 import {
     DrillIcon,
@@ -398,6 +399,13 @@ export const NewSidebar = ({
                                 dispatch={dispatch}
                                 originalSize={1000}
                             />
+                        ),
+                    },
+                    {
+                        key: 'tilings',
+                        header: 'Tilings',
+                        content: () => (
+                            <Tilings state={state} dispatch={dispatch} />
                         ),
                     },
                     {

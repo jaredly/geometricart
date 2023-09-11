@@ -537,7 +537,27 @@ export type State = {
 export type Tiling = {
     id: Id;
     // points: Coord[],
-    sides: { from: Coord; kind: 'reflect' | 'rotate' | null }[];
+    shape:
+        | {
+              type: 'right-triangle';
+              rotateHypotenuse: boolean;
+              // 45/45/90 makes sense
+              // 30/60/90 is the hexy
+              // otherwise it'll have to do
+              // the rotate dealio
+              start: Coord;
+              corner: Coord;
+              end: Coord;
+          }
+        | {
+              type: 'isocelese';
+              // Clockwise, where First is the "center" of the figure
+              first: Coord;
+              second: Coord;
+              third: Coord;
+          };
+    // | { type: 'parallellogram' };
+    // sides: { from: Coord; kind: 'reflect' | 'rotate' | null }[];
 };
 
 /*

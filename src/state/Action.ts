@@ -21,6 +21,7 @@ import {
     StyleLine,
     Fill,
     Clip,
+    Tiling,
 } from '../types';
 
 /*
@@ -524,7 +525,7 @@ export type UndoPaletteUpdate = {
 
 export type TilingAdd = {
     type: 'tiling:add';
-    points: Coord[];
+    shape: Tiling['shape'];
 };
 export type UndoTilingAdd = {
     type: TilingAdd['type'];
