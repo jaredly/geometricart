@@ -889,6 +889,22 @@ export const reduceWithoutUndo = (
             const mx: Matrix[] = transformMatrix(action);
             return [transformState(state, mx), { type: action.type, action }];
         }
+        case 'tiling:update': {
+            return [
+                {
+                    ...state,
+                    tilings: {
+                        ...state.tilings,
+                        [action.tiling.id]: action.tiling,
+                    },
+                },
+                {
+                    type: action.type,
+                    action,
+                    prev: state.tilings[action.tiling.id],
+                },
+            ];
+        }
         default:
             let _x: never = action;
             console.log(`SKIPPING ${(action as any).type}`);
@@ -898,6 +914,11 @@ export const reduceWithoutUndo = (
 
 export const undo = (state: State, action: UndoAction): State => {
     switch (action.type) {
+        case 'tiling:update':
+            return {
+                ...state,
+                tilings: { ...state.tilings, [action.prev.id]: action.prev },
+            };
         case 'global:transform': {
             const mx: Matrix[] = transformMatrix(action.action, true);
             return transformState(state, mx);

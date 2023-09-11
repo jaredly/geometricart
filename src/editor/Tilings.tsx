@@ -22,6 +22,7 @@ import {
 import { numKey } from '../rendering/coordKey';
 import {
     Matrix,
+    angleTo,
     applyMatrices,
     dist,
     rotationMatrix,
@@ -30,6 +31,7 @@ import {
 } from '../rendering/getMirrorTransforms';
 import { scalePos } from './PendingPreview';
 import { transformSegment } from '../rendering/points';
+import { boundsForCoords } from './Bounds';
 
 export const Tilings = ({
     state,
@@ -39,20 +41,73 @@ export const Tilings = ({
     dispatch: React.Dispatch<Action>;
 }) => {
     const [flip, setFlip] = useState(false);
+    const [img, setImg] = useState('');
+    const [large, setLarge] = useState(false);
     return (
         <div>
             {Object.values(state.tilings).map((tiling) => (
                 <div key={tiling.id}>
                     <div>Tiling {tiling.id}</div>
+                    <ShowTiling tiling={tiling} />
+                    {tiling.shape.type === 'right-triangle' ? (
+                        <label>
+                            <input
+                                type="checkbox"
+                                checked={tiling.shape.rotateHypotenuse}
+                                onChange={() => {
+                                    const sh = tiling.shape as Extract<
+                                        Tiling['shape'],
+                                        { type: 'right-triangle' }
+                                    >;
+
+                                    dispatch({
+                                        type: 'tiling:update',
+                                        tiling: {
+                                            ...tiling,
+                                            shape: {
+                                                ...sh,
+                                                rotateHypotenuse:
+                                                    !sh.rotateHypotenuse,
+                                            },
+                                        },
+                                    });
+                                }}
+                            />
+                            Rotate around hypotenuse
+                        </label>
+                    ) : null}
                     <button
-                        onClick={() => {
-                            simpleExport(state, tiling.shape);
+                        onClick={async () => {
+                            const svg = await simpleExport(state, tiling.shape);
+                            if (!svg) {
+                                return;
+                            }
+                            consoleSvg(svg);
+                            setImg(`data:image/svg+xml,${svg}`);
                         }}
                     >
                         Show me the money
                     </button>
                 </div>
             ))}
+            {img ? (
+                <img
+                    src={img}
+                    onClick={() => setLarge(!large)}
+                    style={
+                        large
+                            ? {
+                                  width: 1000,
+                                  height: 1000,
+                                  zIndex: 1000,
+                                  position: 'fixed',
+                                  top: 0,
+                                  left: 0,
+                              }
+                            : {}
+                    }
+                />
+            ) : null}
             {/* <label>
                 <input
                     type="checkbox"
@@ -92,12 +147,28 @@ export const Tilings = ({
     );
 };
 
+const ShowTiling = ({ tiling }: { tiling: Tiling }) => {
+    const pts = tilingPoints(tiling.shape);
+    const { x0, y0, x1, y1 } = boundsForCoords(...pts);
+
+    return (
+        <svg
+            viewBox={`${x0} ${y0} ${x1 - x0} ${y1 - y0}`}
+            style={{ background: 'black', width: 50, height: 50 }}
+        >
+            <path
+                fill="red"
+                d={pts
+                    .map(({ x, y }, i) => `${i === 0 ? 'M' : 'L'}${x} ${y}`)
+                    .join(' ')}
+            />
+        </svg>
+    );
+};
+
 export const simpleExport = async (state: State, shape: Tiling['shape']) => {
-    const flip = false;
-    const pts =
-        shape.type === 'right-triangle'
-            ? [shape.start, shape.corner, shape.end]
-            : [shape.first, shape.second, shape.third];
+    const flip = shape.type === 'right-triangle' && shape.rotateHypotenuse;
+    const pts = tilingPoints(shape);
     const res = getShapesIntersectingTriangle(state, pts);
     if (!res) {
         return;
@@ -158,20 +229,24 @@ export const simpleExport = async (state: State, shape: Tiling['shape']) => {
 
     const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" width="50" style="background:black" height="50" viewBox="-2.5 -2.5 5 5">
+    <circle cx="0" cy="0" r="0.01" fill="red" />
     ${full
         .map(([p1, p2]) => {
-            return `<line x1="${p1.x}" x2="${p2.x}" y1="${p1.y}" y2="${p2.y}" stroke="yellow" stroke-width="0.02"/>`;
+            return `<line
+            stroke-linecap='round' stroke-linejoin='round'
+             x1="${p1.x}" x2="${p2.x}" y1="${p1.y}" y2="${p2.y}" stroke="yellow" stroke-width="0.02"/>`;
         })
         .join('\n')}
     </svg>
     `;
-    consoleSvg(svg);
+    // consoleSvg(svg);
+    return svg;
 };
 const consoleSvg = (svg: string) => {
     const bgi = `data:image/svg+xml;base64,${btoa(svg)}`;
-    const img = new Image();
-    img.src = bgi;
-    document.body.append(img);
+    // const img = new Image();
+    // img.src = bgi;
+    // document.body.append(img);
     console.log(
         '%c ',
         `background-image: url("${bgi}");background-size:cover;padding:80px 85px`,
@@ -182,6 +257,22 @@ const transformLines = (lines: [Coord, Coord][], mx: Matrix[]) =>
         applyMatrices(p1, mx),
         applyMatrices(p2, mx),
     ]);
+
+function tilingPoints(
+    shape:
+        | {
+              type: 'right-triangle';
+              rotateHypotenuse: boolean;
+              start: Coord;
+              corner: Coord;
+              end: Coord;
+          }
+        | { type: 'isocelese'; first: Coord; second: Coord; third: Coord },
+) {
+    return shape.type === 'right-triangle'
+        ? [shape.start, shape.corner, shape.end]
+        : [shape.first, shape.second, shape.third];
+}
 
 async function hashData(kk: string) {
     const encoder = new TextEncoder();
@@ -215,17 +306,29 @@ function replicateStandard(full: [Coord, Coord][], ty: number) {
 export const getShapesIntersectingTriangle = (state: State, pts: Coord[]) => {
     // const tri = state.paths[trid];
     // const pts = tri.segments.map((s) => s.to);
-    const mx = Math.min(...pts.map((p) => p.x));
-    const bl = pts.find((p) => p.x === mx)!;
-    const br = pts.find((p) => p !== bl && closeEnough(p.y, bl.y));
-    const tr = pts.find((p) => p !== bl && !closeEnough(p.y, bl.y));
-    if (!br || !tr) {
-        console.error('no bottom right');
-        return;
+    // const mx = Math.min(...pts.map((p) => p.x));
+    // const bl = pts.find((p) => p.x === mx)!;
+    // const br = pts.find((p) => p !== bl && closeEnough(p.y, bl.y));
+    // const tr = pts.find((p) => p !== bl && !closeEnough(p.y, bl.y));
+    // if (!br || !tr) {
+    //     console.error('no bottom right');
+    //     return;
+    // }
+    const [center, corner, top] = pts;
+
+    const scale = 1 / dist(center, corner);
+    const translate = scalePos(center, -1);
+    const rotate = -angleTo(center, corner);
+    const tx = [
+        translationMatrix(translate),
+        rotationMatrix(rotate),
+        scaleMatrix(scale, scale),
+    ];
+    const top_ = applyMatrices(top, tx);
+    if (top_.y > 0) {
+        tx.push(scaleMatrix(1, -1));
+        top_.y *= -1;
     }
-    const scale = 1 / dist(bl, br);
-    const translate = scalePos(bl, -1);
-    const tx = [translationMatrix(translate), scaleMatrix(scale, scale)];
 
     const segments: Segment[] = pts.map((to) => ({ type: 'Line', to }));
     const origin = pts[pts.length - 1];
@@ -282,5 +385,5 @@ export const getShapesIntersectingTriangle = (state: State, pts: Coord[]) => {
             )}:${numKey(max)}`;
             klines[key] = sl;
         });
-    return { shapes, klines, tr: applyMatrices(tr, tx) };
+    return { shapes, klines, tr: applyMatrices(pts[2], tx) };
 };

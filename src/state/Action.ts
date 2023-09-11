@@ -533,8 +533,19 @@ export type UndoTilingAdd = {
     added: [Id, number];
 };
 
+export type TilingUpdate = {
+    type: 'tiling:update';
+    tiling: Tiling;
+};
+export type UndoTilingUpdate = {
+    type: TilingUpdate['type'];
+    action: TilingUpdate;
+    prev: Tiling;
+};
+
 export type UndoableAction =
     | TilingAdd
+    | TilingUpdate
     | PaletteUpdate
     | GuideAdd
     | GuideUpdate
@@ -581,6 +592,7 @@ export type UndoableAction =
 
 export type UndoAction =
     | UndoTilingAdd
+    | UndoTilingUpdate
     | UndoPaletteUpdate
     | UndoGuideAdd
     | UndoAnimationConfig
