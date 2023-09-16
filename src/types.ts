@@ -1,6 +1,7 @@
 import { UndoableAction, UndoAction } from './state/Action';
 import { Primitive } from './rendering/intersect';
 import { Matrix } from './rendering/getMirrorTransforms';
+import { SegmentWithPrev } from './rendering/clipPathNew';
 
 // Should I do polar coords?
 export type Coord = { x: number; y: number };
@@ -534,6 +535,10 @@ export type State = {
     };
 };
 
+export type BarePath = { origin: Coord; segments: Segment[]; open?: boolean };
+
+export type SegPrev = { segment: Segment; prev: Coord };
+
 export type Tiling = {
     id: Id;
     // points: Coord[],
@@ -558,6 +563,11 @@ export type Tiling = {
           };
     // | { type: 'parallellogram' };
     // sides: { from: Coord; kind: 'reflect' | 'rotate' | null }[];
+    cache: {
+        segments: SegPrev[];
+        shapes: BarePath[];
+        hash: string;
+    };
 };
 
 /*

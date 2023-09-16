@@ -282,6 +282,7 @@ export const reduceWithoutUndo = (
                         ...state.tilings,
                         [id]: {
                             shape: action.shape,
+                            cache: action.cache,
                             id,
                         },
                     },

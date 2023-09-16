@@ -65,6 +65,7 @@ import { findAdjacentPaths, produceJointPaths } from '../animation/getBuiltins';
 import { coordsEqual } from '../rendering/pathsAreIdentical';
 import { angleBetween } from '../rendering/findNextSegments';
 import { closeEnough, negPiToPi } from '../rendering/clipPath';
+import { simpleExport } from './Tilings';
 
 export type Props = {
     state: State;
@@ -367,7 +368,11 @@ export const Canvas = ({
                 if (!shape) {
                     return;
                 }
-                dispatch({ type: 'tiling:add', shape });
+                simpleExport(currentState.current, shape).then((cache) =>
+                    cache
+                        ? dispatch({ type: 'tiling:add', shape, cache })
+                        : null,
+                );
                 setEditorState((es) => ({ ...es, pending: null }));
             }
         };

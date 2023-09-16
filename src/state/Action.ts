@@ -526,6 +526,7 @@ export type UndoPaletteUpdate = {
 export type TilingAdd = {
     type: 'tiling:add';
     shape: Tiling['shape'];
+    cache: Tiling['cache'];
 };
 export type UndoTilingAdd = {
     type: TilingAdd['type'];

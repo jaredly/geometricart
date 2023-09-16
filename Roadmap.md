@@ -1,7 +1,42 @@
 
-- [ ] allow the triangle to not be oriented correctrly
+- [ ] hovering over a tiling in the sidebar
+  should show the outline in the main area,
+  and maybe and overlay of what it looks like tiled?
+  Would be a good debugging dealio
 
-- [ ] OK so we actually want this on State. Call it "ur-shapes" or something
+<!--
+- [ ] have a button "Calculate eigenshapes"
+  That would compute the hashes as well, and ... then have a button
+  that is like "commit hashes to metadata" or something like that? -->
+
+- [ ] Actually we're going to cache the eigenshape results in a tiling, already.
+  This makes more sense.
+- [ ] Gotta add it to state tho.
+  And display it.
+  And update metadata.
+
+----
+
+
+- [ ] I thinkkkk I want a button that's like "Generate tiling hashes" or sth
+  and it would also save them on the meta?
+  anyway it's a list of the hashes.
+  and if you have multiple hashes they're all included.
+  alsoooo do I generate the hashes from both sides at this point? idk
+  OK but I do want a "download this tiling" whichhh would make you a png I guess
+  and embed the ... infos. the shapes that are touched, and the normalized lines,
+  and the hash. And it would be named by the hash
+  Then I could upload that hash-having tiling file to my pattern db, and it would be great
+
+- [ ] AND THEN I do a thing where I embed my geometric-art-dealio into my pattern-db
+  so I can patternize all the things
+  it will be glorious
+
+
+----------
+
+- [x] allow the triangle to not be oriented correctrly
+- [x] OK so we actually want this on State. Call it "ur-shapes" or something
   (might be triangles or quadrilaterals, or I guess hexagons? yeah could be)
   oh and actually.. we could have "octagon + square" and "hex + two squares + tri"
 
