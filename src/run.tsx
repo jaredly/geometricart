@@ -100,7 +100,7 @@ export const saveState = async (state: State, id: string, dest: SaveDest) => {
         updateMeta(id, {
             updatedAt: Date.now(),
             size: JSON.stringify(state).length,
-            tilings: Object.values(state.tilings).map((t) => t.cache),
+            tilings: Object.values(state.tilings),
         });
         localforage.setItem(thumbPrefix + key(id), blob);
     } else {
@@ -124,7 +124,7 @@ export type MetaData = {
     openedAt: number;
     id: string;
     size: number;
-    tilings: Tiling['cache'][];
+    tilings: Tiling[];
     checkpoints?: Array<Checkpoint>;
 };
 

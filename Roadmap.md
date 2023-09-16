@@ -9,11 +9,35 @@
   That would compute the hashes as well, and ... then have a button
   that is like "commit hashes to metadata" or something like that? -->
 
-- [ ] Actually we're going to cache the eigenshape results in a tiling, already.
+- [x] Actually we're going to cache the eigenshape results in a tiling, already.
   This makes more sense.
-- [ ] Gotta add it to state tho.
-  And display it.
-  And update metadata.
+- [x] Gotta add it to state tho.
+  - [x] And display it.
+  - [x] And update metadata.
+
+Ok, so in many cases our deduping is working. lovely.
+in some cases, it is not. grrr.
+
+
+
+hrmmmmm
+so how do I package this up
+as like
+an npm package
+or something
+
+
+
+I want to be able to provide: like an initial state or something
+and have it make changes
+and I can be persisting state and stuff.
+
+Yeah maybe it's just the persistence that needs to be extracted.
+
+
+
+
+
 
 ----
 

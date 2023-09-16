@@ -12,6 +12,7 @@ import {
     meta,
     thumbPrefix,
 } from './run';
+import { tilingCacheSvg } from './editor/Tilings';
 
 export const DesignLoader = () => {
     const [designs, setDesigns] = React.useState<MetaData[]>([]);
@@ -57,9 +58,16 @@ export const DesignLoader = () => {
                 >
                     <div style={{ flex: 1 }}>
                         <ThumbLoader id={design.id} />
-                        {design.tilings?.map((tiling) => (
-                            <div>{tiling.hash.slice(0, 10)}</div>
-                        )) ?? <div style={{ color: 'red' }}>No tilings</div>}
+                        {(design.tilings?.length &&
+                            design.tilings[0].cache &&
+                            design.tilings?.map((tiling) => (
+                                <div key={tiling.cache.hash}>
+                                    <div>{tiling.cache.hash.slice(0, 10)}</div>
+                                    {tilingCacheSvg(tiling.cache, tiling.shape)}
+                                </div>
+                            ))) ?? (
+                            <div style={{ color: 'red' }}>No tilings</div>
+                        )}
                         <div>{dayjs(design.updatedAt).from(dayjs())}</div>
                         <div className="flex flex-row justify-content-between">
                             {mb(design.size)}

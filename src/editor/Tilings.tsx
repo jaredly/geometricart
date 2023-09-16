@@ -52,8 +52,6 @@ export const Tilings = ({
     return (
         <div>
             {Object.values(state.tilings).map((tiling) => {
-                const pts = tilingPoints(tiling.shape);
-                const tx = getTransform(pts);
                 return (
                     <div key={tiling.id}>
                         <div>Tiling {tiling.id}</div>
@@ -117,20 +115,9 @@ export const Tilings = ({
                             ).toFixed(2)}
                             kb without
                         </div>
-                        {tiling.cache ? (
-                            <img
-                                src={`data:image/svg+xml,${eigenShapesToSvg(
-                                    tiling.cache?.segments.map((s) => [
-                                        s.prev,
-                                        s.segment.to,
-                                    ]),
-                                    tiling.shape.type === 'right-triangle' &&
-                                        tiling.shape.rotateHypotenuse,
-                                    applyMatrices(pts[2], tx),
-                                    pts.map((pt) => applyMatrices(pt, tx)),
-                                )}`}
-                            />
-                        ) : null}
+                        {tiling.cache
+                            ? tilingCacheSvg(tiling.cache, tiling.shape)
+                            : null}
                         {/* <button
                         onClick={async () => {
                             const res = await simpleExport(state, tiling.shape);
@@ -247,6 +234,22 @@ const transformLines = (lines: [Coord, Coord][], mx: Matrix[]) =>
         applyMatrices(p1, mx),
         applyMatrices(p2, mx),
     ]);
+
+export function tilingCacheSvg(cache: Tiling['cache'], shape: Tiling['shape']) {
+    const pts = tilingPoints(shape);
+    const tx = getTransform(pts);
+    return (
+        <img
+            style={{ width: 200 }}
+            src={`data:image/svg+xml,${eigenShapesToSvg(
+                cache.segments.map((s) => [s.prev, s.segment.to]),
+                shape.type === 'right-triangle' && shape.rotateHypotenuse,
+                applyMatrices(pts[2], tx),
+                pts.map((pt) => applyMatrices(pt, tx)),
+            )}`}
+        />
+    );
+}
 
 function eigenShapesToSvg(
     unique: [Coord, Coord][],
