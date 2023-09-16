@@ -257,10 +257,83 @@ const GistLoader = () => {
 const File = ({ gist, dest }: { gist?: boolean; dest: SaveDest }) => {
     const data = useLoaderData();
     const params = useParams();
+
+    const id = params.id!;
+
+    const [lastSaved, setLastSaved] = React.useState({
+        when: Date.now(),
+        dirty: null as null | true | (() => void),
+        id,
+    });
+    usePreventNavAway(lastSaved);
+
     if (!data) {
         return <div>No loaded data?</div>;
     }
-    return <App initialState={data as State} id={params.id!} dest={dest} />;
+    return (
+        <App
+            initialState={data as State}
+            lastSaved={dest.type === 'gist' ? lastSaved : null}
+            saveState={(state) => {
+                if (dest.type === 'gist') {
+                    const force = debounce(() => {
+                        setLastSaved((s) => ({ ...s, dirty: true }));
+                        return saveState(state, id, dest).then(() => {
+                            setLastSaved({ when: Date.now(), dirty: null, id });
+                        });
+                    }, 10000);
+                    setLastSaved((s) => ({ ...s, dirty: force }));
+                } else {
+                    saveState(state, id, dest);
+                }
+            }}
+        />
+    );
+};
+
+function usePreventNavAway(lastSaved: {
+    when: number;
+    dirty: true | (() => void) | null;
+    id: string;
+}) {
+    React.useEffect(() => {
+        if (lastSaved.dirty) {
+            const fn = (evt: BeforeUnloadEvent) => {
+                evt.preventDefault();
+                evt.stopPropagation();
+                return (evt.returnValue = 'Are you sure?');
+            };
+            window.addEventListener('beforeunload', fn, { capture: true });
+            return () =>
+                window.removeEventListener('beforeunload', fn, {
+                    capture: true,
+                });
+        }
+    }, [lastSaved.dirty]);
+}
+
+/**
+ * Debounce a function.
+ */
+let tid: NodeJS.Timeout | null = null;
+export const debounce = (
+    fn: () => Promise<void>,
+    time: number,
+): (() => void) => {
+    if (tid != null) {
+        clearTimeout(tid);
+    }
+    tid = setTimeout(() => {
+        tid = null;
+        fn();
+    }, time);
+    return () => {
+        if (tid != null) {
+            clearTimeout(tid);
+            tid = null;
+            fn();
+        }
+    };
 };
 
 const PkDebug = () => {

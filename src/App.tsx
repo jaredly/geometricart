@@ -1,6 +1,6 @@
 /* @jsx jsx */
 import { jsx } from '@emotion/react';
-import React, { useState } from 'react';
+import React from 'react';
 import { Canvas } from './editor/Canvas';
 import { reducer } from './state/reducer';
 import { State } from './types';
@@ -14,8 +14,6 @@ import { GCodeEditor } from './gcode/GCodeEditor';
 import { HistoryPlayback } from './history/HistoryPlayback';
 import { handleKeyboard } from './handleKeyboard';
 import { NewSidebar } from './sidebar/NewSidebar';
-import { saveState } from './run';
-import { SaveDest } from './MirrorPicker';
 import { Action } from './state/Action';
 import { useUIState } from './useUIState';
 
@@ -29,19 +27,18 @@ export const useCurrent = <T,>(value: T) => {
 
 export const App = ({
     initialState,
-    dest,
-    id,
+    saveState,
+    lastSaved,
 }: {
-    dest: SaveDest;
     initialState: State;
-    id: string;
+    saveState: (state: State) => unknown;
+    lastSaved: {
+        when: number;
+        dirty: null | true | (() => void);
+        id: string;
+    } | null;
 }) => {
     const [trueState, dispatch] = React.useReducer(reducer, initialState);
-    const [lastSaved, setLastSaved] = React.useState({
-        when: Date.now(),
-        dirty: null as null | true | (() => void),
-        id,
-    });
 
     const { uiState, uiSetters, uiDispatch, state } = useUIState(trueState);
 
@@ -53,7 +50,6 @@ export const App = ({
     // @ts-ignore
     window.state = state;
 
-    usePreventNavAway(lastSaved);
     useHandlePaste(dispatch);
 
     const [dragging, callbacks] = useDropStateOrAttachmentTarget(
@@ -78,7 +74,7 @@ export const App = ({
         },
     );
 
-    useSaveState(state, initialState, dest, setLastSaved, id);
+    useSaveState(state, initialState, saveState);
 
     const latestState = useCurrent(state);
     const currentPendingDuplication = useCurrent(pendingDuplication);
@@ -179,47 +175,12 @@ export const App = ({
             <NewSidebar
                 state={trueState}
                 dispatch={dispatch}
-                lastSaved={dest.type === 'gist' ? lastSaved : null}
+                lastSaved={lastSaved}
                 uiDispatch={uiDispatch}
                 uiState={uiState}
             />
         </div>
     );
-};
-
-/**
- * Debounce a function.
- */
-let tid: NodeJS.Timeout | null = null;
-export const debounce = (
-    fn: () => Promise<void>,
-    time: number,
-): (() => void) => {
-    if (tid != null) {
-        clearTimeout(tid);
-    }
-    tid = setTimeout(() => {
-        tid = null;
-        fn();
-    }, time);
-    return () => {
-        if (tid != null) {
-            clearTimeout(tid);
-            tid = null;
-            fn();
-        }
-    };
-    // lol
-    // if (!bounce) {
-    //     setTimeout(() => {
-    //         bounce && bounce();
-    //         bounce = null;
-    //     }, time);
-    // }
-    // bounce = () => {
-    //     bounce = null;
-    //     fn();
-    // };
 };
 
 function useHandlePaste(dispatch: React.Dispatch<Action>) {
@@ -266,55 +227,16 @@ function useHandlePaste(dispatch: React.Dispatch<Action>) {
     });
 }
 
-function usePreventNavAway(lastSaved: {
-    when: number;
-    dirty: true | (() => void) | null;
-    id: string;
-}) {
-    React.useEffect(() => {
-        if (lastSaved.dirty) {
-            const fn = (evt: BeforeUnloadEvent) => {
-                evt.preventDefault();
-                evt.stopPropagation();
-                return (evt.returnValue = 'Are you sure?');
-            };
-            window.addEventListener('beforeunload', fn, { capture: true });
-            return () =>
-                window.removeEventListener('beforeunload', fn, {
-                    capture: true,
-                });
-        }
-    }, [lastSaved.dirty]);
-}
-
 function useSaveState(
     state: State,
     initialState: State,
-    dest: SaveDest,
-    setLastSaved: React.Dispatch<
-        React.SetStateAction<{
-            when: number;
-            dirty: true | (() => void) | null;
-            id: string;
-        }>
-    >,
-    id: string,
+    saveState: (state: State) => unknown,
 ) {
     let firstChange = React.useRef(false);
     React.useEffect(() => {
         if (firstChange.current || state !== initialState) {
             firstChange.current = true;
-            if (dest.type === 'gist') {
-                const force = debounce(() => {
-                    setLastSaved((s) => ({ ...s, dirty: true }));
-                    return saveState(state, id, dest).then(() => {
-                        setLastSaved({ when: Date.now(), dirty: null, id });
-                    });
-                }, 10000);
-                setLastSaved((s) => ({ ...s, dirty: force }));
-            } else {
-                saveState(state, id, dest);
-            }
+            saveState(state);
         }
     }, [state]);
 }
