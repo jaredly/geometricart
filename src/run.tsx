@@ -18,7 +18,7 @@ import {
     useParams,
 } from 'react-router-dom';
 import localforage from 'localforage';
-import { Checkpoint, Meta, Mirror, State } from './types';
+import { Checkpoint, Meta, Mirror, State, Tiling } from './types';
 import { Accordion } from './sidebar/Accordion';
 import { MirrorPicker, SaveDest } from './MirrorPicker';
 import { setupState } from './setupState';
@@ -87,12 +87,20 @@ export const addSnapshot = async (id: string, state: State) => {
 };
 
 export const saveState = async (state: State, id: string, dest: SaveDest) => {
-    const blob = await exportPNG(400, state, 1000, false, false, 0);
+    const blob = await exportPNG(
+        400,
+        { ...state, view: { ...state.view, guides: false } },
+        1000,
+        false,
+        false,
+        0,
+    );
     if (dest.type === 'local') {
         localforage.setItem(key(id), state);
         updateMeta(id, {
             updatedAt: Date.now(),
             size: JSON.stringify(state).length,
+            tilings: Object.values(state.tilings).map((t) => t.cache),
         });
         localforage.setItem(thumbPrefix + key(id), blob);
     } else {
@@ -116,6 +124,7 @@ export type MetaData = {
     openedAt: number;
     id: string;
     size: number;
+    tilings: Tiling['cache'][];
     checkpoints?: Array<Checkpoint>;
 };
 
@@ -349,5 +358,6 @@ function newMetaData(id: string, state: State): MetaData {
         updatedAt: Date.now(),
         openedAt: Date.now(),
         size: JSON.stringify(state).length,
+        tilings: [],
     };
 }

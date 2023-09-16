@@ -57,18 +57,13 @@ export const DesignLoader = () => {
                 >
                     <div style={{ flex: 1 }}>
                         <ThumbLoader id={design.id} />
+                        {design.tilings?.map((tiling) => (
+                            <div>{tiling.hash.slice(0, 10)}</div>
+                        )) ?? <div style={{ color: 'red' }}>No tilings</div>}
                         <div>{dayjs(design.updatedAt).from(dayjs())}</div>
                         <div className="flex flex-row justify-content-between">
                             {mb(design.size)}
                             <div>
-                                {/* <Button
-                        onClick={(evt) => {
-                            evt.stopPropagation();
-                        }}
-                        icon="pi pi-download"
-                        className="p-button-sm p-button-text"
-                        style={{ marginTop: -5, marginBottom: -6 }}
-                    /> */}
                                 <Button
                                     onClick={(evt) => {
                                         evt.stopPropagation();

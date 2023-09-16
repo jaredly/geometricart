@@ -102,33 +102,35 @@ export const Tilings = ({
                             Recalculate eigenshapes
                         </button>
                         <div style={{ fontSize: '70%' }}>
-                            {tiling.cache.hash.slice(0, 10)}
+                            {tiling.cache?.hash.slice(0, 10)}
                         </div>
                         <div>
                             {(
-                                JSON.stringify(tiling.cache).length / 1000
+                                JSON.stringify(tiling.cache)?.length / 1000
                             ).toFixed(2)}
                             kb with shapes,{' '}
                             {(
                                 JSON.stringify({
-                                    segments: tiling.cache.segments,
-                                    hash: tiling.cache.hash,
+                                    segments: tiling.cache?.segments,
+                                    hash: tiling.cache?.hash,
                                 }).length / 1000
                             ).toFixed(2)}
                             kb without
                         </div>
-                        <img
-                            src={`data:image/svg+xml,${eigenShapesToSvg(
-                                tiling.cache.segments.map((s) => [
-                                    s.prev,
-                                    s.segment.to,
-                                ]),
-                                tiling.shape.type === 'right-triangle' &&
-                                    tiling.shape.rotateHypotenuse,
-                                applyMatrices(pts[2], tx),
-                                pts.map((pt) => applyMatrices(pt, tx)),
-                            )}`}
-                        />
+                        {tiling.cache ? (
+                            <img
+                                src={`data:image/svg+xml,${eigenShapesToSvg(
+                                    tiling.cache?.segments.map((s) => [
+                                        s.prev,
+                                        s.segment.to,
+                                    ]),
+                                    tiling.shape.type === 'right-triangle' &&
+                                        tiling.shape.rotateHypotenuse,
+                                    applyMatrices(pts[2], tx),
+                                    pts.map((pt) => applyMatrices(pt, tx)),
+                                )}`}
+                            />
+                        ) : null}
                         {/* <button
                         onClick={async () => {
                             const res = await simpleExport(state, tiling.shape);
