@@ -69,7 +69,9 @@ export const NewSidebar = ({
 
     uiState,
     uiDispatch,
+    closeFile,
 }: {
+    closeFile: () => unknown;
     lastSaved: {
         when: number;
         dirty: null | true | (() => void);
@@ -202,7 +204,7 @@ export const NewSidebar = ({
                         ),
                         content: () => (
                             <div className="p-3">
-                                <Button onClick={() => (location.hash = '/')}>
+                                <Button onClick={() => closeFile()}>
                                     Close File
                                 </Button>
                                 <div>

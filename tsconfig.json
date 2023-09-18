@@ -1,10 +1,10 @@
 {
     "compilerOptions": {
         "jsx": "react",
-        "target": "es2022",
+        "target": "ESNext",
         "noEmit": true,
         "strict": true,
-        "module": "ES2022",
+        "module": "ESNext",
         "moduleResolution": "Node",
         "resolveJsonModule": true,
         "esModuleInterop": true,

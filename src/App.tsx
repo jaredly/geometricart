@@ -29,7 +29,9 @@ export const App = ({
     initialState,
     saveState,
     lastSaved,
+    closeFile,
 }: {
+    closeFile: () => unknown;
     initialState: State;
     saveState: (state: State) => unknown;
     lastSaved: {
@@ -173,6 +175,7 @@ export const App = ({
                 )}
             </div>
             <NewSidebar
+                closeFile={closeFile}
                 state={trueState}
                 dispatch={dispatch}
                 lastSaved={lastSaved}

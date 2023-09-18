@@ -31,6 +31,7 @@ import { useGists, gistCache } from './useGists';
 import { loadGist, newGist, saveGist, stateFileName } from './gists';
 import { maybeMigrate } from './state/migrateState';
 import { PK } from './editor/pk';
+import { initialState } from './state/initialState';
 dayjs.extend(relativeTime);
 
 export const metaPrefix = 'meta:';
@@ -272,6 +273,7 @@ const File = ({ gist, dest }: { gist?: boolean; dest: SaveDest }) => {
     }
     return (
         <App
+            closeFile={() => (location.hash = '/')}
             initialState={data as State}
             lastSaved={dest.type === 'gist' ? lastSaved : null}
             saveState={(state) => {
@@ -420,10 +422,139 @@ declare global {
     }
 }
 
+type DATA = {
+    App: typeof App;
+    initialState: State;
+    React: typeof React;
+    createRoot: typeof createRoot;
+    setupState: (mirror: Mirror | null) => unknown;
+};
+
+declare global {
+    interface Window {
+        GEOMETRICART_DATA: DATA;
+        GEOMETRICART_INIT: () => unknown;
+    }
+}
+
 const root = (window._reactRoot =
     window._reactRoot || createRoot(document.getElementById('root')!));
 
-root.render(<RouterProvider router={router} />);
+// if (window.GEOMETRICART_INIT) {
+//     window.GEOMETRICART_DATA = {
+//         App,
+//         initialState,
+//         React,
+//         createRoot,
+//         setupState,
+//     };
+//     window.GEOMETRICART_INIT();
+// } else {
+
+const params = new URLSearchParams(location.search);
+
+const image = params.get('image');
+const save = params.get('save');
+const load = params.get('load');
+const back = params.get('back');
+
+const getForeignState = async (image: string | null, load: string | null) => {
+    if (load) {
+        try {
+            const state: State = await (await fetch(load)).json();
+            Object.values(state.attachments).forEach((att) => {
+                console.log(att.contents);
+                if (att.contents.startsWith('/')) {
+                    att.contents = 'http://localhost:3000' + att.contents;
+                }
+            });
+            return state;
+        } catch (err) {
+            // ignore I think
+        }
+    }
+    if (image) {
+        const img = new Image();
+        img.src = image;
+        await new Promise((res) => (img.onload = res));
+
+        const state = setupState(null);
+        state.attachments['pattern'] = {
+            id: 'pattern',
+            name: 'pattern',
+            width: img.naturalWidth,
+            height: img.naturalHeight,
+            contents: image,
+        };
+        state.overlays['overlay'] = {
+            id: 'overlay',
+            source: 'pattern',
+            scale: { x: 1, y: 1 },
+            center: { x: 0, y: 0 },
+            hide: false,
+            over: false,
+            opacity: 1,
+        };
+        state.selection = null;
+        return state;
+    }
+    return setupState(null);
+};
+
+if (save) {
+    getForeignState(image, load).then(
+        (state) => {
+            root.render(
+                <App
+                    closeFile={() => {
+                        if (back) {
+                            location.href = back;
+                        } else {
+                            history.back();
+                        }
+                    }}
+                    initialState={state}
+                    lastSaved={null}
+                    saveState={async (state) => {
+                        fetch(save, {
+                            method: 'POST',
+                            body: JSON.stringify(state),
+                            headers: {
+                                'Content-type': 'application/json',
+                            },
+                        });
+                    }}
+                />,
+            );
+        },
+        (err) => {
+            console.log(err);
+            root.render(<h1>FAILED TO LOARD {err.message}</h1>);
+        },
+    );
+
+    // const state = setupState(null);
+    // state.attachments["pattern"] = {
+    //     id: "pattern",
+    //     name: "pattern",
+    //     width: size.width,
+    //     height: size.height,
+    //     contents: image.url,
+    // };
+    // state.overlays["overlay"] = {
+    //     id: "overlay",
+    //     source: "pattern",
+    //     scale: { x: 1, y: 1 },
+    //     center: { x: 0, y: 0 },
+    //     hide: false,
+    //     over: false,
+    //     opacity: 1,
+    // };
+    // state.selection = null;
+} else {
+    root.render(<RouterProvider router={router} />);
+}
+
 function newMetaData(id: string, state: State): MetaData {
     return {
         id,

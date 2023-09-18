@@ -1,4 +1,11 @@
 
+- [ ] OK USE THE TWO WEBSITES IN TANDEM
+  - like POST back and forth, it's fine
+
+--
+
+- [ ] DELETE A TILING ive made a terrible mistake
+
 - [ ] hovering over a tiling in the sidebar
   should show the outline in the main area,
   and maybe and overlay of what it looks like tiled?
