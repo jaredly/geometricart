@@ -1,5 +1,5 @@
 import { coordKey, numKey } from './coordKey';
-import { closeEnough } from './clipPath';
+import { closeEnough } from './epsilonToZero';
 import {
     cleanUpInsetSegments2,
     filterTooSmallSegments,

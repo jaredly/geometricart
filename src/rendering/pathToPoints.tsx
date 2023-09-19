@@ -3,7 +3,8 @@ import { angleTo, dist, push } from './getMirrorTransforms';
 import { epsilon } from './intersect';
 import { reverseSegment } from './pathsAreIdentical';
 import { Coord, Segment } from '../types';
-import { closeEnough, negPiToPi } from './clipPath';
+import { negPiToPi } from './clipPath';
+import { closeEnough } from './epsilonToZero';
 import { segmentKey } from './segmentKey';
 
 export type RasterSeg = {

@@ -1,4 +1,5 @@
-import { closeEnough, isWithinLineLimit, zeroToTwoPi } from './clipPath';
+import { isWithinLineLimit, zeroToTwoPi } from './clipPath';
+import { closeEnough } from './epsilonToZero';
 import { angleBetween, isAngleBetween } from './findNextSegments';
 import { angleTo, dist, push } from './getMirrorTransforms';
 import { Coord } from '../types';

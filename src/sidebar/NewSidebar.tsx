@@ -47,7 +47,7 @@ import {
     segmentsCenter,
 } from '../editor/Bounds';
 import { transformPath } from '../rendering/points';
-import { scalePos } from '../editor/PendingPreview';
+import { scalePos } from '../editor/scalePos';
 import { insetSegments } from '../rendering/insetPath';
 import { cleanUpInsetSegments2 } from '../rendering/findInternalRegions';
 import { clipPathTry } from '../rendering/clipPathNew';

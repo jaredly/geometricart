@@ -12,7 +12,7 @@ import {
     State,
     Tiling,
 } from '../types';
-import { closeEnough } from '../rendering/clipPath';
+import { closeEnough } from '../rendering/epsilonToZero';
 import {
     consumePath,
     getVisiblePaths,
@@ -27,18 +27,10 @@ import {
     slopeToLine,
 } from '../rendering/intersect';
 import { numKey } from '../rendering/coordKey';
-import {
-    Matrix,
-    angleTo,
-    applyMatrices,
-    dist,
-    rotationMatrix,
-    scaleMatrix,
-    translationMatrix,
-} from '../rendering/getMirrorTransforms';
-import { scalePos } from './PendingPreview';
+import { applyMatrices } from '../rendering/getMirrorTransforms';
 import { transformPath, transformSegment } from '../rendering/points';
 import { boundsForCoords } from './Bounds';
+import { tilingPoints, getTransform, eigenShapesToSvg } from './tilingPoints';
 
 export const Tilings = ({
     state,
@@ -118,55 +110,19 @@ export const Tilings = ({
                         {tiling.cache
                             ? tilingCacheSvg(tiling.cache, tiling.shape)
                             : null}
-                        {/* <button
-                        onClick={async () => {
-                            const res = await simpleExport(state, tiling.shape);
-                            if (!res) {
-                                return;
-                            }
-                            consoleSvg(res.svg);
-                            setImg(`data:image/svg+xml,${res.svg}`);
-                        }}
-                    >
-                        Show me the money
-                    </button> */}
+                        <button
+                            onClick={() => {
+                                // dispatch({
+                                //     type: 'tiling:delete',
+                                //     id: tiling.id,
+                                // });
+                            }}
+                        >
+                            Delete Tiling (TODO)
+                        </button>
                     </div>
                 );
             })}
-            {/* {img.length ? (
-                <div
-                    onClick={() => setLarge(!large)}
-                    style={
-                        large
-                            ? {
-                                  zIndex: 1000,
-                                  position: 'fixed',
-                                  top: 0,
-                                  left: 0,
-                                  width: 1000,
-                                  height: 1000,
-                              }
-                            : {}
-                    }
-                >
-                    {img.map((res, i) => (
-                        <div key={i} style={{ margin: 8 }}>
-                            <div style={{ fontSize: '70%' }}>
-                                {res.hash.slice(0, 10)}
-                            </div>
-                            <img
-                                src={`data:image/svg+xml,${res.svg}`}
-                                style={large ? { width: 500, height: 500 } : {}}
-                            />
-                        </div>
-                    ))}
-                </div>
-            ) : null} */}
-            {/* {img.length ? (
-                <div>
-                    <button onClick={() => {}}>Update eigenshape hashes</button>
-                </div>
-            ) : null} */}
         </div>
     );
 };
@@ -229,12 +185,6 @@ export const simpleExport = async (state: State, shape: Tiling['shape']) => {
 //     );
 // };
 
-const transformLines = (lines: [Coord, Coord][], mx: Matrix[]) =>
-    lines.map(([p1, p2]): [Coord, Coord] => [
-        applyMatrices(p1, mx),
-        applyMatrices(p2, mx),
-    ]);
-
 export function tilingCacheSvg(cache: Tiling['cache'], shape: Tiling['shape']) {
     const pts = tilingPoints(shape);
     const tx = getTransform(pts);
@@ -249,126 +199,6 @@ export function tilingCacheSvg(cache: Tiling['cache'], shape: Tiling['shape']) {
             )}`}
         />
     );
-}
-
-function eigenShapesToSvg(
-    unique: [Coord, Coord][],
-    flip: boolean,
-    tr: Coord,
-    tpts: Coord[],
-) {
-    let full = unique;
-    if (flip) {
-        full = full.concat(
-            transformLines(full, [
-                rotationMatrix(Math.PI),
-                translationMatrix(tr),
-            ]),
-        );
-        full = replicateStandard(full, tr.y);
-    } else if (closeEnough(tr.y, -1 / Math.sqrt(3))) {
-        full = full.concat(
-            transformLines(full, [
-                scaleMatrix(1, -1),
-                rotationMatrix(-(Math.PI / 3)),
-            ]),
-        );
-        full = full.concat(
-            transformLines(full, [
-                scaleMatrix(1, -1),
-                rotationMatrix(-(Math.PI / 3) * 2),
-            ]),
-            transformLines(full, [
-                scaleMatrix(1, -1),
-                rotationMatrix(-Math.PI),
-            ]),
-        );
-        full = full.concat(transformLines(full, [scaleMatrix(1, -1)]));
-        full = full.concat(
-            ...[0, 1, 2, 3, 4, 5].map((i) =>
-                transformLines(full, [
-                    translationMatrix({ x: 2, y: 0 }),
-                    rotationMatrix((Math.PI / 3) * i),
-                ]),
-            ),
-        );
-    } else {
-        full = full.concat(
-            transformLines(full, [
-                scaleMatrix(1, -1),
-                rotationMatrix(-Math.PI / 2),
-            ]),
-        );
-        full = replicateStandard(full, tr.y);
-    }
-
-    const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="50" style="background:black" height="50" viewBox="-2.5 -2.5 5 5">
-    <path
-        d="${tpts
-            .map(
-                ({ x, y }, i) =>
-                    `${i === 0 ? 'M' : 'L'}${x.toFixed(2)} ${y.toFixed(2)}`,
-            )
-            .join(' ')}Z"
-        fill="rgb(50,50,50)"
-        stroke="none"
-    />
-    ${full
-        .map(([p1, p2]) => {
-            return `<line
-            stroke-linecap='round' stroke-linejoin='round'
-             x1="${p1.x}" x2="${p2.x}" y1="${p1.y}" y2="${p2.y}" stroke="yellow" stroke-width="0.02"/>`;
-        })
-        .join('\n')}
-    </svg>
-    `;
-    return svg;
-}
-
-function tilingPoints(
-    shape:
-        | {
-              type: 'right-triangle';
-              rotateHypotenuse: boolean;
-              start: Coord;
-              corner: Coord;
-              end: Coord;
-          }
-        | { type: 'isocelese'; first: Coord; second: Coord; third: Coord },
-) {
-    return shape.type === 'right-triangle'
-        ? [shape.start, shape.corner, shape.end]
-        : [shape.first, shape.second, shape.third];
-}
-
-async function hashData(kk: string) {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(kk);
-    const hashBuffer = await window.crypto.subtle.digest('SHA-1', data);
-
-    const hashArray = Array.from(new Uint8Array(hashBuffer)); // convert buffer to byte array
-    const hashHex = hashArray
-        .map((b) => b.toString(16).padStart(2, '0'))
-        .join(''); // convert bytes to hex string
-    return hashHex;
-}
-function replicateStandard(full: [Coord, Coord][], ty: number) {
-    full = full.concat(
-        transformLines(full, [
-            scaleMatrix(-1, 1),
-            translationMatrix({ x: 2, y: 0 }),
-        ]),
-    );
-    full = full.concat(
-        transformLines(full, [
-            scaleMatrix(1, -1),
-            translationMatrix({ x: 0, y: ty * 2 }),
-        ]),
-    );
-    full.push(...transformLines(full, [scaleMatrix(1, -1)]));
-    full.push(...transformLines(full, [scaleMatrix(-1, 1)]));
-    return full;
 }
 
 export const getShapesIntersectingTriangle = (state: State, pts: Coord[]) => {
@@ -441,21 +271,14 @@ export const getShapesIntersectingTriangle = (state: State, pts: Coord[]) => {
     };
 };
 
-function getTransform(pts: Coord[]) {
-    const [center, corner, top] = pts;
+async function hashData(kk: string) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(kk);
+    const hashBuffer = await window.crypto.subtle.digest('SHA-1', data);
 
-    const scale = 1 / dist(center, corner);
-    const translate = scalePos(center, -1);
-    const rotate = -angleTo(center, corner);
-    const tx = [
-        translationMatrix(translate),
-        rotationMatrix(rotate),
-        scaleMatrix(scale, scale),
-    ];
-    const top_ = applyMatrices(top, tx);
-    if (top_.y > 0) {
-        tx.push(scaleMatrix(1, -1));
-        top_.y *= -1;
-    }
-    return tx;
+    const hashArray = Array.from(new Uint8Array(hashBuffer)); // convert buffer to byte array
+    const hashHex = hashArray
+        .map((b) => b.toString(16).padStart(2, '0'))
+        .join(''); // convert bytes to hex string
+    return hashHex;
 }

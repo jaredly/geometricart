@@ -64,7 +64,8 @@ import { ToolIcons } from './ToolIcons';
 import { findAdjacentPaths, produceJointPaths } from '../animation/getBuiltins';
 import { coordsEqual } from '../rendering/pathsAreIdentical';
 import { angleBetween } from '../rendering/findNextSegments';
-import { closeEnough, negPiToPi } from '../rendering/clipPath';
+import { negPiToPi } from '../rendering/clipPath';
+import { closeEnough } from '../rendering/epsilonToZero';
 import { simpleExport } from './Tilings';
 
 export type Props = {

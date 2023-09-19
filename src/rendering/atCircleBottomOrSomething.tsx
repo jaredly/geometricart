@@ -3,7 +3,7 @@ import { push } from './getMirrorTransforms';
 import { Circle } from './intersect';
 import { coordsEqual } from './pathsAreIdentical';
 import { Coord } from '../types';
-import { closeEnough } from './clipPath';
+import { closeEnough } from './epsilonToZero';
 
 // Also returns true if we're at the top or bottom tangent and not on the top endpoint
 
