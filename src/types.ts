@@ -24,10 +24,18 @@ export type Split = {
     count: number;
 };
 
+export type CloneCircle = {
+    type: 'CloneCircle';
+    p1: Coord;
+    p2: Coord;
+    p3: Coord;
+};
+
 export type GuideGeom =
     | Line
     | Split
     | Circle
+    | CloneCircle
     | AngleBisector
     | PerpendicularBisector
     | Perpendicular
@@ -72,6 +80,7 @@ export const guidePoints: {
     InCircle: 3,
     CircumCircle: 3,
     Perpendicular: 2,
+    CloneCircle: 3,
     Circle: 2,
     Line: 2,
     Split: 2,

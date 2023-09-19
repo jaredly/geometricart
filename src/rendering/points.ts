@@ -105,6 +105,10 @@ export const geomToPrimitives = (
     limit?: boolean,
 ): Array<Primitive> => {
     switch (geom.type) {
+        case 'CloneCircle': {
+            const d = dist(geom.p1, geom.p2);
+            return [{ type: 'circle', center: geom.p3, radius: d }];
+        }
         case 'CircumCircle': {
             const got = getCircumCircle(geom.p1, geom.p2, geom.p3);
             if (!got) {

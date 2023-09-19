@@ -121,6 +121,7 @@ export const transformGuideGeom = (
     transform: (pos: Coord) => Coord,
 ): GuideGeom => {
     switch (geom.type) {
+        case 'CloneCircle':
         case 'InCircle':
         case 'AngleBisector':
         case 'CircumCircle':

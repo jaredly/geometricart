@@ -1,5 +1,9 @@
 
-- [ ] OK USE THE TWO WEBSITES IN TANDEM
+- [ ] I NEEEEEED a "clone circle" dealio
+
+----
+
+- [x] OK USE THE TWO WEBSITES IN TANDEM
   - like POST back and forth, it's fine
 
 --

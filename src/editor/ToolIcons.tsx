@@ -313,6 +313,23 @@ export function ToolIcons({
                         }
                     />
                 ),
+                CloneCircle: (
+                    <ToolIcon
+                        circles={[[{ x: 3, y: 5 }, 4]]}
+                        points={[
+                            { x: 3, y: 5 },
+                            { x: 3, y: 9 },
+                            { x: 10, y: 5 },
+                            { x: 10, y: 9 },
+                        ]}
+                        lines={[
+                            [
+                                { x: 10, y: 5 },
+                                { x: 10, y: 9 },
+                            ],
+                        ]}
+                    />
+                ),
             }).map(([kind, icon]) => (
                 <Button
                     key={kind}
