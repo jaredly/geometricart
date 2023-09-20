@@ -569,8 +569,12 @@ export type Tiling = {
               first: Coord;
               second: Coord;
               third: Coord;
+          }
+        | {
+              type: 'parallellogram';
+              // Clockwise
+              points: [Coord, Coord, Coord, Coord];
           };
-    // | { type: 'parallellogram' };
     // sides: { from: Coord; kind: 'reflect' | 'rotate' | null }[];
     cache: {
         segments: SegPrev[];

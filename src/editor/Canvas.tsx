@@ -67,6 +67,12 @@ import { angleBetween } from '../rendering/findNextSegments';
 import { negPiToPi } from '../rendering/clipPath';
 import { closeEnough } from '../rendering/epsilonToZero';
 import { simpleExport } from './Tilings';
+import {
+    angleDifferences,
+    isClockwise,
+    isClockwisePoints,
+    pointsAngles,
+} from '../rendering/pathToPoints';
 
 export type Props = {
     state: State;
@@ -981,7 +987,25 @@ export const ToolIcon = ({
         </svg>
     );
 };
+
 function determineTilingShape(points: Coord[]): Tiling['shape'] | void {
+    if (points.length === 4) {
+        let [a, b, c, d] = points;
+        if (!isClockwisePoints(points)) {
+            [b, c, d] = [d, c, b];
+        }
+        const angles = angleDifferences(pointsAngles([a, b, c, d]));
+        if (
+            !closeEnough(angles[0], angles[2]) ||
+            !closeEnough(angles[1], angles[3])
+        ) {
+            return;
+        }
+        return {
+            type: 'parallellogram',
+            points: [a, b, c, d],
+        };
+    }
     if (points.length === 3) {
         const [a, b, c] = points;
         const ab = angleTo(a, b);

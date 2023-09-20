@@ -1,5 +1,7 @@
 
-- [ ] I NEEEEEED a "clone circle" dealio
+- [x] I NEEEEEED a "clone circle" dealio
+- [ ] it would be great to be able to massage the
+  overlay image, in case it's out of perspective
 
 ----
 
