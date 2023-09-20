@@ -1,4 +1,4 @@
-import { Coord } from '../types';
+import { Coord, Tiling } from '../types';
 import { closeEnough } from '../rendering/epsilonToZero';
 import {
     Matrix,
@@ -21,9 +21,24 @@ export function eigenShapesToLines(
     unique: [Coord, Coord][],
     flip: boolean,
     tr: Coord,
+    tpts: Coord[],
 ) {
     let full = unique;
-    if (flip) {
+    if (tpts.length === 4) {
+        // paralellogram
+        full = full.concat(transformLines(full, [scaleMatrix(-1, 1)]));
+        full = full.concat(
+            transformLines(full, [scaleMatrix(1, -1)]),
+            // );
+            // full = full.concat(
+            transformLines(full, [translationMatrix({ x: 0, y: -tr.y * 2 })]),
+            transformLines(full, [
+                translationMatrix({ x: 0, y: -tr.y * 2 }),
+                scaleMatrix(1, -1),
+            ]),
+        );
+        return full;
+    } else if (flip) {
         full = full.concat(
             transformLines(full, [
                 rotationMatrix(Math.PI),
@@ -76,7 +91,7 @@ export function eigenShapesToSvg(
     tr: Coord,
     tpts: Coord[],
 ) {
-    let full = eigenShapesToLines(unique, flip, tr);
+    let full = eigenShapesToLines(unique, flip, tr, tpts);
 
     const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" width="50" style="background:black" height="50" viewBox="-2.5 -2.5 5 5">
@@ -102,20 +117,15 @@ export function eigenShapesToSvg(
     return svg;
 }
 
-export function tilingPoints(
-    shape:
-        | {
-              type: 'right-triangle';
-              rotateHypotenuse: boolean;
-              start: Coord;
-              corner: Coord;
-              end: Coord;
-          }
-        | { type: 'isocelese'; first: Coord; second: Coord; third: Coord },
-) {
-    return shape.type === 'right-triangle'
-        ? [shape.start, shape.corner, shape.end]
-        : [shape.first, shape.second, shape.third];
+export function tilingPoints(shape: Tiling['shape']) {
+    switch (shape.type) {
+        case 'right-triangle':
+            return [shape.start, shape.corner, shape.end];
+        case 'isocelese':
+            return [shape.first, shape.second, shape.third];
+        case 'parallellogram':
+            return shape.points;
+    }
 }
 
 export function replicateStandard(full: [Coord, Coord][], ty: number) {

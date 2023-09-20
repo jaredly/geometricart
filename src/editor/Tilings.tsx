@@ -39,7 +39,6 @@ export const Tilings = ({
     state: State;
     dispatch: React.Dispatch<Action>;
 }) => {
-    // const [img, setImg] = useState([] as { svg: string; hash: string }[]);
     const [large, setLarge] = useState(false);
     return (
         <div>
@@ -151,7 +150,7 @@ const ShowTiling = ({ tiling }: { tiling: Tiling }) => {
 
 export const simpleExport = async (state: State, shape: Tiling['shape']) => {
     const pts = tilingPoints(shape);
-    const res = getShapesIntersectingTriangle(state, pts);
+    const res = getShapesIntersectingPolygon(state, pts);
     if (!res) {
         return;
     }
@@ -163,9 +162,7 @@ export const simpleExport = async (state: State, shape: Tiling['shape']) => {
 
     const unique = Object.values(klines).map(slopeToLine);
 
-    // const svg = eigenShapesToSvg(unique, flip, tr, tpts);
     return {
-        // svg,
         hash,
         segments: unique.map(
             ([p1, p2]): SegPrev => ({
@@ -176,14 +173,6 @@ export const simpleExport = async (state: State, shape: Tiling['shape']) => {
         shapes,
     };
 };
-
-// const consoleSvg = (svg: string) => {
-//     const bgi = `data:image/svg+xml;base64,${btoa(svg)}`;
-//     console.log(
-//         '%c ',
-//         `background-image: url("${bgi}");background-size:cover;padding:80px 85px`,
-//     );
-// };
 
 export function tilingCacheSvg(cache: Tiling['cache'], shape: Tiling['shape']) {
     const pts = tilingPoints(shape);
@@ -201,7 +190,7 @@ export function tilingCacheSvg(cache: Tiling['cache'], shape: Tiling['shape']) {
     );
 }
 
-export const getShapesIntersectingTriangle = (state: State, pts: Coord[]) => {
+export const getShapesIntersectingPolygon = (state: State, pts: Coord[]) => {
     const tx = getTransform(pts);
 
     const segments: Segment[] = pts.map((to) => ({ type: 'Line', to }));
