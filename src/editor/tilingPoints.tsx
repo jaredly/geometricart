@@ -10,6 +10,7 @@ import {
     translationMatrix,
 } from '../rendering/getMirrorTransforms';
 import { scalePos } from './scalePos';
+import { transformMatrix } from '../state/reducer';
 
 export const transformLines = (lines: [Coord, Coord][], mx: Matrix[]) =>
     lines.map(([p1, p2]): [Coord, Coord] => [
@@ -73,13 +74,40 @@ export function eigenShapesToLines(
             ),
         );
     } else {
-        full = full.concat(
-            transformLines(full, [
-                scaleMatrix(1, -1),
-                rotationMatrix(-Math.PI / 2),
-            ]),
-        );
-        full = replicateStandard(full, tr.y);
+        const d1 = dist(tpts[0], tpts[1]);
+        const d2 = dist(tpts[1], tpts[2]);
+        const d3 = dist(tpts[0], tpts[2]);
+        if (closeEnough(d1, d2) && closeEnough(d2, d3)) {
+            // Equilateral triangle
+            full = full.concat(
+                transformLines(full, [
+                    rotationMatrix(Math.PI),
+                    translationMatrix({ x: tr.x * 3, y: tr.y }),
+                ]),
+            );
+            full = full.concat(
+                transformLines(full, [
+                    scaleMatrix(1, -1),
+                    translationMatrix({ x: 0, y: tr.y * 2 }),
+                ]),
+            );
+            //
+            full = full.concat(
+                transformLines(full, [rotationMatrix((Math.PI / 3) * 2)]),
+                transformLines(full, [rotationMatrix(Math.PI / 3)]),
+                transformLines(full, [rotationMatrix(Math.PI)]),
+                transformLines(full, [rotationMatrix(-(Math.PI / 3))]),
+                transformLines(full, [rotationMatrix(-(Math.PI / 3) * 2)]),
+            );
+        } else {
+            full = full.concat(
+                transformLines(full, [
+                    scaleMatrix(1, -1),
+                    rotationMatrix(-Math.PI / 2),
+                ]),
+            );
+            full = replicateStandard(full, tr.y);
+        }
     }
 
     return full;
