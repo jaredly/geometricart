@@ -34,11 +34,13 @@ export const OverlayEditor = ({
                 return;
             }
         }
-        const hog = new Homography();
-        hog.setImage(ref.current!);
 
         const w = ref.current!.naturalWidth;
         const h = ref.current!.naturalHeight;
+        if (!w || !h) return;
+
+        const hog = new Homography();
+        hog.setImage(ref.current!);
 
         const x1 = Math.max(0, (w - h) / w / 2);
         const x2 = 1 - x1;
@@ -59,6 +61,8 @@ export const OverlayEditor = ({
             pts.map(({ x, y }) => [x, y]),
             to.map(({ x, y }) => [x, y]),
         );
+
+        console.log(points, to);
 
         const img: ImageData = hog.warp();
         console.log(img);
