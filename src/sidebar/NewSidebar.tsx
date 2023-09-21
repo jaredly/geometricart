@@ -19,6 +19,7 @@ import {
     DrillIcon,
     IconButton,
     IconHistoryToggle,
+    IconVerticalAlignMiddle,
     MagicWandIcon,
     PencilIcon,
     RedoIcon,
@@ -123,6 +124,7 @@ export const NewSidebar = ({
                     { name: 'animate', icon: MagicWandIcon },
                     { name: 'gcode', icon: DrillIcon },
                     { name: 'history', icon: IconHistoryToggle },
+                    { name: 'overlay', icon: IconVerticalAlignMiddle },
                 ].map((Config, i) => (
                     <Button
                         key={i}

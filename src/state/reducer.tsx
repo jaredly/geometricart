@@ -97,6 +97,18 @@ export const reducer = (state: State, action: Action): State => {
             },
         };
     }
+    if (action.type === 'attachment:update') {
+        return {
+            ...state,
+            attachments: {
+                ...state.attachments,
+                [action.id]: {
+                    ...state.attachments[action.id],
+                    ...action.attachment,
+                },
+            },
+        };
+    }
     if (action.type === 'library:palette:rename') {
         const palettes = { ...state.palettes };
         palettes[action.new] = palettes[action.old];

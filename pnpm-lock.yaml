@@ -33,6 +33,7 @@ specifiers:
   esbuild-plugin-babel: ^0.2.3
   fast-deep-equal: ^3.1.3
   fast-glob: ^3.2.11
+  homography: ^1.8.0
   isomorphic-git: ^1.21.0
   jest: ^27.0.6
   json-diff-ts: ^1.2.4
@@ -42,6 +43,7 @@ specifiers:
   memfs: ^3.4.12
   memfs-browser: ^3.4.11000
   pathkit-wasm: ^1.0.0
+  perspectivets: ^2.0.0
   png-metadata: https://github.com/neil-morrison44/png-metadata#1de6be3c50402a188ce06a494c91010f14a297b8
   prando: ^6.0.1
   prettier: ^2.5.1
@@ -82,6 +84,7 @@ dependencies:
   esbuild-plugin-babel: 0.2.3_@babel+core@7.19.6
   fast-deep-equal: 3.1.3
   fast-glob: 3.2.12
+  homography: 1.8.0
   isomorphic-git: 1.21.0
   json-diff-ts: 1.2.5_lodash@4.17.21
   kmeans-js: 0.1.2
@@ -90,6 +93,7 @@ dependencies:
   memfs: 3.4.12
   memfs-browser: 3.4.11000
   pathkit-wasm: 1.0.0
+  perspectivets: 2.0.0
   png-metadata: github.com/neil-morrison44/png-metadata/1de6be3c50402a188ce06a494c91010f14a297b8
   prando: 6.0.1
   prettier: 2.7.1
@@ -3039,6 +3043,12 @@ packages:
       object-keys: 1.1.1
     dev: true
 
+  /delaunator/5.0.0:
+    resolution: {integrity: sha512-AyLvtyJdbv/U1GkiS6gUUzclRoAY4Gs75qkMygJJhU75LW4DNuSF2RMzpxs9jw9Oz1BobHjTdkG3zdP55VxAqw==}
+    dependencies:
+      robust-predicates: 3.0.2
+    dev: false
+
   /delayed-stream/1.0.0:
     resolution: {integrity: sha512-ZySD7Nf91aLB0RxL4KGrKHBXl7Eds1DAmEdcoVawXnLD7SDhpNgtuII2aAkg7a7QS41jxPSZ17p4VdGnMHk3MQ==}
     engines: {node: '>=0.4.0'}
@@ -4069,6 +4079,12 @@ packages:
     resolution: {integrity: sha512-/gGivxi8JPKWNm/W0jSmzcMPpfpPLc3dY/6GxhX2hQ9iGj3aDfklV4ET7NjKpSinLpJ5vafa9iiGIEZg10SfBw==}
     dependencies:
       react-is: 16.13.1
+    dev: false
+
+  /homography/1.8.0:
+    resolution: {integrity: sha512-yA473QslqUlt7mT9DzYD2TWodyRKwWmvpWd2tX1lXxJconLCRpjtFcdNFQ8R9D1N+qNdILckCYXjo7zpcgrePg==}
+    dependencies:
+      delaunator: 5.0.0
     dev: false
 
   /html-encoding-sniffer/2.0.1:
@@ -5167,7 +5183,6 @@ packages:
     hasBin: true
     dependencies:
       js-tokens: 4.0.0
-    dev: false
 
   /lru-cache/6.0.0:
     resolution: {integrity: sha512-Jo6dJ04CmSjuznwJSS3pUeWmd/H0ffTlkXXgwZi+eq1UCmqQwCh+eLsYOYCwY991i2Fah4h1BEMCx4qThGbsiA==}
@@ -5888,6 +5903,10 @@ packages:
       is-reference: 3.0.0
     dev: true
 
+  /perspectivets/2.0.0:
+    resolution: {integrity: sha512-ry7bOT6xeRazuFX0pckqfMMFbx0nvR1EpHre2FOEFvnwMP8V1R0jNSLtRPlVvq5wVQTTSW9M4kQLa9zIHrRz8g==}
+    dev: false
+
   /picocolors/1.0.0:
     resolution: {integrity: sha512-1fygroTLlHu66zi26VoTDv8yRgm0Fccecssto+MhsZ0D/DGW2sm8E8AjW7NU5VVTRt5GxbeZ5qBuJr+HyLYkjQ==}
 
@@ -6088,7 +6107,6 @@ packages:
       loose-envify: 1.4.0
       react: 18.2.0
       scheduler: 0.23.0
-    dev: false
 
   /react-is/16.13.1:
     resolution: {integrity: sha512-24e6ynE2H+OKt4kqsOvNd8kBpV65zoxbA4BVsEOB3ARVWQki/DHzaUoC5KuON/BiccDaCCTZBuOcfZs70kR8bQ==}
@@ -6196,7 +6214,6 @@ packages:
     engines: {node: '>=0.10.0'}
     dependencies:
       loose-envify: 1.4.0
-    dev: false
 
   /reactcss/1.2.3_react@18.2.0:
     resolution: {integrity: sha512-KiwVUcFu1RErkI97ywr8nvx8dNOpT03rbnma0SSalTYjkrPYaEajR4a/MRt6DZ46K6arDRbWMNHF+xH7G7n/8A==}
@@ -6395,6 +6412,10 @@ packages:
       glob: 7.2.3
     dev: true
 
+  /robust-predicates/3.0.2:
+    resolution: {integrity: sha512-IXgzBWvWQwE6PrDI05OvmXUIruQTcoMDzRsOd5CDvHCVLcLHMTSYvOK5Cm46kWqlV3yAbuSpBZdJ5oP5OUoStg==}
+    dev: false
+
   /rollup/2.79.1:
     resolution: {integrity: sha512-uKxbd0IhMZOhjAiD5oAFp7BqvkA4Dv47qpOCtaNvng4HBwdbWtdOh8f5nZNuk2rp51PMGk3bzfWu5oayNEuYnw==}
     engines: {node: '>=10.0.0'}
@@ -6476,7 +6497,6 @@ packages:
     resolution: {integrity: sha512-CtuThmgHNg7zIZWAXi3AsyIzA3n4xx7aNyjwC2VJldO2LMVDhFK+63xGqq6CsJH4rTAt6/M+N4GhZiDYPx9eUw==}
     dependencies:
       loose-envify: 1.4.0
-    dev: false
 
   /semver/6.3.0:
     resolution: {integrity: sha512-b39TBaTSfV6yBrapU89p5fKekE2m/NwnDocOVruQFS1/veMgdzuPcnOM34M6CwxW8jH/lxEa5rBoDeUwu5HHTw==}

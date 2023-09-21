@@ -348,6 +348,10 @@ export type Attachment = {
     name: string;
     width: number;
     height: number;
+    perspectivePoints?: {
+        from: [Coord, Coord, Coord, Coord];
+        to: [Coord, Coord, Coord, Coord];
+    };
 };
 
 export type Meta = {

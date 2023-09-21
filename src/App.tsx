@@ -16,6 +16,7 @@ import { handleKeyboard } from './handleKeyboard';
 import { NewSidebar } from './sidebar/NewSidebar';
 import { Action } from './state/Action';
 import { useUIState } from './useUIState';
+import { OverlayEditor } from './OverelayEditor';
 
 export const useCurrent = <T,>(value: T) => {
     const ref = React.useRef(value);
@@ -155,6 +156,8 @@ export const App = ({
                     />
                 ) : screen === 'history' ? (
                     <HistoryPlayback state={state} />
+                ) : screen === 'overlay' ? (
+                    <OverlayEditor state={state} dispatch={dispatch} />
                 ) : (
                     <Canvas
                         state={state}

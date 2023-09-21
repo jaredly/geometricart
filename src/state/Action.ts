@@ -44,6 +44,7 @@ export type Action =
     | { type: 'select:same'; line?: StyleLine; fill?: Fill }
     | { type: 'tab:set'; tab: Tab }
     | { type: 'attachment:add'; id: string; attachment: Attachment }
+    | { type: 'attachment:update'; attachment: Partial<Attachment> }
     | { type: 'library:palette:rename'; old: string; new: string }
     | { type: 'library:palette:update'; name: string; colors: Array<string> };
 // | { type: 'library:palette:select'; name: string };
