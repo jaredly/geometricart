@@ -44,7 +44,7 @@ export type Action =
     | { type: 'select:same'; line?: StyleLine; fill?: Fill }
     | { type: 'tab:set'; tab: Tab }
     | { type: 'attachment:add'; id: string; attachment: Attachment }
-    | { type: 'attachment:update'; attachment: Partial<Attachment> }
+    | { type: 'attachment:update'; id: string; attachment: Partial<Attachment> }
     | { type: 'library:palette:rename'; old: string; new: string }
     | { type: 'library:palette:update'; name: string; colors: Array<string> };
 // | { type: 'library:palette:select'; name: string };
@@ -524,6 +524,16 @@ export type UndoPaletteUpdate = {
     prev: string[];
 };
 
+export type TilingDelete = {
+    type: 'tiling:delete';
+    id: string;
+};
+export type UndoTilingDelete = {
+    type: TilingDelete['type'];
+    action: TilingDelete;
+    removed: Tiling;
+};
+
 export type TilingAdd = {
     type: 'tiling:add';
     shape: Tiling['shape'];
@@ -547,6 +557,7 @@ export type UndoTilingUpdate = {
 
 export type UndoableAction =
     | TilingAdd
+    | TilingDelete
     | TilingUpdate
     | PaletteUpdate
     | GuideAdd
@@ -631,6 +642,7 @@ export type UndoAction =
     | UndoPathDelete
     // | UndoPathPoint
     // | UndoPathAdd
+    | UndoTilingDelete
     | UndoPathCreate
     | UndoPathMultiply
     | UndoPendingExtent

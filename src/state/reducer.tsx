@@ -918,6 +918,21 @@ export const reduceWithoutUndo = (
                 },
             ];
         }
+        case 'tiling:delete': {
+            const ts = { ...state.tilings };
+            delete ts[action.id];
+            return [
+                {
+                    ...state,
+                    tilings: ts,
+                },
+                {
+                    type: action.type,
+                    action,
+                    removed: state.tilings[action.id],
+                },
+            ];
+        }
         default:
             let _x: never = action;
             console.log(`SKIPPING ${(action as any).type}`);
@@ -931,6 +946,14 @@ export const undo = (state: State, action: UndoAction): State => {
             return {
                 ...state,
                 tilings: { ...state.tilings, [action.prev.id]: action.prev },
+            };
+        case 'tiling:delete':
+            return {
+                ...state,
+                tilings: {
+                    ...state.tilings,
+                    [action.action.id]: action.removed,
+                },
             };
         case 'global:transform': {
             const mx: Matrix[] = transformMatrix(action.action, true);

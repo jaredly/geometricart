@@ -20,25 +20,24 @@ NOT ALLOWED:
 
 export const maybeReverseSegment = (prev: Coord, segment: Segment) => {
     if (shouldReverseSegment(prev, segment)) {
-        return { prev: segment.to, segment: reverseSegment(prev, segment) }
+        return { prev: segment.to, segment: reverseSegment(prev, segment) };
     }
-    return { prev, segment }
-}
+    return { prev, segment };
+};
 
 export const shouldReverseSegment = (prev: Coord, segment: Segment) => {
-    const dx = prev.x - segment.to.x
-    const dy = prev.y - segment.to.y
-    return Math.abs(dx) < epsilon
-        ? dy > 0
-        : dx > 0;
-}
+    const dx = prev.x - segment.to.x;
+    const dy = prev.y - segment.to.y;
+    return Math.abs(dx) < epsilon ? dy > 0 : dx > 0;
+};
 
 export const orderedSegmentKey = (prev: Coord, segment: Segment) => {
-    return shouldReverseSegment(prev, segment) ? segmentKey(prev, segment) : segmentKeyReverse(prev, segment)
-}
+    return shouldReverseSegment(prev, segment)
+        ? segmentKey(prev, segment)
+        : segmentKeyReverse(prev, segment);
+};
 
-export const segmentKey = (prev: Coord, segment: Segment) =>
-    coordKey(prev) +
+export const segmentKeyInner = (segment: Segment) =>
     ` ${segment.type} ` +
     (segment.type === 'Line'
         ? ''
@@ -46,12 +45,15 @@ export const segmentKey = (prev: Coord, segment: Segment) =>
     ' to ' +
     coordKey(segment.to);
 
+export const segmentKey = (prev: Coord, segment: Segment) =>
+    coordKey(prev) + segmentKeyInner(segment);
+
 export const segmentKeyReverse = (prev: Coord, segment: Segment) =>
     segment.type === 'Line'
         ? segmentKey(segment.to, { type: 'Line', to: prev })
         : segmentKey(segment.to, {
-            type: 'Arc',
-            center: segment.center,
-            clockwise: !segment.clockwise,
-            to: prev,
-        });
+              type: 'Arc',
+              center: segment.center,
+              clockwise: !segment.clockwise,
+              to: prev,
+          });

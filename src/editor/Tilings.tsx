@@ -111,13 +111,13 @@ export const Tilings = ({
                             : null}
                         <button
                             onClick={() => {
-                                // dispatch({
-                                //     type: 'tiling:delete',
-                                //     id: tiling.id,
-                                // });
+                                dispatch({
+                                    type: 'tiling:delete',
+                                    id: tiling.id,
+                                });
                             }}
                         >
-                            Delete Tiling (TODO)
+                            Delete Tiling
                         </button>
                     </div>
                 );
