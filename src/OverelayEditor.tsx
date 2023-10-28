@@ -3,6 +3,7 @@ import { Coord, State } from './types';
 // @ts-ignore
 import { Homography } from 'homography';
 import { Action } from './state/Action';
+import { push } from './rendering/getMirrorTransforms';
 
 type Guide =
     | { type: 'rect'; points: [Coord, Coord, Coord, Coord] }
@@ -26,7 +27,7 @@ export const OverlayEditor = ({
             return;
         }
         let pts = points;
-        if (pts.length < 4) {
+        if (pts.length < 3) {
             const pp = state.attachments[ov.source].perspectivePoints;
             if (pp) {
                 pts = pp.from;
@@ -38,6 +39,20 @@ export const OverlayEditor = ({
         const w = ref.current!.naturalWidth;
         const h = ref.current!.naturalHeight;
         if (!w || !h) return;
+
+        const smaller = Math.min(w, h) / 2;
+
+        const to_: Coord[] = [];
+
+        for (let i = 0; i < pts.length; i++) {
+            to_.push(
+                push(
+                    { x: w / 2, y: h / 2 },
+                    ((Math.PI * 2) / pts.length) * i,
+                    smaller,
+                ),
+            );
+        }
 
         const hog = new Homography();
         hog.setImage(ref.current!);
@@ -55,14 +70,21 @@ export const OverlayEditor = ({
             { x: x2, y: y1 },
         ] as [Coord, Coord, Coord, Coord];
 
-        console.log(x1, y1, x2, y2);
+        const to2 = to_.map(({ x, y }) => ({ x: x / w, y: y / h }));
+
+        console.log(points, to, to2);
+
+        if (pts.length !== to.length) {
+            return;
+        }
+
+        // console.log(x1, y1, x2, y2);
         console.log(w, h);
         hog.setReferencePoints(
             pts.map(({ x, y }) => [x, y]),
+            // to_.map(({ x, y }) => [x / w, y / h]),
             to.map(({ x, y }) => [x, y]),
         );
-
-        console.log(points, to);
 
         const img: ImageData = hog.warp();
         console.log(img);
@@ -120,6 +142,7 @@ export const OverlayEditor = ({
             </div>
             {h2 ? (
                 <div>
+                    Transformed image:
                     <img src={h2.data} />
                     <button
                         onClick={() => {
