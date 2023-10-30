@@ -522,6 +522,11 @@ export type State = {
     activeMirror: Id | null;
     view: View;
 
+    historyView?: {
+        zooms: { idx: number; view: Pick<View, 'zoom' | 'center'> }[];
+        skips: number[];
+    };
+
     tilings: { [key: Id]: Tiling };
 
     clips: { [key: Id]: Clip };

@@ -1,4 +1,10 @@
 
+- [ ] HistoryPlayback - manually set the views, and skip frames
+
+- [ ] I want to ... animate between different patterns
+
+---
+
 - [x] I NEEEEEED a "clone circle" dealio
 - [x] it would be great to be able to massage the
   overlay image, in case it's out of perspective

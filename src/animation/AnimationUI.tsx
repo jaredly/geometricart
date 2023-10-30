@@ -14,6 +14,7 @@ import { getAnimatedPaths, getAnimationScripts } from './getAnimatedPaths';
 import { Timelines } from './Timeline';
 import { Scripts } from './Scripts';
 import { Lerps } from './Lerps';
+import { tar } from 'tinytar';
 
 export const makeEven = (v: number) => {
     v = Math.ceil(v);
@@ -474,7 +475,7 @@ export const Editable = ({
 
 export function tarImages(images: Uint8Array[], fps: number, state: State) {
     // @ts-ignore
-    const tar = require('tinytar').tar;
+    // const tar = import('tinytar').tar;
 
     const args = [
         '-r',
