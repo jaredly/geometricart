@@ -9,7 +9,7 @@ import { epsilon } from '../rendering/intersect';
 import { canvasRender } from '../rendering/CanvasRender';
 import { Action } from '../state/Action';
 import { initialHistory } from '../state/initialState';
-import { Animations, Coord, State } from '../types';
+import { Animations, State } from '../types';
 import { getAnimatedPaths, getAnimationScripts } from './getAnimatedPaths';
 import { Timelines } from './Timeline';
 import { Scripts } from './Scripts';

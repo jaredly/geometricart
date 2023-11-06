@@ -29,10 +29,10 @@ import { animateHistory } from './animateHistory';
 export const HistoryPlayback = ({ state }: { state: State }) => {
     const canvas = React.useRef<HTMLCanvasElement>(null);
     // const interactionCanvas = React.useRef<HTMLCanvasElement>(null);
-    const bounds = React.useMemo(
-        () => findBoundingRect(state),
-        [state.view, state.paths, state.pathGroups],
-    );
+    // const bounds = React.useMemo(
+    //     () => findBoundingRect(state),
+    //     [state.view, state.paths, state.pathGroups],
+    // );
     // const [recording, setRecording] = React.useState(false);
 
     const [preimage, setPreimage] = useState(false);
@@ -95,10 +95,10 @@ export const HistoryPlayback = ({ state }: { state: State }) => {
         });
     }, [state, w, h, dx, dy, zoom, backgroundAlpha, current]);
 
-    useEffect(() => {
-        // const ctx = interactionCanvas.current!.getContext('2d')!;
-        const { state, action } = histories[current];
-    }, [state, current]);
+    // useEffect(() => {
+    //     // const ctx = interactionCanvas.current!.getContext('2d')!;
+    //     const { state, action } = histories[current];
+    // }, [state, current]);
 
     const stopped = useRef(true);
 
