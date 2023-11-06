@@ -14,6 +14,7 @@ import { getAnimatedPaths, getAnimationScripts } from './getAnimatedPaths';
 import { Timelines } from './Timeline';
 import { Scripts } from './Scripts';
 import { Lerps } from './Lerps';
+// @ts-ignore
 import { tar } from 'tinytar';
 
 export const makeEven = (v: number) => {
