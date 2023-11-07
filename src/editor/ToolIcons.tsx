@@ -294,6 +294,28 @@ export function ToolIcons({
                         ]}
                     />
                 ),
+                Polygon: (
+                    <ToolIcon
+                        lines={[
+                            [
+                                { x: 0, y: 0 },
+                                { x: 0, y: 10 },
+                            ],
+                            [
+                                { x: 0, y: 10 },
+                                { x: 10, y: 10 },
+                            ],
+                            [
+                                { x: 10, y: 10 },
+                                { x: 10, y: 0 },
+                            ],
+                            [
+                                { x: 10, y: 0 },
+                                { x: 0, y: 0 },
+                            ],
+                        ]}
+                    />
+                ),
                 Split: (
                     <ToolIcon
                         // circles={[[{ x: 3, y: 5 }, 3]]}

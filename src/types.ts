@@ -40,12 +40,20 @@ export type GuideGeom =
     | PerpendicularBisector
     | Perpendicular
     | InCicle
+    | Polygon
     | CircumCircle;
 
 export type Perpendicular = {
     type: 'Perpendicular';
     p1: Coord;
     p2: Coord;
+};
+
+export type Polygon = {
+    type: 'Polygon';
+    p1: Coord;
+    p2: Coord;
+    sides: number;
 };
 
 export type InCicle = {
@@ -70,6 +78,7 @@ export const guideTypes: Array<GuideGeom['type']> = [
     'PerpendicularBisector',
     'Perpendicular',
     'InCircle',
+    'Polygon',
     'CircumCircle',
 ];
 
@@ -84,6 +93,7 @@ export const guidePoints: {
     Circle: 2,
     Line: 2,
     Split: 2,
+    Polygon: 2,
     PerpendicularBisector: 2,
 };
 

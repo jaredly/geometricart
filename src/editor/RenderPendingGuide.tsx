@@ -116,6 +116,13 @@ export const pendingGuide = (
                 limit: shiftKey,
                 extent,
             };
+        case 'Polygon':
+            return {
+                type,
+                p1: points[0],
+                p2: points[1],
+                sides: extent ?? 3,
+            };
         case 'Circle':
             return {
                 type,

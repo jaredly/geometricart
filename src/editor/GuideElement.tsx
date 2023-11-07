@@ -5,7 +5,7 @@ import { jsx } from '@emotion/react';
 import { angleTo, dist, push, scale } from '../rendering/getMirrorTransforms';
 import { GuideGeom } from '../types';
 import { lineLine, lineToSlope, SlopeIntercept } from '../rendering/intersect';
-import { getCircumCircle, getInCircle } from '../rendering/points';
+import { calcPolygon, getCircumCircle, getInCircle } from '../rendering/points';
 
 export type Bounds = { x0: number; y0: number; x1: number; y1: number };
 
@@ -94,6 +94,36 @@ export const GuideElement = ({
                             />
                         </>
                     ) : null}
+                </>
+            );
+        }
+        case 'Polygon': {
+            const { center, points } = calcPolygon(
+                geom.p1,
+                geom.p2,
+                geom.sides,
+            );
+            return (
+                <>
+                    <line
+                        x1={geom.p1.x * zoom}
+                        y1={geom.p1.y * zoom}
+                        x2={geom.p2.x * zoom}
+                        y2={geom.p2.y * zoom}
+                        stroke="#fff"
+                        strokeWidth={1}
+                    />
+                    {[center, ...points].map((pos, i) => (
+                        <circle
+                            key={i}
+                            cx={pos.x * zoom}
+                            cy={pos.y * zoom}
+                            r={0.01 * zoom}
+                            fill="none"
+                            stroke="#fff"
+                            strokeWidth={1}
+                        />
+                    ))}
                 </>
             );
         }

@@ -1,18 +1,11 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import {
-    convertDataURIToBinary,
-    makeEven,
-    tarImages,
-} from '../animation/AnimationUI';
-import { useCurrent } from '../App';
-import { findBoundingRect } from '../editor/Export';
-import { addMetadata, renderTexture } from '../editor/ExportPng';
+import React, { useMemo, useRef, useState } from 'react';
+import { makeEven } from '../animation/AnimationUI';
+import { renderTexture } from '../editor/ExportPng';
 import { undoAction } from '../editor/history';
 import { canvasRender } from '../rendering/CanvasRender';
-import { epsilon } from '../rendering/intersect';
 import { Action } from '../state/Action';
 import { undo } from '../state/reducer';
-import { History, State } from '../types';
+import { State } from '../types';
 import { animateHistory } from './animateHistory';
 
 // const historyItems = (history: History) => {

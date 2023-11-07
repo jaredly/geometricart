@@ -133,6 +133,7 @@ export const transformGuideGeom = (
             };
         case 'Split':
         case 'Line':
+        case 'Polygon':
         case 'PerpendicularBisector':
         case 'Perpendicular':
             return { ...geom, p1: transform(geom.p1), p2: transform(geom.p2) };
