@@ -357,6 +357,9 @@ async function renderOverlay(
     ctx: CanvasRenderingContext2D,
 ) {
     const attachment = state.attachments[overlay.source];
+    if (attachment.contents.match(/^https?/)) {
+        return; // skip things that would taint the canvas
+    }
 
     const scale = Math.min(overlay.scale.x, overlay.scale.y);
 

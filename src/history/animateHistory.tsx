@@ -53,6 +53,7 @@ export const animateHistory = async (
         // backgroundAlpha,
     } = originalState.animations.config;
     const ctx = canvas.getContext('2d')!;
+    ctx.lineWidth = 1;
 
     const bounds = findBoundingRect(originalState);
     const originalSize = 1000;
@@ -131,6 +132,28 @@ export const animateHistory = async (
         state.frames[startAt - 1] = await createImageBitmap(canvas);
     }
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const text = 'Pattern walk-through';
+    for (let i = 0; i <= text.length; i++) {
+        if (stopped.current) {
+            break;
+        }
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        await draw(histories.length - 1);
+
+        ctx.font = '100px sans-serif';
+        ctx.fillStyle = 'white';
+        ctx.textAlign = 'center';
+        ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+        ctx.lineWidth = 10;
+        const t = text.slice(0, i);
+        ctx.strokeText(t, ctx.canvas.width / 2, ctx.canvas.height * 0.9);
+        ctx.fillText(t, ctx.canvas.width / 2, ctx.canvas.height * 0.9);
+        ctx.lineWidth = 1;
+        await wait(60);
+    }
+    await wait(400);
 
     for (; state.i < histories.length; state.i++) {
         if (stopped.current) {
