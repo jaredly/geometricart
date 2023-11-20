@@ -76,14 +76,17 @@ async function highlightPaths(
             continue;
         }
 
-        if (by < minWait) {
-            const skip = Math.floor(minWait / by);
-            if (j++ % skip === 0) {
-                await wait(minWait);
-            }
-        } else {
-            await wait(by);
-        }
+        // if (by < minWait) {
+        //     const skip = Math.floor(minWait / by);
+        //     if (j++ % skip === 0) {
+        //         await wait(minWait);
+        //     }
+        // } else {
+        //     await wait(by);
+        // }
+    }
+    if (!noWait) {
+        await wait(300);
     }
     ctx.restore();
 }

@@ -39,6 +39,7 @@ export const animateHistory = async (
     preimage: boolean,
     log: React.RefObject<HTMLDivElement>,
     inputRef?: HTMLInputElement | null,
+    animateTitle?: boolean,
 ) => {
     const now = Date.now();
     console.log('hup');
@@ -133,27 +134,29 @@ export const animateHistory = async (
     }
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    const text = 'Pattern walk-through';
-    for (let i = 0; i <= text.length; i++) {
-        if (stopped.current) {
-            break;
+    if (animateTitle) {
+        const text = 'Pattern walk-through';
+        for (let i = 0; i <= text.length; i++) {
+            if (stopped.current) {
+                break;
+            }
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            await draw(histories.length - 1);
+
+            ctx.font = '100px sans-serif';
+            ctx.fillStyle = 'white';
+            ctx.textAlign = 'center';
+            ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+            ctx.lineWidth = 10;
+            const t = text.slice(0, i);
+            ctx.strokeText(t, ctx.canvas.width / 2, ctx.canvas.height * 0.9);
+            ctx.fillText(t, ctx.canvas.width / 2, ctx.canvas.height * 0.9);
+            ctx.lineWidth = 1;
+            await wait(60);
         }
-
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        await draw(histories.length - 1);
-
-        ctx.font = '100px sans-serif';
-        ctx.fillStyle = 'white';
-        ctx.textAlign = 'center';
-        ctx.strokeStyle = 'rgba(0,0,0,0.5)';
-        ctx.lineWidth = 10;
-        const t = text.slice(0, i);
-        ctx.strokeText(t, ctx.canvas.width / 2, ctx.canvas.height * 0.9);
-        ctx.fillText(t, ctx.canvas.width / 2, ctx.canvas.height * 0.9);
-        ctx.lineWidth = 1;
-        await wait(60);
+        await wait(400);
     }
-    await wait(400);
 
     for (; state.i < histories.length; state.i++) {
         if (stopped.current) {

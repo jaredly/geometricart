@@ -89,7 +89,7 @@ export async function animatePath(
                 state.view.zoom * 2,
             );
             ctx.stroke();
-            await wait(1000 / action.segments.length);
+            await wait(500 / action.segments.length);
         }
 
         ctx.restore();

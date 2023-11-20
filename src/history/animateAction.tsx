@@ -48,7 +48,10 @@ export async function animateAction(
             state.lastSelection = undefined;
         }
 
-        if (action.type === 'path:create') {
+        if (
+            action.type === 'path:create' ||
+            action.type === 'path:create:many'
+        ) {
             await animatePath(state, follow, action, prev);
         } else if (action.type === 'path:multiply') {
             await animateMultiply(state, action, prev, follow);
@@ -89,16 +92,7 @@ export async function animateAction(
                 withScreen,
             );
         } else if (action.type === 'mirror:add') {
-            await animateMirror(
-                follow,
-                i,
-                action,
-                ctx,
-                state.fromScreen,
-                prev,
-                histories,
-                canvas,
-            );
+            await animateMirror(follow, i, action, ctx, state.fromScreen, prev);
         } else if (
             action.type === 'path:update' ||
             action.type === 'path:update:many' ||

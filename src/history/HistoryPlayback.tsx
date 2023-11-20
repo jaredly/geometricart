@@ -28,6 +28,7 @@ export const HistoryPlayback = ({ state }: { state: State }) => {
     // );
     // const [recording, setRecording] = React.useState(false);
 
+    const [title, setTitle] = useState(false);
     const [preimage, setPreimage] = useState(false);
     const log = useRef<HTMLDivElement>(null);
 
@@ -109,6 +110,14 @@ export const HistoryPlayback = ({ state }: { state: State }) => {
                 }}
             />
             <div>
+                <label>
+                    <input
+                        type="checkbox"
+                        checked={title}
+                        onClick={() => setTitle(!title)}
+                    />
+                    Animate title
+                </label>
                 <div ref={log} />
                 <button
                     onClick={() => {
@@ -122,6 +131,7 @@ export const HistoryPlayback = ({ state }: { state: State }) => {
                                 preimage,
                                 log,
                                 inputRef.current,
+                                title,
                             );
                         } else {
                             stopped.current = true;
