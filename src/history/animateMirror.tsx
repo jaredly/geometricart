@@ -8,6 +8,7 @@ import {
     push,
     transformsToMatrices,
 } from '../rendering/getMirrorTransforms';
+import { wait } from './animateHistory';
 
 export async function animateMirror(
     follow: (
@@ -66,4 +67,6 @@ export async function animateMirror(
         ctx.setLineDash([]);
         ctx.restore();
     });
+
+    await wait(200);
 }
