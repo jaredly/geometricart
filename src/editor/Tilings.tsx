@@ -215,7 +215,7 @@ export const getShapesIntersectingPolygon = (state: State, pts: Coord[]) => {
                 pkPath(PK, state.paths[id].segments, state.paths[id].origin),
                 [pkc],
                 state.paths[id],
-            ),
+            )[0],
             state.paths[id],
         );
         if (got.length) {
