@@ -34,6 +34,7 @@ import { getClips } from './pkInsetPaths';
 export const makeImage = (href: string): Promise<HTMLImageElement> => {
     return new Promise((res, rej) => {
         const img = new Image();
+        img.crossOrigin = 'Anonymous';
         img.src = href;
         img.onload = () => {
             res(img);

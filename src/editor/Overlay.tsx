@@ -121,7 +121,7 @@ export function Overlay({
         }
 
         const src = new Image();
-        src.crossOrigin = 'anonymous';
+        src.crossOrigin = 'Anonymous';
         const loaded = new Promise((res) => (src.onload = res));
         src.src = attachment.contents;
         await loaded;

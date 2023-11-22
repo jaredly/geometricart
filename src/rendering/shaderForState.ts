@@ -3,7 +3,7 @@ import { pathToPoints, rasterSegPoints } from './pathToPoints';
 import { hslToRgb, rgbToHsl } from './colorConvert';
 import { pathToPrimitives } from '../editor/findSelection';
 import { Primitive } from './intersect';
-import { Rgb } from '../editor/PalettesForm';
+import { Rgb } from '../editor/Rgb';
 import { transformSegment } from './points';
 import { paletteColor } from '../editor/RenderPath';
 import { shaderFunctions } from './shaderFunctions';
