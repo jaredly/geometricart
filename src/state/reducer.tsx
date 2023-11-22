@@ -56,7 +56,7 @@ import {
 
 export const reducer = (state: State, action: Action): State => {
     if (action.type === 'undo') {
-        console.log(state.history);
+        // console.log(state.history);
         const [history, lastAction] = undoAction(state.history);
         if (lastAction) {
             return undo({ ...state, history }, lastAction);
@@ -244,7 +244,7 @@ export const reduceWithoutUndo = (
             ];
         }
         case 'guide:add':
-            console.log('select it up', action.id);
+            // console.log('select it up', action.id);
             return [
                 {
                     ...state,
@@ -1462,7 +1462,7 @@ export function handlePathCreate(
     if (!action.paths.length) {
         return [state, null];
     }
-    console.log('creating', action.paths);
+    // console.log('creating', action.paths);
     state = {
         ...state,
         paths: { ...state.paths },
@@ -1540,12 +1540,12 @@ export function handlePathCreate(
                     segments,
                     style,
                 };
-                console.log(state.paths[nid]);
+                // console.log(state.paths[nid]);
                 ids.push(nid);
             });
         }
         state.paths[id] = main;
-        console.log(state.paths[id]);
+        // console.log(state.paths[id]);
     });
     return [
         {

@@ -62,7 +62,7 @@ export function Clips({
                     >
                         Clip {id}
                     </label>
-                    O
+                    Outside
                     <Checkbox
                         checked={state.clips[id].outside}
                         inputId={id}
@@ -81,7 +81,7 @@ export function Clips({
                         name="mirror"
                         value={id}
                     />
-                    Inset
+                    InsetBefore
                     <Checkbox
                         checked={state.clips[id].defaultInsetBefore}
                         inputId={id}

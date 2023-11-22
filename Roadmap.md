@@ -1,4 +1,7 @@
 
+- [x] clip "inset after" should work
+- [ ] hex triangle tilings need to be able to flip, not just rotate.
+
 - [ ] HistoryPlayback - manually set the views, and skip frames
 
 - [ ] I want to ... animate between different patterns

@@ -34,6 +34,7 @@ export function pkSortedVisibleInsetPaths(
     insetCache: PKInsetCache = {},
 ): Array<Path> {
     paths = { ...paths };
+    // console.log('doing sorted visible');
 
     const pkc = clips.map((c) => ({
         path: pkPath(PK, c.shape),
@@ -82,6 +83,7 @@ export function pkSortedVisibleInsetPaths(
 
             const pre = pkc.filter((c) => !c.before);
             const post = pkc.filter((c) => c.before);
+            // console.log('visibles');
 
             if (group?.insetBeforeClip != null) {
                 if (group.insetBeforeClip) {
@@ -93,28 +95,49 @@ export function pkSortedVisibleInsetPaths(
                     ).flatMap(({ path, pkp }) => {
                         return consumePath(
                             PK,
-                            pkClips(PK, pkp, pkc, path, group?.clipMode),
+                            pkClips(PK, pkp, pkc, path, group?.clipMode)[0],
                             path,
                         );
                     });
                 } else {
-                    const res = pkClips(PK, pkp, pkc, path, group?.clipMode);
+                    const [res, changed] = pkClips(
+                        PK,
+                        pkp,
+                        pkc,
+                        path,
+                        group?.clipMode,
+                    );
                     return res
-                        ? pkPathToInsetPaths(PK, res, path, insetCache).flatMap(
-                              ({ path, pkp }) => consumePath(PK, pkp, path),
+                        ? pkPathToInsetPaths(
+                              PK,
+                              res,
+                              path,
+                              changed ? {} : insetCache,
+                          ).flatMap(({ path, pkp }) =>
+                              consumePath(PK, pkp, path),
                           )
                         : [];
                 }
             } else {
-                const res = pkClips(PK, pkp, pre, path, group?.clipMode);
+                const [res, changed] = pkClips(
+                    PK,
+                    pkp,
+                    pre,
+                    path,
+                    group?.clipMode,
+                );
                 return res
-                    ? pkPathToInsetPaths(PK, res, path, insetCache).flatMap(
-                          ({ path, pkp }) =>
-                              consumePath(
-                                  PK,
-                                  pkClips(PK, pkp, post, path, group?.clipMode),
-                                  path,
-                              ),
+                    ? pkPathToInsetPaths(
+                          PK,
+                          res,
+                          path,
+                          changed ? {} : insetCache,
+                      ).flatMap(({ path, pkp }) =>
+                          consumePath(
+                              PK,
+                              pkClips(PK, pkp, post, path, group?.clipMode)[0],
+                              path,
+                          ),
                       )
                     : [];
                 // } else {
@@ -136,37 +159,40 @@ export const pkClips = (
     PK: PathKit,
     pkp: PKPath,
     pkclips: PKC[],
-    path: Path,
+    opath: Path,
     groupMode?: PathGroup['clipMode'],
-): null | PKPath => {
-    const clipMode = path.clipMode ?? groupMode;
+): [null | PKPath, boolean] => {
+    if (!pkclips.length) {
+        return [pkp, false];
+    }
+    // console.log('pk clips', pkp, opath);
+    const clipMode = opath.clipMode ?? groupMode;
     if (
         clipMode === 'none' ||
-        (clipMode === 'fills' && path.style.fills.length)
+        (clipMode === 'fills' && opath.style.fills.length)
     ) {
-        return pkp; //consumePath(PK, pkp, path)
+        return [pkp, false]; //consumePath(PK, pkp, path)
     }
 
+    const orig = pkp.toSVGString();
     for (let { path, outside } of pkclips) {
         if (clipMode === 'remove') {
-            if (clipMode === 'remove') {
-                console.warn('No totally doing? idk');
-                const is = pkp.copy();
-                is.op(path, PK.PathOp.INTERSECT);
-                const cmds = is.toCmds();
-                is.delete();
-                if (cmds.length) {
-                    pkp.delete();
-                    return null;
-                }
-                continue;
+            console.warn('No totally doing? idk');
+            const is = pkp.copy();
+            is.op(path, PK.PathOp.INTERSECT);
+            const cmds = is.toCmds();
+            is.delete();
+            if (cmds.length) {
+                pkp.delete();
+                return [null, false];
             }
+            continue;
         }
 
         pkp.op(path, outside ? PK.PathOp.DIFFERENCE : PK.PathOp.INTERSECT);
     }
 
-    return pkp;
+    return [pkp, pkp.toSVGString() !== orig];
 };
 
 // export const pkClip = (
@@ -213,6 +239,7 @@ export const pkPathToInsetPaths = (
     path: Path,
     insetCache: PKInsetCache,
 ) => {
+    // console.log('hm to inset paths');
     const res = pathToSingles(path).map(([path, inset]) => {
         if (!inset || Math.abs(inset) < 0.005) {
             return { path, pkp: pkp.copy() };
@@ -247,6 +274,7 @@ export const pkPathToInsetPaths = (
         return { path, pkp: pkpi };
     });
     pkp.delete();
+    // console.log('got some singles I guess', res);
     return res;
 };
 
