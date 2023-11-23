@@ -1,6 +1,9 @@
 import { Coord, State } from '../types';
 import {
+    applyHistoryView,
+    findViewPoints,
     getHistoriesList,
+    mergeViewPoints,
     simplifyHistory,
     StateAndAction,
 } from './HistoryPlayback';
@@ -43,7 +46,7 @@ export const animateHistory = async (
     const now = Date.now();
     console.log('hup');
 
-    const histories = simplifyHistory(getHistoriesList(originalState));
+    let histories = simplifyHistory(getHistoriesList(originalState));
     const { zoom } = originalState.animations.config;
     const ctx = canvas.getContext('2d')!;
     ctx.lineWidth = 1;
@@ -59,6 +62,24 @@ export const animateHistory = async (
     //     : originalSize;
     let h = originalSize;
     let w = originalSize;
+
+    const viewPoints = findViewPoints(histories);
+    const mergedVP = mergeViewPoints(
+        viewPoints,
+        originalState.historyView?.zooms,
+    );
+
+    for (let i = 0; i < histories.length; i++) {
+        histories[i].state = applyHistoryView(
+            mergedVP,
+            i,
+            // originalState.historyView?.zooms ?? [],
+            histories[i].state,
+        );
+    }
+    histories = histories.filter(
+        (_, i) => !originalState.historyView?.skips.includes(i),
+    );
 
     const draw = async (current: number) => {
         ctx.save();
@@ -154,6 +175,9 @@ export const animateHistory = async (
         if (stopped.current) {
             break;
         }
+        // if (originalState.historyView?.skips.includes(state.i)) {
+        //     continue;
+        // }
         if (inputRef) {
             inputRef.value = state.i + '';
         }
