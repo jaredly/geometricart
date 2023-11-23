@@ -1,4 +1,9 @@
 
+- [ ] historyplayback
+  - list the different "pan/zoom"s
+  - allow me to "start an override" at a given ... index
+  - allow me to "exclude" frames that I don't like.
+
 - [x] clip "inset after" should work
 - [ ] hex triangle tilings need to be able to flip, not just rotate.
 

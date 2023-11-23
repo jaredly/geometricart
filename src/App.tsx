@@ -155,7 +155,7 @@ export const App = ({
                         }}
                     />
                 ) : screen === 'history' ? (
-                    <HistoryPlayback state={state} />
+                    <HistoryPlayback state={state} dispatch={dispatch} />
                 ) : screen === 'overlay' ? (
                     <OverlayEditor state={state} dispatch={dispatch} />
                 ) : (

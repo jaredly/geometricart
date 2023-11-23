@@ -933,6 +933,11 @@ export const reduceWithoutUndo = (
                 },
             ];
         }
+        case 'history-view:update':
+            return [
+                { ...state, historyView: action.view },
+                { type: action.type, action, prev: state.historyView },
+            ];
         default:
             let _x: never = action;
             console.log(`SKIPPING ${(action as any).type}`);
@@ -942,6 +947,8 @@ export const reduceWithoutUndo = (
 
 export const undo = (state: State, action: UndoAction): State => {
     switch (action.type) {
+        case 'history-view:update':
+            return { ...state, historyView: action.prev };
         case 'tiling:update':
             return {
                 ...state,

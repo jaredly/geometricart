@@ -5,8 +5,9 @@ import { undoAction } from '../editor/history';
 import { canvasRender } from '../rendering/CanvasRender';
 import { Action } from '../state/Action';
 import { undo } from '../state/reducer';
-import { State } from '../types';
+import { State, View } from '../types';
 import { animateHistory } from './animateHistory';
+import { coordsEqual } from '../rendering/pathsAreIdentical';
 
 // const historyItems = (history: History) => {
 //     let current = history.branches[history.currentBranch];
@@ -19,7 +20,13 @@ import { animateHistory } from './animateHistory';
 //     return items;
 // };
 
-export const HistoryPlayback = ({ state }: { state: State }) => {
+export const HistoryPlayback = ({
+    state,
+    dispatch,
+}: {
+    state: State;
+    dispatch: React.Dispatch<Action>;
+}) => {
     const canvas = React.useRef<HTMLCanvasElement>(null);
     // const interactionCanvas = React.useRef<HTMLCanvasElement>(null);
     // const bounds = React.useMemo(
@@ -35,6 +42,27 @@ export const HistoryPlayback = ({ state }: { state: State }) => {
     const histories = useMemo(() => {
         return simplifyHistory(getHistoriesList(state));
     }, [state]);
+
+    const viewPoints = useMemo(() => {
+        let points: { idx: number; view: Pick<View, 'zoom' | 'center'> }[] = [];
+        histories.forEach((item, i) => {
+            let prev = points.length ? points[points.length - 1] : null;
+            if (
+                !prev ||
+                prev.view.zoom !== item.state.view.zoom ||
+                !coordsEqual(item.state.view.center, prev.view.center)
+            ) {
+                points.push({
+                    view: {
+                        zoom: item.state.view.zoom,
+                        center: item.state.view.center,
+                    },
+                    idx: i,
+                });
+            }
+        });
+        return points;
+    }, [histories]);
 
     const [current, setCurrent] = React.useState(0);
 
@@ -70,10 +98,31 @@ export const HistoryPlayback = ({ state }: { state: State }) => {
         }
         const ctx = canvas.current.getContext('2d')!;
         ctx.save();
-        const state = histories[current].state;
+        let hstate = histories[current].state;
+
+        let relevantView = null;
+        for (let vp of viewPoints) {
+            if (vp.idx > current) break;
+            relevantView = vp;
+            const f = state.historyView?.zooms.find((z) => z.idx === vp.idx);
+            if (f) {
+                relevantView = f;
+            }
+        }
+        if (relevantView) {
+            hstate = {
+                ...hstate,
+                view: {
+                    ...hstate.view,
+                    center: relevantView.view.center,
+                    zoom: relevantView.view.zoom,
+                },
+            };
+        }
+
         canvasRender(
             ctx,
-            { ...state, overlays: {} },
+            { ...hstate, overlays: {} },
             w * 2 * zoom,
             h * 2 * zoom,
             2 * zoom,
@@ -82,9 +131,9 @@ export const HistoryPlayback = ({ state }: { state: State }) => {
             null,
         ).then(() => {
             ctx.restore();
-            if (state.view.texture) {
+            if (hstate.view.texture) {
                 const size = Math.max(w * 2 * zoom, h * 2 * zoom);
-                renderTexture(state.view.texture, size, size, ctx);
+                renderTexture(hstate.view.texture, size, size, ctx);
             }
         });
     }, [state, w, h, dx, dy, zoom, backgroundAlpha, current]);
@@ -114,7 +163,7 @@ export const HistoryPlayback = ({ state }: { state: State }) => {
                     <input
                         type="checkbox"
                         checked={title}
-                        onClick={() => setTitle(!title)}
+                        onChange={() => setTitle(!title)}
                     />
                     Animate title
                 </label>
@@ -141,21 +190,71 @@ export const HistoryPlayback = ({ state }: { state: State }) => {
                     Animate it up
                 </button>
             </div>
-            <div>
-                {current}
+            <div
+                style={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                }}
+            >
+                <span
+                    style={{
+                        width: 30,
+                        display: 'inline-block',
+                        textAlign: 'right',
+                        marginRight: 8,
+                    }}
+                >
+                    {current}
+                </span>
 
-                <input
-                    type="range"
-                    ref={inputRef}
-                    value={current}
-                    max={histories.length - 1}
-                    onChange={(e) => setCurrent(parseInt(e.target.value))}
-                    style={{ width: '500px' }}
-                />
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <input
+                        type="range"
+                        ref={inputRef}
+                        value={current}
+                        max={histories.length - 1}
+                        onChange={(e) => setCurrent(parseInt(e.target.value))}
+                        style={{ width: '500px' }}
+                    />
+                    <div
+                        style={{ width: 500, position: 'relative', height: 10 }}
+                    >
+                        {viewPoints.map((pt) => (
+                            <div
+                                key={pt.idx}
+                                style={{
+                                    position: 'absolute',
+                                    top: 0,
+                                    left: (pt.idx / histories.length) * 500,
+                                    width: 10,
+                                    height: 10,
+                                    backgroundColor: 'green',
+                                    borderRadius: 5,
+                                    cursor: 'pointer',
+                                }}
+                                onClick={() => {
+                                    const v = state.historyView
+                                        ? { ...state.historyView }
+                                        : { zooms: [], skips: [] };
+                                    v.zooms = v.zooms.slice();
+                                    v.zooms.push({
+                                        idx: current,
+                                        view: pt.view,
+                                    });
+                                    dispatch({
+                                        type: 'history-view:update',
+                                        view: v,
+                                    });
+                                }}
+                            />
+                        ))}
+                    </div>
+                </div>
             </div>
-            {/* <div style={{ maxWidth: 500 }}>
-                {JSON.stringify(histories[current].action)}
-            </div> */}
+            <div style={{ maxWidth: 500 }}>
+                {JSON.stringify(state.historyView ?? 'no history view')}
+            </div>
             <button onClick={() => setPreimage(!preimage)}>
                 {!preimage
                     ? 'Image everything in advance'

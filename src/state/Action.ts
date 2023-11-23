@@ -86,6 +86,17 @@ export type UndoTimelineLaneARE = {
     undo: UndoAddRemoveEdit<TimelineLane, number>;
 };
 
+export type HistoryViewUpdate = {
+    type: 'history-view:update';
+    view: State['historyView'];
+};
+
+export type UndoHistoryViewUpdate = {
+    type: HistoryViewUpdate['type'];
+    action: HistoryViewUpdate;
+    prev: State['historyView'];
+};
+
 export type TimelineSlotARE = {
     type: 'timeline:slot:are';
     timeline: number;
@@ -580,6 +591,7 @@ export type UndoableAction =
     | TimelineLaneARE
     | GCodeConfig
     | TimelineSlotARE
+    | HistoryViewUpdate
     | GCodeItemARE
     | GCodeItemOrder
     | ScriptUpdate
@@ -640,6 +652,7 @@ export type UndoAction =
     | UndoPendingPoint
     | UndoClipCut
     | UndoPathDelete
+    | UndoHistoryViewUpdate
     // | UndoPathPoint
     // | UndoPathAdd
     | UndoTilingDelete

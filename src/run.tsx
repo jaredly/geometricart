@@ -475,6 +475,7 @@ const getForeignState = async (image: string | null, load: string | null) => {
     }
     if (image) {
         const img = new Image();
+        img.crossOrigin = 'Anonymous';
         img.src = image;
         await new Promise((res) => (img.onload = res));
 
