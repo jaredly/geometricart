@@ -43,26 +43,7 @@ export const HistoryPlayback = ({
         return simplifyHistory(getHistoriesList(state));
     }, [state]);
 
-    const viewPoints = useMemo(() => {
-        let points: { idx: number; view: Pick<View, 'zoom' | 'center'> }[] = [];
-        histories.forEach((item, i) => {
-            let prev = points.length ? points[points.length - 1] : null;
-            if (
-                !prev ||
-                prev.view.zoom !== item.state.view.zoom ||
-                !coordsEqual(item.state.view.center, prev.view.center)
-            ) {
-                points.push({
-                    view: {
-                        zoom: item.state.view.zoom,
-                        center: item.state.view.center,
-                    },
-                    idx: i,
-                });
-            }
-        });
-        return points;
-    }, [histories]);
+    const viewPoints = useMemo(() => findViewPoints(histories), [histories]);
 
     const [current, setCurrent] = React.useState(0);
 
@@ -98,27 +79,12 @@ export const HistoryPlayback = ({
         }
         const ctx = canvas.current.getContext('2d')!;
         ctx.save();
-        let hstate = histories[current].state;
-
-        let relevantView = null;
-        for (let vp of viewPoints) {
-            if (vp.idx > current) break;
-            relevantView = vp;
-            const f = state.historyView?.zooms.find((z) => z.idx === vp.idx);
-            if (f) {
-                relevantView = f;
-            }
-        }
-        if (relevantView) {
-            hstate = {
-                ...hstate,
-                view: {
-                    ...hstate.view,
-                    center: relevantView.view.center,
-                    zoom: relevantView.view.zoom,
-                },
-            };
-        }
+        const hstate = applyHistoryView(
+            viewPoints,
+            current,
+            state,
+            histories[current].state,
+        );
 
         canvasRender(
             ctx,
@@ -209,14 +175,44 @@ export const HistoryPlayback = ({
                 </span>
 
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <input
-                        type="range"
-                        ref={inputRef}
-                        value={current}
-                        max={histories.length - 1}
-                        onChange={(e) => setCurrent(parseInt(e.target.value))}
-                        style={{ width: '500px' }}
-                    />
+                    <div>
+                        <input
+                            type="range"
+                            ref={inputRef}
+                            value={current}
+                            max={histories.length - 1}
+                            onChange={(e) =>
+                                setCurrent(parseInt(e.target.value))
+                            }
+                            style={{ width: '500px' }}
+                        />
+                        <button
+                            onClick={() => {
+                                const view = state.historyView
+                                    ? { ...state.historyView }
+                                    : { zooms: [], skips: [] };
+                                view.skips = view.skips.slice();
+                                if (view.skips.includes(current)) {
+                                    view.skips = view.skips.filter(
+                                        (k) => k !== current,
+                                    );
+                                } else {
+                                    view.skips.push(current);
+                                }
+                                dispatch({ type: 'history-view:update', view });
+                                setCurrent(current + 1);
+                            }}
+                            style={{
+                                background: state.historyView?.skips.includes(
+                                    current,
+                                )
+                                    ? 'red'
+                                    : 'white',
+                            }}
+                        >
+                            ✖️
+                        </button>
+                    </div>
                     <div
                         style={{ width: 500, position: 'relative', height: 10 }}
                     >
@@ -249,6 +245,21 @@ export const HistoryPlayback = ({
                                 }}
                             />
                         ))}
+                        {state.historyView?.skips.map((idx) => (
+                            <div
+                                key={idx}
+                                style={{
+                                    position: 'absolute',
+                                    top: 0,
+                                    left: (idx / histories.length) * 500,
+                                    width: 5,
+                                    height: 5,
+                                    backgroundColor: 'red',
+                                    borderRadius: 5,
+                                    cursor: 'pointer',
+                                }}
+                            />
+                        ))}
                     </div>
                 </div>
             </div>
@@ -263,6 +274,55 @@ export const HistoryPlayback = ({
         </div>
     );
 };
+
+function findViewPoints(histories: StateAndAction[]) {
+    let points: { idx: number; view: Pick<View, 'zoom' | 'center'> }[] = [];
+    histories.forEach((item, i) => {
+        let prev = points.length ? points[points.length - 1] : null;
+        if (
+            !prev ||
+            prev.view.zoom !== item.state.view.zoom ||
+            !coordsEqual(item.state.view.center, prev.view.center)
+        ) {
+            points.push({
+                view: {
+                    zoom: item.state.view.zoom,
+                    center: item.state.view.center,
+                },
+                idx: i,
+            });
+        }
+    });
+    return points;
+}
+
+function applyHistoryView(
+    viewPoints: { idx: number; view: Pick<View, 'zoom' | 'center'> }[],
+    current: number,
+    state: State,
+    hstate: State,
+) {
+    let relevantView = null;
+    for (let vp of viewPoints) {
+        if (vp.idx > current) break;
+        relevantView = vp;
+        const f = state.historyView?.zooms.find((z) => z.idx === vp.idx);
+        if (f) {
+            relevantView = f;
+        }
+    }
+    if (relevantView) {
+        hstate = {
+            ...hstate,
+            view: {
+                ...hstate.view,
+                center: relevantView.view.center,
+                zoom: relevantView.view.zoom,
+            },
+        };
+    }
+    return hstate;
+}
 
 export function getHistoriesList(state: State, overrideZoom?: boolean) {
     let states: { state: State; action: Action | null }[] = [];

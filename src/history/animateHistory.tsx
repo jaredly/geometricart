@@ -33,7 +33,6 @@ export type AnimateState = {
 export const animateHistory = async (
     originalState: State,
     canvas: HTMLCanvasElement,
-    // interactionCanvas: HTMLCanvasElement,
     stopped: { current: boolean },
     startAt: number,
     preimage: boolean,
@@ -45,14 +44,7 @@ export const animateHistory = async (
     console.log('hup');
 
     const histories = simplifyHistory(getHistoriesList(originalState));
-    const {
-        // crop,
-        // fps,
-        zoom,
-        // increment,
-        // restrictAspectRatio: lockAspectRatio,
-        // backgroundAlpha,
-    } = originalState.animations.config;
+    const { zoom } = originalState.animations.config;
     const ctx = canvas.getContext('2d')!;
     ctx.lineWidth = 1;
 
