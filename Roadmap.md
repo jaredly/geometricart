@@ -1,4 +1,6 @@
 
+- [ ] Polygon - toggle between "point / next" and "point / center"
+
 - [ ] historyplayback
   - list the different "pan/zoom"s
   - allow me to "start an override" at a given ... index

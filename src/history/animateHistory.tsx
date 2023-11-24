@@ -160,8 +160,10 @@ export const animateHistory = async (
             ctx.font = '100px sans-serif';
             ctx.fillStyle = 'white';
             ctx.textAlign = 'center';
-            ctx.strokeStyle = 'rgba(0,0,0,0.5)';
-            ctx.lineWidth = 10;
+            ctx.strokeStyle = 'rgba(0,0,0,1)';
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+            ctx.lineWidth = 30;
             const t = text.slice(0, i);
             ctx.strokeText(t, ctx.canvas.width / 2, ctx.canvas.height * 0.9);
             ctx.fillText(t, ctx.canvas.width / 2, ctx.canvas.height * 0.9);

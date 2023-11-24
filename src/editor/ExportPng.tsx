@@ -27,7 +27,7 @@ export function ExportPng({
 }) {
     const [png, setPng] = React.useState(null as null | string);
 
-    const [size, setSize] = React.useState(originalSize);
+    const [size, setSize] = React.useState(3000);
 
     return (
         <div css={{ marginTop: 16, border: '1px solid #aaa', padding: 8 }}>
