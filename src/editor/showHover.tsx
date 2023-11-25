@@ -7,6 +7,7 @@ import {
     applyMatrices,
     getTransformsForNewMirror,
     Matrix,
+    reverseTransform,
 } from '../rendering/getMirrorTransforms';
 import { geomToPrimitives } from '../rendering/points';
 import { Mirror, State } from '../types';
@@ -126,14 +127,18 @@ export const showHover = (
             const tiling = state.tilings[hover.id];
             const pts = tilingPoints(tiling.shape);
             const tx = getTransform(pts);
+            const btx = reverseTransform(tx);
             const full = eigenShapesToLines(
                 tiling.cache.segments.map((s) => [s.prev, s.segment.to]),
-                tiling.shape.type === 'right-triangle' &&
-                    tiling.shape.rotateHypotenuse,
+                tiling.shape,
+                //.type === 'right-triangle' &&
+                // tiling.shape.rotateHypotenuse,
                 applyMatrices(pts[2], tx),
                 pts.map((pt) => applyMatrices(pt, tx)),
-            );
-            // return <circle x={0} y={0} r={10} fill="red" />;
+            ).map(([p1, p2]) => [
+                applyMatrices(p1, btx),
+                applyMatrices(p2, btx),
+            ]);
             return full.map(([p1, p2], i) => (
                 <line
                     stroke="yellow"

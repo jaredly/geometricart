@@ -69,7 +69,7 @@ export const Tilings = ({
                             <label>
                                 <input
                                     type="checkbox"
-                                    checked={tiling.shape.rotateHypotenuse}
+                                    checked={!!tiling.shape.rotateHypotenuse}
                                     onChange={() => {
                                         const sh = tiling.shape as Extract<
                                             Tiling['shape'],
@@ -90,6 +90,31 @@ export const Tilings = ({
                                     }}
                                 />
                                 Rotate around hypotenuse
+                            </label>
+                        ) : tiling.shape.type === 'isocelese' ? (
+                            <label>
+                                <input
+                                    type="checkbox"
+                                    checked={!!tiling.shape.flip}
+                                    onChange={() => {
+                                        const sh = tiling.shape as Extract<
+                                            Tiling['shape'],
+                                            { type: 'isocelese' }
+                                        >;
+
+                                        dispatch({
+                                            type: 'tiling:update',
+                                            tiling: {
+                                                ...tiling,
+                                                shape: {
+                                                    ...sh,
+                                                    flip: !sh.flip,
+                                                },
+                                            },
+                                        });
+                                    }}
+                                />
+                                Flip (vs rotate)
                             </label>
                         ) : null}
                         <button
@@ -200,7 +225,7 @@ export function tilingCacheSvg(cache: Tiling['cache'], shape: Tiling['shape']) {
             style={{ width: 200 }}
             src={`data:image/svg+xml,${eigenShapesToSvg(
                 cache.segments.map((s) => [s.prev, s.segment.to]),
-                shape.type === 'right-triangle' && shape.rotateHypotenuse,
+                shape,
                 applyMatrices(pts[2], tx),
                 pts.map((pt) => applyMatrices(pt, tx)),
             )}`}

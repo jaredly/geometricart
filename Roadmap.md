@@ -1,6 +1,6 @@
 
 - [x] show tiling on hover
-- [ ] allow equilateral treiangle to do the "flip" vs "noflip"
+- [x] allow equilateral treiangle to do the "flip" vs "noflip"
 - [ ] Polygon - toggle between "point / next" and "point / center"
 
 - [ ] historyplayback
@@ -30,9 +30,9 @@
 
 --
 
-- [ ] DELETE A TILING ive made a terrible mistake
+- [x] DELETE A TILING ive made a terrible mistake
 
-- [ ] hovering over a tiling in the sidebar
+- [x] hovering over a tiling in the sidebar
   should show the outline in the main area,
   and maybe and overlay of what it looks like tiled?
   Would be a good debugging dealio

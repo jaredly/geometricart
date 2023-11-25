@@ -567,33 +567,36 @@ export type BarePath = { origin: Coord; segments: Segment[]; open?: boolean };
 
 export type SegPrev = { segment: Segment; prev: Coord };
 
+export type TilingShape =
+    | {
+          type: 'right-triangle';
+          rotateHypotenuse: boolean;
+          // 45/45/90 makes sense
+          // 30/60/90 is the hexy
+          // otherwise it'll have to do
+          // the rotate dealio
+          start: Coord;
+          corner: Coord;
+          end: Coord;
+      }
+    | {
+          type: 'isocelese';
+          flip?: boolean; // vs 'rotate'
+          // Clockwise, where First is the "center" of the figure
+          first: Coord;
+          second: Coord;
+          third: Coord;
+      }
+    | {
+          type: 'parallellogram';
+          // Clockwise
+          points: [Coord, Coord, Coord, Coord];
+      };
+
 export type Tiling = {
     id: Id;
     // points: Coord[],
-    shape:
-        | {
-              type: 'right-triangle';
-              rotateHypotenuse: boolean;
-              // 45/45/90 makes sense
-              // 30/60/90 is the hexy
-              // otherwise it'll have to do
-              // the rotate dealio
-              start: Coord;
-              corner: Coord;
-              end: Coord;
-          }
-        | {
-              type: 'isocelese';
-              // Clockwise, where First is the "center" of the figure
-              first: Coord;
-              second: Coord;
-              third: Coord;
-          }
-        | {
-              type: 'parallellogram';
-              // Clockwise
-              points: [Coord, Coord, Coord, Coord];
-          };
+    shape: TilingShape;
     // sides: { from: Coord; kind: 'reflect' | 'rotate' | null }[];
     cache: {
         segments: SegPrev[];

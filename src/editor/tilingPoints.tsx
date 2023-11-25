@@ -1,4 +1,4 @@
-import { Coord, Tiling } from '../types';
+import { Coord, Tiling, TilingShape } from '../types';
 import { closeEnough } from '../rendering/epsilonToZero';
 import {
     Matrix,
@@ -20,7 +20,7 @@ export const transformLines = (lines: [Coord, Coord][], mx: Matrix[]) =>
 
 export function eigenShapesToLines(
     unique: [Coord, Coord][],
-    flip: boolean,
+    shape: TilingShape,
     tr: Coord,
     tpts: Coord[],
 ) {
@@ -30,8 +30,6 @@ export function eigenShapesToLines(
         full = full.concat(transformLines(full, [scaleMatrix(-1, 1)]));
         full = full.concat(
             transformLines(full, [scaleMatrix(1, -1)]),
-            // );
-            // full = full.concat(
             transformLines(full, [translationMatrix({ x: 0, y: -tr.y * 2 })]),
             transformLines(full, [
                 translationMatrix({ x: 0, y: -tr.y * 2 }),
@@ -39,7 +37,7 @@ export function eigenShapesToLines(
             ]),
         );
         return full;
-    } else if (flip) {
+    } else if (shape.type === 'right-triangle' && shape.rotateHypotenuse) {
         full = full.concat(
             transformLines(full, [
                 rotationMatrix(Math.PI),
@@ -79,26 +77,71 @@ export function eigenShapesToLines(
         const d3 = dist(tpts[0], tpts[2]);
         if (closeEnough(d1, d2) && closeEnough(d2, d3)) {
             // Equilateral triangle
-            full = full.concat(
-                transformLines(full, [
-                    rotationMatrix(Math.PI),
-                    translationMatrix({ x: tr.x * 3, y: tr.y }),
-                ]),
-            );
-            full = full.concat(
-                transformLines(full, [
-                    scaleMatrix(1, -1),
-                    translationMatrix({ x: 0, y: tr.y * 2 }),
-                ]),
-            );
-            //
-            full = full.concat(
-                transformLines(full, [rotationMatrix((Math.PI / 3) * 2)]),
-                transformLines(full, [rotationMatrix(Math.PI / 3)]),
-                transformLines(full, [rotationMatrix(Math.PI)]),
-                transformLines(full, [rotationMatrix(-(Math.PI / 3))]),
-                transformLines(full, [rotationMatrix(-(Math.PI / 3) * 2)]),
-            );
+            if (shape.type === 'isocelese' && shape.flip) {
+                full = full.concat(
+                    transformLines(full, [
+                        rotationMatrix(-Math.PI / 3),
+                        translationMatrix({
+                            x: tr.x * 2,
+                            y: 0,
+                        }),
+                    ]),
+                    transformLines(full, [
+                        rotationMatrix((Math.PI * 2) / 3),
+                        scaleMatrix(-1, 1),
+                        translationMatrix({
+                            x: tr.x * 2,
+                            y: tr.y * 2,
+                        }),
+                    ]),
+                    transformLines(full, [
+                        rotationMatrix(-Math.PI / 3),
+                        scaleMatrix(-1, 1),
+                        rotationMatrix(Math.PI / 3),
+                        translationMatrix({
+                            x: tr.x * 2,
+                            y: 0,
+                        }),
+                    ]),
+                );
+                full = full.concat(
+                    transformLines(full, [
+                        scaleMatrix(-1, 1),
+                        rotationMatrix(Math.PI / 3),
+                    ]),
+                    transformLines(full, [
+                        scaleMatrix(-1, 1),
+                        rotationMatrix(Math.PI),
+                    ]),
+                    transformLines(full, [
+                        scaleMatrix(-1, 1),
+                        rotationMatrix(-Math.PI / 3),
+                    ]),
+                    transformLines(full, [rotationMatrix((-Math.PI * 2) / 3)]),
+                    transformLines(full, [rotationMatrix((Math.PI * 2) / 3)]),
+                );
+            } else {
+                full = full.concat(
+                    transformLines(full, [
+                        rotationMatrix(Math.PI),
+                        translationMatrix({ x: tr.x * 3, y: tr.y }),
+                    ]),
+                );
+                full = full.concat(
+                    transformLines(full, [
+                        scaleMatrix(1, -1),
+                        translationMatrix({ x: 0, y: tr.y * 2 }),
+                    ]),
+                );
+                //
+                full = full.concat(
+                    transformLines(full, [rotationMatrix((Math.PI / 3) * 2)]),
+                    transformLines(full, [rotationMatrix(Math.PI / 3)]),
+                    transformLines(full, [rotationMatrix(Math.PI)]),
+                    transformLines(full, [rotationMatrix(-(Math.PI / 3))]),
+                    transformLines(full, [rotationMatrix(-(Math.PI / 3) * 2)]),
+                );
+            }
         } else {
             full = full.concat(
                 transformLines(full, [
@@ -115,11 +158,11 @@ export function eigenShapesToLines(
 
 export function eigenShapesToSvg(
     unique: [Coord, Coord][],
-    flip: boolean,
+    shape: TilingShape,
     tr: Coord,
     tpts: Coord[],
 ) {
-    let full = eigenShapesToLines(unique, flip, tr, tpts);
+    let full = eigenShapesToLines(unique, shape, tr, tpts);
 
     const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" width="50" style="background:black" height="50" viewBox="-2.5 -2.5 5 5">
@@ -137,7 +180,9 @@ export function eigenShapesToSvg(
         .map(([p1, p2]) => {
             return `<line
             stroke-linecap='round' stroke-linejoin='round'
-             x1="${p1.x}" x2="${p2.x}" y1="${p1.y}" y2="${p2.y}" stroke="yellow" stroke-width="0.02"/>`;
+             x1="${p1.x}" x2="${p2.x}" y1="${p1.y}" y2="${p2.y}"
+             stroke="yellow" stroke-width="0.02"
+             />`;
         })
         .join('\n')}
     </svg>
