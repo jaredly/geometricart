@@ -131,8 +131,6 @@ export const showHover = (
             const full = eigenShapesToLines(
                 tiling.cache.segments.map((s) => [s.prev, s.segment.to]),
                 tiling.shape,
-                //.type === 'right-triangle' &&
-                // tiling.shape.rotateHypotenuse,
                 applyMatrices(pts[2], tx),
                 pts.map((pt) => applyMatrices(pt, tx)),
             ).map(([p1, p2]) => [

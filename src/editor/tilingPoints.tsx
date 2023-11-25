@@ -80,28 +80,17 @@ export function eigenShapesToLines(
             if (shape.type === 'isocelese' && shape.flip) {
                 full = full.concat(
                     transformLines(full, [
+                        scaleMatrix(-1, 1),
                         rotationMatrix(-Math.PI / 3),
-                        translationMatrix({
-                            x: tr.x * 2,
-                            y: 0,
-                        }),
+                        translationMatrix({ x: tr.x * 3, y: tr.y }),
                     ]),
                     transformLines(full, [
                         rotationMatrix((Math.PI * 2) / 3),
-                        scaleMatrix(-1, 1),
-                        translationMatrix({
-                            x: tr.x * 2,
-                            y: tr.y * 2,
-                        }),
+                        translationMatrix({ x: tr.x * 3, y: tr.y }),
                     ]),
                     transformLines(full, [
-                        rotationMatrix(-Math.PI / 3),
-                        scaleMatrix(-1, 1),
-                        rotationMatrix(Math.PI / 3),
-                        translationMatrix({
-                            x: tr.x * 2,
-                            y: 0,
-                        }),
+                        rotationMatrix((-Math.PI * 2) / 3),
+                        translationMatrix({ x: tr.x * 3, y: tr.y }),
                     ]),
                 );
                 full = full.concat(
