@@ -2,6 +2,8 @@
 - [x] show tiling on hover
 - [x] allow equilateral treiangle to do the "flip" vs "noflip"
 - [ ] Polygon - toggle between "point / next" and "point / center"
+- [x] fix tilings that are colinear with the defining triangle
+- [ ] remove unused tilings on save
 
 - [ ] historyplayback
   - list the different "pan/zoom"s

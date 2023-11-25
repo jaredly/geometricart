@@ -167,14 +167,18 @@ function PaletteForm({
             style={{
                 border: `1px solid transparent`,
             }}
-            onClick={() => {
-                dispatch({
-                    type: 'palette:update',
-                    colors: state.palettes[name],
-                });
-            }}
         >
             {name}
+            <button
+                onClick={() => {
+                    dispatch({
+                        type: 'palette:update',
+                        colors: state.palettes[name],
+                    });
+                }}
+            >
+                Use
+            </button>
             <div
                 css={{
                     display: 'flex',

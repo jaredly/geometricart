@@ -23,6 +23,7 @@ import { pkPath } from '../sidebar/NewSidebar';
 import { addPrevsToSegments } from '../rendering/segmentsToNonIntersectingSegments';
 import {
     SlopeIntercept,
+    lineLine,
     lineToSlope,
     slopeToLine,
 } from '../rendering/intersect';
@@ -32,6 +33,9 @@ import { transformPath, transformSegment } from '../rendering/points';
 import { boundsForCoords } from './Bounds';
 import { tilingPoints, getTransform, eigenShapesToSvg } from './tilingPoints';
 import { UIDispatch } from '../useUIState';
+import { coordsEqual } from '../rendering/pathsAreIdentical';
+import { consoleSvg, renderSegments } from '../animation/getBuiltins';
+import { SegmentWithPrev } from '../rendering/clipPathNew';
 
 export const Tilings = ({
     state,
@@ -198,6 +202,7 @@ export const simpleExport = async (state: State, shape: Tiling['shape']) => {
         return;
     }
     const { klines, shapes, tr, pts: tpts } = res;
+    console.log('pts', pts);
     console.log('klins', klines);
     const segs = Object.keys(klines).sort();
 
@@ -215,6 +220,11 @@ export const simpleExport = async (state: State, shape: Tiling['shape']) => {
         ),
         shapes,
     };
+};
+
+export const slopeToPseg = (line: SlopeIntercept): SegmentWithPrev => {
+    const [p1, p2] = slopeToLine(line);
+    return { prev: p1, segment: { type: 'Line', to: p2 }, shape: -1 };
 };
 
 export function tilingCacheSvg(cache: Tiling['cache'], shape: Tiling['shape']) {
@@ -271,12 +281,23 @@ export const getShapesIntersectingPolygon = (state: State, pts: Coord[]) => {
         return got;
     });
 
-    intersections
-        .flatMap((path) =>
-            addPrevsToSegments(
-                path.segments.map((seg) => transformSegment(seg, tx)),
-            ),
-        )
+    const origSegments = paths.flatMap((id) =>
+        addPrevsToSegments(
+            state.paths[id].segments.map((seg) => transformSegment(seg, tx)),
+        ),
+    );
+    const origLines = origSegments.map((iline) =>
+        lineToSlope(iline.prev, iline.segment.to, true),
+    );
+
+    const isegs = intersections.flatMap((path) =>
+        addPrevsToSegments(
+            path.segments.map((seg) => transformSegment(seg, tx)),
+        ),
+    );
+    // consoleSvg(renderSegments(origSegments));
+    // consoleSvg(renderSegments(isegs));
+    isegs
         .map((iline) => lineToSlope(iline.prev, iline.segment.to, true))
         .filter((sl) => {
             if (
@@ -284,6 +305,43 @@ export const getShapesIntersectingPolygon = (state: State, pts: Coord[]) => {
                     (tl) => closeEnough(tl.b, sl.b) && closeEnough(tl.m, sl.m),
                 )
             ) {
+                const ss = slopeToLine(sl);
+                for (let os of origLines) {
+                    const ol = slopeToLine(os);
+                    if (
+                        (coordsEqual(ss[0], ol[0]) ||
+                            coordsEqual(ss[0], ol[1])) &&
+                        (coordsEqual(ss[1], ol[1]) || coordsEqual(ss[1], ol[0]))
+                    ) {
+                        return true;
+                    }
+                    const int = lineLine(os, sl);
+                    if (int) {
+                        // consoleSvg(
+                        //     renderSegments(
+                        //         [slopeToPseg(os), slopeToPseg(sl)],
+                        //         undefined,
+                        //         ['red', 'blue'],
+                        //     ),
+                        // );
+                        // console.log(
+                        //     'thing to remove, is maybe still good',
+                        //     os,
+                        //     sl,
+                        //     int,
+                        // );
+                        const back = slopeToLine(os);
+                        const first = coordsEqual(int, back[0]);
+                        const last = coordsEqual(int, back[1]);
+                        if ((!first && !last) || (first && last)) {
+                            return true;
+                        }
+                    }
+                }
+                // const got = origSegments.some((os) => lineLine(os, sl))
+                // if () {
+                //     return true;
+                // }
                 return false;
             }
             return true;

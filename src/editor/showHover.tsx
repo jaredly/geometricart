@@ -141,8 +141,8 @@ export const showHover = (
                 <line
                     stroke="yellow"
                     strokeWidth={1}
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
                     key={i}
                     x1={p1.x * zoom}
                     x2={p2.x * zoom}
