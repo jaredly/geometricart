@@ -409,7 +409,11 @@ export const NewSidebar = ({
                         key: 'tilings',
                         header: 'Tilings',
                         content: () => (
-                            <Tilings state={state} dispatch={dispatch} />
+                            <Tilings
+                                state={state}
+                                dispatch={dispatch}
+                                uiDispatch={uiDispatch}
+                            />
                         ),
                     },
                     {

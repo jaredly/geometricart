@@ -15,7 +15,7 @@ export const SUFFIX = '-->';
 export type Hover =
     | {
           type: 'element';
-          kind: Selection['type'] | 'Clip';
+          kind: Selection['type'] | 'Clip' | 'Tiling';
           id: Id;
       }
     | { type: 'guides' };

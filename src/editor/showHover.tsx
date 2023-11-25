@@ -4,6 +4,7 @@ import { jsx } from '@emotion/react';
 import * as React from 'react';
 import { geomsForGiude } from '../rendering/calculateGuideElements';
 import {
+    applyMatrices,
     getTransformsForNewMirror,
     Matrix,
 } from '../rendering/getMirrorTransforms';
@@ -14,6 +15,7 @@ import { RenderMirror } from './RenderMirror';
 import { emptyPath, UnderlinePath } from './RenderPath';
 import { RenderPrimitive } from './RenderPrimitive';
 import { Hover } from './Sidebar';
+import { eigenShapesToLines, getTransform, tilingPoints } from './tilingPoints';
 
 export const showHover = (
     key: string,
@@ -119,6 +121,32 @@ export const showHover = (
                     key={key}
                 />
             );
+        }
+        case 'Tiling': {
+            const tiling = state.tilings[hover.id];
+            const pts = tilingPoints(tiling.shape);
+            const tx = getTransform(pts);
+            const full = eigenShapesToLines(
+                tiling.cache.segments.map((s) => [s.prev, s.segment.to]),
+                tiling.shape.type === 'right-triangle' &&
+                    tiling.shape.rotateHypotenuse,
+                applyMatrices(pts[2], tx),
+                pts.map((pt) => applyMatrices(pt, tx)),
+            );
+            // return <circle x={0} y={0} r={10} fill="red" />;
+            return full.map(([p1, p2], i) => (
+                <line
+                    stroke="yellow"
+                    strokeWidth={1}
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    key={i}
+                    x1={p1.x * zoom}
+                    x2={p2.x * zoom}
+                    y1={p1.y * zoom}
+                    y2={p2.y * zoom}
+                />
+            ));
         }
     }
 };

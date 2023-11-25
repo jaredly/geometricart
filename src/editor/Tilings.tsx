@@ -31,12 +31,15 @@ import { applyMatrices } from '../rendering/getMirrorTransforms';
 import { transformPath, transformSegment } from '../rendering/points';
 import { boundsForCoords } from './Bounds';
 import { tilingPoints, getTransform, eigenShapesToSvg } from './tilingPoints';
+import { UIDispatch } from '../useUIState';
 
 export const Tilings = ({
     state,
     dispatch,
+    uiDispatch,
 }: {
     state: State;
+    uiDispatch: UIDispatch;
     dispatch: React.Dispatch<Action>;
 }) => {
     const [large, setLarge] = useState(false);
@@ -44,7 +47,22 @@ export const Tilings = ({
         <div>
             {Object.values(state.tilings).map((tiling) => {
                 return (
-                    <div key={tiling.id}>
+                    <div
+                        key={tiling.id}
+                        onMouseEnter={() =>
+                            uiDispatch({
+                                type: 'hover',
+                                hover: {
+                                    id: tiling.id,
+                                    kind: 'Tiling',
+                                    type: 'element',
+                                },
+                            })
+                        }
+                        onMouseLeave={() =>
+                            uiDispatch({ type: 'hover', hover: null })
+                        }
+                    >
                         <div>Tiling {tiling.id}</div>
                         <ShowTiling tiling={tiling} />
                         {tiling.shape.type === 'right-triangle' ? (
