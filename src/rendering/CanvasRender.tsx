@@ -107,7 +107,7 @@ export const canvasRender = async (
     );
     for (let id of uids) {
         const overlay = state.overlays[id];
-        await renderOverlay(state, overlay, ctx);
+        await renderOverlay(state, overlay, ctx, extraZoom);
     }
 
     const clip = getClips(state);
@@ -287,7 +287,7 @@ export const canvasRender = async (
     );
     for (let id of oids) {
         const overlay = state.overlays[id];
-        await renderOverlay(state, overlay, ctx);
+        await renderOverlay(state, overlay, ctx, extraZoom);
     }
 
     if (!state.view.guides) {
@@ -356,20 +356,18 @@ async function renderOverlay(
     state: State,
     overlay: Overlay,
     ctx: CanvasRenderingContext2D,
+    zoom: number,
 ) {
     const attachment = state.attachments[overlay.source];
-    if (attachment.contents.match(/^https?/)) {
-        return; // skip things that would taint the canvas
-    }
 
-    const scale = Math.min(overlay.scale.x, overlay.scale.y);
+    const scale = Math.min(overlay.scale.x, overlay.scale.y) * zoom;
 
     let iwidth = ((attachment.width * state.view.zoom) / 100) * scale;
     let iheight = ((attachment.height * state.view.zoom) / 100) * scale;
 
-    const x = overlay.center.x * state.view.zoom;
+    const x = overlay.center.x * state.view.zoom * zoom;
 
-    const y = overlay.center.y * state.view.zoom;
+    const y = overlay.center.y * state.view.zoom * zoom;
 
     const img = await makeImage(attachment.contents);
 
