@@ -34,7 +34,7 @@ import { boundsForCoords } from './Bounds';
 import { tilingPoints, getTransform, eigenShapesToSvg } from './tilingPoints';
 import { UIDispatch } from '../useUIState';
 import { coordsEqual } from '../rendering/pathsAreIdentical';
-import { consoleSvg, renderSegments } from '../animation/getBuiltins';
+import { consoleSvg, renderSegments } from '../animation/renderSegments';
 import { SegmentWithPrev } from '../rendering/clipPathNew';
 
 export const Tilings = ({

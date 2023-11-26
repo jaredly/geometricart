@@ -89,7 +89,7 @@ export function eigenShapesToLines(
             internalAngle = 1 - internalAngle;
         }
 
-        for (let j = 3; j < 10; j++) {
+        for (let j = 5; j < 10; j++) {
             if (closeEnough(internalAngle, 1 / (j * 2))) {
                 full = full.concat(transformLines(full, [scaleMatrix(1, -1)]));
                 const res: [Coord, Coord][] = [...full];
@@ -104,7 +104,7 @@ export function eigenShapesToLines(
             }
         }
 
-        console.log('shape', shape, internalAngle);
+        // console.log('shape', shape, internalAngle);
         full = full.concat(
             transformLines(full, [
                 scaleMatrix(1, -1),

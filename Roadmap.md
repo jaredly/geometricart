@@ -1,17 +1,18 @@
 
+- [ ] so the tiling shapes, looks like I still need to do line coalescingggg
 - [x] show tiling on hover
 - [x] allow equilateral treiangle to do the "flip" vs "noflip"
 - [ ] Polygon - toggle between "point / next" and "point / center"
 - [x] fix tilings that are colinear with the defining triangle
-- [ ] remove unused tilings on save
+- [x] remove unused tilings on save
 
-- [ ] historyplayback
+- [x] historyplayback
   - list the different "pan/zoom"s
   - allow me to "start an override" at a given ... index
   - allow me to "exclude" frames that I don't like.
 
 - [x] clip "inset after" should work
-- [ ] hex triangle tilings need to be able to flip, not just rotate.
+- [x] hex triangle tilings need to be able to flip, not just rotate.
 
 - [x] HistoryPlayback - manually set the views, and skip frames
 

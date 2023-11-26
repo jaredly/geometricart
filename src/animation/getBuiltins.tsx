@@ -366,7 +366,7 @@ const modInsets = (
     };
 };
 
-type PSeg = {
+export type PSeg = {
     prev: Coord;
     segment: Segment;
 };
@@ -449,7 +449,7 @@ function resolveOverlaps(borders: PSeg[]): PSeg[] {
     return borders;
 }
 
-const segmentPath = ({ prev, segment }: PSeg) => {
+export const segmentPath = ({ prev, segment }: PSeg) => {
     if (segment.type === 'Line') {
         return `M${prev.x} ${prev.y}L${segment.to.x} ${segment.to.y}`;
     }
@@ -466,7 +466,7 @@ const segmentPath = ({ prev, segment }: PSeg) => {
     return arcPath(segment, prev, 1, true);
 };
 
-const renderSegment = (pseg: PSeg, point?: Coord) => {
+export const renderSegment = (pseg: PSeg, point?: Coord) => {
     const bounds = segmentBounds(
         pseg.segment.type === 'Arc' ? pseg.segment.to : pseg.prev,
         pseg.segment,
@@ -506,57 +506,4 @@ export const psegmentsBounds = (segments: Array<PSeg>): Bounds => {
         bounds = mergeBounds(bounds, next);
     }
     return bounds;
-};
-
-export const renderSegments = (
-    pseg: PSeg[],
-    points?: Coord[],
-    colors?: string[],
-) => {
-    const bounds = psegmentsBounds(pseg);
-    const w = bounds.x1 - bounds.x0;
-    const h = bounds.y1 - bounds.y0;
-    let x = w < h ? (h - w) / 2 : 0;
-    let y = h < w ? (w - h) / 2 : 0;
-    let size = Math.max(w, h);
-    x += size * 0.25;
-    y += size * 0.25;
-    size += size * 0.5;
-    // const path = segmentPath(pseg);
-    return `
-    <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="${
-        bounds.x0 - x
-    } ${bounds.y0 - y} ${size} ${size}">
-    ${pseg.map(
-        (pseg, i) =>
-            `
-    <path d="${segmentPath(pseg)}" fill="none" stroke="${
-                colors ? colors[i % colors.length] : 'red'
-            }" stroke-width="${size / 50}" />
-            `,
-    )}
-    </svg>
-    `;
-};
-
-export const consoleSegment = (seg: PSeg, point?: Coord) => {
-    const bgi = `data:image/svg+xml;base64,${btoa(renderSegment(seg, point))}`;
-    const img = new Image();
-    img.src = bgi;
-    document.body.append(img);
-    console.log(
-        '%c ',
-        `background-image: url("${bgi}");background-size:cover;padding:20px`,
-    );
-};
-
-export const consoleSvg = (svg: string) => {
-    const bgi = `data:image/svg+xml;base64,${btoa(svg)}`;
-    // const img = new Image();
-    // img.src = bgi;
-    // document.body.append(img);
-    console.log(
-        '%c ',
-        `background-image: url("${bgi}");background-size:cover;padding:20px`,
-    );
 };
