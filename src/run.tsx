@@ -18,19 +18,20 @@ import {
     useParams,
 } from 'react-router-dom';
 import localforage from 'localforage';
-import { Checkpoint, Meta, Mirror, State } from './types';
+import { Checkpoint, Meta, Mirror, State, Tiling } from './types';
 import { Accordion } from './sidebar/Accordion';
 import { MirrorPicker, SaveDest } from './MirrorPicker';
 import { setupState } from './setupState';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import { exportPNG } from './editor/Export';
+import { exportPNG } from './editor/ExportPng';
 import { DesignLoader } from './DesignLoader';
 import { Button } from 'primereact/button';
 import { useGists, gistCache } from './useGists';
 import { loadGist, newGist, saveGist, stateFileName } from './gists';
 import { maybeMigrate } from './state/migrateState';
 import { PK } from './editor/pk';
+import { initialState } from './state/initialState';
 dayjs.extend(relativeTime);
 
 export const metaPrefix = 'meta:';
@@ -87,12 +88,20 @@ export const addSnapshot = async (id: string, state: State) => {
 };
 
 export const saveState = async (state: State, id: string, dest: SaveDest) => {
-    const blob = await exportPNG(400, state, 1000, false, false, 0);
+    const blob = await exportPNG(
+        400,
+        { ...state, view: { ...state.view, guides: false } },
+        1000,
+        false,
+        false,
+        0,
+    );
     if (dest.type === 'local') {
         localforage.setItem(key(id), state);
         updateMeta(id, {
             updatedAt: Date.now(),
             size: JSON.stringify(state).length,
+            tilings: Object.values(state.tilings),
         });
         localforage.setItem(thumbPrefix + key(id), blob);
     } else {
@@ -116,6 +125,7 @@ export type MetaData = {
     openedAt: number;
     id: string;
     size: number;
+    tilings: Tiling[];
     checkpoints?: Array<Checkpoint>;
 };
 
@@ -248,10 +258,84 @@ const GistLoader = () => {
 const File = ({ gist, dest }: { gist?: boolean; dest: SaveDest }) => {
     const data = useLoaderData();
     const params = useParams();
+
+    const id = params.id!;
+
+    const [lastSaved, setLastSaved] = React.useState({
+        when: Date.now(),
+        dirty: null as null | true | (() => void),
+        id,
+    });
+    usePreventNavAway(lastSaved);
+
     if (!data) {
         return <div>No loaded data?</div>;
     }
-    return <App initialState={data as State} id={params.id!} dest={dest} />;
+    return (
+        <App
+            closeFile={() => (location.hash = '/')}
+            initialState={data as State}
+            lastSaved={dest.type === 'gist' ? lastSaved : null}
+            saveState={(state) => {
+                if (dest.type === 'gist') {
+                    const force = debounce(() => {
+                        setLastSaved((s) => ({ ...s, dirty: true }));
+                        return saveState(state, id, dest).then(() => {
+                            setLastSaved({ when: Date.now(), dirty: null, id });
+                        });
+                    }, 10000);
+                    setLastSaved((s) => ({ ...s, dirty: force }));
+                } else {
+                    saveState(state, id, dest);
+                }
+            }}
+        />
+    );
+};
+
+function usePreventNavAway(lastSaved: {
+    when: number;
+    dirty: true | (() => void) | null;
+    id: string;
+}) {
+    React.useEffect(() => {
+        if (lastSaved.dirty) {
+            const fn = (evt: BeforeUnloadEvent) => {
+                evt.preventDefault();
+                evt.stopPropagation();
+                return (evt.returnValue = 'Are you sure?');
+            };
+            window.addEventListener('beforeunload', fn, { capture: true });
+            return () =>
+                window.removeEventListener('beforeunload', fn, {
+                    capture: true,
+                });
+        }
+    }, [lastSaved.dirty]);
+}
+
+/**
+ * Debounce a function.
+ */
+let tid: NodeJS.Timeout | null = null;
+export const debounce = (
+    fn: () => Promise<void>,
+    time: number,
+): (() => void) => {
+    if (tid != null) {
+        clearTimeout(tid);
+    }
+    tid = setTimeout(() => {
+        tid = null;
+        fn();
+    }, time);
+    return () => {
+        if (tid != null) {
+            clearTimeout(tid);
+            tid = null;
+            fn();
+        }
+    };
 };
 
 const PkDebug = () => {
@@ -338,10 +422,140 @@ declare global {
     }
 }
 
+type DATA = {
+    App: typeof App;
+    initialState: State;
+    React: typeof React;
+    createRoot: typeof createRoot;
+    setupState: (mirror: Mirror | null) => unknown;
+};
+
+declare global {
+    interface Window {
+        GEOMETRICART_DATA: DATA;
+        GEOMETRICART_INIT: () => unknown;
+    }
+}
+
 const root = (window._reactRoot =
     window._reactRoot || createRoot(document.getElementById('root')!));
 
-root.render(<RouterProvider router={router} />);
+// if (window.GEOMETRICART_INIT) {
+//     window.GEOMETRICART_DATA = {
+//         App,
+//         initialState,
+//         React,
+//         createRoot,
+//         setupState,
+//     };
+//     window.GEOMETRICART_INIT();
+// } else {
+
+const params = new URLSearchParams(location.search);
+
+const image = params.get('image');
+const save = params.get('save');
+const load = params.get('load');
+const back = params.get('back');
+
+const getForeignState = async (image: string | null, load: string | null) => {
+    if (load) {
+        try {
+            const state: State = await (await fetch(load)).json();
+            Object.values(state.attachments).forEach((att) => {
+                console.log(att.contents);
+                if (att.contents.startsWith('/')) {
+                    att.contents = 'http://localhost:3000' + att.contents;
+                }
+            });
+            return state;
+        } catch (err) {
+            // ignore I think
+        }
+    }
+    if (image) {
+        const img = new Image();
+        img.crossOrigin = 'Anonymous';
+        img.src = image;
+        await new Promise((res) => (img.onload = res));
+
+        const state = setupState(null);
+        state.attachments['pattern'] = {
+            id: 'pattern',
+            name: 'pattern',
+            width: img.naturalWidth,
+            height: img.naturalHeight,
+            contents: image,
+        };
+        state.overlays['overlay'] = {
+            id: 'overlay',
+            source: 'pattern',
+            scale: { x: 1, y: 1 },
+            center: { x: 0, y: 0 },
+            hide: false,
+            over: false,
+            opacity: 1,
+        };
+        state.selection = null;
+        return state;
+    }
+    return setupState(null);
+};
+
+if (save) {
+    getForeignState(image, load).then(
+        (state) => {
+            root.render(
+                <App
+                    closeFile={() => {
+                        if (back) {
+                            location.href = back;
+                        } else {
+                            history.back();
+                        }
+                    }}
+                    initialState={state}
+                    lastSaved={null}
+                    saveState={async (state) => {
+                        fetch(save, {
+                            method: 'POST',
+                            body: JSON.stringify(state),
+                            headers: {
+                                'Content-type': 'application/json',
+                            },
+                        });
+                    }}
+                />,
+            );
+        },
+        (err) => {
+            console.log(err);
+            root.render(<h1>FAILED TO LOARD {err.message}</h1>);
+        },
+    );
+
+    // const state = setupState(null);
+    // state.attachments["pattern"] = {
+    //     id: "pattern",
+    //     name: "pattern",
+    //     width: size.width,
+    //     height: size.height,
+    //     contents: image.url,
+    // };
+    // state.overlays["overlay"] = {
+    //     id: "overlay",
+    //     source: "pattern",
+    //     scale: { x: 1, y: 1 },
+    //     center: { x: 0, y: 0 },
+    //     hide: false,
+    //     over: false,
+    //     opacity: 1,
+    // };
+    // state.selection = null;
+} else {
+    root.render(<RouterProvider router={router} />);
+}
+
 function newMetaData(id: string, state: State): MetaData {
     return {
         id,
@@ -349,5 +563,6 @@ function newMetaData(id: string, state: State): MetaData {
         updatedAt: Date.now(),
         openedAt: Date.now(),
         size: JSON.stringify(state).length,
+        tilings: [],
     };
 }

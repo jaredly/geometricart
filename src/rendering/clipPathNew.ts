@@ -333,9 +333,6 @@ export const clipPathNew = (
             console.log('no intersect', clipBounds, pathBounding);
             console.groupEnd();
         }
-        if (clipMode === 'outside') {
-            return [path];
-        }
         return [];
     }
 

@@ -8,6 +8,7 @@ import {
     push,
     transformsToMatrices,
 } from '../rendering/getMirrorTransforms';
+import { wait } from './animateHistory';
 
 export async function animateMirror(
     follow: (
@@ -20,19 +21,17 @@ export async function animateMirror(
     ctx: CanvasRenderingContext2D,
     fromScreen: (point: Coord, state: State) => { x: number; y: number },
     prev: State,
-    histories: { state: State; action: Action | null }[],
-    canvas: HTMLCanvasElement,
 ) {
     await follow(i, action.mirror.origin);
 
     await follow(i, action.mirror.point, async (pos) => {
         ctx.save();
         const back = fromScreen(pos, prev);
-        const state = histories[i - 1].state;
+        const state = prev;
         const zoom = state.view.zoom * 2;
 
-        const xoff = canvas.width / 2 + state.view.center.x * zoom;
-        const yoff = canvas.height / 2 + state.view.center.y * zoom;
+        const xoff = ctx.canvas.width / 2 + state.view.center.x * zoom;
+        const yoff = ctx.canvas.height / 2 + state.view.center.y * zoom;
         ctx.translate(xoff, yoff);
 
         // const dx = back.x - action.mirror.origin.x;
@@ -68,4 +67,6 @@ export async function animateMirror(
         ctx.setLineDash([]);
         ctx.restore();
     });
+
+    await wait(200);
 }

@@ -17,6 +17,7 @@ import {
 } from '../rendering/getMirrorTransforms';
 import { angleBetween } from '../rendering/findNextSegments';
 import {
+    mergeBounds,
     segmentBounds,
     segmentsBounds,
     segmentsCenter,
@@ -34,6 +35,7 @@ import { intersectSegments } from '../rendering/clipPathNew';
 import { segmentToPrimitive } from '../editor/findSelection';
 import { pointCircle, pointLine } from '../rendering/intersect';
 import { arcPath } from '../editor/RenderPendingPath';
+import { Bounds } from '../editor/GuideElement';
 
 const clamp = (v: number, min = 0, max = 1) => Math.max(min, Math.min(max, v));
 
@@ -364,7 +366,7 @@ const modInsets = (
     };
 };
 
-type PSeg = {
+export type PSeg = {
     prev: Coord;
     segment: Segment;
 };
@@ -447,7 +449,7 @@ function resolveOverlaps(borders: PSeg[]): PSeg[] {
     return borders;
 }
 
-const segmentPath = ({ prev, segment }: PSeg) => {
+export const segmentPath = ({ prev, segment }: PSeg) => {
     if (segment.type === 'Line') {
         return `M${prev.x} ${prev.y}L${segment.to.x} ${segment.to.y}`;
     }
@@ -464,7 +466,7 @@ const segmentPath = ({ prev, segment }: PSeg) => {
     return arcPath(segment, prev, 1, true);
 };
 
-const renderSegment = (pseg: PSeg, point?: Coord) => {
+export const renderSegment = (pseg: PSeg, point?: Coord) => {
     const bounds = segmentBounds(
         pseg.segment.type === 'Arc' ? pseg.segment.to : pseg.prev,
         pseg.segment,
@@ -497,13 +499,11 @@ const renderSegment = (pseg: PSeg, point?: Coord) => {
     `;
 };
 
-const consoleSegment = (seg: PSeg, point?: Coord) => {
-    const bgi = `data:image/svg+xml;base64,${btoa(renderSegment(seg, point))}`;
-    const img = new Image();
-    img.src = bgi;
-    document.body.append(img);
-    console.log(
-        '%c ',
-        `background-image: url("${bgi}");background-size:cover;padding:20px`,
-    );
+export const psegmentsBounds = (segments: Array<PSeg>): Bounds => {
+    let bounds = segmentBounds(segments[0].prev, segments[0].segment);
+    for (let i = 1; i < segments.length; i++) {
+        const next = segmentBounds(segments[i].prev, segments[i].segment);
+        bounds = mergeBounds(bounds, next);
+    }
+    return bounds;
 };

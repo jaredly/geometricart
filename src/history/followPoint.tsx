@@ -1,4 +1,4 @@
-import { Coord } from '../types';
+import { Coord, State } from '../types';
 import { wait, nextFrame, AnimateState } from './animateHistory';
 import { drawCursor } from './cursor';
 
@@ -10,9 +10,9 @@ export async function followPoints(state: AnimateState, points: Coord[]) {
 }
 
 export async function followPoint(
-    { cursor, ctx, i, canvas, frames }: AnimateState,
+    { cursor, ctx, i, canvas, frames, histories }: AnimateState,
     { x, y }: Coord,
-    extra?: (v: Coord) => void | Promise<void>,
+    extra?: (v: Coord, state: State) => void | Promise<void>,
 ) {
     let dx = x - cursor.x;
     let dy = y - cursor.y;
@@ -36,7 +36,7 @@ export async function followPoint(
         }
 
         if (extra) {
-            await extra(cursor);
+            await extra(cursor, histories[i].state);
         }
 
         drawCursor(ctx, cursor.x, cursor.y);

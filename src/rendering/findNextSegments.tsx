@@ -1,5 +1,5 @@
 import { coordKey } from './coordKey';
-import { closeEnough } from './clipPath';
+import { closeEnough } from './epsilonToZero';
 import { segmentKey } from './segmentKey';
 import { angleTo } from './getMirrorTransforms';
 import { closeEnoughAngle, epsilon, Primitive } from './intersect';

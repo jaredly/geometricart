@@ -1,11 +1,15 @@
 import { Coord, State } from '../types';
 import {
+    applyHistoryView,
+    findViewPoints,
     getHistoriesList,
+    mergeViewPoints,
     simplifyHistory,
     StateAndAction,
 } from './HistoryPlayback';
 import { canvasRender } from '../rendering/CanvasRender';
-import { findBoundingRect, renderTexture } from '../editor/Export';
+import { findBoundingRect } from '../editor/Export';
+import { renderTexture } from '../editor/ExportPng';
 import { screenToWorld, worldToScreen } from '../editor/Canvas';
 import { Action } from '../state/Action';
 import React from 'react';
@@ -32,26 +36,20 @@ export type AnimateState = {
 export const animateHistory = async (
     originalState: State,
     canvas: HTMLCanvasElement,
-    // interactionCanvas: HTMLCanvasElement,
     stopped: { current: boolean },
     startAt: number,
     preimage: boolean,
     log: React.RefObject<HTMLDivElement>,
     inputRef?: HTMLInputElement | null,
+    animateTitle?: boolean,
 ) => {
     const now = Date.now();
     console.log('hup');
 
-    const histories = simplifyHistory(getHistoriesList(originalState));
-    const {
-        // crop,
-        // fps,
-        zoom,
-        // increment,
-        // restrictAspectRatio: lockAspectRatio,
-        // backgroundAlpha,
-    } = originalState.animations.config;
+    let histories = simplifyHistory(getHistoriesList(originalState));
+    const { zoom } = originalState.animations.config;
     const ctx = canvas.getContext('2d')!;
+    ctx.lineWidth = 1;
 
     const bounds = findBoundingRect(originalState);
     const originalSize = 1000;
@@ -64,6 +62,24 @@ export const animateHistory = async (
     //     : originalSize;
     let h = originalSize;
     let w = originalSize;
+
+    const viewPoints = findViewPoints(histories);
+    const mergedVP = mergeViewPoints(
+        viewPoints,
+        originalState.historyView?.zooms,
+    );
+
+    for (let i = 0; i < histories.length; i++) {
+        histories[i].state = applyHistoryView(
+            mergedVP,
+            i,
+            // originalState.historyView?.zooms ?? [],
+            histories[i].state,
+        );
+    }
+    histories = histories.filter(
+        (_, i) => !originalState.historyView?.skips.includes(i),
+    );
 
     const draw = async (current: number) => {
         ctx.save();
@@ -131,10 +147,39 @@ export const animateHistory = async (
     }
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+    if (animateTitle) {
+        const text = 'Pattern walk-through';
+        for (let i = 0; i <= text.length; i++) {
+            if (stopped.current) {
+                break;
+            }
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            await draw(histories.length - 1);
+
+            ctx.font = '100px sans-serif';
+            ctx.fillStyle = 'white';
+            ctx.textAlign = 'center';
+            ctx.strokeStyle = 'rgba(0,0,0,1)';
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+            ctx.lineWidth = 30;
+            const t = text.slice(0, i);
+            ctx.strokeText(t, ctx.canvas.width / 2, ctx.canvas.height * 0.9);
+            ctx.fillText(t, ctx.canvas.width / 2, ctx.canvas.height * 0.9);
+            ctx.lineWidth = 1;
+            await wait(60);
+        }
+        await wait(400);
+    }
+
     for (; state.i < histories.length; state.i++) {
         if (stopped.current) {
             break;
         }
+        // if (originalState.historyView?.skips.includes(state.i)) {
+        //     continue;
+        // }
         if (inputRef) {
             inputRef.value = state.i + '';
         }

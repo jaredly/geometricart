@@ -1,22 +1,20 @@
-import { coordKey, numKey } from './coordKey';
-import { angleBetween, isAngleBetween } from './findNextSegments';
 import { pathToPrimitives } from '../editor/findSelection';
+import { ArcSegment, Coord, Path, PathGroup, Segment } from '../types';
+import { coordKey, numKey } from './coordKey';
+import { epsilonToZero, anglesEqual, closeEnough } from './epsilonToZero';
+import { angleBetween } from './findNextSegments';
 import { angleTo, dist } from './getMirrorTransforms';
-import { simplifyPath } from './simplifyPath';
 import {
-    Circle,
-    closeEnoughAngle,
-    epsilon,
-    intersections,
     Primitive,
     SlopeIntercept,
+    epsilon,
+    intersections,
     withinLimit,
 } from './intersect';
-import { coordsEqual } from './pathsAreIdentical';
 import { ensureClockwise, isClockwise } from './pathToPoints';
-import { ArcSegment, Coord, Path, PathGroup, Segment } from '../types';
+import { coordsEqual } from './pathsAreIdentical';
+import { simplifyPath } from './simplifyPath';
 import { windingNumber } from './windingNumber';
-import { atCircleBottomOrSomething } from './atCircleBottomOrSomething';
 
 export type Hit = { i: number; j: number; coord: Coord };
 
@@ -45,40 +43,6 @@ export const angleKey = (angle: Angle) =>
         : `${numKey(angle.theta)}:${numKey(angle.radius)}:${
               angle.clockwise ? 'c' : ''
           }`;
-
-// export const anglesEqual = (one: Angle, two: Angle): boolean => {
-//     if (one.type !== two.type) {
-//         return false
-//     }
-//     if (!closeEnough(one.theta, two.theta)) {
-//         return false
-//     }
-//     if(one.type === 'arc' && two.type === 'arc') {
-//         return one.clockwise === two.clockwise && closeEnough(one.radius, two.radius)
-//     }
-//     return true
-// }
-
-export const closeEnough = (one: number, two: number) =>
-    one === two || Math.abs(one - two) < epsilon;
-
-export const anglesEqual = (one: Angle, two: Angle) => {
-    if (one.type === 'flat' && two.type === 'flat') {
-        return closeEnoughAngle(one.theta, two.theta);
-    }
-    if (one.type === 'arc' && two.type === 'arc') {
-        return (
-            one.clockwise === two.clockwise &&
-            closeEnoughAngle(one.theta, two.theta) &&
-            closeEnough(one.radius, two.radius)
-        );
-    }
-    return false;
-};
-
-// ok folks, here's what we're doing
-export const epsilonToZero = (value: number) =>
-    Math.abs(value) < epsilon ? 0 : value;
 
 // Yo definitely need tests for this
 /** given two angles with the same theta, is one "more clockwise" than the other?

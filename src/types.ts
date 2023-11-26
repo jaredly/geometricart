@@ -1,6 +1,7 @@
 import { UndoableAction, UndoAction } from './state/Action';
 import { Primitive } from './rendering/intersect';
 import { Matrix } from './rendering/getMirrorTransforms';
+import { SegmentWithPrev } from './rendering/clipPathNew';
 
 // Should I do polar coords?
 export type Coord = { x: number; y: number };
@@ -23,20 +24,36 @@ export type Split = {
     count: number;
 };
 
+export type CloneCircle = {
+    type: 'CloneCircle';
+    p1: Coord;
+    p2: Coord;
+    p3: Coord;
+};
+
 export type GuideGeom =
     | Line
     | Split
     | Circle
+    | CloneCircle
     | AngleBisector
     | PerpendicularBisector
     | Perpendicular
     | InCicle
+    | Polygon
     | CircumCircle;
 
 export type Perpendicular = {
     type: 'Perpendicular';
     p1: Coord;
     p2: Coord;
+};
+
+export type Polygon = {
+    type: 'Polygon';
+    p1: Coord;
+    p2: Coord;
+    sides: number;
 };
 
 export type InCicle = {
@@ -61,6 +78,7 @@ export const guideTypes: Array<GuideGeom['type']> = [
     'PerpendicularBisector',
     'Perpendicular',
     'InCircle',
+    'Polygon',
     'CircumCircle',
 ];
 
@@ -71,9 +89,11 @@ export const guidePoints: {
     InCircle: 3,
     CircumCircle: 3,
     Perpendicular: 2,
+    CloneCircle: 3,
     Circle: 2,
     Line: 2,
     Split: 2,
+    Polygon: 2,
     PerpendicularBisector: 2,
 };
 
@@ -204,7 +224,7 @@ export type PathGroup = {
     // style: Style;
     group: Id | null;
     hide?: boolean;
-    clipMode?: 'none' | 'remove' | 'normal' | 'fills' | 'outside';
+    clipMode?: 'none' | 'remove' | 'normal' | 'fills';
     insetBeforeClip?: boolean;
     ordering?: number;
 };
@@ -299,11 +319,17 @@ export type TextureConfig = {
     intensity: number;
 };
 
+export type Clip = {
+    shape: Segment[];
+    active: boolean;
+    outside: boolean;
+    defaultInsetBefore?: boolean;
+};
+
 export type View = {
     center: Coord;
     zoom: number;
     guides: boolean;
-    activeClip: Id | null;
     hideDuplicatePaths?: boolean;
     laserCutMode?: boolean;
     background?: string | number;
@@ -332,6 +358,10 @@ export type Attachment = {
     name: string;
     width: number;
     height: number;
+    perspectivePoints?: {
+        from: [Coord, Coord, Coord, Coord];
+        to: [Coord, Coord, Coord, Coord];
+    };
 };
 
 export type Meta = {
@@ -482,7 +512,7 @@ export type GCodePath = {
 };
 
 export type State = {
-    version: 10;
+    version: 12;
     nextId: number;
     history: History;
     meta: Meta;
@@ -502,7 +532,14 @@ export type State = {
     activeMirror: Id | null;
     view: View;
 
-    clips: { [key: Id]: Array<Segment> };
+    historyView?: {
+        zooms: { idx: number; view: Pick<View, 'zoom' | 'center'> }[];
+        skips: number[];
+    };
+
+    tilings: { [key: Id]: Tiling };
+
+    clips: { [key: Id]: Clip };
 
     overlays: { [key: Id]: Overlay };
 
@@ -523,6 +560,48 @@ export type State = {
         clearHeight: number;
         pauseHeight: number;
         items: Array<GCodePath | { type: 'pause'; message: string }>;
+    };
+};
+
+export type BarePath = { origin: Coord; segments: Segment[]; open?: boolean };
+
+export type SegPrev = { segment: Segment; prev: Coord };
+
+export type TilingShape =
+    | {
+          type: 'right-triangle';
+          rotateHypotenuse: boolean;
+          // 45/45/90 makes sense
+          // 30/60/90 is the hexy
+          // otherwise it'll have to do
+          // the rotate dealio
+          start: Coord;
+          corner: Coord;
+          end: Coord;
+      }
+    | {
+          type: 'isocelese';
+          flip?: boolean; // vs 'rotate'
+          // Clockwise, where First is the "center" of the figure
+          first: Coord;
+          second: Coord;
+          third: Coord;
+      }
+    | {
+          type: 'parallellogram';
+          // Clockwise
+          points: [Coord, Coord, Coord, Coord];
+      };
+
+export type Tiling = {
+    id: Id;
+    // points: Coord[],
+    shape: TilingShape;
+    // sides: { from: Coord; kind: 'reflect' | 'rotate' | null }[];
+    cache: {
+        segments: SegPrev[];
+        shapes: BarePath[];
+        hash: string;
     };
 };
 

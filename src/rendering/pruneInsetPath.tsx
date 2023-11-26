@@ -4,7 +4,6 @@ import { intersections, Primitive } from './intersect';
 import { coordsEqual } from './pathsAreIdentical';
 import { pathToPrimitives } from '../editor/findSelection';
 import {
-    anglesEqual,
     Clippable,
     getAngle,
     getBackAngle,
@@ -12,6 +11,7 @@ import {
     isInside,
     sortHitsForPrimitive,
 } from './clipPath';
+import { anglesEqual } from './epsilonToZero';
 import { coordKey } from './coordKey';
 
 /*

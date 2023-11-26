@@ -1,12 +1,15 @@
 import { pendingGuide } from '../editor/RenderPendingGuide';
 import { coordKey } from '../rendering/coordKey';
 import {
+    Matrix,
     applyMatrices,
     getTransformsForMirror,
     mirrorTransforms,
+    rotationMatrix,
+    scaleMatrix,
 } from '../rendering/getMirrorTransforms';
 import { addAction, redoAction, undoAction } from '../editor/history';
-import { transformSegment } from '../rendering/points';
+import { transformPath, transformSegment } from '../rendering/points';
 import {
     Guide,
     GuideGeom,
@@ -21,6 +24,7 @@ import {
     PathGroup,
     PendingGuide,
     TimelineLane,
+    Coord,
 } from '../types';
 import {
     Action,
@@ -32,6 +36,7 @@ import {
     UndoAddRemoveEdit,
     ScriptRename,
     PathCreateMany,
+    GlobalTransform,
 } from './Action';
 import {
     pathsAreIdentical,
@@ -43,10 +48,15 @@ import { ensureClockwise } from '../rendering/pathToPoints';
 import { clipPath } from '../rendering/clipPath';
 import { pathToPrimitives } from '../editor/findSelection';
 import { styleMatches } from '../editor/MultiStyleForm';
+import {
+    transformGuide,
+    transformGuideGeom,
+    transformMirror,
+} from '../rendering/calculateGuideElements';
 
 export const reducer = (state: State, action: Action): State => {
     if (action.type === 'undo') {
-        console.log(state.history);
+        // console.log(state.history);
         const [history, lastAction] = undoAction(state.history);
         if (lastAction) {
             return undo({ ...state, history }, lastAction);
@@ -84,6 +94,18 @@ export const reducer = (state: State, action: Action): State => {
             attachments: {
                 ...state.attachments,
                 [action.id]: action.attachment,
+            },
+        };
+    }
+    if (action.type === 'attachment:update') {
+        return {
+            ...state,
+            attachments: {
+                ...state.attachments,
+                [action.id]: {
+                    ...state.attachments[action.id],
+                    ...action.attachment,
+                },
             },
         };
     }
@@ -222,7 +244,7 @@ export const reduceWithoutUndo = (
             ];
         }
         case 'guide:add':
-            console.log('select it up', action.id);
+            // console.log('select it up', action.id);
             return [
                 {
                     ...state,
@@ -260,6 +282,26 @@ export const reduceWithoutUndo = (
                     prev: state.guides[action.id].active,
                 },
             ];
+
+        case 'tiling:add': {
+            let nextId = state.nextId + 1;
+            const id = `id-${state.nextId}`;
+            return [
+                {
+                    ...state,
+                    nextId,
+                    tilings: {
+                        ...state.tilings,
+                        [id]: {
+                            shape: action.shape,
+                            cache: action.cache,
+                            id,
+                        },
+                    },
+                },
+                { type: action.type, action, added: [id, state.nextId] },
+            ];
+        }
 
         case 'mirror:add': {
             let nextId = state.nextId + 1;
@@ -558,15 +600,17 @@ export const reduceWithoutUndo = (
                     ...state,
                     clips: {
                         ...state.clips,
-                        [id]: action.clip,
+                        [id]: {
+                            shape: action.clip,
+                            active: true,
+                            outside: false,
+                        },
                     },
-                    view: { ...state.view, activeClip: id },
                     nextId,
                 },
                 {
                     type: action.type,
                     action,
-                    prevActive: state.view.activeClip,
                     added: [id, state.nextId],
                 },
             ];
@@ -615,13 +659,18 @@ export const reduceWithoutUndo = (
         case 'clip:cut': {
             const paths: State['paths'] = {};
             const clip = state.clips[action.clip];
-            let clipPrims = pathToPrimitives(clip);
+            let clipPrims = pathToPrimitives(clip.shape);
             const added: Array<Id> = [];
             const previous: State['paths'] = {};
             Object.keys(state.paths).forEach((k) => {
                 const path = state.paths[k];
                 const group = path.group ? state.pathGroups[path.group] : null;
-                const result = clipPath(path, clip, clipPrims, group?.clipMode);
+                const result = clipPath(
+                    path,
+                    clip.shape,
+                    clipPrims,
+                    group?.clipMode,
+                );
                 // TODO: figure out if the result is the same...
                 if (result.length > 0) {
                     paths[k] = result[0];
@@ -645,7 +694,17 @@ export const reduceWithoutUndo = (
                 }
             });
             return [
-                { ...state, paths, view: { ...state.view, activeClip: null } },
+                {
+                    ...state,
+                    paths,
+                    clips: {
+                        ...state.clips,
+                        [action.clip]: {
+                            ...state.clips[action.clip],
+                            active: false,
+                        },
+                    },
+                },
                 { type: action.type, action, paths: previous, added },
             ];
         }
@@ -830,6 +889,55 @@ export const reduceWithoutUndo = (
                 { type: action.type, action, prev: state.palette },
             ];
         }
+        case 'clip:update': {
+            return [
+                {
+                    ...state,
+                    clips: { ...state.clips, [action.id]: action.clip },
+                },
+                { type: action.type, action, prev: state.clips[action.id] },
+            ];
+        }
+        case 'global:transform': {
+            const mx: Matrix[] = transformMatrix(action);
+            return [transformState(state, mx), { type: action.type, action }];
+        }
+        case 'tiling:update': {
+            return [
+                {
+                    ...state,
+                    tilings: {
+                        ...state.tilings,
+                        [action.tiling.id]: action.tiling,
+                    },
+                },
+                {
+                    type: action.type,
+                    action,
+                    prev: state.tilings[action.tiling.id],
+                },
+            ];
+        }
+        case 'tiling:delete': {
+            const ts = { ...state.tilings };
+            delete ts[action.id];
+            return [
+                {
+                    ...state,
+                    tilings: ts,
+                },
+                {
+                    type: action.type,
+                    action,
+                    removed: state.tilings[action.id],
+                },
+            ];
+        }
+        case 'history-view:update':
+            return [
+                { ...state, historyView: action.view },
+                { type: action.type, action, prev: state.historyView },
+            ];
         default:
             let _x: never = action;
             console.log(`SKIPPING ${(action as any).type}`);
@@ -839,6 +947,30 @@ export const reduceWithoutUndo = (
 
 export const undo = (state: State, action: UndoAction): State => {
     switch (action.type) {
+        case 'history-view:update':
+            return { ...state, historyView: action.prev };
+        case 'tiling:update':
+            return {
+                ...state,
+                tilings: { ...state.tilings, [action.prev.id]: action.prev },
+            };
+        case 'tiling:delete':
+            return {
+                ...state,
+                tilings: {
+                    ...state.tilings,
+                    [action.action.id]: action.removed,
+                },
+            };
+        case 'global:transform': {
+            const mx: Matrix[] = transformMatrix(action.action, true);
+            return transformState(state, mx);
+        }
+        case 'clip:update':
+            return {
+                ...state,
+                clips: { ...state.clips, [action.action.id]: action.prev },
+            };
         case 'palette:update':
             return { ...state, palette: action.prev };
         case 'gcode:config':
@@ -955,9 +1087,12 @@ export const undo = (state: State, action: UndoAction): State => {
             });
             return {
                 ...state,
-                view: {
-                    ...state.view,
-                    activeClip: action.action.clip,
+                clips: {
+                    ...state.clips,
+                    [action.action.clip]: {
+                        ...state.clips[action.action.clip],
+                        active: true,
+                    },
                 },
                 paths,
             };
@@ -999,7 +1134,6 @@ export const undo = (state: State, action: UndoAction): State => {
                 clips: {
                     ...state.clips,
                 },
-                view: { ...state.view, activeClip: action.prevActive },
                 nextId: action.added[1],
             };
             delete state.clips[action.added[0]];
@@ -1159,6 +1293,11 @@ export const undo = (state: State, action: UndoAction): State => {
                 ...state,
                 mirrors: { ...state.mirrors, [action.action.id]: action.prev },
             };
+        case 'tiling:add': {
+            const tilings = { ...state.tilings };
+            delete tilings[action.added[0]];
+            return { ...state, tilings, nextId: action.added[1] };
+        }
         case 'mirror:add': {
             const mirrors = { ...state.mirrors };
             delete mirrors[action.added[0]];
@@ -1330,7 +1469,7 @@ export function handlePathCreate(
     if (!action.paths.length) {
         return [state, null];
     }
-    console.log('creating', action.paths);
+    // console.log('creating', action.paths);
     state = {
         ...state,
         paths: { ...state.paths },
@@ -1408,12 +1547,12 @@ export function handlePathCreate(
                     segments,
                     style,
                 };
-                console.log(state.paths[nid]);
+                // console.log(state.paths[nid]);
                 ids.push(nid);
             });
         }
         state.paths[id] = main;
-        console.log(state.paths[id]);
+        // console.log(state.paths[id]);
     });
     return [
         {
@@ -1497,4 +1636,38 @@ export const handleListARE = <T,>(
             return [list, old];
         },
     });
+};
+
+export const transformMatrix = (action: GlobalTransform, reverse?: boolean) => {
+    if (action.flip) {
+        return [action.flip === 'H' ? scaleMatrix(-1, 1) : scaleMatrix(1, -1)];
+    }
+    if (action.rotate) {
+        return [rotationMatrix(action.rotate * (reverse ? -1 : 1))];
+    }
+    return [];
+};
+
+export const transformState = (state: State, mx: Matrix[]) => {
+    const paths = { ...state.paths };
+    const guides = { ...state.guides };
+    const clips = { ...state.clips };
+    const mirrors = { ...state.mirrors };
+    Object.entries(paths).forEach(([key, path]) => {
+        paths[key] = transformPath(path, mx);
+    });
+    const tx = (pos: Coord) => applyMatrices(pos, mx);
+    Object.entries(guides).forEach(([key, guide]) => {
+        guides[key] = transformGuide(guide, tx);
+    });
+    Object.entries(mirrors).forEach(([key, mirror]) => {
+        mirrors[key] = transformMirror(mirror, tx);
+    });
+    Object.entries(clips).forEach(([key, clip]) => {
+        clips[key] = {
+            ...clip,
+            shape: clip.shape.map((seg) => transformSegment(seg, mx)),
+        };
+    });
+    return { ...state, paths, guides, clips, mirrors };
 };

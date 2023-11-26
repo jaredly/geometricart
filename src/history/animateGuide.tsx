@@ -10,8 +10,12 @@ import {
 import { pendingGuide } from '../editor/RenderPendingGuide';
 import { geomToPrimitives } from '../rendering/points';
 import { renderPrimitive } from '../rendering/CanvasRender';
-import { transformGuideGeom } from '../rendering/calculateGuideElements';
+import {
+    geomPoints,
+    transformGuideGeom,
+} from '../rendering/calculateGuideElements';
 import { drawPastCursor } from './cursor';
+import { wait } from './animateHistory';
 
 export async function animateGuide(
     prev: State,
@@ -93,11 +97,21 @@ export async function animateGuide(
                 renderPrimitive(ctx, prim, zoom, width, height);
             });
 
+            const extraPoints = geomPoints(geom);
+            extraPoints.forEach((point) => {
+                // ctx.beginPath();
+                // ctx.arc(point.x, point.y, 4, 0, Math.PI);
+                // ctx.stroke();
+                drawPastCursor(ctx, point.x * zoom, point.y * zoom);
+            });
+
             pending.points.forEach((poing) => {
                 drawPastCursor(ctx, poing.x * zoom, poing.y * zoom);
             });
         });
     });
+
+    await wait(200);
 
     return;
 }

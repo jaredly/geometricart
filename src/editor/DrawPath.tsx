@@ -14,6 +14,7 @@ import { epsilon, Primitive } from '../rendering/intersect';
 import { EditorState } from './Canvas';
 
 export type DrawPathState = {
+    type: 'path';
     origin: Intersect;
     isClip: boolean;
     parts: Array<PendingSegment>;
@@ -27,6 +28,7 @@ export const initialState = (
     intersections: Array<Intersect>,
 ): DrawPathState => {
     return {
+        type: 'path',
         origin,
         parts: [],
         isClip: false,
@@ -50,9 +52,7 @@ export const DrawPath = React.memo(
         pendingPath: [
             DrawPathState,
             (
-                fn: (
-                    state: EditorState['pendingPath'],
-                ) => EditorState['pendingPath'],
+                fn: (state: EditorState['pending']) => EditorState['pending'],
             ) => void,
         ];
         mirror: null | Array<Array<Matrix>>;
@@ -235,7 +235,7 @@ export const DrawPath = React.memo(
                         color={isClip ? 'magenta' : 'rgba(0, 0, 255, 1.0)'}
                         onClick={() => {
                             setState((state) =>
-                                state
+                                state?.type === 'path'
                                     ? backUpToIndex(
                                           state,
                                           i,
@@ -262,7 +262,7 @@ export const DrawPath = React.memo(
                         prev={current.coord}
                         onClick={() => {
                             setState((state) => {
-                                if (!state) {
+                                if (state?.type !== 'path') {
                                     return state;
                                 }
                                 const parts = state.parts.concat([seg]);
@@ -289,8 +289,8 @@ export const DrawPath = React.memo(
     },
 );
 
-export const goLeft = (state: EditorState['pendingPath']) =>
-    state
+export const goLeft = (state: EditorState['pending']) =>
+    state?.type === 'path'
         ? {
               ...state,
               selection:
@@ -301,9 +301,9 @@ export const goLeft = (state: EditorState['pendingPath']) =>
         : state;
 
 export const goRight = (
-    state: EditorState['pendingPath'],
-): EditorState['pendingPath'] =>
-    state
+    state: EditorState['pending'],
+): EditorState['pending'] =>
+    state?.type === 'path'
         ? {
               ...state,
               selection: (state.selection + 1) % state.next.length,
@@ -313,9 +313,9 @@ export const goRight = (
 export function goForward(
     primitives: { prim: Primitive; guides: Array<Id> }[],
     intersections: Intersect[],
-): (state: EditorState['pendingPath']) => EditorState['pendingPath'] {
+): (state: EditorState['pending']) => EditorState['pending'] {
     return (state) => {
-        if (!state || state.selection >= state.next.length) {
+        if (state?.type !== 'path' || state.selection >= state.next.length) {
             return state;
         }
 
@@ -353,9 +353,9 @@ export function backUp(
     origin: Intersect,
     primitives: { prim: Primitive; guides: Array<Id> }[],
     intersections: Intersect[],
-): (state: EditorState['pendingPath']) => EditorState['pendingPath'] {
+): (state: EditorState['pending']) => EditorState['pending'] {
     return (state) => {
-        if (!state || !state.parts.length) {
+        if (state?.type !== 'path' || !state.parts.length) {
             return null;
         }
         const index = state.parts.length - 1;

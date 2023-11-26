@@ -1,18 +1,21 @@
 import React, { useState } from 'react';
 import { useCurrent } from '../App';
 import { evaluateAnimatedValues, getAnimatedFunctions } from '../editor/Canvas';
-import { addMetadata, findBoundingRect, renderTexture } from '../editor/Export';
+import { findBoundingRect } from '../editor/Export';
+import { addMetadata, renderTexture } from '../editor/ExportPng';
 import { BlurInt, Toggle } from '../editor/Forms';
 import { CancelIcon, CheckmarkIcon, PencilIcon } from '../icons/Icon';
 import { epsilon } from '../rendering/intersect';
 import { canvasRender } from '../rendering/CanvasRender';
 import { Action } from '../state/Action';
 import { initialHistory } from '../state/initialState';
-import { Animations, Coord, State } from '../types';
+import { Animations, State } from '../types';
 import { getAnimatedPaths, getAnimationScripts } from './getAnimatedPaths';
 import { Timelines } from './Timeline';
 import { Scripts } from './Scripts';
 import { Lerps } from './Lerps';
+// @ts-ignore
+import { tar } from 'tinytar';
 
 export const makeEven = (v: number) => {
     v = Math.ceil(v);
@@ -473,7 +476,7 @@ export const Editable = ({
 
 export function tarImages(images: Uint8Array[], fps: number, state: State) {
     // @ts-ignore
-    const tar = require('tinytar').tar;
+    // const tar = import('tinytar').tar;
 
     const args = [
         '-r',

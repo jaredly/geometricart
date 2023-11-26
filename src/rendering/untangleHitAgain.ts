@@ -6,13 +6,13 @@ import {
 } from './untangleHit';
 import {
     Angle,
-    anglesEqual,
     backAngle,
     isAngleBetweenAngles,
     isInside,
     negPiToPi,
     sortAngles,
 } from './clipPath';
+import { anglesEqual } from './epsilonToZero';
 import { angleIsBetween, closeEnoughAngle } from './intersect';
 
 // @trace

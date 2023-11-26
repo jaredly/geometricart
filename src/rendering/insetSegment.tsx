@@ -9,7 +9,7 @@ import {
     lineToSlope,
 } from './intersect';
 import { angleBetween } from './findNextSegments';
-import { anglesEqual } from './clipPath';
+import { anglesEqual } from './epsilonToZero';
 import { coordsEqual } from './pathsAreIdentical';
 
 export const insetLineLine = (
@@ -103,12 +103,12 @@ export const insetLineArc = (
         intersection.length === 1
             ? intersection[0]
             : intersection.length === 0
-                ? seg.to
-                : angleBetween(perp, angleTo(next.center, intersection[0]), true) >
-                    Math.PI ===
-                    isLeft
-                    ? intersection[0]
-                    : intersection[1];
+            ? seg.to
+            : angleBetween(perp, angleTo(next.center, intersection[0]), true) >
+                  Math.PI ===
+              isLeft
+            ? intersection[0]
+            : intersection[1];
 
     // const dists = intersection.map((pos) => dist(pos, p1));
     // const target_ =
@@ -169,12 +169,12 @@ export const insetArcLine = (
         intersection.length === 1
             ? intersection[0]
             : intersection.length === 0
-                ? seg.to
-                : angleBetween(perp, angleTo(seg.center, intersection[0]), true) >
-                    Math.PI ===
-                    isLeft
-                    ? intersection[0]
-                    : intersection[1];
+            ? seg.to
+            : angleBetween(perp, angleTo(seg.center, intersection[0]), true) >
+                  Math.PI ===
+              isLeft
+            ? intersection[0]
+            : intersection[1];
 
     // const dists = intersection.map((pos) => dist(pos, p2));
     // const target_ =
@@ -321,13 +321,13 @@ export const insetArcArc = (
         const tangentPoint = push(
             seg.center,
             angleTo(seg.center, next.center) +
-            (tangentPosition === 'pre-seg' ? Math.PI : 0),
+                (tangentPosition === 'pre-seg' ? Math.PI : 0),
             radius,
         );
         const otherTangent = push(
             next.center,
             angleTo(next.center, seg.center) +
-            (tangentPosition === 'post-next' ? Math.PI : 0),
+                (tangentPosition === 'post-next' ? Math.PI : 0),
             radius2,
         );
         const dst = dist(tangentPoint, otherTangent);
@@ -362,8 +362,8 @@ export const insetArcArc = (
                     seg.clockwise === next.clockwise
                         ? !seg.clockwise
                         : seg.clockwise
-                            ? r1 > r2
-                            : r2 > r1,
+                        ? r1 > r2
+                        : r2 > r1,
                 // tangentPosition === 'between'
                 //     ? !seg.clockwise
                 //     : seg.clockwise,
@@ -407,12 +407,12 @@ export const insetArcArc = (
 
     let isTop =
         closeEnoughAngle(between, angle) ||
-            closeEnoughAngle(between, angle + Math.PI)
+        closeEnoughAngle(between, angle + Math.PI)
             ? seg.clockwise === next.clockwise
                 ? seg.clockwise
                 : seg.clockwise
-                    ? r1 > r2
-                    : r2 > r1
+                ? r1 > r2
+                : r2 > r1
             : angleBetween(between, angle, true) > Math.PI;
 
     // if (!seg.clockwise && next.clockwise) {

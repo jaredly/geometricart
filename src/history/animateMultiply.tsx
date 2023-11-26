@@ -2,6 +2,7 @@ import { Coord, Mirror, State } from '../types';
 import { tracePath } from '../rendering/CanvasRender';
 import { PathMultiply } from '../state/Action';
 import { AnimateState, wait } from './animateHistory';
+import { handlePathMultiply } from '../state/reducer';
 
 export async function animateMultiply(
     state: AnimateState,
@@ -45,6 +46,21 @@ export async function animateMultiply(
     if (!noWait) {
         await highlightPaths(pathIds, ctx, prev, zoom, noWait, canvas);
     }
+
+    const current = state.histories[state.i].state;
+    // console.log({ ...prev.paths });
+    // console.log({ ...current.paths });
+    // const [next, _] = handlePathMultiply(current, action);
+    const added: string[] = [];
+    Object.keys(current.paths).forEach((k) => {
+        if (!prev.paths[k]) {
+            added.push(k);
+        }
+    });
+    // console.log(next.paths, current.paths, added);
+
+    await highlightPaths(added, ctx, current, zoom, noWait, canvas);
+
     state.lastSelection = action.selection;
 }
 
@@ -76,14 +92,17 @@ async function highlightPaths(
             continue;
         }
 
-        if (by < minWait) {
-            const skip = Math.floor(minWait / by);
-            if (j++ % skip === 0) {
-                await wait(minWait);
-            }
-        } else {
-            await wait(by);
-        }
+        // if (by < minWait) {
+        //     const skip = Math.floor(minWait / by);
+        //     if (j++ % skip === 0) {
+        //         await wait(minWait);
+        //     }
+        // } else {
+        //     await wait(by);
+        // }
+    }
+    if (!noWait) {
+        await wait(300);
     }
     ctx.restore();
 }

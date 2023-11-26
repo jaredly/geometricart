@@ -3,11 +3,12 @@ import { pathToPoints, rasterSegPoints } from './pathToPoints';
 import { hslToRgb, rgbToHsl } from './colorConvert';
 import { pathToPrimitives } from '../editor/findSelection';
 import { Primitive } from './intersect';
-import { Rgb } from '../editor/PalettesForm';
+import { Rgb } from '../editor/Rgb';
 import { transformSegment } from './points';
 import { paletteColor } from '../editor/RenderPath';
 import { shaderFunctions } from './shaderFunctions';
 import { Coord, Fill, Path, State, StyleLine } from '../types';
+import { getClips } from './pkInsetPaths';
 
 const namedColors: { [key: string]: Rgb } = {
     white: { r: 1, g: 1, b: 1 },
@@ -43,15 +44,11 @@ export const lightDark = ({ r, g, b }: Rgb, lighten?: number): Rgb => {
 export const shaderForState = (state: State): [number, string] => {
     // ok, so this is gonna be a mega-function
 
-    const clip = state.view.activeClip
-        ? state.clips[state.view.activeClip]
-        : undefined;
-
     const paths = sortedVisibleInsetPaths(
         state.paths,
         state.pathGroups,
         { next: (_, __) => 0 },
-        clip,
+        getClips(state),
         state.view.hideDuplicatePaths,
     );
     const palette = state.palette;
@@ -92,7 +89,7 @@ vec3 sdgTriangle( in vec2 p, in vec2 v[3] )
 {
     float gs = cro(v[0]-v[2],v[1]-v[0]);
     vec4 res;
-    
+
     {
     vec2  e = v[1]-v[0], w = p-v[0];
     vec2  q = w-e*clamp(dot(w,e)/dot(e,e),0.0,1.0);
@@ -111,7 +108,7 @@ vec3 sdgTriangle( in vec2 p, in vec2 v[3] )
     res = vec4( (d<res.x) ? vec3(d,q) : res.xyz,
                 (s>res.w) ?      s    : res.w );
     }
-    
+
     float d = sqrt(res.x)*sign(res.w);
     return vec3(d,res.yz/d);
 }
@@ -350,7 +347,7 @@ function strokeToSdf(
 		}`;
         })
         .join('\n    ')}
-    
+
     // float d = sqrt(res.x)*sign(res.w);
 	if (abs(res.x) < ${(stroke.width ?? 2.0).toFixed(1)}) {
 				return ${vec3(color)};
@@ -403,7 +400,7 @@ function pathToSdf(
 		}`;
         })
         .join('\n    ')}
-    
+
     // float d = sqrt(res.x)*sign(res.w);
 	${
         strokeWidth && stroke

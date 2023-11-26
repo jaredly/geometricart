@@ -24,13 +24,14 @@ export const initialHistory: History = {
 };
 
 export const initialState: State = {
-    version: 10,
+    version: 12,
     meta: {
         title: '',
         description: '',
         created: 0,
         ppi: 170,
     },
+    tilings: {},
     gcode: {
         clearHeight: 3,
         items: [],
@@ -90,7 +91,6 @@ export const initialState: State = {
         // This can't be implemented with svg zoom, because that would muck with line widths of guides and mirrors.
         zoom: 100,
         guides: true,
-        activeClip: null,
     },
     clips: {},
     selection: null,
@@ -154,6 +154,18 @@ export const initialState: State = {
             '#dddf00',
             '#eeef20',
             '#ffff3f',
+        ],
+        palette4: [
+            '#7f99d3',
+            '#37498c',
+            '#2ca787',
+            '#92211d',
+            '#f27a25',
+            '#6d3431',
+            '#f7b544',
+            '#fdd781',
+            '#f9f5e4',
+            '#060708',
         ],
     },
     // activePalette: 'default',

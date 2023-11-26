@@ -127,6 +127,7 @@ export const Inside = () => {
                 state.paths,
                 state.pathGroups,
                 new Prando('ok'),
+                [],
             ),
         [state],
     );

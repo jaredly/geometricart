@@ -63,7 +63,7 @@ export function useMouseDrag(
                 if (evt.button !== 0) {
                     return;
                 }
-                console.log('drag');
+                // console.log('drag');
                 const rect = evt.currentTarget.getBoundingClientRect();
                 const coord = screenToWorld(
                     width,
@@ -275,7 +275,7 @@ export function useDragSelect(
             },
             onMouseUpCapture: (evt: React.MouseEvent) => {
                 if (dragPos) {
-                    console.log('up capture drag pos seteditorstate');
+                    // console.log('up capture drag pos seteditorstate');
                     // setDragPos(null);
                     setEditorState((state) => ({
                         ...state,
@@ -283,7 +283,7 @@ export function useDragSelect(
                     }));
                     evt.preventDefault();
                 }
-                console.log('cancel drag select');
+                // console.log('cancel drag select');
                 cancelDragSelect(evt.shiftKey);
             },
             onMouseDown: (evt: React.MouseEvent) => {

@@ -1,10 +1,12 @@
 /* @jsx jsx */
 /* @jsxFrag React.Fragment */
 import { jsx } from '@emotion/react';
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Coord, Overlay, Overlay as OverlayT, State, View } from '../types';
 import { screenToWorld } from './Canvas';
 import { useCurrent } from '../App';
+// @ts-ignore
+import { Homography } from 'homography';
 
 export function Overlay({
     state,
@@ -69,32 +71,6 @@ export function Overlay({
 
                 const reScale = Math.abs(resize.pos.x / resize.origin.x);
                 const scale = reScale * overlay.scale.x;
-                // const scale =
-                //     ((resize.pos.x - overlay.center.x) /
-                //         (resize.origin.x - overlay.center.x)) *
-                //     overlay.scale.x;
-
-                // const iwidth = ((attachment.width * view.zoom) / 100) * scale;
-                // const iheight = ((attachment.height * view.zoom) / 100) * scale;
-
-                // const w =
-                //     Math.abs(resize.pos.x - overlay.center.x) *
-                //     2;
-                // const h =
-                //     Math.abs(resize.pos.y - overlay.center.y) *
-                //     2;
-
-                // const iwidth =
-                //     (currentAttachment.current.width / 100) *
-                //     overlay.scale.x;
-                // const iheight =
-                //     (currentAttachment.current.height / 100) *
-                //     overlay.scale.y;
-
-                // const scale = {
-                //     x: overlay.scale.x * (w / iwidth),
-                //     y: overlay.scale.y * (h / iheight),
-                // };
                 onUpdate({
                     ...overlay,
                     scale: { x: scale, y: scale },
@@ -139,13 +115,46 @@ export function Overlay({
         }, []),
     );
 
+    const sourcePromise = useMemo(async (): Promise<string> => {
+        if (!attachment.perspectivePoints) {
+            return attachment.contents;
+        }
+
+        const src = new Image();
+        src.crossOrigin = 'Anonymous';
+        const loaded = new Promise((res) => (src.onload = res));
+        src.src = attachment.contents;
+        await loaded;
+
+        const hog = new Homography();
+        hog.setImage(src);
+        hog.setReferencePoints(
+            attachment.perspectivePoints.from.map(({ x, y }) => [x, y]),
+            attachment.perspectivePoints.to.map(({ x, y }) => [x, y]),
+        );
+
+        const img: ImageData = hog.warp();
+        console.log(img);
+        const canv = document.createElement('canvas');
+        canv.width = img.width;
+        canv.height = img.height;
+        const ctx = canv.getContext('2d')!;
+        ctx.putImageData(img, 0, 0);
+        return canv.toDataURL();
+    }, [attachment.perspectivePoints, attachment.contents]);
+
+    const [source, setSource] = useState(null as null | string);
+    useEffect(() => {
+        sourcePromise.then((res) => setSource(res));
+    }, [sourcePromise]);
+
     const isSelected =
         state.selection?.type === 'Overlay' && state.selection.ids.includes(id);
     return (
         <>
             <image
                 key={id}
-                href={attachment.contents}
+                href={source ?? ''}
                 ref={(node) => (ref.current = node)}
                 width={iwidth}
                 height={iheight}

@@ -100,11 +100,39 @@ export const getInCircle = (p1: Coord, p2: Coord, p3: Coord) => {
     return { center: mid, r };
 };
 
+export const calcPolygon = (p1: Coord, p2: Coord, sides: number) => {
+    const theta = angleTo(p1, p2);
+    const internal = Math.PI / sides;
+    const adjacent = Math.PI / 2 - internal;
+    const d = dist(p1, p2) / 2;
+    const r = d / Math.sin(internal);
+    const center = push(p1, theta + adjacent, r);
+    const points = [p1, p2];
+    for (let i = 2; i < sides; i++) {
+        points.push(
+            push(
+                center,
+                theta + adjacent + Math.PI + ((Math.PI * 2) / sides) * i,
+                r,
+            ),
+        );
+    }
+    return {
+        center,
+        points,
+        r,
+    };
+};
+
 export const geomToPrimitives = (
     geom: GuideGeom,
     limit?: boolean,
 ): Array<Primitive> => {
     switch (geom.type) {
+        case 'CloneCircle': {
+            const d = dist(geom.p1, geom.p2);
+            return [{ type: 'circle', center: geom.p3, radius: d }];
+        }
         case 'CircumCircle': {
             const got = getCircumCircle(geom.p1, geom.p2, geom.p3);
             if (!got) {
@@ -136,6 +164,20 @@ export const geomToPrimitives = (
         }
         case 'Split': {
             return [lineToSlope(geom.p1, geom.p2, true)];
+        }
+        case 'Polygon': {
+            const { center, points, r } = calcPolygon(
+                geom.p1,
+                geom.p2,
+                geom.sides,
+            );
+            return [
+                // { type: 'circle', center, radius: r },
+                ...points.map((p1, i) =>
+                    lineToSlope(p1, points[(i + 1) % points.length], true),
+                ),
+                // lineToSlope(geom.p1, geom.p2, true)
+            ];
         }
         case 'Line': {
             if (geom.extent) {

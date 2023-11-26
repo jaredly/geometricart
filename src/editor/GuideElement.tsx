@@ -5,7 +5,7 @@ import { jsx } from '@emotion/react';
 import { angleTo, dist, push, scale } from '../rendering/getMirrorTransforms';
 import { GuideGeom } from '../types';
 import { lineLine, lineToSlope, SlopeIntercept } from '../rendering/intersect';
-import { getCircumCircle, getInCircle } from '../rendering/points';
+import { calcPolygon, getCircumCircle, getInCircle } from '../rendering/points';
 
 export type Bounds = { x0: number; y0: number; x1: number; y1: number };
 
@@ -94,6 +94,36 @@ export const GuideElement = ({
                             />
                         </>
                     ) : null}
+                </>
+            );
+        }
+        case 'Polygon': {
+            const { center, points } = calcPolygon(
+                geom.p1,
+                geom.p2,
+                geom.sides,
+            );
+            return (
+                <>
+                    <line
+                        x1={geom.p1.x * zoom}
+                        y1={geom.p1.y * zoom}
+                        x2={geom.p2.x * zoom}
+                        y2={geom.p2.y * zoom}
+                        stroke="#fff"
+                        strokeWidth={1}
+                    />
+                    {[center, ...points].map((pos, i) => (
+                        <circle
+                            key={i}
+                            cx={pos.x * zoom}
+                            cy={pos.y * zoom}
+                            r={0.01 * zoom}
+                            fill="none"
+                            stroke="#fff"
+                            strokeWidth={1}
+                        />
+                    ))}
                 </>
             );
         }
@@ -286,6 +316,20 @@ export const GuideElement = ({
                 </>
             );
         }
+        case 'CloneCircle': {
+            const r = dist(geom.p1, geom.p2);
+            return (
+                <circle
+                    cx={geom.p3.x * zoom}
+                    cy={geom.p3.y * zoom}
+                    r={r * zoom}
+                    strokeDasharray="5 5"
+                    fill="none"
+                    stroke="#666"
+                    strokeWidth={1}
+                />
+            );
+        }
         case 'Circle':
             const r = dist(geom.radius, geom.center);
             const m = [];
@@ -304,19 +348,8 @@ export const GuideElement = ({
                     />,
                 );
             }
-            const a = angleTo(geom.center, geom.radius);
-            const p1 = push(scale(geom.center, zoom), a, 2000);
-            const p2 = push(scale(geom.center, zoom), a, -2000);
             return (
                 <>
-                    {/* <line
-                        x1={p1.x}
-                        y1={p1.y}
-                        x2={p2.x}
-                        y2={p2.y}
-                        stroke="green"
-                        strokeWidth={0.5}
-                    /> */}
                     {m}
                     {geom.half ? (
                         <circle
@@ -329,22 +362,6 @@ export const GuideElement = ({
                             strokeWidth={1}
                         />
                     ) : null}
-                    {/* {original ? (
-                        <circle
-                            cx={geom.center.x * zoom}
-                            cy={geom.center.y * zoom}
-                            r={5}
-                            fill="white"
-                        />
-                    ) : null}
-                    {original ? (
-                        <circle
-                            cx={geom.radius.x * zoom}
-                            cy={geom.radius.y * zoom}
-                            r={5}
-                            fill="white"
-                        />
-                    ) : null} */}
                 </>
             );
     }

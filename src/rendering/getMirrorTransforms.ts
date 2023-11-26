@@ -154,6 +154,40 @@ export const scaleMatrix = (sx: number, sy: number) => [
     [0, sy, 0],
 ];
 
+export const reverseTransform = (mx: Matrix[]): Matrix[] => {
+    return mx.slice().reverse().map(invertMatrix);
+};
+
+export const invertMatrix = (matrix: Matrix): Matrix => {
+    const [[a, b, c], [d, e, f]] = matrix;
+    // translation
+    if (a === 1 && b === 0 && d === 0 && e === 1) {
+        return [
+            [1, 0, -c],
+            [0, 1, -f],
+        ];
+    }
+    // scale
+    if (b === 0 && c === 0 && d === 0 && f === 0) {
+        return [
+            [1 / a, 0, 0],
+            [0, 1 / e, 0],
+        ];
+    }
+    // rotation
+    if (c === 0 && f === 0) {
+        // sin(-x) = -sin(x)
+        // cos(-x) = cos(x)
+        return [
+            [a, -b, c],
+            [-d, e, f],
+        ];
+    }
+    console.warn('cant invert', matrix);
+    throw new Error(`cant invert matrix`);
+    // return null;
+};
+
 export const transformToMatrices = (t: Transform) => {
     switch (t.type) {
         case 'rotate':

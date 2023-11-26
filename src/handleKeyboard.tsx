@@ -12,7 +12,9 @@ export const toType: { [key: string]: GuideGeom['type'] } = {
     b: 'PerpendicularBisector',
     p: 'Perpendicular',
     i: 'InCircle',
+    y: 'Polygon',
     o: 'CircumCircle',
+    e: 'CloneCircle',
 };
 
 export const toTypeRev: { [key: string]: string } = {};

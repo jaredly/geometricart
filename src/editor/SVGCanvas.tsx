@@ -1,6 +1,6 @@
 import { jsx } from '@emotion/react';
 import Prando from 'prando';
-import React from 'react';
+import React, { useRef } from 'react';
 import { RoughGenerator } from 'roughjs/bin/generator';
 import { Action } from '../state/Action';
 import { useCurrent } from '../App';
@@ -20,13 +20,17 @@ import { Overlay } from '../editor/Overlay';
 import { paletteColor, RenderPath } from './RenderPath';
 import { showHover } from './showHover';
 import { Hover } from './Sidebar';
-import { sortedVisibleInsetPaths } from '../rendering/sortedVisibleInsetPaths';
-import { Coord, State, Intersect, View } from '../types';
+import {
+    InsetCache,
+    sortedVisibleInsetPaths,
+} from '../rendering/sortedVisibleInsetPaths';
+import { Coord, State, Intersect, View, Segment } from '../types';
 import { useDragSelect, useMouseDrag } from './useMouseDrag';
 import { useScrollWheel } from './useScrollWheel';
 import { EditorState, MenuItem } from './Canvas';
 import { coordsEqual } from '../rendering/pathsAreIdentical';
 import { RenderIntersections } from './RenderIntersections';
+import { PKInsetCache, getClips } from '../rendering/pkInsetPaths';
 
 export function SVGCanvas({
     state,
@@ -152,9 +156,7 @@ export function SVGCanvas({
         );
     }, []);
 
-    const clip = state.view.activeClip
-        ? state.clips[state.view.activeClip]
-        : undefined;
+    const clip = getClips(state);
 
     const selectedIds = React.useMemo(() => {
         return getSelectedIds(state.paths, state.selection);
@@ -162,6 +164,8 @@ export function SVGCanvas({
 
     const rand = React.useRef(new Prando('ok'));
     rand.current.reset();
+
+    const insetCache = useRef({} as PKInsetCache);
 
     let pathsToShow = React.useMemo(() => {
         const now = performance.now();
@@ -174,13 +178,14 @@ export function SVGCanvas({
             state.view.laserCutMode ? state.palette : undefined,
             undefined,
             selectedIds,
+            insetCache.current,
         );
         // console.log(`Path calc`, performance.now() - now);
         return res;
     }, [
         state.paths,
         state.pathGroups,
-        clip,
+        state.clips,
         state.view.hideDuplicatePaths,
         state.view.laserCutMode,
         selectedIds,
@@ -197,10 +202,21 @@ export function SVGCanvas({
         });
     }
 
-    const clipPrimitives = React.useMemo(
-        () => (clip ? { prims: pathToPrimitives(clip), segments: clip } : null),
-        [clip],
-    );
+    const clipPrimitives = React.useMemo(() => {
+        if (clip.length) {
+            const res = { prims: [] as Primitive[], segments: [] as Segment[] };
+            clip.forEach((c) => {
+                res.segments.push(...c.shape);
+                res.prims.push(...pathToPrimitives(c.shape));
+            });
+            return res;
+        } else {
+            return null;
+        }
+        // clip
+        //     ? { prims: pathToPrimitives(clip.shape), segments: clip.shape }
+        //     : null,
+    }, [state.clips]);
 
     const dragged = editorState.dragSelectPos
         ? findSelection(
@@ -316,7 +332,11 @@ export function SVGCanvas({
                         styleHover={selectedIds[path.id] ? styleHover : null}
                         onClick={
                             // TODO: Disable path clickies if we're doing guides, folks.
-                            editorState.pendingPath ? undefined : clickPath
+                            editorState.pending !== null ||
+                            uiState.pendingDuplication ||
+                            uiState.pendingMirror
+                                ? undefined
+                                : clickPath
                         }
                     />
                 ))}
@@ -350,7 +370,9 @@ export function SVGCanvas({
                         );
                     })}
 
-                {view.guides || hover?.type === 'guides' ? (
+                {view.guides ||
+                hover?.type === 'guides' ||
+                editorState.pending ? (
                     <Guides
                         uiState={uiState}
                         state={state}

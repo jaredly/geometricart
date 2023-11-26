@@ -31,31 +31,20 @@ export function Clips({
                     onMouseEnter={() =>
                         setHover({ type: 'element', kind: 'Clip', id })
                     }
-                    onClick={() => {
-                        dispatch({
-                            type: 'view:update',
-                            view: {
-                                ...state.view,
-                                activeClip:
-                                    state.view.activeClip === id ? null : id,
-                            },
-                        });
-                    }}
                     onMouseLeave={() => setHover(null)}
                 >
                     <Checkbox
-                        checked={state.view.activeClip === id}
+                        checked={state.clips[id].active}
                         inputId={id}
                         onClick={(evt) => evt.stopPropagation()}
                         onChange={(evt) => {
                             dispatch({
-                                type: 'view:update',
-                                view: {
-                                    ...state.view,
-                                    activeClip:
-                                        state.view.activeClip === id
-                                            ? null
-                                            : id,
+                                // ergh, this will be ~broken
+                                type: 'clip:update',
+                                id,
+                                clip: {
+                                    ...state.clips[id],
+                                    active: !state.clips[id].active,
                                 },
                             });
                         }}
@@ -69,23 +58,63 @@ export function Clips({
                             fontFamily: 'monospace',
                             fontSize: '80%',
                             cursor: 'pointer',
-                            flex: 1,
                         }}
                     >
                         Clip {id}
                     </label>
-                    {state.view.activeClip === id ? (
+                    Outside
+                    <Checkbox
+                        checked={state.clips[id].outside}
+                        inputId={id}
+                        onClick={(evt) => evt.stopPropagation()}
+                        onChange={(evt) => {
+                            dispatch({
+                                // ergh, this will be ~broken
+                                type: 'clip:update',
+                                id,
+                                clip: {
+                                    ...state.clips[id],
+                                    outside: !state.clips[id].outside,
+                                },
+                            });
+                        }}
+                        name="mirror"
+                        value={id}
+                    />
+                    InsetBefore
+                    <Checkbox
+                        checked={state.clips[id].defaultInsetBefore}
+                        inputId={id}
+                        onClick={(evt) => evt.stopPropagation()}
+                        onChange={(evt) => {
+                            dispatch({
+                                // ergh, this will be ~broken
+                                type: 'clip:update',
+                                id,
+                                clip: {
+                                    ...state.clips[id],
+                                    defaultInsetBefore:
+                                        !state.clips[id].defaultInsetBefore,
+                                },
+                            });
+                        }}
+                        name="mirror"
+                        value={id}
+                    />
+                    <div style={{ flex: 1 }} />
+                    {state.clips[id].active ? (
                         <>
                             <Button
                                 tooltip="Make a shape for clip"
                                 onClick={(evt) => {
                                     evt.preventDefault();
-                                    const segments = state.clips[id];
+                                    const clip = state.clips[id];
                                     dispatch({
                                         type: 'path:create',
-                                        segments,
-                                        origin: segments[segments.length - 1]
-                                            .to,
+                                        segments: clip.shape,
+                                        origin: clip.shape[
+                                            clip.shape.length - 1
+                                        ].to,
                                     });
                                 }}
                                 tooltipOptions={{ position: 'left' }}

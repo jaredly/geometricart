@@ -29,10 +29,12 @@ import { calcPathD, idSeed, lightenedColor } from '../editor/RenderPath';
 import { sortedVisibleInsetPaths } from './sortedVisibleInsetPaths';
 import { ArcSegment, Overlay, Path, State } from '../types';
 import { imageCache } from '../editor/SVGCanvas';
+import { getClips } from './pkInsetPaths';
 
 export const makeImage = (href: string): Promise<HTMLImageElement> => {
     return new Promise((res, rej) => {
         const img = new Image();
+        img.crossOrigin = 'Anonymous';
         img.src = href;
         img.onload = () => {
             res(img);
@@ -105,12 +107,10 @@ export const canvasRender = async (
     );
     for (let id of uids) {
         const overlay = state.overlays[id];
-        await renderOverlay(state, overlay, ctx);
+        await renderOverlay(state, overlay, ctx, extraZoom);
     }
 
-    const clip = state.view.activeClip
-        ? state.clips[state.view.activeClip]
-        : undefined;
+    const clip = getClips(state);
 
     const currentAnimatedValues = evaluateAnimatedValues(
         animatedFunctions,
@@ -287,7 +287,7 @@ export const canvasRender = async (
     );
     for (let id of oids) {
         const overlay = state.overlays[id];
-        await renderOverlay(state, overlay, ctx);
+        await renderOverlay(state, overlay, ctx, extraZoom);
     }
 
     if (!state.view.guides) {
@@ -344,8 +344,10 @@ export const canvasRender = async (
         ctx.strokeStyle = 'magenta';
         ctx.setLineDash([5, 15]);
         ctx.lineWidth = 10;
-        pathToPrimitives(clip).forEach((prim) => {
-            renderPrimitive(ctx, prim, zoom, sourceHeight, sourceWidth);
+        clip.forEach((c) => {
+            pathToPrimitives(c.shape).forEach((prim) => {
+                renderPrimitive(ctx, prim, zoom, sourceHeight, sourceWidth);
+            });
         });
     }
 };
@@ -354,17 +356,18 @@ async function renderOverlay(
     state: State,
     overlay: Overlay,
     ctx: CanvasRenderingContext2D,
+    zoom: number,
 ) {
     const attachment = state.attachments[overlay.source];
 
-    const scale = Math.min(overlay.scale.x, overlay.scale.y);
+    const scale = Math.min(overlay.scale.x, overlay.scale.y) * zoom;
 
     let iwidth = ((attachment.width * state.view.zoom) / 100) * scale;
     let iheight = ((attachment.height * state.view.zoom) / 100) * scale;
 
-    const x = overlay.center.x * state.view.zoom;
+    const x = overlay.center.x * state.view.zoom * zoom;
 
-    const y = overlay.center.y * state.view.zoom;
+    const y = overlay.center.y * state.view.zoom * zoom;
 
     const img = await makeImage(attachment.contents);
 

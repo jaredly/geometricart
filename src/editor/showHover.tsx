@@ -4,8 +4,10 @@ import { jsx } from '@emotion/react';
 import * as React from 'react';
 import { geomsForGiude } from '../rendering/calculateGuideElements';
 import {
+    applyMatrices,
     getTransformsForNewMirror,
     Matrix,
+    reverseTransform,
 } from '../rendering/getMirrorTransforms';
 import { geomToPrimitives } from '../rendering/points';
 import { Mirror, State } from '../types';
@@ -14,6 +16,7 @@ import { RenderMirror } from './RenderMirror';
 import { emptyPath, UnderlinePath } from './RenderPath';
 import { RenderPrimitive } from './RenderPrimitive';
 import { Hover } from './Sidebar';
+import { eigenShapesToLines, getTransform, tilingPoints } from './tilingPoints';
 
 export const showHover = (
     key: string,
@@ -111,14 +114,42 @@ export const showHover = (
                 <UnderlinePath
                     path={{
                         ...emptyPath,
-                        segments: clip,
-                        origin: clip[clip.length - 1].to,
+                        segments: clip.shape,
+                        origin: clip.shape[clip.shape.length - 1].to,
                     }}
                     zoom={zoom}
                     color={color}
                     key={key}
                 />
             );
+        }
+        case 'Tiling': {
+            const tiling = state.tilings[hover.id];
+            const pts = tilingPoints(tiling.shape);
+            const tx = getTransform(pts);
+            const btx = reverseTransform(tx);
+            const full = eigenShapesToLines(
+                tiling.cache.segments.map((s) => [s.prev, s.segment.to]),
+                tiling.shape,
+                applyMatrices(pts[2], tx),
+                pts.map((pt) => applyMatrices(pt, tx)),
+            ).map(([p1, p2]) => [
+                applyMatrices(p1, btx),
+                applyMatrices(p2, btx),
+            ]);
+            return full.map(([p1, p2], i) => (
+                <line
+                    stroke="yellow"
+                    strokeWidth={1}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    key={i}
+                    x1={p1.x * zoom}
+                    x2={p2.x * zoom}
+                    y1={p1.y * zoom}
+                    y2={p2.y * zoom}
+                />
+            ));
         }
     }
 };

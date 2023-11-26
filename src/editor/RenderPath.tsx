@@ -436,7 +436,7 @@ export const itemsForPath = (
             select.push({
                 label: (
                     <span>
-                        {colorSquare(full)}
+                        {colorSquare(full, 0)}
                         by fill
                     </span>
                 ),
@@ -459,7 +459,7 @@ export const itemsForPath = (
             select.push({
                 label: (
                     <span>
-                        {colorSquare(full)}
+                        {colorSquare(full, 0)}
                         by line
                     </span>
                 ),
@@ -579,9 +579,10 @@ export const idSeed = (id: string) => {
     return num;
 };
 
-export function colorSquare(full: string | undefined) {
+export function colorSquare(full: string | undefined, i: number) {
     return (
         <div
+            key={i}
             style={{
                 width: '1em',
                 height: '1em',

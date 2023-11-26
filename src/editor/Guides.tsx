@@ -1,7 +1,7 @@
 /* @jsx jsx */
 /* @jsxFrag React.Fragment */
 import { jsx } from '@emotion/react';
-import React from 'react';
+import React, { useRef } from 'react';
 import { useCurrent } from '../App';
 import { PendingMirror, UIState } from '../useUIState';
 import { Action, PathMultiply } from '../state/Action';
@@ -33,6 +33,7 @@ import {
     State,
     View,
 } from '../types';
+import { getClips } from '../rendering/pkInsetPaths';
 
 // This /will/ contain duplicates!
 // export const calculatePathElements = (
@@ -132,13 +133,11 @@ export function primitivesForElementsAndPaths(
 }
 
 export type PendingPathPair = [
-    EditorState['pendingPath'],
+    EditorState['pending'],
     (
         fn:
-            | EditorState['pendingPath']
-            | ((
-                  state: EditorState['pendingPath'],
-              ) => EditorState['pendingPath']),
+            | EditorState['pending']
+            | ((state: EditorState['pending']) => EditorState['pending']),
     ) => void,
 ];
 
@@ -199,11 +198,11 @@ export const Guides = ({
     disableGuides: boolean;
 }) => {
     const pendingPath: PendingPathPair = [
-        editorState.pendingPath,
+        editorState.pending,
         (pp) =>
             setEditorState((s) => ({
                 ...s,
-                pendingPath: typeof pp === 'function' ? pp(s.pendingPath) : pp,
+                pending: typeof pp === 'function' ? pp(s.pending) : pp,
             })),
     ];
     const inactiveGuidePrimitives = React.useMemo(() => {
@@ -253,7 +252,7 @@ export const Guides = ({
 
     const onCompletePath = React.useCallback(
         (parts: Array<PendingSegment>) => {
-            if (!pendingPath[0]) {
+            if (pendingPath[0]?.type !== 'path') {
                 return;
             }
             if (pendingPath[0].isClip) {
@@ -283,12 +282,19 @@ export const Guides = ({
     const primsAndStuff = useCurrent({ guidePrimitives, allIntersections });
 
     const currentDuplication = useCurrent(pendingDuplication);
+    const currentEditorState = useCurrent(editorState);
 
     const onClickIntersection = React.useCallback(
         (coord: Intersect, shiftKey: boolean) => {
             console.log(`click intersection`, currentDuplication, coord);
             if (currentDuplication.current) {
-                handleDuplicationIntersection(coord, currentState.current, currentDuplication.current, setPendingDuplication, dispatch)
+                handleDuplicationIntersection(
+                    coord,
+                    currentState.current,
+                    currentDuplication.current,
+                    setPendingDuplication,
+                    dispatch,
+                );
                 return;
             }
             if (currentPendingMirror.current) {
@@ -320,6 +326,20 @@ export const Guides = ({
                     });
                 }
             }
+            const editorState = currentEditorState.current;
+            if (editorState.pending?.type === 'tiling') {
+                return setEditorState((es) =>
+                    es.pending?.type === 'tiling'
+                        ? {
+                              ...es,
+                              pending: {
+                                  ...es.pending,
+                                  points: es.pending.points.concat(coord.coord),
+                              },
+                          }
+                        : es,
+                );
+            }
             const state = currentState.current;
             if (!state.pending) {
                 const { guidePrimitives, allIntersections } =
@@ -341,11 +361,16 @@ export const Guides = ({
     );
 
     // When intersections change, cancel pending stuffs
+    const first = useRef(true);
     React.useEffect(() => {
+        if (first.current) {
+            first.current = false;
+            return;
+        }
         pendingPath[1](null);
     }, [allIntersections]);
 
-    const clip = view.activeClip ? state.clips[view.activeClip] : undefined;
+    const clip = getClips(state);
 
     const clickInactive = React.useCallback(
         (guides: string[], shift: boolean): void => {
@@ -424,10 +449,17 @@ export const Guides = ({
                 zoom={view.zoom}
                 bounds={bounds}
                 onClick={
-                    disableGuides || pendingPath[0] ? undefined : clickActive
+                    disableGuides ||
+                    pendingPath[0] ||
+                    state.pending != null ||
+                    editorState.pending ||
+                    uiState.pendingDuplication
+                        ? undefined
+                        : clickActive
                 }
             />
-            {(editorState.pendingPath === false ||
+            {(editorState.pending?.type === 'waiting' ||
+                editorState.pending?.type === 'tiling' ||
                 state.pending != null ||
                 uiState.pendingMirror ||
                 uiState.pendingDuplication) &&
@@ -437,6 +469,11 @@ export const Guides = ({
                     highlight={state.pending != null}
                     intersections={allIntersections}
                     onClick={onClickIntersection}
+                    colored={
+                        editorState.pending?.type === 'tiling'
+                            ? editorState.pending.points
+                            : undefined
+                    }
                 />
             ) : null}
             {state.pending && state.pending.type === 'Guide' ? (
@@ -453,20 +490,22 @@ export const Guides = ({
                     shiftKey={!!shiftKey}
                 />
             ) : null}
-            {clip
-                ? pathToPrimitives(clip).map((prim, i) => (
-                      <RenderPrimitive
-                          bounds={bounds}
-                          isImplied
-                          prim={prim}
-                          zoom={view.zoom}
-                          color={'magenta'}
-                          strokeWidth={4}
-                          key={i}
-                      />
-                  ))
-                : null}
-            {pendingPath[0] ? (
+            {clip.map((clip, i) => (
+                <React.Fragment key={i}>
+                    {pathToPrimitives(clip.shape).map((prim, i) => (
+                        <RenderPrimitive
+                            bounds={bounds}
+                            isImplied
+                            prim={prim}
+                            zoom={view.zoom}
+                            color={'magenta'}
+                            strokeWidth={4}
+                            key={i}
+                        />
+                    ))}
+                </React.Fragment>
+            ))}
+            {pendingPath[0]?.type === 'path' ? (
                 <DrawPath
                     palette={state.palette}
                     mirror={
@@ -577,13 +616,13 @@ function keyHandler(
     currentState: React.MutableRefObject<State>,
     currentPathOrigin: React.MutableRefObject<
         [
-            EditorState['pendingPath'],
+            EditorState['pending'],
             (
                 v:
-                    | EditorState['pendingPath']
+                    | EditorState['pending']
                     | ((
-                          state: EditorState['pendingPath'],
-                      ) => EditorState['pendingPath']),
+                          state: EditorState['pending'],
+                      ) => EditorState['pending']),
             ) => void,
         ]
     >,
@@ -610,7 +649,9 @@ function keyHandler(
         if (evt.key === 'C' && currentPathOrigin.current) {
             evt.stopPropagation();
             return currentPathOrigin.current[1]((path) =>
-                path ? { ...path, isClip: !path.isClip } : null,
+                path?.type === 'path'
+                    ? { ...path, isClip: !path.isClip }
+                    : null,
             );
         }
         if (evt.key === 'ArrowUp' || evt.key === 'k') {
@@ -740,25 +781,18 @@ export function calculateBounds(width: number, height: number, view: View) {
     return { x0, y0, x1, y1 };
 }
 
-export const handleDuplicationIntersection = (coord: Intersect, state: State, duplication: PendingDuplication,
+export const handleDuplicationIntersection = (
+    coord: Intersect,
+    state: State,
+    duplication: PendingDuplication,
     setPendingDuplication: (pd: PendingDuplication | null) => void,
-    dispatch: React.Dispatch<Action>
-    ) => {
-    if (
-        !['Path', 'PathGroup'].includes(
-            state.selection?.type ?? '',
-        )
-    ) {
-        console.log(
-            'um selection idk what',
-            state.selection,
-        );
+    dispatch: React.Dispatch<Action>,
+) => {
+    if (!['Path', 'PathGroup'].includes(state.selection?.type ?? '')) {
+        console.log('um selection idk what', state.selection);
         return;
     }
-    if (
-        duplication.reflect &&
-        !duplication.p0
-    ) {
+    if (duplication.reflect && !duplication.p0) {
         console.log('got a p0', coord.coord);
         setPendingDuplication({
             reflect: true,
@@ -769,8 +803,7 @@ export const handleDuplicationIntersection = (coord: Intersect, state: State, du
     setPendingDuplication(null);
     dispatch({
         type: 'path:multiply',
-        selection: state
-            .selection as PathMultiply['selection'],
+        selection: state.selection as PathMultiply['selection'],
         mirror: {
             id: 'tmp',
             origin: coord.coord,
@@ -780,9 +813,7 @@ export const handleDuplicationIntersection = (coord: Intersect, state: State, du
                 y: 0,
             },
             reflect: duplication.reflect,
-            rotational: duplication.reflect
-                ? []
-                : [true],
+            rotational: duplication.reflect ? [] : [true],
         },
     });
-}
+};

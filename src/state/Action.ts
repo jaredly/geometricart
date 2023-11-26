@@ -20,6 +20,8 @@ import {
     TimelineSlot,
     StyleLine,
     Fill,
+    Clip,
+    Tiling,
 } from '../types';
 
 /*
@@ -42,6 +44,7 @@ export type Action =
     | { type: 'select:same'; line?: StyleLine; fill?: Fill }
     | { type: 'tab:set'; tab: Tab }
     | { type: 'attachment:add'; id: string; attachment: Attachment }
+    | { type: 'attachment:update'; id: string; attachment: Partial<Attachment> }
     | { type: 'library:palette:rename'; old: string; new: string }
     | { type: 'library:palette:update'; name: string; colors: Array<string> };
 // | { type: 'library:palette:select'; name: string };
@@ -81,6 +84,17 @@ export type UndoTimelineLaneARE = {
     type: TimelineLaneARE['type'];
     action: TimelineLaneARE;
     undo: UndoAddRemoveEdit<TimelineLane, number>;
+};
+
+export type HistoryViewUpdate = {
+    type: 'history-view:update';
+    view: State['historyView'];
+};
+
+export type UndoHistoryViewUpdate = {
+    type: HistoryViewUpdate['type'];
+    action: HistoryViewUpdate;
+    prev: State['historyView'];
 };
 
 export type TimelineSlotARE = {
@@ -143,6 +157,13 @@ export type UndoGCodeItemARE = {
 //     prev: TimelineLane;
 // };
 
+export type ClipUpdate = { type: 'clip:update'; id: string; clip: Clip };
+export type UndoClipUpdate = {
+    type: ClipUpdate['type'];
+    action: ClipUpdate;
+    prev: Clip;
+};
+
 export type ViewUpdate = { type: 'view:update'; view: View };
 export type UndoViewUpdate = {
     type: ViewUpdate['type'];
@@ -196,7 +217,6 @@ export type ClipAdd = { type: 'clip:add'; clip: Array<Segment> };
 export type UndoClipAdd = {
     type: ClipAdd['type'];
     action: ClipAdd;
-    prevActive: Id | null;
     added: [string, number];
 };
 
@@ -265,6 +285,16 @@ export type PathUpdateMany = {
     type: 'path:update:many';
     changed: { [key: string]: Path | null };
     nextId?: number;
+};
+
+export type UndoGlobalTransform = {
+    type: GlobalTransform['type'];
+    action: GlobalTransform;
+};
+export type GlobalTransform = {
+    type: 'global:transform';
+    rotate: number | null;
+    flip: 'V' | 'H' | null;
 };
 
 export type UndoPathUpdate = {
@@ -505,7 +535,41 @@ export type UndoPaletteUpdate = {
     prev: string[];
 };
 
+export type TilingDelete = {
+    type: 'tiling:delete';
+    id: string;
+};
+export type UndoTilingDelete = {
+    type: TilingDelete['type'];
+    action: TilingDelete;
+    removed: Tiling;
+};
+
+export type TilingAdd = {
+    type: 'tiling:add';
+    shape: Tiling['shape'];
+    cache: Tiling['cache'];
+};
+export type UndoTilingAdd = {
+    type: TilingAdd['type'];
+    action: TilingAdd;
+    added: [Id, number];
+};
+
+export type TilingUpdate = {
+    type: 'tiling:update';
+    tiling: Tiling;
+};
+export type UndoTilingUpdate = {
+    type: TilingUpdate['type'];
+    action: TilingUpdate;
+    prev: Tiling;
+};
+
 export type UndoableAction =
+    | TilingAdd
+    | TilingDelete
+    | TilingUpdate
     | PaletteUpdate
     | GuideAdd
     | GuideUpdate
@@ -523,9 +587,11 @@ export type UndoableAction =
     // | PathPoint
     | MirrorActive
     | ViewUpdate
+    | ClipUpdate
     | TimelineLaneARE
     | GCodeConfig
     | TimelineSlotARE
+    | HistoryViewUpdate
     | GCodeItemARE
     | GCodeItemOrder
     | ScriptUpdate
@@ -533,6 +599,7 @@ export type UndoableAction =
     | TimelineUpdate
     | AnimationConfig
     | PathUpdateMany
+    | GlobalTransform
     | GroupUpdate
     | GuideDelete
     | GroupDelete
@@ -549,6 +616,8 @@ export type UndoableAction =
     | GuideToggle;
 
 export type UndoAction =
+    | UndoTilingAdd
+    | UndoTilingUpdate
     | UndoPaletteUpdate
     | UndoGuideAdd
     | UndoAnimationConfig
@@ -564,6 +633,7 @@ export type UndoAction =
     | UndoOverlayDelete
     | UndoClipAdd
     | UndoPathCreateMany
+    | UndoGlobalTransform
     | UndoGroupUpdate
     | UndoGroupRegroup
     | UndoPathUpdate
@@ -574,6 +644,7 @@ export type UndoAction =
     | UndoGuideUpdate
     | UndoOverlayUpdate
     | UndoViewUpdate
+    | UndoClipUpdate
     | UndoMirrorAdd
     | UndoMirrorDelete
     | UndoGroupDelete
@@ -581,8 +652,10 @@ export type UndoAction =
     | UndoPendingPoint
     | UndoClipCut
     | UndoPathDelete
+    | UndoHistoryViewUpdate
     // | UndoPathPoint
     // | UndoPathAdd
+    | UndoTilingDelete
     | UndoPathCreate
     | UndoPathMultiply
     | UndoPendingExtent

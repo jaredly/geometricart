@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Action } from '../state/Action';
+import { Action, GlobalTransform } from '../state/Action';
 import { Coord, Mirror, Path, PathGroup, Segment, State } from '../types';
 import { Tree } from 'primereact/tree';
 import { Button } from 'primereact/button';
@@ -13,11 +13,13 @@ import type * as CSS from 'csstype';
 import { selectedPathIds } from '../editor/touchscreenControls';
 import { MultiStyleForm, StyleHover } from '../editor/MultiStyleForm';
 import { Export } from '../editor/Export';
+import { Tilings } from '../editor/Tilings';
 import { Screen, UIDispatch, UIState } from '../useUIState';
 import {
     DrillIcon,
     IconButton,
     IconHistoryToggle,
+    IconVerticalAlignMiddle,
     MagicWandIcon,
     PencilIcon,
     RedoIcon,
@@ -46,7 +48,7 @@ import {
     segmentsCenter,
 } from '../editor/Bounds';
 import { transformPath } from '../rendering/points';
-import { scalePos } from '../editor/PendingPreview';
+import { scalePos } from '../editor/scalePos';
 import { insetSegments } from '../rendering/insetPath';
 import { cleanUpInsetSegments2 } from '../rendering/findInternalRegions';
 import { clipPathTry } from '../rendering/clipPathNew';
@@ -68,7 +70,9 @@ export const NewSidebar = ({
 
     uiState,
     uiDispatch,
+    closeFile,
 }: {
+    closeFile: () => unknown;
     lastSaved: {
         when: number;
         dirty: null | true | (() => void);
@@ -120,6 +124,7 @@ export const NewSidebar = ({
                     { name: 'animate', icon: MagicWandIcon },
                     { name: 'gcode', icon: DrillIcon },
                     { name: 'history', icon: IconHistoryToggle },
+                    { name: 'overlay', icon: IconVerticalAlignMiddle },
                 ].map((Config, i) => (
                     <Button
                         key={i}
@@ -201,7 +206,7 @@ export const NewSidebar = ({
                         ),
                         content: () => (
                             <div className="p-3">
-                                <Button onClick={() => (location.hash = '/')}>
+                                <Button onClick={() => closeFile()}>
                                     Close File
                                 </Button>
                                 <div>
@@ -401,6 +406,17 @@ export const NewSidebar = ({
                         ),
                     },
                     {
+                        key: 'tilings',
+                        header: 'Tilings',
+                        content: () => (
+                            <Tilings
+                                state={state}
+                                dispatch={dispatch}
+                                uiDispatch={uiDispatch}
+                            />
+                        ),
+                    },
+                    {
                         key: 'palette',
                         header: 'Palette',
                         content: () => (
@@ -467,10 +483,16 @@ export const NewSidebar = ({
                         header: 'Transform',
                         content() {
                             return (
-                                <TransformPanel
-                                    state={state}
-                                    dispatch={dispatch}
-                                />
+                                <>
+                                    <TransformPanel
+                                        state={state}
+                                        dispatch={dispatch}
+                                    />
+                                    <TransformGlobal
+                                        state={state}
+                                        dispatch={dispatch}
+                                    />
+                                </>
                             );
                         },
                     },
@@ -492,6 +514,68 @@ const showMirror = (
     );
 };
 
+const transforms: { title: string; action: GlobalTransform }[] = [
+    {
+        title: '+45º',
+        action: {
+            type: 'global:transform',
+            rotate: Math.PI / 4,
+            flip: null,
+        },
+    },
+    {
+        title: '-45º',
+        action: {
+            type: 'global:transform',
+            rotate: -Math.PI / 4,
+            flip: null,
+        },
+    },
+    {
+        title: '+30º',
+        action: {
+            type: 'global:transform',
+            rotate: Math.PI / 6,
+            flip: null,
+        },
+    },
+    {
+        title: '-X',
+        action: {
+            type: 'global:transform',
+            rotate: null,
+            flip: 'H',
+        },
+    },
+    {
+        title: '-Y',
+        action: {
+            type: 'global:transform',
+            rotate: null,
+            flip: 'V',
+        },
+    },
+];
+
+function TransformGlobal({
+    state,
+    dispatch,
+}: {
+    state: State;
+    dispatch: React.Dispatch<Action>;
+}) {
+    return (
+        <div>
+            <div>Global Transformations</div>
+            {transforms.map(({ title, action }, i) => (
+                <button key={i} onClick={() => dispatch(action)}>
+                    {title}
+                </button>
+            ))}
+        </div>
+    );
+}
+
 function TransformPanel({
     state,
     dispatch,
@@ -501,7 +585,7 @@ function TransformPanel({
 }) {
     const [inset, setInset] = React.useState(18);
     const [clip, setClip] = React.useState(null as null | string);
-    console.log('tx', clip);
+    // console.log('tx', clip);
     const pathIds = selectedPathIds(state);
     if (!pathIds.length) {
         return <div>Select a thing</div>;
@@ -568,14 +652,14 @@ function TransformPanel({
                     </select>
                     <button
                         onClick={() => {
-                            const cn = clip ?? state.view.activeClip;
+                            const cn = clip;
                             if (cn == null) {
                                 return;
                             }
 
                             pkClipPaths(
                                 state,
-                                state.clips[cn],
+                                state.clips[cn].shape,
                                 inset,
                                 pathIds,
                                 dispatch,
@@ -586,13 +670,13 @@ function TransformPanel({
                     </button>
                     <button
                         onClick={() => {
-                            const cn = clip ?? state.view.activeClip;
+                            const cn = clip;
                             if (cn == null) {
                                 return;
                             }
                             pkClipPaths(
                                 state,
-                                state.clips[cn],
+                                state.clips[cn].shape,
                                 inset,
                                 pathIds,
                                 dispatch,
@@ -1060,11 +1144,11 @@ export const pkPath = (PK: PathKit, segments: Segment[], origin?: Coord) => {
 export const pkInset = (PK: PathKit, path: PKPath, inset: number) => {
     const line = path.copy();
     line.stroke({
-        width: inset,
+        width: inset < 0 ? -inset : inset,
         join: PK.StrokeJoin.MITER,
         cap: PK.StrokeCap.SQUARE,
     });
-    path.op(line, PK.PathOp.DIFFERENCE);
+    path.op(line, inset < 0 ? PK.PathOp.UNION : PK.PathOp.DIFFERENCE);
     line.delete();
     return path;
 };
@@ -1145,67 +1229,67 @@ export const pkClipPaths = async (
     });
 };
 
-const clipPaths = (
-    state: State,
-    inset: number,
-    pathIds: string[],
-    dispatch: React.Dispatch<Action>,
-    outside = false,
-) => {
-    const paths: { [key: string]: Path | null } = {};
-    if (state.view.activeClip == null) {
-        return;
-    }
-    const clip = state.clips[state.view.activeClip];
+// const clipPaths = (
+//     state: State,
+//     inset: number,
+//     pathIds: string[],
+//     dispatch: React.Dispatch<Action>,
+//     outside = false,
+// ) => {
+//     const paths: { [key: string]: Path | null } = {};
+//     if (state.view.activeClip == null) {
+//         return;
+//     }
+//     const clip = state.clips[state.view.activeClip];
 
-    let insetClip: typeof clip;
-    if (inset === 0) {
-        insetClip = clip;
-    } else {
-        let [segments, corners] = insetSegments(clip, inset / 100);
-        const regions = cleanUpInsetSegments2(segments, corners);
-        insetClip = regions[0];
-        if (regions.length !== 1) {
-            console.error('nope bad clip inset');
-            return;
-        }
-    }
+//     let insetClip: typeof clip;
+//     if (inset === 0) {
+//         insetClip = clip;
+//     } else {
+//         let [segments, corners] = insetSegments(clip, inset / 100);
+//         const regions = cleanUpInsetSegments2(segments, corners);
+//         insetClip = regions[0];
+//         if (regions.length !== 1) {
+//             console.error('nope bad clip inset');
+//             return;
+//         }
+//     }
 
-    const clipBounds = segmentsBounds(insetClip);
+//     const clipBounds = segmentsBounds(insetClip);
 
-    let nextId = state.nextId;
+//     let nextId = state.nextId;
 
-    pathIds.forEach((id) => {
-        const path = state.paths[id];
-        const clipped = clipPathTry(
-            {
-                ...path,
-                segments: ensureClockwise(path.segments),
-            },
-            insetClip,
-            clipBounds!,
-            false,
-            outside ? 'outside' : undefined,
-        );
-        if (!clipped.length) {
-            paths[id] = null;
-            return;
-        }
-        paths[id] = clipped[0];
-        for (let i = 1; i < clipped.length; i++) {
-            const pt = clipped[i];
-            paths[nextId] = pt;
-            nextId += 1;
-        }
-    });
+//     pathIds.forEach((id) => {
+//         const path = state.paths[id];
+//         const clipped = clipPathTry(
+//             {
+//                 ...path,
+//                 segments: ensureClockwise(path.segments),
+//             },
+//             insetClip,
+//             clipBounds!,
+//             false,
+//             outside ? 'outside' : undefined,
+//         );
+//         if (!clipped.length) {
+//             paths[id] = null;
+//             return;
+//         }
+//         paths[id] = clipped[0];
+//         for (let i = 1; i < clipped.length; i++) {
+//             const pt = clipped[i];
+//             paths[nextId] = pt;
+//             nextId += 1;
+//         }
+//     });
 
-    dispatch({
-        type: 'selection:set',
-        selection: null,
-    });
-    dispatch({
-        type: 'path:update:many',
-        changed: paths,
-        nextId,
-    });
-};
+//     dispatch({
+//         type: 'selection:set',
+//         selection: null,
+//     });
+//     dispatch({
+//         type: 'path:update:many',
+//         changed: paths,
+//         nextId,
+//     });
+// };

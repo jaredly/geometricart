@@ -36,13 +36,13 @@ export const PendingPathControls = ({
         segments: Array<Segment>,
     ) => void;
 }) => {
-    const state = editorState.pendingPath;
-    if (!state) {
+    const state = editorState.pending;
+    if (state?.type !== 'path') {
         return null;
     }
     const setState = (
-        pp: (path: EditorState['pendingPath']) => EditorState['pendingPath'],
-    ) => setEditorState((s) => ({ ...s, pendingPath: pp(s.pendingPath) }));
+        pp: (path: EditorState['pending']) => EditorState['pending'],
+    ) => setEditorState((s) => ({ ...s, pending: pp(s.pending) }));
     return (
         <div
             css={{
@@ -103,7 +103,7 @@ export const PendingPathControls = ({
                     <div
                         css={{
                             display: 'flex',
-                            flexDirection: 'column',
+                            flexDirection: 'row',
                             alignItems: 'stretch',
                         }}
                     >
@@ -123,7 +123,7 @@ export const PendingPathControls = ({
                         </button>
                         <PendingPreview
                             state={state}
-                            size={200}
+                            size={100}
                             // guidePrimitives={guidePrimitives}
                             // allIntersections={allIntersections}
                         />
@@ -131,7 +131,10 @@ export const PendingPathControls = ({
                         <button
                             css={{ fontSize: 40, flex: 1 }}
                             onClick={() => {
-                                if (state && isComplete(state)) {
+                                if (
+                                    state?.type === 'path' &&
+                                    isComplete(state)
+                                ) {
                                     return onComplete(
                                         state.isClip,
                                         state.origin.coord,

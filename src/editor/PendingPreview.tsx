@@ -5,6 +5,7 @@ import { adjustBounds, largestDimension, segmentBounds } from './Bounds';
 import { angleTo, push } from '../rendering/getMirrorTransforms';
 import { RenderSegment } from './RenderSegment';
 import { Coord } from '../types';
+import { scalePos } from './scalePos';
 
 export const PendingPreview = ({
     state,
@@ -162,8 +163,3 @@ export const Arrow = ({
         />
     );
 };
-
-export const scalePos = (pos: Coord, scale: number) => ({
-    x: pos.x * scale,
-    y: pos.y * scale,
-});

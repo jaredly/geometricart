@@ -3,7 +3,8 @@ import { angleTo, dist, push } from './getMirrorTransforms';
 import { epsilon } from './intersect';
 import { reverseSegment } from './pathsAreIdentical';
 import { Coord, Segment } from '../types';
-import { closeEnough, negPiToPi } from './clipPath';
+import { negPiToPi } from './clipPath';
+import { closeEnough } from './epsilonToZero';
 import { segmentKey } from './segmentKey';
 
 export type RasterSeg = {
@@ -160,7 +161,11 @@ export function angleDifferences(angles: number[]) {
 
 export const totalAngle = (segments: Array<Segment>) => {
     const points = pathToPoints(segments, true);
-    const angles = pointsAngles(rasterSegPoints(points));
+    return totalAnglePoints(rasterSegPoints(points));
+};
+
+export const totalAnglePoints = (points: Coord[]) => {
+    const angles = pointsAngles(points);
     const betweens = angleDifferences(angles);
     const relatives = betweens.map((between) =>
         between > Math.PI ? between - Math.PI * 2 : between,
@@ -187,6 +192,10 @@ export const isClockwise = (segments: Array<Segment>) => {
         return segments[0].clockwise;
     }
     return totalAngle(segments) >= Math.PI - epsilon;
+};
+
+export const isClockwisePoints = (points: Coord[]) => {
+    return totalAnglePoints(points) >= Math.PI - epsilon;
 };
 
 // export const toDegrees = (x: number) => Math.floor((x / Math.PI) * 180);

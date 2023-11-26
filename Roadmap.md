@@ -1,4 +1,136 @@
 
+- [ ] so the tiling shapes, looks like I still need to do line coalescingggg
+- [x] show tiling on hover
+- [x] allow equilateral treiangle to do the "flip" vs "noflip"
+- [ ] Polygon - toggle between "point / next" and "point / center"
+- [x] fix tilings that are colinear with the defining triangle
+- [x] remove unused tilings on save
+
+- [x] historyplayback
+  - list the different "pan/zoom"s
+  - allow me to "start an override" at a given ... index
+  - allow me to "exclude" frames that I don't like.
+
+- [x] clip "inset after" should work
+- [x] hex triangle tilings need to be able to flip, not just rotate.
+
+- [x] HistoryPlayback - manually set the views, and skip frames
+
+- [ ] I want to ... animate between different patterns
+
+---
+
+- [x] I NEEEEEED a "clone circle" dealio
+- [x] it would be great to be able to massage the
+  overlay image, in case it's out of perspective
+- [ ] ok on the overlay editor thing,
+  allow me to place some guides. extend lines around.
+
+----
+
+- [x] OK USE THE TWO WEBSITES IN TANDEM
+  - like POST back and forth, it's fine
+
+--
+
+- [x] DELETE A TILING ive made a terrible mistake
+
+- [x] hovering over a tiling in the sidebar
+  should show the outline in the main area,
+  and maybe and overlay of what it looks like tiled?
+  Would be a good debugging dealio
+
+<!--
+- [ ] have a button "Calculate eigenshapes"
+  That would compute the hashes as well, and ... then have a button
+  that is like "commit hashes to metadata" or something like that? -->
+
+- [x] Actually we're going to cache the eigenshape results in a tiling, already.
+  This makes more sense.
+- [x] Gotta add it to state tho.
+  - [x] And display it.
+  - [x] And update metadata.
+
+Ok, so in many cases our deduping is working. lovely.
+in some cases, it is not. grrr.
+
+
+
+hrmmmmm
+so how do I package this up
+as like
+an npm package
+or something
+
+
+
+I want to be able to provide: like an initial state or something
+and have it make changes
+and I can be persisting state and stuff.
+
+Yeah maybe it's just the persistence that needs to be extracted.
+
+
+
+
+
+
+----
+
+
+- [ ] I thinkkkk I want a button that's like "Generate tiling hashes" or sth
+  and it would also save them on the meta?
+  anyway it's a list of the hashes.
+  and if you have multiple hashes they're all included.
+  alsoooo do I generate the hashes from both sides at this point? idk
+  OK but I do want a "download this tiling" whichhh would make you a png I guess
+  and embed the ... infos. the shapes that are touched, and the normalized lines,
+  and the hash. And it would be named by the hash
+  Then I could upload that hash-having tiling file to my pattern db, and it would be great
+
+- [ ] AND THEN I do a thing where I embed my geometric-art-dealio into my pattern-db
+  so I can patternize all the things
+  it will be glorious
+
+
+----------
+
+- [x] allow the triangle to not be oriented correctrly
+- [x] OK so we actually want this on State. Call it "ur-shapes" or something
+  (might be triangles or quadrilaterals, or I guess hexagons? yeah could be)
+  oh and actually.. we could have "octagon + square" and "hex + two squares + tri"
+
+
+
+
+- [ ] show like a preview of it? I guess the svg/png export will have it rite
+
+# Export and such
+- OK What is exported in a "minimal" export?
+  - we've got the triangle, with like an indication of the kind it is
+    - for each side, we can either reflect, rotate, or (nothing?)
+  - we've got the lines inside of the triangle, which are very normalized
+  - and then we've got all of the shapes that overlap the triangle.
+    I'm just gonna dump them all in willy nilly.
+
+# Global Transforms
+
+- [x] FLIP
+- [x] ROT
+
+# Use PathKit for clipping & insets
+
+yasss love it, now things really work.
+
+Ok, so multiple clips is easy
+but what about multiple layers?
+I think I want layers to be independently resizable?
+ugh do I actually need this?
+or can I just compose in inkscape 🤔
+
+- [x] much more clever clips. outside clips, inset-before clips
+
+
 # Multiple Clips
 
 Not enough to be able to reify a clip; because I
