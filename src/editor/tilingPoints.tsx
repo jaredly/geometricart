@@ -11,6 +11,7 @@ import {
 } from '../rendering/getMirrorTransforms';
 import { scalePos } from './scalePos';
 import { transformMatrix } from '../state/reducer';
+import { angleBetween } from '../rendering/findNextSegments';
 
 export const transformLines = (lines: [Coord, Coord][], mx: Matrix[]) =>
     lines.map(([p1, p2]): [Coord, Coord] => [
@@ -71,12 +72,53 @@ export function eigenShapesToLines(
                 ]),
             ),
         );
+    } else if (shape.type === 'right-triangle') {
+        // start == origin
+        // corner === on the x axis
+        // end === the final whatsit
+        let internalAngle =
+            angleBetween(
+                angleTo(shape.start, shape.corner),
+                angleTo(shape.start, shape.end),
+                true,
+            ) /
+            Math.PI /
+            2;
+
+        if (internalAngle > 0.5) {
+            internalAngle = 1 - internalAngle;
+        }
+
+        for (let j = 3; j < 10; j++) {
+            if (closeEnough(internalAngle, 1 / (j * 2))) {
+                full = full.concat(transformLines(full, [scaleMatrix(1, -1)]));
+                const res: [Coord, Coord][] = [...full];
+                for (let i = 1; i < j; i++) {
+                    res.push(
+                        ...transformLines(full, [
+                            rotationMatrix((i / 8) * Math.PI * 2),
+                        ]),
+                    );
+                }
+                return res;
+            }
+        }
+
+        console.log('shape', shape, internalAngle);
+        full = full.concat(
+            transformLines(full, [
+                scaleMatrix(1, -1),
+                rotationMatrix(-Math.PI / 2),
+            ]),
+        );
+        full = replicateStandard(full, tr.y);
     } else {
-        const d1 = dist(tpts[0], tpts[1]);
-        const d2 = dist(tpts[1], tpts[2]);
-        const d3 = dist(tpts[0], tpts[2]);
+        const [a, b, c] = tpts;
+        const d1 = dist(a, b);
+        const d2 = dist(b, c);
+        const d3 = dist(a, c);
+        // Equilateral triangle
         if (closeEnough(d1, d2) && closeEnough(d2, d3)) {
-            // Equilateral triangle
             if (shape.type === 'isocelese' && shape.flip) {
                 full = full.concat(
                     transformLines(full, [
