@@ -28,6 +28,12 @@ export function eigenShapesToLines(
     let full = unique;
     if (tpts.length === 4) {
         // paralellogram
+        full = full.concat(
+            transformLines(full, [
+                scaleMatrix(-1, 1),
+                translationMatrix({ x: tr.x * 2, y: 0 }),
+            ]),
+        );
         full = full.concat(transformLines(full, [scaleMatrix(-1, 1)]));
         full = full.concat(
             transformLines(full, [scaleMatrix(1, -1)]),
