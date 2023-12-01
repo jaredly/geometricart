@@ -2,27 +2,24 @@
  * Clipping and stuff
  */
 
-import { segmentsBounds } from '../editor/Bounds';
-import { pathToPrimitives, segmentToPrimitive } from '../editor/findSelection';
-import { Bounds } from '../editor/GuideElement';
-import { Coord, Path, PathGroup, Segment } from '../types';
+import { segmentToPrimitive } from '../editor/findSelection';
+import { Coord, Segment } from '../types';
+import { angleForSegment } from './clipPath';
 import { coordKey } from './coordKey';
-import { angleForSegment, insidePath } from './clipPath';
-import { boundsIntersect, removeContainedRegions } from './findInternalRegions';
+import { removeContainedRegions } from './findInternalRegions';
 import { angleBetween } from './findNextSegments';
-import { angleTo, dist, push } from './getMirrorTransforms';
+import { angleTo, dist } from './getMirrorTransforms';
 import { intersections } from './intersect';
-import { coordsEqual } from './pathsAreIdentical';
 import { isClockwise } from './pathToPoints';
+import { coordsEqual } from './pathsAreIdentical';
 import {
-    findExit,
-    findFirstExit,
     HitTransitions,
     IntersectionError,
     SegmentIntersection,
+    findExit,
+    findFirstExit,
     untangleHit,
 } from './untangleHit';
-import { windingNumber } from './windingNumber';
 
 export function addPrevsToSegments(
     segments: Segment[],
@@ -244,208 +241,6 @@ const calcSI = (
     };
 };
 
-export const clipPathTry = (
-    path: Path,
-    clip: Array<Segment>,
-    clipBounds: Bounds,
-    debug = false,
-    groupMode?: PathGroup['clipMode'],
-): Array<Path> => {
-    try {
-        return clipPathNew(path, clip, clipBounds, debug, groupMode);
-    } catch (err) {
-        console.error(err);
-        return [];
-    }
-};
-
-const fixCircle = (shape: Array<Segment>) => {
-    if (shape.length === 1 && shape[0].type === 'Arc') {
-        const opposite = push(
-            shape[0].center,
-            angleTo(shape[0].to, shape[0].center),
-            dist(shape[0].to, shape[0].center),
-        );
-        return [{ ...shape[0], to: opposite }, shape[0]];
-    }
-};
-
-export const clipPathNew = (
-    path: Path,
-    clip: Array<Segment>,
-    clipBounds: Bounds,
-    debug = false,
-    groupMode?: PathGroup['clipMode'],
-): Array<Path> => {
-    const clipMode = path.clipMode ?? groupMode;
-    // const clipMode = 'outside';
-    if (debug) {
-        // clip = simplifyPath(clip);
-        console.groupCollapsed(`Clip path ${path.id}`);
-        console.groupCollapsed(`Path & Clip`);
-        console.log(path);
-        console.log(clip);
-        console.groupEnd();
-    }
-
-    if (clipMode === 'fills') {
-        if (path.style.lines.length && path.style.fills.length) {
-            return [
-                { ...path, style: { lines: path.style.lines, fills: [] } },
-                ...clipPathNew(
-                    { ...path, style: { lines: [], fills: path.style.fills } },
-                    clip,
-                    clipBounds,
-                    debug,
-                    groupMode,
-                ),
-            ];
-        } else if (path.style.lines.length) {
-            return [path];
-        }
-    }
-
-    if (
-        clipMode === 'none' ||
-        (clipMode === 'fills' && path.style.lines.length)
-    ) {
-        if (debug) {
-            console.groupEnd();
-        }
-        return [path];
-    }
-
-    if (!path.open && !isClockwise(path.segments)) {
-        throw new Error(`non-clockwise path`);
-    }
-    if (!isClockwise(clip)) {
-        throw new Error(`non-clockwise clip`);
-    }
-
-    let fixedPath = fixCircle(path.segments);
-    if (fixedPath) {
-        path = { ...path, segments: fixedPath, normalized: undefined };
-    }
-
-    const pathBounding = segmentsBounds(path.segments);
-    if (!boundsIntersect(pathBounding, clipBounds)) {
-        if (debug) {
-            console.log('no intersect', clipBounds, pathBounding);
-            console.groupEnd();
-        }
-        return [];
-    }
-
-    let fixedClip = fixCircle(clip);
-    if (fixedClip) {
-        clip = fixedClip;
-    }
-
-    const allSegments = addPrevsToSegments(path.segments, 0).concat(
-        addPrevsToSegments(clip, 1),
-    );
-
-    const hitsResults = getSomeHits(allSegments, debug);
-
-    if (debug) {
-        console.log('wat');
-    }
-    if (!hitsResults) {
-        if (insidePath(path.origin, pathToPrimitives(clip), clip)) {
-            if (debug) {
-                console.log(`Inside clip, all good`);
-                const primitives = pathToPrimitives(clip);
-                const wind = windingNumber(path.origin, primitives, clip);
-                const wcount = wind.reduce((c, w) => (w.up ? 1 : -1) + c, 0);
-                console.log(`Winding check`, path.origin, primitives, clip);
-                console.log(wind, wcount);
-
-                console.groupEnd();
-            }
-            return [path];
-        } else {
-            if (debug) {
-                console.log('Not inside clip, no dice');
-                console.groupEnd();
-            }
-            return [];
-        }
-    } else if (clipMode === 'remove') {
-        if (debug) {
-            console.log('GroupMode = remove');
-            console.groupEnd();
-        }
-        return [];
-    }
-
-    const { hits, entriesBySegment, hitPairs } = hitsResults;
-
-    if (debug) {
-        console.groupCollapsed(`Details`);
-        console.log('by segment', entriesBySegment, hits, allSegments);
-        console.log(JSON.stringify(hitPairs, null, 2));
-        console.groupEnd();
-    }
-
-    // console.log(`Exits to hit ${Object.keys(exits).length}`);
-    const regions = collectRegions(allSegments, hitsResults, debug);
-
-    // whereeee to start?
-    // like.
-    // gotta start somewhere, right?
-    // Ok, so current is always an exit. And we're looking for our next enter?
-
-    if (debug) {
-        console.log('regons', regions);
-    }
-
-    const filtered = regions
-        .filter(
-            (region) =>
-                // clipMode === 'outside'
-                //     ? region.isInternal === false
-                // :
-                region.isInternal !== false,
-        )
-        .map((region) => {
-            // TODO: verify that the prevs actually do match up
-            return region.segments
-                .map((s, i) => {
-                    const prev =
-                        region.segments[
-                            i === 0 ? region.segments.length - 1 : i - 1
-                        ].segment.to;
-                    if (!coordsEqual(s.prev, prev)) {
-                        console.warn(`BAD PREV`, s.prev, prev, i);
-                    }
-                    return s.segment;
-                })
-                .concat(
-                    coordsEqual(
-                        region.segments[0].prev,
-                        region.segments[region.segments.length - 1].segment.to,
-                    )
-                        ? []
-                        : [
-                              { type: 'Line', to: { x: 0, y: 0 } },
-                              { type: 'Line', to: region.segments[0].prev },
-                          ],
-                );
-        })
-        .filter(isClockwise)
-        .map((segments) => ({
-            ...path,
-            segments,
-            origin: segments[segments.length - 1].to,
-            normalized: undefined,
-        }));
-    if (debug) {
-        console.log(`All done ${filtered.length} regions found`);
-        console.groupEnd();
-    }
-    return filtered;
-};
-
 export const prevSegmentsToShape = (
     segments: Array<SegmentWithPrev>,
 ): null | Array<Segment> => {
@@ -459,17 +254,6 @@ export const prevSegmentsToShape = (
         return s.segment;
     });
     return bad ? null : singles;
-    // .concat(
-    //     coordsEqual(
-    //         segments[0].prev,
-    //         segments[segments.length - 1].segment.to,
-    //     )
-    //         ? []
-    //         : [
-    //               { type: 'Line', to: { x: 0, y: 0 } },
-    //               { type: 'Line', to: segments[0].prev },
-    //           ],
-    // );
 };
 
 export function hasNonEndpointCollision(hits: {

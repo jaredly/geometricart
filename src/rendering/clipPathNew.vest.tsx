@@ -5,7 +5,6 @@ import { Segment } from '../types';
 import { register } from '../vest';
 import {
     addPrevsToSegments,
-    clipPathNew,
     collectRegions,
     getSomeHits,
     prevSegmentsToShape,

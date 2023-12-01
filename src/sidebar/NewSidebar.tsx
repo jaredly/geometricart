@@ -51,7 +51,6 @@ import { transformPath } from '../rendering/points';
 import { scalePos } from '../editor/scalePos';
 import { insetSegments } from '../rendering/insetPath';
 import { cleanUpInsetSegments2 } from '../rendering/findInternalRegions';
-import { clipPathTry } from '../rendering/clipPathNew';
 import { ensureClockwise } from '../rendering/pathToPoints';
 import PathKitInit, { PathKit, Path as PKPath } from 'pathkit-wasm';
 import { cmdsToSegments } from '../gcode/generateGcode';

@@ -42,7 +42,6 @@ import {
 import { paletteColor } from '../editor/RenderPath';
 import { Coord, Path, PathGroup, Segment, State } from '../types';
 import { segmentsBounds } from '../editor/Bounds';
-import { cleanUpInsetSegments3, clipPathTry } from './clipPathNew';
 import { transformSegment } from './points';
 import { pkSortedVisibleInsetPaths } from './pkInsetPaths';
 
@@ -83,77 +82,6 @@ export type InsetCache = {
         };
     };
 };
-
-// export function _oldsortedVisibleInsetPaths(
-//     paths: { [key: string]: Path },
-//     pathGroups: { [key: string]: PathGroup },
-//     rand: { next: (min: number, max: number) => number },
-//     clips: State['clips'][''][],
-//     hideDuplicatePaths?: boolean,
-//     laserCutPalette?: Array<string>,
-//     styleHover?: StyleHover,
-//     selectedIds: { [key: string]: boolean } = {},
-// ): Array<Path> {
-//     paths = { ...paths };
-
-//     const insetCache: InsetCache = {};
-
-//     const now = performance.now();
-//     Object.keys(paths).forEach((k) => {
-//         paths[k] = applyColorVariations(paths[k], rand);
-//         const norm = normalizedPath(paths[k].segments);
-//         if (norm) {
-//             const key = pathToSegmentKeys(
-//                 norm[0][norm[0].length - 1].to,
-//                 norm[0],
-//             ).join(':');
-//             if (!insetCache[key]) {
-//                 insetCache[key] = { segments: norm[0], insets: {} };
-//             }
-//             paths[k].normalized = {
-//                 key: key,
-//                 transform: norm[1],
-//             };
-//         }
-//     });
-//     // console.log(performance.now() - now);
-
-//     let visible = Object.keys(paths)
-//         .filter(
-//             (k) =>
-//                 !paths[k].hidden &&
-//                 (!paths[k].group || !pathGroups[paths[k].group!]?.hide),
-//         )
-//         .sort(sortByOrdering(paths, pathGroups));
-
-//     if (hideDuplicatePaths) {
-//         visible = removeDuplicatePaths(visible, paths);
-//     }
-
-//     /*
-//     If it's clip first, go through and clip the paths, leaving the styles.
-//     if it's inset first, go through and inset the paths, ... ok yeah that's fine.
-//     */
-
-//     let processed: Array<Path> = visible
-//         .map((k) => paths[k])
-//         .map(
-//             processOnePath(
-//                 pathGroups,
-//                 selectedIds,
-//                 styleHover,
-//                 clips,
-//                 insetCache,
-//             ),
-//         )
-//         .flat();
-
-//     if (laserCutPalette) {
-//         return sortForLaserCutting(processed, laserCutPalette);
-//     }
-
-//     return processed;
-// }
 
 export const addToUsed = (path: Path, used: Used, pi: number) => {
     path.segments.forEach((seg, i) => {
@@ -214,64 +142,6 @@ export const pathToSingles = (path: Path) => {
         ]);
     });
     return singles;
-};
-
-export const pathToInsetPaths = (
-    path: Path,
-    insetCache: InsetCache,
-): Array<Path> => {
-    // const result = insetPath(path)
-    return pathToSingles(path)
-        .map(([path, inset]) => {
-            if (!inset || Math.abs(inset) < 0.005) {
-                return [path];
-            }
-            if (path.debug) {
-                console.log('insetting', path, inset);
-            }
-
-            if (path.normalized && insetCache[path.normalized.key]) {
-                if (!insetCache[path.normalized.key].insets[inset / 100]) {
-                    const [segments, corners] = insetSegments(
-                        insetCache[path.normalized.key].segments,
-                        inset / 100,
-                    );
-                    const regions = cleanUpInsetSegments2(segments, corners);
-                    insetCache[path.normalized.key].insets[inset / 100] =
-                        regions;
-                }
-                const transform = path.normalized.transform;
-                return insetCache[path.normalized.key].insets[inset / 100].map(
-                    (region) => {
-                        // const segments = region;
-                        const segments = region.map((seg) =>
-                            transformSegment(seg, transform),
-                        );
-                        return {
-                            ...path,
-                            segments,
-                            origin: segments[segments.length - 1].to,
-                        };
-                    },
-                );
-            }
-
-            const [segments, corners] = insetSegments(
-                path.segments,
-                inset / 100,
-            );
-            const regions = cleanUpInsetSegments2(segments, corners);
-            if (path.segments.length === 1) {
-                // console.log('regions', path.segments, regions);
-            }
-
-            return regions.map((segments) => ({
-                ...path,
-                segments,
-                origin: segments[segments.length - 1].to,
-            }));
-        })
-        .flat();
 };
 
 export const segmentKeyAndLimit = (
@@ -563,58 +433,6 @@ export const removePartialOverlaps = (
     }
 };
 
-export function processOnePath(
-    pathGroups: { [key: string]: PathGroup },
-    selectedIds: { [key: string]: boolean },
-    styleHover: StyleHover | undefined,
-    clip: Segment[] | undefined,
-    insetCache: InsetCache,
-): (value: Path, index: number, array: Path[]) => Path[] {
-    const clipBounds = clip ? segmentsBounds(clip) : null;
-    return (path) => {
-        if (!isClockwise(path.segments) && !path.open) {
-            const segments = reversePath(path.segments);
-            const origin = segments[segments.length - 1].to;
-            path = { ...path, segments, origin };
-        }
-        const group = path.group ? pathGroups[path.group] : null;
-        if (selectedIds[path.id] && styleHover) {
-            path = {
-                ...path,
-                style: applyStyleHover(styleHover, path.style),
-            };
-        }
-
-        if (group?.insetBeforeClip) {
-            return pathToInsetPaths(path, insetCache)
-                .map((insetPath) => {
-                    return clip
-                        ? clipPathTry(
-                              insetPath,
-                              clip,
-                              clipBounds!,
-                              path.debug,
-                              group?.clipMode,
-                          )
-                        : insetPath;
-                })
-                .flat();
-        } else if (clip) {
-            return clipPathTry(
-                path,
-                clip,
-                clipBounds!,
-                path.debug,
-                group?.clipMode,
-            )
-                .map((clipped) => pathToInsetPaths(clipped, insetCache))
-                .flat();
-        } else {
-            return pathToInsetPaths(path, insetCache);
-        }
-    };
-}
-
 export function sortForLaserCutting(
     processed: Path[],
     laserCutPalette: string[],
@@ -764,6 +582,3 @@ export function applyColorVariations(
 
 const NEW = true;
 export const sortedVisibleInsetPaths = pkSortedVisibleInsetPaths;
-// export const sortedVisibleInsetPaths = NEW
-//     ? pkSortedVisibleInsetPaths
-//     : _oldsortedVisibleInsetPaths;
