@@ -1171,6 +1171,7 @@ export const pkPathToSegments = (PK: PathKit, pkp: PKPath) => {
         const { segments, origin } = region;
         if (!coordsEqual(segments[segments.length - 1].to, origin)) {
             console.error('NO BADS clipped idk', segments, origin);
+            console.log(pkp.toCmds());
         }
         const segs = ensureClockwise(segments);
         region.segments = segs;

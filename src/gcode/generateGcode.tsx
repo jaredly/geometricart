@@ -780,10 +780,17 @@ export const cmdsToSegments = (
         } else if (cmd[0] === pk.CLOSE_VERB) {
             latest.open = false;
             // Don't need this,
-            // latest.segments.push({
-            //     type: 'Line',
-            //     to: latest.origin,
-            // });
+            if (
+                !coordsEqual(
+                    latest.segments[latest.segments.length - 1].to,
+                    latest.origin,
+                )
+            ) {
+                latest.segments.push({
+                    type: 'Line',
+                    to: latest.origin,
+                });
+            }
             continue;
         } else {
             throw new Error('unknown cmd ' + cmd[0]);

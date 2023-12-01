@@ -1,6 +1,6 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { makeEven } from '../animation/AnimationUI';
-import { renderTexture } from '../editor/ExportPng';
+import { exportPNG, renderTexture } from '../editor/ExportPng';
 import { undoAction } from '../editor/history';
 import { canvasRender } from '../rendering/CanvasRender';
 import { Action } from '../state/Action';
@@ -8,17 +8,6 @@ import { undo } from '../state/reducer';
 import { Coord, State, View } from '../types';
 import { animateHistory } from './animateHistory';
 import { coordsEqual } from '../rendering/pathsAreIdentical';
-
-// const historyItems = (history: History) => {
-//     let current = history.branches[history.currentBranch];
-//     let items = current.items.slice();
-//     while (current.parent) {
-//         const { branch, idx } = current.parent;
-//         current = history.branches[branch];
-//         items = current.items.slice(0, idx).concat(items);
-//     }
-//     return items;
-// };
 
 export const HistoryPlayback = ({
     state,
@@ -28,17 +17,12 @@ export const HistoryPlayback = ({
     dispatch: React.Dispatch<Action>;
 }) => {
     const canvas = React.useRef<HTMLCanvasElement>(null);
-    // const interactionCanvas = React.useRef<HTMLCanvasElement>(null);
-    // const bounds = React.useMemo(
-    //     () => findBoundingRect(state),
-    //     [state.view, state.paths, state.pathGroups],
-    // );
-    // const [recording, setRecording] = React.useState(false);
 
     const [zoomPreview, setZoomPreview] = useState(
         null as null | { zoom: number; center: Coord },
     );
 
+    const [exportUrl, setExportUrl] = useState(null as null | string);
     const [title, setTitle] = useState(false);
     const [preimage, setPreimage] = useState(false);
     const log = useRef<HTMLDivElement>(null);
@@ -90,9 +74,6 @@ export const HistoryPlayback = ({
         const hstate = applyHistoryView(
             zoomPreview ? [{ idx: current, view: zoomPreview }] : mergedVP,
             current,
-            // zoomPreview
-            //     ? [{ idx: current, view: zoomPreview }]
-            //     : state.historyView?.zooms ?? [],
             histories[current].state,
         );
 
@@ -122,7 +103,7 @@ export const HistoryPlayback = ({
     const stopped = useRef(true);
 
     return (
-        <div style={{}}>
+        <div style={{ paddingBottom: 100 }}>
             <canvas
                 ref={canvas}
                 width={makeEven(w * 2 * zoom)}
@@ -396,6 +377,43 @@ export const HistoryPlayback = ({
                     ? 'Image everything in advance'
                     : "Don't image everything in advance"}
             </button>
+            <button
+                style={{ marginLeft: 8 }}
+                onClick={() => {
+                    const state = applyHistoryView(
+                        zoomPreview
+                            ? [{ idx: current, view: zoomPreview }]
+                            : mergedVP,
+                        current,
+                        histories[current].state,
+                    );
+                    exportPNG(3000, state, 1000, true, false, 0).then(
+                        (blob) => {
+                            setExportUrl(URL.createObjectURL(blob));
+                        },
+                    );
+                }}
+            >
+                Export snapshot
+            </button>
+            {exportUrl ? (
+                <a
+                    href={exportUrl}
+                    download={`image-snapshot-${Date.now()}.png`}
+                    style={{
+                        display: 'block',
+                        // color: 'white',
+                        // background: '#666',
+                        borderRadius: 6,
+                        marginBottom: 16,
+                        padding: '4px 8px',
+                        textDecoration: 'none',
+                        cursor: 'pointer',
+                    }}
+                >
+                    <img src={exportUrl} style={{ maxHeight: 400 }} />
+                </a>
+            ) : null}
         </div>
     );
 };

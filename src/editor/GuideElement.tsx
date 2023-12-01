@@ -102,6 +102,7 @@ export const GuideElement = ({
                 geom.p1,
                 geom.p2,
                 geom.sides,
+                geom.toCenter,
             );
             return (
                 <>

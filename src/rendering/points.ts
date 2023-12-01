@@ -100,10 +100,27 @@ export const getInCircle = (p1: Coord, p2: Coord, p3: Coord) => {
     return { center: mid, r };
 };
 
-export const calcPolygon = (p1: Coord, p2: Coord, sides: number) => {
-    const theta = angleTo(p1, p2);
+export const calcPolygon = (
+    p1: Coord,
+    p2: Coord,
+    sides: number,
+    toCenter: boolean,
+) => {
+    // console.log('calc', toCenter);
     const internal = Math.PI / sides;
     const adjacent = Math.PI / 2 - internal;
+    if (toCenter) {
+        const center = p1;
+        const r = dist(p1, p2);
+        const a1 = angleTo(p1, p2);
+        const points = [p2];
+        for (let i = 1; i < sides; i++) {
+            points.push(push(center, a1 + internal * 2 * i, r));
+        }
+        return { center, points, r };
+    }
+
+    const theta = angleTo(p1, p2);
     const d = dist(p1, p2) / 2;
     const r = d / Math.sin(internal);
     const center = push(p1, theta + adjacent, r);
@@ -170,6 +187,7 @@ export const geomToPrimitives = (
                 geom.p1,
                 geom.p2,
                 geom.sides,
+                geom.toCenter,
             );
             return [
                 // { type: 'circle', center, radius: r },

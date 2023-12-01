@@ -46,6 +46,7 @@ export const RenderPendingGuide = ({
                                   points,
                                   shiftKey,
                                   guide.extent,
+                                  guide.toggle,
                               ),
                               (pos) => applyMatrices(pos, transform),
                           )}
@@ -56,7 +57,13 @@ export const RenderPendingGuide = ({
                 zoom={zoom}
                 bounds={bounds}
                 original={true}
-                geom={pendingGuide(guide.kind, points, shiftKey, guide.extent)}
+                geom={pendingGuide(
+                    guide.kind,
+                    points,
+                    shiftKey,
+                    guide.extent,
+                    guide.toggle,
+                )}
             />
             {/* <circle
                 cx={pos.x * zoom}
@@ -92,6 +99,7 @@ export const pendingGuide = (
     points: Array<Coord>,
     shiftKey: boolean,
     extent?: number,
+    toggle?: boolean,
 ): GuideGeom => {
     switch (type) {
         case 'CloneCircle':
@@ -122,6 +130,7 @@ export const pendingGuide = (
                 p1: points[0],
                 p2: points[1],
                 sides: extent ?? 3,
+                toCenter: !!toggle,
             };
         case 'Circle':
             return {

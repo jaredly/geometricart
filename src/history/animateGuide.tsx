@@ -76,6 +76,7 @@ export async function animateGuide(
                 points,
                 false,
                 pending.extent,
+                pending.toggle,
             );
             const guidePrimitives = geomToPrimitives(geom, true);
 

@@ -180,6 +180,7 @@ export const reduceWithoutUndo = (
                               kind: action.kind,
                               points: [],
                               extent: 5,
+                              toggle: false,
                           }
                         : null,
                 },
@@ -209,6 +210,7 @@ export const reduceWithoutUndo = (
                                     points,
                                     action.shiftKey,
                                     state.pending.extent,
+                                    state.pending.toggle,
                                 ),
                                 mirror: state.activeMirror
                                     ? reifyMirror(
@@ -572,6 +574,21 @@ export const reduceWithoutUndo = (
                     action,
                     prev: state.overlays[action.overlay.id],
                 },
+            ];
+        }
+        case 'pending:toggle': {
+            if (state.pending?.type !== 'Guide') {
+                return [state, null];
+            }
+            return [
+                {
+                    ...state,
+                    pending: {
+                        ...state.pending,
+                        toggle: !state.pending.toggle,
+                    },
+                },
+                { type: action.type, action },
             ];
         }
         case 'pending:extent': {
@@ -1109,6 +1126,12 @@ export const undo = (state: State, action: UndoAction): State => {
             });
             return state;
         }
+        case 'pending:toggle':
+            const pending = state.pending as PendingGuide;
+            return {
+                ...state,
+                pending: { ...pending, toggle: !pending.toggle },
+            };
         case 'pending:extent': {
             const pending = state.pending as PendingGuide;
             return {

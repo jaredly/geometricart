@@ -54,6 +54,7 @@ export type Polygon = {
     p1: Coord;
     p2: Coord;
     sides: number;
+    toCenter: boolean;
 };
 
 export type InCicle = {
@@ -262,6 +263,7 @@ export type PendingGuide = {
     points: Array<Coord>;
     kind: GuideGeom['type'];
     extent?: number;
+    toggle: boolean;
 };
 
 export type Intersect = {

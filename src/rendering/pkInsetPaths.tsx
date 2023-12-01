@@ -34,7 +34,7 @@ export function pkSortedVisibleInsetPaths(
     insetCache: PKInsetCache = {},
 ): Array<Path> {
     paths = { ...paths };
-    // console.log('doing sorted visible');
+    console.log('doing sorted visible');
 
     const pkc = clips.map((c) => ({
         path: pkPath(PK, c.shape),

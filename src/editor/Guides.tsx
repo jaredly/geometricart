@@ -654,6 +654,13 @@ function keyHandler(
                     : null,
             );
         }
+        if (evt.key === ' ' && state.pending?.type === 'Guide') {
+            dispatch({
+                type: 'pending:toggle',
+            });
+            console.log('toggle');
+            return;
+        }
         if (evt.key === 'ArrowUp' || evt.key === 'k') {
             if (state.pending?.type === 'Guide') {
                 dispatch({

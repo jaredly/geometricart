@@ -433,6 +433,15 @@ export type UndoPathMultiply = {
     added: [Array<Id>, Id | null, number];
 };
 
+export type PendingToggle = {
+    type: 'pending:toggle';
+};
+
+export type UndoPendingToggle = {
+    type: PendingToggle['type'];
+    action: PendingToggle;
+};
+
 export type PendingExtent = {
     type: 'pending:extent';
     delta: number;
@@ -604,6 +613,7 @@ export type UndoableAction =
     | GuideDelete
     | GroupDelete
     | PendingExtent
+    | PendingToggle
     | PathDelete
     | PathDeleteMany
     | OverlayUpdate
@@ -659,6 +669,7 @@ export type UndoAction =
     | UndoPathCreate
     | UndoPathMultiply
     | UndoPendingExtent
+    | UndoPendingToggle
     | UndoPendingType
     | UndoGuideToggle
     | UndoMirrorActive
