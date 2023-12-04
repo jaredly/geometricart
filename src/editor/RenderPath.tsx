@@ -259,7 +259,8 @@ const RenderPathMemo = ({
                 ? line.dash.map((d) => ((d / 100) * zoom).toFixed(2)).join(' ')
                 : undefined,
             fill: 'none',
-            strokeLinejoin: 'round' as 'round',
+            // roundedCorners ?
+            // strokeLinejoin: 'round' as 'round',
             onClick: onClick
                 ? (evt: React.MouseEvent) => {
                       evt.stopPropagation();

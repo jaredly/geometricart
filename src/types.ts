@@ -333,6 +333,7 @@ export type View = {
     zoom: number;
     guides: boolean;
     hideDuplicatePaths?: boolean;
+    roundedCorners?: boolean;
     laserCutMode?: boolean;
     background?: string | number;
     sketchiness?: number;

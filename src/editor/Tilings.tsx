@@ -295,6 +295,7 @@ export const getShapesIntersectingPolygon = (state: State, pts: Coord[]) => {
             path.segments.map((seg) => transformSegment(seg, tx)),
         ),
     );
+    // KEEP
     // consoleSvg(renderSegments(origSegments));
     // consoleSvg(renderSegments(isegs));
     isegs
@@ -307,6 +308,9 @@ export const getShapesIntersectingPolygon = (state: State, pts: Coord[]) => {
             ) {
                 const ss = slopeToLine(sl);
                 for (let os of origLines) {
+                    if (!closeEnough(os.b, sl.b) || !closeEnough(os.m, sl.m)) {
+                        continue;
+                    }
                     const ol = slopeToLine(os);
                     if (
                         (coordsEqual(ss[0], ol[0]) ||
@@ -317,23 +321,23 @@ export const getShapesIntersectingPolygon = (state: State, pts: Coord[]) => {
                     }
                     const int = lineLine(os, sl);
                     if (int) {
-                        // consoleSvg(
-                        //     renderSegments(
-                        //         [slopeToPseg(os), slopeToPseg(sl)],
-                        //         undefined,
-                        //         ['red', 'blue'],
-                        //     ),
-                        // );
-                        // console.log(
-                        //     'thing to remove, is maybe still good',
-                        //     os,
-                        //     sl,
-                        //     int,
-                        // );
                         const back = slopeToLine(os);
                         const first = coordsEqual(int, back[0]);
                         const last = coordsEqual(int, back[1]);
                         if ((!first && !last) || (first && last)) {
+                            // consoleSvg(
+                            //     renderSegments(
+                            //         [slopeToPseg(os), slopeToPseg(sl)],
+                            //         undefined,
+                            //         ['red', 'blue'],
+                            //     ),
+                            // );
+                            // console.log(
+                            //     'thing to remove, is maybe still good',
+                            //     os,
+                            //     sl,
+                            //     int,
+                            // );
                             return true;
                         }
                     }
