@@ -98,7 +98,7 @@ export async function animateAction(
             action.type === 'path:update:many' ||
             action.type === 'pathGroup:update:many'
         ) {
-            await wait(500);
+            await wait(100);
         } else if (action.type === 'view:update') {
             if (
                 action.view.zoom !== prev.view.zoom ||

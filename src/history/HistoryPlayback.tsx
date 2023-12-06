@@ -49,17 +49,9 @@ export const HistoryPlayback = ({
     } = state.animations.config;
 
     const originalSize = 1000;
-    // let h = bounds
-    //     ? makeEven((bounds.y2 - bounds.y1) * state.view.zoom + crop * 2)
-    //     : originalSize;
-    // let w = bounds
-    //     ? makeEven((bounds.x2 - bounds.x1) * state.view.zoom + crop * 2)
-    //     : originalSize;
     let h = originalSize;
     let w = originalSize;
 
-    // let dx = bounds ? (bounds.x1 + bounds.x2) / 2 : 0;
-    // let dy = bounds ? (bounds.y1 + bounds.y2) / 2 : 0;
     let dx = -originalSize / 2;
     let dy = -originalSize / 2;
 
@@ -79,7 +71,7 @@ export const HistoryPlayback = ({
 
         canvasRender(
             ctx,
-            { ...hstate, overlays: {} },
+            hstate,
             w * 2 * zoom,
             h * 2 * zoom,
             2 * zoom,
@@ -94,11 +86,6 @@ export const HistoryPlayback = ({
             }
         });
     }, [state, w, h, dx, dy, zoom, backgroundAlpha, current, zoomPreview]);
-
-    // useEffect(() => {
-    //     // const ctx = interactionCanvas.current!.getContext('2d')!;
-    //     const { state, action } = histories[current];
-    // }, [state, current]);
 
     const stopped = useRef(true);
 
@@ -372,11 +359,19 @@ export const HistoryPlayback = ({
                 </button>
                 {/* {JSON.stringify(state.historyView ?? 'no history view')} */}
             </div>
-            <button onClick={() => setPreimage(!preimage)}>
+            <label>
+                <input
+                    type="checkbox"
+                    checked={preimage}
+                    onChange={() => setPreimage(!preimage)}
+                />
+                Image everything in advance
+            </label>
+            {/* <button onClick={() => setPreimage(!preimage)}>
                 {!preimage
                     ? 'Image everything in advance'
                     : "Don't image everything in advance"}
-            </button>
+            </button> */}
             <button
                 style={{ marginLeft: 8 }}
                 onClick={() => {

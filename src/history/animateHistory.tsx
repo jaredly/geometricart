@@ -86,7 +86,7 @@ export const animateHistory = async (
         const state = histories[current].state;
         await canvasRender(
             ctx,
-            { ...state, overlays: {} },
+            state,
             w * 2 * zoom,
             h * 2 * zoom,
             2 * zoom,
@@ -148,28 +148,49 @@ export const animateHistory = async (
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     if (animateTitle) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        await draw(histories.length - 1);
+        const final = await createImageBitmap(canvas);
         const text = 'Pattern walk-through';
-        for (let i = 0; i <= text.length; i++) {
-            if (stopped.current) {
-                break;
-            }
 
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            await draw(histories.length - 1);
+        ctx.font = '100px sans-serif';
+        ctx.fillStyle = 'white';
+        ctx.textAlign = 'left';
+        // ctx.textAlign = 'center';
+        ctx.strokeStyle = 'rgba(0,0,0,1)';
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+        ctx.lineWidth = 30;
 
-            ctx.font = '100px sans-serif';
-            ctx.fillStyle = 'white';
-            ctx.textAlign = 'center';
-            ctx.strokeStyle = 'rgba(0,0,0,1)';
-            ctx.lineJoin = 'round';
-            ctx.lineCap = 'round';
-            ctx.lineWidth = 30;
-            const t = text.slice(0, i);
-            ctx.strokeText(t, ctx.canvas.width / 2, ctx.canvas.height * 0.9);
-            ctx.fillText(t, ctx.canvas.width / 2, ctx.canvas.height * 0.9);
-            ctx.lineWidth = 1;
-            await wait(60);
+        const fw = ctx.measureText(text).width;
+        const widths = [0];
+        for (let i = 1; i <= text.length; i++) {
+            widths.push(ctx.measureText(text.slice(0, i)).width);
         }
+
+        const parties = 240;
+        for (let i = 0; i < parties; i++) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(final, 0, 0);
+            const w = (fw / parties) * i;
+            const at = widths.findIndex((m) => m > w);
+
+            const t = text.slice(0, at);
+            ctx.strokeText(
+                t,
+                ctx.canvas.width / 2 - w / 2,
+                ctx.canvas.height * 0.9,
+            );
+            ctx.fillText(
+                t,
+                ctx.canvas.width / 2 - w / 2,
+                ctx.canvas.height * 0.9,
+            );
+
+            await new Promise((res) => requestAnimationFrame(res));
+        }
+        ctx.lineWidth = 1;
+
         await wait(400);
     }
 
@@ -193,8 +214,11 @@ export const animateHistory = async (
             state.frames.push(await createImageBitmap(canvas));
         }
 
-        // Draw the cursor
-        drawCursor(ctx, state.cursor.x, state.cursor.y);
+        if (histories[state.i].action?.type === 'path:update:many') {
+        } else {
+            // Draw the cursor
+            drawCursor(ctx, state.cursor.x, state.cursor.y);
+        }
 
         await nextFrame();
     }

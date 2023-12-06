@@ -809,7 +809,11 @@ function PathGroupItem({
                         e.stopPropagation();
                     }}
                 />
-                <OverlayPanel ref={op}>
+                <OverlayPanel
+                    ref={op}
+                    onClick={(evt) => evt.stopPropagation()}
+                    onMouseDown={(evt) => evt.stopPropagation()}
+                >
                     <PathGroupForm
                         group={state.pathGroups[k]}
                         selected={false}

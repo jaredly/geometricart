@@ -1,8 +1,32 @@
 
-- [ ] so the tiling shapes, looks like I still need to do line coalescingggg
+next up folks:
+- import just a tiling, and then ... duplicate the shapes from a tiling please
+- eigenshape quadrilateral, need to be able to "rotate" instead of "flip"
+
+# New shape formation:
+- allow you to click on a line, or a point
+- do a "closest clickable" calculation, instead of relying on SVG hittesting
+- if the clickables are too close together, make a magnifying glass so you can better click
+- and if there are far too many clickables, then just disable it
+
+
+
+
+# Animate
+- [ ] smoother text render pls
+- [ ] "flood" fill for changing color. Pick a point to start, and flow out from there.
+  - oof, ok so to be able to do that, I want much more fine grained path:update actions.
+  - like: "fill:add" and stuff. Also, to be able to have a single delta applied to all paths.
+  - althoughhhhh actually, that's not true. I can still say organize the paths, and do a partial
+    application of the change.
+  - that's fine in fact.
+- [ ] allow override of "delay" on specific frames. Allows me to speed through path fill creation?
+
+
+- [x] so the tiling shapes, looks like I still need to do line coalescingggg
 - [x] show tiling on hover
 - [x] allow equilateral treiangle to do the "flip" vs "noflip"
-- [ ] Polygon - toggle between "point / next" and "point / center"
+- [x] Polygon - toggle between "point / next" and "point / center"
 - [x] fix tilings that are colinear with the defining triangle
 - [x] remove unused tilings on save
 

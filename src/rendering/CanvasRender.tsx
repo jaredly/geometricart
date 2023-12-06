@@ -52,6 +52,7 @@ export const canvasRender = async (
     animatedFunctions: AnimatedFunctions,
     animationPosition: number,
     backgroundAlpha?: number | null,
+    overlayCache: { [key: string]: HTMLImageElement } = {},
 ) => {
     const palette = state.palette;
 
@@ -107,7 +108,7 @@ export const canvasRender = async (
     );
     for (let id of uids) {
         const overlay = state.overlays[id];
-        await renderOverlay(state, overlay, ctx, extraZoom);
+        await renderOverlay(state, overlay, ctx, extraZoom, overlayCache);
     }
 
     const clip = getClips(state);
@@ -291,7 +292,7 @@ export const canvasRender = async (
     );
     for (let id of oids) {
         const overlay = state.overlays[id];
-        await renderOverlay(state, overlay, ctx, extraZoom);
+        await renderOverlay(state, overlay, ctx, extraZoom, overlayCache);
     }
 
     if (!state.view.guides) {
@@ -361,6 +362,7 @@ async function renderOverlay(
     overlay: Overlay,
     ctx: CanvasRenderingContext2D,
     zoom: number,
+    overlayCache: { [key: string]: HTMLImageElement },
 ) {
     const attachment = state.attachments[overlay.source];
 
@@ -373,7 +375,11 @@ async function renderOverlay(
 
     const y = overlay.center.y * state.view.zoom * zoom;
 
-    const img = await makeImage(attachment.contents);
+    const cached = overlayCache[attachment.contents];
+    const img = cached ?? (await makeImage(attachment.contents));
+    if (!cached) {
+        overlayCache[attachment.contents] = img;
+    }
 
     ctx.globalAlpha = overlay.opacity;
     ctx.drawImage(img, -iwidth / 2 + x, -iheight / 2 + y, iwidth, iheight);

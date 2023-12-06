@@ -129,6 +129,7 @@ export const Int = ({
         <input
             value={value}
             placeholder={placeholder}
+            onClick={(evt) => evt.stopPropagation()}
             onChange={(evt) => {
                 const res = +evt.target.value;
                 if (isNaN(res) || !evt.target.value.trim()) {
@@ -280,6 +281,7 @@ export const PathGroupForm = ({
             style={{
                 backgroundColor: selected ? 'rgba(255,255,255,0.1)' : undefined,
             }}
+            onClick={(evt) => evt.stopPropagation()}
             onMouseOut={onMouseOut}
             onMouseOver={onMouseOver}
         >

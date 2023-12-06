@@ -299,6 +299,18 @@ export const MultiStyleForm = ({
                     onChange(
                         styles.map((style) => {
                             const fills = style.fills.slice();
+
+                            let at: Fill | null = null;
+                            for (let fill of style.fills) {
+                                if (
+                                    fill &&
+                                    (at == null ||
+                                        (at.inset ?? 0) < (fill.inset ?? 0))
+                                ) {
+                                    at = fill;
+                                }
+                            }
+
                             for (let i = fills.length; i < maxNum; i++) {
                                 fills.push(null);
                             }
