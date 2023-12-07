@@ -1,4 +1,4 @@
-import { Coord, State } from '../types';
+import { Coord, State, View } from '../types';
 import { tracePath } from '../rendering/CanvasRender';
 import { Action } from '../state/Action';
 import { emptyPath } from '../editor/RenderPath';
@@ -101,10 +101,31 @@ export async function animateAction(
             await wait(100);
         } else if (action.type === 'view:update') {
             if (
-                action.view.zoom !== prev.view.zoom ||
-                action.view.center.x !== prev.view.center.x ||
-                action.view.center.y !== prev.view.center.y
+                action.view.zoom > prev.view.zoom &&
+                action.view.center.x === prev.view.center.x &&
+                action.view.center.y === prev.view.center.y
             ) {
+                const frame = state.frames[state.i - 1];
+
+                const num = 60;
+                const bz = action.view.zoom - prev.view.zoom; // / num;
+
+                for (let i = num; i >= 0; i--) {
+                    const perc = (Math.sin((i / num - 0.5) * Math.PI) + 1) / 2;
+                    const az = (prev.view.zoom + bz * perc) / prev.view.zoom;
+                    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+                    const nw = frame.width * az;
+                    const nh = frame.height * az;
+                    ctx.drawImage(
+                        frame,
+                        (frame.width - nw) / 2,
+                        (frame.height - nh) / 2,
+                        nw,
+                        nh,
+                    );
+                    await new Promise((res) => requestAnimationFrame(res));
+                }
+
                 /*
                 const zoomLevel = Math.max(action.view.zoom, prev.view.zoom);
                 const ptl = fromScreen({ x: 0, y: 0 }, prev);
@@ -157,6 +178,11 @@ export async function animateAction(
                 );
                 document.body.appendChild(c2);
                 */
+            } else if (
+                action.view.zoom !== prev.view.zoom ||
+                action.view.center.x !== prev.view.center.x ||
+                action.view.center.y !== prev.view.center.y
+            ) {
                 await wait(500);
             }
         } else {
