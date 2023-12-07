@@ -47,7 +47,7 @@ export const animateHistory = async (
     const now = Date.now();
     console.log('hup');
 
-    let histories = simplifyHistory(getHistoriesList(originalState));
+    let histories = getHistoriesList(originalState);
     const { zoom } = originalState.animations.config;
     const ctx = canvas.getContext('2d')!;
     ctx.lineWidth = 1;

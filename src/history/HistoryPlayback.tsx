@@ -28,7 +28,7 @@ export const HistoryPlayback = ({
     const log = useRef<HTMLDivElement>(null);
 
     const histories = useMemo(() => {
-        return simplifyHistory(getHistoriesList(state));
+        return getHistoriesList(state);
     }, [state]);
 
     const viewPoints = useMemo(() => findViewPoints(histories), [histories]);
@@ -247,117 +247,9 @@ export const HistoryPlayback = ({
                     </div>
                 </div>
             </div>
+            {histories[current].action?.type}
             <div>
-                {state.historyView?.zooms.map((zoom, i) => (
-                    // <EditZoom zoom={zoom} setPreview={setZoomPreview} />
-                    <div key={i}>
-                        Idx:
-                        {zoom.idx}
-                        Zoom:
-                        <NumberInput
-                            value={zoomPreview?.zoom ?? zoom.view.zoom}
-                            onChange={(v) => {
-                                setZoomPreview((z) =>
-                                    z
-                                        ? { ...z, zoom: v }
-                                        : { zoom: v, center: zoom.view.center },
-                                );
-                            }}
-                            inner={{ style: { width: 100 } }}
-                        />
-                        Center:
-                        <NumberInput
-                            value={zoomPreview?.center.x ?? zoom.view.center.x}
-                            onChange={(v) => {
-                                setZoomPreview((z) =>
-                                    z
-                                        ? {
-                                              ...z,
-                                              center: {
-                                                  x: v,
-                                                  y: z.center.y,
-                                              },
-                                          }
-                                        : {
-                                              zoom: zoom.view.zoom,
-                                              center: {
-                                                  x: v,
-                                                  y: zoom.view.center.y,
-                                              },
-                                          },
-                                );
-                            }}
-                            inner={{ style: { width: 100 } }}
-                        />
-                        <NumberInput
-                            value={zoomPreview?.center.y ?? zoom.view.center.y}
-                            onChange={(v) => {
-                                setZoomPreview((z) =>
-                                    z
-                                        ? {
-                                              ...z,
-                                              center: {
-                                                  x: z.center.x,
-                                                  y: v,
-                                              },
-                                          }
-                                        : {
-                                              zoom: zoom.view.zoom,
-                                              center: {
-                                                  x: zoom.view.center.x,
-                                                  y: v,
-                                              },
-                                          },
-                                );
-                            }}
-                            inner={{ style: { width: 100 } }}
-                        />
-                        {/* <Numberinpu */}
-                        {zoomPreview ? (
-                            <>
-                                <button
-                                    onClick={() => {
-                                        const view = state.historyView
-                                            ? { ...state.historyView }
-                                            : { zooms: [], skips: [] };
-                                        view.zooms = view.zooms.slice();
-                                        view.zooms[i].view = zoomPreview;
-                                        dispatch({
-                                            type: 'history-view:update',
-                                            view,
-                                        });
-                                        setZoomPreview(null);
-                                    }}
-                                >
-                                    Commit
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        setZoomPreview(null);
-                                    }}
-                                >
-                                    Reset
-                                </button>
-                            </>
-                        ) : null}
-                        <button
-                            onClick={() => {
-                                const view = state.historyView
-                                    ? { ...state.historyView }
-                                    : { zooms: [], skips: [] };
-                                view.zooms = view.zooms.slice();
-                                view.zooms.splice(i, 1);
-                                dispatch({
-                                    type: 'history-view:update',
-                                    view,
-                                });
-                                setZoomPreview(null);
-                            }}
-                        >
-                            &times;
-                        </button>
-                    </div>
-                ))}
+                {renderZooms(state, zoomPreview, setZoomPreview, dispatch)}
                 <button
                     onClick={() => {
                         const view = state.historyView
@@ -509,6 +401,126 @@ export const mergeViewPoints = (vp: ViewPoints[], zooms?: ViewPoints[]) => {
         .map((v) => v.v);
 };
 
+function renderZooms(
+    state: State,
+    zoomPreview: { zoom: number; center: Coord } | null,
+    setZoomPreview: React.Dispatch<
+        React.SetStateAction<{ zoom: number; center: Coord } | null>
+    >,
+    dispatch: React.Dispatch<Action>,
+): React.ReactNode {
+    return state.historyView?.zooms.map((zoom, i) => (
+        // <EditZoom zoom={zoom} setPreview={setZoomPreview} />
+        <div key={i}>
+            Idx:
+            {zoom.idx}
+            Zoom:
+            <NumberInput
+                value={zoomPreview?.zoom ?? zoom.view.zoom}
+                onChange={(v) => {
+                    setZoomPreview((z) =>
+                        z
+                            ? { ...z, zoom: v }
+                            : { zoom: v, center: zoom.view.center },
+                    );
+                }}
+                inner={{ style: { width: 100 } }}
+            />
+            Center:
+            <NumberInput
+                value={zoomPreview?.center.x ?? zoom.view.center.x}
+                onChange={(v) => {
+                    setZoomPreview((z) =>
+                        z
+                            ? {
+                                  ...z,
+                                  center: {
+                                      x: v,
+                                      y: z.center.y,
+                                  },
+                              }
+                            : {
+                                  zoom: zoom.view.zoom,
+                                  center: {
+                                      x: v,
+                                      y: zoom.view.center.y,
+                                  },
+                              },
+                    );
+                }}
+                inner={{ style: { width: 100 } }}
+            />
+            <NumberInput
+                value={zoomPreview?.center.y ?? zoom.view.center.y}
+                onChange={(v) => {
+                    setZoomPreview((z) =>
+                        z
+                            ? {
+                                  ...z,
+                                  center: {
+                                      x: z.center.x,
+                                      y: v,
+                                  },
+                              }
+                            : {
+                                  zoom: zoom.view.zoom,
+                                  center: {
+                                      x: zoom.view.center.x,
+                                      y: v,
+                                  },
+                              },
+                    );
+                }}
+                inner={{ style: { width: 100 } }}
+            />
+            {/* <Numberinpu */}
+            {zoomPreview ? (
+                <>
+                    <button
+                        onClick={() => {
+                            const view = state.historyView
+                                ? { ...state.historyView }
+                                : { zooms: [], skips: [] };
+                            view.zooms = view.zooms.slice();
+                            view.zooms[i].view = zoomPreview;
+                            dispatch({
+                                type: 'history-view:update',
+                                view,
+                            });
+                            setZoomPreview(null);
+                        }}
+                    >
+                        Commit
+                    </button>
+                    <button
+                        onClick={() => {
+                            setZoomPreview(null);
+                        }}
+                    >
+                        Reset
+                    </button>
+                </>
+            ) : null}
+            <button
+                onClick={() => {
+                    const view = state.historyView
+                        ? { ...state.historyView }
+                        : { zooms: [], skips: [] };
+                    view.zooms = view.zooms.slice();
+                    view.zooms.splice(i, 1);
+                    dispatch({
+                        type: 'history-view:update',
+                        view,
+                    });
+                    setZoomPreview(null);
+                }}
+            >
+                &times;
+            </button>
+        </div>
+    ));
+}
+
 export async function cacheOverlays(hstate: State) {
     const overlays: { [key: string]: HTMLImageElement } = {};
     for (let [id, overlay] of Object.entries(hstate.overlays)) {
@@ -590,16 +602,12 @@ export function getHistoriesList(state: State, overrideZoom?: boolean) {
             action: action.action,
         });
         current = undo({ ...current, history }, action);
-
-        // Object.entries(current.paths).forEach(([id, path]) => {
-        //     path.style.lines.forEach((line) => {
-        //         if (line?.width === 3) {
-        //             // line.width = 1;
-        //         }
-        //     });
-        // });
     }
-    return states;
+    const simple = simplifyHistory(states);
+    if (state.historyView?.start != null) {
+        return simple.slice(state.historyView.start);
+    }
+    return simple;
 }
 export type StateAndAction = {
     state: State;

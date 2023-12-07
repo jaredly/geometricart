@@ -8,6 +8,7 @@ import { animateMirror } from './animateMirror';
 import { animatePath } from './animatePath';
 import { animateMultiply } from './animateMultiply';
 import { wait, actionPoints, AnimateState } from './animateHistory';
+import equal from 'fast-deep-equal';
 
 export async function animateAction(
     state: AnimateState,
@@ -105,6 +106,10 @@ export async function animateAction(
                 action.view.center.x === prev.view.center.x &&
                 action.view.center.y === prev.view.center.y
             ) {
+                // The zoom was overridden
+                if (!equal(action.view, histories[state.i].state.view)) {
+                    return;
+                }
                 const frame = state.frames[state.i - 1];
 
                 const num = 60;
