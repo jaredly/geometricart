@@ -16,6 +16,7 @@ import { Scripts } from './Scripts';
 import { Lerps } from './Lerps';
 // @ts-ignore
 import { tar } from 'tinytar';
+import { cacheOverlays } from '../history/HistoryPlayback';
 
 export const makeEven = (v: number) => {
     v = Math.ceil(v);
@@ -98,25 +99,30 @@ export const AnimationEditor = ({
     const nowRecording = useCurrent(recording);
 
     React.useEffect(() => {
-        if (!canvas.current) {
-            return;
-        }
-        if (nowRecording.current) {
-            return;
-        }
+        const run = async () => {
+            if (!canvas.current) {
+                return;
+            }
+            if (nowRecording.current) {
+                return;
+            }
 
-        const ctx = canvas.current.getContext('2d')!;
-        ctx.save();
-        canvasRender(
-            ctx,
-            { ...state, view: { ...state.view, center: { x: -dx, y: -dy } } },
-            w * 2 * zoom,
-            h * 2 * zoom,
-            2 * zoom,
-            animatedFunctions,
-            animationPosition,
-            animationPosition === 0 ? null : backgroundAlpha,
-        ).then(() => {
+            const ctx = canvas.current.getContext('2d')!;
+            ctx.save();
+            await canvasRender(
+                ctx,
+                {
+                    ...state,
+                    view: { ...state.view, center: { x: -dx, y: -dy } },
+                },
+                w * 2 * zoom,
+                h * 2 * zoom,
+                2 * zoom,
+                animatedFunctions,
+                animationPosition,
+                await cacheOverlays(state),
+                animationPosition === 0 ? null : backgroundAlpha,
+            );
             ctx.restore();
             if (state.view.texture) {
                 renderTexture(
@@ -127,7 +133,8 @@ export const AnimationEditor = ({
                     ctx,
                 );
             }
-        });
+        };
+        run();
     }, [animationPosition, state, w, h, dx, dy, zoom, backgroundAlpha]);
 
     const onRecord = (increment: number) => {
@@ -177,6 +184,7 @@ export const AnimationEditor = ({
                 2 * zoom,
                 animatedFunctions,
                 i,
+                await cacheOverlays(state),
                 i === 0 ? null : backgroundAlpha,
             );
             ctx.restore();

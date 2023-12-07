@@ -51,8 +51,8 @@ export const canvasRender = async (
     extraZoom: number,
     animatedFunctions: AnimatedFunctions,
     animationPosition: number,
+    overlayCache: { [key: string]: HTMLImageElement },
     backgroundAlpha?: number | null,
-    overlayCache: { [key: string]: HTMLImageElement } = {},
 ) => {
     const palette = state.palette;
 
@@ -108,7 +108,7 @@ export const canvasRender = async (
     );
     for (let id of uids) {
         const overlay = state.overlays[id];
-        await renderOverlay(state, overlay, ctx, extraZoom, overlayCache);
+        renderOverlay(state, overlay, ctx, extraZoom, overlayCache);
     }
 
     const clip = getClips(state);
@@ -292,7 +292,7 @@ export const canvasRender = async (
     );
     for (let id of oids) {
         const overlay = state.overlays[id];
-        await renderOverlay(state, overlay, ctx, extraZoom, overlayCache);
+        renderOverlay(state, overlay, ctx, extraZoom, overlayCache);
     }
 
     if (!state.view.guides) {
@@ -357,7 +357,7 @@ export const canvasRender = async (
     }
 };
 
-async function renderOverlay(
+function renderOverlay(
     state: State,
     overlay: Overlay,
     ctx: CanvasRenderingContext2D,
@@ -376,13 +376,14 @@ async function renderOverlay(
     const y = overlay.center.y * state.view.zoom * zoom;
 
     const cached = overlayCache[attachment.contents];
-    const img = cached ?? (await makeImage(attachment.contents));
     if (!cached) {
-        overlayCache[attachment.contents] = img;
+        console.log('um', overlayCache, attachment.contents);
+        console.warn(`Overlay not cached`);
+        return;
     }
 
     ctx.globalAlpha = overlay.opacity;
-    ctx.drawImage(img, -iwidth / 2 + x, -iheight / 2 + y, iwidth, iheight);
+    ctx.drawImage(cached, -iwidth / 2 + x, -iheight / 2 + y, iwidth, iheight);
     ctx.globalAlpha = 1;
 }
 

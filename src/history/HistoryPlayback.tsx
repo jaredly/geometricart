@@ -2,7 +2,7 @@ import React, { useMemo, useRef, useState } from 'react';
 import { makeEven } from '../animation/AnimationUI';
 import { exportPNG, renderTexture } from '../editor/ExportPng';
 import { undoAction } from '../editor/history';
-import { canvasRender } from '../rendering/CanvasRender';
+import { canvasRender, makeImage } from '../rendering/CanvasRender';
 import { Action } from '../state/Action';
 import { undo } from '../state/reducer';
 import { Coord, State, View } from '../types';
@@ -58,33 +58,39 @@ export const HistoryPlayback = ({
     let inputRef = useRef<HTMLInputElement>(null);
 
     React.useEffect(() => {
-        if (!canvas.current) {
-            return;
-        }
-        const ctx = canvas.current.getContext('2d')!;
-        ctx.save();
-        const hstate = applyHistoryView(
-            zoomPreview ? [{ idx: current, view: zoomPreview }] : mergedVP,
-            current,
-            histories[current].state,
-        );
+        const run = async () => {
+            if (!canvas.current) {
+                return;
+            }
 
-        canvasRender(
-            ctx,
-            hstate,
-            w * 2 * zoom,
-            h * 2 * zoom,
-            2 * zoom,
-            {},
-            0,
-            null,
-        ).then(() => {
+            const ctx = canvas.current.getContext('2d')!;
+            ctx.save();
+            const hstate = applyHistoryView(
+                zoomPreview ? [{ idx: current, view: zoomPreview }] : mergedVP,
+                current,
+                histories[current].state,
+            );
+
+            const overlays = await cacheOverlays(hstate);
+
+            await canvasRender(
+                ctx,
+                hstate,
+                w * 2 * zoom,
+                h * 2 * zoom,
+                2 * zoom,
+                {},
+                0,
+                overlays,
+                null,
+            );
             ctx.restore();
             if (hstate.view.texture) {
                 const size = Math.max(w * 2 * zoom, h * 2 * zoom);
                 renderTexture(hstate.view.texture, size, size, ctx);
             }
-        });
+        };
+        run();
     }, [state, w, h, dx, dy, zoom, backgroundAlpha, current, zoomPreview]);
 
     const stopped = useRef(true);
@@ -407,6 +413,20 @@ export const HistoryPlayback = ({
             >
                 Export snapshot
             </button>
+            {state.historyView?.start ?? 'No start'}
+            <button
+                onClick={() => {
+                    dispatch({
+                        type: 'history-view:update',
+                        view: {
+                            ...(state.historyView ?? { zooms: [], skips: [] }),
+                            start: current,
+                        },
+                    });
+                }}
+            >
+                Set start
+            </button>
             {exportUrl ? (
                 <a
                     href={exportUrl}
@@ -488,6 +508,17 @@ export const mergeViewPoints = (vp: ViewPoints[], zooms?: ViewPoints[]) => {
         )
         .map((v) => v.v);
 };
+
+export async function cacheOverlays(hstate: State) {
+    const overlays: { [key: string]: HTMLImageElement } = {};
+    for (let [id, overlay] of Object.entries(hstate.overlays)) {
+        const key = hstate.attachments[overlay.source].contents;
+        overlays[key] = await makeImage(
+            hstate.attachments[overlay.source].contents,
+        );
+    }
+    return overlays;
+}
 
 export function findViewPoints(histories: StateAndAction[]) {
     let points: ViewPoints[] = [];

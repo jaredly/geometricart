@@ -287,7 +287,8 @@ export const MultiStyleForm = ({
                             ),
                         0,
                     );
-                    const inset = maxInset + 4;
+                    const inset = maxInset + 8; // 4
+                    const lightenAmt = 1; // 0.5
                     let at: Fill | null = null;
                     for (let style of styles) {
                         for (let fill of style.fills) {
@@ -317,7 +318,7 @@ export const MultiStyleForm = ({
                             fills.push({
                                 color: at?.color ?? 0,
                                 inset,
-                                lighten: (at?.lighten || 0) - 0.5,
+                                lighten: (at?.lighten || 0) - lightenAmt,
                             });
                             return { ...style, fills };
                         }),

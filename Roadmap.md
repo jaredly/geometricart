@@ -13,7 +13,9 @@ next up folks:
 
 
 # Animate
+- [ ] hmm can we fade out from the start?
 - [x] smoother text render pls
+- [x] little bit of smooth zoom, as a treat
 - [ ] "flood" fill for changing color. Pick a point to start, and flow out from there.
   - oof, ok so to be able to do that, I want much more fine grained path:update actions.
   - like: "fill:add" and stuff. Also, to be able to have a single delta applied to all paths.

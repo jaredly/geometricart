@@ -9,6 +9,7 @@ import { setup } from './RenderWebGL';
 import { initialHistory } from '../state/initialState';
 import { texture1, texture2 } from '../rendering/textures';
 import { State, TextureConfig } from '../types';
+import { cacheOverlays } from '../history/HistoryPlayback';
 
 export function ExportPng({
     state,
@@ -115,6 +116,7 @@ export async function exportPNG(
         size / originalSize,
         {},
         animationPosition,
+        await cacheOverlays(state),
     );
     ctx.restore();
 

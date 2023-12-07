@@ -1,13 +1,14 @@
 import { Coord, State } from '../types';
 import {
     applyHistoryView,
+    cacheOverlays,
     findViewPoints,
     getHistoriesList,
     mergeViewPoints,
     simplifyHistory,
     StateAndAction,
 } from './HistoryPlayback';
-import { canvasRender } from '../rendering/CanvasRender';
+import { canvasRender, makeImage } from '../rendering/CanvasRender';
 import { findBoundingRect } from '../editor/Export';
 import { renderTexture } from '../editor/ExportPng';
 import { screenToWorld, worldToScreen } from '../editor/Canvas';
@@ -81,6 +82,8 @@ export const animateHistory = async (
         (_, i) => !originalState.historyView?.skips.includes(i),
     );
 
+    const overlays = await cacheOverlays(originalState);
+
     const draw = async (current: number) => {
         ctx.save();
         const state = histories[current].state;
@@ -92,6 +95,7 @@ export const animateHistory = async (
             2 * zoom,
             {},
             0,
+            overlays,
             null,
         );
         ctx.restore();
