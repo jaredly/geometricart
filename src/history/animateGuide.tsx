@@ -93,10 +93,12 @@ export async function animateGuide(
                 });
             }
 
+            ctx.lineWidth = 10;
             ctx.strokeStyle = 'yellow';
             guidePrimitives.forEach((prim) => {
                 renderPrimitive(ctx, prim, zoom, width, height);
             });
+            ctx.lineWidth = 1;
 
             const extraPoints = geomPoints(geom);
             extraPoints.forEach((point) => {
