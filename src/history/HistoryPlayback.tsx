@@ -334,6 +334,22 @@ export const HistoryPlayback = ({
                                 </button>
                             </>
                         ) : null}
+                        <button
+                            onClick={() => {
+                                const view = state.historyView
+                                    ? { ...state.historyView }
+                                    : { zooms: [], skips: [] };
+                                view.zooms = view.zooms.slice();
+                                view.zooms.splice(i, 1);
+                                dispatch({
+                                    type: 'history-view:update',
+                                    view,
+                                });
+                                setZoomPreview(null);
+                            }}
+                        >
+                            &times;
+                        </button>
                     </div>
                 ))}
                 <button
