@@ -1,4 +1,11 @@
 
+# Hm ok so what is thiss
+
+can I, make a whole new UI?
+
+
+#
+
 next up folks:
 - import just a tiling, and then ... duplicate the shapes from a tiling please
 - eigenshape quadrilateral, need to be able to "rotate" instead of "flip"
