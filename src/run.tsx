@@ -32,6 +32,7 @@ import { loadGist, newGist, saveGist, stateFileName } from './gists';
 import { maybeMigrate } from './state/migrateState';
 import { PK } from './editor/pk';
 import { initialState } from './state/initialState';
+import { Morph } from './Morph';
 dayjs.extend(relativeTime);
 
 export const metaPrefix = 'meta:';
@@ -501,8 +502,11 @@ const getForeignState = async (image: string | null, load: string | null) => {
     }
     return setupState(null);
 };
+const morph = true;
 
-if (save) {
+if (morph) {
+    root.render(<Morph />);
+} else if (save) {
     getForeignState(image, load).then(
         (state) => {
             root.render(
@@ -533,25 +537,6 @@ if (save) {
             root.render(<h1>FAILED TO LOARD {err.message}</h1>);
         },
     );
-
-    // const state = setupState(null);
-    // state.attachments["pattern"] = {
-    //     id: "pattern",
-    //     name: "pattern",
-    //     width: size.width,
-    //     height: size.height,
-    //     contents: image.url,
-    // };
-    // state.overlays["overlay"] = {
-    //     id: "overlay",
-    //     source: "pattern",
-    //     scale: { x: 1, y: 1 },
-    //     center: { x: 0, y: 0 },
-    //     hide: false,
-    //     over: false,
-    //     opacity: 1,
-    // };
-    // state.selection = null;
 } else {
     root.render(<RouterProvider router={router} />);
 }
