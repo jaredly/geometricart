@@ -407,11 +407,15 @@ export const handleNegZero = (n: number) => {
     return m === '-0.00' ? '0.00' : m;
 };
 
-export function tilingSvg(bounds: Coord[], lines: [Coord, Coord][]) {
+export function tilingSvg(
+    bounds: Coord[],
+    lines: [Coord, Coord][],
+    size = 300,
+) {
     return (
         <svg
             xmlns="http://www.w3.org/2000/svg"
-            style={{ background: 'black', width: 300, height: 300 }}
+            style={{ background: 'black', width: size, height: size }}
             viewBox="-2.5 -2.5 5 5"
         >
             <path
