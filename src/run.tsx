@@ -502,7 +502,7 @@ const getForeignState = async (image: string | null, load: string | null) => {
     }
     return setupState(null);
 };
-const morph = true;
+const morph = false;
 
 if (morph) {
     root.render(<Morph />);

@@ -201,6 +201,27 @@ export const Editor = ({ one, two }: { one: Tiling; two: Tiling }) => {
                                 y2={p1.y}
                                 strokeWidth={0.01}
                                 stroke="red"
+                                style={{ cursor: 'pointer' }}
+                                onDoubleClick={(evt) => {
+                                    let svg =
+                                        evt.currentTarget as any as HTMLElement;
+                                    while (svg.nodeName !== 'svg') {
+                                        svg = svg.parentElement!;
+                                    }
+                                    const box = svg.getBoundingClientRect();
+                                    const x =
+                                        (evt.clientX - box.left) / box.width;
+                                    const y =
+                                        (evt.clientY - box.top) / box.height;
+                                    const x0 = (x - 0.5) * 3;
+                                    const y0 = (y - 0.5) * 3;
+                                    const pnew = { x: x0, y: y0 };
+
+                                    const c2 = current.slice();
+                                    c2[i] = [p0, pnew];
+                                    c2.splice(i, 0, [pnew, p1]);
+                                    setCurrent(c2);
+                                }}
                             />
                             <Point
                                 pos={p0}
@@ -448,13 +469,20 @@ export const Animate = ({
             draw(fi, i);
             requestAnimationFrame(() => {
                 if (i >= total) {
-                    setTimeout(() => {
-                        if (fi + 2 === frames.length) {
+                    if (fi + 2 === frames.length) {
+                        setTimeout(() => {
                             tick(0, 0);
-                        } else {
+                        }, 200);
+                    } else if (
+                        frames[fi + 1].length !== frames[fi + 2].length
+                    ) {
+                        tick(fi + 2, 0);
+                    } else {
+                        // tick(fi + 1, 0);
+                        setTimeout(() => {
                             tick(fi + 1, 0);
-                        }
-                    }, 200);
+                        }, 200);
+                    }
                 } else {
                     tick(fi, i + 1);
                 }
