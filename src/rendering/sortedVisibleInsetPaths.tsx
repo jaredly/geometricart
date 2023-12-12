@@ -522,6 +522,11 @@ export function sortByOrdering(
             ? pathGroups[paths[b].group!]?.ordering
             : paths[b].ordering;
         if (oa === ob) {
+            const numa = a.startsWith('id-') ? +a.slice(3) : 0;
+            const numb = b.startsWith('id-') ? +b.slice(3) : 0;
+            if (!isNaN(numa) && !isNaN(numb)) {
+                return numa - numb;
+            }
             return 0;
         }
         if (oa == null) {

@@ -31,7 +31,12 @@ import { numKey } from '../rendering/coordKey';
 import { applyMatrices } from '../rendering/getMirrorTransforms';
 import { transformPath, transformSegment } from '../rendering/points';
 import { boundsForCoords } from './Bounds';
-import { tilingPoints, getTransform, eigenShapesToSvg } from './tilingPoints';
+import {
+    tilingPoints,
+    getTransform,
+    eigenShapesToSvg,
+    eigenShapesToLines,
+} from './tilingPoints';
 import { UIDispatch } from '../useUIState';
 import { coordsEqual } from '../rendering/pathsAreIdentical';
 import { consoleSvg, renderSegments } from '../animation/renderSegments';
@@ -375,4 +380,71 @@ async function hashData(kk: string) {
         .map((b) => b.toString(16).padStart(2, '0'))
         .join(''); // convert bytes to hex string
     return hashHex;
+}
+
+export function handleTiling(data: Tiling) {
+    const pts = tilingPoints(data.shape);
+    const tx = getTransform(pts);
+    const bounds = pts.map((pt) => applyMatrices(pt, tx));
+    const lines = data.cache.segments.map((s): [Coord, Coord] => [
+        s.prev,
+        s.segment.to,
+    ]);
+    const tr = applyMatrices(pts[2], tx);
+    return { bounds, lines, tr };
+}
+
+export function getSvgData(data: Tiling): {
+    bounds: Coord[];
+    lines: [Coord, Coord][];
+} {
+    const { bounds, lines, tr } = handleTiling(data);
+    return { bounds, lines: eigenShapesToLines(lines, data.shape, tr, bounds) };
+}
+
+export const handleNegZero = (n: number) => {
+    const m = n.toFixed(2);
+    return m === '-0.00' ? '0.00' : m;
+};
+
+export function tilingSvg(
+    bounds: Coord[],
+    lines: [Coord, Coord][],
+    size = 300,
+) {
+    return (
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            style={{ background: 'black', width: size, height: size }}
+            viewBox="-2.5 -2.5 5 5"
+        >
+            <path
+                d={`${bounds
+                    .map(
+                        ({ x, y }, i) =>
+                            `${i === 0 ? 'M' : 'L'}${handleNegZero(
+                                x,
+                            )} ${handleNegZero(y)}`,
+                    )
+                    .join(' ')}Z`}
+                fill="rgb(50,50,50)"
+                stroke="none"
+            />
+            {lines.map(([p1, p2], i) => {
+                return (
+                    <line
+                        key={i}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        x1={p1.x.toFixed(2)}
+                        x2={p2.x.toFixed(2)}
+                        y1={p1.y.toFixed(2)}
+                        y2={p2.y.toFixed(2)}
+                        stroke="yellow"
+                        strokeWidth="0.02"
+                    />
+                );
+            })}
+        </svg>
+    );
 }

@@ -43,7 +43,7 @@ export const makeImage = (href: string): Promise<HTMLImageElement> => {
     });
 };
 
-export const canvasRender = async (
+export const canvasRender = (
     ctx: CanvasRenderingContext2D,
     state: State,
     sourceWidth: number,
@@ -52,17 +52,11 @@ export const canvasRender = async (
     animatedFunctions: AnimatedFunctions,
     animationPosition: number,
     overlayCache: { [key: string]: HTMLImageElement },
+    images: (HTMLImageElement | null)[],
+    extraLarge = false,
     backgroundAlpha?: number | null,
 ) => {
     const palette = state.palette;
-
-    const images = await Promise.all(
-        palette.map((c) =>
-            c.startsWith('http') && imageCache[c]
-                ? makeImage(imageCache[c] as string)
-                : null,
-        ),
-    );
 
     const rough =
         state.view.sketchiness && state.view.sketchiness > 0
@@ -234,7 +228,12 @@ export const canvasRender = async (
                 ctx.globalAlpha = line.opacity;
             }
 
-            ctx.lineWidth = line.width === 0 ? 2 : (line.width / 100) * zoom;
+            ctx.lineWidth =
+                line.width === 0
+                    ? extraLarge
+                        ? 7
+                        : 2
+                    : (line.width / 100) * zoom;
             ctx.lineJoin = 'bevel';
             ctx.lineCap = 'square';
 
@@ -320,7 +319,7 @@ export const canvasRender = async (
     ).coords;
 
     ctx.strokeStyle = '#666';
-    ctx.lineWidth = 1;
+    ctx.lineWidth = extraLarge ? 4 : 1;
     inativeGuidePrimitives.forEach(({ prim }) => {
         renderPrimitive(ctx, prim, zoom, sourceHeight, sourceWidth);
     });
@@ -356,6 +355,16 @@ export const canvasRender = async (
         });
     }
 };
+
+export async function paletteImages(palette: string[]) {
+    return await Promise.all(
+        palette.map((c) =>
+            c.startsWith('http') && imageCache[c]
+                ? makeImage(imageCache[c] as string)
+                : null,
+        ),
+    );
+}
 
 function renderOverlay(
     state: State,
@@ -443,6 +452,7 @@ export function renderPrimitive(
     zoom: number,
     sourceHeight: number,
     sourceWidth: number,
+    extraLarge = false,
 ) {
     ctx.beginPath();
     if (prim.type === 'line') {

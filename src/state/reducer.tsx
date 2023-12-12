@@ -1115,14 +1115,17 @@ export const undo = (state: State, action: UndoAction): State => {
             };
         }
         case 'group:regroup': {
-            state = { ...state };
+            state = { ...state, paths: { ...state.paths } };
             if (action.created) {
                 state.pathGroups = { ...state.pathGroups };
                 delete state.pathGroups[action.created[0]];
                 state.nextId = action.created[1];
             }
             Object.keys(action.prevGroups).forEach((k) => {
-                state.paths[k].group = action.prevGroups[k];
+                state.paths[k] = {
+                    ...state.paths[k],
+                    group: action.prevGroups[k],
+                };
             });
             return state;
         }

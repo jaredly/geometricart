@@ -3,7 +3,7 @@
 import { jsx } from '@emotion/react';
 import { encodeChunks, extractChunks, insertMetadata } from 'png-metadata';
 import React from 'react';
-import { canvasRender } from '../rendering/CanvasRender';
+import { canvasRender, paletteImages } from '../rendering/CanvasRender';
 import { transparent } from './Icons';
 import { setup } from './RenderWebGL';
 import { initialHistory } from '../state/initialState';
@@ -117,6 +117,7 @@ export async function exportPNG(
         {},
         animationPosition,
         await cacheOverlays(state),
+        await paletteImages(state.palette),
     );
     ctx.restore();
 
