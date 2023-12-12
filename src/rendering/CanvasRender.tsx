@@ -53,6 +53,7 @@ export const canvasRender = (
     animationPosition: number,
     overlayCache: { [key: string]: HTMLImageElement },
     images: (HTMLImageElement | null)[],
+    extraLarge = false,
     backgroundAlpha?: number | null,
 ) => {
     const palette = state.palette;
@@ -227,7 +228,12 @@ export const canvasRender = (
                 ctx.globalAlpha = line.opacity;
             }
 
-            ctx.lineWidth = line.width === 0 ? 2 : (line.width / 100) * zoom;
+            ctx.lineWidth =
+                line.width === 0
+                    ? extraLarge
+                        ? 7
+                        : 2
+                    : (line.width / 100) * zoom;
             ctx.lineJoin = 'bevel';
             ctx.lineCap = 'square';
 
@@ -313,7 +319,7 @@ export const canvasRender = (
     ).coords;
 
     ctx.strokeStyle = '#666';
-    ctx.lineWidth = 1;
+    ctx.lineWidth = extraLarge ? 4 : 1;
     inativeGuidePrimitives.forEach(({ prim }) => {
         renderPrimitive(ctx, prim, zoom, sourceHeight, sourceWidth);
     });
@@ -446,6 +452,7 @@ export function renderPrimitive(
     zoom: number,
     sourceHeight: number,
     sourceWidth: number,
+    extraLarge = false,
 ) {
     ctx.beginPath();
     if (prim.type === 'line') {

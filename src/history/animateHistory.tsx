@@ -21,6 +21,8 @@ import React from 'react';
 import { followPoint } from './followPoint';
 import { animateAction } from './animateAction';
 import { drawCursor } from './cursor';
+import { coordsEqual } from '../rendering/pathsAreIdentical';
+import { closeEnough } from '../rendering/epsilonToZero';
 
 export const nextFrame = () => new Promise(requestAnimationFrame);
 export const wait = (time: number) =>
@@ -56,6 +58,11 @@ export const animateHistory = async (
     const ctx = canvas.getContext('2d')!;
     ctx.lineWidth = 1;
 
+    const offcan = document.createElement('canvas');
+    offcan.width = canvas.width;
+    offcan.height = canvas.height;
+    const offctx = offcan.getContext('2d')!;
+
     const bounds = findBoundingRect(originalState);
     const originalSize = 1000;
 
@@ -89,11 +96,11 @@ export const animateHistory = async (
     const overlays = await cacheOverlays(originalState);
     const cachedPaletteImages = await paletteImages(originalState.palette);
 
-    const draw = (current: number) => {
-        ctx.save();
+    const draw = (current: number, context = ctx) => {
+        context.save();
         const state = histories[current].state;
         canvasRender(
-            ctx,
+            context,
             state,
             w * 2 * zoom,
             h * 2 * zoom,
@@ -102,12 +109,12 @@ export const animateHistory = async (
             0,
             overlays,
             cachedPaletteImages,
-            null,
+            true,
         );
-        ctx.restore();
+        context.restore();
         if (state.view.texture) {
             const size = Math.max(w * 2 * zoom, h * 2 * zoom);
-            renderTexture(state.view.texture, size, size, ctx);
+            renderTexture(state.view.texture, size, size, context);
         }
     };
 
@@ -152,8 +159,8 @@ export const animateHistory = async (
 
     if (!preimage && startAt > 0) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        draw(startAt - 1);
-        state.frames[startAt - 1] = await createImageBitmap(canvas);
+        draw(startAt - 1, offctx);
+        state.frames[startAt - 1] = await createImageBitmap(offcan);
     }
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -161,10 +168,11 @@ export const animateHistory = async (
         draw(state.i);
         const first = await createImageBitmap(canvas);
 
-        await wait(100);
-
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         draw(histories.length - 1);
+
+        await wait(500);
+
         const final = await createImageBitmap(canvas);
         const text = 'Pattern walk-through';
 
@@ -221,7 +229,35 @@ export const animateHistory = async (
         if (inputRef) {
             inputRef.value = state.i + '';
         }
+
         await animateAction(state, histories, follow);
+
+        if (state.i > 0) {
+            const st = histories[state.i].state;
+            const ps = histories[state.i - 1].state;
+            if (
+                !coordsEqual(st.view.center, ps.view.center) ||
+                !closeEnough(st.view.zoom, ps.view.zoom)
+            ) {
+                let next;
+                if (preimage) {
+                    next = state.frames[state.i];
+                } else {
+                    draw(state.i, offctx);
+                    next = await createImageBitmap(offcan);
+                    // ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    // ctx.drawImage(state.frames[state.i - 1], 0, 0);
+                }
+                await crossFade(
+                    ctx,
+                    canvas,
+                    next,
+                    state.frames[state.i - 1],
+                    30,
+                );
+            }
+            // continue;
+        }
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         if (preimage) {

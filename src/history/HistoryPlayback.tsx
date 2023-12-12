@@ -89,7 +89,7 @@ export const HistoryPlayback = ({
                 0,
                 overlays,
                 await paletteImages(state.palette),
-                null,
+                true,
             );
             ctx.restore();
             if (hstate.view.texture) {
