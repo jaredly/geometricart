@@ -51,9 +51,8 @@ export const animateHistory = async (
     animateTitle?: boolean,
 ) => {
     const now = Date.now();
-    console.log('hup');
 
-    const speed = 5;
+    const speed = 1;
 
     let histories = getHistoriesList(originalState);
     const { zoom } = originalState.animations.config;
