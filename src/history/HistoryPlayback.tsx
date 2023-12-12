@@ -7,13 +7,11 @@ import {
     makeImage,
     paletteImages,
 } from '../rendering/CanvasRender';
+import { coordsEqual } from '../rendering/pathsAreIdentical';
 import { Action } from '../state/Action';
 import { undo } from '../state/reducer';
 import { Coord, State, View } from '../types';
 import { animateHistory } from './animateHistory';
-import { coordsEqual } from '../rendering/pathsAreIdentical';
-import { deepEqual } from '../rendering/deepEqual';
-import equal from 'fast-deep-equal';
 
 export const HistoryPlayback = ({
     state,
@@ -79,7 +77,7 @@ export const HistoryPlayback = ({
 
             const overlays = await cacheOverlays(hstate);
 
-            await canvasRender(
+            canvasRender(
                 ctx,
                 hstate,
                 w * 2 * zoom,
@@ -278,7 +276,6 @@ export const HistoryPlayback = ({
                 >
                     Add zoom override
                 </button>
-                {/* {JSON.stringify(state.historyView ?? 'no history view')} */}
             </div>
             <label>
                 <input
@@ -288,11 +285,6 @@ export const HistoryPlayback = ({
                 />
                 Image everything in advance
             </label>
-            {/* <button onClick={() => setPreimage(!preimage)}>
-                {!preimage
-                    ? 'Image everything in advance'
-                    : "Don't image everything in advance"}
-            </button> */}
             <button
                 style={{ marginLeft: 8 }}
                 onClick={() => {
@@ -332,8 +324,6 @@ export const HistoryPlayback = ({
                     download={`image-snapshot-${Date.now()}.png`}
                     style={{
                         display: 'block',
-                        // color: 'white',
-                        // background: '#666',
                         borderRadius: 6,
                         marginBottom: 16,
                         padding: '4px 8px',

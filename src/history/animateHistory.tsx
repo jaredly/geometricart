@@ -53,6 +53,8 @@ export const animateHistory = async (
     const now = Date.now();
     console.log('hup');
 
+    const speed = 5;
+
     let histories = getHistoriesList(originalState);
     const { zoom } = originalState.animations.config;
     const ctx = canvas.getContext('2d')!;
@@ -191,7 +193,7 @@ export const animateHistory = async (
             widths.push(ctx.measureText(text.slice(0, i)).width);
         }
 
-        const frames = 240;
+        const frames = 240; // / speed;
         for (let i = 0; i < frames; i++) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.drawImage(final, 0, 0);
@@ -214,9 +216,9 @@ export const animateHistory = async (
         }
         ctx.lineWidth = 1;
 
-        await wait(400);
+        await wait(400 / speed);
 
-        await crossFade(ctx, canvas, first, final, 30);
+        await crossFade(ctx, canvas, first, final, 30 / speed);
     }
 
     for (; state.i < histories.length; state.i++) {
@@ -230,7 +232,7 @@ export const animateHistory = async (
             inputRef.value = state.i + '';
         }
 
-        await animateAction(state, histories, follow);
+        await animateAction(state, histories, follow, speed);
 
         if (state.i > 0) {
             const st = histories[state.i].state;

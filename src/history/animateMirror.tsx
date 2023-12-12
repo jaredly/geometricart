@@ -21,6 +21,7 @@ export async function animateMirror(
     ctx: CanvasRenderingContext2D,
     fromScreen: (point: Coord, state: State) => { x: number; y: number },
     prev: State,
+    speed: number,
 ) {
     await follow(i, action.mirror.origin);
 
@@ -68,5 +69,5 @@ export async function animateMirror(
         ctx.restore();
     });
 
-    await wait(200);
+    await wait(200 / speed);
 }

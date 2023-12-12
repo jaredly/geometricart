@@ -18,6 +18,7 @@ export async function animateAction(
         point: Coord,
         extra?: ((pos: Coord) => void | Promise<void>) | undefined,
     ) => Promise<unknown>,
+    speed: number,
 ) {
     const { i, ctx, canvas } = state;
     const action = histories[i].action;
@@ -53,9 +54,9 @@ export async function animateAction(
             action.type === 'path:create' ||
             action.type === 'path:create:many'
         ) {
-            await animatePath(state, follow, action, prev);
+            await animatePath(state, follow, action, prev, speed);
         } else if (action.type === 'path:multiply') {
-            await animateMultiply(state, action, prev, follow);
+            await animateMultiply(state, action, prev, follow, speed);
         } else if (action.type === 'clip:add') {
             const clip = action.clip;
             await withScreen(async (zoom, width, height) => {
@@ -74,7 +75,7 @@ export async function animateAction(
                         zoom,
                     );
                     ctx.stroke();
-                    await wait(1000 / clip.length);
+                    await wait(1000 / clip.length / speed);
                 }
             });
         } else if (
@@ -91,111 +92,115 @@ export async function animateAction(
                 ctx,
                 state.fromScreen,
                 withScreen,
+                speed,
             );
         } else if (action.type === 'mirror:add') {
-            await animateMirror(follow, i, action, ctx, state.fromScreen, prev);
+            await animateMirror(
+                follow,
+                i,
+                action,
+                ctx,
+                state.fromScreen,
+                prev,
+                speed,
+            );
         } else if (
             action.type === 'path:update' ||
             action.type === 'path:update:many' ||
             action.type === 'pathGroup:update:many'
         ) {
-            await wait(100);
+            await wait(100 / speed);
         } else if (action.type === 'view:update') {
-            if (
-                action.view.zoom > prev.view.zoom &&
-                action.view.center.x === prev.view.center.x &&
-                action.view.center.y === prev.view.center.y
-            ) {
-                // The zoom was overridden
-                if (!equal(action.view, histories[state.i].state.view)) {
-                    return;
-                }
-                const frame = state.frames[state.i - 1];
-
-                const num = 60;
-                const bz = action.view.zoom - prev.view.zoom; // / num;
-
-                for (let i = num; i >= 0; i--) {
-                    const perc = (Math.sin((i / num - 0.5) * Math.PI) + 1) / 2;
-                    const az = (prev.view.zoom + bz * perc) / prev.view.zoom;
-                    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-                    const nw = frame.width * az;
-                    const nh = frame.height * az;
-                    ctx.drawImage(
-                        frame,
-                        (frame.width - nw) / 2,
-                        (frame.height - nh) / 2,
-                        nw,
-                        nh,
-                    );
-                    await new Promise((res) => requestAnimationFrame(res));
-                }
-
-                /*
-                const zoomLevel = Math.max(action.view.zoom, prev.view.zoom);
-                const ptl = fromScreen({ x: 0, y: 0 }, prev);
-                const pbr = fromScreen(
-                    { x: canvas.width, y: canvas.height },
-                    prev,
-                );
-                const ntl = fromScreen(
-                    { x: 0, y: 0 },
-                    { ...prev, view: action.view },
-                );
-                const nbr = fromScreen(
-                    { x: canvas.width, y: canvas.height },
-                    { ...prev, view: action.view },
-                );
-
-                const x0 = Math.min(ptl.x, pbr.x);
-                const x1 = Math.max(ptl.x, pbr.x);
-                const y0 = Math.min(ptl.y, pbr.y);
-                const y1 = Math.max(ptl.y, pbr.y);
-                const dx = x1 - x0;
-                const dy = y1 - y0;
-
-                const width = dx * zoomLevel;
-                const height = dy * zoomLevel;
-                console.log(`desired`, width, height, dx, dy, zoomLevel);
-
-                const c2 = document.createElement('canvas');
-                c2.width = width;
-                c2.height = height;
-                const ct2 = c2.getContext('2d')!;
-                await canvasRender(
-                    ct2,
-                    // prev,
-                    {
-                        ...prev,
-                        overlays: {},
-                        view: {
-                            ...action.view,
-                            zoom: zoomLevel,
-                            center: { x: x0 + dx / 2, y: y0 + dy / 2 },
-                        },
-                    },
-                    width,
-                    width,
-                    1,
-                    {},
-                    0,
-                    null,
-                );
-                document.body.appendChild(c2);
-                */
-            } else if (
-                action.view.zoom !== prev.view.zoom ||
-                action.view.center.x !== prev.view.center.x ||
-                action.view.center.y !== prev.view.center.y
-            ) {
-                await wait(500);
-            }
+            // if (
+            //     action.view.zoom > prev.view.zoom &&
+            //     action.view.center.x === prev.view.center.x &&
+            //     action.view.center.y === prev.view.center.y
+            // ) {
+            //     // The zoom was overridden
+            //     if (!equal(action.view, histories[state.i].state.view)) {
+            //         return;
+            //     }
+            //     const frame = state.frames[state.i - 1];
+            //     const num = 60 / speed;
+            //     const bz = action.view.zoom - prev.view.zoom; // / num;
+            //     for (let i = num; i >= 0; i--) {
+            //         const perc = (Math.sin((i / num - 0.5) * Math.PI) + 1) / 2;
+            //         const az = (prev.view.zoom + bz * perc) / prev.view.zoom;
+            //         ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+            //         const nw = frame.width * az;
+            //         const nh = frame.height * az;
+            //         ctx.drawImage(
+            //             frame,
+            //             (frame.width - nw) / 2,
+            //             (frame.height - nh) / 2,
+            //             nw,
+            //             nh,
+            //         );
+            //         await new Promise((res) => requestAnimationFrame(res));
+            //     }
+            //     /*
+            //     const zoomLevel = Math.max(action.view.zoom, prev.view.zoom);
+            //     const ptl = fromScreen({ x: 0, y: 0 }, prev);
+            //     const pbr = fromScreen(
+            //         { x: canvas.width, y: canvas.height },
+            //         prev,
+            //     );
+            //     const ntl = fromScreen(
+            //         { x: 0, y: 0 },
+            //         { ...prev, view: action.view },
+            //     );
+            //     const nbr = fromScreen(
+            //         { x: canvas.width, y: canvas.height },
+            //         { ...prev, view: action.view },
+            //     );
+            //     const x0 = Math.min(ptl.x, pbr.x);
+            //     const x1 = Math.max(ptl.x, pbr.x);
+            //     const y0 = Math.min(ptl.y, pbr.y);
+            //     const y1 = Math.max(ptl.y, pbr.y);
+            //     const dx = x1 - x0;
+            //     const dy = y1 - y0;
+            //     const width = dx * zoomLevel;
+            //     const height = dy * zoomLevel;
+            //     console.log(`desired`, width, height, dx, dy, zoomLevel);
+            //     const c2 = document.createElement('canvas');
+            //     c2.width = width;
+            //     c2.height = height;
+            //     const ct2 = c2.getContext('2d')!;
+            //     await canvasRender(
+            //         ct2,
+            //         // prev,
+            //         {
+            //             ...prev,
+            //             overlays: {},
+            //             view: {
+            //                 ...action.view,
+            //                 zoom: zoomLevel,
+            //                 center: { x: x0 + dx / 2, y: y0 + dy / 2 },
+            //             },
+            //         },
+            //         width,
+            //         width,
+            //         1,
+            //         {},
+            //         0,
+            //         null,
+            //     );
+            //     document.body.appendChild(c2);
+            //     */
+            // } else if (
+            //     action.view.zoom !== prev.view.zoom ||
+            //     action.view.center.x !== prev.view.center.x ||
+            //     action.view.center.y !== prev.view.center.y
+            // ) {
+            //     await wait(500 / speed);
+            // }
         } else {
             await followPoints(
                 state,
                 actionPoints(action).map((point) =>
                     state.toScreen(point, histories[i].state),
                 ),
+                speed,
             );
         }
     }

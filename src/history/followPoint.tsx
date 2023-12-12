@@ -2,10 +2,14 @@ import { Coord, State } from '../types';
 import { wait, nextFrame, AnimateState } from './animateHistory';
 import { drawCursor } from './cursor';
 
-export async function followPoints(state: AnimateState, points: Coord[]) {
+export async function followPoints(
+    state: AnimateState,
+    points: Coord[],
+    speed: number,
+) {
     for (let point of points) {
         await followPoint(state, point);
-        await wait(100);
+        await wait(100 / speed);
     }
 }
 

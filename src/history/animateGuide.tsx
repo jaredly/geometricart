@@ -36,6 +36,7 @@ export async function animateGuide(
             height: number,
         ) => Promise<void> | void,
     ) => Promise<void>,
+    speed: number,
 ) {
     if (pending.points.length === 0) {
         await follow(i, action.coord);
@@ -114,7 +115,7 @@ export async function animateGuide(
         });
     });
 
-    await wait(200);
+    await wait(200 / speed);
 
     return;
 }

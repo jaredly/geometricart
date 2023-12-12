@@ -13,6 +13,7 @@ export async function animateMultiply(
         point: Coord,
         extra?: ((pos: Coord) => void | Promise<void>) | undefined,
     ) => Promise<unknown>,
+    speed: number,
 ) {
     const { i, ctx, canvas } = state;
     const zoom = prev.view.zoom * 2;
@@ -30,7 +31,7 @@ export async function animateMultiply(
               );
 
     if (noWait) {
-        await highlightPaths(pathIds, ctx, prev, zoom, noWait, canvas);
+        await highlightPaths(pathIds, ctx, prev, zoom, noWait, canvas, speed);
     }
 
     const mirror: Mirror =
@@ -39,12 +40,12 @@ export async function animateMultiply(
             : action.mirror;
     await follow(i, mirror.origin, () => {
         if (noWait) {
-            highlightPaths(pathIds, ctx, prev, zoom, noWait, canvas);
+            highlightPaths(pathIds, ctx, prev, zoom, noWait, canvas, speed);
         }
     });
 
     if (!noWait) {
-        await highlightPaths(pathIds, ctx, prev, zoom, noWait, canvas);
+        await highlightPaths(pathIds, ctx, prev, zoom, noWait, canvas, speed);
     }
 
     const current = state.histories[state.i].state;
@@ -59,7 +60,7 @@ export async function animateMultiply(
     });
     // console.log(next.paths, current.paths, added);
 
-    await highlightPaths(added, ctx, current, zoom, noWait, canvas);
+    await highlightPaths(added, ctx, current, zoom, noWait, canvas, speed);
 
     state.lastSelection = action.selection;
 }
@@ -71,6 +72,7 @@ async function highlightPaths(
     zoom: number,
     noWait: boolean | undefined,
     canvas: HTMLCanvasElement,
+    speed: number,
 ) {
     ctx.save();
 
@@ -102,7 +104,7 @@ async function highlightPaths(
         // }
     }
     if (!noWait) {
-        await wait(300);
+        await wait(300 / speed);
     }
     ctx.restore();
 }

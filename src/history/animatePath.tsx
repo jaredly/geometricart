@@ -19,6 +19,7 @@ export async function animatePath(
     ) => Promise<unknown>,
     origGroup: PathCreateMany | PathCreate,
     prev: State,
+    speed: number,
 ) {
     const group: PathCreateMany =
         origGroup.type === 'path:create:many'
@@ -89,7 +90,7 @@ export async function animatePath(
                 state.view.zoom * 2,
             );
             ctx.stroke();
-            await wait(500 / action.segments.length);
+            await wait(500 / action.segments.length / speed);
         }
 
         ctx.restore();
