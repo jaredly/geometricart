@@ -122,6 +122,7 @@ export const AnimationEditor = ({
                 animationPosition,
                 await cacheOverlays(state),
                 await paletteImages(state.palette),
+                false,
                 animationPosition === 0 ? null : backgroundAlpha,
             );
             ctx.restore();
@@ -187,6 +188,7 @@ export const AnimationEditor = ({
                 i,
                 await cacheOverlays(state),
                 await paletteImages(state.palette),
+                false,
                 i === 0 ? null : backgroundAlpha,
             );
             ctx.restore();
