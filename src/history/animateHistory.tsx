@@ -8,7 +8,11 @@ import {
     simplifyHistory,
     StateAndAction,
 } from './HistoryPlayback';
-import { canvasRender, makeImage } from '../rendering/CanvasRender';
+import {
+    canvasRender,
+    makeImage,
+    paletteImages,
+} from '../rendering/CanvasRender';
 import { findBoundingRect } from '../editor/Export';
 import { renderTexture } from '../editor/ExportPng';
 import { screenToWorld, worldToScreen } from '../editor/Canvas';
@@ -83,11 +87,12 @@ export const animateHistory = async (
     );
 
     const overlays = await cacheOverlays(originalState);
+    const cachedPaletteImages = await paletteImages(originalState.palette);
 
-    const draw = async (current: number) => {
+    const draw = (current: number) => {
         ctx.save();
         const state = histories[current].state;
-        await canvasRender(
+        canvasRender(
             ctx,
             state,
             w * 2 * zoom,
@@ -96,6 +101,7 @@ export const animateHistory = async (
             {},
             0,
             overlays,
+            cachedPaletteImages,
             null,
         );
         ctx.restore();
@@ -135,7 +141,7 @@ export const animateHistory = async (
 
     if (preimage) {
         for (let i = 0; i < histories.length; i++) {
-            await draw(i);
+            draw(i);
             state.frames.push(await createImageBitmap(canvas));
             if (i % 5 === 0) {
                 log.current!.textContent = `Frame ${i} of ${histories.length}`;
@@ -146,14 +152,19 @@ export const animateHistory = async (
 
     if (!preimage && startAt > 0) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        await draw(startAt - 1);
+        draw(startAt - 1);
         state.frames[startAt - 1] = await createImageBitmap(canvas);
     }
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     if (animateTitle) {
+        draw(state.i);
+        const first = await createImageBitmap(canvas);
+
+        await wait(100);
+
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        await draw(histories.length - 1);
+        draw(histories.length - 1);
         const final = await createImageBitmap(canvas);
         const text = 'Pattern walk-through';
 
@@ -172,11 +183,11 @@ export const animateHistory = async (
             widths.push(ctx.measureText(text.slice(0, i)).width);
         }
 
-        const parties = 240;
-        for (let i = 0; i < parties; i++) {
+        const frames = 240;
+        for (let i = 0; i < frames; i++) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.drawImage(final, 0, 0);
-            const w = (fw / parties) * i;
+            const w = (fw / frames) * i;
             const at = widths.findIndex((m) => m > w);
 
             const t = text.slice(0, at);
@@ -191,11 +202,13 @@ export const animateHistory = async (
                 ctx.canvas.height * 0.9,
             );
 
-            await new Promise((res) => requestAnimationFrame(res));
+            await nextFrame();
         }
         ctx.lineWidth = 1;
 
         await wait(400);
+
+        await crossFade(ctx, canvas, first, final, 30);
     }
 
     for (; state.i < histories.length; state.i++) {
@@ -214,7 +227,7 @@ export const animateHistory = async (
         if (preimage) {
             ctx.drawImage(state.frames[state.i], 0, 0);
         } else {
-            await draw(state.i);
+            draw(state.i);
             state.frames.push(await createImageBitmap(canvas));
         }
 
@@ -244,3 +257,22 @@ export const actionPoints = (action: Action) => {
     }
     return [];
 };
+
+async function crossFade(
+    ctx: CanvasRenderingContext2D,
+    canvas: HTMLCanvasElement,
+    first: ImageBitmap,
+    final: ImageBitmap,
+    frames: number,
+) {
+    for (let i = 0; i <= frames; i++) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(first, 0, 0);
+        ctx.globalAlpha = (frames - i) / frames;
+        ctx.drawImage(final, 0, 0);
+        ctx.globalAlpha = 1;
+        await nextFrame();
+    }
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(first, 0, 0);
+}

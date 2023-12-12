@@ -2,12 +2,18 @@ import React, { useMemo, useRef, useState } from 'react';
 import { makeEven } from '../animation/AnimationUI';
 import { exportPNG, renderTexture } from '../editor/ExportPng';
 import { undoAction } from '../editor/history';
-import { canvasRender, makeImage } from '../rendering/CanvasRender';
+import {
+    canvasRender,
+    makeImage,
+    paletteImages,
+} from '../rendering/CanvasRender';
 import { Action } from '../state/Action';
 import { undo } from '../state/reducer';
 import { Coord, State, View } from '../types';
 import { animateHistory } from './animateHistory';
 import { coordsEqual } from '../rendering/pathsAreIdentical';
+import { deepEqual } from '../rendering/deepEqual';
+import equal from 'fast-deep-equal';
 
 export const HistoryPlayback = ({
     state,
@@ -82,6 +88,7 @@ export const HistoryPlayback = ({
                 {},
                 0,
                 overlays,
+                await paletteImages(state.palette),
                 null,
             );
             ctx.restore();

@@ -43,7 +43,7 @@ export const makeImage = (href: string): Promise<HTMLImageElement> => {
     });
 };
 
-export const canvasRender = async (
+export const canvasRender = (
     ctx: CanvasRenderingContext2D,
     state: State,
     sourceWidth: number,
@@ -52,17 +52,10 @@ export const canvasRender = async (
     animatedFunctions: AnimatedFunctions,
     animationPosition: number,
     overlayCache: { [key: string]: HTMLImageElement },
+    images: (HTMLImageElement | null)[],
     backgroundAlpha?: number | null,
 ) => {
     const palette = state.palette;
-
-    const images = await Promise.all(
-        palette.map((c) =>
-            c.startsWith('http') && imageCache[c]
-                ? makeImage(imageCache[c] as string)
-                : null,
-        ),
-    );
 
     const rough =
         state.view.sketchiness && state.view.sketchiness > 0
@@ -356,6 +349,16 @@ export const canvasRender = async (
         });
     }
 };
+
+export async function paletteImages(palette: string[]) {
+    return await Promise.all(
+        palette.map((c) =>
+            c.startsWith('http') && imageCache[c]
+                ? makeImage(imageCache[c] as string)
+                : null,
+        ),
+    );
+}
 
 function renderOverlay(
     state: State,

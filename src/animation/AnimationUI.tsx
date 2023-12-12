@@ -6,7 +6,7 @@ import { addMetadata, renderTexture } from '../editor/ExportPng';
 import { BlurInt, Toggle } from '../editor/Forms';
 import { CancelIcon, CheckmarkIcon, PencilIcon } from '../icons/Icon';
 import { epsilon } from '../rendering/intersect';
-import { canvasRender } from '../rendering/CanvasRender';
+import { canvasRender, paletteImages } from '../rendering/CanvasRender';
 import { Action } from '../state/Action';
 import { initialHistory } from '../state/initialState';
 import { Animations, State } from '../types';
@@ -121,6 +121,7 @@ export const AnimationEditor = ({
                 animatedFunctions,
                 animationPosition,
                 await cacheOverlays(state),
+                await paletteImages(state.palette),
                 animationPosition === 0 ? null : backgroundAlpha,
             );
             ctx.restore();
@@ -185,6 +186,7 @@ export const AnimationEditor = ({
                 animatedFunctions,
                 i,
                 await cacheOverlays(state),
+                await paletteImages(state.palette),
                 i === 0 ? null : backgroundAlpha,
             );
             ctx.restore();

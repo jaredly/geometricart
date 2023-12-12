@@ -1,5 +1,5 @@
 import { applyMatrices, dist, Matrix } from '../rendering/getMirrorTransforms';
-import { Coord, Path, Segment, State } from '../types';
+import { Coord, Fill, Path, Segment, State } from '../types';
 import { transformSegment } from '../rendering/points';
 import { pathToPoints, rasterSegPoints } from '../rendering/pathToPoints';
 import { insetSegments, insetSegmentsBeta } from '../rendering/insetPath';
@@ -125,6 +125,7 @@ export function getBuiltins(): { [key: string]: Function | number } {
         farthestPoint,
         scaleInsets,
         modInsets,
+        modFills,
         transformPath: (path: Path, tx: Array<Matrix>): Path => {
             return {
                 ...path,
@@ -337,6 +338,19 @@ export const findAdjacentPaths = (ids: string[], paths: State['paths']) => {
                 return segMap[key];
             }),
     );
+};
+
+const modFills = (
+    path: Path,
+    mod: (fill: Fill, i: number) => Fill | null,
+): Path => {
+    return {
+        ...path,
+        style: {
+            ...path.style,
+            fills: path.style.fills.map((f, i) => (f ? mod(f, i) : f)),
+        },
+    };
 };
 
 const modInsets = (
