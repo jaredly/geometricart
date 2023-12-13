@@ -65,6 +65,15 @@ export const RenderPendingMirror = ({
                 strokeWidth="2"
                 pointerEvents="none"
             />
+            <text
+                x={center.x * zoom + 10}
+                y={center.y * zoom}
+                style={{
+                    pointerEvents: 'none',
+                }}
+            >
+                {mirror.rotations}
+            </text>
             {alls.map((transforms, i) => {
                 const p1 = applyMatrices(line.p1, transforms);
                 const p2 = applyMatrices(line.p2, transforms);
