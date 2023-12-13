@@ -541,14 +541,17 @@ export const MultiStyleForm = ({
                             ),
                         0,
                     );
-                    const inset = maxInset + 5;
+                    const inset = maxNum === 0 ? 0 : maxInset + 5;
                     onChange(
-                        styles.map((style) => {
+                        styles.map((style, i) => {
+                            const color =
+                                style.fills.find((f) => f?.color != null)
+                                    ?.color ?? 0;
                             const lines = style.lines.slice();
                             for (let i = lines.length; i < maxNum; i++) {
                                 lines.push(null);
                             }
-                            lines.push({ color: 0, inset, width: 0 });
+                            lines.push({ color, inset, width: 0 });
                             return { ...style, lines };
                         }),
                     );

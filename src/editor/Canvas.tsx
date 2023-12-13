@@ -297,6 +297,16 @@ export const evaluateAnimatedValues = (
 
 export type SelectMode = boolean | 'radius' | 'path';
 
+/**
+ * This is the newfangled version of DrawPathState... probably
+ */
+export type DrawShapeState = {
+    type: 'shape';
+    points: Coord[];
+    // that's it, right?
+    // the adjacency matrix gets just memoized, right?
+};
+
 export type EditorState = {
     tmpView: null | View;
     items: Array<MenuItem>;
@@ -313,6 +323,7 @@ export type EditorState = {
         | null
         | { type: 'waiting' }
         | DrawPathState
+        | DrawShapeState
         | {
               type: 'tiling';
               points: Coord[];

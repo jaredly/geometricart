@@ -1,4 +1,16 @@
 
+# Lineification
+
+is fun y'all
+
+so,
+let's do a new way of making shapes
+where you click points
+and we do a little pathfinding.
+anddddd if you do a "new shape" with guides OFFF
+then we only count points of existing shapes. not of guides. yeah that's very nice.
+
+
 # Hm ok so what is thiss
 
 can I, make a whole new UI?
