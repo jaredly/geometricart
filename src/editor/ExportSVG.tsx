@@ -1,6 +1,6 @@
 /* @jsx jsx */
 /* @jsxFrag React.Fragment */
-import { jsx } from '@emotion/react';
+import { Interpolation, Theme, jsx } from '@emotion/react';
 import React, { useState } from 'react';
 import * as ReactDOM from 'react-dom';
 import { Canvas } from './Canvas';
@@ -8,7 +8,7 @@ import { BlurInt, Toggle } from './Forms';
 import { PREFIX, SUFFIX } from './Sidebar';
 import { Action } from '../state/Action';
 import { initialHistory } from '../state/initialState';
-import { Path, State } from '../types';
+import { Fill, Path, State, StyleLine } from '../types';
 import { calcPPI } from './SVGCanvas';
 import {
     Bounds,
@@ -18,6 +18,7 @@ import {
     findBoundingRect,
 } from './Export';
 import { constantColors, maybeUrlColor } from './MultiStyleForm';
+import { lightenedColor } from './RenderPath';
 
 export function ExportSVG({
     state,
@@ -164,6 +165,25 @@ export function ExportSVG({
         </div>
     );
 }
+
+const styleKey = (s: StyleLine | Fill) => {
+    const lighten = s.lighten ?? 0;
+    return lighten === 0 ? s.color ?? 0 : `${s.color}${'/' + lighten}`;
+};
+
+const parseStyleKey = (
+    key: string | number,
+): [string | number, number, string | number] => {
+    if (typeof key === 'number') {
+        return [key, 0, key];
+    }
+    const [name, lighten] = key.split('/');
+    if (!isNaN(+name)) {
+        return [+name, lighten ? +lighten : 0, key];
+    }
+    return [name, lighten ? +lighten : 0, key];
+};
+
 function multiForm(
     state: State,
     multi: NonNullable<State['view']['multi']>,
@@ -174,7 +194,8 @@ function multiForm(
     Object.entries(state.paths).forEach(([k, path]) => {
         path.style.lines.forEach((line) => {
             if (line && line.color != null) {
-                colors[line.color] = (colors[line.color] || 0) + 1;
+                const k = styleKey(line);
+                colors[k] = (colors[k] || 0) + 1;
             }
         });
     });
@@ -372,14 +393,13 @@ async function runSVGExport({
             pathsToRender.push([]);
         }
         const byGroup: { [key: string]: Path[] } = {};
-        console.log('mshapes', multi.shapes);
         Object.keys(state.paths).forEach((k) => {
             let path = state.paths[k];
             if (path.style.fills.length) {
                 return;
             }
             const out = path.style.lines.find(
-                (s) => s && s.color === multi.outline,
+                (s) => s && styleKey(s) == multi.outline,
             );
             if (out) {
                 outlines.push({ ...path, style: { fills: [], lines: [out] } });
@@ -388,7 +408,7 @@ async function runSVGExport({
                 if (shape == null) return;
 
                 const line = path.style.lines.find(
-                    (s) => s && s.color === shape,
+                    (s) => s && styleKey(s) == shape,
                 );
                 if (!line) return;
                 // path =
@@ -545,10 +565,13 @@ export const Select = ({
 }: {
     current: string | number | null | undefined;
     state: State;
-    colors: { [key: string | number]: number };
+    colors: { [key: string]: number };
     onChange: (color: string | number | null) => void;
 }) => {
     const [open, setOpen] = useState(false);
+
+    const keys = Object.keys(colors).map(parseStyleKey);
+    const ckey = current ? parseStyleKey(current) : null;
 
     return (
         <div css={{ position: 'relative' }}>
@@ -557,14 +580,20 @@ export const Select = ({
                     border: '1px solid #777',
                     borderRadius: 4,
                     margin: '8px 0',
+                    display: 'flex',
+                    flexDirection: 'row',
                 }}
             >
                 <Line
                     color={
-                        typeof current === 'number'
-                            ? state.palette[current]
-                            : current
+                        ckey
+                            ? typeof ckey[0] === 'number'
+                                ? state.palette[ckey[0]]
+                                : ckey[0]
+                            : undefined
                     }
+                    style={{ flex: 1 }}
+                    lighten={ckey ? ckey[1] : 0}
                     count={current != null ? colors[current] : null}
                     onClick={() => setOpen(!open)}
                 />
@@ -581,8 +610,29 @@ export const Select = ({
                         zIndex: 1000,
                     }}
                 >
-                    {state.palette
-                        .map((color, i) => (
+                    {keys.map(([color, lighten, orig], i) => (
+                        <Line
+                            key={i}
+                            color={
+                                typeof color === 'number'
+                                    ? state.palette[color]
+                                    : color
+                            }
+                            style={{
+                                ':hover': {
+                                    backgroundColor: 'rgba(255,255,255,0.3)',
+                                },
+                            }}
+                            lighten={lighten}
+                            count={colors[i]}
+                            onClick={() => {
+                                onChange(orig);
+                                setOpen(false);
+                            }}
+                        />
+                    ))}
+                    {/* {state.palette.map((color, i) =>
+                        colors[i] != null ? (
                             <Line
                                 key={i}
                                 color={color}
@@ -592,8 +642,8 @@ export const Select = ({
                                     setOpen(false);
                                 }}
                             />
-                        ))
-                        .filter((_, i) => colors[i] != null)}
+                        ) : null,
+                    )}
                     {constantColors
                         .filter((color) => colors[color] != null)
                         .map((color) => (
@@ -606,7 +656,7 @@ export const Select = ({
                                     setOpen(false);
                                 }}
                             />
-                        ))}
+                        ))} */}
                 </div>
             ) : null}
         </div>
@@ -617,36 +667,34 @@ const Line = ({
     color,
     count,
     onClick,
+    lighten,
+    style,
 }: {
     color: string | null | undefined;
     count: number | null;
+    lighten: number;
     onClick?: () => void;
+    style?: Interpolation<Theme>;
 }) => {
     return (
         <div
-            css={{
-                display: 'flex',
-                flexDirection: 'row',
-                padding: '4px 16px',
-                cursor: 'pointer',
-            }}
+            css={[
+                {
+                    display: 'flex',
+                    flexDirection: 'row',
+                    padding: '4px 16px',
+                    cursor: 'pointer',
+                },
+                style,
+            ]}
             onClick={onClick}
         >
             <div
-                // onClick={() => onChange(i)}
-                // onMouseOver={() => onHover(i)}
-                // onMouseOut={() => onHover(null)}
-                // style={{
-                //     boxShadow: color.includes(i)
-                //         ? `0 3px 0 ${highlight}`
-                //         : 'none',
-                //     // border: `2px solid ${
-                //     //     color.includes(i) ? highlight : '#444'
-                //     // }`,
-                // }}
                 css={{
                     background:
-                        color != null ? maybeUrlColor(color) : undefined,
+                        color != null
+                            ? lightenedColor([], maybeUrlColor(color), lighten)
+                            : undefined,
                     width: 20,
                     height: 20,
                     cursor: 'pointer',
@@ -659,7 +707,9 @@ const Line = ({
                     },
                 }}
             />
-            {color != null ? color : 'Select a color'}
+            {color != null
+                ? color + (lighten != 0 ? '/' + lighten : '')
+                : 'Select a color'}
             {count != null ? ' ' + count : null}
         </div>
     );
