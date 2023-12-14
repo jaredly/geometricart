@@ -251,7 +251,7 @@ export const Guides = ({
     }, [!!pendingPath[0]]);
 
     const onCompletePath = React.useCallback(
-        (parts: Array<PendingSegment>) => {
+        (parts: Array<PendingSegment>, open?: boolean) => {
             if (pendingPath[0]?.type !== 'path') {
                 return;
             }
@@ -269,6 +269,7 @@ export const Guides = ({
                         {
                             segments: parts.map((s) => s.segment),
                             origin: pendingPath[0].origin.coord,
+                            open,
                         },
                     ],
                     withMirror: true,

@@ -1134,11 +1134,16 @@ export const NewPalettesForm = ({
     );
 };
 
-export const pkPath = (PK: PathKit, segments: Segment[], origin?: Coord) => {
+export const pkPath = (
+    PK: PathKit,
+    segments: Segment[],
+    origin?: Coord,
+    open?: boolean,
+) => {
     const d = calcSegmentsD(
         segments,
         origin ?? segments[segments.length - 1].to,
-        false,
+        open,
         1,
     );
     return PK.FromSVGString(d);
@@ -1171,14 +1176,16 @@ export const pkPathToSegments = (PK: PathKit, pkp: PKPath) => {
     const clipped = cmdsToSegments(pkp.toCmds(), PK);
 
     clipped.forEach((region) => {
-        const { segments, origin } = region;
-        if (!coordsEqual(segments[segments.length - 1].to, origin)) {
-            console.error('NO BADS clipped idk', segments, origin);
-            console.log(pkp.toCmds());
+        const { segments, origin, open } = region;
+        if (!open) {
+            if (!coordsEqual(segments[segments.length - 1].to, origin)) {
+                console.error('NO BADS clipped idk', segments, origin);
+                console.log(pkp.toCmds());
+            }
+            const segs = ensureClockwise(segments);
+            region.segments = segs;
+            region.origin = segs[segs.length - 1].to;
         }
-        const segs = ensureClockwise(segments);
-        region.segments = segs;
-        region.origin = segs[segs.length - 1].to;
     });
 
     return clipped;
@@ -1206,7 +1213,7 @@ export const pkClipPaths = async (
 
     pathIds.forEach((id) => {
         const path = state.paths[id];
-        const pkp = pkPath(PK, path.segments, path.origin);
+        const pkp = pkPath(PK, path.segments, path.origin, path.open);
 
         const clipped = pkClipPath(PK, pkp, pkClip, outside);
 

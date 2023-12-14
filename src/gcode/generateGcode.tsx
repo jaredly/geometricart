@@ -692,7 +692,7 @@ export const cmdsToSegments = (
     cmds: number[][],
     pk: PathKit,
     // outer: SVGSVGElement,
-): { segments: Segment[]; origin: Coord }[] => {
+): { segments: Segment[]; origin: Coord; open: boolean }[] => {
     const points: { segments: Segment[]; origin: Coord; open: boolean }[] = [];
 
     for (let cmd of cmds) {

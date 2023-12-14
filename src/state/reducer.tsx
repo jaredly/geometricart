@@ -1516,7 +1516,7 @@ export function handlePathCreate(
         ids.push(id);
 
         const style: Style = {
-            fills: action.trace ? [] : [{ color: 1 }],
+            fills: action.trace || open ? [] : [{ color: 1 }],
             lines: [{ color: 'white', width: 0 }],
         };
 
@@ -1529,7 +1529,7 @@ export function handlePathCreate(
             origin,
             open,
             // simplify it up y'all
-            segments: simplifyPath(ensureClockwise(segments)),
+            segments: simplifyPath(open ? segments : ensureClockwise(segments)),
             style,
         };
 

@@ -503,6 +503,7 @@ function getSVGText(
               selection: null,
           }
         : state;
+    // I want this to be sync, so I need the old API
     ReactDOM.render(
         <Canvas
             {...blankCanvasProps}
