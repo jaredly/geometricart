@@ -226,6 +226,7 @@ const GistLoader = () => {
             <div className="flex flex-row flex-wrap">
                 {gists.map((gist) => (
                     <div
+                        key={gist.id}
                         className="mt-3 flex flex-column hover:surface-hover surface-base p-4 cursor-pointer"
                         onClick={() => {
                             window.location.hash = '/gist/' + gist.id;

@@ -16,6 +16,7 @@ import { ExportSVG } from './ExportSVG';
 import { ExportPng } from './ExportPng';
 import { applyMatrix } from '../rendering/getMirrorTransforms';
 import { EditorState } from './Canvas';
+import { PK } from './pk';
 
 export type Bounds = {
     x1: number;
@@ -132,6 +133,7 @@ export const Export = ({
                 name={name}
             />
             <ExportSVG
+                PK={PK}
                 state={state}
                 dispatch={dispatch}
                 originalSize={originalSize}
@@ -210,7 +212,10 @@ export const DL = ({
                     backgroundSize: 40,
                 }}
             >
-                <img src={url} css={{ maxHeight: 400 }} />
+                <img
+                    src={url}
+                    css={{ maxHeight: 400, backgroundColor: 'black' }}
+                />
             </div>
         </>
     );

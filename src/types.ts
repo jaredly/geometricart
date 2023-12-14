@@ -345,6 +345,7 @@ export type View = {
         rows: number;
         combineGroups?: boolean;
         skipBacking?: boolean;
+        traceAndMerge?: boolean;
     };
 };
 

@@ -11,6 +11,9 @@ anddddd if you do a "new shape" with guides OFFF
 then we only count points of existing shapes. not of guides. yeah that's very nice.
 
 
+- [ ] make an option for svg export that is "stroke to path & merge"
+
+
 # Hm ok so what is thiss
 
 can I, make a whole new UI?
