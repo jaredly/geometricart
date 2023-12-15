@@ -1,8 +1,9 @@
 import React from 'react';
-import { State } from '../types';
+import { State, Tiling } from '../types';
 import { migrateState } from '../state/migrateState';
 import { readMetadata } from 'png-metadata';
 import { PREFIX, SUFFIX } from './Sidebar';
+import { initialState } from '../state/initialState';
 
 export const useDropTarget = (
     onDrop: (file: File) => void,
@@ -113,16 +114,26 @@ export const getStateFromFile = (
     } else if (file.type === 'image/svg+xml') {
         const reader = new FileReader();
         reader.onload = () => {
-            const last = (reader.result as string)
-                .split('\n')
-                .slice(-1)[0]
-                .trim();
+            const raw = reader.result as string;
+            const last = raw.split('\n').slice(-1)[0].trim();
             if (last.startsWith(PREFIX) && last.endsWith(SUFFIX)) {
                 done(JSON.parse(last.slice(PREFIX.length, -SUFFIX.length)));
             } else {
-                console.log('not last, bad news');
-                console.log(last);
-                done(null);
+                const TPREFIX = '<!-- TILING:';
+                const TSUFFIX = '-->';
+                if (raw.includes(TPREFIX) && raw.includes(TSUFFIX)) {
+                    const tiling: Tiling = JSON.parse(
+                        raw.slice(
+                            raw.indexOf(TPREFIX) + TPREFIX.length,
+                            raw.indexOf(TSUFFIX),
+                        ),
+                    );
+                    done({ ...initialState, tilings: { [tiling.id]: tiling } });
+                } else {
+                    console.log('not last, bad news');
+                    console.log(last);
+                    done(null);
+                }
             }
         };
         reader.readAsText(file);

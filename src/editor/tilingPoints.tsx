@@ -10,8 +10,8 @@ import {
     translationMatrix,
 } from '../rendering/getMirrorTransforms';
 import { scalePos } from './scalePos';
-import { transformMatrix } from '../state/reducer';
 import { angleBetween } from '../rendering/findNextSegments';
+import { tilingTransforms } from './tilingTransforms';
 
 export const transformLines = (lines: [Coord, Coord][], mx: Matrix[]) =>
     lines.map(([p1, p2]): [Coord, Coord] => [
@@ -19,12 +19,28 @@ export const transformLines = (lines: [Coord, Coord][], mx: Matrix[]) =>
         applyMatrices(p2, mx),
     ]);
 
+export const applyTilingTransforms = (
+    unique: [Coord, Coord][],
+    mx: Matrix[][][],
+) => {
+    let full = unique;
+    mx.forEach((set) => {
+        full = full.concat(...set.map((m) => transformLines(full, m)));
+    });
+    return full;
+};
+
 export function eigenShapesToLines(
     unique: [Coord, Coord][],
     shape: TilingShape,
     tr: Coord,
     tpts: Coord[],
 ) {
+    const ok = true;
+    if (ok) {
+        return applyTilingTransforms(unique, tilingTransforms(shape, tr, tpts));
+    }
+
     let full = unique;
     if (tpts.length === 4) {
         // paralellogram

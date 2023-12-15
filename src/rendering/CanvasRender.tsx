@@ -235,7 +235,8 @@ export const canvasRender = (
                         : 2
                     : (line.width / 100) * zoom;
             ctx.lineJoin = 'bevel';
-            ctx.lineCap = 'square';
+            // ctx.lineCap = 'square';
+            ctx.lineCap = 'round';
 
             let myPath = path;
             const color = lightenedColor(palette, line.color, line.lighten)!;
@@ -500,7 +501,7 @@ export function tracePath(
     // ctx.lineJoin = 'round';
     // ctx.lineCap = 'round';
     ctx.lineJoin = 'miter';
-    ctx.lineCap = 'square';
+    ctx.lineCap = 'round';
     if (
         path.segments.length === 1 &&
         path.segments[0].type === 'Arc' &&

@@ -559,7 +559,9 @@ const traceAndMergePaths = (
     const zoom = state.view.zoom;
     const { x, y } = viewPos(state.view, size.width, size.height);
 
-    let pk: null | PKPath;
+    const backer = Object.keys(state.paths).length === 1;
+
+    let pk = null as null | PKPath;
     let c;
     Object.values(state.paths).forEach((path) => {
         const st = path.style.lines[0];
@@ -568,11 +570,18 @@ const traceAndMergePaths = (
         c = paletteColor(state.palette, st?.color ?? 0, st?.lighten ?? 0);
         // const d = calcPathD(path, state.view.zoom)
         const p = pkPath(PK, path.segments, path.origin, path.open);
-        p.stroke({
+        const stroke = {
             width: w / zoom,
             join: PK.StrokeJoin.MITER,
             cap: PK.StrokeCap.ROUND,
-        });
+        };
+        if (backer) {
+            const s = p.copy().stroke(stroke);
+            p.op(s, PK.PathOp.UNION);
+            s.delete();
+        } else {
+            p.stroke(stroke);
+        }
         if (pk == null) {
             pk = p;
         } else {
@@ -580,6 +589,7 @@ const traceAndMergePaths = (
             p.delete();
         }
     });
+    if (pk == null) return '';
     pk!.simplify();
     const d = pk!.toSVGString();
     pk!.delete();

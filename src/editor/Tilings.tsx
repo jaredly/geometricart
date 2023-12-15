@@ -41,6 +41,7 @@ import { UIDispatch } from '../useUIState';
 import { coordsEqual } from '../rendering/pathsAreIdentical';
 import { consoleSvg, renderSegments } from '../animation/renderSegments';
 import { SegmentWithPrev } from '../rendering/clipPathNew';
+import { emptyPath } from './RenderPath';
 
 export const Tilings = ({
     state,
@@ -73,75 +74,103 @@ export const Tilings = ({
                         }
                     >
                         <div>Tiling {tiling.id}</div>
-                        <ShowTiling tiling={tiling} />
-                        {tiling.shape.type === 'right-triangle' ? (
-                            <label>
-                                <input
-                                    type="checkbox"
-                                    checked={!!tiling.shape.rotateHypotenuse}
-                                    onChange={() => {
-                                        const sh = tiling.shape as Extract<
-                                            Tiling['shape'],
-                                            { type: 'right-triangle' }
-                                        >;
+                        <div style={{ display: 'flex' }}>
+                            <ShowTiling tiling={tiling} />
+                            {tiling.shape.type === 'right-triangle' ? (
+                                <label>
+                                    <input
+                                        type="checkbox"
+                                        checked={
+                                            !!tiling.shape.rotateHypotenuse
+                                        }
+                                        onChange={() => {
+                                            const sh = tiling.shape as Extract<
+                                                Tiling['shape'],
+                                                { type: 'right-triangle' }
+                                            >;
+
+                                            dispatch({
+                                                type: 'tiling:update',
+                                                tiling: {
+                                                    ...tiling,
+                                                    shape: {
+                                                        ...sh,
+                                                        rotateHypotenuse:
+                                                            !sh.rotateHypotenuse,
+                                                    },
+                                                },
+                                            });
+                                        }}
+                                    />
+                                    Rotate around hypotenuse
+                                </label>
+                            ) : tiling.shape.type === 'isocelese' ? (
+                                <label>
+                                    <input
+                                        type="checkbox"
+                                        checked={!!tiling.shape.flip}
+                                        onChange={() => {
+                                            const sh = tiling.shape as Extract<
+                                                Tiling['shape'],
+                                                { type: 'isocelese' }
+                                            >;
+
+                                            dispatch({
+                                                type: 'tiling:update',
+                                                tiling: {
+                                                    ...tiling,
+                                                    shape: {
+                                                        ...sh,
+                                                        flip: !sh.flip,
+                                                    },
+                                                },
+                                            });
+                                        }}
+                                    />
+                                    Flip (vs rotate)
+                                </label>
+                            ) : null}
+                            <div
+                                style={{
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                }}
+                            >
+                                <button
+                                    onClick={() => {
+                                        dispatch({
+                                            type: 'path:create:many',
+                                            paths: tiling.cache.shapes.map(
+                                                (bare): Path => ({
+                                                    ...emptyPath,
+                                                    origin: bare.origin,
+                                                    segments: bare.segments,
+                                                }),
+                                            ),
+                                            withMirror: false,
+                                        });
+                                    }}
+                                >
+                                    Create shapes
+                                </button>
+                                <button
+                                    onClick={async () => {
+                                        const cache = await simpleExport(
+                                            state,
+                                            tiling.shape,
+                                        );
+                                        if (!cache) return;
 
                                         dispatch({
                                             type: 'tiling:update',
-                                            tiling: {
-                                                ...tiling,
-                                                shape: {
-                                                    ...sh,
-                                                    rotateHypotenuse:
-                                                        !sh.rotateHypotenuse,
-                                                },
-                                            },
+                                            tiling: { ...tiling, cache },
                                         });
                                     }}
-                                />
-                                Rotate around hypotenuse
-                            </label>
-                        ) : tiling.shape.type === 'isocelese' ? (
-                            <label>
-                                <input
-                                    type="checkbox"
-                                    checked={!!tiling.shape.flip}
-                                    onChange={() => {
-                                        const sh = tiling.shape as Extract<
-                                            Tiling['shape'],
-                                            { type: 'isocelese' }
-                                        >;
-
-                                        dispatch({
-                                            type: 'tiling:update',
-                                            tiling: {
-                                                ...tiling,
-                                                shape: {
-                                                    ...sh,
-                                                    flip: !sh.flip,
-                                                },
-                                            },
-                                        });
-                                    }}
-                                />
-                                Flip (vs rotate)
-                            </label>
-                        ) : null}
-                        <button
-                            onClick={async () => {
-                                const cache = await simpleExport(
-                                    state,
-                                    tiling.shape,
-                                );
-                                if (!cache) return;
-
-                                dispatch({
-                                    type: 'tiling:update',
-                                    tiling: { ...tiling, cache },
-                                });
-                            }}
-                        >
-                            Recalculate eigenshapes
-                        </button>
+                                >
+                                    Recalculate eigenshapes
+                                </button>
+                            </div>
+                        </div>
                         <div style={{ fontSize: '70%' }}>
                             {tiling.cache?.hash.slice(0, 10)}
                         </div>
