@@ -1,7 +1,7 @@
 /* @jsx jsx */
 /* @jsxFrag React.Fragment */
 import { jsx } from '@emotion/react';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Action } from '../state/Action';
 import {
     BarePath,
@@ -42,6 +42,7 @@ import { coordsEqual } from '../rendering/pathsAreIdentical';
 import { consoleSvg, renderSegments } from '../animation/renderSegments';
 import { SegmentWithPrev } from '../rendering/clipPathNew';
 import { emptyPath } from './RenderPath';
+import { tilingTransforms } from './tilingTransforms';
 
 export const Tilings = ({
     state,
@@ -134,13 +135,43 @@ export const Tilings = ({
                                 style={{
                                     display: 'flex',
                                     flexDirection: 'column',
+                                    alignItems: 'flex-start',
                                 }}
                             >
                                 <button
                                     onClick={() => {
+                                        const { bounds, lines, tr } =
+                                            handleTiling(tiling);
+                                        const mx = tilingTransforms(
+                                            tiling.shape,
+                                            tr,
+                                            bounds,
+                                        );
+
+                                        let shapes = tiling.cache.shapes;
+                                        mx.forEach((set) => {
+                                            shapes = shapes.concat(
+                                                ...set.map((s) =>
+                                                    shapes.map((shape) => ({
+                                                        origin: applyMatrices(
+                                                            shape.origin,
+                                                            s,
+                                                        ),
+                                                        segments:
+                                                            shape.segments.map(
+                                                                (seg) =>
+                                                                    transformSegment(
+                                                                        seg,
+                                                                        s,
+                                                                    ),
+                                                            ),
+                                                    })),
+                                                ),
+                                            );
+                                        });
                                         dispatch({
                                             type: 'path:create:many',
-                                            paths: tiling.cache.shapes.map(
+                                            paths: shapes.map(
                                                 (bare): Path => ({
                                                     ...emptyPath,
                                                     origin: bare.origin,
@@ -187,9 +218,7 @@ export const Tilings = ({
                             ).toFixed(2)}
                             kb without
                         </div>
-                        {tiling.cache
-                            ? tilingCacheSvg(tiling.cache, tiling.shape)
-                            : null}
+                        {tiling.cache ? <SimpleTiling tiling={tiling} /> : null}
                         <button
                             onClick={() => {
                                 dispatch({
@@ -477,3 +506,34 @@ export function tilingSvg(
         </svg>
     );
 }
+
+const PREFIX = '<!-- TILING:';
+const SUFFIX = '-->';
+
+export const SimpleTiling = ({ tiling }: { tiling: Tiling }) => {
+    const { bounds, lines } = useMemo(() => getSvgData(tiling), [tiling]);
+
+    return (
+        <a
+            href=""
+            download={'tiling-' + tiling.cache.hash + '.svg'}
+            onClick={(evt) => {
+                const txt = evt.currentTarget.innerHTML;
+                const blob = new Blob(
+                    [txt + PREFIX + JSON.stringify(tiling) + SUFFIX],
+                    {
+                        type: 'image/svg+xml',
+                    },
+                );
+                const url = URL.createObjectURL(blob);
+                evt.currentTarget.href = url;
+                setTimeout(() => {
+                    evt.currentTarget.href = '';
+                    URL.revokeObjectURL(url);
+                }, 0);
+            }}
+        >
+            {tilingSvg(bounds, lines)}
+        </a>
+    );
+};
