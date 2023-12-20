@@ -304,20 +304,45 @@ export const HistoryPlayback = ({
             >
                 Export snapshot
             </button>
-            {state.historyView?.start ?? 'No start'}
-            <button
-                onClick={() => {
-                    dispatch({
-                        type: 'history-view:update',
-                        view: {
-                            ...(state.historyView ?? { zooms: [], skips: [] }),
-                            start: current,
-                        },
-                    });
-                }}
-            >
-                Set start
-            </button>
+            <div>
+                {state.historyView?.start ?? 'No start'}
+                <button
+                    onClick={() => {
+                        dispatch({
+                            type: 'history-view:update',
+                            view: {
+                                ...(state.historyView ?? {
+                                    zooms: [],
+                                    skips: [],
+                                }),
+                                start: current,
+                            },
+                        });
+                    }}
+                >
+                    Set start
+                </button>
+                {state.historyView?.end ?? 'No end'}
+                <button
+                    onClick={() => {
+                        dispatch({
+                            type: 'history-view:update',
+                            view: {
+                                ...(state.historyView ?? {
+                                    zooms: [],
+                                    skips: [],
+                                }),
+                                end:
+                                    state.historyView?.end != null
+                                        ? undefined
+                                        : current,
+                            },
+                        });
+                    }}
+                >
+                    {state.historyView?.end != null ? 'Clear end' : 'Set End'}
+                </button>
+            </div>
             {exportUrl ? (
                 <a
                     href={exportUrl}
@@ -601,10 +626,10 @@ export function getHistoriesList(state: State, overrideZoom?: boolean) {
         current = undo({ ...current, history }, action);
     }
     const simple = simplifyHistory(states);
-    if (state.historyView?.start != null) {
-        return simple.slice(state.historyView.start);
-    }
-    return simple;
+    return simple.slice(
+        state.historyView?.start ?? 0,
+        state.historyView?.end ?? simple.length,
+    );
 }
 export type StateAndAction = {
     state: State;

@@ -540,6 +540,7 @@ export type State = {
         zooms: { idx: number; view: Pick<View, 'zoom' | 'center'> }[];
         skips: number[];
         start?: number;
+        end?: number;
     };
 
     tilings: { [key: Id]: Tiling };

@@ -1455,6 +1455,7 @@ export function handlePathMultiply(
                 origin,
                 segments,
                 style: main.group ? main.style : { fills: [], lines: [] },
+                open: main.open,
             };
             ids.push(nid);
         });

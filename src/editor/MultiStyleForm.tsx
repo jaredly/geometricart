@@ -545,8 +545,11 @@ export const MultiStyleForm = ({
                     onChange(
                         styles.map((style, i) => {
                             const color =
-                                style.fills.find((f) => f?.color != null)
-                                    ?.color ?? 0;
+                                style.fills.findLast((f) => f?.color != null)
+                                    ?.color ??
+                                style.lines.findLast((f) => f?.color != null)
+                                    ?.color ??
+                                0;
                             const lines = style.lines.slice();
                             for (let i = lines.length; i < maxNum; i++) {
                                 lines.push(null);
