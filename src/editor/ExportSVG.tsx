@@ -18,7 +18,8 @@ import {
     findBoundingRect,
 } from './Export';
 import { constantColors, maybeUrlColor } from './MultiStyleForm';
-import { calcPathD, lightenedColor, paletteColor } from './RenderPath';
+import { lightenedColor, paletteColor } from './RenderPath';
+import { calcPathD } from './calcPathD';
 import { PathKit, Path as PKPath } from 'pathkit-wasm';
 import { pkPath } from '../sidebar/NewSidebar';
 

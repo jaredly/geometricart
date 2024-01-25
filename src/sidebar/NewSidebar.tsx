@@ -40,7 +40,8 @@ import {
 import { MirrorItems } from './MirrorItems';
 import dayjs from 'dayjs';
 import { SketchPicker } from 'react-color';
-import { calcSegmentsD, paletteColor } from '../editor/RenderPath';
+import { paletteColor } from '../editor/RenderPath';
+import { calcSegmentsD } from '../editor/calcPathD';
 import {
     boundsMidpoint,
     segmentBounds,

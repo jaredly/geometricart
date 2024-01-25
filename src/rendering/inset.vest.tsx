@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { calcSegmentsD } from '../editor/RenderPath';
+import { calcSegmentsD } from '../editor/calcPathD';
 import { Segment } from '../types';
 import { register } from '../vest';
 import { coordKey } from './coordKey';

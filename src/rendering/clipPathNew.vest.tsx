@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { segmentsBounds } from '../editor/Bounds';
-import { calcPathD, calcSegmentsD, pathSegs } from '../editor/RenderPath';
+import { pathSegs } from '../editor/RenderPath';
+import { calcPathD, calcSegmentsD } from '../editor/calcPathD';
 import { Segment } from '../types';
 import { register } from '../vest';
 import {

@@ -10,7 +10,7 @@ import {
 import { sortedVisibleInsetPaths } from '../rendering/sortedVisibleInsetPaths';
 import { Coord, Path, Segment, State, StyleLine } from '../types';
 import PathKitInit, { PathKit } from 'pathkit-wasm';
-import { calcPathD } from '../editor/RenderPath';
+import { calcPathD } from '../editor/calcPathD';
 import { segmentKey, segmentKeyReverse } from '../rendering/segmentKey';
 import { coordsEqual } from '../rendering/pathsAreIdentical';
 import { angleBetween } from '../rendering/findNextSegments';

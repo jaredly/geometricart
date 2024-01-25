@@ -8,13 +8,13 @@ import { Primitive } from '../rendering/intersect';
 import { Coord, Path, PathGroup, Segment, State } from '../types';
 import { StyleHover } from './MultiStyleForm';
 import { useTouchClick } from './RenderIntersections';
-import { arcPath } from './RenderPendingPath';
 import { DebugOrigPath } from './DebugOrigPath';
 import { MenuItem } from './Canvas';
 import { Action } from '../state/Action';
 import { normalizedPath } from '../rendering/sortedVisibleInsetPaths';
 import { pathToSegmentKeys } from '../rendering/pathsAreIdentical';
 import { segmentsCenter } from './Bounds';
+import { calcPathD } from './calcPathD';
 
 export const UnderlinePath = ({
     path,
@@ -41,43 +41,6 @@ export const UnderlinePath = ({
             strokeLinejoin="round"
         />
     );
-};
-
-export const calcPathD = (path: Path, zoom: number): string => {
-    return calcSegmentsD(path.segments, path.origin, path.open, zoom);
-};
-
-export const calcSegmentsD = (
-    segments: Array<Segment>,
-    origin: Coord,
-    open: boolean | undefined,
-    zoom: number,
-): string => {
-    let d = `M ${origin.x * zoom} ${origin.y * zoom}`;
-    if (segments.length === 1 && segments[0].type === 'Arc') {
-        const arc = segments[0];
-        const { center, to } = arc;
-        const r = dist(center, to);
-        const theta = angleTo(to, center);
-        const opposite = push(center, theta, r);
-        return calcSegmentsD(
-            [{ ...arc, to: opposite }, arc],
-            origin,
-            open,
-            zoom,
-        );
-        // this can only happen if we're a pure cicle
-    }
-    segments.forEach((seg, i) => {
-        if (seg.type === 'Line') {
-            d += ` L ${seg.to.x * zoom} ${seg.to.y * zoom}`;
-        } else {
-            const prev = i === 0 ? origin : segments[i - 1].to;
-            d += arcPath(seg, prev, zoom);
-        }
-    });
-
-    return d + (open ? '' : ' Z');
 };
 
 const RenderPathMemo = ({

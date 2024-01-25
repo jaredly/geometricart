@@ -25,7 +25,8 @@ import {
     rasterSegPoints,
     reversePath,
 } from './pathToPoints';
-import { calcPathD, idSeed, lightenedColor } from '../editor/RenderPath';
+import { idSeed, lightenedColor } from '../editor/RenderPath';
+import { calcPathD } from '../editor/calcPathD';
 import { sortedVisibleInsetPaths } from './sortedVisibleInsetPaths';
 import { ArcSegment, Overlay, Path, State } from '../types';
 import { imageCache } from '../editor/SVGCanvas';
