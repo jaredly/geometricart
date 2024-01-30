@@ -14,8 +14,8 @@ import { Angle } from './clipPath';
 //     return true
 // }
 
-export const closeEnough = (one: number, two: number) =>
-    one === two || Math.abs(one - two) < epsilon;
+export const closeEnough = (one: number, two: number, eps = epsilon) =>
+    one === two || Math.abs(one - two) < eps;
 
 export const anglesEqual = (one: Angle, two: Angle) => {
     if (one.type === 'flat' && two.type === 'flat') {
