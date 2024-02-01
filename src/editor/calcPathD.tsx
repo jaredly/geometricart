@@ -1,8 +1,8 @@
 import { angleTo, dist, push } from '../rendering/getMirrorTransforms';
-import { Coord, Path, Segment } from '../types';
+import { BarePath, Coord, Path, Segment } from '../types';
 import { arcPath } from './RenderPendingPath';
 
-export const calcPathD = (path: Path, zoom: number): string => {
+export const calcPathD = (path: BarePath, zoom: number): string => {
     return calcSegmentsD(path.segments, path.origin, path.open, zoom);
 };
 
@@ -29,7 +29,9 @@ export const calcSegmentsD = (
     }
     segments.forEach((seg, i) => {
         if (seg.type === 'Line') {
-            d += ` L ${seg.to.x * zoom} ${seg.to.y * zoom}`;
+            d += ` L ${(seg.to.x * zoom).toFixed(3)} ${(
+                seg.to.y * zoom
+            ).toFixed(3)}`;
         } else {
             const prev = i === 0 ? origin : segments[i - 1].to;
             d += arcPath(seg, prev, zoom);

@@ -4,7 +4,8 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useDropTarget } from './editor/useDropTarget';
 import { Coord, Tiling } from './types';
 import { useLocalStorage } from './vest/App';
-import { getSvgData, handleTiling, tilingSvg } from './editor/Tilings';
+import { TilingSvg } from './editor/Tilings';
+import { getSvgData, handleTiling } from './editor/handleTiling';
 import { eigenShapesToLines } from './editor/tilingPoints';
 import { coordKey } from './rendering/coordKey';
 
@@ -249,16 +250,16 @@ export const Editor = ({ one, two }: { one: Tiling; two: Tiling }) => {
                             key={i}
                             style={{ display: 'flex', flexDirection: 'row' }}
                         >
-                            {tilingSvg(
-                                onez.bounds,
-                                eigenShapesToLines(
+                            {TilingSvg({
+                                bounds: onez.bounds,
+                                lines: eigenShapesToLines(
                                     frame,
                                     one.shape,
                                     onez.tr,
                                     onez.bounds,
                                 ),
-                                150,
-                            )}
+                                size: 150,
+                            })}
 
                             <div
                                 style={{
@@ -400,10 +401,15 @@ export const Morph = () => {
                 return (
                     <div key={i}>
                         {/* {t.cache.hash} */}
-                        {tilingSvg(
+                        {TilingSvg({
                             bounds,
-                            eigenShapesToLines(lines, t.shape, tr, bounds),
-                        )}
+                            lines: eigenShapesToLines(
+                                lines,
+                                t.shape,
+                                tr,
+                                bounds,
+                            ),
+                        })}
                     </div>
                 );
             })}

@@ -12,7 +12,29 @@ import {
     meta,
     thumbPrefix,
 } from './run';
-import { tilingCacheSvg } from './editor/Tilings';
+import { Tiling } from './types';
+import {
+    eigenShapesToSvg,
+    getTransform,
+    tilingPoints,
+} from './editor/tilingPoints';
+import { applyMatrices } from './rendering/getMirrorTransforms';
+
+export function tilingCacheSvg(cache: Tiling['cache'], shape: Tiling['shape']) {
+    const pts = tilingPoints(shape);
+    const tx = getTransform(pts);
+    return (
+        <img
+            style={{ width: 200 }}
+            src={`data:image/svg+xml,${eigenShapesToSvg(
+                cache.segments.map((s) => [s.prev, s.segment.to]),
+                shape,
+                applyMatrices(pts[2], tx),
+                pts.map((pt) => applyMatrices(pt, tx)),
+            )}`}
+        />
+    );
+}
 
 export const DesignLoader = () => {
     const [designs, setDesigns] = React.useState<MetaData[]>([]);

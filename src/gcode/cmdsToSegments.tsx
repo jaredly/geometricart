@@ -79,6 +79,7 @@ export const cmdsToSegments = (
             latest.open = false;
             // Don't need this,
             if (
+                latest.segments.length &&
                 !coordsEqual(
                     latest.segments[latest.segments.length - 1].to,
                     latest.origin,
