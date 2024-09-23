@@ -1,4 +1,7 @@
 
+# Why is GCode failing on open paths?
+
+
 # Lineification
 
 is fun y'all

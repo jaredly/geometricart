@@ -31,16 +31,33 @@ export const greedyPaths = (
     paths: Array<{ path: Path; style: StyleLine }>,
     ppi: number,
 ) => {
+    console.log('greedy it up', paths);
     const pathPoints: Array<Array<RasterSeg>> = [];
     paths.forEach(({ path, style }) => {
         if (style.inset) {
             insetPath(path, style.inset).forEach((sub) => {
-                pathPoints.push(pathToPoints(sub.segments, false, ppi));
+                pathPoints.push(
+                    pathToPoints(
+                        sub.segments,
+                        sub.open ? sub.origin : null,
+                        false,
+                        ppi,
+                    ),
+                );
             });
         } else {
-            pathPoints.push(pathToPoints(path.segments, false, ppi));
+            pathPoints.push(
+                pathToPoints(
+                    path.segments,
+                    path.open ? path.origin : null,
+                    false,
+                    ppi,
+                ),
+            );
         }
     });
+
+    console.log('path is points', pathPoints);
 
     const ordered: RasterSeg[][] = [];
     const first = pathPoints.shift()!;
@@ -80,6 +97,7 @@ export const greedyPaths = (
     });
 
     // return res.filter((shape) => shape.some((seg) => !seg.skipped));
+    console.log(`got the one`, res);
     return res;
 };
 

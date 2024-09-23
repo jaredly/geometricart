@@ -413,6 +413,11 @@ export const PathForm = ({
                 Path! {path.id}
                 <div style={{ flexBasis: 8 }} />
                 <Toggle
+                    label="Open"
+                    value={!!path.open}
+                    onChange={(open) => onChange({ ...path, open })}
+                />
+                <Toggle
                     label="Hide"
                     value={path.hidden}
                     onChange={(hidden) => onChange({ ...path, hidden })}

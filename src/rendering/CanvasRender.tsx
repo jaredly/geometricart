@@ -418,7 +418,9 @@ function drawCenteredImage(
 }
 
 function debugPath(path: Path, ctx: CanvasRenderingContext2D, zoom: number) {
-    rasterSegPoints(pathToPoints(path.segments)).forEach((point) => {
+    rasterSegPoints(
+        pathToPoints(path.segments, path.open ? path.origin : null),
+    ).forEach((point) => {
         ctx.beginPath();
         ctx.ellipse(point.x * zoom, point.y * zoom, 10, 10, 0, Math.PI * 2, 0);
         ctx.fillStyle = 'blue';

@@ -161,7 +161,7 @@ export const closestPoint = (
     segments: Array<Segment>,
 ): [number, Coord] => {
     let best = null as null | [number, Coord];
-    rasterSegPoints(pathToPoints(segments)).forEach((point) => {
+    rasterSegPoints(pathToPoints(segments, null)).forEach((point) => {
         const d = dist(point, center);
         if (best == null || best[0] > d) {
             best = [d, point];
@@ -173,7 +173,7 @@ export const closestPoint = (
 
 export const farthestPoint = (center: Coord, segments: Array<Segment>) => {
     let best = null as null | [number, Coord];
-    rasterSegPoints(pathToPoints(segments)).forEach((point) => {
+    rasterSegPoints(pathToPoints(segments, null)).forEach((point) => {
         const d = dist(point, center);
         if (best == null || best[0] < d) {
             best = [d, point];
@@ -214,7 +214,9 @@ export const animationTimer = (
 const followPath = (path: Array<Coord> | Path, percent: number) => {
     let points;
     if (!Array.isArray(path)) {
-        points = rasterSegPoints(pathToPoints(path.segments));
+        points = rasterSegPoints(
+            pathToPoints(path.segments, path.open ? path.origin : null),
+        );
         points = points.concat([points[0]]);
     } else {
         points = path;

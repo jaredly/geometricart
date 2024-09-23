@@ -25,13 +25,17 @@ export const pxToMM = (value: number, ppi: number) => {
 
 export const pathToPoints = (
     segments: Array<Segment>,
+    origin: null | Coord,
     accurateArcCorners = false,
     ppi?: number,
 ): RasterSeg[] => {
     let smallestArcLength = Infinity;
     segments.forEach((seg, i) => {
         if (seg.type === 'Arc') {
-            const prev = segments[i === 0 ? segments.length - 1 : i - 1].to;
+            const prev =
+                i === 0
+                    ? origin ?? segments[segments.length - 1].to
+                    : segments[i - 1].to;
             const t1 = angleTo(seg.center, prev);
             const t2 = angleTo(seg.center, seg.to);
             let bt = angleBetween(t1, t2, seg.clockwise);
@@ -47,7 +51,10 @@ export const pathToPoints = (
     let arcLengths: null | Array<number>;
     if (accurateArcCorners) {
         arcLengths = segments.map((seg, i) => {
-            const prev = segments[i === 0 ? segments.length - 1 : i - 1].to;
+            const prev =
+                i === 0
+                    ? origin ?? segments[segments.length - 1].to
+                    : segments[i - 1].to;
             if (seg.type === 'Arc') {
                 const t1 = angleTo(seg.center, prev);
                 const t2 = angleTo(seg.center, seg.to);
@@ -67,17 +74,25 @@ export const pathToPoints = (
     const segmentPoints: Array<RasterSeg> = [];
     // let prev = segments[segments.length - 1].to;
     segments.forEach((seg, i) => {
-        const pi = i === 0 ? segments.length - 1 : i - 1;
-        const prev = segments[pi].to;
+        const prev =
+            i === 0
+                ? origin ?? segments[segments.length - 1].to
+                : segments[i - 1].to;
         if (seg.type === 'Arc') {
             const t1 = angleTo(seg.center, prev);
             const t2 = angleTo(seg.center, seg.to);
             const r = dist(seg.center, prev);
 
             if (arcLengths) {
+                const prevAl =
+                    i === 0
+                        ? origin
+                            ? Infinity
+                            : arcLengths[segments.length - 1]
+                        : arcLengths[i - 1];
                 const smallest =
                     Math.min(
-                        arcLengths[pi],
+                        prevAl,
                         arcLengths[i],
                         // arcLengths[(i + 1) % segments.length],
                     ) / 4;
@@ -160,7 +175,7 @@ export function angleDifferences(angles: number[]) {
 }
 
 export const totalAngle = (segments: Array<Segment>) => {
-    const points = pathToPoints(segments, true);
+    const points = pathToPoints(segments, null, true);
     return totalAnglePoints(rasterSegPoints(points));
 };
 
@@ -175,7 +190,7 @@ export const totalAnglePoints = (points: Coord[]) => {
 };
 
 export const isMaybeClockwise = (segments: Array<Segment>) => {
-    const points = rasterSegPoints(pathToPoints(segments));
+    const points = rasterSegPoints(pathToPoints(segments, null));
     const angles = points.map((point, i) => {
         const prev = i === 0 ? points[points.length - 1] : points[i - 1];
         return angleTo(prev, point);
