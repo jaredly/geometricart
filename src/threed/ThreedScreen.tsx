@@ -35,6 +35,7 @@ import { sortedVisibleInsetPaths } from '../rendering/sortedVisibleInsetPaths';
 import Prando from 'prando';
 import { getSelectedIds, usePathsToShow } from '../editor/SVGCanvas';
 import {
+    ensureClockwise,
     isClockwise,
     pathToPoints,
     rasterSegPoints,
@@ -43,6 +44,7 @@ import { PK } from '../editor/pk';
 import { calcPathD } from '../editor/calcPathD';
 import { paletteColor } from '../editor/RenderPath';
 import { cmdsToSegments } from '../gcode/cmdsToSegments';
+import { segmentsBounds } from '../editor/Bounds';
 // PK
 
 const unique = (v: string[]) => {
@@ -83,7 +85,7 @@ export const ThreedScreen = ({
             const line = path.style.lines[0]!;
 
             const pkpath = PK.FromSVGString(calcPathD(path, 10));
-            pkpath.setFillType(PK.FillType.EVENODD);
+            // pkpath.setFillType(PK.FillType.EVENODD);
             pkpath.stroke({
                 width: line.width! / 10,
                 cap: PK.StrokeCap.BUTT,
@@ -91,39 +93,54 @@ export const ThreedScreen = ({
             });
             pkpath.simplify();
 
-            const clipped = cmdsToSegments(pkpath.toCmds(), PK);
+            const clipped = cmdsToSegments(pkpath.toCmds(), PK).map((r) => ({
+                ...r,
+                bounds: segmentsBounds(r.segments),
+            }));
+            clipped.sort(
+                (a, b) =>
+                    b.bounds.x1 - b.bounds.x0 - (a.bounds.x1 - a.bounds.x0),
+            );
 
-            const houts: typeof clipped = [];
-            const holes: typeof clipped = [];
-            pkpath.setFillType(PK.FillType.EVENODD);
-            console.log('got', pkpath.getFillTypeString());
-
-            clipped.forEach((region) => {
-                if (region.open) {
-                    console.error(
-                        `found an open region, which really shouldnt happen at this point`,
-                    );
-                    console.log(region);
-                    return;
+            const houter = clipped[0];
+            const holes = clipped.slice(1).map((r) => {
+                if (r.open) {
+                    console.log(r);
+                    throw new Error(`hole cannot be open`);
                 }
-
-                if (!isClockwise(region.segments)) {
-                    houts.push(region);
-                } else {
-                    holes.push(region);
-                }
+                r.segments = ensureClockwise(r.segments);
+                r.origin = r.segments[r.segments.length - 1].to;
+                return r;
             });
+            // pkpath.setFillType(PK.FillType.EVENODD);
+            // console.log('got', pkpath.getFillTypeString());
 
-            if (houts.length !== 1) {
-                console.error(
-                    `I only expect one outer thing, but got ${houts.length}`,
-                );
-                console.log(clipped, houts, holes);
-                return [];
-            }
+            // clipped.forEach((region) => {
+            //     if (region.open) {
+            //         console.error(
+            //             `found an open region, which really shouldnt happen at this point`,
+            //         );
+            //         console.log(region);
+            //         return;
+            //     }
+
+            //     if (!isClockwise(region.segments)) {
+            //         houts.push(region);
+            //     } else {
+            //         holes.push(region);
+            //     }
+            // });
+
+            // if (houts.length !== 1) {
+            //     console.error(
+            //         `I only expect one outer thing, but got ${houts.length}`,
+            //     );
+            //     console.log(clipped, houts, holes);
+            //     return [];
+            // }
 
             const outer = rasterSegPoints(
-                pathToPoints(houts[0].segments, houts[0].origin),
+                pathToPoints(houter.segments, houter.origin),
             );
             const inners = holes.map((region) =>
                 rasterSegPoints(pathToPoints(region.segments, region.origin)),
