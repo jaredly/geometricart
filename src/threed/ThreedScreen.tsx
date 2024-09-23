@@ -92,107 +92,207 @@ export const ThreedScreen = ({
 
             const clipped = cmdsToSegments(pkpath.toCmds(), PK);
 
+            const houts: typeof clipped = [];
+            const holes: typeof clipped = [];
+
             clipped.forEach((region) => {
-                console.log('region', isClockwise(region.segments));
+                if (region.open) {
+                    console.error(
+                        `found an open region, which really shouldnt happen at this point`,
+                    );
+                    console.log(region);
+                    return;
+                }
+
+                if (!isClockwise(region.segments)) {
+                    houts.push(region);
+                } else {
+                    holes.push(region);
+                }
             });
 
-            const paths = consumePath(PK, pkpath, path);
+            if (houts.length !== 1) {
+                console.error(
+                    `I only expect one outer thing, but got ${houts.length}`,
+                );
+                console.log(clipped, houts, holes);
+                return [];
+            }
+
+            const outer = rasterSegPoints(
+                pathToPoints(houts[0].segments, houts[0].origin),
+            );
+            const inners = holes.map((region) =>
+                rasterSegPoints(pathToPoints(region.segments, region.origin)),
+            );
+
+            // const paths = consumePath(PK, pkpath, path);
 
             const col = paletteColor(state.palette, line.color, line.lighten);
 
-            return paths.map((path, i) => {
-                const geometry = new BufferGeometry();
+            const geometry = new BufferGeometry();
 
-                const material = new MeshPhongMaterial({
-                    color: isSelected ? '#ffaaaa' : col,
-                    //0xff0000,
-                    // map: tex,
-                    flatShading: true,
-                });
-
-                const segs = pathToPoints(path.segments, path.origin);
-                const points = rasterSegPoints(segs);
-
-                console.log('one', path, points);
-
-                const flat = points.flatMap((pt) => [pt.x, pt.y]);
-
-                const flat3d = points.flatMap((pt) => [pt.x, pt.y, 0 + i * 2]);
-                flat3d.push(
-                    ...points.flatMap((pt) => [pt.x, pt.y, -1 + i * 2]),
-                );
-                const vertices = new Float32Array(flat3d);
-                // const tris = [];
-                const tris = earcut(flat);
-                tris.push(...tris.map((n) => n + points.length).reverse());
-                for (let i = 0; i < points.length - 1; i++) {
-                    tris.push(i + 1, i, i + points.length);
-                    tris.push(i + 1, i + points.length, i + points.length + 1);
-                }
-                tris.push(points.length - 1, points.length, 0);
-                tris.push(
-                    points.length,
-                    points.length - 1,
-                    points.length * 2 - 1,
-                );
-
-                geometry.setIndex(tris);
-                geometry.setAttribute(
-                    'position',
-                    new BufferAttribute(vertices, 3),
-                );
-
-                // const mesh = new Mesh(geometry, material);
-                // return { geometry, material, isSelected };
-                if (isSelected) {
-                    return (
-                        <React.Fragment key={`${n}-${i}`}>
-                            <mesh
-                                material={material}
-                                geometry={geometry}
-                                position={[0, 0, xoff]}
-                            ></mesh>
-                            <lineSegments
-                                position={[0, 0, xoff]}
-                                key={`${n}-${i}-sel`}
-                                geometry={new EdgesGeometry(geometry)}
-                                material={
-                                    new LineBasicMaterial({
-                                        color: 'red',
-                                    })
-                                }
-                            />
-                        </React.Fragment>
-                    );
-                }
-                // return (
-                //     <mesh
-                //         key={`${n}-${i}`}
-                //         material={material}
-                //         geometry={geometry}
-                //         position={[0, 0, xoff]}
-                //     ></mesh>
-                // );
-                return (
-                    <React.Fragment key={`${n}-${i}`}>
-                        <mesh
-                            material={material}
-                            geometry={geometry}
-                            position={[0, 0, xoff]}
-                        ></mesh>
-                        <lineSegments
-                            position={[0, 0, xoff]}
-                            key={`${n}-${i}-sel`}
-                            geometry={new EdgesGeometry(geometry)}
-                            material={
-                                new LineBasicMaterial({
-                                    color: '#555',
-                                })
-                            }
-                        />
-                    </React.Fragment>
-                );
+            const material = new MeshPhongMaterial({
+                color: isSelected ? '#ffaaaa' : col,
+                //0xff0000,
+                // map: tex,
+                flatShading: true,
             });
+
+            // const segs = pathToPoints(path.segments, path.origin);
+            // const points = rasterSegPoints(segs);
+
+            // console.log('one', path, points);
+
+            const flat = outer.flatMap((pt) => [pt.x, pt.y]);
+            const flat3d = outer.flatMap((pt) => [pt.x, pt.y, 0]);
+            const holeStarts: number[] = [];
+            let count = outer.length;
+            // console.log('outer', outer);
+
+            inners.forEach((pts) => {
+                // console.log('inner', pts);
+                holeStarts.push(count);
+                flat.push(...pts.flatMap((pt) => [pt.x, pt.y]));
+                flat3d.push(...pts.flatMap((pt) => [pt.x, pt.y, 0]));
+                count += pts.length;
+            });
+
+            flat3d.push(...outer.flatMap((pt) => [pt.x, pt.y, -1]));
+            inners.forEach((pts) => {
+                flat3d.push(...pts.flatMap((pt) => [pt.x, pt.y, -1]));
+            });
+            const vertices = new Float32Array(flat3d);
+            // const tris = [];
+            const tris = earcut(flat, holeStarts);
+
+            // Bottom:
+            tris.push(...tris.map((n) => n + count).reverse());
+
+            // Border:
+            for (let i = 0; i < outer.length - 1; i++) {
+                tris.push(i, i + 1, i + count);
+                tris.push(i + count, i + 1, i + count + 1);
+            }
+            tris.push(count, count - 1, 0);
+            tris.push(count - 1, count, count * 2 - 1);
+
+            geometry.setIndex(tris);
+            geometry.setAttribute('position', new BufferAttribute(vertices, 3));
+
+            return (
+                <React.Fragment key={`${n}`}>
+                    <mesh
+                        material={material}
+                        geometry={geometry}
+                        position={[0, 0, xoff]}
+                    ></mesh>
+                    <lineSegments
+                        position={[0, 0, xoff]}
+                        key={`${n}-sel`}
+                        geometry={new EdgesGeometry(geometry)}
+                        material={
+                            new LineBasicMaterial({
+                                color: isSelected ? 'red' : '#555',
+                            })
+                        }
+                    />
+                </React.Fragment>
+            );
+
+            // return paths.map((path, i) => {
+            //     const geometry = new BufferGeometry();
+
+            //     const material = new MeshPhongMaterial({
+            //         color: isSelected ? '#ffaaaa' : col,
+            //         //0xff0000,
+            //         // map: tex,
+            //         flatShading: true,
+            //     });
+
+            //     const segs = pathToPoints(path.segments, path.origin);
+            //     const points = rasterSegPoints(segs);
+
+            //     console.log('one', path, points);
+
+            //     const flat = points.flatMap((pt) => [pt.x, pt.y]);
+
+            //     const flat3d = points.flatMap((pt) => [pt.x, pt.y, 0 + i * 2]);
+            //     flat3d.push(
+            //         ...points.flatMap((pt) => [pt.x, pt.y, -1 + i * 2]),
+            //     );
+            //     const vertices = new Float32Array(flat3d);
+            //     // const tris = [];
+            //     const tris = earcut(flat);
+            //     tris.push(...tris.map((n) => n + points.length).reverse());
+            //     for (let i = 0; i < points.length - 1; i++) {
+            //         tris.push(i + 1, i, i + points.length);
+            //         tris.push(i + 1, i + points.length, i + points.length + 1);
+            //     }
+            //     tris.push(points.length - 1, points.length, 0);
+            //     tris.push(
+            //         points.length,
+            //         points.length - 1,
+            //         points.length * 2 - 1,
+            //     );
+
+            //     geometry.setIndex(tris);
+            //     geometry.setAttribute(
+            //         'position',
+            //         new BufferAttribute(vertices, 3),
+            //     );
+
+            //     // const mesh = new Mesh(geometry, material);
+            //     // return { geometry, material, isSelected };
+            //     if (isSelected) {
+            //         return (
+            //             <React.Fragment key={`${n}-${i}`}>
+            //                 <mesh
+            //                     material={material}
+            //                     geometry={geometry}
+            //                     position={[0, 0, xoff]}
+            //                 ></mesh>
+            //                 <lineSegments
+            //                     position={[0, 0, xoff]}
+            //                     key={`${n}-${i}-sel`}
+            //                     geometry={new EdgesGeometry(geometry)}
+            //                     material={
+            //                         new LineBasicMaterial({
+            //                             color: 'red',
+            //                         })
+            //                     }
+            //                 />
+            //             </React.Fragment>
+            //         );
+            //     }
+            //     // return (
+            //     //     <mesh
+            //     //         key={`${n}-${i}`}
+            //     //         material={material}
+            //     //         geometry={geometry}
+            //     //         position={[0, 0, xoff]}
+            //     //     ></mesh>
+            //     // );
+            //     return (
+            //         <React.Fragment key={`${n}-${i}`}>
+            //             <mesh
+            //                 material={material}
+            //                 geometry={geometry}
+            //                 position={[0, 0, xoff]}
+            //             ></mesh>
+            //             <lineSegments
+            //                 position={[0, 0, xoff]}
+            //                 key={`${n}-${i}-sel`}
+            //                 geometry={new EdgesGeometry(geometry)}
+            //                 material={
+            //                     new LineBasicMaterial({
+            //                         color: '#555',
+            //                     })
+            //                 }
+            //             />
+            //         </React.Fragment>
+            //     );
+            // });
         });
     }, [pathsToShow, tex]);
     const canv = React.useRef<HTMLCanvasElement>(null);
