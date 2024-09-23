@@ -13,9 +13,14 @@ import PathKitInit, { PathKit } from 'pathkit-wasm';
 import { calcPathD } from '../editor/calcPathD';
 import { segmentKey, segmentKeyReverse } from '../rendering/segmentKey';
 import { getClips } from '../rendering/pkInsetPaths';
+import { coordsEqual } from '../rendering/pathsAreIdentical';
 
+// NOTE: if the shape isn't closed, we pretty much bail.
 const findClosest = (shape: RasterSeg[], point: Coord) => {
     let best = null as null | [number, number];
+    if (!coordsEqual(shape[0].from, shape[shape.length - 1].to)) {
+        return { dist: dist(shape[0].from, point), idx: 0 };
+    }
     shape.forEach((seg, i) => {
         seg.points.forEach((p) => {
             const d = dist(p, point);
@@ -57,16 +62,22 @@ export const greedyPaths = (
         }
     });
 
-    console.log('path is points', pathPoints);
+    console.log('path is points', pathPoints.slice());
 
     const ordered: RasterSeg[][] = [];
     const first = pathPoints.shift()!;
-    first.push(first[0]);
+    // TODO: Why is this? Why are we adding on the first segment to the end?
+    // is it a "cleanup" kind of thing?
+    // because ... we always end up skipping it anyway...
+    // first.push(first[0]);
     ordered.push(first);
     while (pathPoints.length) {
         const last = ordered[ordered.length - 1];
+        // This is the most recent position
         let point = last[last.length - 1].to;
         let best = null as null | { dist: number; idx: number; subIdx: number };
+        // ohhhhhh ok, so... the thing is ....
+        // if a path is /open/, then we can't just jump into the middle of it.
         pathPoints.forEach((shape, i) => {
             const closest = findClosest(shape, point);
             if (best == null || closest.dist < best.dist) {
@@ -78,7 +89,8 @@ export const greedyPaths = (
         const reordeeed = next
             .slice(best!.subIdx)
             .concat(next.slice(0, best!.subIdx));
-        reordeeed.push(reordeeed[0]);
+        // TODO: I think this is useless, we will always skip it
+        // reordeeed.push(reordeeed[0]);
         ordered.push(reordeeed);
     }
 

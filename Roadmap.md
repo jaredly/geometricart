@@ -1,6 +1,10 @@
 
+
+
+
 # Why is GCode failing on open paths?
 
+- [x] ok figured it out. I needed to add an `origin` to `pathToPoints`
 
 # Lineification
 
