@@ -14,7 +14,7 @@ import { tilingPoints } from './tilingPoints';
 import { UIDispatch } from '../useUIState';
 import { emptyPath } from './RenderPath';
 import { tilingTransforms } from './tilingTransforms';
-import { calcSegmentsD } from './calcPathD';
+import { calcPathD, calcSegmentsD } from './calcPathD';
 import {
     handleTiling,
     simpleExport,
@@ -277,6 +277,10 @@ export function TilingSvg({
             style={{ background: 'black', width: size, height: size }}
             viewBox="-2.5 -2.5 5 5"
         >
+            {' '}
+            {shapes.map((shape, i) => (
+                <path key={i} d={calcPathD(shape, 1)} fill="green" />
+            ))}
             <path
                 d={`${bounds
                     .map(
@@ -287,6 +291,7 @@ export function TilingSvg({
                     )
                     .join(' ')}Z`}
                 fill="rgb(50,50,50)"
+                opacity={0.5}
                 stroke="none"
             />
             {lines.map(([p1, p2], i) => {

@@ -12,7 +12,7 @@ export const calcSegmentsD = (
     open: boolean | undefined,
     zoom: number,
 ): string => {
-    let d = `M ${origin.x * zoom} ${origin.y * zoom}`;
+    let d = `M ${(origin.x * zoom).toFixed(3)} ${(origin.y * zoom).toFixed(3)}`;
     if (segments.length === 1 && segments[0].type === 'Arc') {
         const arc = segments[0];
         const { center, to } = arc;

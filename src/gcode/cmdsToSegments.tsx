@@ -1,13 +1,10 @@
 import { angleTo, dist, push } from '../rendering/getMirrorTransforms';
-import { Coord, Segment } from '../types';
+import { BarePath, Coord, Segment } from '../types';
 import { PathKit } from 'pathkit-wasm';
 import { coordsEqual } from '../rendering/pathsAreIdentical';
 import { angleBetween } from '../rendering/findNextSegments';
 
-export const cmdsToSegments = (
-    cmds: number[][],
-    pk: PathKit,
-): { segments: Segment[]; origin: Coord; open: boolean }[] => {
+export const cmdsToSegments = (cmds: number[][], pk: PathKit): BarePath[] => {
     const points: { segments: Segment[]; origin: Coord; open: boolean }[] = [];
 
     for (let cmd of cmds) {

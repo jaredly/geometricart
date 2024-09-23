@@ -502,7 +502,8 @@ export function tracePath(
     // ctx.lineJoin = 'round';
     // ctx.lineCap = 'round';
     ctx.lineJoin = 'miter';
-    ctx.lineCap = 'round';
+    ctx.lineCap = 'butt';
+    // ctx.lineCap = 'round';
     if (
         path.segments.length === 1 &&
         path.segments[0].type === 'Arc' &&

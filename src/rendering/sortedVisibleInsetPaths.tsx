@@ -585,5 +585,4 @@ export function applyColorVariations(
     return path;
 }
 
-const NEW = true;
 export const sortedVisibleInsetPaths = pkSortedVisibleInsetPaths;
