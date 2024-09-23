@@ -35,7 +35,13 @@ export type PendingMirror = {
     reflect: boolean;
     parent: Id | null;
 };
-export type Screen = 'edit' | 'animate' | 'gcode' | 'history' | 'overlay';
+export type Screen =
+    | 'edit'
+    | 'animate'
+    | 'gcode'
+    | 'history'
+    | 'overlay'
+    | '3d';
 
 type UIAction =
     | { type: 'screen'; screen: UIState['screen'] }

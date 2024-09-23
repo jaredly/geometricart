@@ -252,6 +252,7 @@ export const Editor = ({ one, two }: { one: Tiling; two: Tiling }) => {
                         >
                             {TilingSvg({
                                 bounds: onez.bounds,
+                                shapes: [], // TODO what
                                 lines: eigenShapesToLines(
                                     frame,
                                     one.shape,
@@ -403,6 +404,7 @@ export const Morph = () => {
                         {/* {t.cache.hash} */}
                         {TilingSvg({
                             bounds,
+                            shapes: [], // TODO what
                             lines: eigenShapesToLines(
                                 lines,
                                 t.shape,

@@ -1,5 +1,23 @@
 
 
+Let'ssssss turn our whatsits into 3d meshesssss
+yeah.
+https://github.com/mapbox/earcut
+earcut is the jam I believe.
+
+SO:
+- the main thing I want to be able to do is this:
+  - turn /each group/ into a ... 3d mesh, ish,
+    with like a specific height
+    and stack each on top of each other.
+    right?
+    strokes just get stroked
+    fills get filled, as you might imagine.
+    for now I can ignore holes.
+
+ALTERNATIVELY I could make a separate tool to turn any SVG
+into an STL
+which would certainly be something folks want.
 
 
 # Why is GCode failing on open paths?

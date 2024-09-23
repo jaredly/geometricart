@@ -16,6 +16,7 @@ import { Export } from '../editor/Export';
 import { Tilings } from '../editor/Tilings';
 import { Screen, UIDispatch, UIState } from '../useUIState';
 import {
+    CubeIcon,
     DrillIcon,
     IconButton,
     IconHistoryToggle,
@@ -122,24 +123,26 @@ export const NewSidebar = ({
                 {[
                     { name: 'edit', icon: PencilIcon },
                     { name: 'animate', icon: MagicWandIcon },
+                    { name: '3d', icon: CubeIcon },
                     { name: 'gcode', icon: DrillIcon },
                     { name: 'history', icon: IconHistoryToggle },
                     { name: 'overlay', icon: IconVerticalAlignMiddle },
                 ].map((Config, i) => (
                     <Button
                         key={i}
+                        tooltip={Config.name}
                         className={
                             uiState.screen === Config.name
                                 ? ''
                                 : 'p-button-text'
                         }
                         onClick={() =>
+                            uiState.screen !== Config.name &&
                             uiDispatch({
                                 type: 'screen',
                                 screen: Config.name as Screen,
                             })
                         }
-                        disabled={uiState.screen === Config.name}
                     >
                         <Config.icon />
                     </Button>
