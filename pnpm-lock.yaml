@@ -18,6 +18,7 @@ specifiers:
   '@testing-library/jest-dom': '*'
   '@testing-library/react': 13.4.0
   '@testing-library/user-event': '*'
+  '@types/earcut': ^2.1.4
   '@types/react': ^18
   '@types/react-color': ^3.0.6
   '@types/react-dom': ^18
@@ -131,6 +132,7 @@ devDependencies:
   '@testing-library/jest-dom': 5.16.5
   '@testing-library/react': 13.4.0_biqbaboplfbrettd7655fr4n2y
   '@testing-library/user-event': 13.5.0_aaq3sbffpfe3jnxzm2zngsddei
+  '@types/earcut': 2.1.4
   '@types/react': 18.0.21
   '@types/react-color': 3.0.6
   '@types/react-dom': 18.0.6
@@ -2174,6 +2176,10 @@ packages:
     resolution: {integrity: sha512-9AonUzyTjXXhEOa0DnqpzZi6VHlqKMswga9EXjpXnnqxwLtdvPPtlO8evrI5D9S6asFRCQ6v+wpiUKbw+vKqyg==}
     dependencies:
       '@types/ms': 0.7.31
+
+  /@types/earcut/2.1.4:
+    resolution: {integrity: sha512-qp3m9PPz4gULB9MhjGID7wpo3gJ4bTGXm7ltNDsmOvsPduTeHp8wSW9YckBj3mljeOh4F0m2z/0JKAALRKbmLQ==}
+    dev: true
 
   /@types/estree-jsx/1.0.0:
     resolution: {integrity: sha512-3qvGd0z8F2ENTGr/GG1yViqfiKmRfrXVx5sJyHGFu3z7m5g5utCQtGp/g29JnjflhtQJBv1WDQukHiT58xPcYQ==}

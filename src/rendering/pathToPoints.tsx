@@ -157,7 +157,7 @@ export const pathToPoints = (
     if (!segmentPoints.length) {
         console.warn('wat', segments);
     }
-    console.log(`pathToPoints`, segments, origin, segmentPoints);
+    // console.log(`pathToPoints`, segments, origin, segmentPoints);
     return segmentPoints;
 };
 
