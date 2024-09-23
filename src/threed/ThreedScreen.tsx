@@ -83,6 +83,7 @@ export const ThreedScreen = ({
             const line = path.style.lines[0]!;
 
             const pkpath = PK.FromSVGString(calcPathD(path, 10));
+            pkpath.setFillType(PK.FillType.EVENODD);
             pkpath.stroke({
                 width: line.width! / 10,
                 cap: PK.StrokeCap.BUTT,
@@ -94,6 +95,8 @@ export const ThreedScreen = ({
 
             const houts: typeof clipped = [];
             const holes: typeof clipped = [];
+            pkpath.setFillType(PK.FillType.EVENODD);
+            console.log('got', pkpath.getFillTypeString());
 
             clipped.forEach((region) => {
                 if (region.open) {
@@ -169,13 +172,32 @@ export const ThreedScreen = ({
             // Bottom:
             tris.push(...tris.map((n) => n + count).reverse());
 
-            // Border:
+            // Border (outside):
             for (let i = 0; i < outer.length - 1; i++) {
                 tris.push(i, i + 1, i + count);
                 tris.push(i + count, i + 1, i + count + 1);
             }
-            tris.push(count, count - 1, 0);
-            tris.push(count - 1, count, count * 2 - 1);
+            tris.push(count, outer.length - 1, 0);
+            tris.push(outer.length - 1, count, count + outer.length - 1);
+
+            // let start = outer.length;
+            inners.forEach((pts, n) => {
+                let start = holeStarts[n];
+                for (let i = start; i < start + pts.length - 1; i++) {
+                    tris.push(i, i + 1, i + count);
+                    tris.push(i + count, i + 1, i + count + 1);
+                }
+                tris.push(count + start, start + pts.length - 1, start);
+                tris.push(
+                    start + pts.length - 1,
+                    start + count,
+                    start + count + pts.length - 1,
+                );
+                // tris.push(count, outer.length - 1, 0);
+                // tris.push(outer.length - 1, count, count + outer.length - 1);
+
+                // start += pts.length;
+            });
 
             geometry.setIndex(tris);
             geometry.setAttribute('position', new BufferAttribute(vertices, 3));
