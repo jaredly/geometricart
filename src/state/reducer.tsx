@@ -955,6 +955,18 @@ export const reduceWithoutUndo = (
                 { ...state, historyView: action.view },
                 { type: action.type, action, prev: state.historyView },
             ];
+        case 'groups:order': {
+            const pathGroups = { ...state.pathGroups };
+            const prev: Record<string, number | undefined> = {};
+            Object.entries(action.order).forEach(([key, ordering]) => {
+                prev[key] = pathGroups[key].ordering;
+                pathGroups[key] = { ...pathGroups[key], ordering };
+            });
+            return [
+                { ...state, pathGroups },
+                { type: action.type, action, prev },
+            ];
+        }
         default:
             let _x: never = action;
             console.log(`SKIPPING ${(action as any).type}`);
@@ -964,6 +976,12 @@ export const reduceWithoutUndo = (
 
 export const undo = (state: State, action: UndoAction): State => {
     switch (action.type) {
+        case 'groups:order':
+            const pathGroups = { ...state.pathGroups };
+            Object.entries(action.prev).forEach(([key, ordering]) => {
+                pathGroups[key] = { ...pathGroups[key], ordering };
+            });
+            return { ...state, pathGroups };
         case 'history-view:update':
             return { ...state, historyView: action.prev };
         case 'tiling:update':

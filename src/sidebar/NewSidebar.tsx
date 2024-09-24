@@ -57,6 +57,7 @@ import { ensureClockwise } from '../rendering/pathToPoints';
 import PathKitInit, { PathKit, Path as PKPath } from 'pathkit-wasm';
 import { cmdsToSegments } from '../gcode/cmdsToSegments';
 import { coordsEqual } from '../rendering/pathsAreIdentical';
+import { groupSort } from '../threed/ThreedScreen';
 
 declare module 'csstype' {
     interface Properties {
@@ -712,6 +713,7 @@ function ShapeItems({
         <>
             {Object.entries(state.pathGroups)
                 .filter((k) => groups[k[0]])
+                .sort(([_, a], [__, b]) => groupSort(a, b))
                 .map(([k, group]) => (
                     <PathGroupItem
                         key={k}
