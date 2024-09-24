@@ -1,4 +1,7 @@
 
+- [x] want a way to specify thickness I believe
+- [ ] would be nice to ... be able to script a path for the camera? yeah so I can make a screen recording.
+
 
 Let'ssssss turn our whatsits into 3d meshesssss
 yeah.
