@@ -1,46 +1,30 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Bounds, findBoundingRect } from '../editor/Export';
-import { BlurInt, Text } from '../editor/Forms';
-import { canvasRender } from '../rendering/CanvasRender';
+import { BlurInt } from '../editor/Forms';
 import { Action } from '../state/Action';
-import { Fill, Path, PathGroup, State, StyleLine } from '../types';
-import PathKitInit, { PathKit } from 'pathkit-wasm';
+import { Fill, PathGroup, State, StyleLine } from '../types';
 // import { Canvas } from '../editor/Canvas';
-import { IconDelete } from '../icons/Icon';
 import earcut from 'earcut';
 // import THREE from 'three';
+import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 import '@react-three/fiber';
-import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber';
-import {
-    OrbitControls,
-    PerspectiveCamera,
-    PointMaterial,
-} from '@react-three/drei';
+import { Canvas } from '@react-three/fiber';
 import {
     BufferAttribute,
     BufferGeometry,
-    Camera,
-    CanvasTexture,
     DirectionalLight,
-    DoubleSide,
     EdgesGeometry,
-    LinearFilter,
     LineBasicMaterial,
-    Mesh,
-    MeshBasicMaterial,
     MeshPhongMaterial,
     MeshStandardMaterial,
     PointsMaterial,
-    RepeatWrapping,
-    ShaderMaterial,
-    Texture,
-    TextureLoader,
-    Vector3,
+    PerspectiveCamera as TPC,
 } from 'three';
-import { consumePath, getClips, PKInsetCache } from '../rendering/pkInsetPaths';
-import { sortedVisibleInsetPaths } from '../rendering/sortedVisibleInsetPaths';
-import Prando from 'prando';
-import { getSelectedIds, usePathsToShow } from '../editor/SVGCanvas';
+import { segmentsBounds } from '../editor/Bounds';
+import { calcPathD } from '../editor/calcPathD';
+import { PK } from '../editor/pk';
+import { paletteColor } from '../editor/RenderPath';
+import { usePathsToShow } from '../editor/SVGCanvas';
+import { cmdsToSegments } from '../gcode/cmdsToSegments';
 import {
     ensureClockwise,
     isClockwise,
@@ -48,12 +32,10 @@ import {
     rasterSegPoints,
     reversePath,
 } from '../rendering/pathToPoints';
-import { PK } from '../editor/pk';
-import { calcPathD } from '../editor/calcPathD';
-import { paletteColor } from '../editor/RenderPath';
-import { cmdsToSegments } from '../gcode/cmdsToSegments';
-import { segmentsBounds } from '../editor/Bounds';
-// PK
+import { useLocalStorage } from '../vest/App';
+// @ts-ignore
+import { serialize } from './serialize';
+import * as fflate from 'fflate';
 
 export const unique = (v: string[]) => {
     const seen: Record<string, true> = {};
@@ -74,7 +56,8 @@ export const ThreedScreen = ({
     dispatch: React.Dispatch<Action>;
 }) => {
     let { pathsToShow, selectedIds, clip, rand } = usePathsToShow(state);
-    const [thick, setThick] = useState(3);
+    const [thick, setThick] = useLocalStorage('thick', 3);
+    const [toBack, setToBack] = useState(false as null | boolean);
 
     const latestState = useLatest(state);
 
@@ -139,13 +122,19 @@ export const ThreedScreen = ({
         };
     }, [state.selection]);
 
-    const items = useMemo(() => {
+    const { items, stls } = useMemo(() => {
         console.log('Doing a calc');
+
+        const stls: {
+            cells: [number, number, number][];
+            positions: [number, number, number][];
+        }[] = [];
 
         // TODO: group paths by ... group id.
         const gids = unique(pathsToShow.map((p) => p.group || ''));
-        return pathsToShow.flatMap((path, n) => {
-            const xoff = gids.indexOf(path.group || '') * thick;
+        const items = pathsToShow.flatMap((path, n) => {
+            const gat = gids.indexOf(path.group || '');
+            const xoff = gat * thick;
 
             const isSelected = selectedIds[path.id];
 
@@ -203,8 +192,6 @@ export const ThreedScreen = ({
                 rasterSegPoints(pathToPoints(region.segments, region.origin)),
             );
 
-            // const paths = consumePath(PK, pkpath, path);
-
             const col =
                 style.type === 'line'
                     ? paletteColor(
@@ -222,36 +209,31 @@ export const ThreedScreen = ({
 
             const material = new MeshPhongMaterial({
                 color: col, // isSelected ? '#ffaaaa' : col,
-                //0xff0000,
-                // map: tex,
                 flatShading: true,
             });
-
-            // const segs = pathToPoints(path.segments, path.origin);
-            // const points = rasterSegPoints(segs);
-
-            // console.log('one', path, points);
 
             const flat = outer.flatMap((pt) => [pt.x, pt.y]);
             const flat3d = outer.flatMap((pt) => [pt.x, pt.y, 0]);
             const holeStarts: number[] = [];
             let count = outer.length;
-            // console.log('outer', outer);
 
             inners.forEach((pts) => {
-                // console.log('inner', pts);
                 holeStarts.push(count);
                 flat.push(...pts.flatMap((pt) => [pt.x, pt.y]));
                 flat3d.push(...pts.flatMap((pt) => [pt.x, pt.y, 0]));
                 count += pts.length;
             });
 
-            flat3d.push(...outer.flatMap((pt) => [pt.x, pt.y, -thick]));
+            const thickness =
+                toBack === true || (toBack === false && gat === gids.length - 1)
+                    ? xoff + thick
+                    : thick;
+
+            flat3d.push(...outer.flatMap((pt) => [pt.x, pt.y, -thickness]));
             inners.forEach((pts) => {
-                flat3d.push(...pts.flatMap((pt) => [pt.x, pt.y, -thick]));
+                flat3d.push(...pts.flatMap((pt) => [pt.x, pt.y, -thickness]));
             });
             const vertices = new Float32Array(flat3d);
-            // const tris = [];
             const tris = earcut(flat, holeStarts);
 
             // Bottom:
@@ -265,7 +247,6 @@ export const ThreedScreen = ({
             tris.push(count, outer.length - 1, 0);
             tris.push(outer.length - 1, count, count + outer.length - 1);
 
-            // let start = outer.length;
             inners.forEach((pts, n) => {
                 let start = holeStarts[n];
                 for (let i = start; i < start + pts.length - 1; i++) {
@@ -278,15 +259,21 @@ export const ThreedScreen = ({
                     start + count,
                     start + count + pts.length - 1,
                 );
-                // tris.push(count, outer.length - 1, 0);
-                // tris.push(outer.length - 1, count, count + outer.length - 1);
-
-                // start += pts.length;
             });
 
             geometry.setIndex(tris);
             geometry.setAttribute('position', new BufferAttribute(vertices, 3));
             geometry.computeVertexNormals();
+
+            const cells: [number, number, number][] = [];
+            for (let i = 0; i < tris.length; i += 3) {
+                cells.push([tris[i], tris[i + 1], tris[i + 2]]);
+            }
+            const positions: [number, number, number][] = [];
+            for (let i = 0; i < flat3d.length; i += 3) {
+                positions.push([flat3d[i], flat3d[i + 1], flat3d[i + 2]]);
+            }
+            stls.push({ cells, positions });
 
             return (
                 <React.Fragment key={`${n}`}>
@@ -353,25 +340,27 @@ export const ThreedScreen = ({
                 </React.Fragment>
             );
         });
-    }, [pathsToShow, thick]);
+
+        return { items, stls };
+    }, [pathsToShow, thick, toBack]);
+
     const canv = React.useRef<HTMLCanvasElement>(null);
-    const virtualCamera = React.useRef<Camera>();
+    const virtualCamera = React.useRef<TPC>();
 
     const dl = useRef<DirectionalLight>(null);
+    const [move, setMove] = useState(false);
 
     const [[x, y], setCpos] = useState<[number, number]>([0, 0]);
-    // useEffect(() => {
-    //     let r = 0;
-    //     const iv = setInterval(() => {
-    //         r += Math.PI / 30;
-    //         const rad = 30;
-    //         setCpos([Math.cos(r) * rad, Math.sin(r) * rad]);
-    //         virtualCamera.current?.lookAt(new Vector3(x, y, 0));
-    //         virtualCamera.current!.matrixWorldNeedsUpdate = true;
-    //         // setLpos([Math.cos(r) * 5, Math.sin(r) * 5, 10]);
-    //     }, 100);
-    //     return () => clearInterval(iv);
-    // }, []);
+    useEffect(() => {
+        if (!move) return;
+        let r = 0;
+        const iv = setInterval(() => {
+            const rad = 10;
+            setCpos([Math.sin(r) * rad, Math.sin(r) * rad]);
+            r += Math.PI / 30;
+        }, 50);
+        return () => clearInterval(iv);
+    }, [move]);
 
     // const [lpos, setLpos] = useState<[number, number, number]>([3, 0, 10]);
     const lpos = [3, 0, 10] as const;
@@ -392,6 +381,27 @@ export const ThreedScreen = ({
     //     }, 100)
     //     return () => clearInterval(iv)
     // }, [])
+
+    const tmax = 100;
+    const tmin = 0;
+    const [twiddle, setTwiddle] = useState(tmin);
+
+    const perc = twiddle / tmax;
+
+    // useEffect(() => {
+    //     // virtualCamera.current?.updateMatrix();
+    //     // virtualCamera.current?.updateMatrixWorld();
+    //     virtualCamera.current?.updateProjectionMatrix();
+    // }, [twiddle]);
+
+    // 200 - 30
+    // 1000 - 2
+    // const cdist = 200 + 800 * perc;
+    // const fov = 30 - 28 * perc;
+    const cdist = 1000;
+    const fov = 2;
+    // const cdist = 70;
+    // const fov = 40;
 
     return (
         <div>
@@ -427,14 +437,79 @@ export const ThreedScreen = ({
                     <PerspectiveCamera
                         makeDefault
                         ref={virtualCamera}
-                        position={[x, y, 200]}
-                        args={[30, 1, 1, 1000]}
+                        position={[x, y, cdist]}
+                        args={[fov, 1, 1, 2000]}
                     />
                     <OrbitControls camera={virtualCamera.current} />
                     {items.map((item) => item)}
                 </Canvas>
             </div>
             <BlurInt value={thick} onChange={(t) => (t ? setThick(t) : null)} />
+            <label>
+                To Back
+                <button
+                    disabled={toBack === true}
+                    onClick={() => setToBack(true)}
+                >
+                    All
+                </button>
+                <button
+                    disabled={toBack === false}
+                    onClick={() => setToBack(false)}
+                >
+                    Top
+                </button>
+                <button
+                    disabled={toBack === null}
+                    onClick={() => setToBack(null)}
+                >
+                    None
+                </button>
+            </label>
+            <input
+                value={twiddle}
+                onChange={(evt) => setTwiddle(+evt.target.value)}
+                type="range"
+                min={tmin}
+                max={tmax}
+            />
+            {twiddle}
+            <button
+                onClick={() => {
+                    setMove(!move);
+                    setCpos([0, 0]);
+                }}
+            >
+                {move ? 'Stop moving' : 'Move'}
+            </button>
+            <button
+                onClick={() => {
+                    const node = document.createElement('a');
+                    node.download = `group-${Date.now()}.zip`;
+                    const map: Record<string, Uint8Array> = {};
+
+                    stls.forEach(
+                        ({ cells, positions }, i) =>
+                            (map[`item_${i}.stl`] = fflate.strToU8(
+                                serialize(
+                                    cells,
+                                    positions,
+                                    undefined,
+                                    'item_' + i,
+                                ),
+                            )),
+                    );
+
+                    const res = fflate.zipSync(map);
+
+                    node.href = URL.createObjectURL(
+                        new Blob([res], { type: 'text/plain' }),
+                    );
+                    node.click();
+                }}
+            >
+                Download I guess
+            </button>
         </div>
     );
 };
