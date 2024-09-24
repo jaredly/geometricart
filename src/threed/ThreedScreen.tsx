@@ -17,6 +17,7 @@ import {
     BufferGeometry,
     Camera,
     CanvasTexture,
+    DirectionalLight,
     DoubleSide,
     EdgesGeometry,
     LinearFilter,
@@ -63,15 +64,63 @@ export const ThreedScreen = ({
     let { pathsToShow, selectedIds, clip, rand } = usePathsToShow(state);
     const [thick, setThick] = useState(3);
     // const wood = useLoader(TextureLoader, 'wood.jpg');
-    const [tex, setTex] = useState(null as null | Texture);
-    useEffect(() => {
-        new TextureLoader().load('wood.jpg', (texture) => {
-            setTex(texture);
+    // const [tex, setTex] = useState(null as null | Texture);
+    // useEffect(() => {
+    //     new TextureLoader().load('wood.jpg', (texture) => {
+    //         setTex(texture);
+    //     });
+    // }, []);
+
+    const back = useMemo(() => {
+        const geometry = new BufferGeometry();
+
+        const material = new MeshStandardMaterial({
+            color: '#eeeeee',
+            // flatShading: true,
         });
+
+        const vertices = new Float32Array(
+            [
+                -1, -1, 0,
+                //
+                -1, 1, 0,
+                //
+                1, 1, 0,
+                //
+                1, -1, 0,
+                //
+                -1, -1, -0.1,
+                //
+                -1, 1, -0.1,
+                //
+                1, 1, -0.1,
+                //
+                1, -1, -0.1,
+            ].map((n) => n * 60),
+        );
+
+        geometry.setIndex([
+            // 1, 2, 3,
+            2, 1, 3,
+            // 0, 1, 3,
+            0, 3, 1, 5, 6, 7, 4, 5, 7,
+        ]);
+        geometry.setAttribute('position', new BufferAttribute(vertices, 3));
+        geometry.computeVertexNormals();
+
+        return (
+            <mesh
+                material={material}
+                geometry={geometry}
+                position={[0, 0, -30]}
+                // castShadow
+                receiveShadow
+            ></mesh>
+        );
     }, []);
 
     const items = useMemo(() => {
-        if (!tex) return [];
+        // if (!tex) return [];
         // ok
 
         console.log('Doing a calc');
@@ -132,7 +181,7 @@ export const ThreedScreen = ({
                 color: isSelected ? '#ffaaaa' : col,
                 //0xff0000,
                 // map: tex,
-                flatShading: true,
+                // flatShading: true,
             });
 
             // const segs = pathToPoints(path.segments, path.origin);
@@ -195,14 +244,19 @@ export const ThreedScreen = ({
             geometry.setIndex(tris);
             geometry.setAttribute('position', new BufferAttribute(vertices, 3));
 
+            // geometry.normalizeNormals();
+            geometry.computeVertexNormals();
+
             return (
                 <React.Fragment key={`${n}`}>
                     <mesh
                         material={material}
                         geometry={geometry}
                         position={[0, 0, xoff]}
+                        castShadow
+                        receiveShadow
                     ></mesh>
-                    <lineSegments
+                    {/* <lineSegments
                         position={[0, 0, xoff]}
                         key={`${n}-sel`}
                         geometry={new EdgesGeometry(geometry)}
@@ -211,13 +265,33 @@ export const ThreedScreen = ({
                                 color: isSelected ? 'red' : '#555',
                             })
                         }
-                    />
+                    /> */}
                 </React.Fragment>
             );
         });
-    }, [pathsToShow, tex, thick]);
+    }, [pathsToShow, thick]);
     const canv = React.useRef<HTMLCanvasElement>(null);
     const virtualCamera = React.useRef<Camera>();
+
+    const dl = useRef<DirectionalLight>(null);
+
+    const [lpos, setLpos] = useState<[number, number, number]>([3, 0, 10]);
+    // useEffect(() => {
+    //     let r = 0;
+    //     const iv = setInterval(() => {
+    //         r += Math.PI / 10;
+    //         setLpos([Math.cos(r) * 5, Math.sin(r) * 5, 10]);
+    //     }, 100);
+    //     return () => clearInterval(iv);
+    // }, []);
+
+    // useEffect(() => {
+    //     const iv = setInterval(() => {
+    //         if (!dl.current) return
+    //         // dl.current.update
+    //     }, 100)
+    //     return () => clearInterval(iv)
+    // }, [])
 
     return (
         <div>
@@ -230,14 +304,20 @@ export const ThreedScreen = ({
             >
                 <Canvas
                     ref={canv}
+                    shadows
                     style={{ backgroundColor: 'white' }}
                     gl={{ physicallyCorrectLights: true, antialias: true }}
                 >
                     {/* <webglrenderer */}
                     <ambientLight />
                     {/* <pointLight position={[10, 10, 10]} /> */}
+                    {back}
                     <directionalLight
-                        position={[2, 0, 10]}
+                        position={lpos}
+                        castShadow
+                        ref={dl}
+                        shadow-mapSize={[1024, 1024]}
+                        // target={[0, 0, 0]}
                         // shadow={}
                     />
                     <PerspectiveCamera
