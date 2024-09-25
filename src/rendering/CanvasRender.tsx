@@ -40,7 +40,13 @@ export const makeImage = (href: string): Promise<HTMLImageElement> => {
         img.onload = () => {
             res(img);
         };
-        img.onerror = () => rej(new Error(`Failed to load image`));
+        img.onerror = () => {
+            // rej(new Error(`Failed to load image`));
+            console.error(`Failed to load image`);
+            img.src =
+                'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAAXNSR0IArs4c6QAAABhJREFUKFNj/M/A8J+BCMA4qhBfKFE/eABl/BP31VUGzAAAAABJRU5ErkJggg==';
+            res(img);
+        };
     });
 };
 

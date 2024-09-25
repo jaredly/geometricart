@@ -1,48 +1,25 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { BlurInt } from '../editor/Forms';
 import { Action } from '../state/Action';
-import { Fill, Path, PathGroup, State, StyleLine } from '../types';
-// import { Canvas } from '../editor/Canvas';
-import earcut from 'earcut';
-// import THREE from 'three';
-import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
+import { PathGroup, State } from '../types';
+import { OrbitControls, PerspectiveCamera, useHelper } from '@react-three/drei';
 import '@react-three/fiber';
 import { Canvas } from '@react-three/fiber';
 import {
     BufferAttribute,
     BufferGeometry,
+    CameraHelper,
     DirectionalLight,
-    EdgesGeometry,
-    LineBasicMaterial,
-    MeshPhongMaterial,
     MeshStandardMaterial,
-    PointsMaterial,
     PerspectiveCamera as TPC,
 } from 'three';
-import { segmentsBounds } from '../editor/Bounds';
-import { calcPathD } from '../editor/calcPathD';
-import { PK } from '../editor/pk';
-import { paletteColor } from '../editor/RenderPath';
 import { usePathsToShow } from '../editor/SVGCanvas';
-import { cmdsToSegments } from '../gcode/cmdsToSegments';
-import {
-    ensureClockwise,
-    isClockwise,
-    pathToPoints,
-    rasterSegPoints,
-    reversePath,
-} from '../rendering/pathToPoints';
 import { useLocalStorage } from '../vest/App';
 // @ts-ignore
-import { serialize } from './serialize';
-// @ts-ignore
 import { serializeObj } from './serialize-obj';
-import * as fflate from 'fflate';
-
-export const unique = (v: string[]) => {
-    const seen: Record<string, true> = {};
-    return v.filter((v) => (!seen[v] ? (seen[v] = true) : false));
-};
+import { calcShapes } from './calcShapes';
+import { addMetadata } from '../editor/ExportPng';
+import { initialHistory } from '../state/initialState';
 
 export const useLatest = <T,>(value: T) => {
     const ref = useRef(value);
@@ -59,6 +36,7 @@ export const ThreedScreen = ({
 }) => {
     let { pathsToShow, selectedIds, clip, rand } = usePathsToShow(state);
     const [thick, setThick] = useLocalStorage('thick', 3);
+    const [gap, setGap] = useLocalStorage('gap', 2);
     const [toBack, setToBack] = useState(false as null | boolean);
 
     const latestState = useLatest(state);
@@ -77,31 +55,20 @@ export const ThreedScreen = ({
         return calcShapes(
             pathsToShow,
             thick,
+            gap,
             selectedIds,
             latestState.current,
             toBack,
             dispatch,
         );
-    }, [pathsToShow, thick, selectedIds]);
+    }, [pathsToShow, thick, selectedIds, toBack, gap]);
 
     const canv = React.useRef<HTMLCanvasElement>(null);
     const virtualCamera = React.useRef<TPC>();
+    const sc = React.useRef<TPC>();
 
     const dl = useRef<DirectionalLight>(null);
     const [move, setMove] = useState(false);
-
-    useEffect(() => {
-        if (!dl.current) return;
-        dl.current!.shadow.camera.top = -1;
-        dl.current!.shadow.camera.bottom = 1;
-        dl.current!.shadow.camera.left = -1;
-        dl.current!.shadow.camera.right = 1;
-        // dl.current!.shadow.camera.matrixWorldNeedsUpdate = true;
-        dl.current!.shadow.camera.updateProjectionMatrix();
-        // dl.current!.shadow.mapSize.width = 1024;
-        // dl.current!.shadow.mapSize.height = 1024;
-        // dl.current!.shadow.needsUpdate = true;
-    }, [dl.current]);
 
     const [[x, y], setCpos] = useState<[number, number]>([0, 0]);
 
@@ -116,14 +83,14 @@ export const ThreedScreen = ({
     //     return () => clearInterval(iv);
     // }, [move]);
 
-    // const [lpos, setLpos] = useState<[number, number, number]>([3, 0, 10]);
-    const lpos = [3, 0, 10] as const;
+    const [lpos, setLpos] = useState<[number, number, number]>([3, 0, 100]);
+    // const lpos = [0, 0, 10] as const;
     // useEffect(() => {
     //     let r = 0;
     //     const iv = setInterval(() => {
-    //         r += Math.PI / 10;
-    //         setLpos([Math.cos(r) * 2, 0, 10]);
-    //         // setLpos([Math.cos(r) * 5, Math.sin(r) * 5, 10]);
+    //         r += Math.PI / 40;
+    //         // setLpos([Math.cos(r) * 2, 0, 10]);
+    //         setLpos([Math.cos(r) * 5, Math.sin(r) * 5, 10]);
     //     }, 100);
     //     return () => clearInterval(iv);
     // }, []);
@@ -156,6 +123,7 @@ export const ThreedScreen = ({
     // const fov = 2;
     const cdist = 70;
     const fov = 40;
+    const [exurl, setExport] = useState(null as null | string);
 
     return (
         <div>
@@ -168,28 +136,25 @@ export const ThreedScreen = ({
             >
                 <Canvas
                     ref={canv}
-                    // shadows
+                    shadows
                     style={{ backgroundColor: 'white' }}
-                    // gl={{ physicallyCorrectLights: true, antialias: true }}
-                    // onClick={(evt) => {
-                    //     if (state.selection) {
-                    //         dispatch({
-                    //             type: 'selection:set',
-                    //             selection: null,
-                    //         });
-                    //     }
-                    // }}
+                    gl={{ antialias: true, preserveDrawingBuffer: true }}
                 >
-                    {/* <ambientLight /> */}
-                    {/* {back} */}
                     <directionalLight
-                        // shadowc
                         position={lpos}
                         ref={dl}
-                        shadow-mapSize={[1024, 1024]}
+                        shadow-mapSize={[2048, 2048]}
                         castShadow
-                    />
-                    {/* <pointLight position={lpos} /> */}
+                    >
+                        <orthographicCamera
+                            zoom={0.01}
+                            attach="shadow-camera"
+                        ></orthographicCamera>
+                    </directionalLight>
+                    {/* {sc.current ? <cameraHelper camera={sc.current} /> : null} */}
+                    <ambientLight intensity={0.3} />
+                    <CH camera={sc} />
+
                     <PerspectiveCamera
                         makeDefault
                         ref={virtualCamera}
@@ -197,107 +162,145 @@ export const ThreedScreen = ({
                         args={[fov, 1, 1, 2000]}
                     />
                     <OrbitControls camera={virtualCamera.current} />
-                    {/* {items.map((item) => item)} */}
-                    {items.map(({ material, geometry, xoff, path }, i) => (
-                        <mesh
-                            key={i}
-                            material={material}
-                            geometry={geometry}
-                            position={[0, 0, xoff]}
-                            castShadow
-                            receiveShadow
-                            onClick={(evt) => {
-                                evt.stopPropagation();
-                                clickItem(selectedIds, path, state, dispatch);
-                            }}
-                        ></mesh>
-                    ))}
+                    {items}
                 </Canvas>
             </div>
-            <BlurInt value={thick} onChange={(t) => (t ? setThick(t) : null)} />
-            <label>
-                To Back
+            <div>
+                <label>
+                    Thickness
+                    <BlurInt
+                        value={thick}
+                        onChange={(t) => (t != null ? setThick(t) : null)}
+                    />
+                </label>
+                <label>
+                    Gap
+                    <BlurInt
+                        value={gap}
+                        onChange={(t) => (t != null ? setGap(t) : null)}
+                    />
+                </label>
+                <label>
+                    To Back
+                    <button
+                        disabled={toBack === true}
+                        onClick={() => setToBack(true)}
+                    >
+                        All
+                    </button>
+                    <button
+                        disabled={toBack === false}
+                        onClick={() => setToBack(false)}
+                    >
+                        Top
+                    </button>
+                    <button
+                        disabled={toBack === null}
+                        onClick={() => setToBack(null)}
+                    >
+                        None
+                    </button>
+                </label>
+                <input
+                    value={twiddle}
+                    onChange={(evt) => setTwiddle(+evt.target.value)}
+                    type="range"
+                    min={tmin}
+                    max={tmax}
+                />
+                {twiddle}
                 <button
-                    disabled={toBack === true}
-                    onClick={() => setToBack(true)}
+                    onClick={() => {
+                        setMove(!move);
+                        setCpos([0, 0]);
+                    }}
                 >
-                    All
+                    {move ? 'Stop moving' : 'Move'}
+                </button>
+            </div>
+            <div>
+                <div>Light pos</div>
+                x
+                <BlurInt
+                    value={lpos[0]}
+                    onChange={(t) =>
+                        t ? setLpos([t, lpos[1], lpos[2]]) : null
+                    }
+                />
+                y
+                <BlurInt
+                    value={lpos[1]}
+                    onChange={(t) =>
+                        t ? setLpos([lpos[0], t, lpos[2]]) : null
+                    }
+                />
+                z
+                <BlurInt
+                    value={lpos[2]}
+                    onChange={(t) =>
+                        t ? setLpos([lpos[0], lpos[1], t]) : null
+                    }
+                />
+            </div>
+            <div>
+                <button
+                    onClick={() => {
+                        // const c2 = document.createElement('canvas');
+                        // const ctx = c2.getContext('2d')!;
+                        // ctx.fillRect(0, 0, 100, 100);
+                        // ctx.drawImage(canv.current!, 0, 0);
+                        // setExport(c2.toDataURL());
+                        // setExport(canv.current!.toDataURL());
+                        canv.current!.toBlob(async (blob) => {
+                            blob = await addMetadata(blob, {
+                                ...state,
+                                history: initialHistory,
+                            });
+                            setExport(URL.createObjectURL(blob!));
+                        });
+                    }}
+                >
+                    Export image with state
                 </button>
                 <button
-                    disabled={toBack === false}
-                    onClick={() => setToBack(false)}
+                    onClick={() => {
+                        const node = document.createElement('a');
+                        node.download = `group-${Date.now()}.obj`;
+
+                        let off = 0;
+                        const res = stls
+                            .map(({ cells, positions }, i) => {
+                                const txt = serializeObj(
+                                    cells,
+                                    positions,
+                                    `item_${i}`,
+                                    off,
+                                );
+                                off += positions.length;
+                                return txt;
+                            })
+                            .join('\n');
+
+                        node.href = URL.createObjectURL(
+                            new Blob([res], { type: 'text/plain' }),
+                        );
+                        node.click();
+                    }}
                 >
-                    Top
+                    Download .obj of the scene
                 </button>
-                <button
-                    disabled={toBack === null}
-                    onClick={() => setToBack(null)}
-                >
-                    None
-                </button>
-            </label>
-            <input
-                value={twiddle}
-                onChange={(evt) => setTwiddle(+evt.target.value)}
-                type="range"
-                min={tmin}
-                max={tmax}
-            />
-            {twiddle}
-            <button
-                onClick={() => {
-                    setMove(!move);
-                    setCpos([0, 0]);
-                }}
-            >
-                {move ? 'Stop moving' : 'Move'}
-            </button>
-            <button
-                onClick={() => {
-                    const node = document.createElement('a');
-                    node.download = `group-${Date.now()}.obj`;
-
-                    let off = 0;
-                    const res = stls
-                        .map(({ cells, positions }, i) => {
-                            const txt = serializeObj(
-                                cells,
-                                positions,
-                                // null,
-                                // null,
-                                // null,
-                                // null,
-                                `item_${i}`,
-                                off,
-                            );
-                            off += positions.length;
-                            return txt;
-                        })
-                        .join('\n');
-
-                    // node.download = `group-${Date.now()}.zip`;
-                    // const map: Record<string, Uint8Array> = {};
-                    // stls.forEach(
-                    //     ({ cells, positions }, i) =>
-                    //         (map[`item_${i}.stl`] = fflate.strToU8(
-                    //             serialize(
-                    //                 cells,
-                    //                 positions,
-                    //                 undefined,
-                    //                 'item_' + i,
-                    //             ),
-                    //         )),
-                    // );
-                    // const res = fflate.zipSync(map);
-
-                    node.href = URL.createObjectURL(
-                        new Blob([res], { type: 'text/plain' }),
-                    );
-                    node.click();
-                }}
-            >
-                Download I guess
-            </button>
+            </div>
+            {exurl ? (
+                <div>
+                    <a href={exurl} download={`render-${Date.now()}.png`}>
+                        <img
+                            src={exurl}
+                            style={{ maxWidth: 200, maxHeight: 200 }}
+                        />
+                    </a>
+                    <button onClick={() => setExport(null)}>Clear</button>
+                </div>
+            ) : null}
         </div>
     );
 };
@@ -364,6 +367,12 @@ const back = () => {
     }, []);
 };
 
+const CH = ({ camera }: { camera: any }) => {
+    useHelper(camera, CameraHelper); //, 1, 'hotpink')
+
+    return null;
+};
+
 const handleKey = (
     evt: KeyboardEvent,
     state: State,
@@ -420,246 +429,3 @@ const handleKey = (
         }
     }
 };
-
-const calcShapes = (
-    pathsToShow: Path[],
-    thick: number,
-    selectedIds: Record<string, boolean>,
-    state: State,
-    toBack: boolean | null,
-
-    dispatch: React.Dispatch<Action>,
-) => {
-    console.log('Doing a calc');
-
-    const stls: {
-        cells: [number, number, number][];
-        positions: [number, number, number][];
-    }[] = [];
-
-    // TODO: group paths by ... group id.
-    const gids = unique(pathsToShow.map((p) => p.group || ''));
-    const items = pathsToShow
-        .flatMap((path, n) => {
-            const gat = gids.indexOf(path.group || '');
-            const xoff = gat * thick;
-
-            const isSelected = selectedIds[path.id];
-
-            const style:
-                | null
-                | { type: 'line'; line: StyleLine }
-                | { type: 'fill'; fill: Fill } =
-                path.style.lines.length === 1
-                    ? { type: 'line', line: path.style.lines[0]! }
-                    : path.style.fills.length
-                    ? { type: 'fill', fill: path.style.fills[0]! }
-                    : null;
-
-            if (!style) return null;
-
-            const pkpath = PK.FromSVGString(calcPathD(path, 10));
-
-            if (style.type === 'line') {
-                pkpath.stroke({
-                    width: style.line.width! / 10,
-                    cap: PK.StrokeCap.BUTT,
-                    join: PK.StrokeJoin.MITER,
-                });
-                pkpath.simplify();
-            }
-
-            const clipped = cmdsToSegments(pkpath.toCmds(), PK).map((r) => ({
-                ...r,
-                bounds: segmentsBounds(r.segments),
-            }));
-            clipped.sort(
-                (a, b) =>
-                    b.bounds.x1 - b.bounds.x0 - (a.bounds.x1 - a.bounds.x0),
-            );
-
-            const houter = clipped[0];
-            if (!houter.open && isClockwise(houter.segments)) {
-                houter.segments = reversePath(houter.segments);
-                houter.origin = houter.segments[houter.segments.length - 1].to;
-            }
-            const holes = clipped.slice(1).map((r) => {
-                if (r.open) {
-                    console.log(r);
-                    throw new Error(`hole cannot be open`);
-                }
-                r.segments = ensureClockwise(r.segments);
-                r.origin = r.segments[r.segments.length - 1].to;
-                return r;
-            });
-
-            const outer = rasterSegPoints(
-                pathToPoints(houter.segments, houter.origin),
-            );
-            const inners = holes.map((region) =>
-                rasterSegPoints(pathToPoints(region.segments, region.origin)),
-            );
-
-            const col =
-                style.type === 'line'
-                    ? paletteColor(
-                          state.palette,
-                          style.line.color,
-                          style.line.lighten,
-                      )
-                    : paletteColor(
-                          state.palette,
-                          style.fill.color,
-                          style.fill.lighten,
-                      );
-
-            const geometry = new BufferGeometry();
-
-            const material = new MeshPhongMaterial({
-                color: col, // isSelected ? '#ffaaaa' : col,
-                flatShading: true,
-            });
-
-            const flat = outer.flatMap((pt) => [pt.x, pt.y]);
-            const flat3d = outer.flatMap((pt) => [pt.x, pt.y, 0]);
-            const holeStarts: number[] = [];
-            let count = outer.length;
-
-            inners.forEach((pts) => {
-                holeStarts.push(count);
-                flat.push(...pts.flatMap((pt) => [pt.x, pt.y]));
-                flat3d.push(...pts.flatMap((pt) => [pt.x, pt.y, 0]));
-                count += pts.length;
-            });
-
-            const thickness =
-                toBack === true || (toBack === false && gat === gids.length - 1)
-                    ? xoff + thick
-                    : thick;
-
-            flat3d.push(...outer.flatMap((pt) => [pt.x, pt.y, -thickness]));
-            inners.forEach((pts) => {
-                flat3d.push(...pts.flatMap((pt) => [pt.x, pt.y, -thickness]));
-            });
-            const vertices = new Float32Array(flat3d);
-            const tris = earcut(flat, holeStarts);
-
-            // Bottom:
-            tris.push(...tris.map((n) => n + count).reverse());
-
-            // Border (outside):
-            for (let i = 0; i < outer.length - 1; i++) {
-                tris.push(i, i + 1, i + count);
-                tris.push(i + count, i + 1, i + count + 1);
-            }
-            tris.push(count, outer.length - 1, 0);
-            tris.push(outer.length - 1, count, count + outer.length - 1);
-
-            inners.forEach((pts, n) => {
-                let start = holeStarts[n];
-                for (let i = start; i < start + pts.length - 1; i++) {
-                    tris.push(i, i + 1, i + count);
-                    tris.push(i + count, i + 1, i + count + 1);
-                }
-                tris.push(count + start, start + pts.length - 1, start);
-                tris.push(
-                    start + pts.length - 1,
-                    start + count,
-                    start + count + pts.length - 1,
-                );
-            });
-
-            geometry.setIndex(tris);
-            geometry.setAttribute('position', new BufferAttribute(vertices, 3));
-            geometry.computeVertexNormals();
-
-            const cells: [number, number, number][] = [];
-            for (let i = 0; i < tris.length; i += 3) {
-                cells.push([tris[i], tris[i + 1], tris[i + 2]]);
-            }
-            const positions: [number, number, number][] = [];
-            for (let i = 0; i < flat3d.length; i += 3) {
-                positions.push([flat3d[i], flat3d[i + 1], flat3d[i + 2]]);
-            }
-            stls.push({
-                cells,
-                positions: positions.map(([x, y, z]) => [x, y, z + xoff]),
-            });
-
-            return { material, geometry, xoff, path };
-            // <React.Fragment key={`${n}`}>
-            //     <mesh
-            //         material={material}
-            //         geometry={geometry}
-            //         position={[0, 0, xoff]}
-            //         castShadow
-            //         receiveShadow
-            //         onClick={(evt) => {
-            //             evt.stopPropagation();
-            //             clickItem(selectedIds, path, state, dispatch);
-            //         }}
-            //     ></mesh>
-            //     {isSelected ? (
-            //         <points
-            //             geometry={geometry}
-            //             position={[0, 0, xoff]}
-            //             material={
-            //                 new PointsMaterial({
-            //                     color: 'white',
-            //                 })
-            //             }
-            //         />
-            //     ) : null}
-            //     <lineSegments
-            //         position={[0, 0, xoff]}
-            //         key={`${n}-sel`}
-            //         geometry={new EdgesGeometry(geometry)}
-            //         material={
-            //             new LineBasicMaterial({
-            //                 color: isSelected ? 'red' : '#555',
-            //             })
-            //         }
-            //     />
-            // </React.Fragment>
-        })
-        .filter((n) => n != null);
-
-    return { items, stls };
-};
-
-function clickItem(
-    selectedIds: Record<string, boolean>,
-    path: Path,
-    state: State,
-    dispatch: React.Dispatch<Action>,
-) {
-    if (selectedIds[path.id]) {
-        if (state.selection?.type === 'PathGroup') {
-            dispatch({
-                type: 'selection:set',
-                selection: {
-                    type: 'Path',
-                    ids: [path.id],
-                },
-            });
-        } else {
-            dispatch({
-                type: 'selection:set',
-                selection: null,
-            });
-        }
-    } else {
-        dispatch({
-            type: 'selection:set',
-            selection: path.group
-                ? {
-                      type: 'PathGroup',
-                      ids: [path.group],
-                  }
-                : {
-                      type: 'Path',
-                      ids: [path.id],
-                  },
-        });
-    }
-}

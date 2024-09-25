@@ -1,4 +1,7 @@
 
+- [ ] hover group in sidebar and highlight
+- [ ] I want a way to duplicate a group
+
 - [ ] drag & drop groups?
   or just up/down arrow buttons
 - [x] want a way to specify thickness I believe
