@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { BlurInt } from '../editor/Forms';
 import { Action } from '../state/Action';
-import { Fill, PathGroup, State, StyleLine } from '../types';
+import { Fill, Path, PathGroup, State, StyleLine } from '../types';
 // import { Canvas } from '../editor/Canvas';
 import earcut from 'earcut';
 // import THREE from 'three';
@@ -35,6 +35,8 @@ import {
 import { useLocalStorage } from '../vest/App';
 // @ts-ignore
 import { serialize } from './serialize';
+// @ts-ignore
+import { serializeObj } from './serialize-obj';
 import * as fflate from 'fflate';
 
 export const unique = (v: string[]) => {
@@ -63,58 +65,7 @@ export const ThreedScreen = ({
 
     React.useEffect(() => {
         const fn = (evt: KeyboardEvent) => {
-            const state = latestState.current;
-            switch (evt.key) {
-                case 'ArrowUp':
-                case 'ArrowDown':
-                case 'PageUp':
-                case 'PageDown':
-                    break;
-                default:
-                    return;
-            }
-            evt.preventDefault();
-            evt.stopPropagation();
-            if (state.selection?.type === 'PathGroup') {
-                if (state.selection.ids.length === 1) {
-                    const id = state.selection.ids[0];
-                    const hasPaths: Record<string, boolean> = {};
-                    Object.values(state.paths).forEach((p) =>
-                        p.group != null ? (hasPaths[p.group] = true) : null,
-                    );
-                    const groups = Object.values(state.pathGroups)
-                        .filter((g) => hasPaths[g.id])
-                        .sort((a, b) => groupSort(a, b));
-                    const at = groups.findIndex((g) => g.id === id);
-                    if (at === 0 && evt.key.endsWith('Up')) return;
-                    if (at === groups.length - 1 && evt.key.endsWith('Down'))
-                        return;
-                    const [got] = groups.splice(at, 1);
-                    switch (evt.key) {
-                        case 'ArrowUp':
-                            groups.splice(at - 1, 0, got);
-                            break;
-                        case 'ArrowDown':
-                            groups.splice(at + 1, 0, got);
-                            break;
-                        case 'PageDown':
-                            groups.splice(groups.length, 0, got);
-                            break;
-                        case 'PageUp':
-                            groups.splice(0, 0, got);
-                            break;
-                    }
-                    const order: Record<string, number> = {};
-                    groups.forEach((group, n) => {
-                        const i = groups.length - n;
-                        if (group.ordering !== i) {
-                            order[group.id] = i;
-                        }
-                    });
-                    console.log('reorder', order);
-                    dispatch({ type: 'groups:order', order });
-                }
-            }
+            handleKey(evt, latestState.current, dispatch);
         };
         document.addEventListener('keydown', fn);
         return () => {
@@ -123,16 +74,373 @@ export const ThreedScreen = ({
     }, [state.selection]);
 
     const { items, stls } = useMemo(() => {
-        console.log('Doing a calc');
+        return calcShapes(
+            pathsToShow,
+            thick,
+            selectedIds,
+            latestState.current,
+            toBack,
+            dispatch,
+        );
+    }, [pathsToShow, thick, selectedIds]);
 
-        const stls: {
-            cells: [number, number, number][];
-            positions: [number, number, number][];
-        }[] = [];
+    const canv = React.useRef<HTMLCanvasElement>(null);
+    const virtualCamera = React.useRef<TPC>();
 
-        // TODO: group paths by ... group id.
-        const gids = unique(pathsToShow.map((p) => p.group || ''));
-        const items = pathsToShow.flatMap((path, n) => {
+    const dl = useRef<DirectionalLight>(null);
+    const [move, setMove] = useState(false);
+
+    useEffect(() => {
+        if (!dl.current) return;
+        dl.current!.shadow.camera.top = -1;
+        dl.current!.shadow.camera.bottom = 1;
+        dl.current!.shadow.camera.left = -1;
+        dl.current!.shadow.camera.right = 1;
+        // dl.current!.shadow.camera.matrixWorldNeedsUpdate = true;
+        dl.current!.shadow.camera.updateProjectionMatrix();
+        // dl.current!.shadow.mapSize.width = 1024;
+        // dl.current!.shadow.mapSize.height = 1024;
+        // dl.current!.shadow.needsUpdate = true;
+    }, [dl.current]);
+
+    const [[x, y], setCpos] = useState<[number, number]>([0, 0]);
+
+    // useEffect(() => {
+    //     if (!move) return;
+    //     let r = 0;
+    //     const iv = setInterval(() => {
+    //         const rad = 10;
+    //         setCpos([Math.sin(r) * rad, Math.sin(r) * rad]);
+    //         r += Math.PI / 30;
+    //     }, 50);
+    //     return () => clearInterval(iv);
+    // }, [move]);
+
+    // const [lpos, setLpos] = useState<[number, number, number]>([3, 0, 10]);
+    const lpos = [3, 0, 10] as const;
+    // useEffect(() => {
+    //     let r = 0;
+    //     const iv = setInterval(() => {
+    //         r += Math.PI / 10;
+    //         setLpos([Math.cos(r) * 2, 0, 10]);
+    //         // setLpos([Math.cos(r) * 5, Math.sin(r) * 5, 10]);
+    //     }, 100);
+    //     return () => clearInterval(iv);
+    // }, []);
+
+    // useEffect(() => {
+    //     const iv = setInterval(() => {
+    //         if (!dl.current) return
+    //         // dl.current.update
+    //     }, 100)
+    //     return () => clearInterval(iv)
+    // }, [])
+
+    const tmax = 100;
+    const tmin = 0;
+    const [twiddle, setTwiddle] = useState(tmin);
+
+    const perc = twiddle / tmax;
+
+    // useEffect(() => {
+    //     // virtualCamera.current?.updateMatrix();
+    //     // virtualCamera.current?.updateMatrixWorld();
+    //     virtualCamera.current?.updateProjectionMatrix();
+    // }, [twiddle]);
+
+    // 200 - 30
+    // 1000 - 2
+    // const cdist = 200 + 800 * perc;
+    // const fov = 30 - 28 * perc;
+    // const cdist = 1000;
+    // const fov = 2;
+    const cdist = 70;
+    const fov = 40;
+
+    return (
+        <div>
+            <div
+                style={{
+                    width: 1000,
+                    height: 1000,
+                    border: '1px solid magenta',
+                }}
+            >
+                <Canvas
+                    ref={canv}
+                    // shadows
+                    style={{ backgroundColor: 'white' }}
+                    // gl={{ physicallyCorrectLights: true, antialias: true }}
+                    // onClick={(evt) => {
+                    //     if (state.selection) {
+                    //         dispatch({
+                    //             type: 'selection:set',
+                    //             selection: null,
+                    //         });
+                    //     }
+                    // }}
+                >
+                    {/* <ambientLight /> */}
+                    {/* {back} */}
+                    <directionalLight
+                        // shadowc
+                        position={lpos}
+                        ref={dl}
+                        shadow-mapSize={[1024, 1024]}
+                        castShadow
+                    />
+                    {/* <pointLight position={lpos} /> */}
+                    <PerspectiveCamera
+                        makeDefault
+                        ref={virtualCamera}
+                        position={[x, y, cdist]}
+                        args={[fov, 1, 1, 2000]}
+                    />
+                    <OrbitControls camera={virtualCamera.current} />
+                    {/* {items.map((item) => item)} */}
+                    {items.map(({ material, geometry, xoff, path }, i) => (
+                        <mesh
+                            key={i}
+                            material={material}
+                            geometry={geometry}
+                            position={[0, 0, xoff]}
+                            castShadow
+                            receiveShadow
+                            onClick={(evt) => {
+                                evt.stopPropagation();
+                                clickItem(selectedIds, path, state, dispatch);
+                            }}
+                        ></mesh>
+                    ))}
+                </Canvas>
+            </div>
+            <BlurInt value={thick} onChange={(t) => (t ? setThick(t) : null)} />
+            <label>
+                To Back
+                <button
+                    disabled={toBack === true}
+                    onClick={() => setToBack(true)}
+                >
+                    All
+                </button>
+                <button
+                    disabled={toBack === false}
+                    onClick={() => setToBack(false)}
+                >
+                    Top
+                </button>
+                <button
+                    disabled={toBack === null}
+                    onClick={() => setToBack(null)}
+                >
+                    None
+                </button>
+            </label>
+            <input
+                value={twiddle}
+                onChange={(evt) => setTwiddle(+evt.target.value)}
+                type="range"
+                min={tmin}
+                max={tmax}
+            />
+            {twiddle}
+            <button
+                onClick={() => {
+                    setMove(!move);
+                    setCpos([0, 0]);
+                }}
+            >
+                {move ? 'Stop moving' : 'Move'}
+            </button>
+            <button
+                onClick={() => {
+                    const node = document.createElement('a');
+                    node.download = `group-${Date.now()}.obj`;
+
+                    let off = 0;
+                    const res = stls
+                        .map(({ cells, positions }, i) => {
+                            const txt = serializeObj(
+                                cells,
+                                positions,
+                                // null,
+                                // null,
+                                // null,
+                                // null,
+                                `item_${i}`,
+                                off,
+                            );
+                            off += positions.length;
+                            return txt;
+                        })
+                        .join('\n');
+
+                    // node.download = `group-${Date.now()}.zip`;
+                    // const map: Record<string, Uint8Array> = {};
+                    // stls.forEach(
+                    //     ({ cells, positions }, i) =>
+                    //         (map[`item_${i}.stl`] = fflate.strToU8(
+                    //             serialize(
+                    //                 cells,
+                    //                 positions,
+                    //                 undefined,
+                    //                 'item_' + i,
+                    //             ),
+                    //         )),
+                    // );
+                    // const res = fflate.zipSync(map);
+
+                    node.href = URL.createObjectURL(
+                        new Blob([res], { type: 'text/plain' }),
+                    );
+                    node.click();
+                }}
+            >
+                Download I guess
+            </button>
+        </div>
+    );
+};
+
+export function groupSort(a: PathGroup, b: PathGroup): number {
+    return a.ordering == b.ordering
+        ? 0
+        : a.ordering == null
+        ? b.ordering == null
+            ? 0
+            : b.ordering >= 0
+            ? 1
+            : -1
+        : b.ordering == null
+        ? a.ordering >= 0
+            ? -1
+            : 1
+        : b.ordering - a.ordering;
+}
+
+const back = () => {
+    return useMemo(() => {
+        const geometry = new BufferGeometry();
+        const material = new MeshStandardMaterial({
+            color: '#eeeeee',
+            // flatShading: true,
+        });
+        const vertices = new Float32Array(
+            [
+                -1, -1, 0,
+                //
+                -1, 1, 0,
+                //
+                1, 1, 0,
+                //
+                1, -1, 0,
+                //
+                -1, -1, -0.1,
+                //
+                -1, 1, -0.1,
+                //
+                1, 1, -0.1,
+                //
+                1, -1, -0.1,
+            ].map((n) => n * 60),
+        );
+        geometry.setIndex([
+            // 1, 2, 3,
+            2, 1, 3,
+            // 0, 1, 3,
+            0, 3, 1, 5, 6, 7, 4, 5, 7,
+        ]);
+        geometry.setAttribute('position', new BufferAttribute(vertices, 3));
+        geometry.computeVertexNormals();
+        return (
+            <mesh
+                material={material}
+                geometry={geometry}
+                position={[0, 0, -30]}
+                // castShadow
+                // receiveShadow
+            ></mesh>
+        );
+    }, []);
+};
+
+const handleKey = (
+    evt: KeyboardEvent,
+    state: State,
+    dispatch: React.Dispatch<Action>,
+) => {
+    switch (evt.key) {
+        case 'ArrowUp':
+        case 'ArrowDown':
+        case 'PageUp':
+        case 'PageDown':
+            break;
+        default:
+            return;
+    }
+    evt.preventDefault();
+    evt.stopPropagation();
+    if (state.selection?.type === 'PathGroup') {
+        if (state.selection.ids.length === 1) {
+            const id = state.selection.ids[0];
+            const hasPaths: Record<string, boolean> = {};
+            Object.values(state.paths).forEach((p) =>
+                p.group != null ? (hasPaths[p.group] = true) : null,
+            );
+            const groups = Object.values(state.pathGroups)
+                .filter((g) => hasPaths[g.id])
+                .sort((a, b) => groupSort(a, b));
+            const at = groups.findIndex((g) => g.id === id);
+            if (at === 0 && evt.key.endsWith('Up')) return;
+            if (at === groups.length - 1 && evt.key.endsWith('Down')) return;
+            const [got] = groups.splice(at, 1);
+            switch (evt.key) {
+                case 'ArrowUp':
+                    groups.splice(at - 1, 0, got);
+                    break;
+                case 'ArrowDown':
+                    groups.splice(at + 1, 0, got);
+                    break;
+                case 'PageDown':
+                    groups.splice(groups.length, 0, got);
+                    break;
+                case 'PageUp':
+                    groups.splice(0, 0, got);
+                    break;
+            }
+            const order: Record<string, number> = {};
+            groups.forEach((group, n) => {
+                const i = groups.length - n;
+                if (group.ordering !== i) {
+                    order[group.id] = i;
+                }
+            });
+            console.log('reorder', order);
+            dispatch({ type: 'groups:order', order });
+        }
+    }
+};
+
+const calcShapes = (
+    pathsToShow: Path[],
+    thick: number,
+    selectedIds: Record<string, boolean>,
+    state: State,
+    toBack: boolean | null,
+
+    dispatch: React.Dispatch<Action>,
+) => {
+    console.log('Doing a calc');
+
+    const stls: {
+        cells: [number, number, number][];
+        positions: [number, number, number][];
+    }[] = [];
+
+    // TODO: group paths by ... group id.
+    const gids = unique(pathsToShow.map((p) => p.group || ''));
+    const items = pathsToShow
+        .flatMap((path, n) => {
             const gat = gids.indexOf(path.group || '');
             const xoff = gat * thick;
 
@@ -273,305 +581,85 @@ export const ThreedScreen = ({
             for (let i = 0; i < flat3d.length; i += 3) {
                 positions.push([flat3d[i], flat3d[i + 1], flat3d[i + 2]]);
             }
-            stls.push({ cells, positions });
+            stls.push({
+                cells,
+                positions: positions.map(([x, y, z]) => [x, y, z + xoff]),
+            });
 
-            return (
-                <React.Fragment key={`${n}`}>
-                    <mesh
-                        material={material}
-                        geometry={geometry}
-                        position={[0, 0, xoff]}
-                        // castShadow
-                        // receiveShadow
-                        onClick={(evt) => {
-                            evt.stopPropagation();
-                            if (selectedIds[path.id]) {
-                                if (state.selection?.type === 'PathGroup') {
-                                    dispatch({
-                                        type: 'selection:set',
-                                        selection: {
-                                            type: 'Path',
-                                            ids: [path.id],
-                                        },
-                                    });
-                                } else {
-                                    dispatch({
-                                        type: 'selection:set',
-                                        selection: null,
-                                    });
-                                }
-                            } else {
-                                dispatch({
-                                    type: 'selection:set',
-                                    selection: path.group
-                                        ? {
-                                              type: 'PathGroup',
-                                              ids: [path.group],
-                                          }
-                                        : {
-                                              type: 'Path',
-                                              ids: [path.id],
-                                          },
-                                });
-                            }
-                        }}
-                    ></mesh>
-                    {isSelected ? (
-                        <points
-                            geometry={geometry}
-                            position={[0, 0, xoff]}
-                            material={
-                                new PointsMaterial({
-                                    color: 'white',
-                                })
-                            }
-                        />
-                    ) : null}
-                    <lineSegments
-                        position={[0, 0, xoff]}
-                        key={`${n}-sel`}
-                        geometry={new EdgesGeometry(geometry)}
-                        material={
-                            new LineBasicMaterial({
-                                color: isSelected ? 'red' : '#555',
-                            })
-                        }
-                    />
-                </React.Fragment>
-            );
-        });
+            return { material, geometry, xoff, path };
+            // <React.Fragment key={`${n}`}>
+            //     <mesh
+            //         material={material}
+            //         geometry={geometry}
+            //         position={[0, 0, xoff]}
+            //         castShadow
+            //         receiveShadow
+            //         onClick={(evt) => {
+            //             evt.stopPropagation();
+            //             clickItem(selectedIds, path, state, dispatch);
+            //         }}
+            //     ></mesh>
+            //     {isSelected ? (
+            //         <points
+            //             geometry={geometry}
+            //             position={[0, 0, xoff]}
+            //             material={
+            //                 new PointsMaterial({
+            //                     color: 'white',
+            //                 })
+            //             }
+            //         />
+            //     ) : null}
+            //     <lineSegments
+            //         position={[0, 0, xoff]}
+            //         key={`${n}-sel`}
+            //         geometry={new EdgesGeometry(geometry)}
+            //         material={
+            //             new LineBasicMaterial({
+            //                 color: isSelected ? 'red' : '#555',
+            //             })
+            //         }
+            //     />
+            // </React.Fragment>
+        })
+        .filter((n) => n != null);
 
-        return { items, stls };
-    }, [pathsToShow, thick, toBack]);
-
-    const canv = React.useRef<HTMLCanvasElement>(null);
-    const virtualCamera = React.useRef<TPC>();
-
-    const dl = useRef<DirectionalLight>(null);
-    const [move, setMove] = useState(false);
-
-    const [[x, y], setCpos] = useState<[number, number]>([0, 0]);
-    useEffect(() => {
-        if (!move) return;
-        let r = 0;
-        const iv = setInterval(() => {
-            const rad = 10;
-            setCpos([Math.sin(r) * rad, Math.sin(r) * rad]);
-            r += Math.PI / 30;
-        }, 50);
-        return () => clearInterval(iv);
-    }, [move]);
-
-    // const [lpos, setLpos] = useState<[number, number, number]>([3, 0, 10]);
-    const lpos = [3, 0, 10] as const;
-    // useEffect(() => {
-    //     let r = 0;
-    //     const iv = setInterval(() => {
-    //         r += Math.PI / 10;
-    //         setLpos([Math.cos(r) * 2, 0, 10]);
-    //         // setLpos([Math.cos(r) * 5, Math.sin(r) * 5, 10]);
-    //     }, 100);
-    //     return () => clearInterval(iv);
-    // }, []);
-
-    // useEffect(() => {
-    //     const iv = setInterval(() => {
-    //         if (!dl.current) return
-    //         // dl.current.update
-    //     }, 100)
-    //     return () => clearInterval(iv)
-    // }, [])
-
-    const tmax = 100;
-    const tmin = 0;
-    const [twiddle, setTwiddle] = useState(tmin);
-
-    const perc = twiddle / tmax;
-
-    // useEffect(() => {
-    //     // virtualCamera.current?.updateMatrix();
-    //     // virtualCamera.current?.updateMatrixWorld();
-    //     virtualCamera.current?.updateProjectionMatrix();
-    // }, [twiddle]);
-
-    // 200 - 30
-    // 1000 - 2
-    // const cdist = 200 + 800 * perc;
-    // const fov = 30 - 28 * perc;
-    const cdist = 1000;
-    const fov = 2;
-    // const cdist = 70;
-    // const fov = 40;
-
-    return (
-        <div>
-            <div
-                style={{
-                    width: 1000,
-                    height: 1000,
-                    border: '1px solid magenta',
-                }}
-            >
-                <Canvas
-                    ref={canv}
-                    // shadows
-                    style={{ backgroundColor: 'white' }}
-                    gl={{ physicallyCorrectLights: true, antialias: true }}
-                    // onClick={(evt) => {
-                    //     if (state.selection) {
-                    //         dispatch({
-                    //             type: 'selection:set',
-                    //             selection: null,
-                    //         });
-                    //     }
-                    // }}
-                >
-                    <ambientLight />
-                    {/* {back} */}
-                    <directionalLight
-                        position={lpos}
-                        ref={dl}
-                        shadow-mapSize={[1024, 1024]}
-                    />
-                    <pointLight position={lpos} />
-                    <PerspectiveCamera
-                        makeDefault
-                        ref={virtualCamera}
-                        position={[x, y, cdist]}
-                        args={[fov, 1, 1, 2000]}
-                    />
-                    <OrbitControls camera={virtualCamera.current} />
-                    {items.map((item) => item)}
-                </Canvas>
-            </div>
-            <BlurInt value={thick} onChange={(t) => (t ? setThick(t) : null)} />
-            <label>
-                To Back
-                <button
-                    disabled={toBack === true}
-                    onClick={() => setToBack(true)}
-                >
-                    All
-                </button>
-                <button
-                    disabled={toBack === false}
-                    onClick={() => setToBack(false)}
-                >
-                    Top
-                </button>
-                <button
-                    disabled={toBack === null}
-                    onClick={() => setToBack(null)}
-                >
-                    None
-                </button>
-            </label>
-            <input
-                value={twiddle}
-                onChange={(evt) => setTwiddle(+evt.target.value)}
-                type="range"
-                min={tmin}
-                max={tmax}
-            />
-            {twiddle}
-            <button
-                onClick={() => {
-                    setMove(!move);
-                    setCpos([0, 0]);
-                }}
-            >
-                {move ? 'Stop moving' : 'Move'}
-            </button>
-            <button
-                onClick={() => {
-                    const node = document.createElement('a');
-                    node.download = `group-${Date.now()}.zip`;
-                    const map: Record<string, Uint8Array> = {};
-
-                    stls.forEach(
-                        ({ cells, positions }, i) =>
-                            (map[`item_${i}.stl`] = fflate.strToU8(
-                                serialize(
-                                    cells,
-                                    positions,
-                                    undefined,
-                                    'item_' + i,
-                                ),
-                            )),
-                    );
-
-                    const res = fflate.zipSync(map);
-
-                    node.href = URL.createObjectURL(
-                        new Blob([res], { type: 'text/plain' }),
-                    );
-                    node.click();
-                }}
-            >
-                Download I guess
-            </button>
-        </div>
-    );
+    return { items, stls };
 };
 
-export function groupSort(a: PathGroup, b: PathGroup): number {
-    return a.ordering == b.ordering
-        ? 0
-        : a.ordering == null
-        ? b.ordering == null
-            ? 0
-            : b.ordering >= 0
-            ? 1
-            : -1
-        : b.ordering == null
-        ? a.ordering >= 0
-            ? -1
-            : 1
-        : b.ordering - a.ordering;
+function clickItem(
+    selectedIds: Record<string, boolean>,
+    path: Path,
+    state: State,
+    dispatch: React.Dispatch<Action>,
+) {
+    if (selectedIds[path.id]) {
+        if (state.selection?.type === 'PathGroup') {
+            dispatch({
+                type: 'selection:set',
+                selection: {
+                    type: 'Path',
+                    ids: [path.id],
+                },
+            });
+        } else {
+            dispatch({
+                type: 'selection:set',
+                selection: null,
+            });
+        }
+    } else {
+        dispatch({
+            type: 'selection:set',
+            selection: path.group
+                ? {
+                      type: 'PathGroup',
+                      ids: [path.group],
+                  }
+                : {
+                      type: 'Path',
+                      ids: [path.id],
+                  },
+        });
+    }
 }
-
-const back = () => {
-    return useMemo(() => {
-        const geometry = new BufferGeometry();
-        const material = new MeshStandardMaterial({
-            color: '#eeeeee',
-            // flatShading: true,
-        });
-        const vertices = new Float32Array(
-            [
-                -1, -1, 0,
-                //
-                -1, 1, 0,
-                //
-                1, 1, 0,
-                //
-                1, -1, 0,
-                //
-                -1, -1, -0.1,
-                //
-                -1, 1, -0.1,
-                //
-                1, 1, -0.1,
-                //
-                1, -1, -0.1,
-            ].map((n) => n * 60),
-        );
-        geometry.setIndex([
-            // 1, 2, 3,
-            2, 1, 3,
-            // 0, 1, 3,
-            0, 3, 1, 5, 6, 7, 4, 5, 7,
-        ]);
-        geometry.setAttribute('position', new BufferAttribute(vertices, 3));
-        geometry.computeVertexNormals();
-        return (
-            <mesh
-                material={material}
-                geometry={geometry}
-                position={[0, 0, -30]}
-                // castShadow
-                // receiveShadow
-            ></mesh>
-        );
-    }, []);
-};
