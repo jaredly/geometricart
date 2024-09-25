@@ -632,9 +632,8 @@ export const reduceWithoutUndo = (
                 },
             ];
         }
-        case 'group:regroup': {
+        case 'group:duplicate': {
             const paths = { ...state.paths };
-            const touched: { [key: Id]: true } = {};
             const ids =
                 action.selection.type === 'Path'
                     ? action.selection.ids
@@ -642,12 +641,48 @@ export const reduceWithoutUndo = (
                           action.selection.ids.includes(paths[k].group!),
                       );
             let nextId = state.nextId;
-            const group = `id-${nextId++}`;
+            const group = `gid-${nextId}`;
+            const nids = ids.map((id) => {
+                const nid = `id-${nextId++}`;
+                paths[nid] = { ...paths[id], id: nid, group };
+                return nid;
+            });
+
+            return [
+                {
+                    ...state,
+                    nextId,
+                    selection: { type: 'PathGroup', ids: [group] },
+                    paths,
+                    pathGroups: {
+                        ...state.pathGroups,
+                        [group]: { id: group, group: null },
+                    },
+                },
+                {
+                    type: action.type,
+                    action,
+                    created: [group, state.nextId, nids],
+                },
+            ];
+        }
+        case 'group:regroup': {
+            const paths = { ...state.paths };
+            const ids =
+                action.selection.type === 'Path'
+                    ? action.selection.ids
+                    : Object.keys(paths).filter((k) =>
+                          action.selection.ids.includes(paths[k].group!),
+                      );
+            let nextId = state.nextId;
+            // Re-use the first selected group, if we're combining groups.
+            let oldGroup =
+                action.selection.type === 'PathGroup'
+                    ? action.selection.ids[0]
+                    : null;
+            const group = oldGroup ?? `id-${nextId++}`;
             const prevGroups: { [key: Id]: Id | null } = {};
             ids.forEach((id) => {
-                // if (paths[id].group) {
-                //     touched[paths[id].group!] = true
-                // }
                 prevGroups[id] = paths[id].group;
                 paths[id] = { ...paths[id], group };
             });
@@ -668,7 +703,7 @@ export const reduceWithoutUndo = (
                 {
                     type: action.type,
                     action,
-                    created: [group, state.nextId],
+                    created: oldGroup ? null : [group, state.nextId],
                     prevGroups,
                 },
             ];
@@ -1131,6 +1166,19 @@ export const undo = (state: State, action: UndoAction): State => {
                 },
                 paths,
             };
+        }
+        case 'group:duplicate': {
+            state = { ...state, paths: { ...state.paths } };
+            if (action.created) {
+                const [gid, nextId, pids] = action.created;
+                state.pathGroups = { ...state.pathGroups };
+                delete state.pathGroups[gid];
+                state.nextId = nextId;
+                pids.forEach((pid) => {
+                    delete state.paths[pid];
+                });
+            }
+            return state;
         }
         case 'group:regroup': {
             state = { ...state, paths: { ...state.paths } };

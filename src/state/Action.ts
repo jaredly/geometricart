@@ -340,6 +340,16 @@ export type UndoClipCut = {
     added: Array<Id>;
 };
 
+export type GroupDuplicate = {
+    type: 'group:duplicate';
+    selection: { type: 'Path' | 'PathGroup'; ids: Array<Id> };
+};
+export type UndoGroupDuplicate = {
+    type: GroupDuplicate['type'];
+    action: GroupDuplicate;
+    created: null | [Id, number, Id[]];
+};
+
 export type GroupRegroup = {
     type: 'group:regroup';
     selection: { type: 'Path' | 'PathGroup'; ids: Array<Id> };
@@ -632,6 +642,7 @@ export type UndoableAction =
     | PathCreate
     | PathCreateMany
     | GroupRegroup
+    | GroupDuplicate
     | ClipCut
     | PathMultiply
     | GuideToggle;
@@ -658,6 +669,7 @@ export type UndoAction =
     | UndoGroupUpdate
     | UndoGroupsOrder
     | UndoGroupRegroup
+    | UndoGroupDuplicate
     | UndoPathUpdate
     | UndoPathUpdateMany
     | UndoPathDeleteMany
