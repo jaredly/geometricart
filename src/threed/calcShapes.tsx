@@ -280,6 +280,16 @@ function clickItem(
         }
     } else {
         if (shift && state.selection?.type === 'Path') {
+            dispatch({
+                type: 'selection:set',
+                selection: {
+                    type: 'Path',
+                    ids: state.selection.ids.includes(path.id)
+                        ? state.selection.ids.filter((i) => i !== path.id)
+                        : state.selection.ids.concat([path.id]),
+                },
+            });
+            return;
         }
         dispatch({
             type: 'selection:set',

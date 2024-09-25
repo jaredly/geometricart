@@ -748,6 +748,9 @@ function PathGroupItem({
     const isSelected =
         state.selection?.type === 'PathGroup' &&
         state.selection.ids.includes(k);
+    const isSubSelected =
+        state.selection?.type === 'Path' &&
+        state.selection.ids.some((id) => state.paths[id].group === k);
     const op = React.useRef<OverlayPanel>(null);
 
     return (
@@ -755,7 +758,7 @@ function PathGroupItem({
             <div
                 className="hover"
                 style={{
-                    ...itemStyle(isSelected),
+                    ...itemStyle(isSelected, isSubSelected),
                     padding: '8px 0',
                 }}
                 onMouseEnter={() =>
@@ -1028,7 +1031,10 @@ function toggleViewGuides(state: State, dispatch: React.Dispatch<Action>) {
     );
 }
 
-export function itemStyle(selected: boolean): React.CSSProperties | undefined {
+export function itemStyle(
+    selected: boolean,
+    subSelected: boolean,
+): React.CSSProperties | undefined {
     return {
         padding: 8,
         cursor: 'pointer',
@@ -1037,7 +1043,7 @@ export function itemStyle(selected: boolean): React.CSSProperties | undefined {
         display: 'flex',
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: selected ? '#555' : '',
+        backgroundColor: selected ? '#555' : subSelected ? '#055' : '',
     };
 }
 
