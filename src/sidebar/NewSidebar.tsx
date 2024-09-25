@@ -1033,7 +1033,7 @@ function toggleViewGuides(state: State, dispatch: React.Dispatch<Action>) {
 
 export function itemStyle(
     selected: boolean,
-    subSelected: boolean,
+    subSelected = false,
 ): React.CSSProperties | undefined {
     return {
         padding: 8,
