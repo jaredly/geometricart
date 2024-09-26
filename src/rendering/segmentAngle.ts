@@ -11,6 +11,10 @@ export const segmentAngle = (
     if (segment.type === 'Line') {
         return angleTo(prev, segment.to);
     }
+    if (segment.type === 'Quad') {
+        // return angleTo(prev, segment.to);
+        throw new Error('nop wuad');
+    }
     if (initial) {
         if (real) {
             return (

@@ -1,4 +1,4 @@
-import { insetPath } from '../animation/getBuiltins';
+// import { insetPath } from '../animation/getBuiltins';
 import { findBoundingRect } from '../editor/Export';
 import { findColorPaths } from './GCodeEditor';
 import { dist } from '../rendering/getMirrorTransforms';
@@ -40,16 +40,17 @@ export const greedyPaths = (
     const pathPoints: Array<Array<RasterSeg>> = [];
     paths.forEach(({ path, style }) => {
         if (style.inset) {
-            insetPath(path, style.inset).forEach((sub) => {
-                pathPoints.push(
-                    pathToPoints(
-                        sub.segments,
-                        sub.open ? sub.origin : null,
-                        false,
-                        ppi,
-                    ),
-                );
-            });
+            throw new Error('this should inset with PathKit');
+            // insetPath(path, style.inset).forEach((sub) => {
+            //     pathPoints.push(
+            //         pathToPoints(
+            //             sub.segments,
+            //             sub.open ? sub.origin : null,
+            //             false,
+            //             ppi,
+            //         ),
+            //     );
+            // });
         } else {
             pathPoints.push(
                 pathToPoints(

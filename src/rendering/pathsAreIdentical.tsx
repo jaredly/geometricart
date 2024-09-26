@@ -17,11 +17,11 @@ export const pathToSegmentKeys = (origin: Coord, segments: Array<Segment>) =>
 export const reverseSegment = (prev: Coord, segment: Segment): Segment => {
     switch (segment.type) {
         case 'Line':
-            return { type: 'Line', to: prev };
+        case 'Quad':
+            return { ...segment, to: prev };
         case 'Arc':
             return {
-                type: 'Arc',
-                center: segment.center,
+                ...segment,
                 clockwise: !segment.clockwise,
                 to: prev,
             };

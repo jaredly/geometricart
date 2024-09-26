@@ -217,8 +217,14 @@ export type ArcSegment = {
     // large
 };
 
+export type QuadSegment = {
+    type: 'Quad';
+    control: Coord;
+    to: Coord;
+};
+
 export type LineSegment = { type: 'Line'; to: Coord };
-export type Segment = LineSegment | ArcSegment; // long = "the long way round"
+export type Segment = LineSegment | ArcSegment | QuadSegment; // long = "the long way round"
 
 export type PathGroup = {
     id: Id;

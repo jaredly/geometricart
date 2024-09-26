@@ -8,7 +8,7 @@ import { Primitive } from '../rendering/intersect';
 import { Coord, Path, PathGroup, Segment, State } from '../types';
 import { StyleHover } from './MultiStyleForm';
 import { useTouchClick } from './RenderIntersections';
-import { DebugOrigPath } from './DebugOrigPath';
+// import { DebugOrigPath } from './DebugOrigPath';
 import { MenuItem } from './Canvas';
 import { Action } from '../state/Action';
 import { normalizedPath } from '../rendering/sortedVisibleInsetPaths';
@@ -313,14 +313,14 @@ const RenderPathMemo = ({
         <>
             {fills}
             {lines}
-            {path.debug && origPath ? (
+            {/* {path.debug && origPath ? (
                 <DebugOrigPath
                     path={path}
                     origPath={origPath}
                     zoom={zoom}
                     clip={clip}
                 />
-            ) : null}
+            ) : null} */}
         </>
     );
 };
@@ -511,9 +511,9 @@ export const lightenedColor = (
                 const g = parseInt(raw.slice(3, 5), 16);
                 const b = parseInt(raw.slice(5), 16);
                 let [h, s, l] = rgbToHsl(r, g, b);
-                return `hsl(${h * 360}, ${s * 100}%, ${
-                    (l + lighten * 0.1) * 100
-                }%)`;
+                return `hsl(${(h * 360).toFixed(3)}, ${(s * 100).toFixed(
+                    3,
+                )}%, ${((l + lighten * 0.1) * 100).toFixed(3)}%)`;
             }
         }
     }
@@ -573,6 +573,8 @@ export function segmentArrow(
             x: (seg.to.x + prev.x) / 2,
             y: (seg.to.y + prev.y) / 2,
         };
+    } else if (seg.type === 'Quad') {
+        throw new Error('noa');
     } else {
         const t0 = angleTo(seg.center, prev);
         const tb = angleBetween(t0, angleTo(seg.center, seg.to), seg.clockwise);

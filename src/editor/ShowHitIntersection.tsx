@@ -215,6 +215,8 @@ export const segmentMindpoint = (segment: SegmentWithPrev) => {
             x: (segment.prev.x + segment.segment.to.x) / 2,
             y: (segment.prev.y + segment.segment.to.y) / 2,
         };
+    } else if (segment.segment.type === 'Quad') {
+        throw new Error('noa');
     } else {
         const t0 = angleTo(segment.segment.center, segment.prev);
         const t1 = angleTo(segment.segment.center, segment.segment.to);

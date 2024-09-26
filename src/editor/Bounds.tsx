@@ -74,6 +74,14 @@ export const segmentBounds = (prev: Coord, segment: Segment): Bounds => {
                 y0: Math.min(segment.to.y, prev.y),
                 y1: Math.max(segment.to.y, prev.y),
             };
+        case 'Quad':
+            // throw new Error('bound quad');
+            return {
+                x0: Math.min(segment.to.x, prev.x),
+                x1: Math.max(segment.to.x, prev.x),
+                y0: Math.min(segment.to.y, prev.y),
+                y1: Math.max(segment.to.y, prev.y),
+            };
         case 'Arc': {
             // Hmmm ok what we really need is:
             // start & end & the 4 cardinal points if they are crossed.

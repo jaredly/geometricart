@@ -6,7 +6,7 @@ import { segmentToPrimitive } from '../editor/findSelection';
 import { Coord, Segment } from '../types';
 import { angleForSegment } from './clipPath';
 import { coordKey } from './coordKey';
-import { removeContainedRegions } from './findInternalRegions';
+// import { removeContainedRegions } from './findInternalRegions';
 import { angleBetween } from './findNextSegments';
 import { angleTo, dist } from './getMirrorTransforms';
 import { intersections } from './intersect';
@@ -144,20 +144,20 @@ export const intersectSegments = (
     return { hits, entriesBySegment, entryCoords, exits };
 };
 
-export const cleanUpInsetSegments3 = (
-    segments: Array<Segment>,
-    originalCorners: Array<Coord>,
-) => {
-    const withprev = addPrevsToSegments(segments, -1);
-    const hitsResults = getSomeHits(withprev);
-    const regions = collectRegions(withprev, hitsResults!);
+// export const cleanUpInsetSegments3 = (
+//     segments: Array<Segment>,
+//     originalCorners: Array<Coord>,
+// ) => {
+//     const withprev = addPrevsToSegments(segments, -1);
+//     const hitsResults = getSomeHits(withprev);
+//     const regions = collectRegions(withprev, hitsResults!);
 
-    return removeContainedRegions(
-        regions
-            .map((r) => prevSegmentsToShape(r.segments)!)
-            .filter(isClockwise),
-    );
-};
+//     return removeContainedRegions(
+//         regions
+//             .map((r) => prevSegmentsToShape(r.segments)!)
+//             .filter(isClockwise),
+//     );
+// };
 
 /**
  * Ok, so here I'm not paying attention to the fact that some segments
@@ -222,7 +222,7 @@ const calcSI = (
     //           angleTo(segment.center, coord) +
     //           (Math.PI / 2) * (segment.clockwise ? 1 : -1);
     const distance =
-        segment.type === 'Line'
+        segment.type === 'Line' || segment.type === 'Quad'
             ? dist(coord, segment.to)
             : angleBetween(
                   angleTo(segment.center, coord),

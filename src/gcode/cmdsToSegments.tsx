@@ -34,7 +34,8 @@ export const cmdsToSegments = (cmds: number[][], pk: PathKit): BarePath[] => {
         } else if (cmd[0] === pk.QUAD_VERB) {
             const [_, cx1, cy1, x, y] = cmd;
             latest.segments.push({
-                type: 'Line',
+                type: 'Quad',
+                control: { x: cx1, y: cy1 },
                 to: { x, y },
             });
         } else if (cmd[0] === pk.CONIC_VERB) {

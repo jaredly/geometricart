@@ -45,6 +45,12 @@ export const transformSegment = (
                 to: applyMatrices(segment.to, matrices),
                 // to,
             };
+        case 'Quad':
+            return {
+                type: 'Quad',
+                to: applyMatrices(segment.to, matrices),
+                control: applyMatrices(segment.control, matrices),
+            };
         case 'Line':
             return {
                 type: 'Line',

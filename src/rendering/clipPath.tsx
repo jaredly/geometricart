@@ -228,6 +228,8 @@ export const getBackAngle = <T extends { coord: Coord }>(
         if (prev.type === 'Line') {
             const pprev = getSegment(one.segments, location.segment - 2).to;
             return { type: 'flat', theta: angleTo(prev.to, pprev) };
+        } else if (prev.type === 'Quad') {
+            throw new Error('nop');
         } else {
             const theta =
                 angleTo(prev.center, prev.to) +
@@ -259,6 +261,8 @@ export const getBackAngle = <T extends { coord: Coord }>(
     }
     if (segment.type === 'Line') {
         return { type: 'flat', theta: angleTo(segment.to, prev.to) };
+    } else if (segment.type === 'Quad') {
+        throw new Error('nop');
     } else {
         const hit = one.hits[location.segment][location.intersection].coord;
         const theta =
@@ -314,6 +318,8 @@ export const getAngle = <T extends { coord: Coord }>(
     }
     if (segment.type === 'Line') {
         return { type: 'flat', theta: angleTo(pos, segment.to) };
+    } else if (segment.type === 'Quad') {
+        throw new Error('nop');
     } else {
         const theta =
             angleTo(segment.center, pos) +
@@ -334,6 +340,8 @@ export const angleForSegment = (
 ): Angle => {
     if (segment.type === 'Line') {
         return { type: 'flat', theta: angleTo(prev, segment.to) };
+    } else if (segment.type === 'Quad') {
+        throw new Error('nop');
     } else {
         const theta =
             angleTo(segment.center, coord) +

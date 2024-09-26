@@ -1,24 +1,32 @@
+import { Button } from 'primereact/button';
+import { OverlayPanel } from 'primereact/overlaypanel';
 import * as React from 'react';
+import { Clips } from '../editor/Clips';
+import { Hover } from '../editor/Sidebar';
+import { UndoPanel } from '../editor/UndoPanel';
 import { Action, GlobalTransform } from '../state/Action';
 import { Coord, Mirror, Path, PathGroup, Segment, State } from '../types';
-import { Tree } from 'primereact/tree';
-import { Button } from 'primereact/button';
 import { Accordion as MyAccordion } from './Accordion';
-import { Hover, ReallyButton } from '../editor/Sidebar';
-import { UndoPanel } from '../editor/UndoPanel';
-import { Clips } from '../editor/Clips';
-import { OverlayPanel } from 'primereact/overlaypanel';
 
 import type * as CSS from 'csstype';
-import { selectedPathIds } from '../editor/touchscreenControls';
-import { MultiStyleForm, StyleHover } from '../editor/MultiStyleForm';
+import dayjs from 'dayjs';
+import PathKitInit, { PathKit, Path as PKPath } from 'pathkit-wasm';
+import { SketchPicker } from 'react-color';
 import { Export } from '../editor/Export';
+import { PathForm, PathGroupForm, ViewForm } from '../editor/Forms';
+import { ShowMirror } from '../editor/MirrorForm';
+import { MultiStyleForm } from '../editor/MultiStyleForm';
+import { OverlaysForm } from '../editor/OverlaysForm';
+import { PalettesForm } from '../editor/PalettesForm';
+import { paletteColor } from '../editor/RenderPath';
 import { Tilings } from '../editor/Tilings';
-import { Screen, UIDispatch, UIState } from '../useUIState';
+import { calcSegmentsD } from '../editor/calcPathD';
+import { selectedPathIds } from '../editor/touchscreenControls';
+import { getStateFromFile } from '../editor/useDropTarget';
+import { cmdsToSegments } from '../gcode/cmdsToSegments';
 import {
     CubeIcon,
     DrillIcon,
-    IconButton,
     IconHistoryToggle,
     IconVerticalAlignMiddle,
     MagicWandIcon,
@@ -26,38 +34,13 @@ import {
     RedoIcon,
     UndoIcon,
 } from '../icons/Icon';
-import { useLocalStorage } from '../vest/App';
-import { PalettesForm } from '../editor/PalettesForm';
-import { OverlaysForm } from '../editor/OverlaysForm';
-import { PathForm, PathGroupForm, ViewForm } from '../editor/Forms';
-import { initialState } from '../state/initialState';
-import { getStateFromFile } from '../editor/useDropTarget';
-import { ShowMirror } from '../editor/MirrorForm';
-import {
-    getMirrorTransforms,
-    scaleMatrix,
-    translationMatrix,
-} from '../rendering/getMirrorTransforms';
-import { MirrorItems } from './MirrorItems';
-import dayjs from 'dayjs';
-import { SketchPicker } from 'react-color';
-import { paletteColor } from '../editor/RenderPath';
-import { calcSegmentsD } from '../editor/calcPathD';
-import {
-    boundsMidpoint,
-    segmentBounds,
-    segmentsBounds,
-    segmentsCenter,
-} from '../editor/Bounds';
-import { transformPath } from '../rendering/points';
-import { scalePos } from '../editor/scalePos';
-import { insetSegments } from '../rendering/insetPath';
-import { cleanUpInsetSegments2 } from '../rendering/findInternalRegions';
+import { getMirrorTransforms } from '../rendering/getMirrorTransforms';
 import { ensureClockwise } from '../rendering/pathToPoints';
-import PathKitInit, { PathKit, Path as PKPath } from 'pathkit-wasm';
-import { cmdsToSegments } from '../gcode/cmdsToSegments';
 import { coordsEqual } from '../rendering/pathsAreIdentical';
 import { groupSort } from '../threed/ThreedScreen';
+import { Screen, UIDispatch, UIState } from '../useUIState';
+import { useLocalStorage } from '../vest/App';
+import { MirrorItems } from './MirrorItems';
 
 declare module 'csstype' {
     interface Properties {
@@ -607,7 +590,7 @@ function TransformPanel({
                 />
             </div>
             <div>
-                <button
+                {/* <button
                     onClick={() => {
                         const bounds = segmentsBounds(
                             pathIds.flatMap((id) => state.paths[id].segments),
@@ -643,7 +626,7 @@ function TransformPanel({
                     }}
                 >
                     Scale
-                </button>
+                </button> */}
                 <div>
                     <select
                         onChange={(evt) => setClip(evt.target.value)}

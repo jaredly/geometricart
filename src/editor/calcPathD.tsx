@@ -32,6 +32,12 @@ export const calcSegmentsD = (
             d += ` L ${(seg.to.x * zoom).toFixed(3)} ${(
                 seg.to.y * zoom
             ).toFixed(3)}`;
+        } else if (seg.type === 'Quad') {
+            d += ` Q ${(seg.control.x * zoom).toFixed(3)} ${(
+                seg.control.y * zoom
+            ).toFixed(3)} ${(seg.to.x * zoom).toFixed(3)} ${(
+                seg.to.y * zoom
+            ).toFixed(3)}`;
         } else {
             const prev = i === 0 ? origin : segments[i - 1].to;
             d += arcPath(seg, prev, zoom);

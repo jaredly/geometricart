@@ -41,6 +41,8 @@ export const segmentKeyInner = (segment: Segment) =>
     ` ${segment.type} ` +
     (segment.type === 'Line'
         ? ''
+        : segment.type === 'Quad'
+        ? '`ctrl ' + coordKey(segment.control)
         : `via ${coordKey(segment.center)}${segment.clockwise ? 'C' : 'A'}`) +
     ' to ' +
     coordKey(segment.to);
@@ -51,6 +53,8 @@ export const segmentKey = (prev: Coord, segment: Segment) =>
 export const segmentKeyReverse = (prev: Coord, segment: Segment) =>
     segment.type === 'Line'
         ? segmentKey(segment.to, { type: 'Line', to: prev })
+        : segment.type === 'Quad'
+        ? segmentKey(segment.to, { ...segment, to: prev })
         : segmentKey(segment.to, {
               type: 'Arc',
               center: segment.center,

@@ -185,7 +185,7 @@ export const SegmentEditor = ({
     );
 };
 type Pending = {
-    type: 'Line' | 'Arc';
+    type: 'Line' | 'Arc' | 'Quad';
     clockwise: boolean;
     points: Array<Coord>;
 };
@@ -235,6 +235,8 @@ export const segToPending = (
                   points:
                       s.segment.type === 'Line'
                           ? [s.prev, s.segment.to]
+                          : s.segment.type === 'Quad'
+                          ? [s.prev, s.segment.control, s.segment.to]
                           : [s.prev, s.segment.center, s.segment.to],
               }
             : {

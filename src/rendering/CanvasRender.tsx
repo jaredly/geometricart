@@ -533,6 +533,14 @@ export function tracePath(
     path.segments.forEach((seg, i) => {
         if (seg.type === 'Line') {
             ctx.lineTo(seg.to.x * zoom, seg.to.y * zoom);
+        } else if (seg.type === 'Quad') {
+            // throw new Error('lolno');
+            ctx.quadraticCurveTo(
+                seg.control.x * zoom,
+                seg.control.y * zoom,
+                seg.to.x * zoom,
+                seg.to.y * zoom,
+            );
         } else {
             const radius = dist(seg.center, seg.to);
             const t0 = angleTo(
@@ -592,6 +600,8 @@ export function tracePathLine(
             ctx.lineTo(p4.x * zoom, p4.y * zoom);
             ctx.lineTo(p3.x * zoom, p3.y * zoom);
             ctx.lineTo(p1.x * zoom, p1.y * zoom);
+        } else if (seg.type === 'Quad') {
+            throw new Error('lol no thx');
         } else {
             const radius = dist(seg.center, seg.to);
             const t0 = angleTo(seg.center, prev);

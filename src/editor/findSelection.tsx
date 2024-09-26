@@ -130,6 +130,8 @@ export const arcToCircle = (prev: Coord, seg: ArcSegment): Circle => {
 export const segmentToPrimitive = (prev: Coord, seg: Segment): Primitive => {
     if (seg.type === 'Line') {
         return lineToSlope(prev, seg.to, true);
+    } else if (seg.type === 'Quad') {
+        throw new Error('noa');
     }
     return arcToCircle(prev, seg);
 };

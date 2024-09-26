@@ -108,6 +108,8 @@ export function primitivesForElementsAndPaths(
                             let prim: Primitive;
                             if (seg.type === 'Line') {
                                 prim = lineToSlope(prev, seg.to, true);
+                            } else if (seg.type === 'Quad') {
+                                throw new Error('noa');
                             } else {
                                 const t0 = angleTo(seg.center, prev);
                                 const t1 = angleTo(seg.center, seg.to);
