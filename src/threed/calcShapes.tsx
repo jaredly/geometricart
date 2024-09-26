@@ -24,10 +24,20 @@ import {
     rasterSegPoints,
     reversePath,
 } from '../rendering/pathToPoints';
+import { Hover } from '../editor/Sidebar';
 
 export const unique = (v: string[]) => {
     const seen: Record<string, true> = {};
     return v.filter((v) => (!seen[v] ? (seen[v] = true) : false));
+};
+
+export const matchesHover = (path: Path, hover: Hover | null) => {
+    if (!hover) return false;
+    if (hover.type !== 'element') return false;
+    if (hover.kind === 'Path') {
+        return hover.id === path.id;
+    }
+    return hover.kind === 'PathGroup' && hover.id === path.group;
 };
 
 export const calcShapes = (
@@ -39,6 +49,7 @@ export const calcShapes = (
     toBack: boolean | null,
 
     dispatch: React.Dispatch<Action>,
+    hover: Hover | null,
 ) => {
     console.log('Doing a calc');
 
@@ -193,6 +204,8 @@ export const calcShapes = (
 
             const center = state.view.center;
 
+            const isHovered = matchesHover(path, hover);
+
             // return { geometry, xoff, path, col };
             return (
                 <React.Fragment key={`${n}`}>
@@ -212,7 +225,10 @@ export const calcShapes = (
                             );
                         }}
                     >
-                        <meshPhongMaterial flatShading color={col} />
+                        <meshPhongMaterial
+                            flatShading
+                            color={isHovered ? 'red' : col}
+                        />
                     </mesh>
                     {isSelected ? (
                         <points

@@ -156,7 +156,11 @@ export const App = ({
                         }}
                     />
                 ) : screen === '3d' ? (
-                    <ThreedScreen state={state} dispatch={dispatch} />
+                    <ThreedScreen
+                        state={state}
+                        dispatch={dispatch}
+                        hover={hover}
+                    />
                 ) : screen === 'history' ? (
                     <HistoryPlayback state={state} dispatch={dispatch} />
                 ) : screen === 'overlay' ? (

@@ -62,7 +62,7 @@ export const handleKeyboard = (
                 return;
             }
             return dispatch({
-                type: 'group:regroup',
+                type: 'group:duplicate',
                 selection: latestState.current
                     .selection as GroupRegroup['selection'],
             });

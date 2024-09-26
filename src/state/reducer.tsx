@@ -692,13 +692,15 @@ export const reduceWithoutUndo = (
                     nextId,
                     selection: { type: 'PathGroup', ids: [group] },
                     paths,
-                    pathGroups: {
-                        ...state.pathGroups,
-                        [group]: {
-                            id: group,
-                            group: null,
-                        },
-                    },
+                    pathGroups: oldGroup
+                        ? state.pathGroups
+                        : {
+                              ...state.pathGroups,
+                              [group]: {
+                                  id: group,
+                                  group: null,
+                              },
+                          },
                 },
                 {
                     type: action.type,

@@ -20,6 +20,7 @@ import { serializeObj } from './serialize-obj';
 import { calcShapes } from './calcShapes';
 import { addMetadata } from '../editor/ExportPng';
 import { initialHistory } from '../state/initialState';
+import { Hover } from '../editor/Sidebar';
 
 export const useLatest = <T,>(value: T) => {
     const ref = useRef(value);
@@ -30,9 +31,11 @@ export const useLatest = <T,>(value: T) => {
 export const ThreedScreen = ({
     state,
     dispatch,
+    hover,
 }: {
     state: State;
     dispatch: React.Dispatch<Action>;
+    hover: Hover | null;
 }) => {
     let { pathsToShow, selectedIds, clip, rand } = usePathsToShow(state);
     const [thick, setThick] = useLocalStorage('thick', 3);
@@ -60,8 +63,9 @@ export const ThreedScreen = ({
             latestState.current,
             toBack,
             dispatch,
+            hover,
         );
-    }, [pathsToShow, thick, selectedIds, toBack, gap]);
+    }, [pathsToShow, thick, selectedIds, toBack, gap, hover]);
 
     const canv = React.useRef<HTMLCanvasElement>(null);
     const virtualCamera = React.useRef<TPC>();
