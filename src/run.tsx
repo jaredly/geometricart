@@ -33,6 +33,7 @@ import { maybeMigrate } from './state/migrateState';
 import { PK } from './editor/pk';
 import { initialState } from './state/initialState';
 import { Morph } from './Morph';
+import { useDropStateTarget } from './editor/useDropTarget';
 dayjs.extend(relativeTime);
 
 export const metaPrefix = 'meta:';
@@ -58,8 +59,10 @@ export const updateMeta = async (
     });
 };
 
-export const newState = async (mirror: Mirror | null, dest: SaveDest) => {
-    const state = setupState(mirror);
+export const newState = async (state: State, dest: SaveDest) => {
+    // if (!state) {
+    //     state = setupState(mirror);
+    // }
     const blob = await exportPNG(400, state, 1000, false, false, 0);
     if (dest.type === 'local') {
         const id = genid();
@@ -149,8 +152,20 @@ const Welcome = () => {
     } as {
         [key: string]: boolean;
     });
+    const [dragging, callbacks] = useDropStateTarget((state) => {
+        // ok
+        if (state) {
+            newState(state, { type: 'local' }).then((id) => {
+                window.location.hash = id;
+            });
+        }
+    });
     return (
-        <div className="flex flex-column justify-content-center align-items-center">
+        <div
+            className="flex flex-column justify-content-center align-items-center"
+            {...callbacks}
+            style={dragging ? { background: 'teal' } : {}}
+        >
             <div style={{ width: 900, padding: 24 }}>
                 <Accordion
                     activeIds={activeIds}
@@ -162,9 +177,11 @@ const Welcome = () => {
                             content: () => (
                                 <MirrorPicker
                                     onClick={(mirror, dest) => {
-                                        newState(mirror, dest).then((id) => {
-                                            window.location.hash = id;
-                                        });
+                                        newState(setupState(mirror), dest).then(
+                                            (id) => {
+                                                window.location.hash = id;
+                                            },
+                                        );
                                     }}
                                     githubToken={
                                         localStorage.github_access_token

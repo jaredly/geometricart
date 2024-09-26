@@ -318,17 +318,6 @@ export const NewSidebar = ({
                         },
                     },
                     {
-                        key: 'shapes',
-                        header: 'Shapes',
-                        content: () => (
-                            <ShapeItems
-                                state={state}
-                                setHover={setHover}
-                                dispatch={dispatch}
-                            />
-                        ),
-                    },
-                    {
                         key: 'fill',
                         header: 'Stroke & Fill',
                         content: () => (
@@ -369,6 +358,19 @@ export const NewSidebar = ({
                                     'Select some shapes to edit their style'
                                 )}
                             </div>
+                        ),
+                    },
+                    {
+                        key: 'shapes',
+                        header: 'Shapes',
+                        always: true,
+                        content: (expanded: boolean) => (
+                            <ShapeItems
+                                state={state}
+                                setHover={setHover}
+                                dispatch={dispatch}
+                                onlyShowSelected={!expanded}
+                            />
                         ),
                     },
                     {
@@ -700,10 +702,12 @@ function ShapeItems({
     state,
     setHover,
     dispatch,
+    onlyShowSelected,
 }: {
     state: State;
     setHover: (hover: Hover | null) => void;
     dispatch: React.Dispatch<Action>;
+    onlyShowSelected: boolean;
 }): JSX.Element {
     const groups: { [key: string]: string[] } = {};
     Object.entries(state.paths).forEach(([id, path]) => {
@@ -723,6 +727,7 @@ function ShapeItems({
                         dispatch={dispatch}
                         group={group}
                         pathKeys={groups[k] ?? []}
+                        onlyShowSelected={onlyShowSelected}
                     />
                 ))}
         </>
@@ -736,6 +741,7 @@ function PathGroupItem({
     dispatch,
     group,
     pathKeys,
+    onlyShowSelected,
 }: {
     k: string;
     state: State;
@@ -743,7 +749,8 @@ function PathGroupItem({
     dispatch: React.Dispatch<Action>;
     group: PathGroup;
     pathKeys: string[];
-}): JSX.Element {
+    onlyShowSelected: boolean;
+}) {
     const [open, setOpen] = React.useState(false);
     const isSelected =
         state.selection?.type === 'PathGroup' &&
@@ -752,6 +759,9 @@ function PathGroupItem({
         state.selection?.type === 'Path' &&
         state.selection.ids.some((id) => state.paths[id].group === k);
     const op = React.useRef<OverlayPanel>(null);
+    if (onlyShowSelected && !isSelected && !isSubSelected) {
+        return null;
+    }
 
     return (
         <>
@@ -802,6 +812,7 @@ function PathGroupItem({
                     style={{
                         marginTop: -10,
                         marginBottom: -12,
+                        marginLeft: 18,
                     }}
                     onClick={(evt) => {
                         evt.stopPropagation();
