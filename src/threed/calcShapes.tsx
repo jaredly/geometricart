@@ -25,6 +25,8 @@ import {
     reversePath,
 } from '../rendering/pathToPoints';
 import { Hover } from '../editor/Sidebar';
+import { transformBarePath } from '../rendering/points';
+import { scaleMatrix } from '../rendering/getMirrorTransforms';
 
 export const unique = (v: string[]) => {
     const seen: Record<string, true> = {};
@@ -90,10 +92,12 @@ export const calcShapes = (
                 pkpath.simplify();
             }
 
-            const clipped = cmdsToSegments(pkpath.toCmds(), PK).map((r) => ({
-                ...r,
-                bounds: segmentsBounds(r.segments),
-            }));
+            const clipped = cmdsToSegments(pkpath.toCmds(), PK)
+                .map((r) => transformBarePath(r, [scaleMatrix(1, -1)]))
+                .map((r) => ({
+                    ...r,
+                    bounds: segmentsBounds(r.segments),
+                }));
             clipped.sort(
                 (a, b) =>
                     b.bounds.x1 - b.bounds.x0 - (a.bounds.x1 - a.bounds.x0),

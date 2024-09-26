@@ -143,6 +143,24 @@ export const pathToPoints = (
             // const d = dist(seg.center, seg.to);
             // const midp = push(seg.center, tm, d);
             // points.push(midp);
+        } else if (seg.type === 'Quad') {
+            const points: Coord[] = [];
+            for (let i = 0; i <= 10; i++) {
+                points.push(
+                    getPointOnQuadraticBezierCurve(
+                        prev,
+                        seg.control,
+                        seg.to,
+                        i / 10,
+                    ),
+                );
+            }
+            segmentPoints.push({
+                from: prev,
+                to: seg.to,
+                points,
+                seg,
+            });
         } else {
             segmentPoints.push({
                 from: prev,
@@ -160,6 +178,38 @@ export const pathToPoints = (
     // console.log(`pathToPoints`, segments, origin, segmentPoints);
     return segmentPoints;
 };
+
+function getPointOnQuadraticBezierCurve(
+    startPoint: Coord,
+    controlPoint: Coord,
+    endPoint: Coord,
+    ratio: number,
+) {
+    return getLinearInterpolationPoint(
+        getLinearInterpolationPoint(startPoint, controlPoint, ratio),
+        getLinearInterpolationPoint(controlPoint, endPoint, ratio),
+        ratio,
+    );
+}
+
+function getLinearInterpolationPoint(
+    startPoint: Coord,
+    endPoint: Coord,
+    ratio: number,
+) {
+    return {
+        x: getLinearInterpolationValue(startPoint.x, endPoint.x, ratio),
+        y: getLinearInterpolationValue(startPoint.y, endPoint.y, ratio),
+    };
+}
+
+function getLinearInterpolationValue(
+    startValue: number,
+    endValue: number,
+    ratio: number,
+) {
+    return startValue + (endValue - startValue) * ratio;
+}
 
 export function pointsAngles(points: Coord[]) {
     return points.map((point, i) => {
