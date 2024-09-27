@@ -94,7 +94,7 @@ export const Accordion = ({
                                         : 'none',
                             }}
                         >
-                            {tab.content(activeIds[tab.key] || cache[tab.key])}
+                            {tab.content(activeIds[tab.key])}
                         </div>
                     ) : null}
                 </div>
