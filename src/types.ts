@@ -379,6 +379,23 @@ export type Meta = {
     description: string;
     created: number;
     ppi: number;
+
+    threedSettings?: {
+        // style: {
+        //     type: 'hdf'
+        // } | {
+        //     type: 'cardstock',
+        //     base: 'hdf' | 'cereal',
+        //     overhang: number, // in mm
+        // } | {
+        //     // I'd want this to be ... really thin?
+        //     type: 'acrylic',
+        //     thickness: number
+        // },
+        thickness?: number;
+        gap?: number;
+        lightPosition?: [number, number, number];
+    };
 };
 export type LerpPoint = {
     pos: Coord;
@@ -523,12 +540,6 @@ export type GCodePath = {
 
 export type State = {
     version: 12;
-
-    threedSettings?: {
-        // thickness?: number,
-        gap?: number;
-        lightPosition?: [number, number, number];
-    };
 
     nextId: number;
     history: History;

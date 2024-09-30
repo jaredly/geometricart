@@ -21,6 +21,7 @@ import { calcShapes } from './calcShapes';
 import { addMetadata } from '../editor/ExportPng';
 import { initialHistory } from '../state/initialState';
 import { Hover } from '../editor/Sidebar';
+import { mmToPX } from '../gcode/generateGcode';
 
 export const useLatest = <T,>(value: T) => {
     const ref = useRef(value);
@@ -38,9 +39,32 @@ export const ThreedScreen = ({
     hover: Hover | null;
 }) => {
     let { pathsToShow, selectedIds, clip, rand } = usePathsToShow(state);
-    const [thick, setThick] = useLocalStorage('thick', 3);
-    const [gap, setGap] = useLocalStorage('gap', 2);
-    const [toBack, setToBack] = useState(false as null | boolean);
+    // const [thick, setThick] = useLocalStorage('thick', 3);
+    // const [gap, setGap] = useLocalStorage('gap', 2);
+    // const [toBack, setToBack] = useState(false as null | boolean);
+    const { thickness = 3, gap = 0 } = state.meta.threedSettings ?? {};
+
+    const toBack = false; // TODO make this customizeable? idkyyy
+
+    const setThick = (thickness: number) => {
+        dispatch({
+            type: 'meta:update',
+            meta: {
+                ...state.meta,
+                threedSettings: { ...state.meta.threedSettings, thickness },
+            },
+        });
+    };
+
+    const setGap = (gap: number) => {
+        dispatch({
+            type: 'meta:update',
+            meta: {
+                ...state.meta,
+                threedSettings: { ...state.meta.threedSettings, gap },
+            },
+        });
+    };
 
     const latestState = useLatest(state);
 
@@ -54,18 +78,21 @@ export const ThreedScreen = ({
         };
     }, [state.selection]);
 
+    const thickPX = mmToPX(thickness, state.meta.ppi);
+    const gapPX = mmToPX(gap, state.meta.ppi);
+
     const { items, stls } = useMemo(() => {
         return calcShapes(
             pathsToShow,
-            thick,
-            gap,
+            thickPX,
+            gapPX,
             selectedIds,
             latestState.current,
             toBack,
             dispatch,
             hover,
         );
-    }, [pathsToShow, thick, selectedIds, toBack, gap, hover]);
+    }, [pathsToShow, thickPX, selectedIds, toBack, gapPX, hover]);
 
     const canv = React.useRef<HTMLCanvasElement>(null);
     const virtualCamera = React.useRef<TPC>();
@@ -151,7 +178,7 @@ export const ThreedScreen = ({
                         castShadow
                     >
                         <orthographicCamera
-                            zoom={0.009}
+                            zoom={0.09}
                             attach="shadow-camera"
                         ></orthographicCamera>
                     </directionalLight>
@@ -171,20 +198,20 @@ export const ThreedScreen = ({
             </div>
             <div>
                 <label>
-                    Thickness
+                    Thickness (mm)
                     <BlurInt
-                        value={thick}
+                        value={thickness}
                         onChange={(t) => (t != null ? setThick(t) : null)}
                     />
                 </label>
                 <label>
-                    Gap
+                    Gap (mm)
                     <BlurInt
                         value={gap}
                         onChange={(t) => (t != null ? setGap(t) : null)}
                     />
                 </label>
-                <label>
+                {/* <label>
                     To Back
                     <button
                         disabled={toBack === true}
@@ -204,7 +231,7 @@ export const ThreedScreen = ({
                     >
                         None
                     </button>
-                </label>
+                </label> */}
                 <input
                     value={twiddle}
                     onChange={(evt) => setTwiddle(+evt.target.value)}

@@ -22,6 +22,7 @@ import {
     totalAngle,
 } from '../rendering/pathToPoints';
 import { transformBarePath } from '../rendering/points';
+import { mmToPX } from '../gcode/generateGcode';
 
 export const unique = (v: string[]) => {
     const seen: Record<string, true> = {};
@@ -55,32 +56,44 @@ export const calcShapes = (
         positions: [number, number, number][];
     }[] = [];
 
+    const baseThick = thick;
+
     // TODO: group paths by ... group id.
     const gids = unique(pathsToShow.map((p) => p.group || ''));
     const items = pathsToShow
         .flatMap((path, n) => {
             const gat = gids.indexOf(path.group || '');
-            const xoff = gat * thick + gap * gat;
+            let xoff = gat * baseThick + gap * gat;
 
             const isSelected = selectedIds[path.id];
 
             const style:
                 | null
-                | { type: 'line'; line: StyleLine }
-                | { type: 'fill'; fill: Fill } =
+                | { type: 'line'; style: StyleLine }
+                | { type: 'fill'; style: Fill } =
                 path.style.lines.length === 1
-                    ? { type: 'line', line: path.style.lines[0]! }
+                    ? { type: 'line', style: path.style.lines[0]! }
                     : path.style.fills.length
-                    ? { type: 'fill', fill: path.style.fills[0]! }
+                    ? { type: 'fill', style: path.style.fills[0]! }
                     : null;
 
             if (!style) return null;
 
-            const pkpath = PK.FromSVGString(calcPathD(path, 10));
+            console.log('orgi', style.style.originalIdx);
+            let thick = baseThick;
+            if (
+                style.style.originalIdx != null &&
+                style.style.originalIdx > 0
+            ) {
+                thick = mmToPX(0.2, state.meta.ppi);
+                xoff += thick;
+            }
+
+            const pkpath = PK.FromSVGString(calcPathD(path, 1));
 
             if (style.type === 'line') {
                 pkpath.stroke({
-                    width: style.line.width! / 10,
+                    width: style.style.width! / 100,
                     cap: PK.StrokeCap.BUTT,
                     join: PK.StrokeJoin.MITER,
                 });
@@ -124,13 +137,13 @@ export const calcShapes = (
                 style.type === 'line'
                     ? paletteColor(
                           state.palette,
-                          style.line.color,
-                          style.line.lighten,
+                          style.style.color,
+                          style.style.lighten,
                       )
                     : paletteColor(
                           state.palette,
-                          style.fill.color,
-                          style.fill.lighten,
+                          style.style.color,
+                          style.style.lighten,
                       );
 
             const geometry = new BufferGeometry();
@@ -210,7 +223,7 @@ export const calcShapes = (
                 <React.Fragment key={`${n}`}>
                     <mesh
                         geometry={geometry}
-                        position={[center.x * 10, center.y * 10, xoff]}
+                        position={[center.x, center.y, xoff]}
                         castShadow
                         receiveShadow
                         onClick={(evt) => {
@@ -232,7 +245,7 @@ export const calcShapes = (
                     {isSelected ? (
                         <points
                             geometry={geometry}
-                            position={[center.x * 10, center.y * 10, xoff]}
+                            position={[center.x, center.y, xoff]}
                             material={
                                 new PointsMaterial({
                                     color: 'white',

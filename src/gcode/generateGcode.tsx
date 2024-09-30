@@ -136,6 +136,10 @@ export const pxToMM = (value: number, ppi: number) => {
     return (value / ppi) * 250.4 * 6;
 };
 
+export const mmToPX = (value: number, ppi: number) => {
+    return (value / (250.4 * 6)) * ppi;
+};
+
 export const generateLaserInset = async (state: State) => {
     const PK = await PathKitInit({
         locateFile: (file) => '/node_modules/pathkit-wasm/bin/' + file,
