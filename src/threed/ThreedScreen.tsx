@@ -22,6 +22,7 @@ import { addMetadata } from '../editor/ExportPng';
 import { initialHistory } from '../state/initialState';
 import { Hover } from '../editor/Sidebar';
 import { mmToPX } from '../gcode/generateGcode';
+import { ExportSection } from './ExportSection';
 
 export const useLatest = <T,>(value: T) => {
     const ref = useRef(value);
@@ -42,9 +43,23 @@ export const ThreedScreen = ({
     // const [thick, setThick] = useLocalStorage('thick', 3);
     // const [gap, setGap] = useLocalStorage('gap', 2);
     // const [toBack, setToBack] = useState(false as null | boolean);
-    const { thickness = 3, gap = 0 } = state.meta.threedSettings ?? {};
+    const {
+        thickness = 3,
+        gap = 0,
+        shadowZoom = 0.09,
+    } = state.meta.threedSettings ?? {};
 
     const toBack = false; // TODO make this customizeable? idkyyy
+
+    const setShadowZoom = (shadowZoom: number) => {
+        dispatch({
+            type: 'meta:update',
+            meta: {
+                ...state.meta,
+                threedSettings: { ...state.meta.threedSettings, shadowZoom },
+            },
+        });
+    };
 
     const setThick = (thickness: number) => {
         dispatch({
@@ -136,25 +151,9 @@ export const ThreedScreen = ({
 
     const tmax = 100;
     const tmin = 0;
-    const [twiddle, setTwiddle] = useState(tmin);
 
-    const perc = twiddle / tmax;
-
-    // useEffect(() => {
-    //     // virtualCamera.current?.updateMatrix();
-    //     // virtualCamera.current?.updateMatrixWorld();
-    //     virtualCamera.current?.updateProjectionMatrix();
-    // }, [twiddle]);
-
-    // 200 - 30
-    // 1000 - 2
-    // const cdist = 200 + 800 * perc;
-    // const fov = 30 - 28 * perc;
-    // const cdist = 1000;
-    // const fov = 2;
     const cdist = 70;
     const fov = 40;
-    const [exurl, setExport] = useState(null as null | string);
 
     return (
         <div>
@@ -174,11 +173,12 @@ export const ThreedScreen = ({
                     <directionalLight
                         position={lpos}
                         ref={dl}
-                        shadow-mapSize={[2048, 2048]}
+                        shadow-mapSize={[2048 * 4, 2048 * 4]}
+                        // shadow-mapSize={[2048, 2048]}
                         castShadow
                     >
                         <orthographicCamera
-                            zoom={0.09}
+                            zoom={shadowZoom}
                             attach="shadow-camera"
                         ></orthographicCamera>
                     </directionalLight>
@@ -197,6 +197,13 @@ export const ThreedScreen = ({
                 </Canvas>
             </div>
             <div>
+                <label>
+                    ShadowZoom
+                    <BlurInt
+                        value={shadowZoom}
+                        onChange={(t) => (t != null ? setShadowZoom(t) : null)}
+                    />
+                </label>
                 <label>
                     Thickness (mm)
                     <BlurInt
@@ -232,14 +239,6 @@ export const ThreedScreen = ({
                         None
                     </button>
                 </label> */}
-                <input
-                    value={twiddle}
-                    onChange={(evt) => setTwiddle(+evt.target.value)}
-                    type="range"
-                    min={tmin}
-                    max={tmax}
-                />
-                {twiddle}
                 <button
                     onClick={() => {
                         setMove(!move);
@@ -273,65 +272,7 @@ export const ThreedScreen = ({
                     }
                 />
             </div>
-            <div>
-                <button
-                    onClick={() => {
-                        // const c2 = document.createElement('canvas');
-                        // const ctx = c2.getContext('2d')!;
-                        // ctx.fillRect(0, 0, 100, 100);
-                        // ctx.drawImage(canv.current!, 0, 0);
-                        // setExport(c2.toDataURL());
-                        // setExport(canv.current!.toDataURL());
-                        canv.current!.toBlob(async (blob) => {
-                            blob = await addMetadata(blob, {
-                                ...state,
-                                history: initialHistory,
-                            });
-                            setExport(URL.createObjectURL(blob!));
-                        });
-                    }}
-                >
-                    Export image with state
-                </button>
-                <button
-                    onClick={() => {
-                        const node = document.createElement('a');
-                        node.download = `group-${Date.now()}.obj`;
-
-                        let off = 0;
-                        const res = stls
-                            .map(({ cells, positions }, i) => {
-                                const txt = serializeObj(
-                                    cells,
-                                    positions,
-                                    `item_${i}`,
-                                    off,
-                                );
-                                off += positions.length;
-                                return txt;
-                            })
-                            .join('\n');
-
-                        node.href = URL.createObjectURL(
-                            new Blob([res], { type: 'text/plain' }),
-                        );
-                        node.click();
-                    }}
-                >
-                    Download .obj of the scene
-                </button>
-            </div>
-            {exurl ? (
-                <div>
-                    <a href={exurl} download={`render-${Date.now()}.png`}>
-                        <img
-                            src={exurl}
-                            style={{ maxWidth: 200, maxHeight: 200 }}
-                        />
-                    </a>
-                    <button onClick={() => setExport(null)}>Clear</button>
-                </div>
-            ) : null}
+            <ExportSection canv={canv} state={state} stls={stls} />
         </div>
     );
 };

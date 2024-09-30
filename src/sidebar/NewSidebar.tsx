@@ -307,6 +307,7 @@ export const NewSidebar = ({
                             <div className="p-3">
                                 {styleIds.length ? (
                                     <MultiStyleForm
+                                        ppi={state.meta.ppi}
                                         dispatch={dispatch}
                                         palette={state.palette}
                                         styles={styleIds.map(

@@ -93,7 +93,7 @@ export const calcShapes = (
 
             if (style.type === 'line') {
                 pkpath.stroke({
-                    width: style.style.width! / 100,
+                    width: (style.style.width || 5) / 100,
                     cap: PK.StrokeCap.BUTT,
                     join: PK.StrokeJoin.MITER,
                 });
@@ -249,6 +249,7 @@ export const calcShapes = (
                             material={
                                 new PointsMaterial({
                                     color: 'white',
+                                    size: 0.3,
                                 })
                             }
                         />

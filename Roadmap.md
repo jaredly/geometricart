@@ -1,6 +1,18 @@
 
-- [ ] hover group in sidebar and highlight
-- [ ] I want a way to duplicate a group
+
+# Let's export our 3dddddd
+- might want to be able to ... export like svgs. so I can laser it uppp
+- have options for putting all on the same piece, or one at a time.
+- join the borderr
+
+
+- [ ] let's join the border, for these guys
+
+
+#
+
+- [x] hover group in sidebar and highlight
+- [x] I want a way to duplicate a group
 
 - [ ] drag & drop groups?
   or just up/down arrow buttons

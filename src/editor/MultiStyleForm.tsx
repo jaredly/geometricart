@@ -7,6 +7,7 @@ import { Style, Fill, StyleLine } from '../types';
 import { colorSquare, paletteColor } from './RenderPath';
 import { Button } from 'primereact/button';
 import { Action } from '../state/Action';
+import { pxToMM } from '../gcode/generateGcode';
 
 // I want to be able to communicate:
 // - all have same (one thing selected)
@@ -112,12 +113,14 @@ export const MultiStyleForm = ({
     palette,
     onHover,
     dispatch,
+    ppi,
 }: {
     styles: Array<Style>;
     onChange: (updated: Array<Style | null>) => void;
     palette: Array<string>;
     onHover: (hover: StyleHover | null) => void;
     dispatch: React.Dispatch<Action>;
+    ppi: number;
 }) => {
     const { fills, lines } = collectMultiStyles(styles);
     return (
@@ -396,6 +399,15 @@ export const MultiStyleForm = ({
                                         );
                                     }}
                                 />
+                                {line.width.length === 1 && line.width != null && (
+                                    <span>
+                                        {pxToMM(
+                                            line.width[0]! / 100,
+                                            ppi,
+                                        ).toFixed(1)}
+                                        mm
+                                    </span>
+                                )}
                                 <span
                                     style={{
                                         width: 16,
@@ -791,9 +803,7 @@ export const MultiNumber = ({
                 text ?? (value.length === 1 ? value[0] ?? '' : value.join(','))
             }
             onChange={(evt) => setText(evt.target.value)}
-            css={{
-                width: 50,
-            }}
+            css={{ width: 50 }}
             onKeyDown={(evt) => {
                 if (evt.key === 'Enter') {
                     commit();

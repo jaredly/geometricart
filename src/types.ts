@@ -394,6 +394,7 @@ export type Meta = {
         // },
         thickness?: number;
         gap?: number;
+        shadowZoom?: number;
         lightPosition?: [number, number, number];
     };
 };
