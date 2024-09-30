@@ -523,6 +523,13 @@ export type GCodePath = {
 
 export type State = {
     version: 12;
+
+    threedSettings?: {
+        // thickness?: number,
+        gap?: number;
+        lightPosition?: [number, number, number];
+    };
+
     nextId: number;
     history: History;
     meta: Meta;

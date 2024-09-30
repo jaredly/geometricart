@@ -1,32 +1,27 @@
 import React from 'react';
 import { Action } from '../state/Action';
 import { Fill, Path, State, StyleLine } from '../types';
-// import { Canvas } from '../editor/Canvas';
 import earcut from 'earcut';
-// import THREE from 'three';
 import '@react-three/fiber';
-import {
-    BufferAttribute,
-    BufferGeometry,
-    EdgesGeometry,
-    LineBasicMaterial,
-    PointsMaterial,
-} from 'three';
+import { BufferAttribute, BufferGeometry, PointsMaterial } from 'three';
 import { segmentsBounds } from '../editor/Bounds';
 import { calcPathD } from '../editor/calcPathD';
 import { PK } from '../editor/pk';
 import { paletteColor } from '../editor/RenderPath';
+import { Hover } from '../editor/Sidebar';
 import { cmdsToSegments } from '../gcode/cmdsToSegments';
+import { scaleMatrix } from '../rendering/getMirrorTransforms';
 import {
+    angleDifferences,
     ensureClockwise,
     isClockwise,
     pathToPoints,
+    pointsAngles,
     rasterSegPoints,
     reversePath,
+    totalAngle,
 } from '../rendering/pathToPoints';
-import { Hover } from '../editor/Sidebar';
 import { transformBarePath } from '../rendering/points';
-import { scaleMatrix } from '../rendering/getMirrorTransforms';
 
 export const unique = (v: string[]) => {
     const seen: Record<string, true> = {};

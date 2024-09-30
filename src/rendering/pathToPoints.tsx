@@ -145,7 +145,7 @@ export const pathToPoints = (
             // points.push(midp);
         } else if (seg.type === 'Quad') {
             const points: Coord[] = [];
-            for (let i = 0; i <= 10; i++) {
+            for (let i = 1; i < 10; i++) {
                 points.push(
                     getPointOnQuadraticBezierCurve(
                         prev,

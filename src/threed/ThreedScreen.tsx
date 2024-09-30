@@ -151,7 +151,7 @@ export const ThreedScreen = ({
                         castShadow
                     >
                         <orthographicCamera
-                            zoom={0.01}
+                            zoom={0.009}
                             attach="shadow-camera"
                         ></orthographicCamera>
                     </directionalLight>
