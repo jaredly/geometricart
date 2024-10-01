@@ -96,7 +96,7 @@ export const ThreedScreen = ({
     const thickPX = mmToPX(thickness, state.meta.ppi);
     const gapPX = mmToPX(gap, state.meta.ppi);
 
-    const { items, stls } = useMemo(() => {
+    const { items, stls, backs, covers } = useMemo(() => {
         return calcShapes(
             pathsToShow,
             thickPX,
@@ -272,7 +272,13 @@ export const ThreedScreen = ({
                     }
                 />
             </div>
-            <ExportSection canv={canv} state={state} stls={stls} />
+            <ExportSection
+                canv={canv}
+                state={state}
+                stls={stls}
+                backs={backs}
+                covers={covers}
+            />
         </div>
     );
 };

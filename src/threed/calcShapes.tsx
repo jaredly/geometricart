@@ -58,15 +58,10 @@ export const calcShapes = (
 
     const baseThick = thick;
 
-    // TODO: group paths by ... group id.
     const gids = unique(pathsToShow.map((p) => p.group || ''));
-    const items = pathsToShow
-        .flatMap((path, n) => {
-            const gat = gids.indexOf(path.group || '');
-            let xoff = gat * baseThick + gap * gat;
 
-            const isSelected = selectedIds[path.id];
-
+    const pkPaths = pathsToShow
+        .map((path) => {
             const style:
                 | null
                 | { type: 'line'; style: StyleLine }
@@ -79,16 +74,6 @@ export const calcShapes = (
 
             if (!style) return null;
 
-            console.log('orgi', style.style.originalIdx);
-            let thick = baseThick;
-            if (
-                style.style.originalIdx != null &&
-                style.style.originalIdx > 0
-            ) {
-                thick = mmToPX(0.2, state.meta.ppi);
-                xoff += thick;
-            }
-
             const pkpath = PK.FromSVGString(calcPathD(path, 1));
 
             if (style.type === 'line') {
@@ -98,6 +83,34 @@ export const calcShapes = (
                     join: PK.StrokeJoin.MITER,
                 });
                 pkpath.simplify();
+            }
+            const gat = gids.indexOf(path.group || '');
+            return { pkpath, path, gat, style };
+        })
+        .filter((x) => x != null)
+        .sort((a, b) => a.gat - b.gat);
+
+    const border = pkPaths.find(
+        ({ path }) => gids[gids.length - 1] === path.group,
+    )?.pkpath;
+
+    // TODO: group paths by ... group id.
+    const items = pkPaths
+        .flatMap(({ path, pkpath, gat, style }, n) => {
+            let xoff = gat * baseThick + gap * gat;
+
+            // ermmm so smart collapse? idk maybe.
+
+            const isSelected = selectedIds[path.id];
+
+            console.log('orgi', style.style.originalIdx);
+            let thick = baseThick;
+            if (
+                style.style.originalIdx != null &&
+                style.style.originalIdx > 0
+            ) {
+                thick = mmToPX(0.2, state.meta.ppi);
+                xoff += thick;
             }
 
             const clipped = cmdsToSegments(pkpath.toCmds(), PK)
@@ -269,7 +282,41 @@ export const calcShapes = (
         })
         .filter((n) => n != null);
 
-    return { items, stls };
+    type PKPath = typeof pkPaths[0]['pkpath'];
+
+    const backs: PKPath[] = [];
+    const covers: PKPath[] = [];
+    pkPaths.forEach(({ pkpath, style, gat }) => {
+        const svgs = style.style.originalIdx === 1 ? covers : backs;
+        if (!svgs[gat]) {
+            svgs[gat] = pkpath;
+            if (border && gat < gids.length - 1) {
+                svgs[gat].op(border, PK.PathOp.UNION);
+            }
+        } else {
+            svgs[gat].op(pkpath, PK.PathOp.UNION);
+        }
+    });
+    const convert = (pk: PKPath) => {
+        const svg = pk.toSVGString();
+        const bounds = pk.computeTightBounds();
+        return {
+            svg,
+            bounds: {
+                x0: bounds.fLeft,
+                x1: bounds.fRight,
+                y0: bounds.fTop,
+                y1: bounds.fBottom,
+            },
+        };
+    };
+
+    return {
+        items,
+        stls,
+        backs: backs.map(convert),
+        covers: covers.map(convert),
+    };
 };
 
 function clickItem(

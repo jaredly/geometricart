@@ -5,12 +5,21 @@ import { addMetadata } from '../editor/ExportPng';
 import { initialHistory } from '../state/initialState';
 import { serializeObj } from './serialize-obj';
 
+type SVGPath = {
+    svg: string;
+    bounds: { x0: number; x1: number; y0: number; y1: number };
+};
+
 export const ExportSection = ({
     canv,
     state,
     stls,
+    backs,
+    covers,
 }: {
     canv: { current: HTMLCanvasElement | null };
+    backs: SVGPath[];
+    covers: SVGPath[];
     state: State;
     stls: {
         cells: [number, number, number][];
