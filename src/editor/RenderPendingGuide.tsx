@@ -148,7 +148,7 @@ export const pendingGuide = (
                 p1: points[0],
                 p2: points[1],
                 p3: points[2],
-                extent,
+                // extent,
             };
         case 'PerpendicularBisector':
         case 'Perpendicular':
@@ -156,7 +156,7 @@ export const pendingGuide = (
                 type,
                 p1: points[0],
                 p2: points[1],
-                extent,
+                // extent,
             };
     }
 };

@@ -366,6 +366,6 @@ export const useLocalStorage = <T,>(
     return [value, setValue];
 };
 
-export const run = (config: Config<unknown, unknown>) => {
+export const run = (config: Config<any[], any>) => {
     render(<App config={config} />, document.getElementById('root'));
 };

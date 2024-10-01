@@ -43,7 +43,7 @@ export const jestTests = <I, O>(config: Config<I, O>) => {
 };
 
 export const vestUI = <I, O>(config: Config<I, O>) => {
-    run(config as Config<unknown, unknown>);
+    run(config as any);
 };
 
 export const register = <I, O>(config: Config<I, O>) => {
