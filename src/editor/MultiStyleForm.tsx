@@ -7,7 +7,8 @@ import { Style, Fill, StyleLine } from '../types';
 import { colorSquare, paletteColor } from './RenderPath';
 import { Button } from 'primereact/button';
 import { Action } from '../state/Action';
-import { pxToMM } from '../gcode/generateGcode';
+import { mmToPX, pxToMM } from '../gcode/generateGcode';
+import { BlurInt } from './Forms';
 
 // I want to be able to communicate:
 // - all have same (one thing selected)
@@ -401,10 +402,29 @@ export const MultiStyleForm = ({
                                 />
                                 {line.width.length === 1 && line.width != null && (
                                     <span>
-                                        {pxToMM(
-                                            line.width[0]! / 100,
-                                            ppi,
-                                        ).toFixed(1)}
+                                        <BlurInt
+                                            value={
+                                                Math.round(
+                                                    pxToMM(
+                                                        line.width[0]! / 100,
+                                                        ppi,
+                                                    ) * 100,
+                                                ) / 100
+                                            }
+                                            onChange={(v) =>
+                                                v != null
+                                                    ? onChange(
+                                                          updateLine(
+                                                              styles,
+                                                              i,
+                                                              mmToPX(v, ppi) *
+                                                                  100,
+                                                              'width',
+                                                          ),
+                                                      )
+                                                    : null
+                                            }
+                                        />
                                         mm
                                     </span>
                                 )}
