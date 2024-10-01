@@ -1,15 +1,14 @@
 /* @jsx jsx */
 /* @jsxFrag React.Fragment */
-import { jsx } from '@emotion/react';
+import { Interpolation, Theme, jsx } from '@emotion/react';
+import { Path as PKPath, PathKit } from 'pathkit-wasm';
 import React, { useState } from 'react';
 import * as ReactDOM from 'react-dom';
-import { Canvas } from './Canvas';
-import { BlurInt, Toggle } from './Forms';
-import { PREFIX, SUFFIX } from './Sidebar';
+import { pkPath } from '../sidebar/NewSidebar';
 import { Action } from '../state/Action';
 import { initialHistory } from '../state/initialState';
-import { Path, State } from '../types';
-import { calcPPI } from './SVGCanvas';
+import { Fill, Path, State, StyleLine } from '../types';
+import { Canvas } from './Canvas';
 import {
     Bounds,
     DL,
@@ -17,7 +16,46 @@ import {
     blankCanvasProps,
     findBoundingRect,
 } from './Export';
-import { constantColors, maybeUrlColor } from './MultiStyleForm';
+import { BlurInt, Toggle } from './Forms';
+import { maybeUrlColor } from './MultiStyleForm';
+import { lightenedColor, paletteColor } from './RenderPath';
+import { calcPPI, viewPos } from './SVGCanvas';
+import { PREFIX, SUFFIX } from './Sidebar';
+
+export const PPI = ({
+    ppi,
+    onChange,
+    bounds,
+}: {
+    ppi: number;
+    onChange: (ppi: number) => void;
+    bounds: Bounds | null;
+}) => {
+    if (!bounds) return null;
+    const w = bounds.x2 - bounds.x1;
+    const h = bounds.y2 - bounds.y1;
+
+    return (
+        <div>
+            <label>
+                Width:{' '}
+                <BlurInt
+                    value={Math.round((w / ppi) * 100) / 100}
+                    onChange={(v) => (v != null ? onChange(w / v) : null)}
+                />
+                in
+            </label>
+            <label>
+                Height:{' '}
+                <BlurInt
+                    value={Math.round((h / ppi) * 100) / 100}
+                    onChange={(v) => (v != null ? onChange(h / v) : null)}
+                />
+                in
+            </label>
+        </div>
+    );
+};
 
 export function ExportSVG({
     state,
@@ -26,6 +64,7 @@ export function ExportSVG({
     embed,
     history,
     name,
+    PK,
 }: {
     state: State;
     dispatch: (action: Action) => void;
@@ -33,6 +72,7 @@ export function ExportSVG({
     embed: boolean;
     history: boolean;
     name: string;
+    PK: PathKit;
 }) {
     const [url, setUrl] = React.useState(
         null as null | { url: string; info: string }[],
@@ -56,9 +96,21 @@ export function ExportSVG({
                     })
                 }
             />
+            <PPI
+                ppi={state.meta.ppi}
+                bounds={boundingRect}
+                onChange={(ppi) =>
+                    ppi != null
+                        ? dispatch({
+                              type: 'meta:update',
+                              meta: { ...state.meta, ppi },
+                          })
+                        : null
+                }
+            />
             pixels per inch:{' '}
             <BlurInt
-                value={state.meta.ppi}
+                value={Math.round(state.meta.ppi * 100) / 100}
                 onChange={(ppi) =>
                     ppi != null
                         ? dispatch({
@@ -69,19 +121,17 @@ export function ExportSVG({
                 }
                 label={(ppi) => (
                     <div css={{ marginTop: 8 }}>
-                        Width: {(originalSize / ppi).toFixed(2)}in.
-                        <br />
                         Content Size:
                         {boundingRect
                             ? ` ${(
-                                  ((boundingRect.x2 - boundingRect.x1) / ppi) *
-                                  state.view.zoom
+                                  (boundingRect.x2 - boundingRect.x1) /
+                                  ppi
                               ).toFixed(2)}in x ${(
-                                  ((boundingRect.y2 - boundingRect.y1) / ppi) *
-                                  state.view.zoom
+                                  (boundingRect.y2 - boundingRect.y1) /
+                                  ppi
                               ).toFixed(2)}in`
                             : null}
-                        <FullLength state={state} />
+                        {/* <FullLength state={state} /> */}
                     </div>
                 )}
             />
@@ -125,6 +175,7 @@ export function ExportSVG({
                         history,
                         setUrl,
                         multi: state.view.multi,
+                        PK,
                     })
                 }
             >
@@ -164,6 +215,25 @@ export function ExportSVG({
         </div>
     );
 }
+
+const styleKey = (s: StyleLine | Fill) => {
+    const lighten = s.lighten ?? 0;
+    return lighten === 0 ? s.color ?? 0 : `${s.color}${'/' + lighten}`;
+};
+
+const parseStyleKey = (
+    key: string | number,
+): [string | number, number, string | number] => {
+    if (typeof key === 'number') {
+        return [key, 0, key];
+    }
+    const [name, lighten] = key.split('/');
+    if (!isNaN(+name)) {
+        return [+name, lighten ? +lighten : 0, key];
+    }
+    return [name, lighten ? +lighten : 0, key];
+};
+
 function multiForm(
     state: State,
     multi: NonNullable<State['view']['multi']>,
@@ -174,7 +244,8 @@ function multiForm(
     Object.entries(state.paths).forEach(([k, path]) => {
         path.style.lines.forEach((line) => {
             if (line && line.color != null) {
-                colors[line.color] = (colors[line.color] || 0) + 1;
+                const k = styleKey(line);
+                colors[k] = (colors[k] || 0) + 1;
             }
         });
     });
@@ -219,7 +290,7 @@ function multiForm(
                         onChange={(color) => {
                             const shapes = multi.shapes.slice();
                             if (color == null) {
-                                shapes.splice(1, i);
+                                shapes.splice(i, 1);
                             } else {
                                 shapes[i] = color;
                             }
@@ -248,6 +319,22 @@ function multiForm(
                     }}
                 >
                     Add a shape color
+                </button>
+                <button
+                    onClick={() => {
+                        dispatch({
+                            type: 'view:update',
+                            view: {
+                                ...state.view,
+                                multi: {
+                                    ...multi,
+                                    shapes: Object.keys(colors),
+                                },
+                            },
+                        });
+                    }}
+                >
+                    Add all colors
                 </button>
             </div>
             <div>
@@ -324,6 +411,25 @@ function multiForm(
                 />
                 Skip backing?
             </label>
+            <label style={{ display: 'inline-block' }}>
+                <input
+                    type="checkbox"
+                    checked={!!multi.traceAndMerge}
+                    onChange={() =>
+                        dispatch({
+                            type: 'view:update',
+                            view: {
+                                ...state.view,
+                                multi: {
+                                    ...multi,
+                                    traceAndMerge: !multi.traceAndMerge,
+                                },
+                            },
+                        })
+                    }
+                />
+                Trace &amp; Merge Lines
+            </label>
             <button
                 css={{ marginTop: 16, display: 'block' }}
                 onClick={() =>
@@ -351,6 +457,7 @@ async function runSVGExport({
     history,
     setUrl,
     multi,
+    PK,
 }: {
     crop: number | null;
     boundingRect: Bounds | null;
@@ -362,6 +469,7 @@ async function runSVGExport({
         React.SetStateAction<null | { url: string; info: string }[]>
     >;
     multi?: null | Multi;
+    PK: PathKit;
 }) {
     const size = calcSVGSize(crop, boundingRect, state, originalSize);
 
@@ -372,14 +480,13 @@ async function runSVGExport({
             pathsToRender.push([]);
         }
         const byGroup: { [key: string]: Path[] } = {};
-        console.log('mshapes', multi.shapes);
         Object.keys(state.paths).forEach((k) => {
             let path = state.paths[k];
             if (path.style.fills.length) {
                 return;
             }
             const out = path.style.lines.find(
-                (s) => s && s.color === multi.outline,
+                (s) => s && styleKey(s) == multi.outline,
             );
             if (out) {
                 outlines.push({ ...path, style: { fills: [], lines: [out] } });
@@ -388,7 +495,7 @@ async function runSVGExport({
                 if (shape == null) return;
 
                 const line = path.style.lines.find(
-                    (s) => s && s.color === shape,
+                    (s) => s && styleKey(s) == shape,
                 );
                 if (!line) return;
                 // path =
@@ -425,11 +532,15 @@ async function runSVGExport({
 
                     return `<g transform="translate(${size.width * c}, ${
                         size.height * r
-                    })">${getSVGText(
-                        { ...state, paths: map },
-                        size,
-                        true,
-                    )}</g>`;
+                    })">${
+                        multi.traceAndMerge
+                            ? traceAndMergePaths(
+                                  PK,
+                                  { ...state, paths: map },
+                                  size,
+                              )
+                            : getSVGText({ ...state, paths: map }, size, true)
+                    }</g>`;
                 });
             const info = `${calcPPI(
                 state.meta.ppi,
@@ -458,6 +569,9 @@ async function runSVGExport({
                 xmlns="http://www.w3.org/2000/svg"
             >${contents.join('')}</svg>
             `;
+            // const d = document.createElement('div');
+            // d.innerHTML = full;
+            // document.body.append(d);
             if (embed) {
                 full += `\n\n${PREFIX}${JSON.stringify(
                     history ? state : { ...state, history: initialHistory },
@@ -481,6 +595,77 @@ async function runSVGExport({
     const blob = new Blob([text], { type: 'image/svg+xml' });
     setUrl([{ url: URL.createObjectURL(blob), info: 'no info sry' }]);
 }
+
+const traceAndMergePaths = (
+    PK: PathKit,
+    state: State,
+    size: { width: number; height: number },
+) => {
+    const zoom = state.view.zoom;
+    const { x, y } = viewPos(state.view, size.width, size.height);
+
+    const backer = Object.keys(state.paths).length === 1;
+
+    let pk = null as null | PKPath;
+    let c;
+    Object.values(state.paths).forEach((path) => {
+        const st = path.style.lines[0];
+        let w = st?.width;
+        w = w ? (w / 100) * zoom : 2;
+        c = paletteColor(state.palette, st?.color ?? 0, st?.lighten ?? 0);
+        // const d = calcPathD(path, state.view.zoom)
+        const p = pkPath(PK, path.segments, path.origin, path.open);
+        const stroke = {
+            width: w / zoom,
+            join: PK.StrokeJoin.MITER,
+            cap: PK.StrokeCap.ROUND,
+        };
+        if (backer) {
+            const s = p.copy().stroke(stroke);
+            p.op(s, PK.PathOp.UNION);
+            s.delete();
+        } else {
+            p.stroke(stroke);
+        }
+        if (pk == null) {
+            pk = p;
+        } else {
+            pk.op(p, PK.PathOp.UNION);
+            p.delete();
+        }
+    });
+    if (pk == null) return '';
+    pk!.simplify();
+    const d = pk!.toSVGString();
+    pk!.delete();
+    // return pk!.toSVGString();
+    return `
+    <path stroke="red" fill="none" stroke-width="0.03" d="${d}"
+    transform="scale(${zoom} ${zoom}) translate(${x / zoom}, ${y / zoom})"
+     />
+     `;
+
+    // return Object.values(state.paths)
+    //     .map((path) => {
+    //         const st = path.style.lines[0];
+    //         const w = st?.width;
+    //         const c = paletteColor(
+    //             state.palette,
+    //             st?.color ?? 0,
+    //             st?.lighten ?? 0,
+    //         );
+    //         const d = calcPathD(path, state.view.zoom)
+    //         return `
+    //     <path fill="none" stroke="${c}" stroke-width="${
+    //             w ? (w / 100) * zoom : 2
+    //         }" d="${d}"
+    //     transform="translate(${x}, ${y})"
+    //      />
+    //     `;
+    //     })
+    //     .join('\n');
+};
+
 function getSVGText(
     state: State,
     size: { width: number; height: number },
@@ -503,19 +688,30 @@ function getSVGText(
               selection: null,
           }
         : state;
-    ReactDOM.render(
-        <Canvas
-            {...blankCanvasProps}
-            {...size}
-            innerRef={(node) => (svgNode = node)}
-            ppi={state.meta.ppi}
-            state={rstate}
-        />,
-        dest,
-    );
+    // I want this to be sync, so I need the old API
+    trapWarn(() => {
+        ReactDOM.render(
+            <Canvas
+                {...blankCanvasProps}
+                {...size}
+                innerRef={(node) => (svgNode = node)}
+                ppi={state.meta.ppi}
+                state={rstate}
+            />,
+            dest,
+        );
+    });
 
     return inner ? svgNode!.innerHTML : svgNode!.outerHTML;
 }
+
+const trapWarn = (fn: () => void) => {
+    const prev = console.error;
+    console.error = () => {};
+    fn();
+    console.error = prev;
+};
+
 function calcSVGSize(
     crop: number | null,
     boundingRect: Bounds | null,
@@ -544,10 +740,13 @@ export const Select = ({
 }: {
     current: string | number | null | undefined;
     state: State;
-    colors: { [key: string | number]: number };
+    colors: { [key: string]: number };
     onChange: (color: string | number | null) => void;
 }) => {
     const [open, setOpen] = useState(false);
+
+    const keys = Object.keys(colors).map(parseStyleKey);
+    const ckey = current ? parseStyleKey(current) : null;
 
     return (
         <div css={{ position: 'relative' }}>
@@ -556,14 +755,20 @@ export const Select = ({
                     border: '1px solid #777',
                     borderRadius: 4,
                     margin: '8px 0',
+                    display: 'flex',
+                    flexDirection: 'row',
                 }}
             >
                 <Line
                     color={
-                        typeof current === 'number'
-                            ? state.palette[current]
-                            : current
+                        ckey
+                            ? typeof ckey[0] === 'number'
+                                ? state.palette[ckey[0]]
+                                : ckey[0]
+                            : undefined
                     }
+                    style={{ flex: 1 }}
+                    lighten={ckey ? ckey[1] : 0}
                     count={current != null ? colors[current] : null}
                     onClick={() => setOpen(!open)}
                 />
@@ -580,32 +785,27 @@ export const Select = ({
                         zIndex: 1000,
                     }}
                 >
-                    {state.palette
-                        .map((color, i) => (
-                            <Line
-                                key={i}
-                                color={color}
-                                count={colors[i]}
-                                onClick={() => {
-                                    onChange(i);
-                                    setOpen(false);
-                                }}
-                            />
-                        ))
-                        .filter((_, i) => colors[i] != null)}
-                    {constantColors
-                        .filter((color) => colors[color] != null)
-                        .map((color) => (
-                            <Line
-                                key={color}
-                                color={color}
-                                count={colors[color]}
-                                onClick={() => {
-                                    onChange(color);
-                                    setOpen(false);
-                                }}
-                            />
-                        ))}
+                    {keys.map(([color, lighten, orig], i) => (
+                        <Line
+                            key={i}
+                            color={
+                                typeof color === 'number'
+                                    ? state.palette[color]
+                                    : color
+                            }
+                            style={{
+                                ':hover': {
+                                    backgroundColor: 'rgba(255,255,255,0.3)',
+                                },
+                            }}
+                            lighten={lighten}
+                            count={colors[i]}
+                            onClick={() => {
+                                onChange(orig);
+                                setOpen(false);
+                            }}
+                        />
+                    ))}
                 </div>
             ) : null}
         </div>
@@ -616,36 +816,34 @@ const Line = ({
     color,
     count,
     onClick,
+    lighten,
+    style,
 }: {
     color: string | null | undefined;
     count: number | null;
+    lighten: number;
     onClick?: () => void;
+    style?: Interpolation<Theme>;
 }) => {
     return (
         <div
-            css={{
-                display: 'flex',
-                flexDirection: 'row',
-                padding: '4px 16px',
-                cursor: 'pointer',
-            }}
+            css={[
+                {
+                    display: 'flex',
+                    flexDirection: 'row',
+                    padding: '4px 16px',
+                    cursor: 'pointer',
+                },
+                style,
+            ]}
             onClick={onClick}
         >
             <div
-                // onClick={() => onChange(i)}
-                // onMouseOver={() => onHover(i)}
-                // onMouseOut={() => onHover(null)}
-                // style={{
-                //     boxShadow: color.includes(i)
-                //         ? `0 3px 0 ${highlight}`
-                //         : 'none',
-                //     // border: `2px solid ${
-                //     //     color.includes(i) ? highlight : '#444'
-                //     // }`,
-                // }}
                 css={{
                     background:
-                        color != null ? maybeUrlColor(color) : undefined,
+                        color != null
+                            ? lightenedColor([], maybeUrlColor(color), lighten)
+                            : undefined,
                     width: 20,
                     height: 20,
                     cursor: 'pointer',
@@ -658,25 +856,27 @@ const Line = ({
                     },
                 }}
             />
-            {color != null ? color : 'Select a color'}
+            {color != null
+                ? color + (lighten != 0 ? '/' + lighten : '')
+                : 'Select a color'}
             {count != null ? ' ' + count : null}
         </div>
     );
 };
 
-export const FullLength = ({ state }: { state: State }) => {
-    const [ok, setOk] = useState(null as null | number);
+// export const FullLength = ({ state }: { state: State }) => {
+//     const [ok, setOk] = useState(null as null | number);
 
-    return (
-        <div>
-            {ok ? ok + 'mm' : 'Not calculated'}
-            <button
-                onClick={() => {
-                    // hm
-                }}
-            >
-                Calculate full cut length
-            </button>
-        </div>
-    );
-};
+//     return (
+//         <div>
+//             {ok ? ok + 'mm' : 'Not calculated'}
+//             <button
+//                 onClick={() => {
+//                     // hm
+//                 }}
+//             >
+//                 Calculate full cut length
+//             </button>
+//         </div>
+//     );
+// };

@@ -31,6 +31,8 @@ export const RenderSegmentBasic = ({
                 className={className ?? inner?.className}
             />
         );
+    } else if (segment.type === 'Quad') {
+        throw new Error('noa');
     } else {
         if (coordsEqual(prev, segment.to)) {
             return (

@@ -1,18 +1,9 @@
 import * as React from 'react';
-import { calcSegmentsD } from '../editor/RenderPath';
+import { calcSegmentsD } from '../editor/calcPathD';
 import { Segment } from '../types';
 import { register } from '../vest';
 import { prevSegmentsToShape, SegmentWithPrev } from './clipPathNew';
-import { cleanUpInsetSegments2 } from './findInternalRegions';
 import { insetSegments } from './insetPath';
-import { coordsEqual } from './pathsAreIdentical';
-import {
-    angleDifferences,
-    isClockwise,
-    pathToPoints,
-    pointsAngles,
-    totalAngle,
-} from './pathToPoints';
 import { ShapeEditor } from './ShapeEditor';
 
 type Input = [Array<SegmentWithPrev>, number];

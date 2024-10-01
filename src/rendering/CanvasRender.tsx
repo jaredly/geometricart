@@ -25,7 +25,8 @@ import {
     rasterSegPoints,
     reversePath,
 } from './pathToPoints';
-import { calcPathD, idSeed, lightenedColor } from '../editor/RenderPath';
+import { idSeed, lightenedColor } from '../editor/RenderPath';
+import { calcPathD } from '../editor/calcPathD';
 import { sortedVisibleInsetPaths } from './sortedVisibleInsetPaths';
 import { ArcSegment, Overlay, Path, State } from '../types';
 import { imageCache } from '../editor/SVGCanvas';
@@ -39,7 +40,13 @@ export const makeImage = (href: string): Promise<HTMLImageElement> => {
         img.onload = () => {
             res(img);
         };
-        img.onerror = () => rej(new Error(`Failed to load image`));
+        img.onerror = () => {
+            // rej(new Error(`Failed to load image`));
+            console.error(`Failed to load image`);
+            img.src =
+                'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAAXNSR0IArs4c6QAAABhJREFUKFNj/M/A8J+BCMA4qhBfKFE/eABl/BP31VUGzAAAAABJRU5ErkJggg==';
+            res(img);
+        };
     });
 };
 
@@ -235,7 +242,8 @@ export const canvasRender = (
                         : 2
                     : (line.width / 100) * zoom;
             ctx.lineJoin = 'bevel';
-            ctx.lineCap = 'square';
+            // ctx.lineCap = 'square';
+            ctx.lineCap = 'round';
 
             let myPath = path;
             const color = lightenedColor(palette, line.color, line.lighten)!;
@@ -416,7 +424,9 @@ function drawCenteredImage(
 }
 
 function debugPath(path: Path, ctx: CanvasRenderingContext2D, zoom: number) {
-    rasterSegPoints(pathToPoints(path.segments)).forEach((point) => {
+    rasterSegPoints(
+        pathToPoints(path.segments, path.open ? path.origin : null),
+    ).forEach((point) => {
         ctx.beginPath();
         ctx.ellipse(point.x * zoom, point.y * zoom, 10, 10, 0, Math.PI * 2, 0);
         ctx.fillStyle = 'blue';
@@ -500,7 +510,8 @@ export function tracePath(
     // ctx.lineJoin = 'round';
     // ctx.lineCap = 'round';
     ctx.lineJoin = 'miter';
-    ctx.lineCap = 'square';
+    ctx.lineCap = 'butt';
+    // ctx.lineCap = 'round';
     if (
         path.segments.length === 1 &&
         path.segments[0].type === 'Arc' &&
@@ -522,6 +533,14 @@ export function tracePath(
     path.segments.forEach((seg, i) => {
         if (seg.type === 'Line') {
             ctx.lineTo(seg.to.x * zoom, seg.to.y * zoom);
+        } else if (seg.type === 'Quad') {
+            // throw new Error('lolno');
+            ctx.quadraticCurveTo(
+                seg.control.x * zoom,
+                seg.control.y * zoom,
+                seg.to.x * zoom,
+                seg.to.y * zoom,
+            );
         } else {
             const radius = dist(seg.center, seg.to);
             const t0 = angleTo(
@@ -581,6 +600,8 @@ export function tracePathLine(
             ctx.lineTo(p4.x * zoom, p4.y * zoom);
             ctx.lineTo(p3.x * zoom, p3.y * zoom);
             ctx.lineTo(p1.x * zoom, p1.y * zoom);
+        } else if (seg.type === 'Quad') {
+            throw new Error('lol no thx');
         } else {
             const radius = dist(seg.center, seg.to);
             const t0 = angleTo(seg.center, prev);

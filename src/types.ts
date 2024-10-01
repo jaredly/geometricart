@@ -217,8 +217,14 @@ export type ArcSegment = {
     // large
 };
 
+export type QuadSegment = {
+    type: 'Quad';
+    control: Coord;
+    to: Coord;
+};
+
 export type LineSegment = { type: 'Line'; to: Coord };
-export type Segment = LineSegment | ArcSegment; // long = "the long way round"
+export type Segment = LineSegment | ArcSegment | QuadSegment; // long = "the long way round"
 
 export type PathGroup = {
     id: Id;
@@ -345,6 +351,7 @@ export type View = {
         rows: number;
         combineGroups?: boolean;
         skipBacking?: boolean;
+        traceAndMerge?: boolean;
     };
 };
 
@@ -372,6 +379,24 @@ export type Meta = {
     description: string;
     created: number;
     ppi: number;
+
+    threedSettings?: {
+        // style: {
+        //     type: 'hdf'
+        // } | {
+        //     type: 'cardstock',
+        //     base: 'hdf' | 'cereal',
+        //     overhang: number, // in mm
+        // } | {
+        //     // I'd want this to be ... really thin?
+        //     type: 'acrylic',
+        //     thickness: number
+        // },
+        thickness?: number;
+        gap?: number;
+        shadowZoom?: number;
+        lightPosition?: [number, number, number];
+    };
 };
 export type LerpPoint = {
     pos: Coord;
@@ -516,6 +541,7 @@ export type GCodePath = {
 
 export type State = {
     version: 12;
+
     nextId: number;
     history: History;
     meta: Meta;
@@ -539,6 +565,7 @@ export type State = {
         zooms: { idx: number; view: Pick<View, 'zoom' | 'center'> }[];
         skips: number[];
         start?: number;
+        end?: number;
     };
 
     tilings: { [key: Id]: Tiling };

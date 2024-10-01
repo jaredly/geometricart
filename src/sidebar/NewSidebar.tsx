@@ -1,23 +1,32 @@
+import { Button } from 'primereact/button';
+import { OverlayPanel } from 'primereact/overlaypanel';
 import * as React from 'react';
+import { Clips } from '../editor/Clips';
+import { Hover } from '../editor/Sidebar';
+import { UndoPanel } from '../editor/UndoPanel';
 import { Action, GlobalTransform } from '../state/Action';
 import { Coord, Mirror, Path, PathGroup, Segment, State } from '../types';
-import { Tree } from 'primereact/tree';
-import { Button } from 'primereact/button';
 import { Accordion as MyAccordion } from './Accordion';
-import { Hover, ReallyButton } from '../editor/Sidebar';
-import { UndoPanel } from '../editor/UndoPanel';
-import { Clips } from '../editor/Clips';
-import { OverlayPanel } from 'primereact/overlaypanel';
 
 import type * as CSS from 'csstype';
-import { selectedPathIds } from '../editor/touchscreenControls';
-import { MultiStyleForm, StyleHover } from '../editor/MultiStyleForm';
+import dayjs from 'dayjs';
+import PathKitInit, { PathKit, Path as PKPath } from 'pathkit-wasm';
+import { SketchPicker } from 'react-color';
 import { Export } from '../editor/Export';
+import { PathForm, PathGroupForm, ViewForm } from '../editor/Forms';
+import { ShowMirror } from '../editor/MirrorForm';
+import { MultiStyleForm } from '../editor/MultiStyleForm';
+import { OverlaysForm } from '../editor/OverlaysForm';
+import { PalettesForm } from '../editor/PalettesForm';
+import { paletteColor } from '../editor/RenderPath';
 import { Tilings } from '../editor/Tilings';
-import { Screen, UIDispatch, UIState } from '../useUIState';
+import { calcSegmentsD } from '../editor/calcPathD';
+import { selectedPathIds } from '../editor/touchscreenControls';
+import { getStateFromFile } from '../editor/useDropTarget';
+import { cmdsToSegments } from '../gcode/cmdsToSegments';
 import {
+    CubeIcon,
     DrillIcon,
-    IconButton,
     IconHistoryToggle,
     IconVerticalAlignMiddle,
     MagicWandIcon,
@@ -25,36 +34,13 @@ import {
     RedoIcon,
     UndoIcon,
 } from '../icons/Icon';
-import { useLocalStorage } from '../vest/App';
-import { PalettesForm } from '../editor/PalettesForm';
-import { OverlaysForm } from '../editor/OverlaysForm';
-import { PathForm, PathGroupForm, ViewForm } from '../editor/Forms';
-import { initialState } from '../state/initialState';
-import { getStateFromFile } from '../editor/useDropTarget';
-import { ShowMirror } from '../editor/MirrorForm';
-import {
-    getMirrorTransforms,
-    scaleMatrix,
-    translationMatrix,
-} from '../rendering/getMirrorTransforms';
-import { MirrorItems } from './MirrorItems';
-import dayjs from 'dayjs';
-import { SketchPicker } from 'react-color';
-import { calcSegmentsD, paletteColor } from '../editor/RenderPath';
-import {
-    boundsMidpoint,
-    segmentBounds,
-    segmentsBounds,
-    segmentsCenter,
-} from '../editor/Bounds';
-import { transformPath } from '../rendering/points';
-import { scalePos } from '../editor/scalePos';
-import { insetSegments } from '../rendering/insetPath';
-import { cleanUpInsetSegments2 } from '../rendering/findInternalRegions';
+import { getMirrorTransforms } from '../rendering/getMirrorTransforms';
 import { ensureClockwise } from '../rendering/pathToPoints';
-import PathKitInit, { PathKit, Path as PKPath } from 'pathkit-wasm';
-import { cmdsToSegments } from '../gcode/generateGcode';
 import { coordsEqual } from '../rendering/pathsAreIdentical';
+import { groupSort } from '../threed/ThreedScreen';
+import { Screen, UIDispatch, UIState } from '../useUIState';
+import { useLocalStorage } from '../vest/App';
+import { MirrorItems } from './MirrorItems';
 
 declare module 'csstype' {
     interface Properties {
@@ -121,24 +107,26 @@ export const NewSidebar = ({
                 {[
                     { name: 'edit', icon: PencilIcon },
                     { name: 'animate', icon: MagicWandIcon },
+                    { name: '3d', icon: CubeIcon },
                     { name: 'gcode', icon: DrillIcon },
                     { name: 'history', icon: IconHistoryToggle },
                     { name: 'overlay', icon: IconVerticalAlignMiddle },
                 ].map((Config, i) => (
                     <Button
                         key={i}
+                        tooltip={Config.name}
                         className={
                             uiState.screen === Config.name
                                 ? ''
                                 : 'p-button-text'
                         }
                         onClick={() =>
+                            uiState.screen !== Config.name &&
                             uiDispatch({
                                 type: 'screen',
                                 screen: Config.name as Screen,
                             })
                         }
-                        disabled={uiState.screen === Config.name}
                     >
                         <Config.icon />
                     </Button>
@@ -313,23 +301,13 @@ export const NewSidebar = ({
                         },
                     },
                     {
-                        key: 'shapes',
-                        header: 'Shapes',
-                        content: () => (
-                            <ShapeItems
-                                state={state}
-                                setHover={setHover}
-                                dispatch={dispatch}
-                            />
-                        ),
-                    },
-                    {
                         key: 'fill',
                         header: 'Stroke & Fill',
                         content: () => (
                             <div className="p-3">
                                 {styleIds.length ? (
                                     <MultiStyleForm
+                                        ppi={state.meta.ppi}
                                         dispatch={dispatch}
                                         palette={state.palette}
                                         styles={styleIds.map(
@@ -364,6 +342,19 @@ export const NewSidebar = ({
                                     'Select some shapes to edit their style'
                                 )}
                             </div>
+                        ),
+                    },
+                    {
+                        key: 'shapes',
+                        header: 'Shapes',
+                        always: true,
+                        content: (expanded: boolean) => (
+                            <ShapeItems
+                                state={state}
+                                setHover={setHover}
+                                dispatch={dispatch}
+                                onlyShowSelected={!expanded}
+                            />
                         ),
                     },
                     {
@@ -600,7 +591,7 @@ function TransformPanel({
                 />
             </div>
             <div>
-                <button
+                {/* <button
                     onClick={() => {
                         const bounds = segmentsBounds(
                             pathIds.flatMap((id) => state.paths[id].segments),
@@ -636,7 +627,7 @@ function TransformPanel({
                     }}
                 >
                     Scale
-                </button>
+                </button> */}
                 <div>
                     <select
                         onChange={(evt) => setClip(evt.target.value)}
@@ -695,10 +686,12 @@ function ShapeItems({
     state,
     setHover,
     dispatch,
+    onlyShowSelected,
 }: {
     state: State;
     setHover: (hover: Hover | null) => void;
     dispatch: React.Dispatch<Action>;
+    onlyShowSelected: boolean;
 }): JSX.Element {
     const groups: { [key: string]: string[] } = {};
     Object.entries(state.paths).forEach(([id, path]) => {
@@ -708,6 +701,7 @@ function ShapeItems({
         <>
             {Object.entries(state.pathGroups)
                 .filter((k) => groups[k[0]])
+                .sort(([_, a], [__, b]) => groupSort(a, b))
                 .map(([k, group]) => (
                     <PathGroupItem
                         key={k}
@@ -717,6 +711,7 @@ function ShapeItems({
                         dispatch={dispatch}
                         group={group}
                         pathKeys={groups[k] ?? []}
+                        onlyShowSelected={onlyShowSelected}
                     />
                 ))}
         </>
@@ -730,6 +725,7 @@ function PathGroupItem({
     dispatch,
     group,
     pathKeys,
+    onlyShowSelected,
 }: {
     k: string;
     state: State;
@@ -737,19 +733,26 @@ function PathGroupItem({
     dispatch: React.Dispatch<Action>;
     group: PathGroup;
     pathKeys: string[];
-}): JSX.Element {
+    onlyShowSelected: boolean;
+}) {
     const [open, setOpen] = React.useState(false);
     const isSelected =
         state.selection?.type === 'PathGroup' &&
         state.selection.ids.includes(k);
+    const isSubSelected =
+        state.selection?.type === 'Path' &&
+        state.selection.ids.some((id) => state.paths[id].group === k);
     const op = React.useRef<OverlayPanel>(null);
+    if (onlyShowSelected && !isSelected && !isSubSelected) {
+        return null;
+    }
 
     return (
         <>
             <div
                 className="hover"
                 style={{
-                    ...itemStyle(isSelected),
+                    ...itemStyle(isSelected, isSubSelected),
                     padding: '8px 0',
                 }}
                 onMouseEnter={() =>
@@ -793,6 +796,7 @@ function PathGroupItem({
                     style={{
                         marginTop: -10,
                         marginBottom: -12,
+                        marginLeft: 18,
                     }}
                     onClick={(evt) => {
                         evt.stopPropagation();
@@ -1022,7 +1026,10 @@ function toggleViewGuides(state: State, dispatch: React.Dispatch<Action>) {
     );
 }
 
-export function itemStyle(selected: boolean): React.CSSProperties | undefined {
+export function itemStyle(
+    selected: boolean,
+    subSelected = false,
+): React.CSSProperties | undefined {
     return {
         padding: 8,
         cursor: 'pointer',
@@ -1031,7 +1038,7 @@ export function itemStyle(selected: boolean): React.CSSProperties | undefined {
         display: 'flex',
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: selected ? '#555' : '',
+        backgroundColor: selected ? '#555' : subSelected ? '#055' : '',
     };
 }
 
@@ -1134,11 +1141,16 @@ export const NewPalettesForm = ({
     );
 };
 
-export const pkPath = (PK: PathKit, segments: Segment[], origin?: Coord) => {
+export const pkPath = (
+    PK: PathKit,
+    segments: Segment[],
+    origin?: Coord,
+    open?: boolean,
+) => {
     const d = calcSegmentsD(
         segments,
         origin ?? segments[segments.length - 1].to,
-        false,
+        open,
         1,
     );
     return PK.FromSVGString(d);
@@ -1171,14 +1183,16 @@ export const pkPathToSegments = (PK: PathKit, pkp: PKPath) => {
     const clipped = cmdsToSegments(pkp.toCmds(), PK);
 
     clipped.forEach((region) => {
-        const { segments, origin } = region;
-        if (!coordsEqual(segments[segments.length - 1].to, origin)) {
-            console.error('NO BADS clipped idk', segments, origin);
-            console.log(pkp.toCmds());
+        const { segments, origin, open } = region;
+        if (!open) {
+            if (!coordsEqual(segments[segments.length - 1].to, origin)) {
+                console.error('NO BADS clipped idk', segments, origin);
+                console.log(pkp.toCmds());
+            }
+            const segs = ensureClockwise(segments);
+            region.segments = segs;
+            region.origin = segs[segs.length - 1].to;
         }
-        const segs = ensureClockwise(segments);
-        region.segments = segs;
-        region.origin = segs[segs.length - 1].to;
     });
 
     return clipped;
@@ -1206,7 +1220,7 @@ export const pkClipPaths = async (
 
     pathIds.forEach((id) => {
         const path = state.paths[id];
-        const pkp = pkPath(PK, path.segments, path.origin);
+        const pkp = pkPath(PK, path.segments, path.origin, path.open);
 
         const clipped = pkClipPath(PK, pkp, pkClip, outside);
 

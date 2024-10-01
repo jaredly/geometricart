@@ -108,6 +108,8 @@ export function primitivesForElementsAndPaths(
                             let prim: Primitive;
                             if (seg.type === 'Line') {
                                 prim = lineToSlope(prev, seg.to, true);
+                            } else if (seg.type === 'Quad') {
+                                throw new Error('noa');
                             } else {
                                 const t0 = angleTo(seg.center, prev);
                                 const t1 = angleTo(seg.center, seg.to);
@@ -251,7 +253,7 @@ export const Guides = ({
     }, [!!pendingPath[0]]);
 
     const onCompletePath = React.useCallback(
-        (parts: Array<PendingSegment>) => {
+        (parts: Array<PendingSegment>, open?: boolean) => {
             if (pendingPath[0]?.type !== 'path') {
                 return;
             }
@@ -269,6 +271,7 @@ export const Guides = ({
                         {
                             segments: parts.map((s) => s.segment),
                             origin: pendingPath[0].origin.coord,
+                            open,
                         },
                     ],
                     withMirror: true,

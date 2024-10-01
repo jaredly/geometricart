@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { calcSegmentsD } from '../editor/RenderPath';
+import { calcSegmentsD } from '../editor/calcPathD';
 import { Segment } from '../types';
 import { register } from '../vest';
 import { prevSegmentsToShape, SegmentWithPrev } from './clipPathNew';
@@ -26,7 +26,7 @@ const ShowDebug = ({ shape }: { shape: Array<SegmentWithPrev> }) => {
                 ? []
                 : [{ type: 'Line', to: shape[0].prev }],
         );
-    const points = rasterSegPoints(pathToPoints(segs, true));
+    const points = rasterSegPoints(pathToPoints(segs, null, true));
     const angles = pointsAngles(points);
     const diffs = angleDifferences(angles);
     calcSegmentsD;

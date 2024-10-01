@@ -22,65 +22,65 @@
 
 // NB this file isn't actually used anywhere yet. It was partly just to get my thoughts in order.
 
-import {
-    findRegions,
-    removeContainedRegions,
-    removeNonWindingRegions,
-} from './findInternalRegions';
-import {
-    Froms,
-    PartialSegment,
-    segmentsToNonIntersectingSegments,
-} from './segmentsToNonIntersectingSegments';
-import { simplifyPath } from './simplifyPath';
-import { insetSegment } from './insetSegment';
-import { isClockwise, reversePath } from './pathToPoints';
-import { Segment } from '../types';
+// import {
+//     findRegions,
+//     removeContainedRegions,
+//     removeNonWindingRegions,
+// } from './findInternalRegions';
+// import {
+//     Froms,
+//     PartialSegment,
+//     segmentsToNonIntersectingSegments,
+// } from './segmentsToNonIntersectingSegments';
+// import { simplifyPath } from './simplifyPath';
+// import { insetSegment } from './insetSegment';
+// import { isClockwise, reversePath } from './pathToPoints';
+// import { Segment } from '../types';
 
-export const step0ensureInsetPreconditions = (segments: Array<Segment>) => {
-    segments = isClockwise(segments) ? segments : reversePath(segments);
-    // just in case we can make this easier on ourselves.
-    return simplifyPath(segments);
-};
+// export const step0ensureInsetPreconditions = (segments: Array<Segment>) => {
+//     segments = isClockwise(segments) ? segments : reversePath(segments);
+//     // just in case we can make this easier on ourselves.
+//     return simplifyPath(segments);
+// };
 
-export const step1insetSegments = (segments: Array<Segment>, inset: number) => {
-    const insets = segments.map((seg, i) => {
-        const prev = segments[i === 0 ? segments.length - 1 : i - 1].to;
-        const next = segments[i === segments.length - 1 ? 0 : i + 1];
-        // TODO 🤔: should this pre-split segments that are obviously going to self-intersect? Would
-        // that make my job easier?
-        return insetSegment(prev, seg, next, inset, true);
-    });
-    return insets.flat();
-};
+// export const step1insetSegments = (segments: Array<Segment>, inset: number) => {
+//     const insets = segments.map((seg, i) => {
+//         const prev = segments[i === 0 ? segments.length - 1 : i - 1].to;
+//         const next = segments[i === segments.length - 1 ? 0 : i + 1];
+//         // TODO 🤔: should this pre-split segments that are obviously going to self-intersect? Would
+//         // that make my job easier?
+//         return insetSegment(prev, seg, next, inset, true);
+//     });
+//     return insets.flat();
+// };
 
-export const step2splitAtIntersections = (segments: Array<Segment>) => {
-    return segmentsToNonIntersectingSegments(segments);
-};
+// export const step2splitAtIntersections = (segments: Array<Segment>) => {
+//     return segmentsToNonIntersectingSegments(segments);
+// };
 
-export const step3findClockwiseRegions = ({
-    result,
-    froms,
-}: {
-    result: Array<PartialSegment>;
-    froms: Froms;
-}) => {
-    return findRegions(result, froms).filter(isClockwise);
-};
+// export const step3findClockwiseRegions = ({
+//     result,
+//     froms,
+// }: {
+//     result: Array<PartialSegment>;
+//     froms: Froms;
+// }) => {
+//     return findRegions(result, froms).filter(isClockwise);
+// };
 
-export const step4filterRegions = (
-    regions: Array<Array<Segment>>,
-    segments: Array<Segment>,
-) => {
-    return removeContainedRegions(removeNonWindingRegions(segments, regions));
-};
+// export const step4filterRegions = (
+//     regions: Array<Array<Segment>>,
+//     segments: Array<Segment>,
+// ) => {
+//     return removeContainedRegions(removeNonWindingRegions(segments, regions));
+// };
 
-export const insetPathNew = (segments: Array<Segment>, inset: number) => {
-    segments = step0ensureInsetPreconditions(segments);
-    return step4filterRegions(
-        step3findClockwiseRegions(
-            step2splitAtIntersections(step1insetSegments(segments, inset)),
-        ),
-        segments,
-    );
-};
+// export const insetPathNew = (segments: Array<Segment>, inset: number) => {
+//     segments = step0ensureInsetPreconditions(segments);
+//     return step4filterRegions(
+//         step3findClockwiseRegions(
+//             step2splitAtIntersections(step1insetSegments(segments, inset)),
+//         ),
+//         segments,
+//     );
+// };

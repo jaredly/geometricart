@@ -9,6 +9,9 @@ export const segmentPath = ({ prev, segment }: PSeg) => {
     if (segment.type === 'Line') {
         return `M${prev.x} ${prev.y}L${segment.to.x} ${segment.to.y}`;
     }
+    if (segment.type === 'Quad') {
+        return `M${prev.x} ${prev.y}Q${segment.control.x} ${segment.control.y} ${segment.to.x} ${segment.to.y}`;
+    }
     if (coordsEqual(prev, segment.to)) {
         const mid = {
             x: segment.center.x + (segment.center.x - prev.x),

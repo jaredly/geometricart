@@ -74,10 +74,26 @@ export const BlurInt = ({
                     if (evt.key === 'Return' || evt.key === 'Enter') {
                         (evt.target as HTMLInputElement).blur();
                     }
+                    if (evt.key === 'ArrowUp') {
+                        evt.preventDefault();
+                        evt.stopPropagation();
+                        onChange(v != null ? v + 1 : 0);
+                        if (text != null) {
+                            setText(null);
+                        }
+                    } else if (evt.key === 'ArrowDown') {
+                        evt.preventDefault();
+                        evt.stopPropagation();
+                        onChange(v != null ? v - 1 : 0);
+                        if (text != null) {
+                            setText(null);
+                        }
+                    }
                 }}
                 onBlur={() => {
                     if (text != null) {
                         const res = +text;
+                        setText(null);
                         if (isNaN(res) || !text.trim()) {
                             onChange(undefined);
                         } else {
@@ -412,6 +428,11 @@ export const PathForm = ({
             >
                 Path! {path.id}
                 <div style={{ flexBasis: 8 }} />
+                <Toggle
+                    label="Open"
+                    value={!!path.open}
+                    onChange={(open) => onChange({ ...path, open })}
+                />
                 <Toggle
                     label="Hide"
                     value={path.hidden}

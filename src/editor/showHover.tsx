@@ -9,7 +9,7 @@ import {
     Matrix,
     reverseTransform,
 } from '../rendering/getMirrorTransforms';
-import { geomToPrimitives } from '../rendering/points';
+import { geomToPrimitives, transformBarePath } from '../rendering/points';
 import { Mirror, State } from '../types';
 import { Bounds } from './GuideElement';
 import { RenderMirror } from './RenderMirror';
@@ -17,6 +17,7 @@ import { emptyPath, UnderlinePath } from './RenderPath';
 import { RenderPrimitive } from './RenderPrimitive';
 import { Hover } from './Sidebar';
 import { eigenShapesToLines, getTransform, tilingPoints } from './tilingPoints';
+import { calcPathD, calcSegmentsD } from './calcPathD';
 
 export const showHover = (
     key: string,
@@ -125,6 +126,7 @@ export const showHover = (
         }
         case 'Tiling': {
             const tiling = state.tilings[hover.id];
+            if (!tiling) return;
             const pts = tilingPoints(tiling.shape);
             const tx = getTransform(pts);
             const btx = reverseTransform(tx);
@@ -137,19 +139,40 @@ export const showHover = (
                 applyMatrices(p1, btx),
                 applyMatrices(p2, btx),
             ]);
-            return full.map(([p1, p2], i) => (
-                <line
-                    stroke="yellow"
-                    strokeWidth={1}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    key={i}
-                    x1={p1.x * zoom}
-                    x2={p2.x * zoom}
-                    y1={p1.y * zoom}
-                    y2={p2.y * zoom}
-                />
-            ));
+            return (
+                <>
+                    {full.map(([p1, p2], i) => (
+                        <line
+                            stroke="yellow"
+                            strokeWidth={1}
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            key={i}
+                            x1={p1.x * zoom}
+                            x2={p2.x * zoom}
+                            y1={p1.y * zoom}
+                            y2={p2.y * zoom}
+                        />
+                    ))}
+                    {tiling.cache.shapes.map((shape, i) => (
+                        <path
+                            key={i}
+                            d={calcPathD(transformBarePath(shape, btx), zoom)}
+                            fill="red"
+                            opacity={0.2}
+                        />
+                    ))}
+                    <polygon
+                        points={pts
+                            .map(({ x, y }) => `${x * zoom}, ${y * zoom}`)
+                            .join(' ')}
+                        fill="none"
+                        stroke="green"
+                        strokeWidth={5}
+                        strokeDasharray={'4 4'}
+                    />
+                </>
+            );
         }
     }
 };

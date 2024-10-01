@@ -632,9 +632,8 @@ export const reduceWithoutUndo = (
                 },
             ];
         }
-        case 'group:regroup': {
+        case 'group:duplicate': {
             const paths = { ...state.paths };
-            const touched: { [key: Id]: true } = {};
             const ids =
                 action.selection.type === 'Path'
                     ? action.selection.ids
@@ -642,12 +641,48 @@ export const reduceWithoutUndo = (
                           action.selection.ids.includes(paths[k].group!),
                       );
             let nextId = state.nextId;
-            const group = `id-${nextId++}`;
+            const group = `gid-${nextId}`;
+            const nids = ids.map((id) => {
+                const nid = `id-${nextId++}`;
+                paths[nid] = { ...paths[id], id: nid, group };
+                return nid;
+            });
+
+            return [
+                {
+                    ...state,
+                    nextId,
+                    selection: { type: 'PathGroup', ids: [group] },
+                    paths,
+                    pathGroups: {
+                        ...state.pathGroups,
+                        [group]: { id: group, group: null },
+                    },
+                },
+                {
+                    type: action.type,
+                    action,
+                    created: [group, state.nextId, nids],
+                },
+            ];
+        }
+        case 'group:regroup': {
+            const paths = { ...state.paths };
+            const ids =
+                action.selection.type === 'Path'
+                    ? action.selection.ids
+                    : Object.keys(paths).filter((k) =>
+                          action.selection.ids.includes(paths[k].group!),
+                      );
+            let nextId = state.nextId;
+            // Re-use the first selected group, if we're combining groups.
+            let oldGroup =
+                action.selection.type === 'PathGroup'
+                    ? action.selection.ids[0]
+                    : null;
+            const group = oldGroup ?? `id-${nextId++}`;
             const prevGroups: { [key: Id]: Id | null } = {};
             ids.forEach((id) => {
-                // if (paths[id].group) {
-                //     touched[paths[id].group!] = true
-                // }
                 prevGroups[id] = paths[id].group;
                 paths[id] = { ...paths[id], group };
             });
@@ -657,18 +692,20 @@ export const reduceWithoutUndo = (
                     nextId,
                     selection: { type: 'PathGroup', ids: [group] },
                     paths,
-                    pathGroups: {
-                        ...state.pathGroups,
-                        [group]: {
-                            id: group,
-                            group: null,
-                        },
-                    },
+                    pathGroups: oldGroup
+                        ? state.pathGroups
+                        : {
+                              ...state.pathGroups,
+                              [group]: {
+                                  id: group,
+                                  group: null,
+                              },
+                          },
                 },
                 {
                     type: action.type,
                     action,
-                    created: [group, state.nextId],
+                    created: oldGroup ? null : [group, state.nextId],
                     prevGroups,
                 },
             ];
@@ -955,6 +992,18 @@ export const reduceWithoutUndo = (
                 { ...state, historyView: action.view },
                 { type: action.type, action, prev: state.historyView },
             ];
+        case 'groups:order': {
+            const pathGroups = { ...state.pathGroups };
+            const prev: Record<string, number | undefined> = {};
+            Object.entries(action.order).forEach(([key, ordering]) => {
+                prev[key] = pathGroups[key].ordering;
+                pathGroups[key] = { ...pathGroups[key], ordering };
+            });
+            return [
+                { ...state, pathGroups },
+                { type: action.type, action, prev },
+            ];
+        }
         default:
             let _x: never = action;
             console.log(`SKIPPING ${(action as any).type}`);
@@ -964,6 +1013,12 @@ export const reduceWithoutUndo = (
 
 export const undo = (state: State, action: UndoAction): State => {
     switch (action.type) {
+        case 'groups:order':
+            const pathGroups = { ...state.pathGroups };
+            Object.entries(action.prev).forEach(([key, ordering]) => {
+                pathGroups[key] = { ...pathGroups[key], ordering };
+            });
+            return { ...state, pathGroups };
         case 'history-view:update':
             return { ...state, historyView: action.prev };
         case 'tiling:update':
@@ -1113,6 +1168,19 @@ export const undo = (state: State, action: UndoAction): State => {
                 },
                 paths,
             };
+        }
+        case 'group:duplicate': {
+            state = { ...state, paths: { ...state.paths } };
+            if (action.created) {
+                const [gid, nextId, pids] = action.created;
+                state.pathGroups = { ...state.pathGroups };
+                delete state.pathGroups[gid];
+                state.nextId = nextId;
+                pids.forEach((pid) => {
+                    delete state.paths[pid];
+                });
+            }
+            return state;
         }
         case 'group:regroup': {
             state = { ...state, paths: { ...state.paths } };
@@ -1455,6 +1523,7 @@ export function handlePathMultiply(
                 origin,
                 segments,
                 style: main.group ? main.style : { fills: [], lines: [] },
+                open: main.open,
             };
             ids.push(nid);
         });
@@ -1516,7 +1585,7 @@ export function handlePathCreate(
         ids.push(id);
 
         const style: Style = {
-            fills: action.trace ? [] : [{ color: 1 }],
+            fills: action.trace || open ? [] : [{ color: 1 }],
             lines: [{ color: 'white', width: 0 }],
         };
 
@@ -1529,7 +1598,7 @@ export function handlePathCreate(
             origin,
             open,
             // simplify it up y'all
-            segments: simplifyPath(ensureClockwise(segments)),
+            segments: simplifyPath(open ? segments : ensureClockwise(segments)),
             style,
         };
 

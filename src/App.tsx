@@ -17,6 +17,7 @@ import { NewSidebar } from './sidebar/NewSidebar';
 import { Action } from './state/Action';
 import { useUIState } from './useUIState';
 import { OverlayEditor } from './OverelayEditor';
+import { ThreedScreen } from './threed/ThreedScreen';
 
 export const useCurrent = <T,>(value: T) => {
     const ref = React.useRef(value);
@@ -153,6 +154,12 @@ export const App = ({
                             width: 100,
                             height: 100,
                         }}
+                    />
+                ) : screen === '3d' ? (
+                    <ThreedScreen
+                        state={state}
+                        dispatch={dispatch}
+                        hover={hover}
                     />
                 ) : screen === 'history' ? (
                     <HistoryPlayback state={state} dispatch={dispatch} />

@@ -18,6 +18,7 @@ specifiers:
   '@testing-library/jest-dom': '*'
   '@testing-library/react': 13.4.0
   '@testing-library/user-event': '*'
+  '@types/earcut': ^2.1.4
   '@types/react': ^18
   '@types/react-color': ^3.0.6
   '@types/react-dom': ^18
@@ -29,10 +30,12 @@ specifiers:
   buffer: ^6.0.3
   csstype: ^3.1.1
   dayjs: ^1.11.6
+  earcut: ^3.0.0
   esbuild: '0.14'
   esbuild-plugin-babel: ^0.2.3
   fast-deep-equal: ^3.1.3
   fast-glob: ^3.2.11
+  fflate: ^0.8.2
   homography: ^1.8.0
   isomorphic-git: ^1.21.0
   jest: ^27.0.6
@@ -61,10 +64,11 @@ specifiers:
   remark-math: ^5.1.1
   roughjs: ^4.5.0
   sane: ^5.0.1
+  svg-path-commander: ^2.0.10
   three: ^0.145.0
   tinytar: jaredly/tinytar#tinytar-v0.1.0-gitpkg
   ts-prune: ^0.10.3
-  typescript: ^4.4.4
+  typescript: ^5.6.2
   vite: ^3.2.4
 
 dependencies:
@@ -81,9 +85,11 @@ dependencies:
   buffer: 6.0.3
   csstype: 3.1.1
   dayjs: 1.11.6
+  earcut: 3.0.0
   esbuild-plugin-babel: 0.2.3_@babel+core@7.19.6
   fast-deep-equal: 3.1.3
   fast-glob: 3.2.12
+  fflate: 0.8.2
   homography: 1.8.0
   isomorphic-git: 1.21.0
   json-diff-ts: 1.2.5_lodash@4.17.21
@@ -110,9 +116,10 @@ dependencies:
   remark-math: 5.1.1
   roughjs: 4.5.2
   sane: 5.0.1
+  svg-path-commander: 2.0.10
   three: 0.145.0
   tinytar: github.com/jaredly/tinytar/2e4edb820dc40cb058a094d95916e5e86d965faf
-  typescript: 4.8.4
+  typescript: 5.6.2
   vite: 3.2.4
 
 devDependencies:
@@ -127,6 +134,7 @@ devDependencies:
   '@testing-library/jest-dom': 5.16.5
   '@testing-library/react': 13.4.0_biqbaboplfbrettd7655fr4n2y
   '@testing-library/user-event': 13.5.0_aaq3sbffpfe3jnxzm2zngsddei
+  '@types/earcut': 2.1.4
   '@types/react': 18.0.21
   '@types/react-color': 3.0.6
   '@types/react-dom': 18.0.6
@@ -2109,6 +2117,10 @@ packages:
       '@testing-library/dom': 8.19.0
     dev: true
 
+  /@thednp/dommatrix/2.0.8:
+    resolution: {integrity: sha512-uITrAo0Oyu8BCHfhsBPmbqGoXwcyHUi7N2gPiI3lXItysPp+X8g7ZqGHi5/VBbaEHrv4eJxll8nFwL6SO25hzA==}
+    dev: false
+
   /@tootallnate/once/1.1.2:
     resolution: {integrity: sha512-RbzJvlNzmRq5c3O09UipeuXno4tA1FE6ikOjxZK0tuxVv3412l64l5t1W5pj4+rJq9vpkm/kwiR07aZXnsKPxw==}
     engines: {node: '>= 6'}
@@ -2166,6 +2178,10 @@ packages:
     resolution: {integrity: sha512-9AonUzyTjXXhEOa0DnqpzZi6VHlqKMswga9EXjpXnnqxwLtdvPPtlO8evrI5D9S6asFRCQ6v+wpiUKbw+vKqyg==}
     dependencies:
       '@types/ms': 0.7.31
+
+  /@types/earcut/2.1.4:
+    resolution: {integrity: sha512-qp3m9PPz4gULB9MhjGID7wpo3gJ4bTGXm7ltNDsmOvsPduTeHp8wSW9YckBj3mljeOh4F0m2z/0JKAALRKbmLQ==}
+    dev: true
 
   /@types/estree-jsx/1.0.0:
     resolution: {integrity: sha512-3qvGd0z8F2ENTGr/GG1yViqfiKmRfrXVx5sJyHGFu3z7m5g5utCQtGp/g29JnjflhtQJBv1WDQukHiT58xPcYQ==}
@@ -3109,6 +3125,10 @@ packages:
     resolution: {integrity: sha512-Ahum6SewAd1oVMm6Fk8T/zCE0qbzjohhO5pl1Xp5Outl4JKv7jYicfd5vNtkzImx94XE35fhNXVqHk9ajt+6Tg==}
     dev: false
 
+  /earcut/3.0.0:
+    resolution: {integrity: sha512-41Fs7Q/PLq1SDbqjsgcY7GA42T0jvaCNGXgGtsNdvg+Yv8eIu06bxv4/PoREkZ9nMDNwnUSG9OFB9+yv8eKhDg==}
+    dev: false
+
   /electron-to-chromium/1.4.284:
     resolution: {integrity: sha512-M8WEXFuKXMYMVr45fo8mq0wUrrJHheiKZf6BArTKk9ZBYCKJEOU5H8cdWgDT+qCVZf7Na4lVUaZsA+h6uA9+PA==}
 
@@ -3819,6 +3839,10 @@ packages:
     resolution: {integrity: sha512-IQrh3lEPM93wVCEczc9SaAOvkmcoQn/G8Bo1e8ZPlY3X3bnAxWaBdvTdvM1hP62iZp0BXWDy4vTAy4fF0+Dlpg==}
     dev: false
 
+  /fflate/0.8.2:
+    resolution: {integrity: sha512-cPJU47OaAoCbg0pBvzsgpTPhmhqI5eJjh/JIu8tPj5q+T7iLvW/JAYUqmE7KOB4R1ZyEhzBaIQpQpardBF5z8A==}
+    dev: false
+
   /fill-range/7.0.1:
     resolution: {integrity: sha512-qOo9F+dMUmC2Lcb4BbVvnKJxTPjCm+RRpe4gDuGrzkL7mEVl/djYSu2OdQ2Pa302N4oqkSg9ir6jaLWJ2USVpQ==}
     engines: {node: '>=8'}
@@ -3875,8 +3899,8 @@ packages:
     resolution: {integrity: sha512-OO0pH2lK6a0hZnAdau5ItzHPI6pUlvI7jMVnxUQRtw4owF2wk8lOSabtGDCTP4Ggrg2MbGnWO9X8K1t4+fGMDw==}
     dev: true
 
-  /fsevents/2.3.2:
-    resolution: {integrity: sha512-xiqMQR4xAeHTuB9uWm+fFRcIOgKBMiOBP+eXiyT7jsgVCq1bkVygt00oASowB7EdtpOHaaPgKt812P9ab+DDKA==}
+  /fsevents/2.3.3:
+    resolution: {integrity: sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==}
     engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
     os: [darwin]
     requiresBuild: true
@@ -4675,7 +4699,7 @@ packages:
       micromatch: 4.0.5
       walker: 1.0.8
     optionalDependencies:
-      fsevents: 2.3.2
+      fsevents: 2.3.3
     dev: true
 
   /jest-jasmine2/27.5.1:
@@ -6421,7 +6445,7 @@ packages:
     engines: {node: '>=10.0.0'}
     hasBin: true
     optionalDependencies:
-      fsevents: 2.3.2
+      fsevents: 2.3.3
     dev: false
 
   /roughjs/4.5.2:
@@ -6731,6 +6755,13 @@ packages:
       react: 18.2.0
     dev: false
 
+  /svg-path-commander/2.0.10:
+    resolution: {integrity: sha512-DGYaXpW6cD0ML3Qj/Md/2al4p44wm/THVQMd2wL5w5LlbFWM/iU8BMvWjUDRzJXe8tpQG3LVsuEQftzdjQE+Vg==}
+    engines: {node: '>=16', pnpm: '>=8.6.0'}
+    dependencies:
+      '@thednp/dommatrix': 2.0.8
+    dev: false
+
   /symbol-tree/3.2.4:
     resolution: {integrity: sha512-9QNk5KwDF+Bvz+PyObkmSYjI5ksVUYtjW7AU22r2NKcfLJcXp96hkDWU3+XndOsUb+AQ9QhfzfCT2O+CNWT5Tw==}
     dev: true
@@ -6902,9 +6933,9 @@ packages:
       is-typedarray: 1.0.0
     dev: true
 
-  /typescript/4.8.4:
-    resolution: {integrity: sha512-QCh+85mCy+h0IGff8r5XWzOVSbBO+KfeYrMQh7NJ58QujwcE22u+NUSmUxqF+un70P9GXKxa2HCNiTTMJknyjQ==}
-    engines: {node: '>=4.2.0'}
+  /typescript/5.6.2:
+    resolution: {integrity: sha512-NW8ByodCSNCwZeghjN3o+JX5OFH0Ojg6sadjEKY4huZ52TqbJTJnDo5+Tw98lSy63NZvi4n+ez5m2u5d4PkZyw==}
+    engines: {node: '>=14.17'}
     hasBin: true
     dev: false
 
@@ -7104,7 +7135,7 @@ packages:
       resolve: 1.22.1
       rollup: 2.79.1
     optionalDependencies:
-      fsevents: 2.3.2
+      fsevents: 2.3.3
     dev: false
 
   /w3c-hr-time/1.0.2:

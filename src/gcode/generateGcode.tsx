@@ -1,23 +1,26 @@
-import { insetPath } from '../animation/getBuiltins';
+// import { insetPath } from '../animation/getBuiltins';
 import { findBoundingRect } from '../editor/Export';
 import { findColorPaths } from './GCodeEditor';
-import { angleTo, dist, push } from '../rendering/getMirrorTransforms';
+import { dist } from '../rendering/getMirrorTransforms';
 import {
     pathToPoints,
     RasterSeg,
     rasterSegPoints,
 } from '../rendering/pathToPoints';
 import { sortedVisibleInsetPaths } from '../rendering/sortedVisibleInsetPaths';
-import { Coord, Path, Segment, State, StyleLine } from '../types';
+import { Coord, Path, State, StyleLine } from '../types';
 import PathKitInit, { PathKit } from 'pathkit-wasm';
-import { calcPathD } from '../editor/RenderPath';
+import { calcPathD } from '../editor/calcPathD';
 import { segmentKey, segmentKeyReverse } from '../rendering/segmentKey';
-import { coordsEqual } from '../rendering/pathsAreIdentical';
-import { angleBetween } from '../rendering/findNextSegments';
 import { getClips } from '../rendering/pkInsetPaths';
+import { coordsEqual } from '../rendering/pathsAreIdentical';
 
+// NOTE: if the shape isn't closed, we pretty much bail.
 const findClosest = (shape: RasterSeg[], point: Coord) => {
     let best = null as null | [number, number];
+    if (!coordsEqual(shape[0].from, shape[shape.length - 1].to)) {
+        return { dist: dist(shape[0].from, point), idx: 0 };
+    }
     shape.forEach((seg, i) => {
         seg.points.forEach((p) => {
             const d = dist(p, point);
@@ -33,25 +36,49 @@ export const greedyPaths = (
     paths: Array<{ path: Path; style: StyleLine }>,
     ppi: number,
 ) => {
+    console.log('greedy it up', paths);
     const pathPoints: Array<Array<RasterSeg>> = [];
     paths.forEach(({ path, style }) => {
         if (style.inset) {
-            insetPath(path, style.inset).forEach((sub) => {
-                pathPoints.push(pathToPoints(sub.segments, false, ppi));
-            });
+            throw new Error('this should inset with PathKit');
+            // insetPath(path, style.inset).forEach((sub) => {
+            //     pathPoints.push(
+            //         pathToPoints(
+            //             sub.segments,
+            //             sub.open ? sub.origin : null,
+            //             false,
+            //             ppi,
+            //         ),
+            //     );
+            // });
         } else {
-            pathPoints.push(pathToPoints(path.segments, false, ppi));
+            pathPoints.push(
+                pathToPoints(
+                    path.segments,
+                    path.open ? path.origin : null,
+                    false,
+                    ppi,
+                ),
+            );
         }
     });
 
+    console.log('path is points', pathPoints.slice());
+
     const ordered: RasterSeg[][] = [];
     const first = pathPoints.shift()!;
-    first.push(first[0]);
+    // TODO: Why is this? Why are we adding on the first segment to the end?
+    // is it a "cleanup" kind of thing?
+    // because ... we always end up skipping it anyway...
+    // first.push(first[0]);
     ordered.push(first);
     while (pathPoints.length) {
         const last = ordered[ordered.length - 1];
+        // This is the most recent position
         let point = last[last.length - 1].to;
         let best = null as null | { dist: number; idx: number; subIdx: number };
+        // ohhhhhh ok, so... the thing is ....
+        // if a path is /open/, then we can't just jump into the middle of it.
         pathPoints.forEach((shape, i) => {
             const closest = findClosest(shape, point);
             if (best == null || closest.dist < best.dist) {
@@ -63,7 +90,8 @@ export const greedyPaths = (
         const reordeeed = next
             .slice(best!.subIdx)
             .concat(next.slice(0, best!.subIdx));
-        reordeeed.push(reordeeed[0]);
+        // TODO: I think this is useless, we will always skip it
+        // reordeeed.push(reordeeed[0]);
         ordered.push(reordeeed);
     }
 
@@ -82,6 +110,7 @@ export const greedyPaths = (
     });
 
     // return res.filter((shape) => shape.some((seg) => !seg.skipped));
+    console.log(`got the one`, res);
     return res;
 };
 
@@ -103,8 +132,14 @@ export const makeDepths = (
     return depths;
 };
 
+export const pxToIn = (value: number, ppi: number) => value / ppi;
+
 export const pxToMM = (value: number, ppi: number) => {
-    return (value / ppi) * 250.4 * 6;
+    return (value / ppi) * 25.4;
+};
+
+export const mmToPX = (value: number, ppi: number) => {
+    return (value / 25.4) * ppi;
 };
 
 export const generateLaserInset = async (state: State) => {
@@ -686,116 +721,4 @@ export const cmdsToPoints = (
     }
 
     return points.filter((m) => m.length);
-};
-
-export const cmdsToSegments = (
-    cmds: number[][],
-    pk: PathKit,
-    // outer: SVGSVGElement,
-): { segments: Segment[]; origin: Coord }[] => {
-    const points: { segments: Segment[]; origin: Coord; open: boolean }[] = [];
-
-    for (let cmd of cmds) {
-        const latest = points[points.length - 1];
-        if (cmd[0] === pk.MOVE_VERB) {
-            const [_, x, y] = cmd;
-            points.push({ segments: [], origin: { x, y }, open: true });
-        } else if (cmd[0] === pk.LINE_VERB) {
-            const [_, x, y] = cmd;
-            const to = { x, y };
-            if (
-                latest.segments.length === 0 &&
-                coordsEqual(to, latest.origin)
-            ) {
-                continue;
-            }
-            latest.segments.push({
-                type: 'Line',
-                to,
-            });
-        } else if (cmd[0] === pk.CUBIC_VERB) {
-            const [_, cx1, cy1, cx2, cy2, x, y] = cmd;
-            latest.segments.push({
-                type: 'Line',
-                to: { x, y },
-            });
-            // const current = latest.segs;
-            // const last = current[current.length - 1];
-            // latest.push(
-            //     ...svgPathPoints(
-            //         outer,
-            //         `M${last.x} ${last.y} C${cmd.slice(1).join(' ')}`,
-            //     ),
-            // );
-        } else if (cmd[0] === pk.QUAD_VERB) {
-            const [_, cx1, cy1, x, y] = cmd;
-            latest.segments.push({
-                type: 'Line',
-                to: { x, y },
-            });
-            // const current = latest;
-            // const last = current[current.length - 1];
-            // latest.push(
-            //     ...svgPathPoints(
-            //         outer,
-            //         `M${last.x} ${last.y} Q${cmd.slice(1).join(' ')}`,
-            //     ),
-            // );
-        } else if (cmd[0] === pk.CONIC_VERB) {
-            console.warn('Ignoring conic, sorry', cmd);
-            const [_, ctrlx, ctrly, x, y, w] = cmd;
-
-            // From the Skia source, the way weight is calculated when converting an Arc
-            // SkScalar w = SkScalarSqrt(SK_ScalarHalf + SkScalarCos(thetaWidth) * SK_ScalarHalf);
-            const dt = Math.acos((w * w - 0.5) / 0.5);
-
-            const prev =
-                latest.segments.length > 0
-                    ? latest.segments[latest.segments.length - 1].to
-                    : latest.origin;
-            const ctrl = { x: ctrlx, y: ctrly };
-            const to = { x, y };
-
-            const cp = angleTo(to, ctrl);
-            const prev_to = angleTo(to, prev);
-
-            const midp = { x: (prev.x + to.x) / 2, y: (prev.y + to.y) / 2 };
-
-            const d_between = dist(prev, to);
-            const r = (d_between / 2 / Math.sin(dt / 2)) * Math.cos(dt / 2);
-
-            const ab = angleBetween(cp, prev_to, true);
-            const center = push(
-                midp,
-                prev_to + (Math.PI / 2) * (ab > Math.PI ? -1 : 1),
-                r,
-            );
-
-            latest.segments.push({
-                type: 'Arc',
-                center: center,
-                clockwise: ab > Math.PI,
-                to: { x, y },
-            });
-        } else if (cmd[0] === pk.CLOSE_VERB) {
-            latest.open = false;
-            // Don't need this,
-            if (
-                !coordsEqual(
-                    latest.segments[latest.segments.length - 1].to,
-                    latest.origin,
-                )
-            ) {
-                latest.segments.push({
-                    type: 'Line',
-                    to: latest.origin,
-                });
-            }
-            continue;
-        } else {
-            throw new Error('unknown cmd ' + cmd[0]);
-        }
-    }
-
-    return points.filter((m) => m.segments.length);
 };

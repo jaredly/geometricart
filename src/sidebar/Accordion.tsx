@@ -5,8 +5,9 @@ import { Button } from 'primereact/button';
 export type Tab = {
     key: string;
     header: React.ReactNode;
+    always?: boolean;
     onHover?: (hovered: boolean) => void;
-    content: () => React.ReactNode;
+    content: (expanded: boolean) => React.ReactNode;
 };
 export type ActiveIds = { [key: string]: boolean };
 
@@ -83,14 +84,17 @@ export const Accordion = ({
                         />
                         {tab.header}
                     </div>
-                    {activeIds[tab.key] || cache[tab.key] ? (
+                    {tab.always || activeIds[tab.key] || cache[tab.key] ? (
                         <div
                             style={{
                                 borderBottom: '1px solid var(--surface-border)',
-                                display: activeIds[tab.key] ? 'block' : 'none',
+                                display:
+                                    tab.always || activeIds[tab.key]
+                                        ? 'block'
+                                        : 'none',
                             }}
                         >
-                            {tab.content()}
+                            {tab.content(activeIds[tab.key])}
                         </div>
                     ) : null}
                 </div>

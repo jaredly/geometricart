@@ -10,11 +10,11 @@ export type PendingBounds = {
     y1: null | number;
 };
 
-export function addCoordToBounds(bounds: PendingBounds, c: Coord) {
-    bounds.x0 = bounds.x0 == null ? c.x : Math.min(c.x, bounds.x0);
-    bounds.x1 = bounds.x1 == null ? c.x : Math.max(c.x, bounds.x1);
-    bounds.y0 = bounds.y0 == null ? c.y : Math.min(c.y, bounds.y0);
-    bounds.y1 = bounds.y1 == null ? c.y : Math.max(c.y, bounds.y1);
+export function addCoordToBounds(bounds: PendingBounds, c: Coord, margin = 0) {
+    bounds.x0 = bounds.x0 == null ? c.x : Math.min(c.x - margin, bounds.x0);
+    bounds.x1 = bounds.x1 == null ? c.x : Math.max(c.x + margin, bounds.x1);
+    bounds.y0 = bounds.y0 == null ? c.y : Math.min(c.y - margin, bounds.y0);
+    bounds.y1 = bounds.y1 == null ? c.y : Math.max(c.y + margin, bounds.y1);
 }
 export function newPendingBounds(): PendingBounds {
     return { x0: null, y0: null, x1: null, y1: null };
@@ -68,6 +68,14 @@ export const segmentsBounds = (segments: Array<Segment>): Bounds => {
 export const segmentBounds = (prev: Coord, segment: Segment): Bounds => {
     switch (segment.type) {
         case 'Line':
+            return {
+                x0: Math.min(segment.to.x, prev.x),
+                x1: Math.max(segment.to.x, prev.x),
+                y0: Math.min(segment.to.y, prev.y),
+                y1: Math.max(segment.to.y, prev.y),
+            };
+        case 'Quad':
+            // throw new Error('bound quad');
             return {
                 x0: Math.min(segment.to.x, prev.x),
                 x1: Math.max(segment.to.x, prev.x),

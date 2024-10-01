@@ -319,6 +319,16 @@ export type GroupUpdate = {
     group: PathGroup;
 };
 
+export type UndoGroupsOrder = {
+    type: GroupsOrder['type'];
+    action: GroupsOrder;
+    prev: Record<string, number | undefined>;
+};
+export type GroupsOrder = {
+    type: 'groups:order';
+    order: Record<string, number>;
+};
+
 export type ClipCut = {
     type: 'clip:cut';
     clip: Id;
@@ -328,6 +338,16 @@ export type UndoClipCut = {
     action: ClipCut;
     paths: { [key: Id]: Path };
     added: Array<Id>;
+};
+
+export type GroupDuplicate = {
+    type: 'group:duplicate';
+    selection: { type: 'Path' | 'PathGroup'; ids: Array<Id> };
+};
+export type UndoGroupDuplicate = {
+    type: GroupDuplicate['type'];
+    action: GroupDuplicate;
+    created: null | [Id, number, Id[]];
 };
 
 export type GroupRegroup = {
@@ -610,6 +630,7 @@ export type UndoableAction =
     | PathUpdateMany
     | GlobalTransform
     | GroupUpdate
+    | GroupsOrder
     | GuideDelete
     | GroupDelete
     | PendingExtent
@@ -621,6 +642,7 @@ export type UndoableAction =
     | PathCreate
     | PathCreateMany
     | GroupRegroup
+    | GroupDuplicate
     | ClipCut
     | PathMultiply
     | GuideToggle;
@@ -645,7 +667,9 @@ export type UndoAction =
     | UndoPathCreateMany
     | UndoGlobalTransform
     | UndoGroupUpdate
+    | UndoGroupsOrder
     | UndoGroupRegroup
+    | UndoGroupDuplicate
     | UndoPathUpdate
     | UndoPathUpdateMany
     | UndoPathDeleteMany

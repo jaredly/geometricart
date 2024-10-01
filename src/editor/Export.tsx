@@ -16,6 +16,7 @@ import { ExportSVG } from './ExportSVG';
 import { ExportPng } from './ExportPng';
 import { applyMatrix } from '../rendering/getMirrorTransforms';
 import { EditorState } from './Canvas';
+import { PK } from './pk';
 
 export type Bounds = {
     x1: number;
@@ -35,9 +36,14 @@ export const findBoundingRect = (state: State): Bounds | null => {
         { next: (_, __) => 0 },
         clip,
     ).forEach((path) => {
-        addCoordToBounds(bounds, path.origin);
+        let offset = path.style.lines[0]?.width;
+        if (offset != null) {
+            offset = offset / 2 / 100;
+        }
+        console.log('lines', path.style.lines);
+        addCoordToBounds(bounds, path.origin, offset);
         // TODO: Get proper bounding box for arc segments.
-        path.segments.forEach((t) => addCoordToBounds(bounds, t.to));
+        path.segments.forEach((t) => addCoordToBounds(bounds, t.to, offset));
     });
     if (bounds.x0 == null || bounds.y0 == null) {
         return null;
@@ -132,6 +138,7 @@ export const Export = ({
                 name={name}
             />
             <ExportSVG
+                PK={PK}
                 state={state}
                 dispatch={dispatch}
                 originalSize={originalSize}
@@ -210,7 +217,10 @@ export const DL = ({
                     backgroundSize: 40,
                 }}
             >
-                <img src={url} css={{ maxHeight: 400 }} />
+                <img
+                    src={url}
+                    css={{ maxHeight: 400, backgroundColor: 'black' }}
+                />
             </div>
         </>
     );

@@ -1,25 +1,17 @@
+import { paletteColor } from '../editor/RenderPath';
+import { ensureClockwise } from '../rendering/pathToPoints';
+import { Coord, Path, PathGroup, Segment } from '../types';
 import { coordKey, numKey } from './coordKey';
 import { closeEnough } from './epsilonToZero';
-import {
-    cleanUpInsetSegments2,
-    filterTooSmallSegments,
-    findRegions,
-    removeNonWindingRegions,
-} from './findInternalRegions';
-import { segmentsToNonIntersectingSegments } from './segmentsToNonIntersectingSegments';
 import { angleBetween } from './findNextSegments';
-import { pathToPrimitives } from '../editor/findSelection';
 import {
     angleTo,
     dist,
     Matrix,
     push,
     rotationMatrix,
-    transformsToMatrices,
     translationMatrix,
 } from './getMirrorTransforms';
-import { insetSegments, insetSegmentsBeta } from './insetPath';
-import { simplifyPath } from './simplifyPath';
 import {
     angleIsBetween,
     closeEnoughAngle,
@@ -27,23 +19,14 @@ import {
     slopeToLine,
     withinLimit,
 } from './intersect';
-import { applyStyleHover, StyleHover } from '../editor/MultiStyleForm';
 import {
     pathsAreIdentical,
     pathToReversedSegmentKeys,
     pathToSegmentKeys,
 } from './pathsAreIdentical';
-import {
-    ensureClockwise,
-    isClockwise,
-    isMaybeClockwise,
-    reversePath,
-} from '../rendering/pathToPoints';
-import { paletteColor } from '../editor/RenderPath';
-import { Coord, Path, PathGroup, Segment, State } from '../types';
-import { segmentsBounds } from '../editor/Bounds';
-import { transformSegment } from './points';
 import { pkSortedVisibleInsetPaths } from './pkInsetPaths';
+import { transformSegment } from './points';
+import { simplifyPath } from './simplifyPath';
 
 // This should produce:
 // a list of lines
@@ -152,6 +135,8 @@ export const segmentKeyAndLimit = (
         const si = lineToSlope(prev, seg.to, true);
         const key = `l:${numKey(si.m)}:${numKey(si.b)}`;
         return [key, si.limit!];
+    } else if (seg.type === 'Quad') {
+        throw new Error('quad not doing');
     } else {
         const key = `${coordKey(seg.center)}:${numKey(
             dist(seg.center, seg.to),
@@ -343,6 +328,9 @@ export const adjustSeg = (
             [p1, p2] = [p2, p1];
         }
         return { prev: p1, seg: { ...segment, to: p2 } };
+    }
+    if (segment.type === 'Quad') {
+        throw new Error('quad not doing');
     }
 
     let [t0, t1] = [
@@ -585,5 +573,4 @@ export function applyColorVariations(
     return path;
 }
 
-const NEW = true;
 export const sortedVisibleInsetPaths = pkSortedVisibleInsetPaths;

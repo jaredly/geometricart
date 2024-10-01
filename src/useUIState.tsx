@@ -35,7 +35,13 @@ export type PendingMirror = {
     reflect: boolean;
     parent: Id | null;
 };
-export type Screen = 'edit' | 'animate' | 'gcode' | 'history' | 'overlay';
+export type Screen =
+    | 'edit'
+    | 'animate'
+    | 'gcode'
+    | 'history'
+    | 'overlay'
+    | '3d';
 
 type UIAction =
     | { type: 'screen'; screen: UIState['screen'] }
@@ -94,7 +100,7 @@ export type UIDispatch = React.Dispatch<UIAction>;
 
 export const useUIState = (trueState: State) => {
     const [uiState, uiDispatch] = React.useReducer(reduceUIState, {
-        screen: 'edit', // 'history', // 'edit',
+        screen: '3d', // 'edit', // 'history', // 'edit',
         hover: null,
         styleHover: null,
         pendingMirror: null,

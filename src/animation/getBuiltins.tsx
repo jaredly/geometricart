@@ -3,7 +3,7 @@ import { Coord, Fill, Path, Segment, State } from '../types';
 import { transformSegment } from '../rendering/points';
 import { pathToPoints, rasterSegPoints } from '../rendering/pathToPoints';
 import { insetSegments, insetSegmentsBeta } from '../rendering/insetPath';
-import { cleanUpInsetSegments2 } from '../rendering/findInternalRegions';
+// import { cleanUpInsetSegments2 } from '../rendering/findInternalRegions';
 import { pathSegs } from '../editor/RenderPath';
 import {
     angleTo,
@@ -134,21 +134,21 @@ export function getBuiltins(): { [key: string]: Function | number } {
             };
         },
         followPath,
-        insetPath,
+        // insetPath,
         lerpPos,
     };
 }
 
-export const insetPath = (path: Path, inset: number): Array<Path> => {
-    const [segments, corners] = insetSegments(path.segments, inset / 100);
-    const regions = cleanUpInsetSegments2(segments, corners);
+// export const insetPath = (path: Path, inset: number): Array<Path> => {
+//     const [segments, corners] = insetSegments(path.segments, inset / 100);
+//     const regions = cleanUpInsetSegments2(segments, corners);
 
-    return regions.map((segments) => ({
-        ...path,
-        segments,
-        origin: segments[segments.length - 1].to,
-    }));
-};
+//     return regions.map((segments) => ({
+//         ...path,
+//         segments,
+//         origin: segments[segments.length - 1].to,
+//     }));
+// };
 const lerpPos = (p1: Coord, p2: Coord, percent: number) => {
     return {
         x: (p2.x - p1.x) * percent + p1.x,
@@ -161,7 +161,7 @@ export const closestPoint = (
     segments: Array<Segment>,
 ): [number, Coord] => {
     let best = null as null | [number, Coord];
-    rasterSegPoints(pathToPoints(segments)).forEach((point) => {
+    rasterSegPoints(pathToPoints(segments, null)).forEach((point) => {
         const d = dist(point, center);
         if (best == null || best[0] > d) {
             best = [d, point];
@@ -173,7 +173,7 @@ export const closestPoint = (
 
 export const farthestPoint = (center: Coord, segments: Array<Segment>) => {
     let best = null as null | [number, Coord];
-    rasterSegPoints(pathToPoints(segments)).forEach((point) => {
+    rasterSegPoints(pathToPoints(segments, null)).forEach((point) => {
         const d = dist(point, center);
         if (best == null || best[0] < d) {
             best = [d, point];
@@ -214,7 +214,9 @@ export const animationTimer = (
 const followPath = (path: Array<Coord> | Path, percent: number) => {
     let points;
     if (!Array.isArray(path)) {
-        points = rasterSegPoints(pathToPoints(path.segments));
+        points = rasterSegPoints(
+            pathToPoints(path.segments, path.open ? path.origin : null),
+        );
         points = points.concat([points[0]]);
     } else {
         points = path;

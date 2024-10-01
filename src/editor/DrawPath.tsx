@@ -60,7 +60,10 @@ export const DrawPath = React.memo(
         intersections: Array<Intersect>;
         view: View;
         palette: Array<string>;
-        onComplete: (segments: Array<PendingSegment>) => unknown;
+        onComplete: (
+            segments: Array<PendingSegment>,
+            open?: boolean,
+        ) => unknown;
     }) => {
         // const [state, setState] = React.useState(() =>
         //     initialState(origin, primitives, intersections),
@@ -97,6 +100,11 @@ export const DrawPath = React.memo(
 
                     if (completed) {
                         onComplete(state.parts);
+                        evt.stopPropagation();
+                        evt.preventDefault();
+                        return;
+                    } else {
+                        onComplete(state.parts, true);
                         evt.stopPropagation();
                         evt.preventDefault();
                         return;

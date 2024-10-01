@@ -149,7 +149,7 @@ export const rotationMatrix = (theta: number): Matrix => [
     [Math.cos(theta), -Math.sin(theta), 0],
     [Math.sin(theta), Math.cos(theta), 0],
 ];
-export const scaleMatrix = (sx: number, sy: number) => [
+export const scaleMatrix = (sx: number, sy: number): Matrix => [
     [sx, 0, 0],
     [0, sy, 0],
 ];

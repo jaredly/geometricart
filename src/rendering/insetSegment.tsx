@@ -486,6 +486,9 @@ export const insetSegment = (
     amount: number,
     onlyExtend?: boolean,
 ): Segment | Array<Segment> => {
+    if (next.type === 'Quad') {
+        throw new Error('no');
+    }
     if (seg.type === 'Line') {
         if (next.type === 'Line') {
             return insetLineLine(prev, seg, next, amount, onlyExtend);

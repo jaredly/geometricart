@@ -1,4 +1,49 @@
 
+
+# Let's export our 3dddddd
+- might want to be able to ... export like svgs. so I can laser it uppp
+- have options for putting all on the same piece, or one at a time.
+- join the borderr
+
+
+- [ ] let's join the border, for these guys
+
+
+#
+
+- [x] hover group in sidebar and highlight
+- [x] I want a way to duplicate a group
+
+- [ ] drag & drop groups?
+  or just up/down arrow buttons
+- [x] want a way to specify thickness I believe
+- [ ] would be nice to ... be able to script a path for the camera? yeah so I can make a screen recording.
+
+
+Let'ssssss turn our whatsits into 3d meshesssss
+yeah.
+https://github.com/mapbox/earcut
+earcut is the jam I believe.
+
+SO:
+- the main thing I want to be able to do is this:
+  - turn /each group/ into a ... 3d mesh, ish,
+    with like a specific height
+    and stack each on top of each other.
+    right?
+    strokes just get stroked
+    fills get filled, as you might imagine.
+    for now I can ignore holes.
+
+ALTERNATIVELY I could make a separate tool to turn any SVG
+into an STL
+which would certainly be something folks want.
+
+
+# Why is GCode failing on open paths?
+
+- [x] ok figured it out. I needed to add an `origin` to `pathToPoints`
+
 # Lineification
 
 is fun y'all
@@ -9,6 +54,9 @@ where you click points
 and we do a little pathfinding.
 anddddd if you do a "new shape" with guides OFFF
 then we only count points of existing shapes. not of guides. yeah that's very nice.
+
+
+- [ ] make an option for svg export that is "stroke to path & merge"
 
 
 # Hm ok so what is thiss

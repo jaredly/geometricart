@@ -314,7 +314,9 @@ function strokeToSdf(
     color: Rgb,
     stroke: StyleLine,
 ): string {
-    const points = rasterSegPoints(pathToPoints(path.segments));
+    const points = rasterSegPoints(
+        pathToPoints(path.segments, path.open ? path.origin : null),
+    );
     const last = points[points.length - 1];
 
     return `{ // path ${path.id}
@@ -367,7 +369,9 @@ function pathToSdf(
     strokeWidth?: number,
     stroke?: Rgb | null,
 ): string {
-    const points = rasterSegPoints(pathToPoints(path.segments));
+    const points = rasterSegPoints(
+        pathToPoints(path.segments, path.open ? path.origin : null),
+    );
     const last = points[points.length - 1];
 
     return `{ // path ${path.id}

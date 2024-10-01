@@ -52,6 +52,21 @@ export const handleKeyboard = (
         ) {
             return;
         }
+        if ((evt.metaKey || evt.ctrlKey) && evt.key === 'd') {
+            // duplicates
+            evt.preventDefault();
+            evt.stopPropagation();
+
+            const { selection } = latestState.current;
+            if (selection?.type !== 'PathGroup' && selection?.type !== 'Path') {
+                return;
+            }
+            return dispatch({
+                type: 'group:duplicate',
+                selection: latestState.current
+                    .selection as GroupRegroup['selection'],
+            });
+        }
         // Duplicate selected shapes across 1 point
         if (evt.key === 'd') {
             // uhm
@@ -189,9 +204,6 @@ export const handleKeyboard = (
             evt.stopPropagation();
             evt.preventDefault();
             return dispatch({ type: 'redo' });
-        }
-        if (evt.key === 'd') {
-            // setDragSelect(true);
         }
         if (toType[evt.key]) {
             dispatch({

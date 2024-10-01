@@ -71,7 +71,7 @@ export function pkSortedVisibleInsetPaths(
     let processed: Array<Path> = visible
         .map((k) => paths[k])
         .flatMap((path: Path): Path[] => {
-            const pkp = pkPath(PK, path.segments, path.origin);
+            const pkp = pkPath(PK, path.segments, path.origin, path.open);
             const group = path.group ? pathGroups[path.group] : null;
             if (selectedIds[path.id] && styleHover) {
                 path = {

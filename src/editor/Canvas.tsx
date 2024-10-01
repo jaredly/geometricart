@@ -66,7 +66,7 @@ import { coordsEqual } from '../rendering/pathsAreIdentical';
 import { angleBetween } from '../rendering/findNextSegments';
 import { negPiToPi } from '../rendering/clipPath';
 import { closeEnough } from '../rendering/epsilonToZero';
-import { simpleExport } from './Tilings';
+import { simpleExport } from './handleTiling';
 import {
     angleDifferences,
     isClockwise,
@@ -555,7 +555,9 @@ export const Canvas = ({
     }, [state.view, editorState.tmpView]);
 
     const guidePrimitives = React.useMemo(() => {
-        const elements = calculateGuideElements(state.guides, mirrorTransforms);
+        const elements = state.view.guides
+            ? calculateGuideElements(state.guides, mirrorTransforms)
+            : [];
         const points = elements.flatMap((el) => geomPoints(el.geom));
         return {
             primitives: primitivesForElementsAndPaths(
@@ -571,7 +573,13 @@ export const Canvas = ({
             ),
             points,
         };
-    }, [state.guides, state.paths, state.pathGroups, mirrorTransforms]);
+    }, [
+        state.guides,
+        state.paths,
+        state.pathGroups,
+        mirrorTransforms,
+        state.view.guides,
+    ]);
 
     const allIntersections = React.useMemo(() => {
         const { coords: fromGuides, seenCoords } = calcAllIntersections(

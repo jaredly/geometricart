@@ -14,7 +14,7 @@ import {
     Primitive,
     SlopeIntercept,
 } from './intersect';
-import { Coord, GuideGeom, Path, Segment } from '../types';
+import { BarePath, Coord, GuideGeom, Path, Segment } from '../types';
 
 // export type Primitive = {type: 'line', data: SlopeIntercept} | {type: 'circle', center: Coord, radius: number}
 export const transformPath = (path: Path, matrices: Array<Matrix>): Path => ({
@@ -22,6 +22,13 @@ export const transformPath = (path: Path, matrices: Array<Matrix>): Path => ({
     origin: applyMatrices(path.origin, matrices),
     segments: path.segments.map((s) => transformSegment(s, matrices)),
 });
+
+export function transformBarePath(shape: BarePath, tx: Matrix[]): BarePath {
+    return {
+        origin: applyMatrices(shape.origin, tx),
+        segments: shape.segments.map((seg) => transformSegment(seg, tx)),
+    };
+}
 
 export const transformSegment = (
     segment: Segment,
@@ -37,6 +44,12 @@ export const transformSegment = (
                 clockwise: flips ? !segment.clockwise : segment.clockwise,
                 to: applyMatrices(segment.to, matrices),
                 // to,
+            };
+        case 'Quad':
+            return {
+                type: 'Quad',
+                to: applyMatrices(segment.to, matrices),
+                control: applyMatrices(segment.control, matrices),
             };
         case 'Line':
             return {

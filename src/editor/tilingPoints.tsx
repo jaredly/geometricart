@@ -1,5 +1,4 @@
 import { Coord, Tiling, TilingShape } from '../types';
-import { closeEnough } from '../rendering/epsilonToZero';
 import {
     Matrix,
     angleTo,
@@ -10,8 +9,7 @@ import {
     translationMatrix,
 } from '../rendering/getMirrorTransforms';
 import { scalePos } from './scalePos';
-import { transformMatrix } from '../state/reducer';
-import { angleBetween } from '../rendering/findNextSegments';
+import { tilingTransforms } from './tilingTransforms';
 
 export const transformLines = (lines: [Coord, Coord][], mx: Matrix[]) =>
     lines.map(([p1, p2]): [Coord, Coord] => [
@@ -19,178 +17,24 @@ export const transformLines = (lines: [Coord, Coord][], mx: Matrix[]) =>
         applyMatrices(p2, mx),
     ]);
 
+export const applyTilingTransforms = (
+    unique: [Coord, Coord][],
+    mx: Matrix[][][],
+) => {
+    let full = unique;
+    mx.forEach((set) => {
+        full = full.concat(...set.map((m) => transformLines(full, m)));
+    });
+    return full;
+};
+
 export function eigenShapesToLines(
     unique: [Coord, Coord][],
     shape: TilingShape,
     tr: Coord,
     tpts: Coord[],
 ) {
-    let full = unique;
-    if (tpts.length === 4) {
-        // paralellogram
-        full = full.concat(
-            transformLines(full, [
-                scaleMatrix(-1, 1),
-                translationMatrix({ x: tr.x * 2, y: 0 }),
-            ]),
-        );
-        full = full.concat(transformLines(full, [scaleMatrix(-1, 1)]));
-        full = full.concat(
-            transformLines(full, [scaleMatrix(1, -1)]),
-            transformLines(full, [translationMatrix({ x: 0, y: -tr.y * 2 })]),
-            transformLines(full, [
-                translationMatrix({ x: 0, y: -tr.y * 2 }),
-                scaleMatrix(1, -1),
-            ]),
-        );
-        return full;
-    } else if (shape.type === 'right-triangle' && shape.rotateHypotenuse) {
-        full = full.concat(
-            transformLines(full, [
-                rotationMatrix(Math.PI),
-                translationMatrix(tr),
-            ]),
-        );
-        full = replicateStandard(full, tr.y);
-    } else if (closeEnough(tr.y, -1 / Math.sqrt(3))) {
-        full = full.concat(
-            transformLines(full, [
-                scaleMatrix(1, -1),
-                rotationMatrix(-(Math.PI / 3)),
-            ]),
-        );
-        full = full.concat(
-            transformLines(full, [
-                scaleMatrix(1, -1),
-                rotationMatrix(-(Math.PI / 3) * 2),
-            ]),
-            transformLines(full, [
-                scaleMatrix(1, -1),
-                rotationMatrix(-Math.PI),
-            ]),
-        );
-        full = full.concat(transformLines(full, [scaleMatrix(1, -1)]));
-        full = full.concat(
-            ...[0, 1, 2, 3, 4, 5].map((i) =>
-                transformLines(full, [
-                    translationMatrix({ x: 2, y: 0 }),
-                    rotationMatrix((Math.PI / 3) * i),
-                ]),
-            ),
-        );
-    } else if (shape.type === 'right-triangle') {
-        // start == origin
-        // corner === on the x axis
-        // end === the final whatsit
-        let internalAngle =
-            angleBetween(
-                angleTo(shape.start, shape.corner),
-                angleTo(shape.start, shape.end),
-                true,
-            ) /
-            Math.PI /
-            2;
-
-        if (internalAngle > 0.5) {
-            internalAngle = 1 - internalAngle;
-        }
-
-        for (let j = 5; j < 10; j++) {
-            if (closeEnough(internalAngle, 1 / (j * 2))) {
-                full = full.concat(transformLines(full, [scaleMatrix(1, -1)]));
-                const res: [Coord, Coord][] = [...full];
-                for (let i = 1; i < j; i++) {
-                    res.push(
-                        ...transformLines(full, [
-                            rotationMatrix((i / 8) * Math.PI * 2),
-                        ]),
-                    );
-                }
-                return res;
-            }
-        }
-
-        // console.log('shape', shape, internalAngle);
-        full = full.concat(
-            transformLines(full, [
-                scaleMatrix(1, -1),
-                rotationMatrix(-Math.PI / 2),
-            ]),
-        );
-        full = replicateStandard(full, tr.y);
-    } else {
-        const [a, b, c] = tpts;
-        const d1 = dist(a, b);
-        const d2 = dist(b, c);
-        const d3 = dist(a, c);
-        // Equilateral triangle
-        if (closeEnough(d1, d2) && closeEnough(d2, d3)) {
-            if (shape.type === 'isocelese' && shape.flip) {
-                full = full.concat(
-                    transformLines(full, [
-                        scaleMatrix(-1, 1),
-                        rotationMatrix(-Math.PI / 3),
-                        translationMatrix({ x: tr.x * 3, y: tr.y }),
-                    ]),
-                    transformLines(full, [
-                        rotationMatrix((Math.PI * 2) / 3),
-                        translationMatrix({ x: tr.x * 3, y: tr.y }),
-                    ]),
-                    transformLines(full, [
-                        rotationMatrix((-Math.PI * 2) / 3),
-                        translationMatrix({ x: tr.x * 3, y: tr.y }),
-                    ]),
-                );
-                full = full.concat(
-                    transformLines(full, [
-                        scaleMatrix(-1, 1),
-                        rotationMatrix(Math.PI / 3),
-                    ]),
-                    transformLines(full, [
-                        scaleMatrix(-1, 1),
-                        rotationMatrix(Math.PI),
-                    ]),
-                    transformLines(full, [
-                        scaleMatrix(-1, 1),
-                        rotationMatrix(-Math.PI / 3),
-                    ]),
-                    transformLines(full, [rotationMatrix((-Math.PI * 2) / 3)]),
-                    transformLines(full, [rotationMatrix((Math.PI * 2) / 3)]),
-                );
-            } else {
-                full = full.concat(
-                    transformLines(full, [
-                        rotationMatrix(Math.PI),
-                        translationMatrix({ x: tr.x * 3, y: tr.y }),
-                    ]),
-                );
-                full = full.concat(
-                    transformLines(full, [
-                        scaleMatrix(1, -1),
-                        translationMatrix({ x: 0, y: tr.y * 2 }),
-                    ]),
-                );
-                //
-                full = full.concat(
-                    transformLines(full, [rotationMatrix((Math.PI / 3) * 2)]),
-                    transformLines(full, [rotationMatrix(Math.PI / 3)]),
-                    transformLines(full, [rotationMatrix(Math.PI)]),
-                    transformLines(full, [rotationMatrix(-(Math.PI / 3))]),
-                    transformLines(full, [rotationMatrix(-(Math.PI / 3) * 2)]),
-                );
-            }
-        } else {
-            full = full.concat(
-                transformLines(full, [
-                    scaleMatrix(1, -1),
-                    rotationMatrix(-Math.PI / 2),
-                ]),
-            );
-            full = replicateStandard(full, tr.y);
-        }
-    }
-
-    return full;
+    return applyTilingTransforms(unique, tilingTransforms(shape, tr, tpts));
 }
 
 export function eigenShapesToSvg(

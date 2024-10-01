@@ -1,46 +1,26 @@
 /* @jsx jsx */
 /* @jsxFrag React.Fragment */
 import { jsx } from '@emotion/react';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Action } from '../state/Action';
+import { BarePath, Coord, Path, State, Tiling } from '../types';
 import {
-    BarePath,
-    Coord,
-    Path,
-    SegPrev,
-    Segment,
-    State,
-    Tiling,
-} from '../types';
-import { closeEnough } from '../rendering/epsilonToZero';
-import {
-    consumePath,
-    getVisiblePaths,
-    pkClips,
-} from '../rendering/pkInsetPaths';
-import { PK } from './pk';
-import { pkPath } from '../sidebar/NewSidebar';
-import { addPrevsToSegments } from '../rendering/segmentsToNonIntersectingSegments';
-import {
-    SlopeIntercept,
-    lineLine,
-    lineToSlope,
-    slopeToLine,
-} from '../rendering/intersect';
-import { numKey } from '../rendering/coordKey';
-import { applyMatrices } from '../rendering/getMirrorTransforms';
-import { transformPath, transformSegment } from '../rendering/points';
-import { boundsForCoords } from './Bounds';
-import {
-    tilingPoints,
-    getTransform,
-    eigenShapesToSvg,
-    eigenShapesToLines,
-} from './tilingPoints';
+    applyMatrices,
+    translationMatrix,
+} from '../rendering/getMirrorTransforms';
+import { transformBarePath, transformSegment } from '../rendering/points';
+import { boundsForCoords, segmentsBounds } from './Bounds';
+import { tilingPoints } from './tilingPoints';
 import { UIDispatch } from '../useUIState';
-import { coordsEqual } from '../rendering/pathsAreIdentical';
-import { consoleSvg, renderSegments } from '../animation/renderSegments';
-import { SegmentWithPrev } from '../rendering/clipPathNew';
+import { emptyPath } from './RenderPath';
+import { tilingTransforms } from './tilingTransforms';
+import { calcPathD, calcSegmentsD } from './calcPathD';
+import {
+    handleTiling,
+    simpleExport,
+    handleNegZero,
+    getSvgData,
+} from './handleTiling';
 
 export const Tilings = ({
     state,
@@ -73,75 +53,133 @@ export const Tilings = ({
                         }
                     >
                         <div>Tiling {tiling.id}</div>
-                        <ShowTiling tiling={tiling} />
-                        {tiling.shape.type === 'right-triangle' ? (
-                            <label>
-                                <input
-                                    type="checkbox"
-                                    checked={!!tiling.shape.rotateHypotenuse}
-                                    onChange={() => {
-                                        const sh = tiling.shape as Extract<
-                                            Tiling['shape'],
-                                            { type: 'right-triangle' }
-                                        >;
+                        <div style={{ display: 'flex' }}>
+                            <ShowTiling tiling={tiling} />
+                            {tiling.shape.type === 'right-triangle' ? (
+                                <label>
+                                    <input
+                                        type="checkbox"
+                                        checked={
+                                            !!tiling.shape.rotateHypotenuse
+                                        }
+                                        onChange={() => {
+                                            const sh = tiling.shape as Extract<
+                                                Tiling['shape'],
+                                                { type: 'right-triangle' }
+                                            >;
+
+                                            dispatch({
+                                                type: 'tiling:update',
+                                                tiling: {
+                                                    ...tiling,
+                                                    shape: {
+                                                        ...sh,
+                                                        rotateHypotenuse:
+                                                            !sh.rotateHypotenuse,
+                                                    },
+                                                },
+                                            });
+                                        }}
+                                    />
+                                    Rotate around hypotenuse
+                                </label>
+                            ) : tiling.shape.type === 'isocelese' ? (
+                                <label>
+                                    <input
+                                        type="checkbox"
+                                        checked={!!tiling.shape.flip}
+                                        onChange={() => {
+                                            const sh = tiling.shape as Extract<
+                                                Tiling['shape'],
+                                                { type: 'isocelese' }
+                                            >;
+
+                                            dispatch({
+                                                type: 'tiling:update',
+                                                tiling: {
+                                                    ...tiling,
+                                                    shape: {
+                                                        ...sh,
+                                                        flip: !sh.flip,
+                                                    },
+                                                },
+                                            });
+                                        }}
+                                    />
+                                    Flip (vs rotate)
+                                </label>
+                            ) : null}
+                            <div
+                                style={{
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'flex-start',
+                                }}
+                            >
+                                <button
+                                    onClick={() => {
+                                        const { bounds, lines, tr } =
+                                            handleTiling(tiling);
+                                        const mx = tilingTransforms(
+                                            tiling.shape,
+                                            tr,
+                                            bounds,
+                                        );
+
+                                        let shapes = tiling.cache.shapes;
+                                        mx.forEach((set) => {
+                                            shapes = shapes.concat(
+                                                ...set.map((s) =>
+                                                    shapes.map((shape) => ({
+                                                        origin: applyMatrices(
+                                                            shape.origin,
+                                                            s,
+                                                        ),
+                                                        segments:
+                                                            shape.segments.map(
+                                                                (seg) =>
+                                                                    transformSegment(
+                                                                        seg,
+                                                                        s,
+                                                                    ),
+                                                            ),
+                                                    })),
+                                                ),
+                                            );
+                                        });
+                                        dispatch({
+                                            type: 'path:create:many',
+                                            paths: shapes.map(
+                                                (bare): Path => ({
+                                                    ...emptyPath,
+                                                    origin: bare.origin,
+                                                    segments: bare.segments,
+                                                }),
+                                            ),
+                                            withMirror: false,
+                                        });
+                                    }}
+                                >
+                                    Create shapes
+                                </button>
+                                <button
+                                    onClick={async () => {
+                                        const cache = await simpleExport(
+                                            state,
+                                            tiling.shape,
+                                        );
+                                        if (!cache) return;
 
                                         dispatch({
                                             type: 'tiling:update',
-                                            tiling: {
-                                                ...tiling,
-                                                shape: {
-                                                    ...sh,
-                                                    rotateHypotenuse:
-                                                        !sh.rotateHypotenuse,
-                                                },
-                                            },
+                                            tiling: { ...tiling, cache },
                                         });
                                     }}
-                                />
-                                Rotate around hypotenuse
-                            </label>
-                        ) : tiling.shape.type === 'isocelese' ? (
-                            <label>
-                                <input
-                                    type="checkbox"
-                                    checked={!!tiling.shape.flip}
-                                    onChange={() => {
-                                        const sh = tiling.shape as Extract<
-                                            Tiling['shape'],
-                                            { type: 'isocelese' }
-                                        >;
-
-                                        dispatch({
-                                            type: 'tiling:update',
-                                            tiling: {
-                                                ...tiling,
-                                                shape: {
-                                                    ...sh,
-                                                    flip: !sh.flip,
-                                                },
-                                            },
-                                        });
-                                    }}
-                                />
-                                Flip (vs rotate)
-                            </label>
-                        ) : null}
-                        <button
-                            onClick={async () => {
-                                const cache = await simpleExport(
-                                    state,
-                                    tiling.shape,
-                                );
-                                if (!cache) return;
-
-                                dispatch({
-                                    type: 'tiling:update',
-                                    tiling: { ...tiling, cache },
-                                });
-                            }}
-                        >
-                            Recalculate eigenshapes
-                        </button>
+                                >
+                                    Recalculate eigenshapes
+                                </button>
+                            </div>
+                        </div>
                         <div style={{ fontSize: '70%' }}>
                             {tiling.cache?.hash.slice(0, 10)}
                         </div>
@@ -158,9 +196,7 @@ export const Tilings = ({
                             ).toFixed(2)}
                             kb without
                         </div>
-                        {tiling.cache
-                            ? tilingCacheSvg(tiling.cache, tiling.shape)
-                            : null}
+                        {tiling.cache ? <SimpleTiling tiling={tiling} /> : null}
                         <button
                             onClick={() => {
                                 dispatch({
@@ -200,224 +236,51 @@ const ShowTiling = ({ tiling }: { tiling: Tiling }) => {
     );
 };
 
-export const simpleExport = async (state: State, shape: Tiling['shape']) => {
-    const pts = tilingPoints(shape);
-    const res = getShapesIntersectingPolygon(state, pts);
-    if (!res) {
-        return;
-    }
-    const { klines, shapes, tr, pts: tpts } = res;
-    console.log('pts', pts);
-    console.log('klins', klines);
-    const segs = Object.keys(klines).sort();
-
-    const hash = await hashData(segs.join(','));
-
-    const unique = Object.values(klines).map(slopeToLine);
-
-    return {
-        hash,
-        segments: unique.map(
-            ([p1, p2]): SegPrev => ({
-                prev: p1,
-                segment: { type: 'Line', to: p2 },
-            }),
-        ),
-        shapes,
-    };
-};
-
-export const slopeToPseg = (line: SlopeIntercept): SegmentWithPrev => {
-    const [p1, p2] = slopeToLine(line);
-    return { prev: p1, segment: { type: 'Line', to: p2 }, shape: -1 };
-};
-
-export function tilingCacheSvg(cache: Tiling['cache'], shape: Tiling['shape']) {
-    const pts = tilingPoints(shape);
-    const tx = getTransform(pts);
-    return (
-        <img
-            style={{ width: 200 }}
-            src={`data:image/svg+xml,${eigenShapesToSvg(
-                cache.segments.map((s) => [s.prev, s.segment.to]),
-                shape,
-                applyMatrices(pts[2], tx),
-                pts.map((pt) => applyMatrices(pt, tx)),
-            )}`}
-        />
-    );
-}
-
-export const getShapesIntersectingPolygon = (state: State, pts: Coord[]) => {
-    const tx = getTransform(pts);
-
-    const segments: Segment[] = pts.map((to) => ({ type: 'Line', to }));
-    const origin = pts[pts.length - 1];
-
-    const trilines = addPrevsToSegments(
-        segments.map((seg) => transformSegment(seg, tx)),
-    ).map((seg) => lineToSlope(seg.prev, seg.segment.to, true));
-    const klines: Record<string, SlopeIntercept> = {};
-
-    const paths = getVisiblePaths(state.paths, state.pathGroups);
-    const pkc = {
-        path: pkPath(PK, segments, origin),
-        outside: false,
-    };
-    const shapes: BarePath[] = [];
-    const intersections = paths.flatMap((id) => {
-        const got = consumePath(
-            PK,
-            pkClips(
-                PK,
-                pkPath(PK, state.paths[id].segments, state.paths[id].origin),
-                [pkc],
-                state.paths[id],
-            )[0],
-            state.paths[id],
-        );
-        if (got.length) {
-            const { origin, segments, open } = transformPath(
-                state.paths[id],
-                tx,
-            );
-            shapes.push({ origin, segments, open });
-        }
-        return got;
-    });
-
-    const origSegments = paths.flatMap((id) =>
-        addPrevsToSegments(
-            state.paths[id].segments.map((seg) => transformSegment(seg, tx)),
-        ),
-    );
-    const origLines = origSegments.map((iline) =>
-        lineToSlope(iline.prev, iline.segment.to, true),
-    );
-
-    const isegs = intersections.flatMap((path) =>
-        addPrevsToSegments(
-            path.segments.map((seg) => transformSegment(seg, tx)),
-        ),
-    );
-    // KEEP
-    // consoleSvg(renderSegments(origSegments));
-    // consoleSvg(renderSegments(isegs));
-    isegs
-        .map((iline) => lineToSlope(iline.prev, iline.segment.to, true))
-        .filter((sl) => {
-            if (
-                trilines.some(
-                    (tl) => closeEnough(tl.b, sl.b) && closeEnough(tl.m, sl.m),
-                )
-            ) {
-                const ss = slopeToLine(sl);
-                for (let os of origLines) {
-                    if (!closeEnough(os.b, sl.b) || !closeEnough(os.m, sl.m)) {
-                        continue;
-                    }
-                    const ol = slopeToLine(os);
-                    if (
-                        (coordsEqual(ss[0], ol[0]) ||
-                            coordsEqual(ss[0], ol[1])) &&
-                        (coordsEqual(ss[1], ol[1]) || coordsEqual(ss[1], ol[0]))
-                    ) {
-                        return true;
-                    }
-                    const int = lineLine(os, sl);
-                    if (int) {
-                        const back = slopeToLine(os);
-                        const first = coordsEqual(int, back[0]);
-                        const last = coordsEqual(int, back[1]);
-                        if ((!first && !last) || (first && last)) {
-                            // consoleSvg(
-                            //     renderSegments(
-                            //         [slopeToPseg(os), slopeToPseg(sl)],
-                            //         undefined,
-                            //         ['red', 'blue'],
-                            //     ),
-                            // );
-                            // console.log(
-                            //     'thing to remove, is maybe still good',
-                            //     os,
-                            //     sl,
-                            //     int,
-                            // );
-                            return true;
-                        }
-                    }
-                }
-                // const got = origSegments.some((os) => lineLine(os, sl))
-                // if () {
-                //     return true;
-                // }
-                return false;
-            }
-            return true;
-        })
-        .forEach((sl) => {
-            const [min, max] = sl.limit!;
-            const key = `${numKey(min)}:${numKey(sl.b)}:${numKey(
-                sl.m,
-            )}:${numKey(max)}`;
-            klines[key] = sl;
-        });
-    return {
-        shapes,
-        klines,
-        tr: applyMatrices(pts[2], tx),
-        pts: pts.map((pt) => applyMatrices(pt, tx)),
-    };
-};
-
-async function hashData(kk: string) {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(kk);
-    const hashBuffer = await window.crypto.subtle.digest('SHA-1', data);
-
-    const hashArray = Array.from(new Uint8Array(hashBuffer)); // convert buffer to byte array
-    const hashHex = hashArray
-        .map((b) => b.toString(16).padStart(2, '0'))
-        .join(''); // convert bytes to hex string
-    return hashHex;
-}
-
-export function handleTiling(data: Tiling) {
-    const pts = tilingPoints(data.shape);
-    const tx = getTransform(pts);
-    const bounds = pts.map((pt) => applyMatrices(pt, tx));
-    const lines = data.cache.segments.map((s): [Coord, Coord] => [
-        s.prev,
-        s.segment.to,
-    ]);
-    const tr = applyMatrices(pts[2], tx);
-    return { bounds, lines, tr };
-}
-
-export function getSvgData(data: Tiling): {
+export function TilingSvg({
+    bounds,
+    lines,
+    shapes,
+    size = 300,
+}: {
+    shapes: BarePath[];
     bounds: Coord[];
     lines: [Coord, Coord][];
-} {
-    const { bounds, lines, tr } = handleTiling(data);
-    return { bounds, lines: eigenShapesToLines(lines, data.shape, tr, bounds) };
-}
+    size?: number;
+}) {
+    const normShapes = useMemo(() => {
+        const margin = 0.1;
+        let left = -2.5;
+        let y = 0;
+        let rh = 0;
+        return shapes.map((shape) => {
+            const bounds = segmentsBounds(shape.segments);
+            if (left + (bounds.x1 - bounds.x0) > 2.5) {
+                left = -2.5;
+                y += rh + 0.1;
+                rh = 0;
+            }
+            const norm = transformBarePath(shape, [
+                translationMatrix({
+                    x: -bounds.x0 + left,
+                    y: -bounds.y0 + y,
+                }),
+            ]);
+            left += bounds.x1 - bounds.x0 + margin;
+            rh = Math.max(rh, bounds.y1 - bounds.y0);
+            return norm;
+        });
+    }, [shapes]);
 
-export const handleNegZero = (n: number) => {
-    const m = n.toFixed(2);
-    return m === '-0.00' ? '0.00' : m;
-};
-
-export function tilingSvg(
-    bounds: Coord[],
-    lines: [Coord, Coord][],
-    size = 300,
-) {
     return (
         <svg
             xmlns="http://www.w3.org/2000/svg"
             style={{ background: 'black', width: size, height: size }}
             viewBox="-2.5 -2.5 5 5"
         >
+            {' '}
+            {shapes.map((shape, i) => (
+                <path key={i} d={calcPathD(shape, 1)} fill="green" />
+            ))}
             <path
                 d={`${bounds
                     .map(
@@ -428,6 +291,7 @@ export function tilingSvg(
                     )
                     .join(' ')}Z`}
                 fill="rgb(50,50,50)"
+                opacity={0.5}
                 stroke="none"
             />
             {lines.map(([p1, p2], i) => {
@@ -444,7 +308,54 @@ export function tilingSvg(
                         strokeWidth="0.02"
                     />
                 );
-            })}
+            })}{' '}
+            {normShapes.map((shape, i) => (
+                <path
+                    key={i}
+                    d={calcSegmentsD(
+                        shape.segments,
+                        shape.origin,
+                        shape.open,
+                        1,
+                    )}
+                    fill="red"
+                />
+            ))}
         </svg>
     );
 }
+
+const PREFIX = '<!-- TILING:';
+const SUFFIX = '-->';
+
+export const SimpleTiling = ({ tiling }: { tiling: Tiling }) => {
+    const { bounds, lines } = useMemo(() => getSvgData(tiling), [tiling]);
+
+    return (
+        <a
+            href=""
+            download={'tiling-' + tiling.cache.hash + '.svg'}
+            onClick={(evt) => {
+                const txt = evt.currentTarget.innerHTML;
+                const blob = new Blob(
+                    [txt + PREFIX + JSON.stringify(tiling) + SUFFIX],
+                    {
+                        type: 'image/svg+xml',
+                    },
+                );
+                const url = URL.createObjectURL(blob);
+                evt.currentTarget.href = url;
+                setTimeout(() => {
+                    evt.currentTarget.href = '';
+                    URL.revokeObjectURL(url);
+                }, 0);
+            }}
+        >
+            <TilingSvg
+                bounds={bounds}
+                lines={lines}
+                shapes={tiling.cache.shapes}
+            />
+        </a>
+    );
+};

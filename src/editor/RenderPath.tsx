@@ -8,13 +8,13 @@ import { Primitive } from '../rendering/intersect';
 import { Coord, Path, PathGroup, Segment, State } from '../types';
 import { StyleHover } from './MultiStyleForm';
 import { useTouchClick } from './RenderIntersections';
-import { arcPath } from './RenderPendingPath';
-import { DebugOrigPath } from './DebugOrigPath';
+// import { DebugOrigPath } from './DebugOrigPath';
 import { MenuItem } from './Canvas';
 import { Action } from '../state/Action';
 import { normalizedPath } from '../rendering/sortedVisibleInsetPaths';
 import { pathToSegmentKeys } from '../rendering/pathsAreIdentical';
 import { segmentsCenter } from './Bounds';
+import { calcPathD } from './calcPathD';
 
 export const UnderlinePath = ({
     path,
@@ -41,43 +41,6 @@ export const UnderlinePath = ({
             strokeLinejoin="round"
         />
     );
-};
-
-export const calcPathD = (path: Path, zoom: number): string => {
-    return calcSegmentsD(path.segments, path.origin, path.open, zoom);
-};
-
-export const calcSegmentsD = (
-    segments: Array<Segment>,
-    origin: Coord,
-    open: boolean | undefined,
-    zoom: number,
-): string => {
-    let d = `M ${origin.x * zoom} ${origin.y * zoom}`;
-    if (segments.length === 1 && segments[0].type === 'Arc') {
-        const arc = segments[0];
-        const { center, to } = arc;
-        const r = dist(center, to);
-        const theta = angleTo(to, center);
-        const opposite = push(center, theta, r);
-        return calcSegmentsD(
-            [{ ...arc, to: opposite }, arc],
-            origin,
-            open,
-            zoom,
-        );
-        // this can only happen if we're a pure cicle
-    }
-    segments.forEach((seg, i) => {
-        if (seg.type === 'Line') {
-            d += ` L ${seg.to.x * zoom} ${seg.to.y * zoom}`;
-        } else {
-            const prev = i === 0 ? origin : segments[i - 1].to;
-            d += arcPath(seg, prev, zoom);
-        }
-    });
-
-    return d + (open ? '' : ' Z');
 };
 
 const RenderPathMemo = ({
@@ -350,14 +313,14 @@ const RenderPathMemo = ({
         <>
             {fills}
             {lines}
-            {path.debug && origPath ? (
+            {/* {path.debug && origPath ? (
                 <DebugOrigPath
                     path={path}
                     origPath={origPath}
                     zoom={zoom}
                     clip={clip}
                 />
-            ) : null}
+            ) : null} */}
         </>
     );
 };
@@ -548,9 +511,9 @@ export const lightenedColor = (
                 const g = parseInt(raw.slice(3, 5), 16);
                 const b = parseInt(raw.slice(5), 16);
                 let [h, s, l] = rgbToHsl(r, g, b);
-                return `hsl(${h * 360}, ${s * 100}%, ${
-                    (l + lighten * 0.1) * 100
-                }%)`;
+                return `hsl(${(h * 360).toFixed(3)}, ${(s * 100).toFixed(
+                    3,
+                )}%, ${((l + lighten * 0.1) * 100).toFixed(3)}%)`;
             }
         }
     }
@@ -610,6 +573,8 @@ export function segmentArrow(
             x: (seg.to.x + prev.x) / 2,
             y: (seg.to.y + prev.y) / 2,
         };
+    } else if (seg.type === 'Quad') {
+        throw new Error('noa');
     } else {
         const t0 = angleTo(seg.center, prev);
         const tb = angleBetween(t0, angleTo(seg.center, seg.to), seg.clockwise);

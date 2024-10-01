@@ -129,9 +129,15 @@ export type PartialSegment = {
     hitEnd: number | null;
 };
 
-export function addPrevsToSegments(segments: Segment[]): SegmentWithPrev[] {
+export function addPrevsToSegments(
+    segments: Segment[],
+    origin?: Coord,
+): SegmentWithPrev[] {
     return segments.map((s, i) => ({
-        prev: i === 0 ? segments[segments.length - 1].to : segments[i - 1].to,
+        prev:
+            i === 0
+                ? origin ?? segments[segments.length - 1].to
+                : segments[i - 1].to,
         segment: s,
         shape: -1,
     }));
