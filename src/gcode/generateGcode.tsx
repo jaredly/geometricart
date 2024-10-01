@@ -132,12 +132,14 @@ export const makeDepths = (
     return depths;
 };
 
+export const pxToIn = (value: number, ppi: number) => value / ppi;
+
 export const pxToMM = (value: number, ppi: number) => {
-    return (value / ppi) * 250.4 * 6;
+    return (value / ppi) * 25.4;
 };
 
 export const mmToPX = (value: number, ppi: number) => {
-    return (value / (250.4 * 6)) * ppi;
+    return (value / 25.4) * ppi;
 };
 
 export const generateLaserInset = async (state: State) => {

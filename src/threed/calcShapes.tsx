@@ -303,10 +303,10 @@ export const calcShapes = (
         return {
             svg,
             bounds: {
-                x0: bounds.fLeft,
-                x1: bounds.fRight,
-                y0: bounds.fTop,
-                y1: bounds.fBottom,
+                x: bounds.fLeft,
+                y: bounds.fTop,
+                w: bounds.fRight - bounds.fLeft,
+                h: bounds.fBottom - bounds.fTop,
             },
         };
     };

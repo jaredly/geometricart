@@ -6,6 +6,7 @@ import { Coord, Segment } from '../types';
 import { negPiToPi } from './clipPath';
 import { closeEnough } from './epsilonToZero';
 import { segmentKey } from './segmentKey';
+import { pxToMM } from '../gcode/generateGcode';
 
 export type RasterSeg = {
     from: Coord;
@@ -17,10 +18,6 @@ export type RasterSeg = {
 
 export const rasterSegPoints = (segs: RasterSeg[]) => {
     return segs.flatMap((seg) => seg.points);
-};
-
-export const pxToMM = (value: number, ppi: number) => {
-    return (value / ppi) * 250.4 * 6;
 };
 
 export const pathToPoints = (

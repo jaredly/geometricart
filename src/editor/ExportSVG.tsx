@@ -1,15 +1,14 @@
 /* @jsx jsx */
 /* @jsxFrag React.Fragment */
 import { Interpolation, Theme, jsx } from '@emotion/react';
+import { Path as PKPath, PathKit } from 'pathkit-wasm';
 import React, { useState } from 'react';
 import * as ReactDOM from 'react-dom';
-import { Canvas } from './Canvas';
-import { BlurInt, Toggle } from './Forms';
-import { PREFIX, SUFFIX } from './Sidebar';
+import { pkPath } from '../sidebar/NewSidebar';
 import { Action } from '../state/Action';
 import { initialHistory } from '../state/initialState';
 import { Fill, Path, State, StyleLine } from '../types';
-import { calcPPI, viewPos } from './SVGCanvas';
+import { Canvas } from './Canvas';
 import {
     Bounds,
     DL,
@@ -17,11 +16,46 @@ import {
     blankCanvasProps,
     findBoundingRect,
 } from './Export';
-import { constantColors, maybeUrlColor } from './MultiStyleForm';
+import { BlurInt, Toggle } from './Forms';
+import { maybeUrlColor } from './MultiStyleForm';
 import { lightenedColor, paletteColor } from './RenderPath';
-import { calcPathD } from './calcPathD';
-import { PathKit, Path as PKPath } from 'pathkit-wasm';
-import { pkPath } from '../sidebar/NewSidebar';
+import { calcPPI, viewPos } from './SVGCanvas';
+import { PREFIX, SUFFIX } from './Sidebar';
+
+export const PPI = ({
+    ppi,
+    onChange,
+    bounds,
+}: {
+    ppi: number;
+    onChange: (ppi: number) => void;
+    bounds: Bounds | null;
+}) => {
+    if (!bounds) return null;
+    const w = bounds.x2 - bounds.x1;
+    const h = bounds.y2 - bounds.y1;
+
+    return (
+        <div>
+            <label>
+                Width:{' '}
+                <BlurInt
+                    value={Math.round((w / ppi) * 100) / 100}
+                    onChange={(v) => (v != null ? onChange(w / v) : null)}
+                />
+                in
+            </label>
+            <label>
+                Height:{' '}
+                <BlurInt
+                    value={Math.round((h / ppi) * 100) / 100}
+                    onChange={(v) => (v != null ? onChange(h / v) : null)}
+                />
+                in
+            </label>
+        </div>
+    );
+};
 
 export function ExportSVG({
     state,
@@ -62,9 +96,21 @@ export function ExportSVG({
                     })
                 }
             />
+            <PPI
+                ppi={state.meta.ppi}
+                bounds={boundingRect}
+                onChange={(ppi) =>
+                    ppi != null
+                        ? dispatch({
+                              type: 'meta:update',
+                              meta: { ...state.meta, ppi },
+                          })
+                        : null
+                }
+            />
             pixels per inch:{' '}
             <BlurInt
-                value={state.meta.ppi}
+                value={Math.round(state.meta.ppi * 100) / 100}
                 onChange={(ppi) =>
                     ppi != null
                         ? dispatch({
@@ -75,19 +121,17 @@ export function ExportSVG({
                 }
                 label={(ppi) => (
                     <div css={{ marginTop: 8 }}>
-                        Width: {(originalSize / ppi).toFixed(2)}in.
-                        <br />
                         Content Size:
                         {boundingRect
                             ? ` ${(
-                                  ((boundingRect.x2 - boundingRect.x1) / ppi) *
-                                  state.view.zoom
+                                  (boundingRect.x2 - boundingRect.x1) /
+                                  ppi
                               ).toFixed(2)}in x ${(
-                                  ((boundingRect.y2 - boundingRect.y1) / ppi) *
-                                  state.view.zoom
+                                  (boundingRect.y2 - boundingRect.y1) /
+                                  ppi
                               ).toFixed(2)}in`
                             : null}
-                        <FullLength state={state} />
+                        {/* <FullLength state={state} /> */}
                     </div>
                 )}
             />
@@ -820,19 +864,19 @@ const Line = ({
     );
 };
 
-export const FullLength = ({ state }: { state: State }) => {
-    const [ok, setOk] = useState(null as null | number);
+// export const FullLength = ({ state }: { state: State }) => {
+//     const [ok, setOk] = useState(null as null | number);
 
-    return (
-        <div>
-            {ok ? ok + 'mm' : 'Not calculated'}
-            <button
-                onClick={() => {
-                    // hm
-                }}
-            >
-                Calculate full cut length
-            </button>
-        </div>
-    );
-};
+//     return (
+//         <div>
+//             {ok ? ok + 'mm' : 'Not calculated'}
+//             <button
+//                 onClick={() => {
+//                     // hm
+//                 }}
+//             >
+//                 Calculate full cut length
+//             </button>
+//         </div>
+//     );
+// };
