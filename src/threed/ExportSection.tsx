@@ -85,8 +85,16 @@ export const ExportSection = ({
                     <button onClick={() => setExport(null)}>Clear</button>
                 </div>
             ) : null}
-            <SVGPlates paths={backs} ppi={state.meta.ppi} />
-            <SVGPlates paths={covers} ppi={state.meta.ppi} />
+            <SVGPlates
+                paths={backs}
+                ppi={state.meta.ppi}
+                title={state.meta.title || 'pattern'}
+            />
+            <SVGPlates
+                paths={covers}
+                ppi={state.meta.ppi}
+                title={(state.meta.title || 'pattern') + '-covers'}
+            />
         </>
     );
 };
@@ -97,6 +105,7 @@ const groupPaths = (
     width: number,
     height: number,
     margin: number,
+    strokeWidth: number,
 ) => {
     const grouped: {
         items: JSX.Element[];
@@ -124,7 +133,7 @@ const groupPaths = (
                 d={path.svg}
                 stroke="red"
                 fill="none"
-                strokeWidth={margin / 10}
+                strokeWidth={strokeWidth}
             />,
         );
         last.x += path.bounds.w + margin;
@@ -133,15 +142,25 @@ const groupPaths = (
     return grouped;
 };
 
-const SVGPlates = ({ paths, ppi }: { paths: SVGPath[]; ppi: number }) => {
+const SVGPlates = ({
+    paths,
+    ppi,
+    title,
+}: {
+    title: string;
+    paths: SVGPath[];
+    ppi: number;
+}) => {
     const [width, setWidth] = useState(10);
     const [height, setHeight] = useState(8);
+    const [marginMM, setMarginMM] = useState(3);
 
     const grouped = groupPaths(
         paths,
         inToPX(width, ppi),
         inToPX(height, ppi),
-        mmToPX(5, ppi),
+        mmToPX(marginMM, ppi),
+        ppi / 80,
     );
 
     return (
@@ -162,12 +181,21 @@ const SVGPlates = ({ paths, ppi }: { paths: SVGPath[]; ppi: number }) => {
                 />
                 in
             </label>
+            <label style={{ marginLeft: 8 }}>
+                Margin
+                <BlurInt
+                    value={marginMM}
+                    onChange={(v) => (v != null ? setMarginMM(v) : null)}
+                />
+                mm
+            </label>
             <div>
                 {grouped.map((p, i) => (
                     <svg
                         key={i}
                         width={`${width}in`}
                         height={`${height}in`}
+                        onClick={downloadSvg(title)}
                         xmlns="http://www.w3.org/2000/svg"
                         viewBox={`${0} ${0} ${inToPX(width, ppi)} ${inToPX(
                             height,
@@ -177,6 +205,7 @@ const SVGPlates = ({ paths, ppi }: { paths: SVGPath[]; ppi: number }) => {
                             margin: 8,
                             outline: '1px solid magenta',
                             display: 'block',
+                            cursor: 'pointer',
                         }}
                     >
                         {p.items}
@@ -186,3 +215,14 @@ const SVGPlates = ({ paths, ppi }: { paths: SVGPath[]; ppi: number }) => {
         </div>
     );
 };
+
+const downloadSvg =
+    (name: string) => (evt: React.MouseEvent<SVGSVGElement>) => {
+        const data = evt.currentTarget.outerHTML;
+        const blob = new Blob([data], { type: 'image/svg+xml' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.download = `${name}-${Date.now()}.svg`;
+        a.href = url;
+        a.click();
+    };

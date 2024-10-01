@@ -314,8 +314,8 @@ export const calcShapes = (
     return {
         items,
         stls,
-        backs: backs.map(convert),
-        covers: covers.map(convert),
+        backs: backs.filter(Boolean).map(convert),
+        covers: covers.filter(Boolean).map(convert),
     };
 };
 

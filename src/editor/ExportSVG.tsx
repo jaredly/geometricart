@@ -2,7 +2,7 @@
 /* @jsxFrag React.Fragment */
 import { Interpolation, Theme, jsx } from '@emotion/react';
 import { Path as PKPath, PathKit } from 'pathkit-wasm';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import * as ReactDOM from 'react-dom';
 import { pkPath } from '../sidebar/NewSidebar';
 import { Action } from '../state/Action';
@@ -21,19 +21,36 @@ import { maybeUrlColor } from './MultiStyleForm';
 import { lightenedColor, paletteColor } from './RenderPath';
 import { calcPPI, viewPos } from './SVGCanvas';
 import { PREFIX, SUFFIX } from './Sidebar';
+import { pxToMM } from '../gcode/generateGcode';
+
+const thinnestLine = (paths: State['paths']) => {
+    let width = Infinity;
+    Object.values(paths).forEach((path) => {
+        path.style.lines.forEach((line) => {
+            if (line && line.width != null) {
+                width = Math.min(width, line.width);
+            }
+        });
+    });
+    return width;
+};
 
 export const PPI = ({
     ppi,
     onChange,
     bounds,
+    state,
 }: {
     ppi: number;
     onChange: (ppi: number) => void;
     bounds: Bounds | null;
+    state: State;
 }) => {
     if (!bounds) return null;
     const w = bounds.x2 - bounds.x1;
     const h = bounds.y2 - bounds.y1;
+
+    const thinnest = useMemo(() => thinnestLine(state.paths), [state.paths]);
 
     return (
         <div>
@@ -45,7 +62,7 @@ export const PPI = ({
                 />
                 in
             </label>
-            <label>
+            <label style={{ marginLeft: 8 }}>
                 Height:{' '}
                 <BlurInt
                     value={Math.round((h / ppi) * 100) / 100}
@@ -53,6 +70,9 @@ export const PPI = ({
                 />
                 in
             </label>
+            <br />
+            Thinnest line: {Math.round(pxToMM(thinnest / 100, ppi) * 100) / 100}
+            mm
         </div>
     );
 };
@@ -107,6 +127,7 @@ export function ExportSVG({
                           })
                         : null
                 }
+                state={state}
             />
             pixels per inch:{' '}
             <BlurInt
