@@ -10,11 +10,11 @@ export type PendingBounds = {
     y1: null | number;
 };
 
-export function addCoordToBounds(bounds: PendingBounds, c: Coord) {
-    bounds.x0 = bounds.x0 == null ? c.x : Math.min(c.x, bounds.x0);
-    bounds.x1 = bounds.x1 == null ? c.x : Math.max(c.x, bounds.x1);
-    bounds.y0 = bounds.y0 == null ? c.y : Math.min(c.y, bounds.y0);
-    bounds.y1 = bounds.y1 == null ? c.y : Math.max(c.y, bounds.y1);
+export function addCoordToBounds(bounds: PendingBounds, c: Coord, margin = 0) {
+    bounds.x0 = bounds.x0 == null ? c.x : Math.min(c.x - margin, bounds.x0);
+    bounds.x1 = bounds.x1 == null ? c.x : Math.max(c.x + margin, bounds.x1);
+    bounds.y0 = bounds.y0 == null ? c.y : Math.min(c.y - margin, bounds.y0);
+    bounds.y1 = bounds.y1 == null ? c.y : Math.max(c.y + margin, bounds.y1);
 }
 export function newPendingBounds(): PendingBounds {
     return { x0: null, y0: null, x1: null, y1: null };

@@ -36,9 +36,14 @@ export const findBoundingRect = (state: State): Bounds | null => {
         { next: (_, __) => 0 },
         clip,
     ).forEach((path) => {
-        addCoordToBounds(bounds, path.origin);
+        let offset = path.style.lines[0]?.width;
+        if (offset != null) {
+            offset = offset / 2 / 100;
+        }
+        console.log('lines', path.style.lines);
+        addCoordToBounds(bounds, path.origin, offset);
         // TODO: Get proper bounding box for arc segments.
-        path.segments.forEach((t) => addCoordToBounds(bounds, t.to));
+        path.segments.forEach((t) => addCoordToBounds(bounds, t.to, offset));
     });
     if (bounds.x0 == null || bounds.y0 == null) {
         return null;
