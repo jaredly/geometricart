@@ -4,7 +4,8 @@ import { State } from '../types';
 import { addMetadata } from '../editor/ExportPng';
 import { initialHistory } from '../state/initialState';
 import { serializeObj } from './serialize-obj';
-import { pxToMM } from '../gcode/generateGcode';
+import { inToPX, mmToPX, pxToIn, pxToMM } from '../gcode/generateGcode';
+import { BlurInt } from '../editor/Forms';
 
 type SVGPath = {
     svg: string;
@@ -92,45 +93,96 @@ export const ExportSection = ({
 
 const groupPaths = (
     paths: SVGPath[],
-    ppi: number,
+    // gotta be mm ... or ... px actually
     width: number,
     height: number,
+    margin: number,
 ) => {
-    const margin = 5; // mm
     const grouped: {
         items: JSX.Element[];
         x: number;
         y: number;
-    }[] = [{ items: [], x: 0, y: 0 }];
+        y1: number;
+    }[] = [{ items: [], x: margin, y: margin, y1: margin * 2 }];
     for (let path of paths) {
+        let last = grouped[grouped.length - 1];
+        if (last.x + path.bounds.w > width) {
+            if (last.y1 + path.bounds.h > height) {
+                last = { items: [], x: margin, y: margin, y1: margin * 2 };
+                grouped.push(last);
+            } else {
+                last.y = last.y1;
+                last.x = margin;
+            }
+        }
+        last.items.push(
+            <path
+                transform={`translate(${last.x - path.bounds.x} ${
+                    last.y - path.bounds.y
+                })`}
+                key={last.items.length}
+                d={path.svg}
+                stroke="red"
+                fill="none"
+                strokeWidth={margin / 10}
+            />,
+        );
+        last.x += path.bounds.w + margin;
+        last.y1 = Math.max(last.y + path.bounds.h + margin, last.y1);
     }
+    return grouped;
 };
 
 const SVGPlates = ({ paths, ppi }: { paths: SVGPath[]; ppi: number }) => {
     const [width, setWidth] = useState(10);
     const [height, setHeight] = useState(8);
 
-    const grouped = [];
+    const grouped = groupPaths(
+        paths,
+        inToPX(width, ppi),
+        inToPX(height, ppi),
+        mmToPX(5, ppi),
+    );
 
     return (
-        <div style={{ display: 'flex', flexWrap: 'wrap', maxWidth: 800 }}>
-            {paths.map((p, i) => (
-                <svg
-                    key={i}
-                    width={pxToMM(p.bounds.w, ppi).toFixed(2) + 'mm'}
-                    height={pxToMM(p.bounds.h, ppi).toFixed(2) + 'mm'}
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox={`${p.bounds.x} ${p.bounds.y} ${p.bounds.w} ${p.bounds.h}`}
-                    style={{ margin: 8 }}
-                >
-                    <path
-                        d={p.svg}
-                        stroke="red"
-                        fill="none"
-                        strokeWidth={p.bounds.h / 100}
-                    />
-                </svg>
-            ))}
+        <div>
+            <label>
+                Width
+                <BlurInt
+                    value={width}
+                    onChange={(w) => (w != null ? setWidth(w) : null)}
+                />
+                in
+            </label>
+            <label style={{ marginLeft: 8 }}>
+                Height
+                <BlurInt
+                    value={height}
+                    onChange={(v) => (v != null ? setHeight(v) : null)}
+                />
+                in
+            </label>
+            <div>
+                {grouped.map((p, i) => (
+                    <svg
+                        key={i}
+                        width={`${width}in`}
+                        height={`${height}in`}
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox={`${0} ${0} ${inToPX(width, ppi)} ${inToPX(
+                            height,
+                            ppi,
+                        )}`}
+                        style={{
+                            margin: 8,
+                            outline: '1px solid magenta',
+                            display: 'block',
+                        }}
+                    >
+                        {p.items}
+                    </svg>
+                ))}
+            </div>
         </div>
     );
 };

@@ -133,6 +133,7 @@ export const makeDepths = (
 };
 
 export const pxToIn = (value: number, ppi: number) => value / ppi;
+export const inToPX = (value: number, ppi: number) => value * ppi;
 
 export const pxToMM = (value: number, ppi: number) => {
     return (value / ppi) * 25.4;

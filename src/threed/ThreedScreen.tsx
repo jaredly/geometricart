@@ -1,27 +1,20 @@
-import React, { useMemo, useRef, useState } from 'react';
-import { BlurInt } from '../editor/Forms';
-import { Action } from '../state/Action';
-import { PathGroup, State } from '../types';
 import { OrbitControls, PerspectiveCamera, useHelper } from '@react-three/drei';
 import '@react-three/fiber';
 import { Canvas } from '@react-three/fiber';
+import React, { useMemo, useRef, useState } from 'react';
 import {
-    BufferAttribute,
-    BufferGeometry,
     CameraHelper,
     DirectionalLight,
-    MeshStandardMaterial,
     PerspectiveCamera as TPC,
 } from 'three';
+import { BlurInt } from '../editor/Forms';
 import { usePathsToShow } from '../editor/SVGCanvas';
-import { useLocalStorage } from '../vest/App';
+import { Action } from '../state/Action';
+import { PathGroup, State } from '../types';
 // @ts-ignore
-import { serializeObj } from './serialize-obj';
-import { calcShapes } from './calcShapes';
-import { addMetadata } from '../editor/ExportPng';
-import { initialHistory } from '../state/initialState';
 import { Hover } from '../editor/Sidebar';
 import { mmToPX } from '../gcode/generateGcode';
+import { calcShapes } from './calcShapes';
 import { ExportSection } from './ExportSection';
 
 export const useLatest = <T,>(value: T) => {
@@ -183,8 +176,8 @@ export const ThreedScreen = ({
                         ></orthographicCamera>
                     </directionalLight>
                     {/* {sc.current ? <cameraHelper camera={sc.current} /> : null} */}
+                    {/* <CH camera={sc} /> */}
                     <ambientLight intensity={0.3} />
-                    <CH camera={sc} />
 
                     <PerspectiveCamera
                         makeDefault
@@ -299,54 +292,8 @@ export function groupSort(a: PathGroup, b: PathGroup): number {
         : b.ordering - a.ordering;
 }
 
-const back = () => {
-    return useMemo(() => {
-        const geometry = new BufferGeometry();
-        const material = new MeshStandardMaterial({
-            color: '#eeeeee',
-            // flatShading: true,
-        });
-        const vertices = new Float32Array(
-            [
-                -1, -1, 0,
-                //
-                -1, 1, 0,
-                //
-                1, 1, 0,
-                //
-                1, -1, 0,
-                //
-                -1, -1, -0.1,
-                //
-                -1, 1, -0.1,
-                //
-                1, 1, -0.1,
-                //
-                1, -1, -0.1,
-            ].map((n) => n * 60),
-        );
-        geometry.setIndex([
-            // 1, 2, 3,
-            2, 1, 3,
-            // 0, 1, 3,
-            0, 3, 1, 5, 6, 7, 4, 5, 7,
-        ]);
-        geometry.setAttribute('position', new BufferAttribute(vertices, 3));
-        geometry.computeVertexNormals();
-        return (
-            <mesh
-                material={material}
-                geometry={geometry}
-                position={[0, 0, -30]}
-                // castShadow
-                // receiveShadow
-            ></mesh>
-        );
-    }, []);
-};
-
 const CH = ({ camera }: { camera: any }) => {
-    useHelper(camera, CameraHelper); //, 1, 'hotpink')
+    useHelper(camera, CameraHelper);
 
     return null;
 };
