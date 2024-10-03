@@ -14,6 +14,7 @@ import { calcPathD } from '../editor/calcPathD';
 import { segmentKey, segmentKeyReverse } from '../rendering/segmentKey';
 import { getClips } from '../rendering/pkInsetPaths';
 import { coordsEqual } from '../rendering/pathsAreIdentical';
+import { PK } from '../editor/pk';
 
 // NOTE: if the shape isn't closed, we pretty much bail.
 const findClosest = (shape: RasterSeg[], point: Coord) => {
@@ -143,11 +144,7 @@ export const mmToPX = (value: number, ppi: number) => {
     return (value / 25.4) * ppi;
 };
 
-export const generateLaserInset = async (state: State) => {
-    const PK = await PathKitInit({
-        locateFile: (file) => '/node_modules/pathkit-wasm/bin/' + file,
-    });
-
+export const generateLaserInset = (state: State) => {
     const clips = getClips(state);
 
     const insetPaths = sortedVisibleInsetPaths(

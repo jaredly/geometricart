@@ -41,6 +41,7 @@ import { groupSort } from '../threed/ThreedScreen';
 import { Screen, UIDispatch, UIState } from '../useUIState';
 import { useLocalStorage } from '../vest/App';
 import { MirrorItems } from './MirrorItems';
+import { PK } from '../editor/pk';
 
 declare module 'csstype' {
     interface Properties {
@@ -1198,7 +1199,7 @@ export const pkPathToSegments = (PK: PathKit, pkp: PKPath) => {
     return clipped;
 };
 
-export const pkClipPaths = async (
+export const pkClipPaths = (
     state: State,
     clip: Segment[],
     inset: number,
@@ -1206,10 +1207,6 @@ export const pkClipPaths = async (
     dispatch: React.Dispatch<Action>,
     outside = false,
 ) => {
-    const PK = await PathKitInit({
-        locateFile: (file) => '/node_modules/pathkit-wasm/bin/' + file,
-    });
-
     const pkClip = pkPath(PK, clip);
     if (inset != 0) {
         pkInset(PK, pkClip, inset / 100);

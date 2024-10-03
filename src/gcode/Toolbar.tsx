@@ -66,16 +66,15 @@ export function Toolbar({
         <div>
             <button
                 onClick={() => {
-                    generateLaserInset(state).then((svg) => {
-                        if (!bounds) {
-                            throw new Error('no bounds');
-                        }
-                        const blob = new Blob([wrapSvg(bounds, state, svg)], {
-                            type: 'image/svg+xml',
-                        });
-                        const url = URL.createObjectURL(blob);
-                        setLaserUrl({ svg, url });
+                    const svg = generateLaserInset(state);
+                    if (!bounds) {
+                        throw new Error('no bounds');
+                    }
+                    const blob = new Blob([wrapSvg(bounds, state, svg)], {
+                        type: 'image/svg+xml',
                     });
+                    const url = URL.createObjectURL(blob);
+                    setLaserUrl({ svg, url });
                 }}
             >
                 Generate Laser

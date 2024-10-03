@@ -10,6 +10,7 @@ import { ItemEdit } from './ItemEdit';
 import PathKitInit, { PathKit } from 'pathkit-wasm';
 import { Canvas } from '../editor/Canvas';
 import { IconDelete } from '../icons/Icon';
+import { usePK } from '../editor/pk';
 
 const many = (value: string, m: number) => {
     const values: string[] = [];
@@ -37,17 +38,7 @@ export const GCodeEditor = ({
         [state.view, state.paths, state.pathGroups],
     );
 
-    const [pathKit, setPathKit] = React.useState(null as null | PathKit);
-    useEffect(() => {
-        PathKitInit({
-            locateFile: (file) =>
-                (process.env.NODE_ENV === 'development'
-                    ? '/node_modules/pathkit-wasm/bin/'
-                    : '/') + file,
-        }).then((pk) => {
-            setPathKit(pk);
-        });
-    }, []);
+    const pathKit = usePK();
 
     const originalSize = 700;
 

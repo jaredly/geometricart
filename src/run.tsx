@@ -30,10 +30,10 @@ import { Button } from 'primereact/button';
 import { useGists, gistCache } from './useGists';
 import { loadGist, newGist, saveGist, stateFileName } from './gists';
 import { maybeMigrate } from './state/migrateState';
-import { PK } from './editor/pk';
 import { initialState } from './state/initialState';
 import { Morph } from './Morph';
 import { useDropStateTarget } from './editor/useDropTarget';
+import { usePK, WithPathKit } from './editor/pk';
 dayjs.extend(relativeTime);
 
 export const metaPrefix = 'meta:';
@@ -358,6 +358,7 @@ export const debounce = (
 };
 
 const PkDebug = () => {
+    const PK = usePK();
     const [text, setText] = React.useState(
         `L10 10L5 0Z`,
         // `p.lineTo(10, 10)\np.conicTo(0, 0, 0, 10, 0.2)\np.close()`,
@@ -523,31 +524,37 @@ const getForeignState = async (image: string | null, load: string | null) => {
 const morph = false;
 
 if (morph) {
-    root.render(<Morph />);
+    root.render(
+        <WithPathKit>
+            <Morph />
+        </WithPathKit>,
+    );
 } else if (save) {
     getForeignState(image, load).then(
         (state) => {
             root.render(
-                <App
-                    closeFile={() => {
-                        if (back) {
-                            location.href = back;
-                        } else {
-                            history.back();
-                        }
-                    }}
-                    initialState={state}
-                    lastSaved={null}
-                    saveState={async (state) => {
-                        fetch(save, {
-                            method: 'POST',
-                            body: JSON.stringify(state),
-                            headers: {
-                                'Content-type': 'application/json',
-                            },
-                        });
-                    }}
-                />,
+                <WithPathKit>
+                    <App
+                        closeFile={() => {
+                            if (back) {
+                                location.href = back;
+                            } else {
+                                history.back();
+                            }
+                        }}
+                        initialState={state}
+                        lastSaved={null}
+                        saveState={async (state) => {
+                            fetch(save, {
+                                method: 'POST',
+                                body: JSON.stringify(state),
+                                headers: {
+                                    'Content-type': 'application/json',
+                                },
+                            });
+                        }}
+                    />
+                </WithPathKit>,
             );
         },
         (err) => {
@@ -556,7 +563,11 @@ if (morph) {
         },
     );
 } else {
-    root.render(<RouterProvider router={router} />);
+    root.render(
+        <WithPathKit>
+            <RouterProvider router={router} />{' '}
+        </WithPathKit>,
+    );
 }
 
 function newMetaData(id: string, state: State): MetaData {
