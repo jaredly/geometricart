@@ -1,28 +1,26 @@
-import React from 'react';
-import { Action } from '../state/Action';
-import { Fill, Path, State, StyleLine } from '../types';
-import earcut from 'earcut';
 import '@react-three/fiber';
+import earcut from 'earcut';
+import { PathKit } from 'pathkit-wasm';
+import React from 'react';
 import { BufferAttribute, BufferGeometry, PointsMaterial } from 'three';
 import { segmentsBounds } from '../editor/Bounds';
 import { calcPathD } from '../editor/calcPathD';
-import { PK } from '../editor/pk';
 import { paletteColor } from '../editor/RenderPath';
 import { Hover } from '../editor/Sidebar';
 import { cmdsToSegments } from '../gcode/cmdsToSegments';
+import { mmToPX } from '../gcode/generateGcode';
 import { scaleMatrix } from '../rendering/getMirrorTransforms';
 import {
-    angleDifferences,
     ensureClockwise,
     isClockwise,
     pathToPoints,
-    pointsAngles,
     rasterSegPoints,
     reversePath,
-    totalAngle,
 } from '../rendering/pathToPoints';
 import { transformBarePath } from '../rendering/points';
-import { mmToPX } from '../gcode/generateGcode';
+import { Action } from '../state/Action';
+import { Fill, Path, State, StyleLine } from '../types';
+import { PK } from '../editor/pk';
 
 export const unique = (v: string[]) => {
     const seen: Record<string, true> = {};
