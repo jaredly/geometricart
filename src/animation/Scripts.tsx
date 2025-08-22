@@ -27,6 +27,15 @@ export const ScriptEditor = ({
 			>
 				<button>▶️</button>
 				{id}
+				<button
+					onClick={() => {
+						if (confirm("really delete")) {
+							dispatch({ type: "script:update", key: id, script: null });
+						}
+					}}
+				>
+					🗑️
+				</button>
 			</div>
 		);
 	}

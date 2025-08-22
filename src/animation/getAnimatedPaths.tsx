@@ -64,7 +64,7 @@ export function getAnimatedPaths(
 			const args = [
 				subset,
 				...script!.args.map((arg) =>
-					arg === "t"
+					arg === "t" || arg === "t0"
 						? t
 						: arg === "view"
 							? view
