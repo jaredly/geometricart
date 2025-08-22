@@ -29,6 +29,9 @@ export function getBuiltins(): { [key: string]: Function | number } {
 		scale,
 		angleTo,
 		angleBetween,
+		easeInOutSine(x: number): number {
+			return -(Math.cos(Math.PI * x) - 1) / 2;
+		},
 		sin: Math.sin,
 		cos: Math.cos,
 		tan: Math.tan,
@@ -193,7 +196,7 @@ export const animationTimer = (
 	return [weights.length - 1, 1];
 };
 const followPath = (path: Array<Coord> | Path, percent: number) => {
-	let points;
+	let points: Coord[];
 	if (!Array.isArray(path)) {
 		points = rasterSegPoints(
 			pathToPoints(path.segments, path.open ? path.origin : null),
