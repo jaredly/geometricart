@@ -125,7 +125,7 @@ export const geomToPrimitives = (geom: GuideGeom, limit?: boolean): Array<Primit
     switch (geom.type) {
         case 'CircleMark': {
             const d = dist(geom.p1, geom.p2);
-            return [{type: 'circle', center: geom.p3, radius: d}];
+            return [{type: 'circle', center: geom.p3, radius: d, limit: [geom.angle - Math.PI / 30, geom.angle + Math.PI / 30]}];
         }
         case 'CloneCircle': {
             const d = dist(geom.p1, geom.p2);
