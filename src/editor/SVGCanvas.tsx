@@ -6,7 +6,7 @@ import {Action} from '../state/Action';
 import {useCurrent} from '../App';
 import {PendingMirror, UIState} from '../useUIState';
 import {findSelection, pathToPrimitives} from './findSelection';
-import {Matrix, scale} from '../rendering/getMirrorTransforms';
+import {angleTo, Matrix, scale} from '../rendering/getMirrorTransforms';
 import {calculateBounds, Guides, handleDuplicationIntersection, PendingDuplication} from './Guides';
 import {handleSelection} from './handleSelection';
 import {Primitive} from '../rendering/intersect';
@@ -16,10 +16,10 @@ import {paletteColor, RenderPath} from './RenderPath';
 import {showHover} from './showHover';
 import {Hover} from './Sidebar';
 import {InsetCache, sortedVisibleInsetPaths} from '../rendering/sortedVisibleInsetPaths';
-import {Coord, State, Intersect, View, Segment} from '../types';
+import {Coord, State, Intersect, View, Segment, guideNeedsAngle, guidePoints} from '../types';
 import {useDragSelect, useMouseDrag} from './useMouseDrag';
 import {useScrollWheel} from './useScrollWheel';
-import {EditorState, MenuItem} from './Canvas';
+import {EditorState, MenuItem, screenToWorld} from './Canvas';
 import {coordsEqual} from '../rendering/pathsAreIdentical';
 import {RenderIntersections} from './RenderIntersections';
 import {PKInsetCache, getClips} from '../rendering/pkInsetPaths';
@@ -167,7 +167,28 @@ export function SVGCanvas({
                 ref.current = node;
             }}
             {...mouseHandlers}
-            onClick={() => {
+            onClick={(evt) => {
+                const rect = evt.currentTarget.getBoundingClientRect();
+                const coord = screenToWorld(
+                    width,
+                    height,
+                    {
+                        x: evt.clientX - rect.left,
+                        y: evt.clientY - rect.top,
+                    },
+                    view,
+                );
+                if (
+                    state.pending?.type === 'Guide' &&
+                    guideNeedsAngle(state.pending.kind) &&
+                    guidePoints[state.pending.kind] === state.pending.points.length
+                ) {
+                    dispatch({
+                        type: 'pending:angle',
+                        angle: angleTo(state.pending.points[state.pending.points.length - 1], coord),
+                    });
+                }
+
                 console.log('clickinggggg');
             }}
         >

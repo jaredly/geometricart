@@ -35,9 +35,6 @@ export const RenderPendingGuide = ({
             ? angleTo(guide.points[guide.points.length - 1], pos)
             : undefined;
 
-    console.log('rendering guide', angle);
-
-    // const prims = geomToPrimitives(pendingGuide(guide.kind, points, shiftKey));
     return (
         <g style={{pointerEvents: 'none'}}>
             {mirror
