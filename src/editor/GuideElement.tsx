@@ -242,7 +242,7 @@ export const GuideElement = ({geom, zoom, original, bounds}: {geom: GuideGeom; z
         }
         case 'CircleMark': {
             const r = dist(geom.p1, geom.p2);
-            const td = Math.PI / 20;
+            const td = Math.PI / 30;
             const start = push(geom.p3, geom.angle - td, r);
             const end = push(geom.p3, geom.angle + td, r);
             const largeArcFlag = 0;
