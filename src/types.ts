@@ -1,10 +1,10 @@
-import { UndoableAction, UndoAction } from './state/Action';
-import { Primitive } from './rendering/intersect';
-import { Matrix } from './rendering/getMirrorTransforms';
-import { SegmentWithPrev } from './rendering/clipPathNew';
+import {UndoableAction, UndoAction} from './state/Action';
+import {Primitive} from './rendering/intersect';
+import {Matrix} from './rendering/getMirrorTransforms';
+import {SegmentWithPrev} from './rendering/clipPathNew';
 
 // Should I do polar coords?
-export type Coord = { x: number; y: number };
+export type Coord = {x: number; y: number};
 
 export type Id = string;
 
@@ -24,6 +24,14 @@ export type Split = {
     count: number;
 };
 
+export type CircleMark = {
+    type: 'CloneCircle';
+    p1: Coord;
+    p2: Coord;
+    p3: Coord;
+    angle: number;
+};
+
 export type CloneCircle = {
     type: 'CloneCircle';
     p1: Coord;
@@ -36,6 +44,7 @@ export type GuideGeom =
     | Split
     | Circle
     | CloneCircle
+    // | CircleMark
     | AngleBisector
     | PerpendicularBisector
     | Perpendicular
@@ -223,7 +232,7 @@ export type QuadSegment = {
     to: Coord;
 };
 
-export type LineSegment = { type: 'Line'; to: Coord };
+export type LineSegment = {type: 'Line'; to: Coord};
 export type Segment = LineSegment | ArcSegment | QuadSegment; // long = "the long way round"
 
 export type PathGroup = {
@@ -244,7 +253,7 @@ export type GuideElement = {
 };
 
 export type Idd<T> = {
-    items: { [key: number]: T };
+    items: {[key: number]: T};
     next: number;
 };
 
@@ -253,13 +262,13 @@ export type Cache = {
     // is it fine to dedup these primitives?
     // or do I need to keep them?
     // yeah let's dedup, and then each prim might point back to multiple guides.
-    primitives: Idd<{ prim: Primitive; guide: Array<number> }>;
+    primitives: Idd<{prim: Primitive; guide: Array<number>}>;
     // Do we just say "link back to the guide" always?
     // is there a need to link back to the specific primitive?
     // yes there is.
     // for determining adjacent segments when drawing paths.
     // and in fact, an intersection will have 2+ primitives to hark back to.
-    intersections: Idd<{ coord: Coord; prims: Array<number> }>;
+    intersections: Idd<{coord: Coord; prims: Array<number>}>;
 };
 
 export type Pending = PendingGuide | PendingPath;
@@ -313,7 +322,7 @@ export type History = {
             id: number;
             items: Array<UndoAction>;
             snapshot: string | null;
-            parent: { branch: number; idx: number } | null;
+            parent: {branch: number; idx: number} | null;
         };
     };
 
@@ -415,7 +424,7 @@ export type TimelineSlot = {
     contents:
         | {
               type: 'script';
-              custom: { [vbl: string]: number | Array<Id> | boolean };
+              custom: {[vbl: string]: number | Array<Id> | boolean};
               scriptId: string;
               phase: 'pre-inset' | 'post-inset';
               selection?: {
@@ -508,7 +517,7 @@ export type Library = {
             };
         };
     };
-    lerps: { [id: string]: Lerp };
+    lerps: {[id: string]: Lerp};
 };
 
 export const initialLibrary: Library = {
@@ -546,39 +555,39 @@ export type State = {
     history: History;
     meta: Meta;
     pending: Pending | null;
-    paths: { [key: Id]: Path };
+    paths: {[key: Id]: Path};
     // Pathgroups automatically happen when, for example, a path is created when a mirror is active.
     // SO: Paths are automatically /realized/, that is, when completing a path, the mirrored paths are also
     // added to the paths dict.
     // Whereas mirrored guides are /virtual/. Does that sound right? That means you can't individually disable mirrored guides.
     // But that sounds perfectly fine to me...
-    pathGroups: { [key: Id]: PathGroup };
-    guides: { [key: Id]: Guide };
+    pathGroups: {[key: Id]: PathGroup};
+    guides: {[key: Id]: Guide};
     // TODO: Are we likely to need guide groups?
     // maybe not? idk.
     // guideGroups: {[key: Id]: GuideGroup},
-    mirrors: { [key: Id]: Mirror };
+    mirrors: {[key: Id]: Mirror};
     activeMirror: Id | null;
     view: View;
 
     historyView?: {
-        zooms: { idx: number; view: Pick<View, 'zoom' | 'center'> }[];
+        zooms: {idx: number; view: Pick<View, 'zoom' | 'center'>}[];
         skips: number[];
         start?: number;
         end?: number;
     };
 
-    tilings: { [key: Id]: Tiling };
+    tilings: {[key: Id]: Tiling};
 
-    clips: { [key: Id]: Clip };
+    clips: {[key: Id]: Clip};
 
-    overlays: { [key: Id]: Overlay };
+    overlays: {[key: Id]: Overlay};
 
     // Non historied, my folks
     selection: Selection | null;
     tab: Tab;
 
-    palettes: { [name: string]: Array<string> };
+    palettes: {[name: string]: Array<string>};
     // activePalette: string;
     palette: string[];
     attachments: {
@@ -590,13 +599,13 @@ export type State = {
     gcode: {
         clearHeight: number;
         pauseHeight: number;
-        items: Array<GCodePath | { type: 'pause'; message: string }>;
+        items: Array<GCodePath | {type: 'pause'; message: string}>;
     };
 };
 
-export type BarePath = { origin: Coord; segments: Segment[]; open?: boolean };
+export type BarePath = {origin: Coord; segments: Segment[]; open?: boolean};
 
-export type SegPrev = { segment: Segment; prev: Coord };
+export type SegPrev = {segment: Segment; prev: Coord};
 
 export type TilingShape =
     | {

@@ -1,10 +1,10 @@
-import { Hover } from './editor/Sidebar';
-import { GuideGeom, Id, State } from './types';
-import { Action, GroupRegroup } from './state/Action';
-import { PendingDuplication } from './editor/Guides';
-import { PendingMirror } from './useUIState';
+import {Hover} from './editor/Sidebar';
+import {GuideGeom, Id, State} from './types';
+import {Action, GroupRegroup} from './state/Action';
+import {PendingDuplication} from './editor/Guides';
+import {PendingMirror} from './useUIState';
 
-export const toType: { [key: string]: GuideGeom['type'] } = {
+export const toType: {[key: string]: GuideGeom['type']} = {
     l: 'Line',
     s: 'Split',
     c: 'Circle',
@@ -15,22 +15,23 @@ export const toType: { [key: string]: GuideGeom['type'] } = {
     y: 'Polygon',
     o: 'CircumCircle',
     e: 'CloneCircle',
+    // k: 'CircleMark',
 };
 
-export const toTypeRev: { [key: string]: string } = {};
+export const toTypeRev: {[key: string]: string} = {};
 Object.keys(toType).forEach((k) => (toTypeRev[toType[k]] = k));
 
 export const handleKeyboard = (
-    latestState: { current: State },
+    latestState: {current: State},
     dispatch: (action: Action) => void,
     setHover: (hover: Hover | null) => void,
     setPendingMirror: (pending: PendingMirror | null) => void,
-    pendingDuplication: { current: null | PendingDuplication },
+    pendingDuplication: {current: null | PendingDuplication},
     setPendingDuplication: (d: null | PendingDuplication) => void,
 ) => {
     let tid: null | NodeJS.Timeout = null;
     const hoverMirror = (id: Id, quick: boolean) => {
-        setHover({ kind: 'Mirror', id, type: 'element' });
+        setHover({kind: 'Mirror', id, type: 'element'});
         if (tid) {
             clearTimeout(tid);
         }
@@ -45,11 +46,7 @@ export const handleKeyboard = (
     let prevMirror = latestState.current.activeMirror;
 
     return (evt: KeyboardEvent) => {
-        if (
-            evt.target !== document.body &&
-            (evt.target instanceof HTMLInputElement ||
-                evt.target instanceof HTMLTextAreaElement)
-        ) {
+        if (evt.target !== document.body && (evt.target instanceof HTMLInputElement || evt.target instanceof HTMLTextAreaElement)) {
             return;
         }
         if ((evt.metaKey || evt.ctrlKey) && evt.key === 'd') {
@@ -57,25 +54,24 @@ export const handleKeyboard = (
             evt.preventDefault();
             evt.stopPropagation();
 
-            const { selection } = latestState.current;
+            const {selection} = latestState.current;
             if (selection?.type !== 'PathGroup' && selection?.type !== 'Path') {
                 return;
             }
             return dispatch({
                 type: 'group:duplicate',
-                selection: latestState.current
-                    .selection as GroupRegroup['selection'],
+                selection: latestState.current.selection as GroupRegroup['selection'],
             });
         }
         // Duplicate selected shapes across 1 point
         if (evt.key === 'd') {
             // uhm
-            setPendingDuplication({ reflect: false, p0: null });
+            setPendingDuplication({reflect: false, p0: null});
             return;
         }
         // Duplicate selected shapes across 2 points
         if (evt.key === 'D') {
-            setPendingDuplication({ reflect: true, p0: null });
+            setPendingDuplication({reflect: true, p0: null});
             return;
         }
         // Cycle through mirrors
@@ -86,7 +82,7 @@ export const handleKeyboard = (
                 const idx = ids.indexOf(latestState.current.activeMirror);
                 id = ids[(idx + 1) % ids.length];
             }
-            dispatch({ type: 'mirror:active', id });
+            dispatch({type: 'mirror:active', id});
             hoverMirror(id, false);
             return;
         }
@@ -96,9 +92,9 @@ export const handleKeyboard = (
             if (latestState.current.activeMirror) {
                 prevMirror = latestState.current.activeMirror;
                 hoverMirror(prevMirror, true);
-                dispatch({ type: 'mirror:active', id: null });
+                dispatch({type: 'mirror:active', id: null});
             } else if (prevMirror) {
-                dispatch({ type: 'mirror:active', id: prevMirror });
+                dispatch({type: 'mirror:active', id: prevMirror});
                 hoverMirror(prevMirror, false);
             } else {
                 const id = Object.keys(latestState.current.mirrors)[0];
@@ -163,17 +159,13 @@ export const handleKeyboard = (
             if (evt.metaKey || evt.ctrlKey) {
                 evt.preventDefault();
                 evt.stopPropagation();
-                const { selection } = latestState.current;
-                if (
-                    selection?.type !== 'PathGroup' &&
-                    selection?.type !== 'Path'
-                ) {
+                const {selection} = latestState.current;
+                if (selection?.type !== 'PathGroup' && selection?.type !== 'Path') {
                     return;
                 }
                 return dispatch({
                     type: 'group:regroup',
-                    selection: latestState.current
-                        .selection as GroupRegroup['selection'],
+                    selection: latestState.current.selection as GroupRegroup['selection'],
                 });
             }
             return dispatch({
@@ -189,21 +181,21 @@ export const handleKeyboard = (
                 return setPendingDuplication(null);
             }
             if (latestState.current.pending) {
-                return dispatch({ type: 'pending:type', kind: null });
+                return dispatch({type: 'pending:type', kind: null});
             }
             if (latestState.current.selection) {
-                return dispatch({ type: 'selection:set', selection: null });
+                return dispatch({type: 'selection:set', selection: null});
             }
         }
         if (evt.key === 'z' && (evt.ctrlKey || evt.metaKey)) {
             evt.preventDefault();
             evt.stopPropagation();
-            return dispatch({ type: evt.shiftKey ? 'redo' : 'undo' });
+            return dispatch({type: evt.shiftKey ? 'redo' : 'undo'});
         }
         if (evt.key === 'y' && (evt.ctrlKey || evt.metaKey)) {
             evt.stopPropagation();
             evt.preventDefault();
-            return dispatch({ type: 'redo' });
+            return dispatch({type: 'redo'});
         }
         if (toType[evt.key]) {
             dispatch({

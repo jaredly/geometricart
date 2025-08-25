@@ -1,4 +1,18 @@
 
+# Ok so getting serious about construction
+
+- add a guide type that is a "circle tick", center + direction; and it does like a PI / 20 circle segment
+- mayyyybe have a whole new mode that is "real constructive geometry", where all you have is a compass and ruler...
+
+- ok so for circle ticks used to make bisectors, we need to be able to have the "radius" be a little bit arbitrary. BUT for those guides, we need to /not/ allow them to interact with any other guides. Because their placement is arbitrary. They only exist to make the bisector.
+- AH ok so for a bisector, we still have a bisector tool, but and the circle ticks for it are *decorations*. So not actually guides. but you can like move them around, recreationally.
+
+
+# Animate pls
+
+- ive got a 1-2 thing going
+- make it more fluid?
+
 
 # Let's export our 3dddddd
 - might want to be able to ... export like svgs. so I can laser it uppp
