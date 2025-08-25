@@ -15,7 +15,7 @@ export const toType: {[key: string]: GuideGeom['type']} = {
     y: 'Polygon',
     o: 'CircumCircle',
     e: 'CloneCircle',
-    // k: 'CircleMark',
+    k: 'CircleMark',
 };
 
 export const toTypeRev: {[key: string]: string} = {};

@@ -1,10 +1,10 @@
 /* @jsx jsx */
 /* @jsxFrag React.Fragment */
-import { jsx } from '@emotion/react';
-import { transformGuideGeom } from '../rendering/calculateGuideElements';
-import { applyMatrices, Matrix } from '../rendering/getMirrorTransforms';
-import { Bounds, GuideElement } from './GuideElement';
-import { Coord, GuideGeom, PendingGuide } from '../types';
+import {jsx} from '@emotion/react';
+import {transformGuideGeom} from '../rendering/calculateGuideElements';
+import {applyMatrices, Matrix} from '../rendering/getMirrorTransforms';
+import {Bounds, GuideElement} from './GuideElement';
+import {Coord, GuideGeom, PendingGuide} from '../types';
 
 export const RenderPendingGuide = ({
     guide,
@@ -22,49 +22,32 @@ export const RenderPendingGuide = ({
     mirror: null | Array<Array<Matrix>>;
 }) => {
     let offsets = [
-        { x: -1, y: 1 },
-        { x: 2, y: 1 },
+        {x: -1, y: 1},
+        {x: 2, y: 1},
     ];
 
     const points = guide.points.concat([pos]);
     offsets.slice(guide.points.length).forEach((off) => {
-        points.push({ x: pos.x + off.x, y: pos.y + off.y });
+        points.push({x: pos.x + off.x, y: pos.y + off.y});
     });
 
     // const prims = geomToPrimitives(pendingGuide(guide.kind, points, shiftKey));
     return (
-        <g style={{ pointerEvents: 'none' }}>
+        <g style={{pointerEvents: 'none'}}>
             {mirror
-                ? mirror.map((transform) => (
+                ? mirror.map((transform, i) => (
                       <GuideElement
+                          key={i}
                           zoom={zoom}
                           bounds={bounds}
                           original={false}
-                          geom={transformGuideGeom(
-                              pendingGuide(
-                                  guide.kind,
-                                  points,
-                                  shiftKey,
-                                  guide.extent,
-                                  guide.toggle,
-                              ),
-                              (pos) => applyMatrices(pos, transform),
+                          geom={transformGuideGeom(pendingGuide(guide.kind, points, shiftKey, guide.extent, guide.toggle), (pos) =>
+                              applyMatrices(pos, transform),
                           )}
                       />
                   ))
                 : null}
-            <GuideElement
-                zoom={zoom}
-                bounds={bounds}
-                original={true}
-                geom={pendingGuide(
-                    guide.kind,
-                    points,
-                    shiftKey,
-                    guide.extent,
-                    guide.toggle,
-                )}
-            />
+            <GuideElement zoom={zoom} bounds={bounds} original={true} geom={pendingGuide(guide.kind, points, shiftKey, guide.extent, guide.toggle)} />
             {/* <circle
                 cx={pos.x * zoom}
                 cy={pos.y * zoom}
@@ -74,22 +57,8 @@ export const RenderPendingGuide = ({
                 stroke={'red'}
                 strokeWidth={2}
             /> */}
-            <line
-                x1={pos.x * zoom}
-                x2={pos.x * zoom}
-                y1={pos.y * zoom - 10}
-                y2={pos.y * zoom + 10}
-                stroke="red"
-                strokeWidth={1}
-            />
-            <line
-                x1={pos.x * zoom - 10}
-                x2={pos.x * zoom + 10}
-                y1={pos.y * zoom}
-                y2={pos.y * zoom}
-                stroke="red"
-                strokeWidth={1}
-            />
+            <line x1={pos.x * zoom} x2={pos.x * zoom} y1={pos.y * zoom - 10} y2={pos.y * zoom + 10} stroke="red" strokeWidth={1} />
+            <line x1={pos.x * zoom - 10} x2={pos.x * zoom + 10} y1={pos.y * zoom} y2={pos.y * zoom} stroke="red" strokeWidth={1} />
         </g>
     );
 };
@@ -100,8 +69,17 @@ export const pendingGuide = (
     shiftKey: boolean,
     extent?: number,
     toggle?: boolean,
+    angle?: number,
 ): GuideGeom => {
     switch (type) {
+        case 'CircleMark':
+            return {
+                type,
+                p1: points[0],
+                p2: points[1],
+                p3: points[2],
+                angle: angle ?? 0,
+            };
         case 'CloneCircle':
             return {
                 type,

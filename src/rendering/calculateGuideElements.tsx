@@ -1,18 +1,10 @@
-import {
-    applyMatrices,
-    getTransformsForNewMirror,
-    Matrix,
-    push,
-} from './getMirrorTransforms';
-import { Coord, Guide, GuideGeom, Id, Mirror } from '../types';
-import { getCircumCircle } from './points';
+import {applyMatrices, getTransformsForNewMirror, Matrix, push} from './getMirrorTransforms';
+import {Coord, Guide, GuideGeom, Id, Mirror} from '../types';
+import {getCircumCircle} from './points';
 
 // These are NOT in /view/ coordinates!
 
-export const calculateInactiveGuideElements = (
-    guides: { [key: Id]: Guide },
-    mirrorTransforms: { [key: Id]: Array<Array<Matrix>> },
-) => {
+export const calculateInactiveGuideElements = (guides: {[key: Id]: Guide}, mirrorTransforms: {[key: Id]: Array<Array<Matrix>>}) => {
     const elements: Array<GuideElement> = [];
     Object.keys(guides).forEach((k) => {
         if (guides[k].active) {
@@ -42,7 +34,7 @@ export const geomPoints = (geom: GuideGeom): Array<Coord> => {
             const bx = dx / count;
             const by = dy / count;
             for (let i = 1; i < count; i++) {
-                points.push({ x: geom.p1.x + bx * i, y: geom.p1.y + by * i });
+                points.push({x: geom.p1.x + bx * i, y: geom.p1.y + by * i});
             }
             return points;
         }
@@ -57,10 +49,7 @@ export const geomPoints = (geom: GuideGeom): Array<Coord> => {
     return [];
 };
 
-export const calculateGuideElements = (
-    guides: { [key: Id]: Guide },
-    mirrorTransforms: { [key: Id]: Array<Array<Matrix>> },
-) => {
+export const calculateGuideElements = (guides: {[key: Id]: Guide}, mirrorTransforms: {[key: Id]: Array<Array<Matrix>>}) => {
     const elements: Array<GuideElement> = [];
     Object.keys(guides).forEach((k) => {
         if (!guides[k].active) {
@@ -87,40 +76,26 @@ export type GuideElement = {
     original: boolean;
 };
 
-export const transformMirror = (
-    mirror: Mirror,
-    transform: (pos: Coord) => Coord,
-): Mirror => {
+export const transformMirror = (mirror: Mirror, transform: (pos: Coord) => Coord): Mirror => {
     return {
         ...mirror,
         origin: transform(mirror.origin),
         point: transform(mirror.point),
-        parent:
-            typeof mirror.parent === 'object' && mirror.parent
-                ? transformMirror(mirror.parent, transform)
-                : mirror.parent,
+        parent: typeof mirror.parent === 'object' && mirror.parent ? transformMirror(mirror.parent, transform) : mirror.parent,
     };
 };
 
-export const transformGuide = (
-    guide: Guide,
-    transform: (pos: Coord) => Coord,
-): Guide => {
+export const transformGuide = (guide: Guide, transform: (pos: Coord) => Coord): Guide => {
     return {
         ...guide,
         geom: transformGuideGeom(guide.geom, transform),
-        mirror:
-            guide.mirror && typeof guide.mirror === 'object'
-                ? transformMirror(guide.mirror, transform)
-                : guide.mirror,
+        mirror: guide.mirror && typeof guide.mirror === 'object' ? transformMirror(guide.mirror, transform) : guide.mirror,
     };
 };
 
-export const transformGuideGeom = (
-    geom: GuideGeom,
-    transform: (pos: Coord) => Coord,
-): GuideGeom => {
+export const transformGuideGeom = (geom: GuideGeom, transform: (pos: Coord) => Coord): GuideGeom => {
     switch (geom.type) {
+        case 'CircleMark':
         case 'CloneCircle':
         case 'InCircle':
         case 'AngleBisector':
@@ -136,7 +111,7 @@ export const transformGuideGeom = (
         case 'Polygon':
         case 'PerpendicularBisector':
         case 'Perpendicular':
-            return { ...geom, p1: transform(geom.p1), p2: transform(geom.p2) };
+            return {...geom, p1: transform(geom.p1), p2: transform(geom.p2)};
         case 'Circle':
             return {
                 ...geom,
@@ -146,10 +121,7 @@ export const transformGuideGeom = (
     }
 };
 
-export const geomsForGiude = (
-    guide: Guide,
-    mirror: Array<Array<Matrix>> | null,
-) => {
+export const geomsForGiude = (guide: Guide, mirror: Array<Array<Matrix>> | null) => {
     const elements: Array<GuideElement> = [];
 
     if (mirror) {
@@ -157,9 +129,7 @@ export const geomsForGiude = (
             elements.push({
                 id: guide.id,
                 active: guide.active,
-                geom: transformGuideGeom(guide.geom, (pos) =>
-                    applyMatrices(pos, matrices),
-                ),
+                geom: transformGuideGeom(guide.geom, (pos) => applyMatrices(pos, matrices)),
                 original: false,
             });
         });

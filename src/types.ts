@@ -25,7 +25,7 @@ export type Split = {
 };
 
 export type CircleMark = {
-    type: 'CloneCircle';
+    type: 'CircleMark';
     p1: Coord;
     p2: Coord;
     p3: Coord;
@@ -44,7 +44,7 @@ export type GuideGeom =
     | Split
     | Circle
     | CloneCircle
-    // | CircleMark
+    | CircleMark
     | AngleBisector
     | PerpendicularBisector
     | Perpendicular
@@ -90,12 +90,14 @@ export const guideTypes: Array<GuideGeom['type']> = [
     'InCircle',
     'Polygon',
     'CircumCircle',
+    'CircleMark',
 ];
 
 export const guidePoints: {
     [x in GuideGeom['type']]: number;
 } = {
     AngleBisector: 3,
+    CircleMark: 3,
     InCircle: 3,
     CircumCircle: 3,
     Perpendicular: 2,

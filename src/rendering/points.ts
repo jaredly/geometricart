@@ -1,20 +1,6 @@
-import {
-    angleTo,
-    applyMatrices,
-    dist,
-    Matrix,
-    push,
-} from './getMirrorTransforms';
-import {
-    Circle,
-    circleCircle,
-    lineCircle,
-    lineLine,
-    lineToSlope,
-    Primitive,
-    SlopeIntercept,
-} from './intersect';
-import { BarePath, Coord, GuideGeom, Path, Segment } from '../types';
+import {angleTo, applyMatrices, dist, Matrix, push} from './getMirrorTransforms';
+import {Circle, circleCircle, lineCircle, lineLine, lineToSlope, Primitive, SlopeIntercept} from './intersect';
+import {BarePath, Coord, GuideGeom, Path, Segment} from '../types';
 
 // export type Primitive = {type: 'line', data: SlopeIntercept} | {type: 'circle', center: Coord, radius: number}
 export const transformPath = (path: Path, matrices: Array<Matrix>): Path => ({
@@ -30,13 +16,10 @@ export function transformBarePath(shape: BarePath, tx: Matrix[]): BarePath {
     };
 }
 
-export const transformSegment = (
-    segment: Segment,
-    matrices: Array<Matrix>,
-): Segment => {
+export const transformSegment = (segment: Segment, matrices: Array<Matrix>): Segment => {
     // const to = applyMatrices(segment.to, matrices)
     switch (segment.type) {
-        case 'Arc':
+        case 'Arc': {
             const flips = matrices.some((m) => m[0][0] === 1 && m[1][1] === -1);
             return {
                 type: 'Arc',
@@ -45,6 +28,7 @@ export const transformSegment = (
                 to: applyMatrices(segment.to, matrices),
                 // to,
             };
+        }
         case 'Quad':
             return {
                 type: 'Quad',
@@ -69,16 +53,13 @@ export const getCircumCircle = (p1: Coord, p2: Coord, p3: Coord) => {
     const m1 = push(p1, t1, d1 / 2);
     const m2 = push(p1, t2, d2 / 2);
 
-    const mid = lineLine(
-        lineToSlope(m1, push(m1, t1 + Math.PI / 2, 1)),
-        lineToSlope(m2, push(m2, t2 + Math.PI / 2, 1)),
-    );
+    const mid = lineLine(lineToSlope(m1, push(m1, t1 + Math.PI / 2, 1)), lineToSlope(m2, push(m2, t2 + Math.PI / 2, 1)));
 
     if (!mid) {
         return null;
     }
 
-    return { center: mid, r: dist(p1, mid), m1, m2 };
+    return {center: mid, r: dist(p1, mid), m1, m2};
 
     // const ta = (t1 + t2) / 2;
     // const t3 = angleTo(p2, p1);
@@ -101,24 +82,16 @@ export const getInCircle = (p1: Coord, p2: Coord, p3: Coord) => {
     const t4 = angleTo(p2, p3);
     const tb = (t3 + t4) / 2;
 
-    const mid = lineLine(
-        lineToSlope(p1, push(p1, ta, 1)),
-        lineToSlope(p2, push(p2, tb, 1)),
-    );
+    const mid = lineLine(lineToSlope(p1, push(p1, ta, 1)), lineToSlope(p2, push(p2, tb, 1)));
     if (!mid) {
         return null;
     }
     const da = dist(p1, mid);
     const r = Math.abs(Math.sin(ta - t1) * da);
-    return { center: mid, r };
+    return {center: mid, r};
 };
 
-export const calcPolygon = (
-    p1: Coord,
-    p2: Coord,
-    sides: number,
-    toCenter: boolean,
-) => {
+export const calcPolygon = (p1: Coord, p2: Coord, sides: number, toCenter: boolean) => {
     // console.log('calc', toCenter);
     const internal = Math.PI / sides;
     const adjacent = Math.PI / 2 - internal;
@@ -130,7 +103,7 @@ export const calcPolygon = (
         for (let i = 1; i < sides; i++) {
             points.push(push(center, a1 + internal * 2 * i, r));
         }
-        return { center, points, r };
+        return {center, points, r};
     }
 
     const theta = angleTo(p1, p2);
@@ -139,13 +112,7 @@ export const calcPolygon = (
     const center = push(p1, theta + adjacent, r);
     const points = [p1, p2];
     for (let i = 2; i < sides; i++) {
-        points.push(
-            push(
-                center,
-                theta + adjacent + Math.PI + ((Math.PI * 2) / sides) * i,
-                r,
-            ),
-        );
+        points.push(push(center, theta + adjacent + Math.PI + ((Math.PI * 2) / sides) * i, r));
     }
     return {
         center,
@@ -154,40 +121,35 @@ export const calcPolygon = (
     };
 };
 
-export const geomToPrimitives = (
-    geom: GuideGeom,
-    limit?: boolean,
-): Array<Primitive> => {
+export const geomToPrimitives = (geom: GuideGeom, limit?: boolean): Array<Primitive> => {
     switch (geom.type) {
+        case 'CircleMark': {
+            const d = dist(geom.p1, geom.p2);
+            return [{type: 'circle', center: geom.p3, radius: d}];
+        }
         case 'CloneCircle': {
             const d = dist(geom.p1, geom.p2);
-            return [{ type: 'circle', center: geom.p3, radius: d }];
+            return [{type: 'circle', center: geom.p3, radius: d}];
         }
         case 'CircumCircle': {
             const got = getCircumCircle(geom.p1, geom.p2, geom.p3);
             if (!got) {
                 return [];
             }
-            return [{ type: 'circle', center: got.center, radius: got.r }];
+            return [{type: 'circle', center: got.center, radius: got.r}];
         }
         case 'InCircle': {
             const got = getInCircle(geom.p1, geom.p2, geom.p3);
             if (!got) {
                 return [];
             }
-            return [{ type: 'circle', center: got.center, radius: got.r }];
+            return [{type: 'circle', center: got.center, radius: got.r}];
         }
         case 'Perpendicular': {
             const t1 = angleTo(geom.p1, geom.p2) + Math.PI / 2;
             if (limit) {
                 const mag = dist(geom.p1, geom.p2);
-                return [
-                    lineToSlope(
-                        push(geom.p1, t1, mag),
-                        push(geom.p1, t1, -mag),
-                        true,
-                    ),
-                ];
+                return [lineToSlope(push(geom.p1, t1, mag), push(geom.p1, t1, -mag), true)];
             }
             const p2 = push(geom.p1, t1, 1);
             return [lineToSlope(geom.p1, p2, false)];
@@ -196,17 +158,10 @@ export const geomToPrimitives = (
             return [lineToSlope(geom.p1, geom.p2, true)];
         }
         case 'Polygon': {
-            const { center, points, r } = calcPolygon(
-                geom.p1,
-                geom.p2,
-                geom.sides,
-                geom.toCenter,
-            );
+            const {center, points, r} = calcPolygon(geom.p1, geom.p2, geom.sides, geom.toCenter);
             return [
                 // { type: 'circle', center, radius: r },
-                ...points.map((p1, i) =>
-                    lineToSlope(p1, points[(i + 1) % points.length], true),
-                ),
+                ...points.map((p1, i) => lineToSlope(p1, points[(i + 1) % points.length], true)),
                 // lineToSlope(geom.p1, geom.p2, true)
             ];
         }
@@ -218,13 +173,7 @@ export const geomToPrimitives = (
                 };
                 const t = angleTo(geom.p1, geom.p2);
                 const d = dist(geom.p1, geom.p2);
-                return [
-                    lineToSlope(
-                        push(mid, t, (d * geom.extent) / 2),
-                        push(mid, t + Math.PI, (d * geom.extent) / 2),
-                        true,
-                    ),
-                ];
+                return [lineToSlope(push(mid, t, (d * geom.extent) / 2), push(mid, t + Math.PI, (d * geom.extent) / 2), true)];
             }
             return [lineToSlope(geom.p1, geom.p2, geom.limit)];
         }
@@ -265,10 +214,7 @@ export const geomToPrimitives = (
     }
 };
 
-export const calculateIntersections = (
-    p1: Primitive,
-    p2: Primitive,
-): Array<Coord> => {
+export const calculateIntersections = (p1: Primitive, p2: Primitive): Array<Coord> => {
     if (p1.type === 'line' && p2.type === 'line') {
         const int = lineLine(p1, p2);
         return int ? [int] : [];
