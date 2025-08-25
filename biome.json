@@ -20,10 +20,12 @@
             "style": "off",
             "correctness": {
                 "noUnusedVariables": "off",
-                "noUnusedImports": "off"
+                "noUnusedImports": "off",
+                "useExhaustiveDependencies": "warn"
             },
             "suspicious": {
-                "noArrayIndexKey": "off"
+                "noArrayIndexKey": "off",
+                "noAssignInExpressions": "warn"
             }
         }
     },
