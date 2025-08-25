@@ -1,24 +1,13 @@
 import * as React from 'react';
-import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber';
-import {
-    Camera,
-    CanvasTexture,
-    DoubleSide,
-    LinearFilter,
-    Mesh,
-    RepeatWrapping,
-    ShaderMaterial,
-    Texture,
-    TextureLoader,
-    Vector3,
-} from 'three';
-import { GCodeData } from './Visualize';
-import { renderCutDepths } from './renderCutDepths';
-import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
-import { addMetadata } from '../editor/ExportPng';
-import { initialHistory } from '../state/initialState';
-import { State } from '../types';
-import { gcodeStateSuffix } from './Toolbar';
+import {Canvas, useFrame, useLoader, useThree} from '@react-three/fiber';
+import {Camera, CanvasTexture, DoubleSide, LinearFilter, Mesh, RepeatWrapping, ShaderMaterial, Texture, TextureLoader, Vector3} from 'three';
+import {GCodeData} from './Visualize';
+import {renderCutDepths} from './renderCutDepths';
+import {OrbitControls, PerspectiveCamera} from '@react-three/drei';
+import {addMetadata} from '../editor/ExportPng';
+import {initialHistory} from '../state/initialState';
+import {State} from '../types';
+import {gcodeStateSuffix} from './Toolbar';
 
 // Based on https://stemkoski.github.io/Three.js/Shader-Heightmap-Textures.html
 const vertext = `
@@ -105,17 +94,7 @@ void main() {
 }
 `;
 
-export const GCode3D = ({
-    data,
-    gcode,
-    state,
-    meta,
-}: {
-    data: GCodeData;
-    gcode: string;
-    state: State;
-    meta: string;
-}) => {
+export const GCode3D = ({data, gcode, state, meta}: {data: GCodeData; gcode: string; state: State; meta: string}) => {
     const [scaleBase, setScaleBase] = React.useState(500);
     const scale = scaleBase / Math.max(data.dims.width, data.dims.height);
     const tx = React.useMemo(() => {
@@ -141,9 +120,7 @@ export const GCode3D = ({
     const cam = React.useRef(null as null | Camera | void);
     const canv = React.useRef<HTMLCanvasElement>(null);
     const stateRef = React.useRef(null as null | any);
-    const [download, setDownload] = React.useState(
-        null as null | { url: string; img: string },
-    );
+    const [download, setDownload] = React.useState(null as null | {url: string; img: string});
     const qsize = 500;
     const virtualCamera = React.useRef<Camera>();
 
@@ -169,67 +146,43 @@ export const GCode3D = ({
                     const textMargin = 5;
 
                     ctx.fillStyle = 'white';
-                    ctx.fillRect(
-                        0,
-                        qsize * 2 - textHeight - textMargin,
-                        qsize * 2,
-                        50,
-                    );
+                    ctx.fillRect(0, qsize * 2 - textHeight - textMargin, qsize * 2, 50);
                     ctx.font = `${textHeight}px system-ui`;
                     ctx.fillStyle = 'black';
                     ctx.fillText(meta, textMargin, qsize * 2 - textMargin);
 
                     const url = dest.toDataURL();
-                    const blob = new Blob(
-                        [
-                            gcode +
-                                gcodeStateSuffix(state) +
-                                `\n;thumbnail: ${url}`,
-                        ],
-                        {
-                            type: 'text/x-gcode',
-                        },
-                    );
-                    setDownload({ url: URL.createObjectURL(blob), img: url });
+                    const blob = new Blob([gcode + gcodeStateSuffix(state) + `\n;thumbnail: ${url}`], {
+                        type: 'text/x-gcode',
+                    });
+                    setDownload({url: URL.createObjectURL(blob), img: url});
                 }}
             >
                 {download ? 'Clear' : 'Download GCode w/ Preview Image'}
             </button>
             {download ? (
                 <div>
-                    <a
-                        href={download.url}
-                        style={{ cursor: 'pointer' }}
-                        download={`geometric-${new Date().toISOString()}.nc`}
-                    >
-                        <img
-                            src={download.img}
-                            style={{ width: qsize, height: qsize }}
-                        />
+                    <a href={download.url} style={{cursor: 'pointer'}} download={`geometric-${new Date().toISOString()}.nc`}>
+                        <img src={download.img} style={{width: qsize, height: qsize}} />
                     </a>
                 </div>
             ) : null}
             <div>
                 {[500, 1000, 2000, 5000].map((num) => (
-                    <button
-                        key={num}
-                        onClick={() => setScaleBase(num)}
-                        disabled={scaleBase === num}
-                    >
+                    <button key={num} onClick={() => setScaleBase(num)} disabled={scaleBase === num}>
                         {num}
                     </button>
                 ))}
             </div>
-            <div
-                style={{ width: 500, height: 500, border: '1px solid magenta' }}
-            >
-                <Canvas ref={canv} style={{ backgroundColor: 'black' }}>
+            <div style={{width: 500, height: 500, border: '1px solid magenta'}}>
+                <Canvas ref={canv} style={{backgroundColor: 'black'}}>
                     <ambientLight />
                     <pointLight position={[10, 10, 10]} />
                     <VBox tx={tx} data={data} scale={scale} />
                     <GetState ok={stateRef} />
                     <PerspectiveCamera
                         makeDefault
+                        // @ts-expect-error
                         ref={virtualCamera}
                         position={[0, 0, 10]}
                         args={[30, 1, 1, 1000]}
@@ -241,18 +194,13 @@ export const GCode3D = ({
     );
 };
 
-const GetState = ({ ok }: { ok: React.MutableRefObject<any> }) => {
+const GetState = ({ok}: {ok: React.MutableRefObject<any>}) => {
     const state = useThree();
     ok.current = state;
     return null;
 };
 
-export function takePerspectivePictures(
-    threes: any,
-    ctx: CanvasRenderingContext2D,
-    canv: React.RefObject<HTMLCanvasElement>,
-    qsize: number,
-) {
+export function takePerspectivePictures(threes: any, ctx: CanvasRenderingContext2D, canv: React.RefObject<HTMLCanvasElement>, qsize: number) {
     threes.camera.position.set(0, 0, 10);
     threes.camera.lookAt(new Vector3(0, 0, 0));
     threes.gl.render(threes.scene, threes.camera);
@@ -282,15 +230,7 @@ export function takePerspectivePictures(
     threes.camera.lookAt(new Vector3(0, 0, 0));
 }
 
-function VBox({
-    tx,
-    data,
-    scale,
-}: {
-    tx: Texture;
-    data: GCodeData;
-    scale: number;
-}) {
+function VBox({tx, data, scale}: {tx: Texture; data: GCodeData; scale: number}) {
     const mesh = React.useRef<Mesh>(null);
     const wood = useLoader(TextureLoader, 'wood.jpg');
 
@@ -300,9 +240,9 @@ function VBox({
 
     const mat = React.useMemo(() => {
         const customUniforms = {
-            backgroundTexture: { type: 't', value: wood },
-            bumpTexture: { type: 't', value: tx },
-            bumpScale: { type: 'f', value: modelDepth },
+            backgroundTexture: {type: 't', value: wood},
+            bumpTexture: {type: 't', value: tx},
+            bumpScale: {type: 'f', value: modelDepth},
         };
         const mat = new ShaderMaterial({
             uniforms: customUniforms,
@@ -317,14 +257,7 @@ function VBox({
         <mesh ref={mesh} material={mat} position={[0, 0, -modelDepth]}>
             {/* <meshBasicMaterial material={tx} toneMapped={false} /> */}
             {/* <boxGeometry args={[2, 2, 2]} /> */}
-            <planeGeometry
-                args={[
-                    modelWidth,
-                    modelHeight,
-                    data.dims.width * scale,
-                    data.dims.height * scale,
-                ]}
-            />
+            <planeGeometry args={[modelWidth, modelHeight, data.dims.width * scale, data.dims.height * scale]} />
         </mesh>
     );
 }

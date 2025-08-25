@@ -1,21 +1,17 @@
-import { OrbitControls, PerspectiveCamera, useHelper } from '@react-three/drei';
+import {OrbitControls, PerspectiveCamera, useHelper} from '@react-three/drei';
 import '@react-three/fiber';
-import { Canvas } from '@react-three/fiber';
-import React, { useMemo, useRef, useState } from 'react';
-import {
-    CameraHelper,
-    DirectionalLight,
-    PerspectiveCamera as TPC,
-} from 'three';
-import { BlurInt } from '../editor/Forms';
-import { usePathsToShow } from '../editor/SVGCanvas';
-import { Action } from '../state/Action';
-import { PathGroup, State } from '../types';
+import {Canvas} from '@react-three/fiber';
+import React, {useMemo, useRef, useState} from 'react';
+import {CameraHelper, DirectionalLight, PerspectiveCamera as TPC} from 'three';
+import {BlurInt} from '../editor/Forms';
+import {usePathsToShow} from '../editor/SVGCanvas';
+import {Action} from '../state/Action';
+import {PathGroup, State} from '../types';
 // @ts-ignore
-import { Hover } from '../editor/Sidebar';
-import { mmToPX } from '../gcode/generateGcode';
-import { calcShapes } from './calcShapes';
-import { ExportSection } from './ExportSection';
+import {Hover} from '../editor/Sidebar';
+import {mmToPX} from '../gcode/generateGcode';
+import {calcShapes} from './calcShapes';
+import {ExportSection} from './ExportSection';
 
 export const useLatest = <T,>(value: T) => {
     const ref = useRef(value);
@@ -23,24 +19,12 @@ export const useLatest = <T,>(value: T) => {
     return ref;
 };
 
-export const ThreedScreen = ({
-    state,
-    dispatch,
-    hover,
-}: {
-    state: State;
-    dispatch: React.Dispatch<Action>;
-    hover: Hover | null;
-}) => {
-    let { pathsToShow, selectedIds, clip, rand } = usePathsToShow(state);
+export const ThreedScreen = ({state, dispatch, hover}: {state: State; dispatch: React.Dispatch<Action>; hover: Hover | null}) => {
+    let {pathsToShow, selectedIds, clip, rand} = usePathsToShow(state);
     // const [thick, setThick] = useLocalStorage('thick', 3);
     // const [gap, setGap] = useLocalStorage('gap', 2);
     // const [toBack, setToBack] = useState(false as null | boolean);
-    const {
-        thickness = 3,
-        gap = 0,
-        shadowZoom = 0.09,
-    } = state.meta.threedSettings ?? {};
+    const {thickness = 3, gap = 0, shadowZoom = 0.09} = state.meta.threedSettings ?? {};
 
     const toBack = false; // TODO make this customizeable? idkyyy
 
@@ -49,7 +33,7 @@ export const ThreedScreen = ({
             type: 'meta:update',
             meta: {
                 ...state.meta,
-                threedSettings: { ...state.meta.threedSettings, shadowZoom },
+                threedSettings: {...state.meta.threedSettings, shadowZoom},
             },
         });
     };
@@ -59,7 +43,7 @@ export const ThreedScreen = ({
             type: 'meta:update',
             meta: {
                 ...state.meta,
-                threedSettings: { ...state.meta.threedSettings, thickness },
+                threedSettings: {...state.meta.threedSettings, thickness},
             },
         });
     };
@@ -69,7 +53,7 @@ export const ThreedScreen = ({
             type: 'meta:update',
             meta: {
                 ...state.meta,
-                threedSettings: { ...state.meta.threedSettings, gap },
+                threedSettings: {...state.meta.threedSettings, gap},
             },
         });
     };
@@ -89,17 +73,8 @@ export const ThreedScreen = ({
     const thickPX = mmToPX(thickness, state.meta.ppi);
     const gapPX = mmToPX(gap, state.meta.ppi);
 
-    const { items, stls, backs, covers } = useMemo(() => {
-        return calcShapes(
-            pathsToShow,
-            thickPX,
-            gapPX,
-            selectedIds,
-            latestState.current,
-            toBack,
-            dispatch,
-            hover,
-        );
+    const {items, stls, backs, covers} = useMemo(() => {
+        return calcShapes(pathsToShow, thickPX, gapPX, selectedIds, latestState.current, toBack, dispatch, hover);
     }, [pathsToShow, thickPX, selectedIds, toBack, gapPX, hover]);
 
     const canv = React.useRef<HTMLCanvasElement>(null);
@@ -157,12 +132,7 @@ export const ThreedScreen = ({
                     border: '1px solid magenta',
                 }}
             >
-                <Canvas
-                    ref={canv}
-                    shadows
-                    style={{ backgroundColor: 'white' }}
-                    gl={{ antialias: true, preserveDrawingBuffer: true }}
-                >
+                <Canvas ref={canv} shadows style={{backgroundColor: 'white'}} gl={{antialias: true, preserveDrawingBuffer: true}}>
                     <directionalLight
                         position={lpos}
                         ref={dl}
@@ -170,10 +140,7 @@ export const ThreedScreen = ({
                         // shadow-mapSize={[2048, 2048]}
                         castShadow
                     >
-                        <orthographicCamera
-                            zoom={shadowZoom}
-                            attach="shadow-camera"
-                        ></orthographicCamera>
+                        <orthographicCamera zoom={shadowZoom} attach="shadow-camera"></orthographicCamera>
                     </directionalLight>
                     {/* {sc.current ? <cameraHelper camera={sc.current} /> : null} */}
                     {/* <CH camera={sc} /> */}
@@ -181,6 +148,7 @@ export const ThreedScreen = ({
 
                     <PerspectiveCamera
                         makeDefault
+                        // @ts-expect-error
                         ref={virtualCamera}
                         position={[x, y, cdist]}
                         args={[fov, 1, 1, 2000]}
@@ -192,24 +160,15 @@ export const ThreedScreen = ({
             <div>
                 <label>
                     ShadowZoom
-                    <BlurInt
-                        value={shadowZoom}
-                        onChange={(t) => (t != null ? setShadowZoom(t) : null)}
-                    />
+                    <BlurInt value={shadowZoom} onChange={(t) => (t != null ? setShadowZoom(t) : null)} />
                 </label>
                 <label>
                     Thickness (mm)
-                    <BlurInt
-                        value={thickness}
-                        onChange={(t) => (t != null ? setThick(t) : null)}
-                    />
+                    <BlurInt value={thickness} onChange={(t) => (t != null ? setThick(t) : null)} />
                 </label>
                 <label>
                     Gap (mm)
-                    <BlurInt
-                        value={gap}
-                        onChange={(t) => (t != null ? setGap(t) : null)}
-                    />
+                    <BlurInt value={gap} onChange={(t) => (t != null ? setGap(t) : null)} />
                 </label>
                 {/* <label>
                     To Back
@@ -244,34 +203,13 @@ export const ThreedScreen = ({
             <div>
                 <div>Light pos</div>
                 x
-                <BlurInt
-                    value={lpos[0]}
-                    onChange={(t) =>
-                        t ? setLpos([t, lpos[1], lpos[2]]) : null
-                    }
-                />
+                <BlurInt value={lpos[0]} onChange={(t) => (t ? setLpos([t, lpos[1], lpos[2]]) : null)} />
                 y
-                <BlurInt
-                    value={lpos[1]}
-                    onChange={(t) =>
-                        t ? setLpos([lpos[0], t, lpos[2]]) : null
-                    }
-                />
+                <BlurInt value={lpos[1]} onChange={(t) => (t ? setLpos([lpos[0], t, lpos[2]]) : null)} />
                 z
-                <BlurInt
-                    value={lpos[2]}
-                    onChange={(t) =>
-                        t ? setLpos([lpos[0], lpos[1], t]) : null
-                    }
-                />
+                <BlurInt value={lpos[2]} onChange={(t) => (t ? setLpos([lpos[0], lpos[1], t]) : null)} />
             </div>
-            <ExportSection
-                canv={canv}
-                state={state}
-                stls={stls}
-                backs={backs}
-                covers={covers}
-            />
+            <ExportSection canv={canv} state={state} stls={stls} backs={backs} covers={covers} />
         </div>
     );
 };
@@ -292,17 +230,13 @@ export function groupSort(a: PathGroup, b: PathGroup): number {
         : b.ordering - a.ordering;
 }
 
-const CH = ({ camera }: { camera: any }) => {
+const CH = ({camera}: {camera: any}) => {
     useHelper(camera, CameraHelper);
 
     return null;
 };
 
-const handleKey = (
-    evt: KeyboardEvent,
-    state: State,
-    dispatch: React.Dispatch<Action>,
-) => {
+const handleKey = (evt: KeyboardEvent, state: State, dispatch: React.Dispatch<Action>) => {
     switch (evt.key) {
         case 'ArrowUp':
         case 'ArrowDown':
@@ -318,9 +252,7 @@ const handleKey = (
         if (state.selection.ids.length === 1) {
             const id = state.selection.ids[0];
             const hasPaths: Record<string, boolean> = {};
-            Object.values(state.paths).forEach((p) =>
-                p.group != null ? (hasPaths[p.group] = true) : null,
-            );
+            Object.values(state.paths).forEach((p) => (p.group != null ? (hasPaths[p.group] = true) : null));
             const groups = Object.values(state.pathGroups)
                 .filter((g) => hasPaths[g.id])
                 .sort((a, b) => groupSort(a, b));
@@ -350,7 +282,7 @@ const handleKey = (
                 }
             });
             console.log('reorder', order);
-            dispatch({ type: 'groups:order', order });
+            dispatch({type: 'groups:order', order});
         }
     }
 };
