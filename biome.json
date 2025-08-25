@@ -25,7 +25,9 @@
             },
             "suspicious": {
                 "noArrayIndexKey": "off",
-                "noAssignInExpressions": "warn"
+                "noAssignInExpressions": "warn",
+                "noDoubleEquals": "warn",
+                "noControlCharactersInRegex": "warn"
             }
         }
     },
