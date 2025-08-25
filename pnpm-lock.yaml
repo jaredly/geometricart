@@ -192,9 +192,6 @@ importers:
       '@types/earcut':
         specifier: ^2.1.4
         version: 2.1.4
-      '@types/prettier':
-        specifier: ^3.0.0
-        version: 3.0.0
       '@types/react':
         specifier: ^18
         version: 18.3.24
@@ -1376,10 +1373,6 @@ packages:
 
   '@types/prettier@2.7.3':
     resolution: {integrity: sha512-+68kP9yzs4LMp7VNh8gdzMSPZFL44MLGqiHWvttYJe+6qnuVr4Ek9wSBQoveqY/r+LwjCcU29kNVkidwim+kYA==}
-
-  '@types/prettier@3.0.0':
-    resolution: {integrity: sha512-mFMBfMOz8QxhYVbuINtswBp9VL2b4Y0QqYHwqLz3YbgtfAcat2Dl6Y1o4e22S/OVE6Ebl9m7wWiMT2lSbAs1wA==}
-    deprecated: This is a stub types definition. prettier provides its own type definitions, so you do not need this installed.
 
   '@types/prop-types@15.7.15':
     resolution: {integrity: sha512-F6bEyamV9jKGAFBEmlQnesRPGOQqS2+Uwi0Em15xenOxHaf2hv6L8YCVn3rPdPJOiJfPiCnLIRyvwVaqMY3MIw==}
@@ -5631,10 +5624,6 @@ snapshots:
   '@types/parse-json@4.0.2': {}
 
   '@types/prettier@2.7.3': {}
-
-  '@types/prettier@3.0.0':
-    dependencies:
-      prettier: 2.8.8
 
   '@types/prop-types@15.7.15': {}
 
