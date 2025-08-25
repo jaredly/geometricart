@@ -281,7 +281,10 @@ export type PendingGuide = {
     kind: GuideGeom['type'];
     extent?: number;
     toggle: boolean;
+    angle?: number;
 };
+
+export const guideNeedsAngle = (type: GuideGeom['type']) => type === 'CircleMark';
 
 export type Intersect = {
     coord: Coord;

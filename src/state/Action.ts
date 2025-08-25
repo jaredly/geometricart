@@ -37,16 +37,16 @@ so, this is a strict tree
 
 export type Action =
     | UndoableAction
-    | { type: 'undo' }
-    | { type: 'redo' }
-    | { type: 'reset'; state: State }
-    | { type: 'selection:set'; selection: Selection | null }
-    | { type: 'select:same'; line?: StyleLine; fill?: Fill }
-    | { type: 'tab:set'; tab: Tab }
-    | { type: 'attachment:add'; id: string; attachment: Attachment }
-    | { type: 'attachment:update'; id: string; attachment: Partial<Attachment> }
-    | { type: 'library:palette:rename'; old: string; new: string }
-    | { type: 'library:palette:update'; name: string; colors: Array<string> };
+    | {type: 'undo'}
+    | {type: 'redo'}
+    | {type: 'reset'; state: State}
+    | {type: 'selection:set'; selection: Selection | null}
+    | {type: 'select:same'; line?: StyleLine; fill?: Fill}
+    | {type: 'tab:set'; tab: Tab}
+    | {type: 'attachment:add'; id: string; attachment: Attachment}
+    | {type: 'attachment:update'; id: string; attachment: Partial<Attachment>}
+    | {type: 'library:palette:rename'; old: string; new: string}
+    | {type: 'library:palette:update'; name: string; colors: Array<string>};
 // | { type: 'library:palette:select'; name: string };
 
 export type AddRemoveEdit<T, Key> =
@@ -55,15 +55,15 @@ export type AddRemoveEdit<T, Key> =
           key: Key;
           value?: T;
       }
-    | { type: 'edit'; key: Key; value: Partial<T> }
-    | { type: 'remove'; key: Key };
+    | {type: 'edit'; key: Key; value: Partial<T>}
+    | {type: 'remove'; key: Key};
 export type UndoAddRemoveEdit<T, Key> =
     | {
           type: 'add';
           key: Key;
       }
-    | { type: 'edit'; prev: Partial<T>; key: Key }
-    | { type: 'remove'; prev: T; key: Key };
+    | {type: 'edit'; prev: Partial<T>; key: Key}
+    | {type: 'remove'; prev: T; key: Key};
 
 export type GCodeConfig = {
     type: 'gcode:config';
@@ -157,14 +157,14 @@ export type UndoGCodeItemARE = {
 //     prev: TimelineLane;
 // };
 
-export type ClipUpdate = { type: 'clip:update'; id: string; clip: Clip };
+export type ClipUpdate = {type: 'clip:update'; id: string; clip: Clip};
 export type UndoClipUpdate = {
     type: ClipUpdate['type'];
     action: ClipUpdate;
     prev: Clip;
 };
 
-export type ViewUpdate = { type: 'view:update'; view: View };
+export type ViewUpdate = {type: 'view:update'; view: View};
 export type UndoViewUpdate = {
     type: ViewUpdate['type'];
     action: ViewUpdate;
@@ -213,21 +213,21 @@ export type UndoTimelineUpdate = {
     prev: TimelineUpdate['vbl'];
 };
 
-export type ClipAdd = { type: 'clip:add'; clip: Array<Segment> };
+export type ClipAdd = {type: 'clip:add'; clip: Array<Segment>};
 export type UndoClipAdd = {
     type: ClipAdd['type'];
     action: ClipAdd;
     added: [string, number];
 };
 
-export type OverlayDelete = { type: 'overlay:delete'; id: Id };
+export type OverlayDelete = {type: 'overlay:delete'; id: Id};
 export type UndoOverlayDelete = {
     type: OverlayDelete['type'];
     action: OverlayDelete;
     removed: Overlay;
 };
 
-export type OverlyAdd = { type: 'overlay:add'; attachment: Id };
+export type OverlyAdd = {type: 'overlay:add'; attachment: Id};
 export type UndoOverlayAdd = {
     type: OverlyAdd['type'];
     action: OverlyAdd;
@@ -258,17 +258,17 @@ export type GuideUpdate = {
 export type UndoPathGroupUpdateMany = {
     type: PathGroupUpdateMany['type'];
     action: PathGroupUpdateMany;
-    prev: { [key: string]: PathGroup };
+    prev: {[key: string]: PathGroup};
 };
 export type PathGroupUpdateMany = {
     type: 'pathGroup:update:many';
-    changed: { [key: string]: PathGroup };
+    changed: {[key: string]: PathGroup};
 };
 
 export type UndoPathDeleteMany = {
     type: PathDeleteMany['type'];
     action: PathDeleteMany;
-    prev: { [key: string]: Path };
+    prev: {[key: string]: Path};
 };
 export type PathDeleteMany = {
     type: 'path:delete:many';
@@ -278,12 +278,12 @@ export type PathDeleteMany = {
 export type UndoPathUpdateMany = {
     type: PathUpdateMany['type'];
     action: PathUpdateMany;
-    prev: { [key: string]: Path };
+    prev: {[key: string]: Path};
     prevNextId?: number;
 };
 export type PathUpdateMany = {
     type: 'path:update:many';
-    changed: { [key: string]: Path | null };
+    changed: {[key: string]: Path | null};
     nextId?: number;
 };
 
@@ -336,13 +336,13 @@ export type ClipCut = {
 export type UndoClipCut = {
     type: ClipCut['type'];
     action: ClipCut;
-    paths: { [key: Id]: Path };
+    paths: {[key: Id]: Path};
     added: Array<Id>;
 };
 
 export type GroupDuplicate = {
     type: 'group:duplicate';
-    selection: { type: 'Path' | 'PathGroup'; ids: Array<Id> };
+    selection: {type: 'Path' | 'PathGroup'; ids: Array<Id>};
 };
 export type UndoGroupDuplicate = {
     type: GroupDuplicate['type'];
@@ -352,13 +352,13 @@ export type UndoGroupDuplicate = {
 
 export type GroupRegroup = {
     type: 'group:regroup';
-    selection: { type: 'Path' | 'PathGroup'; ids: Array<Id> };
+    selection: {type: 'Path' | 'PathGroup'; ids: Array<Id>};
 };
 export type UndoGroupRegroup = {
     type: GroupRegroup['type'];
     action: GroupRegroup;
     created: null | [Id, number];
-    prevGroups: { [key: Id]: Id | null };
+    prevGroups: {[key: Id]: Id | null};
 };
 
 export type PathDelete = {
@@ -379,10 +379,10 @@ export type UndoGroupDelete = {
     type: GroupDelete['type'];
     action: GroupDelete;
     group: PathGroup;
-    paths: { [key: Id]: Path };
+    paths: {[key: Id]: Path};
 };
 
-export type UndoGuideAdd = { action: GuideAdd; type: GuideAdd['type'] };
+export type UndoGuideAdd = {action: GuideAdd; type: GuideAdd['type']};
 export type GuideAdd = {
     type: 'guide:add';
     id: Id;
@@ -407,6 +407,18 @@ export type PendingPoint = {
     shiftKey: boolean;
 };
 
+export type UndoPendingAngle = {
+    type: PendingAngle['type'];
+    action: PendingAngle;
+    added: [Id, number] | null;
+    pending: Pending;
+};
+export type PendingAngle = {
+    type: 'pending:angle';
+    angle: number;
+    // shiftKey: boolean;
+};
+
 export type MetaUpdate = {
     type: 'meta:update';
     meta: Meta;
@@ -419,7 +431,7 @@ export type UndoMetaUpdate = {
 
 export type PathCreateMany = {
     type: 'path:create:many';
-    paths: { origin: Coord; segments: Segment[]; open?: boolean }[];
+    paths: {origin: Coord; segments: Segment[]; open?: boolean}[];
     withMirror: boolean;
     trace?: boolean;
 };
@@ -444,7 +456,7 @@ export type UndoPathCreate = {
 
 export type PathMultiply = {
     type: 'path:multiply';
-    selection: { type: 'Path' | 'PathGroup'; ids: Array<Id> };
+    selection: {type: 'Path' | 'PathGroup'; ids: Array<Id>};
     mirror: Id | Mirror;
 };
 export type UndoPathMultiply = {
@@ -605,6 +617,7 @@ export type UndoableAction =
     | MirrorAdd
     | MirrorUpdate
     | PendingPoint
+    | PendingAngle
     | MetaUpdate
     | OverlyAdd
     | OverlayDelete
@@ -684,6 +697,7 @@ export type UndoAction =
     | UndoGroupDelete
     | UndoGuideDelete
     | UndoPendingPoint
+    | UndoPendingAngle
     | UndoClipCut
     | UndoPathDelete
     | UndoHistoryViewUpdate

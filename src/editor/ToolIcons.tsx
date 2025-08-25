@@ -1,14 +1,14 @@
 /* @jsx jsx */
 /* @jsxFrag React.Fragment */
-import { jsx } from '@emotion/react';
+import {jsx} from '@emotion/react';
 import React from 'react';
-import { Action } from '../state/Action';
-import { push } from '../rendering/getMirrorTransforms';
-import { State, GuideGeom } from '../types';
-import { Button } from 'primereact/button';
-import { toTypeRev } from '../handleKeyboard';
-import { EditorState, ToolIcon } from './Canvas';
-import { findAdjacentPaths } from '../animation/getBuiltins';
+import {Action} from '../state/Action';
+import {push} from '../rendering/getMirrorTransforms';
+import {State, GuideGeom} from '../types';
+import {Button} from 'primereact/button';
+import {toTypeRev} from '../handleKeyboard';
+import {EditorState, ToolIcon} from './Canvas';
+import {findAdjacentPaths} from '../animation/getBuiltins';
 
 export function ToolIcons({
     state,
@@ -32,19 +32,13 @@ export function ToolIcons({
             }}
             className="p-2 flex flex-column"
         >
-            <div style={{ position: 'relative' }}>
+            <div style={{position: 'relative'}}>
                 <Button
-                    className={
-                        'pi p-button-icon-only ' +
-                        (state.pending == null &&
-                        editorState.selectMode === true
-                            ? 'p-button-outlined'
-                            : '')
-                    }
+                    className={'pi p-button-icon-only ' + (state.pending == null && editorState.selectMode === true ? 'p-button-outlined' : '')}
                     tooltip="Select"
                     onClick={() => {
                         if (state.pending != null) {
-                            dispatch({ type: 'pending:type', kind: null });
+                            dispatch({type: 'pending:type', kind: null});
                             setEditorState((es) => ({
                                 ...es,
                                 selectMode: true,
@@ -52,24 +46,12 @@ export function ToolIcons({
                         } else {
                             setEditorState((es) => ({
                                 ...es,
-                                selectMode:
-                                    es.selectMode === true
-                                        ? !es.selectMode
-                                        : true,
+                                selectMode: es.selectMode === true ? !es.selectMode : true,
                             }));
                         }
                     }}
                 >
-                    <ToolIcon
-                        lines={[
-                            [
-                                { x: 2, y: 0 },
-                                push({ x: 2, y: 0 }, Math.PI / 4, 10),
-                                push({ x: 2, y: 0 }, Math.PI / 2, 10),
-                                { x: 2, y: 0 },
-                            ],
-                        ]}
-                    />
+                    <ToolIcon lines={[[{x: 2, y: 0}, push({x: 2, y: 0}, Math.PI / 4, 10), push({x: 2, y: 0}, Math.PI / 2, 10), {x: 2, y: 0}]]} />
                 </Button>
 
                 <div
@@ -83,16 +65,12 @@ export function ToolIcons({
                 >
                     <Button
                         className={
-                            'pi mr-2 p-button-icon-only ' +
-                            (state.pending == null &&
-                            editorState.selectMode === 'radius'
-                                ? 'p-button-outlined'
-                                : '')
+                            'pi mr-2 p-button-icon-only ' + (state.pending == null && editorState.selectMode === 'radius' ? 'p-button-outlined' : '')
                         }
                         tooltip="Radius Select"
                         onClick={() => {
                             if (state.pending != null) {
-                                dispatch({ type: 'pending:type', kind: null });
+                                dispatch({type: 'pending:type', kind: null});
                             }
                             setEditorState((es) => ({
                                 ...es,
@@ -100,23 +78,16 @@ export function ToolIcons({
                             }));
                         }}
                     >
-                        <ToolIcon circles={[[{ x: 5, y: 5 }, 5]]} />
+                        <ToolIcon circles={[[{x: 5, y: 5}, 5]]} />
                     </Button>
                     <Button
                         className={
-                            'pi p-button-icon-only ' +
-                            (state.pending == null &&
-                            editorState.selectMode === 'radius'
-                                ? 'p-button-outlined'
-                                : '')
+                            'pi p-button-icon-only ' + (state.pending == null && editorState.selectMode === 'radius' ? 'p-button-outlined' : '')
                         }
                         tooltip="Expand All The Things"
                         onClick={() => {
                             if (state.selection?.type === 'Path') {
-                                const more = findAdjacentPaths(
-                                    state.selection.ids,
-                                    state.paths,
-                                );
+                                const more = findAdjacentPaths(state.selection.ids, state.paths);
                                 dispatch({
                                     type: 'selection:set',
                                     selection: {
@@ -141,15 +112,10 @@ export function ToolIcons({
             <Button
                 tooltip="Pan (or shift+scroll)"
                 icon="pi pi-arrows-alt"
-                className={
-                    'mt-2 ' +
-                    (state.pending == null && !editorState.selectMode
-                        ? 'p-button-outlined'
-                        : '')
-                }
+                className={'mt-2 ' + (state.pending == null && !editorState.selectMode ? 'p-button-outlined' : '')}
                 onClick={() => {
                     if (state.pending != null) {
-                        dispatch({ type: 'pending:type', kind: null });
+                        dispatch({type: 'pending:type', kind: null});
                         setEditorState((es) => ({
                             ...es,
                             selectMode: false,
@@ -164,10 +130,7 @@ export function ToolIcons({
             />
             <Button
                 tooltip={'New shape (n)'}
-                className={
-                    'mt-2 p-button-icon-only ' +
-                    (editorState.pending !== null ? 'p-button-outlined' : '')
-                }
+                className={'mt-2 p-button-icon-only ' + (editorState.pending !== null ? 'p-button-outlined' : '')}
                 onClick={(evt) => {
                     evt.preventDefault();
                     evt.stopPropagation();
@@ -176,32 +139,32 @@ export function ToolIcons({
                 children={
                     <ToolIcon
                         points={[
-                            { x: 0, y: 0 },
-                            { x: 10, y: 0 },
-                            { x: 5, y: 5 },
-                            { x: 10, y: 10 },
-                            { x: 0, y: 10 },
+                            {x: 0, y: 0},
+                            {x: 10, y: 0},
+                            {x: 5, y: 5},
+                            {x: 10, y: 10},
+                            {x: 0, y: 10},
                         ]}
                         lines={[
                             [
-                                { x: 0, y: 0 },
-                                { x: 10, y: 0 },
+                                {x: 0, y: 0},
+                                {x: 10, y: 0},
                             ],
                             [
-                                { x: 10, y: 0 },
-                                { x: 5, y: 5 },
+                                {x: 10, y: 0},
+                                {x: 5, y: 5},
                             ],
                             [
-                                { x: 5, y: 5 },
-                                { x: 10, y: 10 },
+                                {x: 5, y: 5},
+                                {x: 10, y: 10},
                             ],
                             [
-                                { x: 10, y: 10 },
-                                { x: 0, y: 10 },
+                                {x: 10, y: 10},
+                                {x: 0, y: 10},
                             ],
                             [
-                                { x: 0, y: 0 },
-                                { x: 0, y: 10 },
+                                {x: 0, y: 0},
+                                {x: 0, y: 10},
                             ],
                         ]}
                     />
@@ -211,13 +174,13 @@ export function ToolIcons({
                 Line: (
                     <ToolIcon
                         points={[
-                            { x: 0, y: 0 },
-                            { x: 10, y: 10 },
+                            {x: 0, y: 0},
+                            {x: 10, y: 10},
                         ]}
                         lines={[
                             [
-                                { x: 0, y: 0 },
-                                { x: 10, y: 10 },
+                                {x: 0, y: 0},
+                                {x: 10, y: 10},
                             ],
                         ]}
                     />
@@ -225,13 +188,13 @@ export function ToolIcons({
                 Perpendicular: (
                     <ToolIcon
                         points={[
-                            { x: 5, y: 2 },
-                            { x: 5, y: 10 },
+                            {x: 5, y: 2},
+                            {x: 5, y: 10},
                         ]}
                         lines={[
                             [
-                                { x: -2, y: 2 },
-                                { x: 12, y: 2 },
+                                {x: -2, y: 2},
+                                {x: 12, y: 2},
                             ],
                         ]}
                     />
@@ -239,13 +202,13 @@ export function ToolIcons({
                 PerpendicularBisector: (
                     <ToolIcon
                         points={[
-                            { x: 0, y: 5 },
-                            { x: 10, y: 5 },
+                            {x: 0, y: 5},
+                            {x: 10, y: 5},
                         ]}
                         lines={[
                             [
-                                { x: 5, y: -2 },
-                                { x: 5, y: 12 },
+                                {x: 5, y: -2},
+                                {x: 5, y: 12},
                             ],
                         ]}
                     />
@@ -253,44 +216,40 @@ export function ToolIcons({
                 AngleBisector: (
                     <ToolIcon
                         points={[
-                            { x: 0, y: 0 },
-                            { x: 10, y: 10 },
-                            { x: 0, y: 10 },
+                            {x: 0, y: 0},
+                            {x: 10, y: 10},
+                            {x: 0, y: 10},
                         ]}
                         lines={[
                             [
-                                { x: 10, y: 0 },
-                                { x: 0, y: 10 },
+                                {x: 10, y: 0},
+                                {x: 0, y: 10},
                             ],
                         ]}
                     />
                 ),
                 Circle: (
                     <ToolIcon
-                        circles={[[{ x: 5, y: 5 }, 5]]}
+                        circles={[[{x: 5, y: 5}, 5]]}
                         points={[
-                            { x: 5, y: 0 },
-                            { x: 5, y: 5 },
+                            {x: 5, y: 0},
+                            {x: 5, y: 5},
                         ]}
                     />
                 ),
                 CircumCircle: (
                     <ToolIcon
-                        circles={[[{ x: 5, y: 5 }, 5]]}
-                        points={[
-                            push({ x: 5, y: 5 }, Math.PI / 4, 5),
-                            push({ x: 5, y: 5 }, -Math.PI / 4, 5),
-                            push({ x: 5, y: 5 }, Math.PI, 5),
-                        ]}
+                        circles={[[{x: 5, y: 5}, 5]]}
+                        points={[push({x: 5, y: 5}, Math.PI / 4, 5), push({x: 5, y: 5}, -Math.PI / 4, 5), push({x: 5, y: 5}, Math.PI, 5)]}
                     />
                 ),
                 InCircle: (
                     <ToolIcon
-                        circles={[[{ x: 3, y: 5 }, 3]]}
+                        circles={[[{x: 3, y: 5}, 3]]}
                         points={[
-                            { x: 0, y: 0 },
-                            { x: 0, y: 10 },
-                            { x: 10, y: 5 },
+                            {x: 0, y: 0},
+                            {x: 0, y: 10},
+                            {x: 10, y: 5},
                         ]}
                     />
                 ),
@@ -298,20 +257,20 @@ export function ToolIcons({
                     <ToolIcon
                         lines={[
                             [
-                                { x: 0, y: 0 },
-                                { x: 0, y: 10 },
+                                {x: 0, y: 0},
+                                {x: 0, y: 10},
                             ],
                             [
-                                { x: 0, y: 10 },
-                                { x: 10, y: 10 },
+                                {x: 0, y: 10},
+                                {x: 10, y: 10},
                             ],
                             [
-                                { x: 10, y: 10 },
-                                { x: 10, y: 0 },
+                                {x: 10, y: 10},
+                                {x: 10, y: 0},
                             ],
                             [
-                                { x: 10, y: 0 },
-                                { x: 0, y: 0 },
+                                {x: 10, y: 0},
+                                {x: 0, y: 0},
                             ],
                         ]}
                     />
@@ -320,10 +279,10 @@ export function ToolIcons({
                     <ToolIcon
                         // circles={[[{ x: 3, y: 5 }, 3]]}
                         points={[
-                            { x: 0, y: 0 },
-                            { x: 3.33, y: 3.33 },
-                            { x: 6.66, y: 6.66 },
-                            { x: 10, y: 10 },
+                            {x: 0, y: 0},
+                            {x: 3.33, y: 3.33},
+                            {x: 6.66, y: 6.66},
+                            {x: 10, y: 10},
                         ]}
                         lines={
                             [
@@ -337,18 +296,28 @@ export function ToolIcons({
                 ),
                 CloneCircle: (
                     <ToolIcon
-                        circles={[[{ x: 3, y: 5 }, 4]]}
+                        circles={[[{x: 3, y: 5}, 4]]}
                         points={[
-                            { x: 3, y: 5 },
-                            { x: 3, y: 9 },
-                            { x: 10, y: 5 },
-                            { x: 10, y: 9 },
+                            {x: 3, y: 5},
+                            {x: 3, y: 9},
+                            {x: 10, y: 5},
+                            {x: 10, y: 9},
                         ]}
                         lines={[
                             [
-                                { x: 10, y: 5 },
-                                { x: 10, y: 9 },
+                                {x: 10, y: 5},
+                                {x: 10, y: 9},
                             ],
+                        ]}
+                    />
+                ),
+                CircleMark: (
+                    <ToolIcon
+                        circles={[[{x: 3, y: 5}, 4]]}
+                        points={[
+                            {x: 3, y: 5},
+                            {x: 3, y: 9},
+                            {x: 10, y: 5},
                         ]}
                     />
                 ),
@@ -358,16 +327,11 @@ export function ToolIcons({
                     tooltip={kind + ` (${toTypeRev[kind]})`}
                     icon={typeof icon === 'string' ? `pi ${icon}` : undefined}
                     className={
-                        'mt-2 p-button-icon-only ' +
-                        (state.pending?.type === 'Guide' &&
-                        state.pending.kind === kind
-                            ? 'p-button-outlined'
-                            : '')
+                        'mt-2 p-button-icon-only ' + (state.pending?.type === 'Guide' && state.pending.kind === kind ? 'p-button-outlined' : '')
                     }
                     onClick={() => {
-                        state.pending?.type === 'Guide' &&
-                        state.pending.kind === kind
-                            ? dispatch({ type: 'pending:type', kind: null })
+                        state.pending?.type === 'Guide' && state.pending.kind === kind
+                            ? dispatch({type: 'pending:type', kind: null})
                             : dispatch({
                                   type: 'pending:type',
                                   kind: kind as GuideGeom['type'],
@@ -378,19 +342,14 @@ export function ToolIcons({
             ))}
             <Button
                 tooltip="Outline a Tiling"
-                className={
-                    'mt-2 ' +
-                    (editorState.pending?.type === 'tiling'
-                        ? 'p-button-outlined'
-                        : '')
-                }
+                className={'mt-2 ' + (editorState.pending?.type === 'tiling' ? 'p-button-outlined' : '')}
                 onClick={() => {
                     if (editorState.pending?.type === 'tiling') {
-                        setEditorState((es) => ({ ...es, pending: null }));
+                        setEditorState((es) => ({...es, pending: null}));
                     } else {
                         setEditorState((es) => ({
                             ...es,
-                            pending: { type: 'tiling', points: [] },
+                            pending: {type: 'tiling', points: []},
                         }));
                     }
                 }}
@@ -398,16 +357,16 @@ export function ToolIcons({
                     <ToolIcon
                         lines={[
                             [
-                                { x: 10, y: 2 },
-                                { x: 0, y: 10 },
+                                {x: 10, y: 2},
+                                {x: 0, y: 10},
                             ],
                             [
-                                { x: 0, y: 10 },
-                                { x: 10, y: 10 },
+                                {x: 0, y: 10},
+                                {x: 10, y: 10},
                             ],
                             [
-                                { x: 10, y: 10 },
-                                { x: 10, y: 2 },
+                                {x: 10, y: 10},
+                                {x: 10, y: 2},
                             ],
                         ]}
                     />

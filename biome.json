@@ -21,7 +21,8 @@
             "correctness": {
                 "noUnusedVariables": "off",
                 "noUnusedImports": "off",
-                "useExhaustiveDependencies": "warn"
+                "useExhaustiveDependencies": "warn",
+                "noSwitchDeclarations": "warn"
             },
             "suspicious": {
                 "noArrayIndexKey": "off",

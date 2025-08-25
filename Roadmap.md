@@ -1,4 +1,5 @@
 
+
 # Ok so getting serious about construction
 
 - add a guide type that is a "circle tick", center + direction; and it does like a PI / 20 circle segment
@@ -6,6 +7,10 @@
 
 - ok so for circle ticks used to make bisectors, we need to be able to have the "radius" be a little bit arbitrary. BUT for those guides, we need to /not/ allow them to interact with any other guides. Because their placement is arbitrary. They only exist to make the bisector.
 - AH ok so for a bisector, we still have a bisector tool, but and the circle ticks for it are *decorations*. So not actually guides. but you can like move them around, recreationally.
+
+CircleMark:
+- render circlemark as an arc
+- change PendingWhatsit to include an "angle" after the points
 
 
 # Animate pls
