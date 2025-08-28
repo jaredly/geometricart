@@ -1,4 +1,11 @@
 
+# More construction
+
+- CircleMark
+  - I think I want ... like a protractor tool? like ...
+    - when it's selected, you press one key for "change radius" and another key for "change center"
+    - like when you're changing radius, it anchors to the first point...
+
 
 # Ok so getting serious about construction
 

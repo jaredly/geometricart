@@ -22,7 +22,17 @@ export const visibleEndPoints = (si: SlopeIntercept, bounds: Bounds) => {
     ];
 };
 
-export const GuideElement = ({geom, zoom, original, bounds}: {geom: GuideGeom; zoom: number; bounds: Bounds; original: boolean}) => {
+export const GuideElement = ({
+    geom,
+    zoom,
+    original,
+    bounds,
+}: {
+    geom: GuideGeom;
+    zoom: number;
+    bounds: Bounds;
+    original: boolean;
+}) => {
     switch (geom.type) {
         case 'CircumCircle': {
             const got = getCircumCircle(geom.p1, geom.p2, geom.p3);
@@ -66,8 +76,22 @@ export const GuideElement = ({geom, zoom, original, bounds}: {geom: GuideGeom; z
                                 stroke="#fff"
                                 strokeWidth={1}
                             />
-                            <circle cx={got.m1.x * zoom} cy={got.m1.y * zoom} r={10} fill="none" stroke="#fff" strokeWidth={1} />
-                            <circle cx={got.m2.x * zoom} cy={got.m2.y * zoom} r={10} fill="none" stroke="#fff" strokeWidth={1} />
+                            <circle
+                                cx={got.m1.x * zoom}
+                                cy={got.m1.y * zoom}
+                                r={10}
+                                fill="none"
+                                stroke="#fff"
+                                strokeWidth={1}
+                            />
+                            <circle
+                                cx={got.m2.x * zoom}
+                                cy={got.m2.y * zoom}
+                                r={10}
+                                fill="none"
+                                stroke="#fff"
+                                strokeWidth={1}
+                            />
                         </>
                     ) : null}
                 </>
@@ -77,9 +101,24 @@ export const GuideElement = ({geom, zoom, original, bounds}: {geom: GuideGeom; z
             const {center, points} = calcPolygon(geom.p1, geom.p2, geom.sides, geom.toCenter);
             return (
                 <>
-                    <line x1={geom.p1.x * zoom} y1={geom.p1.y * zoom} x2={geom.p2.x * zoom} y2={geom.p2.y * zoom} stroke="#fff" strokeWidth={1} />
+                    <line
+                        x1={geom.p1.x * zoom}
+                        y1={geom.p1.y * zoom}
+                        x2={geom.p2.x * zoom}
+                        y2={geom.p2.y * zoom}
+                        stroke="#fff"
+                        strokeWidth={1}
+                    />
                     {[center, ...points].map((pos, i) => (
-                        <circle key={i} cx={pos.x * zoom} cy={pos.y * zoom} r={0.01 * zoom} fill="none" stroke="#fff" strokeWidth={1} />
+                        <circle
+                            key={i}
+                            cx={pos.x * zoom}
+                            cy={pos.y * zoom}
+                            r={0.01 * zoom}
+                            fill="none"
+                            stroke="#fff"
+                            strokeWidth={1}
+                        />
                     ))}
                 </>
             );
@@ -92,10 +131,38 @@ export const GuideElement = ({geom, zoom, original, bounds}: {geom: GuideGeom; z
 
             return (
                 <>
-                    <line x1={geom.p1.x * zoom} y1={geom.p1.y * zoom} x2={geom.p2.x * zoom} y2={geom.p2.y * zoom} stroke="#fff" strokeWidth={1} />
-                    <line x1={geom.p2.x * zoom} y1={geom.p2.y * zoom} x2={geom.p3.x * zoom} y2={geom.p3.y * zoom} stroke="#fff" strokeWidth={1} />
-                    <line x1={geom.p1.x * zoom} y1={geom.p1.y * zoom} x2={geom.p3.x * zoom} y2={geom.p3.y * zoom} stroke="#fff" strokeWidth={1} />
-                    <circle cx={got.center.x * zoom} cy={got.center.y * zoom} r={got.r * zoom} fill="none" stroke="#fff" strokeWidth={1} />
+                    <line
+                        x1={geom.p1.x * zoom}
+                        y1={geom.p1.y * zoom}
+                        x2={geom.p2.x * zoom}
+                        y2={geom.p2.y * zoom}
+                        stroke="#fff"
+                        strokeWidth={1}
+                    />
+                    <line
+                        x1={geom.p2.x * zoom}
+                        y1={geom.p2.y * zoom}
+                        x2={geom.p3.x * zoom}
+                        y2={geom.p3.y * zoom}
+                        stroke="#fff"
+                        strokeWidth={1}
+                    />
+                    <line
+                        x1={geom.p1.x * zoom}
+                        y1={geom.p1.y * zoom}
+                        x2={geom.p3.x * zoom}
+                        y2={geom.p3.y * zoom}
+                        stroke="#fff"
+                        strokeWidth={1}
+                    />
+                    <circle
+                        cx={got.center.x * zoom}
+                        cy={got.center.y * zoom}
+                        r={got.r * zoom}
+                        fill="none"
+                        stroke="#fff"
+                        strokeWidth={1}
+                    />
                 </>
             );
         }
@@ -149,7 +216,14 @@ export const GuideElement = ({geom, zoom, original, bounds}: {geom: GuideGeom; z
             const right = scale(push(mid, t1, extent ?? 10), zoom);
             return (
                 <>
-                    <line x1={left.x} y1={left.y} x2={right.x} y2={right.y} stroke={original ? '#ff0' : 'rgba(255,255,0,0.1)'} strokeWidth={1} />
+                    <line
+                        x1={left.x}
+                        y1={left.y}
+                        x2={right.x}
+                        y2={right.y}
+                        stroke={original ? '#ff0' : 'rgba(255,255,0,0.1)'}
+                        strokeWidth={1}
+                    />
                 </>
             );
         }
@@ -237,7 +311,15 @@ export const GuideElement = ({geom, zoom, original, bounds}: {geom: GuideGeom; z
         case 'CloneCircle': {
             const r = dist(geom.p1, geom.p2);
             return (
-                <circle cx={geom.p3.x * zoom} cy={geom.p3.y * zoom} r={r * zoom} strokeDasharray="5 5" fill="none" stroke="#666" strokeWidth={1} />
+                <circle
+                    cx={geom.p3.x * zoom}
+                    cy={geom.p3.y * zoom}
+                    r={r * zoom}
+                    strokeDasharray="5 5"
+                    fill="none"
+                    stroke="#666"
+                    strokeWidth={1}
+                />
             );
         }
         case 'CircleMark': {
@@ -247,9 +329,11 @@ export const GuideElement = ({geom, zoom, original, bounds}: {geom: GuideGeom; z
             const end = push(geom.p3, geom.angle + td, r);
             const largeArcFlag = 0;
             const sweepFlag = 1;
-            const d = `M${start.x * zoom},${start.y * zoom} A${r * zoom},${r * zoom} 0 ${largeArcFlag},${sweepFlag} ${end.x * zoom},${end.y * zoom}`;
+            const d = `M${start.x * zoom},${start.y * zoom} A${r * zoom},${
+                r * zoom
+            } 0 ${largeArcFlag},${sweepFlag} ${end.x * zoom},${end.y * zoom}`;
 
-            return <path strokeDasharray="5 5" fill="none" stroke="#666" strokeWidth={1} d={d} />;
+            return <path fill="none" stroke="#666" strokeWidth={1} d={d} />;
         }
         case 'Circle': {
             const r = dist(geom.radius, geom.center);

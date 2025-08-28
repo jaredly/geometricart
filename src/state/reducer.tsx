@@ -1,6 +1,13 @@
 import {pendingGuide} from '../editor/RenderPendingGuide';
 import {coordKey} from '../rendering/coordKey';
-import {Matrix, applyMatrices, getTransformsForMirror, mirrorTransforms, rotationMatrix, scaleMatrix} from '../rendering/getMirrorTransforms';
+import {
+    Matrix,
+    applyMatrices,
+    getTransformsForMirror,
+    mirrorTransforms,
+    rotationMatrix,
+    scaleMatrix,
+} from '../rendering/getMirrorTransforms';
 import {addAction, redoAction, undoAction} from '../editor/history';
 import {transformPath, transformSegment} from '../rendering/points';
 import {
@@ -19,6 +26,7 @@ import {
     TimelineLane,
     Coord,
     guideNeedsAngle,
+    CircleMark,
 } from '../types';
 import {
     Action,
@@ -34,13 +42,21 @@ import {
     PendingPoint,
     PendingAngle,
 } from './Action';
-import {pathsAreIdentical, pathToReversedSegmentKeys, pathToSegmentKeys} from '../rendering/pathsAreIdentical';
+import {
+    pathsAreIdentical,
+    pathToReversedSegmentKeys,
+    pathToSegmentKeys,
+} from '../rendering/pathsAreIdentical';
 import {simplifyPath} from '../rendering/simplifyPath';
 import {ensureClockwise} from '../rendering/pathToPoints';
 import {clipPath} from '../rendering/clipPath';
 import {pathToPrimitives} from '../editor/findSelection';
 import {styleMatches} from '../editor/MultiStyleForm';
-import {transformGuide, transformGuideGeom, transformMirror} from '../rendering/calculateGuideElements';
+import {
+    transformGuide,
+    transformGuideGeom,
+    transformMirror,
+} from '../rendering/calculateGuideElements';
 
 export const reducer = (state: State, action: Action): State => {
     if (action.type === 'undo') {
@@ -113,7 +129,10 @@ export const reducer = (state: State, action: Action): State => {
         const ids = Object.keys(state.paths).filter((id) => {
             const path = state.paths[id];
             if (action.line) {
-                if (path.style.lines.find((line) => line && styleMatches(line, action.line!)) != null) {
+                if (
+                    path.style.lines.find((line) => line && styleMatches(line, action.line!)) !=
+                    null
+                ) {
                     return true;
                 }
             }
@@ -138,7 +157,38 @@ export const reducer = (state: State, action: Action): State => {
     return {...newState, history: addAction(newState.history, newAction)};
 };
 
-export const reduceWithoutUndo = (state: State, action: UndoableAction): [State, UndoAction | null] => {
+const guideAgain = (kind: GuideGeom['type'], state: State, shiftKey?: boolean): PendingGuide => {
+    if (shiftKey && kind === 'CircleMark') {
+        let cur: null | Guide = null;
+        for (let i = state.nextId - 1; i >= 0; i--) {
+            const guide = state.guides[`id-${i}`];
+            if (guide.geom.type === 'CircleMark') {
+                cur = guide;
+                break;
+            }
+        }
+        if (cur?.geom.type === 'CircleMark') {
+            return {
+                type: 'Guide',
+                kind: 'CircleMark',
+                points: [cur.geom.p1, cur.geom.p2],
+                toggle: false,
+            };
+        }
+    }
+    return {
+        type: 'Guide',
+        kind: kind,
+        points: [],
+        extent: 5,
+        toggle: false,
+    };
+};
+
+export const reduceWithoutUndo = (
+    state: State,
+    action: UndoableAction,
+): [State, UndoAction | null] => {
     // console.log('🤔 an action', action);
     switch (action.type) {
         case 'mirror:change':
@@ -153,15 +203,7 @@ export const reduceWithoutUndo = (state: State, action: UndoableAction): [State,
             return [
                 {
                     ...state,
-                    pending: action.kind
-                        ? {
-                              type: 'Guide',
-                              kind: action.kind,
-                              points: [],
-                              extent: 5,
-                              toggle: false,
-                          }
-                        : null,
+                    pending: action.kind ? guideAgain(action.kind, state, action.shiftKey) : null,
                 },
                 {type: action.type, action, prev: state.pending},
             ];
@@ -173,7 +215,14 @@ export const reduceWithoutUndo = (state: State, action: UndoableAction): [State,
             return completePendingGuide(
                 state,
                 action,
-                pendingGuide(state.pending.kind, state.pending.points, false, state.pending.extent, state.pending.toggle, action.angle),
+                pendingGuide(
+                    state.pending.kind,
+                    state.pending.points,
+                    false,
+                    state.pending.extent,
+                    state.pending.toggle,
+                    action.angle,
+                ),
             );
         }
         case 'pending:point': {
@@ -181,7 +230,10 @@ export const reduceWithoutUndo = (state: State, action: UndoableAction): [State,
                 return [state, null];
             }
             const points = state.pending.points.concat([action.coord]);
-            if (points.length < guidePoints[state.pending.kind] || (guideNeedsAngle(state.pending.kind) && state.pending.angle == null)) {
+            if (
+                points.length < guidePoints[state.pending.kind] ||
+                (guideNeedsAngle(state.pending.kind) && state.pending.angle == null)
+            ) {
                 return [
                     {
                         ...state,
@@ -202,7 +254,14 @@ export const reduceWithoutUndo = (state: State, action: UndoableAction): [State,
             return completePendingGuide(
                 state,
                 action,
-                pendingGuide(state.pending.kind, points, action.shiftKey, state.pending.extent, state.pending.toggle, state.pending.angle),
+                pendingGuide(
+                    state.pending.kind,
+                    points,
+                    action.shiftKey,
+                    state.pending.extent,
+                    state.pending.toggle,
+                    state.pending.angle,
+                ),
             );
         }
         case 'guide:add':
@@ -276,7 +335,9 @@ export const reduceWithoutUndo = (state: State, action: UndoableAction): [State,
                         [id]: {
                             ...action.mirror,
                             parent:
-                                typeof action.mirror.parent === 'string' ? reifyMirror(state.mirrors, action.mirror.parent) : action.mirror.parent,
+                                typeof action.mirror.parent === 'string'
+                                    ? reifyMirror(state.mirrors, action.mirror.parent)
+                                    : action.mirror.parent,
                             id,
                         },
                     },
@@ -581,7 +642,9 @@ export const reduceWithoutUndo = (state: State, action: UndoableAction): [State,
             const ids =
                 action.selection.type === 'Path'
                     ? action.selection.ids
-                    : Object.keys(paths).filter((k) => action.selection.ids.includes(paths[k].group!));
+                    : Object.keys(paths).filter((k) =>
+                          action.selection.ids.includes(paths[k].group!),
+                      );
             let nextId = state.nextId;
             const group = `gid-${nextId}`;
             const nids = ids.map((id) => {
@@ -613,7 +676,9 @@ export const reduceWithoutUndo = (state: State, action: UndoableAction): [State,
             const ids =
                 action.selection.type === 'Path'
                     ? action.selection.ids
-                    : Object.keys(paths).filter((k) => action.selection.ids.includes(paths[k].group!));
+                    : Object.keys(paths).filter((k) =>
+                          action.selection.ids.includes(paths[k].group!),
+                      );
             let nextId = state.nextId;
             // Re-use the first selected group, if we're combining groups.
             let oldGroup = action.selection.type === 'PathGroup' ? action.selection.ids[0] : null;
@@ -663,7 +728,8 @@ export const reduceWithoutUndo = (state: State, action: UndoableAction): [State,
                 }
                 if (
                     result.length !== 1 ||
-                    pathToSegmentKeys(path.origin, path.segments).join(';') !== pathToSegmentKeys(result[0].origin, result[0].segments).join(';')
+                    pathToSegmentKeys(path.origin, path.segments).join(';') !==
+                        pathToSegmentKeys(result[0].origin, result[0].segments).join(';')
                 ) {
                     previous[k] = state.paths[k];
                 }
@@ -780,27 +846,35 @@ export const reduceWithoutUndo = (state: State, action: UndoableAction): [State,
             ];
         }
         case 'timeline:lane:are': {
-            const [timelines, undo] = handleListARE(action.action, state.animations.timelines.slice(), {
-                enabled: true,
-                items: [
-                    {
-                        weight: 1,
-                        enabled: true,
-                        contents: {type: 'spacer'},
-                    },
-                ],
-            });
+            const [timelines, undo] = handleListARE(
+                action.action,
+                state.animations.timelines.slice(),
+                {
+                    enabled: true,
+                    items: [
+                        {
+                            weight: 1,
+                            enabled: true,
+                            contents: {type: 'spacer'},
+                        },
+                    ],
+                },
+            );
             return [
                 {...state, animations: {...state.animations, timelines}},
                 {type: action.type, action, undo},
             ];
         }
         case 'timeline:slot:are': {
-            const [timline, undo] = handleListARE(action.action, state.animations.timelines[action.timeline].items.slice(), {
-                contents: {type: 'spacer'},
-                weight: 1,
-                enabled: true,
-            });
+            const [timline, undo] = handleListARE(
+                action.action,
+                state.animations.timelines[action.timeline].items.slice(),
+                {
+                    contents: {type: 'spacer'},
+                    weight: 1,
+                    enabled: true,
+                },
+            );
             const timelines = state.animations.timelines.slice();
             timelines[action.timeline] = {
                 ...timelines[action.timeline],
@@ -819,7 +893,11 @@ export const reduceWithoutUndo = (state: State, action: UndoableAction): [State,
             const scripts = {...state.animations.scripts};
             scripts[action.newKey] = scripts[action.key];
             delete scripts[action.key];
-            const timelines = renameScriptInTimelines(state.animations.timelines, action.key, action.newKey);
+            const timelines = renameScriptInTimelines(
+                state.animations.timelines,
+                action.key,
+                action.newKey,
+            );
             return [
                 {
                     ...state,
@@ -967,7 +1045,11 @@ export const undo = (state: State, action: UndoAction): State => {
             const scripts = {...state.animations.scripts};
             scripts[action.action.key] = scripts[action.action.newKey];
             delete scripts[action.action.newKey];
-            const timelines = renameScriptInTimelines(state.animations.timelines, action.action.newKey, action.action.key);
+            const timelines = renameScriptInTimelines(
+                state.animations.timelines,
+                action.action.newKey,
+                action.action.key,
+            );
             return {
                 ...state,
                 animations: {...state.animations, scripts, timelines},
@@ -1230,7 +1312,11 @@ export const undo = (state: State, action: UndoAction): State => {
                 const sourceIds =
                     action.action.selection.type === 'Path'
                         ? action.action.selection.ids
-                        : Object.keys(state.paths).filter((k) => state.paths[k].group && action.action.selection.ids.includes(state.paths[k].group!));
+                        : Object.keys(state.paths).filter(
+                              (k) =>
+                                  state.paths[k].group &&
+                                  action.action.selection.ids.includes(state.paths[k].group!),
+                          );
                 sourceIds.forEach((id) => {
                     if (state.paths[id].group === action.added[1]) {
                         state.paths[id].group = null;
@@ -1346,11 +1432,16 @@ export function handlePathMultiply(state: State, action: PathMultiply): [State, 
     const sourceIds =
         action.selection.type === 'Path'
             ? action.selection.ids
-            : Object.keys(state.paths).filter((k) => state.paths[k].group && action.selection.ids.includes(state.paths[k].group!));
+            : Object.keys(state.paths).filter(
+                  (k) =>
+                      state.paths[k].group && action.selection.ids.includes(state.paths[k].group!),
+              );
 
     const ids: Array<Id> = [];
 
-    const usedPaths = Object.keys(state.paths).map((k) => pathToSegmentKeys(state.paths[k].origin, state.paths[k].segments));
+    const usedPaths = Object.keys(state.paths).map((k) =>
+        pathToSegmentKeys(state.paths[k].origin, state.paths[k].segments),
+    );
     // const usedPaths = [pathToSegmentKeys(main.origin, main.segments)];
 
     state = {...state, paths: {...state.paths}};
@@ -1385,7 +1476,11 @@ export function handlePathMultiply(state: State, action: PathMultiply): [State, 
             // Are they equivalent?
             const forward = pathToSegmentKeys(origin, segments);
             const backward = pathToReversedSegmentKeys(origin, segments);
-            if (usedPaths.some((path) => pathsAreIdentical(path, backward) || pathsAreIdentical(path, forward))) {
+            if (
+                usedPaths.some(
+                    (path) => pathsAreIdentical(path, backward) || pathsAreIdentical(path, forward),
+                )
+            ) {
                 return;
             }
             usedPaths.push(forward);
@@ -1419,7 +1514,10 @@ export function handlePathMultiply(state: State, action: PathMultiply): [State, 
     ];
 }
 
-export function handlePathCreate(state: State, origAction: PathCreateMany | PathCreate): [State, UndoAction | null] {
+export function handlePathCreate(
+    state: State,
+    origAction: PathCreateMany | PathCreate,
+): [State, UndoAction | null] {
     const action: PathCreateMany =
         origAction.type === 'path:create:many'
             ? origAction
@@ -1488,7 +1586,12 @@ export function handlePathCreate(state: State, origAction: PathCreateMany | Path
                 // Are they equivalent?
                 const forward = pathToSegmentKeys(origin, segments);
                 const backward = pathToReversedSegmentKeys(origin, segments);
-                if (usedPaths.some((path) => pathsAreIdentical(path, backward) || pathsAreIdentical(path, forward))) {
+                if (
+                    usedPaths.some(
+                        (path) =>
+                            pathsAreIdentical(path, backward) || pathsAreIdentical(path, forward),
+                    )
+                ) {
                     return;
                 }
                 usedPaths.push(forward);
@@ -1619,7 +1722,11 @@ export const transformState = (state: State, mx: Matrix[]) => {
     return {...state, paths, guides, clips, mirrors};
 };
 
-export const completePendingGuide = (state: State, action: PendingPoint | PendingAngle, geom: GuideGeom): [State, UndoAction | null] => {
+export const completePendingGuide = (
+    state: State,
+    action: PendingPoint | PendingAngle,
+    geom: GuideGeom,
+): [State, UndoAction | null] => {
     const id = 'id-' + state.nextId;
     return [
         {
@@ -1634,7 +1741,9 @@ export const completePendingGuide = (state: State, action: PendingPoint | Pendin
                     active: true,
                     basedOn: [],
                     geom,
-                    mirror: state.activeMirror ? reifyMirror(state.mirrors, state.activeMirror) : null,
+                    mirror: state.activeMirror
+                        ? reifyMirror(state.mirrors, state.activeMirror)
+                        : null,
                 },
             },
         },

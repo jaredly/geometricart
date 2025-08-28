@@ -16,6 +16,7 @@ export const toType: {[key: string]: GuideGeom['type']} = {
     o: 'CircumCircle',
     e: 'CloneCircle',
     k: 'CircleMark',
+    K: 'CircleMark',
 };
 
 export const toTypeRev: {[key: string]: string} = {};
@@ -46,7 +47,10 @@ export const handleKeyboard = (
     let prevMirror = latestState.current.activeMirror;
 
     return (evt: KeyboardEvent) => {
-        if (evt.target !== document.body && (evt.target instanceof HTMLInputElement || evt.target instanceof HTMLTextAreaElement)) {
+        if (
+            evt.target !== document.body &&
+            (evt.target instanceof HTMLInputElement || evt.target instanceof HTMLTextAreaElement)
+        ) {
             return;
         }
         if ((evt.metaKey || evt.ctrlKey) && evt.key === 'd') {
@@ -201,6 +205,7 @@ export const handleKeyboard = (
             dispatch({
                 type: 'pending:type',
                 kind: toType[evt.key],
+                shiftKey: evt.shiftKey,
             });
         }
     };
