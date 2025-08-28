@@ -1,436 +1,423 @@
 /* @jsx jsx */
-import * as React from 'react';
-import { jsx } from '@emotion/react';
-import { State, Coord } from '../types';
-import { Action } from '../state/Action';
+import * as React from "react";
+import { jsx } from "@emotion/react";
+import { State, Coord } from "../types";
+import { Action } from "../state/Action";
 import {
-    ExportPalettes,
-    getPalettesFromFile,
-    importPalettes,
-    ImportPalettes,
-} from './ExportPalettes';
-import { useDropTarget } from './useDropTarget';
-import { rgbToHsl } from '../rendering/colorConvert';
-import { SliderPicker, SketchPicker } from 'react-color';
+	ExportPalettes,
+	getPalettesFromFile,
+	importPalettes,
+	ImportPalettes,
+} from "./ExportPalettes";
+import { useDropTarget } from "./useDropTarget";
+import { rgbToHsl } from "../rendering/colorConvert";
+import { SliderPicker, SketchPicker } from "react-color";
 // @ts-ignore
-import kMeans from 'kmeans-js';
+import kMeans from "kmeans-js";
 
-import { ColorPicker } from 'primereact/colorpicker';
-import { Rgb, AttachmentsChooser } from './Rgb';
+import { ColorPicker } from "primereact/colorpicker";
+import { Rgb, AttachmentsChooser } from "./Rgb";
 
 export const averageAt = (data: ImageData, pos: Coord): Rgb => {
-    const colors = [
-        colorAt(data, pos),
-        colorAt(data, { x: pos.x - 1, y: pos.y }),
-        colorAt(data, { x: pos.x + 1, y: pos.y }),
-        colorAt(data, { x: pos.x, y: pos.y - 1 }),
-        colorAt(data, { x: pos.x, y: pos.y + 1 }),
-    ];
-    return {
-        r: Math.round(colors.reduce((a, b) => a + b.r, 0) / colors.length),
-        g: Math.round(colors.reduce((a, b) => a + b.g, 0) / colors.length),
-        b: Math.round(colors.reduce((a, b) => a + b.b, 0) / colors.length),
-    };
+	const colors = [
+		colorAt(data, pos),
+		colorAt(data, { x: pos.x - 1, y: pos.y }),
+		colorAt(data, { x: pos.x + 1, y: pos.y }),
+		colorAt(data, { x: pos.x, y: pos.y - 1 }),
+		colorAt(data, { x: pos.x, y: pos.y + 1 }),
+	];
+	return {
+		r: Math.round(colors.reduce((a, b) => a + b.r, 0) / colors.length),
+		g: Math.round(colors.reduce((a, b) => a + b.g, 0) / colors.length),
+		b: Math.round(colors.reduce((a, b) => a + b.b, 0) / colors.length),
+	};
 };
 
 export const colorAt = (imageData: ImageData, { x, y }: Coord): Rgb => {
-    x = Math.floor(x);
-    y = Math.floor(y);
-    return {
-        r: imageData.data[y * (imageData.width * 4) + x * 4 + 0],
-        g: imageData.data[y * (imageData.width * 4) + x * 4 + 1],
-        b: imageData.data[y * (imageData.width * 4) + x * 4 + 2],
-    };
-    // color['alpha'] = imageData.data[((y*(imageData.width*4)) + (x*4)) + 3];
+	x = Math.floor(x);
+	y = Math.floor(y);
+	return {
+		r: imageData.data[y * (imageData.width * 4) + x * 4 + 0],
+		g: imageData.data[y * (imageData.width * 4) + x * 4 + 1],
+		b: imageData.data[y * (imageData.width * 4) + x * 4 + 2],
+	};
+	// color['alpha'] = imageData.data[((y*(imageData.width*4)) + (x*4)) + 3];
 };
 
 export const rgbToString = ({ r, g, b }: Rgb) => `rgb(${r},${g},${b})`;
-export const toHex = (n: number) => n.toString(16).padStart(2, '0');
+export const toHex = (n: number) => n.toString(16).padStart(2, "0");
 export const rgbToHex = ({ r, g, b }: Rgb) =>
-    `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+	`#${toHex(r)}${toHex(g)}${toHex(b)}`;
 
 export function PalettesForm({
-    state,
-    dispatch,
+	state,
+	dispatch,
 }: {
-    state: State;
-    dispatch: (action: Action) => unknown;
+	state: State;
+	dispatch: (action: Action) => unknown;
 }) {
-    const [dragging, callbacks] = useDropTarget((file) => {
-        getPalettesFromFile(file, (data) => {
-            console.log(data);
-            importPalettes(state.palettes, data, dispatch);
-        });
-    });
-    return (
-        <div
-            {...callbacks}
-            style={{
-                // overflow: 'auto',
-                padding: 8,
-                // display: 'flex',
-                // flexDirection: 'column',
-                // flex: 1,
-                background: dragging ? 'rgba(255,255,255,0.1)' : '',
-                transition: '.3s ease background',
-            }}
-        >
-            {Object.keys(state.palettes).map((name) => (
-                <PaletteForm
-                    name={name}
-                    state={state}
-                    dispatch={dispatch}
-                    key={name}
-                />
-            ))}
-            <button
-                css={{ margin: '14px 0' }}
-                onClick={() => {
-                    let num = Object.keys(state.palettes).length;
-                    while (state.palettes[`palette${num}`]) {
-                        num += 1;
-                    }
-                    let newName = `palette${num}`;
-                    dispatch({
-                        type: 'library:palette:update',
-                        name: newName,
-                        colors: ['red', 'green', 'blue'],
-                    });
-                }}
-            >
-                Add Palette
-            </button>
-            <input
-                css={{ display: 'block' }}
-                onPaste={(evt) => {
-                    const data = evt.clipboardData.getData('text/plain');
-                    let parts;
-                    if (data.startsWith(`https://coolors.co/`)) {
-                        parts = data
-                            .split('/')
-                            .slice(-1)[0]
-                            .split('-')
-                            .map((m) => `#` + m);
-                    } else {
-                        parts = data
-                            .split(/[,-\s]/g)
-                            .map((m) =>
-                                m.trim().match(/^[0-9a-fA-F]{6}$/)
-                                    ? '#' + m.trim()
-                                    : m.trim(),
-                            );
-                    }
-                    if (
-                        !parts.every((value) =>
-                            value.match(/^#[0-9a-fA-F]{3,6}$/),
-                        )
-                    ) {
-                        console.log(`not hex`, parts);
-                        return;
-                    }
-                    let num = Object.keys(state.palettes).length;
-                    while (state.palettes[`palette${num}`]) {
-                        num += 1;
-                    }
-                    let newName = `palette${num}`;
-                    dispatch({
-                        type: 'library:palette:update',
-                        name: newName,
-                        colors: parts,
-                    });
-                }}
-                value=""
-                onChange={() => {}}
-                placeholder="Paste comma-separated colors"
-            />
-            <ExportPalettes palettes={state.palettes} />
-            <ImportPalettes dispatch={dispatch} palettes={state.palettes} />
-        </div>
-    );
+	const [dragging, callbacks] = useDropTarget((file) => {
+		getPalettesFromFile(file, (data) => {
+			console.log(data);
+			importPalettes(state.palettes, data, dispatch);
+		});
+	});
+	return (
+		<div
+			{...callbacks}
+			style={{
+				// overflow: 'auto',
+				padding: 8,
+				// display: 'flex',
+				// flexDirection: 'column',
+				// flex: 1,
+				background: dragging ? "rgba(255,255,255,0.1)" : "",
+				transition: ".3s ease background",
+			}}
+		>
+			{Object.keys(state.palettes).map((name) => (
+				<PaletteForm name={name} state={state} dispatch={dispatch} key={name} />
+			))}
+			<button
+				css={{ margin: "14px 0" }}
+				onClick={() => {
+					let num = Object.keys(state.palettes).length;
+					while (state.palettes[`palette${num}`]) {
+						num += 1;
+					}
+					let newName = `palette${num}`;
+					dispatch({
+						type: "library:palette:update",
+						name: newName,
+						colors: ["red", "green", "blue"],
+					});
+				}}
+			>
+				Add Palette
+			</button>
+			<input
+				css={{ display: "block" }}
+				onPaste={(evt) => {
+					const data = evt.clipboardData.getData("text/plain");
+					let parts;
+					if (data.startsWith(`https://coolors.co/`)) {
+						parts = data
+							.split("/")
+							.slice(-1)[0]
+							.split("-")
+							.map((m) => `#` + m);
+					} else {
+						parts = data
+							.split(/[,-\s]/g)
+							.map((m) =>
+								m.trim().match(/^[0-9a-fA-F]{6}$/) ? "#" + m.trim() : m.trim(),
+							);
+					}
+					if (!parts.every((value) => value.match(/^#[0-9a-fA-F]{3,6}$/))) {
+						console.log(`not hex`, parts);
+						return;
+					}
+					let num = Object.keys(state.palettes).length;
+					while (state.palettes[`palette${num}`]) {
+						num += 1;
+					}
+					let newName = `palette${num}`;
+					dispatch({
+						type: "library:palette:update",
+						name: newName,
+						colors: parts,
+					});
+				}}
+				value=""
+				onChange={() => {}}
+				placeholder="Paste comma-separated colors"
+			/>
+			<ExportPalettes palettes={state.palettes} />
+			<ImportPalettes dispatch={dispatch} palettes={state.palettes} />
+		</div>
+	);
 }
 
 function PaletteForm({
-    name,
-    state,
-    dispatch,
+	name,
+	state,
+	dispatch,
 }: {
-    name: string;
-    state: State;
-    dispatch: (action: Action) => unknown;
+	name: string;
+	state: State;
+	dispatch: (action: Action) => unknown;
 }): jsx.JSX.Element {
-    const [editing, setEditing] = React.useState(false);
-    const [choosing, setChoosing] = React.useState(
-        null as null | [string, number],
-    );
-    return (
-        <div
-            style={{
-                border: `1px solid transparent`,
-            }}
-        >
-            {name}
-            <button
-                onClick={() => {
-                    dispatch({
-                        type: 'palette:update',
-                        colors: state.palettes[name],
-                    });
-                }}
-            >
-                Use
-            </button>
-            <div
-                css={{
-                    display: 'flex',
-                    flexDirection: editing ? 'column' : 'row',
-                    alignItems: 'flex-start',
-                }}
-            >
-                {state.palettes[name].map((color, i) =>
-                    editing ? (
-                        <ColorEditor
-                            color={color}
-                            key={i}
-                            onChange={(color) => {
-                                const palette = state.palettes[name].slice();
-                                palette[i] = color;
-                                dispatch({
-                                    type: 'library:palette:update',
-                                    name,
-                                    colors: palette,
-                                });
-                            }}
-                            onChoose={() => setChoosing([name, i])}
-                        />
-                    ) : (
-                        <div
-                            key={i}
-                            style={{
-                                background: color.startsWith('http')
-                                    ? `url("${color}")`
-                                    : color,
-                                backgroundSize: '20px 20px',
-                                width: 20,
-                                height: 20,
-                            }}
-                        />
-                    ),
-                )}
-                {editing ? (
-                    <ColorEditor
-                        color={''}
-                        onChange={(color) => {
-                            const palette = state.palettes[name].slice();
-                            palette.push(color);
-                            dispatch({
-                                type: 'library:palette:update',
-                                name,
-                                colors: palette,
-                            });
-                        }}
-                        onChoose={() =>
-                            setChoosing([name, state.palettes[name].length])
-                        }
-                    />
-                ) : null}
-                <div style={{ flexBasis: 16 }} />
-                <button
-                    onClick={() => {
-                        setEditing(!editing);
-                    }}
-                >
-                    {editing ? 'Done' : 'Edit'}
-                </button>
-                <button
-                    onClick={() => {
-                        let num = Object.keys(state.palettes).length;
-                        while (state.palettes[`palette${num}`]) {
-                            num += 1;
-                        }
-                        let newName = `palette${num}`;
-                        dispatch({
-                            type: 'library:palette:update',
-                            name: newName,
-                            colors: state.palettes[name],
-                        });
-                    }}
-                >
-                    Duplicate
-                </button>
-            </div>
-            {choosing ? (
-                <AttachmentsChooser
-                    attachments={state.attachments}
-                    onChoose={(color) => {
-                        setChoosing(null);
-                        if (!color) {
-                            return;
-                        }
-                        const [name, i] = choosing!;
-                        const colors = state.palettes[name].slice();
-                        colors[i] = rgbToHex(color);
-                        dispatch({
-                            type: 'library:palette:update',
-                            name,
-                            colors,
-                        });
-                    }}
-                />
-            ) : null}
-        </div>
-    );
+	const [editing, setEditing] = React.useState(false);
+	const [choosing, setChoosing] = React.useState(
+		null as null | [string, number],
+	);
+	return (
+		<div
+			style={{
+				border: `1px solid transparent`,
+			}}
+		>
+			{name}
+			<button
+				onClick={() => {
+					dispatch({
+						type: "palette:update",
+						colors: state.palettes[name],
+					});
+				}}
+			>
+				Use
+			</button>
+			<div
+				css={{
+					display: "flex",
+					flexDirection: editing ? "column" : "row",
+					alignItems: "flex-start",
+				}}
+			>
+				{state.palettes[name].map((color, i) =>
+					editing ? (
+						<ColorEditor
+							color={color}
+							key={i}
+							onChange={(color) => {
+								const palette = state.palettes[name].slice();
+								palette[i] = color;
+								dispatch({
+									type: "library:palette:update",
+									name,
+									colors: palette,
+								});
+							}}
+							onChoose={() => setChoosing([name, i])}
+						/>
+					) : (
+						<div
+							key={i}
+							style={{
+								background: color.startsWith("http")
+									? `url("${color}")`
+									: color,
+								backgroundSize: "20px 20px",
+								width: 20,
+								height: 20,
+							}}
+						/>
+					),
+				)}
+				{editing ? (
+					<ColorEditor
+						color={""}
+						onChange={(color) => {
+							const palette = state.palettes[name].slice();
+							palette.push(color);
+							dispatch({
+								type: "library:palette:update",
+								name,
+								colors: palette,
+							});
+						}}
+						onChoose={() => setChoosing([name, state.palettes[name].length])}
+					/>
+				) : null}
+				<div style={{ flexBasis: 16 }} />
+				<button
+					onClick={() => {
+						setEditing(!editing);
+					}}
+				>
+					{editing ? "Done" : "Edit"}
+				</button>
+				<button
+					onClick={() => {
+						let num = Object.keys(state.palettes).length;
+						while (state.palettes[`palette${num}`]) {
+							num += 1;
+						}
+						let newName = `palette${num}`;
+						dispatch({
+							type: "library:palette:update",
+							name: newName,
+							colors: state.palettes[name],
+						});
+					}}
+				>
+					Duplicate
+				</button>
+			</div>
+			{choosing ? (
+				<AttachmentsChooser
+					attachments={state.attachments}
+					onChoose={(color) => {
+						setChoosing(null);
+						if (!color) {
+							return;
+						}
+						const [name, i] = choosing!;
+						const colors = state.palettes[name].slice();
+						colors[i] = rgbToHex(color);
+						dispatch({
+							type: "library:palette:update",
+							name,
+							colors,
+						});
+					}}
+				/>
+			) : null}
+		</div>
+	);
 }
 
 export const ColorEditor = ({
-    color,
-    onChange,
-    onChoose,
+	color,
+	onChange,
+	onChoose,
 }: {
-    color: string;
-    onChange: (color: string) => void;
-    onChoose: () => void;
+	color: string;
+	onChange: (color: string) => void;
+	onChoose: () => void;
 }) => {
-    const [text, setText] = React.useState(null as null | string);
-    const [visual, showVisual] = React.useState(false);
-    return (
-        <div css={{ display: 'flex', position: 'relative' }}>
-            <div
-                style={{
-                    background: (text ?? color).startsWith('http')
-                        ? `url("${text ?? color}")`
-                        : text ?? color,
-                    backgroundSize: '20px 20px',
-                    // backgroundColor: text ?? color,
-                    width: 20,
-                    height: 20,
-                    marginRight: 16,
-                }}
-            ></div>
-            <input
-                value={text ?? color}
-                onChange={(evt) => setText(evt.target.value)}
-                onKeyDown={(evt) => {
-                    if (evt.key === 'Escape') {
-                        setText(null);
-                        setTimeout(() => {
-                            (evt.target as HTMLInputElement).blur();
-                        }, 10);
-                    }
-                }}
-                onBlur={() => {
-                    if (text) {
-                        onChange(text);
-                        setText(null);
-                    }
-                }}
-            />
-            <button onClick={() => onChoose()}>Choose from attachments</button>
-            <button
-                onClick={() => {
-                    showVisual(!visual);
-                }}
-            >
-                Visual picker
-            </button>
-            {visual ? (
-                <div
-                    css={{
-                        position: 'absolute',
-                        zIndex: 10,
-                        top: '100%',
-                        width: 200,
-                    }}
-                >
-                    <SketchPicker
-                        color={text ?? color}
-                        onChange={(change) => {
-                            onChange(change.hex);
-                        }}
-                    />
-                    {/* <ColorPicker
+	const [text, setText] = React.useState(null as null | string);
+	const [visual, showVisual] = React.useState(false);
+	return (
+		<div css={{ display: "flex", position: "relative" }}>
+			<div
+				style={{
+					background: (text ?? color).startsWith("http")
+						? `url("${text ?? color}")`
+						: (text ?? color),
+					backgroundSize: "20px 20px",
+					// backgroundColor: text ?? color,
+					width: 20,
+					height: 20,
+					marginRight: 16,
+				}}
+			></div>
+			<input
+				value={text ?? color}
+				onChange={(evt) => setText(evt.target.value)}
+				onKeyDown={(evt) => {
+					if (evt.key === "Escape") {
+						setText(null);
+						setTimeout(() => {
+							(evt.target as HTMLInputElement).blur();
+						}, 10);
+					}
+				}}
+				onBlur={() => {
+					if (text) {
+						onChange(text);
+						setText(null);
+					}
+				}}
+			/>
+			<button onClick={() => onChoose()}>Choose from attachments</button>
+			<button
+				onClick={() => {
+					showVisual(!visual);
+				}}
+			>
+				Visual picker
+			</button>
+			{visual ? (
+				<div
+					css={{
+						position: "absolute",
+						zIndex: 10,
+						top: "100%",
+						width: 200,
+					}}
+				>
+					<SketchPicker
+						color={text ?? color}
+						onChange={(change) => {
+							onChange(change.hex);
+						}}
+					/>
+					{/* <ColorPicker
                         inline
                         color={text?.slice(1) ?? color.slice(1)}
                         onChange={(e) => onChange('#' + e.value)}
                     /> */}
-                </div>
-            ) : null}
-        </div>
-    );
+				</div>
+			) : null}
+		</div>
+	);
 };
 
 export const findMajorColorsExpensive = (
-    data: ImageData,
-    bins: number = 50,
-    top: number = 10,
+	data: ImageData,
+	bins: number = 50,
+	top: number = 10,
 ) => {
-    const points = [];
-    // // h, s, l
-    // // l = 3 bins; 0.3, 0.6
-    // // s = 2 bins 0.5, 1.0
-    // // const bins = 50;
-    // const hueBins = new Array(bins).fill(0);
-    for (let x = 0; x < data.width; x++) {
-        for (let y = 0; y < data.height; y++) {
-            const color = colorAt(data, { x, y });
-            const [h, s, l] = rgbToHsl(color.r, color.g, color.b);
-            points.push([h, s, l]);
-            // // outside of range
-            // // if (s < 0.5 || l > 0.9 || l < 0.2) {
-            // //     continue;
-            // // }
-            // const hue = Math.floor(h * bins);
-            // hueBins[hue]++;
-        }
-    }
+	const points = [];
+	// // h, s, l
+	// // l = 3 bins; 0.3, 0.6
+	// // s = 2 bins 0.5, 1.0
+	// // const bins = 50;
+	// const hueBins = new Array(bins).fill(0);
+	for (let x = 0; x < data.width; x++) {
+		for (let y = 0; y < data.height; y++) {
+			const color = colorAt(data, { x, y });
+			const [h, s, l] = rgbToHsl(color.r, color.g, color.b);
+			points.push([h, s, l]);
+			// // outside of range
+			// // if (s < 0.5 || l > 0.9 || l < 0.2) {
+			// //     continue;
+			// // }
+			// const hue = Math.floor(h * bins);
+			// hueBins[hue]++;
+		}
+	}
 
-    const km = new kMeans({ K: 8 });
+	const km = new kMeans({ K: 8 });
 
-    km.cluster(points);
-    while (km.step()) {
-        km.findClosestCentroids();
-        km.moveCentroids();
+	km.cluster(points);
+	while (km.step()) {
+		km.findClosestCentroids();
+		km.moveCentroids();
 
-        // console.log(km.centroids);
+		// console.log(km.centroids);
 
-        if (km.hasConverged()) break;
-    }
+		if (km.hasConverged()) break;
+	}
 
-    return km.centroids; //.map((item) => item[0] * 360);
+	return km.centroids; //.map((item) => item[0] * 360);
 
-    // const sorted = hueBins
-    //     .map((count, i) => ({ i, count }))
-    //     .sort((a, b) => b.count - a.count)
-    //     .slice(0, top)
-    //     .sort((a, b) => a.i - b.i);
-    // return sorted.map((item) => (item.i / bins) * 360);
+	// const sorted = hueBins
+	//     .map((count, i) => ({ i, count }))
+	//     .sort((a, b) => b.count - a.count)
+	//     .slice(0, top)
+	//     .sort((a, b) => a.i - b.i);
+	// return sorted.map((item) => (item.i / bins) * 360);
 };
 
 export const findMajorColors = (
-    data: ImageData,
-    bins: number = 50,
-    top: number = 10,
+	data: ImageData,
+	bins: number = 50,
+	top: number = 10,
 ) => {
-    // // h, s, l
-    // // l = 3 bins; 0.3, 0.6
-    // // s = 2 bins 0.5, 1.0
-    // // const bins = 50;
-    const hueBins = new Array(bins).fill(0);
-    for (let x = 0; x < data.width; x++) {
-        for (let y = 0; y < data.height; y++) {
-            const color = colorAt(data, { x, y });
-            const [h, s, l] = rgbToHsl(color.r, color.g, color.b);
-            // // outside of range
-            // // if (s < 0.5 || l > 0.9 || l < 0.2) {
-            // //     continue;
-            // // }
-            const hue = Math.floor(h * bins);
-            hueBins[hue]++;
-        }
-    }
-    const sorted = hueBins
-        .map((count, i) => ({ i, count }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, top)
-        .sort((a, b) => a.i - b.i);
-    return sorted.map((item) => [(item.i / bins) * 360, 0.8, 0.3]);
+	// // h, s, l
+	// // l = 3 bins; 0.3, 0.6
+	// // s = 2 bins 0.5, 1.0
+	// // const bins = 50;
+	const hueBins = new Array(bins).fill(0);
+	for (let x = 0; x < data.width; x++) {
+		for (let y = 0; y < data.height; y++) {
+			const color = colorAt(data, { x, y });
+			const [h, s, l] = rgbToHsl(color.r, color.g, color.b);
+			// // outside of range
+			// // if (s < 0.5 || l > 0.9 || l < 0.2) {
+			// //     continue;
+			// // }
+			const hue = Math.floor(h * bins);
+			hueBins[hue]++;
+		}
+	}
+	const sorted = hueBins
+		.map((count, i) => ({ i, count }))
+		.sort((a, b) => b.count - a.count)
+		.slice(0, top)
+		.sort((a, b) => a.i - b.i);
+	return sorted.map((item) => [(item.i / bins) * 360, 0.8, 0.3]);
 };

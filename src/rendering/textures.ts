@@ -2,8 +2,8 @@
 
 // based on https://www.shadertoy.com/view/wsdyRf
 export const texture1 = (scale: number, intensity: number) => {
-    const cell = 5 + scale * 20;
-    return `#version 300 es
+	const cell = 5 + scale * 20;
+	return `#version 300 es
 
 precision mediump float;
 
@@ -60,7 +60,7 @@ void main() {
 // cross hatchy
 // based on https://www.shadertoy.com/view/MsSGD1
 export const texture2 = (scale: number, intensity: number) => {
-    return `#version 300 es
+	return `#version 300 es
 
 precision mediump float;
 

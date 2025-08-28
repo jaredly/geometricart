@@ -1,18 +1,18 @@
-import { angleBetween } from './findNextSegments';
-import { angleTo, dist, push } from './getMirrorTransforms';
-import { closeEnoughAngle, lineLine, lineToSlope } from './intersect';
-import { coordsEqual } from './pathsAreIdentical';
-import { Coord, Segment } from '../types';
+import { angleBetween } from "./findNextSegments";
+import { angleTo, dist, push } from "./getMirrorTransforms";
+import { closeEnoughAngle, lineLine, lineToSlope } from "./intersect";
+import { coordsEqual } from "./pathsAreIdentical";
+import { Coord, Segment } from "../types";
 
-export type Line = { type: 'Line'; p0: Coord; p1: Coord };
+export type Line = { type: "Line"; p0: Coord; p1: Coord };
 export type Full = Line | Arc;
 export type Arc = {
-    type: 'Arc';
-    center: Coord;
-    t0: number;
-    t1: number;
-    r: number;
-    clockwise: boolean;
+	type: "Arc";
+	center: Coord;
+	t0: number;
+	t1: number;
+	r: number;
+	clockwise: boolean;
 };
 
 // export const segmentToFull = (prev: Coord, segment: Segment): Full => {
