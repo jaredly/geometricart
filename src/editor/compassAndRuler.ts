@@ -4,15 +4,17 @@ import { Coord, Guide, GuideGeom } from "../types";
 
 export type States = "PO" | "PA1" | "PA2" | "DC" | "R1" | "R2" | "DR";
 
+export type PendingMark =
+	| { type: "circle"; t1: number; t2: number; clockwise: boolean }
+	| { type: "line"; p1: Coord; p2: Coord };
+
 export type CompassState = {
 	compassRadius: { p1: Coord; p2: Coord; radius: number };
 	compassOrigin: Coord;
 	rulerP1: Coord;
 	rulerP2: Coord;
 	state: States;
-	pendingMark?:
-		| { type: "circle"; t1: number; t2: number; clockwise: boolean }
-		| { type: "line"; p1: Coord; p2: Coord };
+	pendingMark?: PendingMark;
 };
 
 const backspace: Record<States, States> = {
