@@ -69,7 +69,8 @@ UI:
 
 */
 
-export const canFreeClick = (state: States) => state === "DC" || state === "DR";
+export const canFreeClick = (state?: States) =>
+	state === "DC" || state === "DR";
 
 export const previewPos = (
 	state: CompassState | undefined,
@@ -101,6 +102,7 @@ export const previewPos = (
 				},
 			};
 		case "DC": {
+			if (state.pendingMark?.type === "circle") return dragPos(state, coord);
 			const theta = angleTo(state.compassOrigin, coord);
 			return {
 				...state,
@@ -114,6 +116,7 @@ export const previewPos = (
 		case "R2":
 			return { ...state, rulerP2: coord };
 		case "DR": {
+			if (state.pendingMark?.type === "line") return dragPos(state, coord);
 			const p = projectPointOntoLine(coord, state.rulerP1, state.rulerP2);
 			return { ...state, pendingMark: { type: "line", p1: p, p2: p } };
 		}

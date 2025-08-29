@@ -1,6 +1,6 @@
 import { jsx } from "@emotion/react";
 import Prando from "prando";
-import React, { useRef } from "react";
+import React, { useMemo, useRef } from "react";
 import { RoughGenerator } from "roughjs/bin/generator";
 import { Action } from "../state/Action";
 import { useCurrent } from "../App";
@@ -39,6 +39,7 @@ import { EditorState, MenuItem, screenToWorld } from "./Canvas";
 import { coordsEqual } from "../rendering/pathsAreIdentical";
 import { RenderIntersections } from "./RenderIntersections";
 import { PKInsetCache, getClips } from "../rendering/pkInsetPaths";
+import { canFreeClick, handleClick, previewPos } from "./compassAndRuler";
 
 export function SVGCanvas({
 	state,
@@ -100,6 +101,8 @@ export function SVGCanvas({
 }) {
 	const currentState = React.useRef(state);
 	currentState.current = state;
+	const currentView = React.useRef(view);
+	currentView.current = view;
 
 	usePalettePreload(state);
 
@@ -138,9 +141,85 @@ export function SVGCanvas({
 		view,
 	);
 
-	const mouseHandlers = editorState.selectMode
-		? dragSelectHandlers
-		: mouseDragHandlers;
+	const compassRulerHandlers = useMemo(
+		() => ({
+			onMouseDown(evt: React.MouseEvent) {
+				const rect = ref.current!.getBoundingClientRect();
+				const view = currentView.current;
+				// evt.
+				const pos = screenToWorld(
+					width,
+					height,
+					{ x: evt.clientX - rect.left, y: evt.clientY - rect.top },
+					view,
+				);
+
+				const state = currentState.current;
+				console.log("holla", canFreeClick(state.compassState?.state));
+				if (canFreeClick(state.compassState?.state)) {
+					dispatch({
+						type: "pending:compass&ruler",
+						state: handleClick(previewPos(state.compassState, pos)),
+					});
+				}
+			},
+			onMouseMove: (evt: React.MouseEvent) => {
+				const state = currentState.current;
+				const view = currentView.current;
+				// if (state.compassState?.pendingMark)
+
+				const rect = evt.currentTarget.getBoundingClientRect();
+
+				const pos = screenToWorld(
+					width,
+					height,
+					{
+						x: evt.clientX - rect.left,
+						y: evt.clientY - rect.top,
+					},
+					view,
+				);
+
+				// const pos = {
+				// 	x: (evt.clientX - rect.left - x) / view.zoom,
+				// 	y: (evt.clientY - rect.top - y) / view.zoom,
+				// };
+				setEditorState((state) => ({ ...state, pos }));
+
+				// if (dragPos) {
+				// 	const rect = evt.currentTarget.getBoundingClientRect();
+				// 	const clientX = evt.clientX;
+				// 	const clientY = evt.clientY;
+				// 	evt.preventDefault();
+
+				// 	setEditorState((prev) => {
+				// 		return {
+				// 			...prev,
+				// 			tmpView: dragView(
+				// 				prev.tmpView,
+				// 				dragPos,
+				// 				clientX,
+				// 				rect,
+				// 				clientY,
+				// 				width,
+				// 				height,
+				// 			),
+				// 		};
+				// 	});
+				// } else {
+				// 	// setPos(pos);
+				// }
+			},
+		}),
+		[],
+	);
+
+	const mouseHandlers =
+		state.pending?.type === "compass&ruler"
+			? compassRulerHandlers
+			: editorState.selectMode
+				? dragSelectHandlers
+				: mouseDragHandlers;
 
 	React.useEffect(() => {
 		if (!state.selection && multiRef.current) {
