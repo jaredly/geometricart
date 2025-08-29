@@ -1,5 +1,5 @@
 import { angleBetween } from "../rendering/findNextSegments";
-import { angleTo } from "../rendering/getMirrorTransforms";
+import { angleTo, dist } from "../rendering/getMirrorTransforms";
 import { Coord, Guide, GuideGeom } from "../types";
 
 export type States = "PO" | "PA1" | "PA2" | "DC" | "R1" | "R2" | "DR";
@@ -35,7 +35,17 @@ const clicks: Record<States, States> = {
 	DR: "DR",
 };
 
-export const handleSpace = (state: CompassState) => {
+export const handleSpace = (state?: CompassState): CompassState => {
+	if (!state) {
+		const no: Coord = { x: 0, y: 0 };
+		return {
+			compassOrigin: no,
+			compassRadius: { p1: no, p2: no, radius: 0 },
+			rulerP1: no,
+			rulerP2: no,
+			state: "PA1",
+		};
+	}
 	return { ...state, state: backspace[state.state] };
 };
 
@@ -61,7 +71,19 @@ UI:
 
 export const canFreeClick = (state: States) => state === "DC" || state === "DR";
 
-export const previewPos = (state: CompassState, coord: Coord): CompassState => {
+export const previewPos = (
+	state: CompassState | undefined,
+	coord: Coord,
+): CompassState => {
+	if (!state) {
+		return {
+			compassOrigin: coord,
+			compassRadius: { p1: coord, p2: coord, radius: 0 },
+			rulerP1: coord,
+			rulerP2: coord,
+			state: "PA1",
+		};
+	}
 	switch (state.state) {
 		case "PA1":
 			return {
@@ -70,7 +92,14 @@ export const previewPos = (state: CompassState, coord: Coord): CompassState => {
 				compassOrigin: coord,
 			};
 		case "PA2":
-			return { ...state, compassRadius: { p1: coord, p2: coord, radius: 0 } };
+			return {
+				...state,
+				compassRadius: {
+					...state.compassRadius,
+					p2: coord,
+					radius: dist(state.compassRadius.p1, coord),
+				},
+			};
 		case "DC": {
 			const theta = angleTo(state.compassOrigin, coord);
 			return {

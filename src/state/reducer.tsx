@@ -210,6 +210,16 @@ export const reduceWithoutUndo = (
 				},
 				{ type: action.type, action, prev: state.pending },
 			];
+
+		case "pending:compass&ruler": {
+			if (state.pending?.type !== "compass&ruler") {
+				return [state, null];
+			}
+			return [
+				{ ...state, compassState: action.state },
+				{ type: action.type, action, prev: state.compassState },
+			];
+		}
 		case "pending:angle": {
 			if (!state.pending || state.pending.type !== "Guide") {
 				return [state, null];
@@ -1366,6 +1376,11 @@ export const undo = (state: State, action: UndoAction): State => {
 
 		case "pending:type":
 			return { ...state, pending: action.prev };
+		case "pending:compass&ruler":
+			return {
+				...state,
+				compassState: action.prev,
+			};
 		case "pending:angle":
 		case "pending:point": {
 			if (action.added) {

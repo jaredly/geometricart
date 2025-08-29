@@ -34,6 +34,8 @@ import {
 	View,
 } from "../types";
 import { getClips } from "../rendering/pkInsetPaths";
+import { RenderCompassAndRuler } from "./RenderCompassAndRuler";
+import { handleClick, handleSpace, previewPos } from "./compassAndRuler";
 
 // This /will/ contain duplicates!
 // export const calculatePathElements = (
@@ -284,6 +286,15 @@ export const Guides = ({
 	const onClickIntersection = React.useCallback(
 		(coord: Intersect, shiftKey: boolean) => {
 			console.log(`click intersection`, currentDuplication, coord);
+			if (currentState.current.pending?.type === "compass&ruler") {
+				dispatch({
+					type: "pending:compass&ruler",
+					state: handleClick(
+						previewPos(currentState.current.compassState, coord.coord),
+					),
+				});
+				return;
+			}
 			if (currentDuplication.current) {
 				handleDuplicationIntersection(
 					coord,
@@ -533,6 +544,14 @@ export const Guides = ({
 					/>
 				) : null,
 			)}
+			{state.pending?.type === "compass&ruler" ? (
+				<RenderCompassAndRuler
+					editorState={editorState}
+					view={view}
+					bounds={bounds}
+					state={state.compassState}
+				/>
+			) : null}
 		</>
 	);
 };
@@ -629,6 +648,12 @@ function keyHandler(
 		const state = currentState.current;
 		if (evt.target !== document.body || evt.metaKey || evt.ctrlKey) {
 			return;
+		}
+		if (evt.key === " " && state.pending?.type === "compass&ruler") {
+			return dispatch({
+				type: "pending:compass&ruler",
+				state: handleSpace(state.compassState),
+			});
 		}
 		if (evt.key === "P") {
 			// protractor

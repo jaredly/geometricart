@@ -1,3 +1,4 @@
+import { CompassState } from "../editor/compassAndRuler";
 import {
 	State,
 	Selection,
@@ -419,6 +420,16 @@ export type PendingAngle = {
 	// shiftKey: boolean;
 };
 
+export type UndoPendingCompassAndRuler = {
+	type: PendingCompassAndRuler["type"];
+	action: PendingCompassAndRuler;
+	prev?: CompassState;
+};
+export type PendingCompassAndRuler = {
+	type: "pending:compass&ruler";
+	state: CompassState;
+};
+
 export type MetaUpdate = {
 	type: "meta:update";
 	meta: Meta;
@@ -619,6 +630,7 @@ export type UndoableAction =
 	| MirrorUpdate
 	| PendingPoint
 	| PendingAngle
+	| PendingCompassAndRuler
 	| MetaUpdate
 	| OverlyAdd
 	| OverlayDelete
@@ -699,6 +711,7 @@ export type UndoAction =
 	| UndoGuideDelete
 	| UndoPendingPoint
 	| UndoPendingAngle
+	| UndoPendingCompassAndRuler
 	| UndoClipCut
 	| UndoPathDelete
 	| UndoHistoryViewUpdate

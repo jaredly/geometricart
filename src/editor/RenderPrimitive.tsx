@@ -21,9 +21,11 @@ export function RenderPrimitive({
 	color,
 	inactive,
 	touchOnly,
+	ignoreMouse,
 	strokeWidth = 1,
 }: {
 	color?: string;
+	ignoreMouse?: boolean;
 	isImplied?: boolean;
 	prim: Primitive;
 	bounds: Bounds;
@@ -51,6 +53,7 @@ export function RenderPrimitive({
 		...handlers(undefined),
 		style: onClick ? { cursor: "pointer" } : {},
 		strokeDasharray: isImplied ? "3 3" : "",
+		pointerEvents: undefined as string | undefined,
 		...(touchOnly
 			? {
 					strokeWidth: 20,
@@ -61,6 +64,9 @@ export function RenderPrimitive({
 			: {}),
 		className: onClick ? hoverClass : undefined,
 	};
+	if (ignoreMouse) {
+		common.pointerEvents = "none";
+	}
 	if (prim.type === "line") {
 		if (prim.limit) {
 			if (prim.m === Infinity) {
