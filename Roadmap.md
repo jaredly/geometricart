@@ -1,4 +1,33 @@
 
+Interaction plan:
+When in "bare tools" mode, there are 4 states:
+- DC draw circle mark
+- PO set protractor origin
+- PA1/PA2 set protractor radius
+- DR draw ruler mark
+- R1 set ruler p1
+- R2 set ruler p2
+
+and the only transitions are "click" and "spacebar".
+
+Click ->
+Spacebar <-
+
+Initial state is ... P0 maybe
+
+PA1 -> PA2 -> DC // origin is assumes to be the first point. spacebar to back up and move the origin
+PA1 <- PA2 <- P0 <- DC
+              P0 -> DC
+
+R1 <- PA1
+P0 <- R1   -- note that going back to the protractor retains the previous radius
+
+R1 -> R2 -> DR
+R1 <- R2 <- DR
+
+
+
+
 # More construction
 
 - CircleMark

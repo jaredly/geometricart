@@ -30,6 +30,7 @@ export type CircleMark = {
 	p2: Coord;
 	p3: Coord;
 	angle: number;
+	angle2?: number;
 };
 
 export type CloneCircle = {
