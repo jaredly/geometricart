@@ -379,6 +379,38 @@ export function ToolIcons({
 				/>
 			))}
 			<Button
+				tooltip="Compass & Ruler"
+				className={
+					"mt-2 " +
+					(state.pending?.type === "compass&ruler" ? "p-button-outlined" : "")
+				}
+				onClick={() => {
+					if (state.pending?.type === "compass&ruler") {
+						dispatch({ type: "pending:type", kind: null });
+					} else {
+						dispatch({ type: "pending:type", kind: "compass&ruler" });
+					}
+				}}
+				children={
+					<ToolIcon
+						lines={[
+							[
+								{ x: 5, y: 2 },
+								{ x: 0, y: 8 },
+							],
+							[
+								{ x: 0, y: 11 },
+								{ x: 10, y: 11 },
+							],
+							[
+								{ x: 10, y: 8 },
+								{ x: 5, y: 2 },
+							],
+						]}
+					/>
+				}
+			/>
+			<Button
 				tooltip="Outline a Tiling"
 				className={
 					"mt-2 " +

@@ -543,7 +543,7 @@ export type UndoPendingType = {
 };
 export type PendingType = {
 	type: "pending:type";
-	kind: GuideGeom["type"] | null;
+	kind: GuideGeom["type"] | null | "compass&ruler";
 	shiftKey?: boolean;
 };
 

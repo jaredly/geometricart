@@ -1,4 +1,11 @@
 
+# Need to do
+
+- implement the event handlers and rendering stuffs
+- make CircleMark rendering and stuff aware of `angle2`
+
+#
+
 Interaction plan:
 When in "bare tools" mode, there are 4 states:
 - DC draw circle mark

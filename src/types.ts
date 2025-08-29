@@ -2,6 +2,7 @@ import { UndoableAction, UndoAction } from "./state/Action";
 import { Primitive } from "./rendering/intersect";
 import { Matrix } from "./rendering/getMirrorTransforms";
 import { SegmentWithPrev } from "./rendering/clipPathNew";
+import { CompassState } from "./editor/compassAndRuler";
 
 // Should I do polar coords?
 export type Coord = { x: number; y: number };
@@ -274,7 +275,7 @@ export type Cache = {
 	intersections: Idd<{ coord: Coord; prims: Array<number> }>;
 };
 
-export type Pending = PendingGuide | PendingPath;
+export type Pending = PendingGuide | PendingPath | { type: "compass&ruler" };
 
 export type PendingGuide = {
 	type: "Guide";
@@ -562,6 +563,7 @@ export type State = {
 	history: History;
 	meta: Meta;
 	pending: Pending | null;
+	compassState?: CompassState;
 	paths: { [key: Id]: Path };
 	// Pathgroups automatically happen when, for example, a path is created when a mirror is active.
 	// SO: Paths are automatically /realized/, that is, when completing a path, the mirrored paths are also

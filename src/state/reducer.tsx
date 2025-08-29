@@ -1,62 +1,55 @@
+import { pathToPrimitives } from "../editor/findSelection";
+import { addAction, redoAction, undoAction } from "../editor/history";
+import { styleMatches } from "../editor/MultiStyleForm";
 import { pendingGuide } from "../editor/RenderPendingGuide";
-import { coordKey } from "../rendering/coordKey";
 import {
-	Matrix,
+	transformGuide,
+	transformMirror,
+} from "../rendering/calculateGuideElements";
+import { clipPath } from "../rendering/clipPath";
+import {
 	applyMatrices,
 	getTransformsForMirror,
-	mirrorTransforms,
+	Matrix,
 	rotationMatrix,
 	scaleMatrix,
 } from "../rendering/getMirrorTransforms";
-import { addAction, redoAction, undoAction } from "../editor/history";
-import { transformPath, transformSegment } from "../rendering/points";
-import {
-	Guide,
-	GuideGeom,
-	guidePoints,
-	Id,
-	Mirror,
-	Pending,
-	PendingPath,
-	State,
-	Path,
-	Style,
-	PathGroup,
-	PendingGuide,
-	TimelineLane,
-	Coord,
-	guideNeedsAngle,
-	CircleMark,
-} from "../types";
-import {
-	Action,
-	UndoableAction,
-	UndoAction,
-	PathCreate,
-	PathMultiply,
-	AddRemoveEdit,
-	UndoAddRemoveEdit,
-	ScriptRename,
-	PathCreateMany,
-	GlobalTransform,
-	PendingPoint,
-	PendingAngle,
-} from "./Action";
 import {
 	pathsAreIdentical,
 	pathToReversedSegmentKeys,
 	pathToSegmentKeys,
 } from "../rendering/pathsAreIdentical";
-import { simplifyPath } from "../rendering/simplifyPath";
 import { ensureClockwise } from "../rendering/pathToPoints";
-import { clipPath } from "../rendering/clipPath";
-import { pathToPrimitives } from "../editor/findSelection";
-import { styleMatches } from "../editor/MultiStyleForm";
+import { transformPath, transformSegment } from "../rendering/points";
+import { simplifyPath } from "../rendering/simplifyPath";
 import {
-	transformGuide,
-	transformGuideGeom,
-	transformMirror,
-} from "../rendering/calculateGuideElements";
+	Coord,
+	Guide,
+	GuideGeom,
+	guideNeedsAngle,
+	guidePoints,
+	Id,
+	Mirror,
+	Path,
+	PathGroup,
+	PendingGuide,
+	State,
+	Style,
+	TimelineLane,
+} from "../types";
+import {
+	Action,
+	AddRemoveEdit,
+	GlobalTransform,
+	PathCreate,
+	PathCreateMany,
+	PathMultiply,
+	PendingAngle,
+	PendingPoint,
+	UndoableAction,
+	UndoAction,
+	UndoAddRemoveEdit,
+} from "./Action";
 
 export const reducer = (state: State, action: Action): State => {
 	if (action.type === "undo") {
@@ -208,9 +201,12 @@ export const reduceWithoutUndo = (
 			return [
 				{
 					...state,
-					pending: action.kind
-						? guideAgain(action.kind, state, action.shiftKey)
-						: null,
+					pending:
+						action.kind === "compass&ruler"
+							? { type: "compass&ruler" }
+							: action.kind
+								? guideAgain(action.kind, state, action.shiftKey)
+								: null,
 				},
 				{ type: action.type, action, prev: state.pending },
 			];

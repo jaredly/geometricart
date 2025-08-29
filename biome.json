@@ -22,7 +22,8 @@
 				"noUnusedVariables": "off",
 				"noUnusedImports": "off",
 				"useExhaustiveDependencies": "warn",
-				"noSwitchDeclarations": "warn"
+				"noSwitchDeclarations": "warn",
+				"noChildrenProp": "off"
 			},
 			"suspicious": {
 				"noArrayIndexKey": "off",

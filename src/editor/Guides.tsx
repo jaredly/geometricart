@@ -630,6 +630,10 @@ function keyHandler(
 		if (evt.target !== document.body || evt.metaKey || evt.ctrlKey) {
 			return;
 		}
+		if (evt.key === "P") {
+			// protractor
+			return dispatch({ type: "pending:type", kind: "compass&ruler" });
+		}
 		if (evt.key === "C" && currentPathOrigin.current) {
 			evt.stopPropagation();
 			return currentPathOrigin.current[1]((path) =>
