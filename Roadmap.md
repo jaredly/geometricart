@@ -1,8 +1,13 @@
 
 # Need to do
 
-- implement the event handlers and rendering stuffs
-- make CircleMark rendering and stuff aware of `angle2`
+- [x] implement the event handlers and rendering stuffs
+- [x] make CircleMark rendering and stuff aware of `angle2`
+- [x] fix circlemark transform to mirror properly
+- [ ] pending draw-circle doesnt do clockwise correctly
+- [ ] hide the dots while dragging?
+- [x] click for full circle
+- [ ] make marks editable -- expand/contract the limits pls
 
 #
 

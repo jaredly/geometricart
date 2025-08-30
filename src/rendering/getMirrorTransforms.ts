@@ -228,6 +228,12 @@ export const push = (p1: Coord, theta: number, mag: number) => ({
 	x: p1.x + Math.cos(theta) * mag,
 	y: p1.y + Math.sin(theta) * mag,
 });
+
+export const posOffset = (p1: Coord, p2: Coord) => ({
+	x: p1.x + p2.x,
+	y: p1.y + p2.y,
+});
+
 /**
  * Calculate the angle from `p1`, pointing at `p2`.
  */

@@ -51,7 +51,9 @@ export function RenderPrimitive({
 				}
 			: undefined,
 		...handlers(undefined),
-		style: onClick ? { cursor: "pointer" } : {},
+		style: onClick
+			? { cursor: "pointer", pointerEvents: undefined as undefined | "none" }
+			: { pointerEvents: undefined },
 		strokeDasharray: isImplied ? "3 3" : "",
 		pointerEvents: undefined as string | undefined,
 		...(touchOnly
@@ -66,6 +68,7 @@ export function RenderPrimitive({
 	};
 	if (ignoreMouse) {
 		common.pointerEvents = "none";
+		common.style.pointerEvents = "none";
 	}
 	if (prim.type === "line") {
 		if (prim.limit) {

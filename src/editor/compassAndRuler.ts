@@ -19,12 +19,12 @@ export type CompassState = {
 
 const backspace: Record<States, States> = {
 	DC: "PO",
-	PO: "PA2",
+	PO: "PA1",
 	PA2: "PA1",
 	PA1: "R1",
 	R1: "PO",
 	R2: "R1",
-	DR: "R2",
+	DR: "R1",
 };
 
 const clicks: Record<States, States> = {
@@ -91,7 +91,11 @@ export const previewPos = (
 		case "PA1":
 			return {
 				...state,
-				compassRadius: { p1: coord, p2: coord, radius: 0 },
+				compassRadius: {
+					p1: coord,
+					p2: { x: coord.x + 1, y: coord.y },
+					radius: 1,
+				},
 				compassOrigin: coord,
 			};
 		case "PA2":
@@ -114,7 +118,11 @@ export const previewPos = (
 		case "PO":
 			return { ...state, compassOrigin: coord };
 		case "R1":
-			return { ...state, rulerP1: coord };
+			return {
+				...state,
+				rulerP1: coord,
+				rulerP2: { x: coord.x + 1, y: coord.y },
+			};
 		case "R2":
 			return { ...state, rulerP2: coord };
 		case "DR": {
@@ -125,6 +133,20 @@ export const previewPos = (
 	}
 };
 
+export const mouseDownMark = (
+	state: CompassState | undefined,
+	coord: Coord,
+): PendingMark | undefined => {
+	if (state?.state === "DC") {
+		const theta = angleTo(state.compassOrigin, coord);
+		return { type: "circle", t1: theta, t2: theta, clockwise: true };
+	}
+	if (state?.state === "DR") {
+		const p = projectPointOntoLine(coord, state.rulerP1, state.rulerP2);
+		return { type: "line", p1: p, p2: p };
+	}
+};
+
 const projectPointOntoLine = (coord: Coord, a: Coord, b: Coord) => {
 	const ap = { x: coord.x - a.x, y: coord.y - a.y };
 	const ab = { x: b.x - a.x, y: b.y - a.y };
@@ -132,6 +154,26 @@ const projectPointOntoLine = (coord: Coord, a: Coord, b: Coord) => {
 	const dot = ap.x * ab.x + ap.y * ab.y;
 	const t = abLenSq === 0 ? 0 : dot / abLenSq;
 	return { x: a.x + ab.x * t, y: a.y + ab.y * t };
+};
+
+export const mouseMoveMark = (
+	state: CompassState,
+	mark: PendingMark,
+	coord: Coord,
+): PendingMark => {
+	if (mark.type === "line") {
+		const p2 = projectPointOntoLine(coord, state.rulerP1, state.rulerP2);
+		return { ...mark, p2 };
+	}
+	const theta = angleTo(state.compassOrigin, coord);
+
+	let clockwise = mark.clockwise;
+	const pdiff = angleBetween(mark.t1, mark.t2, true);
+	// if previous diff was within 10 degrees of 0, recalc clockwiseness
+	if (pdiff < Math.PI / 18 || pdiff > Math.PI * 2 - Math.PI / 18) {
+		clockwise = angleBetween(mark.t1, theta, true) < Math.PI;
+	}
+	return { ...mark, t2: theta, clockwise };
 };
 
 export const dragPos = (state: CompassState, coord: Coord): CompassState => {
@@ -171,7 +213,7 @@ export const markToGeom = (state: CompassState): null | GuideGeom => {
 					p1: state.pendingMark.p1,
 					p2: state.pendingMark.p2,
 					extent: 0,
-					limit: false,
+					limit: true,
 				}
 			: null;
 	} else {
@@ -188,7 +230,12 @@ export const markToGeom = (state: CompassState): null | GuideGeom => {
 						? state.pendingMark.t2
 						: state.pendingMark.t1,
 				}
-			: null;
+			: {
+					type: "CloneCircle",
+					p1: state.compassRadius.p1,
+					p2: state.compassRadius.p2,
+					p3: state.compassOrigin,
+				};
 	}
 };
 

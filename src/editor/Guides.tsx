@@ -35,7 +35,12 @@ import {
 } from "../types";
 import { getClips } from "../rendering/pkInsetPaths";
 import { RenderCompassAndRuler } from "./RenderCompassAndRuler";
-import { handleClick, handleSpace, previewPos } from "./compassAndRuler";
+import {
+	handleClick,
+	handleSpace,
+	PendingMark,
+	previewPos,
+} from "./compassAndRuler";
 
 // This /will/ contain duplicates!
 // export const calculatePathElements = (
@@ -169,8 +174,10 @@ export const Guides = ({
 	editorState,
 	uiState,
 	setEditorState,
+	compassDragState,
 }: {
 	uiState: UIState;
+	compassDragState: PendingMark;
 	bounds: Bounds;
 	state: State;
 	isTouchScreen: boolean;
@@ -546,6 +553,7 @@ export const Guides = ({
 			)}
 			{state.pending?.type === "compass&ruler" ? (
 				<RenderCompassAndRuler
+					pendingMark={compassDragState}
 					editorState={editorState}
 					view={view}
 					bounds={bounds}

@@ -1,4 +1,5 @@
 import {
+	angleTo,
 	applyMatrices,
 	getTransformsForNewMirror,
 	Matrix,
@@ -6,6 +7,7 @@ import {
 } from "./getMirrorTransforms";
 import { Coord, Guide, GuideGeom, Id, Mirror } from "../types";
 import { getCircumCircle } from "./points";
+import { angleBetween } from "./findNextSegments";
 
 // These are NOT in /view/ coordinates!
 
@@ -116,12 +118,39 @@ export const transformGuide = (
 	};
 };
 
+const unitPos = (theta: number): Coord => ({
+	x: Math.cos(theta),
+	y: Math.sin(theta),
+});
+
 export const transformGuideGeom = (
 	geom: GuideGeom,
 	transform: (pos: Coord) => Coord,
 ): GuideGeom => {
 	switch (geom.type) {
-		case "CircleMark":
+		case "CircleMark": {
+			let angle = angleTo({ x: 0, y: 0 }, transform(unitPos(geom.angle)));
+			let angle2 = geom.angle2
+				? angleTo({ x: 0, y: 0 }, transform(unitPos(geom.angle2)))
+				: undefined;
+
+			if (angle2 != null) {
+				const b1 = angleBetween(geom.angle, geom.angle2!, true);
+				const b2 = angleBetween(angle, angle2, true);
+				if (Math.abs(b1 - b2) > Math.PI) {
+					[angle2, angle] = [angle, angle2];
+				}
+			}
+
+			return {
+				...geom,
+				p1: transform(geom.p1),
+				p2: transform(geom.p2),
+				p3: transform(geom.p3),
+				angle: angle,
+				angle2: angle2,
+			};
+		}
 		case "CloneCircle":
 		case "InCircle":
 		case "AngleBisector":

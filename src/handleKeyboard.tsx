@@ -4,7 +4,7 @@ import { Action, GroupRegroup } from "./state/Action";
 import { PendingDuplication } from "./editor/Guides";
 import { PendingMirror } from "./useUIState";
 
-export const toType: { [key: string]: GuideGeom["type"] } = {
+export const toType: { [key: string]: GuideGeom["type"] | "compass&ruler" } = {
 	l: "Line",
 	s: "Split",
 	c: "Circle",
@@ -17,6 +17,7 @@ export const toType: { [key: string]: GuideGeom["type"] } = {
 	e: "CloneCircle",
 	k: "CircleMark",
 	K: "CircleMark",
+	R: "compass&ruler",
 };
 
 export const toTypeRev: { [key: string]: string } = {};

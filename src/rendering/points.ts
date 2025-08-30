@@ -163,7 +163,10 @@ export const geomToPrimitives = (
 					type: "circle",
 					center: geom.p3,
 					radius: d,
-					limit: [geom.angle - Math.PI / 30, geom.angle + Math.PI / 30],
+					limit:
+						geom.angle2 != null
+							? [geom.angle, geom.angle2]
+							: [geom.angle - Math.PI / 30, geom.angle + Math.PI / 30],
 				},
 			];
 		}

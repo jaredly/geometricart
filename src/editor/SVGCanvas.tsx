@@ -140,7 +140,7 @@ export function SVGCanvas({
 		view,
 	);
 
-	const compassRulerHandlers = useCompassAndRulerHandlers(
+	const { compassRulerHandlers, compassDragState } = useCompassAndRulerHandlers(
 		ref,
 		view,
 		width,
@@ -384,6 +384,7 @@ export function SVGCanvas({
 				{view.guides || hover?.type === "guides" || editorState.pending ? (
 					<Guides
 						uiState={uiState}
+						compassDragState={compassDragState}
 						state={state}
 						bounds={bounds}
 						isTouchScreen={isTouchScreen}

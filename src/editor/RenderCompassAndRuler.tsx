@@ -1,9 +1,9 @@
 import React from "react";
-import { push } from "../rendering/getMirrorTransforms";
+import { posOffset, push } from "../rendering/getMirrorTransforms";
 import { Circle, lineToSlope, Primitive } from "../rendering/intersect";
 import { Coord, GuideGeom, View } from "../types";
 import { EditorState } from "./Canvas";
-import { CompassState, previewPos } from "./compassAndRuler";
+import { CompassState, PendingMark, previewPos } from "./compassAndRuler";
 import { RenderPrimitive } from "./RenderPrimitive";
 import { Bounds } from "./GuideElement";
 
@@ -115,14 +115,16 @@ export const RenderCompassAndRuler = ({
 	editorState,
 	bounds,
 	view,
+	pendingMark,
 }: {
+	pendingMark: PendingMark | undefined;
 	state?: CompassState;
 	editorState: EditorState;
 	view: View;
 	bounds: Bounds;
 }) => {
 	const withPos = previewPos(state, editorState.pos);
-	const shapes = compassShapes(withPos);
+	const shapes = compassShapes({ ...withPos, pendingMark });
 	return (
 		<>
 			{shapes.map((shape, i) =>
@@ -132,6 +134,7 @@ export const RenderCompassAndRuler = ({
 						cy={shape.pos.y * view.zoom}
 						r={5}
 						pointerEvents={"none"}
+						style={{ pointerEvents: "none" }}
 						stroke="red"
 						fill="none"
 						strokeWidth={shape.active ? 3 : 1}
@@ -142,6 +145,7 @@ export const RenderCompassAndRuler = ({
 						key={i}
 						prim={shape.prim}
 						isImplied={shape.dashed}
+						ignoreMouse
 						bounds={bounds}
 						zoom={view.zoom}
 					/>

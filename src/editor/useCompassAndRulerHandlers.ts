@@ -1,4 +1,4 @@
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { State, View } from "../types";
 import { EditorState, screenToWorld } from "./Canvas";
 import {
@@ -6,11 +6,19 @@ import {
 	dragPos,
 	handleClick,
 	markToGeom,
+	mouseDownMark,
+	mouseMoveMark,
+	PendingMark,
 	previewPos,
 } from "./compassAndRuler";
 import { Action } from "../state/Action";
 
 export const genId = () => Math.random().toString(36).slice(2);
+export const useCurrent = <T>(value: T) => {
+	const ref = useRef(value);
+	ref.current = value;
+	return ref;
+};
 
 export const useCompassAndRulerHandlers = (
 	ref: React.RefObject<SVGSVGElement>,
@@ -23,13 +31,16 @@ export const useCompassAndRulerHandlers = (
 ) => {
 	const currentView = useRef(view);
 	currentView.current = view;
+	const [compassDragState, setCompassDragState] = useState(
+		undefined as undefined | PendingMark,
+	);
+	const cds = useCurrent(compassDragState);
 
-	return useMemo(
+	const compassRulerHandlers = useMemo(
 		() => ({
 			onMouseDown(evt: React.MouseEvent) {
 				const rect = ref.current!.getBoundingClientRect();
 				const view = currentView.current;
-				// evt.
 				const pos = screenToWorld(
 					width,
 					height,
@@ -38,17 +49,17 @@ export const useCompassAndRulerHandlers = (
 				);
 
 				const state = currentState.current;
-				console.log("holla", canFreeClick(state.compassState?.state));
 				if (canFreeClick(state.compassState?.state)) {
-					dispatch({
-						type: "pending:compass&ruler",
-						state: handleClick(previewPos(state.compassState, pos)),
-					});
+					setCompassDragState(mouseDownMark(state.compassState, pos));
 				}
 			},
 			onMouseUp: (evt: React.MouseEvent) => {
-				const rect = evt.currentTarget.getBoundingClientRect();
+				if (!cds.current) return;
+				const state = currentState.current;
+				const view = currentView.current;
+				if (!state.compassState) return;
 
+				const rect = evt.currentTarget.getBoundingClientRect();
 				const pos = screenToWorld(
 					width,
 					height,
@@ -58,10 +69,9 @@ export const useCompassAndRulerHandlers = (
 					},
 					view,
 				);
-				const state = currentState.current;
-				if (!state.compassState?.pendingMark) return;
+				const mark = mouseMoveMark(state.compassState, cds.current, pos);
 
-				const geom = markToGeom(dragPos(state.compassState, pos));
+				const geom = markToGeom({ ...state.compassState, pendingMark: mark });
 				if (geom) {
 					const id = genId();
 					dispatch({
@@ -78,19 +88,11 @@ export const useCompassAndRulerHandlers = (
 						},
 					});
 				}
-
-				dispatch({
-					type: "pending:compass&ruler",
-					state: { ...state.compassState, pendingMark: undefined },
-				});
+				setCompassDragState(undefined);
 			},
 			onMouseMove: (evt: React.MouseEvent) => {
-				const state = currentState.current;
-				const view = currentView.current;
-				// if (state.compassState?.pendingMark)
-
 				const rect = evt.currentTarget.getBoundingClientRect();
-
+				const view = currentView.current;
 				const pos = screenToWorld(
 					width,
 					height,
@@ -100,38 +102,19 @@ export const useCompassAndRulerHandlers = (
 					},
 					view,
 				);
+				const state = currentState.current;
+				if (!cds.current || !state.compassState) {
+					setEditorState((state) => ({ ...state, pos }));
+					return;
+				}
 
-				// const pos = {
-				// 	x: (evt.clientX - rect.left - x) / view.zoom,
-				// 	y: (evt.clientY - rect.top - y) / view.zoom,
-				// };
-				setEditorState((state) => ({ ...state, pos }));
-
-				// if (dragPos) {
-				// 	const rect = evt.currentTarget.getBoundingClientRect();
-				// 	const clientX = evt.clientX;
-				// 	const clientY = evt.clientY;
-				// 	evt.preventDefault();
-
-				// 	setEditorState((prev) => {
-				// 		return {
-				// 			...prev,
-				// 			tmpView: dragView(
-				// 				prev.tmpView,
-				// 				dragPos,
-				// 				clientX,
-				// 				rect,
-				// 				clientY,
-				// 				width,
-				// 				height,
-				// 			),
-				// 		};
-				// 	});
-				// } else {
-				// 	// setPos(pos);
-				// }
+				setCompassDragState(
+					mouseMoveMark(state.compassState, cds.current, pos),
+				);
 			},
 		}),
 		[],
 	);
+
+	return { compassRulerHandlers, compassDragState };
 };
