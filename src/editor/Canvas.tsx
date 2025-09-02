@@ -559,7 +559,7 @@ export const Canvas = ({
 						(k) =>
 							!state.paths[k].hidden &&
 							(!state.paths[k].group ||
-								!state.pathGroups[state.paths[k].group!].hide),
+								!state.pathGroups[state.paths[k].group!]?.hide),
 					)
 					.map((k) => state.paths[k]),
 			),

@@ -653,6 +653,17 @@ function ShapeItems({
 	Object.entries(state.paths).forEach(([id, path]) => {
 		groups[path.group ?? ""] = (groups[path.group ?? ""] ?? []).concat(id);
 	});
+	const ungrouped = Object.entries(state.paths)
+		.filter(([_, path]) => !state.pathGroups[path.group!])
+		.map(([k, path]) => (
+			<PathItem
+				key={k}
+				k={k}
+				state={state}
+				setHover={setHover}
+				dispatch={dispatch}
+			/>
+		));
 	return (
 		<>
 			{Object.entries(state.pathGroups)
@@ -670,6 +681,24 @@ function ShapeItems({
 						onlyShowSelected={onlyShowSelected}
 					/>
 				))}
+			{ungrouped.length ? (
+				<div>
+					<h1></h1>
+					<div
+						className="hover py-3 px-2 hover:surface-hover"
+						style={{
+							cursor: "pointer",
+							borderBottom: "1px solid var(--surface-border)",
+							display: "flex",
+							alignItems: "center",
+						}}
+					>
+						Ungrouped paths
+					</div>
+
+					{ungrouped}
+				</div>
+			) : null}
 		</>
 	);
 }

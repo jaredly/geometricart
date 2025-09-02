@@ -19,7 +19,7 @@ export const findSelection = (
 		if (path.hidden) {
 			return false;
 		}
-		if (path.group && groups[path.group].hide) {
+		if (path.group && groups[path.group]?.hide) {
 			return false;
 		}
 		return intersectsRect(path, rect, debug);
