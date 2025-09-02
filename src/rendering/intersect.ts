@@ -234,14 +234,17 @@ export const intersections = (
 	return circleCircle(one, two);
 };
 
+const ignoreColinearCircles = true;
+
 export const circleCircle = (one: Circle, two: Circle): Array<Coord> => {
-	if (one.limit && two.limit) {
-		console.log("finding circle intersections", one, two);
-	}
 	if (
 		coordsEqual(one.center, two.center) &&
 		closeEnough(one.radius, two.radius)
 	) {
+		if (ignoreColinearCircles) {
+			return [];
+		}
+		// Actually I don't want this
 		if (!one.limit && !two.limit) {
 			return [];
 		}
@@ -533,7 +536,7 @@ export function lineCircle(
 	var d = sq(b) - 4 * a * c;
 	if (d >= 0) {
 		// insert into quadratic formula
-		var intersections = [
+		let intersections = [
 			(-b + Math.sqrt(d)) / (2 * a),
 			(-b - Math.sqrt(d)) / (2 * a),
 		].map((x) => ({ x, y: slope * x + intercept }));

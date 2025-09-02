@@ -177,7 +177,7 @@ export const Guides = ({
 	compassDragState,
 }: {
 	uiState: UIState;
-	compassDragState: PendingMark;
+	compassDragState: PendingMark | undefined;
 	bounds: Bounds;
 	state: State;
 	isTouchScreen: boolean;

@@ -40,7 +40,6 @@ export const findBoundingRect = (state: State): Bounds | null => {
 		if (offset != null) {
 			offset = offset / 2 / 100;
 		}
-		console.log("lines", path.style.lines);
 		addCoordToBounds(bounds, path.origin, offset);
 		// TODO: Get proper bounding box for arc segments.
 		path.segments.forEach((t) => addCoordToBounds(bounds, t.to, offset));

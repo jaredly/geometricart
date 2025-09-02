@@ -8,6 +8,20 @@
 - [ ] hide the dots while dragging?
 - [x] click for full circle
 - [ ] make marks editable -- expand/contract the limits pls
+- [x] finding intersections between colinear circle segments shouldn't find anything
+- [ ] DRAW THE COMPASS THING it would be much elss confusing
+- [ ] ANIMATE the compass and ruler, make happen
+
+OK We're really getting close, this is awesome
+
+- [ ] when you're in DC/RC, show "candidate intersections", and allow you to just /click/ them,
+  to make new points. yay.
+  - ... although honestly, do I need this? maybe not totally. don't need to be that clean
+
+OK FOLKS WHAT ABOUT A MUCH BETTER WAY TO MAKE SHAPES
+"paint by shaper"
+what with guides being much more ... restrained, I can probably reasonably do a "find all encloseable regions"
+and let you just paint around to grab what you want.
 
 #
 
