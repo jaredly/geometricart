@@ -409,6 +409,7 @@ export type Meta = {
 		//     type: 'acrylic',
 		//     thickness: number
 		// },
+		cameraDistance?: number;
 		thickness?: number;
 		gap?: number;
 		shadowZoom?: number;

@@ -1,7 +1,7 @@
 import { OrbitControls, PerspectiveCamera, useHelper } from "@react-three/drei";
 import "@react-three/fiber";
 import { Canvas } from "@react-three/fiber";
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
 	CameraHelper,
 	DirectionalLight,
@@ -16,6 +16,7 @@ import { Hover } from "../editor/Sidebar";
 import { mmToPX } from "../gcode/generateGcode";
 import { calcShapes } from "./calcShapes";
 import { ExportSection } from "./ExportSection";
+import { paletteColor } from "../editor/RenderPath";
 
 export const useLatest = <T,>(value: T) => {
 	const ref = useRef(value);
@@ -40,9 +41,20 @@ export const ThreedScreen = ({
 		thickness = 3,
 		gap = 0,
 		shadowZoom = 0.09,
+		cameraDistance = 70,
 	} = state.meta.threedSettings ?? {};
 
 	const toBack = false; // TODO make this customizeable? idkyyy
+
+	const setCameraDistance = (cameraDistance: number) => {
+		dispatch({
+			type: "meta:update",
+			meta: {
+				...state.meta,
+				threedSettings: { ...state.meta.threedSettings, cameraDistance },
+			},
+		});
+	};
 
 	const setShadowZoom = (shadowZoom: number) => {
 		dispatch({
@@ -102,6 +114,8 @@ export const ThreedScreen = ({
 		);
 	}, [pathsToShow, thickPX, selectedIds, toBack, gapPX, hover]);
 
+	// const backdrop =
+
 	const canv = React.useRef<HTMLCanvasElement>(null);
 	const virtualCamera = React.useRef<TPC>();
 	const sc = React.useRef<TPC>();
@@ -112,27 +126,29 @@ export const ThreedScreen = ({
 	const [[x, y], setCpos] = useState<[number, number]>([0, 0]);
 
 	// useEffect(() => {
-	//     if (!move) return;
-	//     let r = 0;
-	//     const iv = setInterval(() => {
-	//         const rad = 10;
-	//         setCpos([Math.sin(r) * rad, Math.sin(r) * rad]);
-	//         r += Math.PI / 30;
-	//     }, 50);
-	//     return () => clearInterval(iv);
+	// 	if (!move) return;
+	// 	let r = 0;
+	// 	const iv = setInterval(() => {
+	// 		const rad = 3;
+	// 		setCpos([Math.cos(r) * rad, Math.sin(r) * rad]);
+	// 		r += Math.PI / 30;
+	// 	}, 50);
+	// 	return () => clearInterval(iv);
 	// }, [move]);
 
 	const [lpos, setLpos] = useState<[number, number, number]>([3, 0, 100]);
 	// const lpos = [0, 0, 10] as const;
-	// useEffect(() => {
-	//     let r = 0;
-	//     const iv = setInterval(() => {
-	//         r += Math.PI / 40;
-	//         // setLpos([Math.cos(r) * 2, 0, 10]);
-	//         setLpos([Math.cos(r) * 5, Math.sin(r) * 5, 10]);
-	//     }, 100);
-	//     return () => clearInterval(iv);
-	// }, []);
+
+	useEffect(() => {
+		if (!move) return;
+		let r = 0;
+		const iv = setInterval(() => {
+			r += Math.PI / 40;
+			// setLpos([Math.cos(r) * 2, 0, 10]);
+			setLpos([Math.cos(r) * 5, Math.sin(r) * 5, 10]);
+		}, 100);
+		return () => clearInterval(iv);
+	}, [move]);
 
 	// useEffect(() => {
 	//     const iv = setInterval(() => {
@@ -145,7 +161,8 @@ export const ThreedScreen = ({
 	const tmax = 100;
 	const tmin = 0;
 
-	const cdist = 70;
+	// const cdist = 5;
+	// const cdist = 70;
 	const fov = 40;
 
 	return (
@@ -183,14 +200,29 @@ export const ThreedScreen = ({
 						makeDefault
 						// @ts-expect-error
 						ref={virtualCamera}
-						position={[x, y, cdist]}
+						position={[x, y, cameraDistance]}
 						args={[fov, 1, 1, 2000]}
 					/>
 					<OrbitControls camera={virtualCamera.current} />
+
+					<mesh position={[0, 0, -1]}>
+						<planeBufferGeometry attach="geometry" args={[100, 100]} />
+						<meshPhongMaterial
+							attach="material"
+							color={paletteColor(state.palette, state.view.background)}
+						/>
+					</mesh>
 					{items}
 				</Canvas>
 			</div>
 			<div>
+				<label>
+					Camera Distance
+					<BlurInt
+						value={cameraDistance}
+						onChange={(t) => (t != null ? setCameraDistance(t) : null)}
+					/>
+				</label>
 				<label>
 					ShadowZoom
 					<BlurInt
@@ -247,17 +279,17 @@ export const ThreedScreen = ({
 				x
 				<BlurInt
 					value={lpos[0]}
-					onChange={(t) => (t ? setLpos([t, lpos[1], lpos[2]]) : null)}
+					onChange={(t) => (t != null ? setLpos([t, lpos[1], lpos[2]]) : null)}
 				/>
 				y
 				<BlurInt
 					value={lpos[1]}
-					onChange={(t) => (t ? setLpos([lpos[0], t, lpos[2]]) : null)}
+					onChange={(t) => (t != null ? setLpos([lpos[0], t, lpos[2]]) : null)}
 				/>
 				z
 				<BlurInt
 					value={lpos[2]}
-					onChange={(t) => (t ? setLpos([lpos[0], lpos[1], t]) : null)}
+					onChange={(t) => (t != null ? setLpos([lpos[0], lpos[1], t]) : null)}
 				/>
 			</div>
 			<ExportSection
