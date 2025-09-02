@@ -1,4 +1,6 @@
 
+- [ ] 3d but removing by layer
+
 # Need to do
 
 - [x] implement the event handlers and rendering stuffs
