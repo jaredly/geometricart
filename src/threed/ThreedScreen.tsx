@@ -122,9 +122,17 @@ export const ThreedScreen = ({
 			toBack,
 			dispatch,
 			hover,
-			useMultiSVG,
+			useMultiSVG ? state.view.multi : undefined,
 		);
-	}, [pathsToShow, thickPX, selectedIds, toBack, gapPX, hover, useMultiSVG]);
+	}, [
+		pathsToShow,
+		thickPX,
+		selectedIds,
+		toBack,
+		gapPX,
+		hover,
+		useMultiSVG ? state.view.multi : undefined,
+	]);
 
 	// const backdrop =
 

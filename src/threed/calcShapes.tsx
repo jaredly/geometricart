@@ -19,8 +19,9 @@ import {
 } from "../rendering/pathToPoints";
 import { transformBarePath } from "../rendering/points";
 import { Action } from "../state/Action";
-import { Fill, Path, State, StyleLine } from "../types";
+import { Fill, Path, State, Style, StyleLine } from "../types";
 import { PK } from "../editor/pk";
+import { generatePathsAndOutlines } from "../editor/ExportSVG";
 
 export const unique = (v: string[]) => {
 	const seen: Record<string, true> = {};
@@ -36,27 +37,83 @@ export const matchesHover = (path: Path, hover: Hover | null) => {
 	return hover.kind === "PathGroup" && hover.id === path.group;
 };
 
-export const calcShapes = (
+const byMultiSvg = (
 	pathsToShow: Path[],
-	thick: number,
-	gap: number,
-	selectedIds: Record<string, boolean>,
-	state: State,
-	toBack: boolean | null,
+	multi: State["view"]["multi"] & {},
+): Shapes => {
+	const grouped = generatePathsAndOutlines(multi, pathsToShow);
 
-	dispatch: React.Dispatch<Action>,
-	hover: Hover | null,
-) => {
-	console.log("Doing a calc");
+	console.log("grp", grouped);
 
-	const stls: {
-		cells: [number, number, number][];
-		positions: [number, number, number][];
-	}[] = [];
+	const outline = PK.NewPath();
+	grouped.outlines.forEach((path) => {
+		const pkpath = PK.FromSVGString(calcPathD(path, 1));
+		outline.op(pkpath, PK.PathOp.UNION);
+		pkpath.delete();
+	});
 
-	const baseThick = thick;
+	const populated = grouped.pathsToRender.filter(
+		(p) => p.length && p[0].style.lines[0],
+	);
 
+	const styles: StyleLine[] = populated.map(
+		(paths) => paths[0].style.lines[0]!,
+	);
+	styles.unshift(grouped.outlines[0].style.lines[0]!);
+
+	const pkPaths = populated
+		.map((paths, i): Shapes["pkPaths"][0] | undefined => {
+			if (!paths.length) return;
+			// const style = styles[i];
+			const style = paths[0].style.lines[0];
+			if (!style) return;
+
+			const pkpath = outline.copy();
+			paths.forEach((path) => {
+				const single = PK.FromSVGString(calcPathD(path, 1));
+				pkpath.op(single, PK.PathOp.DIFFERENCE);
+				single.delete();
+			});
+
+			// const gat = gids.indexOf(path.group || "");
+			return {
+				pkpath,
+				gat: i,
+				style: { type: "fill", style: { ...style, originalIdx: 0 } },
+				// path: paths[0],
+			};
+		})
+		.filter((x) => x != null);
+	// .sort((a, b) => a.gat - b.gat);
+
+	pkPaths.push({
+		pkpath: outline,
+		gat: 0,
+		style: {
+			type: "fill",
+			style: grouped.outlines[0].style.lines[0]!,
+			// { ...styles[styles.length - 1], originalIdx: 0 },
+		},
+	});
+	// outline.delete();
+
+	return { pkPaths, border: undefined, fullThicknessGat: null };
+};
+
+type Shapes = {
+	border?: PKPath;
+	pkPaths: {
+		path?: Path;
+		pkpath: PKPath;
+		gat: number;
+		style: { type: "line"; style: StyleLine } | { type: "fill"; style: Fill };
+	}[];
+	fullThicknessGat: number | null;
+};
+
+const byGroupShapes = (pathsToShow: Path[]): Shapes => {
 	const gids = unique(pathsToShow.map((p) => p.group || ""));
+	const fullThicknessGat = gids.length - 1;
 
 	const pkPaths = pathsToShow
 		.map((path) => {
@@ -92,29 +149,54 @@ export const calcShapes = (
 		({ path }) => gids[gids.length - 1] === path.group,
 	)?.pkpath;
 
-	// TODO: group paths by ... group id.
+	return { border, pkPaths, fullThicknessGat };
+};
+
+export const calcShapes = (
+	pathsToShow: Path[],
+	thick: number,
+	gap: number,
+	selectedIds: Record<string, boolean>,
+	state: State,
+	toBack: boolean | null,
+
+	dispatch: React.Dispatch<Action>,
+	hover: Hover | null,
+	useMultiSVG?: State["view"]["multi"],
+) => {
+	console.log("Doing a calc");
+
+	const baseThick = thick;
+	const { border, pkPaths, fullThicknessGat } = useMultiSVG
+		? byMultiSvg(pathsToShow, useMultiSVG)
+		: byGroupShapes(pathsToShow);
+
+	const stls: {
+		cells: [number, number, number][];
+		positions: [number, number, number][];
+	}[] = [];
+
 	const items = pkPaths
 		.flatMap(({ path, pkpath, gat, style }, n) => {
 			let xoff = gat * baseThick + gap * gat;
 
-			// ermmm so smart collapse? idk maybe.
+			const isSelected = path ? selectedIds[path.id] : false;
 
-			const isSelected = selectedIds[path.id];
-
-			console.log("orgi", style.style.originalIdx);
 			let thick = baseThick;
 			if (style.style.originalIdx != null && style.style.originalIdx > 0) {
 				thick = mmToPX(0.2, state.meta.ppi);
 				xoff += thick;
 			}
 
-			const { geometry, stl } = pathToGeometry({
+			const pg = pathToGeometry({
 				pkpath,
 				fullThickness:
-					toBack === true || (toBack === false && gat === gids.length - 1),
+					toBack === true || (toBack === false && gat === fullThicknessGat),
 				xoff,
 				thick,
 			});
+			if (!pg) return [];
+			const { geometry, stl } = pg;
 			stls.push(stl);
 
 			const center = state.view.center;
@@ -124,7 +206,7 @@ export const calcShapes = (
 					? paletteColor(state.palette, style.style.color, style.style.lighten)
 					: paletteColor(state.palette, style.style.color, style.style.lighten);
 
-			const isHovered = matchesHover(path, hover);
+			const isHovered = path ? matchesHover(path, hover) : false;
 
 			return (
 				<React.Fragment key={`${n}`}>
@@ -135,6 +217,7 @@ export const calcShapes = (
 						receiveShadow
 						onClick={(evt) => {
 							evt.stopPropagation();
+							if (!path) return;
 							clickItem(
 								evt.nativeEvent.shiftKey,
 								selectedIds,
@@ -173,22 +256,20 @@ export const calcShapes = (
 		})
 		.filter((n) => n != null);
 
-	type PKPath = (typeof pkPaths)[0]["pkpath"];
-
 	const backs: PKPath[] = [];
 	const covers: PKPath[] = [];
 	pkPaths.forEach(({ pkpath, style, gat }) => {
 		const svgs = style.style.originalIdx === 1 ? covers : backs;
 		if (!svgs[gat]) {
 			svgs[gat] = pkpath;
-			if (border && gat < gids.length - 1) {
+			if (border && fullThicknessGat != null && gat < fullThicknessGat) {
 				svgs[gat].op(border, PK.PathOp.UNION);
 			}
 		} else {
 			svgs[gat].op(pkpath, PK.PathOp.UNION);
 		}
 	});
-	const convert = (pk: PKPath) => {
+	const svgPathWithBounds = (pk: PKPath) => {
 		const svg = pk.toSVGString();
 		const bounds = pk.computeTightBounds();
 		return {
@@ -205,8 +286,8 @@ export const calcShapes = (
 	return {
 		items,
 		stls,
-		backs: backs.filter(Boolean).map(convert),
-		covers: covers.filter(Boolean).map(convert),
+		backs: backs.filter(Boolean).map(svgPathWithBounds),
+		covers: covers.filter(Boolean).map(svgPathWithBounds),
 	};
 };
 
@@ -230,6 +311,10 @@ function pathToGeometry({
 	clipped.sort(
 		(a, b) => b.bounds.x1 - b.bounds.x0 - (a.bounds.x1 - a.bounds.x0),
 	);
+
+	if (!clipped.length) {
+		return;
+	}
 
 	const houter = clipped[0];
 	if (!houter.open && isClockwise(houter.segments)) {

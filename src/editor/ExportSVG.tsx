@@ -46,11 +46,11 @@ export const PPI = ({
 	bounds: Bounds | null;
 	state: State;
 }) => {
+	const thinnest = useMemo(() => thinnestLine(state.paths), [state.paths]);
+
 	if (!bounds) return null;
 	const w = bounds.x2 - bounds.x1;
 	const h = bounds.y2 - bounds.y1;
-
-	const thinnest = useMemo(() => thinnestLine(state.paths), [state.paths]);
 
 	return (
 		<div>
@@ -305,27 +305,58 @@ function multiForm(
 			<div css={{ marginTop: 8 }}>
 				Shape line Color:
 				{multi.shapes.map((color, i) => (
-					<Select
-						key={i}
-						current={color}
-						state={state}
-						colors={colors}
-						onChange={(color) => {
-							const shapes = multi.shapes.slice();
-							if (color == null) {
+					<div key={i} style={{ display: "flex", alignItems: "center" }}>
+						<div style={{ flex: 1 }}>
+							<Select
+								current={color}
+								state={state}
+								colors={colors}
+								onChange={(color) => {
+									const shapes = multi.shapes.slice();
+									if (color == null) {
+										shapes.splice(i, 1);
+									} else {
+										shapes[i] = color;
+									}
+									dispatch({
+										type: "view:update",
+										view: {
+											...state.view,
+											multi: { ...multi, shapes },
+										},
+									});
+								}}
+							/>
+						</div>
+						<button
+							onClick={() => {
+								if (i === 0) return;
+								const shapes = multi.shapes.slice();
 								shapes.splice(i, 1);
-							} else {
-								shapes[i] = color;
-							}
-							dispatch({
-								type: "view:update",
-								view: {
-									...state.view,
-									multi: { ...multi, shapes },
-								},
-							});
-						}}
-					/>
+								shapes.splice(i - 1, 0, color);
+								dispatch({
+									type: "view:update",
+									view: { ...state.view, multi: { ...multi, shapes } },
+								});
+							}}
+						>
+							up
+						</button>
+						<button
+							onClick={() => {
+								if (i === multi.shapes.length - 1) return;
+								const shapes = multi.shapes.slice();
+								shapes.splice(i, 1);
+								shapes.splice(i + 1, 0, color);
+								dispatch({
+									type: "view:update",
+									view: { ...state.view, multi: { ...multi, shapes } },
+								});
+							}}
+						>
+							dn
+						</button>
+					</div>
 				))}
 				<button
 					onClick={() => {
@@ -358,6 +389,17 @@ function multiForm(
 					}}
 				>
 					Add all colors
+				</button>
+				<button
+					onClick={() => {
+						const shapes = multi.shapes.slice().reverse();
+						dispatch({
+							type: "view:update",
+							view: { ...state.view, multi: { ...multi, shapes } },
+						});
+					}}
+				>
+					Reverse
 				</button>
 			</div>
 			<div>
@@ -515,76 +557,49 @@ async function runSVGExport({
 }) {
 	const size = calcSVGSize(crop, boundingRect, state, originalSize);
 
-	if (multi) {
-		const outlines: Path[] = [];
-		const pathsToRender: Path[][] = [];
-		if (!multi.skipBacking) {
-			pathsToRender.push([]);
+	if (!multi) {
+		let text = getSVGText(state, size);
+
+		if (embed) {
+			text += `\n\n${PREFIX}${JSON.stringify(
+				history ? state : { ...state, history: initialHistory },
+			)}${SUFFIX}`;
 		}
-		const byGroup: { [key: string]: Path[] } = {};
-		Object.keys(state.paths).forEach((k) => {
-			let path = state.paths[k];
-			if (path.style.fills.length && !multi.useFills) {
-				return;
-			}
-			const out = (multi.useFills ? path.style.fills : path.style.lines).find(
-				(s) => s && styleKey(s) == multi.outline,
-			);
-			if (out) {
-				outlines.push({ ...path, style: { fills: [], lines: [out] } });
-			}
-			multi.shapes.forEach((shape) => {
-				if (shape == null) return;
+		const blob = new Blob([text], { type: "image/svg+xml" });
+		setUrl([{ url: URL.createObjectURL(blob), info: "no info sry" }]);
+		return;
+	}
 
-				const line = (
-					multi.useFills ? path.style.fills : path.style.lines
-				).find((s) => s && styleKey(s) === shape);
-				if (!line) return;
-				// path =
-				const oneLine = {
-					...path,
-					style: { fills: [], lines: [line] },
-				};
-				const group = multi.combineGroups ? "aa" : path.group;
-				if (group) {
-					if (!byGroup[group + ":" + shape]) {
-						byGroup[group + ":" + shape] = [];
-					}
-					byGroup[group + ":" + shape].push(oneLine);
-				} else {
-					pathsToRender.push([oneLine]);
-				}
-			});
+	const { pathsToRender, outlines } = generatePathsAndOutlines(
+		multi,
+		Object.values(state.paths),
+	);
+	console.log("paths to render", pathsToRender);
+
+	const urls: { url: string; info: string }[] = [];
+	const perImage = multi.rows * multi.columns;
+	for (let i = 0; i < pathsToRender.length; i += perImage) {
+		let contents = pathsToRender.slice(i, i + perImage).map((paths, i) => {
+			const map: State["paths"] = {};
+			let aa = 0;
+			paths.forEach((path) => (map[aa++] = path));
+			outlines.forEach((path) => (map[aa++] = path));
+
+			const r = (i / multi.columns) | 0;
+			const c = i % multi.columns;
+
+			return `<g transform="translate(${size.width * c}, ${size.height * r})">${
+				multi.traceAndMerge
+					? traceAndMergePaths(PK, { ...state, paths: map }, size)
+					: getSVGText({ ...state, paths: map }, size, true)
+			}</g>`;
 		});
-		pathsToRender.push(...Object.values(byGroup));
-		console.log("paths to render", pathsToRender);
-
-		const urls: { url: string; info: string }[] = [];
-		const perImage = multi.rows * multi.columns;
-		for (let i = 0; i < pathsToRender.length; i += perImage) {
-			let contents = pathsToRender.slice(i, i + perImage).map((paths, i) => {
-				const map: State["paths"] = {};
-				let aa = 0;
-				paths.forEach((path) => (map[aa++] = path));
-				outlines.forEach((path) => (map[aa++] = path));
-
-				const r = (i / multi.columns) | 0;
-				const c = i % multi.columns;
-
-				return `<g transform="translate(${size.width * c}, ${
-					size.height * r
-				})">${
-					multi.traceAndMerge
-						? traceAndMergePaths(PK, { ...state, paths: map }, size)
-						: getSVGText({ ...state, paths: map }, size, true)
-				}</g>`;
-			});
-			const info = `${calcPPI(
-				state.meta.ppi,
-				size.width * multi.columns,
-				state.view.zoom,
-			)}x${calcPPI(state.meta.ppi, size.height * multi.rows, state.view.zoom)}`;
-			let full = `
+		const info = `${calcPPI(
+			state.meta.ppi,
+			size.width * multi.columns,
+			state.view.zoom,
+		)}x${calcPPI(state.meta.ppi, size.height * multi.rows, state.view.zoom)}`;
+		let full = `
             <svg
                 width="${calcPPI(
 									state.meta.ppi,
@@ -602,31 +617,20 @@ async function runSVGExport({
                 xmlns="http://www.w3.org/2000/svg"
             >${contents.join("")}</svg>
             `;
-			// const d = document.createElement('div');
-			// d.innerHTML = full;
-			// document.body.append(d);
-			if (embed) {
-				full += `\n\n${PREFIX}${JSON.stringify(
-					history ? state : { ...state, history: initialHistory },
-				)}${SUFFIX}`;
-			}
-			const blob = new Blob([full], { type: "image/svg+xml" });
-			urls.push({ url: URL.createObjectURL(blob), info });
+		// const d = document.createElement('div');
+		// d.innerHTML = full;
+		// document.body.append(d);
+		if (embed) {
+			full += `\n\n${PREFIX}${JSON.stringify(
+				history ? state : { ...state, history: initialHistory },
+			)}${SUFFIX}`;
 		}
-
-		setUrl(urls);
-		return;
+		const blob = new Blob([full], { type: "image/svg+xml" });
+		urls.push({ url: URL.createObjectURL(blob), info });
 	}
 
-	let text = getSVGText(state, size);
-
-	if (embed) {
-		text += `\n\n${PREFIX}${JSON.stringify(
-			history ? state : { ...state, history: initialHistory },
-		)}${SUFFIX}`;
-	}
-	const blob = new Blob([text], { type: "image/svg+xml" });
-	setUrl([{ url: URL.createObjectURL(blob), info: "no info sry" }]);
+	setUrl(urls);
+	return;
 }
 
 const traceAndMergePaths = (
@@ -640,7 +644,7 @@ const traceAndMergePaths = (
 	const backer = Object.keys(state.paths).length === 1;
 
 	let pk = null as null | PKPath;
-	let c;
+	let c: string | undefined;
 	Object.values(state.paths).forEach((path) => {
 		const st = path.style.lines[0];
 		if (!st) {
@@ -701,6 +705,57 @@ const traceAndMergePaths = (
 	//     })
 	//     .join('\n');
 };
+
+export function generatePathsAndOutlines(
+	multi: State["view"]["multi"] & {},
+	paths: Path[],
+): { pathsToRender: Path[][]; outlines: Path[] } {
+	const outlines: Path[] = [];
+	const pathsToRender: Path[][] = [];
+	if (!multi.skipBacking) {
+		pathsToRender.push([]);
+	}
+	const byGroup: { [key: string]: Path[] } = {};
+	paths.forEach((path) => {
+		if (path.style.fills.length && !multi.useFills) {
+			return;
+		}
+		const out = (multi.useFills ? path.style.fills : path.style.lines).find(
+			(s) => s && styleKey(s) === multi.outline,
+		);
+		if (out) {
+			outlines.push({ ...path, style: { fills: [], lines: [out] } });
+		}
+		multi.shapes.forEach((shape, i) => {
+			if (shape == null) return;
+
+			const line = (multi.useFills ? path.style.fills : path.style.lines).find(
+				(s) => s && styleKey(s) === shape,
+			);
+			if (!line) return;
+			const oneLine = {
+				...path,
+				style: { fills: [], lines: [line] },
+			};
+			const prefix = i.toString().padStart(2, "0") + ":";
+			const group = multi.combineGroups ? "aa" : path.group;
+			if (group) {
+				if (!byGroup[prefix + group + ":" + shape]) {
+					byGroup[prefix + group + ":" + shape] = [];
+				}
+				byGroup[prefix + group + ":" + shape].push(oneLine);
+			} else {
+				pathsToRender.push([oneLine]);
+			}
+		});
+	});
+	pathsToRender.push(
+		...Object.keys(byGroup)
+			.sort()
+			.map((k) => byGroup[k]),
+	);
+	return { pathsToRender, outlines };
+}
 
 function getSVGText(
 	state: State,
