@@ -253,14 +253,25 @@ function multiForm(
 ): React.ReactNode {
 	const colors: { [key: string | number]: number } = {};
 
-	Object.entries(state.paths).forEach(([k, path]) => {
-		path.style.lines.forEach((line) => {
-			if (line && line.color != null) {
-				const k = styleKey(line);
-				colors[k] = (colors[k] || 0) + 1;
-			}
+	if (multi.useFills) {
+		Object.entries(state.paths).forEach(([k, path]) => {
+			path.style.fills.forEach((fill) => {
+				if (fill && fill.color != null) {
+					const k = styleKey(fill);
+					colors[k] = (colors[k] || 0) + 1;
+				}
+			});
 		});
-	});
+	} else {
+		Object.entries(state.paths).forEach(([k, path]) => {
+			path.style.lines.forEach((line) => {
+				if (line && line.color != null) {
+					const k = styleKey(line);
+					colors[k] = (colors[k] || 0) + 1;
+				}
+			});
+		});
+	}
 
 	return (
 		<div
@@ -407,6 +418,25 @@ function multiForm(
 			<label>
 				<input
 					type="checkbox"
+					checked={!!multi.useFills}
+					onChange={() =>
+						dispatch({
+							type: "view:update",
+							view: {
+								...state.view,
+								multi: {
+									...multi,
+									useFills: !multi.useFills,
+								},
+							},
+						})
+					}
+				/>
+				Use fills
+			</label>
+			<label>
+				<input
+					type="checkbox"
 					checked={!!multi.skipBacking}
 					onChange={() =>
 						dispatch({
@@ -494,10 +524,10 @@ async function runSVGExport({
 		const byGroup: { [key: string]: Path[] } = {};
 		Object.keys(state.paths).forEach((k) => {
 			let path = state.paths[k];
-			if (path.style.fills.length) {
+			if (path.style.fills.length && !multi.useFills) {
 				return;
 			}
-			const out = path.style.lines.find(
+			const out = (multi.useFills ? path.style.fills : path.style.lines).find(
 				(s) => s && styleKey(s) == multi.outline,
 			);
 			if (out) {
@@ -506,7 +536,9 @@ async function runSVGExport({
 			multi.shapes.forEach((shape) => {
 				if (shape == null) return;
 
-				const line = path.style.lines.find((s) => s && styleKey(s) == shape);
+				const line = (
+					multi.useFills ? path.style.fills : path.style.lines
+				).find((s) => s && styleKey(s) === shape);
 				if (!line) return;
 				// path =
 				const oneLine = {
@@ -525,6 +557,7 @@ async function runSVGExport({
 			});
 		});
 		pathsToRender.push(...Object.values(byGroup));
+		console.log("paths to render", pathsToRender);
 
 		const urls: { url: string; info: string }[] = [];
 		const perImage = multi.rows * multi.columns;
@@ -610,6 +643,9 @@ const traceAndMergePaths = (
 	let c;
 	Object.values(state.paths).forEach((path) => {
 		const st = path.style.lines[0];
+		if (!st) {
+			throw new Error(`path has no lines`);
+		}
 		let w = st?.width;
 		w = w ? (w / 100) * zoom : 2;
 		c = paletteColor(state.palette, st?.color ?? 0, st?.lighten ?? 0);

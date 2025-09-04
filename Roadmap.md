@@ -1,7 +1,12 @@
 
+- ooooh can we do like a dependency analysis on marks, and do some regrouping of stuff?
+  like do a toposort but also like do remapping of parents if there are equivalent measurements (for setting the compass angle) so that all the marks for a given circle size can happen at once.
+
 - [ ] 3d but removing by layer
 
 # Need to do
+- [ ] animate the compass n stuff
+
 
 - [x] implement the event handlers and rendering stuffs
 - [x] make CircleMark rendering and stuff aware of `angle2`

@@ -112,8 +112,6 @@ export const calcShapes = (
 				pkpath,
 				fullThickness:
 					toBack === true || (toBack === false && gat === gids.length - 1),
-				// toBack,
-				// isLastGroup: gat === gids.length - 1,
 				xoff,
 				thick,
 			});
@@ -128,7 +126,6 @@ export const calcShapes = (
 
 			const isHovered = matchesHover(path, hover);
 
-			// return { geometry, xoff, path, col };
 			return (
 				<React.Fragment key={`${n}`}>
 					<mesh

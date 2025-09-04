@@ -369,6 +369,7 @@ export type View = {
 		combineGroups?: boolean;
 		skipBacking?: boolean;
 		traceAndMerge?: boolean;
+		useFills?: boolean;
 	};
 };
 
