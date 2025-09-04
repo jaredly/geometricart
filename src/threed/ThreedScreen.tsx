@@ -42,6 +42,7 @@ export const ThreedScreen = ({
 		gap = 0,
 		shadowZoom = 0.09,
 		cameraDistance = 70,
+		useMultiSVG,
 	} = state.meta.threedSettings ?? {};
 
 	const toBack = false; // TODO make this customizeable? idkyyy
@@ -52,6 +53,16 @@ export const ThreedScreen = ({
 			meta: {
 				...state.meta,
 				threedSettings: { ...state.meta.threedSettings, cameraDistance },
+			},
+		});
+	};
+
+	const setUseMultiSVG = (useMultiSVG: boolean) => {
+		dispatch({
+			type: "meta:update",
+			meta: {
+				...state.meta,
+				threedSettings: { ...state.meta.threedSettings, useMultiSVG },
 			},
 		});
 	};
@@ -111,8 +122,9 @@ export const ThreedScreen = ({
 			toBack,
 			dispatch,
 			hover,
+			useMultiSVG,
 		);
-	}, [pathsToShow, thickPX, selectedIds, toBack, gapPX, hover]);
+	}, [pathsToShow, thickPX, selectedIds, toBack, gapPX, hover, useMultiSVG]);
 
 	// const backdrop =
 
@@ -273,6 +285,14 @@ export const ThreedScreen = ({
 				>
 					{move ? "Stop moving" : "Move"}
 				</button>
+				<label>
+					Use multi svg
+					<input
+						type="checkbox"
+						checked={useMultiSVG}
+						onChange={(t) => setUseMultiSVG(t.target.checked)}
+					/>
+				</label>
 			</div>
 			<div>
 				<div>Light pos</div>

@@ -415,6 +415,7 @@ export type Meta = {
 		gap?: number;
 		shadowZoom?: number;
 		lightPosition?: [number, number, number];
+		useMultiSVG?: boolean;
 	};
 };
 export type LerpPoint = {
