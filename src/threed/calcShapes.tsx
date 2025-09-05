@@ -61,11 +61,13 @@ const byMultiSvg = (
 	);
 
 	if (!populated.length) return null;
+	const outlinestyle = grouped.outlines[0].style.lines[0]!;
 
 	const styles: StyleLine[] = populated.map(
 		(paths) => paths[0].style.lines[0]!,
 	);
-	styles.push(grouped.outlines[0].style.lines[0]!);
+	// const backcolor = styles.shift()!;
+	styles.push({ ...outlinestyle, originalIdx: 0 });
 	styles.push(styles.shift()!);
 
 	const pkPaths = populated
@@ -74,20 +76,26 @@ const byMultiSvg = (
 			const style = styles[i];
 			// const style = paths[0].style.lines[0];
 			if (!style) return;
+			console.log(style);
 
-			const outline = PK.NewPath();
-			grouped.outlines.forEach((path) => {
-				const pkpath = PK.FromSVGString(calcPathD(path, 1));
-				outline.op(pkpath, PK.PathOp.UNION);
-				pkpath.delete();
-			});
-
+			// const pkpath = PK.NewPath();
 			const pkpath = outline.copy();
 			paths.forEach((path) => {
 				const single = PK.FromSVGString(calcPathD(path, 1));
+
+				if (style.color === 2 && style.lighten === 1) {
+					console.log(calcPathD(path, 1));
+					console.log(single.getBounds());
+				}
+
 				pkpath.op(single, PK.PathOp.DIFFERENCE);
 				single.delete();
 			});
+
+			if (!pkpath.toSVGString().trim()) {
+				console.log(`This path is bad news sorry`);
+				console.log(paths, style);
+			}
 
 			// const gat = gids.indexOf(path.group || "");
 			return {
@@ -212,16 +220,20 @@ export const calcShapes = (
 				xoff,
 				thick,
 			});
-			if (!pg) return [];
+			if (!pg) {
+				console.log("Notice! PathToGeometry said no", gat, style);
+				return [];
+			}
 			const { geometry, stl } = pg;
 			stls.push(stl);
 
 			const center = state.view.center;
 
-			const col =
-				style.type === "line"
-					? paletteColor(state.palette, style.style.color, style.style.lighten)
-					: paletteColor(state.palette, style.style.color, style.style.lighten);
+			const col = paletteColor(
+				state.palette,
+				style.style.color,
+				style.style.lighten,
+			);
 
 			const isHovered = path ? matchesHover(path, hover) : false;
 
@@ -330,6 +342,8 @@ function pathToGeometry({
 	);
 
 	if (!clipped.length) {
+		console.log("After clipping, there was nothing left.");
+		console.log(pkpath.toSVGString());
 		return;
 	}
 
