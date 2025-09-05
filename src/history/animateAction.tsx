@@ -43,6 +43,11 @@ export async function animateAction(
 			state.lastSelection = undefined;
 		}
 
+		if (action.type === "pending:compass&ruler") {
+			// action.state
+			// TODO start here! Yes please.
+		}
+
 		if (action.type === "path:create" || action.type === "path:create:many") {
 			await animatePath(state, follow, action, prev, speed);
 		} else if (action.type === "path:multiply") {

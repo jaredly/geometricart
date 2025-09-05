@@ -232,7 +232,7 @@ export const animateHistory = async (
 				!coordsEqual(st.view.center, ps.view.center) ||
 				!closeEnough(st.view.zoom, ps.view.zoom)
 			) {
-				let next;
+				let next: ImageBitmap;
 				if (preimage) {
 					next = state.frames[state.i];
 				} else {

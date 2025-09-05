@@ -96,7 +96,7 @@ export type UIDispatch = React.Dispatch<UIAction>;
 
 export const useUIState = (trueState: State) => {
 	const [uiState, uiDispatch] = React.useReducer(reduceUIState, {
-		screen: "3d", // 'history', // 'edit',
+		screen: "edit", // 'history', // '3d',
 		hover: null,
 		styleHover: null,
 		pendingMirror: null,
