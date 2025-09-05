@@ -40,10 +40,14 @@ export const matchesHover = (path: Path, hover: Hover | null) => {
 const byMultiSvg = (
 	pathsToShow: Path[],
 	multi: State["view"]["multi"] & {},
-): Shapes => {
+): Shapes | null => {
 	const grouped = generatePathsAndOutlines(multi, pathsToShow);
 
-	console.log("grp", grouped);
+	if (!grouped.outlines.length || !grouped.pathsToRender.length) {
+		return null;
+	}
+
+	console.log("grp", grouped, multi, pathsToShow);
 
 	const outline = PK.NewPath();
 	grouped.outlines.forEach((path) => {
@@ -56,17 +60,27 @@ const byMultiSvg = (
 		(p) => p.length && p[0].style.lines[0],
 	);
 
+	if (!populated.length) return null;
+
 	const styles: StyleLine[] = populated.map(
 		(paths) => paths[0].style.lines[0]!,
 	);
-	styles.unshift(grouped.outlines[0].style.lines[0]!);
+	styles.push(grouped.outlines[0].style.lines[0]!);
+	styles.push(styles.shift()!);
 
 	const pkPaths = populated
 		.map((paths, i): Shapes["pkPaths"][0] | undefined => {
 			if (!paths.length) return;
-			// const style = styles[i];
-			const style = paths[0].style.lines[0];
+			const style = styles[i];
+			// const style = paths[0].style.lines[0];
 			if (!style) return;
+
+			const outline = PK.NewPath();
+			grouped.outlines.forEach((path) => {
+				const pkpath = PK.FromSVGString(calcPathD(path, 1));
+				outline.op(pkpath, PK.PathOp.UNION);
+				pkpath.delete();
+			});
 
 			const pkpath = outline.copy();
 			paths.forEach((path) => {
@@ -88,11 +102,11 @@ const byMultiSvg = (
 
 	pkPaths.push({
 		pkpath: outline,
-		gat: 0,
+		gat: -1,
 		style: {
 			type: "fill",
-			style: grouped.outlines[0].style.lines[0]!,
-			// { ...styles[styles.length - 1], originalIdx: 0 },
+			style: //grouped.outlines[0].style.lines[0]!,
+				{ ...styles[styles.length - 1], originalIdx: 0 },
 		},
 	});
 	// outline.delete();
@@ -167,9 +181,12 @@ export const calcShapes = (
 	console.log("Doing a calc");
 
 	const baseThick = thick;
-	const { border, pkPaths, fullThicknessGat } = useMultiSVG
+	const shapes = useMultiSVG
 		? byMultiSvg(pathsToShow, useMultiSVG)
 		: byGroupShapes(pathsToShow);
+
+	if (!shapes) return;
+	const { border, pkPaths, fullThicknessGat } = shapes;
 
 	const stls: {
 		cells: [number, number, number][];

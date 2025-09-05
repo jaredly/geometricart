@@ -111,8 +111,8 @@ importers:
         specifier: ^6.0.1
         version: 6.0.1
       primereact:
-        specifier: ^8.7.2
-        version: 8.7.3(@types/react@18.3.24)(primeicons@6.0.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        specifier: 10.0.0
+        version: 10.0.0(@types/react@18.3.24)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react:
         specifier: ^18
         version: 18.3.1
@@ -3445,11 +3445,10 @@ packages:
   primeicons@6.0.1:
     resolution: {integrity: sha512-KDeO94CbWI4pKsPnYpA1FPjo79EsY9I+M8ywoPBSf9XMXoe/0crjbUK7jcQEDHuc0ZMRIZsxH3TYLv4TUtHmAA==}
 
-  primereact@8.7.3:
-    resolution: {integrity: sha512-BjlIOOsVcUqX9edn7HewN/U28aUqREOvPP3fnpk7X6S7k5JTM570Dm7Z/TEPH1x/Mko1NL6iDaYWnkjKiBrtPQ==}
+  primereact@10.0.0:
+    resolution: {integrity: sha512-vYF+ImkID0VU3zNvuApZ2NBub8Js3efsxTsKh0eGR1dTsh7ZuR1ICgNZlqooVcdUNvmNBZ8Nja9omDeLfDNTKQ==}
     peerDependencies:
       '@types/react': ^17.0.0 || ^18.0.0
-      primeicons: ^5.0.0 || ^6.0.0
       react: ^17.0.0 || ^18.0.0
       react-dom: ^17.0.0 || ^18.0.0
     peerDependenciesMeta:
@@ -8229,10 +8228,9 @@ snapshots:
 
   primeicons@6.0.1: {}
 
-  primereact@8.7.3(@types/react@18.3.24)(primeicons@6.0.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
+  primereact@10.0.0(@types/react@18.3.24)(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
     dependencies:
       '@types/react-transition-group': 4.4.12(@types/react@18.3.24)
-      primeicons: 6.0.1
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
       react-transition-group: 4.4.5(react-dom@18.3.1(react@18.3.1))(react@18.3.1)

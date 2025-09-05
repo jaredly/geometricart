@@ -112,7 +112,7 @@ export const ThreedScreen = ({
 	const thickPX = mmToPX(thickness, state.meta.ppi);
 	const gapPX = mmToPX(gap, state.meta.ppi);
 
-	const { items, stls, backs, covers } = useMemo(() => {
+	const calced = useMemo(() => {
 		return calcShapes(
 			pathsToShow,
 			thickPX,
@@ -163,12 +163,16 @@ export const ThreedScreen = ({
 		if (!move) return;
 		let r = 0;
 		const iv = setInterval(() => {
-			r += Math.PI / 40;
+			r += Math.PI / 80;
 			// setLpos([Math.cos(r) * 2, 0, 10]);
 			setLpos([Math.cos(r) * 5, Math.sin(r) * 5, 10]);
 		}, 100);
 		return () => clearInterval(iv);
 	}, [move]);
+
+	if (!calced) return <div>No shapes</div>;
+
+	const { items, stls, backs, covers } = calced;
 
 	// useEffect(() => {
 	//     const iv = setInterval(() => {
@@ -226,7 +230,7 @@ export const ThreedScreen = ({
 					<OrbitControls camera={virtualCamera.current} />
 
 					<mesh position={[0, 0, -1]}>
-						<planeBufferGeometry attach="geometry" args={[100, 100]} />
+						<planeGeometry attach="geometry" args={[100, 100]} />
 						<meshPhongMaterial
 							attach="material"
 							color={paletteColor(state.palette, state.view.background)}

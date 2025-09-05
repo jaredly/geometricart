@@ -51,7 +51,7 @@
 		"prettier": "^2.5.1",
 		"primeflex": "^3.3.0",
 		"primeicons": "^6.0.1",
-		"primereact": "^8.7.2",
+		"primereact": "10.0.0",
 		"react": "^18",
 		"react-color": "^2.19.3",
 		"react-colorful": "^5.2.2",
