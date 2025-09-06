@@ -42,12 +42,13 @@ const byMultiSvg = (
 	multi: State["view"]["multi"] & {},
 ): Shapes | null => {
 	const grouped = generatePathsAndOutlines(multi, pathsToShow);
+	// console.log("grouped", grouped);
 
 	if (!grouped.outlines.length || !grouped.pathsToRender.length) {
 		return null;
 	}
 
-	console.log("grp", grouped, multi, pathsToShow);
+	// console.log("grp", grouped, multi, pathsToShow);
 
 	const outline = PK.NewPath();
 	grouped.outlines.forEach((path) => {

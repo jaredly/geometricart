@@ -729,13 +729,18 @@ export function generatePathsAndOutlines(
 			}
 		});
 	});
-	console.log("organized", byStyleKey);
+	// console.log("organized", byStyleKey);
 
-	console.log("multis", multi);
+	// console.log("multis", multi);
 	const byGroup: { [key: string]: Path[] } = {};
 
 	const outlines =
-		multi.outline != null ? byStyleKey[multi.outline]?.paths : [];
+		multi.outline != null
+			? (byStyleKey[multi.outline]?.paths?.map((path) => ({
+					...path,
+					style: { fills: [], lines: [byStyleKey[multi.outline!].style] },
+				})) ?? [])
+			: [];
 
 	multi.shapes.forEach((shape, i) => {
 		if (shape == null) return console.log("ignoring cause no shape");
