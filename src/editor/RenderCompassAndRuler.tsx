@@ -15,8 +15,11 @@ type Shapes = (
 	| null
 )[];
 
+export const isCompass = (state: CompassState["state"]) =>
+	["PO", "PA1", "PA2", "DC"].includes(state);
+
 const compassShapes = (state: CompassState): Shapes => {
-	if (["PO", "PA1", "PA2", "DC"].includes(state.state)) {
+	if (isCompass(state.state)) {
 		const shapes: Shapes = [
 			{
 				type: "dot",

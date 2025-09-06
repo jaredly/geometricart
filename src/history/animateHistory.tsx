@@ -23,6 +23,7 @@ import { animateAction } from "./animateAction";
 import { drawCursor } from "./cursor";
 import { coordsEqual } from "../rendering/pathsAreIdentical";
 import { closeEnough } from "../rendering/epsilonToZero";
+import { CompassState } from "../editor/compassAndRuler";
 
 export const nextFrame = () => new Promise(requestAnimationFrame);
 export const wait = (time: number) =>
@@ -31,6 +32,8 @@ export const wait = (time: number) =>
 export type AnimateState = {
 	ctx: CanvasRenderingContext2D;
 	canvas: HTMLCanvasElement;
+	compassState?: CompassState;
+	lastDrawnCompassState?: CompassState;
 	i: number;
 	cursor: Coord;
 	frames: ImageBitmap[];
@@ -125,6 +128,7 @@ export const animateHistory = async (
 		ctx,
 		i: startAt,
 		cursor: { x: 0, y: 0 },
+		compassState: undefined,
 		canvas,
 		frames: [],
 		histories,
