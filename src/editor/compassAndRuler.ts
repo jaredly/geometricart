@@ -8,6 +8,11 @@ export type PendingMark =
 	| { type: "circle"; t1: number; t2: number; clockwise: boolean }
 	| { type: "line"; p1: Coord; p2: Coord };
 
+export type CompassRenderState = {
+	ruler: { p1: Coord; p2: Coord };
+	compass: { source: { p1: Coord; p2: Coord }; mark: { p1: Coord; p2: Coord } };
+};
+
 export type CompassState = {
 	compassRadius: { p1: Coord; p2: Coord; radius: number };
 	compassOrigin: Coord;

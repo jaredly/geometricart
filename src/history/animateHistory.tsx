@@ -19,11 +19,11 @@ import { screenToWorld, worldToScreen } from "../editor/Canvas";
 import { Action } from "../state/Action";
 import React from "react";
 import { followPoint } from "./followPoint";
-import { animateAction } from "./animateAction";
+import { animateAction, drawCompassAndRuler } from "./animateAction";
 import { drawCursor } from "./cursor";
 import { coordsEqual } from "../rendering/pathsAreIdentical";
 import { closeEnough } from "../rendering/epsilonToZero";
-import { CompassState } from "../editor/compassAndRuler";
+import { CompassRenderState, CompassState } from "../editor/compassAndRuler";
 
 export const nextFrame = () => new Promise(requestAnimationFrame);
 export const wait = (time: number) =>
@@ -33,7 +33,7 @@ export type AnimateState = {
 	ctx: CanvasRenderingContext2D;
 	canvas: HTMLCanvasElement;
 	compassState?: CompassState;
-	lastDrawnCompassState?: CompassState;
+	lastDrawnCompassState?: CompassRenderState;
 	i: number;
 	cursor: Coord;
 	frames: ImageBitmap[];
@@ -148,7 +148,7 @@ export const animateHistory = async (
 	const follow = (
 		i: number,
 		point: Coord,
-		extra?: (pos: Coord) => void | Promise<void>,
+		extra?: (pos: Coord, state: State) => void | Promise<void>,
 	) => followPoint(state, state.toScreen(point, histories[i].state), extra);
 
 	if (preimage) {
@@ -261,6 +261,14 @@ export const animateHistory = async (
 		if (histories[state.i].action?.type === "path:update:many") {
 		} else {
 			// Draw the cursor
+			if (state.lastDrawnCompassState) {
+				drawCompassAndRuler(
+					ctx,
+					state.lastDrawnCompassState,
+					state,
+					histories[state.i].state,
+				);
+			}
 			drawCursor(ctx, state.cursor.x, state.cursor.y);
 		}
 

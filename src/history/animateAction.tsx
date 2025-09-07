@@ -9,9 +9,14 @@ import { animatePath } from "./animatePath";
 import { animateMultiply } from "./animateMultiply";
 import { wait, actionPoints, AnimateState } from "./animateHistory";
 import equal from "fast-deep-equal";
-import { CompassState } from "../editor/compassAndRuler";
+import { CompassRenderState, CompassState } from "../editor/compassAndRuler";
 import { isCompass } from "../editor/RenderCompassAndRuler";
-import { angleTo, dist, push } from "../rendering/getMirrorTransforms";
+import {
+	angleTo,
+	dist,
+	posOffset,
+	push,
+} from "../rendering/getMirrorTransforms";
 import { coordsEqual } from "../rendering/pathsAreIdentical";
 import { closeEnough } from "../rendering/epsilonToZero";
 import { drawCursor } from "./cursor";
@@ -55,17 +60,19 @@ export async function animateAction(
 
 		if (action.type === "guide:add") {
 			if (!state.compassState) return;
-			const lastDrawn =
-				state.lastDrawnCompassState ??
-				offscreenCompassState(state, histories[i].state);
-
-			state.lastDrawnCompassState = state.compassState;
+			if (!state.lastDrawnCompassState) {
+				state.lastDrawnCompassState = offscreenCompassState(
+					state,
+					histories[i].state,
+				);
+			}
+			const lastDrawn = state.lastDrawnCompassState;
 
 			const cs = state.compassState;
 			if (action.guide.geom.type === "Line") {
 				if (
-					!coordsEqual(lastDrawn.rulerP1, state.compassState.rulerP1) ||
-					!coordsEqual(lastDrawn.rulerP2, state.compassState.rulerP2)
+					!coordsEqual(lastDrawn.ruler.p1, state.compassState.rulerP1) ||
+					!coordsEqual(lastDrawn.ruler.p2, state.compassState.rulerP2)
 				) {
 					const ustate = histories[i].state;
 					const cp1 = state.toScreen(cs.rulerP1, ustate);
@@ -73,8 +80,8 @@ export async function animateAction(
 					await tweens(
 						state,
 						{
-							p1: state.toScreen(lastDrawn.rulerP1, ustate),
-							p2: state.toScreen(lastDrawn.rulerP2, ustate),
+							p1: state.toScreen(lastDrawn.ruler.p1, ustate),
+							p2: state.toScreen(lastDrawn.ruler.p2, ustate),
 						},
 						({ p1, p2 }) => ({
 							p1: closer(p1, cp1),
@@ -85,19 +92,22 @@ export async function animateAction(
 							drawRuler(p1, p2, ctx);
 						},
 					);
+					lastDrawn.ruler.p1 = state.compassState.rulerP1;
+					lastDrawn.ruler.p2 = state.compassState.rulerP2;
 				}
+
 				await follow(i, action.guide.geom.p1, (_, ustate) => {
 					drawRuler(
-						state.toScreen(cs.rulerP1, ustate),
-						state.toScreen(cs.rulerP2, ustate),
+						state.toScreen(lastDrawn.ruler.p1, ustate),
+						state.toScreen(lastDrawn.ruler.p2, ustate),
 						ctx,
 					);
 				});
 				const p1 = action.guide.geom.p1;
 				await follow(i, action.guide.geom.p2, (cursor, ustate) => {
 					drawRuler(
-						state.toScreen(cs.rulerP1, ustate),
-						state.toScreen(cs.rulerP2, ustate),
+						state.toScreen(lastDrawn.ruler.p1, ustate),
+						state.toScreen(lastDrawn.ruler.p2, ustate),
 						ctx,
 					);
 					ctx.strokeStyle = "white";
@@ -112,65 +122,91 @@ export async function animateAction(
 				action.guide.geom.type === "CloneCircle" ||
 				action.guide.geom.type === "CircleMark"
 			) {
-				if (
-					!closeEnough(
-						lastDrawn.compassRadius.radius,
-						state.compassState.compassRadius.radius,
-					)
-				) {
-					// animateCompass to radius.p1/radius.p2
-				}
-				const [t1, t2] =
-					action.guide.geom.type === "CloneCircle"
-						? [0, Math.PI * 2]
-						: [action.guide.geom.angle, action.guide.geom.angle2!];
-
-				const p1 = push(cs.compassOrigin, cs.compassRadius.radius, t1);
-				await follow(i, p1);
-				// const p2 = push(cs.compassOrigin, cs.compassRadius.radius, t2);
-
-				const ustate = histories[i].state;
-				const radScreen = oneToScreen(state, ustate, cs.compassRadius.radius);
-
-				const origin = state.toScreen(cs.compassOrigin, ustate);
-				const cp2 = state.toScreen(cs.rulerP2, ustate);
-				await tweens(
-					state,
-					t1,
-					(theta) => closerOne(theta, t2),
-					(theta) => Math.abs((t2 - theta) * radScreen),
-					(theta, ustate) => {
-						const cptheta = angleTo(cs.compassRadius.p1, cs.compassRadius.p2);
-						drawCompassTemplate(
-							state.toScreen(cs.compassRadius.p1, ustate),
-							cptheta,
-							radScreen,
-							ctx,
-						);
-						drawCompass(origin, theta, radScreen, ctx);
-						ctx.strokeStyle = "white";
-						ctx.lineWidth = 1;
-						ctx.beginPath();
-						ctx.arc(origin.x, origin.y, radScreen, t1, theta);
-						ctx.stroke();
-					},
-				);
-
-				// animateCompass to origin / geom.limit[0]
-				// animate the mark drawing
+				// if (
+				// 	!coordsEqual(
+				// 		lastDrawn.compassRadius.p1,
+				// 		state.compassState.compassRadius.p1,
+				// 	) ||
+				// 	!coordsEqual(
+				// 		lastDrawn.compassRadius.p2,
+				// 		state.compassState.compassRadius.p2,
+				// 	)
+				// ) {
+				// 	const ustate = histories[i].state;
+				// 	const cp1 = state.toScreen(cs.compassRadius.p1, ustate);
+				// 	const cp2 = state.toScreen(cs.compassRadius.p2, ustate);
+				// 	await tweens(
+				// 		state,
+				// 		{
+				// 			p1: state.toScreen(lastDrawn.compassRadius.p1, ustate),
+				// 			p2: state.toScreen(lastDrawn.compassRadius.p2, ustate),
+				// 		},
+				// 		({ p1, p2 }) => ({
+				// 			p1: closer(p1, cp1),
+				// 			p2: closer(p2, cp2),
+				// 		}),
+				// 		({ p1, p2 }) => Math.max(dist(p1, cp1), dist(p2, cp2)),
+				// 		({ p1, p2 }, ustate) => {
+				// 			drawCompassTemplate(p1, angleTo(p1, p2), dist(p1, p2), ctx);
+				// 		},
+				// 	);
+				// }
+				// if (
+				// 	!coordsEqual(
+				// 		lastDrawn.compassOrigin,
+				// 		state.compassState.compassOrigin,
+				// 	)
+				// ) {
+				// 	const ustate = histories[i].state;
+				// 	const cp1 = state.toScreen(cs.compassRadius.p1, ustate);
+				// 	const cp2 = state.toScreen(cs.compassRadius.p2, ustate);
+				// 	await tweens(
+				// 		state,
+				// 		{
+				// 			p1: state.toScreen(lastDrawn.compassRadius.p1, ustate),
+				// 			p2: state.toScreen(lastDrawn.compassRadius.p2, ustate),
+				// 		},
+				// 		({ p1, p2 }) => ({
+				// 			p1: closer(p1, cp1),
+				// 			p2: closer(p2, cp2),
+				// 		}),
+				// 		({ p1, p2 }) => Math.max(dist(p1, cp1), dist(p2, cp2)),
+				// 		({ p1, p2 }, ustate) => {
+				// 			drawCompassTemplate(p1, angleTo(p1, p2), dist(p1, p2), ctx);
+				// 		},
+				// 	);
+				// }
+				// const [t1, t2] =
+				// 	action.guide.geom.type === "CloneCircle"
+				// 		? [0, Math.PI * 2]
+				// 		: [action.guide.geom.angle, action.guide.geom.angle2!];
+				// const p1 = push(cs.compassOrigin, cs.compassRadius.radius, t1);
+				// await follow(i, p1);
+				// const ustate = histories[i].state;
+				// const radScreen = oneToScreen(state, ustate, cs.compassRadius.radius);
+				// const origin = state.toScreen(cs.compassOrigin, ustate);
+				// await tweens(
+				// 	state,
+				// 	t1,
+				// 	(theta) => closerOne(theta, t2),
+				// 	(theta) => Math.abs((t2 - theta) * radScreen),
+				// 	(theta, ustate) => {
+				// 		const cptheta = angleTo(cs.compassRadius.p1, cs.compassRadius.p2);
+				// 		drawCompassTemplate(
+				// 			state.toScreen(cs.compassRadius.p1, ustate),
+				// 			cptheta,
+				// 			radScreen,
+				// 			ctx,
+				// 		);
+				// 		drawCompass(origin, theta, radScreen, ctx);
+				// 		ctx.strokeStyle = "white";
+				// 		ctx.lineWidth = 1;
+				// 		ctx.beginPath();
+				// 		ctx.arc(origin.x, origin.y, radScreen, t1, theta);
+				// 		ctx.stroke();
+				// 	},
+				// );
 			}
-
-			// if (isCompass(state.compassState.state)) {
-			//     if (action.guide.geom.type !== 'CircleMark' && action.guide.geom.type !== 'CloneCircle') {
-
-			//     }
-			// 	await follow(i, state.compassState.compassRadius.p1);
-			// 	await follow(i, state.compassState.compassRadius.p2);
-			// 	await follow(i, state.compassState.compassOrigin);
-			// } else {
-			// 	await follow(i, state.compassState.rulerP1);
-			// 	await follow(i, state.compassState.rulerP2);
-			// }
 		}
 
 		if (action.type === "pending:compass&ruler") {
@@ -399,13 +435,14 @@ const drawRuler = (p1: Coord, p2: Coord, ctx: CanvasRenderingContext2D) => {
 
 const drawCompassTemplate = (
 	origin: Coord,
-	angle: number,
-	radius: number,
+	pd: Coord,
 	ctx: CanvasRenderingContext2D,
 ) => {
 	circle(ctx, origin, 20);
-	const pd = push(origin, angle, radius);
 	circle(ctx, pd, 20);
+
+	const angle = angleTo(origin, pd);
+	const radius = dist(origin, pd);
 
 	ctx.strokeStyle = "white";
 	ctx.lineWidth = 5;
@@ -427,22 +464,18 @@ const drawCompassTemplate = (
 	ctx.setLineDash([]);
 };
 
-const drawCompass = (
-	origin: Coord,
-	angle: number,
-	radius: number,
-	ctx: CanvasRenderingContext2D,
-) => {
-	circle(ctx, origin, 20);
-	const pd = push(origin, angle, radius);
+const drawCompass = (p0: Coord, pd: Coord, ctx: CanvasRenderingContext2D) => {
+	circle(ctx, p0, 20);
 
 	ctx.fillStyle = "rgba(0, 100, 255, 0.1)";
 	ctx.lineWidth = 5;
 
 	ctx.beginPath();
-	ctx.moveTo(origin.x, origin.y);
+	ctx.moveTo(p0.x, p0.y);
+	const angle = angleTo(p0, pd);
+	const radius = dist(p0, pd);
 
-	const half = push(origin, angle, radius / 2);
+	const half = push(p0, angle, radius / 2);
 
 	const p1 = push(half, angle + Math.PI / 2, radius / 20);
 	const p2 = push(half, angle + Math.PI / 2, -radius / 20);
@@ -455,10 +488,35 @@ const drawCompass = (
 	drawCursor(ctx, pd.x, pd.y);
 };
 
+export const drawCompassAndRuler = (
+	ctx: CanvasRenderingContext2D,
+	{ ruler, compass }: CompassRenderState,
+	state: AnimateState,
+	ustate: State,
+) => {
+	drawRuler(
+		state.toScreen(ruler.p1, ustate),
+		state.toScreen(ruler.p2, ustate),
+		ctx,
+	);
+
+	drawCompassTemplate(
+		state.toScreen(compass.source.p1, ustate),
+		state.toScreen(compass.source.p2, ustate),
+		ctx,
+	);
+
+	drawCompass(
+		state.toScreen(compass.mark.p1, ustate),
+		state.toScreen(compass.mark.p2, ustate),
+		ctx,
+	);
+};
+
 const offscreenCompassState = (
 	state: AnimateState,
 	ustate: State,
-): CompassState => {
+): CompassRenderState => {
 	const tl = state.fromScreen(
 		{ x: -state.canvas.width / 10, y: -state.canvas.height / 10 },
 		ustate,
@@ -469,10 +527,10 @@ const offscreenCompassState = (
 	);
 
 	return {
-		compassOrigin: tl,
-		compassRadius: { p1: tl, p2: { x: tl.x + 1, y: tl.y }, radius: 1 },
-		rulerP1: br,
-		rulerP2: { x: br.x + 1, y: br.y },
-		state: "DC",
+		ruler: { p1: br, p2: posOffset(br, { x: 1, y: 0 }) },
+		compass: {
+			source: { p1: tl, p2: posOffset(tl, { x: 1, y: 0 }) },
+			mark: { p1: tl, p2: posOffset(tl, { x: 1, y: 0 }) },
+		},
 	};
 };

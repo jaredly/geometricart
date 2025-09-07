@@ -5,7 +5,9 @@
 - [ ] 3d but removing by layer
 
 # Need to do
-- [ ] animate the compass n stuff
+- [x] animate the compass n stuff
+  - [ ] need to persist the compass realized angle tho. so it's a little different.
+- [ ] persistence of compass drawing pls
 
 
 - [x] implement the event handlers and rendering stuffs
