@@ -90,6 +90,19 @@ export async function animateAction(
 						({ p1, p2 }) => Math.max(dist(p1, cp1), dist(p2, cp2)),
 						({ p1, p2 }, ustate) => {
 							drawRuler(p1, p2, ctx);
+
+							drawCompassTemplate(
+								state.toScreen(lastDrawn.compass.source.p1, ustate),
+								state.toScreen(lastDrawn.compass.source.p2, ustate),
+								ctx,
+							);
+
+							drawCompass(
+								state.toScreen(lastDrawn.compass.mark.p1, ustate),
+								state.toScreen(lastDrawn.compass.mark.p2, ustate),
+								ctx,
+							);
+							drawCursor(ctx, state.cursor.x, state.cursor.y);
 						},
 					);
 					lastDrawn.ruler.p1 = state.compassState.rulerP1;
@@ -97,19 +110,12 @@ export async function animateAction(
 				}
 
 				await follow(i, action.guide.geom.p1, (_, ustate) => {
-					drawRuler(
-						state.toScreen(lastDrawn.ruler.p1, ustate),
-						state.toScreen(lastDrawn.ruler.p2, ustate),
-						ctx,
-					);
+					drawCompassAndRuler(ctx, lastDrawn, state, ustate);
 				});
 				const p1 = action.guide.geom.p1;
 				await follow(i, action.guide.geom.p2, (cursor, ustate) => {
-					drawRuler(
-						state.toScreen(lastDrawn.ruler.p1, ustate),
-						state.toScreen(lastDrawn.ruler.p2, ustate),
-						ctx,
-					);
+					drawCompassAndRuler(ctx, lastDrawn, state, ustate);
+
 					ctx.strokeStyle = "white";
 					ctx.lineWidth = 1;
 					ctx.beginPath();
@@ -122,90 +128,143 @@ export async function animateAction(
 				action.guide.geom.type === "CloneCircle" ||
 				action.guide.geom.type === "CircleMark"
 			) {
-				// if (
-				// 	!coordsEqual(
-				// 		lastDrawn.compassRadius.p1,
-				// 		state.compassState.compassRadius.p1,
-				// 	) ||
-				// 	!coordsEqual(
-				// 		lastDrawn.compassRadius.p2,
-				// 		state.compassState.compassRadius.p2,
-				// 	)
-				// ) {
-				// 	const ustate = histories[i].state;
-				// 	const cp1 = state.toScreen(cs.compassRadius.p1, ustate);
-				// 	const cp2 = state.toScreen(cs.compassRadius.p2, ustate);
-				// 	await tweens(
-				// 		state,
-				// 		{
-				// 			p1: state.toScreen(lastDrawn.compassRadius.p1, ustate),
-				// 			p2: state.toScreen(lastDrawn.compassRadius.p2, ustate),
-				// 		},
-				// 		({ p1, p2 }) => ({
-				// 			p1: closer(p1, cp1),
-				// 			p2: closer(p2, cp2),
-				// 		}),
-				// 		({ p1, p2 }) => Math.max(dist(p1, cp1), dist(p2, cp2)),
-				// 		({ p1, p2 }, ustate) => {
-				// 			drawCompassTemplate(p1, angleTo(p1, p2), dist(p1, p2), ctx);
-				// 		},
-				// 	);
-				// }
-				// if (
-				// 	!coordsEqual(
-				// 		lastDrawn.compassOrigin,
-				// 		state.compassState.compassOrigin,
-				// 	)
-				// ) {
-				// 	const ustate = histories[i].state;
-				// 	const cp1 = state.toScreen(cs.compassRadius.p1, ustate);
-				// 	const cp2 = state.toScreen(cs.compassRadius.p2, ustate);
-				// 	await tweens(
-				// 		state,
-				// 		{
-				// 			p1: state.toScreen(lastDrawn.compassRadius.p1, ustate),
-				// 			p2: state.toScreen(lastDrawn.compassRadius.p2, ustate),
-				// 		},
-				// 		({ p1, p2 }) => ({
-				// 			p1: closer(p1, cp1),
-				// 			p2: closer(p2, cp2),
-				// 		}),
-				// 		({ p1, p2 }) => Math.max(dist(p1, cp1), dist(p2, cp2)),
-				// 		({ p1, p2 }, ustate) => {
-				// 			drawCompassTemplate(p1, angleTo(p1, p2), dist(p1, p2), ctx);
-				// 		},
-				// 	);
-				// }
-				// const [t1, t2] =
-				// 	action.guide.geom.type === "CloneCircle"
-				// 		? [0, Math.PI * 2]
-				// 		: [action.guide.geom.angle, action.guide.geom.angle2!];
-				// const p1 = push(cs.compassOrigin, cs.compassRadius.radius, t1);
-				// await follow(i, p1);
-				// const ustate = histories[i].state;
-				// const radScreen = oneToScreen(state, ustate, cs.compassRadius.radius);
-				// const origin = state.toScreen(cs.compassOrigin, ustate);
-				// await tweens(
-				// 	state,
-				// 	t1,
-				// 	(theta) => closerOne(theta, t2),
-				// 	(theta) => Math.abs((t2 - theta) * radScreen),
-				// 	(theta, ustate) => {
-				// 		const cptheta = angleTo(cs.compassRadius.p1, cs.compassRadius.p2);
-				// 		drawCompassTemplate(
-				// 			state.toScreen(cs.compassRadius.p1, ustate),
-				// 			cptheta,
-				// 			radScreen,
-				// 			ctx,
-				// 		);
-				// 		drawCompass(origin, theta, radScreen, ctx);
-				// 		ctx.strokeStyle = "white";
-				// 		ctx.lineWidth = 1;
-				// 		ctx.beginPath();
-				// 		ctx.arc(origin.x, origin.y, radScreen, t1, theta);
-				// 		ctx.stroke();
-				// 	},
-				// );
+				if (
+					!coordsEqual(
+						lastDrawn.compass.source.p1,
+						state.compassState.compassRadius.p1,
+					) ||
+					!coordsEqual(
+						lastDrawn.compass.source.p2,
+						state.compassState.compassRadius.p2,
+					)
+				) {
+					const ustate = histories[i].state;
+					const cp1 = state.toScreen(cs.compassRadius.p1, ustate);
+					const cp2 = state.toScreen(cs.compassRadius.p2, ustate);
+					await tweens(
+						state,
+						{
+							p1: state.toScreen(lastDrawn.compass.mark.p1, ustate),
+							p2: state.toScreen(lastDrawn.compass.mark.p2, ustate),
+						},
+						({ p1, p2 }) => ({
+							p1: closer(p1, cp1),
+							p2: closer(p2, cp2),
+						}),
+						({ p1, p2 }) => Math.max(dist(p1, cp1), dist(p2, cp2)),
+						({ p1, p2 }, ustate) => {
+							drawRuler(
+								state.toScreen(lastDrawn.ruler.p1, ustate),
+								state.toScreen(lastDrawn.ruler.p2, ustate),
+								ctx,
+							);
+
+							drawCompassTemplate(
+								state.toScreen(lastDrawn.compass.source.p1, ustate),
+								state.toScreen(lastDrawn.compass.source.p2, ustate),
+								ctx,
+							);
+
+							drawCompass(p1, p2, ctx);
+							drawCursor(ctx, state.cursor.x, state.cursor.y);
+						},
+					);
+					lastDrawn.compass.source.p1 = state.compassState.compassRadius.p1;
+					lastDrawn.compass.source.p2 = state.compassState.compassRadius.p2;
+					lastDrawn.compass.mark.p1 = state.compassState.compassRadius.p1;
+					lastDrawn.compass.mark.p2 = state.compassState.compassRadius.p2;
+				}
+
+				const [t1, t2] =
+					action.guide.geom.type === "CloneCircle"
+						? [0, Math.PI * 2]
+						: [action.guide.geom.angle, action.guide.geom.angle2!];
+
+				const ustate = histories[i].state;
+				const cp1 = state.toScreen(cs.compassOrigin, ustate);
+				const cp2 = state.toScreen(
+					push(cs.compassOrigin, t1, cs.compassRadius.radius),
+					ustate,
+				);
+				await tweens(
+					state,
+					{
+						p1: state.toScreen(lastDrawn.compass.mark.p1, ustate),
+						p2: state.toScreen(lastDrawn.compass.mark.p2, ustate),
+					},
+					({ p1, p2 }) => ({
+						p1: closer(p1, cp1),
+						p2: closer(p2, cp2),
+					}),
+					({ p1, p2 }) => Math.max(dist(p1, cp1), dist(p2, cp2)),
+					({ p1, p2 }, ustate) => {
+						drawRuler(
+							state.toScreen(lastDrawn.ruler.p1, ustate),
+							state.toScreen(lastDrawn.ruler.p2, ustate),
+							ctx,
+						);
+
+						drawCompassTemplate(
+							state.toScreen(lastDrawn.compass.source.p1, ustate),
+							state.toScreen(lastDrawn.compass.source.p2, ustate),
+							ctx,
+						);
+
+						drawCompass(p1, p2, ctx);
+						drawCursor(ctx, state.cursor.x, state.cursor.y);
+					},
+				);
+				lastDrawn.compass.mark.p1 = cs.compassOrigin;
+				lastDrawn.compass.mark.p2 = push(
+					cs.compassOrigin,
+					t1,
+					cs.compassRadius.radius,
+				);
+
+				const p1 = push(cs.compassOrigin, t1, cs.compassRadius.radius);
+				await follow(i, p1, (_, ustate) => {
+					drawCompassAndRuler(ctx, lastDrawn, state, ustate);
+				});
+				const radScreen = oneToScreen(state, ustate, cs.compassRadius.radius);
+				const origin = state.toScreen(cs.compassOrigin, ustate);
+				await tweens(
+					state,
+					t1,
+					(theta) => closerOne(theta, t2),
+					(theta) => Math.abs((t2 - theta) * radScreen),
+					(theta, ustate) => {
+						drawRuler(
+							state.toScreen(lastDrawn.ruler.p1, ustate),
+							state.toScreen(lastDrawn.ruler.p2, ustate),
+							ctx,
+						);
+
+						drawCompassTemplate(
+							state.toScreen(lastDrawn.compass.source.p1, ustate),
+							state.toScreen(lastDrawn.compass.source.p2, ustate),
+							ctx,
+						);
+
+						const p2 = push(origin, theta, radScreen);
+						drawCompass(origin, p2, ctx);
+
+						ctx.strokeStyle = "white";
+						ctx.lineWidth = 1;
+						ctx.beginPath();
+						ctx.arc(origin.x, origin.y, radScreen, t1, theta);
+						ctx.stroke();
+
+						state.cursor.x = p2.x;
+						state.cursor.y = p2.y;
+						drawCursor(ctx, p2.x, p2.y);
+					},
+				);
+
+				lastDrawn.compass.mark.p2 = push(
+					cs.compassOrigin,
+					t2,
+					cs.compassRadius.radius,
+				);
 			}
 		}
 
@@ -467,11 +526,6 @@ const drawCompassTemplate = (
 const drawCompass = (p0: Coord, pd: Coord, ctx: CanvasRenderingContext2D) => {
 	circle(ctx, p0, 20);
 
-	ctx.fillStyle = "rgba(0, 100, 255, 0.1)";
-	ctx.lineWidth = 5;
-
-	ctx.beginPath();
-	ctx.moveTo(p0.x, p0.y);
 	const angle = angleTo(p0, pd);
 	const radius = dist(p0, pd);
 
@@ -480,12 +534,30 @@ const drawCompass = (p0: Coord, pd: Coord, ctx: CanvasRenderingContext2D) => {
 	const p1 = push(half, angle + Math.PI / 2, radius / 20);
 	const p2 = push(half, angle + Math.PI / 2, -radius / 20);
 
+	ctx.fillStyle = "rgba(0, 100, 255, 0.1)";
+	ctx.lineWidth = 5;
+
+	ctx.beginPath();
+	ctx.moveTo(p0.x, p0.y);
 	ctx.lineTo(p1.x, p1.y);
 	ctx.lineTo(pd.x, pd.y);
 	ctx.lineTo(p2.x, p2.y);
 	ctx.fill();
 
-	drawCursor(ctx, pd.x, pd.y);
+	ctx.strokeStyle = "rgba(0, 100, 255)";
+	ctx.lineWidth = 2;
+
+	ctx.beginPath();
+	ctx.moveTo(p0.x, p0.y);
+	ctx.lineTo(p1.x, p1.y);
+	ctx.lineTo(pd.x, pd.y);
+	ctx.lineTo(p2.x, p2.y);
+	ctx.lineTo(p0.x, p0.y);
+	ctx.stroke();
+
+	circle(ctx, pd, 20);
+
+	// drawCursor(ctx, pd.x, pd.y);
 };
 
 export const drawCompassAndRuler = (
