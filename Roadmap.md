@@ -1,10 +1,14 @@
 
 ## Guide Inspector Please
 
-- [ ] Only shows up when a guide is selected
+- [x] For knowing what circles share the same radius
+- [ ]
 
 
 ##
+
+- [ ] when animating in a path, if all the sides are shared with existing paths, just plop it in
+  - ok for that matter, do we even need to do the song & dance? can't I just always plop it in?
 
 - ooooh can we do like a dependency analysis on marks, and do some regrouping of stuff?
   like do a toposort but also like do remapping of parents if there are equivalent measurements (for setting the compass angle) so that all the marks for a given circle size can happen at once.

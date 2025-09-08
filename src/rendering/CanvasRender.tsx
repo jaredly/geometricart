@@ -315,9 +315,13 @@ export const canvasRender = (
 	inativeGuidePrimitives.forEach(({ prim }) => {
 		renderPrimitive(ctx, prim, zoom, sourceHeight, sourceWidth);
 	});
-	guidePrimitives.forEach(({ prim }, i) => {
+
+    const guideIndices = Object.keys(state.guides)
+
+	guidePrimitives.forEach(({ prim, guides }, i) => {
 		if (highlightRecentGuides) {
-			ctx.strokeStyle = `rgba(255,255,255,${(i / guidePrimitives.length) * 0.5 + 0.5})`;
+            const latest = Math.max(...guides.map(id => guideIndices.indexOf(id)))
+			ctx.strokeStyle = `rgba(255,255,255,${(6 - Math.min(6, guideIndices.length - 1 - latest)) / 6 * 0.8 + 0.2})`;
 		}
 		renderPrimitive(ctx, prim, zoom, sourceHeight, sourceWidth);
 	});

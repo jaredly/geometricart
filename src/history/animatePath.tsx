@@ -54,8 +54,8 @@ export async function animatePath(
 				transforms.forEach((transform) => {
 					const mx = transformsToMatrices(transform);
 					ctx.strokeStyle = "orange";
-					ctx.lineWidth = 3;
-					ctx.setLineDash([5, 15]);
+					ctx.lineWidth = 10;
+					// ctx.setLineDash([5, 15]);
 					ctx.beginPath();
 					tracePath(
 						ctx,
