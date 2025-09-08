@@ -49,10 +49,10 @@ export function MirrorItems({
 						inputId={k}
 						onClick={(evt) => evt.stopPropagation()}
 						onChange={(evt) => {
-							if (state.activeMirror !== evt.value) {
+							if (state.activeMirror !== k) {
 								dispatch({
 									type: "mirror:active",
-									id: evt.value,
+									id: k,
 								});
 							} else {
 								dispatch({

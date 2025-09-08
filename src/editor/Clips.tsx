@@ -81,7 +81,7 @@ export function Clips({
 					/>
 					InsetBefore
 					<Checkbox
-						checked={state.clips[id].defaultInsetBefore}
+						checked={!!state.clips[id].defaultInsetBefore}
 						inputId={id}
 						onClick={(evt) => evt.stopPropagation()}
 						onChange={(evt) => {

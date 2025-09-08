@@ -6,8 +6,11 @@
 
 # Need to do
 - [x] animate the compass n stuff
-  - [ ] need to persist the compass realized angle tho. so it's a little different.
-- [ ] persistence of compass drawing pls
+  - [x] need to persist the compass realized angle tho. so it's a little different.
+- [x] persistence of compass drawing pls
+- [ ] the compass needs to tween angle & radius, not p1 and p2
+- [ ] should draw the fixpoint of the compass different from the drawing head.
+- [ ] there's a weird thing where some circle marks are reversed, and maybe should be drawn as the greater circle, but they aren't. But when animating, I do follow the greater circle.
 
 
 - [x] implement the event handlers and rendering stuffs
