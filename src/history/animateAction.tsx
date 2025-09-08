@@ -141,34 +141,55 @@ export async function animateAction(
 					const ustate = histories[i].state;
 					const cp1 = state.toScreen(cs.compassRadius.p1, ustate);
 					const cp2 = state.toScreen(cs.compassRadius.p2, ustate);
+					const cpp = pointsToPolar(cp1, cp2);
+					const currentp = pointsToPolar(
+						state.toScreen(lastDrawn.compass.mark.p1, ustate),
+						state.toScreen(lastDrawn.compass.mark.p2, ustate),
+					);
+
+					const mid: Polar = { ...cpp, dist: currentp.dist };
 					await tweens(
 						state,
-						{
-							p1: state.toScreen(lastDrawn.compass.mark.p1, ustate),
-							p2: state.toScreen(lastDrawn.compass.mark.p2, ustate),
-						},
-						({ p1, p2 }) => ({
-							p1: closer(p1, cp1),
-							p2: closer(p2, cp2),
-						}),
-						({ p1, p2 }) => Math.max(dist(p1, cp1), dist(p2, cp2)),
-						({ p1, p2 }, ustate) => {
+						currentp,
+						(polar) => polarCloser(polar, mid),
+						(polar) => polarDist(polar, mid),
+						(polar, ustate) => {
 							drawRuler(
 								state.toScreen(lastDrawn.ruler.p1, ustate),
 								state.toScreen(lastDrawn.ruler.p2, ustate),
 								ctx,
 							);
-
 							drawCompassTemplate(
 								state.toScreen(lastDrawn.compass.source.p1, ustate),
 								state.toScreen(lastDrawn.compass.source.p2, ustate),
 								ctx,
 							);
-
-							drawCompass(p1, p2, ctx);
+							drawCompass(polar.origin, polarPoint(polar), ctx);
 							drawCursor(ctx, state.cursor.x, state.cursor.y);
 						},
 					);
+
+					await tweens(
+						state,
+						mid,
+						(polar) => polarCloser(polar, cpp),
+						(polar) => polarDist(polar, cpp),
+						(polar, ustate) => {
+							drawRuler(
+								state.toScreen(lastDrawn.ruler.p1, ustate),
+								state.toScreen(lastDrawn.ruler.p2, ustate),
+								ctx,
+							);
+							drawCompassTemplate(
+								state.toScreen(lastDrawn.compass.source.p1, ustate),
+								state.toScreen(lastDrawn.compass.source.p2, ustate),
+								ctx,
+							);
+							drawCompass(polar.origin, polarPoint(polar), ctx);
+							drawCursor(ctx, state.cursor.x, state.cursor.y);
+						},
+					);
+
 					lastDrawn.compass.source.p1 = state.compassState.compassRadius.p1;
 					lastDrawn.compass.source.p2 = state.compassState.compassRadius.p2;
 					lastDrawn.compass.mark.p1 = state.compassState.compassRadius.p1;
@@ -186,18 +207,18 @@ export async function animateAction(
 					push(cs.compassOrigin, t1, cs.compassRadius.radius),
 					ustate,
 				);
+				const cpp = pointsToPolar(cp1, cp2);
+				const currentp = pointsToPolar(
+					state.toScreen(lastDrawn.compass.mark.p1, ustate),
+					state.toScreen(lastDrawn.compass.mark.p2, ustate),
+				);
+
 				await tweens(
 					state,
-					{
-						p1: state.toScreen(lastDrawn.compass.mark.p1, ustate),
-						p2: state.toScreen(lastDrawn.compass.mark.p2, ustate),
-					},
-					({ p1, p2 }) => ({
-						p1: closer(p1, cp1),
-						p2: closer(p2, cp2),
-					}),
-					({ p1, p2 }) => Math.max(dist(p1, cp1), dist(p2, cp2)),
-					({ p1, p2 }, ustate) => {
+					currentp,
+					(polar) => polarCloser(polar, cpp),
+					(polar) => polarDist(polar, cpp),
+					(polar, ustate) => {
 						drawRuler(
 							state.toScreen(lastDrawn.ruler.p1, ustate),
 							state.toScreen(lastDrawn.ruler.p2, ustate),
@@ -210,7 +231,7 @@ export async function animateAction(
 							ctx,
 						);
 
-						drawCompass(p1, p2, ctx);
+						drawCompass(polar.origin, polarPoint(polar), ctx);
 						drawCursor(ctx, state.cursor.x, state.cursor.y);
 					},
 				);
@@ -606,3 +627,23 @@ const offscreenCompassState = (
 		},
 	};
 };
+
+export type Polar = { origin: Coord; angle: number; dist: number };
+
+export const pointsToPolar = (p1: Coord, p2: Coord) => ({
+	origin: p1,
+	angle: angleTo(p1, p2),
+	dist: dist(p1, p2),
+});
+
+export const polarPoint = (polar: Polar) =>
+	push(polar.origin, polar.angle, polar.dist);
+
+export const polarCloser = (p1: Polar, p2: Polar, amt?: number): Polar => ({
+	origin: closer(p1.origin, p2.origin, amt),
+	angle: closerOne(p1.angle, p2.angle, amt),
+	dist: closerOne(p1.dist, p2.dist, amt),
+});
+
+export const polarDist = (p1: Polar, p2: Polar) =>
+	Math.max(dist(p1.origin, p2.origin), dist(polarPoint(p1), polarPoint(p2)));
