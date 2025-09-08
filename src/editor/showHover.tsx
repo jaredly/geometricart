@@ -28,6 +28,40 @@ export const showHover = (
 	bounds: Bounds,
 	selection: boolean,
 ) => {
+	if (hover.type === "guides" && hover.ids?.length) {
+		console.log("got ids");
+		return hover.ids.map((id) =>
+			geomsForGiude(
+				state.guides[id],
+				typeof state.guides[id].mirror === "string"
+					? mirrorTransforms[state.guides[id].mirror as string]
+					: state.guides[id].mirror
+						? getTransformsForNewMirror(state.guides[id].mirror as Mirror)
+						: null,
+			).map((geom, j) =>
+				geomToPrimitives(geom.geom).flatMap((prim, i) => [
+					<RenderPrimitive
+						bounds={bounds}
+						prim={prim}
+						strokeWidth={10}
+						color={"red"}
+						zoom={zoom}
+						key={`${key}:${id}:${j}:${i}-bg`}
+						lineCap
+					/>,
+					<RenderPrimitive
+						bounds={bounds}
+						prim={prim}
+						strokeWidth={4}
+						color={state.guides[id].active ? "#ccc" : "rgba(102,102,102,0.5)"}
+						zoom={zoom}
+						key={`${key}:${id}:${j}:${i}-fg`}
+					/>,
+				]),
+			),
+		);
+	}
+
 	if (hover.type !== "element") {
 		return null;
 	}

@@ -1,5 +1,10 @@
 import React from "react";
-import { posOffset, push } from "../rendering/getMirrorTransforms";
+import {
+	angleTo,
+	dist,
+	posOffset,
+	push,
+} from "../rendering/getMirrorTransforms";
 import { Circle, lineToSlope, Primitive } from "../rendering/intersect";
 import { Coord, GuideGeom, View } from "../types";
 import { EditorState } from "./Canvas";
@@ -18,9 +23,35 @@ type Shapes = (
 export const isCompass = (state: CompassState["state"]) =>
 	["PO", "PA1", "PA2", "DC"].includes(state);
 
+const diamond = (p1: Coord, p2: Coord): Primitive[] => {
+	const theta = angleTo(p1, p2);
+	const mag = dist(p1, p2);
+	const mid = push(p1, theta, mag / 2);
+	const o1 = push(mid, theta + Math.PI / 2, mag / 10);
+	const o2 = push(mid, theta + Math.PI / 2, -mag / 10);
+	return [
+		lineToSlope(p1, o1, true),
+		lineToSlope(p1, o2, true),
+		lineToSlope(p2, o1, true),
+		lineToSlope(p2, o2, true),
+	];
+};
+
 const compassShapes = (state: CompassState): Shapes => {
 	if (isCompass(state.state)) {
+		const mid = push(
+			state.compassOrigin,
+			angleTo(state.compassOrigin, state.compassRadius.p2),
+			state.compassRadius.radius / 2,
+		);
 		const shapes: Shapes = [
+			...diamond(state.compassRadius.p1, state.compassRadius.p2).map(
+				(prim) => ({
+					type: "prim" as const,
+					prim,
+					dashed: true,
+				}),
+			),
 			{
 				type: "dot",
 				pos: state.compassOrigin,

@@ -113,6 +113,8 @@ export const animateHistory = async (
 			0,
 			overlays,
 			cachedPaletteImages,
+			false,
+			null,
 			true,
 		);
 		context.restore();

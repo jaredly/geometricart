@@ -18,7 +18,7 @@ export type Hover =
 			kind: Selection["type"] | "Clip" | "Tiling";
 			id: Id;
 	  }
-	| { type: "guides" };
+	| { type: "guides"; ids?: string[] };
 
 export type TabProps = {
 	state: State;

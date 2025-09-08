@@ -23,10 +23,12 @@ export function RenderPrimitive({
 	touchOnly,
 	ignoreMouse,
 	strokeWidth = 1,
+	lineCap,
 }: {
 	color?: string;
 	ignoreMouse?: boolean;
 	isImplied?: boolean;
+	lineCap?: boolean;
 	prim: Primitive;
 	bounds: Bounds;
 	zoom: number;
@@ -65,6 +67,7 @@ export function RenderPrimitive({
 				}
 			: {}),
 		className: onClick ? hoverClass : undefined,
+		strokeLinecap: "round",
 	};
 	if (ignoreMouse) {
 		common.pointerEvents = "none";

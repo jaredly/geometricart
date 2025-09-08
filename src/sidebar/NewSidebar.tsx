@@ -42,6 +42,7 @@ import { Screen, UIDispatch, UIState } from "../useUIState";
 import { useLocalStorage } from "../vest/App";
 import { MirrorItems } from "./MirrorItems";
 import { PK } from "../editor/pk";
+import { GuideInspector } from "./GuideInspector";
 
 declare module "csstype" {
 	interface Properties {
@@ -272,6 +273,19 @@ export const NewSidebar = ({
 									state={state}
 									setHover={setHover}
 									dispatch={dispatch}
+								/>
+							);
+						},
+					},
+					{
+						key: "guide-inspector",
+						header: <div> Guide Inspector </div>,
+						content: () => {
+							return (
+								<GuideInspector
+									state={state}
+									setHover={setHover}
+									// dispatch={dispatch}
 								/>
 							);
 						},

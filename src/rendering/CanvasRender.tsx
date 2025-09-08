@@ -62,6 +62,7 @@ export const canvasRender = (
 	images: (HTMLImageElement | null)[],
 	extraLarge = false,
 	backgroundAlpha?: number | null,
+	highlightRecentGuides = false,
 ) => {
 	const palette = state.palette;
 
@@ -314,7 +315,10 @@ export const canvasRender = (
 	inativeGuidePrimitives.forEach(({ prim }) => {
 		renderPrimitive(ctx, prim, zoom, sourceHeight, sourceWidth);
 	});
-	guidePrimitives.forEach(({ prim }) => {
+	guidePrimitives.forEach(({ prim }, i) => {
+		if (highlightRecentGuides) {
+			ctx.strokeStyle = `rgba(255,255,255,${(i / guidePrimitives.length) * 0.5 + 0.5})`;
+		}
 		renderPrimitive(ctx, prim, zoom, sourceHeight, sourceWidth);
 	});
 	ctx.fillStyle = "#fff";
@@ -445,7 +449,6 @@ export function renderPrimitive(
 	zoom: number,
 	sourceHeight: number,
 	sourceWidth: number,
-	extraLarge = false,
 ) {
 	ctx.beginPath();
 	if (prim.type === "line") {

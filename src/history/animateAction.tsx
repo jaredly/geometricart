@@ -164,7 +164,7 @@ export async function animateAction(
 								state.toScreen(lastDrawn.compass.source.p2, ustate),
 								ctx,
 							);
-							drawCompass(polar.origin, polarPoint(polar), ctx);
+							drawCompass(polar.origin, polarPoint(polar), ctx, true);
 							drawCursor(ctx, state.cursor.x, state.cursor.y);
 						},
 					);
@@ -185,7 +185,7 @@ export async function animateAction(
 								state.toScreen(lastDrawn.compass.source.p2, ustate),
 								ctx,
 							);
-							drawCompass(polar.origin, polarPoint(polar), ctx);
+							drawCompass(polar.origin, polarPoint(polar), ctx, true);
 							drawCursor(ctx, state.cursor.x, state.cursor.y);
 						},
 					);
@@ -490,8 +490,13 @@ export async function animateAction(
 	}
 }
 
-const circle = (ctx: CanvasRenderingContext2D, p: Coord, r: number) => {
-	ctx.strokeStyle = "rgb(0,100,255)";
+const circle = (
+	ctx: CanvasRenderingContext2D,
+	p: Coord,
+	r: number,
+	color = "rgb(0,100,255)",
+) => {
+	ctx.strokeStyle = color;
 	ctx.lineWidth = 4;
 	ctx.beginPath();
 	ctx.ellipse(p.x, p.y, r, r, 0, 0, Math.PI * 2);
@@ -518,8 +523,8 @@ const drawCompassTemplate = (
 	pd: Coord,
 	ctx: CanvasRenderingContext2D,
 ) => {
-	circle(ctx, origin, 20);
-	circle(ctx, pd, 20);
+	// circle(ctx, origin, 20);
+	// circle(ctx, pd, 20);
 
 	const angle = angleTo(origin, pd);
 	const radius = dist(origin, pd);
@@ -544,7 +549,12 @@ const drawCompassTemplate = (
 	ctx.setLineDash([]);
 };
 
-const drawCompass = (p0: Coord, pd: Coord, ctx: CanvasRenderingContext2D) => {
+const drawCompass = (
+	p0: Coord,
+	pd: Coord,
+	ctx: CanvasRenderingContext2D,
+	destCircle = false,
+) => {
 	circle(ctx, p0, 20);
 
 	const angle = angleTo(p0, pd);
@@ -576,7 +586,8 @@ const drawCompass = (p0: Coord, pd: Coord, ctx: CanvasRenderingContext2D) => {
 	ctx.lineTo(p0.x, p0.y);
 	ctx.stroke();
 
-	circle(ctx, pd, 20);
+	if (destCircle) circle(ctx, pd, 20);
+	// circle(ctx, pd, 10, "rgba(0,255,100,0.5)");
 
 	// drawCursor(ctx, pd.x, pd.y);
 };

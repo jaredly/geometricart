@@ -1,6 +1,14 @@
 
+## Guide Inspector Please
+
+- [ ] Only shows up when a guide is selected
+
+
+##
+
 - ooooh can we do like a dependency analysis on marks, and do some regrouping of stuff?
   like do a toposort but also like do remapping of parents if there are equivalent measurements (for setting the compass angle) so that all the marks for a given circle size can happen at once.
+
 
 - [ ] 3d but removing by layer
 
@@ -8,9 +16,11 @@
 - [x] animate the compass n stuff
   - [x] need to persist the compass realized angle tho. so it's a little different.
 - [x] persistence of compass drawing pls
-- [ ] the compass needs to tween angle & radius, not p1 and p2
-- [ ] should draw the fixpoint of the compass different from the drawing head.
+- [x] the compass needs to tween angle & radius, not p1 and p2
+- [x] should draw the fixpoint of the compass different from the drawing head.
 - [ ] there's a weird thing where some circle marks are reversed, and maybe should be drawn as the greater circle, but they aren't. But when animating, I do follow the greater circle.
+
+- [ ] I want to do a recency thing when drawing guides in the history view.
 
 
 - [x] implement the event handlers and rendering stuffs
