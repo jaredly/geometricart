@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Coord, State } from "./types";
 // @ts-ignore
-import { Homography } from "homography";
+// import { Homography } from "homography";
 import { Action } from "./state/Action";
 import { push } from "./rendering/getMirrorTransforms";
 
@@ -50,8 +50,8 @@ export const OverlayEditor = ({
 			);
 		}
 
-		const hog = new Homography();
-		hog.setImage(ref.current!);
+		const hog = null; // new Homography();
+		// hog.setImage(ref.current!);
 
 		const x1 = Math.max(0, (w - h) / w / 2);
 		const x2 = 1 - x1;

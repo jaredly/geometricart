@@ -5,8 +5,6 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Coord, Overlay, Overlay as OverlayT, State, View } from "../types";
 import { screenToWorld } from "./Canvas";
 import { useCurrent } from "../App";
-// @ts-ignore
-import { Homography } from "homography";
 
 export function Overlay({
 	state,
@@ -122,6 +120,8 @@ export function Overlay({
 		src.src = attachment.contents;
 		await loaded;
 
+		// @ts-ignore
+		const Homography = await import("homography");
 		const hog = new Homography();
 		hog.setImage(src);
 		hog.setReferencePoints(
