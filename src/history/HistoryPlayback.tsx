@@ -9,6 +9,10 @@ import {undo} from '../state/reducer';
 import {Coord, State, View} from '../types';
 import {animateHistory} from './animateHistory';
 import {BlurInt} from '../editor/Forms';
+import {CompassRenderState} from '../editor/compassAndRuler';
+import {drawCompassAndRuler} from './animateAction';
+import {worldToScreen} from '../editor/Canvas';
+import {angleTo, dist, push} from '../rendering/getMirrorTransforms';
 
 export const HistoryPlayback = ({
     state,
@@ -22,7 +26,7 @@ export const HistoryPlayback = ({
     const [zoomPreview, setZoomPreview] = useState(null as null | {zoom: number; center: Coord});
 
     const [exportUrl, setExportUrl] = useState(null as null | string);
-    const [preview, setPreview] = useState(null as null | 'corner' | number);
+    const [preview, setPreview] = useState('corner' as null | 'corner' | number);
     const [title, setTitle] = useState(false);
     const [preimage, setPreimage] = useState(false);
     const log = useRef<HTMLDivElement>(null);
@@ -74,6 +78,7 @@ export const HistoryPlayback = ({
 
             const overlays = await cacheOverlays(hstate);
 
+            ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
             canvasRender(
                 ctx,
                 hstate,
@@ -84,12 +89,79 @@ export const HistoryPlayback = ({
                 0,
                 overlays,
                 await paletteImages(state.palette),
+                false,
+                null,
                 true,
             );
             ctx.restore();
             if (hstate.view.texture) {
                 const size = Math.max(w * 2 * zoom, h * 2 * zoom);
                 renderTexture(hstate.view.texture, size, size, ctx);
+            }
+
+            const action = histories[current].action;
+
+            if (action?.type === 'path:update:many') {
+            } else {
+                const cstate = histories[current].state.compassState;
+
+                let lastMarkTheta = null as null | number;
+                for (let i = current; i >= 0; i--) {
+                    const action = histories[i].action;
+                    if (action?.type === 'guide:add') {
+                        if (action.guide.geom.type === 'CloneCircle') {
+                            lastMarkTheta = 0;
+                            break;
+                        }
+                        if (action.guide.geom.type === 'CircleMark') {
+                            lastMarkTheta = action.guide.geom.angle2!;
+                            break;
+                        }
+                    }
+                }
+
+                if (cstate) {
+                    drawCompassAndRuler(
+                        ctx,
+                        {
+                            ruler: {p1: cstate.rulerP1, p2: cstate.rulerP2},
+                            compass: {
+                                source: {p1: cstate.compassRadius.p1, p2: cstate.compassRadius.p2},
+                                mark: {
+                                    p1: cstate.compassOrigin,
+                                    p2: push(
+                                        cstate.compassOrigin,
+                                        lastMarkTheta ?? 0,
+                                        dist(cstate.compassRadius.p1, cstate.compassRadius.p2),
+                                    ),
+                                },
+                            },
+                        },
+                        {
+                            toScreen: (point, state) =>
+                                worldToScreen(ctx.canvas.width, ctx.canvas.height, point, {
+                                    ...state.view,
+                                    zoom: state.view.zoom * 2,
+                                }),
+                        },
+                        histories[current].state,
+                    );
+                }
+
+                // Draw the cursor
+                // if (
+                //     state.lastDrawnCompassState &&
+                //     !['path:create', 'path:create:many'].includes(action?.type!) &&
+                //     !(action?.type === 'view:update' && !action.view.guides)
+                // ) {
+                //     drawCompassAndRuler(
+                //         ctx,
+                //         state.lastDrawnCompassState,
+                //         state,
+                //         histories[state.i].state,
+                //     );
+                // }
+                // drawCursor(ctx, state.cursor.x, state.cursor.y);
             }
         };
         run();
@@ -145,6 +217,7 @@ export const HistoryPlayback = ({
                                 log,
                                 inputRef.current,
                                 title,
+                                preview,
                             );
                         } else {
                             stopped.current = true;

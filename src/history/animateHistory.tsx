@@ -160,6 +160,14 @@ export const animateHistory = async (
         draw(startAt - 1, offctx);
         state.frames[startAt - 1] = await createImageBitmap(offcan);
     }
+
+    let lastScene = null;
+    if (preview != null || true) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        draw(state.histories.length - 1, offctx);
+        lastScene = await createImageBitmap(offcan);
+    }
+
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     if (animateTitle) {
@@ -241,24 +249,21 @@ export const animateHistory = async (
         }
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        // if (state.i < histories.length - 1) {
-        //     if (preview === 'corner') {
-        //         ctx.drawImage(
-        //             state.frames[state.frames.length - 1],
-        //             0,
-        //             0,
-        //             ctx.canvas.width / 5,
-        //             ctx.canvas.height / 5,
-        //         );
-        //     }
-        // }
 
         if (preimage) {
             ctx.drawImage(state.frames[state.i], 0, 0);
         } else {
+            if (preview === 'corner') {
+                ctx.drawImage(lastScene!, 0, 0, ctx.canvas.width / 5, ctx.canvas.height / 5);
+            } else if (preview != null) {
+                ctx.globalAlpha = preview;
+                ctx.drawImage(lastScene!, 0, 0);
+                ctx.globalAlpha = 1;
+            }
             draw(state.i);
             state.frames.push(await createImageBitmap(canvas));
         }
+
         const action = histories[state.i].action;
 
         if (action?.type === 'path:update:many') {

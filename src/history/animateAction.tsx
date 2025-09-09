@@ -563,7 +563,7 @@ const drawCompass = (p0: Coord, pd: Coord, ctx: CanvasRenderingContext2D, destCi
 export const drawCompassAndRuler = (
     ctx: CanvasRenderingContext2D,
     {ruler, compass}: CompassRenderState,
-    state: AnimateState,
+    state: Pick<AnimateState, 'toScreen'>,
     ustate: State,
 ) => {
     drawRuler(state.toScreen(ruler.p1, ustate), state.toScreen(ruler.p2, ustate), ctx);
