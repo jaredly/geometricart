@@ -47,6 +47,7 @@ export const animateHistory = async (
     log: React.RefObject<HTMLDivElement>,
     inputRef?: HTMLInputElement | null,
     animateTitle?: boolean,
+    preview?: 'corner' | number | null,
 ) => {
     const now = Date.now();
 
@@ -210,11 +211,8 @@ export const animateHistory = async (
 
     for (; state.i < histories.length; state.i++) {
         if (stopped.current) {
-            break;
+            return; // break;
         }
-        // if (originalState.historyView?.skips.includes(state.i)) {
-        //     continue;
-        // }
         if (inputRef) {
             inputRef.value = state.i + '';
         }
@@ -243,6 +241,18 @@ export const animateHistory = async (
         }
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+        // if (state.i < histories.length - 1) {
+        //     if (preview === 'corner') {
+        //         ctx.drawImage(
+        //             state.frames[state.frames.length - 1],
+        //             0,
+        //             0,
+        //             ctx.canvas.width / 5,
+        //             ctx.canvas.height / 5,
+        //         );
+        //     }
+        // }
+
         if (preimage) {
             ctx.drawImage(state.frames[state.i], 0, 0);
         } else {

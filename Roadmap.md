@@ -2,12 +2,14 @@
 ## Guide Inspector Please
 
 - [x] For knowing what circles share the same radius
-- [ ]
-
 
 ##
 
-- [ ] when animating in a path, if all the sides are shared with existing paths, just plop it in
+- [ ] what iff there we show the final image as like ...
+  - [ ] a preview in the corner?
+  - [ ] a preview underlayment
+
+- [x] when animating in a path, if all the sides are shared with existing paths, just plop it in
   - ok for that matter, do we even need to do the song & dance? can't I just always plop it in?
 
 - ooooh can we do like a dependency analysis on marks, and do some regrouping of stuff?
@@ -22,9 +24,9 @@
 - [x] persistence of compass drawing pls
 - [x] the compass needs to tween angle & radius, not p1 and p2
 - [x] should draw the fixpoint of the compass different from the drawing head.
-- [ ] there's a weird thing where some circle marks are reversed, and maybe should be drawn as the greater circle, but they aren't. But when animating, I do follow the greater circle.
+- [x] there's a weird thing where some circle marks are reversed, and maybe should be drawn as the greater circle, but they aren't. But when animating, I do follow the greater circle.
 
-- [ ] I want to do a recency thing when drawing guides in the history view.
+- [x] I want to do a recency thing when drawing guides in the history view.
 
 
 - [x] implement the event handlers and rendering stuffs
