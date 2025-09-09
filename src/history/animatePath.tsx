@@ -10,6 +10,10 @@ import {
 import {transformSegment} from '../rendering/points';
 import {AnimateState, wait} from './animateHistory';
 import {segmentsCenter} from '../editor/Bounds';
+import {segmentKey} from '../rendering/segmentKey';
+import {reverseSegment} from '../rendering/pathsAreIdentical';
+import {ensureClockwise} from '../rendering/pathToPoints';
+import {simplifyPath} from '../rendering/simplifyPath';
 
 const animateSegments = async (
     {i, ctx, histories, canvas, frames}: AnimateState,
@@ -109,11 +113,44 @@ export async function animatePath(
 
     const showIndividualSegments = false;
 
+    const ustate = state.histories[state.i - 1].state;
+    const populatedKeys = new Set();
+    Object.values(ustate.paths).forEach((path) => {
+        path.segments.forEach((seg, i) => {
+            const prev = i === 0 ? path.origin : path.segments[i - 1].to;
+            populatedKeys.add(segmentKey(prev, seg));
+            populatedKeys.add(segmentKey(seg.to, reverseSegment(prev, seg)));
+        });
+    });
+    // console.group('popkeys');
+    // populatedKeys.keys().forEach((key) => {
+    //     console.log(key);
+    // });
+    // console.groupEnd();
+
     for (let action of group.paths) {
-        if (showIndividualSegments) {
+        const segments = simplifyPath(
+            action.open ? action.segments : ensureClockwise(action.segments),
+        );
+
+        // console.log('make a path', action);
+        // console.group('check keys');
+        const quick = segments.every((seg, i) => {
+            const prev = i === 0 ? action.origin : segments[i - 1].to;
+            const key = segmentKey(prev, seg);
+            // console.log('check key', key);
+            return populatedKeys.has(key);
+        });
+        // console.groupEnd();
+
+        // console.log({quick});
+
+        if (quick) {
+            await wait(100);
+        } else if (showIndividualSegments && !quick) {
             await animateSegments(state, follow, group, prev, speed, action);
         } else {
-            const center = segmentsCenter(action.segments);
+            const center = segmentsCenter(segments);
             await follow(state.i, center);
             await wait(100);
         }
