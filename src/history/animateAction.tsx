@@ -502,24 +502,34 @@ const drawCompassTemplate = (origin: Coord, pd: Coord, ctx: CanvasRenderingConte
     const angle = angleTo(origin, pd);
     const radius = dist(origin, pd);
 
-    ctx.strokeStyle = 'white';
-    ctx.lineWidth = 5;
-
-    ctx.beginPath();
-    ctx.moveTo(origin.x, origin.y);
+    ctx.fillStyle = 'rgba(255,255,255,0.1)';
+    ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+    ctx.lineWidth = 2;
 
     const half = push(origin, angle, radius / 2);
 
     const p1 = push(half, angle + Math.PI / 2, radius / 20);
     const p2 = push(half, angle + Math.PI / 2, -radius / 20);
 
+    ctx.beginPath();
+    ctx.moveTo(origin.x, origin.y);
     ctx.lineTo(p1.x, p1.y);
     ctx.lineTo(pd.x, pd.y);
     ctx.lineTo(p2.x, p2.y);
     ctx.lineTo(origin.x, origin.y);
-    ctx.setLineDash([5, 5]);
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(origin.x, origin.y);
+    ctx.lineTo(p1.x, p1.y);
+    ctx.lineTo(pd.x, pd.y);
+    ctx.lineTo(p2.x, p2.y);
+    ctx.lineTo(origin.x, origin.y);
     ctx.stroke();
-    ctx.setLineDash([]);
+
+    // ctx.setLineDash([5, 5]);
+    // ctx.stroke();
+    // ctx.setLineDash([]);
 };
 
 const drawCompass = (p0: Coord, pd: Coord, ctx: CanvasRenderingContext2D, destCircle = false) => {

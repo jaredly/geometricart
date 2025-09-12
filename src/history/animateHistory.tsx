@@ -162,7 +162,7 @@ export const animateHistory = async (
     }
 
     let lastScene = null;
-    if (preview != null || true) {
+    if (preview != null) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         draw(state.histories.length - 1, offctx);
         lastScene = await createImageBitmap(offcan);
@@ -238,12 +238,28 @@ export const animateHistory = async (
                 if (preimage) {
                     next = state.frames[state.i];
                 } else {
+                    offctx.clearRect(0, 0, offcan.width, offcan.height);
+
+                    if (preview === 'corner') {
+                        offctx.drawImage(
+                            lastScene!,
+                            0,
+                            0,
+                            offctx.canvas.width / 5,
+                            offctx.canvas.height / 5,
+                        );
+                    } else if (preview != null) {
+                        offctx.globalAlpha = preview;
+                        offctx.drawImage(lastScene!, 0, 0);
+                        offctx.globalAlpha = 1;
+                    }
+
                     draw(state.i, offctx);
                     next = await createImageBitmap(offcan);
-                    // ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    // ctx.drawImage(state.frames[state.i - 1], 0, 0);
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(state.frames[state.i - 1], 0, 0);
                 }
-                await crossFade(ctx, canvas, next, state.frames[state.i - 1], 30);
+                await crossFade(ctx, canvas, state.frames[state.i - 1], next, 50);
             }
             // continue;
         }
@@ -312,14 +328,25 @@ async function crossFade(
     final: ImageBitmap,
     frames: number,
 ) {
+    const ww = canvas.width / 5;
+    const wh = canvas.height / 5;
     for (let i = 0; i <= frames; i++) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // ctx.strokeStyle = 'black';
+        // ctx.lineWidth = 1;
+        // ctx.strokeRect(ww, wh, ww, wh);
+        // ctx.strokeRect(ww * 2, wh * 2, ww, wh);
+
+        ctx.globalAlpha = 1 - i / frames;
         ctx.drawImage(first, 0, 0);
-        ctx.globalAlpha = (frames - i) / frames;
+
+        ctx.globalAlpha = i / frames;
         ctx.drawImage(final, 0, 0);
-        ctx.globalAlpha = 1;
+
         await nextFrame();
     }
+    ctx.globalAlpha = 1;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(first, 0, 0);
 }
