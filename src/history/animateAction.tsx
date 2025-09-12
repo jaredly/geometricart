@@ -69,6 +69,7 @@ export async function animateAction(
                     const ustate = histories[i].state;
                     const cp1 = state.toScreen(cs.rulerP1, ustate);
                     const cp2 = state.toScreen(cs.rulerP2, ustate);
+
                     await tweens(
                         state,
                         {
@@ -94,9 +95,15 @@ export async function animateAction(
                                 state.toScreen(lastDrawn.compass.mark.p2, ustate),
                                 ctx,
                             );
+                            drawCompassCircle(
+                                state.toScreen(lastDrawn.compass.mark.p1, ustate),
+                                state.toScreen(lastDrawn.compass.mark.p2, ustate),
+                                ctx,
+                            );
                             drawCursor(ctx, state.cursor.x, state.cursor.y);
                         },
                     );
+
                     lastDrawn.ruler.p1 = state.compassState.rulerP1;
                     lastDrawn.ruler.p2 = state.compassState.rulerP2;
                 }
@@ -154,6 +161,7 @@ export async function animateAction(
                                 ctx,
                             );
                             drawCompass(polar.origin, polarPoint(polar), ctx, true);
+                            drawCompassCircle(polar.origin, polarPoint(polar), ctx);
                             drawCursor(ctx, state.cursor.x, state.cursor.y);
                         },
                     );
@@ -175,6 +183,7 @@ export async function animateAction(
                                 ctx,
                             );
                             drawCompass(polar.origin, polarPoint(polar), ctx, true);
+                            drawCompassCircle(polar.origin, polarPoint(polar), ctx);
                             drawCursor(ctx, state.cursor.x, state.cursor.y);
                         },
                     );
@@ -226,6 +235,7 @@ export async function animateAction(
                         );
 
                         drawCompass(polar.origin, polarPoint(polar), ctx);
+                        drawCompassCircle(polar.origin, polarPoint(polar), ctx);
                         drawCursor(ctx, state.cursor.x, state.cursor.y);
                     },
                 );
@@ -264,6 +274,7 @@ export async function animateAction(
 
                         const p2 = push(origin, theta, radScreen);
                         drawCompass(origin, p2, ctx);
+                        drawCompassCircle(origin, p2, ctx);
 
                         ctx.strokeStyle = 'white';
                         ctx.lineWidth = 1;
@@ -532,6 +543,18 @@ const drawCompassTemplate = (origin: Coord, pd: Coord, ctx: CanvasRenderingConte
     // ctx.setLineDash([]);
 };
 
+export const drawCompassCircle = (p0: Coord, pd: Coord, ctx: CanvasRenderingContext2D) => {
+    const radius = dist(p0, pd);
+
+    ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.ellipse(p0.x, p0.y, radius, radius, 0, 0, Math.PI * 2);
+    ctx.setLineDash([5, 5]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+};
+
 const drawCompass = (p0: Coord, pd: Coord, ctx: CanvasRenderingContext2D, destCircle = false) => {
     circle(ctx, p0, 20);
 
@@ -585,6 +608,11 @@ export const drawCompassAndRuler = (
     );
 
     drawCompass(
+        state.toScreen(compass.mark.p1, ustate),
+        state.toScreen(compass.mark.p2, ustate),
+        ctx,
+    );
+    drawCompassCircle(
         state.toScreen(compass.mark.p1, ustate),
         state.toScreen(compass.mark.p2, ustate),
         ctx,
