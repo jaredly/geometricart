@@ -239,6 +239,7 @@ export const posOffset = (p1: Coord, p2: Coord) => ({
  */
 export const angleTo = (p1: Coord, p2: Coord) =>
 	Math.atan2(p2.y - p1.y, p2.x - p1.x);
+
 /**
  * Calculate the distance between two points.
  */

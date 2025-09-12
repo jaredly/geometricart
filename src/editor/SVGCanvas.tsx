@@ -203,6 +203,7 @@ export function SVGCanvas({
             height={ppi != null ? calcPPI(ppi, height, view.zoom) : height}
             viewBox={`0 0 ${width} ${height}`}
             xmlns="http://www.w3.org/2000/svg"
+            style={{border: '1px solid #333'}}
             ref={(node) => {
                 if (innerRef) {
                     innerRef(node);

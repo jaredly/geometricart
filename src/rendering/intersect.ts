@@ -114,20 +114,22 @@ const sq = (x: number) => x * x;
 export const epsilon = 0.000001;
 
 export const slopeToLine = (si: SlopeIntercept): [Coord, Coord] => {
-	if (!si.limit) {
-		throw new Error(
-			`cannot convert a si that doesn't have a limit back to a line`,
-		);
-	}
 	if (si.m === Infinity) {
+        if (!si.limit) {
+		return [
+			{ x: si.b, y: 0 },
+			{ x: si.b, y: 1 },
+		];
+        }
 		return [
 			{ x: si.b, y: si.limit[0] },
 			{ x: si.b, y: si.limit[1] },
 		];
 	}
+    const limit = si.limit ?? [0, 1]
 	return [
-		{ x: si.limit[0], y: si.m * si.limit[0] + si.b },
-		{ x: si.limit[1], y: si.m * si.limit[1] + si.b },
+		{ x: limit[0], y: si.m * limit[0] + si.b },
+		{ x: limit[1], y: si.m * limit[1] + si.b },
 	];
 };
 
