@@ -121,6 +121,7 @@ export const HistoryPlayback = ({
                 }
 
                 if (cstate) {
+                    // const hstate = histories[current].state
                     drawCompassAndRuler(
                         ctx,
                         {
@@ -144,7 +145,7 @@ export const HistoryPlayback = ({
                                     zoom: state.view.zoom * 2,
                                 }),
                         },
-                        histories[current].state,
+                        hstate,
                     );
                 }
 

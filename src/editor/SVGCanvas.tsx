@@ -1,7 +1,7 @@
 import {jsx} from '@emotion/react';
 import Prando from 'prando';
 import React, {useMemo, useRef} from 'react';
-// import { RoughGenerator } from "roughjs/bin/generator";
+import {RoughGenerator} from 'roughjs/bin/generator';
 import {Action} from '../state/Action';
 import {useCurrent} from '../App';
 import {PendingMirror, UIState} from '../useUIState';
@@ -92,7 +92,7 @@ export function SVGCanvas({
 
     useScrollWheel(ref, setEditorState, currentState, width, height);
 
-    const generator = React.useMemo(() => null, []); // new RoughGenerator(), []);
+    const generator = React.useMemo(() => new RoughGenerator(), []);
 
     const currentDrag = useCurrent({
         pos: editorState.pos,

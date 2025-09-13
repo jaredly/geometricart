@@ -1,5 +1,5 @@
 import Prando from 'prando';
-// import {RoughCanvas} from 'roughjs/bin/canvas';
+import {RoughCanvas} from 'roughjs/bin/canvas';
 import {calcAllIntersections} from './calcAllIntersections';
 import {calculateGuideElements, calculateInactiveGuideElements} from './calculateGuideElements';
 import {AnimatedFunctions, evaluateAnimatedValues} from '../editor/Canvas';
@@ -57,7 +57,7 @@ export const canvasRender = (
         ? getAnimatedPaths(state, scripts, animationPosition, currentAnimatedValues)
         : state;
 
-    const rough = null as any; //view.sketchiness && view.sketchiness > 0 ? new RoughCanvas(ctx.canvas) : null;
+    const rough = view.sketchiness && view.sketchiness > 0 ? new RoughCanvas(ctx.canvas) : null;
 
     const rand = new Prando('ok');
 

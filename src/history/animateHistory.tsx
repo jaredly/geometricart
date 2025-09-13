@@ -163,7 +163,8 @@ export const animateHistory = async (
 
     let lastScene = null;
     if (preview != null) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        offctx.clearRect(0, 0, canvas.width, canvas.height);
+        console.log('the view', state.histories[state.histories.length - 1].state.view);
         draw(state.histories.length - 1, offctx);
         lastScene = await createImageBitmap(offcan);
     }
@@ -214,7 +215,7 @@ export const animateHistory = async (
 
         await wait(400 / speed);
 
-        await crossFade(ctx, canvas, first, final, 30 / speed);
+        await crossFade(ctx, canvas, final, first, 30 / speed);
     }
 
     for (; state.i < histories.length; state.i++) {

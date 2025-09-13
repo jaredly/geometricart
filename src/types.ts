@@ -584,6 +584,7 @@ export type State = {
 
 	historyView?: {
 		zooms: { idx: number; view: Pick<View, "zoom" | "center"> }[];
+        titles?: {idx: number; title: string; duration: number}[];
 		skips: number[];
 		start?: number;
 		end?: number;

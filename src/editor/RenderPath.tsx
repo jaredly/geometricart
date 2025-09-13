@@ -1,6 +1,6 @@
 import Prando from 'prando';
 import * as React from 'react';
-// import { RoughGenerator } from "roughjs/bin/generator";
+import {RoughGenerator} from 'roughjs/bin/generator';
 import {rgbToHsl} from '../rendering/colorConvert';
 import {angleBetween} from '../rendering/findNextSegments';
 import {angleTo, dist, push} from '../rendering/getMirrorTransforms';
@@ -57,7 +57,7 @@ const RenderPathMemo = ({
     path: Path;
     rand?: Prando;
     origPath?: Path;
-    generator?: any; //RoughGenerator;
+    generator?: RoughGenerator;
     styleHover: StyleHover | null;
     clip?: {prims: Array<Primitive>; segments: Array<Segment>} | null;
     zoom: number;

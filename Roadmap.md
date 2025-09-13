@@ -1,4 +1,6 @@
 
+- [ ] History Animate: show subtitles
+
 ## Guide Inspector Please
 
 - [x] For knowing what circles share the same radius
