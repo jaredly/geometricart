@@ -44,6 +44,42 @@ export const Text = ({
 	);
 };
 
+export const BlurInput = ({
+	value,
+	onChange,
+	width,
+}: {
+	value: string | undefined | null;
+	width?: number;
+	onChange: (v: string | undefined) => unknown;
+}) => {
+	const [text, setText] = React.useState(null as null | string);
+	return (
+		<>
+			<input
+				value={text != null ? text : (value ?? "")}
+				onChange={(evt) => {
+					setText(evt.target.value);
+				}}
+				onKeyDown={(evt) => {
+					if (evt.key === "Return" || evt.key === "Enter") {
+						(evt.target as HTMLInputElement).blur();
+					}
+				}}
+				onBlur={() => {
+                    if (text != null) {
+                        onChange(text ? text : undefined);
+                        setText(null);
+                    }
+				}}
+				css={{
+					width: width ?? 200,
+				}}
+			/>
+		</>
+	);
+};
+
 export const BlurInt = ({
 	value,
 	onChange,

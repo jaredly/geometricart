@@ -8,7 +8,7 @@ import {Action} from '../state/Action';
 import {undo} from '../state/reducer';
 import {Coord, State, View} from '../types';
 import {animateHistory} from './animateHistory';
-import {BlurInt} from '../editor/Forms';
+import {BlurInput, BlurInt} from '../editor/Forms';
 import {CompassRenderState} from '../editor/compassAndRuler';
 import {drawCompassAndRuler} from './animateAction';
 import {worldToScreen} from '../editor/Canvas';
@@ -328,7 +328,8 @@ export const HistoryPlayback = ({
                 </div>
             </div>
             {histories[current].action?.type}
-            <div>
+            <div style={{padding: 16}}>
+                <h3 style={{margin: 0, padding: 0, paddingBottom: 8}}>Zoom Overrides</h3>
                 {renderZooms(state, zoomPreview, setZoomPreview, dispatch)}
                 <button
                     onClick={() => {
@@ -352,6 +353,47 @@ export const HistoryPlayback = ({
                     Add zoom override
                 </button>
             </div>
+            <div style={{padding: 16}}>
+                <h3 style={{margin: 0, padding: 0, paddingBottom: 8}}>Subtitles</h3>
+                {state.historyView?.titles?.map((title, i) => (
+                    <div key={i}>
+                        <span style={{paddingRight: 8}}>
+                            {title.idx} - {title.idx + title.duration}
+                        </span>
+                        <BlurInput
+                            value={title.title}
+                            onChange={(text) => {
+                                if (!text) return;
+                                const view = state.historyView
+                                    ? {...state.historyView}
+                                    : {zooms: [], skips: []};
+                                view.titles = view.titles?.slice() ?? [];
+                                view.titles[i] = {...title, title: text};
+                                dispatch({
+                                    type: 'history-view:update',
+                                    view,
+                                });
+                            }}
+                        />
+                    </div>
+                ))}
+                <button
+                    onClick={() => {
+                        const view = state.historyView
+                            ? {...state.historyView}
+                            : {zooms: [], skips: []};
+                        view.titles = view.titles?.slice() ?? [];
+                        view.titles.push({
+                            idx: current,
+                            duration: 10,
+                            title: 'A subtitle',
+                        });
+                        dispatch({type: 'history-view:update', view});
+                    }}
+                >
+                    Add Subtitle Here
+                </button>
+            </div>
             <label>
                 <input type="checkbox" checked={preimage} onChange={() => setPreimage(!preimage)} />
                 Image everything in advance
@@ -371,8 +413,8 @@ export const HistoryPlayback = ({
             >
                 Export snapshot
             </button>
-            <div>
-                {state.historyView?.start ?? 'No start'}
+            <div style={{padding: 16}}>
+                <h4 style={{margin: 0, padding: 0, paddingBottom: 8}}>Custom Start / End</h4>
                 <button
                     onClick={() => {
                         dispatch({
@@ -382,14 +424,15 @@ export const HistoryPlayback = ({
                                     zooms: [],
                                     skips: [],
                                 }),
-                                start: current,
+                                start: state.historyView?.start != null ? undefined : current,
                             },
                         });
                     }}
                 >
-                    Set start
+                    {state.historyView?.start != null ? 'Clear start' : 'Set start'}
                 </button>
-                {state.historyView?.end ?? 'No end'}
+                <span style={{paddingLeft: 8}}>{state.historyView?.start ?? 'No start'}</span>
+                <span style={{paddingInline: 8}}>{state.historyView?.end ?? 'No end'}</span>
                 <button
                     onClick={() => {
                         dispatch({
@@ -404,7 +447,7 @@ export const HistoryPlayback = ({
                         });
                     }}
                 >
-                    {state.historyView?.end != null ? 'Clear end' : 'Set End'}
+                    {state.historyView?.end != null ? 'Clear end' : 'Set end'}
                 </button>
             </div>
             {exportUrl ? (
@@ -493,7 +536,7 @@ function renderZooms(
 ): React.ReactNode {
     return state.historyView?.zooms.map((zoom, i) => (
         <div key={i}>
-            Idx: {zoom.idx}
+            Idx: {zoom.idx + ' '}
             Zoom:{' '}
             <NumberInput
                 value={zoomPreview?.zoom ?? zoom.view.zoom}
