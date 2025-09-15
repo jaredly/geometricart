@@ -135,8 +135,8 @@ export function SVGCanvas({
         state.pending?.type === 'compass&ruler'
             ? compassRulerHandlers
             : editorState.selectMode
-            ? dragSelectHandlers
-            : mouseDragHandlers;
+              ? dragSelectHandlers
+              : mouseDragHandlers;
 
     React.useEffect(() => {
         if (!state.selection && multiRef.current) {

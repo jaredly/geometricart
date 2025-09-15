@@ -1,6 +1,6 @@
 export const transparent =
-	`data:image/svg+xml;base64,` +
-	btoa(`
+    `data:image/svg+xml;base64,` +
+    btoa(`
             <svg
                 width='16'
                 height='16'

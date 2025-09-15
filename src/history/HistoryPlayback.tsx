@@ -127,7 +127,10 @@ export const HistoryPlayback = ({
                         {
                             ruler: {p1: cstate.rulerP1, p2: cstate.rulerP2},
                             compass: {
-                                source: {p1: cstate.compassRadius.p1, p2: cstate.compassRadius.p2},
+                                source: {
+                                    p1: cstate.compassRadius.p1,
+                                    p2: cstate.compassRadius.p2,
+                                },
                                 mark: {
                                     p1: cstate.compassOrigin,
                                     p2: push(

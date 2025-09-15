@@ -484,8 +484,7 @@ export const lightenedColor = (
                 const b = parseInt(raw.slice(5), 16);
                 let [h, s, l] = rgbToHsl(r, g, b);
                 return `hsl(${(h * 360).toFixed(3)}, ${(s * 100).toFixed(3)}%, ${(
-                    (l + lighten * 0.1) *
-                    100
+                    (l + lighten * 0.1) * 100
                 ).toFixed(3)}%)`;
             }
         }

@@ -4,8 +4,14 @@
     "[typescript]": {
         "editor.defaultFormatter": "biomejs.biome"
     },
-    "[typescriptreact]": {
+    "[jsonl]": {
         "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[jsonc]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[typescriptreact]": {
+        "editor.defaultFormatter": "biomejs.biome"
     },
     "[json]": {
         "editor.defaultFormatter": "biomejs.biome"

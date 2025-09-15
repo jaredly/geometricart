@@ -25,7 +25,12 @@ export type Line = {
     p: Provenance;
 };
 export type Shape = Circle | Line;
-export type Point = {type: 'point'; coord: Coord; inDest?: boolean; p: Provenance};
+export type Point = {
+    type: 'point';
+    coord: Coord;
+    inDest?: boolean;
+    p: Provenance;
+};
 export type Step = Shape | Point;
 
 export const stateToConstructive = (state: State) => {

@@ -1,13 +1,13 @@
-import { Coord, Path, Segment } from "../types";
-import { isClockwise, reversePath, totalAngle } from "./pathToPoints";
-import { angleTo } from "./getMirrorTransforms";
-import { closeEnoughAngle, epsilon } from "./intersect";
-import { clipTwo, HitLocation } from "./clipPath";
-import { closeEnough } from "./epsilonToZero";
-import { isLargeArc } from "../editor/RenderPendingPath";
-import { Hit } from "./pruneInsetPath";
-import { insetSegment } from "./insetSegment";
-import { simplifyPath } from "./simplifyPath";
+import {Coord, Path, Segment} from '../types';
+import {isClockwise, reversePath, totalAngle} from './pathToPoints';
+import {angleTo} from './getMirrorTransforms';
+import {closeEnoughAngle, epsilon} from './intersect';
+import {clipTwo, HitLocation} from './clipPath';
+import {closeEnough} from './epsilonToZero';
+import {isLargeArc} from '../editor/RenderPendingPath';
+import {Hit} from './pruneInsetPath';
+import {insetSegment} from './insetSegment';
+import {simplifyPath} from './simplifyPath';
 
 type Pos = HitLocation;
 
@@ -120,29 +120,24 @@ type Pos = HitLocation;
 //     return result;
 // };
 
-export const hasReversed = (
-	one: Segment,
-	onep: Coord,
-	two: Segment,
-	twop: Coord,
-) => {
-	if (
-		one.type === "Arc" &&
-		two.type === "Arc" &&
-		isLargeArc(two, twop) !== isLargeArc(one, onep)
-	) {
-		return true;
-	}
+export const hasReversed = (one: Segment, onep: Coord, two: Segment, twop: Coord) => {
+    if (
+        one.type === 'Arc' &&
+        two.type === 'Arc' &&
+        isLargeArc(two, twop) !== isLargeArc(one, onep)
+    ) {
+        return true;
+    }
 
-	if (
-		one.type === "Line" &&
-		two.type === "Line" &&
-		!closeEnough(angleTo(onep, one.to), angleTo(twop, two.to))
-	) {
-		return true;
-	}
+    if (
+        one.type === 'Line' &&
+        two.type === 'Line' &&
+        !closeEnough(angleTo(onep, one.to), angleTo(twop, two.to))
+    ) {
+        return true;
+    }
 
-	return false;
+    return false;
 };
 
 // export const getToFromMaybeArray = (segments: Array<Segment> | Segment) => {
@@ -169,30 +164,30 @@ export const hasReversed = (
 // };
 
 export const insetSegments = (
-	segments: Array<Segment>,
-	inset: number,
+    segments: Array<Segment>,
+    inset: number,
 ): [Array<Segment>, Array<Coord>] => {
-	if (closeEnough(inset, 0)) {
-		return [segments, []];
-	}
+    if (closeEnough(inset, 0)) {
+        return [segments, []];
+    }
 
-	if (!isClockwise(segments)) {
-		segments = reversePath(segments);
-	}
+    if (!isClockwise(segments)) {
+        segments = reversePath(segments);
+    }
 
-	const simplified = simplifyPath(segments);
+    const simplified = simplifyPath(segments);
 
-	const insets = simplified.map((seg, i) => {
-		const prev = simplified[i === 0 ? simplified.length - 1 : i - 1].to;
-		const next = simplified[i === simplified.length - 1 ? 0 : i + 1];
-		// ok, so ... this needs to maybe return two segments.
-		// if we need to bridge the new gap
-		return insetSegment(prev, seg, next, inset, true);
-	});
+    const insets = simplified.map((seg, i) => {
+        const prev = simplified[i === 0 ? simplified.length - 1 : i - 1].to;
+        const next = simplified[i === simplified.length - 1 ? 0 : i + 1];
+        // ok, so ... this needs to maybe return two segments.
+        // if we need to bridge the new gap
+        return insetSegment(prev, seg, next, inset, true);
+    });
 
-	return [insets.flat(), simplified.map((s) => s.to)];
+    return [insets.flat(), simplified.map((s) => s.to)];
 };
 
 export const insetSegmentsBeta = (segments: Array<Segment>, inset: number) => {
-	return insetSegments(segments, inset)[0];
+    return insetSegments(segments, inset)[0];
 };
