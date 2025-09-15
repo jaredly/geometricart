@@ -1,5 +1,10 @@
 
-- [ ] History Animate: show subtitles
+- [ ] if we went cclockwise to get to the compass mark pos, mark it cclockwise
+- [ ] ...
+
+##
+
+- [x] History Animate: show subtitles
 
 ## Guide Inspector Please
 

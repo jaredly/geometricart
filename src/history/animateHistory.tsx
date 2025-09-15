@@ -38,6 +38,8 @@ export type AnimateState = {
     lastSelection?: {type: 'Path' | 'PathGroup'; ids: string[]};
 };
 
+export type PreviewT = 'corner' | number | null;
+
 export const animateHistory = async (
     originalState: State,
     canvas: HTMLCanvasElement,
@@ -47,7 +49,7 @@ export const animateHistory = async (
     log: React.RefObject<HTMLDivElement>,
     inputRef?: HTMLInputElement | null,
     animateTitle?: boolean,
-    preview?: 'corner' | number | null,
+    preview?: PreviewT,
 ) => {
     const now = Date.now();
 
@@ -183,7 +185,7 @@ export const animateHistory = async (
         const final = await createImageBitmap(canvas);
         const text = 'Pattern walk-through';
 
-        ctx.font = '100px sans-serif';
+        ctx.font = '100px system-ui';
         ctx.fillStyle = 'white';
         ctx.textAlign = 'left';
         // ctx.textAlign = 'center';
@@ -241,22 +243,11 @@ export const animateHistory = async (
                 } else {
                     offctx.clearRect(0, 0, offcan.width, offcan.height);
 
-                    if (preview === 'corner') {
-                        offctx.drawImage(
-                            lastScene!,
-                            0,
-                            0,
-                            offctx.canvas.width / 5,
-                            offctx.canvas.height / 5,
-                        );
-                    } else if (preview != null) {
-                        offctx.globalAlpha = preview;
-                        offctx.drawImage(lastScene!, 0, 0);
-                        offctx.globalAlpha = 1;
-                    }
-
+                    underlay(offctx, lastScene!, preview);
                     draw(state.i, offctx);
+                    overlay(ctx, state, originalState.historyView);
                     next = await createImageBitmap(offcan);
+
                     ctx.clearRect(0, 0, canvas.width, canvas.height);
                     ctx.drawImage(state.frames[state.i - 1], 0, 0);
                 }
@@ -270,14 +261,9 @@ export const animateHistory = async (
         if (preimage) {
             ctx.drawImage(state.frames[state.i], 0, 0);
         } else {
-            if (preview === 'corner') {
-                ctx.drawImage(lastScene!, 0, 0, ctx.canvas.width / 5, ctx.canvas.height / 5);
-            } else if (preview != null) {
-                ctx.globalAlpha = preview;
-                ctx.drawImage(lastScene!, 0, 0);
-                ctx.globalAlpha = 1;
-            }
+            underlay(ctx, lastScene!, preview);
             draw(state.i);
+            overlay(ctx, state, originalState.historyView);
             state.frames.push(await createImageBitmap(canvas));
         }
 
@@ -288,7 +274,9 @@ export const animateHistory = async (
             // Draw the cursor
             if (
                 state.lastDrawnCompassState &&
-                !['path:create', 'path:create:many'].includes(action?.type!) &&
+                !['path:create', 'path:create:many', 'history-view:update'].includes(
+                    action?.type!,
+                ) &&
                 !(action?.type === 'view:update' && !action.view.guides)
             ) {
                 drawCompassAndRuler(
@@ -308,6 +296,48 @@ export const animateHistory = async (
     ctx.drawImage(state.frames[state.frames.length - 1], 0, 0);
 
     console.log('ok', Date.now() - now);
+};
+
+export const overlay = (
+    ctx: CanvasRenderingContext2D,
+    state: AnimateState,
+    historyView: State['historyView'],
+) => {
+    const title = historyView?.titles?.find(
+        (title) => title.idx <= state.i && state.i <= title.idx + title.duration,
+    );
+    if (title) {
+        ctx.font = '200 60px Lexend';
+        ctx.fontStretch = 'expanded';
+        ctx.fillStyle = 'white';
+        ctx.textAlign = 'left';
+        // ctx.textAlign = 'center';
+        ctx.strokeStyle = 'rgba(0,0,0,1)';
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+        ctx.lineWidth = 10;
+        const text = title.title;
+
+        const fw = ctx.measureText(text).width;
+        ctx.strokeText(text, ctx.canvas.width / 2 - fw / 2, ctx.canvas.height * 0.94);
+        ctx.fillText(text, ctx.canvas.width / 2 - fw / 2, ctx.canvas.height * 0.94);
+
+        ctx.lineWidth = 1;
+    }
+};
+
+export const underlay = (
+    ctx: CanvasRenderingContext2D,
+    lastScene: ImageBitmap,
+    preview?: PreviewT,
+) => {
+    if (preview === 'corner') {
+        ctx.drawImage(lastScene!, 0, 0, ctx.canvas.width / 5, ctx.canvas.height / 5);
+    } else if (preview != null) {
+        ctx.globalAlpha = preview;
+        ctx.drawImage(lastScene!, 0, 0);
+        ctx.globalAlpha = 1;
+    }
 };
 
 export const actionPoints = (action: Action) => {

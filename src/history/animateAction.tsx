@@ -33,6 +33,10 @@ export async function animateAction(
     const {i, ctx, canvas} = state;
     const action = histories[i].action;
 
+    if (action?.type === 'history-view:update') {
+        return;
+    }
+
     if (action && i > 0) {
         const prev = histories[i - 1].state;
 
@@ -67,8 +71,18 @@ export async function animateAction(
                     !coordsEqual(lastDrawn.ruler.p2, state.compassState.rulerP2)
                 ) {
                     const ustate = histories[i].state;
-                    const cp1 = state.toScreen(cs.rulerP1, ustate);
-                    const cp2 = state.toScreen(cs.rulerP2, ustate);
+                    let cp1 = state.toScreen(cs.rulerP1, ustate);
+                    let cp2 = state.toScreen(cs.rulerP2, ustate);
+
+                    const cd1 =
+                        dist(cs.rulerP1, lastDrawn.ruler.p1) + dist(cs.rulerP2, lastDrawn.ruler.p2);
+                    const cd2 =
+                        dist(cs.rulerP1, lastDrawn.ruler.p2) + dist(cs.rulerP2, lastDrawn.ruler.p1);
+
+                    if (cd2 < cd1) {
+                        // flip them
+                        [cp1, cp2] = [cp2, cp1];
+                    }
 
                     await tweens(
                         state,
@@ -293,51 +307,7 @@ export async function animateAction(
         }
 
         if (action.type === 'pending:compass&ruler') {
-            // const prev = state.compassState;
             state.compassState = action.state;
-            // 	if (!prev) return;
-
-            // 	// I need a comprehensive approach:
-            // 	// Render the compass & ruler
-            // 	// Animate moving it (from/to) when moving it
-            // 	// Animate drawing marks with it.
-
-            // 	if (prev.compassOrigin !== action.state.compassOrigin) {
-            // 		// const angle = angleTo(
-            // 		// 	state.compassState.compassRadius.p1,
-            // 		// 	state.compassState.compassRadius.p2,
-            // 		// );
-            // 		// await follow(i, state.compassState.compassOrigin, (pos, ustate) => {
-            // 		// 	const radius = oneToScreen(
-            // 		// 		state,
-            // 		// 		ustate,
-            // 		// 		state.compassState!.compassRadius.radius,
-            // 		// 	);
-            // 		// 	drawCompass(pos, angle, radius, ctx);
-            // 		// });
-            // 	}
-            // 	if (prev.compassRadius.p1 !== action.state.compassRadius.p1) {
-            // 		// const angle = angleTo(prev.compassRadius.p1, prev.compassRadius.p2);
-            // 		// await follow(i, state.compassState.compassRadius.p1, (pos, ustate) => {
-            // 		// 	const radius = oneToScreen(state, ustate, prev.compassRadius.radius);
-            // 		// 	drawCompass(pos, angle, radius, ctx);
-            // 		// });
-            // 	}
-            // 	if (prev.compassRadius.p2 !== action.state.compassRadius.p2) {
-            // 		// await follow(i, state.compassState.compassRadius.p2, (pos, ustate) => {
-            // 		//     const angle = angleTo(prev.compassRadius.p1, prev.compassRadius.p2);
-            // 		// 	const radius = oneToScreen(state, ustate, prev.compassRadius.radius);
-            // 		// 	drawCompass(pos, angle, radius, ctx);
-            // 		// });
-            // 	}
-            // 	if (prev.rulerP1 !== action.state.rulerP1) {
-            // 		await follow(i, state.compassState.rulerP1);
-            // 	}
-            // 	if (prev.rulerP2 !== action.state.rulerP2) {
-            // 		await follow(i, state.compassState.rulerP2);
-            // 	}
-            // 	// action.state
-            // 	// TODO start here! Yes please.
         }
 
         if (action.type === 'path:create' || action.type === 'path:create:many') {

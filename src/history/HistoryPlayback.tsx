@@ -278,6 +278,7 @@ export const HistoryPlayback = ({
                         >
                             ✖️
                         </button>
+                        {histories[current]?.action?.type}
                     </div>
                     <div style={{width: 500, position: 'relative', height: 10}}>
                         {viewPoints.map((pt) => (
@@ -327,7 +328,6 @@ export const HistoryPlayback = ({
                     </div>
                 </div>
             </div>
-            {histories[current].action?.type}
             <div style={{padding: 16}}>
                 <h3 style={{margin: 0, padding: 0, paddingBottom: 8}}>Zoom Overrides</h3>
                 {renderZooms(state, zoomPreview, setZoomPreview, dispatch)}
@@ -358,7 +358,30 @@ export const HistoryPlayback = ({
                 {state.historyView?.titles?.map((title, i) => (
                     <div key={i}>
                         <span style={{paddingRight: 8}}>
-                            {title.idx} - {title.idx + title.duration}
+                            <button
+                                onClick={() => {
+                                    const view = {...state.historyView!};
+                                    view.titles = view.titles?.slice() ?? [];
+                                    view.titles[i] = {...title, idx: current};
+                                    dispatch({type: 'history-view:update', view});
+                                }}
+                                disabled={current === title.idx}
+                            >
+                                {title.idx} -
+                            </button>
+                            <button
+                                onClick={() => {
+                                    const view = {...state.historyView!};
+                                    view.titles = view.titles?.slice() ?? [];
+                                    view.titles[i] = {...title, duration: current - title.idx};
+                                    dispatch({type: 'history-view:update', view});
+                                }}
+                                disabled={
+                                    current === title.idx + title.duration || current <= title.idx
+                                }
+                            >
+                                {title.idx + title.duration}
+                            </button>
                         </span>
                         <BlurInput
                             value={title.title}

@@ -1,7 +1,7 @@
 import {jsx} from '@emotion/react';
 import Prando from 'prando';
 import React, {useMemo, useRef} from 'react';
-import {RoughGenerator} from 'roughjs/bin/generator';
+// import {RoughGenerator} from 'roughjs/bin/generator';
 import {Action} from '../state/Action';
 import {useCurrent} from '../App';
 import {PendingMirror, UIState} from '../useUIState';
@@ -12,7 +12,7 @@ import {handleSelection} from './handleSelection';
 import {Primitive} from '../rendering/intersect';
 import {applyStyleHover, StyleHover} from './MultiStyleForm';
 import {Overlay} from '../editor/Overlay';
-import {paletteColor, RenderPath} from './RenderPath';
+import {paletteColor, RenderPath, RoughGenerator} from './RenderPath';
 import {showHover} from './showHover';
 import {Hover} from './Sidebar';
 import {InsetCache, sortedVisibleInsetPaths} from '../rendering/sortedVisibleInsetPaths';

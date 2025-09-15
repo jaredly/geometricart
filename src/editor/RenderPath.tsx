@@ -1,6 +1,6 @@
 import Prando from 'prando';
 import * as React from 'react';
-import {RoughGenerator} from 'roughjs/bin/generator';
+// import {RoughGenerator} from 'roughjs/bin/generator';
 import {rgbToHsl} from '../rendering/colorConvert';
 import {angleBetween} from '../rendering/findNextSegments';
 import {angleTo, dist, push} from '../rendering/getMirrorTransforms';
@@ -15,6 +15,28 @@ import {normalizedPath} from '../rendering/sortedVisibleInsetPaths';
 import {pathToSegmentKeys} from '../rendering/pathsAreIdentical';
 import {segmentsCenter} from './Bounds';
 import {calcPathD} from './calcPathD';
+
+export class RoughGenerator {
+    path(raw: string, options: any): 'path' {
+        return 'path';
+    }
+    toPaths(paths: 'path'): {stroke: string; d: string; fill: string; strokeWidth: string}[] {
+        return [];
+    }
+}
+
+export class RoughCanvas extends RoughGenerator {
+    generator: RoughGenerator;
+    constructor(canvas: any) {
+        super();
+        this.generator = null as any;
+    }
+}
+
+// export type RoughGenerator = {
+//     path: (raw: string, options: any) => 'path';
+//     toPaths: (paths: 'path') => {stroke: string; d: string; fill: string; strokeWidth: string}[];
+// };
 
 export const UnderlinePath = ({path, zoom, color}: {path: Path; zoom: number; color: string}) => {
     const d = calcPathD(path, zoom);

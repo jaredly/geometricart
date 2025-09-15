@@ -1,5 +1,5 @@
 import Prando from 'prando';
-import {RoughCanvas} from 'roughjs/bin/canvas';
+// import {RoughCanvas} from 'roughjs/bin/canvas';
 import {calcAllIntersections} from './calcAllIntersections';
 import {calculateGuideElements, calculateInactiveGuideElements} from './calculateGuideElements';
 import {AnimatedFunctions, evaluateAnimatedValues} from '../editor/Canvas';
@@ -9,7 +9,7 @@ import {angleTo, dist, getMirrorTransforms, push} from './getMirrorTransforms';
 import {primitivesForElementsAndPaths} from '../editor/Guides';
 import {Primitive} from './intersect';
 import {isClockwise, pathToPoints, rasterSegPoints, reversePath} from './pathToPoints';
-import {idSeed, lightenedColor} from '../editor/RenderPath';
+import {idSeed, lightenedColor, RoughCanvas} from '../editor/RenderPath';
 import {calcPathD} from '../editor/calcPathD';
 import {sortedVisibleInsetPaths} from './sortedVisibleInsetPaths';
 import {ArcSegment, Overlay, Path, State} from '../types';
