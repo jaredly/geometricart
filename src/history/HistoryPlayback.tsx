@@ -10,7 +10,7 @@ import {Coord, State, View} from '../types';
 import {animateHistory} from './animateHistory';
 import {BlurInput, BlurInt} from '../editor/Forms';
 import {CompassRenderState} from '../editor/compassAndRuler';
-import {drawCompassAndRuler} from './animateAction';
+import {drawCompassAndRuler} from './animateCompassAndRuler';
 import {worldToScreen} from '../editor/Canvas';
 import {angleTo, dist, push} from '../rendering/getMirrorTransforms';
 
