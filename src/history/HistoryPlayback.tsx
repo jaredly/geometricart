@@ -60,6 +60,7 @@ export const HistoryPlayback = ({
     let dy = -originalSize / 2;
 
     let inputRef = useRef<HTMLInputElement>(null);
+    const currentRef = useRef<HTMLSpanElement>(null);
 
     // biome-ignore lint/correctness/useExhaustiveDependencies: lol
     React.useEffect(() => {
@@ -219,7 +220,10 @@ export const HistoryPlayback = ({
                                 current,
                                 preimage,
                                 log,
-                                inputRef.current,
+                                (i) => {
+                                    inputRef.current!.value = i + '';
+                                    currentRef.current!.textContent = i + '';
+                                },
                                 title,
                                 preview,
                             );
@@ -239,6 +243,7 @@ export const HistoryPlayback = ({
                 }}
             >
                 <span
+                    ref={currentRef}
                     style={{
                         width: 30,
                         display: 'inline-block',

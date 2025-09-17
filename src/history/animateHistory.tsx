@@ -47,7 +47,8 @@ export const animateHistory = async (
     startAt: number,
     preimage: boolean,
     log: React.RefObject<HTMLDivElement>,
-    inputRef?: HTMLInputElement | null,
+    onStep?: (i: number) => void,
+    // inputRef?: HTMLInputElement | null,
     animateTitle?: boolean,
     preview?: PreviewT,
 ) => {
@@ -224,9 +225,7 @@ export const animateHistory = async (
         if (stopped.current) {
             return; // break;
         }
-        if (inputRef) {
-            inputRef.value = state.i + '';
-        }
+        onStep?.(state.i);
 
         await animateAction(state, histories, follow, speed);
 
