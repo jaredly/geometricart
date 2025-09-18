@@ -366,6 +366,7 @@ export const HistoryPlayback = ({
                 {state.historyView?.titles?.map((title, i) => (
                     <div key={i}>
                         <span style={{paddingRight: 8}}>
+                            <button onClick={() => setCurrent(title.idx)}>*</button>
                             <button
                                 onClick={() => {
                                     const view = {...state.historyView!};
@@ -390,6 +391,9 @@ export const HistoryPlayback = ({
                             >
                                 {title.idx + title.duration}
                             </button>
+                            <button onClick={() => setCurrent(title.idx + title.duration)}>
+                                *
+                            </button>
                         </span>
                         <BlurInput
                             value={title.title}
@@ -400,10 +404,19 @@ export const HistoryPlayback = ({
                                     : {zooms: [], skips: []};
                                 view.titles = view.titles?.slice() ?? [];
                                 view.titles[i] = {...title, title: text};
-                                dispatch({
-                                    type: 'history-view:update',
-                                    view,
-                                });
+                                dispatch({type: 'history-view:update', view});
+                            }}
+                        />
+                        Speed:
+                        <BlurInt
+                            value={title.speed}
+                            onChange={(speed) => {
+                                const view = state.historyView
+                                    ? {...state.historyView}
+                                    : {zooms: [], skips: []};
+                                view.titles = view.titles?.slice() ?? [];
+                                view.titles[i] = {...title, speed};
+                                dispatch({type: 'history-view:update', view});
                             }}
                         />
                     </div>

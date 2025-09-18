@@ -146,7 +146,8 @@ export const animateHistory = async (
         i: number,
         point: Coord,
         extra?: (pos: Coord, state: State) => void | Promise<void>,
-    ) => followPoint(state, state.toScreen(point, histories[i].state), extra);
+        speed = 1,
+    ) => followPoint(state, state.toScreen(point, histories[i].state), extra, speed);
 
     if (preimage) {
         for (let i = 0; i < histories.length; i++) {
@@ -187,14 +188,14 @@ export const animateHistory = async (
         const final = await createImageBitmap(canvas);
         const text = 'Pattern walk-through';
 
-        ctx.font = '100px system-ui';
+        ctx.font = '200 100px Lexend';
         ctx.fillStyle = 'white';
         ctx.textAlign = 'left';
         // ctx.textAlign = 'center';
         ctx.strokeStyle = 'rgba(0,0,0,1)';
         ctx.lineJoin = 'round';
         ctx.lineCap = 'round';
-        ctx.lineWidth = 30;
+        ctx.lineWidth = 20;
 
         const fw = ctx.measureText(text).width;
         const widths = [0];
@@ -202,7 +203,7 @@ export const animateHistory = async (
             widths.push(ctx.measureText(text.slice(0, i)).width);
         }
 
-        const frames = 240; // / speed;
+        const frames = 140; // / speed;
         for (let i = 0; i < frames; i++) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.drawImage(final, 0, 0);
@@ -217,7 +218,7 @@ export const animateHistory = async (
         }
         ctx.lineWidth = 1;
 
-        await wait(400 / speed);
+        await wait(800 / speed);
 
         await crossFade(ctx, canvas, final, first, 30 / speed);
     }
@@ -227,6 +228,16 @@ export const animateHistory = async (
             return; // break;
         }
         onStep?.(state.i);
+
+        const title = originalState.historyView?.titles?.find(
+            (title) => title.idx <= state.i && state.i <= title.idx + title.duration,
+        );
+        let speed = title?.speed ?? 1;
+        let skip = 0;
+        if (speed >= 5) {
+            skip = speed - 4;
+            speed = 4;
+        }
 
         await animateAction(state, histories, follow, speed);
 
@@ -290,6 +301,19 @@ export const animateHistory = async (
         }
 
         await nextFrame();
+
+        if (skip) {
+            for (let i = 0; i < skip; i++) {
+                state.i++;
+                if (!preimage) {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    underlay(ctx, lastScene!, preview);
+                    draw(state.i);
+                    overlay(ctx, state, originalState.historyView);
+                    state.frames.push(await createImageBitmap(canvas));
+                }
+            }
+        }
     }
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);

@@ -1,5 +1,9 @@
 
-- [ ] if we went cclockwise to get to the compass mark pos, mark it cclockwise
+- [ ] set different speeds along the line
+- [ ] use historyView.preview
+
+- [x] if we went cclockwise to get to the compass mark pos, mark it cclockwise
+- [ ] would be cool to look ahhead to see "is my next compass move clockwise or counter"
 - [ ] ...
 
 ##

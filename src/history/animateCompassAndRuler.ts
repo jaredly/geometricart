@@ -29,7 +29,9 @@ export async function animateCompass(
         i: number,
         point: Coord,
         extra?: ((pos: Coord, state: State) => void | Promise<void>) | undefined,
+        speed?: number,
     ) => Promise<unknown>,
+    speed: number,
 ) {
     if (action.guide.geom.type !== 'CloneCircle' && action.guide.geom.type !== 'CircleMark') return;
     if (!state.compassState) return;
@@ -37,7 +39,7 @@ export async function animateCompass(
         !coordsEqual(lastDrawn.compass.source.p1, state.compassState.compassRadius.p1) ||
         !coordsEqual(lastDrawn.compass.source.p2, state.compassState.compassRadius.p2)
     ) {
-        await updateCompassSource(histories, i, state, cs, lastDrawn, ctx);
+        await updateCompassSource(histories, i, state, cs, lastDrawn, ctx, speed);
     }
     const fullCircle = action.guide.geom.type === 'CloneCircle';
 
@@ -56,18 +58,24 @@ export async function animateCompass(
     }
 
     const ustate = histories[i].state;
-    await updateCompassPosition(state, cs, ustate, t1, lastDrawn, ctx);
+    await updateCompassPosition(state, cs, ustate, t1, lastDrawn, ctx, speed);
 
     const p1 = push(cs.compassOrigin, t1, cs.compassRadius.radius);
-    await follow(i, p1, (_, ustate) => {
-        drawCompassAndRuler(ctx, lastDrawn, state, ustate);
-    });
+    await follow(
+        i,
+        p1,
+        (_, ustate) => {
+            drawCompassAndRuler(ctx, lastDrawn, state, ustate);
+        },
+        speed,
+    );
     const radScreen = oneToScreen(state, ustate, cs.compassRadius.radius);
     const origin = state.toScreen(cs.compassOrigin, ustate);
     await tweens(
         state,
         t1,
-        (theta) => (fullCircle ? closerOne(theta, t2) : closerAngle(theta, t2)),
+        (theta) =>
+            fullCircle ? closerOne(theta, t2, 0.1 * speed) : closerAngle(theta, t2, 0.1 * speed),
         (theta) =>
             fullCircle
                 ? Math.abs((t2 - theta) * radScreen)
@@ -115,6 +123,7 @@ async function updateCompassPosition(
     t1: number,
     lastDrawn: CompassRenderState,
     ctx: CanvasRenderingContext2D,
+    speed: number,
 ) {
     const cp1 = state.toScreen(cs.compassOrigin, ustate);
     const cp2 = state.toScreen(push(cs.compassOrigin, t1, cs.compassRadius.radius), ustate);
@@ -127,7 +136,7 @@ async function updateCompassPosition(
     await tweens(
         state,
         currentp,
-        (polar) => polarCloser(polar, cpp),
+        (polar) => polarCloser(polar, cpp, 0.1 * speed),
         (polar) => polarDist(polar, cpp),
         (polar, ustate) => {
             drawRuler(
@@ -158,6 +167,7 @@ async function updateCompassSource(
     cs: CompassState,
     lastDrawn: CompassRenderState,
     ctx: CanvasRenderingContext2D,
+    speed: number,
 ) {
     if (!state.compassState) return;
     const ustate = histories[i].state;
@@ -173,7 +183,7 @@ async function updateCompassSource(
     await tweens(
         state,
         currentp,
-        (polar) => polarCloser(polar, mid),
+        (polar) => polarCloser(polar, mid, 0.1 * speed),
         (polar) => polarDist(polar, mid),
         (polar, ustate) => {
             drawRuler(
@@ -195,7 +205,7 @@ async function updateCompassSource(
     await tweens(
         state,
         mid,
-        (polar) => polarCloser(polar, cpp),
+        (polar) => polarCloser(polar, cpp, 0.1 * speed),
         (polar) => polarDist(polar, cpp),
         (polar, ustate) => {
             drawRuler(
@@ -231,8 +241,10 @@ export async function animateRuler(
         i: number,
         point: Coord,
         extra?: ((pos: Coord, state: State) => void | Promise<void>) | undefined,
+        speed?: number,
     ) => Promise<unknown>,
     action: GuideAdd,
+    speed: number,
 ) {
     if (action.guide.geom.type !== 'Line') return;
     if (
@@ -258,8 +270,8 @@ export async function animateRuler(
                 p2: state.toScreen(lastDrawn.ruler.p2, ustate),
             },
             ({p1, p2}) => ({
-                p1: closer(p1, cp1),
-                p2: closer(p2, cp2),
+                p1: closer(p1, cp1, 0.1 * speed),
+                p2: closer(p2, cp2, 0.1 * speed),
             }),
             ({p1, p2}) => Math.max(dist(p1, cp1), dist(p2, cp2)),
             ({p1, p2}, ustate) => {
@@ -289,21 +301,31 @@ export async function animateRuler(
         lastDrawn.ruler.p2 = state.compassState!.rulerP2;
     }
 
-    await follow(i, action.guide.geom.p1, (_, ustate) => {
-        drawCompassAndRuler(ctx, lastDrawn, state, ustate);
-    });
+    await follow(
+        i,
+        action.guide.geom.p1,
+        (_, ustate) => {
+            drawCompassAndRuler(ctx, lastDrawn, state, ustate);
+        },
+        speed,
+    );
     const p1 = action.guide.geom.p1;
-    await follow(i, action.guide.geom.p2, (cursor, ustate) => {
-        drawCompassAndRuler(ctx, lastDrawn, state, ustate);
+    await follow(
+        i,
+        action.guide.geom.p2,
+        (cursor, ustate) => {
+            drawCompassAndRuler(ctx, lastDrawn, state, ustate);
 
-        ctx.strokeStyle = 'white';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(cursor.x, cursor.y);
-        const p = state.toScreen(p1, ustate);
-        ctx.lineTo(p.x, p.y);
-        ctx.stroke();
-    });
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(cursor.x, cursor.y);
+            const p = state.toScreen(p1, ustate);
+            ctx.lineTo(p.x, p.y);
+            ctx.stroke();
+        },
+        speed,
+    );
 }
 
 const circle = (ctx: CanvasRenderingContext2D, p: Coord, r: number, color = 'rgb(0,100,255)') => {

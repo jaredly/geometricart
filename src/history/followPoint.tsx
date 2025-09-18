@@ -4,7 +4,7 @@ import {drawCursor} from './cursor';
 
 export async function followPoints(state: AnimateState, points: Coord[], speed: number) {
     for (let point of points) {
-        await followPoint(state, point);
+        await followPoint(state, point, undefined, speed);
         await wait(100 / speed);
     }
 }
@@ -13,19 +13,20 @@ export async function followPoint(
     {cursor, ctx, i, canvas, frames, histories}: AnimateState,
     {x, y}: Coord,
     extra?: (v: Coord, state: State) => void | Promise<void>,
+    speed = 1,
 ) {
     let dx = x - cursor.x;
     let dy = y - cursor.y;
     let dist = Math.sqrt(dx * dx + dy * dy);
     if (dist < 2) {
         drawCursor(ctx, x, y);
-        return await wait(300);
+        return await wait(300 / speed);
     }
     while (dist > 2) {
         // console.log(dist, cursor, point);
         // const amt = Math.min(1, speed / dist);
         // const amt = Math.max(1, dist / 10);
-        const amt = 0.2;
+        const amt = 0.2 * speed;
 
         cursor.x += dx * amt;
         cursor.y += dy * amt;

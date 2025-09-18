@@ -64,12 +64,22 @@ export async function animateAction(
 
             const cs = state.compassState;
             if (action.guide.geom.type === 'Line') {
-                await animateRuler(lastDrawn, state, histories, i, cs, ctx, follow, action);
+                await animateRuler(lastDrawn, state, histories, i, cs, ctx, follow, action, speed);
             } else if (
                 action.guide.geom.type === 'CloneCircle' ||
                 action.guide.geom.type === 'CircleMark'
             ) {
-                await animateCompass(lastDrawn, state, histories, i, cs, ctx, action, follow);
+                await animateCompass(
+                    lastDrawn,
+                    state,
+                    histories,
+                    i,
+                    cs,
+                    ctx,
+                    action,
+                    follow,
+                    speed,
+                );
             }
         }
 
