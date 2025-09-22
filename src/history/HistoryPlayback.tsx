@@ -580,7 +580,22 @@ function renderZooms(
 ): React.ReactNode {
     return state.historyView?.zooms.map((zoom, i) => (
         <div key={i}>
-            Idx: {zoom.idx + ' '}
+            Idx:
+            <BlurInt
+                value={zoom.idx}
+                onChange={(idx) => {
+                    if (!idx) return;
+                    const view = state.historyView
+                        ? {...state.historyView}
+                        : {zooms: [], skips: []};
+                    view.zooms = view.zooms.slice();
+                    view.zooms[i].idx = idx;
+                    dispatch({
+                        type: 'history-view:update',
+                        view,
+                    });
+                }}
+            />
             Zoom:{' '}
             <NumberInput
                 value={zoomPreview?.zoom ?? zoom.view.zoom}

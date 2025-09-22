@@ -1,4 +1,30 @@
 
+# Ways to classify patternssss
+
+"hexagonal plane tiling"
+(6x rotational + reflection)
+
+"4x rotational + reflection"
+
+Ok what about using Schläfli symbols?
+|6/2| + |6|
+
+|6/2| + 2|3|
+
+|6/12/3| ... for
+
+|4/8/3| - so it;s like an |8/3| but we take only have of the points.
+
+and then there's an |8/1| but we take 5 of the points.
+
+and then there's an |8/1| but we invert two of the points 🤔
+
+and you can do like "6/2" w/ 2 layers of rosettes
+
+
+
+#
+
 - [ ] set different speeds along the line
 - [ ] use historyView.preview
 

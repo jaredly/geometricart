@@ -15,7 +15,7 @@ import {screenToWorld, worldToScreen} from '../editor/Canvas';
 import {Action} from '../state/Action';
 import React from 'react';
 import {followPoint} from './followPoint';
-import {animateAction} from './animateAction';
+import {animateAction, skipAction} from './animateAction';
 import {drawCompassAndRuler} from './animateCompassAndRuler';
 import {drawCursor} from './cursor';
 import {coordsEqual} from '../rendering/pathsAreIdentical';
@@ -239,6 +239,51 @@ export const animateHistory = async (
             speed = 4;
         }
 
+        if (skip) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            underlay(ctx, state, lastScene!, preview);
+            draw(state.i);
+            overlay(ctx, state, originalState.historyView);
+            state.frames.push(await createImageBitmap(canvas));
+
+            const action = histories[state.i].action;
+            if (action?.type === 'path:update:many') {
+            } else {
+                // Draw the cursor
+                if (
+                    state.lastDrawnCompassState &&
+                    !['path:create', 'path:create:many', 'history-view:update'].includes(
+                        action?.type!,
+                    ) &&
+                    !(action?.type === 'view:update' && !action.view.guides)
+                ) {
+                    drawCompassAndRuler(
+                        ctx,
+                        state.lastDrawnCompassState,
+                        state,
+                        histories[state.i].state,
+                    );
+                }
+                drawCursor(ctx, state.cursor.x, state.cursor.y);
+            }
+
+            // await wait(100);
+            await nextFrame();
+            // await nextFrame();
+            // await nextFrame();
+
+            for (let i = 0; i < skip; i++) {
+                state.i++;
+                skipAction(state, histories);
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                underlay(ctx, state, lastScene!, preview);
+                draw(state.i);
+                overlay(ctx, state, originalState.historyView);
+                state.frames.push(await createImageBitmap(canvas));
+            }
+            continue;
+        }
+
         await animateAction(state, histories, follow, speed);
 
         if (state.i > 0) {
@@ -254,7 +299,7 @@ export const animateHistory = async (
                 } else {
                     offctx.clearRect(0, 0, offcan.width, offcan.height);
 
-                    underlay(offctx, lastScene!, preview);
+                    underlay(offctx, state, lastScene!, preview);
                     draw(state.i, offctx);
                     overlay(ctx, state, originalState.historyView);
                     next = await createImageBitmap(offcan);
@@ -272,7 +317,7 @@ export const animateHistory = async (
         if (preimage) {
             ctx.drawImage(state.frames[state.i], 0, 0);
         } else {
-            underlay(ctx, lastScene!, preview);
+            underlay(ctx, state, lastScene!, preview);
             draw(state.i);
             overlay(ctx, state, originalState.historyView);
             state.frames.push(await createImageBitmap(canvas));
@@ -305,9 +350,10 @@ export const animateHistory = async (
         if (skip) {
             for (let i = 0; i < skip; i++) {
                 state.i++;
+                skipAction(state, histories);
                 if (!preimage) {
                     ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    underlay(ctx, lastScene!, preview);
+                    underlay(ctx, state, lastScene!, preview);
                     draw(state.i);
                     overlay(ctx, state, originalState.historyView);
                     state.frames.push(await createImageBitmap(canvas));
@@ -352,14 +398,34 @@ export const overlay = (
 
 export const underlay = (
     ctx: CanvasRenderingContext2D,
+    state: AnimateState,
     lastScene: ImageBitmap,
     preview?: PreviewT,
 ) => {
     if (preview === 'corner') {
         ctx.drawImage(lastScene!, 0, 0, ctx.canvas.width / 5, ctx.canvas.height / 5);
     } else if (preview != null) {
+        const lastView = state.histories[state.histories.length - 1].state.view;
+        const view = state.histories[state.i].state.view;
         ctx.globalAlpha = preview;
-        ctx.drawImage(lastScene!, 0, 0);
+        if (
+            lastView.center.x !== view.center.x ||
+            lastView.center.y !== view.center.y ||
+            lastView.zoom !== view.zoom
+        ) {
+            const wp = screenToWorld(ctx.canvas.width, ctx.canvas.height, {x: 0, y: 0}, lastView);
+            const tl = worldToScreen(ctx.canvas.width, ctx.canvas.height, wp, view);
+            const wp2 = screenToWorld(
+                ctx.canvas.width,
+                ctx.canvas.height,
+                {x: ctx.canvas.width, y: ctx.canvas.height},
+                lastView,
+            );
+            const br = worldToScreen(ctx.canvas.width, ctx.canvas.height, wp2, view);
+            ctx.drawImage(lastScene!, tl.x, tl.y, br.x - tl.x, br.y - tl.y);
+        } else {
+            ctx.drawImage(lastScene!, 0, 0);
+        }
         ctx.globalAlpha = 1;
     }
 };

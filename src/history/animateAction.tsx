@@ -13,10 +13,46 @@ import {isCompass} from '../editor/RenderCompassAndRuler';
 import {angleTo, dist, push} from '../rendering/getMirrorTransforms';
 import {closeEnough} from '../rendering/epsilonToZero';
 import {angleBetween} from '../rendering/findNextSegments';
-import {animateRuler, animateCompass, offscreenCompassState} from './animateCompassAndRuler';
+import {
+    animateRuler,
+    animateCompass,
+    offscreenCompassState,
+    skipRuler,
+    skipCompass,
+} from './animateCompassAndRuler';
 
 export const oneToScreen = (state: AnimateState, ustate: State, value: number) =>
     state.toScreen({x: value, y: 0}, ustate).x - state.toScreen({x: 0, y: 0}, ustate).x;
+
+export const skipAction = (
+    state: AnimateState,
+    histories: {state: State; action: Action | null}[],
+) => {
+    const {i, ctx, canvas} = state;
+    const action = histories[i].action;
+    if (!action) return;
+    if (action.type === 'pending:compass&ruler') {
+        state.compassState = action.state;
+    }
+
+    if (action.type === 'guide:add') {
+        if (!state.compassState) return;
+        if (!state.lastDrawnCompassState) {
+            state.lastDrawnCompassState = offscreenCompassState(state, histories[i].state);
+        }
+        const lastDrawn = state.lastDrawnCompassState;
+
+        const cs = state.compassState;
+        if (action.guide.geom.type === 'Line') {
+            skipRuler(lastDrawn, state, action);
+        } else if (
+            action.guide.geom.type === 'CloneCircle' ||
+            action.guide.geom.type === 'CircleMark'
+        ) {
+            skipCompass(lastDrawn, state, cs, action);
+        }
+    }
+};
 
 export async function animateAction(
     state: AnimateState,

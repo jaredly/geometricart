@@ -230,6 +230,54 @@ async function updateCompassSource(
     lastDrawn.compass.mark.p2 = state.compassState.compassRadius.p2;
 }
 
+export const skipRuler = (lastDrawn: CompassRenderState, state: AnimateState, action: GuideAdd) => {
+    if (action.guide.geom.type !== 'Line') return;
+    if (
+        !coordsEqual(lastDrawn.ruler.p1, state.compassState!.rulerP1) ||
+        !coordsEqual(lastDrawn.ruler.p2, state.compassState!.rulerP2)
+    ) {
+        lastDrawn.ruler.p1 = state.compassState!.rulerP1;
+        lastDrawn.ruler.p2 = state.compassState!.rulerP2;
+    }
+};
+
+export const skipCompass = (
+    lastDrawn: CompassRenderState,
+    state: AnimateState,
+    cs: CompassState,
+    action: GuideAdd,
+) => {
+    if (action.guide.geom.type !== 'CloneCircle' && action.guide.geom.type !== 'CircleMark') return;
+    if (!state.compassState) return;
+    if (
+        !coordsEqual(lastDrawn.compass.source.p1, state.compassState.compassRadius.p1) ||
+        !coordsEqual(lastDrawn.compass.source.p2, state.compassState.compassRadius.p2)
+    ) {
+        lastDrawn.compass.source.p1 = state.compassState.compassRadius.p1;
+        lastDrawn.compass.source.p2 = state.compassState.compassRadius.p2;
+        lastDrawn.compass.mark.p1 = state.compassState.compassRadius.p1;
+        lastDrawn.compass.mark.p2 = state.compassState.compassRadius.p2;
+    }
+
+    let [t1, t2] =
+        action.guide.geom.type === 'CloneCircle'
+            ? [0, Math.PI * 2]
+            : [action.guide.geom.angle, action.guide.geom.angle2!];
+
+    const currentTheta = angleTo(lastDrawn.compass.mark.p1, lastDrawn.compass.mark.p2);
+    const d1 = leastAngleDiff(t1, currentTheta);
+    const d2 = leastAngleDiff(t2, currentTheta);
+    let clockwise = true;
+    if (Math.abs(d2) < Math.abs(d1)) {
+        [t1, t2] = [t2, t1];
+        clockwise = false;
+    }
+
+    lastDrawn.compass.mark.p1 = cs.compassOrigin;
+    // lastDrawn.compass.mark.p2 = push(cs.compassOrigin, t1, cs.compassRadius.radius);
+    lastDrawn.compass.mark.p2 = push(cs.compassOrigin, t2, cs.compassRadius.radius);
+};
+
 export async function animateRuler(
     lastDrawn: CompassRenderState,
     state: AnimateState,
