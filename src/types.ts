@@ -583,6 +583,8 @@ export type State = {
 
     historyView?: {
         preview?: 'corner' | number;
+        preapplyPathUpdates?: boolean;
+        hideOverlays?: boolean;
         zooms: {idx: number; view: Pick<View, 'zoom' | 'center'>}[];
         titles?: {idx: number; title: string; duration: number; speed?: number}[];
         skips: number[];

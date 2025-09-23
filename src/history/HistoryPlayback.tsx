@@ -207,6 +207,36 @@ export const HistoryPlayback = ({
                             onChange={(number) => setPreview(number ?? null)}
                         />
                     </label>
+                    <label>
+                        <input
+                            type="checkbox"
+                            checked={state.historyView?.preapplyPathUpdates ?? false}
+                            onChange={(evt) => {
+                                const checked = evt.target.checked;
+                                const view = state.historyView
+                                    ? {...state.historyView}
+                                    : {zooms: [], skips: []};
+                                view.preapplyPathUpdates = checked;
+                                dispatch({type: 'history-view:update', view});
+                            }}
+                        />
+                        Preapply path updates
+                    </label>
+                    <label>
+                        <input
+                            type="checkbox"
+                            checked={state.historyView?.hideOverlays ?? false}
+                            onChange={(evt) => {
+                                const checked = evt.target.checked;
+                                const view = state.historyView
+                                    ? {...state.historyView}
+                                    : {zooms: [], skips: []};
+                                view.hideOverlays = checked;
+                                dispatch({type: 'history-view:update', view});
+                            }}
+                        />
+                        Hide overlays
+                    </label>
                 </div>
                 <div ref={log} />
                 <button
@@ -782,7 +812,11 @@ export function getHistoriesList(state: State, overrideZoom?: boolean) {
         });
         current = undo({...current, history}, action);
     }
-    const simple = simplifyHistory(states);
+    const simple = simplifyHistory(
+        states,
+        state.historyView?.preapplyPathUpdates ?? false,
+        state.historyView?.hideOverlays ?? false,
+    );
     return simple.slice(state.historyView?.start ?? 0, state.historyView?.end ?? simple.length);
 }
 
@@ -792,13 +826,25 @@ export type StateAndAction = {
     undo: UndoAction | null;
 };
 
-export function simplifyHistory(history: StateAndAction[]): StateAndAction[] {
+export function simplifyHistory(
+    history: StateAndAction[],
+    preapplyPathUpdates: boolean,
+    hideOverlays: boolean,
+): StateAndAction[] {
     // Remove pending guides that end up being cancelled.
     let result: StateAndAction[] = [];
     for (let i = 0; i < history.length; i++) {
         const {action} = history[i];
         if (!action) {
             result.push(history[i]);
+            continue;
+        }
+        if (
+            hideOverlays &&
+            (action.type === 'overlay:add' ||
+                action.type === 'overlay:update' ||
+                action.type === 'overlay:delete')
+        ) {
             continue;
         }
         if (action.type === 'pending:type' && action.kind === null) {
@@ -832,30 +878,34 @@ export function simplifyHistory(history: StateAndAction[]): StateAndAction[] {
                 continue;
             }
         }
-        if (
-            (action.type === 'path:update' || action.type === 'path:update:many') &&
-            result.length
-        ) {
-            const ids = action.type === 'path:update' ? [action.id] : Object.keys(action.changed);
-            const last = result[result.length - 1];
-            if (last.undo?.type === 'path:create' || last.undo?.type === 'path:create:many') {
-                const created = new Set(last.undo.added[0]);
-                if (ids.every((id) => created.has(id))) {
-                    ids.forEach((id) => {
-                        if (action.type === 'path:update') {
-                            last.state.paths[id] = action.path;
-                        } else if (action.changed[id]) {
-                            last.state.paths[id] = action.changed[id]!;
-                        } else {
-                            delete last.state.paths[id];
-                        }
-                    });
-                    continue;
+
+        // Collapse path updates
+        if (action.type === 'path:update' && preapplyPathUpdates) {
+            result.forEach((item) => {
+                if (item.state.paths[action.id]) {
+                    item.state.paths[action.id] = action.path;
                 }
-            }
+            });
+            continue;
         }
-        // Collapse path updates for paths that were just created
+        if (action.type === 'path:update:many' && preapplyPathUpdates) {
+            result.forEach((item) => {
+                Object.entries(action.changed).forEach(([id, path]) => {
+                    if (!path) delete item.state.paths[id];
+                    else if (item.state.paths[id]) {
+                        item.state.paths[id] = path;
+                    }
+                });
+            });
+            continue;
+        }
+
         result.push(history[i]);
+    }
+    if (hideOverlays) {
+        result.forEach((item) => {
+            item.state.overlays = {};
+        });
     }
     return result;
 }
