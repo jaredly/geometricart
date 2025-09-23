@@ -4,7 +4,7 @@ import {exportPNG, renderTexture} from '../editor/ExportPng';
 import {undoAction} from '../editor/history';
 import {canvasRender, makeImage, paletteImages} from '../rendering/CanvasRender';
 import {coordsEqual} from '../rendering/pathsAreIdentical';
-import {Action} from '../state/Action';
+import {Action, UndoAction} from '../state/Action';
 import {undo} from '../state/reducer';
 import {Coord, State, View} from '../types';
 import {animateHistory} from './animateHistory';
@@ -762,12 +762,12 @@ export function applyHistoryView(
 }
 
 export function getHistoriesList(state: State, overrideZoom?: boolean) {
-    let states: {state: State; action: Action | null}[] = [];
+    let states: StateAndAction[] = [];
     let current = state;
     while (true) {
         const [history, action] = undoAction(current.history);
         if (!action) {
-            states.unshift({state: current, action: null});
+            states.unshift({state: current, action: null, undo: null});
             break;
         }
         states.unshift({
@@ -778,15 +778,18 @@ export function getHistoriesList(state: State, overrideZoom?: boolean) {
                   }
                 : current,
             action: action.action,
+            undo: action,
         });
         current = undo({...current, history}, action);
     }
     const simple = simplifyHistory(states);
     return simple.slice(state.historyView?.start ?? 0, state.historyView?.end ?? simple.length);
 }
+
 export type StateAndAction = {
     state: State;
     action: Action | null;
+    undo: UndoAction | null;
 };
 
 export function simplifyHistory(history: StateAndAction[]): StateAndAction[] {
@@ -829,6 +832,29 @@ export function simplifyHistory(history: StateAndAction[]): StateAndAction[] {
                 continue;
             }
         }
+        if (
+            (action.type === 'path:update' || action.type === 'path:update:many') &&
+            result.length
+        ) {
+            const ids = action.type === 'path:update' ? [action.id] : Object.keys(action.changed);
+            const last = result[result.length - 1];
+            if (last.undo?.type === 'path:create' || last.undo?.type === 'path:create:many') {
+                const created = new Set(last.undo.added[0]);
+                if (ids.every((id) => created.has(id))) {
+                    ids.forEach((id) => {
+                        if (action.type === 'path:update') {
+                            last.state.paths[id] = action.path;
+                        } else if (action.changed[id]) {
+                            last.state.paths[id] = action.changed[id]!;
+                        } else {
+                            delete last.state.paths[id];
+                        }
+                    });
+                    continue;
+                }
+            }
+        }
+        // Collapse path updates for paths that were just created
         result.push(history[i]);
     }
     return result;
