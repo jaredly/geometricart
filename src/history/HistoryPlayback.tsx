@@ -879,6 +879,33 @@ export function simplifyHistory(
             }
         }
 
+        if (action.type === 'path:delete:many' && preapplyPathUpdates) {
+            result.forEach((item) => {
+                action.ids.forEach((id) => {
+                    delete item.state.paths[id];
+                });
+            });
+            continue;
+        }
+
+        if (action.type === 'path:delete' && preapplyPathUpdates) {
+            result.forEach((item) => {
+                delete item.state.paths[action.id];
+            });
+            continue;
+        }
+
+        if (action.type === 'group:delete' && preapplyPathUpdates) {
+            result.forEach((item) => {
+                Object.keys(item.state.paths).forEach((id) => {
+                    if (item.state.paths[id].group === action.id) {
+                        delete item.state.paths[id];
+                    }
+                });
+            });
+            continue;
+        }
+
         // Collapse path updates
         if (action.type === 'path:update' && preapplyPathUpdates) {
             result.forEach((item) => {
