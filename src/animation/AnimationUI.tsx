@@ -23,12 +23,25 @@ export const makeEven = (v: number) => {
     return v % 2 === 0 ? v : v + 1;
 };
 
-export const AnimationEditor = ({state, dispatch}: {state: State; dispatch: (action: Action) => unknown}) => {
+export const AnimationEditor = ({
+    state,
+    dispatch,
+}: {
+    state: State;
+    dispatch: (action: Action) => unknown;
+}) => {
     const [animationPosition, setAnimationPosition] = React.useState(0);
     const canvas = React.useRef(null as null | HTMLCanvasElement);
     const [recording, setRecording] = React.useState(false);
 
-    const {crop, fps, zoom, increment, restrictAspectRatio: lockAspectRatio, backgroundAlpha} = state.animations.config;
+    const {
+        crop,
+        fps,
+        zoom,
+        increment,
+        restrictAspectRatio: lockAspectRatio,
+        backgroundAlpha,
+    } = state.animations.config;
     const setConfig = (fn: (c: Animations['config']) => Animations['config']) =>
         dispatch({
             type: 'animation:config',
@@ -38,16 +51,23 @@ export const AnimationEditor = ({state, dispatch}: {state: State; dispatch: (act
     const setFps = (fps: number) => setConfig((c) => ({...c, fps}));
     const setZoom = (zoom: number) => setConfig((c) => ({...c, zoom}));
     const setIncrement = (increment: number) => setConfig((c) => ({...c, increment}));
-    const setLockAspectRatio = (restrictAspectRatio: boolean) => setConfig((c) => ({...c, restrictAspectRatio}));
-    const setBackgroundAlpha = (backgroundAlpha: number) => setConfig((c) => ({...c, backgroundAlpha}));
+    const setLockAspectRatio = (restrictAspectRatio: boolean) =>
+        setConfig((c) => ({...c, restrictAspectRatio}));
+    const setBackgroundAlpha = (backgroundAlpha: number) =>
+        setConfig((c) => ({...c, backgroundAlpha}));
 
-    const [downloadUrl, setDownloadUrl] = React.useState(null as null | {url: string; name: string});
+    const [downloadUrl, setDownloadUrl] = React.useState(
+        null as null | {url: string; name: string},
+    );
     const [transcodingProgress, setTranscodingProgress] = React.useState({
         start: 0.0,
         percent: 0.0,
     });
 
-    const bounds = React.useMemo(() => findBoundingRect(state), [state.view, state.paths, state.pathGroups]);
+    const bounds = React.useMemo(
+        () => findBoundingRect(state),
+        [state.view, state.paths, state.pathGroups],
+    );
 
     const originalSize = 1000;
 
@@ -66,7 +86,10 @@ export const AnimationEditor = ({state, dispatch}: {state: State; dispatch: (act
         }
     }
 
-    const animatedFunctions = React.useMemo(() => getAnimatedFunctions(state.animations), [state.animations]);
+    const animatedFunctions = React.useMemo(
+        () => getAnimatedFunctions(state.animations),
+        [state.animations],
+    );
 
     const nowRecording = useCurrent(recording);
 
@@ -206,18 +229,32 @@ export const AnimationEditor = ({state, dispatch}: {state: State; dispatch: (act
 
     return (
         <div style={{paddingBottom: 50}}>
-            <canvas ref={canvas} width={makeEven(w * 2 * zoom)} height={makeEven(h * 2 * zoom)} style={{width: w * zoom, height: h * zoom}} />
+            <canvas
+                ref={canvas}
+                width={makeEven(w * 2 * zoom)}
+                height={makeEven(h * 2 * zoom)}
+                style={{width: w * zoom, height: h * zoom}}
+            />
             <div style={{display: 'flex'}}>
                 <div>
-                    FPS: <BlurInt value={fps} onChange={(f) => (f ? setFps(f) : null)} /> {1 / increment / fps} Seconds
+                    FPS: <BlurInt value={fps} onChange={(f) => (f ? setFps(f) : null)} />{' '}
+                    {1 / increment / fps} Seconds
                 </div>
                 <div>
                     Zoom: <BlurInt value={zoom} onChange={(f) => (f ? setZoom(f) : null)} />
                 </div>
                 <div>
-                    BackgroundAlpha: <BlurInt value={backgroundAlpha} onChange={(f) => (f ? setBackgroundAlpha(f) : null)} />
+                    BackgroundAlpha:{' '}
+                    <BlurInt
+                        value={backgroundAlpha}
+                        onChange={(f) => (f ? setBackgroundAlpha(f) : null)}
+                    />
                 </div>
-                <Toggle value={lockAspectRatio} onChange={setLockAspectRatio} label="Ensure aspect ratio is between 16:9 and 4:5" />
+                <Toggle
+                    value={lockAspectRatio}
+                    onChange={setLockAspectRatio}
+                    label="Ensure aspect ratio is between 16:9 and 4:5"
+                />
                 <div>
                     Crop:
                     <BlurInt value={crop} onChange={(f) => (f != null ? setCrop(f) : null)} />
@@ -251,9 +288,17 @@ export const AnimationEditor = ({state, dispatch}: {state: State; dispatch: (act
                                 return;
                             }
                             const scripts = getAnimationScripts(state);
-                            const currentAnimatedValues = evaluateAnimatedValues(animatedFunctions, animationPosition);
+                            const currentAnimatedValues = evaluateAnimatedValues(
+                                animatedFunctions,
+                                animationPosition,
+                            );
                             const animatedPaths = Object.keys(scripts).length
-                                ? getAnimatedPaths(state, scripts, animationPosition, currentAnimatedValues).paths
+                                ? getAnimatedPaths(
+                                      state,
+                                      scripts,
+                                      animationPosition,
+                                      currentAnimatedValues,
+                                  ).paths
                                 : state.paths;
 
                             blob = await addMetadata(blob, {
@@ -279,9 +324,17 @@ export const AnimationEditor = ({state, dispatch}: {state: State; dispatch: (act
                 <button
                     onClick={() => {
                         const scripts = getAnimationScripts(state);
-                        const currentAnimatedValues = evaluateAnimatedValues(animatedFunctions, animationPosition);
+                        const currentAnimatedValues = evaluateAnimatedValues(
+                            animatedFunctions,
+                            animationPosition,
+                        );
                         const animatedPaths = Object.keys(scripts).length
-                            ? getAnimatedPaths(state, scripts, animationPosition, currentAnimatedValues).paths
+                            ? getAnimatedPaths(
+                                  state,
+                                  scripts,
+                                  animationPosition,
+                                  currentAnimatedValues,
+                              ).paths
                             : state.paths;
                         dispatch({
                             type: 'reset',
@@ -305,9 +358,16 @@ export const AnimationEditor = ({state, dispatch}: {state: State; dispatch: (act
             {transcodingProgress.start === 0 ? null : (
                 <div>
                     {(transcodingProgress.percent * 100).toFixed(1)} percent encoded. ETA{' '}
-                    {(((Date.now() - transcodingProgress.start) / 1000 / transcodingProgress.percent) * (1 - transcodingProgress.percent)).toFixed(1)}
+                    {(
+                        ((Date.now() - transcodingProgress.start) /
+                            1000 /
+                            transcodingProgress.percent) *
+                        (1 - transcodingProgress.percent)
+                    ).toFixed(1)}
                     seconds
-                    {recording ? <button onClick={() => setRecording(false)}>Cancel recording</button> : null}
+                    {recording ? (
+                        <button onClick={() => setRecording(false)}>Cancel recording</button>
+                    ) : null}
                 </div>
             )}
             {downloadUrl ? (
@@ -325,7 +385,11 @@ export const AnimationEditor = ({state, dispatch}: {state: State; dispatch: (act
                     </a>
                 </div>
             ) : null}
-            <BlurInt value={increment} width={60} onChange={(increment) => (increment ? setIncrement(increment) : null)} />
+            <BlurInt
+                value={increment}
+                width={60}
+                onChange={(increment) => (increment ? setIncrement(increment) : null)}
+            />
             <button
                 onClick={() => {
                     onRecord(increment);
@@ -340,7 +404,12 @@ export const AnimationEditor = ({state, dispatch}: {state: State; dispatch: (act
                     display: 'flex',
                 }}
             >
-                <Timelines dispatch={dispatch} state={state} animationPosition={animationPosition} setAnimationPosition={setAnimationPosition} />
+                <Timelines
+                    dispatch={dispatch}
+                    state={state}
+                    animationPosition={animationPosition}
+                    setAnimationPosition={setAnimationPosition}
+                />
                 <Lerps dispatch={dispatch} state={state} />
             </div>
             <Scripts state={state} dispatch={dispatch} />
@@ -386,7 +455,18 @@ export function tarImages(images: Uint8Array[], fps: number, state: State) {
     // @ts-ignore
     // const tar = import('tinytar').tar;
 
-    const args = ['-r', '' + fps, '-i', 'image%03d.jpg', '-c:v', 'libx264', '-crf', '18', '-pix_fmt', 'yuv420p'];
+    const args = [
+        '-r',
+        '' + fps,
+        '-i',
+        'image%03d.jpg',
+        '-c:v',
+        'libx264',
+        '-crf',
+        '18',
+        '-pix_fmt',
+        'yuv420p',
+    ];
     args.push('video.mp4');
     const res = tar(
         images
@@ -395,7 +475,7 @@ export function tarImages(images: Uint8Array[], fps: number, state: State) {
                     ({
                         name: `image${i.toString().padStart(3, '0')}.jpg`,
                         data: image,
-                    } as any),
+                    }) as any,
             )
             .concat([
                 {
@@ -434,7 +514,13 @@ export const AddVbl = ({onAdd}: {onAdd: (name: string, v: Animations['lerps'][''
             }}
         >
             <span style={{marginRight: 8}}>
-                Vbl name: <input value={key} style={{width: 50}} onChange={(evt) => setKey(evt.target.value)} placeholder="vbl name" />
+                Vbl name:{' '}
+                <input
+                    value={key}
+                    style={{width: 50}}
+                    onChange={(evt) => setKey(evt.target.value)}
+                    placeholder="vbl name"
+                />
             </span>
             <span style={{marginRight: 8}}>
                 Kind:{' '}
@@ -451,10 +537,12 @@ export const AddVbl = ({onAdd}: {onAdd: (name: string, v: Animations['lerps'][''
             {kind === 'float' ? (
                 <>
                     <span>
-                        Low: <BlurInt value={low} onChange={(v) => (v != null ? setLow(v) : null)} />
+                        Low:{' '}
+                        <BlurInt value={low} onChange={(v) => (v != null ? setLow(v) : null)} />
                     </span>
                     <span>
-                        High: <BlurInt value={high} onChange={(v) => (v != null ? setHigh(v) : null)} />
+                        High:{' '}
+                        <BlurInt value={high} onChange={(v) => (v != null ? setHigh(v) : null)} />
                     </span>
                 </>
             ) : null}
@@ -469,14 +557,14 @@ export const AddVbl = ({onAdd}: {onAdd: (name: string, v: Animations['lerps'][''
                                   points: [],
                               }
                             : kind === 'float-fn'
-                            ? {
-                                  type: 'float-fn',
-                                  code: '(t) => sin(t)',
-                              }
-                            : {
-                                  type: 'pos-fn',
-                                  code: '(t) => ({x: sin(t), y: cos(t)})',
-                              },
+                              ? {
+                                    type: 'float-fn',
+                                    code: '(t) => sin(t)',
+                                }
+                              : {
+                                    type: 'pos-fn',
+                                    code: '(t) => ({x: sin(t), y: cos(t)})',
+                                },
                     );
                 }}
             >
@@ -486,7 +574,15 @@ export const AddVbl = ({onAdd}: {onAdd: (name: string, v: Animations['lerps'][''
     );
 };
 
-export const TickTock = ({t, set, increment}: {t: number; set: (t: number) => void; increment: number}) => {
+export const TickTock = ({
+    t,
+    set,
+    increment,
+}: {
+    t: number;
+    set: (t: number) => void;
+    increment: number;
+}) => {
     const [tick, setTick] = React.useState(null as number | null);
     React.useEffect(() => {
         if (!tick) {
@@ -502,7 +598,14 @@ export const TickTock = ({t, set, increment}: {t: number; set: (t: number) => vo
     return (
         <div>
             <BlurInt value={t} onChange={(t) => (t ? set(t) : null)} />
-            <input type="range" min="0" max="1" step="0.01" value={t + ''} onChange={(evt) => set(+evt.target.value)} />
+            <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value={t + ''}
+                onChange={(evt) => set(+evt.target.value)}
+            />
             <button onClick={() => setTick(100)}>100ms</button>
             <button onClick={() => setTick(20)}>20ms</button>
             <button onClick={() => setTick(null)}>Clear tick</button>

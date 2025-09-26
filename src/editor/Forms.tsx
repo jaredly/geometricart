@@ -1,9 +1,9 @@
 /* @jsx jsx */
 /* @jsxFrag React.Fragment */
-import { jsx } from '@emotion/react';
+import {jsx} from '@emotion/react';
 import * as React from 'react';
-import { transparent } from './Icons';
-import { Circle, Guide, Line, Path, PathGroup, Style, View } from '../types';
+import {transparent} from './Icons';
+import {Circle, Guide, Line, Path, PathGroup, Style, View} from '../types';
 
 export const Text = ({
     value,
@@ -27,9 +27,8 @@ export const Text = ({
     const shared = {
         value: text ?? value,
         style,
-        onChange: (
-            evt: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-        ) => setText(evt.target.value),
+        onChange: (evt: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+            setText(evt.target.value),
         onBlur: () => {
             if (text != null) {
                 onChange(text);
@@ -37,10 +36,42 @@ export const Text = ({
             }
         },
     };
-    return multiline ? (
-        <textarea {...shared} />
-    ) : (
-        <input type="text" {...shared} />
+    return multiline ? <textarea {...shared} /> : <input type="text" {...shared} />;
+};
+
+export const BlurInput = ({
+    value,
+    onChange,
+    width,
+}: {
+    value: string | undefined | null;
+    width?: number;
+    onChange: (v: string | undefined) => unknown;
+}) => {
+    const [text, setText] = React.useState(null as null | string);
+    return (
+        <>
+            <input
+                value={text != null ? text : (value ?? '')}
+                onChange={(evt) => {
+                    setText(evt.target.value);
+                }}
+                onKeyDown={(evt) => {
+                    if (evt.key === 'Return' || evt.key === 'Enter') {
+                        (evt.target as HTMLInputElement).blur();
+                    }
+                }}
+                onBlur={() => {
+                    if (text != null) {
+                        onChange(text ? text : undefined);
+                        setText(null);
+                    }
+                }}
+                css={{
+                    width: width ?? 200,
+                }}
+            />
+        </>
     );
 };
 
@@ -66,7 +97,7 @@ export const BlurInt = ({
     return (
         <>
             <input
-                value={text != null ? text : value ?? ''}
+                value={text != null ? text : (value ?? '')}
                 onChange={(evt) => {
                     setText(evt.target.value);
                 }}
@@ -112,13 +143,7 @@ export const BlurInt = ({
     );
 };
 
-export const Float = ({
-    value,
-    onChange,
-}: {
-    value: number;
-    onChange: (v: number) => unknown;
-}) => {
+export const Float = ({value, onChange}: {value: number; onChange: (v: number) => unknown}) => {
     return (
         <input
             value={value}
@@ -163,7 +188,7 @@ export const Int = ({
     );
 };
 
-export const Label = ({ text }: { text: string }) => (
+export const Label = ({text}: {text: string}) => (
     <div
         css={{
             fontWeight: 'bold',
@@ -195,9 +220,7 @@ export const Color = ({
                     onClick={() => onChange(i)}
                     style={{
                         border: `2px solid ${color === i ? 'white' : '#444'}`,
-                        background: item.startsWith('http')
-                            ? `url("${item}")`
-                            : item,
+                        background: item.startsWith('http') ? `url("${item}")` : item,
                     }}
                     css={{
                         width: 20,
@@ -211,15 +234,10 @@ export const Color = ({
                     key={name}
                     onClick={() => onChange(name)}
                     style={{
-                        background:
-                            name === 'transparent'
-                                ? `url("${transparent}")`
-                                : name,
+                        background: name === 'transparent' ? `url("${transparent}")` : name,
                     }}
                     css={{
-                        border: `2px solid ${
-                            color === name ? 'white' : '#444'
-                        }`,
+                        border: `2px solid ${color === name ? 'white' : '#444'}`,
                         width: 20,
                         height: 20,
                         cursor: 'pointer',
@@ -309,18 +327,18 @@ export const PathGroupForm = ({
                 }}
             >
                 Path Group {group.id}
-                <div style={{ flexBasis: 10 }} />
+                <div style={{flexBasis: 10}} />
                 <Toggle
                     value={!!group.hide}
-                    onChange={(hide) => onChange({ ...group, hide })}
+                    onChange={(hide) => onChange({...group, hide})}
                     label="Hide"
                 />
                 Ordering:
                 <Int
                     value={group.ordering}
-                    onChange={(ordering) => onChange({ ...group, ordering })}
+                    onChange={(ordering) => onChange({...group, ordering})}
                 />
-                <div style={{ flex: 1 }} />
+                <div style={{flex: 1}} />
                 <button
                     onClick={() => {
                         onDelete();
@@ -331,9 +349,7 @@ export const PathGroupForm = ({
             </div>
             <Toggle
                 value={!!group.insetBeforeClip}
-                onChange={(insetBeforeClip) =>
-                    onChange({ ...group, insetBeforeClip })
-                }
+                onChange={(insetBeforeClip) => onChange({...group, insetBeforeClip})}
                 label="Inset before clip"
             />
             <div>
@@ -341,11 +357,7 @@ export const PathGroupForm = ({
                 {['none', 'remove', 'normal', 'fills'].map((name) => (
                     <button
                         key={name}
-                        style={
-                            group.clipMode === name
-                                ? { fontWeight: 'bold' }
-                                : {}
-                        }
+                        style={group.clipMode === name ? {fontWeight: 'bold'} : {}}
                         onClick={() => {
                             if (group.clipMode === name) {
                                 return onChange({
@@ -371,14 +383,8 @@ export const hasNonBodyScrollParent = (node: HTMLElement) => {
     let parent = node.parentElement;
     while (parent && parent !== document.body) {
         const style = getComputedStyle(parent);
-        if (
-            style.overflow.match(/auto|scroll/) ||
-            style.overflowY.match(/auto|scroll/)
-        ) {
-            if (
-                parent.scrollHeight >
-                parent.getBoundingClientRect().height + 10
-            ) {
+        if (style.overflow.match(/auto|scroll/) || style.overflowY.match(/auto|scroll/)) {
+            if (parent.scrollHeight > parent.getBoundingClientRect().height + 10) {
                 return true;
             }
         }
@@ -406,7 +412,7 @@ export const PathForm = ({
     React.useEffect(() => {
         // console.log(ref.current, 'scroll apth');
         if (selected && ref.current && hasNonBodyScrollParent(ref.current)) {
-            ref.current?.scrollIntoView({ block: 'nearest' });
+            ref.current?.scrollIntoView({block: 'nearest'});
         }
     }, [selected]);
     return (
@@ -427,33 +433,31 @@ export const PathForm = ({
                 }}
             >
                 Path! {path.id}
-                <div style={{ flexBasis: 8 }} />
+                <div style={{flexBasis: 8}} />
                 <Toggle
                     label="Open"
                     value={!!path.open}
-                    onChange={(open) => onChange({ ...path, open })}
+                    onChange={(open) => onChange({...path, open})}
                 />
                 <Toggle
                     label="Hide"
                     value={path.hidden}
-                    onChange={(hidden) => onChange({ ...path, hidden })}
+                    onChange={(hidden) => onChange({...path, hidden})}
                 />
-                <div style={{ flex: 1 }} />
+                <div style={{flex: 1}} />
                 <button onClick={onDelete}>Delete</button>
             </div>
             <Toggle
                 label="Debug"
                 value={!!path.debug}
-                onChange={(debug) => onChange({ ...path, debug })}
+                onChange={(debug) => onChange({...path, debug})}
             />
             <div>
                 Clip Mode:
                 {['none', 'remove', 'normal', 'fills'].map((name) => (
                     <button
                         key={name}
-                        style={
-                            path.clipMode === name ? { fontWeight: 'bold' } : {}
-                        }
+                        style={path.clipMode === name ? {fontWeight: 'bold'} : {}}
                         onClick={() => {
                             if (path.clipMode === name) {
                                 return onChange({
@@ -511,9 +515,7 @@ export const GuideForm = ({
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
-                    background: selected
-                        ? 'rgba(100,100,100,0.4)'
-                        : 'rgba(100,100,100,0.1)',
+                    background: selected ? 'rgba(100,100,100,0.4)' : 'rgba(100,100,100,0.1)',
                     ':hover': {
                         background: 'rgba(100,100,100,0.2)',
                     },
@@ -526,9 +528,9 @@ export const GuideForm = ({
                 <Toggle
                     label="Active"
                     value={guide.active}
-                    onChange={(active) => onChange({ ...guide, active })}
+                    onChange={(active) => onChange({...guide, active})}
                 />
-                <div style={{ flex: 1 }} />
+                <div style={{flex: 1}} />
                 <button
                     onClick={() => {
                         onDelete();
@@ -625,44 +627,31 @@ export const ViewForm = ({
             <Toggle
                 label="Laser Cut Mode"
                 value={!!view.laserCutMode}
-                onChange={(laserCutMode) => onChange({ ...view, laserCutMode })}
+                onChange={(laserCutMode) => onChange({...view, laserCutMode})}
             />
 
             <Toggle
                 label="Hide duplicate paths"
                 value={!!view.hideDuplicatePaths}
-                onChange={(hideDuplicatePaths) =>
-                    onChange({ ...view, hideDuplicatePaths })
-                }
+                onChange={(hideDuplicatePaths) => onChange({...view, hideDuplicatePaths})}
             />
 
             <div>
                 Zoom
-                <span style={{ marginLeft: 8 }} />
-                <Float
-                    value={view.zoom}
-                    onChange={(zoom) => onChange({ ...view, zoom })}
-                />
-                <span style={{ marginLeft: 16 }} />
+                <span style={{marginLeft: 8}} />
+                <Float value={view.zoom} onChange={(zoom) => onChange({...view, zoom})} />
+                <span style={{marginLeft: 16}} />
                 Offset
-                <span style={{ marginLeft: 8 }} />
+                <span style={{marginLeft: 8}} />
                 <Float
                     value={view.center.x}
-                    onChange={(x) =>
-                        onChange({ ...view, center: { ...view.center, x } })
-                    }
+                    onChange={(x) => onChange({...view, center: {...view.center, x}})}
                 />
                 <Float
                     value={view.center.y}
-                    onChange={(y) =>
-                        onChange({ ...view, center: { ...view.center, y } })
-                    }
+                    onChange={(y) => onChange({...view, center: {...view.center, y}})}
                 />
-                <button
-                    onClick={() =>
-                        onChange({ ...view, center: { x: 0, y: 0 } })
-                    }
-                >
+                <button onClick={() => onChange({...view, center: {x: 0, y: 0}})}>
                     Reset Center
                 </button>
             </div>
@@ -706,7 +695,7 @@ export const ViewForm = ({
                 {view.texture ? (
                     <button
                         onClick={() => {
-                            onChange({ ...view, texture: undefined });
+                            onChange({...view, texture: undefined});
                         }}
                     >
                         Clear texture
@@ -749,16 +738,13 @@ export const ViewForm = ({
                     flexWrap: 'wrap',
                 }}
             >
-                <div css={{ marginRight: 8 }}>Background</div>
+                <div css={{marginRight: 8}}>Background</div>
                 <Color
                     color={view.background}
                     onChange={(background) => {
                         onChange({
                             ...view,
-                            background:
-                                background === 'transparent'
-                                    ? undefined
-                                    : background,
+                            background: background === 'transparent' ? undefined : background,
                         });
                     }}
                     palette={palette}

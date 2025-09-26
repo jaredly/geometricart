@@ -1,4 +1,164 @@
 
+# Site organization
+
+/ about page?
+/gallery/?search-params
+/gallery/pattern/[pattern-id].html
+/editor/#id or source
+/admin/#idk
+
+the about page is maybe mdx ... can I SSR it?
+yeah that would be nice.
+ssr so the index is js-free.
+
+also want to make a "pattern explorer" where you can like compare the sizes of things and ratios and such.
+
+we'll want to make redirects for old IDs if the hashing method changes.
+b/c a pattern ID should be ... like a hash of the shapes n such.
+
+# So, I want like a showcase page
+
+- have a way to ... name patterns? tag them?
+  - automatic tags
+    - shlaefli symbols
+    - major symmetry
+    - other shapes
+  - manual links to related patterns (pattern groups?)
+  - manually point out sub-shapes that should be looked for in other patterns
+  - also filter by location
+
+ok so I'll need a server
+andd like an admin section
+and then a public section
+
+# Ways to classify patternssss
+
+"hexagonal plane tiling"
+(6x rotational + reflection)
+
+"4x rotational + reflection"
+
+Ok what about using Schläfli symbols?
+|6/2| + |6|
+
+|6/2| + 2|3|
+
+|6/12/3| ... for
+
+|4/8/3| - so it;s like an |8/3| but we take only have of the points.
+
+and then there's an |8/1| but we take 5 of the points.
+
+and then there's an |8/1| but we invert two of the points 🤔
+
+and you can do like "6/2" w/ 2 layers of rosettes
+
+
+
+#
+
+- [ ] set different speeds along the line
+- [ ] use historyView.preview
+
+- [x] if we went cclockwise to get to the compass mark pos, mark it cclockwise
+- [ ] would be cool to look ahhead to see "is my next compass move clockwise or counter"
+- [ ] ...
+
+##
+
+- [x] History Animate: show subtitles
+
+## Guide Inspector Please
+
+- [x] For knowing what circles share the same radius
+
+##
+
+- [ ] what iff there we show the final image as like ...
+  - [ ] a preview in the corner?
+  - [ ] a preview underlayment
+
+- [x] when animating in a path, if all the sides are shared with existing paths, just plop it in
+  - ok for that matter, do we even need to do the song & dance? can't I just always plop it in?
+
+- ooooh can we do like a dependency analysis on marks, and do some regrouping of stuff?
+  like do a toposort but also like do remapping of parents if there are equivalent measurements (for setting the compass angle) so that all the marks for a given circle size can happen at once.
+
+
+- [ ] 3d but removing by layer
+
+# Need to do
+- [x] animate the compass n stuff
+  - [x] need to persist the compass realized angle tho. so it's a little different.
+- [x] persistence of compass drawing pls
+- [x] the compass needs to tween angle & radius, not p1 and p2
+- [x] should draw the fixpoint of the compass different from the drawing head.
+- [x] there's a weird thing where some circle marks are reversed, and maybe should be drawn as the greater circle, but they aren't. But when animating, I do follow the greater circle.
+
+- [x] I want to do a recency thing when drawing guides in the history view.
+
+
+- [x] implement the event handlers and rendering stuffs
+- [x] make CircleMark rendering and stuff aware of `angle2`
+- [x] fix circlemark transform to mirror properly
+- [ ] pending draw-circle doesnt do clockwise correctly
+- [ ] hide the dots while dragging?
+- [x] click for full circle
+- [ ] make marks editable -- expand/contract the limits pls
+- [x] finding intersections between colinear circle segments shouldn't find anything
+- [ ] DRAW THE COMPASS THING it would be much elss confusing
+- [ ] ANIMATE the compass and ruler, make happen
+
+OK We're really getting close, this is awesome
+
+- [ ] when you're in DC/RC, show "candidate intersections", and allow you to just /click/ them,
+  to make new points. yay.
+  - ... although honestly, do I need this? maybe not totally. don't need to be that clean
+
+OK FOLKS WHAT ABOUT A MUCH BETTER WAY TO MAKE SHAPES
+"paint by shaper"
+what with guides being much more ... restrained, I can probably reasonably do a "find all encloseable regions"
+and let you just paint around to grab what you want.
+
+#
+
+Interaction plan:
+When in "bare tools" mode, there are 4 states:
+- DC draw circle mark
+- PO set protractor origin
+- PA1/PA2 set protractor radius
+- DR draw ruler mark
+- R1 set ruler p1
+- R2 set ruler p2
+
+and the only transitions are "click" and "spacebar".
+
+Click ->
+Spacebar <-
+
+Initial state is ... P0 maybe
+
+PA1 -> PA2 -> DC // origin is assumes to be the first point. spacebar to back up and move the origin
+PA1 <- PA2 <- P0 <- DC
+              P0 -> DC
+
+R1 <- PA1
+P0 <- R1   -- note that going back to the protractor retains the previous radius
+
+R1 -> R2 -> DR
+R1 <- R2 <- DR
+
+
+
+
+# More construction
+
+- CircleMark
+  - I think I want ... like a protractor tool? like ...
+    - when it's selected, you press one key for "change radius" and another key for "change center"
+    - like when you're changing radius, it anchors to the first point...
+
+
 # Ok so getting serious about construction
 
 - add a guide type that is a "circle tick", center + direction; and it does like a PI / 20 circle segment
@@ -6,6 +166,10 @@
 
 - ok so for circle ticks used to make bisectors, we need to be able to have the "radius" be a little bit arbitrary. BUT for those guides, we need to /not/ allow them to interact with any other guides. Because their placement is arbitrary. They only exist to make the bisector.
 - AH ok so for a bisector, we still have a bisector tool, but and the circle ticks for it are *decorations*. So not actually guides. but you can like move them around, recreationally.
+
+CircleMark:
+- render circlemark as an arc
+- change PendingWhatsit to include an "angle" after the points
 
 
 # Animate pls

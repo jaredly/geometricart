@@ -1,16 +1,16 @@
-import React, { useMemo, useRef } from 'react';
-import { initialState } from '../src/state/initialState';
-import { useDropStateTarget } from '../src/editor/useDropTarget';
-import { sortedVisibleInsetPaths } from '../src/rendering/sortedVisibleInsetPaths';
+import React, {useMemo, useRef} from 'react';
+import {initialState} from '../src/state/initialState';
+import {useDropStateTarget} from '../src/editor/useDropTarget';
+import {sortedVisibleInsetPaths} from '../src/rendering/sortedVisibleInsetPaths';
 import Prando from 'prando';
-import { segmentsBounds } from '../src/editor/Bounds';
-import { insidePath } from '../src/rendering/clipPath';
-import { windingNumber } from '../src/rendering/windingNumber';
-import { pathToPrimitives } from '../src/editor/findSelection';
-import { Path, State } from '../src/types';
-import { ensureClockwise, isClockwise } from '../src/rendering/pathToPoints';
+import {segmentsBounds} from '../src/editor/Bounds';
+import {insidePath} from '../src/rendering/clipPath';
+import {windingNumber} from '../src/rendering/windingNumber';
+import {pathToPrimitives} from '../src/editor/findSelection';
+import {Path, State} from '../src/types';
+import {ensureClockwise, isClockwise} from '../src/rendering/pathToPoints';
 
-export const DebugInside = ({ path }: { path: Path }) => {
+export const DebugInside = ({path}: {path: Path}) => {
     const canvasRef = useRef(null as null | HTMLCanvasElement);
     const [debug, setDebug] = React.useState([] as Array<any>);
 
@@ -67,17 +67,13 @@ export const DebugInside = ({ path }: { path: Path }) => {
                     const box = canvasRef.current!.getBoundingClientRect();
                     const dx = evt.clientX - box.left;
                     const dy = evt.clientY - box.top;
-                    const round = (a: number, b: number) =>
-                        Math.floor(a / b) * b;
+                    const round = (a: number, b: number) => Math.floor(a / b) * b;
                     const x = round(dx, pixel) / scale + bounds.x0 - margin;
                     const y = round(dy, pixel) / scale + bounds.y0 - margin;
 
-                    const coord = { x, y };
+                    const coord = {x, y};
                     const wind = windingNumber(coord, primitives, segments);
-                    const wcount = wind.reduce(
-                        (c, w) => (w.up ? 1 : -1) + c,
-                        0,
-                    );
+                    const wcount = wind.reduce((c, w) => (w.up ? 1 : -1) + c, 0);
                     setDebug([`Ok ${wcount}` as any].concat(wind));
                 }}
                 ref={canvasRef}
@@ -99,10 +95,9 @@ const load = () => {
     if (raw) {
         return JSON.parse(raw);
     }
-    return { state: initialState, index: 0 };
+    return {state: initialState, index: 0};
 };
-const save = (state: State, index: number) =>
-    (localStorage[key] = JSON.stringify({ state, index }));
+const save = (state: State, index: number) => (localStorage[key] = JSON.stringify({state, index}));
 
 const initial = load();
 
@@ -122,13 +117,7 @@ export const Inside = () => {
     // });
 
     const paths = useMemo(
-        () =>
-            sortedVisibleInsetPaths(
-                state.paths,
-                state.pathGroups,
-                new Prando('ok'),
-                [],
-            ),
+        () => sortedVisibleInsetPaths(state.paths, state.pathGroups, new Prando('ok'), []),
         [state],
     );
 
@@ -147,16 +136,10 @@ export const Inside = () => {
         >
             Hello folks
             {paths.length} paths. {index}
-            <button
-                onClick={() =>
-                    setIndex(index === 0 ? paths.length - 1 : index - 1)
-                }
-            >
+            <button onClick={() => setIndex(index === 0 ? paths.length - 1 : index - 1)}>
                 prev
             </button>
-            <button onClick={() => setIndex((index + 1) % paths.length)}>
-                next
-            </button>
+            <button onClick={() => setIndex((index + 1) % paths.length)}>next</button>
             {paths[index] ? <DebugInside path={paths[index]} /> : 'No path'}
         </div>
     );

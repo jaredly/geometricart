@@ -6,7 +6,7 @@
 import path from 'path';
 // @ts-ignore
 import fs from 'fs';
-import { deserializeFixture, serializeFixtures } from './utils';
+import {deserializeFixture, serializeFixtures} from './utils';
 
 // @ts-ignore
 const [_, __, dir] = process.argv;

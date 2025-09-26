@@ -8,17 +8,17 @@ const PORT = 4363;
 // Start esbuild's server on a random local port
 esbuild
     .serve(
-        { servedir: __dirname },
+        {servedir: __dirname},
         {
             entryPoints: ['test/run.tsx'],
             bundle: true,
             sourcemap: true,
-            define: { 'process.env.NODE_ENV': '"development"' },
+            define: {'process.env.NODE_ENV': '"development"'},
         },
     )
     .then((result) => {
         // The result tells us where esbuild's local server is
-        const { host, port } = result;
+        const {host, port} = result;
 
         // Then start a proxy server on port 3000
         http.createServer((req, res) => {
@@ -33,17 +33,13 @@ esbuild
             const base = path.join(__dirname, 'cases');
             if (req.url === '/cases/') {
                 if (req.method === 'GET') {
-                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.writeHead(200, {'Content-Type': 'application/json'});
                     res.end(
                         JSON.stringify(
                             fs
                                 .readdirSync(base)
                                 .filter((name) => name.endsWith('.json'))
-                                .map((name) =>
-                                    JSON.parse(
-                                        fs.readFileSync(path.join(base, name)),
-                                    ),
-                                )
+                                .map((name) => JSON.parse(fs.readFileSync(path.join(base, name))))
                                 .sort((a, b) => a.id - b.id),
                         ),
                     );
@@ -91,18 +87,18 @@ esbuild
             const proxyReq = http.request(options, (proxyRes) => {
                 // If esbuild returns "not found", send a custom 404 page
                 if (proxyRes.statusCode === 404) {
-                    res.writeHead(404, { 'Content-Type': 'text/html' });
+                    res.writeHead(404, {'Content-Type': 'text/html'});
                     res.end('<h1>A custom 404 page</h1>');
                     return;
                 }
 
                 // Otherwise, forward the response from esbuild to the client
                 res.writeHead(proxyRes.statusCode, proxyRes.headers);
-                proxyRes.pipe(res, { end: true });
+                proxyRes.pipe(res, {end: true});
             });
 
             // Forward the body of the request to esbuild
-            req.pipe(proxyReq, { end: true });
+            req.pipe(proxyReq, {end: true});
         }).listen(PORT);
         console.log(`Listening on http://${host}:${PORT}`);
     });

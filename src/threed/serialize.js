@@ -1,4 +1,4 @@
-import { faceNormals as computeFaceNormals } from './normals';
+import {faceNormals as computeFaceNormals} from './normals';
 
 function serializeVector(vec) {
     return vec
@@ -19,9 +19,7 @@ export function serialize(cells, positions, faceNormals, name) {
         lines.push('  facet normal ' + serializeVector(faceNormals[i]));
         lines.push('    outer loop');
         for (var j = 0; j < cells[i].length; j++) {
-            lines.push(
-                '      vertex ' + serializeVector(positions[cells[i][j]]),
-            );
+            lines.push('      vertex ' + serializeVector(positions[cells[i][j]]));
         }
         lines.push('    endloop');
         lines.push('  endfacet');

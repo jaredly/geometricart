@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<meta charset="utf8" />
+<title>Geometric Artttt</title>
+<link rel="shortcut icon" href="favicon.png" />
+<link rel="preconnect" href="https://fonts.gstatic.com" />
+<link
+    href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@200;300;400&display=swap"
+    rel="stylesheet"
+/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300..700;1,300..700&family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&family=Lexend:wght@100..900&display=swap"
+    rel="stylesheet"
+/>
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+<style>
+    :root {
+        --surface-ground: black;
+    }
+    html,
+    body {
+        margin: 0;
+        padding: 0;
+        background-color: var(--surface-gound);
+        color: white;
+        font-family: system-ui;
+        overscroll-behavior: none;
+    }
+    * {
+        text-decoration-skip-ink: none;
+        box-sizing: border-box;
+    }
+    div {
+        min-height: 0;
+        min-width: 0;
+        flex-shrink: 0;
+    }
+    button {
+        cursor: pointer;
+    }
+    .hover:hover {
+        background-color: var(--hover-color);
+    }
+    .p-accordion-header-text {
+        flex: 1;
+    }
+    .p-accordion .p-toggleable-content .p-accordion-content {
+        padding: 8px;
+    }
+</style>
+<body>
+    <div id="root"></div>
+    <script>
+        window.cwd = () => '/';
+    </script>
+    <script src="/src/run.tsx" type="module"></script>
+</body>

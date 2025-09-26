@@ -1,9 +1,9 @@
 import * as React from 'react';
-import { segmentsBounds } from '../editor/Bounds';
-import { pathSegs } from '../editor/RenderPath';
-import { calcPathD, calcSegmentsD } from '../editor/calcPathD';
-import { Segment } from '../types';
-import { register } from '../vest';
+import {segmentsBounds} from '../editor/Bounds';
+import {pathSegs} from '../editor/RenderPath';
+import {calcPathD, calcSegmentsD} from '../editor/calcPathD';
+import {Segment} from '../types';
+import {register} from '../vest';
 import {
     addPrevsToSegments,
     collectRegions,
@@ -11,11 +11,11 @@ import {
     prevSegmentsToShape,
     SegmentWithPrev,
 } from './clipPathNew';
-import { angleTo, dist, push } from './getMirrorTransforms';
-import { coordsEqual } from './pathsAreIdentical';
-import { ensureClockwise, isClockwise } from './pathToPoints';
-import { useInitialState } from './SegmentEditor';
-import { ShapeEditor } from './ShapeEditor';
+import {angleTo, dist, push} from './getMirrorTransforms';
+import {coordsEqual} from './pathsAreIdentical';
+import {ensureClockwise, isClockwise} from './pathToPoints';
+import {useInitialState} from './SegmentEditor';
+import {ShapeEditor} from './ShapeEditor';
 
 type Input = [Array<SegmentWithPrev>, Array<SegmentWithPrev>];
 type Output = Array<{
@@ -59,24 +59,16 @@ export const Editor = ({
             </button>
             <ShapeEditor
                 initial={current[first ? 0 : 1]}
-                onChange={(shape) =>
-                    setCurrent((c) => (first ? [shape, c[1]] : [c[0], shape]))
-                }
+                onChange={(shape) => setCurrent((c) => (first ? [shape, c[1]] : [c[0], shape]))}
             >
                 {(shape, rendered) => {
                     let regions: Output = [];
                     try {
                         regions = transform(
-                            shape
-                                ? first
-                                    ? [shape, current[1]]
-                                    : [current[0], shape]
-                                : current,
+                            shape ? (first ? [shape, current[1]] : [current[0], shape]) : current,
                         );
                     } catch (e) {}
-                    const other = prevSegmentsToShape(
-                        first ? current[1] : current[0],
-                    );
+                    const other = prevSegmentsToShape(first ? current[1] : current[0]);
                     return (
                         <>
                             {other?.length ? (
@@ -106,11 +98,7 @@ export const Editor = ({
                                     opacity={0.8}
                                     strokeWidth={r.isClockwise ? 7 : 2}
                                     strokeDasharray={
-                                        r.isInternal
-                                            ? ''
-                                            : r.isClockwise
-                                            ? '7 7'
-                                            : '3 3'
+                                        r.isInternal ? '' : r.isClockwise ? '7 7' : '3 3'
                                     }
                                     d={calcSegmentsD(
                                         r.segments,
@@ -128,13 +116,7 @@ export const Editor = ({
         </div>
     );
 };
-export const Fixture = ({
-    input,
-    output,
-}: {
-    input: Input;
-    output: Output;
-}) => {
+export const Fixture = ({input, output}: {input: Input; output: Output}) => {
     const first = prevSegmentsToShape(input[0]);
     const second = prevSegmentsToShape(input[1]);
     return (
@@ -146,12 +128,7 @@ export const Fixture = ({
                         stroke={'yellow'}
                         opacity={0.5}
                         strokeWidth={1}
-                        d={calcSegmentsD(
-                            first,
-                            first[first.length - 1].to,
-                            undefined,
-                            1,
-                        )}
+                        d={calcSegmentsD(first, first[first.length - 1].to, undefined, 1)}
                     />
                 ) : null}
                 {second ? (
@@ -160,22 +137,13 @@ export const Fixture = ({
                         stroke={'white'}
                         opacity={0.5}
                         strokeWidth={1}
-                        d={calcSegmentsD(
-                            second,
-                            second[second.length - 1].to,
-                            undefined,
-                            1,
-                        )}
+                        d={calcSegmentsD(second, second[second.length - 1].to, undefined, 1)}
                     />
                 ) : null}
 
                 {output.map((r, i) => (
                     <path
-                        fill={
-                            r.isClockwise && r.isInternal
-                                ? 'rgba(255,255,255,0.2'
-                                : 'none'
-                        }
+                        fill={r.isClockwise && r.isInternal ? 'rgba(255,255,255,0.2' : 'none'}
                         key={i}
                         stroke={colors[i % colors.length]}
                         opacity={0.5}
@@ -199,10 +167,7 @@ const colors = ['red', 'green', 'blue', 'orange', 'yellow', 'white'];
 const fixCircle = (shape: Array<SegmentWithPrev>) => {
     const res: Array<SegmentWithPrev> = [];
     shape.forEach((seg) => {
-        if (
-            seg.segment.type === 'Arc' &&
-            coordsEqual(seg.prev, seg.segment.to)
-        ) {
+        if (seg.segment.type === 'Arc' && coordsEqual(seg.prev, seg.segment.to)) {
             const opposite = push(
                 seg.segment.center,
                 angleTo(seg.prev, seg.segment.center),
@@ -211,7 +176,7 @@ const fixCircle = (shape: Array<SegmentWithPrev>) => {
             res.push(
                 {
                     ...seg,
-                    segment: { ...seg.segment, to: opposite },
+                    segment: {...seg.segment, to: opposite},
                 },
                 {
                     ...seg,
@@ -227,8 +192,8 @@ const fixCircle = (shape: Array<SegmentWithPrev>) => {
 
 const transform = ([shape, clip]: Input, debug?: boolean) => {
     const allSegments = fixCircle(shape)
-        .map((s) => ({ ...s, shape: 0 }))
-        .concat(clip.map((c) => ({ ...c, shape: 1 })));
+        .map((s) => ({...s, shape: 0}))
+        .concat(clip.map((c) => ({...c, shape: 1})));
     const hitsResults = getSomeHits(allSegments, debug);
     if (!hitsResults) {
         throw new Error(`No intersection!`);

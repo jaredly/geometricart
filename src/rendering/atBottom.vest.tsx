@@ -1,53 +1,35 @@
 import * as React from 'react';
-import { segmentToPrimitive } from '../editor/findSelection';
-import { RenderSegmentBasic } from '../editor/RenderSegment';
-import { Coord } from '../types';
-import { register } from '../vest';
-import { atCircleBottomOrSomething } from './atCircleBottomOrSomething';
-import { atLineBottom } from './clipPath';
-import { SegmentWithPrev } from './clipPathNew';
-import { angleTo, dist, push } from './getMirrorTransforms';
-import {
-    Circle,
-    lineCircle,
-    lineLine,
-    lineToSlope,
-    SlopeIntercept,
-    withinLimit,
-} from './intersect';
-import { SegmentEditor, useInitialState, useOnChange } from './SegmentEditor';
+import {segmentToPrimitive} from '../editor/findSelection';
+import {RenderSegmentBasic} from '../editor/RenderSegment';
+import {Coord} from '../types';
+import {register} from '../vest';
+import {atCircleBottomOrSomething} from './atCircleBottomOrSomething';
+import {atLineBottom} from './clipPath';
+import {SegmentWithPrev} from './clipPathNew';
+import {angleTo, dist, push} from './getMirrorTransforms';
+import {Circle, lineCircle, lineLine, lineToSlope, SlopeIntercept, withinLimit} from './intersect';
+import {SegmentEditor, useInitialState, useOnChange} from './SegmentEditor';
 
 type Pair = [SegmentWithPrev, Coord];
 type Which = 'segment' | 'coord';
 
-const Editor = ({
-    initial,
-    onChange,
-}: {
-    initial: Pair | null;
-    onChange: (pair: Pair) => void;
-}) => {
-    const [current, setCurrent] = useInitialState<
-        [SegmentWithPrev | null, Coord | null] | null
-    >(initial);
+const Editor = ({initial, onChange}: {initial: Pair | null; onChange: (pair: Pair) => void}) => {
+    const [current, setCurrent] = useInitialState<[SegmentWithPrev | null, Coord | null] | null>(
+        initial,
+    );
     const segment = current ? current[0] : null;
     const coord = current ? current[1] : null;
 
     const [edit, setEdit] = React.useState('segment' as Which);
 
-    useOnChange(initial, (initial) =>
-        initial !== current ? setEdit('segment') : null,
-    );
+    useOnChange(initial, (initial) => (initial !== current ? setEdit('segment') : null));
     // React.useEffect(() => {
     //     setEdit('segment');
     // }, [initial]);
 
     const buttons = (
         <div>
-            <button
-                disabled={edit === 'segment'}
-                onClick={() => setEdit('segment')}
-            >
+            <button disabled={edit === 'segment'} onClick={() => setEdit('segment')}>
                 Segment
             </button>
             <button
@@ -62,10 +44,7 @@ const Editor = ({
     if (edit === 'segment') {
         return (
             <div>
-                <SegmentEditor
-                    onChange={(p) => setCurrent([p, null])}
-                    initial={segment}
-                >
+                <SegmentEditor onChange={(p) => setCurrent([p, null])} initial={segment}>
                     {(segment, rendered) => (
                         <>
                             {rendered}
@@ -73,11 +52,7 @@ const Editor = ({
                                 <circle
                                     cx={coord.x}
                                     cy={coord.y}
-                                    fill={
-                                        isAtBottom(segment, coord)
-                                            ? 'green'
-                                            : 'red'
-                                    }
+                                    fill={isAtBottom(segment, coord) ? 'green' : 'red'}
                                     r={5}
                                 />
                             ) : null}
@@ -127,15 +102,12 @@ const CoordPlacer = ({
             const si = lineToSlope(segment.prev, segment.segment.to, true);
             const other: SlopeIntercept =
                 si.m === 0
-                    ? { type: 'line', m: Infinity, b: coord.x }
-                    : { type: 'line', m: 0, b: coord.y };
+                    ? {type: 'line', m: Infinity, b: coord.x}
+                    : {type: 'line', m: 0, b: coord.y};
             const int = lineLine(si, other);
             return int;
         }
-        const prim = segmentToPrimitive(
-            segment.prev,
-            segment.segment,
-        ) as Circle;
+        const prim = segmentToPrimitive(segment.prev, segment.segment) as Circle;
         const theta = angleTo(prim.center, coord);
         const out = push(prim.center, theta, prim.radius * 2);
         const int = lineCircle(prim, lineToSlope(prim.center, out, true));
@@ -209,7 +181,7 @@ const Fixture = ({
 }: {
     input: Pair;
     output: boolean;
-    previous: { output: boolean | null; isPassing: boolean };
+    previous: {output: boolean | null; isPassing: boolean};
 }) => {
     return (
         <div>
@@ -223,12 +195,7 @@ const Fixture = ({
                         strokeWidth: 4,
                     }}
                 />
-                <circle
-                    cx={input[1].x}
-                    cy={input[1].y}
-                    r={5}
-                    fill={output ? 'green' : 'red'}
-                />
+                <circle cx={input[1].x} cy={input[1].y} r={5} fill={output ? 'green' : 'red'} />
             </svg>
         </div>
     );
@@ -236,13 +203,7 @@ const Fixture = ({
 
 const isAtBottom = (segment: SegmentWithPrev, coord: Coord) => {
     return segment.segment.type === 'Line'
-        ? atLineBottom(
-              coord,
-              segmentToPrimitive(
-                  segment.prev,
-                  segment.segment,
-              ) as SlopeIntercept,
-          )
+        ? atLineBottom(coord, segmentToPrimitive(segment.prev, segment.segment) as SlopeIntercept)
         : atCircleBottomOrSomething(
               coord,
               segmentToPrimitive(segment.prev, segment.segment) as Circle,

@@ -1,10 +1,20 @@
-import {applyMatrices, getTransformsForNewMirror, Matrix, push} from './getMirrorTransforms';
+import {
+    angleTo,
+    applyMatrices,
+    getTransformsForNewMirror,
+    Matrix,
+    push,
+} from './getMirrorTransforms';
 import {Coord, Guide, GuideGeom, Id, Mirror} from '../types';
 import {getCircumCircle} from './points';
+import {angleBetween} from './findNextSegments';
 
 // These are NOT in /view/ coordinates!
 
-export const calculateInactiveGuideElements = (guides: {[key: Id]: Guide}, mirrorTransforms: {[key: Id]: Array<Array<Matrix>>}) => {
+export const calculateInactiveGuideElements = (
+    guides: {[key: Id]: Guide},
+    mirrorTransforms: {[key: Id]: Array<Array<Matrix>>},
+) => {
     const elements: Array<GuideElement> = [];
     Object.keys(guides).forEach((k) => {
         if (guides[k].active) {
@@ -16,8 +26,8 @@ export const calculateInactiveGuideElements = (guides: {[key: Id]: Guide}, mirro
                 typeof guides[k].mirror === 'string'
                     ? mirrorTransforms[guides[k].mirror as string]
                     : guides[k].mirror
-                    ? getTransformsForNewMirror(guides[k].mirror as Mirror)
-                    : null,
+                      ? getTransformsForNewMirror(guides[k].mirror as Mirror)
+                      : null,
             ),
         );
     });
@@ -49,7 +59,10 @@ export const geomPoints = (geom: GuideGeom): Array<Coord> => {
     return [];
 };
 
-export const calculateGuideElements = (guides: {[key: Id]: Guide}, mirrorTransforms: {[key: Id]: Array<Array<Matrix>>}) => {
+export const calculateGuideElements = (
+    guides: {[key: Id]: Guide},
+    mirrorTransforms: {[key: Id]: Array<Array<Matrix>>},
+) => {
     const elements: Array<GuideElement> = [];
     Object.keys(guides).forEach((k) => {
         if (!guides[k].active) {
@@ -61,8 +74,8 @@ export const calculateGuideElements = (guides: {[key: Id]: Guide}, mirrorTransfo
                 typeof guides[k].mirror === 'string'
                     ? mirrorTransforms[guides[k].mirror as string]
                     : guides[k].mirror
-                    ? getTransformsForNewMirror(guides[k].mirror as Mirror)
-                    : null,
+                      ? getTransformsForNewMirror(guides[k].mirror as Mirror)
+                      : null,
             ),
         );
     });
@@ -81,7 +94,10 @@ export const transformMirror = (mirror: Mirror, transform: (pos: Coord) => Coord
         ...mirror,
         origin: transform(mirror.origin),
         point: transform(mirror.point),
-        parent: typeof mirror.parent === 'object' && mirror.parent ? transformMirror(mirror.parent, transform) : mirror.parent,
+        parent:
+            typeof mirror.parent === 'object' && mirror.parent
+                ? transformMirror(mirror.parent, transform)
+                : mirror.parent,
     };
 };
 
@@ -89,13 +105,46 @@ export const transformGuide = (guide: Guide, transform: (pos: Coord) => Coord): 
     return {
         ...guide,
         geom: transformGuideGeom(guide.geom, transform),
-        mirror: guide.mirror && typeof guide.mirror === 'object' ? transformMirror(guide.mirror, transform) : guide.mirror,
+        mirror:
+            guide.mirror && typeof guide.mirror === 'object'
+                ? transformMirror(guide.mirror, transform)
+                : guide.mirror,
     };
 };
 
-export const transformGuideGeom = (geom: GuideGeom, transform: (pos: Coord) => Coord): GuideGeom => {
+const unitPos = (theta: number): Coord => ({
+    x: Math.cos(theta),
+    y: Math.sin(theta),
+});
+
+export const transformGuideGeom = (
+    geom: GuideGeom,
+    transform: (pos: Coord) => Coord,
+): GuideGeom => {
     switch (geom.type) {
-        case 'CircleMark':
+        case 'CircleMark': {
+            let angle = angleTo({x: 0, y: 0}, transform(unitPos(geom.angle)));
+            let angle2 = geom.angle2
+                ? angleTo({x: 0, y: 0}, transform(unitPos(geom.angle2)))
+                : undefined;
+
+            if (angle2 != null) {
+                const b1 = angleBetween(geom.angle, geom.angle2!, true);
+                const b2 = angleBetween(angle, angle2, true);
+                if (Math.abs(b1 - b2) > Math.PI) {
+                    [angle2, angle] = [angle, angle2];
+                }
+            }
+
+            return {
+                ...geom,
+                p1: transform(geom.p1),
+                p2: transform(geom.p2),
+                p3: transform(geom.p3),
+                angle: angle,
+                angle2: angle2,
+            };
+        }
         case 'CloneCircle':
         case 'InCircle':
         case 'AngleBisector':

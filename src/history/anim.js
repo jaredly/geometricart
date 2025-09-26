@@ -1,16 +1,4 @@
-const foods = [
-    '🍇',
-    '🍈',
-    '🍉',
-    '🍊',
-    '🍋',
-    '🍌',
-    '🍍',
-    '🥭',
-    '🍎',
-    '🍏',
-    '🍐',
-];
+const foods = ['🍇', '🍈', '🍉', '🍊', '🍋', '🍌', '🍍', '🥭', '🍎', '🍏', '🍐'];
 function getRandomFood() {
     let index = Math.floor(Math.random() * foods.length);
     return foods[index];
@@ -55,7 +43,7 @@ async function startDrawing() {
 }
 
 function startWorker() {
-    let worker = new Worker('video-worker.js', { name: 'Video worker' });
+    let worker = new Worker('video-worker.js', {name: 'Video worker'});
     worker.onmessage = function (e) {
         // Recreate worker in case of an error
         console.log('Worker error: ' + e.data);

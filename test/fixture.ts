@@ -1,4 +1,4 @@
-import { Segment } from '../src/types';
+import {Segment} from '../src/types';
 
 export const fixture: Array<Segment> = [
     {

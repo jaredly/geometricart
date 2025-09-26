@@ -1,4 +1,4 @@
-import { Config, Fixture } from './types';
+import {Config, Fixture} from './types';
 
 export const findFixtureDivider = (chunks: Array<string>) => {
     let divider = '===';
@@ -26,10 +26,7 @@ export const serializeFixtures = <I, O>(
     return divider + '\n' + chunks.join(`\n${divider}\n`);
 };
 
-export const deserializeFixtures = <I, O>(
-    raw: string,
-    serde: Config<I, O>['serde'],
-) => {
+export const deserializeFixtures = <I, O>(raw: string, serde: Config<I, O>['serde']) => {
     if (!raw.length) {
         return [];
     }
@@ -55,10 +52,8 @@ export const serializeFixture = <I, O>(
     const parts = [
         fixture.name,
         fixture.isPassing ? 'pass' : 'fail',
-        serde?.input?.serialize(fixture.input) ??
-            JSON.stringify(fixture.input, null, 2),
-        serde?.output?.serialize(fixture.output) ??
-            JSON.stringify(fixture.output, null, 2),
+        serde?.input?.serialize(fixture.input) ?? JSON.stringify(fixture.input, null, 2),
+        serde?.output?.serialize(fixture.output) ?? JSON.stringify(fixture.output, null, 2),
     ];
     if (fixture.options) {
         parts.push(JSON.stringify(fixture.options));

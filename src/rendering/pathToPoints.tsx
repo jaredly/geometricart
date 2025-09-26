@@ -1,12 +1,12 @@
-import { angleBetween } from './findNextSegments';
-import { angleTo, dist, push } from './getMirrorTransforms';
-import { epsilon } from './intersect';
-import { reverseSegment } from './pathsAreIdentical';
-import { Coord, Segment } from '../types';
-import { negPiToPi } from './clipPath';
-import { closeEnough } from './epsilonToZero';
-import { segmentKey } from './segmentKey';
-import { pxToMM } from '../gcode/generateGcode';
+import {angleBetween} from './findNextSegments';
+import {angleTo, dist, push} from './getMirrorTransforms';
+import {epsilon} from './intersect';
+import {reverseSegment} from './pathsAreIdentical';
+import {Coord, Segment} from '../types';
+import {negPiToPi} from './clipPath';
+import {closeEnough} from './epsilonToZero';
+import {segmentKey} from './segmentKey';
+import {pxToMM} from '../gcode/generateGcode';
 
 export type RasterSeg = {
     from: Coord;
@@ -30,9 +30,7 @@ export const pathToPoints = (
     segments.forEach((seg, i) => {
         if (seg.type === 'Arc') {
             const prev =
-                i === 0
-                    ? origin ?? segments[segments.length - 1].to
-                    : segments[i - 1].to;
+                i === 0 ? (origin ?? segments[segments.length - 1].to) : segments[i - 1].to;
             const t1 = angleTo(seg.center, prev);
             const t2 = angleTo(seg.center, seg.to);
             let bt = angleBetween(t1, t2, seg.clockwise);
@@ -49,9 +47,7 @@ export const pathToPoints = (
     if (accurateArcCorners) {
         arcLengths = segments.map((seg, i) => {
             const prev =
-                i === 0
-                    ? origin ?? segments[segments.length - 1].to
-                    : segments[i - 1].to;
+                i === 0 ? (origin ?? segments[segments.length - 1].to) : segments[i - 1].to;
             if (seg.type === 'Arc') {
                 const t1 = angleTo(seg.center, prev);
                 const t2 = angleTo(seg.center, seg.to);
@@ -71,10 +67,7 @@ export const pathToPoints = (
     const segmentPoints: Array<RasterSeg> = [];
     // let prev = segments[segments.length - 1].to;
     segments.forEach((seg, i) => {
-        const prev =
-            i === 0
-                ? origin ?? segments[segments.length - 1].to
-                : segments[i - 1].to;
+        const prev = i === 0 ? (origin ?? segments[segments.length - 1].to) : segments[i - 1].to;
         if (seg.type === 'Arc') {
             const t1 = angleTo(seg.center, prev);
             const t2 = angleTo(seg.center, seg.to);
@@ -93,22 +86,14 @@ export const pathToPoints = (
                         arcLengths[i],
                         // arcLengths[(i + 1) % segments.length],
                     ) / 4;
-                const smright =
-                    Math.min(
-                        arcLengths[i],
-                        arcLengths[(i + 1) % segments.length],
-                    ) / 4;
+                const smright = Math.min(arcLengths[i], arcLengths[(i + 1) % segments.length]) / 4;
                 const sign = seg.clockwise ? 1 : -1;
                 const t1a = t1 + (smallest / r) * sign;
                 const t2a = t2 - (smright / r) * sign;
                 segmentPoints.push({
                     from: prev,
                     to: seg.to,
-                    points: [
-                        push(seg.center, t1a, r),
-                        push(seg.center, t2a, r),
-                        seg.to,
-                    ],
+                    points: [push(seg.center, t1a, r), push(seg.center, t2a, r), seg.to],
                     seg,
                 });
             } else {
@@ -143,14 +128,7 @@ export const pathToPoints = (
         } else if (seg.type === 'Quad') {
             const points: Coord[] = [];
             for (let i = 1; i < 10; i++) {
-                points.push(
-                    getPointOnQuadraticBezierCurve(
-                        prev,
-                        seg.control,
-                        seg.to,
-                        i / 10,
-                    ),
-                );
+                points.push(getPointOnQuadraticBezierCurve(prev, seg.control, seg.to, i / 10));
             }
             segmentPoints.push({
                 from: prev,
@@ -189,22 +167,14 @@ function getPointOnQuadraticBezierCurve(
     );
 }
 
-function getLinearInterpolationPoint(
-    startPoint: Coord,
-    endPoint: Coord,
-    ratio: number,
-) {
+function getLinearInterpolationPoint(startPoint: Coord, endPoint: Coord, ratio: number) {
     return {
         x: getLinearInterpolationValue(startPoint.x, endPoint.x, ratio),
         y: getLinearInterpolationValue(startPoint.y, endPoint.y, ratio),
     };
 }
 
-function getLinearInterpolationValue(
-    startValue: number,
-    endValue: number,
-    ratio: number,
-) {
+function getLinearInterpolationValue(startValue: number, endValue: number, ratio: number) {
     return startValue + (endValue - startValue) * ratio;
 }
 
@@ -265,7 +235,7 @@ export const isClockwisePoints = (points: Coord[]) => {
 
 export const ensureClockwise = (segments: Array<Segment>) => {
     if (segments.length === 1 && segments[0].type === 'Arc') {
-        return [{ ...segments[0], clockwise: true }];
+        return [{...segments[0], clockwise: true}];
     }
     if (segments.length < 2 || isClockwise(segments)) {
         return segments;

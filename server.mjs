@@ -1,4 +1,4 @@
-import { viteFsProxy } from './vite-fs-proxy.mjs';
+import {viteFsProxy} from './vite-fs-proxy.mjs';
 
 viteFsProxy({
     root: './',

@@ -1,9 +1,9 @@
 /* @jsx jsx */
 /* @jsxFrag React.Fragment */
-import { jsx } from '@emotion/react';
-import React, { useMemo } from 'react';
-import { PendingMirror } from '../useUIState';
-import { EyeIcon, EyeInvisibleIcon } from '../icons/Eyes';
+import {jsx} from '@emotion/react';
+import React, {useMemo} from 'react';
+import {PendingMirror} from '../useUIState';
+import {EyeIcon, EyeInvisibleIcon} from '../icons/Eyes';
 import {
     AddIcon,
     BxSelectMultipleIcon,
@@ -18,29 +18,27 @@ import {
     SubtractLineIcon,
     VectorSelectionIcon,
 } from '../icons/Icon';
-import { Action, PathMultiply, PendingType } from '../state/Action';
-import { Coord, guideTypes, Line, State } from '../types';
-import { EditorState, SelectMode } from './Canvas';
-import { PendingDuplication } from './Guides';
-import { Hover } from './Sidebar';
-import { closestPoint } from '../animation/getBuiltins';
+import {Action, PathMultiply, PendingType} from '../state/Action';
+import {Coord, guideTypes, Line, State} from '../types';
+import {EditorState, SelectMode} from './Canvas';
+import {PendingDuplication} from './Guides';
+import {Hover} from './Sidebar';
+import {closestPoint} from '../animation/getBuiltins';
 
 export const selectedPathIds = (state: State) => {
-    if (
-        state.selection?.type === 'PathGroup' ||
-        state.selection?.type === 'Path'
-    ) {
+    if (state.selection?.type === 'PathGroup' || state.selection?.type === 'Path') {
         return state.selection.type === 'PathGroup'
             ? Object.keys(state.paths).filter((k) =>
-                state.selection!.ids.includes(state.paths[k].group!),
-            )
+                  state.selection!.ids.includes(state.paths[k].group!),
+              )
             : state.selection.ids;
     }
     return [];
 };
 
 export const RadiusSelector = ({
-    state, dispatch,
+    state,
+    dispatch,
 }: {
     state: State;
     dispatch: (action: Action) => unknown;
@@ -49,35 +47,37 @@ export const RadiusSelector = ({
     // setHover: (hover: Hover | null) => void;
 }) => {
     const closestPoints = useMemo(() => {
-        const points: { [key: string]: [number, Coord] } = {};
+        const points: {[key: string]: [number, Coord]} = {};
         let max = 0;
         Object.entries(state.paths).forEach(([key, path]) => {
-            points[key] = closestPoint(state.view.center, path.segments)
+            points[key] = closestPoint(state.view.center, path.segments);
             max = Math.max(max, points[key][0]);
-        })
-        return { max, map: points };
-    }, [state.paths, state.view.center])
+        });
+        return {max, map: points};
+    }, [state.paths, state.view.center]);
 
     return (
         <input
             type="range"
             min="0"
-            style={{ width: 500 }}
+            style={{width: 500}}
             max={closestPoints.max}
             step={closestPoints.max / 100}
-            onInput={evt => {
-                console.log(evt.currentTarget.value)
+            onInput={(evt) => {
+                console.log(evt.currentTarget.value);
                 dispatch({
                     type: 'selection:set',
                     selection: {
                         type: 'Path',
-                        ids: Object.keys(closestPoints.map).filter(k => closestPoints.map[k][0] < +evt.currentTarget.value)
-                    }
-                })
+                        ids: Object.keys(closestPoints.map).filter(
+                            (k) => closestPoints.map[k][0] < +evt.currentTarget.value,
+                        ),
+                    },
+                });
             }}
         />
-    )
-}
+    );
+};
 
 // export function GuideSection({
 //     state,
@@ -144,9 +144,9 @@ export function selectionSection(
                 <SelectDragIcon />
             </IconButton>
             {state.selection.type === 'Guide' &&
-                state.selection.ids.length === 1 &&
-                state.guides[state.selection.ids[0]] &&
-                state.guides[state.selection.ids[0]].geom.type === 'Line' ? (
+            state.selection.ids.length === 1 &&
+            state.guides[state.selection.ids[0]] &&
+            state.guides[state.selection.ids[0]].geom.type === 'Line' ? (
                 <>
                     <IconButton
                         onClick={() => {
@@ -160,10 +160,7 @@ export function selectionSection(
                                     ...state.guides[id],
                                     geom: {
                                         ...geom,
-                                        extent:
-                                            geom.extent != null
-                                                ? geom.extent + 1
-                                                : 2,
+                                        extent: geom.extent != null ? geom.extent + 1 : 2,
                                     },
                                 },
                             });
@@ -184,9 +181,7 @@ export function selectionSection(
                                     geom: {
                                         ...geom,
                                         extent:
-                                            geom.extent != null
-                                                ? Math.max(0, geom.extent - 1)
-                                                : 1,
+                                            geom.extent != null ? Math.max(0, geom.extent - 1) : 1,
                                     },
                                 },
                             });
@@ -196,8 +191,7 @@ export function selectionSection(
                     </IconButton>
                 </>
             ) : null}
-            {state.selection.type === 'PathGroup' ||
-                state.selection.type === 'Path' ? (
+            {state.selection.type === 'PathGroup' || state.selection.type === 'Path' ? (
                 <IconButton
                     onClick={() => {
                         setEditorState((state) => ({
@@ -231,7 +225,7 @@ export function selectionSection(
                             });
                         case 'Guide':
                             return state.selection.ids.forEach((id) =>
-                                dispatch({ type: 'guide:delete', id }),
+                                dispatch({type: 'guide:delete', id}),
                             );
                     }
                 }}
@@ -239,14 +233,12 @@ export function selectionSection(
                 <DeleteForeverIcon />
             </IconButton>
             {state.activeMirror &&
-                (state.selection.type === 'Path' ||
-                    state.selection.type === 'PathGroup') ? (
+            (state.selection.type === 'Path' || state.selection.type === 'PathGroup') ? (
                 <IconButton
                     onClick={() => {
                         dispatch({
                             type: 'path:multiply',
-                            selection:
-                                state.selection as PathMultiply['selection'],
+                            selection: state.selection as PathMultiply['selection'],
                             mirror: state.activeMirror!,
                         });
                     }}
@@ -255,12 +247,11 @@ export function selectionSection(
                     <VectorSelectionIcon />
                 </IconButton>
             ) : null}
-            {(state.selection.type === 'Path' ||
-                state.selection.type === 'PathGroup') &&
-                state.view.guides ? (
+            {(state.selection.type === 'Path' || state.selection.type === 'PathGroup') &&
+            state.view.guides ? (
                 <IconButton
                     onClick={() => {
-                        setPendingDuplication({ reflect: false, p0: null });
+                        setPendingDuplication({reflect: false, p0: null});
                     }}
                 >
                     <VectorSelectionIcon />
@@ -272,10 +263,7 @@ export function selectionSection(
 
 export function mirrorControls(
     setPendingMirror: (
-        fn:
-            | PendingMirror
-            | ((m: PendingMirror | null) => PendingMirror | null)
-            | null,
+        fn: PendingMirror | ((m: PendingMirror | null) => PendingMirror | null) | null,
     ) => void,
     pendingMirror: PendingMirror,
 ): React.ReactChild {
@@ -297,9 +285,9 @@ export function mirrorControls(
                     setPendingMirror((mirror) =>
                         mirror
                             ? {
-                                ...mirror,
-                                rotations: mirror.rotations + 1,
-                            }
+                                  ...mirror,
+                                  rotations: mirror.rotations + 1,
+                              }
                             : null,
                     );
                 }}
@@ -314,9 +302,9 @@ export function mirrorControls(
                     setPendingMirror((mirror) =>
                         mirror
                             ? {
-                                ...mirror,
-                                rotations: Math.max(1, mirror.rotations - 1),
-                            }
+                                  ...mirror,
+                                  rotations: Math.max(1, mirror.rotations - 1),
+                              }
                             : null,
                     );
                 }}
@@ -331,9 +319,9 @@ export function mirrorControls(
                     setPendingMirror((mirror) =>
                         mirror
                             ? {
-                                ...mirror,
-                                reflect: !mirror.reflect,
-                            }
+                                  ...mirror,
+                                  reflect: !mirror.reflect,
+                              }
                             : null,
                     );
                 }}

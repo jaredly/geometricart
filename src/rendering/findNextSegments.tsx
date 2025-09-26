@@ -1,23 +1,17 @@
-import { coordKey } from './coordKey';
-import { closeEnough } from './epsilonToZero';
-import { segmentKey } from './segmentKey';
-import { angleTo } from './getMirrorTransforms';
-import { closeEnoughAngle, epsilon, Primitive } from './intersect';
-import {
-    Coord,
-    Intersect,
-    PendingPath,
-    PendingSegment,
-    Segment,
-} from '../types';
+import {coordKey} from './coordKey';
+import {closeEnough} from './epsilonToZero';
+import {segmentKey} from './segmentKey';
+import {angleTo} from './getMirrorTransforms';
+import {closeEnoughAngle, epsilon, Primitive} from './intersect';
+import {Coord, Intersect, PendingPath, PendingSegment, Segment} from '../types';
 
 export const dedup = (numbers: Array<number>) => {
-    const seen: { [k: number]: true } = {};
+    const seen: {[k: number]: true} = {};
     return numbers.filter((n) => (seen[n] ? false : (seen[n] = true)));
 };
 
 export const dedupString = (numbers: Array<string>) => {
-    const seen: { [k: string]: true } = {};
+    const seen: {[k: string]: true} = {};
     return numbers.filter((n) => (seen[n] ? false : (seen[n] = true)));
 };
 
@@ -30,12 +24,9 @@ export const findNextSegments = (
         ? pending.parts[pending.parts.length - 1].to
         : pending.origin;
     const intersections = current.primitives;
-    const touchingPrimitives = dedup(
-        ([] as Array<number>).concat(...intersections),
-    );
+    const touchingPrimitives = dedup(([] as Array<number>).concat(...intersections));
     // List of coords that each primtive touches.
-    const coordsForPrimitive: { [key: number]: { [key: string]: Intersect } } =
-        {};
+    const coordsForPrimitive: {[key: number]: {[key: string]: Intersect}} = {};
     touchingPrimitives.forEach((id) => (coordsForPrimitive[id] = {}));
     coords.forEach((int) => {
         int.primitives.forEach((pair) => {
@@ -50,9 +41,9 @@ export const findNextSegments = (
         pending.parts.length === 0
             ? null
             : pending.parts.length === 1
-            ? null
-            : pending.parts[pending.parts.length - 2].to.coord;
-    const seen: { [key: string]: true } = {};
+              ? null
+              : pending.parts[pending.parts.length - 2].to.coord;
+    const seen: {[key: string]: true} = {};
     const res = ([] as Array<PendingSegment>)
         .concat(
             ...touchingPrimitives.map((id) => {
@@ -60,9 +51,7 @@ export const findNextSegments = (
                 return calcPendingSegments(
                     primitives[id],
                     current,
-                    Object.keys(coordsForPrimitive[id]).map(
-                        (k) => coordsForPrimitive[id][k],
-                    ),
+                    Object.keys(coordsForPrimitive[id]).map((k) => coordsForPrimitive[id][k]),
                 );
             }),
         )
@@ -98,15 +87,13 @@ export const calcPendingSegments = (
         }
         const left = idx > 0 ? sorted[idx - 1] : null;
         const right = idx < sorted.length - 1 ? sorted[idx + 1] : null;
-        return ([left, right].filter(Boolean) as Array<Intersect>).map(
-            (to) => ({
-                to,
-                segment: {
-                    type: 'Line',
-                    to: to.coord,
-                },
-            }),
-        );
+        return ([left, right].filter(Boolean) as Array<Intersect>).map((to) => ({
+            to,
+            segment: {
+                type: 'Line',
+                to: to.coord,
+            },
+        }));
     } else {
         // we're sorting the points by their angle around the circle
         const withTheta = allCoords.map((coord) => ({
@@ -118,18 +105,14 @@ export const calcPendingSegments = (
         withTheta.sort((a, b) => a.theta - b.theta);
         const idx = withTheta.findIndex((c) => c.coord === coord);
         if (idx === -1) {
-            console.warn(
-                `current coord not in the list of coords that this circle touches`,
-            );
+            console.warn(`current coord not in the list of coords that this circle touches`);
             return [];
         }
         const thisTheta = withTheta[idx].theta;
         // the one just counter-clockwise of this one
-        const left =
-            idx > 0 ? withTheta[idx - 1] : withTheta[withTheta.length - 1];
+        const left = idx > 0 ? withTheta[idx - 1] : withTheta[withTheta.length - 1];
         // the one just clockwise of this one
-        const right =
-            idx < withTheta.length - 1 ? withTheta[idx + 1] : withTheta[0];
+        const right = idx < withTheta.length - 1 ? withTheta[idx + 1] : withTheta[0];
         return [left, right]
             .map(
                 (item, i): PendingSegment => ({
@@ -147,16 +130,10 @@ export const calcPendingSegments = (
                 if (!primitive.limit) {
                     return true;
                 }
-                if (
-                    closeEnoughAngle(thisTheta, primitive.limit[0]) &&
-                    i === 0
-                ) {
+                if (closeEnoughAngle(thisTheta, primitive.limit[0]) && i === 0) {
                     return false;
                 }
-                if (
-                    closeEnoughAngle(thisTheta, primitive.limit[1]) &&
-                    i === 1
-                ) {
+                if (closeEnoughAngle(thisTheta, primitive.limit[1]) && i === 1) {
                     return false;
                 }
                 return true;
@@ -177,12 +154,7 @@ export const calcPendingSegments = (
 
 // true if middle is between left and right, going from left to right around the circle {clockwise/or not}
 // if middle is equal to left or right, also return true
-export const isAngleBetween = (
-    left: number,
-    middle: number,
-    right: number,
-    clockwise: boolean,
-) => {
+export const isAngleBetween = (left: number, middle: number, right: number, clockwise: boolean) => {
     if (closeEnough(left, right)) {
         return true;
     }

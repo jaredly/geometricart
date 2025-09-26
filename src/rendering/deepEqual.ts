@@ -10,10 +10,8 @@ export const deepRoundFloats = (value: unknown): unknown => {
         return value.map(deepRoundFloats);
     }
     if (typeof value === 'object') {
-        const mapped: { [key: string]: unknown } = {};
-        Object.keys(value).forEach(
-            (k) => (mapped[k] = deepRoundFloats((value as any)[k])),
-        );
+        const mapped: {[key: string]: unknown} = {};
+        Object.keys(value).forEach((k) => (mapped[k] = deepRoundFloats((value as any)[k])));
         return mapped;
     }
     if (typeof value === 'number') {

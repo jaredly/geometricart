@@ -1,16 +1,10 @@
-import { arcToCircle } from '../../editor/findSelection';
-import {
-    ArcSegment,
-    Attachment,
-    Coord,
-    LineSegment,
-    Segment,
-} from '../../types';
-import { zeroToTwoPi } from '../clipPath';
-import { angleBetween } from '../findNextSegments';
-import { angleTo, dist, push } from '../getMirrorTransforms';
-import { circleCircle, closeEnoughAngle } from '../intersect';
-import { coordsEqual } from '../pathsAreIdentical';
+import {arcToCircle} from '../../editor/findSelection';
+import {ArcSegment, Attachment, Coord, LineSegment, Segment} from '../../types';
+import {zeroToTwoPi} from '../clipPath';
+import {angleBetween} from '../findNextSegments';
+import {angleTo, dist, push} from '../getMirrorTransforms';
+import {circleCircle, closeEnoughAngle} from '../intersect';
+import {coordsEqual} from '../pathsAreIdentical';
 
 // @trace
 /**
@@ -31,9 +25,7 @@ export const insetArcArc = (
      */
     if (coordsEqual(seg.center, next.center)) {
         // @list-examples
-        return [
-            { ...seg, to: push(seg.to, angleTo(seg.center, seg.to), amount) },
-        ];
+        return [{...seg, to: push(seg.to, angleTo(seg.center, seg.to), amount)}];
     }
     /**
      * Then, calculate some angles, radii, and tangent angles.
@@ -56,9 +48,9 @@ export const insetArcArc = (
     if (contract) {
         // @list-examples
         return [
-            { ...seg, to: push(seg.center, t0, r0a) },
-            { type: 'Line', to: seg.to },
-            { type: 'Line', to: push(next.center, t1, r1a) },
+            {...seg, to: push(seg.center, t0, r0a)},
+            {type: 'Line', to: seg.to},
+            {type: 'Line', to: push(next.center, t1, r1a)},
         ];
     }
     /**
@@ -80,14 +72,14 @@ export const insetArcArc = (
             clockwise: isLeft,
             center: seg.center,
         }),
-        { type: 'circle', center: next.center, radius: r1a },
+        {type: 'circle', center: next.center, radius: r1a},
     );
     /**
      * If there's a hit, that's the end of it! We've successfully expanded the corner.
      */
     if (hits.length === 1) {
         // @list-examples
-        return [{ ...seg, to: hits[0] }];
+        return [{...seg, to: hits[0]}];
     }
     /**
      * Otherwise, the circles are no longer intersecting, so we need to connect up the
@@ -119,7 +111,7 @@ export const insetArcArc = (
         clockwise = !seg.clockwise;
     }
     return [
-        { ...seg, to: sto },
+        {...seg, to: sto},
         {
             type: 'Arc',
             clockwise,
@@ -130,5 +122,5 @@ export const insetArcArc = (
 };
 
 export const midPoint = (c1: Coord, c2: Coord) => {
-    return { x: (c1.x + c2.x) / 2, y: (c1.y + c2.y) / 2 };
+    return {x: (c1.x + c2.x) / 2, y: (c1.y + c2.y) / 2};
 };

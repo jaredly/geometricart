@@ -1,19 +1,7 @@
-import {
-    Exit,
-    IntersectionError,
-    SegmentIntersection,
-    HitSegment,
-} from './untangleHit';
-import {
-    Angle,
-    backAngle,
-    isAngleBetweenAngles,
-    isInside,
-    negPiToPi,
-    sortAngles,
-} from './clipPath';
-import { anglesEqual } from './epsilonToZero';
-import { angleIsBetween, closeEnoughAngle } from './intersect';
+import {Exit, IntersectionError, SegmentIntersection, HitSegment} from './untangleHit';
+import {Angle, backAngle, isAngleBetweenAngles, isInside, negPiToPi, sortAngles} from './clipPath';
+import {anglesEqual} from './epsilonToZero';
+import {angleIsBetween, closeEnoughAngle} from './intersect';
 
 // @trace
 /**
@@ -23,9 +11,7 @@ import { angleIsBetween, closeEnoughAngle } from './intersect';
  * line segments and splitting it into "corners", each consisting
  * of an entrance and an exit, that a final clipped shape will follow.
  */
-export const untangleHit = (
-    entries: Array<SegmentIntersection>,
-): Array<HitCorner> => {
+export const untangleHit = (entries: Array<SegmentIntersection>): Array<HitCorner> => {
     /**
      * #### Preprocessing
      *
@@ -38,14 +24,14 @@ export const untangleHit = (
     for (const entry of entries) {
         if (entry.enter) {
             segments.push({
-                kind: { type: 'enter' },
+                kind: {type: 'enter'},
                 entry,
                 theta: backAngle(entry.theta),
             });
         }
         if (entry.exit) {
             segments.push({
-                kind: { type: 'exit', goingInside: null },
+                kind: {type: 'exit', goingInside: null},
                 entry,
                 theta: entry.theta,
             });
@@ -103,20 +89,16 @@ export const untangleHit = (
              */
             if (exit && entry) {
                 // @list-examples
-                const enters = group
-                    .filter((s) => s.kind.type === 'enter')
-                    .map((s) => s.entry);
+                const enters = group.filter((s) => s.kind.type === 'enter').map((s) => s.entry);
                 segmentGroups.push({
-                    kind: { type: 'enter' },
+                    kind: {type: 'enter'},
                     entries: enters,
                     theta: group[0].theta,
                     shape: getShape(enters),
                 });
-                const exits = group
-                    .filter((s) => s.kind.type === 'exit')
-                    .map((s) => s.entry);
+                const exits = group.filter((s) => s.kind.type === 'exit').map((s) => s.entry);
                 segmentGroups.push({
-                    kind: { type: 'exit', goingInside: null },
+                    kind: {type: 'exit', goingInside: null},
                     entries: exits,
                     theta: group[0].theta,
                     shape: getShape(exits),
@@ -154,8 +136,7 @@ export const untangleHit = (
             for (let other of segmentGroups[j].entries) {
                 if (other.shape !== side.shape) {
                     // @show(side, other)
-                    side.kind.goingInside =
-                        segmentGroups[j].kind.type === 'enter';
+                    side.kind.goingInside = segmentGroups[j].kind.type === 'enter';
                     break outer;
                 }
             }
@@ -211,9 +192,7 @@ export const untangleHit = (
                          * whether we're 'inside' or 'outside' the other
                          * shape, so we ditch that information.
                          */
-                        goingInside: doubleBack
-                            ? null
-                            : (a.kind as Exit).goingInside,
+                        goingInside: doubleBack ? null : (a.kind as Exit).goingInside,
                     })),
                 });
                 if (j > i) {

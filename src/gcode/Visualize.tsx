@@ -1,21 +1,24 @@
 // ok
 import * as React from 'react';
-import { State } from '../types';
-import { GCode3D } from './GCode3D';
-import { renderCutDepths } from './renderCutDepths';
+import {State} from '../types';
+import {GCode3D} from './GCode3D';
+import {renderCutDepths} from './renderCutDepths';
 
 const parseCoords = (line: string) => {
-    return [...line.matchAll(/([xyzf])(-?[0-9.]+)/g)].reduce((acc, m) => {
-        acc[m[1] as 'x' | 'y' | 'z' | 'f'] = parseFloat(m[2]);
-        return acc;
-    }, {} as { x?: number; y?: number; z?: number; f?: number });
+    return [...line.matchAll(/([xyzf])(-?[0-9.]+)/g)].reduce(
+        (acc, m) => {
+            acc[m[1] as 'x' | 'y' | 'z' | 'f'] = parseFloat(m[2]);
+            return acc;
+        },
+        {} as {x?: number; y?: number; z?: number; f?: number},
+    );
 };
 
-export type Tool = { diameter: number; vbit?: number };
+export type Tool = {diameter: number; vbit?: number};
 
 export const parse = (gcode: string): GCodeData['toolPaths'] => {
-    const settings = { units: 'in' };
-    let pos: { x?: number; y?: number; z?: number; f?: number } = {};
+    const settings = {units: 'in'};
+    let pos: {x?: number; y?: number; z?: number; f?: number} = {};
     // if f === -1, then it's a rapid move
     const toolPaths: GCodeData['toolPaths'] = [];
     // const positions: {
@@ -64,12 +67,12 @@ export const parse = (gcode: string): GCodeData['toolPaths'] => {
                 if (!toolPaths.length) {
                     toolPaths.push({
                         positions: [],
-                        tool: { diameter: 3 },
+                        tool: {diameter: 3},
                     });
                 }
                 const positions = toolPaths[toolPaths.length - 1].positions;
                 const coords = parseCoords(good);
-                pos = { ...pos, ...coords };
+                pos = {...pos, ...coords};
                 if (pos.x != null && pos.y != null && pos.z != null) {
                     positions.push({
                         x: pos.x,
@@ -85,12 +88,12 @@ export const parse = (gcode: string): GCodeData['toolPaths'] => {
                     console.warn('No initial tool');
                     toolPaths.push({
                         positions: [],
-                        tool: { diameter: 3 },
+                        tool: {diameter: 3},
                     });
                 }
                 const positions = toolPaths[toolPaths.length - 1].positions;
                 const coords = parseCoords(good);
-                pos = { ...pos, ...coords };
+                pos = {...pos, ...coords};
                 if (pos.x != null && pos.y != null && pos.z != null) {
                     positions.push({
                         x: pos.x,
@@ -105,15 +108,7 @@ export const parse = (gcode: string): GCodeData['toolPaths'] => {
     return toolPaths;
 };
 
-export const Visualize = ({
-    gcode,
-    state,
-    time,
-}: {
-    gcode: string;
-    state: State;
-    time: number;
-}) => {
+export const Visualize = ({gcode, state, time}: {gcode: string; state: State; time: number}) => {
     const bitSize = 3; // mm, 1/8"
     const data = React.useMemo(() => {
         try {
@@ -124,7 +119,7 @@ export const Visualize = ({
                 height: bounds.max.y! - bounds.min.y!,
                 depth: -bounds.min.z!,
             };
-            return { toolPaths, bounds, dims };
+            return {toolPaths, bounds, dims};
         } catch (err) {
             console.error(err);
         }
@@ -177,13 +172,11 @@ export const Visualize = ({
                         state={state}
                         meta={`Time: ${time.toFixed(0)} min. GCode lines: ${
                             gcode.split('\n').length
-                        }. ${data.dims.width.toFixed(
+                        }. ${data.dims.width.toFixed(1)} x ${data.dims.height.toFixed(
                             1,
-                        )} x ${data.dims.height.toFixed(
+                        )} x ${data.dims.depth.toFixed(1)}mm ; ${(data.dims.width / 25.4).toFixed(
                             1,
-                        )} x ${data.dims.depth.toFixed(1)}mm ; ${(
-                            data.dims.width / 25.4
-                        ).toFixed(1)}" x ${(data.dims.height / 25.4).toFixed(
+                        )}" x ${(data.dims.height / 25.4).toFixed(
                             1,
                         )}" x ${(data.dims.depth / 25.4).toFixed(1)}"`}
                     />
@@ -206,35 +199,29 @@ export const Visualize = ({
 };
 
 type Bound = {
-    min: { x: number | null; y: number | null; z: number | null };
-    max: { x: number | null; y: number | null; z: number | null };
+    min: {x: number | null; y: number | null; z: number | null};
+    max: {x: number | null; y: number | null; z: number | null};
 };
 
 const ax = ['x', 'y', 'z'] as const;
 
-const findBounds = (
-    toolPaths: GCodeData['toolPaths'],
-    bitSize: number,
-    margin: number,
-) => {
+const findBounds = (toolPaths: GCodeData['toolPaths'], bitSize: number, margin: number) => {
     return toolPaths.reduce(
-        (acc, { positions }) =>
+        (acc, {positions}) =>
             positions.reduce((acc, pos) => {
                 ax.forEach((k: 'x' | 'y' | 'z') => {
                     if (acc.min[k] == null || pos[k] < acc.min[k]!) {
-                        acc.min[k] =
-                            k === 'z' ? pos[k] : pos[k] - bitSize / 2 - margin;
+                        acc.min[k] = k === 'z' ? pos[k] : pos[k] - bitSize / 2 - margin;
                     }
                     if (acc.max[k] == null || pos[k] > acc.max[k]!) {
-                        acc.max[k] =
-                            k === 'z' ? pos[k] : pos[k] + bitSize / 2 + margin;
+                        acc.max[k] = k === 'z' ? pos[k] : pos[k] + bitSize / 2 + margin;
                     }
                 });
                 return acc;
             }, acc),
         {
-            min: { x: null, y: null, z: null },
-            max: { x: null, y: null, z: null },
+            min: {x: null, y: null, z: null},
+            max: {x: null, y: null, z: null},
         } as Bound,
     );
 };
@@ -262,7 +249,7 @@ export function renderCutPaths(ctx: CanvasRenderingContext2D, data: GCodeData) {
     ctx.lineWidth = 0.1;
     ctx.strokeStyle = 'black';
     let above = false;
-    data.toolPaths.forEach(({ positions }) => {
+    data.toolPaths.forEach(({positions}) => {
         positions.forEach((pos, i) => {
             if (i === 0 || pos.z >= 0 !== above) {
                 if (i > 0) {

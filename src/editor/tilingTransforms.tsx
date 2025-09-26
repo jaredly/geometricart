@@ -1,5 +1,5 @@
-import { Coord, TilingShape } from '../types';
-import { closeEnough } from '../rendering/epsilonToZero';
+import {Coord, TilingShape} from '../types';
+import {closeEnough} from '../rendering/epsilonToZero';
 import {
     Matrix,
     angleTo,
@@ -8,38 +8,31 @@ import {
     scaleMatrix,
     translationMatrix,
 } from '../rendering/getMirrorTransforms';
-import { angleBetween } from '../rendering/findNextSegments';
-import { transformLines } from './tilingPoints';
+import {angleBetween} from '../rendering/findNextSegments';
+import {transformLines} from './tilingPoints';
 
 export function replicateStandard(ty: number): Matrix[][][] {
     return [
-        [[scaleMatrix(-1, 1), translationMatrix({ x: 2, y: 0 })]],
-        [[scaleMatrix(1, -1), translationMatrix({ x: 0, y: ty * 2 })]],
+        [[scaleMatrix(-1, 1), translationMatrix({x: 2, y: 0})]],
+        [[scaleMatrix(1, -1), translationMatrix({x: 0, y: ty * 2})]],
         [[scaleMatrix(1, -1)]],
         [[scaleMatrix(-1, 1)]],
     ];
 }
 
-export function tilingTransforms(
-    shape: TilingShape,
-    tr: Coord,
-    tpts: Coord[],
-): Matrix[][][] {
+export function tilingTransforms(shape: TilingShape, tr: Coord, tpts: Coord[]): Matrix[][][] {
     if (tpts.length === 4) {
         return [
-            [[scaleMatrix(-1, 1), translationMatrix({ x: tr.x * 2, y: 0 })]],
+            [[scaleMatrix(-1, 1), translationMatrix({x: tr.x * 2, y: 0})]],
             [[scaleMatrix(-1, 1)]],
             [
                 [scaleMatrix(1, -1)],
-                [translationMatrix({ x: 0, y: -tr.y * 2 })],
-                [translationMatrix({ x: 0, y: -tr.y * 2 }), scaleMatrix(1, -1)],
+                [translationMatrix({x: 0, y: -tr.y * 2})],
+                [translationMatrix({x: 0, y: -tr.y * 2}), scaleMatrix(1, -1)],
             ],
         ];
     } else if (shape.type === 'right-triangle' && shape.rotateHypotenuse) {
-        return [
-            [[rotationMatrix(Math.PI), translationMatrix(tr)]],
-            ...replicateStandard(tr.y),
-        ];
+        return [[[rotationMatrix(Math.PI), translationMatrix(tr)]], ...replicateStandard(tr.y)];
     } else if (closeEnough(tr.y, -1 / Math.sqrt(3))) {
         return [
             [[scaleMatrix(1, -1), rotationMatrix(-(Math.PI / 3))]],
@@ -49,7 +42,7 @@ export function tilingTransforms(
             ],
             [[scaleMatrix(1, -1)]],
             [0, 1, 2, 3, 4, 5].map((i) => [
-                translationMatrix({ x: 2, y: 0 }),
+                translationMatrix({x: 2, y: 0}),
                 rotationMatrix((Math.PI / 3) * i),
             ]),
         ];
@@ -77,9 +70,7 @@ export function tilingTransforms(
                 mx.push([[scaleMatrix(1, -1)]]);
                 mx.push([]);
                 for (let i = 1; i < j; i++) {
-                    mx[mx.length - 1].push([
-                        rotationMatrix((i / 8) * Math.PI * 2),
-                    ]);
+                    mx[mx.length - 1].push([rotationMatrix((i / 8) * Math.PI * 2)]);
                 }
                 return mx;
             }
@@ -100,15 +91,15 @@ export function tilingTransforms(
                         [
                             scaleMatrix(-1, 1),
                             rotationMatrix(-Math.PI / 3),
-                            translationMatrix({ x: tr.x * 3, y: tr.y }),
+                            translationMatrix({x: tr.x * 3, y: tr.y}),
                         ],
                         [
                             rotationMatrix((Math.PI * 2) / 3),
-                            translationMatrix({ x: tr.x * 3, y: tr.y }),
+                            translationMatrix({x: tr.x * 3, y: tr.y}),
                         ],
                         [
                             rotationMatrix((-Math.PI * 2) / 3),
-                            translationMatrix({ x: tr.x * 3, y: tr.y }),
+                            translationMatrix({x: tr.x * 3, y: tr.y}),
                         ],
                     ],
                     [
@@ -121,18 +112,8 @@ export function tilingTransforms(
                 ];
             } else {
                 return [
-                    [
-                        [
-                            rotationMatrix(Math.PI),
-                            translationMatrix({ x: tr.x * 3, y: tr.y }),
-                        ],
-                    ],
-                    [
-                        [
-                            scaleMatrix(1, -1),
-                            translationMatrix({ x: 0, y: tr.y * 2 }),
-                        ],
-                    ],
+                    [[rotationMatrix(Math.PI), translationMatrix({x: tr.x * 3, y: tr.y})]],
+                    [[scaleMatrix(1, -1), translationMatrix({x: 0, y: tr.y * 2})]],
                     [
                         [rotationMatrix((Math.PI / 3) * 2)],
                         [rotationMatrix(Math.PI / 3)],

@@ -29,7 +29,15 @@ export function Lerps({dispatch, state}: {dispatch: (action: Action) => unknown;
     );
 }
 
-function ScriptLerp({id: key, vbl, dispatch}: {id: string; vbl: SLT | PosScript; dispatch: (action: Action) => unknown}): JSX.Element {
+function ScriptLerp({
+    id: key,
+    vbl,
+    dispatch,
+}: {
+    id: string;
+    vbl: SLT | PosScript;
+    dispatch: (action: Action) => unknown;
+}): JSX.Element {
     const [code, setCode] = React.useState(vbl.code);
 
     const fn = useMemo(() => {
@@ -85,7 +93,15 @@ function ScriptLerp({id: key, vbl, dispatch}: {id: string; vbl: SLT | PosScript;
     );
 }
 
-function FloatLerp({id: key, vbl, dispatch}: {id: string; vbl: FLT; dispatch: (action: Action) => unknown}): JSX.Element {
+function FloatLerp({
+    id: key,
+    vbl,
+    dispatch,
+}: {
+    id: string;
+    vbl: FLT;
+    dispatch: (action: Action) => unknown;
+}): JSX.Element {
     const [current, setCurrentInner] = React.useState(null as null | FLT);
     const last = React.useRef(vbl.points);
     React.useEffect(() => {
@@ -220,12 +236,23 @@ export const FnViewer = ({fn, kind}: {fn: (n: number) => number; kind: 'float-fn
                 border: '1px solid #333',
             }}
         >
-            <polyline points={points.map((m) => `${m.x * width},${(1 - m.y) * height}`).join(' ')} stroke="red" strokeWidth={2} fill="none" />
+            <polyline
+                points={points.map((m) => `${m.x * width},${(1 - m.y) * height}`).join(' ')}
+                stroke="red"
+                strokeWidth={2}
+                fill="none"
+            />
         </svg>
     );
 };
 
-export const PointsViewer = ({points, onClick}: {points: Array<LerpPoint>; onClick: () => void}) => {
+export const PointsViewer = ({
+    points,
+    onClick,
+}: {
+    points: Array<LerpPoint>;
+    onClick: () => void;
+}) => {
     const width = 50;
     const height = 50;
 

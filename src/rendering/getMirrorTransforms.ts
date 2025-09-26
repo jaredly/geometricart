@@ -1,11 +1,11 @@
-import { Coord, Id, Mirror } from '../types';
+import {Coord, Id, Mirror} from '../types';
 
 // [[a, b, c], [d, e, f]]
 export type Matrix = Array<Array<number>>;
 
-export const getMirrorTransforms = (mirrors: { [key: Id]: Mirror }) => {
+export const getMirrorTransforms = (mirrors: {[key: Id]: Mirror}) => {
     // TODO: topo sort if I want this to be faster
-    const got: { [key: Id]: Array<Array<Matrix>> } = {};
+    const got: {[key: Id]: Array<Array<Matrix>>} = {};
     const left = Object.keys(mirrors).filter((k) => {
         const m = mirrors[k];
         if (typeof m.parent === 'string') {
@@ -45,9 +45,7 @@ export const getMirrorTransforms = (mirrors: { [key: Id]: Mirror }) => {
     return got;
 };
 
-export const getTransformsForNewMirror = (
-    mirror: Mirror,
-): Array<Array<Matrix>> => {
+export const getTransformsForNewMirror = (mirror: Mirror): Array<Array<Matrix>> => {
     let transforms = mirrorTransforms(mirror).map(transformsToMatrices);
     let current = mirror;
     while (current.parent && typeof current.parent !== 'string') {
@@ -67,16 +65,13 @@ export const getTransformsForNewMirror = (
 
 export const getTransformsForMirror = (
     mirror: Id | Mirror,
-    mirrors: { [key: Id]: Mirror },
+    mirrors: {[key: Id]: Mirror},
 ): Array<Array<Matrix>> => {
     const m = typeof mirror === 'string' ? mirrors[mirror] : mirror;
     let transforms = mirrorTransforms(m).map(transformsToMatrices);
     let current = m;
     while (current.parent) {
-        current =
-            typeof current.parent === 'string'
-                ? mirrors[current.parent]
-                : current.parent;
+        current = typeof current.parent === 'string' ? mirrors[current.parent] : current.parent;
         const outer = mirrorTransforms(current).map(transformsToMatrices);
         let next: Array<Array<Matrix>> = transforms.slice();
         outer.forEach((steps) => {
@@ -90,10 +85,7 @@ export const getTransformsForMirror = (
     return transforms;
 };
 
-export const applyMatrix = (
-    { x, y }: Coord,
-    [[a, b, c], [d, e, f]]: Matrix,
-) => ({
+export const applyMatrix = ({x, y}: Coord, [[a, b, c], [d, e, f]]: Matrix) => ({
     x: x * a + y * b + c,
     y: x * d + y * e + f,
 });
@@ -106,9 +98,7 @@ export const mirrorTransforms = (mirror: Mirror): Array<Array<Transform>> => {
     const original: Array<Array<Transform>> = [[]];
     const transforms: Array<Array<Transform>> = [];
     if (mirror.reflect) {
-        const reflect: Array<Transform> = [
-            { type: 'reflect', p1: mirror.origin, p2: mirror.point },
-        ];
+        const reflect: Array<Transform> = [{type: 'reflect', p1: mirror.origin, p2: mirror.point}];
         original.push(reflect);
         transforms.push(reflect);
     }
@@ -134,8 +124,8 @@ export const mirrorTransforms = (mirror: Mirror): Array<Array<Transform>> => {
 
 // export type Transform = Array<Array<number>>;
 export type Transform =
-    | { type: 'rotate'; center: Coord; theta: number }
-    | { type: 'reflect'; p1: Coord; p2: Coord };
+    | {type: 'rotate'; center: Coord; theta: number}
+    | {type: 'reflect'; p1: Coord; p2: Coord};
 
 export const scale = (coord: Coord, scale: number) => ({
     x: coord.x * scale,
@@ -216,10 +206,7 @@ export const transformToMatrices = (t: Transform) => {
 };
 
 export const transformsToMatrices = (t: Array<Transform>) =>
-    t.reduce(
-        (result, t) => result.concat(transformToMatrices(t)),
-        [] as Array<Matrix>,
-    );
+    t.reduce((result, t) => result.concat(transformToMatrices(t)), [] as Array<Matrix>);
 
 /**
  * Calculate the point found `mag` units in `theta` direction from `p1`.
@@ -228,11 +215,17 @@ export const push = (p1: Coord, theta: number, mag: number) => ({
     x: p1.x + Math.cos(theta) * mag,
     y: p1.y + Math.sin(theta) * mag,
 });
+
+export const posOffset = (p1: Coord, p2: Coord) => ({
+    x: p1.x + p2.x,
+    y: p1.y + p2.y,
+});
+
 /**
  * Calculate the angle from `p1`, pointing at `p2`.
  */
-export const angleTo = (p1: Coord, p2: Coord) =>
-    Math.atan2(p2.y - p1.y, p2.x - p1.x);
+export const angleTo = (p1: Coord, p2: Coord) => Math.atan2(p2.y - p1.y, p2.x - p1.x);
+
 /**
  * Calculate the distance between two points.
  */

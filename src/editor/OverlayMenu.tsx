@@ -1,8 +1,8 @@
 /* @jsx jsx */
 /* @jsxFrag React.Fragment */
-import { jsx } from '@emotion/react';
+import {jsx} from '@emotion/react';
 import React from 'react';
-import { EyeIcon, EyeInvisibleIcon } from '../icons/Eyes';
+import {EyeIcon, EyeInvisibleIcon} from '../icons/Eyes';
 import {
     BringToFrontIcon,
     DeleteForeverIcon,
@@ -11,10 +11,10 @@ import {
     LibraryAddIcon,
     SendToBackIcon,
 } from '../icons/Icon';
-import { Hover } from './Sidebar';
-import { State } from '../types';
-import { Action } from '../state/Action';
-import { parseAttachment } from './useDropTarget';
+import {Hover} from './Sidebar';
+import {State} from '../types';
+import {Action} from '../state/Action';
+import {parseAttachment} from './useDropTarget';
 
 export const openFile = (onSuccess: (files: FileList | null) => void) => {
     const input = document.createElement('input');
@@ -97,10 +97,7 @@ export const OverlayMenu = ({
                             }}
                         >
                             <img
-                                src={
-                                    state.attachments[state.overlays[k].source]
-                                        .contents
-                                }
+                                src={state.attachments[state.overlays[k].source].contents}
                                 css={{
                                     objectFit: 'cover',
                                     width: 58,
@@ -142,18 +139,10 @@ export const OverlayMenu = ({
                                     }
                                     onMouseOut={() => setHover(null)}
                                     hoverIcon={
-                                        !state.overlays[k].hide ? (
-                                            <EyeInvisibleIcon />
-                                        ) : (
-                                            <EyeIcon />
-                                        )
+                                        !state.overlays[k].hide ? <EyeInvisibleIcon /> : <EyeIcon />
                                     }
                                 >
-                                    {state.overlays[k].hide ? (
-                                        <EyeInvisibleIcon />
-                                    ) : (
-                                        <EyeIcon />
-                                    )}
+                                    {state.overlays[k].hide ? <EyeInvisibleIcon /> : <EyeIcon />}
                                 </IconButton>
                                 {!state.overlays[k].hide ? (
                                     <IconButton
@@ -162,8 +151,7 @@ export const OverlayMenu = ({
                                                 type: 'overlay:update',
                                                 overlay: {
                                                     ...state.overlays[k],
-                                                    over: !state.overlays[k]
-                                                        .over,
+                                                    over: !state.overlays[k].over,
                                                 },
                                             });
                                             setOpen(false);
@@ -206,9 +194,7 @@ export const OverlayMenu = ({
                                 if (files?.length) {
                                     parseAttachment(
                                         (name, contents, width, height) => {
-                                            const id = Math.random()
-                                                .toString(36)
-                                                .slice(2);
+                                            const id = Math.random().toString(36).slice(2);
                                             dispatch({
                                                 type: 'attachment:add',
                                                 attachment: {
@@ -227,9 +213,7 @@ export const OverlayMenu = ({
                                         },
                                         files[0],
                                         (err) => {
-                                            alert(
-                                                `Failed to parse image: ${err}`,
-                                            );
+                                            alert(`Failed to parse image: ${err}`);
                                         },
                                     );
                                 }

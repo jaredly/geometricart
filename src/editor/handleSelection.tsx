@@ -1,5 +1,5 @@
-import { Path, State } from '../types';
-import { Action } from '../state/Action';
+import {Path, State} from '../types';
+import {Action} from '../state/Action';
 
 export const handleSelection = (
     path: Path,
@@ -22,9 +22,7 @@ export const handleSelection = (
                     type: 'selection:set',
                     selection: {
                         type: 'PathGroup',
-                        ids: state.selection.ids.filter(
-                            (id) => id !== path.group,
-                        ),
+                        ids: state.selection.ids.filter((id) => id !== path.group),
                     },
                 });
             } else {
@@ -60,10 +58,7 @@ export const handleSelection = (
     }
     if (
         path.group &&
-        !(
-            state.selection?.type === 'PathGroup' &&
-            state.selection.ids.includes(path.group)
-        )
+        !(state.selection?.type === 'PathGroup' && state.selection.ids.includes(path.group))
     ) {
         dispatch({
             type: 'selection:set',

@@ -1,6 +1,6 @@
 import React from 'react';
-import { Coord, Intersect } from '../types';
-import { css } from '@emotion/css';
+import {Coord, Intersect} from '../types';
+import {css} from '@emotion/css';
 
 const intersectionStyle = css({
     // fill: 'rgba(255,255,255,0.1)',
@@ -52,9 +52,7 @@ export const RenderIntersections = React.memo(
         onClick: (item: Intersect, shiftKey: boolean) => unknown;
         colored?: Coord[];
     }) => {
-        const handlers = useTouchClick<Intersect>((intersection) =>
-            onClick(intersection, false),
-        );
+        const handlers = useTouchClick<Intersect>((intersection) => onClick(intersection, false));
         const isTouchScreen = 'ontouchstart' in window;
         return (
             <>
@@ -103,8 +101,8 @@ export const RenderIntersections = React.memo(
                             colored?.includes(intersection.coord)
                                 ? 'green'
                                 : highlight
-                                ? '#faa'
-                                : 'rgba(255,255,255,0.1)'
+                                  ? '#faa'
+                                  : 'rgba(255,255,255,0.1)'
                         }
                         stroke={'black'}
                         className={intersectionStyle}

@@ -1,27 +1,21 @@
 /* @jsx jsx */
 /* @jsxFrag React.Fragment */
-import { Interpolation, Theme, jsx } from '@emotion/react';
-import { Path as PKPath, PathKit } from 'pathkit-wasm';
-import React, { useMemo, useState } from 'react';
+import {Interpolation, Theme, jsx} from '@emotion/react';
+import {Path as PKPath, PathKit} from 'pathkit-wasm';
+import React, {useMemo, useState} from 'react';
 import * as ReactDOM from 'react-dom';
-import { pkPath } from '../sidebar/NewSidebar';
-import { Action } from '../state/Action';
-import { initialHistory } from '../state/initialState';
-import { Fill, Path, State, StyleLine } from '../types';
-import { Canvas } from './Canvas';
-import {
-    Bounds,
-    DL,
-    Multi,
-    blankCanvasProps,
-    findBoundingRect,
-} from './Export';
-import { BlurInt, Toggle } from './Forms';
-import { maybeUrlColor } from './MultiStyleForm';
-import { lightenedColor, paletteColor } from './RenderPath';
-import { calcPPI, viewPos } from './SVGCanvas';
-import { PREFIX, SUFFIX } from './Sidebar';
-import { pxToMM } from '../gcode/generateGcode';
+import {pkPath} from '../sidebar/NewSidebar';
+import {Action} from '../state/Action';
+import {initialHistory} from '../state/initialState';
+import {Fill, Path, State, StyleLine} from '../types';
+import {Canvas} from './Canvas';
+import {Bounds, DL, Multi, blankCanvasProps, findBoundingRect} from './Export';
+import {BlurInt, Toggle} from './Forms';
+import {maybeUrlColor} from './MultiStyleForm';
+import {lightenedColor, paletteColor} from './RenderPath';
+import {calcPPI, viewPos} from './SVGCanvas';
+import {PREFIX, SUFFIX} from './Sidebar';
+import {pxToMM} from '../gcode/generateGcode';
 
 const thinnestLine = (paths: State['paths']) => {
     let width = Infinity;
@@ -46,11 +40,11 @@ export const PPI = ({
     bounds: Bounds | null;
     state: State;
 }) => {
+    const thinnest = useMemo(() => thinnestLine(state.paths), [state.paths]);
+
     if (!bounds) return null;
     const w = bounds.x2 - bounds.x1;
     const h = bounds.y2 - bounds.y1;
-
-    const thinnest = useMemo(() => thinnestLine(state.paths), [state.paths]);
 
     return (
         <div>
@@ -62,7 +56,7 @@ export const PPI = ({
                 />
                 in
             </label>
-            <label style={{ marginLeft: 8 }}>
+            <label style={{marginLeft: 8}}>
                 Height:{' '}
                 <BlurInt
                     value={Math.round((h / ppi) * 100) / 100}
@@ -94,9 +88,7 @@ export function ExportSVG({
     name: string;
     PK: PathKit;
 }) {
-    const [url, setUrl] = React.useState(
-        null as null | { url: string; info: string }[],
-    );
+    const [url, setUrl] = React.useState(null as null | {url: string; info: string}[]);
     const boundingRect = React.useMemo(
         () => findBoundingRect(state),
         [state.paths, state.pathGroups, state.clips],
@@ -105,14 +97,14 @@ export function ExportSVG({
     const [crop, setCrop] = React.useState(10 as null | number);
 
     return (
-        <div css={{ marginTop: 16, border: '1px solid #aaa', padding: 8 }}>
+        <div css={{marginTop: 16, border: '1px solid #aaa', padding: 8}}>
             <Toggle
                 label="Laser Cut Mode"
                 value={!!state.view.laserCutMode}
                 onChange={(laserCutMode) =>
                     dispatch({
                         type: 'view:update',
-                        view: { ...state.view, laserCutMode },
+                        view: {...state.view, laserCutMode},
                     })
                 }
             />
@@ -123,7 +115,7 @@ export function ExportSVG({
                     ppi != null
                         ? dispatch({
                               type: 'meta:update',
-                              meta: { ...state.meta, ppi },
+                              meta: {...state.meta, ppi},
                           })
                         : null
                 }
@@ -136,20 +128,16 @@ export function ExportSVG({
                     ppi != null
                         ? dispatch({
                               type: 'meta:update',
-                              meta: { ...state.meta, ppi },
+                              meta: {...state.meta, ppi},
                           })
                         : null
                 }
                 label={(ppi) => (
-                    <div css={{ marginTop: 8 }}>
+                    <div css={{marginTop: 8}}>
                         Content Size:
                         {boundingRect
-                            ? ` ${(
-                                  (boundingRect.x2 - boundingRect.x1) /
-                                  ppi
-                              ).toFixed(2)}in x ${(
-                                  (boundingRect.y2 - boundingRect.y1) /
-                                  ppi
+                            ? ` ${((boundingRect.x2 - boundingRect.x1) / ppi).toFixed(2)}in x ${(
+                                  (boundingRect.y2 - boundingRect.y1) / ppi
                               ).toFixed(2)}in`
                             : null}
                         {/* <FullLength state={state} /> */}
@@ -164,7 +152,7 @@ export function ExportSVG({
                 multiForm(state, state.view.multi, dispatch)
             ) : (
                 <button
-                    css={{ marginTop: 16, display: 'block' }}
+                    css={{marginTop: 16, display: 'block'}}
                     onClick={() =>
                         dispatch({
                             type: 'view:update',
@@ -185,7 +173,7 @@ export function ExportSVG({
             )}
             <br />
             <button
-                css={{ marginTop: 16, display: 'block' }}
+                css={{marginTop: 16, display: 'block'}}
                 onClick={() =>
                     runSVGExport({
                         crop,
@@ -213,20 +201,13 @@ export function ExportSVG({
                     }}
                 >
                     {url.length === 1 ? (
-                        <DL
-                            url={url[0].url}
-                            subtitle={url[0].info}
-                            name={name}
-                        />
+                        <DL url={url[0].url} subtitle={url[0].info} name={name} />
                     ) : (
                         url.map((url, i) => (
                             <DL
                                 url={url.url}
                                 subtitle={url.info}
-                                name={name.replace(
-                                    '.svg',
-                                    `-${(i + '').padStart(2, '0')}.svg`,
-                                )}
+                                name={name.replace('.svg', `-${(i + '').padStart(2, '0')}.svg`)}
                                 key={i}
                             />
                         ))
@@ -239,12 +220,10 @@ export function ExportSVG({
 
 const styleKey = (s: StyleLine | Fill) => {
     const lighten = s.lighten ?? 0;
-    return lighten === 0 ? s.color ?? 0 : `${s.color}${'/' + lighten}`;
+    return lighten === 0 ? (s.color ?? 0) : `${s.color}${'/' + lighten}`;
 };
 
-const parseStyleKey = (
-    key: string | number,
-): [string | number, number, string | number] => {
+const parseStyleKey = (key: string | number): [string | number, number, string | number] => {
     if (typeof key === 'number') {
         return [key, 0, key];
     }
@@ -260,16 +239,27 @@ function multiForm(
     multi: NonNullable<State['view']['multi']>,
     dispatch: React.Dispatch<Action>,
 ): React.ReactNode {
-    const colors: { [key: string | number]: number } = {};
+    const colors: {[key: string | number]: number} = {};
 
-    Object.entries(state.paths).forEach(([k, path]) => {
-        path.style.lines.forEach((line) => {
-            if (line && line.color != null) {
-                const k = styleKey(line);
-                colors[k] = (colors[k] || 0) + 1;
-            }
+    if (multi.useFills) {
+        Object.entries(state.paths).forEach(([k, path]) => {
+            path.style.fills.forEach((fill) => {
+                if (fill && fill.color != null) {
+                    const k = styleKey(fill);
+                    colors[k] = (colors[k] || 0) + 1;
+                }
+            });
         });
-    });
+    } else {
+        Object.entries(state.paths).forEach(([k, path]) => {
+            path.style.lines.forEach((line) => {
+                if (line && line.color != null) {
+                    const k = styleKey(line);
+                    colors[k] = (colors[k] || 0) + 1;
+                }
+            });
+        });
+    }
 
     return (
         <div
@@ -280,7 +270,7 @@ function multiForm(
             }}
         >
             Multi SVG Settings
-            <div css={{ marginTop: 8 }}>
+            <div css={{marginTop: 8}}>
                 Outline Color:
                 <Select
                     current={multi.outline}
@@ -300,30 +290,61 @@ function multiForm(
                     }}
                 />
             </div>
-            <div css={{ marginTop: 8 }}>
+            <div css={{marginTop: 8}}>
                 Shape line Color:
                 {multi.shapes.map((color, i) => (
-                    <Select
-                        key={i}
-                        current={color}
-                        state={state}
-                        colors={colors}
-                        onChange={(color) => {
-                            const shapes = multi.shapes.slice();
-                            if (color == null) {
+                    <div key={i} style={{display: 'flex', alignItems: 'center'}}>
+                        <div style={{flex: 1}}>
+                            <Select
+                                current={color}
+                                state={state}
+                                colors={colors}
+                                onChange={(color) => {
+                                    const shapes = multi.shapes.slice();
+                                    if (color == null) {
+                                        shapes.splice(i, 1);
+                                    } else {
+                                        shapes[i] = color;
+                                    }
+                                    dispatch({
+                                        type: 'view:update',
+                                        view: {
+                                            ...state.view,
+                                            multi: {...multi, shapes},
+                                        },
+                                    });
+                                }}
+                            />
+                        </div>
+                        <button
+                            onClick={() => {
+                                if (i === 0) return;
+                                const shapes = multi.shapes.slice();
                                 shapes.splice(i, 1);
-                            } else {
-                                shapes[i] = color;
-                            }
-                            dispatch({
-                                type: 'view:update',
-                                view: {
-                                    ...state.view,
-                                    multi: { ...multi, shapes },
-                                },
-                            });
-                        }}
-                    />
+                                shapes.splice(i - 1, 0, color);
+                                dispatch({
+                                    type: 'view:update',
+                                    view: {...state.view, multi: {...multi, shapes}},
+                                });
+                            }}
+                        >
+                            up
+                        </button>
+                        <button
+                            onClick={() => {
+                                if (i === multi.shapes.length - 1) return;
+                                const shapes = multi.shapes.slice();
+                                shapes.splice(i, 1);
+                                shapes.splice(i + 1, 0, color);
+                                dispatch({
+                                    type: 'view:update',
+                                    view: {...state.view, multi: {...multi, shapes}},
+                                });
+                            }}
+                        >
+                            dn
+                        </button>
+                    </div>
                 ))}
                 <button
                     onClick={() => {
@@ -357,6 +378,17 @@ function multiForm(
                 >
                     Add all colors
                 </button>
+                <button
+                    onClick={() => {
+                        const shapes = multi.shapes.slice().reverse();
+                        dispatch({
+                            type: 'view:update',
+                            view: {...state.view, multi: {...multi, shapes}},
+                        });
+                    }}
+                >
+                    Reverse
+                </button>
             </div>
             <div>
                 Columns
@@ -364,14 +396,14 @@ function multiForm(
                     type="number"
                     min="0"
                     max="100"
-                    style={{ width: 50 }}
+                    style={{width: 50}}
                     value={multi.columns}
                     onChange={(evt) =>
                         dispatch({
                             type: 'view:update',
                             view: {
                                 ...state.view,
-                                multi: { ...multi, columns: +evt.target.value },
+                                multi: {...multi, columns: +evt.target.value},
                             },
                         })
                     }
@@ -381,14 +413,14 @@ function multiForm(
                     type="number"
                     min="0"
                     max="100"
-                    style={{ width: 50 }}
+                    style={{width: 50}}
                     value={multi.rows}
                     onChange={(evt) =>
                         dispatch({
                             type: 'view:update',
                             view: {
                                 ...state.view,
-                                multi: { ...multi, rows: +evt.target.value },
+                                multi: {...multi, rows: +evt.target.value},
                             },
                         })
                     }
@@ -416,6 +448,25 @@ function multiForm(
             <label>
                 <input
                     type="checkbox"
+                    checked={!!multi.useFills}
+                    onChange={() =>
+                        dispatch({
+                            type: 'view:update',
+                            view: {
+                                ...state.view,
+                                multi: {
+                                    ...multi,
+                                    useFills: !multi.useFills,
+                                },
+                            },
+                        })
+                    }
+                />
+                Use fills
+            </label>
+            <label>
+                <input
+                    type="checkbox"
                     checked={!!multi.skipBacking}
                     onChange={() =>
                         dispatch({
@@ -432,7 +483,7 @@ function multiForm(
                 />
                 Skip backing?
             </label>
-            <label style={{ display: 'inline-block' }}>
+            <label style={{display: 'inline-block'}}>
                 <input
                     type="checkbox"
                     checked={!!multi.traceAndMerge}
@@ -452,7 +503,7 @@ function multiForm(
                 Trace &amp; Merge Lines
             </label>
             <button
-                css={{ marginTop: 16, display: 'block' }}
+                css={{marginTop: 16, display: 'block'}}
                 onClick={() =>
                     dispatch({
                         type: 'view:update',
@@ -486,151 +537,88 @@ async function runSVGExport({
     originalSize: number;
     embed: boolean;
     history: boolean;
-    setUrl: React.Dispatch<
-        React.SetStateAction<null | { url: string; info: string }[]>
-    >;
+    setUrl: React.Dispatch<React.SetStateAction<null | {url: string; info: string}[]>>;
     multi?: null | Multi;
     PK: PathKit;
 }) {
     const size = calcSVGSize(crop, boundingRect, state, originalSize);
 
-    if (multi) {
-        const outlines: Path[] = [];
-        const pathsToRender: Path[][] = [];
-        if (!multi.skipBacking) {
-            pathsToRender.push([]);
+    if (!multi) {
+        let text = getSVGText(state, size);
+
+        if (embed) {
+            text += `\n\n${PREFIX}${JSON.stringify(
+                history ? state : {...state, history: initialHistory},
+            )}${SUFFIX}`;
         }
-        const byGroup: { [key: string]: Path[] } = {};
-        Object.keys(state.paths).forEach((k) => {
-            let path = state.paths[k];
-            if (path.style.fills.length) {
-                return;
-            }
-            const out = path.style.lines.find(
-                (s) => s && styleKey(s) == multi.outline,
-            );
-            if (out) {
-                outlines.push({ ...path, style: { fills: [], lines: [out] } });
-            }
-            multi.shapes.forEach((shape) => {
-                if (shape == null) return;
-
-                const line = path.style.lines.find(
-                    (s) => s && styleKey(s) == shape,
-                );
-                if (!line) return;
-                // path =
-                const oneLine = {
-                    ...path,
-                    style: { fills: [], lines: [line] },
-                };
-                const group = multi.combineGroups ? 'aa' : path.group;
-                if (group) {
-                    if (!byGroup[group + ':' + shape]) {
-                        byGroup[group + ':' + shape] = [];
-                    }
-                    byGroup[group + ':' + shape].push(oneLine);
-                } else {
-                    pathsToRender.push([oneLine]);
-                }
-            });
-        });
-        pathsToRender.push(...Object.values(byGroup));
-
-        const urls: { url: string; info: string }[] = [];
-        const perImage = multi.rows * multi.columns;
-        for (let i = 0; i < pathsToRender.length; i += perImage) {
-            let contents = pathsToRender
-                .slice(i, i + perImage)
-                .map((paths, i) => {
-                    const map: State['paths'] = {};
-                    let aa = 0;
-                    paths.forEach((path) => (map[aa++] = path));
-                    outlines.forEach((path) => (map[aa++] = path));
-
-                    const r = (i / multi.columns) | 0;
-                    const c = i % multi.columns;
-
-                    return `<g transform="translate(${size.width * c}, ${
-                        size.height * r
-                    })">${
-                        multi.traceAndMerge
-                            ? traceAndMergePaths(
-                                  PK,
-                                  { ...state, paths: map },
-                                  size,
-                              )
-                            : getSVGText({ ...state, paths: map }, size, true)
-                    }</g>`;
-                });
-            const info = `${calcPPI(
-                state.meta.ppi,
-                size.width * multi.columns,
-                state.view.zoom,
-            )}x${calcPPI(
-                state.meta.ppi,
-                size.height * multi.rows,
-                state.view.zoom,
-            )}`;
-            let full = `
-            <svg
-                width="${calcPPI(
-                    state.meta.ppi,
-                    size.width * multi.columns,
-                    state.view.zoom,
-                )}"
-                height="${calcPPI(
-                    state.meta.ppi,
-                    size.height * multi.rows,
-                    state.view.zoom,
-                )}"
-                viewBox="0 0 ${size.width * multi.columns} ${
-                size.height * multi.rows
-            }"
-                xmlns="http://www.w3.org/2000/svg"
-            >${contents.join('')}</svg>
-            `;
-            // const d = document.createElement('div');
-            // d.innerHTML = full;
-            // document.body.append(d);
-            if (embed) {
-                full += `\n\n${PREFIX}${JSON.stringify(
-                    history ? state : { ...state, history: initialHistory },
-                )}${SUFFIX}`;
-            }
-            const blob = new Blob([full], { type: 'image/svg+xml' });
-            urls.push({ url: URL.createObjectURL(blob), info });
-        }
-
-        setUrl(urls);
+        const blob = new Blob([text], {type: 'image/svg+xml'});
+        setUrl([{url: URL.createObjectURL(blob), info: 'no info sry'}]);
         return;
     }
 
-    let text = getSVGText(state, size);
+    const {pathsToRender, outlines} = generatePathsAndOutlines(multi, Object.values(state.paths));
+    console.log('paths to render', pathsToRender);
 
-    if (embed) {
-        text += `\n\n${PREFIX}${JSON.stringify(
-            history ? state : { ...state, history: initialHistory },
-        )}${SUFFIX}`;
+    const urls: {url: string; info: string}[] = [];
+    const perImage = multi.rows * multi.columns;
+    for (let i = 0; i < pathsToRender.length; i += perImage) {
+        let contents = pathsToRender.slice(i, i + perImage).map((paths, i) => {
+            const map: State['paths'] = {};
+            let aa = 0;
+            paths.forEach((path) => (map[aa++] = path));
+            outlines.forEach((path) => (map[aa++] = path));
+
+            const r = (i / multi.columns) | 0;
+            const c = i % multi.columns;
+
+            return `<g transform="translate(${size.width * c}, ${size.height * r})">${
+                multi.traceAndMerge
+                    ? traceAndMergePaths(PK, {...state, paths: map}, size)
+                    : getSVGText({...state, paths: map}, size, true)
+            }</g>`;
+        });
+        const info = `${calcPPI(
+            state.meta.ppi,
+            size.width * multi.columns,
+            state.view.zoom,
+        )}x${calcPPI(state.meta.ppi, size.height * multi.rows, state.view.zoom)}`;
+        let full = `
+            <svg
+                width="${calcPPI(state.meta.ppi, size.width * multi.columns, state.view.zoom)}"
+                height="${calcPPI(state.meta.ppi, size.height * multi.rows, state.view.zoom)}"
+                viewBox="0 0 ${size.width * multi.columns} ${size.height * multi.rows}"
+                xmlns="http://www.w3.org/2000/svg"
+            >${contents.join('')}</svg>
+            `;
+        // const d = document.createElement('div');
+        // d.innerHTML = full;
+        // document.body.append(d);
+        if (embed) {
+            full += `\n\n${PREFIX}${JSON.stringify(
+                history ? state : {...state, history: initialHistory},
+            )}${SUFFIX}`;
+        }
+        const blob = new Blob([full], {type: 'image/svg+xml'});
+        urls.push({url: URL.createObjectURL(blob), info});
     }
-    const blob = new Blob([text], { type: 'image/svg+xml' });
-    setUrl([{ url: URL.createObjectURL(blob), info: 'no info sry' }]);
+
+    setUrl(urls);
+    return;
 }
 
-const traceAndMergePaths = (
-    PK: PathKit,
-    state: State,
-    size: { width: number; height: number },
-) => {
+const traceAndMergePaths = (PK: PathKit, state: State, size: {width: number; height: number}) => {
     const zoom = state.view.zoom;
-    const { x, y } = viewPos(state.view, size.width, size.height);
+    const {x, y} = viewPos(state.view, size.width, size.height);
 
     const backer = Object.keys(state.paths).length === 1;
 
     let pk = null as null | PKPath;
-    let c;
+    let c: string | undefined;
     Object.values(state.paths).forEach((path) => {
         const st = path.style.lines[0];
+        if (!st) {
+            throw new Error(`path has no lines`);
+        }
         let w = st?.width;
         w = w ? (w / 100) * zoom : 2;
         c = paletteColor(state.palette, st?.color ?? 0, st?.lighten ?? 0);
@@ -687,11 +675,128 @@ const traceAndMergePaths = (
     //     .join('\n');
 };
 
-function getSVGText(
-    state: State,
-    size: { width: number; height: number },
-    inner = false,
-) {
+export function generatePathsAndOutlines(
+    multi: State['view']['multi'] & {},
+    paths: Path[],
+): {pathsToRender: Path[][]; outlines: Path[]} {
+    // const outlines: Path[] = [];
+    const pathsToRender: Path[][] = [];
+    if (!multi.skipBacking) {
+        pathsToRender.push([]);
+    }
+
+    const byStyleKey: Record<string, {style: StyleLine; paths: Path[]}> = {};
+
+    paths.forEach((path) => {
+        (multi.useFills ? path.style.fills : path.style.lines).forEach((style) => {
+            if (style) {
+                const k = styleKey(style);
+                if (!byStyleKey[k]) {
+                    byStyleKey[k] = {style, paths: []};
+                }
+                byStyleKey[k].paths.push(path);
+            }
+        });
+    });
+    // console.log("organized", byStyleKey);
+
+    // console.log("multis", multi);
+    const byGroup: {[key: string]: Path[]} = {};
+
+    const outlines =
+        multi.outline != null
+            ? (byStyleKey[multi.outline]?.paths?.map((path) => ({
+                  ...path,
+                  style: {fills: [], lines: [byStyleKey[multi.outline!].style]},
+              })) ?? [])
+            : [];
+
+    multi.shapes.forEach((shape, i) => {
+        if (shape == null) return console.log('ignoring cause no shape');
+
+        // const line = (multi.useFills ? path.style.fills : path.style.lines).find(
+        //     (s) => s && styleKey(s) === shape,
+        // );
+        // if (!line) {
+        //     // console.log(
+        //     // 	multi.useFills ? path.style.fills : path.style.lines,
+        //     // 	shape,
+        //     // );
+        //     return console.log("ignoring caus no matching style");
+        // }
+        if (!byStyleKey[shape]) {
+            console.log('Nothing for', shape, byStyleKey);
+        }
+
+        byStyleKey[shape]?.paths.forEach((path) => {
+            const oneLine = {
+                ...path,
+                style: {fills: [], lines: [byStyleKey[shape].style]},
+            };
+            const prefix = i.toString().padStart(2, '0') + ':';
+            const group = multi.combineGroups ? 'aa' : path.group;
+            if (group) {
+                if (!byGroup[prefix + group + ':' + shape]) {
+                    byGroup[prefix + group + ':' + shape] = [];
+                }
+                byGroup[prefix + group + ':' + shape].push(oneLine);
+            } else {
+                pathsToRender.push([oneLine]);
+            }
+        });
+    });
+
+    // paths.forEach((path) => {
+    // 	// if (path.style.fills.length && !multi.useFills) {
+    // 	// 	console.log("ignoring cause its filled");
+    // 	// 	return;
+    // 	// }
+    // 	// const out = (multi.useFills ? path.style.fills : path.style.lines).find(
+    // 	// 	(s) => s && styleKey(s) === multi.outline,
+    // 	// );
+    // 	// if (out) {
+    // 	// 	outlines.push({ ...path, style: { fills: [], lines: [out] } });
+    // 	// }
+    // 	multi.shapes.forEach((shape, i) => {
+    // 		if (shape == null) return console.log("ignoring cause no shape");
+
+    // 		const line = (multi.useFills ? path.style.fills : path.style.lines).find(
+    // 			(s) => s && styleKey(s) === shape,
+    // 		);
+    // 		if (!line) {
+    // 			// console.log(
+    // 			// 	multi.useFills ? path.style.fills : path.style.lines,
+    // 			// 	shape,
+    // 			// );
+    // 			return console.log("ignoring caus no matching style");
+    // 		}
+    // 		const oneLine = {
+    // 			...path,
+    // 			style: { fills: [], lines: [line] },
+    // 		};
+    // 		const prefix = i.toString().padStart(2, "0") + ":";
+    // 		const group = multi.combineGroups ? "aa" : path.group;
+    // 		if (group) {
+    // 			if (!byGroup[prefix + group + ":" + shape]) {
+    // 				byGroup[prefix + group + ":" + shape] = [];
+    // 			}
+    // 			byGroup[prefix + group + ":" + shape].push(oneLine);
+    // 		} else {
+    // 			pathsToRender.push([oneLine]);
+    // 		}
+    // 	});
+    // });
+
+    console.log('bygrouped', byGroup);
+    pathsToRender.push(
+        ...Object.keys(byGroup)
+            .sort()
+            .map((k) => byGroup[k]),
+    );
+    return {pathsToRender, outlines};
+}
+
+function getSVGText(state: State, size: {width: number; height: number}, inner = false) {
     const dest = document.createElement('div');
     let svgNode: SVGElement | null = null;
     const rstate = state.view.laserCutMode
@@ -741,15 +846,13 @@ function calcSVGSize(
 ) {
     const h =
         crop && boundingRect
-            ? (boundingRect.y2 - boundingRect.y1) * state.view.zoom +
-              (crop / 50) * state.meta.ppi
+            ? (boundingRect.y2 - boundingRect.y1) * state.view.zoom + (crop / 50) * state.meta.ppi
             : originalSize;
     const w =
         crop && boundingRect
-            ? (boundingRect.x2 - boundingRect.x1) * state.view.zoom +
-              (crop / 50) * state.meta.ppi
+            ? (boundingRect.x2 - boundingRect.x1) * state.view.zoom + (crop / 50) * state.meta.ppi
             : originalSize;
-    const size = { width: w, height: h };
+    const size = {width: w, height: h};
     return size;
 }
 
@@ -761,7 +864,7 @@ export const Select = ({
 }: {
     current: string | number | null | undefined;
     state: State;
-    colors: { [key: string]: number };
+    colors: {[key: string]: number};
     onChange: (color: string | number | null) => void;
 }) => {
     const [open, setOpen] = useState(false);
@@ -770,7 +873,7 @@ export const Select = ({
     const ckey = current ? parseStyleKey(current) : null;
 
     return (
-        <div css={{ position: 'relative' }}>
+        <div css={{position: 'relative'}}>
             <div
                 css={{
                     border: '1px solid #777',
@@ -788,7 +891,7 @@ export const Select = ({
                                 : ckey[0]
                             : undefined
                     }
-                    style={{ flex: 1 }}
+                    style={{flex: 1}}
                     lighten={ckey ? ckey[1] : 0}
                     count={current != null ? colors[current] : null}
                     onClick={() => setOpen(!open)}
@@ -809,11 +912,7 @@ export const Select = ({
                     {keys.map(([color, lighten, orig], i) => (
                         <Line
                             key={i}
-                            color={
-                                typeof color === 'number'
-                                    ? state.palette[color]
-                                    : color
-                            }
+                            color={typeof color === 'number' ? state.palette[color] : color}
                             style={{
                                 ':hover': {
                                     backgroundColor: 'rgba(255,255,255,0.3)',
@@ -877,9 +976,7 @@ const Line = ({
                     },
                 }}
             />
-            {color != null
-                ? color + (lighten != 0 ? '/' + lighten : '')
-                : 'Select a color'}
+            {color != null ? color + (lighten != 0 ? '/' + lighten : '') : 'Select a color'}
             {count != null ? ' ' + count : null}
         </div>
     );

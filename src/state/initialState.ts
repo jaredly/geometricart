@@ -1,4 +1,4 @@
-import { State, History } from '../types';
+import {State, History} from '../types';
 
 // export const pointForView = (coord: Coord, view: View) => {
 // 	return {
@@ -38,7 +38,7 @@ export const initialState: State = {
         pauseHeight: 30,
     },
     animations: {
-        timelines: [{ enabled: true, items: [] }],
+        timelines: [{enabled: true, items: []}],
         scripts: {},
         lerps: {},
         config: {
@@ -87,7 +87,7 @@ export const initialState: State = {
     },
     activeMirror: null, // 'baseMirror',
     view: {
-        center: { x: 0, y: 0 },
+        center: {x: 0, y: 0},
         // This can't be implemented with svg zoom, because that would muck with line widths of guides and mirrors.
         zoom: 100,
         guides: true,

@@ -1,10 +1,10 @@
 import * as React from 'react';
-import { Action } from '../state/Action';
-import { State } from '../types';
-import { Checkbox } from 'primereact/checkbox';
-import { Hover } from '../editor/Sidebar';
-import { itemStyle } from './NewSidebar';
-import { Button } from 'primereact/button';
+import {Action} from '../state/Action';
+import {State} from '../types';
+import {Checkbox} from 'primereact/checkbox';
+import {Hover} from '../editor/Sidebar';
+import {itemStyle} from './NewSidebar';
+import {Button} from 'primereact/button';
 
 export function MirrorItems({
     state,
@@ -49,10 +49,10 @@ export function MirrorItems({
                         inputId={k}
                         onClick={(evt) => evt.stopPropagation()}
                         onChange={(evt) => {
-                            if (state.activeMirror !== evt.value) {
+                            if (state.activeMirror !== k) {
                                 dispatch({
                                     type: 'mirror:active',
-                                    id: evt.value,
+                                    id: k,
                                 });
                             } else {
                                 dispatch({
@@ -76,10 +76,9 @@ export function MirrorItems({
                             alignItems: 'center',
                         }}
                     >
-                        {mirror.rotational.length}x at{' '}
-                        {mirror.origin.x.toFixed(2)},
+                        {mirror.rotational.length}x at {mirror.origin.x.toFixed(2)},
                         {mirror.origin.y.toFixed(2)}
-                        <span style={{ flex: 1 }} />
+                        <span style={{flex: 1}} />
                         <Button
                             onClick={() => {
                                 dispatch({
@@ -89,7 +88,7 @@ export function MirrorItems({
                             }}
                             icon="pi pi-trash"
                             className=" p-button-sm p-button-text p-button-danger"
-                            style={{ marginTop: -5, marginBottom: -6 }}
+                            style={{marginTop: -5, marginBottom: -6}}
                         />
                     </label>
                 </div>

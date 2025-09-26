@@ -1,14 +1,14 @@
 /* @jsx jsx */
 /* @jsxFrag React.Fragment */
 import * as React from 'react';
-import { jsx } from '@emotion/react';
-import { transparent } from './Icons';
-import { Style, Fill, StyleLine } from '../types';
-import { colorSquare, paletteColor } from './RenderPath';
-import { Button } from 'primereact/button';
-import { Action } from '../state/Action';
-import { mmToPX, pxToMM } from '../gcode/generateGcode';
-import { BlurInt } from './Forms';
+import {jsx} from '@emotion/react';
+import {transparent} from './Icons';
+import {Style, Fill, StyleLine} from '../types';
+import {colorSquare, paletteColor} from './RenderPath';
+import {Button} from 'primereact/button';
+import {Action} from '../state/Action';
+import {mmToPX, pxToMM} from '../gcode/generateGcode';
+import {BlurInt} from './Forms';
 
 // I want to be able to communicate:
 // - all have same (one thing selected)
@@ -26,8 +26,8 @@ export type StyleHover =
           idx: number;
           color: string | number;
       }
-    | { type: 'fill-lightness'; idx: number; lighten: number }
-    | { type: 'line-lightness'; idx: number; lighten: number }
+    | {type: 'fill-lightness'; idx: number; lighten: number}
+    | {type: 'line-lightness'; idx: number; lighten: number}
     | {
           type: 'line-color';
           idx: number;
@@ -35,18 +35,12 @@ export type StyleHover =
       }; // TODO add line width and inset and stuff, when we have a slider or something
 
 // This may be done after splitting everything.
-export const applyStyleHover = (
-    styleHover: StyleHover,
-    style: Style,
-): Style => {
-    style = { ...style };
+export const applyStyleHover = (styleHover: StyleHover, style: Style): Style => {
+    style = {...style};
     if (styleHover.type === 'fill-color') {
         style.fills = style.fills.slice();
-        if (
-            style.fills.length === 1 &&
-            style.fills[0]?.originalIdx === styleHover.idx
-        ) {
-            style.fills[0] = { ...style.fills[0], color: styleHover.color };
+        if (style.fills.length === 1 && style.fills[0]?.originalIdx === styleHover.idx) {
+            style.fills[0] = {...style.fills[0], color: styleHover.color};
         } else {
             const fill = style.fills[styleHover.idx];
             if (fill) {
@@ -58,11 +52,8 @@ export const applyStyleHover = (
         }
     } else if (styleHover.type === 'line-color') {
         style.lines = style.lines.slice();
-        if (
-            style.lines.length === 1 &&
-            style.lines[0]?.originalIdx === styleHover.idx
-        ) {
-            style.lines[0] = { ...style.lines[0], color: styleHover.color };
+        if (style.lines.length === 1 && style.lines[0]?.originalIdx === styleHover.idx) {
+            style.lines[0] = {...style.lines[0], color: styleHover.color};
         } else {
             const line = style.lines[styleHover.idx];
             if (line) {
@@ -74,11 +65,8 @@ export const applyStyleHover = (
         }
     } else if (styleHover.type === 'line-lightness') {
         style.lines = style.lines.slice();
-        if (
-            style.lines.length === 1 &&
-            style.lines[0]?.originalIdx === styleHover.idx
-        ) {
-            style.lines[0] = { ...style.lines[0], lighten: styleHover.lighten };
+        if (style.lines.length === 1 && style.lines[0]?.originalIdx === styleHover.idx) {
+            style.lines[0] = {...style.lines[0], lighten: styleHover.lighten};
         } else {
             const line = style.lines[styleHover.idx];
             if (line) {
@@ -90,11 +78,8 @@ export const applyStyleHover = (
         }
     } else if (styleHover.type === 'fill-lightness') {
         style.fills = style.fills.slice();
-        if (
-            style.fills.length === 1 &&
-            style.fills[0]?.originalIdx === styleHover.idx
-        ) {
-            style.fills[0] = { ...style.fills[0], lighten: styleHover.lighten };
+        if (style.fills.length === 1 && style.fills[0]?.originalIdx === styleHover.idx) {
+            style.fills[0] = {...style.fills[0], lighten: styleHover.lighten};
         } else {
             const fill = style.fills[styleHover.idx];
             if (fill) {
@@ -123,24 +108,18 @@ export const MultiStyleForm = ({
     dispatch: React.Dispatch<Action>;
     ppi: number;
 }) => {
-    const { fills, lines } = collectMultiStyles(styles);
+    const {fills, lines} = collectMultiStyles(styles);
     return (
         <div css={{}}>
             <div className="mb-2 text-xs">{styles.length} shapes selected.</div>
             <h4 className="mb-2">Fills</h4>
             {fills.map((fill, i) => (
-                <div
-                    key={i}
-                    className="p-3 py-2 mb-2 border-solid surface-border"
-                >
+                <div key={i} className="p-3 py-2 mb-2 border-solid surface-border">
                     <div key={`inset-${i}`}>
-                        <details style={{ display: 'inline' }}>
-                            <summary style={{ cursor: 'pointer' }}>
+                        <details style={{display: 'inline'}}>
+                            <summary style={{cursor: 'pointer'}}>
                                 {fill.color.map((color, i) =>
-                                    colorSquare(
-                                        paletteColor(palette, color),
-                                        i,
-                                    ),
+                                    colorSquare(paletteColor(palette, color), i),
                                 )}
                                 inset
                                 <span
@@ -153,12 +132,7 @@ export const MultiStyleForm = ({
                                     value={fill.inset}
                                     onChange={(inset) => {
                                         onChange(
-                                            updateFill(
-                                                styles,
-                                                i,
-                                                inset ?? undefined,
-                                                'inset',
-                                            ),
+                                            updateFill(styles, i, inset ?? undefined, 'inset'),
                                         );
                                     }}
                                 />
@@ -174,21 +148,14 @@ export const MultiStyleForm = ({
                                     }}
                                     icon="pi pi-trash"
                                     className=" p-button-sm p-button-text p-button-danger"
-                                    style={{ marginTop: -5, marginBottom: -6 }}
+                                    style={{marginTop: -5, marginBottom: -6}}
                                 />
                             </summary>
-                            <div css={{ display: 'flex', flexWrap: 'wrap' }}>
+                            <div css={{display: 'flex', flexWrap: 'wrap'}}>
                                 <MultiColor
                                     color={fill.color}
                                     onChange={(color) => {
-                                        onChange(
-                                            updateFill(
-                                                styles,
-                                                i,
-                                                color,
-                                                'color',
-                                            ),
-                                        );
+                                        onChange(updateFill(styles, i, color, 'color'));
                                         // ok
                                     }}
                                     onHover={(color) =>
@@ -203,7 +170,7 @@ export const MultiStyleForm = ({
                                     palette={palette}
                                     key={i}
                                 />
-                                <div style={{ flexBasis: 16 }} />
+                                <div style={{flexBasis: 16}} />
                                 <div key={`lighten-${i}`}>
                                     <LightDark
                                         lighten={fill.lighten}
@@ -231,7 +198,7 @@ export const MultiStyleForm = ({
                                             );
                                         }}
                                     />
-                                    <div style={{ display: 'flex' }}>
+                                    <div style={{display: 'flex'}}>
                                         <div key={`variation-${i}`}>
                                             variation:
                                             <MultiNumber
@@ -241,15 +208,14 @@ export const MultiStyleForm = ({
                                                         updateFill(
                                                             styles,
                                                             i,
-                                                            colorVariation ??
-                                                                undefined,
+                                                            colorVariation ?? undefined,
                                                             'colorVariation',
                                                         ),
                                                     );
                                                 }}
                                             />
                                         </div>
-                                        <div style={{ flexBasis: 16 }} />
+                                        <div style={{flexBasis: 16}} />
                                         <div key={`opacity-${i}`}>
                                             opacity:
                                             <MultiNumber
@@ -259,8 +225,7 @@ export const MultiStyleForm = ({
                                                         updateFill(
                                                             styles,
                                                             i,
-                                                            opacity ??
-                                                                undefined,
+                                                            opacity ?? undefined,
                                                             'opacity',
                                                         ),
                                                     );
@@ -284,10 +249,7 @@ export const MultiStyleForm = ({
                         (num, style) =>
                             Math.max(
                                 num,
-                                style.fills.reduce(
-                                    (n, f) => Math.max(n, f?.inset ?? 0),
-                                    0,
-                                ),
+                                style.fills.reduce((n, f) => Math.max(n, f?.inset ?? 0), 0),
                             ),
                         0,
                     );
@@ -307,11 +269,7 @@ export const MultiStyleForm = ({
 
                             let at: Fill | null = null;
                             for (let fill of style.fills) {
-                                if (
-                                    fill &&
-                                    (at == null ||
-                                        (at.inset ?? 0) < (fill.inset ?? 0))
-                                ) {
+                                if (fill && (at == null || (at.inset ?? 0) < (fill.inset ?? 0))) {
                                     at = fill;
                                 }
                             }
@@ -324,7 +282,7 @@ export const MultiStyleForm = ({
                                 inset,
                                 lighten: (at?.lighten || 0) - lightenAmt,
                             });
-                            return { ...style, fills };
+                            return {...style, fills};
                         }),
                     );
                 }}
@@ -347,12 +305,9 @@ export const MultiStyleForm = ({
                         }}
                     >
                         <details>
-                            <summary style={{ cursor: 'pointer' }}>
+                            <summary style={{cursor: 'pointer'}}>
                                 {line.color.map((color, i) =>
-                                    colorSquare(
-                                        paletteColor(palette, color),
-                                        i,
-                                    ),
+                                    colorSquare(paletteColor(palette, color), i),
                                 )}
                                 inset
                                 <span
@@ -365,12 +320,7 @@ export const MultiStyleForm = ({
                                     value={line.inset}
                                     onChange={(inset) => {
                                         onChange(
-                                            updateLine(
-                                                styles,
-                                                i,
-                                                inset ?? undefined,
-                                                'inset',
-                                            ),
+                                            updateLine(styles, i, inset ?? undefined, 'inset'),
                                         );
                                     }}
                                 />
@@ -391,12 +341,7 @@ export const MultiStyleForm = ({
                                     value={line.width}
                                     onChange={(width) => {
                                         onChange(
-                                            updateLine(
-                                                styles,
-                                                i,
-                                                width ?? undefined,
-                                                'width',
-                                            ),
+                                            updateLine(styles, i, width ?? undefined, 'width'),
                                         );
                                     }}
                                 />
@@ -405,10 +350,7 @@ export const MultiStyleForm = ({
                                         <BlurInt
                                             value={
                                                 Math.round(
-                                                    pxToMM(
-                                                        line.width[0]! / 100,
-                                                        ppi,
-                                                    ) * 100,
+                                                    pxToMM(line.width[0]! / 100, ppi) * 100,
                                                 ) / 100
                                             }
                                             onChange={(v) =>
@@ -417,8 +359,7 @@ export const MultiStyleForm = ({
                                                           updateLine(
                                                               styles,
                                                               i,
-                                                              mmToPX(v, ppi) *
-                                                                  100,
+                                                              mmToPX(v, ppi) * 100,
                                                               'width',
                                                           ),
                                                       )
@@ -440,7 +381,7 @@ export const MultiStyleForm = ({
                                     }}
                                     icon="pi pi-trash"
                                     className=" p-button-sm p-button-text p-button-danger"
-                                    style={{ marginTop: -5, marginBottom: -6 }}
+                                    style={{marginTop: -5, marginBottom: -6}}
                                 />
                                 {single ? (
                                     <Button
@@ -462,9 +403,7 @@ export const MultiStyleForm = ({
                             <MultiColor
                                 color={line.color}
                                 onChange={(color) => {
-                                    onChange(
-                                        updateLine(styles, i, color, 'color'),
-                                    );
+                                    onChange(updateLine(styles, i, color, 'color'));
                                     // ok
                                 }}
                                 onHover={(color) =>
@@ -479,7 +418,7 @@ export const MultiStyleForm = ({
                                 palette={palette}
                                 key={i}
                             />
-                            <div style={{ flexBasis: 16 }} />
+                            <div style={{flexBasis: 16}} />
                             <div key={`lighten-${i}`}>
                                 <LightDark
                                     lighten={line.lighten}
@@ -498,19 +437,14 @@ export const MultiStyleForm = ({
                                     }
                                     onChange={(lighten) => {
                                         onChange(
-                                            updateLine(
-                                                styles,
-                                                i,
-                                                lighten ?? undefined,
-                                                'lighten',
-                                            ),
+                                            updateLine(styles, i, lighten ?? undefined, 'lighten'),
                                         );
                                     }}
                                 />
                             </div>
-                            <div style={{ flexBasis: 16 }} />
+                            <div style={{flexBasis: 16}} />
                             <div key={`stroke-${i}`}></div>
-                            <div style={{ flexBasis: 16 }} />
+                            <div style={{flexBasis: 16}} />
                             <div key={`inset-${i}`}></div>
                             <div
                                 style={{
@@ -534,7 +468,7 @@ export const MultiStyleForm = ({
                                         }}
                                     />
                                 </div>
-                                <div style={{ flexBasis: 16 }} />
+                                <div style={{flexBasis: 16}} />
                                 <div key={`opacity-${i}`}>
                                     opacity:
                                     <MultiNumber
@@ -566,10 +500,7 @@ export const MultiStyleForm = ({
                         (num, style) =>
                             Math.max(
                                 num,
-                                style.lines.reduce(
-                                    (n, f) => Math.max(n, f?.inset ?? 0),
-                                    0,
-                                ),
+                                style.lines.reduce((n, f) => Math.max(n, f?.inset ?? 0), 0),
                             ),
                         0,
                     );
@@ -578,20 +509,17 @@ export const MultiStyleForm = ({
                         styles.map((style, i) => {
                             const color =
                                 // @ts-ignore
-                                style.fills.findLast(
-                                    (f: Fill | null) => f?.color != null,
-                                )?.color ??
+                                style.fills.findLast((f: Fill | null) => f?.color != null)?.color ??
                                 // @ts-ignore
-                                style.lines.findLast(
-                                    (f: StyleLine | null) => f?.color != null,
-                                )?.color ??
+                                style.lines.findLast((f: StyleLine | null) => f?.color != null)
+                                    ?.color ??
                                 0;
                             const lines = style.lines.slice();
                             for (let i = lines.length; i < maxNum; i++) {
                                 lines.push(null);
                             }
-                            lines.push({ color, inset, width: 0 });
-                            return { ...style, lines };
+                            lines.push({color, inset, width: 0});
+                            return {...style, lines};
                         }),
                     );
                 }}
@@ -633,9 +561,7 @@ export const LightDark = ({
                         .map((color) => (
                             <div
                                 key={`${i}-${color}`}
-                                onClick={() =>
-                                    onChange(allSame === value ? null : value)
-                                }
+                                onClick={() => onChange(allSame === value ? null : value)}
                                 onMouseOver={() => onHover(value)}
                                 onMouseOut={() => onHover(null)}
                                 style={{
@@ -652,17 +578,12 @@ export const LightDark = ({
                                         (value === 0 && lighten.includes(null))
                                             ? `0 3px 0 ${
                                                   allSame === value ||
-                                                  (allSame == null &&
-                                                      value === 0)
+                                                  (allSame == null && value === 0)
                                                       ? 'white'
                                                       : 'orange'
                                               }`
                                             : 'none',
-                                    background: paletteColor(
-                                        palette,
-                                        color!,
-                                        value,
-                                    ),
+                                    background: paletteColor(palette, color!, value),
                                 }}
                                 css={{
                                     cursor: 'pointer',
@@ -723,8 +644,7 @@ export const getSingularLine = (line: MultiLine): StyleLine | null => {
     if (line.joinStyle.length > 1) return null;
     if (line.joinStyle.length) style.joinStyle = line.joinStyle[0] ?? undefined;
     if (line.colorVariation.length > 1) return null;
-    if (line.colorVariation.length)
-        style.colorVariation = line.colorVariation[0] ?? undefined;
+    if (line.colorVariation.length) style.colorVariation = line.colorVariation[0] ?? undefined;
     if (line.lighten.length > 1) return null;
     if (line.lighten.length) style.lighten = line.lighten[0] ?? undefined;
     return style;
@@ -754,10 +674,7 @@ export const mergeFills = (one: Fill, two: Fill | null): Fill =>
               lighten: two.lighten != null ? two.lighten : one.lighten,
           };
 
-export const mergeStyleLines = (
-    one: StyleLine,
-    two: null | StyleLine,
-): StyleLine =>
+export const mergeStyleLines = (one: StyleLine, two: null | StyleLine): StyleLine =>
     !two
         ? one
         : {
@@ -769,7 +686,7 @@ export const mergeStyleLines = (
           };
 
 export const mergeStyles = (one: Style, two: Style) => {
-    const result: Style = { fills: [], lines: [] };
+    const result: Style = {fills: [], lines: []};
     one.fills.forEach((fill, i) => {
         if (fill) {
             result.fills.push(mergeFills(fill, two.fills[i]));
@@ -819,11 +736,9 @@ export const MultiNumber = ({
     }, [text, value]);
     return (
         <input
-            value={
-                text ?? (value.length === 1 ? value[0] ?? '' : value.join(','))
-            }
+            value={text ?? (value.length === 1 ? (value[0] ?? '') : value.join(','))}
             onChange={(evt) => setText(evt.target.value)}
-            css={{ width: 50 }}
+            css={{width: 50}}
             onKeyDown={(evt) => {
                 if (evt.key === 'Enter') {
                     commit();
@@ -865,9 +780,7 @@ export const MultiColor = ({
                     onMouseOver={() => onHover(i)}
                     onMouseOut={() => onHover(null)}
                     style={{
-                        boxShadow: color.includes(i)
-                            ? `0 3px 0 ${highlight}`
-                            : 'none',
+                        boxShadow: color.includes(i) ? `0 3px 0 ${highlight}` : 'none',
                         // border: `2px solid ${
                         //     color.includes(i) ? highlight : '#444'
                         // }`,
@@ -898,13 +811,9 @@ export const MultiColor = ({
                     onMouseOut={() => onHover(null)}
                     style={{
                         background:
-                            name === 'transparent'
-                                ? `url("${transparent}")`
-                                : maybeUrlColor(name),
+                            name === 'transparent' ? `url("${transparent}")` : maybeUrlColor(name),
 
-                        boxShadow: color.includes(name)
-                            ? `0 3px 0 ${highlight}`
-                            : 'none',
+                        boxShadow: color.includes(name) ? `0 3px 0 ${highlight}` : 'none',
                     }}
                     css={{
                         border: 'none',
@@ -936,14 +845,8 @@ export const maybeUrlColor = (color: string) =>
 export function collectMultiStyles(styles: Style[]) {
     const fills: Array<MultiFill> = [];
     const lines: Array<MultiLine> = [];
-    const maxLines = styles.reduce(
-        (num, style) => Math.max(num, style.lines.length),
-        0,
-    );
-    const maxFills = styles.reduce(
-        (num, style) => Math.max(num, style.fills.length),
-        0,
-    );
+    const maxLines = styles.reduce((num, style) => Math.max(num, style.lines.length), 0);
+    const maxFills = styles.reduce((num, style) => Math.max(num, style.fills.length), 0);
     for (let i = 0; i < maxFills; i++) {
         fills.push({
             color: [],
@@ -982,7 +885,7 @@ export function collectMultiStyles(styles: Style[]) {
             addIfNew(lines[i].lighten, line?.lighten ?? null);
         });
     });
-    return { fills, lines };
+    return {fills, lines};
 }
 
 export function updateLine(
@@ -997,11 +900,11 @@ export function updateLine(
         }
         const lines = style.lines.slice();
         if (!lines[i]) {
-            lines[i] = { [key]: value };
+            lines[i] = {[key]: value};
         } else {
-            lines[i] = { ...lines[i], [key]: value };
+            lines[i] = {...lines[i], [key]: value};
         }
-        return { ...style, lines };
+        return {...style, lines};
     });
 }
 
@@ -1012,7 +915,7 @@ export function removeLine(styles: Style[], i: number): (Style | null)[] {
         }
         const lines = style.lines.slice();
         lines.splice(i, 1);
-        return { ...style, lines };
+        return {...style, lines};
     });
 }
 
@@ -1023,7 +926,7 @@ export function removeFill(styles: Style[], i: number): (Style | null)[] {
         }
         const fills = style.fills.slice();
         fills.splice(i, 1);
-        return { ...style, fills };
+        return {...style, fills};
     });
 }
 
@@ -1039,10 +942,10 @@ export function updateFill(
         }
         const fills = style.fills.slice();
         if (!fills[i]) {
-            fills[i] = { [key]: value };
+            fills[i] = {[key]: value};
         } else {
-            fills[i] = { ...fills[i], [key]: value };
+            fills[i] = {...fills[i], [key]: value};
         }
-        return { ...style, fills };
+        return {...style, fills};
     });
 }

@@ -1,49 +1,36 @@
 import * as React from 'react';
-import { ShowHitIntersection } from '../editor/ShowHitIntersection';
-import { RenderSegmentBasic } from '../editor/RenderSegment';
-import { Coord } from '../types';
-import { register } from '../vest';
-import { HitsInfo, intersectSegments, SegmentWithPrev } from './clipPathNew';
-import { SegmentEditor, useInitialState } from './SegmentEditor';
-import { HitTransitions, untangleHit } from './untangleHit';
-import {
-    arrow,
-    pointsList,
-    ShowHitIntersection2,
-} from '../editor/ShowHitIntersection2';
-import { coordsEqual } from './pathsAreIdentical';
-import { angleForSegment } from './clipPath';
+import {ShowHitIntersection} from '../editor/ShowHitIntersection';
+import {RenderSegmentBasic} from '../editor/RenderSegment';
+import {Coord} from '../types';
+import {register} from '../vest';
+import {HitsInfo, intersectSegments, SegmentWithPrev} from './clipPathNew';
+import {SegmentEditor, useInitialState} from './SegmentEditor';
+import {HitTransitions, untangleHit} from './untangleHit';
+import {arrow, pointsList, ShowHitIntersection2} from '../editor/ShowHitIntersection2';
+import {coordsEqual} from './pathsAreIdentical';
+import {angleForSegment} from './clipPath';
 
 type Input = Array<SegmentWithPrev>;
-type Output = { pair: HitTransitions; coord: Coord };
+type Output = {pair: HitTransitions; coord: Coord};
 
 const getHit = (hits: HitsInfo['hits']) => {
-    const keys = Object.keys(hits).sort(
-        (a, b) => hits[b].parties.length - hits[a].parties.length,
-    );
+    const keys = Object.keys(hits).sort((a, b) => hits[b].parties.length - hits[a].parties.length);
     if (!keys.length) {
         return null;
     }
     try {
         const hit = hits[keys[0]];
-        return { pair: untangleHit(hit.parties), coord: hit.coord };
+        return {pair: untangleHit(hit.parties), coord: hit.coord};
     } catch (e) {}
     return null;
 };
 
-const Editor = ({
-    initial,
-    onChange,
-}: {
-    initial: Input | null;
-    onChange: (i: Input) => void;
-}) => {
-    const [current, setCurrent] =
-        useInitialState<Array<SegmentWithPrev> | null>(initial);
+const Editor = ({initial, onChange}: {initial: Input | null; onChange: (i: Input) => void}) => {
+    const [current, setCurrent] = useInitialState<Array<SegmentWithPrev> | null>(initial);
 
     React.useEffect(() => {
         if (!current) return;
-        const { hits } = intersectSegments(current);
+        const {hits} = intersectSegments(current);
         if (getHit(hits) != null) {
             onChange(current);
         }
@@ -55,13 +42,13 @@ const Editor = ({
                 key={current?.length || '0'}
                 initial={null}
                 onChange={(seg) => {
-                    seg = { ...seg, shape: 0 };
+                    seg = {...seg, shape: 0};
                     const next = (current || []).concat([seg]);
                     setCurrent(next);
                 }}
             >
                 {(segment, rendered) => {
-                    const { hits } = intersectSegments(
+                    const {hits} = intersectSegments(
                         (current || []).concat(segment ? [segment] : []),
                     );
                     let hitt = getHit(hits);
@@ -74,22 +61,16 @@ const Editor = ({
                                         prev={current.prev}
                                         segment={current.segment}
                                         inner={{
-                                            stroke: ['red', 'green', 'blue'][
-                                                current.shape
-                                            ],
+                                            stroke: ['red', 'green', 'blue'][current.shape],
                                             strokeWidth: 2,
                                         }}
                                         zoom={1}
                                     />
                                     <SegmentArrows
-                                        color={
-                                            ['red', 'green', 'blue'][
-                                                current.shape
-                                            ]
-                                        }
+                                        color={['red', 'green', 'blue'][current.shape]}
                                         size={10}
                                         segment={current}
-                                        coord={hitt?.coord || { x: 0, y: 0 }}
+                                        coord={hitt?.coord || {x: 0, y: 0}}
                                     />
                                 </React.Fragment>
                             ))}
@@ -114,14 +95,14 @@ const Editor = ({
                     );
                 }}
             </SegmentEditor>
-            <div style={{ display: 'flex', flexWrap: 'wrap' }}>
+            <div style={{display: 'flex', flexWrap: 'wrap'}}>
                 {current?.map((c, i) => (
                     <div key={i}>
                         <div>Shape {i}</div>
                         <input
                             type="number"
                             value={c.shape}
-                            style={{ width: 50 }}
+                            style={{width: 50}}
                             onChange={(evt) =>
                                 setCurrent((c) => {
                                     c = c!.slice();
@@ -223,11 +204,7 @@ const SegmentArrows = ({
                     points={pointsList(
                         arrow(
                             segment.prev,
-                            angleForSegment(
-                                segment.prev,
-                                segment.segment,
-                                segment.prev,
-                            ).theta,
+                            angleForSegment(segment.prev, segment.segment, segment.prev).theta,
                             size,
                         ),
                     )}
@@ -239,11 +216,8 @@ const SegmentArrows = ({
                     points={pointsList(
                         arrow(
                             segment.segment.to,
-                            angleForSegment(
-                                segment.prev,
-                                segment.segment,
-                                segment.segment.to,
-                            ).theta,
+                            angleForSegment(segment.prev, segment.segment, segment.segment.to)
+                                .theta,
                             size,
                         ),
                     )}
@@ -259,7 +233,7 @@ register({
     id: 'untangleHit',
     dir: __dirname,
     transform: (segments: Input) => {
-        const { hits } = intersectSegments(segments);
+        const {hits} = intersectSegments(segments);
         const hit = getHit(hits);
         if (!hit) {
             throw new Error(`No valid intersection`);

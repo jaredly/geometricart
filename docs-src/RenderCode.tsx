@@ -1,18 +1,12 @@
 import * as React from 'react';
-import Highlight, { defaultProps } from 'prism-react-renderer';
-import {
-    DOC_COMMENT,
-    EXAMPLES,
-    FullToken,
-    organizeTokens,
-    SHOW,
-} from './organizeTokens';
-import { Info, ByStart, TraceOutput, getWidget, hasVisual } from './Fixtures';
+import Highlight, {defaultProps} from 'prism-react-renderer';
+import {DOC_COMMENT, EXAMPLES, FullToken, organizeTokens, SHOW} from './organizeTokens';
+import {Info, ByStart, TraceOutput, getWidget, hasVisual} from './Fixtures';
 
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
-import { widgets } from './functionWidgets';
+import {widgets} from './functionWidgets';
 
 export const RenderCode = React.memo(
     ({
@@ -28,31 +22,18 @@ export const RenderCode = React.memo(
     }: {
         source: string;
         info: Info;
-        pins: { [key: number]: boolean };
-        setPins: React.Dispatch<
-            React.SetStateAction<{ [key: number]: boolean }>
-        >;
+        pins: {[key: number]: boolean};
+        setPins: React.Dispatch<React.SetStateAction<{[key: number]: boolean}>>;
         byStart: ByStart;
         traceOutput: TraceOutput;
         hover: number | null;
         setHover: (id: number | null) => void;
-        examplesMatching: { [key: number]: JSX.Element };
+        examplesMatching: {[key: number]: JSX.Element};
     }) => {
         return (
             <Highlight {...defaultProps} code={source} language="tsx">
-                {({
-                    className,
-                    style,
-                    tokens: lines,
-                    getLineProps,
-                    getTokenProps,
-                }) => {
-                    const organized = organizeTokens(
-                        lines,
-                        byStart,
-                        traceOutput,
-                        info,
-                    );
+                {({className, style, tokens: lines, getLineProps, getTokenProps}) => {
+                    const organized = organizeTokens(lines, byStart, traceOutput, info);
                     return (
                         <pre
                             className={className}
@@ -93,9 +74,9 @@ const renderFull = (
     key: string,
     hover: number | null,
     onHover: (i: number | null) => void,
-    pins: { [key: number]: boolean },
-    setPins: React.Dispatch<React.SetStateAction<{ [key: number]: boolean }>>,
-    examplesMatching: { [key: number]: JSX.Element },
+    pins: {[key: number]: boolean},
+    setPins: React.Dispatch<React.SetStateAction<{[key: number]: boolean}>>,
+    examplesMatching: {[key: number]: JSX.Element},
     info: Info,
 ) => {
     return (
@@ -112,15 +93,10 @@ const renderFull = (
                       }
                     : undefined),
 
-                cursor:
-                    token.id != null && hasVisual(token.id, traceOutput)
-                        ? 'pointer'
-                        : 'unset',
+                cursor: token.id != null && hasVisual(token.id, traceOutput) ? 'pointer' : 'unset',
             }}
             className={
-                token.id != null && (token.id === hover || pins[token.id])
-                    ? 'underline-tokens'
-                    : ''
+                token.id != null && (token.id === hover || pins[token.id]) ? 'underline-tokens' : ''
             }
             onClick={
                 token.id && hasVisual(token.id, traceOutput)
@@ -195,7 +171,7 @@ const renderFull = (
                     traceOutput={traceOutput}
                 />
             ) : (
-                <span {...getTokenProps({ token: token.content })} />
+                <span {...getTokenProps({token: token.content})} />
             )}
         </span>
     );
@@ -234,31 +210,24 @@ function ShowLog({
             {open ? (
                 <>
                     <br />
-                    <div style={{ display: 'inline-flex', flexWrap: 'wrap' }}>
-                        {traceOutput[show.items[0]].values
-                            .slice(0, minCount)
-                            .map((_, i) => (
-                                <div key={i}>
-                                    <div
-                                        style={{
-                                            backgroundColor: 'black',
-                                            padding: '4px 8px',
-                                            borderRadius: 3,
-                                            margin: 4,
-                                        }}
-                                    >
-                                        {i + 1}
-                                    </div>
-                                    <div style={{ display: 'flex' }}>
-                                        {renderWidgets(
-                                            show,
-                                            traceOutput,
-                                            info,
-                                            i,
-                                        )}
-                                    </div>
+                    <div style={{display: 'inline-flex', flexWrap: 'wrap'}}>
+                        {traceOutput[show.items[0]].values.slice(0, minCount).map((_, i) => (
+                            <div key={i}>
+                                <div
+                                    style={{
+                                        backgroundColor: 'black',
+                                        padding: '4px 8px',
+                                        borderRadius: 3,
+                                        margin: 4,
+                                    }}
+                                >
+                                    {i + 1}
                                 </div>
-                            ))}
+                                <div style={{display: 'flex'}}>
+                                    {renderWidgets(show, traceOutput, info, i)}
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 </>
             ) : null}
@@ -266,7 +235,7 @@ function ShowLog({
     );
 }
 function renderWidgets(
-    show: { start: number; end: number; items: number[] },
+    show: {start: number; end: number; items: number[]},
     traceOutput: TraceOutput,
     info: Info,
     index: number,
@@ -284,8 +253,7 @@ function renderWidgets(
                     margin: 4,
                 }}
             >
-                {info.expressions[id].type &&
-                widgets[info.expressions[id].type!.type] ? (
+                {info.expressions[id].type && widgets[info.expressions[id].type!.type] ? (
                     widgets[info.expressions[id].type!.type](
                         traceOutput[id].values[index],
                         null,

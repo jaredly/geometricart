@@ -1,15 +1,15 @@
 import React from 'react';
-import { reducer } from './state/reducer';
-import { Hover } from './editor/Sidebar';
-import { Coord, Id, State } from './types';
-import { PendingDuplication } from './editor/Guides';
-import { StyleHover } from './editor/MultiStyleForm';
-import { Action } from './state/Action';
+import {reducer} from './state/reducer';
+import {Hover} from './editor/Sidebar';
+import {Coord, Id, State} from './types';
+import {PendingDuplication} from './editor/Guides';
+import {StyleHover} from './editor/MultiStyleForm';
+import {Action} from './state/Action';
 
 export type UIState = {
     screen: Screen;
     clipboard?:
-        | { type: 'circle'; radius: number }
+        | {type: 'circle'; radius: number}
         | {
               type: 'line';
               dx: number;
@@ -35,25 +35,17 @@ export type PendingMirror = {
     reflect: boolean;
     parent: Id | null;
 };
-export type Screen =
-    | 'edit'
-    | 'animate'
-    | 'gcode'
-    | 'history'
-    | 'overlay'
-    | '3d';
+export type Screen = 'edit' | 'animate' | 'gcode' | 'history' | 'overlay' | '3d';
 
 type UIAction =
-    | { type: 'screen'; screen: UIState['screen'] }
-    | { type: 'hover'; hover: UIState['hover'] }
-    | { type: 'styleHover'; styleHover: UIState['styleHover'] }
+    | {type: 'screen'; screen: UIState['screen']}
+    | {type: 'hover'; hover: UIState['hover']}
+    | {type: 'styleHover'; styleHover: UIState['styleHover']}
     | {
           type: 'pendingMirror';
           pendingMirror:
               | UIState['pendingMirror']
-              | ((
-                    previous: UIState['pendingMirror'],
-                ) => UIState['pendingMirror']);
+              | ((previous: UIState['pendingMirror']) => UIState['pendingMirror']);
       }
     | {
           type: 'pendingDuplication';
@@ -63,18 +55,16 @@ type UIAction =
           type: 'previewActions';
           previewActions:
               | UIState['previewActions']
-              | ((
-                    previous: UIState['previewActions'],
-                ) => UIState['previewActions']);
+              | ((previous: UIState['previewActions']) => UIState['previewActions']);
       };
 const reduceUIState = (state: UIState, action: UIAction): UIState => {
     switch (action.type) {
         case 'screen':
-            return { ...state, screen: action.screen };
+            return {...state, screen: action.screen};
         case 'hover':
-            return { ...state, hover: action.hover };
+            return {...state, hover: action.hover};
         case 'styleHover':
-            return { ...state, styleHover: action.styleHover };
+            return {...state, styleHover: action.styleHover};
         case 'pendingMirror':
             return {
                 ...state,
@@ -84,7 +74,7 @@ const reduceUIState = (state: UIState, action: UIAction): UIState => {
                         : action.pendingMirror,
             };
         case 'pendingDuplication':
-            return { ...state, pendingDuplication: action.pendingDuplication };
+            return {...state, pendingDuplication: action.pendingDuplication};
         case 'previewActions':
             return {
                 ...state,
@@ -100,7 +90,7 @@ export type UIDispatch = React.Dispatch<UIAction>;
 
 export const useUIState = (trueState: State) => {
     const [uiState, uiDispatch] = React.useReducer(reduceUIState, {
-        screen: 'edit', // 'history', // 'edit',
+        screen: 'edit', // 'edit', // '3d',
         hover: null,
         styleHover: null,
         pendingMirror: null,
@@ -110,29 +100,16 @@ export const useUIState = (trueState: State) => {
 
     const updateUIState = <T,>(attr: keyof UIState): ((value: T) => void) => {
         return (value: T) => {
-            uiDispatch({ type: attr, [attr]: value } as any);
+            uiDispatch({type: attr, [attr]: value} as any);
         };
     };
 
-    const setScreen = React.useCallback(
-        updateUIState<UIState['screen']>('screen'),
-        [],
-    );
-    const setHover = React.useCallback(
-        updateUIState<UIState['hover']>('hover'),
-        [],
-    );
-    const setStyleHover = React.useCallback(
-        updateUIState<UIState['styleHover']>('styleHover'),
-        [],
-    );
+    const setScreen = React.useCallback(updateUIState<UIState['screen']>('screen'), []);
+    const setHover = React.useCallback(updateUIState<UIState['hover']>('hover'), []);
+    const setStyleHover = React.useCallback(updateUIState<UIState['styleHover']>('styleHover'), []);
     const setPendingMirror = React.useCallback(
-        (
-            pendingMirror: Extract<
-                UIAction,
-                { type: 'pendingMirror' }
-            >['pendingMirror'],
-        ) => uiDispatch({ type: 'pendingMirror', pendingMirror }),
+        (pendingMirror: Extract<UIAction, {type: 'pendingMirror'}>['pendingMirror']) =>
+            uiDispatch({type: 'pendingMirror', pendingMirror}),
         [],
     );
     const setPendingDuplication = React.useCallback(
@@ -140,12 +117,8 @@ export const useUIState = (trueState: State) => {
         [],
     );
     const setPreviewActions = React.useCallback(
-        (
-            previewActions: Extract<
-                UIAction,
-                { type: 'previewActions' }
-            >['previewActions'],
-        ) => uiDispatch({ type: 'previewActions', previewActions }),
+        (previewActions: Extract<UIAction, {type: 'previewActions'}>['previewActions']) =>
+            uiDispatch({type: 'previewActions', previewActions}),
         [],
     );
     const state = applyActions(uiState.previewActions, trueState);
@@ -155,10 +128,7 @@ export const useUIState = (trueState: State) => {
         setPendingMirror(null);
     }, [state.mirrors, state.guides]);
 
-    if (
-        uiState.pendingMirror &&
-        uiState.pendingMirror.parent !== state.activeMirror
-    ) {
+    if (uiState.pendingMirror && uiState.pendingMirror.parent !== state.activeMirror) {
         uiState.pendingMirror.parent = state.activeMirror;
     }
 

@@ -1,15 +1,15 @@
 /* @jsx jsx */
 /* @jsxFrag React.Fragment */
-import { jsx } from '@emotion/react';
-import { encodeChunks, extractChunks, insertMetadata } from 'png-metadata';
+import {jsx} from '@emotion/react';
+import {encodeChunks, extractChunks, insertMetadata} from 'png-metadata';
 import React from 'react';
-import { canvasRender, paletteImages } from '../rendering/CanvasRender';
-import { transparent } from './Icons';
-import { setup } from './RenderWebGL';
-import { initialHistory } from '../state/initialState';
-import { texture1, texture2 } from '../rendering/textures';
-import { State, TextureConfig } from '../types';
-import { cacheOverlays } from '../history/HistoryPlayback';
+import {canvasRender, paletteImages} from '../rendering/CanvasRender';
+import {transparent} from './Icons';
+import {setup} from './RenderWebGL';
+import {initialHistory} from '../state/initialState';
+import {texture1, texture2} from '../rendering/textures';
+import {State, TextureConfig} from '../types';
+import {cacheOverlays} from '../history/HistoryPlayback';
 
 export function ExportPng({
     state,
@@ -31,15 +31,11 @@ export function ExportPng({
     const [size, setSize] = React.useState(3000);
 
     return (
-        <div css={{ marginTop: 16, border: '1px solid #aaa', padding: 8 }}>
+        <div css={{marginTop: 16, border: '1px solid #aaa', padding: 8}}>
             Width (px):{' '}
-            <input
-                type="number"
-                value={size}
-                onChange={(evt) => setSize(+evt.target.value)}
-            />
+            <input type="number" value={size} onChange={(evt) => setSize(+evt.target.value)} />
             <button
-                css={{ marginTop: 16, display: 'block' }}
+                css={{marginTop: 16, display: 'block'}}
                 onClick={async () => {
                     const blob = await exportPNG(
                         size,
@@ -87,7 +83,7 @@ export function ExportPng({
                             backgroundSize: 40,
                         }}
                     >
-                        <img css={{ maxHeight: 400 }} src={png} />
+                        <img css={{maxHeight: 400}} src={png} />
                     </div>
                 </div>
             ) : null}
@@ -134,7 +130,7 @@ export async function exportPNG(
             if (embed) {
                 blob = await addMetadata(
                     blob,
-                    history ? state : { ...state, history: initialHistory },
+                    history ? state : {...state, history: initialHistory},
                 );
             }
             res(blob);
@@ -150,7 +146,7 @@ export function renderTexture(
 ) {
     const fns: {
         [key: string]: (scale: number, intensity: number) => string;
-    } = { texture1: texture1, texture2: texture2 };
+    } = {texture1: texture1, texture2: texture2};
     const fn = fns[textureConfig.id];
     if (fn) {
         const texture = document.createElement('canvas');
@@ -160,24 +156,13 @@ export function renderTexture(
         if (!gl) {
             throw new Error(`unable to get webgl context`);
         }
-        setup(
-            gl,
-            fn(
-                (textureConfig.scale * size) / originalSize,
-                textureConfig.intensity,
-            ),
-            0,
-        );
+        setup(gl, fn((textureConfig.scale * size) / originalSize, textureConfig.intensity), 0);
 
         ctx.drawImage(texture, 0, 0);
     }
 }
 
-export async function addMetadata(
-    blob: Blob | null,
-    state: State,
-    gcode?: string,
-) {
+export async function addMetadata(blob: Blob | null, state: State, gcode?: string) {
     const buffer = await blob!.arrayBuffer();
     const uint8Array = new Uint8Array(buffer);
     const raw = JSON.stringify(state).replaceAll(/[^\u0000-\u007f]/g, '*');

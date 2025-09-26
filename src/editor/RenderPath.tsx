@@ -1,30 +1,44 @@
 import Prando from 'prando';
 import * as React from 'react';
-import { RoughGenerator } from 'roughjs/bin/generator';
-import { rgbToHsl } from '../rendering/colorConvert';
-import { angleBetween } from '../rendering/findNextSegments';
-import { angleTo, dist, push } from '../rendering/getMirrorTransforms';
-import { Primitive } from '../rendering/intersect';
-import { Coord, Path, PathGroup, Segment, State } from '../types';
-import { StyleHover } from './MultiStyleForm';
-import { useTouchClick } from './RenderIntersections';
+// import {RoughGenerator} from 'roughjs/bin/generator';
+import {rgbToHsl} from '../rendering/colorConvert';
+import {angleBetween} from '../rendering/findNextSegments';
+import {angleTo, dist, push} from '../rendering/getMirrorTransforms';
+import {Primitive} from '../rendering/intersect';
+import {Coord, Path, PathGroup, Segment, State} from '../types';
+import {StyleHover} from './MultiStyleForm';
+import {useTouchClick} from './RenderIntersections';
 // import { DebugOrigPath } from './DebugOrigPath';
-import { MenuItem } from './Canvas';
-import { Action } from '../state/Action';
-import { normalizedPath } from '../rendering/sortedVisibleInsetPaths';
-import { pathToSegmentKeys } from '../rendering/pathsAreIdentical';
-import { segmentsCenter } from './Bounds';
-import { calcPathD } from './calcPathD';
+import {MenuItem} from './Canvas';
+import {Action} from '../state/Action';
+import {normalizedPath} from '../rendering/sortedVisibleInsetPaths';
+import {pathToSegmentKeys} from '../rendering/pathsAreIdentical';
+import {segmentsCenter} from './Bounds';
+import {calcPathD} from './calcPathD';
 
-export const UnderlinePath = ({
-    path,
-    zoom,
-    color,
-}: {
-    path: Path;
-    zoom: number;
-    color: string;
-}) => {
+export class RoughGenerator {
+    path(raw: string, options: any): 'path' {
+        return 'path';
+    }
+    toPaths(paths: 'path'): {stroke: string; d: string; fill: string; strokeWidth: string}[] {
+        return [];
+    }
+}
+
+export class RoughCanvas extends RoughGenerator {
+    generator: RoughGenerator;
+    constructor(canvas: any) {
+        super();
+        this.generator = null as any;
+    }
+}
+
+// export type RoughGenerator = {
+//     path: (raw: string, options: any) => 'path';
+//     toPaths: (paths: 'path') => {stroke: string; d: string; fill: string; strokeWidth: string}[];
+// };
+
+export const UnderlinePath = ({path, zoom, color}: {path: Path; zoom: number; color: string}) => {
     const d = calcPathD(path, zoom);
 
     return (
@@ -33,7 +47,7 @@ export const UnderlinePath = ({
             // strokeWidth={2}
             strokeWidth={4}
             stroke={color}
-            style={{ pointerEvents: 'none' }}
+            style={{pointerEvents: 'none'}}
             // fill="white"
             fill="none"
             strokeDasharray="5 10"
@@ -67,10 +81,10 @@ const RenderPathMemo = ({
     origPath?: Path;
     generator?: RoughGenerator;
     styleHover: StyleHover | null;
-    clip?: { prims: Array<Primitive>; segments: Array<Segment> } | null;
+    clip?: {prims: Array<Primitive>; segments: Array<Segment>} | null;
     zoom: number;
     sketchiness: number | undefined;
-    groups: { [key: string]: PathGroup };
+    groups: {[key: string]: PathGroup};
     onClick?: (shiftKey: boolean, id: string) => void;
     palette: Array<string>;
 }) => {
@@ -79,9 +93,7 @@ const RenderPathMemo = ({
         // console.log('DEBUG', path, d);
     }
     const style = path.style;
-    const handlers = useTouchClick<null>(() =>
-        onClick ? onClick(false, path.id) : null,
-    );
+    const handlers = useTouchClick<null>(() => (onClick ? onClick(false, path.id) : null));
 
     // const insetPaths =
     //
@@ -103,9 +115,7 @@ const RenderPathMemo = ({
                       cursor: 'pointer',
                   }
                 : {},
-            onMouseDown: onClick
-                ? (evt: React.MouseEvent) => evt.preventDefault()
-                : undefined,
+            onMouseDown: onClick ? (evt: React.MouseEvent) => evt.preventDefault() : undefined,
             fill: color,
             onClick: onClick
                 ? (evt: React.MouseEvent) => {
@@ -135,9 +145,9 @@ const RenderPathMemo = ({
         let raw = d;
         // let newPath = path;
 
-        let pathInfos = [{ path, raw }];
+        let pathInfos = [{path, raw}];
 
-        return pathInfos.map(({ path: newPath, raw }, k) => {
+        return pathInfos.map(({path: newPath, raw}, k) => {
             if (generator && sketchiness && sketchiness > 0) {
                 const p = generator.path(raw, {
                     fill: common.fill,
@@ -158,15 +168,10 @@ const RenderPathMemo = ({
                             contextMenu
                                 ? (evt) => {
                                       evt.preventDefault();
-                                      const { state, dispatch, showMenu } =
-                                          contextMenu;
+                                      const {state, dispatch, showMenu} = contextMenu;
                                       showMenu(
                                           evt,
-                                          itemsForPath(
-                                              origPath ?? path,
-                                              state,
-                                              dispatch,
-                                          ),
+                                          itemsForPath(origPath ?? path, state, dispatch),
                                       );
                                   }
                                 : undefined
@@ -185,15 +190,10 @@ const RenderPathMemo = ({
                             contextMenu
                                 ? (evt) => {
                                       evt.preventDefault();
-                                      const { state, dispatch, showMenu } =
-                                          contextMenu;
+                                      const {state, dispatch, showMenu} = contextMenu;
                                       showMenu(
                                           evt,
-                                          itemsForPath(
-                                              origPath ?? path,
-                                              state,
-                                              dispatch,
-                                          ),
+                                          itemsForPath(origPath ?? path, state, dispatch),
                                       );
                                   }
                                 : undefined
@@ -234,11 +234,8 @@ const RenderPathMemo = ({
             onContextMenu: contextMenu
                 ? (evt: React.MouseEvent) => {
                       evt.preventDefault();
-                      const { state, dispatch, showMenu } = contextMenu;
-                      showMenu(
-                          evt,
-                          itemsForPath(origPath ?? path, state, dispatch),
-                      );
+                      const {state, dispatch, showMenu} = contextMenu;
+                      showMenu(evt, itemsForPath(origPath ?? path, state, dispatch));
                   }
                 : undefined,
             style: onClick
@@ -248,15 +245,9 @@ const RenderPathMemo = ({
                 : {},
             ...handlers(null),
             strokeWidth: line.width ? (line.width / 100) * zoom : 2,
-            onMouseDown: onClick
-                ? (evt: React.MouseEvent) => evt.preventDefault()
-                : undefined,
+            onMouseDown: onClick ? (evt: React.MouseEvent) => evt.preventDefault() : undefined,
         };
-        if (
-            path.segments.length === 1 &&
-            path.segments[0].type === 'Arc' &&
-            !path.open
-        ) {
+        if (path.segments.length === 1 && path.segments[0].type === 'Arc' && !path.open) {
             let r = dist(path.segments[0].center, path.segments[0].to);
             if (line.inset) {
                 r -= line.inset / 100;
@@ -272,9 +263,9 @@ const RenderPathMemo = ({
             );
         }
 
-        let pathInfos = [{ path, raw: d }];
+        let pathInfos = [{path, raw: d}];
 
-        return pathInfos.map(({ raw }, k) => {
+        return pathInfos.map(({raw}, k) => {
             if (generator && sketchiness && sketchiness > 0) {
                 const p = generator.path(raw, {
                     fill: 'none',
@@ -299,14 +290,7 @@ const RenderPathMemo = ({
                 ));
             }
 
-            return (
-                <path
-                    d={raw}
-                    data-id={path.id}
-                    {...common}
-                    key={`line-info-${i}-${k}`}
-                />
-            );
+            return <path d={raw} data-id={path.id} {...common} key={`line-info-${i}-${k}`} />;
         });
     });
     return (
@@ -334,11 +318,7 @@ const normalizedKey = (path: Path) => {
     return pathToSegmentKeys(norm[0][norm[0].length - 1].to, norm[0]).join(':');
 };
 
-const selectPathIds = (
-    state: State,
-    event: React.MouseEvent,
-    ids: string[],
-): Action => {
+const selectPathIds = (state: State, event: React.MouseEvent, ids: string[]): Action => {
     return {
         type: 'selection:set',
         selection: {
@@ -351,11 +331,7 @@ const selectPathIds = (
     };
 };
 
-export const itemsForPath = (
-    path: Path,
-    state: State,
-    dispatch: (action: Action) => void,
-) => {
+export const itemsForPath = (path: Path, state: State, dispatch: (action: Action) => void) => {
     console.log('ok', path);
     const select: MenuItem[] = [];
 
@@ -363,7 +339,7 @@ export const itemsForPath = (
     if (key) {
         select.push({
             label: 'By shape',
-            command({ originalEvent }) {
+            command({originalEvent}) {
                 const ids = Object.keys(state.paths).filter(
                     (k) => normalizedKey(state.paths[k]) === key,
                 );
@@ -388,7 +364,7 @@ export const itemsForPath = (
             dispatch({
                 type: 'path:update',
                 id: path.id,
-                path: { ...path, debug: !path.debug },
+                path: {...path, debug: !path.debug},
             });
         },
     });
@@ -404,11 +380,9 @@ export const itemsForPath = (
                         by fill
                     </span>
                 ),
-                command({ originalEvent }) {
+                command({originalEvent}) {
                     const ids = Object.keys(state.paths).filter((id) =>
-                        state.paths[id].style.fills.find(
-                            (fill) => fill && fill.color === color,
-                        ),
+                        state.paths[id].style.fills.find((fill) => fill && fill.color === color),
                     );
                     dispatch(selectPathIds(state, originalEvent, ids));
                 },
@@ -427,11 +401,9 @@ export const itemsForPath = (
                         by line
                     </span>
                 ),
-                command({ originalEvent }) {
+                command({originalEvent}) {
                     const ids = Object.keys(state.paths).filter((id) =>
-                        state.paths[id].style.lines.find(
-                            (line) => line && line.color === color,
-                        ),
+                        state.paths[id].style.lines.find((line) => line && line.color === color),
                     );
                     dispatch(selectPathIds(state, originalEvent, ids));
                 },
@@ -442,11 +414,11 @@ export const itemsForPath = (
     const items: MenuItem[] = [];
     items.push({
         label: 'Center on this shape',
-        command({ originalEvent }) {
+        command({originalEvent}) {
             const center = segmentsCenter(path.segments);
             dispatch({
                 type: 'view:update',
-                view: { ...state.view, center: { x: -center.x, y: -center.y } },
+                view: {...state.view, center: {x: -center.x, y: -center.y}},
             });
         },
     });
@@ -470,7 +442,7 @@ export const emptyPath: Path = {
     },
     clipMode: 'normal',
     segments: [],
-    origin: { x: 0, y: 0 },
+    origin: {x: 0, y: 0},
 };
 
 export const pathSegs = (segments: Array<Segment>): Path => ({
@@ -511,9 +483,9 @@ export const lightenedColor = (
                 const g = parseInt(raw.slice(3, 5), 16);
                 const b = parseInt(raw.slice(5), 16);
                 let [h, s, l] = rgbToHsl(r, g, b);
-                return `hsl(${(h * 360).toFixed(3)}, ${(s * 100).toFixed(
-                    3,
-                )}%, ${((l + lighten * 0.1) * 100).toFixed(3)}%)`;
+                return `hsl(${(h * 360).toFixed(3)}, ${(s * 100).toFixed(3)}%, ${(
+                    (l + lighten * 0.1) * 100
+                ).toFixed(3)}%)`;
             }
         }
     }
@@ -560,13 +532,7 @@ export function colorSquare(full: string | undefined, i: number) {
     );
 }
 
-export function segmentArrow(
-    prev: Coord,
-    i: number,
-    seg: Segment,
-    zoom = 1,
-    size = 2,
-) {
+export function segmentArrow(prev: Coord, i: number, seg: Segment, zoom = 1, size = 2) {
     let mid;
     if (seg.type === 'Line') {
         mid = {
@@ -578,13 +544,9 @@ export function segmentArrow(
     } else {
         const t0 = angleTo(seg.center, prev);
         const tb = angleBetween(t0, angleTo(seg.center, seg.to), seg.clockwise);
-        mid = push(
-            seg.center,
-            t0 + (tb / 2) * (seg.clockwise ? 1 : -1),
-            dist(seg.center, seg.to),
-        );
+        mid = push(seg.center, t0 + (tb / 2) * (seg.clockwise ? 1 : -1), dist(seg.center, seg.to));
     }
-    mid = { x: mid.x * zoom, y: mid.y * zoom };
+    mid = {x: mid.x * zoom, y: mid.y * zoom};
     const theta = angleTo(prev, seg.to);
     const show = (p: Coord) => `${p.x.toFixed(2)},${p.y.toFixed(2)}`;
     return (

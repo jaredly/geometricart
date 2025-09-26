@@ -1,14 +1,12 @@
 import * as React from 'react';
 import localforage from 'localforage';
-import { stateFileName } from './gists';
+import {stateFileName} from './gists';
 
 export const useGists = () => {
-    const urlToken = new URLSearchParams(window.location.search).get(
-        'access_token',
-    );
+    const urlToken = new URLSearchParams(window.location.search).get('access_token');
     const token = urlToken ?? localStorage.github_access_token;
     if (!token) {
-        return { token: null, gists: null };
+        return {token: null, gists: null};
     }
     if (token !== localStorage.github_access_token) {
         localStorage.github_access_token = token;
@@ -21,7 +19,7 @@ export const useGists = () => {
             history.pushState({}, '', window.location.pathname);
         }
         localforage.getItem(gistCache).then((data) => {
-            const cached = data as null | { time: number; gists: SmallGist[] };
+            const cached = data as null | {time: number; gists: SmallGist[]};
             if (cached && cached.time > Date.now() - 1000 * 60 * 60) {
                 setGists(cached.gists);
             } else {
@@ -36,8 +34,7 @@ export const useGists = () => {
                         gists
                             .filter(
                                 (gist: Gist) =>
-                                    gist.files['preview.png'] &&
-                                    gist.files[stateFileName],
+                                    gist.files['preview.png'] && gist.files[stateFileName],
                             )
                             .map((gist: Gist) => ({
                                 id: gist.id,
@@ -62,7 +59,7 @@ export const useGists = () => {
         });
     }, []);
 
-    return { token, gists };
+    return {token, gists};
 };
 
 export type SmallGist = {

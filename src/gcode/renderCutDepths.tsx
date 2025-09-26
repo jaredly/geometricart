@@ -1,5 +1,5 @@
-import { angleTo, push } from '../rendering/getMirrorTransforms';
-import { GCodeData, Tool } from './Visualize';
+import {angleTo, push} from '../rendering/getMirrorTransforms';
+import {GCodeData, Tool} from './Visualize';
 
 export function renderCutDepths(
     ctx: CanvasRenderingContext2D,
@@ -14,9 +14,9 @@ export function renderCutDepths(
     const depth = 0 - data.bounds.min.z!;
 
     const vBit = false;
-    let tool: Tool = { diameter: 3 };
+    let tool: Tool = {diameter: 3};
 
-    data.toolPaths.forEach(({ tool, positions }) => {
+    data.toolPaths.forEach(({tool, positions}) => {
         ctx.lineWidth = tool.diameter;
         if (!tool.vbit) {
             ctx.lineJoin = 'round';
@@ -27,8 +27,7 @@ export function renderCutDepths(
                         ctx.stroke();
                     }
                     z = pos.z;
-                    const zDepth =
-                        (Math.min(0, z) - data.bounds.min.z!) / depth;
+                    const zDepth = (Math.min(0, z) - data.bounds.min.z!) / depth;
                     ctx.strokeStyle = forDepthMap
                         ? `rgb(${Math.round(zDepth * 255)}, 0, 0)`
                         : `hsl(0, 100%, ${Math.round(zDepth * 100)}%)`;
@@ -100,7 +99,7 @@ export function renderCutDepths(
 
 export function circleGradient(
     ctx: CanvasRenderingContext2D,
-    last: { x: number; y: number },
+    last: {x: number; y: number},
     radius: number,
 ) {
     return ctx.createRadialGradient(last.x, last.y, 0, last.x, last.y, radius);

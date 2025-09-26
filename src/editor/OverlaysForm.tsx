@@ -1,21 +1,15 @@
 /* @jsx jsx */
 /* @jsxFrag React.Fragment */
 import * as React from 'react';
-import { jsx } from '@emotion/react';
-import { State } from '../types';
-import { Action } from '../state/Action';
-import { useDropTarget } from './useDropTarget';
-import { Float, Int, Toggle } from './Forms';
-import { Button } from 'primereact/button';
-import { DeleteForeverIcon } from '../icons/Icon';
+import {jsx} from '@emotion/react';
+import {State} from '../types';
+import {Action} from '../state/Action';
+import {useDropTarget} from './useDropTarget';
+import {Float, Int, Toggle} from './Forms';
+import {Button} from 'primereact/button';
+import {DeleteForeverIcon} from '../icons/Icon';
 
-export const OverlaysForm = ({
-    state,
-    dispatch,
-}: {
-    state: State;
-    dispatch: (a: Action) => void;
-}) => {
+export const OverlaysForm = ({state, dispatch}: {state: State; dispatch: (a: Action) => void}) => {
     const [dragging, callbacks] = useDropTarget((file) => {
         var reader = new FileReader();
         reader.readAsDataURL(file);
@@ -65,8 +59,7 @@ export const OverlaysForm = ({
                             borderBottom: '1px solid var(--surface-border)',
                         }}
                         style={
-                            state.selection?.type === 'Overlay' &&
-                            state.selection.ids.includes(id)
+                            state.selection?.type === 'Overlay' && state.selection.ids.includes(id)
                                 ? {
                                       border: '1px solid white',
                                   }
@@ -75,16 +68,13 @@ export const OverlaysForm = ({
                         onClick={() => {
                             dispatch({
                                 type: 'selection:set',
-                                selection: { type: 'Overlay', ids: [id] },
+                                selection: {type: 'Overlay', ids: [id]},
                             });
                         }}
                     >
                         <img
-                            src={
-                                state.attachments[state.overlays[id].source]
-                                    .contents
-                            }
-                            style={{ maxWidth: 200, maxHeight: 200 }}
+                            src={state.attachments[state.overlays[id].source].contents}
+                            style={{maxWidth: 200, maxHeight: 200}}
                         />
                         <div className="p-2">
                             <Toggle
@@ -143,9 +133,9 @@ export const OverlaysForm = ({
                     </div>
                 ))}
             </div>
-            <div css={{ margin: 8 }}>
-                Attachments: Drag &amp; drop an image on here to attach an image
-                for use as an overlay.
+            <div css={{margin: 8}}>
+                Attachments: Drag &amp; drop an image on here to attach an image for use as an
+                overlay.
             </div>
             <div
                 css={{
@@ -156,13 +146,10 @@ export const OverlaysForm = ({
                 }}
             >
                 {Object.keys(state.attachments).map((id) => (
-                    <div
-                        key={id}
-                        css={{ display: 'flex', flexDirection: 'column' }}
-                    >
+                    <div key={id} css={{display: 'flex', flexDirection: 'column'}}>
                         <img
                             src={state.attachments[id].contents}
-                            style={{ maxWidth: 200, maxHeight: 200 }}
+                            style={{maxWidth: 200, maxHeight: 200}}
                         />
                         <button
                             onClick={() => {

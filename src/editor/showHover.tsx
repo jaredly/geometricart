@@ -1,33 +1,67 @@
 /* @jsx jsx */
 /* @jsxFrag React.Fragment */
-import { jsx } from '@emotion/react';
+import {jsx} from '@emotion/react';
 import * as React from 'react';
-import { geomsForGiude } from '../rendering/calculateGuideElements';
+import {geomsForGiude} from '../rendering/calculateGuideElements';
 import {
     applyMatrices,
     getTransformsForNewMirror,
     Matrix,
     reverseTransform,
 } from '../rendering/getMirrorTransforms';
-import { geomToPrimitives, transformBarePath } from '../rendering/points';
-import { Mirror, State } from '../types';
-import { Bounds } from './GuideElement';
-import { RenderMirror } from './RenderMirror';
-import { emptyPath, UnderlinePath } from './RenderPath';
-import { RenderPrimitive } from './RenderPrimitive';
-import { Hover } from './Sidebar';
-import { eigenShapesToLines, getTransform, tilingPoints } from './tilingPoints';
-import { calcPathD, calcSegmentsD } from './calcPathD';
+import {geomToPrimitives, transformBarePath} from '../rendering/points';
+import {Mirror, State} from '../types';
+import {Bounds} from './GuideElement';
+import {RenderMirror} from './RenderMirror';
+import {emptyPath, UnderlinePath} from './RenderPath';
+import {RenderPrimitive} from './RenderPrimitive';
+import {Hover} from './Sidebar';
+import {eigenShapesToLines, getTransform, tilingPoints} from './tilingPoints';
+import {calcPathD, calcSegmentsD} from './calcPathD';
 
 export const showHover = (
     key: string,
     hover: Hover,
     state: State,
-    mirrorTransforms: { [key: string]: Array<Array<Matrix>> },
+    mirrorTransforms: {[key: string]: Array<Array<Matrix>>},
     zoom: number,
     bounds: Bounds,
     selection: boolean,
 ) => {
+    if (hover.type === 'guides' && hover.ids?.length) {
+        console.log('got ids');
+        return hover.ids.map((id) =>
+            geomsForGiude(
+                state.guides[id],
+                typeof state.guides[id].mirror === 'string'
+                    ? mirrorTransforms[state.guides[id].mirror as string]
+                    : state.guides[id].mirror
+                      ? getTransformsForNewMirror(state.guides[id].mirror as Mirror)
+                      : null,
+            ).map((geom, j) =>
+                geomToPrimitives(geom.geom).flatMap((prim, i) => [
+                    <RenderPrimitive
+                        bounds={bounds}
+                        prim={prim}
+                        strokeWidth={10}
+                        color={'red'}
+                        zoom={zoom}
+                        key={`${key}:${id}:${j}:${i}-bg`}
+                        lineCap
+                    />,
+                    <RenderPrimitive
+                        bounds={bounds}
+                        prim={prim}
+                        strokeWidth={4}
+                        color={state.guides[id].active ? '#ccc' : 'rgba(102,102,102,0.5)'}
+                        zoom={zoom}
+                        key={`${key}:${id}:${j}:${i}-fg`}
+                    />,
+                ]),
+            ),
+        );
+    }
+
     if (hover.type !== 'element') {
         return null;
     }
@@ -51,12 +85,7 @@ export const showHover = (
                 return;
             }
             return (
-                <UnderlinePath
-                    path={state.paths[hover.id]}
-                    zoom={zoom}
-                    color={color}
-                    key={key}
-                />
+                <UnderlinePath path={state.paths[hover.id]} zoom={zoom} color={color} key={key} />
             );
         }
         case 'PathGroup': {
@@ -84,10 +113,8 @@ export const showHover = (
                 typeof state.guides[hover.id].mirror === 'string'
                     ? mirrorTransforms[state.guides[hover.id].mirror as string]
                     : state.guides[hover.id].mirror
-                    ? getTransformsForNewMirror(
-                          state.guides[hover.id].mirror as Mirror,
-                      )
-                    : null,
+                      ? getTransformsForNewMirror(state.guides[hover.id].mirror as Mirror)
+                      : null,
 
                 // state.guides[hover.id].mirror
                 //     ? mirrorTransforms[state.guides[hover.id].mirror!]
@@ -98,11 +125,7 @@ export const showHover = (
                         bounds={bounds}
                         prim={prim}
                         strokeWidth={4}
-                        color={
-                            state.guides[hover.id].active
-                                ? '#ccc'
-                                : 'rgba(102,102,102,0.5)'
-                        }
+                        color={state.guides[hover.id].active ? '#ccc' : 'rgba(102,102,102,0.5)'}
                         zoom={zoom}
                         key={`${key}:${j}:${i}`}
                     />
@@ -135,10 +158,7 @@ export const showHover = (
                 tiling.shape,
                 applyMatrices(pts[2], tx),
                 pts.map((pt) => applyMatrices(pt, tx)),
-            ).map(([p1, p2]) => [
-                applyMatrices(p1, btx),
-                applyMatrices(p2, btx),
-            ]);
+            ).map(([p1, p2]) => [applyMatrices(p1, btx), applyMatrices(p2, btx)]);
             return (
                 <>
                     {full.map(([p1, p2], i) => (
@@ -163,9 +183,7 @@ export const showHover = (
                         />
                     ))}
                     <polygon
-                        points={pts
-                            .map(({ x, y }) => `${x * zoom}, ${y * zoom}`)
-                            .join(' ')}
+                        points={pts.map(({x, y}) => `${x * zoom}, ${y * zoom}`).join(' ')}
                         fill="none"
                         stroke="green"
                         strokeWidth={5}

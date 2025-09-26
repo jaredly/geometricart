@@ -1,29 +1,29 @@
-import { Button } from 'primereact/button';
-import { OverlayPanel } from 'primereact/overlaypanel';
+import {Button} from 'primereact/button';
+import {OverlayPanel} from 'primereact/overlaypanel';
 import * as React from 'react';
-import { Clips } from '../editor/Clips';
-import { Hover } from '../editor/Sidebar';
-import { UndoPanel } from '../editor/UndoPanel';
-import { Action, GlobalTransform } from '../state/Action';
-import { Coord, Mirror, Path, PathGroup, Segment, State } from '../types';
-import { Accordion as MyAccordion } from './Accordion';
+import {Clips} from '../editor/Clips';
+import {Hover} from '../editor/Sidebar';
+import {UndoPanel} from '../editor/UndoPanel';
+import {Action, GlobalTransform} from '../state/Action';
+import {Coord, Mirror, Path, PathGroup, Segment, State} from '../types';
+import {Accordion as MyAccordion} from './Accordion';
 
 import type * as CSS from 'csstype';
 import dayjs from 'dayjs';
-import PathKitInit, { PathKit, Path as PKPath } from 'pathkit-wasm';
-import { SketchPicker } from 'react-color';
-import { Export } from '../editor/Export';
-import { PathForm, PathGroupForm, ViewForm } from '../editor/Forms';
-import { ShowMirror } from '../editor/MirrorForm';
-import { MultiStyleForm } from '../editor/MultiStyleForm';
-import { OverlaysForm } from '../editor/OverlaysForm';
-import { PalettesForm } from '../editor/PalettesForm';
-import { paletteColor } from '../editor/RenderPath';
-import { Tilings } from '../editor/Tilings';
-import { calcSegmentsD } from '../editor/calcPathD';
-import { selectedPathIds } from '../editor/touchscreenControls';
-import { getStateFromFile } from '../editor/useDropTarget';
-import { cmdsToSegments } from '../gcode/cmdsToSegments';
+import PathKitInit, {PathKit, Path as PKPath} from 'pathkit-wasm';
+import {SketchPicker} from 'react-color';
+import {Export} from '../editor/Export';
+import {PathForm, PathGroupForm, ViewForm} from '../editor/Forms';
+import {ShowMirror} from '../editor/MirrorForm';
+import {MultiStyleForm} from '../editor/MultiStyleForm';
+import {OverlaysForm} from '../editor/OverlaysForm';
+import {PalettesForm} from '../editor/PalettesForm';
+import {paletteColor} from '../editor/RenderPath';
+import {Tilings} from '../editor/Tilings';
+import {calcSegmentsD} from '../editor/calcPathD';
+import {selectedPathIds} from '../editor/touchscreenControls';
+import {getStateFromFile} from '../editor/useDropTarget';
+import {cmdsToSegments} from '../gcode/cmdsToSegments';
 import {
     CubeIcon,
     DrillIcon,
@@ -34,14 +34,15 @@ import {
     RedoIcon,
     UndoIcon,
 } from '../icons/Icon';
-import { getMirrorTransforms } from '../rendering/getMirrorTransforms';
-import { ensureClockwise } from '../rendering/pathToPoints';
-import { coordsEqual } from '../rendering/pathsAreIdentical';
-import { groupSort } from '../threed/ThreedScreen';
-import { Screen, UIDispatch, UIState } from '../useUIState';
-import { useLocalStorage } from '../vest/App';
-import { MirrorItems } from './MirrorItems';
-import { PK } from '../editor/pk';
+import {getMirrorTransforms} from '../rendering/getMirrorTransforms';
+import {ensureClockwise} from '../rendering/pathToPoints';
+import {coordsEqual} from '../rendering/pathsAreIdentical';
+import {groupSort} from '../threed/ThreedScreen';
+import {Screen, UIDispatch, UIState} from '../useUIState';
+import {useLocalStorage} from '../vest/App';
+import {MirrorItems} from './MirrorItems';
+import {PK} from '../editor/pk';
+import {GuideInspector} from './GuideInspector';
 
 declare module 'csstype' {
     interface Properties {
@@ -73,7 +74,7 @@ export const NewSidebar = ({
     const styleIds = selectedPathIds(state);
     const [openSidebars, setOpenSidebars] = useLocalStorage(
         'openSidebarIds',
-        {} as { [key: string]: boolean },
+        {} as {[key: string]: boolean},
     );
     const mirrorTransforms = React.useMemo(
         () => getMirrorTransforms(state.mirrors),
@@ -81,7 +82,7 @@ export const NewSidebar = ({
     );
 
     const setHover = React.useCallback(
-        (hover: UIState['hover']) => uiDispatch({ type: 'hover', hover }),
+        (hover: UIState['hover']) => uiDispatch({type: 'hover', hover}),
         [],
     );
 
@@ -101,26 +102,19 @@ export const NewSidebar = ({
                 overflow: 'auto',
             }}
         >
-            <div
-                style={{ display: 'flex', flexDirection: 'row' }}
-                className="mb-3"
-            >
+            <div style={{display: 'flex', flexDirection: 'row'}} className="mb-3">
                 {[
-                    { name: 'edit', icon: PencilIcon },
-                    { name: 'animate', icon: MagicWandIcon },
-                    { name: '3d', icon: CubeIcon },
-                    { name: 'gcode', icon: DrillIcon },
-                    { name: 'history', icon: IconHistoryToggle },
-                    { name: 'overlay', icon: IconVerticalAlignMiddle },
+                    {name: 'edit', icon: PencilIcon},
+                    {name: 'animate', icon: MagicWandIcon},
+                    {name: '3d', icon: CubeIcon},
+                    {name: 'gcode', icon: DrillIcon},
+                    {name: 'history', icon: IconHistoryToggle},
+                    {name: 'overlay', icon: IconVerticalAlignMiddle},
                 ].map((Config, i) => (
                     <Button
                         key={i}
                         tooltip={Config.name}
-                        className={
-                            uiState.screen === Config.name
-                                ? ''
-                                : 'p-button-text'
-                        }
+                        className={uiState.screen === Config.name ? '' : 'p-button-text'}
                         onClick={() =>
                             uiState.screen !== Config.name &&
                             uiDispatch({
@@ -159,18 +153,14 @@ export const NewSidebar = ({
                                                 <div
                                                     onClick={(evt) => {
                                                         evt.stopPropagation();
-                                                        const dirty =
-                                                            lastSaved.dirty as () => void;
+                                                        const dirty = lastSaved.dirty as () => void;
                                                         dirty();
                                                     }}
                                                     style={{
                                                         cursor: 'pointer',
                                                     }}
                                                 >
-                                                    Last saved{' '}
-                                                    {dayjs(
-                                                        lastSaved.when,
-                                                    ).fromNow()}
+                                                    Last saved {dayjs(lastSaved.when).fromNow()}
                                                 </div>
                                             )
                                         ) : (
@@ -180,9 +170,7 @@ export const NewSidebar = ({
                                             target="_blank"
                                             href={`https://gist.github.com/${lastSaved.id}`}
                                             className="pi pi-external-link pi-button pi-button-text m-1"
-                                            onClick={(evt) =>
-                                                evt.stopPropagation()
-                                            }
+                                            onClick={(evt) => evt.stopPropagation()}
                                             style={{
                                                 textDecoration: 'none',
                                                 color: 'inherit',
@@ -194,18 +182,14 @@ export const NewSidebar = ({
                         ),
                         content: () => (
                             <div className="p-3">
-                                <Button onClick={() => closeFile()}>
-                                    Close File
-                                </Button>
+                                <Button onClick={() => closeFile()}>Close File</Button>
                                 <div>
                                     Import:{' '}
                                     <input
                                         type="file"
                                         placeholder="Select a file to import"
                                         onChange={(evt) => {
-                                            if (
-                                                evt.target.files?.length !== 1
-                                            ) {
+                                            if (evt.target.files?.length !== 1) {
                                                 return;
                                             }
                                             getStateFromFile(
@@ -246,7 +230,7 @@ export const NewSidebar = ({
                                 }}
                             >
                                 Mirrors
-                                <div style={{ flex: 1 }} />
+                                <div style={{flex: 1}} />
                                 {state.activeMirror ? (
                                     <div
                                         style={{
@@ -256,16 +240,8 @@ export const NewSidebar = ({
                                         }}
                                     >
                                         <ShowMirror
-                                            mirror={
-                                                state.mirrors[
-                                                    state.activeMirror
-                                                ]
-                                            }
-                                            transforms={
-                                                mirrorTransforms[
-                                                    state.activeMirror
-                                                ]
-                                            }
+                                            mirror={state.mirrors[state.activeMirror]}
+                                            transforms={mirrorTransforms[state.activeMirror]}
                                             size={40}
                                         />
                                     </div>
@@ -273,11 +249,7 @@ export const NewSidebar = ({
                             </div>
                         ),
                         content: () => (
-                            <MirrorItems
-                                state={state}
-                                setHover={setHover}
-                                dispatch={dispatch}
-                            />
+                            <MirrorItems state={state} setHover={setHover} dispatch={dispatch} />
                         ),
                     },
                     {
@@ -289,14 +261,23 @@ export const NewSidebar = ({
                             </div>
                         ),
                         onHover(hovered) {
-                            setHover(hovered ? { type: 'guides' } : null);
+                            setHover(hovered ? {type: 'guides'} : null);
                         },
                         content: () => {
                             return (
-                                <GuideItems
+                                <GuideItems state={state} setHover={setHover} dispatch={dispatch} />
+                            );
+                        },
+                    },
+                    {
+                        key: 'guide-inspector',
+                        header: <div> Guide Inspector </div>,
+                        content: () => {
+                            return (
+                                <GuideInspector
                                     state={state}
                                     setHover={setHover}
-                                    dispatch={dispatch}
+                                    // dispatch={dispatch}
                                 />
                             );
                         },
@@ -311,9 +292,7 @@ export const NewSidebar = ({
                                         ppi={state.meta.ppi}
                                         dispatch={dispatch}
                                         palette={state.palette}
-                                        styles={styleIds.map(
-                                            (k) => state.paths[k].style,
-                                        )}
+                                        styles={styleIds.map((k) => state.paths[k].style)}
                                         onHover={(hover) => {
                                             uiDispatch({
                                                 type: 'styleHover',
@@ -362,11 +341,7 @@ export const NewSidebar = ({
                         key: 'clips',
                         header: 'Clips',
                         content: () => (
-                            <Clips
-                                state={state}
-                                dispatch={dispatch}
-                                setHover={setHover}
-                            />
+                            <Clips state={state} dispatch={dispatch} setHover={setHover} />
                         ),
                     },
                     {
@@ -389,22 +364,14 @@ export const NewSidebar = ({
                         key: 'export',
                         header: 'Export',
                         content: () => (
-                            <Export
-                                state={state}
-                                dispatch={dispatch}
-                                originalSize={1000}
-                            />
+                            <Export state={state} dispatch={dispatch} originalSize={1000} />
                         ),
                     },
                     {
                         key: 'tilings',
                         header: 'Tilings',
                         content: () => (
-                            <Tilings
-                                state={state}
-                                dispatch={dispatch}
-                                uiDispatch={uiDispatch}
-                            />
+                            <Tilings state={state} dispatch={dispatch} uiDispatch={uiDispatch} />
                         ),
                     },
                     {
@@ -421,9 +388,7 @@ export const NewSidebar = ({
                     {
                         key: 'overlays',
                         header: 'Overlays',
-                        content: () => (
-                            <OverlaysForm state={state} dispatch={dispatch} />
-                        ),
+                        content: () => <OverlaysForm state={state} dispatch={dispatch} />,
                     },
                     {
                         key: 'history',
@@ -436,7 +401,7 @@ export const NewSidebar = ({
                                 }}
                             >
                                 History
-                                <div style={{ flex: 1 }} />
+                                <div style={{flex: 1}} />
                                 <Button
                                     className="p-button-sm p-button-rounded p-button-text"
                                     style={{
@@ -445,7 +410,7 @@ export const NewSidebar = ({
                                     }}
                                     onClick={(evt) => {
                                         evt.stopPropagation();
-                                        dispatch({ type: 'undo' });
+                                        dispatch({type: 'undo'});
                                     }}
                                 >
                                     <UndoIcon />
@@ -458,16 +423,14 @@ export const NewSidebar = ({
                                     }}
                                     onClick={(evt) => {
                                         evt.stopPropagation();
-                                        dispatch({ type: 'redo' });
+                                        dispatch({type: 'redo'});
                                     }}
                                 >
                                     <RedoIcon />
                                 </Button>
                             </div>
                         ),
-                        content: () => (
-                            <UndoPanel state={state} dispatch={dispatch} />
-                        ),
+                        content: () => <UndoPanel state={state} dispatch={dispatch} />,
                     },
                     {
                         key: 'transform',
@@ -475,14 +438,8 @@ export const NewSidebar = ({
                         content() {
                             return (
                                 <>
-                                    <TransformPanel
-                                        state={state}
-                                        dispatch={dispatch}
-                                    />
-                                    <TransformGlobal
-                                        state={state}
-                                        dispatch={dispatch}
-                                    />
+                                    <TransformPanel state={state} dispatch={dispatch} />
+                                    <TransformGlobal state={state} dispatch={dispatch} />
                                 </>
                             );
                         },
@@ -493,19 +450,16 @@ export const NewSidebar = ({
     );
 };
 
-const showMirror = (
-    id: string | Mirror,
-    mirrors: { [key: string]: Mirror },
-): JSX.Element => {
+const showMirror = (id: string | Mirror, mirrors: {[key: string]: Mirror}): JSX.Element => {
     const mirror = typeof id === 'string' ? mirrors[id] : id;
     return (
-        <span style={{ fontSize: '80%', marginLeft: 16, opacity: 0.7 }}>
+        <span style={{fontSize: '80%', marginLeft: 16, opacity: 0.7}}>
             {(mirror.rotational.length + 1) * (mirror.reflect ? 2 : 1)}x
         </span>
     );
 };
 
-const transforms: { title: string; action: GlobalTransform }[] = [
+const transforms: {title: string; action: GlobalTransform}[] = [
     {
         title: '+45º',
         action: {
@@ -548,17 +502,11 @@ const transforms: { title: string; action: GlobalTransform }[] = [
     },
 ];
 
-function TransformGlobal({
-    state,
-    dispatch,
-}: {
-    state: State;
-    dispatch: React.Dispatch<Action>;
-}) {
+function TransformGlobal({state, dispatch}: {state: State; dispatch: React.Dispatch<Action>}) {
     return (
         <div>
             <div>Global Transformations</div>
-            {transforms.map(({ title, action }, i) => (
+            {transforms.map(({title, action}, i) => (
                 <button key={i} onClick={() => dispatch(action)}>
                     {title}
                 </button>
@@ -567,13 +515,7 @@ function TransformGlobal({
     );
 }
 
-function TransformPanel({
-    state,
-    dispatch,
-}: {
-    state: State;
-    dispatch: React.Dispatch<Action>;
-}) {
+function TransformPanel({state, dispatch}: {state: State; dispatch: React.Dispatch<Action>}) {
     const [inset, setInset] = React.useState(18);
     const [clip, setClip] = React.useState(null as null | string);
     // console.log('tx', clip);
@@ -630,10 +572,7 @@ function TransformPanel({
                     Scale
                 </button> */}
                 <div>
-                    <select
-                        onChange={(evt) => setClip(evt.target.value)}
-                        value={clip ?? ''}
-                    >
+                    <select onChange={(evt) => setClip(evt.target.value)} value={clip ?? ''}>
                         <option>Select a clip</option>
                         {Object.keys(state.clips).map((k, i) => (
                             <option key={k} value={k}>
@@ -648,13 +587,7 @@ function TransformPanel({
                                 return;
                             }
 
-                            pkClipPaths(
-                                state,
-                                state.clips[cn].shape,
-                                inset,
-                                pathIds,
-                                dispatch,
-                            );
+                            pkClipPaths(state, state.clips[cn].shape, inset, pathIds, dispatch);
                         }}
                     >
                         Clippp
@@ -694,10 +627,15 @@ function ShapeItems({
     dispatch: React.Dispatch<Action>;
     onlyShowSelected: boolean;
 }): JSX.Element {
-    const groups: { [key: string]: string[] } = {};
+    const groups: {[key: string]: string[]} = {};
     Object.entries(state.paths).forEach(([id, path]) => {
         groups[path.group ?? ''] = (groups[path.group ?? ''] ?? []).concat(id);
     });
+    const ungrouped = Object.entries(state.paths)
+        .filter(([_, path]) => !state.pathGroups[path.group!])
+        .map(([k, path]) => (
+            <PathItem key={k} k={k} state={state} setHover={setHover} dispatch={dispatch} />
+        ));
     return (
         <>
             {Object.entries(state.pathGroups)
@@ -715,6 +653,24 @@ function ShapeItems({
                         onlyShowSelected={onlyShowSelected}
                     />
                 ))}
+            {ungrouped.length ? (
+                <div>
+                    <h1></h1>
+                    <div
+                        className="hover py-3 px-2 hover:surface-hover"
+                        style={{
+                            cursor: 'pointer',
+                            borderBottom: '1px solid var(--surface-border)',
+                            display: 'flex',
+                            alignItems: 'center',
+                        }}
+                    >
+                        Ungrouped paths
+                    </div>
+
+                    {ungrouped}
+                </div>
+            ) : null}
         </>
     );
 }
@@ -737,9 +693,7 @@ function PathGroupItem({
     onlyShowSelected: boolean;
 }) {
     const [open, setOpen] = React.useState(false);
-    const isSelected =
-        state.selection?.type === 'PathGroup' &&
-        state.selection.ids.includes(k);
+    const isSelected = state.selection?.type === 'PathGroup' && state.selection.ids.includes(k);
     const isSubSelected =
         state.selection?.type === 'Path' &&
         state.selection.ids.some((id) => state.paths[id].group === k);
@@ -791,9 +745,7 @@ function PathGroupItem({
             >
                 <Button
                     className="p-button-sm p-button-rounded p-button-text"
-                    icon={`p-accordion-toggle-icon pi pi-chevron-${
-                        open ? 'down' : 'right'
-                    }`}
+                    icon={`p-accordion-toggle-icon pi pi-chevron-${open ? 'down' : 'right'}`}
                     style={{
                         marginTop: -10,
                         marginBottom: -12,
@@ -805,7 +757,7 @@ function PathGroupItem({
                     }}
                 />
                 Group of {pathKeys.length} shapes
-                <div style={{ flex: 1 }} />
+                <div style={{flex: 1}} />
                 <Button
                     icon="pi pi-cog"
                     className="p-button-text"
@@ -830,7 +782,7 @@ function PathGroupItem({
                             })
                         }
                         onDelete={() => {
-                            dispatch({ type: 'group:delete', id: k });
+                            dispatch({type: 'group:delete', id: k});
                         }}
                         onMouseOver={() => {}}
                         onMouseOut={() => {}}
@@ -871,10 +823,7 @@ function PathItem({
             key={k}
             className="hover"
             style={{
-                ...itemStyle(
-                    state.selection?.type === 'Path' &&
-                        state.selection.ids.includes(k),
-                ),
+                ...itemStyle(state.selection?.type === 'Path' && state.selection.ids.includes(k)),
                 // padding: '8px 0',
             }}
             onMouseEnter={() =>
@@ -910,7 +859,7 @@ function PathItem({
             onMouseLeave={() => setHover(null)}
         >
             {state.paths[k].segments.length} segments
-            <div style={{ flex: 1 }} />
+            <div style={{flex: 1}} />
             <Button
                 icon="pi pi-cog"
                 className="p-button-text pl-2"
@@ -927,11 +876,9 @@ function PathItem({
                 <PathForm
                     path={state.paths[k]}
                     selected={false}
-                    onChange={(path) =>
-                        dispatch({ type: 'path:update', id: k, path })
-                    }
+                    onChange={(path) => dispatch({type: 'path:update', id: k, path})}
                     onDelete={() => {
-                        dispatch({ type: 'path:delete', id: k });
+                        dispatch({type: 'path:delete', id: k});
                     }}
                     onMouseOver={() => {}}
                     onMouseOut={() => {}}
@@ -957,8 +904,7 @@ function GuideItems({
                     key={k}
                     className="hover"
                     style={itemStyle(
-                        state.selection?.type === 'Guide' &&
-                            state.selection.ids.includes(k),
+                        state.selection?.type === 'Guide' && state.selection.ids.includes(k),
                     )}
                     onMouseEnter={() =>
                         setHover({
@@ -971,8 +917,7 @@ function GuideItems({
                         dispatch({
                             type: 'selection:set',
                             selection:
-                                state.selection?.type === 'Guide' &&
-                                state.selection.ids.includes(k)
+                                state.selection?.type === 'Guide' && state.selection.ids.includes(k)
                                     ? null
                                     : {
                                           type: 'Guide',
@@ -983,10 +928,8 @@ function GuideItems({
                     onMouseLeave={() => setHover(null)}
                 >
                     {guide.geom.type}
-                    {guide.mirror
-                        ? showMirror(guide.mirror, state.mirrors)
-                        : null}
-                    <span style={{ flex: 1 }} />
+                    {guide.mirror ? showMirror(guide.mirror, state.mirrors) : null}
+                    <span style={{flex: 1}} />
                     <Button
                         onClick={() => {
                             dispatch({
@@ -996,7 +939,7 @@ function GuideItems({
                         }}
                         icon="pi pi-trash"
                         className=" p-button-sm p-button-text p-button-danger"
-                        style={{ marginTop: -5, marginBottom: -6 }}
+                        style={{marginTop: -5, marginBottom: -6}}
                     />
                 </div>
             ))}
@@ -1027,10 +970,7 @@ function toggleViewGuides(state: State, dispatch: React.Dispatch<Action>) {
     );
 }
 
-export function itemStyle(
-    selected: boolean,
-    subSelected = false,
-): React.CSSProperties | undefined {
+export function itemStyle(selected: boolean, subSelected = false): React.CSSProperties | undefined {
     return {
         padding: 8,
         cursor: 'pointer',
@@ -1058,8 +998,7 @@ export const NewPalettesForm = ({
     const [editing, setEditing] = React.useState(0);
 
     const modified =
-        tmp.length !== state.palette.length ||
-        tmp.some((t, i) => t !== state.palette[i]);
+        tmp.length !== state.palette.length || tmp.some((t, i) => t !== state.palette[i]);
 
     return (
         <div className="m-3">
@@ -1142,18 +1081,8 @@ export const NewPalettesForm = ({
     );
 };
 
-export const pkPath = (
-    PK: PathKit,
-    segments: Segment[],
-    origin?: Coord,
-    open?: boolean,
-) => {
-    const d = calcSegmentsD(
-        segments,
-        origin ?? segments[segments.length - 1].to,
-        open,
-        1,
-    );
+export const pkPath = (PK: PathKit, segments: Segment[], origin?: Coord, open?: boolean) => {
+    const d = calcSegmentsD(segments, origin ?? segments[segments.length - 1].to, open, 1);
     return PK.FromSVGString(d);
 };
 
@@ -1174,7 +1103,7 @@ export const pkClipPath = (
     pkp: PKPath,
     pkClip: PKPath,
     outside = false,
-): { segments: Segment[]; origin: Coord }[] => {
+): {segments: Segment[]; origin: Coord}[] => {
     pkp.op(pkClip, outside ? PK.PathOp.DIFFERENCE : PK.PathOp.INTERSECT);
 
     return pkPathToSegments(PK, pkp);
@@ -1184,7 +1113,7 @@ export const pkPathToSegments = (PK: PathKit, pkp: PKPath) => {
     const clipped = cmdsToSegments(pkp.toCmds(), PK);
 
     clipped.forEach((region) => {
-        const { segments, origin, open } = region;
+        const {segments, origin, open} = region;
         if (!open) {
             if (!coordsEqual(segments[segments.length - 1].to, origin)) {
                 console.error('NO BADS clipped idk', segments, origin);
@@ -1212,7 +1141,7 @@ export const pkClipPaths = (
         pkInset(PK, pkClip, inset / 100);
     }
 
-    const paths: { [key: string]: Path | null } = {};
+    const paths: {[key: string]: Path | null} = {};
     let nextId = state.nextId;
 
     pathIds.forEach((id) => {
@@ -1225,10 +1154,10 @@ export const pkClipPaths = (
         console.log('Started as', path.segments);
         console.log('Became', clipped);
 
-        paths[id] = { ...path, ...clipped[0] };
+        paths[id] = {...path, ...clipped[0]};
         for (let i = 1; i < clipped.length; i++) {
             const pt = clipped[i];
-            paths[nextId] = { ...path, ...pt };
+            paths[nextId] = {...path, ...pt};
             nextId += 1;
         }
     });

@@ -8,8 +8,8 @@ import {
     unlinkSync,
     writeFileSync,
 } from 'fs';
-import { createServer, request } from 'http';
-import { createServer as vite } from 'vite';
+import {createServer, request} from 'http';
+import {createServer as vite} from 'vite';
 
 // export type Config = {
 //     root: string;
@@ -23,7 +23,7 @@ import { createServer as vite } from 'vite';
 export const viteFsProxy = async (config) => {
     const server = await vite({
         root: config.root,
-        server: { port: config.port },
+        server: {port: config.port},
         define: {
             'process.env': {},
         },
@@ -46,14 +46,14 @@ export const viteFsProxy = async (config) => {
         if (full) {
             if (req.method === 'GET') {
                 if (!existsSync(full)) {
-                    res.writeHead(404, { 'Content-Type': 'text/plain' });
+                    res.writeHead(404, {'Content-Type': 'text/plain'});
                     return res.end('File not found');
                 }
                 if (statSync(full).isDirectory()) {
-                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.writeHead(200, {'Content-Type': 'application/json'});
                     return res.end(JSON.stringify(readdirSync(full)));
                 }
-                res.writeHead(200, { 'Content-Type': 'text/plain' });
+                res.writeHead(200, {'Content-Type': 'text/plain'});
                 return res.end(readFileSync(full, 'utf8'));
             }
 
@@ -80,7 +80,7 @@ export const viteFsProxy = async (config) => {
 
                     const toFull = findMap(to);
                     if (!toFull) {
-                        res.writeHead(400, { 'Content-Type': 'text/plain' });
+                        res.writeHead(400, {'Content-Type': 'text/plain'});
                         return res.end('Invalid "to" parameter');
                     }
 
@@ -129,10 +129,10 @@ export const viteFsProxy = async (config) => {
 
         const proxy = request(options, function (proxy_res) {
             res.writeHead(proxy_res.statusCode, proxy_res.headers);
-            proxy_res.pipe(res, { end: true });
+            proxy_res.pipe(res, {end: true});
         });
 
-        req.pipe(proxy, { end: true });
+        req.pipe(proxy, {end: true});
     }).listen(config.innerPort);
     console.log(`Get it on http://localhost:${config.innerPort}`);
 };

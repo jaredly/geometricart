@@ -6,8 +6,7 @@ import t from '@babel/types';
 import generate from '@babel/generator';
 
 const hasComment = (node) =>
-    node.leadingComments &&
-    node.leadingComments.some((s) => s.value.includes(' @trace'));
+    node.leadingComments && node.leadingComments.some((s) => s.value.includes(' @trace'));
 
 const fns = ['ArrowFunctionExpression', 'FunctionDeclaration'];
 
@@ -34,10 +33,7 @@ export const addFunctionMeta = (contents, filePath) => {
                     let comment;
                     let argComments = [];
                     if (node.leadingComments?.length) {
-                        const last =
-                            node.leadingComments[
-                                node.leadingComments.length - 1
-                            ];
+                        const last = node.leadingComments[node.leadingComments.length - 1];
                         if (last.type === 'CommentBlock') {
                             comment = last.value;
                         }
@@ -48,9 +44,7 @@ export const addFunctionMeta = (contents, filePath) => {
                             param.loc.start.line > decl.loc.start.line
                         ) {
                             const prev = parsed.comments?.find(
-                                (comment) =>
-                                    comment.loc.end.line ===
-                                    param.loc.start.line - 1,
+                                (comment) => comment.loc.end.line === param.loc.start.line - 1,
                             )?.value;
                             argComments.push({
                                 name: param.name,
@@ -85,15 +79,11 @@ export const addFunctionMeta = (contents, filePath) => {
                                     ),
                                     t.objectProperty(
                                         t.identifier('comment'),
-                                        comment
-                                            ? t.stringLiteral(comment)
-                                            : t.nullLiteral(),
+                                        comment ? t.stringLiteral(comment) : t.nullLiteral(),
                                     ),
                                     t.objectProperty(
                                         t.identifier('argComments'),
-                                        t.identifier(
-                                            JSON.stringify(argComments),
-                                        ),
+                                        t.identifier(JSON.stringify(argComments)),
                                     ),
                                 ]),
                             ),
@@ -108,10 +98,7 @@ export const addFunctionMeta = (contents, filePath) => {
 };
 
 export default function (contents, filePath, typesInfo) {
-    contents = contents.replace(
-        new RegExp(listExamplesComment, 'g'),
-        listExamplesSigil + ';\n',
-    );
+    contents = contents.replace(new RegExp(listExamplesComment, 'g'), listExamplesSigil + ';\n');
     contents = contents.replace(new RegExp('// @show\\(', 'g'), '____SHOW(');
     const parsed = babel.parseSync(contents, {
         parserOpts: {
@@ -148,21 +135,14 @@ export default function (contents, filePath, typesInfo) {
                                 })),
                             docs: node.leadingComments
                                 .reverse()
-                                .find(
-                                    (x) =>
-                                        x.type === 'CommentBlock' &&
-                                        x.value.startsWith('*'),
-                                )?.value,
+                                .find((x) => x.type === 'CommentBlock' && x.value.startsWith('*'))
+                                ?.value,
                             start: node.start,
                             end: node.end,
                         };
                         traverse.default(
                             t.file(t.program([ensureStmt(decl.init)])),
-                            annotateFunctionBody(
-                                decl.init,
-                                traceInfo,
-                                typesInfo,
-                            ),
+                            annotateFunctionBody(decl.init, traceInfo, typesInfo),
                         );
                         found.push(
                             t.expressionStatement(
@@ -238,9 +218,7 @@ function annotateFunctionBody(toplevel, traceInfo, typesInfo) {
                 seen.set(n.callee, -1);
                 n.arguments.forEach((arg) => seen.set(arg, -1));
                 if (path.node.body.type !== 'BlockStatement') {
-                    path.node.body = t.blockStatement([
-                        t.returnStatement(path.node.body),
-                    ]);
+                    path.node.body = t.blockStatement([t.returnStatement(path.node.body)]);
                 }
                 path.node.body.body.unshift(n);
                 assigns[param.name] = num;
@@ -326,10 +304,7 @@ function annotateFunctionBody(toplevel, traceInfo, typesInfo) {
         ExpressionStatement(path) {
             if (path.node.expression.type === 'CallExpression') {
                 const callee = path.node.expression.callee;
-                if (
-                    callee.type === 'Identifier' &&
-                    callee.name === '____SHOW'
-                ) {
+                if (callee.type === 'Identifier' && callee.name === '____SHOW') {
                     const items = [];
                     traceInfo.shows.push({
                         items,
@@ -340,20 +315,17 @@ function annotateFunctionBody(toplevel, traceInfo, typesInfo) {
                         t.blockStatement(
                             path.node.expression.arguments.map((arg) => {
                                 const num = i++;
-                                const n = t.callExpression(
-                                    t.identifier('trace'),
-                                    [arg, t.numericLiteral(num)],
-                                );
+                                const n = t.callExpression(t.identifier('trace'), [
+                                    arg,
+                                    t.numericLiteral(num),
+                                ]);
                                 items.push(num);
                                 const argNum = assigns[arg.name];
                                 traceInfo.expressions[num] = {
                                     start: arg.start,
                                     end: arg.end,
                                     type:
-                                        argNum != null
-                                            ? traceInfo.expressions[argNum]
-                                                  ?.type
-                                            : null,
+                                        argNum != null ? traceInfo.expressions[argNum]?.type : null,
                                 };
                                 seen.set(n, num);
                                 seen.set(n.callee, -1);
@@ -408,25 +380,16 @@ function annotateFunctionBody(toplevel, traceInfo, typesInfo) {
                 // if (path.node.type === 'StringLiteral') return;
                 // if (path.node.type === 'BoolLiteral') return;
                 if (seen.has(path.node)) return;
-                if (
-                    path.node.type === 'Identifier' &&
-                    path.node.name === '____SHOW'
-                ) {
+                if (path.node.type === 'Identifier' && path.node.name === '____SHOW') {
                     return;
                 }
                 // Ignore forEach folks
                 if (
                     path.node.type === 'MemberExpression' &&
                     path.node.property.type === 'Identifier' &&
-                    [
-                        'forEach',
-                        'push',
-                        'sort',
-                        'splice',
-                        'map',
-                        'flat',
-                        'filter',
-                    ].includes(path.node.property.name)
+                    ['forEach', 'push', 'sort', 'splice', 'map', 'flat', 'filter'].includes(
+                        path.node.property.name,
+                    )
                 ) {
                     seen.set(path.node, -1);
                     return;
@@ -434,10 +397,7 @@ function annotateFunctionBody(toplevel, traceInfo, typesInfo) {
 
                 // TODO: Need to capture the location somewhere,
                 // otherwise we don't know where to display it.
-                if (
-                    path.node.type === 'Identifier' &&
-                    assigns[path.node.name] != null
-                ) {
+                if (path.node.type === 'Identifier' && assigns[path.node.name] != null) {
                     seen.set(path.node, assigns[path.node.name]);
                     traceInfo.references.push({
                         id: assigns[path.node.name],
@@ -489,15 +449,13 @@ function annotateFunctionBody(toplevel, traceInfo, typesInfo) {
 
 const isLval = (path) => {
     return (
-        (path.parent.type === 'AssignmentExpression' &&
-            path.parentKey === 'left') ||
+        (path.parent.type === 'AssignmentExpression' && path.parentKey === 'left') ||
         (path.parentPath && isLval(path.parentPath))
     );
 };
 
 const isTS = (path) => {
     return (
-        path.node.type.toLowerCase().startsWith('ts') ||
-        (path.parentPath && isTS(path.parentPath))
+        path.node.type.toLowerCase().startsWith('ts') || (path.parentPath && isTS(path.parentPath))
     );
 };

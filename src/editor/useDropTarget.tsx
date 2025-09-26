@@ -1,9 +1,9 @@
 import React from 'react';
-import { State, Tiling } from '../types';
-import { migrateState } from '../state/migrateState';
-import { readMetadata } from 'png-metadata';
-import { PREFIX, SUFFIX } from './Sidebar';
-import { initialState } from '../state/initialState';
+import {State, Tiling} from '../types';
+import {migrateState} from '../state/migrateState';
+import {readMetadata} from 'png-metadata';
+import {PREFIX, SUFFIX} from './Sidebar';
+import {initialState} from '../state/initialState';
 
 export const useDropTarget = (
     onDrop: (file: File) => void,
@@ -85,9 +85,7 @@ export const useDropStateOrAttachmentTarget = (
 export const getStateFromFile = (
     file: File,
     done: (s: State | null) => void,
-    attachment:
-        | null
-        | ((name: string, src: string, w: number, h: number) => void),
+    attachment: null | ((name: string, src: string, w: number, h: number) => void),
     err: (message: string) => void,
 ) => {
     if (file.type === 'image/jpeg') {
@@ -123,12 +121,9 @@ export const getStateFromFile = (
                 const TSUFFIX = '-->';
                 if (raw.includes(TPREFIX) && raw.includes(TSUFFIX)) {
                     const tiling: Tiling = JSON.parse(
-                        raw.slice(
-                            raw.indexOf(TPREFIX) + TPREFIX.length,
-                            raw.indexOf(TSUFFIX),
-                        ),
+                        raw.slice(raw.indexOf(TPREFIX) + TPREFIX.length, raw.indexOf(TSUFFIX)),
                     );
-                    done({ ...initialState, tilings: { [tiling.id]: tiling } });
+                    done({...initialState, tilings: {[tiling.id]: tiling}});
                 } else {
                     console.log('not last, bad news');
                     console.log(last);
@@ -141,9 +136,7 @@ export const getStateFromFile = (
         const reader = new FileReader();
         reader.onload = () => {
             // debugger;
-            const lines = (reader.result as string).split(
-                ';; ** STATE **\n;; ',
-            );
+            const lines = (reader.result as string).split(';; ** STATE **\n;; ');
             if (lines.length > 1) {
                 done(JSON.parse(lines[1].split('\n')[0]));
             } else {
@@ -174,12 +167,7 @@ export function parseAttachment(
         const image = new Image();
         image.src = base64data;
         image.onload = () => {
-            attachment(
-                file.name,
-                base64data,
-                image.naturalWidth,
-                image.naturalHeight,
-            );
+            attachment(file.name, base64data, image.naturalWidth, image.naturalHeight);
         };
         image.onerror = () => {
             err('Unable to load base64 image');

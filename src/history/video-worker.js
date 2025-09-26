@@ -19,7 +19,7 @@ function captureAndEncode(frame_source, cnv, fps, processChunk) {
         width: cnv.width,
         height: cnv.height,
         bitrate: 1000000,
-        avc: { format: 'annexb' },
+        avc: {format: 'annexb'},
         framerate: fps,
         hardwareAcceleration: 'prefer-software',
     };
@@ -35,7 +35,7 @@ function captureAndEncode(frame_source, cnv, fps, processChunk) {
         if (encoder.encodeQueueSize < 2) {
             frame_counter++;
             const insert_keyframe = false; // (frame_counter % 130) == 0;
-            encoder.encode(frame, { keyFrame: insert_keyframe });
+            encoder.encode(frame, {keyFrame: insert_keyframe});
             frame.close();
         } else {
             // Too many frames in flight, encoder is overwhelmed

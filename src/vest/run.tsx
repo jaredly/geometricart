@@ -1,9 +1,9 @@
 import * as React from 'react';
-import { render } from 'react-dom';
+import {render} from 'react-dom';
 
-const Home = ({ fixtures }: { fixtures: Array<string> }) => {
+const Home = ({fixtures}: {fixtures: Array<string>}) => {
     return (
-        <div style={{ margin: 48 }}>
+        <div style={{margin: 48}}>
             {!fixtures.length ? 'No vest tests found! Go create some.' : null}
             {fixtures.map((f) => (
                 <a

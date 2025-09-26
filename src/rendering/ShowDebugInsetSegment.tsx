@@ -1,10 +1,10 @@
 import * as React from 'react';
-import { RenderSegmentBasic } from '../editor/RenderSegment';
-import { Coord, Segment } from '../types';
-import { angleForSegment } from './clipPath';
-import { addPrevsToSegments, SegmentWithPrev } from './clipPathNew';
-import { angleTo, dist, push } from './getMirrorTransforms';
-import { insetSegment } from './insetSegment';
+import {RenderSegmentBasic} from '../editor/RenderSegment';
+import {Coord, Segment} from '../types';
+import {angleForSegment} from './clipPath';
+import {addPrevsToSegments, SegmentWithPrev} from './clipPathNew';
+import {angleTo, dist, push} from './getMirrorTransforms';
+import {insetSegment} from './insetSegment';
 // import { asArray } from './insetSegment.vest';
 
 // export const insetPrev = (prev: Coord, segment: Segment, amount: number) => {

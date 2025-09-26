@@ -2,9 +2,9 @@
 /* @jsxFrag React.Fragment */
 import {jsx} from '@emotion/react';
 import {transformGuideGeom} from '../rendering/calculateGuideElements';
-import {applyMatrices, Matrix} from '../rendering/getMirrorTransforms';
+import {angleTo, applyMatrices, Matrix} from '../rendering/getMirrorTransforms';
 import {Bounds, GuideElement} from './GuideElement';
-import {Coord, GuideGeom, PendingGuide} from '../types';
+import {Coord, GuideGeom, guideNeedsAngle, guidePoints, PendingGuide} from '../types';
 
 export const RenderPendingGuide = ({
     guide,
@@ -30,8 +30,11 @@ export const RenderPendingGuide = ({
     offsets.slice(guide.points.length).forEach((off) => {
         points.push({x: pos.x + off.x, y: pos.y + off.y});
     });
+    const angle =
+        guideNeedsAngle(guide.kind) && guide.points.length >= guidePoints[guide.kind]
+            ? angleTo(guide.points[guide.points.length - 1], pos)
+            : undefined;
 
-    // const prims = geomToPrimitives(pendingGuide(guide.kind, points, shiftKey));
     return (
         <g style={{pointerEvents: 'none'}}>
             {mirror
@@ -41,13 +44,26 @@ export const RenderPendingGuide = ({
                           zoom={zoom}
                           bounds={bounds}
                           original={false}
-                          geom={transformGuideGeom(pendingGuide(guide.kind, points, shiftKey, guide.extent, guide.toggle), (pos) =>
-                              applyMatrices(pos, transform),
+                          geom={transformGuideGeom(
+                              pendingGuide(
+                                  guide.kind,
+                                  points,
+                                  shiftKey,
+                                  guide.extent,
+                                  guide.toggle,
+                                  angle,
+                              ),
+                              (pos) => applyMatrices(pos, transform),
                           )}
                       />
                   ))
                 : null}
-            <GuideElement zoom={zoom} bounds={bounds} original={true} geom={pendingGuide(guide.kind, points, shiftKey, guide.extent, guide.toggle)} />
+            <GuideElement
+                zoom={zoom}
+                bounds={bounds}
+                original={true}
+                geom={pendingGuide(guide.kind, points, shiftKey, guide.extent, guide.toggle, angle)}
+            />
             {/* <circle
                 cx={pos.x * zoom}
                 cy={pos.y * zoom}
@@ -57,8 +73,22 @@ export const RenderPendingGuide = ({
                 stroke={'red'}
                 strokeWidth={2}
             /> */}
-            <line x1={pos.x * zoom} x2={pos.x * zoom} y1={pos.y * zoom - 10} y2={pos.y * zoom + 10} stroke="red" strokeWidth={1} />
-            <line x1={pos.x * zoom - 10} x2={pos.x * zoom + 10} y1={pos.y * zoom} y2={pos.y * zoom} stroke="red" strokeWidth={1} />
+            <line
+                x1={pos.x * zoom}
+                x2={pos.x * zoom}
+                y1={pos.y * zoom - 10}
+                y2={pos.y * zoom + 10}
+                stroke="red"
+                strokeWidth={1}
+            />
+            <line
+                x1={pos.x * zoom - 10}
+                x2={pos.x * zoom + 10}
+                y1={pos.y * zoom}
+                y2={pos.y * zoom}
+                stroke="red"
+                strokeWidth={1}
+            />
         </g>
     );
 };

@@ -1,19 +1,13 @@
 import * as React from 'react';
-import {
-    Angle,
-    angleForSegment,
-    backAngle,
-    isAngleBetweenAngles,
-} from '../rendering/clipPath';
-import { anglesEqual } from '../rendering/epsilonToZero';
-import { angleTo, dist, push } from '../rendering/getMirrorTransforms';
-import { Coord } from '../types';
-import { SegmentWithPrev } from '../rendering/clipPathNew';
-import { HitTransitions } from '../rendering/untangleHit';
-import { angleBetween } from '../rendering/findNextSegments';
+import {Angle, angleForSegment, backAngle, isAngleBetweenAngles} from '../rendering/clipPath';
+import {anglesEqual} from '../rendering/epsilonToZero';
+import {angleTo, dist, push} from '../rendering/getMirrorTransforms';
+import {Coord} from '../types';
+import {SegmentWithPrev} from '../rendering/clipPathNew';
+import {HitTransitions} from '../rendering/untangleHit';
+import {angleBetween} from '../rendering/findNextSegments';
 
-export const pointsList = (points: Array<Coord>) =>
-    points.map(({ x, y }) => `${x},${y}`).join(' ');
+export const pointsList = (points: Array<Coord>) => points.map(({x, y}) => `${x},${y}`).join(' ');
 
 export const arrow = (coord: Coord, theta: number, size: number, wsize = 1) => [
     push(coord, theta, size),
@@ -21,11 +15,7 @@ export const arrow = (coord: Coord, theta: number, size: number, wsize = 1) => [
     push(coord, theta - (Math.PI * 2) / 3, size * wsize),
 ];
 
-const isInner = (
-    enter: Angle,
-    exit: Angle,
-    other: { entry: Angle; exit: Angle },
-) => {
+const isInner = (enter: Angle, exit: Angle, other: {entry: Angle; exit: Angle}) => {
     const back = backAngle(enter);
     if (
         isAngleBetweenAngles(back, backAngle(other.entry), exit, true) ||
@@ -48,7 +38,7 @@ const Corner = ({
     coord: Coord;
     enter: Angle;
     exit: Angle;
-    other: null | { entry: Angle; exit: Angle };
+    other: null | {entry: Angle; exit: Angle};
     isInside: boolean | null;
     // inner: boolean;
     size: number;
@@ -71,10 +61,7 @@ const Corner = ({
                 stroke={color}
                 fill="none"
             />
-            <polygon
-                points={pointsList(arrow(p2, exit.theta, size / 2))}
-                fill={color}
-            />
+            <polygon points={pointsList(arrow(p2, exit.theta, size / 2))} fill={color} />
         </>
     );
 };
@@ -93,11 +80,7 @@ export const Arrow = ({
     inner?: React.ComponentProps<'polygon'>;
 }) => {
     return (
-        <polygon
-            points={pointsList(arrow(point, theta, size / 2, 0.8))}
-            fill={color}
-            {...inner}
-        />
+        <polygon points={pointsList(arrow(point, theta, size / 2, 0.8))} fill={color} {...inner} />
     );
 };
 
@@ -131,7 +114,7 @@ export const ShowHitIntersection2 = ({
                         coord={coord}
                         enter={pair.back}
                         exit={pair.inside.theta}
-                        other={{ entry: pair.back, exit: pair.outside.theta }}
+                        other={{entry: pair.back, exit: pair.outside.theta}}
                         isInside
                         size={arrowSize}
                     />
@@ -139,7 +122,7 @@ export const ShowHitIntersection2 = ({
                         coord={coord}
                         enter={pair.back}
                         exit={pair.outside.theta}
-                        other={{ entry: pair.back, exit: pair.inside.theta }}
+                        other={{entry: pair.back, exit: pair.inside.theta}}
                         isInside={false}
                         size={arrowSize}
                     />
@@ -153,7 +136,7 @@ export const ShowHitIntersection2 = ({
                         coord={coord}
                         enter={one.entry.theta}
                         exit={one.exit.theta}
-                        other={{ entry: two.entry.theta, exit: two.exit.theta }}
+                        other={{entry: two.entry.theta, exit: two.exit.theta}}
                         isInside={one.goingInside}
                         size={arrowSize}
                     />
@@ -161,7 +144,7 @@ export const ShowHitIntersection2 = ({
                         coord={coord}
                         enter={two.entry.theta}
                         exit={two.exit.theta}
-                        other={{ entry: one.entry.theta, exit: one.exit.theta }}
+                        other={{entry: one.entry.theta, exit: one.exit.theta}}
                         isInside={two.goingInside}
                         size={arrowSize}
                     />

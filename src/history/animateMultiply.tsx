@@ -1,8 +1,8 @@
-import { Coord, Mirror, State } from '../types';
-import { tracePath } from '../rendering/CanvasRender';
-import { PathMultiply } from '../state/Action';
-import { AnimateState, wait } from './animateHistory';
-import { handlePathMultiply } from '../state/reducer';
+import {Coord, Mirror, State} from '../types';
+import {tracePath} from '../rendering/CanvasRender';
+import {PathMultiply} from '../state/Action';
+import {AnimateState, wait} from './animateHistory';
+import {handlePathMultiply} from '../state/reducer';
 
 export async function animateMultiply(
     state: AnimateState,
@@ -15,14 +15,12 @@ export async function animateMultiply(
     ) => Promise<unknown>,
     speed: number,
 ) {
-    const { i, ctx, canvas } = state;
+    const {i, ctx, canvas} = state;
     const zoom = prev.view.zoom * 2;
     const noWait =
         state.lastSelection &&
         state.lastSelection.type === action.selection.type &&
-        state.lastSelection.ids.every(
-            (id, j) => id === action.selection.ids[j],
-        );
+        state.lastSelection.ids.every((id, j) => id === action.selection.ids[j]);
     const pathIds =
         action.selection.type === 'Path'
             ? action.selection.ids
@@ -35,9 +33,7 @@ export async function animateMultiply(
     }
 
     const mirror: Mirror =
-        typeof action.mirror === 'string'
-            ? prev.mirrors[action.mirror]
-            : action.mirror;
+        typeof action.mirror === 'string' ? prev.mirrors[action.mirror] : action.mirror;
     await follow(i, mirror.origin, () => {
         if (noWait) {
             highlightPaths(pathIds, ctx, prev, zoom, noWait, canvas, speed);

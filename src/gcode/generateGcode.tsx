@@ -1,26 +1,22 @@
 // import { insetPath } from '../animation/getBuiltins';
-import { findBoundingRect } from '../editor/Export';
-import { findColorPaths } from './GCodeEditor';
-import { dist } from '../rendering/getMirrorTransforms';
-import {
-    pathToPoints,
-    RasterSeg,
-    rasterSegPoints,
-} from '../rendering/pathToPoints';
-import { sortedVisibleInsetPaths } from '../rendering/sortedVisibleInsetPaths';
-import { Coord, Path, State, StyleLine } from '../types';
-import PathKitInit, { PathKit } from 'pathkit-wasm';
-import { calcPathD } from '../editor/calcPathD';
-import { segmentKey, segmentKeyReverse } from '../rendering/segmentKey';
-import { getClips } from '../rendering/pkInsetPaths';
-import { coordsEqual } from '../rendering/pathsAreIdentical';
-import { PK } from '../editor/pk';
+import {findBoundingRect} from '../editor/Export';
+import {findColorPaths} from './GCodeEditor';
+import {dist} from '../rendering/getMirrorTransforms';
+import {pathToPoints, RasterSeg, rasterSegPoints} from '../rendering/pathToPoints';
+import {sortedVisibleInsetPaths} from '../rendering/sortedVisibleInsetPaths';
+import {Coord, Path, State, StyleLine} from '../types';
+import PathKitInit, {PathKit} from 'pathkit-wasm';
+import {calcPathD} from '../editor/calcPathD';
+import {segmentKey, segmentKeyReverse} from '../rendering/segmentKey';
+import {getClips} from '../rendering/pkInsetPaths';
+import {coordsEqual} from '../rendering/pathsAreIdentical';
+import {PK} from '../editor/pk';
 
 // NOTE: if the shape isn't closed, we pretty much bail.
 const findClosest = (shape: RasterSeg[], point: Coord) => {
     let best = null as null | [number, number];
     if (!coordsEqual(shape[0].from, shape[shape.length - 1].to)) {
-        return { dist: dist(shape[0].from, point), idx: 0 };
+        return {dist: dist(shape[0].from, point), idx: 0};
     }
     shape.forEach((seg, i) => {
         seg.points.forEach((p) => {
@@ -30,16 +26,13 @@ const findClosest = (shape: RasterSeg[], point: Coord) => {
             }
         });
     });
-    return { dist: best![0], idx: best![1] };
+    return {dist: best![0], idx: best![1]};
 };
 
-export const greedyPaths = (
-    paths: Array<{ path: Path; style: StyleLine }>,
-    ppi: number,
-) => {
+export const greedyPaths = (paths: Array<{path: Path; style: StyleLine}>, ppi: number) => {
     console.log('greedy it up', paths);
     const pathPoints: Array<Array<RasterSeg>> = [];
-    paths.forEach(({ path, style }) => {
+    paths.forEach(({path, style}) => {
         if (style.inset) {
             throw new Error('this should inset with PathKit');
             // insetPath(path, style.inset).forEach((sub) => {
@@ -54,12 +47,7 @@ export const greedyPaths = (
             // });
         } else {
             pathPoints.push(
-                pathToPoints(
-                    path.segments,
-                    path.open ? path.origin : null,
-                    false,
-                    ppi,
-                ),
+                pathToPoints(path.segments, path.open ? path.origin : null, false, ppi),
             );
         }
     });
@@ -77,26 +65,24 @@ export const greedyPaths = (
         const last = ordered[ordered.length - 1];
         // This is the most recent position
         let point = last[last.length - 1].to;
-        let best = null as null | { dist: number; idx: number; subIdx: number };
+        let best = null as null | {dist: number; idx: number; subIdx: number};
         // ohhhhhh ok, so... the thing is ....
         // if a path is /open/, then we can't just jump into the middle of it.
         pathPoints.forEach((shape, i) => {
             const closest = findClosest(shape, point);
             if (best == null || closest.dist < best.dist) {
-                best = { dist: closest.dist, idx: i, subIdx: closest.idx };
+                best = {dist: closest.dist, idx: i, subIdx: closest.idx};
             }
         });
         const next = pathPoints[best!.idx];
         pathPoints.splice(best!.idx, 1);
-        const reordeeed = next
-            .slice(best!.subIdx)
-            .concat(next.slice(0, best!.subIdx));
+        const reordeeed = next.slice(best!.subIdx).concat(next.slice(0, best!.subIdx));
         // TODO: I think this is useless, we will always skip it
         // reordeeed.push(reordeeed[0]);
         ordered.push(reordeeed);
     }
 
-    const seen: { [key: string]: true } = {};
+    const seen: {[key: string]: true} = {};
     const res = ordered.map((shape) => {
         return shape.map((seg) => {
             const k = segmentKey(seg.from, seg.seg);
@@ -106,7 +92,7 @@ export const greedyPaths = (
                 console.log('saww');
             }
             seen[k] = seen[bk] = true;
-            return already ? { ...seg, skipped: true } : seg;
+            return already ? {...seg, skipped: true} : seg;
         });
     });
 
@@ -115,11 +101,7 @@ export const greedyPaths = (
     return res;
 };
 
-export const makeDepths = (
-    start: number,
-    depth: number,
-    passDepth?: number,
-) => {
+export const makeDepths = (start: number, depth: number, passDepth?: number) => {
     if (passDepth == null || passDepth < 0.001) {
         return [depth];
     }
@@ -150,7 +132,7 @@ export const generateLaserInset = (state: State) => {
     const insetPaths = sortedVisibleInsetPaths(
         state.paths,
         state.pathGroups,
-        { next: () => 0.5 },
+        {next: () => 0.5},
         clips,
         state.view.hideDuplicatePaths,
     );
@@ -184,8 +166,8 @@ export const generateLaserInset = (state: State) => {
 };
 
 type GCode =
-    | { type: 'fast'; x?: number; y?: number; z?: number }
-    | { type: 'tool'; diameter: number; vbitAngle?: number }
+    | {type: 'fast'; x?: number; y?: number; z?: number}
+    | {type: 'tool'; diameter: number; vbitAngle?: number}
     | {
           type: 'cut';
           x?: number;
@@ -194,8 +176,8 @@ type GCode =
           f?: number;
           at?: number;
       }
-    | { type: 'M0'; message: string }
-    | { type: 'clear' };
+    | {type: 'M0'; message: string}
+    | {type: 'clear'};
 
 export const generateGcode = (state: State, PathKit: PathKit) => {
     const clip = getClips(state);
@@ -204,7 +186,7 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
     const insetPaths = sortedVisibleInsetPaths(
         state.paths,
         state.pathGroups,
-        { next: () => 0.5 },
+        {next: () => 0.5},
         clip,
         state.view.hideDuplicatePaths,
         undefined,
@@ -216,7 +198,7 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
     const colors = findColorPaths(insetPaths);
     const bounds = findBoundingRect(state)!;
 
-    const scalePos = ({ x, y }: Coord) => {
+    const scalePos = ({x, y}: Coord) => {
         return {
             x: pxToMM(x - bounds.x1, state.meta.ppi),
             y: pxToMM(y - bounds.y1, state.meta.ppi),
@@ -225,7 +207,7 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
 
     const cmds: GCode[] = [];
 
-    const { clearHeight, pauseHeight } = state.gcode;
+    const {clearHeight, pauseHeight} = state.gcode;
 
     const FAST_SPEED = 500;
     let time = 0;
@@ -233,17 +215,16 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
     let last = null as null | Coord;
     console.log(`B ${Date.now() - now}ms`);
 
-    let lastTool = null as null | { diameter: number; vbitAngle?: number };
+    let lastTool = null as null | {diameter: number; vbitAngle?: number};
 
     state.gcode.items.forEach((item) => {
         if (item.type === 'pause') {
-            cmds.push({ type: 'M0', message: item.message });
+            cmds.push({type: 'M0', message: item.message});
         } else {
             if (item.disabled) {
                 return;
             }
-            let { color, start, depth, speed, passDepth, tabs, vbitAngle } =
-                item;
+            let {color, start, depth, speed, passDepth, tabs, vbitAngle} = item;
             if (!colors[color]) {
                 console.warn(`Unknown color ${color}`);
                 return;
@@ -255,11 +236,7 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
                     : pxToMM(+color.split(':')[1] / 100, state.meta.ppi));
 
             if (vbitAngle != null) {
-                depth = calculateDepthForVBit(
-                    start ?? 0,
-                    (vbitAngle / 180) * Math.PI,
-                    diameter,
-                );
+                depth = calculateDepthForVBit(start ?? 0, (vbitAngle / 180) * Math.PI, diameter);
             }
 
             if (
@@ -267,9 +244,9 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
                 lastTool.diameter !== diameter ||
                 lastTool.vbitAngle !== vbitAngle
             ) {
-                cmds.push({ type: 'tool', diameter, vbitAngle });
+                cmds.push({type: 'tool', diameter, vbitAngle});
             }
-            lastTool = { diameter, vbitAngle };
+            lastTool = {diameter, vbitAngle};
 
             const greedy = greedyPaths(colors[color], state.meta.ppi);
             if (color.endsWith(':pocket')) {
@@ -284,41 +261,37 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
                         return;
                     }
 
-                    cmds.push({ type: 'clear' });
-                    makeDepths(start ?? 0, depth, passDepth).forEach(
-                        (itemDepth) => {
-                            cmds.push({
-                                type: 'fast',
-                                x: pocket[0][0].x,
-                                y: pocket[0][0].y,
-                            });
-                            cmds.push({ type: 'fast', z: 0 });
-                            cmds.push({ type: 'cut', z: -itemDepth, f: speed });
-                            pocket.forEach((round) => {
-                                round.forEach((p) => {
-                                    let travel = last ? dist(p, last) : null;
-                                    if (travel) {
-                                        time += travel! / speed;
-                                    }
-                                    cmds.push({
-                                        type: 'cut',
-                                        x: p.x,
-                                        y: p.y,
-                                        f: speed,
-                                    });
-                                    last = p;
+                    cmds.push({type: 'clear'});
+                    makeDepths(start ?? 0, depth, passDepth).forEach((itemDepth) => {
+                        cmds.push({
+                            type: 'fast',
+                            x: pocket[0][0].x,
+                            y: pocket[0][0].y,
+                        });
+                        cmds.push({type: 'fast', z: 0});
+                        cmds.push({type: 'cut', z: -itemDepth, f: speed});
+                        pocket.forEach((round) => {
+                            round.forEach((p) => {
+                                let travel = last ? dist(p, last) : null;
+                                if (travel) {
+                                    time += travel! / speed;
+                                }
+                                cmds.push({
+                                    type: 'cut',
+                                    x: p.x,
+                                    y: p.y,
+                                    f: speed,
                                 });
+                                last = p;
                             });
-                            cmds.push({ type: 'clear' });
-                        },
-                    );
+                        });
+                        cmds.push({type: 'clear'});
+                    });
                 });
                 return;
             }
             makeDepths(start ?? 0, depth, passDepth).forEach((itemDepth) => {
-                const good = greedy.filter((shape) =>
-                    shape.some((seg) => !seg.skipped),
-                );
+                const good = greedy.filter((shape) => shape.some((seg) => !seg.skipped));
                 good.forEach((shape) => {
                     const shapeCmds: GCode[] = [];
                     let distance = 0;
@@ -329,30 +302,30 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
                                 return;
                             }
                             init = true;
-                            const { x, y } = scalePos(segment.from);
-                            let travel = last ? dist({ x, y }, last) : null;
+                            const {x, y} = scalePos(segment.from);
+                            let travel = last ? dist({x, y}, last) : null;
                             if (travel) {
                                 distance += travel;
                                 time += travel / FAST_SPEED;
                             }
                             shapeCmds.push(
-                                { type: 'clear' },
-                                { type: 'fast', x, y },
-                                { type: 'fast', z: 0 },
-                                { type: 'cut', z: -itemDepth, f: speed },
+                                {type: 'clear'},
+                                {type: 'fast', x, y},
+                                {type: 'fast', z: 0},
+                                {type: 'cut', z: -itemDepth, f: speed},
                             );
-                            last = { x, y };
+                            last = {x, y};
                         }
                         if (segment.skipped) {
                             init = false;
                             return;
                         }
                         segment.points.forEach((pos) => {
-                            const { x, y } = scalePos(pos);
-                            const travel = dist({ x, y }, last!);
+                            const {x, y} = scalePos(pos);
+                            const travel = dist({x, y}, last!);
                             distance += travel;
                             time += travel / speed;
-                            last = { x, y };
+                            last = {x, y};
                             shapeCmds.push({
                                 type: 'cut',
                                 x,
@@ -395,13 +368,13 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
                     //     },
                     // );
                     if (tabs && itemDepth > tabs.depth) {
-                        const { x, y } = scalePos(shape[0].points[0]);
+                        const {x, y} = scalePos(shape[0].points[0]);
                         let latest: {
                             at: number;
                             x: number;
                             y: number;
-                        } = { at: 0, x, y };
-                        let nextTabPos = { idx: 0, at: 0 };
+                        } = {at: 0, x, y};
+                        let nextTabPos = {idx: 0, at: 0};
                         for (let i = 0; i < shapeCmds.length; i++) {
                             const cmd = shapeCmds[i];
                             if (
@@ -413,9 +386,7 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
                             ) {
                                 nextTabPos = {
                                     idx: nextTabPos.idx + 1,
-                                    at:
-                                        (distance / tabs.count) *
-                                        (nextTabPos.idx + 1),
+                                    at: (distance / tabs.count) * (nextTabPos.idx + 1),
                                 };
 
                                 // ugh
@@ -425,8 +396,7 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
                                 const dx = cmd.x - latest.x;
                                 const dy = cmd.y - latest.y;
 
-                                const fullWidth =
-                                    tabs.width + (lastTool?.diameter ?? 3);
+                                const fullWidth = tabs.width + (lastTool?.diameter ?? 3);
 
                                 const a = size / 2 - fullWidth / 2;
                                 const b = a + fullWidth;
@@ -450,7 +420,7 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
                                         y: latest.y + dy * db,
                                     },
                                     // cmd,
-                                    { type: 'cut', z: -itemDepth },
+                                    {type: 'cut', z: -itemDepth},
                                     cmd,
                                 );
                             } else {
@@ -518,12 +488,10 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
         }),
     );
 
-    lines.unshift(
-        `; estimated time: ${time.toFixed(2)}m. Commands ${lines.length}`,
-    );
+    lines.unshift(`; estimated time: ${time.toFixed(2)}m. Commands ${lines.length}`);
     lines.push(`G0 Z${clearHeight}`);
 
-    return { time, text: lines.join('\n') };
+    return {time, text: lines.join('\n')};
 };
 
 export const cmdBounds = (cmds: GCode[]) => {
@@ -548,17 +516,13 @@ export const cmdBounds = (cmds: GCode[]) => {
             return bounds;
         },
         {
-            min: { x: Infinity, y: Infinity, z: Infinity },
-            max: { x: -Infinity, y: -Infinity, z: -Infinity },
+            min: {x: Infinity, y: Infinity, z: Infinity},
+            max: {x: -Infinity, y: -Infinity, z: -Infinity},
         },
     );
 };
 
-const calculateDepthForVBit = (
-    start: number,
-    angle: number,
-    diameter: number,
-) => {
+const calculateDepthForVBit = (start: number, angle: number, diameter: number) => {
     // tan(angle) = diameter / depth
     // depth = diameter / tan(angle)
     return start + diameter / 2 / Math.tan(angle / 2);
@@ -570,7 +534,7 @@ const calculateDepthForVBit = (
 
 function makePocket(PathKit: PathKit, shape: Coord[], bitSize: number) {
     const path = PathKit.NewPath();
-    shape.forEach(({ x, y }, i) => {
+    shape.forEach(({x, y}, i) => {
         if (i === 0) {
             path.moveTo(x, y);
         } else {
@@ -612,10 +576,10 @@ function makePocket(PathKit: PathKit, shape: Coord[], bitSize: number) {
             // erm, fix straight lines probably
             for (let i = 0; i < total; i += 0.2) {
                 const point = svg.getPointAtLength(i);
-                round.push({ x: point.x, y: point.y });
+                round.push({x: point.x, y: point.y});
             }
             const point = svg.getPointAtLength(total);
-            round.push({ x: point.x, y: point.y });
+            round.push({x: point.x, y: point.y});
             svg.remove();
             const string = JSON.stringify(round);
             // No change 🤔
@@ -647,21 +611,17 @@ function makePocket(PathKit: PathKit, shape: Coord[], bitSize: number) {
     return rounds;
 }
 
-const svgPathPoints = (
-    outer: SVGSVGElement,
-    d: string,
-    ppd: number = 0.2,
-): Coord[] => {
+const svgPathPoints = (outer: SVGSVGElement, d: string, ppd: number = 0.2): Coord[] => {
     outer.innerHTML = `<path d="${d}" fill="red" stroke="black" />`;
     const path = outer.firstElementChild as SVGPathElement;
     const total = path.getTotalLength();
     const round = [];
     for (let i = 0; i < total; i += ppd) {
         const point = path.getPointAtLength(i);
-        round.push({ x: point.x, y: point.y });
+        round.push({x: point.x, y: point.y});
     }
     const point = path.getPointAtLength(total);
-    round.push({ x: point.x, y: point.y });
+    round.push({x: point.x, y: point.y});
     path.remove();
     return round;
 };
@@ -671,47 +631,35 @@ const svgPathPoints = (
 // https://github.com/google/skia/blob/main/src/effects/SkCornerPathEffect.cpp
 // https://github.com/google/skia/blob/main/modules/pathkit/pathkit_wasm_bindings.cpp#L358
 
-export const cmdsToPoints = (
-    cmds: number[][],
-    pk: PathKit,
-    outer: SVGSVGElement,
-): Coord[][] => {
+export const cmdsToPoints = (cmds: number[][], pk: PathKit, outer: SVGSVGElement): Coord[][] => {
     const points: Coord[][] = [];
 
     for (let cmd of cmds) {
         if (cmd[0] === pk.MOVE_VERB) {
-            points.push([{ x: cmd[1], y: cmd[2] }]);
+            points.push([{x: cmd[1], y: cmd[2]}]);
         } else if (cmd[0] === pk.LINE_VERB) {
-            points[points.length - 1].push({ x: cmd[1], y: cmd[2] });
+            points[points.length - 1].push({x: cmd[1], y: cmd[2]});
         } else if (cmd[0] === pk.CUBIC_VERB) {
             const current = points[points.length - 1];
             const last = current[current.length - 1];
             points[points.length - 1].push(
-                ...svgPathPoints(
-                    outer,
-                    `M${last.x} ${last.y} C${cmd.slice(1).join(' ')}`,
-                ),
+                ...svgPathPoints(outer, `M${last.x} ${last.y} C${cmd.slice(1).join(' ')}`),
             );
         } else if (cmd[0] === pk.QUAD_VERB) {
             const current = points[points.length - 1];
             const last = current[current.length - 1];
             points[points.length - 1].push(
-                ...svgPathPoints(
-                    outer,
-                    `M${last.x} ${last.y} Q${cmd.slice(1).join(' ')}`,
-                ),
+                ...svgPathPoints(outer, `M${last.x} ${last.y} Q${cmd.slice(1).join(' ')}`),
             );
         } else if (cmd[0] === pk.CONIC_VERB) {
             const current = points[points.length - 1];
             const last = current[current.length - 1];
 
             const path = pk.FromCmds([[pk.MOVE_VERB, last.x, last.y], cmd]);
-            points[points.length - 1].push(
-                ...svgPathPoints(outer, path.toSVGString()),
-            );
+            points[points.length - 1].push(...svgPathPoints(outer, path.toSVGString()));
             path.delete();
         } else if (cmd[0] === pk.CLOSE_VERB) {
-            points[points.length - 1].push({ ...points[points.length - 1][0] });
+            points[points.length - 1].push({...points[points.length - 1][0]});
             continue;
         } else {
             throw new Error('unknown cmd ' + cmd[0]);

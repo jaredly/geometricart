@@ -1,31 +1,19 @@
 import * as React from 'react';
 import localforage from 'localforage';
 import dayjs from 'dayjs';
-import { Button } from 'primereact/button';
-import { confirmPopup, ConfirmPopup } from 'primereact/confirmpopup';
-import {
-    MetaData,
-    keyPrefix,
-    metaPrefix,
-    updateMeta,
-    key,
-    meta,
-    thumbPrefix,
-} from './run';
-import { Tiling } from './types';
-import {
-    eigenShapesToSvg,
-    getTransform,
-    tilingPoints,
-} from './editor/tilingPoints';
-import { applyMatrices } from './rendering/getMirrorTransforms';
+import {Button} from 'primereact/button';
+import {confirmPopup, ConfirmPopup} from 'primereact/confirmpopup';
+import {MetaData, keyPrefix, metaPrefix, updateMeta, key, meta, thumbPrefix} from './run';
+import {Tiling} from './types';
+import {eigenShapesToSvg, getTransform, tilingPoints} from './editor/tilingPoints';
+import {applyMatrices} from './rendering/getMirrorTransforms';
 
 export function tilingCacheSvg(cache: Tiling['cache'], shape: Tiling['shape']) {
     const pts = tilingPoints(shape);
     const tx = getTransform(pts);
     return (
         <img
-            style={{ width: 200 }}
+            style={{width: 200}}
             src={`data:image/svg+xml,${eigenShapesToSvg(
                 cache.segments.map((s) => [s.prev, s.segment.to]),
                 shape,
@@ -45,16 +33,12 @@ export const DesignLoader = () => {
                 Promise.all(
                     keys
                         .filter((k) => k.startsWith(keyPrefix))
-                        .map((k) =>
-                            localforage.getItem<MetaData>(metaPrefix + k),
-                        ),
+                        .map((k) => localforage.getItem<MetaData>(metaPrefix + k)),
                 ),
             )
             .then((metas) =>
                 setDesigns(
-                    (metas.filter(Boolean) as MetaData[]).sort(
-                        (a, b) => b.updatedAt - a.updatedAt,
-                    ),
+                    (metas.filter(Boolean) as MetaData[]).sort((a, b) => b.updatedAt - a.updatedAt),
                 ),
             );
     }, []);
@@ -70,15 +54,13 @@ export const DesignLoader = () => {
                     key={design.id}
                     // style={{ width: 300, height: 300 }}
                     onClick={() => {
-                        updateMeta(design.id, { openedAt: Date.now() }).then(
-                            () => {
-                                window.location.hash = '/' + design.id;
-                            },
-                        );
+                        updateMeta(design.id, {openedAt: Date.now()}).then(() => {
+                            window.location.hash = '/' + design.id;
+                        });
                     }}
                     className="hover:surface-hover surface-base p-4 cursor-pointer"
                 >
-                    <div style={{ flex: 1 }}>
+                    <div style={{flex: 1}}>
                         <ThumbLoader id={design.id} />
                         {(design.tilings?.length &&
                             design.tilings[0].cache &&
@@ -87,9 +69,7 @@ export const DesignLoader = () => {
                                     <div>{tiling.cache.hash.slice(0, 10)}</div>
                                     {tilingCacheSvg(tiling.cache, tiling.shape)}
                                 </div>
-                            ))) ?? (
-                            <div style={{ color: 'red' }}>No tilings</div>
-                        )}
+                            ))) ?? <div style={{color: 'red'}}>No tilings</div>}
                         <div>{dayjs(design.updatedAt).from(dayjs())}</div>
                         <div className="flex flex-row justify-content-between">
                             {mb(design.size)}
@@ -99,25 +79,16 @@ export const DesignLoader = () => {
                                         evt.stopPropagation();
                                         const popup = confirmPopup({
                                             target: evt.currentTarget,
-                                            message:
-                                                'Are you sure you want to delete this design?',
+                                            message: 'Are you sure you want to delete this design?',
                                             icon: 'pi pi-exclamation-triangle',
                                             accept: () => {
                                                 setDesigns(
-                                                    designs.filter(
-                                                        (d) =>
-                                                            d.id !== design.id,
-                                                    ),
+                                                    designs.filter((d) => d.id !== design.id),
                                                 );
+                                                localforage.removeItem(key(design.id));
+                                                localforage.removeItem(meta(design.id));
                                                 localforage.removeItem(
-                                                    key(design.id),
-                                                );
-                                                localforage.removeItem(
-                                                    meta(design.id),
-                                                );
-                                                localforage.removeItem(
-                                                    thumbPrefix +
-                                                        key(design.id),
+                                                    thumbPrefix + key(design.id),
                                                 );
                                             },
                                             reject: () => {},
@@ -127,7 +98,7 @@ export const DesignLoader = () => {
                                     }}
                                     icon="pi pi-trash"
                                     className=" p-button-sm p-button-text p-button-danger"
-                                    style={{ marginTop: -5, marginBottom: -6 }}
+                                    style={{marginTop: -5, marginBottom: -6}}
                                 />
                             </div>
                         </div>
@@ -139,7 +110,7 @@ export const DesignLoader = () => {
         </div>
     );
 };
-const ThumbLoader = ({ id }: { id: string }) => {
+const ThumbLoader = ({id}: {id: string}) => {
     const [data, setData] = React.useState(null as null | string);
     React.useEffect(() => {
         localforage
@@ -149,6 +120,4 @@ const ThumbLoader = ({ id }: { id: string }) => {
     return data ? <img src={data} width={200} height={200} /> : null;
 };
 const mb = (n: number) =>
-    n > 1024 * 1024
-        ? (n / 1024 / 1024).toFixed(2) + 'mb'
-        : (n / 1024).toFixed(0) + 'kb';
+    n > 1024 * 1024 ? (n / 1024 / 1024).toFixed(2) + 'mb' : (n / 1024).toFixed(0) + 'kb';

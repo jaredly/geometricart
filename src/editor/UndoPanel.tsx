@@ -1,10 +1,10 @@
 /* @jsx jsx */
 /* @jsxFrag React.Fragment */
-import { jsx } from '@emotion/react';
-import React, { useState } from 'react';
-import { State } from '../types';
-import { Action } from '../state/Action';
-import { UndoItem } from './Sidebar';
+import {jsx} from '@emotion/react';
+import React, {useState} from 'react';
+import {State} from '../types';
+import {Action} from '../state/Action';
+import {UndoItem} from './Sidebar';
 
 export function UndoPanel({
     state,
@@ -26,7 +26,7 @@ export function UndoPanel({
         >
             <div className="flex flex-row">
                 <select
-                    css={{ display: 'block', flex: 1 }}
+                    css={{display: 'block', flex: 1}}
                     value={branch}
                     onChange={(evt) => setBranch(+evt.target.value)}
                 >
@@ -51,8 +51,7 @@ export function UndoPanel({
                         },
                     }}
                 >
-                    Parent branch: {current.parent.branch} @{' '}
-                    {current.parent.idx}
+                    Parent branch: {current.parent.branch} @ {current.parent.idx}
                 </div>
             ) : (
                 'No parent'

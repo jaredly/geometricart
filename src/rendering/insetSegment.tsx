@@ -1,5 +1,5 @@
-import { ArcSegment, Coord, LineSegment, Segment } from '../types';
-import { angleTo, dist, push } from './getMirrorTransforms';
+import {ArcSegment, Coord, LineSegment, Segment} from '../types';
+import {angleTo, dist, push} from './getMirrorTransforms';
 import {
     angleIsBetween,
     circleCircle,
@@ -8,9 +8,9 @@ import {
     lineLine,
     lineToSlope,
 } from './intersect';
-import { angleBetween } from './findNextSegments';
-import { anglesEqual } from './epsilonToZero';
-import { coordsEqual } from './pathsAreIdentical';
+import {angleBetween} from './findNextSegments';
+import {anglesEqual} from './epsilonToZero';
+import {coordsEqual} from './pathsAreIdentical';
 
 export const insetLineLine = (
     prev: Coord,
@@ -30,20 +30,20 @@ export const insetLineLine = (
     const intersection = lineLine(slope1, slope2);
     if (!intersection) {
         // Assume they're the same line, so the pushed one is correct
-        return { ...seg, to: p2 };
+        return {...seg, to: p2};
     }
     // if the line got shorter, we won't
     if (onlyExtend) {
         const t2 = angleTo(p0, intersection);
         if (dist(p0, intersection) < dist(p0, p1) || !closeEnoughAngle(t, t2)) {
             return [
-                { type: 'Line', to: p1 },
-                { type: 'Line', to: seg.to },
-                { type: 'Line', to: p2 },
+                {type: 'Line', to: p1},
+                {type: 'Line', to: seg.to},
+                {type: 'Line', to: p2},
             ];
         }
     }
-    return { ...seg, to: intersection };
+    return {...seg, to: intersection};
 };
 
 export const insetLineArc = (
@@ -57,12 +57,8 @@ export const insetLineArc = (
     const p0 = push(prev, t + Math.PI / 2, amount);
     const p1 = push(seg.to, t + Math.PI / 2, amount);
     const slope1 = lineToSlope(p0, p1);
-    const radius =
-        dist(next.center, next.to) + amount * (next.clockwise ? -1 : 1);
-    const intersection = lineCircle(
-        { center: next.center, radius: radius, type: 'circle' },
-        slope1,
-    );
+    const radius = dist(next.center, next.to) + amount * (next.clockwise ? -1 : 1);
+    const intersection = lineCircle({center: next.center, radius: radius, type: 'circle'}, slope1);
     if (!intersection.length) {
         // go to the point that's closest between the line and the circle.
         // So, intersect the line from the ircle center that's perpendicular to the line
@@ -75,21 +71,17 @@ export const insetLineArc = (
         const lengthToPerp = dist(perp!, p0);
         if (lengthToPerp > insetLength) {
             return [
-                { type: 'Line', to: perp! },
+                {type: 'Line', to: perp!},
                 {
                     type: 'Line',
-                    to: push(
-                        next.center,
-                        t + (Math.PI / 2) * (next.clockwise ? 1 : -1),
-                        radius,
-                    ),
+                    to: push(next.center, t + (Math.PI / 2) * (next.clockwise ? 1 : -1), radius),
                 },
             ];
         } else {
             const p2 = push(next.center, angleTo(next.center, seg.to), radius);
             return [
-                { type: 'Line', to: p1 },
-                { type: 'Line', to: p2 },
+                {type: 'Line', to: p1},
+                {type: 'Line', to: p2},
             ];
         }
     }
@@ -103,12 +95,10 @@ export const insetLineArc = (
         intersection.length === 1
             ? intersection[0]
             : intersection.length === 0
-            ? seg.to
-            : angleBetween(perp, angleTo(next.center, intersection[0]), true) >
-                  Math.PI ===
-              isLeft
-            ? intersection[0]
-            : intersection[1];
+              ? seg.to
+              : angleBetween(perp, angleTo(next.center, intersection[0]), true) > Math.PI === isLeft
+                ? intersection[0]
+                : intersection[1];
 
     // const dists = intersection.map((pos) => dist(pos, p1));
     // const target_ =
@@ -122,14 +112,13 @@ export const insetLineArc = (
     if (
         !intersection.length ||
         (onlyExtend &&
-            (dist(target, p0) < dist(prev, seg.to) ||
-                !closeEnoughAngle(t, angleTo(p0, target))))
+            (dist(target, p0) < dist(prev, seg.to) || !closeEnoughAngle(t, angleTo(p0, target))))
     ) {
         const p2 = push(next.center, angleTo(next.center, seg.to), radius);
         return [
-            { type: 'Line', to: p1 },
-            { type: 'Line', to: seg.to },
-            { type: 'Line', to: p2 },
+            {type: 'Line', to: p1},
+            {type: 'Line', to: seg.to},
+            {type: 'Line', to: p2},
         ];
     }
     // if (dists.length > 1) {
@@ -139,7 +128,7 @@ export const insetLineArc = (
     //     };
     // }
     // return { ...seg, to: intersection[0] };
-    return { ...seg, to: target };
+    return {...seg, to: target};
 };
 
 export const insetArcLine = (
@@ -155,10 +144,7 @@ export const insetArcLine = (
     const p2 = push(seg.to, t1 + Math.PI / 2, amount);
     const p3 = push(next.to, t1 + Math.PI / 2, amount);
     const slope2 = lineToSlope(p2, p3);
-    const intersection = lineCircle(
-        { center: seg.center, radius: radius, type: 'circle' },
-        slope2,
-    );
+    const intersection = lineCircle({center: seg.center, radius: radius, type: 'circle'}, slope2);
 
     const perp = t1 + Math.PI / 2;
 
@@ -169,12 +155,10 @@ export const insetArcLine = (
         intersection.length === 1
             ? intersection[0]
             : intersection.length === 0
-            ? seg.to
-            : angleBetween(perp, angleTo(seg.center, intersection[0]), true) >
-                  Math.PI ===
-              isLeft
-            ? intersection[0]
-            : intersection[1];
+              ? seg.to
+              : angleBetween(perp, angleTo(seg.center, intersection[0]), true) > Math.PI === isLeft
+                ? intersection[0]
+                : intersection[1];
 
     // const dists = intersection.map((pos) => dist(pos, p2));
     // const target_ =
@@ -199,13 +183,9 @@ export const insetArcLine = (
             return [
                 {
                     ...seg,
-                    to: push(
-                        seg.center,
-                        t1 + (Math.PI / 2) * (seg.clockwise ? 1 : -1),
-                        radius,
-                    ),
+                    to: push(seg.center, t1 + (Math.PI / 2) * (seg.clockwise ? 1 : -1), radius),
                 },
-                { type: 'Line', to: perp! },
+                {type: 'Line', to: perp!},
             ];
             // } else {
             //     const p2 = push(seg.center, angleTo(seg.center, seg.to), radius);
@@ -220,16 +200,13 @@ export const insetArcLine = (
         !intersection.length ||
         (onlyExtend &&
             (dist(next.to, target) < dist(next.to, seg.to) ||
-                !closeEnoughAngle(
-                    angleTo(next.to, seg.to),
-                    angleTo(p3, target),
-                )))
+                !closeEnoughAngle(angleTo(next.to, seg.to), angleTo(p3, target))))
     ) {
         const p1 = push(seg.center, angleTo(seg.center, seg.to), radius);
         return [
-            { ...seg, to: p1 },
-            { type: 'Line', to: seg.to },
-            { type: 'Line', to: p2 },
+            {...seg, to: p1},
+            {type: 'Line', to: seg.to},
+            {type: 'Line', to: p2},
         ];
     }
     // if (dists.length > 1) {
@@ -239,7 +216,7 @@ export const insetArcLine = (
     //     };
     // }
     // return intersection.length ? { ...seg, to: intersection[0] } : seg;
-    return { ...seg, to: target };
+    return {...seg, to: target};
 };
 
 // export const insetArcArc2 = (
@@ -286,20 +263,16 @@ export const insetArcArc = (
     const r2 = dist(next.center, next.to);
     const radius2 = r2 + amount * (next.clockwise ? -1 : 1);
     const intersection = circleCircle(
-        { center: next.center, radius: radius2, type: 'circle' },
-        { center: seg.center, radius: radius, type: 'circle' },
+        {center: next.center, radius: radius2, type: 'circle'},
+        {center: seg.center, radius: radius, type: 'circle'},
     );
     // It's a continuation
     if (coordsEqual(next.center, seg.center)) {
-        return { ...seg, to: push(seg.center, angle, radius) };
+        return {...seg, to: push(seg.center, angle, radius)};
     }
     if (intersection.length === 0) {
         const newTo = push(seg.center, angle, radius);
-        const otherTo = push(
-            next.center,
-            angleTo(next.center, seg.to),
-            radius2,
-        );
+        const otherTo = push(next.center, angleTo(next.center, seg.to), radius2);
         const mid = angleTo(seg.center, next.center) + Math.PI / 2;
         const mp = push(seg.to, mid, amount);
 
@@ -320,29 +293,23 @@ export const insetArcArc = (
         // Go to the tangent point
         const tangentPoint = push(
             seg.center,
-            angleTo(seg.center, next.center) +
-                (tangentPosition === 'pre-seg' ? Math.PI : 0),
+            angleTo(seg.center, next.center) + (tangentPosition === 'pre-seg' ? Math.PI : 0),
             radius,
         );
         const otherTangent = push(
             next.center,
-            angleTo(next.center, seg.center) +
-                (tangentPosition === 'post-next' ? Math.PI : 0),
+            angleTo(next.center, seg.center) + (tangentPosition === 'post-next' ? Math.PI : 0),
             radius2,
         );
         const dst = dist(tangentPoint, otherTangent);
-        const between = push(
-            tangentPoint,
-            angleTo(tangentPoint, otherTangent),
-            dst / 2,
-        );
+        const between = push(tangentPoint, angleTo(tangentPoint, otherTangent), dst / 2);
 
         // We've switched!
         if (r1 > r2 !== radius > radius2) {
             return [
-                { ...seg, to: newTo },
+                {...seg, to: newTo},
                 // { type: 'Line', to: between },
-                { type: 'Line', to: otherTo },
+                {type: 'Line', to: otherTo},
             ];
         }
 
@@ -353,7 +320,7 @@ export const insetArcArc = (
         //     radius + dst / 2,
         // );
         return [
-            { ...seg, to: tangentPoint },
+            {...seg, to: tangentPoint},
             {
                 type: 'Arc',
                 center: between,
@@ -362,8 +329,8 @@ export const insetArcArc = (
                     seg.clockwise === next.clockwise
                         ? !seg.clockwise
                         : seg.clockwise
-                        ? r1 > r2
-                        : r2 > r1,
+                          ? r1 > r2
+                          : r2 > r1,
                 // tangentPosition === 'between'
                 //     ? !seg.clockwise
                 //     : seg.clockwise,
@@ -383,20 +350,16 @@ export const insetArcArc = (
         // We've switched!
         if (r1 > r2 !== radius > radius2) {
             const newTo = push(seg.center, angle, radius);
-            const otherTo = push(
-                next.center,
-                angleTo(next.center, seg.to),
-                radius2,
-            );
+            const otherTo = push(next.center, angleTo(next.center, seg.to), radius2);
             return [
-                { ...seg, to: newTo },
+                {...seg, to: newTo},
                 // { type: 'Line', to: between },
-                { type: 'Line', to: otherTo },
+                {type: 'Line', to: otherTo},
             ];
         }
 
         const newTo = push(seg.center, angle, radius);
-        return { ...seg, to: newTo };
+        return {...seg, to: newTo};
     }
 
     // Ok, so the original intersection was either on the "top" or "bottom" of
@@ -406,50 +369,31 @@ export const insetArcArc = (
     const between = angleTo(seg.center, next.center);
 
     let isTop =
-        closeEnoughAngle(between, angle) ||
-        closeEnoughAngle(between, angle + Math.PI)
+        closeEnoughAngle(between, angle) || closeEnoughAngle(between, angle + Math.PI)
             ? seg.clockwise === next.clockwise
                 ? seg.clockwise
                 : seg.clockwise
-                ? r1 > r2
-                : r2 > r1
+                  ? r1 > r2
+                  : r2 > r1
             : angleBetween(between, angle, true) > Math.PI;
 
     // if (!seg.clockwise && next.clockwise) {
     //     isTop = r1 < r2;
     // }
 
-    const firstTop =
-        angleBetween(between, angleTo(seg.center, intersection[0]), true) >
-        Math.PI;
+    const firstTop = angleBetween(between, angleTo(seg.center, intersection[0]), true) > Math.PI;
 
     const to = isTop === firstTop ? intersection[0] : intersection[1];
 
     const toPrev = angleTo(seg.center, prev);
-    const prevAngle = angleBetween(
-        toPrev,
-        angleTo(seg.center, seg.to),
-        seg.clockwise,
-    );
-    const newAngle = angleBetween(
-        toPrev,
-        angleTo(seg.center, to),
-        seg.clockwise,
-    );
+    const prevAngle = angleBetween(toPrev, angleTo(seg.center, seg.to), seg.clockwise);
+    const newAngle = angleBetween(toPrev, angleTo(seg.center, to), seg.clockwise);
     // This is an extension! Go with it
     if (
         !onlyExtend ||
-        angleBetween(
-            angleTo(seg.center, seg.to),
-            angleTo(seg.center, to),
-            seg.clockwise,
-        ) < Math.PI
+        angleBetween(angleTo(seg.center, seg.to), angleTo(seg.center, to), seg.clockwise) < Math.PI
     ) {
-        const nextPos = push(
-            next.center,
-            angleTo(next.center, seg.to),
-            radius2,
-        );
+        const nextPos = push(next.center, angleTo(next.center, seg.to), radius2);
         return [
             // I, ugh, don't know why this fixes a bug.
             // but it does.
@@ -458,8 +402,8 @@ export const insetArcArc = (
             // an extra segment at the corner here, when I
             // look at the post-splitting debug info. But
             // it's not making problems right now, so 🤷‍♂️.
-            { ...seg, to: push(seg.center, angle, radius) },
-            { ...seg, to },
+            {...seg, to: push(seg.center, angle, radius)},
+            {...seg, to},
             // { type: 'Line', to: to },
             // { type: 'Line', to: nextPos },
             // { ...next, to: nextPos },
@@ -473,9 +417,9 @@ export const insetArcArc = (
     // This is a contraction! Back off
     const nextPos = push(next.center, angleTo(next.center, seg.to), radius2);
     return [
-        { ...seg, to: push(seg.center, angle, radius) },
-        { type: 'Line', to: seg.to },
-        { type: 'Line', to: nextPos },
+        {...seg, to: push(seg.center, angle, radius)},
+        {type: 'Line', to: seg.to},
+        {type: 'Line', to: nextPos},
     ];
 };
 

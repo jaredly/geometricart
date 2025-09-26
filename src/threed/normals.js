@@ -5,10 +5,7 @@ var DEFAULT_FACE_EPSILON = 1e-6;
 export const vertexNormals = function (faces, positions, specifiedEpsilon) {
     var N = positions.length;
     var normals = new Array(N);
-    var epsilon =
-        specifiedEpsilon === void 0
-            ? DEFAULT_NORMALS_EPSILON
-            : specifiedEpsilon;
+    var epsilon = specifiedEpsilon === void 0 ? DEFAULT_NORMALS_EPSILON : specifiedEpsilon;
 
     //Initialize normal array
     for (var i = 0; i < N; ++i) {
@@ -83,8 +80,7 @@ export const vertexNormals = function (faces, positions, specifiedEpsilon) {
 export const faceNormals = function (faces, positions, specifiedEpsilon) {
     var N = faces.length;
     var normals = new Array(N);
-    var epsilon =
-        specifiedEpsilon === void 0 ? DEFAULT_FACE_EPSILON : specifiedEpsilon;
+    var epsilon = specifiedEpsilon === void 0 ? DEFAULT_FACE_EPSILON : specifiedEpsilon;
 
     for (var i = 0; i < N; ++i) {
         var f = faces[i];

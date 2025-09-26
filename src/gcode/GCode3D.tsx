@@ -1,6 +1,17 @@
 import * as React from 'react';
 import {Canvas, useFrame, useLoader, useThree} from '@react-three/fiber';
-import {Camera, CanvasTexture, DoubleSide, LinearFilter, Mesh, RepeatWrapping, ShaderMaterial, Texture, TextureLoader, Vector3} from 'three';
+import {
+    Camera,
+    CanvasTexture,
+    DoubleSide,
+    LinearFilter,
+    Mesh,
+    RepeatWrapping,
+    ShaderMaterial,
+    Texture,
+    TextureLoader,
+    Vector3,
+} from 'three';
 import {GCodeData} from './Visualize';
 import {renderCutDepths} from './renderCutDepths';
 import {OrbitControls, PerspectiveCamera} from '@react-three/drei';
@@ -94,7 +105,17 @@ void main() {
 }
 `;
 
-export const GCode3D = ({data, gcode, state, meta}: {data: GCodeData; gcode: string; state: State; meta: string}) => {
+export const GCode3D = ({
+    data,
+    gcode,
+    state,
+    meta,
+}: {
+    data: GCodeData;
+    gcode: string;
+    state: State;
+    meta: string;
+}) => {
     const [scaleBase, setScaleBase] = React.useState(500);
     const scale = scaleBase / Math.max(data.dims.width, data.dims.height);
     const tx = React.useMemo(() => {
@@ -152,9 +173,12 @@ export const GCode3D = ({data, gcode, state, meta}: {data: GCodeData; gcode: str
                     ctx.fillText(meta, textMargin, qsize * 2 - textMargin);
 
                     const url = dest.toDataURL();
-                    const blob = new Blob([gcode + gcodeStateSuffix(state) + `\n;thumbnail: ${url}`], {
-                        type: 'text/x-gcode',
-                    });
+                    const blob = new Blob(
+                        [gcode + gcodeStateSuffix(state) + `\n;thumbnail: ${url}`],
+                        {
+                            type: 'text/x-gcode',
+                        },
+                    );
                     setDownload({url: URL.createObjectURL(blob), img: url});
                 }}
             >
@@ -162,14 +186,22 @@ export const GCode3D = ({data, gcode, state, meta}: {data: GCodeData; gcode: str
             </button>
             {download ? (
                 <div>
-                    <a href={download.url} style={{cursor: 'pointer'}} download={`geometric-${new Date().toISOString()}.nc`}>
+                    <a
+                        href={download.url}
+                        style={{cursor: 'pointer'}}
+                        download={`geometric-${new Date().toISOString()}.nc`}
+                    >
                         <img src={download.img} style={{width: qsize, height: qsize}} />
                     </a>
                 </div>
             ) : null}
             <div>
                 {[500, 1000, 2000, 5000].map((num) => (
-                    <button key={num} onClick={() => setScaleBase(num)} disabled={scaleBase === num}>
+                    <button
+                        key={num}
+                        onClick={() => setScaleBase(num)}
+                        disabled={scaleBase === num}
+                    >
                         {num}
                     </button>
                 ))}
@@ -200,7 +232,12 @@ const GetState = ({ok}: {ok: React.MutableRefObject<any>}) => {
     return null;
 };
 
-export function takePerspectivePictures(threes: any, ctx: CanvasRenderingContext2D, canv: React.RefObject<HTMLCanvasElement>, qsize: number) {
+export function takePerspectivePictures(
+    threes: any,
+    ctx: CanvasRenderingContext2D,
+    canv: React.RefObject<HTMLCanvasElement>,
+    qsize: number,
+) {
     threes.camera.position.set(0, 0, 10);
     threes.camera.lookAt(new Vector3(0, 0, 0));
     threes.gl.render(threes.scene, threes.camera);
@@ -257,7 +294,9 @@ function VBox({tx, data, scale}: {tx: Texture; data: GCodeData; scale: number}) 
         <mesh ref={mesh} material={mat} position={[0, 0, -modelDepth]}>
             {/* <meshBasicMaterial material={tx} toneMapped={false} /> */}
             {/* <boxGeometry args={[2, 2, 2]} /> */}
-            <planeGeometry args={[modelWidth, modelHeight, data.dims.width * scale, data.dims.height * scale]} />
+            <planeGeometry
+                args={[modelWidth, modelHeight, data.dims.width * scale, data.dims.height * scale]}
+            />
         </mesh>
     );
 }

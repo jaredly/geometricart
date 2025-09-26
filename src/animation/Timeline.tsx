@@ -1,14 +1,14 @@
 /* @jsx jsx */
 /* @jsxFrag React.Fragment */
-import { jsx } from '@emotion/react';
+import {jsx} from '@emotion/react';
 import React from 'react';
-import { Action } from '../state/Action';
-import { BlurInt, Toggle } from '../editor/Forms';
-import { AddIcon, IconButton } from '../icons/Icon';
-import { State, TimelineSlot } from '../types';
+import {Action} from '../state/Action';
+import {BlurInt, Toggle} from '../editor/Forms';
+import {AddIcon, IconButton} from '../icons/Icon';
+import {State, TimelineSlot} from '../types';
 import eq from 'fast-deep-equal';
-import { SlotEditor } from './SlotEditor';
-import { EyeIcon, EyeInvisibleIcon } from '../icons/Eyes';
+import {SlotEditor} from './SlotEditor';
+import {EyeIcon, EyeInvisibleIcon} from '../icons/Eyes';
 
 export const Item = ({
     item,
@@ -32,7 +32,7 @@ export const Item = ({
                 padding: 8,
             }}
         >
-            <div css={{ display: 'flex', alignItems: 'center' }}>
+            <div css={{display: 'flex', alignItems: 'center'}}>
                 <select
                     value={item.contents.type}
                     onChange={(evt) => {
@@ -40,7 +40,7 @@ export const Item = ({
                         if (v === 'spacer') {
                             setEditing({
                                 ...item,
-                                contents: { type: 'spacer' },
+                                contents: {type: 'spacer'},
                             });
                         } else {
                             setEditing({
@@ -50,9 +50,7 @@ export const Item = ({
                                     custom: {},
                                     phase: 'pre-inset',
                                     scriptId:
-                                        Object.keys(
-                                            state.animations.scripts,
-                                        )[0] ?? 'script-0',
+                                        Object.keys(state.animations.scripts)[0] ?? 'script-0',
                                 },
                             });
                         }
@@ -64,7 +62,7 @@ export const Item = ({
                 <Toggle
                     label="Enabled"
                     value={item.enabled}
-                    onChange={(enabled) => setEditing({ ...item, enabled })}
+                    onChange={(enabled) => setEditing({...item, enabled})}
                 />
             </div>
 
@@ -73,9 +71,7 @@ export const Item = ({
                 Weight:{' '}
                 <BlurInt
                     value={item.weight}
-                    onChange={(weight) =>
-                        weight ? setEditing({ ...item, weight }) : null
-                    }
+                    onChange={(weight) => (weight ? setEditing({...item, weight}) : null)}
                 />
             </div>
 
@@ -126,12 +122,10 @@ export function Timelines({
 }) {
     const [error, setError] = React.useState(null as null | Error);
 
-    const [editing, setEditing] = React.useState(
-        null as null | [number, number],
-    );
+    const [editing, setEditing] = React.useState(null as null | [number, number]);
 
     return (
-        <div style={{ flex: 1 }}>
+        <div style={{flex: 1}}>
             <button
                 onClick={() => {
                     dispatch({
@@ -146,10 +140,7 @@ export function Timelines({
                 Add timeline
             </button>
             {state.animations.timelines.map((timeline, ti) => {
-                const min = timeline.items.reduce(
-                    (x, i) => Math.min(x, i.weight),
-                    Infinity,
-                );
+                const min = timeline.items.reduce((x, i) => Math.min(x, i.weight), Infinity);
                 const factor = 1 / min;
                 return (
                     <div
@@ -159,7 +150,7 @@ export function Timelines({
                             display: 'flex',
                             flexDirection: 'row',
                         }}
-                        style={timeline.enabled ? {} : { opacity: 0.7 }}
+                        style={timeline.enabled ? {} : {opacity: 0.7}}
                     >
                         <div
                             css={{
@@ -178,16 +169,12 @@ export function Timelines({
                                     action: {
                                         type: 'edit',
                                         key: ti,
-                                        value: { enabled: !timeline.enabled },
+                                        value: {enabled: !timeline.enabled},
                                     },
                                 });
                             }}
                         >
-                            {timeline.enabled ? (
-                                <EyeIcon />
-                            ) : (
-                                <EyeInvisibleIcon />
-                            )}
+                            {timeline.enabled ? <EyeIcon /> : <EyeInvisibleIcon />}
                         </div>
                         {/* <div css={{ display: 'flex', flexDirection: 'row' }}>
                             <div css={{ fontWeight: 'bold', padding: 4 }}>
@@ -249,7 +236,7 @@ export function Timelines({
                             {timeline.items.map((item, i) => (
                                 <div
                                     key={i}
-                                    style={{ flex: item.weight * factor }}
+                                    style={{flex: item.weight * factor}}
                                     css={{
                                         border: '1px solid white',
                                         height: 30,
@@ -263,9 +250,7 @@ export function Timelines({
                                     }}
                                     onClick={() => setEditing([ti, i])}
                                 >
-                                    {item.contents.type === 'script'
-                                        ? item.contents.scriptId
-                                        : ''}
+                                    {item.contents.type === 'script' ? item.contents.scriptId : ''}
                                     <IconButton
                                         size={12}
                                         css={{
@@ -320,7 +305,7 @@ export function Timelines({
                         dispatch({
                             type: 'timeline:slot:are',
                             timeline: ti,
-                            action: { type: 'remove', key: i },
+                            action: {type: 'remove', key: i},
                         });
                         setEditing(null);
                     }}
@@ -340,9 +325,7 @@ export function Timelines({
                         });
                         setEditing(null);
                     }}
-                    item={
-                        state.animations.timelines[editing[0]].items[editing[1]]
-                    }
+                    item={state.animations.timelines[editing[0]].items[editing[1]]}
                 />
             ) : null}
         </div>

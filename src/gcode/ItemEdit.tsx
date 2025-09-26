@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from 'react';
-import { paletteColor } from '../editor/RenderPath';
-import { makeDepths, pxToMM } from './generateGcode';
-import { GCodePath, State } from '../types';
-import { FillColors, LineColors } from './GCodeEditor';
-import { Int } from '../editor/Forms';
+import React, {useEffect, useState} from 'react';
+import {paletteColor} from '../editor/RenderPath';
+import {makeDepths, pxToMM} from './generateGcode';
+import {GCodePath, State} from '../types';
+import {FillColors, LineColors} from './GCodeEditor';
+import {Int} from '../editor/Forms';
 import {
     CheckmarkIcon,
     IconAngleAcute,
@@ -17,7 +17,7 @@ import {
     IconVerticalAlignMiddle,
     IconVerticalAlignTop,
 } from '../icons/Icon';
-import { Tooltip } from '../utils/Tooltip';
+import {Tooltip} from '../utils/Tooltip';
 
 const ColorsSelect = ({
     value,
@@ -25,16 +25,15 @@ const ColorsSelect = ({
     onChange,
 }: {
     value?: string;
-    colors: { key: string; color: string; title: string }[];
+    colors: {key: string; color: string; title: string}[];
     onChange: (key: string) => void;
 }) => {
     const [show, setShow] = useState(false);
     return (
-        <div style={{ position: 'relative', display: 'inline-block' }}>
+        <div style={{position: 'relative', display: 'inline-block'}}>
             <div
                 style={{
-                    backgroundColor:
-                        colors.find((c) => c.key === value)?.color ?? 'magenta',
+                    backgroundColor: colors.find((c) => c.key === value)?.color ?? 'magenta',
                     width: 20,
                     height: 20,
                     border: '1px solid black',
@@ -57,7 +56,7 @@ const ColorsSelect = ({
                     {colors.map((c) => (
                         <div
                             key={c.key}
-                            style={{ whiteSpace: 'nowrap', cursor: 'pointer' }}
+                            style={{whiteSpace: 'nowrap', cursor: 'pointer'}}
                             onClick={() => (setShow(false), onChange(c.key))}
                         >
                             <div
@@ -69,9 +68,7 @@ const ColorsSelect = ({
                                     marginRight: 4,
                                 }}
                             />
-                            <span style={{ whiteSpace: 'nowrap' }}>
-                                {c.title}
-                            </span>
+                            <span style={{whiteSpace: 'nowrap'}}>{c.title}</span>
                         </div>
                     ))}
                 </div>
@@ -88,7 +85,7 @@ export const ItemEdit = ({
 }: {
     item: GCodePath;
     onChange: (item: GCodePath) => void;
-    colors: { line: LineColors; fill: FillColors };
+    colors: {line: LineColors; fill: FillColors};
     state: State;
 }) => {
     const [edited, setEdited] = useState(null as null | GCodePath);
@@ -103,7 +100,7 @@ export const ItemEdit = ({
             }}
         >
             <button
-                onClick={() => onChange({ ...item, disabled: !item.disabled })}
+                onClick={() => onChange({...item, disabled: !item.disabled})}
                 style={{
                     border: 'none',
                     backgroundColor: 'transparent',
@@ -114,19 +111,15 @@ export const ItemEdit = ({
                 {item.disabled ? <IconEyeInvisible /> : <IconEye />}
             </button>
             <ColorsSelect
-                onChange={(color) => setEdited({ ...current, color })}
+                onChange={(color) => setEdited({...current, color})}
                 value={current.color}
                 colors={Object.keys(colors.line)
                     .map((c) => ({
                         key: c,
-                        color: paletteColor(
-                            state.palette,
-                            colors.line[c].color,
-                        )!,
-                        title: `${pxToMM(
-                            colors.line[c].width! / 100,
-                            state.meta.ppi,
-                        ).toFixed(2)} mm (${colors.line[c].count} paths)`,
+                        color: paletteColor(state.palette, colors.line[c].color)!,
+                        title: `${pxToMM(colors.line[c].width! / 100, state.meta.ppi).toFixed(
+                            2,
+                        )} mm (${colors.line[c].count} paths)`,
                     }))
                     .concat(
                         Object.keys(colors.fill).map((c) => ({
@@ -141,15 +134,12 @@ export const ItemEdit = ({
                     )}
             />
             {selected?.width ? (
-                <span style={{ fontSize: '80%', marginLeft: 8 }}>
-                    {pxToMM(selected.width / 100, state.meta.ppi).toFixed(2) +
-                        'mm'}
+                <span style={{fontSize: '80%', marginLeft: 8}}>
+                    {pxToMM(selected.width / 100, state.meta.ppi).toFixed(2) + 'mm'}
                 </span>
             ) : (
                 <ButtonToggle
-                    button={(_, toggle) => (
-                        <IconArrowAutofitWidth onClick={toggle} />
-                    )}
+                    button={(_, toggle) => <IconArrowAutofitWidth onClick={toggle} />}
                     startOpen
                     body={
                         <Float
@@ -159,15 +149,13 @@ export const ItemEdit = ({
                             }}
                             value={current.diameter}
                             onChange={(diameter) =>
-                                diameter != null
-                                    ? setEdited({ ...current, diameter })
-                                    : null
+                                diameter != null ? setEdited({...current, diameter}) : null
                             }
                         />
                     }
                 />
             )}
-            <span style={{ marginRight: 8 }} />
+            <span style={{marginRight: 8}} />
             <IconSpeedtest />
             <Float
                 style={{
@@ -176,14 +164,10 @@ export const ItemEdit = ({
                 }}
                 value={current.speed}
                 placeholder="Speed"
-                onChange={(speed) =>
-                    speed != null ? setEdited({ ...current, speed }) : null
-                }
+                onChange={(speed) => (speed != null ? setEdited({...current, speed}) : null)}
             />
             <ButtonToggle
-                button={(_, toggle) => (
-                    <IconVerticalAlignTop onClick={toggle} />
-                )}
+                button={(_, toggle) => <IconVerticalAlignTop onClick={toggle} />}
                 startOpen={current.start != null && current.start !== 0}
                 body={
                     <Float
@@ -196,9 +180,7 @@ export const ItemEdit = ({
                         value={current.start ?? 0}
                         placeholder="Start"
                         onChange={(start) =>
-                            start != null
-                                ? setEdited({ ...current, start })
-                                : null
+                            start != null ? setEdited({...current, start}) : null
                         }
                     />
                 }
@@ -224,15 +206,11 @@ export const ItemEdit = ({
                     }}
                     value={current.depth}
                     // placeholder="Depth"
-                    onChange={(depth) =>
-                        depth != null ? setEdited({ ...current, depth }) : null
-                    }
+                    onChange={(depth) => (depth != null ? setEdited({...current, depth}) : null)}
                 />
             </Tooltip>
             <ButtonToggle
-                button={(_, toggle) => (
-                    <IconVerticalAlignMiddle onClick={toggle} />
-                )}
+                button={(_, toggle) => <IconVerticalAlignMiddle onClick={toggle} />}
                 startOpen={current.passDepth != null && current.passDepth !== 0}
                 body={
                     <span>
@@ -244,9 +222,7 @@ export const ItemEdit = ({
                                 width: 30,
                             }}
                             value={current.passDepth}
-                            onChange={(passDepth) =>
-                                setEdited({ ...current, passDepth })
-                            }
+                            onChange={(passDepth) => setEdited({...current, passDepth})}
                         />
                         <span
                             style={{
@@ -254,15 +230,7 @@ export const ItemEdit = ({
                                 marginRight: 8,
                             }}
                         >
-                            (
-                            {
-                                makeDepths(
-                                    current.start,
-                                    current.depth,
-                                    current.passDepth,
-                                ).length
-                            }{' '}
-                            p)
+                            ({makeDepths(current.start, current.depth, current.passDepth).length} p)
                         </span>
                     </span>
                 }
@@ -280,9 +248,7 @@ export const ItemEdit = ({
                                 width: 30,
                             }}
                             value={current.vbitAngle}
-                            onChange={(vbitAngle) =>
-                                setEdited({ ...current, vbitAngle })
-                            }
+                            onChange={(vbitAngle) => setEdited({...current, vbitAngle})}
                         />
                     }
                 />
@@ -291,14 +257,12 @@ export const ItemEdit = ({
             )}
             {selected?.width ? (
                 <ButtonToggle
-                    button={(_, toggle) => (
-                        <IconTabUnselected onClick={toggle} />
-                    )}
+                    button={(_, toggle) => <IconTabUnselected onClick={toggle} />}
                     startOpen={current.tabs != null}
                     body={
                         <Tabs
                             tabs={current.tabs}
-                            onChange={(tabs) => setEdited({ ...current, tabs })}
+                            onChange={(tabs) => setEdited({...current, tabs})}
                         />
                     }
                 />
@@ -308,14 +272,14 @@ export const ItemEdit = ({
             {edited != null ? (
                 <span>
                     <CheckmarkIcon
-                        style={{ cursor: 'pointer', margin: 2 }}
+                        style={{cursor: 'pointer', margin: 2}}
                         onClick={() => {
                             onChange(edited);
                             setEdited(null);
                         }}
                     />
                     <IconUndo
-                        style={{ cursor: 'pointer', margin: 2 }}
+                        style={{cursor: 'pointer', margin: 2}}
                         onClick={() => {
                             setEdited(null);
                         }}
@@ -328,17 +292,10 @@ export const ItemEdit = ({
     );
 };
 
-const tabsToString = (tabs?: Tabs) =>
-    tabs ? `${tabs.count},${tabs.depth},${tabs.width}` : ',,';
+const tabsToString = (tabs?: Tabs) => (tabs ? `${tabs.count},${tabs.depth},${tabs.width}` : ',,');
 
 type Tabs = NonNullable<GCodePath['tabs']>;
-const Tabs = ({
-    tabs,
-    onChange,
-}: {
-    tabs?: Tabs;
-    onChange: (tabs?: Tabs) => void;
-}) => {
+const Tabs = ({tabs, onChange}: {tabs?: Tabs; onChange: (tabs?: Tabs) => void}) => {
     const [text, setText] = useState(tabsToString(tabs));
     useEffect(() => {
         if (tabsToString(tabs) !== text) {
@@ -355,11 +312,9 @@ const Tabs = ({
             !isNaN(count) &&
             !isNaN(depth) &&
             !isNaN(width) &&
-            (count !== tabs?.count ||
-                depth !== tabs?.depth ||
-                width !== tabs?.width)
+            (count !== tabs?.count || depth !== tabs?.depth || width !== tabs?.width)
         ) {
-            onChange({ count, depth, width });
+            onChange({count, depth, width});
         }
     };
     return (

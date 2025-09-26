@@ -1,6 +1,6 @@
 import * as React from 'react';
-import { cx } from '@emotion/css';
-import { Button } from 'primereact/button';
+import {cx} from '@emotion/css';
+import {Button} from 'primereact/button';
 
 export type Tab = {
     key: string;
@@ -9,7 +9,7 @@ export type Tab = {
     onHover?: (hovered: boolean) => void;
     content: (expanded: boolean) => React.ReactNode;
 };
-export type ActiveIds = { [key: string]: boolean };
+export type ActiveIds = {[key: string]: boolean};
 
 export const Accordion = ({
     tabs,
@@ -20,7 +20,7 @@ export const Accordion = ({
     activeIds: ActiveIds;
     setActiveIds: (ids: ActiveIds) => void;
 }) => {
-    const cache = React.useMemo(() => ({} as { [key: string]: boolean }), []);
+    const cache = React.useMemo(() => ({}) as {[key: string]: boolean}, []);
     Object.entries(activeIds).forEach(([key, active]) => {
         if (active) {
             cache[key] = true;
@@ -52,12 +52,8 @@ export const Accordion = ({
                             display: 'flex',
                             alignItems: 'center',
                         }}
-                        onMouseEnter={
-                            tab.onHover ? () => tab.onHover!(true) : undefined
-                        }
-                        onMouseLeave={
-                            tab.onHover ? () => tab.onHover!(false) : undefined
-                        }
+                        onMouseEnter={tab.onHover ? () => tab.onHover!(true) : undefined}
+                        onMouseLeave={tab.onHover ? () => tab.onHover!(false) : undefined}
                         onClick={() =>
                             setActiveIds({
                                 ...activeIds,
@@ -88,10 +84,7 @@ export const Accordion = ({
                         <div
                             style={{
                                 borderBottom: '1px solid var(--surface-border)',
-                                display:
-                                    tab.always || activeIds[tab.key]
-                                        ? 'block'
-                                        : 'none',
+                                display: tab.always || activeIds[tab.key] ? 'block' : 'none',
                             }}
                         >
                             {tab.content(activeIds[tab.key])}

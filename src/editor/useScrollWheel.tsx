@@ -1,6 +1,6 @@
 import React from 'react';
-import { State, View } from '../types';
-import { EditorState, screenToWorld } from './Canvas';
+import {State, View} from '../types';
+import {EditorState, screenToWorld} from './Canvas';
 
 export function useScrollWheel(
     ref: React.MutableRefObject<SVGSVGElement | null>,
@@ -26,7 +26,7 @@ export function useScrollWheel(
                 clearTimeout(timer);
             }
             timer = setTimeout(() => {
-                setEditorState((state) => ({ ...state, zooming: false }));
+                setEditorState((state) => ({...state, zooming: false}));
             }, 50);
 
             if (evt.shiftKey) {
@@ -59,10 +59,7 @@ export function useScrollWheel(
                 const pos = screenToWorld(width, height, screenPos, view);
 
                 const amount = dy / 100 + 1.0;
-                const newZoom = Math.min(
-                    Math.max(view.zoom * amount, 10),
-                    200000,
-                );
+                const newZoom = Math.min(Math.max(view.zoom * amount, 10), 200000);
                 const newPos = screenToWorld(width, height, screenPos, {
                     ...view,
                     zoom: newZoom,
@@ -81,11 +78,11 @@ export function useScrollWheel(
                 };
             });
         };
-        ref.current!.addEventListener('wheel', fn, { passive: false });
+        ref.current!.addEventListener('wheel', fn, {passive: false});
         return () => {
             if (timer != null) {
                 clearTimeout(timer);
-                setEditorState((state) => ({ ...state, zooming: false }));
+                setEditorState((state) => ({...state, zooming: false}));
             }
             ref.current?.removeEventListener('wheel', fn);
         };

@@ -1,4 +1,4 @@
-import { Coord, State } from '../types';
+import {Coord, State} from '../types';
 import {
     applyHistoryView,
     cacheOverlays,
@@ -8,54 +8,57 @@ import {
     simplifyHistory,
     StateAndAction,
 } from './HistoryPlayback';
-import {
-    canvasRender,
-    makeImage,
-    paletteImages,
-} from '../rendering/CanvasRender';
-import { findBoundingRect } from '../editor/Export';
-import { renderTexture } from '../editor/ExportPng';
-import { screenToWorld, worldToScreen } from '../editor/Canvas';
-import { Action } from '../state/Action';
+import {canvasRender, makeImage, paletteImages} from '../rendering/CanvasRender';
+import {findBoundingRect} from '../editor/Export';
+import {renderTexture} from '../editor/ExportPng';
+import {screenToWorld, worldToScreen} from '../editor/Canvas';
+import {Action} from '../state/Action';
 import React from 'react';
-import { followPoint } from './followPoint';
-import { animateAction } from './animateAction';
-import { drawCursor } from './cursor';
-import { coordsEqual } from '../rendering/pathsAreIdentical';
-import { closeEnough } from '../rendering/epsilonToZero';
+import {followPoint} from './followPoint';
+import {animateAction, skipAction} from './animateAction';
+import {drawCompassAndRuler} from './animateCompassAndRuler';
+import {drawCursor} from './cursor';
+import {coordsEqual} from '../rendering/pathsAreIdentical';
+import {closeEnough} from '../rendering/epsilonToZero';
+import {CompassRenderState, CompassState} from '../editor/compassAndRuler';
 
 export const nextFrame = () => new Promise(requestAnimationFrame);
-export const wait = (time: number) =>
-    new Promise((res) => setTimeout(res, time));
+export const wait = (time: number) => new Promise((res) => setTimeout(res, time));
 
 export type AnimateState = {
     ctx: CanvasRenderingContext2D;
     canvas: HTMLCanvasElement;
+    compassState?: CompassState;
+    lastDrawnCompassState?: CompassRenderState;
     i: number;
     cursor: Coord;
     frames: ImageBitmap[];
     fromScreen: (point: Coord, state: State) => Coord;
     toScreen: (point: Coord, state: State) => Coord;
     histories: StateAndAction[];
-    lastSelection?: { type: 'Path' | 'PathGroup'; ids: string[] };
+    lastSelection?: {type: 'Path' | 'PathGroup'; ids: string[]};
 };
+
+export type PreviewT = 'corner' | number | null;
 
 export const animateHistory = async (
     originalState: State,
     canvas: HTMLCanvasElement,
-    stopped: { current: boolean },
+    stopped: {current: boolean},
     startAt: number,
     preimage: boolean,
     log: React.RefObject<HTMLDivElement>,
-    inputRef?: HTMLInputElement | null,
+    onStep?: (i: number) => void,
+    // inputRef?: HTMLInputElement | null,
     animateTitle?: boolean,
+    preview?: PreviewT,
 ) => {
     const now = Date.now();
 
     const speed = 1;
 
     let histories = getHistoriesList(originalState);
-    const { zoom } = originalState.animations.config;
+    const {zoom} = originalState.animations.config;
     const ctx = canvas.getContext('2d')!;
     ctx.lineWidth = 1;
 
@@ -77,10 +80,7 @@ export const animateHistory = async (
     let w = originalSize;
 
     const viewPoints = findViewPoints(histories);
-    const mergedVP = mergeViewPoints(
-        viewPoints,
-        originalState.historyView?.zooms,
-    );
+    const mergedVP = mergeViewPoints(viewPoints, originalState.historyView?.zooms);
 
     for (let i = 0; i < histories.length; i++) {
         histories[i].state = applyHistoryView(
@@ -90,9 +90,7 @@ export const animateHistory = async (
             histories[i].state,
         );
     }
-    histories = histories.filter(
-        (_, i) => !originalState.historyView?.skips.includes(i),
-    );
+    histories = histories.filter((_, i) => !originalState.historyView?.skips.includes(i));
 
     const overlays = await cacheOverlays(originalState);
     const cachedPaletteImages = await paletteImages(originalState.palette);
@@ -110,6 +108,8 @@ export const animateHistory = async (
             0,
             overlays,
             cachedPaletteImages,
+            false,
+            null,
             true,
         );
         context.restore();
@@ -124,7 +124,8 @@ export const animateHistory = async (
     const state: AnimateState = {
         ctx,
         i: startAt,
-        cursor: { x: 0, y: 0 },
+        cursor: {x: 0, y: 0},
+        compassState: undefined,
         canvas,
         frames: [],
         histories,
@@ -144,8 +145,9 @@ export const animateHistory = async (
     const follow = (
         i: number,
         point: Coord,
-        extra?: (pos: Coord) => void | Promise<void>,
-    ) => followPoint(state, state.toScreen(point, histories[i].state), extra);
+        extra?: (pos: Coord, state: State) => void | Promise<void>,
+        speed = 1,
+    ) => followPoint(state, state.toScreen(point, histories[i].state), extra, speed);
 
     if (preimage) {
         for (let i = 0; i < histories.length; i++) {
@@ -163,6 +165,15 @@ export const animateHistory = async (
         draw(startAt - 1, offctx);
         state.frames[startAt - 1] = await createImageBitmap(offcan);
     }
+
+    let lastScene = null;
+    if (preview != null) {
+        offctx.clearRect(0, 0, canvas.width, canvas.height);
+        console.log('the view', state.histories[state.histories.length - 1].state.view);
+        draw(state.histories.length - 1, offctx);
+        lastScene = await createImageBitmap(offcan);
+    }
+
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     if (animateTitle) {
@@ -177,14 +188,14 @@ export const animateHistory = async (
         const final = await createImageBitmap(canvas);
         const text = 'Pattern walk-through';
 
-        ctx.font = '100px sans-serif';
+        ctx.font = '200 100px Lexend';
         ctx.fillStyle = 'white';
         ctx.textAlign = 'left';
         // ctx.textAlign = 'center';
         ctx.strokeStyle = 'rgba(0,0,0,1)';
         ctx.lineJoin = 'round';
         ctx.lineCap = 'round';
-        ctx.lineWidth = 30;
+        ctx.lineWidth = 20;
 
         const fw = ctx.measureText(text).width;
         const widths = [0];
@@ -192,7 +203,7 @@ export const animateHistory = async (
             widths.push(ctx.measureText(text.slice(0, i)).width);
         }
 
-        const frames = 240; // / speed;
+        const frames = 140; // / speed;
         for (let i = 0; i < frames; i++) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.drawImage(final, 0, 0);
@@ -200,35 +211,77 @@ export const animateHistory = async (
             const at = widths.findIndex((m) => m > w);
 
             const t = text.slice(0, at);
-            ctx.strokeText(
-                t,
-                ctx.canvas.width / 2 - w / 2,
-                ctx.canvas.height * 0.9,
-            );
-            ctx.fillText(
-                t,
-                ctx.canvas.width / 2 - w / 2,
-                ctx.canvas.height * 0.9,
-            );
+            ctx.strokeText(t, ctx.canvas.width / 2 - w / 2, ctx.canvas.height * 0.9);
+            ctx.fillText(t, ctx.canvas.width / 2 - w / 2, ctx.canvas.height * 0.9);
 
             await nextFrame();
         }
         ctx.lineWidth = 1;
 
-        await wait(400 / speed);
+        await wait(800 / speed);
 
-        await crossFade(ctx, canvas, first, final, 30 / speed);
+        await crossFade(ctx, canvas, final, first, 30 / speed);
     }
 
     for (; state.i < histories.length; state.i++) {
         if (stopped.current) {
-            break;
+            return; // break;
         }
-        // if (originalState.historyView?.skips.includes(state.i)) {
-        //     continue;
-        // }
-        if (inputRef) {
-            inputRef.value = state.i + '';
+        onStep?.(state.i);
+
+        const title = originalState.historyView?.titles?.find(
+            (title) => title.idx <= state.i && state.i <= title.idx + title.duration,
+        );
+        let speed = title?.speed ?? 1;
+        let skip = 0;
+        if (speed >= 5) {
+            skip = speed - 4;
+            speed = 4;
+        }
+
+        if (skip) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            underlay(ctx, state, lastScene!, preview);
+            draw(state.i);
+            overlay(ctx, state, originalState.historyView);
+            state.frames.push(await createImageBitmap(canvas));
+
+            const action = histories[state.i].action;
+            if (action?.type === 'path:update:many') {
+            } else {
+                // Draw the cursor
+                if (
+                    state.lastDrawnCompassState &&
+                    !['path:create', 'path:create:many', 'history-view:update'].includes(
+                        action?.type!,
+                    ) &&
+                    !(action?.type === 'view:update' && !action.view.guides)
+                ) {
+                    drawCompassAndRuler(
+                        ctx,
+                        state.lastDrawnCompassState,
+                        state,
+                        histories[state.i].state,
+                    );
+                }
+                drawCursor(ctx, state.cursor.x, state.cursor.y);
+            }
+
+            // await wait(100);
+            await nextFrame();
+            // await nextFrame();
+            // await nextFrame();
+
+            for (let i = 0; i < skip; i++) {
+                state.i++;
+                skipAction(state, histories);
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                underlay(ctx, state, lastScene!, preview);
+                draw(state.i);
+                overlay(ctx, state, originalState.historyView);
+                state.frames.push(await createImageBitmap(canvas));
+            }
+            continue;
         }
 
         await animateAction(state, histories, follow, speed);
@@ -240,47 +293,141 @@ export const animateHistory = async (
                 !coordsEqual(st.view.center, ps.view.center) ||
                 !closeEnough(st.view.zoom, ps.view.zoom)
             ) {
-                let next;
+                let next: ImageBitmap;
                 if (preimage) {
                     next = state.frames[state.i];
                 } else {
+                    offctx.clearRect(0, 0, offcan.width, offcan.height);
+
+                    underlay(offctx, state, lastScene!, preview);
                     draw(state.i, offctx);
+                    overlay(ctx, state, originalState.historyView);
                     next = await createImageBitmap(offcan);
-                    // ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    // ctx.drawImage(state.frames[state.i - 1], 0, 0);
+
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(state.frames[state.i - 1], 0, 0);
                 }
-                await crossFade(
-                    ctx,
-                    canvas,
-                    next,
-                    state.frames[state.i - 1],
-                    30,
-                );
+                await crossFade(ctx, canvas, state.frames[state.i - 1], next, 50);
             }
             // continue;
         }
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+
         if (preimage) {
             ctx.drawImage(state.frames[state.i], 0, 0);
         } else {
+            underlay(ctx, state, lastScene!, preview);
             draw(state.i);
+            overlay(ctx, state, originalState.historyView);
             state.frames.push(await createImageBitmap(canvas));
         }
 
-        if (histories[state.i].action?.type === 'path:update:many') {
+        const action = histories[state.i].action;
+
+        if (action?.type === 'path:update:many') {
         } else {
             // Draw the cursor
+            if (
+                state.lastDrawnCompassState &&
+                !['path:create', 'path:create:many', 'history-view:update'].includes(
+                    action?.type!,
+                ) &&
+                !(action?.type === 'view:update' && !action.view.guides)
+            ) {
+                drawCompassAndRuler(
+                    ctx,
+                    state.lastDrawnCompassState,
+                    state,
+                    histories[state.i].state,
+                );
+            }
             drawCursor(ctx, state.cursor.x, state.cursor.y);
         }
 
         await nextFrame();
+
+        if (skip) {
+            for (let i = 0; i < skip; i++) {
+                state.i++;
+                skipAction(state, histories);
+                if (!preimage) {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    underlay(ctx, state, lastScene!, preview);
+                    draw(state.i);
+                    overlay(ctx, state, originalState.historyView);
+                    state.frames.push(await createImageBitmap(canvas));
+                }
+            }
+        }
     }
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(state.frames[state.frames.length - 1], 0, 0);
 
     console.log('ok', Date.now() - now);
+};
+
+export const overlay = (
+    ctx: CanvasRenderingContext2D,
+    state: AnimateState,
+    historyView: State['historyView'],
+) => {
+    const title = historyView?.titles?.find(
+        (title) => title.idx <= state.i && state.i <= title.idx + title.duration,
+    );
+    if (title) {
+        ctx.font = '200 60px Lexend';
+        ctx.fontStretch = 'expanded';
+        ctx.fillStyle = 'white';
+        ctx.textAlign = 'left';
+        // ctx.textAlign = 'center';
+        ctx.strokeStyle = 'rgba(0,0,0,1)';
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+        ctx.lineWidth = 10;
+        const text = title.title;
+
+        const fw = ctx.measureText(text).width;
+        ctx.strokeText(text, ctx.canvas.width / 2 - fw / 2, ctx.canvas.height * 0.94);
+        ctx.fillText(text, ctx.canvas.width / 2 - fw / 2, ctx.canvas.height * 0.94);
+
+        ctx.lineWidth = 1;
+    }
+};
+
+export const underlay = (
+    ctx: CanvasRenderingContext2D,
+    state: AnimateState,
+    lastScene: ImageBitmap,
+    preview?: PreviewT,
+) => {
+    if (preview === 'corner') {
+        ctx.drawImage(lastScene!, 0, 0, ctx.canvas.width / 5, ctx.canvas.height / 5);
+    } else if (preview != null) {
+        const lastView = state.histories[state.histories.length - 1].state.view;
+        const view = state.histories[state.i].state.view;
+        ctx.globalAlpha = preview;
+        if (
+            lastView.center.x !== view.center.x ||
+            lastView.center.y !== view.center.y ||
+            lastView.zoom !== view.zoom
+        ) {
+            const wp = screenToWorld(ctx.canvas.width, ctx.canvas.height, {x: 0, y: 0}, lastView);
+            const tl = worldToScreen(ctx.canvas.width, ctx.canvas.height, wp, view);
+            const wp2 = screenToWorld(
+                ctx.canvas.width,
+                ctx.canvas.height,
+                {x: ctx.canvas.width, y: ctx.canvas.height},
+                lastView,
+            );
+            const br = worldToScreen(ctx.canvas.width, ctx.canvas.height, wp2, view);
+            ctx.drawImage(lastScene!, tl.x, tl.y, br.x - tl.x, br.y - tl.y);
+        } else {
+            ctx.drawImage(lastScene!, 0, 0);
+        }
+        ctx.globalAlpha = 1;
+    }
 };
 
 export const actionPoints = (action: Action) => {
@@ -302,14 +449,25 @@ async function crossFade(
     final: ImageBitmap,
     frames: number,
 ) {
+    const ww = canvas.width / 5;
+    const wh = canvas.height / 5;
     for (let i = 0; i <= frames; i++) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // ctx.strokeStyle = 'black';
+        // ctx.lineWidth = 1;
+        // ctx.strokeRect(ww, wh, ww, wh);
+        // ctx.strokeRect(ww * 2, wh * 2, ww, wh);
+
+        ctx.globalAlpha = 1 - i / frames;
         ctx.drawImage(first, 0, 0);
-        ctx.globalAlpha = (frames - i) / frames;
+
+        ctx.globalAlpha = i / frames;
         ctx.drawImage(final, 0, 0);
-        ctx.globalAlpha = 1;
+
         await nextFrame();
     }
+    ctx.globalAlpha = 1;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(first, 0, 0);
 }

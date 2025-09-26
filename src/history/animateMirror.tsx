@@ -1,5 +1,5 @@
-import { Coord, State } from '../types';
-import { Action, MirrorAdd } from '../state/Action';
+import {Coord, State} from '../types';
+import {Action, MirrorAdd} from '../state/Action';
 import {
     angleTo,
     applyMatrices,
@@ -8,7 +8,7 @@ import {
     push,
     transformsToMatrices,
 } from '../rendering/getMirrorTransforms';
-import { wait } from './animateHistory';
+import {wait} from './animateHistory';
 
 export async function animateMirror(
     follow: (
@@ -19,7 +19,7 @@ export async function animateMirror(
     i: number,
     action: MirrorAdd,
     ctx: CanvasRenderingContext2D,
-    fromScreen: (point: Coord, state: State) => { x: number; y: number },
+    fromScreen: (point: Coord, state: State) => {x: number; y: number},
     prev: State,
     speed: number,
 ) {
@@ -39,11 +39,7 @@ export async function animateMirror(
         // const dy = back.y - action.mirror.origin.y;
         const theta = angleTo(back, action.mirror.origin);
         const d = dist(action.mirror.origin, back);
-        const o2 = push(
-            back,
-            theta + (action.mirror.reflect ? Math.PI / 6 : 0),
-            d / 2,
-        );
+        const o2 = push(back, theta + (action.mirror.reflect ? Math.PI / 6 : 0), d / 2);
 
         ctx.setLineDash([5, 15]);
         ctx.lineWidth = 5;

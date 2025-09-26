@@ -1,39 +1,32 @@
 /* @jsx jsx */
 /* @jsxFrag React.Fragment */
-import { jsx } from '@emotion/react';
-import React, { useRef } from 'react';
-import { useCurrent } from '../App';
-import { PendingMirror, UIState } from '../useUIState';
-import { Action, PathMultiply } from '../state/Action';
-import { EditorState, screenToWorld } from './Canvas';
-import { DrawPath, DrawPathState, initialState } from './DrawPath';
-import { pathToPrimitives } from './findSelection';
-import { Bounds } from './GuideElement';
-import { simplifyPath } from '../rendering/simplifyPath';
-import { lineToSlope, Primitive } from '../rendering/intersect';
-import { ensureClockwise } from '../rendering/pathToPoints';
-import { geomToPrimitives } from '../rendering/points';
-import { primitiveKey } from '../rendering/coordKey';
-import { calculateInactiveGuideElements } from '../rendering/calculateGuideElements';
-import { dedupString } from '../rendering/findNextSegments';
-import { angleTo, dist, Matrix } from '../rendering/getMirrorTransforms';
-import { RenderIntersections } from './RenderIntersections';
-import { RenderMirror } from './RenderMirror';
-import { RenderPendingGuide } from './RenderPendingGuide';
-import { RenderPendingMirror } from './RenderPendingMirror';
-import { RenderPrimitive } from './RenderPrimitive';
-import { Hover } from './Sidebar';
-import {
-    Coord,
-    GuideElement,
-    Id,
-    Intersect,
-    Path,
-    PendingSegment,
-    State,
-    View,
-} from '../types';
-import { getClips } from '../rendering/pkInsetPaths';
+import {jsx} from '@emotion/react';
+import React, {useRef} from 'react';
+import {useCurrent} from '../App';
+import {PendingMirror, UIState} from '../useUIState';
+import {Action, PathMultiply} from '../state/Action';
+import {EditorState, screenToWorld} from './Canvas';
+import {DrawPath, DrawPathState, initialState} from './DrawPath';
+import {pathToPrimitives} from './findSelection';
+import {Bounds} from './GuideElement';
+import {simplifyPath} from '../rendering/simplifyPath';
+import {lineToSlope, Primitive} from '../rendering/intersect';
+import {ensureClockwise} from '../rendering/pathToPoints';
+import {geomToPrimitives} from '../rendering/points';
+import {primitiveKey} from '../rendering/coordKey';
+import {calculateInactiveGuideElements} from '../rendering/calculateGuideElements';
+import {dedupString} from '../rendering/findNextSegments';
+import {angleTo, dist, Matrix} from '../rendering/getMirrorTransforms';
+import {RenderIntersections} from './RenderIntersections';
+import {RenderMirror} from './RenderMirror';
+import {RenderPendingGuide} from './RenderPendingGuide';
+import {RenderPendingMirror} from './RenderPendingMirror';
+import {RenderPrimitive} from './RenderPrimitive';
+import {Hover} from './Sidebar';
+import {Coord, GuideElement, Id, Intersect, Path, PendingSegment, State, View} from '../types';
+import {getClips} from '../rendering/pkInsetPaths';
+import {RenderCompassAndRuler} from './RenderCompassAndRuler';
+import {handleClick, handleSpace, PendingMark, previewPos} from './compassAndRuler';
 
 // This /will/ contain duplicates!
 // export const calculatePathElements = (
@@ -75,9 +68,9 @@ import { getClips } from '../rendering/pkInsetPaths';
 export function primitivesForElementsAndPaths(
     guideElements: GuideElement[],
     paths: Array<Path>,
-): Array<{ prim: Primitive; guides: Array<Id> }> {
-    const seen: { [key: string]: Array<Id> } = {};
-    return ([] as Array<{ prim: Primitive; guide: Id }>)
+): Array<{prim: Primitive; guides: Array<Id>}> {
+    const seen: {[key: string]: Array<Id>} = {};
+    return ([] as Array<{prim: Primitive; guide: Id}>)
         .concat(
             ...guideElements.map((el: GuideElement) =>
                 geomToPrimitives(el.geom).map((prim) => ({
@@ -93,18 +86,14 @@ export function primitivesForElementsAndPaths(
                 return null;
             }
             seen[k] = [prim.guide];
-            return { prim: prim.prim, guides: seen[k] };
+            return {prim: prim.prim, guides: seen[k]};
         })
         .concat(
             paths
                 .map((path) => {
                     return path.segments.map(
-                        (
-                            seg,
-                            i,
-                        ): null | { prim: Primitive; guides: Array<Id> } => {
-                            const prev =
-                                i === 0 ? path.origin : path.segments[i - 1].to;
+                        (seg, i): null | {prim: Primitive; guides: Array<Id>} => {
+                            const prev = i === 0 ? path.origin : path.segments[i - 1].to;
                             let prim: Primitive;
                             if (seg.type === 'Line') {
                                 prim = lineToSlope(prev, seg.to, true);
@@ -125,21 +114,19 @@ export function primitivesForElementsAndPaths(
                                 return null;
                             }
                             seen[k] = [];
-                            return { prim, guides: seen[k] };
+                            return {prim, guides: seen[k]};
                         },
                     );
                 })
                 .flat(),
         )
-        .filter(Boolean) as Array<{ prim: Primitive; guides: Array<Id> }>;
+        .filter(Boolean) as Array<{prim: Primitive; guides: Array<Id>}>;
 }
 
 export type PendingPathPair = [
     EditorState['pending'],
     (
-        fn:
-            | EditorState['pending']
-            | ((state: EditorState['pending']) => EditorState['pending']),
+        fn: EditorState['pending'] | ((state: EditorState['pending']) => EditorState['pending']),
     ) => void,
 ];
 
@@ -171,8 +158,10 @@ export const Guides = ({
     editorState,
     uiState,
     setEditorState,
+    compassDragState,
 }: {
     uiState: UIState;
+    compassDragState: PendingMark | undefined;
     bounds: Bounds;
     state: State;
     isTouchScreen: boolean;
@@ -188,14 +177,12 @@ export const Guides = ({
     // pendingPath: PendingPathPair;
     editorState: EditorState;
     setEditorState: React.Dispatch<React.SetStateAction<EditorState>>;
-    mirrorTransforms: { [key: string]: Array<Array<Matrix>> };
+    mirrorTransforms: {[key: string]: Array<Array<Matrix>>};
     pendingMirror: PendingMirror | null;
-    guidePrimitives: Array<{ prim: Primitive; guides: Array<Id> }>;
+    guidePrimitives: Array<{prim: Primitive; guides: Array<Id>}>;
     allIntersections: Array<Intersect>;
     setPendingMirror: (
-        mirror:
-            | (PendingMirror | null)
-            | ((mirror: PendingMirror | null) => PendingMirror | null),
+        mirror: (PendingMirror | null) | ((mirror: PendingMirror | null) => PendingMirror | null),
     ) => void;
     disableGuides: boolean;
 }) => {
@@ -260,9 +247,7 @@ export const Guides = ({
             if (pendingPath[0].isClip) {
                 dispatch({
                     type: 'clip:add',
-                    clip: simplifyPath(
-                        ensureClockwise(parts.map((p) => p.segment)),
-                    ),
+                    clip: simplifyPath(ensureClockwise(parts.map((p) => p.segment))),
                 });
             } else {
                 dispatch({
@@ -282,86 +267,87 @@ export const Guides = ({
         [pendingPath[0]],
     );
 
-    const primsAndStuff = useCurrent({ guidePrimitives, allIntersections });
+    const primsAndStuff = useCurrent({guidePrimitives, allIntersections});
 
     const currentDuplication = useCurrent(pendingDuplication);
     const currentEditorState = useCurrent(editorState);
 
-    const onClickIntersection = React.useCallback(
-        (coord: Intersect, shiftKey: boolean) => {
-            console.log(`click intersection`, currentDuplication, coord);
-            if (currentDuplication.current) {
-                handleDuplicationIntersection(
-                    coord,
-                    currentState.current,
-                    currentDuplication.current,
-                    setPendingDuplication,
-                    dispatch,
-                );
-                return;
-            }
-            if (currentPendingMirror.current) {
-                const mirror = currentPendingMirror.current;
-                if (mirror.center) {
-                    const nextId = `id-${currentState.current.nextId}`;
-                    const rotational: Array<boolean> = [];
-                    for (let i = 0; i < mirror.rotations - 1; i++) {
-                        rotational.push(true);
-                    }
-                    // we're done folks
-                    dispatch({
-                        type: 'mirror:add',
-                        mirror: {
-                            id: '',
-                            origin: mirror.center,
-                            parent: mirror.parent,
-                            point: coord.coord,
-                            reflect: mirror.reflect,
-                            rotational,
-                        },
-                    });
-                    dispatch({ type: 'mirror:active', id: nextId });
-                    return; // TODO
-                } else {
-                    return setPendingMirror({
-                        ...mirror,
-                        center: coord.coord,
-                    });
+    const onClickIntersection = React.useCallback((coord: Intersect, shiftKey: boolean) => {
+        console.log(`click intersection`, currentDuplication, coord);
+        if (currentState.current.pending?.type === 'compass&ruler') {
+            dispatch({
+                type: 'pending:compass&ruler',
+                state: handleClick(previewPos(currentState.current.compassState, coord.coord)),
+            });
+            return;
+        }
+        if (currentDuplication.current) {
+            handleDuplicationIntersection(
+                coord,
+                currentState.current,
+                currentDuplication.current,
+                setPendingDuplication,
+                dispatch,
+            );
+            return;
+        }
+        if (currentPendingMirror.current) {
+            const mirror = currentPendingMirror.current;
+            if (mirror.center) {
+                const nextId = `id-${currentState.current.nextId}`;
+                const rotational: Array<boolean> = [];
+                for (let i = 0; i < mirror.rotations - 1; i++) {
+                    rotational.push(true);
                 }
-            }
-            const editorState = currentEditorState.current;
-            if (editorState.pending?.type === 'tiling') {
-                return setEditorState((es) =>
-                    es.pending?.type === 'tiling'
-                        ? {
-                              ...es,
-                              pending: {
-                                  ...es.pending,
-                                  points: es.pending.points.concat(coord.coord),
-                              },
-                          }
-                        : es,
-                );
-            }
-            const state = currentState.current;
-            if (!state.pending) {
-                const { guidePrimitives, allIntersections } =
-                    primsAndStuff.current;
-                pendingPath[1](
-                    initialState(coord, guidePrimitives, allIntersections),
-                );
-                // setPathOrigin({ coord, clip: false });
-                // dispatch({ type: 'path:point', coord });
-            } else if (state.pending.type === 'Guide') {
+                // we're done folks
                 dispatch({
-                    type: 'pending:point',
-                    coord: coord.coord,
-                    shiftKey,
+                    type: 'mirror:add',
+                    mirror: {
+                        id: '',
+                        origin: mirror.center,
+                        parent: mirror.parent,
+                        point: coord.coord,
+                        reflect: mirror.reflect,
+                        rotational,
+                    },
+                });
+                dispatch({type: 'mirror:active', id: nextId});
+                return; // TODO
+            } else {
+                return setPendingMirror({
+                    ...mirror,
+                    center: coord.coord,
                 });
             }
-        },
-        [],
-    );
+        }
+        const editorState = currentEditorState.current;
+        if (editorState.pending?.type === 'tiling') {
+            return setEditorState((es) =>
+                es.pending?.type === 'tiling'
+                    ? {
+                          ...es,
+                          pending: {
+                              ...es.pending,
+                              points: es.pending.points.concat(coord.coord),
+                          },
+                      }
+                    : es,
+            );
+        }
+        const state = currentState.current;
+        if (!state.pending) {
+            const {guidePrimitives, allIntersections} = primsAndStuff.current;
+            pendingPath[1](initialState(coord, guidePrimitives, allIntersections));
+            // setPathOrigin({ coord, clip: false });
+            // dispatch({ type: 'path:point', coord });
+        } else if (state.pending.type === 'Guide') {
+            dispatch({
+                type: 'pending:point',
+                coord: coord.coord,
+                shiftKey,
+            });
+        }
+    }, []);
 
     // When intersections change, cancel pending stuffs
     const first = useRef(true);
@@ -375,67 +361,61 @@ export const Guides = ({
 
     const clip = getClips(state);
 
-    const clickInactive = React.useCallback(
-        (guides: string[], shift: boolean): void => {
-            if (!shift) {
-                dispatch({
-                    type: 'selection:set',
-                    selection: {
-                        type: 'Guide',
-                        ids: dedupString(guides),
-                    },
-                });
+    const clickInactive = React.useCallback((guides: string[], shift: boolean): void => {
+        if (!shift) {
+            dispatch({
+                type: 'selection:set',
+                selection: {
+                    type: 'Guide',
+                    ids: dedupString(guides),
+                },
+            });
+            return;
+        }
+        console.log(guides, 'click');
+        const seen: {
+            [key: string]: true;
+        } = {};
+        // ok
+        guides.forEach((guide) => {
+            if (seen[guide]) {
                 return;
             }
-            console.log(guides, 'click');
-            const seen: {
-                [key: string]: true;
-            } = {};
-            // ok
-            guides.forEach((guide) => {
-                if (seen[guide]) {
-                    return;
-                }
-                seen[guide] = true;
-                dispatch({
-                    type: 'guide:toggle',
-                    id: guide,
-                });
+            seen[guide] = true;
+            dispatch({
+                type: 'guide:toggle',
+                id: guide,
             });
-        },
-        [],
-    );
+        });
+    }, []);
 
-    const clickActive = React.useCallback(
-        (guides: string[], shift: boolean): void => {
-            if (!shift) {
-                dispatch({
-                    type: 'selection:set',
-                    selection: {
-                        type: 'Guide',
-                        ids: dedupString(guides),
-                    },
-                });
+    const clickActive = React.useCallback((guides: string[], shift: boolean): void => {
+        if (!shift) {
+            dispatch({
+                type: 'selection:set',
+                selection: {
+                    type: 'Guide',
+                    ids: dedupString(guides),
+                },
+            });
+            return;
+        }
+        console.log(guides, 'click');
+        const seen: {
+            [key: string]: true;
+        } = {};
+        // ok
+        guides.forEach((guide) => {
+            if (seen[guide]) {
                 return;
             }
-            console.log(guides, 'click');
-            const seen: {
-                [key: string]: true;
-            } = {};
-            // ok
-            guides.forEach((guide) => {
-                if (seen[guide]) {
-                    return;
-                }
-                seen[guide] = true;
-                dispatch({
-                    type: 'guide:toggle',
-                    id: guide,
-                });
+            seen[guide] = true;
+            dispatch({
+                type: 'guide:toggle',
+                id: guide,
             });
-        },
-        [],
-    );
+        });
+    }, []);
     return (
         <>
             <RenderPrimitives
@@ -443,9 +423,7 @@ export const Guides = ({
                 zoom={view.zoom}
                 bounds={bounds}
                 inactive
-                onClick={
-                    disableGuides || pendingPath[0] ? undefined : clickInactive
-                }
+                onClick={disableGuides || pendingPath[0] ? undefined : clickInactive}
             />
             <RenderPrimitives
                 primitives={guidePrimitives}
@@ -482,11 +460,7 @@ export const Guides = ({
             {state.pending && state.pending.type === 'Guide' ? (
                 <RenderPendingGuide
                     bounds={bounds}
-                    mirror={
-                        state.activeMirror
-                            ? mirrorTransforms[state.activeMirror]
-                            : null
-                    }
+                    mirror={state.activeMirror ? mirrorTransforms[state.activeMirror] : null}
                     guide={state.pending}
                     pos={pos}
                     zoom={view.zoom}
@@ -530,16 +504,12 @@ export const Guides = ({
                     zoom={view.zoom}
                     mouse={pos}
                     transforms={
-                        pendingMirror.parent
-                            ? mirrorTransforms[pendingMirror.parent]
-                            : null
+                        pendingMirror.parent ? mirrorTransforms[pendingMirror.parent] : null
                     }
                 />
             ) : null}
             {Object.keys(state.mirrors).map((m) =>
-                hover?.type === 'element' &&
-                hover?.kind === 'Mirror' &&
-                hover.id === m ? (
+                hover?.type === 'element' && hover?.kind === 'Mirror' && hover.id === m ? (
                     <RenderMirror
                         key={m}
                         mirror={state.mirrors[m]}
@@ -548,6 +518,15 @@ export const Guides = ({
                     />
                 ) : null,
             )}
+            {state.pending?.type === 'compass&ruler' ? (
+                <RenderCompassAndRuler
+                    pendingMark={compassDragState}
+                    editorState={editorState}
+                    view={view}
+                    bounds={bounds}
+                    state={state.compassState}
+                />
+            ) : null}
         </>
     );
 };
@@ -562,7 +541,7 @@ export const RenderPrimitives = React.memo(
     }: {
         zoom: number;
         bounds: Bounds;
-        primitives: Array<{ prim: Primitive; guides: Array<Id> }>;
+        primitives: Array<{prim: Primitive; guides: Array<Id>}>;
         onClick?: (guides: Array<Id>, shift: boolean) => unknown;
         inactive?: boolean;
     }) => {
@@ -582,8 +561,7 @@ export const RenderPrimitives = React.memo(
                                   isImplied={!prim.guides.length}
                                   onClick={
                                       onClick && prim.guides.length
-                                          ? (shiftKey) =>
-                                                onClick(prim.guides, shiftKey)
+                                          ? (shiftKey) => onClick(prim.guides, shiftKey)
                                           : undefined
                                   }
                                   key={i}
@@ -602,8 +580,7 @@ export const RenderPrimitives = React.memo(
                             isImplied={!prim.guides.length}
                             onClick={
                                 onClick && prim.guides.length
-                                    ? (shiftKey) =>
-                                          onClick(prim.guides, shiftKey)
+                                    ? (shiftKey) => onClick(prim.guides, shiftKey)
                                     : undefined
                             }
                             key={i}
@@ -623,9 +600,7 @@ function keyHandler(
             (
                 v:
                     | EditorState['pending']
-                    | ((
-                          state: EditorState['pending'],
-                      ) => EditorState['pending']),
+                    | ((state: EditorState['pending']) => EditorState['pending']),
             ) => void,
         ]
     >,
@@ -635,10 +610,7 @@ function keyHandler(
     dispatch: (action: Action) => void,
     currentPendingMirror: React.MutableRefObject<PendingMirror | null>,
     setPendingMirror: (
-        mirror:
-            | PendingMirror
-            | ((mirror: PendingMirror | null) => PendingMirror | null)
-            | null,
+        mirror: PendingMirror | ((mirror: PendingMirror | null) => PendingMirror | null) | null,
     ) => void,
     setShiftKey: React.Dispatch<React.SetStateAction<false | Coord>>,
     currentPos: React.MutableRefObject<Coord>,
@@ -649,12 +621,20 @@ function keyHandler(
         if (evt.target !== document.body || evt.metaKey || evt.ctrlKey) {
             return;
         }
+        if (evt.key === ' ' && state.pending?.type === 'compass&ruler') {
+            return dispatch({
+                type: 'pending:compass&ruler',
+                state: handleSpace(state.compassState),
+            });
+        }
+        if (evt.key === 'P') {
+            // protractor
+            return dispatch({type: 'pending:type', kind: 'compass&ruler'});
+        }
         if (evt.key === 'C' && currentPathOrigin.current) {
             evt.stopPropagation();
             return currentPathOrigin.current[1]((path) =>
-                path?.type === 'path'
-                    ? { ...path, isClip: !path.isClip }
-                    : null,
+                path?.type === 'path' ? {...path, isClip: !path.isClip} : null,
             );
         }
         if (evt.key === ' ' && state.pending?.type === 'Guide') {
@@ -671,10 +651,7 @@ function keyHandler(
                     delta: 1,
                 });
             }
-            if (
-                state.selection?.type === 'Guide' &&
-                state.selection.ids.length === 1
-            ) {
+            if (state.selection?.type === 'Guide' && state.selection.ids.length === 1) {
                 const id = state.selection.ids[0];
                 const geom = state.guides[id].geom;
                 if (geom.type === 'Line') {
@@ -685,8 +662,7 @@ function keyHandler(
                             ...state.guides[id],
                             geom: {
                                 ...geom,
-                                extent:
-                                    geom.extent != null ? geom.extent + 1 : 2,
+                                extent: geom.extent != null ? geom.extent + 1 : 2,
                             },
                         },
                     });
@@ -700,10 +676,7 @@ function keyHandler(
                     delta: -1,
                 });
             }
-            if (
-                state.selection?.type === 'Guide' &&
-                state.selection.ids.length === 1
-            ) {
+            if (state.selection?.type === 'Guide' && state.selection.ids.length === 1) {
                 const id = state.selection.ids[0];
                 const geom = state.guides[id].geom;
                 if (geom.type === 'Line') {
@@ -714,10 +687,7 @@ function keyHandler(
                             ...state.guides[id],
                             geom: {
                                 ...geom,
-                                extent:
-                                    geom.extent != null
-                                        ? Math.max(0, geom.extent - 1)
-                                        : 1,
+                                extent: geom.extent != null ? Math.max(0, geom.extent - 1) : 1,
                             },
                         },
                     });
@@ -780,15 +750,10 @@ function keyHandler(
 }
 
 export function calculateBounds(width: number, height: number, view: View) {
-    const { x: x0, y: y0 } = screenToWorld(width, height, { x: 0, y: 0 }, view);
-    const { x: x1, y: y1 } = screenToWorld(
-        width,
-        height,
-        { x: width, y: height },
-        view,
-    );
+    const {x: x0, y: y0} = screenToWorld(width, height, {x: 0, y: 0}, view);
+    const {x: x1, y: y1} = screenToWorld(width, height, {x: width, y: height}, view);
 
-    return { x0, y0, x1, y1 };
+    return {x0, y0, x1, y1};
 }
 
 export const handleDuplicationIntersection = (

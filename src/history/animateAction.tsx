@@ -1,37 +1,81 @@
-import { Coord, State, View } from '../types';
-import { tracePath } from '../rendering/CanvasRender';
-import { Action } from '../state/Action';
-import { emptyPath } from '../editor/RenderPath';
-import { animateGuide } from './animateGuide';
-import { followPoints } from './followPoint';
-import { animateMirror } from './animateMirror';
-import { animatePath } from './animatePath';
-import { animateMultiply } from './animateMultiply';
-import { wait, actionPoints, AnimateState } from './animateHistory';
+import {Coord, GuideGeom, Line, State, View} from '../types';
+import {tracePath} from '../rendering/CanvasRender';
+import {Action} from '../state/Action';
+import {emptyPath} from '../editor/RenderPath';
+import {animateGuide} from './animateGuide';
+import {closer, closerOne, followPoints} from './followPoint';
+import {animateMirror} from './animateMirror';
+import {animatePath} from './animatePath';
+import {animateMultiply} from './animateMultiply';
+import {wait, actionPoints, AnimateState} from './animateHistory';
 import equal from 'fast-deep-equal';
+import {isCompass} from '../editor/RenderCompassAndRuler';
+import {angleTo, dist, push} from '../rendering/getMirrorTransforms';
+import {closeEnough} from '../rendering/epsilonToZero';
+import {angleBetween} from '../rendering/findNextSegments';
+import {
+    animateRuler,
+    animateCompass,
+    offscreenCompassState,
+    skipRuler,
+    skipCompass,
+} from './animateCompassAndRuler';
+
+export const oneToScreen = (state: AnimateState, ustate: State, value: number) =>
+    state.toScreen({x: value, y: 0}, ustate).x - state.toScreen({x: 0, y: 0}, ustate).x;
+
+export const skipAction = (
+    state: AnimateState,
+    histories: {state: State; action: Action | null}[],
+) => {
+    const {i, ctx, canvas} = state;
+    const action = histories[i].action;
+    if (!action) return;
+    if (action.type === 'pending:compass&ruler') {
+        state.compassState = action.state;
+    }
+
+    if (action.type === 'guide:add') {
+        if (!state.compassState) return;
+        if (!state.lastDrawnCompassState) {
+            state.lastDrawnCompassState = offscreenCompassState(state, histories[i].state);
+        }
+        const lastDrawn = state.lastDrawnCompassState;
+
+        const cs = state.compassState;
+        if (action.guide.geom.type === 'Line') {
+            skipRuler(lastDrawn, state, action);
+        } else if (
+            action.guide.geom.type === 'CloneCircle' ||
+            action.guide.geom.type === 'CircleMark'
+        ) {
+            skipCompass(lastDrawn, state, cs, action);
+        }
+    }
+};
 
 export async function animateAction(
     state: AnimateState,
-    histories: { state: State; action: Action | null }[],
+    histories: {state: State; action: Action | null}[],
     follow: (
         i: number,
         point: Coord,
-        extra?: ((pos: Coord) => void | Promise<void>) | undefined,
+        extra?: ((pos: Coord, state: State) => void | Promise<void>) | undefined,
     ) => Promise<unknown>,
     speed: number,
 ) {
-    const { i, ctx, canvas } = state;
+    const {i, ctx, canvas} = state;
     const action = histories[i].action;
+
+    if (action?.type === 'history-view:update') {
+        return;
+    }
 
     if (action && i > 0) {
         const prev = histories[i - 1].state;
 
         const withScreen = async (
-            fn: (
-                zoom: number,
-                width: number,
-                height: number,
-            ) => Promise<void> | void,
+            fn: (zoom: number, width: number, height: number) => Promise<void> | void,
         ): Promise<void> => {
             ctx.save();
             const zoom = prev.view.zoom * 2;
@@ -43,17 +87,43 @@ export async function animateAction(
             ctx.restore();
         };
 
-        if (
-            action.type !== 'path:multiply' &&
-            action.type !== 'path:update:many'
-        ) {
+        if (action.type !== 'path:multiply' && action.type !== 'path:update:many') {
             state.lastSelection = undefined;
         }
 
-        if (
-            action.type === 'path:create' ||
-            action.type === 'path:create:many'
-        ) {
+        if (action.type === 'guide:add') {
+            if (!state.compassState) return;
+            if (!state.lastDrawnCompassState) {
+                state.lastDrawnCompassState = offscreenCompassState(state, histories[i].state);
+            }
+            const lastDrawn = state.lastDrawnCompassState;
+
+            const cs = state.compassState;
+            if (action.guide.geom.type === 'Line') {
+                await animateRuler(lastDrawn, state, histories, i, cs, ctx, follow, action, speed);
+            } else if (
+                action.guide.geom.type === 'CloneCircle' ||
+                action.guide.geom.type === 'CircleMark'
+            ) {
+                await animateCompass(
+                    lastDrawn,
+                    state,
+                    histories,
+                    i,
+                    cs,
+                    ctx,
+                    action,
+                    follow,
+                    speed,
+                );
+            }
+        }
+
+        if (action.type === 'pending:compass&ruler') {
+            state.compassState = action.state;
+        }
+
+        if (action.type === 'path:create' || action.type === 'path:create:many') {
             await animatePath(state, follow, action, prev, speed);
         } else if (action.type === 'path:multiply') {
             await animateMultiply(state, action, prev, follow, speed);
@@ -95,15 +165,7 @@ export async function animateAction(
                 speed,
             );
         } else if (action.type === 'mirror:add') {
-            await animateMirror(
-                follow,
-                i,
-                action,
-                ctx,
-                state.fromScreen,
-                prev,
-                speed,
-            );
+            await animateMirror(follow, i, action, ctx, state.fromScreen, prev, speed);
         } else if (
             action.type === 'path:update' ||
             action.type === 'path:update:many' ||
@@ -197,11 +259,38 @@ export async function animateAction(
         } else {
             await followPoints(
                 state,
-                actionPoints(action).map((point) =>
-                    state.toScreen(point, histories[i].state),
-                ),
+                actionPoints(action).map((point) => state.toScreen(point, histories[i].state)),
                 speed,
             );
         }
     }
 }
+
+export type Polar = {origin: Coord; angle: number; dist: number};
+
+export const pointsToPolar = (p1: Coord, p2: Coord) => ({
+    origin: p1,
+    angle: angleTo(p1, p2),
+    dist: dist(p1, p2),
+});
+
+export const polarPoint = (polar: Polar) => push(polar.origin, polar.angle, polar.dist);
+
+export const closerAngle = (one: number, two: number, amt = 0.1) => {
+    return one + leastAngleDiff(one, two) * amt;
+};
+
+export const leastAngleDiff = (one: number, two: number) => {
+    let diff = angleBetween(one, two, true);
+    if (diff > Math.PI) diff -= Math.PI * 2;
+    return diff;
+};
+
+export const polarCloser = (p1: Polar, p2: Polar, amt?: number): Polar => ({
+    origin: closer(p1.origin, p2.origin, amt),
+    angle: closerAngle(p1.angle, p2.angle, amt),
+    dist: closerOne(p1.dist, p2.dist, amt),
+});
+
+export const polarDist = (p1: Polar, p2: Polar) =>
+    Math.max(dist(p1.origin, p2.origin), dist(polarPoint(p1), polarPoint(p2)));

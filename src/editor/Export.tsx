@@ -1,22 +1,23 @@
 /* @jsx jsx */
 /* @jsxFrag React.Fragment */
-import { jsx } from '@emotion/react';
+import {jsx} from '@emotion/react';
 import React from 'react';
-import { BlurInt, Text, Toggle } from './Forms';
-import { transparent } from './Icons';
-import { angleBetween } from '../rendering/findNextSegments';
-import { sortedVisibleInsetPaths } from '../rendering/sortedVisibleInsetPaths';
-import { Action } from '../state/Action';
-import { State } from '../types';
-import { PendingBounds, newPendingBounds, addCoordToBounds } from './Bounds';
-import { MultiColor, constantColors, maybeUrlColor } from './MultiStyleForm';
-import { UIState } from '../useUIState';
-import { getClips } from '../rendering/pkInsetPaths';
-import { ExportSVG } from './ExportSVG';
-import { ExportPng } from './ExportPng';
-import { applyMatrix } from '../rendering/getMirrorTransforms';
-import { EditorState } from './Canvas';
-import { PK } from './pk';
+import {BlurInt, Text, Toggle} from './Forms';
+import {transparent} from './Icons';
+import {angleBetween} from '../rendering/findNextSegments';
+import {sortedVisibleInsetPaths} from '../rendering/sortedVisibleInsetPaths';
+import {Action} from '../state/Action';
+import {State} from '../types';
+import {PendingBounds, newPendingBounds, addCoordToBounds} from './Bounds';
+import {MultiColor, constantColors, maybeUrlColor} from './MultiStyleForm';
+import {UIState} from '../useUIState';
+import {getClips} from '../rendering/pkInsetPaths';
+import {ExportSVG} from './ExportSVG';
+import {ExportPng} from './ExportPng';
+import {applyMatrix} from '../rendering/getMirrorTransforms';
+import {EditorState} from './Canvas';
+import {PK} from './pk';
+import {stateToConstructive} from './constructiveExport';
 
 export type Bounds = {
     x1: number;
@@ -30,25 +31,21 @@ export const findBoundingRect = (state: State): Bounds | null => {
 
     let bounds: PendingBounds = newPendingBounds();
     // NOTE: This won't totally cover arcs, but that's just too bad folks.
-    sortedVisibleInsetPaths(
-        state.paths,
-        state.pathGroups,
-        { next: (_, __) => 0 },
-        clip,
-    ).forEach((path) => {
-        let offset = path.style.lines[0]?.width;
-        if (offset != null) {
-            offset = offset / 2 / 100;
-        }
-        console.log('lines', path.style.lines);
-        addCoordToBounds(bounds, path.origin, offset);
-        // TODO: Get proper bounding box for arc segments.
-        path.segments.forEach((t) => addCoordToBounds(bounds, t.to, offset));
-    });
+    sortedVisibleInsetPaths(state.paths, state.pathGroups, {next: (_, __) => 0}, clip).forEach(
+        (path) => {
+            let offset = path.style.lines[0]?.width;
+            if (offset != null) {
+                offset = offset / 2 / 100;
+            }
+            addCoordToBounds(bounds, path.origin, offset);
+            // TODO: Get proper bounding box for arc segments.
+            path.segments.forEach((t) => addCoordToBounds(bounds, t.to, offset));
+        },
+    );
     if (bounds.x0 == null || bounds.y0 == null) {
         return null;
     }
-    return { x1: bounds.x0!, y1: bounds.y0!, x2: bounds.x1!, y2: bounds.y1! };
+    return {x1: bounds.x0!, y1: bounds.y0!, x2: bounds.x1!, y2: bounds.y1!};
 };
 
 export type Multi = NonNullable<State['view']['multi']>;
@@ -83,7 +80,7 @@ export const Export = ({
                     onChange={(title) =>
                         dispatch({
                             type: 'meta:update',
-                            meta: { ...state.meta, title },
+                            meta: {...state.meta, title},
                         })
                     }
                 />
@@ -95,23 +92,15 @@ export const Export = ({
                     onChange={(description) =>
                         dispatch({
                             type: 'meta:update',
-                            meta: { ...state.meta, description },
+                            meta: {...state.meta, description},
                         })
                     }
                 />
             </div>
             <div>
-                <Toggle
-                    label="Embed editor state"
-                    value={embed}
-                    onChange={setEmbed}
-                />
+                <Toggle label="Embed editor state" value={embed} onChange={setEmbed} />
                 {embed ? (
-                    <Toggle
-                        label="Embed history"
-                        value={history}
-                        onChange={setHistory}
-                    />
+                    <Toggle label="Embed history" value={history} onChange={setHistory} />
                 ) : null}
             </div>
             <div>
@@ -146,6 +135,17 @@ export const Export = ({
                 history={history}
                 name={name}
             />
+            <div css={{marginTop: 16, border: '1px solid #aaa', padding: 8}}>
+                <button
+                    onClick={() => {
+                        navigator.clipboard.writeText(
+                            JSON.stringify(stateToConstructive(state), null, 2),
+                        );
+                    }}
+                >
+                    Export for constructive solver
+                </button>
+            </div>
             <div
                 css={{
                     display: 'flex',
@@ -182,15 +182,7 @@ export const blankCanvasProps = {
     isTouchScreen: false,
 } as const;
 
-export const DL = ({
-    url,
-    name,
-    subtitle,
-}: {
-    url: string;
-    name: string;
-    subtitle: string;
-}) => {
+export const DL = ({url, name, subtitle}: {url: string; name: string; subtitle: string}) => {
     return (
         <>
             <a
@@ -217,10 +209,7 @@ export const DL = ({
                     backgroundSize: 40,
                 }}
             >
-                <img
-                    src={url}
-                    css={{ maxHeight: 400, backgroundColor: 'black' }}
-                />
+                <img src={url} css={{maxHeight: 400, backgroundColor: 'black'}} />
             </div>
         </>
     );

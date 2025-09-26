@@ -1,5 +1,5 @@
-import { epsilon, Primitive } from './intersect';
-import { Coord } from '../types';
+import {epsilon, Primitive} from './intersect';
+import {Coord} from '../types';
 
 let keys;
 export const numKey = (num: number, precision = 3) => {

@@ -1,11 +1,11 @@
 import * as React from 'react';
-import { Fixture } from '../src/vest/types';
-import { visuals, widgets } from './functionWidgets';
-import { useInitialState } from '../src/rendering/SegmentEditor';
-import { RenderCode } from './RenderCode';
+import {Fixture} from '../src/vest/types';
+import {visuals, widgets} from './functionWidgets';
+import {useInitialState} from '../src/rendering/SegmentEditor';
+import {RenderCode} from './RenderCode';
 
-import { RenderSidebar } from './RenderSidebar';
-import { ShowValues } from './ShowValues';
+import {RenderSidebar} from './RenderSidebar';
+import {ShowValues} from './ShowValues';
 
 type Trace = <V>(
     value: V,
@@ -21,7 +21,7 @@ export type TraceOutput = {
             end: number;
         };
         values: Array<any>;
-        call?: { fn: number; args: Array<number> };
+        call?: {fn: number; args: Array<number>};
     };
 };
 
@@ -29,7 +29,7 @@ const getCallInfo = (id: number, trace: TraceOutput) => {
     if (!trace[id] || !trace[id].call) {
         return;
     }
-    const { fn: fnid, args } = trace[id].call!;
+    const {fn: fnid, args} = trace[id].call!;
     if (fnid === -1) {
         return; // builtin probably
     }
@@ -44,7 +44,7 @@ const getCallInfo = (id: number, trace: TraceOutput) => {
 };
 
 // @ts-ignore
-Math.cos.meta = { name: 'Math.cos' };
+Math.cos.meta = {name: 'Math.cos'};
 
 export const hasVisual = (id: number, trace: TraceOutput) => {
     const info = getCallInfo(id, trace);
@@ -81,8 +81,8 @@ export type ByStart = {
 };
 
 export type Info = {
-    comments: Array<{ value: string; start: number; end: number }>;
-    shows: Array<{ start: number; end: number; items: Array<number> }>;
+    comments: Array<{value: string; start: number; end: number}>;
+    shows: Array<{start: number; end: number; items: Array<number>}>;
     expressions: {
         [key: number]: {
             start: number;
@@ -103,15 +103,14 @@ export type Info = {
             args: Array<number>;
         };
     };
-    examples: { [key: number]: { start: number; end: number } };
+    examples: {[key: number]: {start: number; end: number}};
     docs: string | null;
     start: number;
     end: number;
-    references: Array<{ id: number; loc: { start: number; end: number } }>;
+    references: Array<{id: number; loc: {start: number; end: number}}>;
 };
 
-const colorsRaw =
-    '1f77b4ff7f0e2ca02cd627289467bd8c564be377c27f7f7fbcbd2217becf';
+const colorsRaw = '1f77b4ff7f0e2ca02cd627289467bd8c564be377c27f7f7fbcbd2217becf';
 export const colors: Array<string> = [];
 for (let i = 0; i < colorsRaw.length; i += 6) {
     colors.push('#' + colorsRaw.slice(i, i + 6));
@@ -130,11 +129,7 @@ export const Fixtures = <Fn extends (...args: any) => any>({
         onChange?: (input: Parameters<Fn>) => void;
         scale: number;
     }) => JSX.Element;
-    Output: (props: {
-        output: ReturnType<Fn>;
-        input: Parameters<Fn>;
-        scale: number;
-    }) => JSX.Element;
+    Output: (props: {output: ReturnType<Fn>; input: Parameters<Fn>; scale: number}) => JSX.Element;
     editDelay?: number;
     run: Fn;
 }) => {
@@ -144,10 +139,7 @@ export const Fixtures = <Fn extends (...args: any) => any>({
         traceInfo: Info;
         rawSource: string;
     };
-    if (
-        typeof annotatedRun.trace !== 'function' ||
-        typeof annotatedRun.rawSource !== 'string'
-    ) {
+    if (typeof annotatedRun.trace !== 'function' || typeof annotatedRun.rawSource !== 'string') {
         throw new Error(
             `The function you've passed in hasn't been annotated by \
 			the babel transform! Either you need to add the '// \
@@ -169,26 +161,27 @@ export const Fixtures = <Fn extends (...args: any) => any>({
         ByStart,
     ] => {
         const data: TraceOutput = {};
-        const output = trace((value, id) => {
-            const { start, end } = info.expressions[id];
-            if (!data[id]) {
-                data[id] = {
-                    loc: { start, end },
-                    values: [value],
-                    call: info.calls[id],
-                };
-            } else {
-                data[id].values.push(value);
-            }
-            return value;
-        }, ...selected.input);
+        const output = trace(
+            (value, id) => {
+                const {start, end} = info.expressions[id];
+                if (!data[id]) {
+                    data[id] = {
+                        loc: {start, end},
+                        values: [value],
+                        call: info.calls[id],
+                    };
+                } else {
+                    data[id].values.push(value);
+                }
+                return value;
+            },
+            ...selected.input,
+        );
 
         const byStart: ByStart = {};
         Object.keys(data).forEach((k) => {
             const start = data[+k].loc.start;
-            byStart[start] = (byStart[start] || []).concat([
-                { id: +k, end: data[+k].loc.end },
-            ]);
+            byStart[start] = (byStart[start] || []).concat([{id: +k, end: data[+k].loc.end}]);
         });
         Object.keys(byStart).forEach((start) => {
             byStart[+start].sort((a, b) => b.end - a.end);
@@ -196,27 +189,30 @@ export const Fixtures = <Fn extends (...args: any) => any>({
         return [output, data, byStart];
     }, [selected]);
 
-    const { examplesMatching, unmatchedFixtures } = React.useMemo(() => {
-        const examplesMatching: { [key: string]: Array<number> } = {};
+    const {examplesMatching, unmatchedFixtures} = React.useMemo(() => {
+        const examplesMatching: {[key: string]: Array<number>} = {};
         Object.keys(info.examples).forEach((k) => (examplesMatching[+k] = []));
 
         const unmatchedFixtures: Array<number> = [];
 
         fixtures.forEach((fixture, i) => {
             let matched = false;
-            trace((value, id) => {
-                if (examplesMatching[id] && !examplesMatching[id].includes(i)) {
-                    matched = true;
-                    examplesMatching[id].push(i);
-                }
-                return value;
-            }, ...fixture.input);
+            trace(
+                (value, id) => {
+                    if (examplesMatching[id] && !examplesMatching[id].includes(i)) {
+                        matched = true;
+                        examplesMatching[id].push(i);
+                    }
+                    return value;
+                },
+                ...fixture.input,
+            );
             if (!matched) {
                 unmatchedFixtures.push(i);
             }
         });
 
-        const rendered: { [key: number]: JSX.Element } = {};
+        const rendered: {[key: number]: JSX.Element} = {};
 
         Object.keys(examplesMatching).forEach((k) => {
             rendered[+k] = (
@@ -259,19 +255,10 @@ export const Fixtures = <Fn extends (...args: any) => any>({
                                     setHover(null);
                                 }}
                             >
-                                <svg
-                                    width={50}
-                                    height={50}
-                                    viewBox="0 0 300 300"
-                                >
-                                    <Input
-                                        scale={6}
-                                        input={fixtures[idx].input}
-                                    />
+                                <svg width={50} height={50} viewBox="0 0 300 300">
+                                    <Input scale={6} input={fixtures[idx].input} />
                                     <Output
-                                        output={run(
-                                            ...(fixtures[idx].input as any),
-                                        )}
+                                        output={run(...(fixtures[idx].input as any))}
                                         input={fixtures[idx].input}
                                         scale={6}
                                     />
@@ -283,22 +270,22 @@ export const Fixtures = <Fn extends (...args: any) => any>({
             );
         });
 
-        return { examplesMatching: rendered, unmatchedFixtures };
+        return {examplesMatching: rendered, unmatchedFixtures};
     }, [fixtures, trace, info.examples]);
 
     const [hover, setHover] = React.useState(null as null | number);
-    const [pins, setPins] = React.useState({} as { [key: number]: boolean });
-    const [cursor, setCursor] = React.useState({ x: 0, y: 0 });
+    const [pins, setPins] = React.useState({} as {[key: number]: boolean});
+    const [cursor, setCursor] = React.useState({x: 0, y: 0});
     React.useEffect(() => {
         const fn = (evt: MouseEvent) => {
-            setCursor({ x: evt.clientX, y: evt.clientY });
+            setCursor({x: evt.clientX, y: evt.clientY});
         };
         document.addEventListener('mousemove', fn);
         return () => document.removeEventListener('mousemove', fn);
     }, []);
 
     return (
-        <div style={{ marginBottom: 16 }}>
+        <div style={{marginBottom: 16}}>
             <div
                 style={{
                     maxWidth: 1200,
@@ -365,26 +352,17 @@ export const Fixtures = <Fn extends (...args: any) => any>({
                                                   outline: '1px solid magenta',
                                                   cursor: 'pointer',
                                               }
-                                            : { cursor: 'pointer' }
+                                            : {cursor: 'pointer'}
                                     }
                                     onClick={() => {
                                         setSelected(fixtures[idx]);
                                         setHover(null);
                                     }}
                                 >
-                                    <svg
-                                        width={50}
-                                        height={50}
-                                        viewBox="0 0 300 300"
-                                    >
-                                        <Input
-                                            scale={6}
-                                            input={fixtures[idx].input}
-                                        />
+                                    <svg width={50} height={50} viewBox="0 0 300 300">
+                                        <Input scale={6} input={fixtures[idx].input} />
                                         <Output
-                                            output={run(
-                                                ...(fixtures[idx].input as any),
-                                            )}
+                                            output={run(...(fixtures[idx].input as any))}
                                             input={fixtures[idx].input}
                                             scale={6}
                                         />

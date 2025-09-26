@@ -1,8 +1,8 @@
 /* @jsx jsx */
 /* @jsxFrag React.Fragment */
-import { jsx } from '@emotion/react';
+import {jsx} from '@emotion/react';
 import React from 'react';
-import { State, TimelineSlot } from '../types';
+import {State, TimelineSlot} from '../types';
 
 export const SlotEditor = ({
     item,
@@ -18,18 +18,14 @@ export const SlotEditor = ({
         return (
             <>
                 <div>
-                    {(
-                        ['left', 'right', null] as Array<
-                            'left' | 'right' | null
-                        >
-                    ).map((still, i) => (
+                    {(['left', 'right', null] as Array<'left' | 'right' | null>).map((still, i) => (
                         <button
                             key={i}
                             disabled={contents.still == still}
                             onClick={() =>
                                 onChange({
                                     ...item,
-                                    contents: { ...contents, still },
+                                    contents: {...contents, still},
                                 })
                             }
                         >
@@ -92,10 +88,7 @@ export const SlotEditor = ({
                                 disabled={!state.selection}
                                 onClick={() => {
                                     const sel = state.selection;
-                                    if (
-                                        sel?.type === 'PathGroup' ||
-                                        sel?.type === 'Path'
-                                    ) {
+                                    if (sel?.type === 'PathGroup' || sel?.type === 'Path') {
                                         onChange({
                                             ...item,
                                             contents: {

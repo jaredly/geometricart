@@ -1,11 +1,11 @@
 /* @jsx jsx */
 /* @jsxFrag React.Fragment */
-import { jsx } from '@emotion/react';
-import { Coord, Segment } from '../types';
-import { arcPath } from './RenderPendingPath';
+import {jsx} from '@emotion/react';
+import {Coord, Segment} from '../types';
+import {arcPath} from './RenderPendingPath';
 import React from 'react';
-import { coordsEqual } from '../rendering/pathsAreIdentical';
-import { dist } from '../rendering/getMirrorTransforms';
+import {coordsEqual} from '../rendering/pathsAreIdentical';
+import {dist} from '../rendering/getMirrorTransforms';
 
 export const RenderSegmentBasic = ({
     segment,
@@ -49,10 +49,7 @@ export const RenderSegmentBasic = ({
         return (
             <path
                 fill="none"
-                d={
-                    `M ${prev.x * zoom} ${prev.y * zoom} ` +
-                    arcPath(segment, prev, zoom)
-                }
+                d={`M ${prev.x * zoom} ${prev.y * zoom} ` + arcPath(segment, prev, zoom)}
                 {...inner}
                 className={className ?? inner?.className}
             />

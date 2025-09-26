@@ -1,12 +1,10 @@
 /* @jsx jsx */
 /* @jsxFrag React.Fragment */
-import { jsx } from '@emotion/react';
-import React, { useEffect, useMemo, useState } from 'react';
-import { Coord, Overlay, Overlay as OverlayT, State, View } from '../types';
-import { screenToWorld } from './Canvas';
-import { useCurrent } from '../App';
-// @ts-ignore
-import { Homography } from 'homography';
+import {jsx} from '@emotion/react';
+import React, {useEffect, useMemo, useState} from 'react';
+import {Coord, Overlay, Overlay as OverlayT, State, View} from '../types';
+import {screenToWorld} from './Canvas';
+import {useCurrent} from '../App';
 
 export function Overlay({
     state,
@@ -23,13 +21,9 @@ export function Overlay({
     height: number;
     onUpdate: (overlay: OverlayT) => void;
 }) {
-    const [drag, setDrag] = React.useState(
-        null as null | { orig: Coord; current: Coord },
-    );
+    const [drag, setDrag] = React.useState(null as null | {orig: Coord; current: Coord});
 
-    const [resize, setResize] = React.useState(
-        null as null | { origin: Coord; pos: Coord },
-    );
+    const [resize, setResize] = React.useState(null as null | {origin: Coord; pos: Coord});
 
     const overlay = state.overlays[id];
     const attachment = state.attachments[overlay.source];
@@ -60,7 +54,7 @@ export function Overlay({
         height,
         view,
         React.useCallback((pos) => {
-            setResize((res) => (res ? { ...res, pos } : res));
+            setResize((res) => (res ? {...res, pos} : res));
         }, []),
         React.useCallback(() => {
             setResize((resize) => {
@@ -73,7 +67,7 @@ export function Overlay({
                 const scale = reScale * overlay.scale.x;
                 onUpdate({
                     ...overlay,
-                    scale: { x: scale, y: scale },
+                    scale: {x: scale, y: scale},
                     center: {
                         x: overlay.center.x * reScale,
                         y: overlay.center.y * reScale,
@@ -91,7 +85,7 @@ export function Overlay({
         height,
         view,
         React.useCallback((pos) => {
-            setDrag((drag) => (drag ? { ...drag, current: pos } : drag));
+            setDrag((drag) => (drag ? {...drag, current: pos} : drag));
         }, []),
         React.useCallback(() => {
             setDrag((drag) => {
@@ -102,12 +96,8 @@ export function Overlay({
                 onUpdate({
                     ...currentOverlay.current,
                     center: {
-                        x:
-                            currentOverlay.current.center.x +
-                            (drag.current.x - drag.orig.x),
-                        y:
-                            currentOverlay.current.center.y +
-                            (drag.current.y - drag.orig.y),
+                        x: currentOverlay.current.center.x + (drag.current.x - drag.orig.x),
+                        y: currentOverlay.current.center.y + (drag.current.y - drag.orig.y),
                     },
                 });
                 return null;
@@ -126,11 +116,13 @@ export function Overlay({
         src.src = attachment.contents;
         await loaded;
 
+        // @ts-ignore
+        const Homography = await import('homography');
         const hog = new Homography();
         hog.setImage(src);
         hog.setReferencePoints(
-            attachment.perspectivePoints.from.map(({ x, y }) => [x, y]),
-            attachment.perspectivePoints.to.map(({ x, y }) => [x, y]),
+            attachment.perspectivePoints.from.map(({x, y}) => [x, y]),
+            attachment.perspectivePoints.to.map(({x, y}) => [x, y]),
         );
 
         const img: ImageData = hog.warp();
@@ -148,8 +140,7 @@ export function Overlay({
         sourcePromise.then((res) => setSource(res));
     }, [sourcePromise]);
 
-    const isSelected =
-        state.selection?.type === 'Overlay' && state.selection.ids.includes(id);
+    const isSelected = state.selection?.type === 'Overlay' && state.selection.ids.includes(id);
     return (
         <>
             <image
@@ -161,7 +152,7 @@ export function Overlay({
                 opacity={isSelected ? 0.8 : overlay.opacity}
                 x={-iwidth / 2 + x}
                 y={-iheight / 2 + y}
-                style={isSelected ? {} : { pointerEvents: 'none' }}
+                style={isSelected ? {} : {pointerEvents: 'none'}}
                 onClick={(evt) => evt.stopPropagation()}
                 onMouseDown={(evt) => {
                     evt.stopPropagation();
@@ -181,7 +172,7 @@ export function Overlay({
                             },
                             view,
                         );
-                        setResize({ origin: pos, pos });
+                        setResize({origin: pos, pos});
                         return;
                     }
                     const rect = svg.getBoundingClientRect();
@@ -195,7 +186,7 @@ export function Overlay({
                         },
                         view,
                     );
-                    setDrag({ orig: pos, current: pos });
+                    setDrag({orig: pos, current: pos});
                 }}
             />
             {isSelected ? (
@@ -222,7 +213,7 @@ export function Overlay({
                                 },
                                 view,
                             );
-                            setResize({ origin: pos, pos });
+                            setResize({origin: pos, pos});
                         }}
                     />
                     <g

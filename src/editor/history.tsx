@@ -1,11 +1,11 @@
-import { History } from '../types';
-import { UndoableAction, UndoAction } from '../state/Action';
+import {History} from '../types';
+import {UndoableAction, UndoAction} from '../state/Action';
 
 /** Returns the things to undo to get to a common parent, and then the things to do to get up to the new branch. */
 export const switchBranches = (
     history: History,
     newBranch: number,
-): { undo: Array<UndoableAction>; do: Array<UndoableAction> } => {
+): {undo: Array<UndoableAction>; do: Array<UndoableAction>} => {
     // - get array ofancestor ids for current and new branches
     // - find the longest shared prefix
     // - undo to the smaller idx of that shared parent
@@ -18,7 +18,7 @@ export const switchBranches = (
 export const getHistoricalAction = (
     history: History,
     at: number,
-): { action: UndoAction; idx: number; branch: number } | null => {
+): {action: UndoAction; idx: number; branch: number} | null => {
     if (at === 0) {
         console.error(`AT cannot be zero!`);
         return null;
@@ -36,7 +36,7 @@ export const getHistoricalAction = (
     }
 
     const idx = branch.items.length - at;
-    return { idx, branch: branch.id, action: branch.items[idx] };
+    return {idx, branch: branch.id, action: branch.items[idx]};
 };
 
 export const undoAction = (history: History): [History, UndoAction | null] => {
@@ -45,12 +45,10 @@ export const undoAction = (history: History): [History, UndoAction | null] => {
     if (!action) {
         return [history, null];
     }
-    return [{ ...history, undo }, action.action];
+    return [{...history, undo}, action.action];
 };
 
-export const redoAction = (
-    history: History,
-): [History, UndoableAction | null] => {
+export const redoAction = (history: History): [History, UndoableAction | null] => {
     if (history.undo === 0) {
         return [history, null];
     }
@@ -63,7 +61,7 @@ export const redoAction = (
         return [history, null];
     }
 
-    return [{ ...history, undo: history.undo - 1 }, action.action.action];
+    return [{...history, undo: history.undo - 1}, action.action.action];
 };
 
 export const addAction = (history: History, action: UndoAction): History => {
@@ -81,7 +79,7 @@ export const addAction = (history: History, action: UndoAction): History => {
             branches: {
                 ...history.branches,
                 [history.nextId]: {
-                    parent: { branch: found.branch, idx: found.idx },
+                    parent: {branch: found.branch, idx: found.idx},
                     items: [],
                     snapshot: null,
                     id: history.nextId,
@@ -96,9 +94,7 @@ export const addAction = (history: History, action: UndoAction): History => {
             ...history.branches,
             [history.currentBranch]: {
                 ...history.branches[history.currentBranch],
-                items: history.branches[history.currentBranch].items.concat([
-                    action,
-                ]),
+                items: history.branches[history.currentBranch].items.concat([action]),
             },
         },
     };

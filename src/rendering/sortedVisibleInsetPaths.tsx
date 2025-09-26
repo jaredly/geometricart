@@ -1,9 +1,9 @@
-import { paletteColor } from '../editor/RenderPath';
-import { ensureClockwise } from '../rendering/pathToPoints';
-import { Coord, Path, PathGroup, Segment } from '../types';
-import { coordKey, numKey } from './coordKey';
-import { closeEnough } from './epsilonToZero';
-import { angleBetween } from './findNextSegments';
+import {paletteColor} from '../editor/RenderPath';
+import {ensureClockwise} from '../rendering/pathToPoints';
+import {Coord, Path, PathGroup, Segment} from '../types';
+import {coordKey, numKey} from './coordKey';
+import {closeEnough} from './epsilonToZero';
+import {angleBetween} from './findNextSegments';
 import {
     angleTo,
     dist,
@@ -12,21 +12,11 @@ import {
     rotationMatrix,
     translationMatrix,
 } from './getMirrorTransforms';
-import {
-    angleIsBetween,
-    closeEnoughAngle,
-    lineToSlope,
-    slopeToLine,
-    withinLimit,
-} from './intersect';
-import {
-    pathsAreIdentical,
-    pathToReversedSegmentKeys,
-    pathToSegmentKeys,
-} from './pathsAreIdentical';
-import { pkSortedVisibleInsetPaths } from './pkInsetPaths';
-import { transformSegment } from './points';
-import { simplifyPath } from './simplifyPath';
+import {angleIsBetween, closeEnoughAngle, lineToSlope, slopeToLine, withinLimit} from './intersect';
+import {pathsAreIdentical, pathToReversedSegmentKeys, pathToSegmentKeys} from './pathsAreIdentical';
+import {pkSortedVisibleInsetPaths} from './pkInsetPaths';
+import {transformSegment} from './points';
+import {simplifyPath} from './simplifyPath';
 
 // This should produce:
 // a list of lines
@@ -47,10 +37,7 @@ export const normalizedPath = (
     }
     const p1 = segments[0].to;
     const theta = angleTo(p1, segments[1].to);
-    const forward = [
-        translationMatrix({ x: -p1.x, y: -p1.y }),
-        rotationMatrix(-theta),
-    ];
+    const forward = [translationMatrix({x: -p1.x, y: -p1.y}), rotationMatrix(-theta)];
     // console.log(p1);
     const backward = [rotationMatrix(theta), translationMatrix(p1)];
     const normalized = segments.map((s) => transformSegment(s, forward));
@@ -89,7 +76,7 @@ export const addToUsed = (path: Path, used: Used, pi: number) => {
 // console.log(reduced);
 
 type Uses = Array<[[number, number], number]>;
-type Used = { [centerRad: string]: Uses };
+type Used = {[centerRad: string]: Uses};
 
 export const pathToSingles = (path: Path) => {
     const singles: Array<[Path, number | undefined]> = [];
@@ -102,7 +89,7 @@ export const pathToSingles = (path: Path) => {
             {
                 ...path,
                 style: {
-                    fills: [{ ...fill, inset: undefined, originalIdx: i }],
+                    fills: [{...fill, inset: undefined, originalIdx: i}],
                     lines: [],
                 },
             },
@@ -117,7 +104,7 @@ export const pathToSingles = (path: Path) => {
             {
                 ...path,
                 style: {
-                    lines: [{ ...line, inset: undefined, originalIdx: i }],
+                    lines: [{...line, inset: undefined, originalIdx: i}],
                     fills: [],
                 },
             },
@@ -127,10 +114,7 @@ export const pathToSingles = (path: Path) => {
     return singles;
 };
 
-export const segmentKeyAndLimit = (
-    prev: Coord,
-    seg: Segment,
-): [string, [number, number]] => {
+export const segmentKeyAndLimit = (prev: Coord, seg: Segment): [string, [number, number]] => {
     if (seg.type === 'Line') {
         const si = lineToSlope(prev, seg.to, true);
         const key = `l:${numKey(si.m)}:${numKey(si.b)}`;
@@ -138,9 +122,7 @@ export const segmentKeyAndLimit = (
     } else if (seg.type === 'Quad') {
         throw new Error('quad not doing');
     } else {
-        const key = `${coordKey(seg.center)}:${numKey(
-            dist(seg.center, seg.to),
-        )}`;
+        const key = `${coordKey(seg.center)}:${numKey(dist(seg.center, seg.to))}`;
         let t0 = angleTo(seg.center, prev);
         let t1 = angleTo(seg.center, seg.to);
         if (!seg.clockwise) {
@@ -194,14 +176,9 @@ export const isEntirelyWithin = (
     );
 };
 
-export const removeFullOverlaps = (
-    path: Path,
-    pi: number,
-    used: Used,
-    other?: Used,
-) => {
+export const removeFullOverlaps = (path: Path, pi: number, used: Used, other?: Used) => {
     const finished: Array<Path> = [];
-    let current: Path = { ...path, segments: [], open: true };
+    let current: Path = {...path, segments: [], open: true};
     let droppedAny = false;
     path.segments.forEach((seg, i) => {
         const prev = i === 0 ? path.origin : path.segments[i - 1].to;
@@ -210,15 +187,7 @@ export const removeFullOverlaps = (
 
         const shouldDrop =
             isEntirelyWithin(key, limit, pi, used, false, seg.type === 'Arc') ||
-            (other &&
-                isEntirelyWithin(
-                    key,
-                    limit,
-                    pi,
-                    other,
-                    true,
-                    seg.type === 'Arc',
-                ));
+            (other && isEntirelyWithin(key, limit, pi, other, true, seg.type === 'Arc'));
         if (shouldDrop) {
             droppedAny = true;
             // finish off the current one
@@ -327,16 +296,13 @@ export const adjustSeg = (
         if (isUpOrToTheRight(prev, segment.to)) {
             [p1, p2] = [p2, p1];
         }
-        return { prev: p1, seg: { ...segment, to: p2 } };
+        return {prev: p1, seg: {...segment, to: p2}};
     }
     if (segment.type === 'Quad') {
         throw new Error('quad not doing');
     }
 
-    let [t0, t1] = [
-        angleTo(segment.center, prev),
-        angleTo(segment.center, segment.to),
-    ];
+    let [t0, t1] = [angleTo(segment.center, prev), angleTo(segment.center, segment.to)];
     if (!segment.clockwise) {
         [t0, t1] = [t1, t0];
     }
@@ -357,26 +323,21 @@ export const adjustSeg = (
     if (!segment.clockwise) {
         [newPrev, newTo] = [newTo, newPrev];
     }
-    return { prev: newPrev, seg: { ...segment, to: newTo } };
+    return {prev: newPrev, seg: {...segment, to: newTo}};
 };
 
-export const removePartialOverlaps = (
-    path: Path,
-    pi: number,
-    used: Used,
-    other?: Used,
-) => {
+export const removePartialOverlaps = (path: Path, pi: number, used: Used, other?: Used) => {
     const finished: Array<Path> = [];
-    let current: Path = { ...path, segments: [], open: true };
+    let current: Path = {...path, segments: [], open: true};
     let droppedAny = false;
     path.segments.forEach((seg, i) => {
         const prev = i === 0 ? path.origin : path.segments[i - 1].to;
 
         const [key, limit] = segmentKeyAndLimit(prev, seg);
 
-        const compare = (
-            used[key] ? used[key].filter((o) => o[1] > pi) : []
-        ).concat(other ? other[key] ?? [] : []);
+        const compare = (used[key] ? used[key].filter((o) => o[1] > pi) : []).concat(
+            other ? (other[key] ?? []) : [],
+        );
 
         const newLower = findNewLower(limit[0], seg, compare);
         const newUpper = findNewUpper(limit[1], seg, compare);
@@ -421,10 +382,7 @@ export const removePartialOverlaps = (
     }
 };
 
-export function sortForLaserCutting(
-    processed: Path[],
-    laserCutPalette: string[],
-) {
+export function sortForLaserCutting(processed: Path[], laserCutPalette: string[]) {
     // processed paths are singles at this point
     let red = processed.filter((path) => {
         if (path.style.lines.length !== 1) {
@@ -448,36 +406,27 @@ export function sortForLaserCutting(
         return color !== 'red' && color !== 'blue';
     });
 
-    let used: { red: Used; blue: Used } = { red: {}, blue: {} };
+    let used: {red: Used; blue: Used} = {red: {}, blue: {}};
     // Register all arc segments.
     red.forEach((path, pi) => addToUsed(path, used.red, pi));
     blue.forEach((path, pi) => addToUsed(path, used.blue, pi));
 
     red = red.map((path, pi) => removeFullOverlaps(path, pi, used.red)).flat();
-    blue = blue
-        .map((path, pi) => removeFullOverlaps(path, pi, used.blue, used.red))
-        .flat();
+    blue = blue.map((path, pi) => removeFullOverlaps(path, pi, used.blue, used.red)).flat();
 
     // reset for the new, reduced paths
-    used = { red: {}, blue: {} };
+    used = {red: {}, blue: {}};
     red.forEach((path, pi) => addToUsed(path, used.red, pi));
     blue.forEach((path, pi) => addToUsed(path, used.blue, pi));
 
     // console.log(used);
-    red = red
-        .map((path, pi) => removePartialOverlaps(path, pi, used.red))
-        .flat();
-    blue = blue
-        .map((path, pi) => removePartialOverlaps(path, pi, used.blue, used.red))
-        .flat();
+    red = red.map((path, pi) => removePartialOverlaps(path, pi, used.red)).flat();
+    blue = blue.map((path, pi) => removePartialOverlaps(path, pi, used.blue, used.red)).flat();
 
     return others.concat(blue).concat(red);
 }
 
-export function removeDuplicatePaths(
-    visible: string[],
-    paths: { [key: string]: Path },
-) {
+export function removeDuplicatePaths(visible: string[], paths: {[key: string]: Path}) {
     const usedPaths: Array<Array<string>> = [];
     return visible.filter((k) => {
         const path = paths[k];
@@ -486,9 +435,7 @@ export function removeDuplicatePaths(
         const backward = pathToReversedSegmentKeys(path.origin, segments);
         if (
             usedPaths.some(
-                (path) =>
-                    pathsAreIdentical(path, backward) ||
-                    pathsAreIdentical(path, forward),
+                (path) => pathsAreIdentical(path, backward) || pathsAreIdentical(path, forward),
             )
         ) {
             return false;
@@ -499,16 +446,12 @@ export function removeDuplicatePaths(
 }
 
 export function sortByOrdering(
-    paths: { [key: string]: Path },
-    pathGroups: { [key: string]: PathGroup },
+    paths: {[key: string]: Path},
+    pathGroups: {[key: string]: PathGroup},
 ): ((a: string, b: string) => number) | undefined {
     return (a, b) => {
-        const oa = paths[a].group
-            ? pathGroups[paths[a].group!]?.ordering
-            : paths[a].ordering;
-        const ob = paths[b].group
-            ? pathGroups[paths[b].group!]?.ordering
-            : paths[b].ordering;
+        const oa = paths[a].group ? pathGroups[paths[a].group!]?.ordering : paths[a].ordering;
+        const ob = paths[b].group ? pathGroups[paths[b].group!]?.ordering : paths[b].ordering;
         if (oa === ob) {
             const numa = a.startsWith('id-') ? +a.slice(3) : 0;
             const numb = b.startsWith('id-') ? +b.slice(3) : 0;
@@ -529,7 +472,7 @@ export function sortByOrdering(
 
 export function applyColorVariations(
     path: Path,
-    rand: { next: (min: number, max: number) => number },
+    rand: {next: (min: number, max: number) => number},
 ) {
     if (!path) {
         debugger;

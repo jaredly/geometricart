@@ -1,7 +1,7 @@
-import { Coord, LineSegment, Segment } from '../../types';
-import { zeroToTwoPi } from '../clipPath';
-import { angleBetween } from '../findNextSegments';
-import { angleTo, push } from '../getMirrorTransforms';
+import {Coord, LineSegment, Segment} from '../../types';
+import {zeroToTwoPi} from '../clipPath';
+import {angleBetween} from '../findNextSegments';
+import {angleTo, push} from '../getMirrorTransforms';
 
 // @trace
 /**
@@ -25,7 +25,7 @@ export const insetLineLine = (
      */
     if (between === 0) {
         // @list-examples
-        return [{ type: 'Line', to: push(p2, t0 + Math.PI / 2, amount) }];
+        return [{type: 'Line', to: push(p2, t0 + Math.PI / 2, amount)}];
     }
     /**
      * If the angle `between` the first and second segments is less than 180º,
@@ -37,9 +37,9 @@ export const insetLineLine = (
     if (between <= Math.PI) {
         // @list-examples
         return [
-            { type: 'Line', to: push(p2, t0 + Math.PI / 2, amount) },
-            { type: 'Line', to: p2 },
-            { type: 'Line', to: push(p2, t1 + Math.PI / 2, amount) },
+            {type: 'Line', to: push(p2, t0 + Math.PI / 2, amount)},
+            {type: 'Line', to: p2},
+            {type: 'Line', to: push(p2, t1 + Math.PI / 2, amount)},
         ];
         /**
          * Otherwise, we're "expanding" a corner, and we need to find the new shared
@@ -49,9 +49,8 @@ export const insetLineLine = (
          */
     } else {
         // @list-examples
-        const angle =
-            angleBetween(t0 + Math.PI, t1, amount < 0) * (amount > 0 ? -1 : 1);
+        const angle = angleBetween(t0 + Math.PI, t1, amount < 0) * (amount > 0 ? -1 : 1);
         const dist = Math.abs(amount / Math.cos(between / 2 - Math.PI));
-        return [{ type: 'Line', to: push(p2, t0 - Math.PI + angle / 2, dist) }];
+        return [{type: 'Line', to: push(p2, t0 - Math.PI + angle / 2, dist)}];
     }
 };

@@ -1,12 +1,10 @@
 import * as React from 'react';
-import { Coord } from '../../types';
-import { maybeSnap } from './CoordPicker';
-import { SvgGrid } from './SvgGrid';
+import {Coord} from '../../types';
+import {maybeSnap} from './CoordPicker';
+import {SvgGrid} from './SvgGrid';
 
 const snapCoord = (coord: Coord, margin?: number) => {
-    return margin
-        ? { x: maybeSnap(coord.x, margin), y: maybeSnap(coord.y, margin) }
-        : coord;
+    return margin ? {x: maybeSnap(coord.x, margin), y: maybeSnap(coord.y, margin)} : coord;
 };
 
 export const CoordEditor = ({
@@ -22,9 +20,7 @@ export const CoordEditor = ({
     constrain?: (coord: Coord, idx: number) => Coord;
     margin?: number;
 }) => {
-    const [state, setState] = React.useState(
-        null as null | { type: 'move'; idx: number },
-    );
+    const [state, setState] = React.useState(null as null | {type: 'move'; idx: number});
 
     const ref = React.useRef(null as null | SVGGElement);
     const moved = React.useRef(false);
@@ -69,7 +65,7 @@ export const CoordEditor = ({
     return (
         <>
             <g ref={(n) => (ref.current = n)}>
-                {coords.map(({ x, y }, i) => (
+                {coords.map(({x, y}, i) => (
                     <circle
                         key={i}
                         cx={x}
@@ -78,13 +74,10 @@ export const CoordEditor = ({
                         r={5}
                         onMouseDown={(evt) => {
                             evt.preventDefault();
-                            setState({ type: 'move', idx: i });
+                            setState({type: 'move', idx: i});
                         }}
                         onClick={
-                            onClick
-                                ? (evt) =>
-                                      moved.current ? null : onClick(i, evt)
-                                : undefined
+                            onClick ? (evt) => (moved.current ? null : onClick(i, evt)) : undefined
                         }
                         style={{
                             cursor: 'move',

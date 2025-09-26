@@ -1,18 +1,18 @@
-import { sortedVisibleInsetPaths } from './sortedVisibleInsetPaths';
-import { pathToPoints, rasterSegPoints } from './pathToPoints';
-import { hslToRgb, rgbToHsl } from './colorConvert';
-import { pathToPrimitives } from '../editor/findSelection';
-import { Primitive } from './intersect';
-import { Rgb } from '../editor/Rgb';
-import { transformSegment } from './points';
-import { paletteColor } from '../editor/RenderPath';
-import { shaderFunctions } from './shaderFunctions';
-import { Coord, Fill, Path, State, StyleLine } from '../types';
-import { getClips } from './pkInsetPaths';
+import {sortedVisibleInsetPaths} from './sortedVisibleInsetPaths';
+import {pathToPoints, rasterSegPoints} from './pathToPoints';
+import {hslToRgb, rgbToHsl} from './colorConvert';
+import {pathToPrimitives} from '../editor/findSelection';
+import {Primitive} from './intersect';
+import {Rgb} from '../editor/Rgb';
+import {transformSegment} from './points';
+import {paletteColor} from '../editor/RenderPath';
+import {shaderFunctions} from './shaderFunctions';
+import {Coord, Fill, Path, State, StyleLine} from '../types';
+import {getClips} from './pkInsetPaths';
 
-const namedColors: { [key: string]: Rgb } = {
-    white: { r: 1, g: 1, b: 1 },
-    black: { r: 0, g: 0, b: 0 },
+const namedColors: {[key: string]: Rgb} = {
+    white: {r: 1, g: 1, b: 1},
+    black: {r: 0, g: 0, b: 0},
 };
 export const parseColor = (color?: string): null | Rgb => {
     if (color == null) {
@@ -27,18 +27,18 @@ export const parseColor = (color?: string): null | Rgb => {
     const r = parseInt(color.slice(1, 3), 16);
     const g = parseInt(color.slice(3, 5), 16);
     const b = parseInt(color.slice(5), 16);
-    return { r: r / 255, g: g / 255, b: b / 255 };
+    return {r: r / 255, g: g / 255, b: b / 255};
 };
 
-export const lightDark = ({ r, g, b }: Rgb, lighten?: number): Rgb => {
+export const lightDark = ({r, g, b}: Rgb, lighten?: number): Rgb => {
     if (!lighten) {
-        return { r, g, b };
+        return {r, g, b};
     }
     let [h, s, l] = rgbToHsl(r * 255, g * 255, b * 255);
     l += lighten * 0.1;
 
     [r, g, b] = hslToRgb(h, s, Math.max(0, Math.min(l, 1.0)));
-    return { r: r / 255, g: g / 255, b: b / 255 };
+    return {r: r / 255, g: g / 255, b: b / 255};
 };
 
 export const shaderForState = (state: State): [number, string] => {
@@ -47,13 +47,13 @@ export const shaderForState = (state: State): [number, string] => {
     const paths = sortedVisibleInsetPaths(
         state.paths,
         state.pathGroups,
-        { next: (_, __) => 0 },
+        {next: (_, __) => 0},
         getClips(state),
         state.view.hideDuplicatePaths,
     );
     const palette = state.palette;
 
-    let backgroundColor = { r: 0, g: 0, b: 0 };
+    let backgroundColor = {r: 0, g: 0, b: 0};
     if (state.view.background) {
         const color = parseColor(paletteColor(palette, state.view.background));
         if (color) {
@@ -61,10 +61,7 @@ export const shaderForState = (state: State): [number, string] => {
         }
     }
 
-    const maxPathLength = paths.reduce(
-        (m, p) => Math.max(m, p.segments.length),
-        0,
-    );
+    const maxPathLength = paths.reduce((m, p) => Math.max(m, p.segments.length), 0);
 
     const coff = add(scale(state.view.center, state.view.zoom), {
         x: 500,
@@ -142,20 +139,14 @@ void main() {
 };
 
 export const vec2 = (v: Coord) => `vec2(${v.x.toFixed(1)}, ${v.y.toFixed(1)})`;
-export const vec3 = (v: Rgb) =>
-    `vec3(${v.r.toFixed(2)}, ${v.g.toFixed(2)}, ${v.b.toFixed(2)})`;
-export const sub = (a: Coord, b: Coord) => ({ x: a.x - b.x, y: a.y - b.y });
-export const add = (a: Coord, b: Coord) => ({ x: a.x + b.x, y: a.y + b.y });
-export const mul = (a: Coord, b: Coord) => ({ x: a.x * b.x, y: a.y * b.y });
-export const scale = (a: Coord, by: number) => ({ x: a.x * by, y: a.y * by });
+export const vec3 = (v: Rgb) => `vec3(${v.r.toFixed(2)}, ${v.g.toFixed(2)}, ${v.b.toFixed(2)})`;
+export const sub = (a: Coord, b: Coord) => ({x: a.x - b.x, y: a.y - b.y});
+export const add = (a: Coord, b: Coord) => ({x: a.x + b.x, y: a.y + b.y});
+export const mul = (a: Coord, b: Coord) => ({x: a.x * b.x, y: a.y * b.y});
+export const scale = (a: Coord, by: number) => ({x: a.x * by, y: a.y * by});
 export const cross = (a: Coord, b: Coord) => a.x * b.y - a.y * b.x;
 
-export function makePathFunctions(
-    paths: Path[],
-    state: State,
-    palette: string[],
-    maxSegs: number,
-) {
+export function makePathFunctions(paths: Path[], state: State, palette: string[], maxSegs: number) {
     // const worldPos = (pos: Coord) =>
     //     add(mul(pos, { x: state.view.zoom, y: -state.view.zoom }), coff);
 
@@ -214,12 +205,8 @@ export function makePathFunctions(
                             state.view.zoom,
                             color,
                             fill,
-                            stroke ? stroke.width ?? 0 : 0,
-                            stroke
-                                ? parseColor(
-                                      paletteColor(palette, stroke.color),
-                                  )
-                                : null,
+                            stroke ? (stroke.width ?? 0) : 0,
+                            stroke ? parseColor(paletteColor(palette, stroke.color)) : null,
                         ),
                     );
                 }
@@ -235,7 +222,7 @@ export const transformPrim = (prim: Primitive, zoom: number): Primitive => {
     if (prim.type === 'line') {
         const b = prim.m === Infinity ? wx(prim.b) : wy(prim.b);
         if (!prim.limit) {
-            return { ...prim, b };
+            return {...prim, b};
         }
         return {
             ...prim,
@@ -259,7 +246,7 @@ export const primToGlsl = (prim: Primitive) =>
         x: prim.limit![0],
         y: prim.limit![1],
     })}, ${vec2(
-        prim.type === 'line' ? { x: prim.m, y: prim.b } : prim.center,
+        prim.type === 'line' ? {x: prim.m, y: prim.b} : prim.center,
     )}, ${prim.type === 'circle' ? prim.radius.toFixed(2) : '0.0'})`;
 
 // export const alignPrimitives = (prims: Array<Primitive>) => {
@@ -287,9 +274,7 @@ function pathToExpensive(
     fill: Fill,
     maxSegs: number,
 ): string {
-    const prims = pathToPrimitives(
-        path.segments.map((seg) => ({ ...seg, to: scale(seg.to, zoom) })),
-    );
+    const prims = pathToPrimitives(path.segments.map((seg) => ({...seg, to: scale(seg.to, zoom)})));
     // alignPrimitives(prims)
 
     return `{ // path ${path.id}
@@ -314,9 +299,7 @@ function strokeToSdf(
     color: Rgb,
     stroke: StyleLine,
 ): string {
-    const points = rasterSegPoints(
-        pathToPoints(path.segments, path.open ? path.origin : null),
-    );
+    const points = rasterSegPoints(pathToPoints(path.segments, path.open ? path.origin : null));
     const last = points[points.length - 1];
 
     return `{ // path ${path.id}
@@ -328,10 +311,7 @@ function strokeToSdf(
 
 	${points
         .map((point, i) => {
-            const next = scale(
-                i === points.length - 1 ? points[0] : points[i + 1],
-                zoom,
-            );
+            const next = scale(i === points.length - 1 ? points[0] : points[i + 1], zoom);
             const pos = vec2(scale(point, zoom));
             return `{ // point ${i}
     // vec2  e = ${vec2(next)}-${pos}, w = p-${pos};
@@ -369,9 +349,7 @@ function pathToSdf(
     strokeWidth?: number,
     stroke?: Rgb | null,
 ): string {
-    const points = rasterSegPoints(
-        pathToPoints(path.segments, path.open ? path.origin : null),
-    );
+    const points = rasterSegPoints(pathToPoints(path.segments, path.open ? path.origin : null));
     const last = points[points.length - 1];
 
     return `{ // path ${path.id}
@@ -383,10 +361,7 @@ function pathToSdf(
 
 	${points
         .map((point, i) => {
-            const next = scale(
-                i === points.length - 1 ? points[0] : points[i + 1],
-                zoom,
-            );
+            const next = scale(i === points.length - 1 ? points[0] : points[i + 1], zoom);
             const pos = vec2(scale(point, zoom));
             return `{ // point ${i}
     // vec2  e = ${vec2(next)}-${pos}, w = p-${pos};

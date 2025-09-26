@@ -1,6 +1,6 @@
 import * as React from 'react';
-import { Coord } from '../../types';
-import { SvgGrid } from './SvgGrid';
+import {Coord} from '../../types';
+import {SvgGrid} from './SvgGrid';
 
 export const CoordPicker = ({
     coords,
@@ -20,14 +20,14 @@ export const CoordPicker = ({
         if (constrain) {
             return constrain(coord);
         }
-        return { x: maybeSnap(coord.x, margin), y: maybeSnap(coord.y, margin) };
+        return {x: maybeSnap(coord.x, margin), y: maybeSnap(coord.y, margin)};
     };
 
     return (
         <svg
             width={300}
             height={300}
-            style={{ outline: '1px solid magenta', margin: 1 }}
+            style={{outline: '1px solid magenta', margin: 1}}
             onMouseMove={(evt) => {
                 const box = evt.currentTarget.getBoundingClientRect();
                 setCursor(
@@ -50,17 +50,10 @@ export const CoordPicker = ({
             <SvgGrid size={15} />
             {children(
                 <>
-                    {coords.map(({ x, y }, i) => (
+                    {coords.map(({x, y}, i) => (
                         <circle cx={x} cy={y} fill={'red'} r={5} />
                     ))}
-                    {cursor ? (
-                        <circle
-                            cx={cursor.x}
-                            cy={cursor.y}
-                            fill={'white'}
-                            r={5}
-                        />
-                    ) : null}
+                    {cursor ? <circle cx={cursor.x} cy={cursor.y} fill={'white'} r={5} /> : null}
                 </>,
                 cursor ? coords.concat([cursor]) : coords,
             )}
@@ -68,5 +61,4 @@ export const CoordPicker = ({
     );
 };
 
-export const maybeSnap = (v: number, snap?: number) =>
-    snap ? Math.round(v / snap) * snap : v;
+export const maybeSnap = (v: number, snap?: number) => (snap ? Math.round(v / snap) * snap : v);

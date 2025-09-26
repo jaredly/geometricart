@@ -1,5 +1,5 @@
 import Highlight from 'prism-react-renderer';
-import { ByStart, TraceOutput, Info } from './Fixtures';
+import {ByStart, TraceOutput, Info} from './Fixtures';
 
 export const DOC_COMMENT = 'doc-comment';
 export const EXAMPLES = 'list-examples';
@@ -13,10 +13,10 @@ export const organizeTokens = (
 ): FullToken => {
     // first split tokens
     // then annotate with ides
-    const tokens: Array<Token & { at: number }> = [];
+    const tokens: Array<Token & {at: number}> = [];
     const comments = info.comments.slice();
     const examples = Object.keys(info.examples)
-        .map((id) => ({ id, loc: info.examples[+id] }))
+        .map((id) => ({id, loc: info.examples[+id]}))
         .sort((a, b) => a.loc.start - b.loc.start);
     const shows = info.shows.slice();
 
@@ -97,7 +97,7 @@ export const organizeTokens = (
             let content = token.content;
             const m = content.match(/^\s+/);
             if (m && m[0].length < content.length) {
-                tokens.push({ ...token, content: m[0], at });
+                tokens.push({...token, content: m[0], at});
                 content = content.slice(m[0].length);
                 at += m[0].length;
             }
@@ -109,15 +109,15 @@ export const organizeTokens = (
                     at,
                 });
                 at += content.length - end[0].length;
-                tokens.push({ ...token, content: end[0], at });
+                tokens.push({...token, content: end[0], at});
                 at += end[0].length;
             } else {
-                tokens.push({ ...token, content, at });
+                tokens.push({...token, content, at});
                 at += content.length;
             }
             // });
         }
-        tokens.push({ content: '\n', types: [], at });
+        tokens.push({content: '\n', types: [], at});
         at += 1;
     });
 
@@ -133,11 +133,7 @@ export const organizeTokens = (
     let current = root;
 
     const addTokens = (before: number) => {
-        while (
-            tokens.length &&
-            tokens[0].at < current.end &&
-            tokens[0].at < before
-        ) {
+        while (tokens.length && tokens[0].at < current.end && tokens[0].at < before) {
             if (tokens[0].at < info.start || tokens[0].at > info.end) {
                 tokens.shift();
                 continue;
@@ -155,14 +151,12 @@ export const organizeTokens = (
 
     Object.keys(traceOutput)
         .filter((k) => !info.examples[+k])
-        .map((k) => ({ id: +k, loc: traceOutput[+k].loc }))
+        .map((k) => ({id: +k, loc: traceOutput[+k].loc}))
         .concat(info.references.filter((t) => !!traceOutput[t.id]))
         .sort((a, b) => {
             // const ka = traceOutput[+a];
             // const kb = traceOutput[+b];
-            return a.loc.start === b.loc.start
-                ? b.loc.end - a.loc.end
-                : a.loc.start - b.loc.start;
+            return a.loc.start === b.loc.start ? b.loc.end - a.loc.end : a.loc.start - b.loc.start;
         })
         .forEach((v) => {
             while (v.loc.start >= current.end) {
@@ -175,7 +169,7 @@ export const organizeTokens = (
                 id: v.id,
                 start: v.loc.start,
                 end: v.loc.end,
-                widgets: [{ id: v.id, start: v.loc.start, end: v.loc.end }],
+                widgets: [{id: v.id, start: v.loc.start, end: v.loc.end}],
                 parent: current,
             };
             (current.content as Array<FullToken>).push(token);

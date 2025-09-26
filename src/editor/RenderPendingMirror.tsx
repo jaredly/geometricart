@@ -1,8 +1,8 @@
 /* @jsx jsx */
 /* @jsxFrag React.Fragment */
 import React from 'react';
-import { jsx } from '@emotion/react';
-import { PendingMirror } from '../useUIState';
+import {jsx} from '@emotion/react';
+import {PendingMirror} from '../useUIState';
 import {
     angleTo,
     applyMatrices,
@@ -12,7 +12,7 @@ import {
     push,
     transformsToMatrices,
 } from '../rendering/getMirrorTransforms';
-import { Coord } from '../types';
+import {Coord} from '../types';
 
 export const RenderPendingMirror = ({
     mirror,

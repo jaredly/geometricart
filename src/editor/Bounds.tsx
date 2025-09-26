@@ -1,7 +1,7 @@
-import { Bounds } from './GuideElement';
-import { isAngleBetween } from '../rendering/findNextSegments';
-import { angleTo, dist, push } from '../rendering/getMirrorTransforms';
-import { Coord, Segment } from '../types';
+import {Bounds} from './GuideElement';
+import {isAngleBetween} from '../rendering/findNextSegments';
+import {angleTo, dist, push} from '../rendering/getMirrorTransforms';
+import {Coord, Segment} from '../types';
 
 export type PendingBounds = {
     x0: null | number;
@@ -17,7 +17,7 @@ export function addCoordToBounds(bounds: PendingBounds, c: Coord, margin = 0) {
     bounds.y1 = bounds.y1 == null ? c.y : Math.max(c.y + margin, bounds.y1);
 }
 export function newPendingBounds(): PendingBounds {
-    return { x0: null, y0: null, x1: null, y1: null };
+    return {x0: null, y0: null, x1: null, y1: null};
 }
 
 export const boundsForCoords = (...coords: Array<Coord>) => {
@@ -38,13 +38,10 @@ export const mergeBounds = (b1: Bounds, b2: Bounds): Bounds => ({
     y1: Math.max(b1.y1, b2.y1),
 });
 
-export const largestDimension = ({ x0, x1, y0, y1 }: Bounds) =>
+export const largestDimension = ({x0, x1, y0, y1}: Bounds) =>
     Math.max(Math.abs(x0), Math.abs(x1), Math.abs(y0), Math.abs(y1));
 
-export const adjustBounds = (
-    { x0, x1, y0, y1 }: Bounds,
-    { x, y }: Coord,
-): Bounds => ({
+export const adjustBounds = ({x0, x1, y0, y1}: Bounds, {x, y}: Coord): Bounds => ({
     x0: x0 - x,
     x1: x1 - x,
     y0: y0 - y,
@@ -102,5 +99,5 @@ export const segmentBounds = (prev: Coord, segment: Segment): Bounds => {
 };
 
 export function boundsMidpoint(bounds: Bounds): Coord {
-    return { x: (bounds.x0 + bounds.x1) / 2, y: (bounds.y0 + bounds.y1) / 2 };
+    return {x: (bounds.x0 + bounds.x1) / 2, y: (bounds.y0 + bounds.y1) / 2};
 }

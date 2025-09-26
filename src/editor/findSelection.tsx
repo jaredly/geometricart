@@ -1,16 +1,10 @@
-import { angleTo, dist } from '../rendering/getMirrorTransforms';
-import {
-    Circle,
-    lineCircle,
-    lineLine,
-    lineToSlope,
-    Primitive,
-} from '../rendering/intersect';
-import { ArcSegment, Coord, Id, Path, PathGroup, Segment } from '../types';
+import {angleTo, dist} from '../rendering/getMirrorTransforms';
+import {Circle, lineCircle, lineLine, lineToSlope, Primitive} from '../rendering/intersect';
+import {ArcSegment, Coord, Id, Path, PathGroup, Segment} from '../types';
 
 export const findSelection = (
-    paths: { [key: string]: Path },
-    groups: { [key: string]: PathGroup },
+    paths: {[key: string]: Path},
+    groups: {[key: string]: PathGroup},
     rect: Rect,
     debug?: boolean,
 ): Array<Id> => {
@@ -19,13 +13,13 @@ export const findSelection = (
         if (path.hidden) {
             return false;
         }
-        if (path.group && groups[path.group].hide) {
+        if (path.group && groups[path.group]?.hide) {
             return false;
         }
         return intersectsRect(path, rect, debug);
     });
 };
-type Rect = { x1: number; y1: number; x2: number; y2: number };
+type Rect = {x1: number; y1: number; x2: number; y2: number};
 
 export const intersectsRect = (path: Path, rect: Rect, debug?: boolean) => {
     // Options include:
@@ -49,26 +43,10 @@ export const intersectsRect = (path: Path, rect: Rect, debug?: boolean) => {
     }
 
     const rectLines = [
-        lineToSlope(
-            { x: rect.x1, y: rect.y1 },
-            { x: rect.x2, y: rect.y1 },
-            true,
-        ),
-        lineToSlope(
-            { x: rect.x1, y: rect.y1 },
-            { x: rect.x1, y: rect.y2 },
-            true,
-        ),
-        lineToSlope(
-            { x: rect.x2, y: rect.y2 },
-            { x: rect.x1, y: rect.y2 },
-            true,
-        ),
-        lineToSlope(
-            { x: rect.x2, y: rect.y2 },
-            { x: rect.x2, y: rect.y1 },
-            true,
-        ),
+        lineToSlope({x: rect.x1, y: rect.y1}, {x: rect.x2, y: rect.y1}, true),
+        lineToSlope({x: rect.x1, y: rect.y1}, {x: rect.x1, y: rect.y2}, true),
+        lineToSlope({x: rect.x2, y: rect.y2}, {x: rect.x1, y: rect.y2}, true),
+        lineToSlope({x: rect.x2, y: rect.y2}, {x: rect.x2, y: rect.y1}, true),
     ];
 
     const pathAsPrimitives = pathToPrimitives(path.segments);
@@ -85,12 +63,7 @@ export const intersectsRect = (path: Path, rect: Rect, debug?: boolean) => {
             } else {
                 if (lineCircle(seg, line).length) {
                     if (debug) {
-                        console.log(
-                            `lineCircle`,
-                            seg,
-                            line,
-                            lineCircle(seg, line),
-                        );
+                        console.log(`lineCircle`, seg, line, lineCircle(seg, line));
                     }
                     return true;
                 }
@@ -103,15 +76,11 @@ export const intersectsRect = (path: Path, rect: Rect, debug?: boolean) => {
 };
 
 export const pointInRect = (pos: Coord, rect: Rect) =>
-    rect.x1 <= pos.x &&
-    pos.x <= rect.x2 &&
-    rect.y1 <= pos.y &&
-    pos.y <= rect.y2;
+    rect.x1 <= pos.x && pos.x <= rect.x2 && rect.y1 <= pos.y && pos.y <= rect.y2;
 
 export function pathToPrimitives(segments: Array<Segment>) {
     return segments.map((seg, i): Primitive => {
-        const prev =
-            i === 0 ? segments[segments.length - 1].to : segments[i - 1].to;
+        const prev = i === 0 ? segments[segments.length - 1].to : segments[i - 1].to;
         return segmentToPrimitive(prev, seg);
     });
 }

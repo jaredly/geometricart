@@ -1,7 +1,7 @@
-import { Mirror, State } from './types';
-import { initialState } from './state/initialState';
-import { reducer, reifyMirror } from './state/reducer';
-import { Action } from './state/Action';
+import {Mirror, State} from './types';
+import {initialState} from './state/initialState';
+import {reducer, reifyMirror} from './state/reducer';
+import {Action} from './state/Action';
 
 export function setupState(mirror: Mirror | null) {
     let state = initialState;
@@ -15,8 +15,8 @@ export function setupState(mirror: Mirror | null) {
             id: 'base',
             geom: {
                 type: 'Circle',
-                center: { x: 0, y: 0 },
-                radius: { x: 0, y: -1 },
+                center: {x: 0, y: 0},
+                radius: {x: 0, y: -1},
                 line: true,
                 half: false,
                 multiples: 0,
@@ -42,24 +42,18 @@ export function setupState(mirror: Mirror | null) {
             id: 'line',
             geom: {
                 type: 'Line',
-                p1: { x: 0, y: 0 },
-                p2: { x: 0, y: -1 },
+                p1: {x: 0, y: 0},
+                p2: {x: 0, y: -1},
                 limit: false,
             },
             active: true,
             basedOn: [],
-            mirror: state.activeMirror
-                ? reifyMirror(state.mirrors, state.activeMirror)
-                : null,
+            mirror: state.activeMirror ? reifyMirror(state.mirrors, state.activeMirror) : null,
         },
     }));
 
     actions.forEach(
-        (action) =>
-            (state = reducer(
-                state,
-                typeof action === 'function' ? action(state) : action,
-            )),
+        (action) => (state = reducer(state, typeof action === 'function' ? action(state) : action)),
     );
 
     return state;

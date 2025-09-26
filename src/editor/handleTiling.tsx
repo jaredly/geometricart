@@ -1,34 +1,17 @@
-import { jsx } from '@emotion/react';
-import { BarePath, Coord, SegPrev, Segment, State, Tiling } from '../types';
-import { closeEnough } from '../rendering/epsilonToZero';
-import {
-    consumePath,
-    getVisiblePaths,
-    pkClips,
-} from '../rendering/pkInsetPaths';
-import { PK } from './pk';
-import { pkPath } from '../sidebar/NewSidebar';
-import { addPrevsToSegments } from '../rendering/segmentsToNonIntersectingSegments';
-import {
-    SlopeIntercept,
-    lineLine,
-    lineToSlope,
-    slopeToLine,
-} from '../rendering/intersect';
-import { numKey } from '../rendering/coordKey';
-import {
-    applyMatrices,
-    applyMatrix,
-    scaleMatrix,
-} from '../rendering/getMirrorTransforms';
-import {
-    transformBarePath,
-    transformPath,
-    transformSegment,
-} from '../rendering/points';
-import { tilingPoints, getTransform, eigenShapesToLines } from './tilingPoints';
-import { coordsEqual } from '../rendering/pathsAreIdentical';
-import { SegmentWithPrev } from '../rendering/clipPathNew';
+import {jsx} from '@emotion/react';
+import {BarePath, Coord, SegPrev, Segment, State, Tiling} from '../types';
+import {closeEnough} from '../rendering/epsilonToZero';
+import {consumePath, getVisiblePaths, pkClips} from '../rendering/pkInsetPaths';
+import {PK} from './pk';
+import {pkPath} from '../sidebar/NewSidebar';
+import {addPrevsToSegments} from '../rendering/segmentsToNonIntersectingSegments';
+import {SlopeIntercept, lineLine, lineToSlope, slopeToLine} from '../rendering/intersect';
+import {numKey} from '../rendering/coordKey';
+import {applyMatrices, applyMatrix, scaleMatrix} from '../rendering/getMirrorTransforms';
+import {transformBarePath, transformPath, transformSegment} from '../rendering/points';
+import {tilingPoints, getTransform, eigenShapesToLines} from './tilingPoints';
+import {coordsEqual} from '../rendering/pathsAreIdentical';
+import {SegmentWithPrev} from '../rendering/clipPathNew';
 
 export const simpleExport = async (state: State, shape: Tiling['shape']) => {
     const pts = tilingPoints(shape);
@@ -36,7 +19,7 @@ export const simpleExport = async (state: State, shape: Tiling['shape']) => {
     if (!res) {
         return;
     }
-    const { klines, shapes, tr, pts: tpts } = res;
+    const {klines, shapes, tr, pts: tpts} = res;
     console.log('pts', pts);
     console.log('klins', klines);
     const segs = Object.keys(klines).sort();
@@ -50,7 +33,7 @@ export const simpleExport = async (state: State, shape: Tiling['shape']) => {
         segments: unique.map(
             ([p1, p2]): SegPrev => ({
                 prev: p1,
-                segment: { type: 'Line', to: p2 },
+                segment: {type: 'Line', to: p2},
             }),
         ),
         shapes,
@@ -59,7 +42,7 @@ export const simpleExport = async (state: State, shape: Tiling['shape']) => {
 
 export const slopeToPseg = (line: SlopeIntercept): SegmentWithPrev => {
     const [p1, p2] = slopeToLine(line);
-    return { prev: p1, segment: { type: 'Line', to: p2 }, shape: -1 };
+    return {prev: p1, segment: {type: 'Line', to: p2}, shape: -1};
 };
 
 // Shapes *has* been transformed, by `getTransform(pts)`
@@ -73,7 +56,7 @@ export const getShapesIntersectingPolygon = (state: State, pts: Coord[]) => {
 
     const segments: Segment[] = pts
         .map((p) => applyMatrix(p, scaleMatrix(scale, scale)))
-        .map((to) => ({ type: 'Line', to }));
+        .map((to) => ({type: 'Line', to}));
     const origin = segments[segments.length - 1].to;
 
     // const trilines = addPrevsToSegments(
@@ -95,19 +78,17 @@ export const getShapesIntersectingPolygon = (state: State, pts: Coord[]) => {
             PK,
             pkClips(PK, pkPath(PK, big.segments, big.origin), [pkc], path)[0],
             path,
-        ).map((path) =>
-            transformBarePath(path, [scaleMatrix(1 / scale, 1 / scale), ...tx]),
-        );
+        ).map((path) => transformBarePath(path, [scaleMatrix(1 / scale, 1 / scale), ...tx]));
         if (!got.length) {
             return;
         }
-        const { origin, segments, open } = transformPath(state.paths[id], tx);
-        shapes.push({ origin, segments, open });
+        const {origin, segments, open} = transformPath(state.paths[id], tx);
+        shapes.push({origin, segments, open});
 
         const orig = addPrevsToSegments(segments, origin).map((seg) =>
             lineToSlope(seg.prev, seg.segment.to, true),
         );
-        const valid: { [key: string]: boolean } = {};
+        const valid: {[key: string]: boolean} = {};
         orig.forEach((sli) => (valid[slopeInterceptKey(sli, false)] = true));
         const gotl = got
             .flatMap((path) => addPrevsToSegments(path.segments, path.origin))
@@ -223,9 +204,7 @@ async function hashData(kk: string) {
     const hashBuffer = await window.crypto.subtle.digest('SHA-1', data);
 
     const hashArray = Array.from(new Uint8Array(hashBuffer)); // convert buffer to byte array
-    const hashHex = hashArray
-        .map((b) => b.toString(16).padStart(2, '0'))
-        .join(''); // convert bytes to hex string
+    const hashHex = hashArray.map((b) => b.toString(16).padStart(2, '0')).join(''); // convert bytes to hex string
     return hashHex;
 }
 
@@ -233,20 +212,17 @@ export function handleTiling(data: Tiling) {
     const pts = tilingPoints(data.shape);
     const tx = getTransform(pts);
     const bounds = pts.map((pt) => applyMatrices(pt, tx));
-    const lines = data.cache.segments.map((s): [Coord, Coord] => [
-        s.prev,
-        s.segment.to,
-    ]);
+    const lines = data.cache.segments.map((s): [Coord, Coord] => [s.prev, s.segment.to]);
     const tr = applyMatrices(pts[2], tx);
-    return { bounds, lines, tr };
+    return {bounds, lines, tr};
 }
 
 export function getSvgData(data: Tiling): {
     bounds: Coord[];
     lines: [Coord, Coord][];
 } {
-    const { bounds, lines, tr } = handleTiling(data);
-    return { bounds, lines: eigenShapesToLines(lines, data.shape, tr, bounds) };
+    const {bounds, lines, tr} = handleTiling(data);
+    return {bounds, lines: eigenShapesToLines(lines, data.shape, tr, bounds)};
 }
 
 export const handleNegZero = (n: number) => {

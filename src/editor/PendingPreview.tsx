@@ -1,19 +1,13 @@
 import * as React from 'react';
-import { useCurrent } from '../App';
-import { DrawPathState } from './DrawPath';
-import { adjustBounds, largestDimension, segmentBounds } from './Bounds';
-import { angleTo, push } from '../rendering/getMirrorTransforms';
-import { RenderSegment } from './RenderSegment';
-import { Coord } from '../types';
-import { scalePos } from './scalePos';
+import {useCurrent} from '../App';
+import {DrawPathState} from './DrawPath';
+import {adjustBounds, largestDimension, segmentBounds} from './Bounds';
+import {angleTo, push} from '../rendering/getMirrorTransforms';
+import {RenderSegment} from './RenderSegment';
+import {Coord} from '../types';
+import {scalePos} from './scalePos';
 
-export const PendingPreview = ({
-    state,
-    size,
-}: {
-    state: DrawPathState;
-    size: number;
-}) => {
+export const PendingPreview = ({state, size}: {state: DrawPathState; size: number}) => {
     // So this is the center.
     // What's the scale?
     // Size is the w & h? I think
@@ -41,9 +35,7 @@ export const PendingPreview = ({
     // if (lastR.current == null) {
     //     lastR.current = getBestR(state.next)
     // }
-    const goalZoom = segmentSizes.length
-        ? r / 2 / segmentSizes[state.selection]
-        : 1;
+    const goalZoom = segmentSizes.length ? r / 2 / segmentSizes[state.selection] : 1;
     const gzr = useCurrent(goalZoom);
 
     const [currentZoom, setCurrentZoom] = React.useState(goalZoom);
@@ -87,7 +79,7 @@ export const PendingPreview = ({
     // const scale = ...;
     // state.next
     return (
-        <svg width={size} height={size} style={{ display: 'block' }}>
+        <svg width={size} height={size} style={{display: 'block'}}>
             <g
                 transform={`translate(${-current.x * zoom + size / 2} ${
                     -current.y * zoom + size / 2
@@ -97,11 +89,7 @@ export const PendingPreview = ({
                     <RenderSegment
                         key={i}
                         segment={part.segment}
-                        prev={
-                            i >= 1
-                                ? state.parts[i - 1].to.coord
-                                : state.origin.coord
-                        }
+                        prev={i >= 1 ? state.parts[i - 1].to.coord : state.origin.coord}
                         color="blue"
                         width={1}
                         zoom={zoom}
@@ -112,11 +100,7 @@ export const PendingPreview = ({
                         segment={seg.segment}
                         key={i}
                         prev={current}
-                        color={
-                            i === state.selection
-                                ? 'green'
-                                : 'rgba(255,0,0,0.5)'
-                        }
+                        color={i === state.selection ? 'green' : 'rgba(255,0,0,0.5)'}
                         width={2}
                         zoom={zoom}
                     />
@@ -124,10 +108,7 @@ export const PendingPreview = ({
                 <Arrow
                     at={scalePos(state.next[state.selection].to.coord, zoom)}
                     size={5}
-                    direction={angleTo(
-                        current,
-                        state.next[state.selection].to.coord,
-                    )}
+                    direction={angleTo(current, state.next[state.selection].to.coord)}
                     fill="green"
                 />
                 <circle
@@ -156,10 +137,5 @@ export const Arrow = ({
     const p1 = push(at, direction, size);
     const p2 = push(at, direction + (Math.PI * 3) / 4, size);
     const p3 = push(at, direction - (Math.PI * 3) / 4, size);
-    return (
-        <polygon
-            points={`${p1.x},${p1.y} ${p2.x},${p2.y} ${p3.x},${p3.y}`}
-            fill={fill}
-        />
-    );
+    return <polygon points={`${p1.x},${p1.y} ${p2.x},${p2.y} ${p3.x},${p3.y}`} fill={fill} />;
 };

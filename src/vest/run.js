@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const sane = require('sane');
 const glob = require('fast-glob');
-const { vanillaExtractPlugin } = require('@vanilla-extract/esbuild-plugin');
+const {vanillaExtractPlugin} = require('@vanilla-extract/esbuild-plugin');
 
 const PORT = 4463;
 
@@ -25,7 +25,7 @@ const trigger = () => {
 // watcher.on('add', (p, r) => trigger());
 // watcher.on('remove', (p, r) => trigger());
 
-const initial = glob.sync(pattern, { onlyFiles: true });
+const initial = glob.sync(pattern, {onlyFiles: true});
 console.log(initial);
 
 esbuild
@@ -48,15 +48,13 @@ esbuild
     )
     .then((result) => {
         // The result tells us where esbuild's local server is
-        const { host, port } = result;
+        const {host, port} = result;
         const proxy = makeProxy(host, port);
 
         http.createServer((req, res) => {
             if (req.url === '/' || req.url === '/index.html') {
-                res.writeHead(200, { 'Content-Type': 'text/html' });
-                return res.end(
-                    fs.readFileSync(__dirname + '/index.html', 'utf8'),
-                );
+                res.writeHead(200, {'Content-Type': 'text/html'});
+                return res.end(fs.readFileSync(__dirname + '/index.html', 'utf8'));
             }
 
             if (req.url === '/run.js') {
@@ -66,7 +64,7 @@ esbuild
             }
 
             if (req.url === '/vests') {
-                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.writeHead(200, {'Content-Type': 'application/json'});
                 return res.end(JSON.stringify(initial));
             }
 
@@ -74,21 +72,18 @@ esbuild
 
             if (initial.includes(pathpart.slice(1))) {
                 if (search) {
-                    const dir = path.join(
-                        path.dirname(pathpart.slice(1)),
-                        '__vest__',
-                    );
+                    const dir = path.join(path.dirname(pathpart.slice(1)), '__vest__');
                     const filePath = path.join(dir, search + '.txt');
                     if (req.method === 'POST') {
                         if (!fs.existsSync(dir)) {
-                            fs.mkdirSync(dir, { recursive: true });
+                            fs.mkdirSync(dir, {recursive: true});
                         }
 
                         return getBody(req).then((data) => {
                             fs.writeFileSync(filePath, data);
                         });
                     }
-                    res.writeHead(200, { 'Content-Type': 'text/plain' });
+                    res.writeHead(200, {'Content-Type': 'text/plain'});
                     if (fs.existsSync(filePath)) {
                         const fixtures = fs.readFileSync(filePath, 'utf8');
                         return res.end(fixtures);
@@ -97,7 +92,7 @@ esbuild
                     }
                 }
 
-                res.writeHead(200, { 'Content-Type': 'text/html' });
+                res.writeHead(200, {'Content-Type': 'text/html'});
                 return res.end(
                     fs
                         .readFileSync(__dirname + '/index.html', 'utf8')
@@ -106,10 +101,7 @@ esbuild
                         // register loads up the data, which is fine
                         // and then we have another script that selects
                         // which one to run.
-                        .replace(
-                            '"run.js"',
-                            `"${pathpart.replace(/\.[jt]sx?$/, '.js')}"`,
-                        ),
+                        .replace('"run.js"', `"${pathpart.replace(/\.[jt]sx?$/, '.js')}"`),
                 );
             }
 
@@ -130,11 +122,11 @@ const makeProxy = (host, port) => (req, res, customPath) => {
     // Forward each incoming request to esbuild
     const proxyReq = http.request(options, (proxyRes) => {
         res.writeHead(proxyRes.statusCode, proxyRes.headers);
-        proxyRes.pipe(res, { end: true });
+        proxyRes.pipe(res, {end: true});
     });
 
     // Forward the body of the request to esbuild
-    req.pipe(proxyReq, { end: true });
+    req.pipe(proxyReq, {end: true});
 };
 
 const getBody = (req) => {

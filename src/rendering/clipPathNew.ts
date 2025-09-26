@@ -2,16 +2,16 @@
  * Clipping and stuff
  */
 
-import { segmentToPrimitive } from '../editor/findSelection';
-import { Coord, Segment } from '../types';
-import { angleForSegment } from './clipPath';
-import { coordKey } from './coordKey';
+import {segmentToPrimitive} from '../editor/findSelection';
+import {Coord, Segment} from '../types';
+import {angleForSegment} from './clipPath';
+import {coordKey} from './coordKey';
 // import { removeContainedRegions } from './findInternalRegions';
-import { angleBetween } from './findNextSegments';
-import { angleTo, dist } from './getMirrorTransforms';
-import { intersections } from './intersect';
-import { isClockwise } from './pathToPoints';
-import { coordsEqual } from './pathsAreIdentical';
+import {angleBetween} from './findNextSegments';
+import {angleTo, dist} from './getMirrorTransforms';
+import {intersections} from './intersect';
+import {isClockwise} from './pathToPoints';
+import {coordsEqual} from './pathsAreIdentical';
 import {
     HitTransitions,
     IntersectionError,
@@ -28,17 +28,14 @@ export function addPrevsToSegments(
 ): SegmentWithPrev[] {
     return segments.map((s, i) => ({
         shape,
-        prev:
-            i === 0
-                ? start ?? segments[segments.length - 1].to
-                : segments[i - 1].to,
+        prev: i === 0 ? (start ?? segments[segments.length - 1].to) : segments[i - 1].to,
         segment: s,
     }));
 }
 
 export const HIGH_PRECISION = 4;
 
-export type SegmentWithPrev = { prev: Coord; segment: Segment; shape: number };
+export type SegmentWithPrev = {prev: Coord; segment: Segment; shape: number};
 
 export type HitsInfo = {
     hits: {
@@ -71,25 +68,22 @@ export type HitsInfo = {
  * ok, we have the basics.
  */
 
-export const intersectSegments = (
-    segments: Array<SegmentWithPrev>,
-    debug = false,
-) => {
-    const primitives = segments.map(({ prev, segment }) =>
-        segmentToPrimitive(prev, segment),
-    );
+export const intersectSegments = (segments: Array<SegmentWithPrev>, debug = false) => {
+    const primitives = segments.map(({prev, segment}) => segmentToPrimitive(prev, segment));
     const hits: {
         [key: string]: {
             coord: Coord;
             parties: Array<SegmentIntersection>;
         };
     } = {};
-    const exits: { [key: number]: SegmentIntersection } = {};
-    const entryCoords: { [key: number]: Coord } = {};
+    const exits: {[key: number]: SegmentIntersection} = {};
+    const entryCoords: {[key: number]: Coord} = {};
 
-    const entriesBySegment: Array<
-        Array<{ coord: Coord; entry: SegmentIntersection }>
-    > = new Array(segments.length).fill([]).map(() => []);
+    const entriesBySegment: Array<Array<{coord: Coord; entry: SegmentIntersection}>> = new Array(
+        segments.length,
+    )
+        .fill([])
+        .map(() => []);
 
     let id = 0;
     if (debug) {
@@ -99,22 +93,17 @@ export const intersectSegments = (
         for (let j = i + 1; j < segments.length; j++) {
             const found = intersections(primitives[i], primitives[j], debug);
             if (debug) {
-                console.log(
-                    `Intersecting`,
-                    primitives[i],
-                    primitives[j],
-                    found,
-                );
+                console.log(`Intersecting`, primitives[i], primitives[j], found);
             }
             found.forEach((coord) => {
                 const k = coordKey(coord, HIGH_PRECISION);
                 if (!hits[k]) {
-                    hits[k] = { coord, parties: [] };
+                    hits[k] = {coord, parties: []};
                 }
                 if (!hits[k].parties.find((p) => p.segment === i)) {
                     const entryI = calcSI(id++, i, segments[i], coord, k);
                     hits[k].parties.push(entryI);
-                    entriesBySegment[i].push({ coord, entry: entryI });
+                    entriesBySegment[i].push({coord, entry: entryI});
                     entryCoords[entryI.id] = coord;
                     if (entryI.exit) {
                         exits[entryI.id] = entryI;
@@ -124,7 +113,7 @@ export const intersectSegments = (
                 if (!hits[k].parties.find((p) => p.segment === j)) {
                     const entryJ = calcSI(id++, j, segments[j], coord, k);
                     hits[k].parties.push(entryJ);
-                    entriesBySegment[j].push({ coord, entry: entryJ });
+                    entriesBySegment[j].push({coord, entry: entryJ});
                     entryCoords[entryJ.id] = coord;
                     if (entryJ.exit) {
                         exits[entryJ.id] = entryJ;
@@ -137,11 +126,9 @@ export const intersectSegments = (
         console.groupEnd();
     }
 
-    entriesBySegment.forEach((list) =>
-        list.sort((a, b) => b.entry.distance - a.entry.distance),
-    );
+    entriesBySegment.forEach((list) => list.sort((a, b) => b.entry.distance - a.entry.distance));
 
-    return { hits, entriesBySegment, entryCoords, exits };
+    return {hits, entriesBySegment, entryCoords, exits};
 };
 
 // export const cleanUpInsetSegments3 = (
@@ -169,16 +156,12 @@ export const intersectSegments = (
  * But, it would be quite nice to reuse this logic from the inset stuff.
  * So, maybe I'll just leave it.
  */
-export const getSomeHits = (
-    segments: SegmentWithPrev[],
-    debug = false,
-): HitsInfo | null => {
+export const getSomeHits = (segments: SegmentWithPrev[], debug = false): HitsInfo | null => {
     if (debug) {
         console.group('Get Some Hits');
     }
 
-    const { hits, entriesBySegment, entryCoords, exits } =
-        intersectSegments(segments);
+    const {hits, entriesBySegment, entryCoords, exits} = intersectSegments(segments);
 
     if (!hasNonEndpointCollision(hits)) {
         if (debug) {
@@ -191,7 +174,7 @@ export const getSomeHits = (
         console.groupCollapsed('Untangling');
     }
 
-    const hitPairs: { [key: string]: HitTransitions } = {};
+    const hitPairs: {[key: string]: HitTransitions} = {};
     Object.keys(hits).forEach((k) => {
         const pairs = untangleHit(hits[k].parties, debug);
         if (debug) {
@@ -204,13 +187,13 @@ export const getSomeHits = (
         console.groupEnd();
         console.groupEnd();
     }
-    return { hits, entriesBySegment, exits, entryCoords, hitPairs };
+    return {hits, entriesBySegment, exits, entryCoords, hitPairs};
 };
 
 const calcSI = (
     id: number,
     i: number,
-    { segment, prev, shape }: SegmentWithPrev,
+    {segment, prev, shape}: SegmentWithPrev,
     coord: Coord,
     key: string,
 ): SegmentIntersection => {
@@ -241,9 +224,7 @@ const calcSI = (
     };
 };
 
-export const prevSegmentsToShape = (
-    segments: Array<SegmentWithPrev>,
-): null | Array<Segment> => {
+export const prevSegmentsToShape = (segments: Array<SegmentWithPrev>): null | Array<Segment> => {
     let bad = false;
     const singles = segments.map((s, i) => {
         const prev = segments[i === 0 ? segments.length - 1 : i - 1].segment.to;
@@ -257,7 +238,7 @@ export const prevSegmentsToShape = (
 };
 
 export function hasNonEndpointCollision(hits: {
-    [key: string]: { coord: Coord; parties: Array<SegmentIntersection> };
+    [key: string]: {coord: Coord; parties: Array<SegmentIntersection>};
 }) {
     let hasCollision = false;
     Object.keys(hits).forEach((k) => {
@@ -279,7 +260,7 @@ export const collectRegions = (
     debug = false,
     ignoreUnclosed = false,
 ) => {
-    const { entriesBySegment, exits, entryCoords, hitPairs } = hitsResults;
+    const {entriesBySegment, exits, entryCoords, hitPairs} = hitsResults;
 
     let current = entriesBySegment[0][0].entry;
 
@@ -291,7 +272,7 @@ export const collectRegions = (
     // oh also we have to search around for things that haven't been hit yet. ok.
     const regions: Array<Region> = [];
 
-    let region: Region = { isInternal: null, segments: [] };
+    let region: Region = {isInternal: null, segments: []};
 
     const firstExit = findFirstExit(hitPairs[current.coordKey], current.id);
     if (firstExit != null) {
@@ -300,20 +281,13 @@ export const collectRegions = (
     }
     if (debug) {
         console.group(`Region ${regions.length}`);
-        console.log(
-            `First exit:`,
-            region.isInternal,
-            hitPairs[current.coordKey],
-            current.id,
-        );
+        console.log(`First exit:`, region.isInternal, hitPairs[current.coordKey], current.id);
     }
 
     delete exits[current.id];
 
     while (true) {
-        const idx = entriesBySegment[current.segment].findIndex(
-            (e) => e.entry.id === current.id,
-        );
+        const idx = entriesBySegment[current.segment].findIndex((e) => e.entry.id === current.id);
         const next = entriesBySegment[current.segment][idx + 1];
         if (!next) {
             if (!ignoreUnclosed) {
@@ -366,11 +340,7 @@ export const collectRegions = (
         if (exit[1] != null) {
             if (region.isInternal != null && region.isInternal !== exit[1]) {
                 if (debug) {
-                    console.warn(
-                        `INTERNAL DISAGREEMENT`,
-                        region.isInternal,
-                        exit,
-                    );
+                    console.warn(`INTERNAL DISAGREEMENT`, region.isInternal, exit);
                 }
                 // This will exclude this region from the output.
                 // But also, this is a bug!!!
@@ -409,7 +379,7 @@ export const collectRegions = (
             if (!k) {
                 break;
             }
-            region = { isInternal: null, segments: [] };
+            region = {isInternal: null, segments: []};
             current = exits[+k];
             if (debug) {
                 console.group(`Region ${regions.length}`);

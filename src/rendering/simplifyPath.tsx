@@ -1,7 +1,7 @@
-import { Coord, Segment } from '../types';
-import { angleTo } from './getMirrorTransforms';
-import { closeEnoughAngle } from './intersect';
-import { coordsEqual } from './pathsAreIdentical';
+import {Coord, Segment} from '../types';
+import {angleTo} from './getMirrorTransforms';
+import {closeEnoughAngle} from './intersect';
+import {coordsEqual} from './pathsAreIdentical';
 
 export const simplifyPath = (segments: Array<Segment>): Array<Segment> => {
     let result: Array<Segment> = [];
@@ -39,10 +39,7 @@ export const areContiguous = (prev: Coord, one: Segment, two: Segment) => {
         return closeEnoughAngle(angleTo(prev, one.to), angleTo(one.to, two.to));
     }
     if (one.type === 'Arc' && two.type === 'Arc') {
-        return (
-            one.clockwise === two.clockwise &&
-            coordsEqual(one.center, two.center)
-        );
+        return one.clockwise === two.clockwise && coordsEqual(one.center, two.center);
     }
     return false;
 };

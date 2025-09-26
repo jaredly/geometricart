@@ -1,9 +1,9 @@
 import * as React from 'react';
-import { RenderSegmentBasic } from '../editor/RenderSegment';
-import { Coord, Segment } from '../types';
-import { SegmentWithPrev } from './clipPathNew';
-import { angleTo, dist, push } from './getMirrorTransforms';
-import { SvgGrid } from './inset/SvgGrid';
+import {RenderSegmentBasic} from '../editor/RenderSegment';
+import {Coord, Segment} from '../types';
+import {SegmentWithPrev} from './clipPathNew';
+import {angleTo, dist, push} from './getMirrorTransforms';
+import {SvgGrid} from './inset/SvgGrid';
 
 export const useOnChange = <T,>(v: T, fn: (v: T) => void) => {
     const prev = React.useRef(v);
@@ -19,9 +19,7 @@ export const useInitialState = <T, R = T>(
     v: T,
     transform?: (t: T) => R,
 ): [R, React.Dispatch<React.SetStateAction<R>>] => {
-    const [current, set] = React.useState(
-        transform ? transform(v) : (v as any as R),
-    );
+    const [current, set] = React.useState(transform ? transform(v) : (v as any as R));
     useOnChange(v, (v) => set(transform ? transform(v) : (v as any as R)));
     return [current, set];
 };
@@ -35,10 +33,7 @@ export const SegmentEditor = ({
     initial: null | SegmentWithPrev | JustPrev;
     onChange: (p: SegmentWithPrev) => void;
     restrict?: 'Line' | 'Arc';
-    children: (
-        current: null | SegmentWithPrev,
-        rendered: React.ReactNode,
-    ) => React.ReactNode;
+    children: (current: null | SegmentWithPrev, rendered: React.ReactNode) => React.ReactNode;
 }) => {
     const grid = 15;
 
@@ -48,14 +43,14 @@ export const SegmentEditor = ({
     const [cursor, setCursor] = React.useState(null as null | Coord);
 
     const points = cursor ? current.points.concat([cursor]) : current.points;
-    const seg = pendingToSeg({ ...current, points });
+    const seg = pendingToSeg({...current, points});
 
     return (
         <div>
             <svg
                 width={300}
                 height={300}
-                style={{ border: '1px solid white' }}
+                style={{border: '1px solid white'}}
                 onMouseMove={(evt) => {
                     const box = evt.currentTarget.getBoundingClientRect();
                     setCursor({
@@ -73,9 +68,7 @@ export const SegmentEditor = ({
                     const max = current.type === 'Line' ? 2 : 3;
                     const changed = {
                         ...current,
-                        points: current.points
-                            .slice(0, max - 1)
-                            .concat([coord]),
+                        points: current.points.slice(0, max - 1).concat([coord]),
                     };
                     // console.log(max, changed, current);
                     setCurrent(changed);
@@ -111,13 +104,7 @@ export const SegmentEditor = ({
                             />
                         ) : null}
                         {points.map((p, i) => (
-                            <circle
-                                key={i}
-                                cx={p.x}
-                                cy={p.y}
-                                fill="red"
-                                r={5}
-                            />
+                            <circle key={i} cx={p.x} cy={p.y} fill="red" r={5} />
                         ))}
                     </>,
                 )}
@@ -127,18 +114,12 @@ export const SegmentEditor = ({
                     <>
                         <button
                             // disabled={current.type === 'Line'}
-                            style={
-                                current.type === 'Line'
-                                    ? { fontWeight: 'bold' }
-                                    : {}
-                            }
+                            style={current.type === 'Line' ? {fontWeight: 'bold'} : {}}
                             onClick={() => {
                                 setCurrent({
                                     type: 'Line',
                                     points:
-                                        current.type === 'Arc'
-                                            ? current.points.slice(0, 1)
-                                            : [],
+                                        current.type === 'Arc' ? current.points.slice(0, 1) : [],
                                     clockwise: true,
                                 });
                             }}
@@ -147,18 +128,12 @@ export const SegmentEditor = ({
                         </button>
                         <button
                             // disabled={current.type === 'Arc'}
-                            style={
-                                current.type === 'Arc'
-                                    ? { fontWeight: 'bold' }
-                                    : {}
-                            }
+                            style={current.type === 'Arc' ? {fontWeight: 'bold'} : {}}
                             onClick={() => {
                                 setCurrent({
                                     type: 'Arc',
                                     points:
-                                        current.type === 'Line'
-                                            ? current.points.slice(0, 1)
-                                            : [],
+                                        current.type === 'Line' ? current.points.slice(0, 1) : [],
                                     clockwise: true,
                                 });
                             }}
@@ -195,7 +170,7 @@ export const pendingToSeg = (s: Pending): SegmentWithPrev | null => {
         if (s.points.length > 1) {
             return {
                 prev: s.points[0],
-                segment: { type: 'Line', to: s.points[1] },
+                segment: {type: 'Line', to: s.points[1]},
                 shape: -1,
             };
         }
@@ -220,29 +195,25 @@ export const pendingToSeg = (s: Pending): SegmentWithPrev | null => {
     return null;
 };
 
-export type JustPrev = { prev: Coord; shape?: number; segment?: Segment };
+export type JustPrev = {prev: Coord; shape?: number; segment?: Segment};
 
-export const segToPending = (
-    s: SegmentWithPrev | null | JustPrev,
-    justArc: boolean,
-): Pending =>
+export const segToPending = (s: SegmentWithPrev | null | JustPrev, justArc: boolean): Pending =>
     s
         ? s.segment && s.shape
             ? {
                   type: s.segment.type,
-                  clockwise:
-                      s.segment.type === 'Arc' ? s.segment.clockwise : false,
+                  clockwise: s.segment.type === 'Arc' ? s.segment.clockwise : false,
                   points:
                       s.segment.type === 'Line'
                           ? [s.prev, s.segment.to]
                           : s.segment.type === 'Quad'
-                          ? [s.prev, s.segment.control, s.segment.to]
-                          : [s.prev, s.segment.center, s.segment.to],
+                            ? [s.prev, s.segment.control, s.segment.to]
+                            : [s.prev, s.segment.center, s.segment.to],
               }
             : {
                   type: justArc ? 'Arc' : 'Line',
                   points: [s.prev],
                   clockwise: false,
               }
-        : { type: justArc ? 'Arc' : 'Line', clockwise: false, points: [] };
+        : {type: justArc ? 'Arc' : 'Line', clockwise: false, points: []};
 const snap = (v: number, grid: number) => Math.round(v / grid) * grid;

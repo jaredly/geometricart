@@ -1,9 +1,9 @@
 import React from 'react';
-import { Bounds } from '../editor/Export';
-import { BlurInt } from '../editor/Forms';
-import { Action } from '../state/Action';
-import { State } from '../types';
-import { pxToMM } from './generateGcode';
+import {Bounds} from '../editor/Export';
+import {BlurInt} from '../editor/Forms';
+import {Action} from '../state/Action';
+import {State} from '../types';
+import {pxToMM} from './generateGcode';
 
 export function Settings({
     state,
@@ -23,7 +23,7 @@ export function Settings({
                     ppi
                         ? dispatch({
                               type: 'meta:update',
-                              meta: { ...state.meta, ppi },
+                              meta: {...state.meta, ppi},
                           })
                         : null
                 }
@@ -36,7 +36,7 @@ export function Settings({
                     clearHeight
                         ? dispatch({
                               type: 'gcode:config',
-                              config: { clearHeight },
+                              config: {clearHeight},
                           })
                         : null
                 }
@@ -48,7 +48,7 @@ export function Settings({
                     pauseHeight
                         ? dispatch({
                               type: 'gcode:config',
-                              config: { pauseHeight },
+                              config: {pauseHeight},
                           })
                         : null
                 }
@@ -57,25 +57,17 @@ export function Settings({
     );
 }
 
-export function showBounds(
-    bounds: Bounds | null,
-    ppi: number,
-): React.ReactNode {
+export function showBounds(bounds: Bounds | null, ppi: number): React.ReactNode {
     return (
-        <div style={{ marginTop: 8, marginBottom: 16 }}>
-            Content Size:{' '}
-            {bounds ? pxToMM(bounds.x2 - bounds.x1, ppi).toFixed(1) : 'unknown'}
+        <div style={{marginTop: 8, marginBottom: 16}}>
+            Content Size: {bounds ? pxToMM(bounds.x2 - bounds.x1, ppi).toFixed(1) : 'unknown'}
             {'mm x '}
             {bounds ? pxToMM(bounds.y2 - bounds.y1, ppi).toFixed(1) : 'unknown'}
             {'mm  '}
-            {bounds
-                ? (pxToMM(bounds.x2 - bounds.x1, ppi) / 25).toFixed(2)
-                : 'unknown'}
+            {bounds ? (pxToMM(bounds.x2 - bounds.x1, ppi) / 25).toFixed(2) : 'unknown'}
             {'" x '}
-            {bounds
-                ? (pxToMM(bounds.y2 - bounds.y1, ppi) / 25).toFixed(2)
-                : 'unknown'}
-            " WARNING: Not final size
+            {bounds ? (pxToMM(bounds.y2 - bounds.y1, ppi) / 25).toFixed(2) : 'unknown'}" WARNING:
+            Not final size
         </div>
     );
 }

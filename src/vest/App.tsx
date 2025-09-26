@@ -1,11 +1,11 @@
 // The main deals
 
 import * as React from 'react';
-import { render } from 'react-dom';
-import { deepEqual } from '../rendering/deepEqual';
-import { hoverBackground } from './styles.css';
-import { Config, Fixture } from './types';
-import { deserializeFixtures, serializeFixtures } from './utils';
+import {render} from 'react-dom';
+import {deepEqual} from '../rendering/deepEqual';
+import {hoverBackground} from './styles.css';
+import {Config, Fixture} from './types';
+import {deserializeFixtures, serializeFixtures} from './utils';
 // import ReactJson from 'react-json-view';
 
 const initial: Array<unknown> = [];
@@ -34,10 +34,7 @@ export const Sidebar = () => {
                         textDecoration: 'none',
                         color: 'white',
                         padding: '4px 8px',
-                        backgroundColor:
-                            '/' + id === location.pathname
-                                ? '#555'
-                                : 'transparent',
+                        backgroundColor: '/' + id === location.pathname ? '#555' : 'transparent',
                     }}
                     href={`/${id}`}
                     key={id}
@@ -55,9 +52,7 @@ export const App = <Fn extends (...args: any) => any>({
     config: Config<Parameters<Fn>, ReturnType<Fn>>;
 }) => {
     // Here we go
-    const [fixtures, setFixtures] = React.useState(
-        initial as Array<Fixture<Fn>>,
-    );
+    const [fixtures, setFixtures] = React.useState(initial as Array<Fixture<Fn>>);
 
     React.useEffect(() => {
         fetch(`?${config.id}`)
@@ -76,13 +71,11 @@ export const App = <Fn extends (...args: any) => any>({
         }
         fetch(`?${config.id}`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {'Content-Type': 'application/json'},
             body: serializeFixtures(fixtures, config.serde),
         }).then((res) => {
             if (res.status !== 204) {
-                console.error(
-                    `Unexpected status ${res.status} when saving fixtures.`,
-                );
+                console.error(`Unexpected status ${res.status} when saving fixtures.`);
             }
         });
     }, [fixtures]);
@@ -99,10 +92,7 @@ export const App = <Fn extends (...args: any) => any>({
 
     const [passing, setPassing] = React.useState(null as null | boolean);
 
-    const updateFixture = (
-        name: string,
-        f: (f: Fixture<Fn>) => Fixture<Fn>,
-    ) => {
+    const updateFixture = (name: string, f: (f: Fixture<Fn>) => Fixture<Fn>) => {
         setFixtures((fs) => fs.map((fx) => (fx.name === name ? f(fx) : fx)));
     };
 
@@ -116,17 +106,15 @@ export const App = <Fn extends (...args: any) => any>({
     });
 
     return (
-        <div style={{ display: 'flex' }}>
+        <div style={{display: 'flex'}}>
             <Sidebar />
-            <div style={{ flex: 1 }}>
+            <div style={{flex: 1}}>
                 <div>Fixture: {config.id}</div>
-                <div
-                    style={{ margin: 8, padding: 8, border: '1px solid white' }}
-                >
+                <div style={{margin: 8, padding: 8, border: '1px solid white'}}>
                     <Editor initial={current} onChange={setCurrent} />
                 </div>
                 <input
-                    style={{ marginLeft: 8, padding: 4 }}
+                    style={{marginLeft: 8, padding: 4}}
                     value={name}
                     onChange={(evt) => setName(evt.target.value)}
                     placeholder="Fixture Name"
@@ -136,24 +124,14 @@ export const App = <Fn extends (...args: any) => any>({
                         display: 'inline-block',
                         margin: '0 8px',
                         border: `4px solid ${
-                            passing === null
-                                ? 'orange'
-                                : passing
-                                ? 'green'
-                                : 'red'
+                            passing === null ? 'orange' : passing ? 'green' : 'red'
                         }`,
                     }}
                 >
-                    <button
-                        onClick={() => setPassing(true)}
-                        disabled={passing === true}
-                    >
+                    <button onClick={() => setPassing(true)} disabled={passing === true}>
                         Pass
                     </button>
-                    <button
-                        onClick={() => setPassing(false)}
-                        disabled={passing === false}
-                    >
+                    <button onClick={() => setPassing(false)} disabled={passing === false}>
                         Fail
                     </button>
                 </div>
@@ -195,13 +173,11 @@ export const App = <Fn extends (...args: any) => any>({
                     {fixturesWithOutputs
                         .sort((a, b) => {
                             if (a.isEqual === b.isEqual) {
-                                return (
-                                    +a.fixture.isPassing - +b.fixture.isPassing
-                                );
+                                return +a.fixture.isPassing - +b.fixture.isPassing;
                             }
                             return +a.isEqual - +b.isEqual;
                         })
-                        .map(({ fixture, isEqual, output }, i) => {
+                        .map(({fixture, isEqual, output}, i) => {
                             const color = isEqual
                                 ? fixture.isPassing
                                     ? 'green'
@@ -235,67 +211,44 @@ export const App = <Fn extends (...args: any) => any>({
                                                 fixture.isPassing === null
                                                     ? 'orange'
                                                     : fixture.isPassing
-                                                    ? 'green'
-                                                    : 'red'
+                                                      ? 'green'
+                                                      : 'red'
                                             }`,
                                         }}
                                     >
                                         <button
                                             onClick={() =>
-                                                updateFixture(
-                                                    fixture.name,
-                                                    (f) => ({
-                                                        ...f,
-                                                        output,
-                                                        isPassing: true,
-                                                    }),
-                                                )
+                                                updateFixture(fixture.name, (f) => ({
+                                                    ...f,
+                                                    output,
+                                                    isPassing: true,
+                                                }))
                                             }
-                                            disabled={
-                                                isEqual && fixture.isPassing
-                                            }
+                                            disabled={isEqual && fixture.isPassing}
                                         >
                                             Pass
                                         </button>
                                         <button
                                             onClick={() =>
-                                                updateFixture(
-                                                    fixture.name,
-                                                    (f) => ({
-                                                        ...f,
-                                                        output,
-                                                        isPassing: false,
-                                                    }),
-                                                )
+                                                updateFixture(fixture.name, (f) => ({
+                                                    ...f,
+                                                    output,
+                                                    isPassing: false,
+                                                }))
                                             }
-                                            disabled={
-                                                isEqual && !fixture.isPassing
-                                            }
+                                            disabled={isEqual && !fixture.isPassing}
                                         >
                                             Fail
                                         </button>
                                     </div>
-                                    <MaybeShowJson
-                                        input={fixture.input}
-                                        output={fixture.output}
-                                    />
+                                    <MaybeShowJson input={fixture.input} output={fixture.output} />
                                     {!isEqual ? 'Different!' : null}
-                                    Status: {fixture.isPassing + ''}{' '}
-                                    {isEqual + ''}
-                                    <button
-                                        onClick={() =>
-                                            setCurrent(fixture.input)
-                                        }
-                                    >
-                                        Use
-                                    </button>
+                                    Status: {fixture.isPassing + ''} {isEqual + ''}
+                                    <button onClick={() => setCurrent(fixture.input)}>Use</button>
                                     <button
                                         onClick={() =>
                                             setFixtures((f) =>
-                                                f.filter(
-                                                    (f) =>
-                                                        f.name !== fixture.name,
-                                                ),
+                                                f.filter((f) => f.name !== fixture.name),
                                             )
                                         }
                                     >
@@ -331,7 +284,7 @@ const makeLoader = <T,>(fn: () => Promise<T>) => {
 //     import('react-json-view').then((v) => v.default),
 // );
 
-const MaybeShowJson = ({ input, output }: { input: any; output: any }) => {
+const MaybeShowJson = ({input, output}: {input: any; output: any}) => {
     const [show, setShow] = React.useState(false);
     // const ReactJson = useReactJson();
     // return (

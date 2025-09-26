@@ -1,49 +1,30 @@
 /* @jsx jsx */
 /* @jsxFrag React.Fragment */
-import { jsx } from '@emotion/react';
-import React, { useEffect, useState } from 'react';
-import { Action, PathCreateMany } from '../state/Action';
-import { PendingMirror, UIState } from '../useUIState';
-import { calcAllIntersections } from '../rendering/calcAllIntersections';
+import {jsx} from '@emotion/react';
+import React, {useEffect, useState} from 'react';
+import {Action, PathCreateMany} from '../state/Action';
+import {PendingMirror, UIState} from '../useUIState';
+import {calcAllIntersections} from '../rendering/calcAllIntersections';
 import {
     calculateGuideElements,
     geomPoints,
     geomsForGiude,
 } from '../rendering/calculateGuideElements';
-import { DrawPathState } from './DrawPath';
+import {DrawPathState} from './DrawPath';
 import {
     angleTo,
     getMirrorTransforms,
     getTransformsForNewMirror,
 } from '../rendering/getMirrorTransforms';
-import {
-    PendingDuplication,
-    PendingPathPair,
-    primitivesForElementsAndPaths,
-} from './Guides';
-import {
-    CancelIcon,
-    IconButton,
-    MirrorIcon,
-    ScissorsCuttingIcon,
-} from '../icons/Icon';
-import { epsilon } from '../rendering/intersect';
-import {
-    Bezier,
-    createLookupTable,
-    evaluateBezier,
-    evaluateLookUpTable,
-    LookUpTable,
-} from '../lerp';
-import { mergeFills, mergeStyleLines, StyleHover } from './MultiStyleForm';
-import { PendingPathControls } from './PendingPathControls';
-import { RenderWebGL } from './RenderWebGL';
-import { Hover } from './Sidebar';
-import {
-    mirrorControls,
-    selectionSection,
-    RadiusSelector,
-} from './touchscreenControls';
+import {PendingDuplication, PendingPathPair, primitivesForElementsAndPaths} from './Guides';
+import {CancelIcon, IconButton, MirrorIcon, ScissorsCuttingIcon} from '../icons/Icon';
+import {epsilon} from '../rendering/intersect';
+import {Bezier, createLookupTable, evaluateBezier, evaluateLookUpTable, LookUpTable} from '../lerp';
+import {mergeFills, mergeStyleLines, StyleHover} from './MultiStyleForm';
+import {PendingPathControls} from './PendingPathControls';
+import {RenderWebGL} from './RenderWebGL';
+import {Hover} from './Sidebar';
+import {mirrorControls, selectionSection, RadiusSelector} from './touchscreenControls';
 import {
     Animations,
     Coord,
@@ -56,17 +37,17 @@ import {
     Mirror,
     Tiling,
 } from '../types';
-import { functionWithBuiltins } from '../animation/getAnimatedPaths';
-import { Menu } from 'primereact/menu';
-import { SVGCanvas } from './SVGCanvas';
-import { useCurrent } from '../App';
-import { ToolIcons } from './ToolIcons';
-import { findAdjacentPaths, produceJointPaths } from '../animation/getBuiltins';
-import { coordsEqual } from '../rendering/pathsAreIdentical';
-import { angleBetween } from '../rendering/findNextSegments';
-import { negPiToPi } from '../rendering/clipPath';
-import { closeEnough } from '../rendering/epsilonToZero';
-import { simpleExport } from './handleTiling';
+import {functionWithBuiltins} from '../animation/getAnimatedPaths';
+import {Menu} from 'primereact/menu';
+import {SVGCanvas} from './SVGCanvas';
+import {useCurrent} from '../App';
+import {ToolIcons} from './ToolIcons';
+import {findAdjacentPaths, produceJointPaths} from '../animation/getBuiltins';
+import {coordsEqual} from '../rendering/pathsAreIdentical';
+import {angleBetween} from '../rendering/findNextSegments';
+import {negPiToPi} from '../rendering/clipPath';
+import {closeEnough} from '../rendering/epsilonToZero';
+import {simpleExport} from './handleTiling';
 import {
     angleDifferences,
     isClockwise,
@@ -86,9 +67,7 @@ export type Props = {
     pendingDuplication: null | PendingDuplication;
     setPendingDuplication: (b: null | PendingDuplication) => void;
     setPendingMirror: (
-        mirror:
-            | (PendingMirror | null)
-            | ((mirror: PendingMirror | null) => PendingMirror | null),
+        mirror: (PendingMirror | null) | ((mirror: PendingMirror | null) => PendingMirror | null),
     ) => void;
     dispatch: (action: Action) => unknown;
     hover: Hover | null;
@@ -98,21 +77,11 @@ export type Props = {
     uiState: UIState;
 };
 
-export const worldToScreen = (
-    width: number,
-    height: number,
-    pos: Coord,
-    view: View,
-) => ({
+export const worldToScreen = (width: number, height: number, pos: Coord, view: View) => ({
     x: width / 2 + (pos.x + view.center.x) * view.zoom,
     y: height / 2 + (pos.y + view.center.y) * view.zoom,
 });
-export const screenToWorld = (
-    width: number,
-    height: number,
-    pos: Coord,
-    view: View,
-) => ({
+export const screenToWorld = (width: number, height: number, pos: Coord, view: View) => ({
     x: (pos.x - width / 2) / view.zoom - view.center.x,
     y: (pos.y - height / 2) / view.zoom - view.center.y,
 });
@@ -143,9 +112,7 @@ export type TLSegmentCurve = {
     x0: number;
 };
 
-export type TLSegment =
-    | { type: 'straight'; y0: number; span: number; x0: number }
-    | TLSegmentCurve;
+export type TLSegment = {type: 'straight'; y0: number; span: number; x0: number} | TLSegmentCurve;
 
 export const evaluateSegment = (seg: TLSegment, percent: number) => {
     if (seg.type === 'straight') {
@@ -155,10 +122,7 @@ export const evaluateSegment = (seg: TLSegment, percent: number) => {
     return evaluateBezier(seg.bezier, t).y;
 };
 
-export const segmentForPoints = (
-    left: LerpPoint,
-    right: LerpPoint,
-): TLSegment => {
+export const segmentForPoints = (left: LerpPoint, right: LerpPoint): TLSegment => {
     if (!left.rightCtrl && !right.leftCtrl) {
         return {
             type: 'straight',
@@ -169,12 +133,12 @@ export const segmentForPoints = (
     }
     const dx = right.pos.x - left.pos.x;
     const c1 = left.rightCtrl
-        ? { x: left.rightCtrl.x / dx, y: left.rightCtrl.y + left.pos.y }
-        : { x: 0, y: left.pos.y };
+        ? {x: left.rightCtrl.x / dx, y: left.rightCtrl.y + left.pos.y}
+        : {x: 0, y: left.pos.y};
     const c2 = right.leftCtrl
-        ? { x: (dx + right.leftCtrl.x) / dx, y: right.leftCtrl.y + right.pos.y }
-        : { x: 1, y: right.pos.y };
-    const bezier: Bezier = { y0: left.pos.y, c1, c2, y1: right.pos.y };
+        ? {x: (dx + right.leftCtrl.x) / dx, y: right.leftCtrl.y + right.pos.y}
+        : {x: 1, y: right.pos.y};
+    const bezier: Bezier = {y0: left.pos.y, c1, c2, y1: right.pos.y};
     return {
         type: 'curve',
         bezier,
@@ -183,11 +147,7 @@ export const segmentForPoints = (
     };
 };
 
-export const evaluateBetween = (
-    left: LerpPoint,
-    right: LerpPoint,
-    position: number,
-) => {
+export const evaluateBetween = (left: LerpPoint, right: LerpPoint, position: number) => {
     const percent = (position - left.pos.x) / (right.pos.x - left.pos.x);
     return percent * (right.pos.y - left.pos.y) + left.pos.y;
 };
@@ -215,16 +175,13 @@ export const timelineFunction = (timeline: FloatLerp) => {
 
 export const evaluateTimeline = (timeline: FloatLerp, position: number) => {
     if (!timeline.points.length) {
-        return (
-            (timeline.range[1] - timeline.range[0]) * position +
-            timeline.range[0]
-        );
+        return (timeline.range[1] - timeline.range[0]) * position + timeline.range[0];
     }
     let y = null;
     for (let i = 0; i < timeline.points.length; i++) {
         if (position < timeline.points[i].pos.x) {
             y = evaluateBetween(
-                i === 0 ? { pos: { x: 0, y: 0 } } : timeline.points[i - 1],
+                i === 0 ? {pos: {x: 0, y: 0}} : timeline.points[i - 1],
                 timeline.points[i],
                 position,
             );
@@ -234,7 +191,7 @@ export const evaluateTimeline = (timeline: FloatLerp, position: number) => {
     if (y == null) {
         y = evaluateBetween(
             timeline.points[timeline.points.length - 1],
-            { pos: { x: 1, y: 1 } },
+            {pos: {x: 1, y: 1}},
             position,
         );
     }
@@ -242,15 +199,10 @@ export const evaluateTimeline = (timeline: FloatLerp, position: number) => {
 };
 
 export type AnimatedFunctions = {
-    [key: string]:
-        | ((n: number) => number)
-        | ((n: Coord) => Coord)
-        | ((n: number) => Coord);
+    [key: string]: ((n: number) => number) | ((n: Coord) => Coord) | ((n: number) => Coord);
 };
 
-export const getAnimatedFunctions = (
-    animations: Animations,
-): AnimatedFunctions => {
+export const getAnimatedFunctions = (animations: Animations): AnimatedFunctions => {
     const fn: AnimatedFunctions = {};
     Object.keys(animations.lerps).forEach((key) => {
         if (key === 't') {
@@ -265,9 +217,7 @@ export const getAnimatedFunctions = (
                 const k = functionWithBuiltins(vbl.code);
                 fn[key] = k as (n: number) => number;
             } catch (err) {
-                console.warn(
-                    `Zeroing out ${key}, there was an error evaliation.`,
-                );
+                console.warn(`Zeroing out ${key}, there was an error evaliation.`);
                 console.error(err);
                 fn[key] = (n: number) => {
                     return 0;
@@ -281,18 +231,12 @@ export const getAnimatedFunctions = (
 export type MenuItem = {
     label: React.ReactNode;
     icon?: string;
-    command?: (event: {
-        originalEvent: React.MouseEvent;
-        item: MenuItem;
-    }) => void;
+    command?: (event: {originalEvent: React.MouseEvent; item: MenuItem}) => void;
     items?: MenuItem[];
 };
 
-export const evaluateAnimatedValues = (
-    animatedFunctions: AnimatedFunctions,
-    position: number,
-) => {
-    return { ...animatedFunctions, t: position };
+export const evaluateAnimatedValues = (animatedFunctions: AnimatedFunctions, position: number) => {
+    return {...animatedFunctions, t: position};
 };
 
 export type SelectMode = boolean | 'radius' | 'path';
@@ -314,14 +258,14 @@ export type EditorState = {
 
     // mouse pos
     pos: Coord;
-    dragPos: null | { view: View; coord: Coord };
+    dragPos: null | {view: View; coord: Coord};
 
     dragSelectPos: null | Coord;
     selectMode: SelectMode;
     multiSelect: boolean;
     pending:
         | null
-        | { type: 'waiting' }
+        | {type: 'waiting'}
         | DrawPathState
         | DrawShapeState
         | {
@@ -333,7 +277,7 @@ export type EditorState = {
 const initialEditorState: EditorState = {
     tmpView: null,
     items: [],
-    pos: { x: 0, y: 0 },
+    pos: {x: 0, y: 0},
     zooming: false,
     dragPos: null,
     dragSelectPos: null,
@@ -375,7 +319,7 @@ export const Canvas = ({
             if (evt.key === 't') {
                 setEditorState((es) => ({
                     ...es,
-                    pending: { type: 'tiling', points: [] },
+                    pending: {type: 'tiling', points: []},
                 }));
                 evt.preventDefault();
                 evt.stopImmediatePropagation();
@@ -387,11 +331,9 @@ export const Canvas = ({
                     return;
                 }
                 simpleExport(currentState.current, shape).then((cache) =>
-                    cache
-                        ? dispatch({ type: 'tiling:add', shape, cache })
-                        : null,
+                    cache ? dispatch({type: 'tiling:add', shape, cache}) : null,
                 );
-                setEditorState((es) => ({ ...es, pending: null }));
+                setEditorState((es) => ({...es, pending: null}));
             }
         };
         document.addEventListener('keydown', fn);
@@ -410,11 +352,11 @@ export const Canvas = ({
                         typeof guide.mirror === 'string'
                             ? mirrorTransforms[guide.mirror as string]
                             : guide.mirror
-                            ? getTransformsForNewMirror(guide.mirror as Mirror)
-                            : null,
+                              ? getTransformsForNewMirror(guide.mirror as Mirror)
+                              : null,
                     );
                     return geoms
-                        .map(({ geom }): PathCreateMany['paths'][0] | null =>
+                        .map(({geom}): PathCreateMany['paths'][0] | null =>
                             geom.type === 'Circle'
                                 ? {
                                       origin: geom.radius,
@@ -428,12 +370,12 @@ export const Canvas = ({
                                       ],
                                   }
                                 : geom.type === 'Line'
-                                ? {
-                                      origin: geom.p1,
-                                      segments: [{ type: 'Line', to: geom.p2 }],
-                                      open: true,
-                                  }
-                                : null,
+                                  ? {
+                                        origin: geom.p1,
+                                        segments: [{type: 'Line', to: geom.p2}],
+                                        open: true,
+                                    }
+                                  : null,
                         )
                         .filter(Boolean) as PathCreateMany['paths'];
                 })
@@ -450,10 +392,10 @@ export const Canvas = ({
         console.log('startpath');
         setEditorState((es) => ({
             ...es,
-            pending: es.pending === null ? { type: 'waiting' } : null,
+            pending: es.pending === null ? {type: 'waiting'} : null,
         }));
         if (state.selection) {
-            dispatch({ type: 'selection:set', selection: null });
+            dispatch({type: 'selection:set', selection: null});
         }
     };
 
@@ -472,10 +414,7 @@ export const Canvas = ({
                 if (state.selection?.type === 'Path') {
                     evt.preventDefault();
                     evt.stopPropagation();
-                    const more = findAdjacentPaths(
-                        state.selection.ids,
-                        state.paths,
-                    );
+                    const more = findAdjacentPaths(state.selection.ids, state.paths);
                     dispatch({
                         type: 'selection:set',
                         selection: {
@@ -492,10 +431,7 @@ export const Canvas = ({
 
                 if (currentState.current.selection?.type === 'Path') {
                     const ids = currentState.current.selection.ids;
-                    const joinedSegments = produceJointPaths(
-                        ids,
-                        currentState.current.paths,
-                    );
+                    const joinedSegments = produceJointPaths(ids, currentState.current.paths);
                     dispatch({
                         type: 'path:create:many',
                         paths: joinedSegments
@@ -503,10 +439,7 @@ export const Canvas = ({
                             .map((segs) => ({
                                 origin: segs[0].prev,
                                 segments: segs.map((s) => s.segment),
-                                open: !coordsEqual(
-                                    segs[0].prev,
-                                    segs[segs.length - 1].segment.to,
-                                ),
+                                open: !coordsEqual(segs[0].prev, segs[segs.length - 1].segment.to),
                             })),
                         withMirror: false,
                         trace: true,
@@ -523,35 +456,32 @@ export const Canvas = ({
             }
             if (evt.key === 'Escape') {
                 console.log('no pending path now');
-                setEditorState((es) => ({ ...es, pending: null }));
+                setEditorState((es) => ({...es, pending: null}));
             }
         };
         document.addEventListener('keydown', fn);
         return () => document.removeEventListener('keydown', fn);
     }, []);
 
-    const showMenu = React.useCallback(
-        (evt: React.MouseEvent, items: MenuItem[]) => {
-            evt.preventDefault();
-            evt.stopPropagation();
-            console.log('ok', menu, items);
-            menu.current!.show(evt);
-            setEditorState((state) => ({ ...state, items }));
-            // setItems(items);
-            const { clientX, clientY } = evt;
-            setTimeout(() => {
-                const el = menu.current!.getElement();
-                el.style.top = clientY + 'px';
-                el.style.left = clientX + 'px';
-                console.log('ok', el);
-            }, 10);
-        },
-        [],
-    );
+    const showMenu = React.useCallback((evt: React.MouseEvent, items: MenuItem[]) => {
+        evt.preventDefault();
+        evt.stopPropagation();
+        console.log('ok', menu, items);
+        menu.current!.show(evt);
+        setEditorState((state) => ({...state, items}));
+        // setItems(items);
+        const {clientX, clientY} = evt;
+        setTimeout(() => {
+            const el = menu.current!.getElement();
+            el.style.top = clientY + 'px';
+            el.style.left = clientX + 'px';
+            console.log('ok', el);
+        }, 10);
+    }, []);
 
     let view = React.useMemo(() => {
         let view = editorState.tmpView ?? state.view;
-        return { ...state.view, center: view.center, zoom: view.zoom };
+        return {...state.view, center: view.center, zoom: view.zoom};
     }, [state.view, editorState.tmpView]);
 
     const guidePrimitives = React.useMemo(() => {
@@ -567,22 +497,16 @@ export const Canvas = ({
                         (k) =>
                             !state.paths[k].hidden &&
                             (!state.paths[k].group ||
-                                !state.pathGroups[state.paths[k].group!].hide),
+                                !state.pathGroups[state.paths[k].group!]?.hide),
                     )
                     .map((k) => state.paths[k]),
             ),
             points,
         };
-    }, [
-        state.guides,
-        state.paths,
-        state.pathGroups,
-        mirrorTransforms,
-        state.view.guides,
-    ]);
+    }, [state.guides, state.paths, state.pathGroups, mirrorTransforms, state.view.guides]);
 
     const allIntersections = React.useMemo(() => {
-        const { coords: fromGuides, seenCoords } = calcAllIntersections(
+        const {coords: fromGuides, seenCoords} = calcAllIntersections(
             guidePrimitives.primitives.map((p) => p.prim),
             guidePrimitives.points,
         );
@@ -623,22 +547,14 @@ export const Canvas = ({
             css={{
                 position: 'relative',
             }}
-            style={{ width, height }}
+            style={{width, height}}
             onTouchEnd={(evt) => {
-                if (
-                    state.selection &&
-                    !evt.shiftKey &&
-                    evt.target instanceof SVGElement
-                ) {
+                if (state.selection && !evt.shiftKey && evt.target instanceof SVGElement) {
                     evt.preventDefault();
                 }
             }}
             onClick={(evt) => {
-                if (
-                    state.selection &&
-                    !evt.shiftKey &&
-                    evt.target instanceof SVGElement
-                ) {
+                if (state.selection && !evt.shiftKey && evt.target instanceof SVGElement) {
                     dispatch({
                         type: 'selection:set',
                         selection: null,
@@ -648,20 +564,10 @@ export const Canvas = ({
         >
             {svgContents}
             {view.texture ? (
-                <RenderWebGL
-                    state={state}
-                    texture={view.texture}
-                    width={width}
-                    height={height}
-                />
+                <RenderWebGL state={state} texture={view.texture} width={width} height={height} />
             ) : null}
             {editorState.tmpView
-                ? zoomPanControls(
-                      setEditorState,
-                      state,
-                      editorState.tmpView,
-                      dispatch,
-                  )
+                ? zoomPanControls(setEditorState, state, editorState.tmpView, dispatch)
                 : null}
             <ToolIcons
                 state={state}
@@ -683,10 +589,7 @@ export const Canvas = ({
                 {pendingMirror ? (
                     mirrorControls(setPendingMirror, pendingMirror)
                 ) : pendingDuplication ? (
-                    duplicationControls(
-                        setPendingDuplication,
-                        pendingDuplication,
-                    )
+                    duplicationControls(setPendingDuplication, pendingDuplication)
                 ) : state.selection ? (
                     selectionSection(
                         dispatch,
@@ -701,9 +604,7 @@ export const Canvas = ({
                         css={{
                             fontSize: 30,
                         }}
-                        onClick={() =>
-                            dispatch({ type: 'pending:type', kind: null })
-                        }
+                        onClick={() => dispatch({type: 'pending:type', kind: null})}
                     >
                         Cancel guide
                     </button>
@@ -714,11 +615,7 @@ export const Canvas = ({
                         setEditorState={setEditorState}
                         allIntersections={allIntersections}
                         guidePrimitives={guidePrimitives.primitives}
-                        onComplete={(
-                            isClip: boolean,
-                            origin: Coord,
-                            segments: Array<Segment>,
-                        ) => {
+                        onComplete={(isClip: boolean, origin: Coord, segments: Array<Segment>) => {
                             if (isClip) {
                                 dispatch({
                                     type: 'clip:add',
@@ -727,7 +624,7 @@ export const Canvas = ({
                             } else {
                                 dispatch({
                                     type: 'path:create:many',
-                                    paths: [{ segments, origin }],
+                                    paths: [{segments, origin}],
                                     withMirror: true,
                                 });
                             }
@@ -753,16 +650,12 @@ export const combineStyles = (styles: Array<Style>): Style => {
     styles.forEach((style) => {
         style.fills.forEach((fill, i) => {
             if (fill != null) {
-                result.fills[i] = result.fills[i]
-                    ? mergeFills(result.fills[i]!, fill)
-                    : fill;
+                result.fills[i] = result.fills[i] ? mergeFills(result.fills[i]!, fill) : fill;
             }
         });
         style.lines.forEach((line, i) => {
             if (line != null) {
-                result.lines[i] = result.lines[i]
-                    ? mergeStyleLines(result.lines[i]!, line)
-                    : line;
+                result.lines[i] = result.lines[i] ? mergeStyleLines(result.lines[i]!, line) : line;
             }
         });
     });
@@ -772,7 +665,7 @@ export const combineStyles = (styles: Array<Style>): Style => {
 
 export const dragView = (
     prev: View | null,
-    dragPos: { view: View; coord: Coord },
+    dragPos: {view: View; coord: Coord},
     clientX: number,
     rect: DOMRect,
     clientY: number,
@@ -856,7 +749,7 @@ function zoomPanControls(
                 right: 0,
             }}
         >
-            <div css={{ display: 'flex' }}>
+            <div css={{display: 'flex'}}>
                 <div
                     css={{
                         padding: 10,
@@ -866,9 +759,7 @@ function zoomPanControls(
                             backgroundColor: 'rgba(255,255,255,0.5)',
                         },
                     }}
-                    onClick={() =>
-                        setEditorState((state) => ({ ...state, tmpView: null }))
-                    }
+                    onClick={() => setEditorState((state) => ({...state, tmpView: null}))}
                 >
                     Reset z/p
                 </div>
@@ -912,7 +803,7 @@ function zoomPanControls(
                             zoom: tmpView.zoom,
                         },
                     });
-                    setEditorState((state) => ({ ...state, tmpView: null }));
+                    setEditorState((state) => ({...state, tmpView: null}));
                 }}
             >
                 Commit
@@ -925,10 +816,10 @@ export function timelineSegments(timeline: FloatLerp) {
     const segments: Array<TLSegment> = [];
     const points = timeline.points.slice();
     if (!points.length || points[0].pos.x > 0) {
-        points.unshift({ pos: { x: 0, y: 0 } });
+        points.unshift({pos: {x: 0, y: 0}});
     }
     if (points[points.length - 1].pos.x < 1 - epsilon) {
-        points.push({ pos: { x: 1, y: 1 } });
+        points.push({pos: {x: 1, y: 1}});
     }
     for (let i = 1; i < points.length; i++) {
         const prev = points[i - 1];
@@ -956,13 +847,9 @@ export const ClipMenu = ({
             }}
         >
             <IconButton
-                selected={
-                    pendingPath?.type === 'path' ? pendingPath.isClip : false
-                }
+                selected={pendingPath?.type === 'path' ? pendingPath.isClip : false}
                 onClick={() =>
-                    setPendingPath((p) =>
-                        p?.type === 'path' ? { ...p, isClip: !p.isClip } : p,
-                    )
+                    setPendingPath((p) => (p?.type === 'path' ? {...p, isClip: !p.isClip} : p))
                 }
             >
                 <ScissorsCuttingIcon />
@@ -994,14 +881,7 @@ export const ToolIcon = ({
                 />
             ))}
             {circles?.map(([p, r], i) => (
-                <circle
-                    key={i}
-                    cx={p.x}
-                    cy={p.y}
-                    r={r}
-                    fill="none"
-                    stroke="currentColor"
-                />
+                <circle key={i} cx={p.x} cy={p.y} r={r} fill="none" stroke="currentColor" />
             ))}
         </svg>
     );
@@ -1014,10 +894,7 @@ function determineTilingShape(points: Coord[]): Tiling['shape'] | void {
             [b, c, d] = [d, c, b];
         }
         const angles = angleDifferences(pointsAngles([a, b, c, d]));
-        if (
-            !closeEnough(angles[0], angles[2]) ||
-            !closeEnough(angles[1], angles[3])
-        ) {
+        if (!closeEnough(angles[0], angles[2]) || !closeEnough(angles[1], angles[3])) {
             return;
         }
         return {
@@ -1031,11 +908,7 @@ function determineTilingShape(points: Coord[]): Tiling['shape'] | void {
         const ac = angleTo(a, c);
         const bc = angleTo(b, c);
         let abc = angleBetween(negPiToPi(ab + Math.PI), bc, true);
-        let bca = angleBetween(
-            negPiToPi(bc + Math.PI),
-            negPiToPi(ac + Math.PI),
-            true,
-        );
+        let bca = angleBetween(negPiToPi(bc + Math.PI), negPiToPi(ac + Math.PI), true);
         let cab = angleBetween(ac, ab, true);
 
         // If one is > π, they all will be.

@@ -1,8 +1,8 @@
-import { angleTo } from './getMirrorTransforms';
-import { intersections, Primitive } from './intersect';
-import { ArcSegment, Coord, Segment } from '../types';
-import { atLineBottom } from './clipPath';
-import { atCircleBottomOrSomething } from './atCircleBottomOrSomething';
+import {angleTo} from './getMirrorTransforms';
+import {intersections, Primitive} from './intersect';
+import {ArcSegment, Coord, Segment} from '../types';
+import {atLineBottom} from './clipPath';
+import {atCircleBottomOrSomething} from './atCircleBottomOrSomething';
 
 /** Result > 0 means it's inside. */
 
@@ -19,8 +19,7 @@ export const windingNumber = (
         limit: [coord.x, Infinity],
     };
     // let isOnEdge = false;
-    let wind: Array<{ prev: Coord; seg: Segment; up: boolean; hit: Coord }> =
-        []; // UP is positive, DOWN is negative
+    let wind: Array<{prev: Coord; seg: Segment; up: boolean; hit: Coord}> = []; // UP is positive, DOWN is negative
     prims.forEach((prim, i) => {
         // if (isOnEdge) {
         //     // bail fast
@@ -56,7 +55,7 @@ export const windingNumber = (
                 const t = angleTo(prim.center, coord);
                 const right = Math.abs(t) < Math.PI / 2;
                 const up = right === (segs[i] as ArcSegment).clockwise;
-                wind.push({ prev, seg: segs[i], up, hit: coord });
+                wind.push({prev, seg: segs[i], up, hit: coord});
             }
             // if we're going "up" at this point, +1, otherwise -1
             // hits.push(coord);

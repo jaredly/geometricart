@@ -1,23 +1,17 @@
 import * as React from 'react';
-import { segmentToPrimitive } from '../editor/findSelection';
-import { RenderPrimitive } from '../editor/RenderPrimitive';
-import { RenderSegmentBasic } from '../editor/RenderSegment';
-import { Coord } from '../types';
-import { Config } from '../vest/types';
-import { register } from '../vest';
-import { SegmentWithPrev } from './clipPathNew';
-import { intersections } from './intersect';
-import { SegmentEditor, useInitialState } from './SegmentEditor';
+import {segmentToPrimitive} from '../editor/findSelection';
+import {RenderPrimitive} from '../editor/RenderPrimitive';
+import {RenderSegmentBasic} from '../editor/RenderSegment';
+import {Coord} from '../types';
+import {Config} from '../vest/types';
+import {register} from '../vest';
+import {SegmentWithPrev} from './clipPathNew';
+import {intersections} from './intersect';
+import {SegmentEditor, useInitialState} from './SegmentEditor';
 
 export type Pair = [SegmentWithPrev, SegmentWithPrev];
 
-const Input = ({
-    initial,
-    onChange,
-}: {
-    initial: Pair | null;
-    onChange: (pair: Pair) => void;
-}) => {
+const Input = ({initial, onChange}: {initial: Pair | null; onChange: (pair: Pair) => void}) => {
     const [current, setCurrent] = useInitialState<
         [SegmentWithPrev | null, SegmentWithPrev | null] | null
     >(initial);
@@ -126,7 +120,7 @@ const Output = ({
 }: {
     input: Pair;
     output: Array<Coord>;
-    previous: { output: Array<Coord> | null; isPassing: boolean };
+    previous: {output: Array<Coord> | null; isPassing: boolean};
 }) => {
     return (
         <div>

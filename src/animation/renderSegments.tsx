@@ -1,11 +1,11 @@
-import { Coord } from '../types';
-import { PSeg } from './getBuiltins';
-import { coordsEqual, reverseSegment } from '../rendering/pathsAreIdentical';
-import { arcPath } from '../editor/RenderPendingPath';
-import { mergeBounds, segmentBounds } from '../editor/Bounds';
-import { Bounds } from '../editor/GuideElement';
+import {Coord} from '../types';
+import {PSeg} from './getBuiltins';
+import {coordsEqual, reverseSegment} from '../rendering/pathsAreIdentical';
+import {arcPath} from '../editor/RenderPendingPath';
+import {mergeBounds, segmentBounds} from '../editor/Bounds';
+import {Bounds} from '../editor/GuideElement';
 
-export const segmentPath = ({ prev, segment }: PSeg) => {
+export const segmentPath = ({prev, segment}: PSeg) => {
     if (segment.type === 'Line') {
         return `M${prev.x} ${prev.y}L${segment.to.x} ${segment.to.y}`;
     }
@@ -17,10 +17,7 @@ export const segmentPath = ({ prev, segment }: PSeg) => {
             x: segment.center.x + (segment.center.x - prev.x),
             y: segment.center.y + (segment.center.y - prev.y),
         };
-        return (
-            arcPath({ ...segment, to: mid }, prev, 1, true) +
-            arcPath(segment, prev, 1)
-        );
+        return arcPath({...segment, to: mid}, prev, 1, true) + arcPath(segment, prev, 1);
     }
     return arcPath(segment, prev, 1, true);
 };
@@ -44,16 +41,8 @@ export const renderSegment = (pseg: PSeg, point?: Coord) => {
         bounds.x0 - x
     } ${bounds.y0 - y} ${size} ${size}">
     <path d="${path}" fill="none" stroke="red" stroke-width="${size / 10}" />
-    <circle cx="${pseg.prev.x}" cy="${pseg.prev.y}" r="${
-        size / 10
-    }" fill="white" />
-    ${
-        point
-            ? `<circle cx="${point.x}" cy="${point.y}" r="${
-                  size / 10
-              }" fill="blue" />`
-            : ''
-    }
+    <circle cx="${pseg.prev.x}" cy="${pseg.prev.y}" r="${size / 10}" fill="white" />
+    ${point ? `<circle cx="${point.x}" cy="${point.y}" r="${size / 10}" fill="blue" />` : ''}
     </svg>
     `;
 };
@@ -67,11 +56,7 @@ export const psegmentsBounds = (segments: Array<PSeg>): Bounds => {
     return bounds;
 };
 
-export const renderSegments = (
-    pseg: PSeg[],
-    points?: Coord[],
-    colors?: string[],
-) => {
+export const renderSegments = (pseg: PSeg[], points?: Coord[], colors?: string[]) => {
     const bounds = psegmentsBounds(pseg);
     const w = bounds.x1 - bounds.x0;
     const h = bounds.y1 - bounds.y0;
@@ -90,8 +75,8 @@ export const renderSegments = (
         .map(
             (pseg, i) => `
     <path d="${segmentPath(pseg)}" fill="none" stroke="${
-                colors ? colors[i % colors.length] : 'red'
-            }" stroke-width="${size / 50}" />
+        colors ? colors[i % colors.length] : 'red'
+    }" stroke-width="${size / 50}" />
             `,
         )
         .join('\n')}
@@ -104,10 +89,7 @@ export const consoleSegment = (seg: PSeg, point?: Coord) => {
     const img = new Image();
     img.src = bgi;
     document.body.append(img);
-    console.log(
-        '%c ',
-        `background-image: url("${bgi}");background-size:cover;padding:20px`,
-    );
+    console.log('%c ', `background-image: url("${bgi}");background-size:cover;padding:20px`);
 };
 
 export const consoleSvg = (svg: string) => {
@@ -115,8 +97,5 @@ export const consoleSvg = (svg: string) => {
     // const img = new Image();
     // img.src = bgi;
     // document.body.append(img);
-    console.log(
-        '%c ',
-        `background-image: url("${bgi}");background-size:cover;padding:20px`,
-    );
+    console.log('%c ', `background-image: url("${bgi}");background-size:cover;padding:20px`);
 };

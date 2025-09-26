@@ -19,12 +19,7 @@ declare module 'pathkit-wasm' {
          * for more details.
          */
         computeTightBounds(): SkRect;
-        stroke(config: {
-            width?: number;
-            join?: Join;
-            cap?: Cap;
-            miter_limit?: number;
-        }): Path;
+        stroke(config: {width?: number; join?: Join; cap?: Cap; miter_limit?: number}): Path;
         op(path: Path, op: PathOp): Path;
 
         addPath(other: Path, transform?: SVGMatrix): Path;
@@ -92,13 +87,7 @@ declare module 'pathkit-wasm' {
          * [Path2D.arcTo()](https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/arcTo)
          * for more details.
          */
-        arcTo(
-            x1: number,
-            y1: number,
-            x2: number,
-            y2: number,
-            radius: number,
-        ): Path;
+        arcTo(x1: number, y1: number, x2: number, y2: number, radius: number): Path;
 
         delete(): void;
 
@@ -155,10 +144,10 @@ declare module 'pathkit-wasm' {
     }
 
     export type PathKit = {
-        StrokeJoin: { [key in keyof typeof Join]: Join };
-        StrokeCap: { [key in keyof typeof Cap]: Cap };
-        PathOp: { [key in keyof typeof PathOp]: PathOp };
-        FillType: { [key in keyof typeof FillType]: FillType };
+        StrokeJoin: {[key in keyof typeof Join]: Join};
+        StrokeCap: {[key in keyof typeof Cap]: Cap};
+        PathOp: {[key in keyof typeof PathOp]: PathOp};
+        FillType: {[key in keyof typeof FillType]: FillType};
         /** Returns an empty `SkPath` object.  */
         NewPath(pathToCopy?: Path): Path;
 
@@ -187,13 +176,7 @@ declare module 'pathkit-wasm' {
         FromCmds(cmds: Array<Array<number>>): Path;
         MakeFromOp(one: Path, two: Path, op: PathOp): Path;
 
-        cubicYFromX(
-            cpx1: number,
-            cpy1: number,
-            cpx2: number,
-            cpy2: number,
-            x: number,
-        ): number;
+        cubicYFromX(cpx1: number, cpy1: number, cpx2: number, cpy2: number, x: number): number;
         cubicPtFromT(
             cpx1: number,
             cpy1: number,
@@ -210,7 +193,7 @@ declare module 'pathkit-wasm' {
         CLOSE_VERB: number;
     };
 
-    type Config = { locateFile: (file: string) => string };
+    type Config = {locateFile: (file: string) => string};
     function PathKitInit(config: Config): Promise<PathKit>;
     export default PathKitInit;
 }

@@ -1,11 +1,11 @@
 import * as React from 'react';
-import { Angle, angleForSegment } from '../rendering/clipPath';
-import { anglesEqual } from '../rendering/epsilonToZero';
-import { angleTo, dist, push } from '../rendering/getMirrorTransforms';
-import { Coord } from '../types';
-import { SegmentWithPrev } from '../rendering/clipPathNew';
-import { HitTransitions } from '../rendering/untangleHit';
-import { angleBetween } from '../rendering/findNextSegments';
+import {Angle, angleForSegment} from '../rendering/clipPath';
+import {anglesEqual} from '../rendering/epsilonToZero';
+import {angleTo, dist, push} from '../rendering/getMirrorTransforms';
+import {Coord} from '../types';
+import {SegmentWithPrev} from '../rendering/clipPathNew';
+import {HitTransitions} from '../rendering/untangleHit';
+import {angleBetween} from '../rendering/findNextSegments';
 
 export const ShowHitIntersection = ({
     zoom,
@@ -179,8 +179,8 @@ const point = (
         back === 'mid'
             ? push(center, theta, -size / 3)
             : back
-            ? push(center, theta, -size)
-            : center;
+              ? push(center, theta, -size)
+              : center;
     const mid = push(center, theta, size / 2);
     return (
         <>
@@ -229,10 +229,7 @@ export const segmentMindpoint = (segment: SegmentWithPrev) => {
     }
 };
 
-export const segmentAngles = (
-    segments: Array<SegmentWithPrev>,
-    coord: Coord,
-) => {
+export const segmentAngles = (segments: Array<SegmentWithPrev>, coord: Coord) => {
     return segments.map((segment) => {
         // const first = coordsEqual(segment.prev, coord);
         const mid = segmentMindpoint(segment);
@@ -275,13 +272,5 @@ export const midPoint = (
     if (!found) {
         return null;
     }
-    return point(
-        'mid',
-        found.mid,
-        zoom,
-        found.atMid.theta,
-        size,
-        color,
-        inside,
-    );
+    return point('mid', found.mid, zoom, found.atMid.theta, size, color, inside);
 };

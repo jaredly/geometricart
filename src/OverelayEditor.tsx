@@ -1,14 +1,14 @@
 import * as React from 'react';
-import { Coord, State } from './types';
+import {Coord, State} from './types';
 // @ts-ignore
-import { Homography } from 'homography';
-import { Action } from './state/Action';
-import { push } from './rendering/getMirrorTransforms';
+// import { Homography } from "homography";
+import {Action} from './state/Action';
+import {push} from './rendering/getMirrorTransforms';
 
 type Guide =
-    | { type: 'rect'; points: [Coord, Coord, Coord, Coord] }
-    | { type: 'angle'; points: [Coord, Coord, Coord]; target: number }
-    | { type: 'equal-length'; lines: [Coord, Coord][] };
+    | {type: 'rect'; points: [Coord, Coord, Coord, Coord]}
+    | {type: 'angle'; points: [Coord, Coord, Coord]; target: number}
+    | {type: 'equal-length'; lines: [Coord, Coord][]};
 
 export const OverlayEditor = ({
     state,
@@ -45,17 +45,11 @@ export const OverlayEditor = ({
         const to_: Coord[] = [];
 
         for (let i = 0; i < pts.length; i++) {
-            to_.push(
-                push(
-                    { x: w / 2, y: h / 2 },
-                    ((Math.PI * 2) / pts.length) * i,
-                    smaller,
-                ),
-            );
+            to_.push(push({x: w / 2, y: h / 2}, ((Math.PI * 2) / pts.length) * i, smaller));
         }
 
-        const hog = new Homography();
-        hog.setImage(ref.current!);
+        const hog = null as any; // new Homography();
+        // hog.setImage(ref.current!);
 
         const x1 = Math.max(0, (w - h) / w / 2);
         const x2 = 1 - x1;
@@ -64,13 +58,13 @@ export const OverlayEditor = ({
         const y2 = 1 - y1;
 
         const to = [
-            { x: x1, y: y1 },
-            { x: x1, y: y2 },
-            { x: x2, y: y2 },
-            { x: x2, y: y1 },
+            {x: x1, y: y1},
+            {x: x1, y: y2},
+            {x: x2, y: y2},
+            {x: x2, y: y1},
         ] as [Coord, Coord, Coord, Coord];
 
-        const to2 = to_.map(({ x, y }) => ({ x: x / w, y: y / h }));
+        const to2 = to_.map(({x, y}) => ({x: x / w, y: y / h}));
 
         console.log(points, to, to2);
 
@@ -81,9 +75,9 @@ export const OverlayEditor = ({
         // console.log(x1, y1, x2, y2);
         console.log(w, h);
         hog.setReferencePoints(
-            pts.map(({ x, y }) => [x, y]),
+            pts.map(({x, y}) => [x, y]),
             // to_.map(({ x, y }) => [x / w, y / h]),
-            to.map(({ x, y }) => [x, y]),
+            to.map(({x, y}) => [x, y]),
         );
 
         const img: ImageData = hog.warp();
@@ -93,12 +87,8 @@ export const OverlayEditor = ({
         canv.height = img.height;
         const ctx = canv.getContext('2d')!;
         ctx.putImageData(img, 0, 0);
-        return { data: canv.toDataURL(), to };
-    }, [
-        points,
-        ref.current,
-        ov ? state.attachments[ov.source].perspectivePoints : null,
-    ]);
+        return {data: canv.toDataURL(), to};
+    }, [points, ref.current, ov ? state.attachments[ov.source].perspectivePoints : null]);
 
     if (!ov) return <h1>No overlays</h1>;
 
@@ -110,7 +100,7 @@ export const OverlayEditor = ({
                 flexDirection: 'column',
             }}
         >
-            <div style={{ position: 'relative' }}>
+            <div style={{position: 'relative'}}>
                 <img
                     ref={ref}
                     src={state.attachments[ov.source].contents}
@@ -121,7 +111,7 @@ export const OverlayEditor = ({
                         const y = evt.clientY - box.top;
                         const px = x / box.width;
                         const py = y / box.height;
-                        setPoints([...points, { x: px, y: py }]);
+                        setPoints([...points, {x: px, y: py}]);
                     }}
                 />
                 {points.map((p, i) => (
@@ -151,12 +141,7 @@ export const OverlayEditor = ({
                                 id: ov.source,
                                 attachment: {
                                     perspectivePoints: {
-                                        from: points as [
-                                            Coord,
-                                            Coord,
-                                            Coord,
-                                            Coord,
-                                        ],
+                                        from: points as [Coord, Coord, Coord, Coord],
                                         to: h2.to,
                                     },
                                 },

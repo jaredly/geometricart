@@ -1,8 +1,8 @@
 /* @jsx jsx */
 import * as React from 'react';
-import { jsx } from '@emotion/react';
-import { Coord, Id, Mirror } from '../types';
-import { Toggle, Label, Int } from './Forms';
+import {jsx} from '@emotion/react';
+import {Coord, Id, Mirror} from '../types';
+import {Toggle, Label, Int} from './Forms';
 import {
     angleTo,
     applyMatrices,
@@ -25,9 +25,9 @@ export const ShowMirror = ({
     const d = dist(mirror.point, mirror.origin);
     const base = push(mirror.point, angle, d / 2);
     const off = mirror.reflect ? push(base, angle + Math.PI / 2, d / 6) : base;
-    const line = { p1: mirror.point, p2: off };
+    const line = {p1: mirror.point, p2: off};
 
-    const lines: Array<{ p1: Coord; p2: Coord }> = [line];
+    const lines: Array<{p1: Coord; p2: Coord}> = [line];
     transforms.forEach((transform) => {
         lines.push({
             p1: applyMatrices(line.p1, transform),
@@ -50,13 +50,11 @@ export const ShowMirror = ({
 
     const scale = width < height ? inSize / height : inSize / width;
 
-    const xoff =
-        (minX - (width < height ? (height - width) / 2 : 0)) * scale - 2;
-    const yoff =
-        (minY - (height < width ? (width - height) / 2 : 0)) * scale - 2;
+    const xoff = (minX - (width < height ? (height - width) / 2 : 0)) * scale - 2;
+    const yoff = (minY - (height < width ? (width - height) / 2 : 0)) * scale - 2;
 
     return (
-        <svg width={size} height={size} style={{ display: 'block' }}>
+        <svg width={size} height={size} style={{display: 'block'}}>
             {lines.map((line, i) => (
                 <line
                     key={i}
@@ -98,7 +96,7 @@ export const MirrorForm = ({
     mirrors,
 }: {
     mirror: Mirror;
-    mirrors: { [key: Id]: Mirror };
+    mirrors: {[key: Id]: Mirror};
     isActive: boolean;
     selected: boolean;
     onMouseOver: () => void;
@@ -118,7 +116,7 @@ export const MirrorForm = ({
             css={{
                 padding: 8,
             }}
-            style={selected ? { border: '1px solid white' } : {}}
+            style={selected ? {border: '1px solid white'} : {}}
             // onClick={(evt) => {
             //     evt.stopPropagation();
             //     setSelected(true);
@@ -136,7 +134,7 @@ export const MirrorForm = ({
                 // onClick={onSelect}
             >
                 Mirror
-                <div style={{ flexBasis: 16 }} />
+                <div style={{flexBasis: 16}} />
                 <Toggle label="Active" value={isActive} onChange={onSelect} />
             </div>
             <button

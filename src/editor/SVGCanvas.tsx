@@ -1,36 +1,30 @@
-import { jsx } from '@emotion/react';
+import {jsx} from '@emotion/react';
 import Prando from 'prando';
-import React, { useRef } from 'react';
-import { RoughGenerator } from 'roughjs/bin/generator';
-import { Action } from '../state/Action';
-import { useCurrent } from '../App';
-import { PendingMirror, UIState } from '../useUIState';
-import { findSelection, pathToPrimitives } from './findSelection';
-import { Matrix, scale } from '../rendering/getMirrorTransforms';
-import {
-    calculateBounds,
-    Guides,
-    handleDuplicationIntersection,
-    PendingDuplication,
-} from './Guides';
-import { handleSelection } from './handleSelection';
-import { Primitive } from '../rendering/intersect';
-import { applyStyleHover, StyleHover } from './MultiStyleForm';
-import { Overlay } from '../editor/Overlay';
-import { paletteColor, RenderPath } from './RenderPath';
-import { showHover } from './showHover';
-import { Hover } from './Sidebar';
-import {
-    InsetCache,
-    sortedVisibleInsetPaths,
-} from '../rendering/sortedVisibleInsetPaths';
-import { Coord, State, Intersect, View, Segment } from '../types';
-import { useDragSelect, useMouseDrag } from './useMouseDrag';
-import { useScrollWheel } from './useScrollWheel';
-import { EditorState, MenuItem } from './Canvas';
-import { coordsEqual } from '../rendering/pathsAreIdentical';
-import { RenderIntersections } from './RenderIntersections';
-import { PKInsetCache, getClips } from '../rendering/pkInsetPaths';
+import React, {useMemo, useRef} from 'react';
+// import {RoughGenerator} from 'roughjs/bin/generator';
+import {Action} from '../state/Action';
+import {useCurrent} from '../App';
+import {PendingMirror, UIState} from '../useUIState';
+import {findSelection, pathToPrimitives} from './findSelection';
+import {angleTo, Matrix, scale} from '../rendering/getMirrorTransforms';
+import {calculateBounds, Guides, handleDuplicationIntersection, PendingDuplication} from './Guides';
+import {handleSelection} from './handleSelection';
+import {Primitive} from '../rendering/intersect';
+import {applyStyleHover, StyleHover} from './MultiStyleForm';
+import {Overlay} from '../editor/Overlay';
+import {paletteColor, RenderPath, RoughGenerator} from './RenderPath';
+import {showHover} from './showHover';
+import {Hover} from './Sidebar';
+import {InsetCache, sortedVisibleInsetPaths} from '../rendering/sortedVisibleInsetPaths';
+import {Coord, State, Intersect, View, Segment, guideNeedsAngle, guidePoints} from '../types';
+import {useDragSelect, useMouseDrag} from './useMouseDrag';
+import {useScrollWheel} from './useScrollWheel';
+import {EditorState, MenuItem, screenToWorld} from './Canvas';
+import {coordsEqual} from '../rendering/pathsAreIdentical';
+import {RenderIntersections} from './RenderIntersections';
+import {PKInsetCache, getClips} from '../rendering/pkInsetPaths';
+import {canFreeClick, handleClick, previewPos} from './compassAndRuler';
+import {useCompassAndRulerHandlers} from './useCompassAndRulerHandlers';
 
 export function SVGCanvas({
     state,
@@ -84,10 +78,7 @@ export function SVGCanvas({
         [key: string]: Matrix[][];
     };
     setPendingMirror: (
-        mirror:
-            | PendingMirror
-            | ((mirror: PendingMirror | null) => PendingMirror | null)
-            | null,
+        mirror: PendingMirror | ((mirror: PendingMirror | null) => PendingMirror | null) | null,
     ) => void;
 }) {
     const currentState = React.useRef(state);
@@ -95,7 +86,7 @@ export function SVGCanvas({
 
     usePalettePreload(state);
 
-    const { x, y } = viewPos(view, width, height);
+    const {x, y} = viewPos(view, width, height);
 
     const ref = React.useRef(null as null | SVGSVGElement);
 
@@ -110,13 +101,7 @@ export function SVGCanvas({
     const multiRef = useCurrent(editorState.multiSelect);
 
     const finishDrag = React.useCallback(
-        finishDragFn(
-            setEditorState,
-            currentDrag,
-            currentState,
-            multiRef,
-            dispatch,
-        ),
+        finishDragFn(setEditorState, currentDrag, currentState, multiRef, dispatch),
         [],
     );
 
@@ -136,27 +121,35 @@ export function SVGCanvas({
         view,
     );
 
-    const mouseHandlers = editorState.selectMode
-        ? dragSelectHandlers
-        : mouseDragHandlers;
+    const {compassRulerHandlers, compassDragState} = useCompassAndRulerHandlers(
+        ref,
+        view,
+        width,
+        height,
+        currentState,
+        dispatch,
+        setEditorState,
+    );
+
+    const mouseHandlers =
+        state.pending?.type === 'compass&ruler'
+            ? compassRulerHandlers
+            : editorState.selectMode
+              ? dragSelectHandlers
+              : mouseDragHandlers;
 
     React.useEffect(() => {
         if (!state.selection && multiRef.current) {
-            setEditorState((state) => ({ ...state, multiSelect: false }));
+            setEditorState((state) => ({...state, multiSelect: false}));
         }
     }, [!!state.selection]);
 
     const clickPath = React.useCallback((shiftKey: boolean, id: string) => {
         const path = currentState.current.paths[id];
-        handleSelection(
-            path,
-            currentState.current,
-            dispatch,
-            shiftKey || multiRef.current,
-        );
+        handleSelection(path, currentState.current, dispatch, shiftKey || multiRef.current);
     }, []);
 
-    let { pathsToShow, selectedIds, clip, rand } = usePathsToShow(state);
+    let {pathsToShow, selectedIds, clip, rand} = usePathsToShow(state);
 
     if (styleHover) {
         pathsToShow = pathsToShow.map((path) => {
@@ -172,7 +165,7 @@ export function SVGCanvas({
 
     const clipPrimitives = React.useMemo(() => {
         if (clip.length) {
-            const res = { prims: [] as Primitive[], segments: [] as Segment[] };
+            const res = {prims: [] as Primitive[], segments: [] as Segment[]};
             clip.forEach((c) => {
                 res.segments.push(...c.shape);
                 res.prims.push(...pathToPrimitives(c.shape));
@@ -195,9 +188,7 @@ export function SVGCanvas({
         : null;
 
     const backgroundColor =
-        view.background != null
-            ? paletteColor(state.palette, view.background)
-            : null;
+        view.background != null ? paletteColor(state.palette, view.background) : null;
 
     // Ok, so what I want is:
     // while dragging, freeze the bounds.
@@ -212,6 +203,7 @@ export function SVGCanvas({
             height={ppi != null ? calcPPI(ppi, height, view.zoom) : height}
             viewBox={`0 0 ${width} ${height}`}
             xmlns="http://www.w3.org/2000/svg"
+            style={{border: '1px solid #333'}}
             ref={(node) => {
                 if (innerRef) {
                     innerRef(node);
@@ -219,6 +211,33 @@ export function SVGCanvas({
                 ref.current = node;
             }}
             {...mouseHandlers}
+            onClick={(evt) => {
+                const rect = evt.currentTarget.getBoundingClientRect();
+                const coord = screenToWorld(
+                    width,
+                    height,
+                    {
+                        x: evt.clientX - rect.left,
+                        y: evt.clientY - rect.top,
+                    },
+                    view,
+                );
+                if (
+                    state.pending?.type === 'Guide' &&
+                    guideNeedsAngle(state.pending.kind) &&
+                    guidePoints[state.pending.kind] === state.pending.points.length
+                ) {
+                    dispatch({
+                        type: 'pending:angle',
+                        angle: angleTo(
+                            state.pending.points[state.pending.points.length - 1],
+                            coord,
+                        ),
+                    });
+                }
+
+                console.log('clickinggggg');
+            }}
         >
             <defs>
                 {state.palette.map((color, i) =>
@@ -244,8 +263,7 @@ export function SVGCanvas({
                 )}
             </defs>
             <g transform={`translate(${x} ${y})`}>
-                {backgroundColor != null &&
-                backgroundColor !== 'transparent' ? (
+                {backgroundColor != null && backgroundColor !== 'transparent' ? (
                     <rect
                         width={width}
                         height={height}
@@ -293,7 +311,7 @@ export function SVGCanvas({
                         rand={rand.current}
                         clip={clipPrimitives}
                         path={path}
-                        contextMenu={{ showMenu, state, dispatch }}
+                        contextMenu={{showMenu, state, dispatch}}
                         zoom={view.zoom}
                         sketchiness={view.sketchiness}
                         palette={state.palette}
@@ -338,11 +356,10 @@ export function SVGCanvas({
                         );
                     })}
 
-                {view.guides ||
-                hover?.type === 'guides' ||
-                editorState.pending ? (
+                {view.guides || hover?.type === 'guides' || editorState.pending ? (
                     <Guides
                         uiState={uiState}
+                        compassDragState={compassDragState}
                         state={state}
                         bounds={bounds}
                         isTouchScreen={isTouchScreen}
@@ -356,11 +373,7 @@ export function SVGCanvas({
                         zooming={editorState.zooming}
                         view={view}
                         disableGuides={!!pendingMirror}
-                        pos={
-                            isTouchScreen
-                                ? scale(view.center, -1)
-                                : editorState.pos
-                        }
+                        pos={isTouchScreen ? scale(view.center, -1) : editorState.pos}
                         editorState={editorState}
                         setEditorState={setEditorState}
                         mirrorTransforms={mirrorTransforms}
@@ -407,7 +420,7 @@ export function SVGCanvas({
                     ? dragged.map((id) =>
                           showHover(
                               id,
-                              { kind: 'Path', id, type: 'element' },
+                              {kind: 'Path', id, type: 'element'},
                               state,
                               mirrorTransforms,
                               view.zoom,
@@ -431,27 +444,13 @@ export function SVGCanvas({
                 ) : null}
                 {editorState.dragSelectPos ? (
                     <rect
-                        x={
-                            Math.min(
-                                editorState.dragSelectPos.x,
-                                editorState.pos.x,
-                            ) * view.zoom
-                        }
-                        y={
-                            Math.min(
-                                editorState.dragSelectPos.y,
-                                editorState.pos.y,
-                            ) * view.zoom
-                        }
+                        x={Math.min(editorState.dragSelectPos.x, editorState.pos.x) * view.zoom}
+                        y={Math.min(editorState.dragSelectPos.y, editorState.pos.y) * view.zoom}
                         width={
-                            Math.abs(
-                                editorState.dragSelectPos.x - editorState.pos.x,
-                            ) * view.zoom
+                            Math.abs(editorState.dragSelectPos.x - editorState.pos.x) * view.zoom
                         }
                         height={
-                            Math.abs(
-                                editorState.dragSelectPos.y - editorState.pos.y,
-                            ) * view.zoom
+                            Math.abs(editorState.dragSelectPos.y - editorState.pos.y) * view.zoom
                         }
                         fill="rgba(255,255,255,0.2)"
                         stroke="red"
@@ -469,7 +468,7 @@ export const calcPPI = (ppi: number, pixels: number, zoom: number) => {
 };
 
 // base64
-export const imageCache: { [href: string]: string | false } = {};
+export const imageCache: {[href: string]: string | false} = {};
 
 export function usePathsToShow(state: State) {
     const selectedIds = React.useMemo(() => {
@@ -481,7 +480,7 @@ export function usePathsToShow(state: State) {
 
     const insetCache = useRef({} as PKInsetCache);
 
-    let { res: pathsToShow, clip } = React.useMemo(() => {
+    let {res: pathsToShow, clip} = React.useMemo(() => {
         const clip = getClips(state);
         const now = performance.now();
         const res = sortedVisibleInsetPaths(
@@ -495,7 +494,7 @@ export function usePathsToShow(state: State) {
             selectedIds,
             insetCache.current,
         );
-        return { res, clip };
+        return {res, clip};
     }, [
         state.paths,
         state.pathGroups,
@@ -504,14 +503,11 @@ export function usePathsToShow(state: State) {
         state.view.laserCutMode,
         selectedIds,
     ]);
-    return { pathsToShow, selectedIds, clip, rand };
+    return {pathsToShow, selectedIds, clip, rand};
 }
 
-export function getSelectedIds(
-    paths: State['paths'],
-    selection: State['selection'],
-) {
-    const selectedIds: { [key: string]: boolean } = {};
+export function getSelectedIds(paths: State['paths'], selection: State['selection']) {
+    const selectedIds: {[key: string]: boolean} = {};
     if (selection?.type === 'Path') {
         selection.ids.forEach((id) => (selectedIds[id] = true));
     } else if (selection?.type === 'PathGroup') {
@@ -524,10 +520,9 @@ export function getSelectedIds(
     return selectedIds;
 }
 
-export const maybeReverse = (v: boolean, reverse: boolean) =>
-    reverse ? !v : v;
+export const maybeReverse = (v: boolean, reverse: boolean) => (reverse ? !v : v);
 
-export function rectForCorners(pos: { x: number; y: number }, drag: Coord) {
+export function rectForCorners(pos: {x: number; y: number}, drag: Coord) {
     return {
         x1: Math.min(pos.x, drag.x),
         y1: Math.min(pos.y, drag.y),
@@ -538,7 +533,7 @@ export function rectForCorners(pos: { x: number; y: number }, drag: Coord) {
 
 export function finishDragFn(
     setEditorState: React.Dispatch<React.SetStateAction<EditorState>>,
-    currentDrag: React.MutableRefObject<{ pos: Coord; drag: Coord | null }>,
+    currentDrag: React.MutableRefObject<{pos: Coord; drag: Coord | null}>,
     currentState: React.MutableRefObject<State>,
     multiRef: React.MutableRefObject<boolean>,
     dispatch: (action: Action) => unknown,
@@ -546,7 +541,7 @@ export function finishDragFn(
     return (shiftKey: boolean) => {
         // setEditorState((state) => ({ ...state, selectMode: false }));
         // cancelDragSelect();
-        const { pos, drag } = currentDrag.current;
+        const {pos, drag} = currentDrag.current;
         if (!drag || pos === drag || coordsEqual(pos, drag)) {
             return;
         }
@@ -556,20 +551,15 @@ export function finishDragFn(
             currentState.current.pathGroups,
             rect,
         );
-        if (
-            (shiftKey || multiRef.current) &&
-            currentState.current.selection?.type === 'Path'
-        ) {
+        if ((shiftKey || multiRef.current) && currentState.current.selection?.type === 'Path') {
             selected.push(
-                ...currentState.current.selection.ids.filter(
-                    (id) => !selected.includes(id),
-                ),
+                ...currentState.current.selection.ids.filter((id) => !selected.includes(id)),
             );
         }
         console.log('ok selected', selected);
         dispatch({
             type: 'selection:set',
-            selection: { type: 'Path', ids: selected },
+            selection: {type: 'Path', ids: selected},
         });
     };
 }
@@ -577,7 +567,7 @@ export function finishDragFn(
 export function viewPos(view: View, width: number, height: number) {
     const x = view.center.x * view.zoom + width / 2;
     const y = view.center.y * view.zoom + height / 2;
-    return { x, y };
+    return {x, y};
 }
 
 export function usePalettePreload(state: State) {
@@ -590,11 +580,7 @@ export function usePalettePreload(state: State) {
                     return;
                 }
                 imageCache[color] = false;
-                fetch(
-                    `https://get-page.jaredly.workers.dev/?url=${encodeURIComponent(
-                        color,
-                    )}`,
-                )
+                fetch(`https://get-page.jaredly.workers.dev/?url=${encodeURIComponent(color)}`)
                     .then((data) => data.blob())
                     .then((blob) => {
                         var reader = new FileReader();

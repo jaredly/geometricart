@@ -1,7 +1,7 @@
 import localforage from 'localforage';
-import { State } from '../types';
-import { initialState } from './initialState';
-import { migrateState } from './migrateState';
+import {State} from '../types';
+import {initialState} from './initialState';
+import {migrateState} from './migrateState';
 
 export const key = `geometric-art`;
 
@@ -11,8 +11,7 @@ export const saveState = (state: State) => {
 
 export const loadInitialState = async () => {
     const data = await localforage.getItem(key);
-    const state: State =
-        data && typeof data === 'string' ? JSON.parse(data) : initialState;
+    const state: State = data && typeof data === 'string' ? JSON.parse(data) : initialState;
 
     migrateState(state);
 

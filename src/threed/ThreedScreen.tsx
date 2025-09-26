@@ -1,7 +1,7 @@
 import {OrbitControls, PerspectiveCamera, useHelper} from '@react-three/drei';
 import '@react-three/fiber';
 import {Canvas} from '@react-three/fiber';
-import React, {useMemo, useRef, useState} from 'react';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {CameraHelper, DirectionalLight, PerspectiveCamera as TPC} from 'three';
 import {BlurInt} from '../editor/Forms';
 import {usePathsToShow} from '../editor/SVGCanvas';
@@ -12,6 +12,7 @@ import {Hover} from '../editor/Sidebar';
 import {mmToPX} from '../gcode/generateGcode';
 import {calcShapes} from './calcShapes';
 import {ExportSection} from './ExportSection';
+import {paletteColor} from '../editor/RenderPath';
 
 export const useLatest = <T,>(value: T) => {
     const ref = useRef(value);
@@ -19,14 +20,48 @@ export const useLatest = <T,>(value: T) => {
     return ref;
 };
 
-export const ThreedScreen = ({state, dispatch, hover}: {state: State; dispatch: React.Dispatch<Action>; hover: Hover | null}) => {
+export const ThreedScreen = ({
+    state,
+    dispatch,
+    hover,
+}: {
+    state: State;
+    dispatch: React.Dispatch<Action>;
+    hover: Hover | null;
+}) => {
     let {pathsToShow, selectedIds, clip, rand} = usePathsToShow(state);
     // const [thick, setThick] = useLocalStorage('thick', 3);
     // const [gap, setGap] = useLocalStorage('gap', 2);
     // const [toBack, setToBack] = useState(false as null | boolean);
-    const {thickness = 3, gap = 0, shadowZoom = 0.09} = state.meta.threedSettings ?? {};
+    const {
+        thickness = 3,
+        gap = 0,
+        shadowZoom = 0.09,
+        cameraDistance = 70,
+        useMultiSVG,
+    } = state.meta.threedSettings ?? {};
 
     const toBack = false; // TODO make this customizeable? idkyyy
+
+    const setCameraDistance = (cameraDistance: number) => {
+        dispatch({
+            type: 'meta:update',
+            meta: {
+                ...state.meta,
+                threedSettings: {...state.meta.threedSettings, cameraDistance},
+            },
+        });
+    };
+
+    const setUseMultiSVG = (useMultiSVG: boolean) => {
+        dispatch({
+            type: 'meta:update',
+            meta: {
+                ...state.meta,
+                threedSettings: {...state.meta.threedSettings, useMultiSVG},
+            },
+        });
+    };
 
     const setShadowZoom = (shadowZoom: number) => {
         dispatch({
@@ -73,9 +108,29 @@ export const ThreedScreen = ({state, dispatch, hover}: {state: State; dispatch: 
     const thickPX = mmToPX(thickness, state.meta.ppi);
     const gapPX = mmToPX(gap, state.meta.ppi);
 
-    const {items, stls, backs, covers} = useMemo(() => {
-        return calcShapes(pathsToShow, thickPX, gapPX, selectedIds, latestState.current, toBack, dispatch, hover);
-    }, [pathsToShow, thickPX, selectedIds, toBack, gapPX, hover]);
+    const calced = useMemo(() => {
+        return calcShapes(
+            pathsToShow,
+            thickPX,
+            gapPX,
+            selectedIds,
+            latestState.current,
+            toBack,
+            dispatch,
+            hover,
+            useMultiSVG ? state.view.multi : undefined,
+        );
+    }, [
+        pathsToShow,
+        thickPX,
+        selectedIds,
+        toBack,
+        gapPX,
+        hover,
+        useMultiSVG ? state.view.multi : undefined,
+    ]);
+
+    // const backdrop =
 
     const canv = React.useRef<HTMLCanvasElement>(null);
     const virtualCamera = React.useRef<TPC>();
@@ -87,27 +142,33 @@ export const ThreedScreen = ({state, dispatch, hover}: {state: State; dispatch: 
     const [[x, y], setCpos] = useState<[number, number]>([0, 0]);
 
     // useEffect(() => {
-    //     if (!move) return;
-    //     let r = 0;
-    //     const iv = setInterval(() => {
-    //         const rad = 10;
-    //         setCpos([Math.sin(r) * rad, Math.sin(r) * rad]);
-    //         r += Math.PI / 30;
-    //     }, 50);
-    //     return () => clearInterval(iv);
+    // 	if (!move) return;
+    // 	let r = 0;
+    // 	const iv = setInterval(() => {
+    // 		const rad = 3;
+    // 		setCpos([Math.cos(r) * rad, Math.sin(r) * rad]);
+    // 		r += Math.PI / 30;
+    // 	}, 50);
+    // 	return () => clearInterval(iv);
     // }, [move]);
 
     const [lpos, setLpos] = useState<[number, number, number]>([3, 0, 100]);
     // const lpos = [0, 0, 10] as const;
-    // useEffect(() => {
-    //     let r = 0;
-    //     const iv = setInterval(() => {
-    //         r += Math.PI / 40;
-    //         // setLpos([Math.cos(r) * 2, 0, 10]);
-    //         setLpos([Math.cos(r) * 5, Math.sin(r) * 5, 10]);
-    //     }, 100);
-    //     return () => clearInterval(iv);
-    // }, []);
+
+    useEffect(() => {
+        if (!move) return;
+        let r = 0;
+        const iv = setInterval(() => {
+            r += Math.PI / 80;
+            // setLpos([Math.cos(r) * 2, 0, 10]);
+            setLpos([Math.cos(r) * 5, Math.sin(r) * 5, 10]);
+        }, 100);
+        return () => clearInterval(iv);
+    }, [move]);
+
+    if (!calced) return <div>No shapes</div>;
+
+    const {items, stls, backs, covers} = calced;
 
     // useEffect(() => {
     //     const iv = setInterval(() => {
@@ -120,7 +181,8 @@ export const ThreedScreen = ({state, dispatch, hover}: {state: State; dispatch: 
     const tmax = 100;
     const tmin = 0;
 
-    const cdist = 70;
+    // const cdist = 5;
+    // const cdist = 70;
     const fov = 40;
 
     return (
@@ -132,7 +194,12 @@ export const ThreedScreen = ({state, dispatch, hover}: {state: State; dispatch: 
                     border: '1px solid magenta',
                 }}
             >
-                <Canvas ref={canv} shadows style={{backgroundColor: 'white'}} gl={{antialias: true, preserveDrawingBuffer: true}}>
+                <Canvas
+                    ref={canv}
+                    shadows
+                    style={{backgroundColor: 'white'}}
+                    gl={{antialias: true, preserveDrawingBuffer: true}}
+                >
                     <directionalLight
                         position={lpos}
                         ref={dl}
@@ -140,7 +207,10 @@ export const ThreedScreen = ({state, dispatch, hover}: {state: State; dispatch: 
                         // shadow-mapSize={[2048, 2048]}
                         castShadow
                     >
-                        <orthographicCamera zoom={shadowZoom} attach="shadow-camera"></orthographicCamera>
+                        <orthographicCamera
+                            zoom={shadowZoom}
+                            attach="shadow-camera"
+                        ></orthographicCamera>
                     </directionalLight>
                     {/* {sc.current ? <cameraHelper camera={sc.current} /> : null} */}
                     {/* <CH camera={sc} /> */}
@@ -150,17 +220,35 @@ export const ThreedScreen = ({state, dispatch, hover}: {state: State; dispatch: 
                         makeDefault
                         // @ts-expect-error
                         ref={virtualCamera}
-                        position={[x, y, cdist]}
+                        position={[x, y, cameraDistance]}
                         args={[fov, 1, 1, 2000]}
                     />
                     <OrbitControls camera={virtualCamera.current} />
+
+                    <mesh position={[0, 0, -1]}>
+                        <planeGeometry attach="geometry" args={[100, 100]} />
+                        <meshPhongMaterial
+                            attach="material"
+                            color={paletteColor(state.palette, state.view.background)}
+                        />
+                    </mesh>
                     {items}
                 </Canvas>
             </div>
             <div>
                 <label>
+                    Camera Distance
+                    <BlurInt
+                        value={cameraDistance}
+                        onChange={(t) => (t != null ? setCameraDistance(t) : null)}
+                    />
+                </label>
+                <label>
                     ShadowZoom
-                    <BlurInt value={shadowZoom} onChange={(t) => (t != null ? setShadowZoom(t) : null)} />
+                    <BlurInt
+                        value={shadowZoom}
+                        onChange={(t) => (t != null ? setShadowZoom(t) : null)}
+                    />
                 </label>
                 <label>
                     Thickness (mm)
@@ -199,15 +287,32 @@ export const ThreedScreen = ({state, dispatch, hover}: {state: State; dispatch: 
                 >
                     {move ? 'Stop moving' : 'Move'}
                 </button>
+                <label>
+                    Use multi svg
+                    <input
+                        type="checkbox"
+                        checked={useMultiSVG}
+                        onChange={(t) => setUseMultiSVG(t.target.checked)}
+                    />
+                </label>
             </div>
             <div>
                 <div>Light pos</div>
                 x
-                <BlurInt value={lpos[0]} onChange={(t) => (t ? setLpos([t, lpos[1], lpos[2]]) : null)} />
+                <BlurInt
+                    value={lpos[0]}
+                    onChange={(t) => (t != null ? setLpos([t, lpos[1], lpos[2]]) : null)}
+                />
                 y
-                <BlurInt value={lpos[1]} onChange={(t) => (t ? setLpos([lpos[0], t, lpos[2]]) : null)} />
+                <BlurInt
+                    value={lpos[1]}
+                    onChange={(t) => (t != null ? setLpos([lpos[0], t, lpos[2]]) : null)}
+                />
                 z
-                <BlurInt value={lpos[2]} onChange={(t) => (t ? setLpos([lpos[0], lpos[1], t]) : null)} />
+                <BlurInt
+                    value={lpos[2]}
+                    onChange={(t) => (t != null ? setLpos([lpos[0], lpos[1], t]) : null)}
+                />
             </div>
             <ExportSection canv={canv} state={state} stls={stls} backs={backs} covers={covers} />
         </div>
@@ -218,16 +323,16 @@ export function groupSort(a: PathGroup, b: PathGroup): number {
     return a.ordering == b.ordering
         ? 0
         : a.ordering == null
-        ? b.ordering == null
-            ? 0
-            : b.ordering >= 0
-            ? 1
-            : -1
-        : b.ordering == null
-        ? a.ordering >= 0
-            ? -1
-            : 1
-        : b.ordering - a.ordering;
+          ? b.ordering == null
+              ? 0
+              : b.ordering >= 0
+                ? 1
+                : -1
+          : b.ordering == null
+            ? a.ordering >= 0
+                ? -1
+                : 1
+            : b.ordering - a.ordering;
 }
 
 const CH = ({camera}: {camera: any}) => {
@@ -252,7 +357,9 @@ const handleKey = (evt: KeyboardEvent, state: State, dispatch: React.Dispatch<Ac
         if (state.selection.ids.length === 1) {
             const id = state.selection.ids[0];
             const hasPaths: Record<string, boolean> = {};
-            Object.values(state.paths).forEach((p) => (p.group != null ? (hasPaths[p.group] = true) : null));
+            Object.values(state.paths).forEach((p) =>
+                p.group != null ? (hasPaths[p.group] = true) : null,
+            );
             const groups = Object.values(state.pathGroups)
                 .filter((g) => hasPaths[g.id])
                 .sort((a, b) => groupSort(a, b));

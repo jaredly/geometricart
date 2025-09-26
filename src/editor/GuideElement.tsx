@@ -1,24 +1,24 @@
 /* @jsx jsx */
 /* @jsxFrag React.Fragment */
 import * as React from 'react';
-import { jsx } from '@emotion/react';
-import { angleTo, dist, push, scale } from '../rendering/getMirrorTransforms';
-import { GuideGeom } from '../types';
-import { lineLine, lineToSlope, SlopeIntercept } from '../rendering/intersect';
-import { calcPolygon, getCircumCircle, getInCircle } from '../rendering/points';
+import {jsx} from '@emotion/react';
+import {angleTo, dist, push, scale} from '../rendering/getMirrorTransforms';
+import {GuideGeom} from '../types';
+import {lineLine, lineToSlope, SlopeIntercept} from '../rendering/intersect';
+import {calcPolygon, getCircumCircle, getInCircle} from '../rendering/points';
 
-export type Bounds = { x0: number; y0: number; x1: number; y1: number };
+export type Bounds = {x0: number; y0: number; x1: number; y1: number};
 
 export const visibleEndPoints = (si: SlopeIntercept, bounds: Bounds) => {
     if (si.m === Infinity) {
         return [
-            { x: si.b, y: bounds.y0 },
-            { x: si.b, y: bounds.y1 },
+            {x: si.b, y: bounds.y0},
+            {x: si.b, y: bounds.y1},
         ];
     }
     return [
-        { x: bounds.x0, y: bounds.x0 * si.m + si.b },
-        { x: bounds.x1, y: bounds.x1 * si.m + si.b },
+        {x: bounds.x0, y: bounds.x0 * si.m + si.b},
+        {x: bounds.x1, y: bounds.x1 * si.m + si.b},
     ];
 };
 
@@ -98,12 +98,7 @@ export const GuideElement = ({
             );
         }
         case 'Polygon': {
-            const { center, points } = calcPolygon(
-                geom.p1,
-                geom.p2,
-                geom.sides,
-                geom.toCenter,
-            );
+            const {center, points} = calcPolygon(geom.p1, geom.p2, geom.sides, geom.toCenter);
             return (
                 <>
                     <line
@@ -180,7 +175,7 @@ export const GuideElement = ({
             const by = dy / count;
             const theta = angleTo(geom.p1, geom.p2);
             for (let i = 1; i < count; i++) {
-                const mid = { x: geom.p1.x + bx * i, y: geom.p1.y + by * i };
+                const mid = {x: geom.p1.x + bx * i, y: geom.p1.y + by * i};
                 const p1 = push(mid, theta + Math.PI / 2, 10 / zoom);
                 const p2 = push(mid, theta - Math.PI / 2, 10 / zoom);
                 circles.push(
@@ -216,11 +211,7 @@ export const GuideElement = ({
                 x: (geom.p1.x + geom.p2.x) / 2,
                 y: (geom.p1.y + geom.p2.y) / 2,
             };
-            const extent = geom.extent
-                ? (geom.extent * d) / 2
-                : geom.limit
-                ? d * 0.5
-                : null;
+            const extent = geom.extent ? (geom.extent * d) / 2 : geom.limit ? d * 0.5 : null;
             const left = scale(push(mid, t1, -(extent ?? 10)), zoom);
             const right = scale(push(mid, t1, extent ?? 10), zoom);
             return (
@@ -331,7 +322,20 @@ export const GuideElement = ({
                 />
             );
         }
-        case 'Circle':
+        case 'CircleMark': {
+            const r = dist(geom.p1, geom.p2);
+            const td = Math.PI / 30;
+            const start = push(geom.p3, geom.angle - td, r);
+            const end = push(geom.p3, geom.angle + td, r);
+            const largeArcFlag = 0;
+            const sweepFlag = 1;
+            const d = `M${start.x * zoom},${start.y * zoom} A${r * zoom},${
+                r * zoom
+            } 0 ${largeArcFlag},${sweepFlag} ${end.x * zoom},${end.y * zoom}`;
+
+            return <path fill="none" stroke="#666" strokeWidth={1} d={d} />;
+        }
+        case 'Circle': {
             const r = dist(geom.radius, geom.center);
             const m = [];
             for (let i = 1; i <= geom.multiples + 1; i++) {
@@ -365,5 +369,6 @@ export const GuideElement = ({
                     ) : null}
                 </>
             );
+        }
     }
 };

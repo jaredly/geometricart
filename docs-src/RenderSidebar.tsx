@@ -1,8 +1,8 @@
 import * as React from 'react';
-import { useInitialState } from '../src/rendering/SegmentEditor';
-import { Fixture } from '../src/vest/types';
-import { colors, getWidget, hasVisual, TraceOutput } from './Fixtures';
-import { visuals } from './functionWidgets';
+import {useInitialState} from '../src/rendering/SegmentEditor';
+import {Fixture} from '../src/vest/types';
+import {colors, getWidget, hasVisual, TraceOutput} from './Fixtures';
+import {visuals} from './functionWidgets';
 
 export function RenderSidebar<Fn extends (...args: any) => any>({
     Input,
@@ -25,15 +25,11 @@ export function RenderSidebar<Fn extends (...args: any) => any>({
         scale: number;
     }) => JSX.Element;
     setSelected: React.Dispatch<React.SetStateAction<Fixture<Fn>>>;
-    pins: { [key: number]: boolean };
-    setPins: React.Dispatch<React.SetStateAction<{ [key: number]: boolean }>>;
+    pins: {[key: number]: boolean};
+    setPins: React.Dispatch<React.SetStateAction<{[key: number]: boolean}>>;
     setHover: React.Dispatch<React.SetStateAction<number | null>>;
     selected: Fixture<Fn>;
-    Output: (props: {
-        output: ReturnType<Fn>;
-        input: Parameters<Fn>;
-        scale: number;
-    }) => JSX.Element;
+    Output: (props: {output: ReturnType<Fn>; input: Parameters<Fn>; scale: number}) => JSX.Element;
     output: ReturnType<Fn>;
     run: Fn;
     hover: number | null;
@@ -48,16 +44,16 @@ export function RenderSidebar<Fn extends (...args: any) => any>({
         }
         if (editDelay) {
             const tid = setTimeout(() => {
-                setSelected((s) => ({ ...s, input: edit }));
+                setSelected((s) => ({...s, input: edit}));
             }, editDelay);
             return () => clearTimeout(tid);
         }
         if (edit !== selected.input) {
-            setSelected((s) => ({ ...s, input: edit }));
+            setSelected((s) => ({...s, input: edit}));
         }
     }, [edit]);
     return (
-        <div style={{ width: 300 }}>
+        <div style={{width: 300}}>
             <svg
                 width={300}
                 height={300}
@@ -68,21 +64,16 @@ export function RenderSidebar<Fn extends (...args: any) => any>({
             >
                 <Input onChange={setEdit} input={edit} scale={1} />
                 <Output input={edit} output={myOutput} scale={1} />
-                <g style={{ pointerEvents: 'none' }}>
+                <g style={{pointerEvents: 'none'}}>
                     {(showAll
-                        ? Object.keys(traceOutput).filter((k) =>
-                              hasVisual(+k, traceOutput),
-                          )
-                        : Object.keys(pins).filter(
-                              (k) => pins[+k] && !!traceOutput[+k],
-                          )
+                        ? Object.keys(traceOutput).filter((k) => hasVisual(+k, traceOutput))
+                        : Object.keys(pins).filter((k) => pins[+k] && !!traceOutput[+k])
                     ).map((k, i) => {
                         const hover = traceOutput[+k];
                         if (!hover.call) {
                             return;
                         }
-                        const name =
-                            traceOutput[hover.call.fn].values[0].meta.name;
+                        const name = traceOutput[hover.call.fn].values[0].meta.name;
                         if (visuals[name]) {
                             return (
                                 <g
@@ -92,9 +83,7 @@ export function RenderSidebar<Fn extends (...args: any) => any>({
                                     }}
                                 >
                                     {visuals[name](
-                                        hover.call.args.map(
-                                            (id) => traceOutput[id].values[0],
-                                        ),
+                                        hover.call.args.map((id) => traceOutput[id].values[0]),
                                         hover.values[0],
                                     )}
                                 </g>
@@ -106,14 +95,10 @@ export function RenderSidebar<Fn extends (...args: any) => any>({
                               if (!hover.call || !traceOutput[hover.call.fn]) {
                                   return;
                               }
-                              const name =
-                                  traceOutput[hover.call.fn].values[0].meta
-                                      ?.name;
+                              const name = traceOutput[hover.call.fn].values[0].meta?.name;
                               if (name && visuals[name]) {
                                   return visuals[name](
-                                      hover.call.args.map(
-                                          (id) => traceOutput[id].values[0],
-                                      ),
+                                      hover.call.args.map((id) => traceOutput[id].values[0]),
                                       hover.values[0],
                                   );
                               }
@@ -140,12 +125,8 @@ export function RenderSidebar<Fn extends (...args: any) => any>({
                 }}
             >
                 {(showAll
-                    ? Object.keys(traceOutput).filter((k) =>
-                          hasVisual(+k, traceOutput),
-                      )
-                    : Object.keys(pins).filter(
-                          (k) => pins[+k] && !!traceOutput[+k],
-                      )
+                    ? Object.keys(traceOutput).filter((k) => hasVisual(+k, traceOutput))
+                    : Object.keys(pins).filter((k) => pins[+k] && !!traceOutput[+k])
                 ).map((k, i) => (
                     <div
                         onMouseOut={() => {
@@ -155,7 +136,7 @@ export function RenderSidebar<Fn extends (...args: any) => any>({
                             setHover(+k);
                         }}
                         onClick={() => {
-                            setPins({ ...pins, [+k]: false });
+                            setPins({...pins, [+k]: false});
                             setHover(null);
                         }}
                         style={{

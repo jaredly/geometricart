@@ -1,22 +1,18 @@
 import * as React from 'react';
-import { arcPath } from '../src/editor/RenderPendingPath';
-import { arrow, pointsList } from '../src/editor/ShowHitIntersection2';
-import { Angle } from '../src/rendering/clipPath';
-import {
-    HitsInfo,
-    intersectSegments,
-    SegmentWithPrev,
-} from '../src/rendering/clipPathNew';
-import { push } from '../src/rendering/getMirrorTransforms';
-import { SegmentIntersection } from '../src/rendering/untangleHit';
-import { HitCorner, untangleHit } from '../src/rendering/untangleHitAgain';
-import { Coord } from '../src/types';
-import { Fixture } from '../src/vest/types';
-import { Fixtures } from './Fixtures';
+import {arcPath} from '../src/editor/RenderPendingPath';
+import {arrow, pointsList} from '../src/editor/ShowHitIntersection2';
+import {Angle} from '../src/rendering/clipPath';
+import {HitsInfo, intersectSegments, SegmentWithPrev} from '../src/rendering/clipPathNew';
+import {push} from '../src/rendering/getMirrorTransforms';
+import {SegmentIntersection} from '../src/rendering/untangleHit';
+import {HitCorner, untangleHit} from '../src/rendering/untangleHitAgain';
+import {Coord} from '../src/types';
+import {Fixture} from '../src/vest/types';
+import {Fixtures} from './Fixtures';
 import fixtures from './untangleHit.json';
 
 type I = Parameters<typeof untangleHit>;
-const mid = { x: 150, y: 150 };
+const mid = {x: 150, y: 150};
 
 const colors = ['red', 'green', 'blue'];
 
@@ -42,10 +38,7 @@ export const ShowAngle = ({
             <>
                 {enter ? (
                     <polyline
-                        points={pointsList([
-                            center,
-                            push(center, angle.theta, -size),
-                        ])}
+                        points={pointsList([center, push(center, angle.theta, -size)])}
                         stroke={color}
                         strokeLinecap="round"
                         strokeWidth={2 * scale}
@@ -53,21 +46,14 @@ export const ShowAngle = ({
                 ) : (
                     <>
                         <polyline
-                            points={pointsList([
-                                center,
-                                push(center, angle.theta, size),
-                            ])}
+                            points={pointsList([center, push(center, angle.theta, size)])}
                             strokeLinecap="round"
                             stroke={color}
                             strokeWidth={2 * scale}
                         />
                         <polygon
                             points={pointsList(
-                                arrow(
-                                    push(center, angle.theta, size),
-                                    angle.theta,
-                                    5 * scale,
-                                ),
+                                arrow(push(center, angle.theta, size), angle.theta, 5 * scale),
                             )}
                             fill={headColor ?? color}
                             strokeWidth={2 * scale}
@@ -79,8 +65,7 @@ export const ShowAngle = ({
         );
     } else {
         const rad = angle.radius * (1 / scale);
-        const centerTo =
-            angle.theta + (Math.PI / 2) * (angle.clockwise ? 1 : -1);
+        const centerTo = angle.theta + (Math.PI / 2) * (angle.clockwise ? 1 : -1);
         const arcCenter = push(center, centerTo, rad);
         return (
             <>
@@ -97,11 +82,7 @@ export const ShowAngle = ({
                                 clockwise: angle.clockwise,
                                 to: center,
                             },
-                            push(
-                                arcCenter,
-                                centerTo + Math.PI - Math.PI / 2,
-                                rad,
-                            ),
+                            push(arcCenter, centerTo + Math.PI - Math.PI / 2, rad),
                             1,
                             true,
                         )}
@@ -118,11 +99,7 @@ export const ShowAngle = ({
                                     type: 'Arc',
                                     center: arcCenter,
                                     clockwise: angle.clockwise,
-                                    to: push(
-                                        arcCenter,
-                                        centerTo + Math.PI - Math.PI / 2,
-                                        rad,
-                                    ),
+                                    to: push(arcCenter, centerTo + Math.PI - Math.PI / 2, rad),
                                 },
                                 center,
                                 1,
@@ -132,16 +109,9 @@ export const ShowAngle = ({
                         <polygon
                             points={pointsList(
                                 arrow(
-                                    push(
-                                        arcCenter,
-                                        centerTo + Math.PI - Math.PI / 2,
-                                        rad,
-                                    ),
+                                    push(arcCenter, centerTo + Math.PI - Math.PI / 2, rad),
                                     // angle.theta,
-                                    centerTo +
-                                        Math.PI -
-                                        Math.PI / 2 -
-                                        Math.PI / 2,
+                                    centerTo + Math.PI - Math.PI / 2 - Math.PI / 2,
                                     5 * scale,
                                 ),
                             )}
@@ -165,12 +135,7 @@ export const ShowSegmentIntersection = ({
     return (
         <>
             {seg.enter ? (
-                <ShowAngle
-                    angle={seg.theta}
-                    enter
-                    color={colors[seg.shape]}
-                    scale={scale}
-                />
+                <ShowAngle angle={seg.theta} enter color={colors[seg.shape]} scale={scale} />
             ) : null}
             {seg.exit ? (
                 <ShowAngle
@@ -260,11 +225,7 @@ const ShowTransition = ({
                     center={pos}
                     color={colors[exit.exit.shape]}
                     headColor={
-                        exit.goingInside === null
-                            ? 'orange'
-                            : exit.goingInside
-                            ? 'black'
-                            : 'white'
+                        exit.goingInside === null ? 'orange' : exit.goingInside ? 'black' : 'white'
                     }
                     scale={2}
                     size={size / 2}
@@ -276,9 +237,7 @@ const ShowTransition = ({
 };
 
 const getHit = (hits: HitsInfo['hits']) => {
-    const keys = Object.keys(hits).sort(
-        (a, b) => hits[b].parties.length - hits[a].parties.length,
-    );
+    const keys = Object.keys(hits).sort((a, b) => hits[b].parties.length - hits[a].parties.length);
     if (!keys.length) {
         return null;
     }
@@ -290,20 +249,14 @@ const getHit = (hits: HitsInfo['hits']) => {
 };
 
 const fx = fixtures.map((fx): Fixture<typeof untangleHit> => {
-    const { hits } = intersectSegments(fx.input as SegmentWithPrev[]);
+    const {hits} = intersectSegments(fx.input as SegmentWithPrev[]);
     const hit = getHit(hits);
     if (!hit) {
         throw new Error(`No valid intersection`);
     }
-    return { ...fx, input: [hit], output: [] as Array<HitCorner> };
+    return {...fx, input: [hit], output: [] as Array<HitCorner>};
 });
 
 export const UntangleHit = () => (
-    <Fixtures
-        Input={Input}
-        editDelay={100}
-        Output={Output}
-        run={untangleHit}
-        fixtures={fx}
-    />
+    <Fixtures Input={Input} editDelay={100} Output={Output} run={untangleHit} fixtures={fx} />
 );

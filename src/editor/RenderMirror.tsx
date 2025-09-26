@@ -1,15 +1,9 @@
 /* @jsx jsx */
 /* @jsxFrag React.Fragment */
 import * as React from 'react';
-import { jsx } from '@emotion/react';
-import {
-    angleTo,
-    applyMatrices,
-    dist,
-    Matrix,
-    push,
-} from '../rendering/getMirrorTransforms';
-import { Mirror } from '../types';
+import {jsx} from '@emotion/react';
+import {angleTo, applyMatrices, dist, Matrix, push} from '../rendering/getMirrorTransforms';
+import {Mirror} from '../types';
 
 export const RenderMirror = ({
     mirror,
@@ -25,7 +19,7 @@ export const RenderMirror = ({
     const mid = push(mirror.origin, d, len / 2);
     const off = mirror.reflect ? push(mid, d + Math.PI / 2, len / 4) : mid;
     // const top = push(mirror.origin, d, len);
-    const line = { p1: off, p2: mirror.point };
+    const line = {p1: off, p2: mirror.point};
     const lines = [line].concat(
         transforms.map((tr) => ({
             p1: applyMatrices(line.p1, tr),
@@ -33,8 +27,8 @@ export const RenderMirror = ({
         })),
     );
     return (
-        <g style={{ pointerEvents: 'none' }}>
-            {lines.map(({ p1, p2 }, i) => (
+        <g style={{pointerEvents: 'none'}}>
+            {lines.map(({p1, p2}, i) => (
                 <React.Fragment key={i}>
                     <line
                         key={i}
@@ -48,7 +42,7 @@ export const RenderMirror = ({
                     />
                 </React.Fragment>
             ))}
-            {lines.map(({ p1, p2 }, i) => (
+            {lines.map(({p1, p2}, i) => (
                 <React.Fragment key={i}>
                     <line
                         key={`${i}-`}

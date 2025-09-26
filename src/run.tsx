@@ -3,8 +3,8 @@
 // import { MantineProvider } from '@mantine/core';
 import './polyfill';
 import * as React from 'react';
-import { createRoot, Root } from 'react-dom/client';
-import { App } from './App';
+import {createRoot, Root} from 'react-dom/client';
+import {App} from './App';
 import 'primereact/resources/themes/bootstrap4-dark-blue/theme.css';
 import 'primereact/resources/primereact.min.css';
 import 'primeicons/primeicons.css';
@@ -18,22 +18,22 @@ import {
     useParams,
 } from 'react-router-dom';
 import localforage from 'localforage';
-import { Checkpoint, Meta, Mirror, State, Tiling } from './types';
-import { Accordion } from './sidebar/Accordion';
-import { MirrorPicker, SaveDest } from './MirrorPicker';
-import { setupState } from './setupState';
+import {Checkpoint, Meta, Mirror, State, Tiling} from './types';
+import {Accordion} from './sidebar/Accordion';
+import {MirrorPicker, SaveDest} from './MirrorPicker';
+import {setupState} from './setupState';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import { exportPNG } from './editor/ExportPng';
-import { DesignLoader } from './DesignLoader';
-import { Button } from 'primereact/button';
-import { useGists, gistCache } from './useGists';
-import { loadGist, newGist, saveGist, stateFileName } from './gists';
-import { maybeMigrate } from './state/migrateState';
-import { initialState } from './state/initialState';
-import { Morph } from './Morph';
-import { useDropStateTarget } from './editor/useDropTarget';
-import { usePK, WithPathKit } from './editor/pk';
+import {exportPNG} from './editor/ExportPng';
+import {DesignLoader} from './DesignLoader';
+import {Button} from 'primereact/button';
+import {useGists, gistCache} from './useGists';
+import {loadGist, newGist, saveGist, stateFileName} from './gists';
+import {maybeMigrate} from './state/migrateState';
+import {initialState} from './state/initialState';
+import {Morph} from './Morph';
+import {useDropStateTarget} from './editor/useDropTarget';
+import {usePK, WithPathKit} from './editor/pk';
 dayjs.extend(relativeTime);
 
 export const metaPrefix = 'meta:';
@@ -67,10 +67,7 @@ export const newState = async (state: State, dest: SaveDest) => {
     if (dest.type === 'local') {
         const id = genid();
         localforage.setItem(thumbPrefix + key(id), blob);
-        localforage.setItem<MetaData>(
-            metaPrefix + key(id),
-            newMetaData(id, state),
-        );
+        localforage.setItem<MetaData>(metaPrefix + key(id), newMetaData(id, state));
         return localforage.setItem(key(id), state).then(() => '/' + id);
     } else {
         return newGist(state, blob, dest.token).then((id) => '/gist/' + id);
@@ -81,8 +78,7 @@ export const addSnapshot = async (id: string, state: State) => {
     const checkpoint: Checkpoint = {
         branchId: state.history.currentBranch,
         undo: state.history.undo,
-        branchLength:
-            state.history.branches[state.history.currentBranch].items.length,
+        branchLength: state.history.branches[state.history.currentBranch].items.length,
     };
     const blob = await exportPNG(400, state, 1000, false, false, 0);
     updateMeta(id, (meta) => ({
@@ -94,7 +90,7 @@ export const addSnapshot = async (id: string, state: State) => {
 export const saveState = async (state: State, id: string, dest: SaveDest) => {
     const blob = await exportPNG(
         400,
-        { ...state, view: { ...state.view, guides: false } },
+        {...state, view: {...state.view, guides: false}},
         1000,
         false,
         false,
@@ -133,8 +129,7 @@ export type MetaData = {
     checkpoints?: Array<Checkpoint>;
 };
 
-export const checkpointToString = (c: Checkpoint) =>
-    `${c.branchId}-${c.branchLength}-${c.undo}`;
+export const checkpointToString = (c: Checkpoint) => `${c.branchId}-${c.branchLength}-${c.undo}`;
 export const stringToCheckpoint = (s: string) => {
     const [branchId, branchLength, undo] = s.split('-');
     return {
@@ -155,7 +150,7 @@ const Welcome = () => {
     const [dragging, callbacks] = useDropStateTarget((state) => {
         // ok
         if (state) {
-            newState(state, { type: 'local' }).then((id) => {
+            newState(state, {type: 'local'}).then((id) => {
                 window.location.hash = id;
             });
         }
@@ -164,9 +159,9 @@ const Welcome = () => {
         <div
             className="flex flex-column justify-content-center align-items-center"
             {...callbacks}
-            style={dragging ? { background: 'teal' } : {}}
+            style={dragging ? {background: 'teal'} : {}}
         >
-            <div style={{ width: 900, padding: 24 }}>
+            <div style={{width: 900, padding: 24}}>
                 <Accordion
                     activeIds={activeIds}
                     setActiveIds={setActiveIds}
@@ -177,15 +172,11 @@ const Welcome = () => {
                             content: () => (
                                 <MirrorPicker
                                     onClick={(mirror, dest) => {
-                                        newState(setupState(mirror), dest).then(
-                                            (id) => {
-                                                window.location.hash = id;
-                                            },
-                                        );
+                                        newState(setupState(mirror), dest).then((id) => {
+                                            window.location.hash = id;
+                                        });
                                     }}
-                                    githubToken={
-                                        localStorage.github_access_token
-                                    }
+                                    githubToken={localStorage.github_access_token}
                                 />
                             ),
                         },
@@ -207,7 +198,7 @@ const Welcome = () => {
 };
 
 const GistLoader = () => {
-    const { gists, token } = useGists();
+    const {gists, token} = useGists();
     if (token == null) {
         return (
             <a
@@ -274,7 +265,7 @@ const GistLoader = () => {
     );
 };
 
-const File = ({ gist, dest }: { gist?: boolean; dest: SaveDest }) => {
+const File = ({gist, dest}: {gist?: boolean; dest: SaveDest}) => {
     const data = useLoaderData();
     const params = useParams();
 
@@ -298,12 +289,12 @@ const File = ({ gist, dest }: { gist?: boolean; dest: SaveDest }) => {
             saveState={(state) => {
                 if (dest.type === 'gist') {
                     const force = debounce(() => {
-                        setLastSaved((s) => ({ ...s, dirty: true }));
+                        setLastSaved((s) => ({...s, dirty: true}));
                         return saveState(state, id, dest).then(() => {
-                            setLastSaved({ when: Date.now(), dirty: null, id });
+                            setLastSaved({when: Date.now(), dirty: null, id});
                         });
                     }, 10000);
-                    setLastSaved((s) => ({ ...s, dirty: force }));
+                    setLastSaved((s) => ({...s, dirty: force}));
                 } else {
                     saveState(state, id, dest);
                 }
@@ -324,7 +315,7 @@ function usePreventNavAway(lastSaved: {
                 evt.stopPropagation();
                 return (evt.returnValue = 'Are you sure?');
             };
-            window.addEventListener('beforeunload', fn, { capture: true });
+            window.addEventListener('beforeunload', fn, {capture: true});
             return () =>
                 window.removeEventListener('beforeunload', fn, {
                     capture: true,
@@ -337,10 +328,7 @@ function usePreventNavAway(lastSaved: {
  * Debounce a function.
  */
 let tid: NodeJS.Timeout | null = null;
-export const debounce = (
-    fn: () => Promise<void>,
-    time: number,
-): (() => void) => {
+export const debounce = (fn: () => Promise<void>, time: number): (() => void) => {
     if (tid != null) {
         clearTimeout(tid);
     }
@@ -371,7 +359,7 @@ const PkDebug = () => {
             const d = p.toSVGString();
             const cmds = p.toCmds();
             p.delete();
-            return { d, cmds };
+            return {d, cmds};
         } catch (err) {
             console.error(err);
             return null;
@@ -381,13 +369,13 @@ const PkDebug = () => {
         <div>
             <textarea
                 value={text}
-                style={{ width: 1000, height: 300 }}
+                style={{width: 1000, height: 300}}
                 onChange={(evt) => setText(evt.target.value)}
             />
             {d ? (
                 <div>
                     <svg
-                        style={{ background: 'white', width: 400, height: 400 }}
+                        style={{background: 'white', width: 400, height: 400}}
                         viewBox="-10 -10 50 50"
                     >
                         <path d={d.d} />
@@ -417,19 +405,17 @@ const router = createHashRouter(
                     }}
                 />
             }
-            loader={({ params }) =>
-                loadGist(params.id!, localStorage.github_access_token).then(
-                    (state) => maybeMigrate(state as State),
+            loader={({params}) =>
+                loadGist(params.id!, localStorage.github_access_token).then((state) =>
+                    maybeMigrate(state as State),
                 )
             }
         />,
         <Route
             path=":id"
-            element={<File dest={{ type: 'local' }} />}
-            loader={({ params }) =>
-                localforage
-                    .getItem(key(params.id!))
-                    .then((state) => maybeMigrate(state as State))
+            element={<File dest={{type: 'local'}} />}
+            loader={({params}) =>
+                localforage.getItem(key(params.id!)).then((state) => maybeMigrate(state as State))
             }
         />,
         <Route path="pk" element={<PkDebug />} />,
@@ -510,8 +496,8 @@ const getForeignState = async (image: string | null, load: string | null) => {
         state.overlays['overlay'] = {
             id: 'overlay',
             source: 'pattern',
-            scale: { x: 1, y: 1 },
-            center: { x: 0, y: 0 },
+            scale: {x: 1, y: 1},
+            center: {x: 0, y: 0},
             hide: false,
             over: false,
             opacity: 1,

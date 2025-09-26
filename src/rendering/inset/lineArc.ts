@@ -1,9 +1,9 @@
-import { arcToCircle } from '../../editor/findSelection';
-import { ArcSegment, Coord, LineSegment, Segment } from '../../types';
-import { zeroToTwoPi } from '../clipPath';
-import { angleBetween } from '../findNextSegments';
-import { angleTo, dist, push } from '../getMirrorTransforms';
-import { lineCircle, lineToSlope } from '../intersect';
+import {arcToCircle} from '../../editor/findSelection';
+import {ArcSegment, Coord, LineSegment, Segment} from '../../types';
+import {zeroToTwoPi} from '../clipPath';
+import {angleBetween} from '../findNextSegments';
+import {angleTo, dist, push} from '../getMirrorTransforms';
+import {lineCircle, lineToSlope} from '../intersect';
 
 export const insetLineArc = (
     prev: Coord,
@@ -25,9 +25,9 @@ export const insetLineArc = (
     const contract = amount < 0 ? between > Math.PI : between < Math.PI;
     if (contract) {
         return [
-            { ...seg, to: push(seg.to, tan0, amount) },
-            { type: 'Line', to: seg.to },
-            { type: 'Line', to: push(next.center, t1, r1a) },
+            {...seg, to: push(seg.to, tan0, amount)},
+            {type: 'Line', to: seg.to},
+            {type: 'Line', to: push(next.center, t1, r1a)},
         ];
     }
 
@@ -49,12 +49,12 @@ export const insetLineArc = (
     );
 
     if (hits.length === 1) {
-        return [{ ...seg, to: hits[0] }];
+        return [{...seg, to: hits[0]}];
     }
 
     // bail
     return [
-        { ...seg, to: push(seg.to, tan0, amount) },
-        { type: 'Line', to: push(next.center, t1, r1a) },
+        {...seg, to: push(seg.to, tan0, amount)},
+        {type: 'Line', to: push(next.center, t1, r1a)},
     ];
 };

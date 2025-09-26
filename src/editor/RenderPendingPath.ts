@@ -1,6 +1,6 @@
-import { angleBetween } from '../rendering/findNextSegments';
-import { angleTo, dist } from '../rendering/getMirrorTransforms';
-import { ArcSegment, Coord } from '../types';
+import {angleBetween} from '../rendering/findNextSegments';
+import {angleTo, dist} from '../rendering/getMirrorTransforms';
+import {ArcSegment, Coord} from '../types';
 
 // export const angleDiff = (angle: number, base: number) => {
 //     const res = angle - base;
@@ -13,12 +13,7 @@ import { ArcSegment, Coord } from '../types';
 //     return res;
 // };
 
-export const arcPath = (
-    segment: ArcSegment,
-    prev: Coord,
-    zoom: number,
-    moveTo = false,
-) => {
+export const arcPath = (segment: ArcSegment, prev: Coord, zoom: number, moveTo = false) => {
     const r = dist(segment.to, segment.center);
 
     const largeArc = isLargeArc(segment, prev);

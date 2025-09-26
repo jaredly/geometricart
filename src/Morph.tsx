@@ -1,13 +1,13 @@
 /* @jsx jsx */
-import { jsx } from '@emotion/react';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { useDropTarget } from './editor/useDropTarget';
-import { Coord, Tiling } from './types';
-import { useLocalStorage } from './vest/App';
-import { TilingSvg } from './editor/Tilings';
-import { getSvgData, handleTiling } from './editor/handleTiling';
-import { eigenShapesToLines } from './editor/tilingPoints';
-import { coordKey } from './rendering/coordKey';
+import {jsx} from '@emotion/react';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
+import {useDropTarget} from './editor/useDropTarget';
+import {Coord, Tiling} from './types';
+import {useLocalStorage} from './vest/App';
+import {TilingSvg} from './editor/Tilings';
+import {getSvgData, handleTiling} from './editor/handleTiling';
+import {eigenShapesToLines} from './editor/tilingPoints';
+import {coordKey} from './rendering/coordKey';
 
 const getFileContents = (file: File) => {
     return new Promise<string>((res, rej) => {
@@ -32,7 +32,7 @@ export const plerp = (p0: Coord, p1: Coord, i: number) => ({
     y: lerp(p0.y, p1.y, i),
 });
 
-type Moving = { idx: number; which: number; at: Coord };
+type Moving = {idx: number; which: number; at: Coord};
 
 const Point = ({
     pos,
@@ -62,13 +62,13 @@ const Point = ({
                 cursor: 'pointer',
             }}
             onMouseDown={() => {
-                setMoving({ idx, which, at: pos });
+                setMoving({idx, which, at: pos});
             }}
         />
     );
 };
 
-export const Editor = ({ one, two }: { one: Tiling; two: Tiling }) => {
+export const Editor = ({one, two}: {one: Tiling; two: Tiling}) => {
     const onez = useMemo(() => handleTiling(one), [one]);
     const twoz = useMemo(() => handleTiling(two), [two]);
 
@@ -100,7 +100,7 @@ export const Editor = ({ one, two }: { one: Tiling; two: Tiling }) => {
     }, [moving != null]);
 
     const snaps = useMemo(() => {
-        const byKey: { [key: string]: Coord } = {};
+        const byKey: {[key: string]: Coord} = {};
         const add = (...c: Coord[]) => {
             c.forEach((c) => {
                 byKey[coordKey(c)] = c;
@@ -116,7 +116,7 @@ export const Editor = ({ one, two }: { one: Tiling; two: Tiling }) => {
         <div>
             <svg
                 xmlns="http://www.w3.org/2000/svg"
-                style={{ background: 'black', width: 1000, height: 1000 }}
+                style={{background: 'black', width: 1000, height: 1000}}
                 viewBox="-1.5 -1.5 3 3"
                 onMouseMove={(evt) => {
                     if (moving) {
@@ -130,11 +130,7 @@ export const Editor = ({ one, two }: { one: Tiling; two: Tiling }) => {
                         let best = null as null | [Coord, number];
                         for (let snap of snaps.concat(
                             current.flatMap((c, ci) =>
-                                ci === moving.idx
-                                    ? moving.which === 0
-                                        ? [c[1]]
-                                        : [c[0]]
-                                    : c,
+                                ci === moving.idx ? (moving.which === 0 ? [c[1]] : [c[0]]) : c,
                             ),
                         )) {
                             const dx = snap.x - x0;
@@ -147,7 +143,7 @@ export const Editor = ({ one, two }: { one: Tiling; two: Tiling }) => {
 
                         setMoving({
                             ...moving,
-                            at: best ? best[0] : { x: x0, y: y0 },
+                            at: best ? best[0] : {x: x0, y: y0},
                         });
                     }
                 }}
@@ -155,11 +151,7 @@ export const Editor = ({ one, two }: { one: Tiling; two: Tiling }) => {
                 <path
                     fill="white"
                     opacity={0.1}
-                    d={
-                        'M' +
-                        onez.bounds.map((p) => `${p.x} ${p.y}`).join('L') +
-                        'Z'
-                    }
+                    d={'M' + onez.bounds.map((p) => `${p.x} ${p.y}`).join('L') + 'Z'}
                 />
                 {onez.lines.map(([p0, p1], i) => (
                     <line
@@ -185,14 +177,8 @@ export const Editor = ({ one, two }: { one: Tiling; two: Tiling }) => {
                     />
                 ))}
                 {current.map(([p0, p1], i) => {
-                    p0 =
-                        moving?.idx === i && moving.which === 0
-                            ? moving.at
-                            : p0;
-                    p1 =
-                        moving?.idx === i && moving.which === 1
-                            ? moving.at
-                            : p1;
+                    p0 = moving?.idx === i && moving.which === 0 ? moving.at : p0;
+                    p1 = moving?.idx === i && moving.which === 1 ? moving.at : p1;
                     return (
                         <React.Fragment key={i}>
                             <line
@@ -202,21 +188,18 @@ export const Editor = ({ one, two }: { one: Tiling; two: Tiling }) => {
                                 y2={p1.y}
                                 strokeWidth={0.01}
                                 stroke="red"
-                                style={{ cursor: 'pointer' }}
+                                style={{cursor: 'pointer'}}
                                 onDoubleClick={(evt) => {
-                                    let svg =
-                                        evt.currentTarget as any as HTMLElement;
+                                    let svg = evt.currentTarget as any as HTMLElement;
                                     while (svg.nodeName !== 'svg') {
                                         svg = svg.parentElement!;
                                     }
                                     const box = svg.getBoundingClientRect();
-                                    const x =
-                                        (evt.clientX - box.left) / box.width;
-                                    const y =
-                                        (evt.clientY - box.top) / box.height;
+                                    const x = (evt.clientX - box.left) / box.width;
+                                    const y = (evt.clientY - box.top) / box.height;
                                     const x0 = (x - 0.5) * 3;
                                     const y0 = (y - 0.5) * 3;
-                                    const pnew = { x: x0, y: y0 };
+                                    const pnew = {x: x0, y: y0};
 
                                     const c2 = current.slice();
                                     c2[i] = [p0, pnew];
@@ -244,21 +227,13 @@ export const Editor = ({ one, two }: { one: Tiling; two: Tiling }) => {
             </svg>
             <div>
                 {frames.length} frames
-                <div style={{ display: 'flex', flexDirection: 'row' }}>
+                <div style={{display: 'flex', flexDirection: 'row'}}>
                     {frames.map((frame, i) => (
-                        <div
-                            key={i}
-                            style={{ display: 'flex', flexDirection: 'row' }}
-                        >
+                        <div key={i} style={{display: 'flex', flexDirection: 'row'}}>
                             {TilingSvg({
                                 bounds: onez.bounds,
                                 shapes: [], // TODO what
-                                lines: eigenShapesToLines(
-                                    frame,
-                                    one.shape,
-                                    onez.tr,
-                                    onez.bounds,
-                                ),
+                                lines: eigenShapesToLines(frame, one.shape, onez.tr, onez.bounds),
                                 size: 150,
                             })}
 
@@ -306,9 +281,7 @@ export const Editor = ({ one, two }: { one: Tiling; two: Tiling }) => {
                         </div>
                     ))}
                 </div>
-                <button onClick={() => setFrames([...frames, current])}>
-                    Save frame
-                </button>
+                <button onClick={() => setFrames([...frames, current])}>Save frame</button>
             </div>
             <div>
                 <button
@@ -334,31 +307,21 @@ export const Editor = ({ one, two }: { one: Tiling; two: Tiling }) => {
                 <input
                     type="file"
                     onChange={(evt) => {
-                        getFileContents(evt.target.files!.item(0)!).then(
-                            (text) => {
-                                setFrames(JSON.parse(text));
-                            },
-                        );
+                        getFileContents(evt.target.files!.item(0)!).then((text) => {
+                            setFrames(JSON.parse(text));
+                        });
                     }}
                 />
             </div>
             {animate ? (
-                <Animate
-                    frames={frames}
-                    shape={one.shape}
-                    tr={onez.tr}
-                    bounds={onez.bounds}
-                />
+                <Animate frames={frames} shape={one.shape} tr={onez.tr} bounds={onez.bounds} />
             ) : null}
         </div>
     );
 };
 
 export const Morph = () => {
-    const [tilings, setTilings] = useLocalStorage(
-        'morph:tilings',
-        [] as Tiling[],
-    );
+    const [tilings, setTilings] = useLocalStorage('morph:tilings', [] as Tiling[]);
 
     const [dragging, props] = useDropTarget(async (file) => {
         const text = await getFileContents(file);
@@ -377,7 +340,7 @@ export const Morph = () => {
                 <Editor one={tilings[0]} two={tilings[1]} />
                 {/* <TwoPass one={tilings[0]} two={tilings[1]} /> */}
                 <button
-                    style={{ margin: 48 }}
+                    style={{margin: 48}}
                     onClick={() => {
                         setTilings([]);
                     }}
@@ -397,7 +360,7 @@ export const Morph = () => {
             }}
         >
             {tilings.map((t, i) => {
-                const { bounds, lines, tr } = handleTiling(t);
+                const {bounds, lines, tr} = handleTiling(t);
                 console.log(lines, tr, bounds);
                 return (
                     <div key={i}>
@@ -405,12 +368,7 @@ export const Morph = () => {
                         {TilingSvg({
                             bounds,
                             shapes: [], // TODO what
-                            lines: eigenShapesToLines(
-                                lines,
-                                t.shape,
-                                tr,
-                                bounds,
-                            ),
+                            lines: eigenShapesToLines(lines, t.shape, tr, bounds),
                         })}
                     </div>
                 );
@@ -461,14 +419,12 @@ export const Animate = ({
             });
 
             ctx.strokeStyle = '#339319';
-            eigenShapesToLines(lerped, shape, tr, bounds).forEach(
-                ([p0, p1], i) => {
-                    ctx.beginPath();
-                    ctx.moveTo(p0.x, p0.y);
-                    ctx.lineTo(p1.x, p1.y);
-                    ctx.stroke();
-                },
-            );
+            eigenShapesToLines(lerped, shape, tr, bounds).forEach(([p0, p1], i) => {
+                ctx.beginPath();
+                ctx.moveTo(p0.x, p0.y);
+                ctx.lineTo(p1.x, p1.y);
+                ctx.stroke();
+            });
 
             ctx.restore();
         };
@@ -481,9 +437,7 @@ export const Animate = ({
                         setTimeout(() => {
                             tick(0, 0);
                         }, 200);
-                    } else if (
-                        frames[fi + 1].length !== frames[fi + 2].length
-                    ) {
+                    } else if (frames[fi + 1].length !== frames[fi + 2].length) {
                         tick(fi + 2, 0);
                     } else {
                         // tick(fi + 1, 0);

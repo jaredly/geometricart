@@ -1,5 +1,13 @@
 import {angleTo, applyMatrices, dist, Matrix, push} from './getMirrorTransforms';
-import {Circle, circleCircle, lineCircle, lineLine, lineToSlope, Primitive, SlopeIntercept} from './intersect';
+import {
+    Circle,
+    circleCircle,
+    lineCircle,
+    lineLine,
+    lineToSlope,
+    Primitive,
+    SlopeIntercept,
+} from './intersect';
 import {BarePath, Coord, GuideGeom, Path, Segment} from '../types';
 
 // export type Primitive = {type: 'line', data: SlopeIntercept} | {type: 'circle', center: Coord, radius: number}
@@ -53,7 +61,10 @@ export const getCircumCircle = (p1: Coord, p2: Coord, p3: Coord) => {
     const m1 = push(p1, t1, d1 / 2);
     const m2 = push(p1, t2, d2 / 2);
 
-    const mid = lineLine(lineToSlope(m1, push(m1, t1 + Math.PI / 2, 1)), lineToSlope(m2, push(m2, t2 + Math.PI / 2, 1)));
+    const mid = lineLine(
+        lineToSlope(m1, push(m1, t1 + Math.PI / 2, 1)),
+        lineToSlope(m2, push(m2, t2 + Math.PI / 2, 1)),
+    );
 
     if (!mid) {
         return null;
@@ -125,7 +136,17 @@ export const geomToPrimitives = (geom: GuideGeom, limit?: boolean): Array<Primit
     switch (geom.type) {
         case 'CircleMark': {
             const d = dist(geom.p1, geom.p2);
-            return [{type: 'circle', center: geom.p3, radius: d}];
+            return [
+                {
+                    type: 'circle',
+                    center: geom.p3,
+                    radius: d,
+                    limit:
+                        geom.angle2 != null
+                            ? [geom.angle, geom.angle2]
+                            : [geom.angle - Math.PI / 30, geom.angle + Math.PI / 30],
+                },
+            ];
         }
         case 'CloneCircle': {
             const d = dist(geom.p1, geom.p2);
@@ -173,7 +194,13 @@ export const geomToPrimitives = (geom: GuideGeom, limit?: boolean): Array<Primit
                 };
                 const t = angleTo(geom.p1, geom.p2);
                 const d = dist(geom.p1, geom.p2);
-                return [lineToSlope(push(mid, t, (d * geom.extent) / 2), push(mid, t + Math.PI, (d * geom.extent) / 2), true)];
+                return [
+                    lineToSlope(
+                        push(mid, t, (d * geom.extent) / 2),
+                        push(mid, t + Math.PI, (d * geom.extent) / 2),
+                        true,
+                    ),
+                ];
             }
             return [lineToSlope(geom.p1, geom.p2, geom.limit)];
         }

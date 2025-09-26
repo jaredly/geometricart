@@ -1,23 +1,20 @@
 /* @jsx jsx */
-import { jsx } from '@emotion/react';
+import {jsx} from '@emotion/react';
 import React from 'react';
-import { Canvas } from './editor/Canvas';
-import { reducer } from './state/reducer';
-import { State } from './types';
-import {
-    getStateFromFile,
-    useDropStateOrAttachmentTarget,
-} from './editor/useDropTarget';
-import { AnimationEditor } from './animation/AnimationUI';
+import {Canvas} from './editor/Canvas';
+import {reducer} from './state/reducer';
+import {State} from './types';
+import {getStateFromFile, useDropStateOrAttachmentTarget} from './editor/useDropTarget';
+import {AnimationEditor} from './animation/AnimationUI';
 
-import { GCodeEditor } from './gcode/GCodeEditor';
-import { HistoryPlayback } from './history/HistoryPlayback';
-import { handleKeyboard } from './handleKeyboard';
-import { NewSidebar } from './sidebar/NewSidebar';
-import { Action } from './state/Action';
-import { useUIState } from './useUIState';
-import { OverlayEditor } from './OverelayEditor';
-import { ThreedScreen } from './threed/ThreedScreen';
+import {GCodeEditor} from './gcode/GCodeEditor';
+import {HistoryPlayback} from './history/HistoryPlayback';
+import {handleKeyboard} from './handleKeyboard';
+import {NewSidebar} from './sidebar/NewSidebar';
+import {Action} from './state/Action';
+import {useUIState} from './useUIState';
+import {OverlayEditor} from './OverelayEditor';
+import {ThreedScreen} from './threed/ThreedScreen';
 
 export const useCurrent = <T,>(value: T) => {
     const ref = React.useRef(value);
@@ -44,12 +41,11 @@ export const App = ({
 }) => {
     const [trueState, dispatch] = React.useReducer(reducer, initialState);
 
-    const { uiState, uiSetters, uiDispatch, state } = useUIState(trueState);
+    const {uiState, uiSetters, uiDispatch, state} = useUIState(trueState);
 
-    const { screen, hover, styleHover, pendingMirror, pendingDuplication } =
-        uiState;
+    const {screen, hover, styleHover, pendingMirror, pendingDuplication} = uiState;
 
-    const { setHover, setPendingMirror, setPendingDuplication } = uiSetters;
+    const {setHover, setPendingMirror, setPendingDuplication} = uiSetters;
 
     // @ts-ignore
     window.state = state;
@@ -57,7 +53,7 @@ export const App = ({
     useHandlePaste(dispatch);
 
     const [dragging, callbacks] = useDropStateOrAttachmentTarget(
-        (state) => dispatch({ type: 'reset', state }),
+        (state) => dispatch({type: 'reset', state}),
         (name, src, width, height) => {
             const id = Math.random().toString(36).slice(2);
             dispatch({
@@ -111,9 +107,7 @@ export const App = ({
                 height: '100vh',
                 width: '100vw',
                 overflow: 'auto',
-                background: dragging
-                    ? 'rgba(255,255,255,0.1)'
-                    : 'var(--surface-ground)',
+                background: dragging ? 'rgba(255,255,255,0.1)' : 'var(--surface-ground)',
                 '@media (max-width: 1400px)': {
                     flexDirection: 'column-reverse',
                     overflow: 'visible',
@@ -156,11 +150,7 @@ export const App = ({
                         }}
                     />
                 ) : screen === '3d' ? (
-                    <ThreedScreen
-                        state={state}
-                        dispatch={dispatch}
-                        hover={hover}
-                    />
+                    <ThreedScreen state={state} dispatch={dispatch} hover={hover} />
                 ) : screen === 'history' ? (
                     <HistoryPlayback state={state} dispatch={dispatch} />
                 ) : screen === 'overlay' ? (
@@ -207,7 +197,7 @@ function useHandlePaste(dispatch: React.Dispatch<Action>) {
                     evt.clipboardData.files[0],
                     (state) => {
                         if (state) {
-                            dispatch({ type: 'reset', state });
+                            dispatch({type: 'reset', state});
                         }
                     },
                     (name, src, width, height) => {
@@ -240,11 +230,7 @@ function useHandlePaste(dispatch: React.Dispatch<Action>) {
     });
 }
 
-function useSaveState(
-    state: State,
-    initialState: State,
-    saveState: (state: State) => unknown,
-) {
+function useSaveState(state: State, initialState: State, saveState: (state: State) => unknown) {
     let firstChange = React.useRef(false);
     React.useEffect(() => {
         if (firstChange.current || state !== initialState) {

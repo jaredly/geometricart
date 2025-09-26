@@ -1,6 +1,6 @@
-import { Coord, Segment } from '../types';
-import { angleTo, dist, push } from './getMirrorTransforms';
-import { angleBetween } from './findNextSegments';
+import {Coord, Segment} from '../types';
+import {angleTo, dist, push} from './getMirrorTransforms';
+import {angleBetween} from './findNextSegments';
 
 export const segmentAngle = (
     prev: Coord,
@@ -17,10 +17,7 @@ export const segmentAngle = (
     }
     if (initial) {
         if (real) {
-            return (
-                angleTo(segment.center, prev) +
-                (Math.PI / 2) * (segment.clockwise ? 1 : -1)
-            );
+            return angleTo(segment.center, prev) + (Math.PI / 2) * (segment.clockwise ? 1 : -1);
         }
         const t1 = angleTo(segment.center, prev);
         const t2 = angleTo(segment.center, segment.to);
@@ -38,9 +35,6 @@ export const segmentAngle = (
         // );
     } else {
         // tangent at land
-        return (
-            angleTo(segment.center, segment.to) +
-            (Math.PI / 2) * (segment.clockwise ? 1 : -1)
-        );
+        return angleTo(segment.center, segment.to) + (Math.PI / 2) * (segment.clockwise ? 1 : -1);
     }
 };

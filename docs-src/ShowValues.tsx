@@ -1,7 +1,7 @@
 import * as React from 'react';
-import { Info } from './Fixtures';
-import { widgets } from './functionWidgets';
-import { RenderFunctionDocumentation } from './RenderFunctionDocumentation';
+import {Info} from './Fixtures';
+import {widgets} from './functionWidgets';
+import {RenderFunctionDocumentation} from './RenderFunctionDocumentation';
 
 export const ShowValues = ({
     values,
@@ -33,24 +33,14 @@ export const ShowValues = ({
     }, [values.length]);
     const v = values[index];
     if (typeof v === 'function' && v.meta && v.meta.comment) {
-        const arc: Array<{ name: string; comment?: string }> =
-            v.meta.argComments;
-        return (
-            <RenderFunctionDocumentation
-                values={values}
-                index={index}
-                arc={arc}
-                v={v}
-            />
-        );
+        const arc: Array<{name: string; comment?: string}> = v.meta.argComments;
+        return <RenderFunctionDocumentation values={values} index={index} arc={arc} v={v} />;
     }
     let body = null;
     if (type) {
         if (widgets[type.type]) {
             body = (
-                <div style={{ width: 100, height: 100 }}>
-                    {widgets[type.type](v, null, '100px')}
-                </div>
+                <div style={{width: 100, height: 100}}>{widgets[type.type](v, null, '100px')}</div>
             );
         } else {
             if (type.type.endsWith('[]')) {
@@ -59,10 +49,7 @@ export const ShowValues = ({
                     body = (
                         <div>
                             {v.map((item: any, i: number) => (
-                                <div
-                                    key={i}
-                                    style={{ width: 100, height: 100 }}
-                                >
+                                <div key={i} style={{width: 100, height: 100}}>
                                     {widgets[element](item, null, '100px')}
                                 </div>
                             ))}
@@ -80,14 +67,13 @@ export const ShowValues = ({
         } else {
             body = JSON.stringify(
                 v,
-                (k, v) =>
-                    typeof v === 'number' ? Math.round(v * 100) / 100 : v,
+                (k, v) => (typeof v === 'number' ? Math.round(v * 100) / 100 : v),
                 2,
             );
         }
     }
     return (
-        <div style={{ whiteSpace: 'pre' }}>
+        <div style={{whiteSpace: 'pre'}}>
             {values.length > 1 ? `${1 + index}/${values.length}\n` : ''}
             {type ? type.type : '[No type info]'}
             {'\n'}

@@ -1,12 +1,6 @@
 import * as React from 'react';
 
-export const Slider = ({
-    inset,
-    onChange,
-}: {
-    inset: number;
-    onChange: (value: number) => void;
-}) => {
+export const Slider = ({inset, onChange}: {inset: number; onChange: (value: number) => void}) => {
     const [moving, setMoving] = React.useState(false);
     const ref = React.useRef(null as null | SVGGElement);
     React.useEffect(() => {
@@ -38,14 +32,7 @@ export const Slider = ({
 
     return (
         <g ref={(n) => (ref.current = n)}>
-            <circle
-                cx={150}
-                cy={280}
-                r={3}
-                stroke="currentColor"
-                strokeWidth="2"
-                fill="none"
-            />
+            <circle cx={150} cy={280} r={3} stroke="currentColor" strokeWidth="2" fill="none" />
             <text
                 x={150}
                 y={295}
@@ -70,7 +57,7 @@ export const Slider = ({
                 cy={280}
                 r={5}
                 fill="currentColor"
-                style={{ cursor: 'move' }}
+                style={{cursor: 'move'}}
                 onMouseDown={(evt) => {
                     evt.preventDefault();
                     setMoving(true);

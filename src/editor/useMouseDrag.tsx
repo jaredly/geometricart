@@ -1,23 +1,23 @@
 import React from 'react';
-import { Coord, View } from '../types';
-import { dragView, EditorState, screenToWorld } from './Canvas';
-import { dist } from '../rendering/getMirrorTransforms';
-import { viewPos } from './SVGCanvas';
+import {Coord, View} from '../types';
+import {dragView, EditorState, screenToWorld} from './Canvas';
+import {dist} from '../rendering/getMirrorTransforms';
+import {viewPos} from './SVGCanvas';
 
 export function useMouseDrag(
-    dragPos: { view: View; coord: Coord } | null,
+    dragPos: {view: View; coord: Coord} | null,
     setEditorState: React.Dispatch<React.SetStateAction<EditorState>>,
     width: number,
     height: number,
     view: View,
 ) {
-    const { x, y } = viewPos(view, width, height);
+    const {x, y} = viewPos(view, width, height);
     const ref = React.useRef(
         null as
             | null
             | false
-            | { type: 'one'; coord: Coord; view: View }
-            | { type: 'two'; one: Coord; two: Coord; view: View },
+            | {type: 'one'; coord: Coord; view: View}
+            | {type: 'two'; one: Coord; two: Coord; view: View},
     );
 
     return React.useMemo(
@@ -49,13 +49,13 @@ export function useMouseDrag(
                         x: (evt.clientX - rect.left - x) / view.zoom,
                         y: (evt.clientY - rect.top - y) / view.zoom,
                     };
-                    setEditorState((state) => ({ ...state, pos }));
+                    setEditorState((state) => ({...state, pos}));
                     // setPos(pos);
                 }
             },
             onMouseUpCapture: (evt: React.MouseEvent) => {
                 if (dragPos) {
-                    setEditorState((state) => ({ ...state, dragPos: null }));
+                    setEditorState((state) => ({...state, dragPos: null}));
                     evt.preventDefault();
                 }
             },
@@ -76,7 +76,7 @@ export function useMouseDrag(
                 );
                 setEditorState((state) => ({
                     ...state,
-                    dragPos: { coord, view },
+                    dragPos: {coord, view},
                 }));
             },
 
@@ -84,7 +84,7 @@ export function useMouseDrag(
                 evt.preventDefault();
                 if (evt.touches.length === 0) {
                     ref.current = null;
-                    setEditorState((state) => ({ ...state, dragPos: null }));
+                    setEditorState((state) => ({...state, dragPos: null}));
                 }
             },
             onTouchStart: (evt: React.TouchEvent) => {
@@ -105,9 +105,9 @@ export function useMouseDrag(
                     );
                     setEditorState((state) => ({
                         ...state,
-                        dragPos: { coord, view },
+                        dragPos: {coord, view},
                     }));
-                    ref.current = { type: 'one', coord: coord, view };
+                    ref.current = {type: 'one', coord: coord, view};
                 } else if (ref.current.type === 'one') {
                     const coord = touchToCoord(
                         evt.currentTarget,
@@ -125,7 +125,7 @@ export function useMouseDrag(
                         view: ref.current.view,
                     };
                     // clear out the drag pos
-                    setEditorState((state) => ({ ...state, dragPos: null }));
+                    setEditorState((state) => ({...state, dragPos: null}));
                 } else {
                     // invalidated
                     ref.current = false;
@@ -137,7 +137,7 @@ export function useMouseDrag(
                     return;
                 }
                 if (ref.current.type === 'one') {
-                    const { coord, view } = ref.current;
+                    const {coord, view} = ref.current;
 
                     const touch = evt.touches[0];
                     const rect = evt.currentTarget.getBoundingClientRect();
@@ -149,7 +149,7 @@ export function useMouseDrag(
                             ...prev,
                             tmpView: dragView(
                                 prev.tmpView,
-                                { coord, view },
+                                {coord, view},
                                 clientX,
                                 rect,
                                 clientY,
@@ -158,11 +158,8 @@ export function useMouseDrag(
                             ),
                         };
                     });
-                } else if (
-                    evt.touches.length === 2 &&
-                    ref.current.type === 'two'
-                ) {
-                    const { one, two, view } = ref.current;
+                } else if (evt.touches.length === 2 && ref.current.type === 'two') {
+                    const {one, two, view} = ref.current;
                     const none = touchToCoord(
                         evt.currentTarget,
                         width,
@@ -222,7 +219,7 @@ export function useDragSelect(
     setEditorState: React.Dispatch<React.SetStateAction<EditorState>>,
     cancelDragSelect: (shiftKey: boolean) => void,
 ) {
-    const { x, y } = viewPos(view, width, height);
+    const {x, y} = viewPos(view, width, height);
 
     return React.useMemo(
         () => ({
@@ -235,7 +232,7 @@ export function useDragSelect(
                     x: (clientX - rect.left - x) / view.zoom,
                     y: (clientY - rect.top - y) / view.zoom,
                 };
-                setEditorState((state) => ({ ...state, pos }));
+                setEditorState((state) => ({...state, pos}));
             },
             onTouchEnd: (evt: React.TouchEvent) => {
                 evt.preventDefault();
@@ -262,7 +259,7 @@ export function useDragSelect(
                     view,
                 );
                 // setDragPos(coord);
-                setEditorState((state) => ({ ...state, dragSelectPos: coord }));
+                setEditorState((state) => ({...state, dragSelectPos: coord}));
             },
             onMouseMove: (evt: React.MouseEvent) => {
                 const rect = evt.currentTarget.getBoundingClientRect();
@@ -271,7 +268,7 @@ export function useDragSelect(
                     y: (evt.clientY - rect.top - y) / view.zoom,
                 };
                 // setPos(pos);
-                setEditorState((state) => ({ ...state, pos }));
+                setEditorState((state) => ({...state, pos}));
             },
             onMouseUpCapture: (evt: React.MouseEvent) => {
                 if (dragPos) {
@@ -297,7 +294,7 @@ export function useDragSelect(
                     },
                     view,
                 );
-                setEditorState((state) => ({ ...state, dragSelectPos: coord }));
+                setEditorState((state) => ({...state, dragSelectPos: coord}));
             },
         }),
         [dragPos, width, height, x, y, view],

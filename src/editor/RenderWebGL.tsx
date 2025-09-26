@@ -1,7 +1,7 @@
 import * as React from 'react';
-import { shaderForState } from '../rendering/shaderForState';
-import { texture1, texture2 } from '../rendering/textures';
-import { State } from '../types';
+import {shaderForState} from '../rendering/shaderForState';
+import {texture1, texture2} from '../rendering/textures';
+import {State} from '../types';
 
 export const RenderWebGL = ({
     state,
@@ -10,7 +10,7 @@ export const RenderWebGL = ({
     height,
 }: {
     state: State;
-    texture: { id: string; scale: number; intensity: number };
+    texture: {id: string; scale: number; intensity: number};
     width: number;
     height: number;
 }) => {
@@ -24,7 +24,7 @@ export const RenderWebGL = ({
         // console.log(shader);
         const fns: {
             [key: string]: (scale: number, intensity: number) => string;
-        } = { texture1: texture1, texture2: texture2 };
+        } = {texture1: texture1, texture2: texture2};
         const fn = fns[texture.id];
         if (!fn) {
             return;
@@ -109,11 +109,7 @@ vec3 sdgQuad( in vec2 p, in vec2 v[4] )
 
 */
 
-const createShader = (
-    gl: WebGL2RenderingContext,
-    kind: number,
-    source: string,
-) => {
+const createShader = (gl: WebGL2RenderingContext, kind: number, source: string) => {
     const shader = gl.createShader(kind);
     if (!shader) {
         // TODO: Indicate in the UI that this is probably just the browser limiting stuff
@@ -189,7 +185,7 @@ const makeTextureAndStuff = (
     //     level,
     // );
 
-    textures[i] = { fb: fb!, texture: texture!, i };
+    textures[i] = {fb: fb!, texture: texture!, i};
     return textures[i];
 };
 
@@ -211,7 +207,7 @@ export const setup = (
     gl: WebGL2RenderingContext,
     fragmentShader: string,
     currentTime: number,
-    mousePos?: { x: number; y: number; button: number },
+    mousePos?: {x: number; y: number; button: number},
     // state?: { value: unknown; type: Reference; env: Env },
     bufferShaders: Array<string> = [],
     textures: Array<BufferInfo> = [],
@@ -272,7 +268,7 @@ export const setup = (
             gl.uniform2f(umouse, mousePos.x, mousePos.y);
         }
 
-        return { utime, umouse, umousebutton, textureLocs };
+        return {utime, umouse, umousebutton, textureLocs};
     };
 
     const bufferPrograms = bufferShaders.map((fragmentShader) => {
@@ -295,7 +291,7 @@ export const setup = (
         gl.deleteShader(fragment);
         gl.deleteShader(vertex);
         gl.useProgram(program);
-        return { program, bound: bindUniforms(program) };
+        return {program, bound: bindUniforms(program)};
     });
 
     let frameBuffers: Array<BufferInfo> = [];
@@ -303,9 +299,7 @@ export const setup = (
 
     for (let i = 0; i < bufferShaders.length; i++) {
         frameBuffers.push(makeTextureAndStuff(gl, i, textures));
-        backBuffers.push(
-            makeTextureAndStuff(gl, bufferShaders.length + i, textures),
-        );
+        backBuffers.push(makeTextureAndStuff(gl, bufferShaders.length + i, textures));
     }
 
     const swap = () => {
@@ -326,7 +320,7 @@ export const setup = (
     gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(0);
 
-    bufferPrograms.forEach(({ program, bound }, i) => {
+    bufferPrograms.forEach(({program, bound}, i) => {
         gl.useProgram(program);
 
         bound.textureLocs.forEach((loc, i) => {
@@ -357,14 +351,10 @@ export const setup = (
     gl.clear(gl.COLOR_BUFFER_BIT);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
 
-    return (
-        uTime: number,
-        mousePos?: { x: number; y: number; button: number },
-        state?: unknown,
-    ) => {
+    return (uTime: number, mousePos?: {x: number; y: number; button: number}, state?: unknown) => {
         swap();
         if (bufferPrograms.length) {
-            bufferPrograms.forEach(({ program, bound }, i) => {
+            bufferPrograms.forEach(({program, bound}, i) => {
                 gl.useProgram(program);
 
                 gl.uniform1f(bound.utime, uTime);

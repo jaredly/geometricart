@@ -1,10 +1,10 @@
-import { css } from '@emotion/css';
+import {css} from '@emotion/css';
 import React from 'react';
-import { push } from '../rendering/getMirrorTransforms';
-import { Bounds, visibleEndPoints } from './GuideElement';
-import { Primitive } from '../rendering/intersect';
-import { useTouchClick } from './RenderIntersections';
-import { arcPath } from './RenderPendingPath';
+import {push} from '../rendering/getMirrorTransforms';
+import {Bounds, visibleEndPoints} from './GuideElement';
+import {Primitive} from '../rendering/intersect';
+import {useTouchClick} from './RenderIntersections';
+import {arcPath} from './RenderPendingPath';
 
 const hoverClass = css({
     ':hover': {
@@ -21,10 +21,14 @@ export function RenderPrimitive({
     color,
     inactive,
     touchOnly,
+    ignoreMouse,
     strokeWidth = 1,
+    lineCap,
 }: {
     color?: string;
+    ignoreMouse?: boolean;
     isImplied?: boolean;
+    lineCap?: boolean;
     prim: Primitive;
     bounds: Bounds;
     zoom: number;
@@ -49,8 +53,11 @@ export function RenderPrimitive({
               }
             : undefined,
         ...handlers(undefined),
-        style: onClick ? { cursor: 'pointer' } : {},
+        style: onClick
+            ? {cursor: 'pointer', pointerEvents: undefined as undefined | 'none'}
+            : {pointerEvents: undefined},
         strokeDasharray: isImplied ? '3 3' : '',
+        pointerEvents: undefined as string | undefined,
         ...(touchOnly
             ? {
                   strokeWidth: 20,
@@ -60,7 +67,12 @@ export function RenderPrimitive({
               }
             : {}),
         className: onClick ? hoverClass : undefined,
+        strokeLinecap: 'round' as 'round',
     };
+    if (ignoreMouse) {
+        common.pointerEvents = 'none';
+        common.style.pointerEvents = 'none';
+    }
     if (prim.type === 'line') {
         if (prim.limit) {
             if (prim.m === Infinity) {

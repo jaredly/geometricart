@@ -1,11 +1,11 @@
 /* @jsx jsx */
 /* @jsxFrag React.Fragment */
-import { jsx } from '@emotion/react';
+import {jsx} from '@emotion/react';
 import React from 'react';
-import { Id, State } from '../types';
-import { Action } from '../state/Action';
-import { ShowMirror } from './MirrorForm';
-import { DeleteForeverIcon, IconButton, MirrorIcon } from '../icons/Icon';
+import {Id, State} from '../types';
+import {Action} from '../state/Action';
+import {ShowMirror} from './MirrorForm';
+import {DeleteForeverIcon, IconButton, MirrorIcon} from '../icons/Icon';
 
 export const MirrorMenu = React.memo(
     ({
@@ -41,14 +41,8 @@ export const MirrorMenu = React.memo(
             >
                 <button
                     onClick={() => setOpen((o) => !o)}
-                    onMouseOver={
-                        state.activeMirror
-                            ? () => onHover(state.activeMirror)
-                            : undefined
-                    }
-                    onMouseOut={
-                        state.activeMirror ? () => onHover(null) : undefined
-                    }
+                    onMouseOver={state.activeMirror ? () => onHover(state.activeMirror) : undefined}
+                    onMouseOut={state.activeMirror ? () => onHover(null) : undefined}
                     css={{
                         backgroundColor: 'transparent',
                         cursor: 'pointer',
@@ -116,8 +110,7 @@ export const MirrorMenu = React.memo(
                                             ? 'rgba(255,255,255,0.8)'
                                             : 'transparent'),
                                     ':hover': {
-                                        backgroundColor:
-                                            'rgba(255,255,255,0.1)',
+                                        backgroundColor: 'rgba(255,255,255,0.1)',
                                     },
                                 }}
                                 onClick={() => {

@@ -1,16 +1,16 @@
 // Ok folks
 
 import * as React from 'react';
-import { arcPath } from '../src/editor/RenderPendingPath';
-import { Arrow, arrow, pointsList } from '../src/editor/ShowHitIntersection2';
-import { Angle, angleKey, backAngle } from '../src/rendering/clipPath';
-import { angleTo, dist, push } from '../src/rendering/getMirrorTransforms';
-import { Circle } from '../src/rendering/intersect';
-import { HitSegment, SegmentIntersection } from '../src/rendering/untangleHit';
-import { SegmentGroup } from '../src/rendering/untangleHitAgain';
-import { ArcSegment, Coord } from '../src/types';
-import { colors } from './Fixtures';
-import { ShowAngle, ShowSegmentIntersection } from './UntangleHit';
+import {arcPath} from '../src/editor/RenderPendingPath';
+import {Arrow, arrow, pointsList} from '../src/editor/ShowHitIntersection2';
+import {Angle, angleKey, backAngle} from '../src/rendering/clipPath';
+import {angleTo, dist, push} from '../src/rendering/getMirrorTransforms';
+import {Circle} from '../src/rendering/intersect';
+import {HitSegment, SegmentIntersection} from '../src/rendering/untangleHit';
+import {SegmentGroup} from '../src/rendering/untangleHitAgain';
+import {ArcSegment, Coord} from '../src/types';
+import {colors} from './Fixtures';
+import {ShowAngle, ShowSegmentIntersection} from './UntangleHit';
 
 const angleArrow = (orig: number, reverse?: boolean) => {
     const angle = reverse ? orig + Math.PI : orig;
@@ -18,17 +18,15 @@ const angleArrow = (orig: number, reverse?: boolean) => {
         <>
             <polyline
                 points={pointsList([
-                    push({ x: 10, y: 10 }, angle, 2),
-                    push({ x: 10, y: 10 }, angle, -10),
+                    push({x: 10, y: 10}, angle, 2),
+                    push({x: 10, y: 10}, angle, -10),
                 ])}
                 stroke="red"
                 strokeWidth={1}
                 fill="none"
             />
             <polyline
-                points={pointsList(
-                    arrow(push({ x: 10, y: 10 }, angle, 4), angle, 5),
-                )}
+                points={pointsList(arrow(push({x: 10, y: 10}, angle, 4), angle, 5))}
                 fill={'red'}
             />
             <text x={20} y={20} fill="white" fontSize={6} textAnchor="end">
@@ -62,18 +60,8 @@ export const widgets: {
 } = {
     dist: ([p1, p2]: [Coord, Coord], output: number, size: string) => {
         return (
-            <svg
-                width={'100%'}
-                height={'100%'}
-                viewBox="0 0 20 20"
-                style={{ marginBottom: '-.2em' }}
-            >
-                <path
-                    d={showAmount(output, 300)}
-                    stroke="red"
-                    strokeWidth={1}
-                    fill="none"
-                />
+            <svg width={'100%'} height={'100%'} viewBox="0 0 20 20" style={{marginBottom: '-.2em'}}>
+                <path d={showAmount(output, 300)} stroke="red" strokeWidth={1} fill="none" />
                 <text x={20} y={20} fill="white" fontSize={6} textAnchor="end">
                     {output.toFixed(0)}
                 </text>
@@ -99,14 +87,9 @@ export const widgets: {
         // }
     },
     'Math.cos': ([angle], output: number) => {
-        const mid = { x: 10, y: 10 };
+        const mid = {x: 10, y: 10};
         return (
-            <svg
-                width={'100%'}
-                height={'100%'}
-                viewBox="0 0 20 20"
-                style={{ marginBottom: '-.2em' }}
-            >
+            <svg width={'100%'} height={'100%'} viewBox="0 0 20 20" style={{marginBottom: '-.2em'}}>
                 <polyline
                     points={pointsList([mid, push(mid, angle, 10)])}
                     stroke="red"
@@ -127,42 +110,27 @@ export const widgets: {
     },
     push: ([coord, theta, dist], output: Coord) => {
         return (
-            <svg
-                width={'100%'}
-                height={'100%'}
-                viewBox="0 0 20 20"
-                style={{ marginBottom: '-.2em' }}
-            >
+            <svg width={'100%'} height={'100%'} viewBox="0 0 20 20" style={{marginBottom: '-.2em'}}>
                 {angleArrow(theta, dist < 0)}
             </svg>
         );
     },
     backAngle: (args: [Angle], output: Angle) => {
         return (
-            <svg
-                width={'100%'}
-                height={'100%'}
-                viewBox="0 0 20 20"
-                style={{ marginBottom: '-.2em' }}
-            >
+            <svg width={'100%'} height={'100%'} viewBox="0 0 20 20" style={{marginBottom: '-.2em'}}>
                 {angleArrow(output.theta)}
             </svg>
         );
     },
     angleTo: (args: [Coord, Coord], output: number) => {
         return (
-            <svg
-                width={'100%'}
-                height={'100%'}
-                viewBox="0 0 20 20"
-                style={{ marginBottom: '-.2em' }}
-            >
+            <svg width={'100%'} height={'100%'} viewBox="0 0 20 20" style={{marginBottom: '-.2em'}}>
                 {angleArrow(output)}
             </svg>
         );
     },
     angleBetween: (args: [number, number, boolean], output: number) => {
-        const mid = { x: 10, y: 10 };
+        const mid = {x: 10, y: 10};
         const p0 = push(mid, args[0], 8);
         const p1 = push(mid, args[1], 8);
         const d = arcPath(
@@ -175,25 +143,12 @@ export const widgets: {
             p0,
             1,
         );
-        const around = push(
-            mid,
-            angleTo(mid, p1) + (3 / 8) * (args[2] ? -1 : 1),
-            8,
-        );
+        const around = push(mid, angleTo(mid, p1) + (3 / 8) * (args[2] ? -1 : 1), 8);
         // const arrowTheta =
         //     angleTo(mid, p1) + (Math.PI / 2) * (args[2] ? 1 : -1);
         return (
-            <svg
-                width={'100%'}
-                height={'100%'}
-                viewBox="0 0 20 20"
-                style={{ marginBottom: '-.2em' }}
-            >
-                <path
-                    d={`M10,10 L${p0.x},${p0.y} ` + d}
-                    fill="white"
-                    opacity={0.2}
-                />
+            <svg width={'100%'} height={'100%'} viewBox="0 0 20 20" style={{marginBottom: '-.2em'}}>
+                <path d={`M10,10 L${p0.x},${p0.y} ` + d} fill="white" opacity={0.2} />
                 <path d={`M${p0.x},${p0.y} ` + d} stroke="red" fill="none" />
                 {output === 0 ? (
                     <polyline
@@ -205,12 +160,7 @@ export const widgets: {
                 ) : null}
                 {/* <circle cx={p1.x} cy={p1.y} r={2} fill="orange" /> */}
                 {output != 0 ? (
-                    <Arrow
-                        point={around}
-                        theta={angleTo(around, p1)}
-                        color="red"
-                        size={7}
-                    />
+                    <Arrow point={around} theta={angleTo(around, p1)} color="red" size={7} />
                 ) : null}
                 <text x={20} y={20} fill="white" fontSize={6} textAnchor="end">
                     {(output / Math.PI).toFixed(2)}π
@@ -220,12 +170,7 @@ export const widgets: {
     },
     zeroToTwoPi: (args: [number], output: number) => {
         return (
-            <svg
-                width={'100%'}
-                height={'100%'}
-                viewBox="0 0 20 20"
-                style={{ marginBottom: '-.2em' }}
-            >
+            <svg width={'100%'} height={'100%'} viewBox="0 0 20 20" style={{marginBottom: '-.2em'}}>
                 {angleArrow(output)}
             </svg>
         );
@@ -236,20 +181,9 @@ export const widgets: {
         // }
         // return <div>{JSON.stringify(output)}</div>;
         return (
-            <svg
-                width={'100%'}
-                height={'100%'}
-                viewBox="0 0 20 20"
-                style={{ marginBottom: '-.2em' }}
-            >
+            <svg width={'100%'} height={'100%'} viewBox="0 0 20 20" style={{marginBottom: '-.2em'}}>
                 <circle cx={7} cy={7} r={5} stroke="currentColor" fill="none" />
-                <circle
-                    cx={13}
-                    cy={13}
-                    r={5}
-                    stroke="currentColor"
-                    fill="none"
-                />
+                <circle cx={13} cy={13} r={5} stroke="currentColor" fill="none" />
             </svg>
         );
     },
@@ -259,7 +193,7 @@ export const widgets: {
                 width={'100%'}
                 height={'100%'}
                 viewBox="0 0 300 300"
-                style={{ marginBottom: '-.2em' }}
+                style={{marginBottom: '-.2em'}}
             >
                 <ShowAngle
                     angle={value.entry.theta}
@@ -272,14 +206,14 @@ export const widgets: {
     },
     'HitSegment[]': (values: HitSegment[], _: any, size: string) => {
         // If there are coincident angles, I need to offset a little
-        const used: { [key: string]: true } = {};
+        const used: {[key: string]: true} = {};
         let off = 0;
         return (
             <svg
                 width={'100%'}
                 height={'100%'}
                 viewBox="0 0 300 300"
-                style={{ marginBottom: '-.2em' }}
+                style={{marginBottom: '-.2em'}}
             >
                 {values.map((value, i) => {
                     const k = angleKey(
@@ -312,7 +246,7 @@ export const widgets: {
                 width={'100%'}
                 height={'100%'}
                 viewBox="0 0 300 300"
-                style={{ marginBottom: '-.2em' }}
+                style={{marginBottom: '-.2em'}}
             >
                 <circle cx={150} cy={150} r={10} fill="black" />
                 {value.entries.map((entry, i) => (
@@ -340,7 +274,7 @@ export const widgets: {
                 width={'100%'}
                 height={'100%'}
                 viewBox="0 0 300 300"
-                style={{ marginBottom: '-.2em' }}
+                style={{marginBottom: '-.2em'}}
             >
                 {value.map((v, i) => (
                     <ShowSegmentIntersection seg={v} key={i} scale={2} />
@@ -354,7 +288,7 @@ export const widgets: {
                 width={'100%'}
                 height={'100%'}
                 viewBox="0 0 300 300"
-                style={{ marginBottom: '-.2em' }}
+                style={{marginBottom: '-.2em'}}
             >
                 <ShowSegmentIntersection seg={value} scale={2} />
             </svg>
@@ -367,14 +301,7 @@ const renderCircle = (
     props: React.ComponentProps<'circle'> & React.ComponentProps<'path'>,
 ) => {
     if (!circle.limit) {
-        return (
-            <circle
-                cx={circle.center.x}
-                cy={circle.center.y}
-                r={circle.radius}
-                {...props}
-            />
-        );
+        return <circle cx={circle.center.x} cy={circle.center.y} r={circle.radius} {...props} />;
     }
     const prev = push(circle.center, circle.limit[0], circle.radius);
     const seg: ArcSegment = {
@@ -383,9 +310,7 @@ const renderCircle = (
         to: push(circle.center, circle.limit[1], circle.radius),
         clockwise: true,
     };
-    return (
-        <path d={`M${prev.x},${prev.y} ` + arcPath(seg, prev, 1)} {...props} />
-    );
+    return <path d={`M${prev.x},${prev.y} ` + arcPath(seg, prev, 1)} {...props} />;
 };
 
 // Big things in the SVG

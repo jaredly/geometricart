@@ -1,21 +1,15 @@
 import * as React from 'react';
-import { calcSegmentsD } from '../editor/calcPathD';
-import { Segment } from '../types';
-import { register } from '../vest';
-import { prevSegmentsToShape, SegmentWithPrev } from './clipPathNew';
-import { insetSegments } from './insetPath';
-import { ShapeEditor } from './ShapeEditor';
+import {calcSegmentsD} from '../editor/calcPathD';
+import {Segment} from '../types';
+import {register} from '../vest';
+import {prevSegmentsToShape, SegmentWithPrev} from './clipPathNew';
+import {insetSegments} from './insetPath';
+import {ShapeEditor} from './ShapeEditor';
 
 type Input = [Array<SegmentWithPrev>, number];
 type Output = Array<Segment>;
 
-const ShowDebug = ({
-    shape,
-    inset,
-}: {
-    inset: number;
-    shape: Array<SegmentWithPrev>;
-}) => {
+const ShowDebug = ({shape, inset}: {inset: number; shape: Array<SegmentWithPrev>}) => {
     const seg = prevSegmentsToShape(shape);
     if (!seg) {
         return null;
@@ -31,12 +25,7 @@ const ShowDebug = ({
                 fill="none"
             />
             <path
-                d={calcSegmentsD(
-                    insetSeg,
-                    insetSeg[insetSeg.length - 1].to,
-                    undefined,
-                    1,
-                )}
+                d={calcSegmentsD(insetSeg, insetSeg[insetSeg.length - 1].to, undefined, 1)}
                 stroke="green"
                 opacity={0.2}
                 strokeWidth={2}
@@ -58,34 +47,20 @@ register({
         return inset;
     },
     render: {
-        editor: ({
-            initial,
-            onChange,
-        }: {
-            initial: Input | null;
-            onChange: (i: Input) => void;
-        }) => {
+        editor: ({initial, onChange}: {initial: Input | null; onChange: (i: Input) => void}) => {
             const [inset, setInset] = React.useState(null as null | number);
             return (
                 <div>
                     <ShapeEditor
                         initial={initial ? initial[0] : null}
-                        onChange={(v) =>
-                            onChange([v, initial ? initial[1] : 10])
-                        }
+                        onChange={(v) => onChange([v, initial ? initial[1] : 10])}
                     >
                         {(shape, rendered) => (
                             <>
                                 {rendered}
                                 {shape?.length ? (
                                     <ShowDebug
-                                        inset={
-                                            inset != null
-                                                ? inset
-                                                : initial
-                                                ? initial[1]
-                                                : 10
-                                        }
+                                        inset={inset != null ? inset : initial ? initial[1] : 10}
                                         shape={shape}
                                     />
                                 ) : null}
@@ -114,7 +89,7 @@ register({
                 </div>
             );
         },
-        fixture: ({ input, output }: { input: Input; output: Output }) => {
+        fixture: ({input, output}: {input: Input; output: Output}) => {
             return (
                 <div>
                     <svg width={300} height={300}>

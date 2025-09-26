@@ -26,10 +26,7 @@ export type Config<Input, Output> = {
      * UI Configuration!
      */
     render: {
-        editor: (props: {
-            initial: Input | null;
-            onChange: (changed: Input) => void;
-        }) => JSX.Element;
+        editor: (props: {initial: Input | null; onChange: (changed: Input) => void}) => JSX.Element;
         // TODO: Should I include some linters/validators?
         // Could be cool. But I don't need to right now.
         // Ok I do want a way to store notes about
@@ -45,7 +42,7 @@ export type Config<Input, Output> = {
             output: Output;
             // if null, then it's the same as the produced output
             // if isPassing
-            previous: { output: null | Output; isPassing: boolean };
+            previous: {output: null | Output; isPassing: boolean};
         }) => JSX.Element;
     };
 };

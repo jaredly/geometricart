@@ -1,9 +1,9 @@
-import { PathKit, Path as PKPath } from 'pathkit-wasm';
-import { applyStyleHover, StyleHover } from '../editor/MultiStyleForm';
-import { PK } from '../editor/pk';
-import { pkInset, pkPath, pkPathToSegments } from '../sidebar/NewSidebar';
-import { Path, PathGroup, Segment, State } from '../types';
-import { pathToSegmentKeys } from './pathsAreIdentical';
+import {PathKit, Path as PKPath} from 'pathkit-wasm';
+import {applyStyleHover, StyleHover} from '../editor/MultiStyleForm';
+import {PK} from '../editor/pk';
+import {pkInset, pkPath, pkPathToSegments} from '../sidebar/NewSidebar';
+import {Path, PathGroup, Segment, State} from '../types';
+import {pathToSegmentKeys} from './pathsAreIdentical';
 import {
     applyColorVariations,
     InsetCache,
@@ -20,20 +20,20 @@ export const getClips = (state: State) => {
         .map((k) => state.clips[k]);
 };
 
-type PKC = { path: PKPath; outside: boolean; before?: boolean };
+type PKC = {path: PKPath; outside: boolean; before?: boolean};
 
 export function pkSortedVisibleInsetPaths(
-    paths: { [key: string]: Path },
-    pathGroups: { [key: string]: PathGroup },
-    rand: { next: (min: number, max: number) => number },
+    paths: {[key: string]: Path},
+    pathGroups: {[key: string]: PathGroup},
+    rand: {next: (min: number, max: number) => number},
     clips: State['clips']['l'][],
     hideDuplicatePaths?: boolean,
     laserCutPalette?: Array<string>,
     styleHover?: StyleHover,
-    selectedIds: { [key: string]: boolean } = {},
+    selectedIds: {[key: string]: boolean} = {},
     insetCache: PKInsetCache = {},
 ): Array<Path> {
-    paths = { ...paths };
+    paths = {...paths};
 
     const pkc = clips.map((c) => ({
         path: pkPath(PK, c.shape),
@@ -45,10 +45,7 @@ export function pkSortedVisibleInsetPaths(
         paths[k] = applyColorVariations(paths[k], rand);
         const norm = normalizedPath(paths[k].segments);
         if (norm) {
-            const key = pathToSegmentKeys(
-                norm[0][norm[0].length - 1].to,
-                norm[0],
-            ).join(':');
+            const key = pathToSegmentKeys(norm[0][norm[0].length - 1].to, norm[0]).join(':');
             if (!insetCache[key]) {
                 insetCache[key] = {
                     normalized: pkPath(PK, norm[0]),
@@ -86,12 +83,7 @@ export function pkSortedVisibleInsetPaths(
 
             if (group?.insetBeforeClip != null) {
                 if (group.insetBeforeClip) {
-                    return pkPathToInsetPaths(
-                        PK,
-                        pkp,
-                        path,
-                        insetCache,
-                    ).flatMap(({ path, pkp }) => {
+                    return pkPathToInsetPaths(PK, pkp, path, insetCache).flatMap(({path, pkp}) => {
                         return consumePath(
                             PK,
                             pkClips(PK, pkp, pkc, path, group?.clipMode)[0],
@@ -99,44 +91,23 @@ export function pkSortedVisibleInsetPaths(
                         );
                     });
                 } else {
-                    const [res, changed] = pkClips(
-                        PK,
-                        pkp,
-                        pkc,
-                        path,
-                        group?.clipMode,
-                    );
+                    const [res, changed] = pkClips(PK, pkp, pkc, path, group?.clipMode);
                     return res
-                        ? pkPathToInsetPaths(
-                              PK,
-                              res,
-                              path,
-                              changed ? {} : insetCache,
-                          ).flatMap(({ path, pkp }) =>
-                              consumePath(PK, pkp, path),
+                        ? pkPathToInsetPaths(PK, res, path, changed ? {} : insetCache).flatMap(
+                              ({path, pkp}) => consumePath(PK, pkp, path),
                           )
                         : [];
                 }
             } else {
-                const [res, changed] = pkClips(
-                    PK,
-                    pkp,
-                    pre,
-                    path,
-                    group?.clipMode,
-                );
+                const [res, changed] = pkClips(PK, pkp, pre, path, group?.clipMode);
                 return res
-                    ? pkPathToInsetPaths(
-                          PK,
-                          res,
-                          path,
-                          changed ? {} : insetCache,
-                      ).flatMap(({ path, pkp }) =>
-                          consumePath(
-                              PK,
-                              pkClips(PK, pkp, post, path, group?.clipMode)[0],
-                              path,
-                          ),
+                    ? pkPathToInsetPaths(PK, res, path, changed ? {} : insetCache).flatMap(
+                          ({path, pkp}) =>
+                              consumePath(
+                                  PK,
+                                  pkClips(PK, pkp, post, path, group?.clipMode)[0],
+                                  path,
+                              ),
                       )
                     : [];
                 // } else {
@@ -166,15 +137,12 @@ export const pkClips = (
     }
     // console.log('pk clips', pkp, opath);
     const clipMode = opath.clipMode ?? groupMode;
-    if (
-        clipMode === 'none' ||
-        (clipMode === 'fills' && opath.style.fills.length)
-    ) {
+    if (clipMode === 'none' || (clipMode === 'fills' && opath.style.fills.length)) {
         return [pkp, false]; //consumePath(PK, pkp, path)
     }
 
     const orig = pkp.toSVGString();
-    for (let { path, outside } of pkclips) {
+    for (let {path, outside} of pkclips) {
         if (clipMode === 'remove') {
             console.warn('No totally doing? idk');
             const is = pkp.copy();
@@ -228,7 +196,7 @@ export const pkClips = (
 export type PKInsetCache = {
     [key: string]: {
         normalized: PKPath;
-        insets: { [k: number]: PKPath };
+        insets: {[k: number]: PKPath};
     };
 };
 
@@ -241,7 +209,7 @@ export const pkPathToInsetPaths = (
     // console.log('hm to inset paths');
     const res = pathToSingles(path).map(([path, inset]) => {
         if (!inset || Math.abs(inset) < 0.005) {
-            return { path, pkp: pkp.copy() };
+            return {path, pkp: pkp.copy()};
         }
         if (path.debug) {
             console.log('insetting', path, inset);
@@ -254,8 +222,7 @@ export const pkPathToInsetPaths = (
 
                 insetCache[path.normalized.key].insets[inset / 100] = pkpi;
             }
-            const pkp =
-                insetCache[path.normalized.key].insets[inset / 100].copy();
+            const pkp = insetCache[path.normalized.key].insets[inset / 100].copy();
             path.normalized.transform.forEach((matrix) => {
                 const [[a, b, c], [d, e, f]] = matrix;
                 pkp.transform(a, b, c, d, e, f, 0, 0, 1);
@@ -270,34 +237,26 @@ export const pkPathToInsetPaths = (
         const pkpi = pkp.copy();
         pkInset(PK, pkpi, (inset / 100) * 2);
 
-        return { path, pkp: pkpi };
+        return {path, pkp: pkpi};
     });
     pkp.delete();
     // console.log('got some singles I guess', res);
     return res;
 };
 
-export const consumePath = (
-    PK: PathKit,
-    pkp: PKPath | null,
-    path: Path,
-): Path[] => {
+export const consumePath = (PK: PathKit, pkp: PKPath | null, path: Path): Path[] => {
     if (!pkp) {
         return [];
     }
     const regions = pkPathToSegments(PK, pkp);
     pkp.delete();
-    return regions.map((region) => ({ ...path, ...region }));
+    return regions.map((region) => ({...path, ...region}));
 };
 export function getVisiblePaths(
-    paths: { [key: string]: Path },
-    pathGroups: { [key: string]: PathGroup },
+    paths: {[key: string]: Path},
+    pathGroups: {[key: string]: PathGroup},
 ) {
     return Object.keys(paths)
-        .filter(
-            (k) =>
-                !paths[k].hidden &&
-                (!paths[k].group || !pathGroups[paths[k].group!]?.hide),
-        )
+        .filter((k) => !paths[k].hidden && (!paths[k].group || !pathGroups[paths[k].group!]?.hide))
         .sort(sortByOrdering(paths, pathGroups));
 }

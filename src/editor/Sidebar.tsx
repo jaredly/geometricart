@@ -1,13 +1,13 @@
 /* @jsx jsx */
 /* @jsxFrag React.Fragment */
-import { jsx } from '@emotion/react';
-import { diff } from 'json-diff-ts';
+import {jsx} from '@emotion/react';
+import {diff} from 'json-diff-ts';
 import React from 'react';
-import { PendingMirror } from '../useUIState';
-import { Action, UndoAction } from '../state/Action';
-import { initialState } from '../state/initialState';
-import { Id, Selection, State } from '../types';
-import { getStateFromFile } from './useDropTarget';
+import {PendingMirror} from '../useUIState';
+import {Action, UndoAction} from '../state/Action';
+import {initialState} from '../state/initialState';
+import {Id, Selection, State} from '../types';
+import {getStateFromFile} from './useDropTarget';
 
 export const PREFIX = `<!-- STATE:`;
 export const SUFFIX = '-->';
@@ -18,12 +18,12 @@ export type Hover =
           kind: Selection['type'] | 'Clip' | 'Tiling';
           id: Id;
       }
-    | { type: 'guides' };
+    | {type: 'guides'; ids?: string[]};
 
 export type TabProps = {
     state: State;
     dispatch: (action: Action) => unknown;
-    canvasRef: { current: SVGSVGElement | null };
+    canvasRef: {current: SVGSVGElement | null};
     hover: Hover | null;
     width: number;
     height: number;
@@ -36,29 +36,19 @@ export const showDiff = (diff: any[]) => {
         item.type === 'UPDATE'
             ? `Update ${item.key}`
             : item.type === 'REMOVE'
-            ? `Remove ${item.key}`
-            : '',
+              ? `Remove ${item.key}`
+              : '',
     );
 };
 
-export const UndoItem = ({ item }: { item: UndoAction }) => {
+export const UndoItem = ({item}: {item: UndoAction}) => {
     switch (item.type) {
         case 'view:update':
-            return (
-                <span>View: {showDiff(diff(item.action.view, item.prev))}</span>
-            );
+            return <span>View: {showDiff(diff(item.action.view, item.prev))}</span>;
         case 'overlay:update':
-            return (
-                <span>
-                    Overlay: {showDiff(diff(item.action.overlay, item.prev))}
-                </span>
-            );
+            return <span>Overlay: {showDiff(diff(item.action.overlay, item.prev))}</span>;
         case 'path:update:many':
-            return (
-                <span>
-                    Update {Object.keys(item.action.changed).length} paths
-                </span>
-            );
+            return <span>Update {Object.keys(item.action.changed).length} paths</span>;
     }
     return <span>{item.type}</span>;
 };
@@ -98,7 +88,7 @@ export const ReallyButton = ({
     );
 };
 
-export function Sidebar({ dispatch }: { dispatch: (action: Action) => void }) {
+export function Sidebar({dispatch}: {dispatch: (action: Action) => void}) {
     return (
         <div
             style={{
@@ -120,9 +110,9 @@ export function Sidebar({ dispatch }: { dispatch: (action: Action) => void }) {
                 >
                     <ReallyButton
                         label="Clear all"
-                        css={{ margin: 8 }}
+                        css={{margin: 8}}
                         onClick={() => {
-                            dispatch({ type: 'reset', state: initialState });
+                            dispatch({type: 'reset', state: initialState});
                         }}
                     />
                     Import project:{' '}
@@ -137,7 +127,7 @@ export function Sidebar({ dispatch }: { dispatch: (action: Action) => void }) {
                                 evt.target.files[0],
                                 (state) => {
                                     if (state) {
-                                        dispatch({ type: 'reset', state });
+                                        dispatch({type: 'reset', state});
                                     } else {
                                         alert(
                                             "Unable to parse state from image. Maybe this wasn't saved with project metadata?",

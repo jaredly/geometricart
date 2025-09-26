@@ -13,7 +13,7 @@ export const Tooltip = ({
     }
     return (
         <span
-            style={{ position: 'relative' }}
+            style={{position: 'relative'}}
             onMouseEnter={() => {
                 setShow(true);
             }}

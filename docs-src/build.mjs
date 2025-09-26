@@ -2,8 +2,8 @@ import esbuild from 'esbuild';
 import mdx from '@mdx-js/esbuild';
 import babel from '@babel/core';
 import generate from '@babel/generator';
-import annotate, { addFunctionMeta } from './annotate-trace.mjs';
-import { fileURLToPath } from 'url';
+import annotate, {addFunctionMeta} from './annotate-trace.mjs';
+import {fileURLToPath} from 'url';
 import path from 'path';
 import fs from 'fs';
 import t from '@babel/types';
@@ -14,7 +14,7 @@ const __dirname = path.dirname(__filename);
 const entry = __dirname + '/run.tsx';
 
 const walk = (dir, fn) => {
-    fs.readdirSync(dir, { withFileTypes: true }).forEach((value) => {
+    fs.readdirSync(dir, {withFileTypes: true}).forEach((value) => {
         if (value.isDirectory()) {
             walk(path.join(dir, value.name), fn);
         } else {
@@ -51,15 +51,13 @@ const myFancyPlugin = {
             const start = performance.now();
             program = ts.createProgram(
                 getAllTSFiles(),
-                JSON.parse(
-                    fs.readFileSync(__dirname + '/../tsconfig.json', 'utf8'),
-                ),
+                JSON.parse(fs.readFileSync(__dirname + '/../tsconfig.json', 'utf8')),
             );
             checker = program.getTypeChecker();
             console.log('Type checking took', performance.now() - start);
         });
 
-        build.onLoad({ filter: /.*.tsx?$/ }, async (args) => {
+        build.onLoad({filter: /.*.tsx?$/}, async (args) => {
             let contents = await fs.promises.readFile(args.path, 'utf8');
 
             const rel = path.relative(path.dirname(__dirname), args.path);
@@ -69,9 +67,7 @@ const myFancyPlugin = {
                     contents:
                         contents +
                         '\n\n' +
-                        generate.default(
-                            t.program(addFunctionMeta(contents, rel)),
-                        ).code,
+                        generate.default(t.program(addFunctionMeta(contents, rel))).code,
                     loader: 'ts' + (args.path.endsWith('x') ? 'x' : ''),
                 };
             }
@@ -111,16 +107,17 @@ await esbuild.build({
         'process.env.NODE_ENV': '"development"',
     },
     bundle: true,
-    plugins: [myFancyPlugin, mdx({ outputFormat: 'program' })],
+    plugins: [myFancyPlugin, mdx({outputFormat: 'program'})],
 });
 
 function makeWalker(checker, sf, types) {
     const walk = (node) => {
         const start = node.getStart();
-        const { line, character } = sf.getLineAndCharacterOfPosition(start);
+        const {line, character} = sf.getLineAndCharacterOfPosition(start);
 
         const expressionKinds = [
-            79, 104, 95, 110,
+            79, 104, 95,
+            110,
             // 6,7,8,9,63,78,87,91,93,110,120,121,123,124,141,142,14
         ];
         const exprMin = 202;

@@ -1,33 +1,17 @@
-import React, { useMemo } from 'react';
-import { useState } from 'react';
-import {
-    PointsEditor,
-    pointsPath,
-    pointsPathD,
-} from '../src/animation/PointsEditor';
-import {
-    timelineFunction,
-    timelineSegments,
-    TLSegment,
-    TLSegmentCurve,
-} from '../src/editor/Canvas';
-import {
-    createLookupTable,
-    evaluateBezier,
-    evaluateLookUpTable,
-} from '../src/lerp';
-import { Coord, LerpPoint } from '../src/types';
+import React, {useMemo} from 'react';
+import {useState} from 'react';
+import {PointsEditor, pointsPath, pointsPathD} from '../src/animation/PointsEditor';
+import {timelineFunction, timelineSegments, TLSegment, TLSegmentCurve} from '../src/editor/Canvas';
+import {createLookupTable, evaluateBezier, evaluateLookUpTable} from '../src/lerp';
+import {Coord, LerpPoint} from '../src/types';
 
 export const Timeline = () => {
     const [points, setPoints] = useState([] as Array<LerpPoint>);
     const size = 500;
 
-    let fn = useMemo(
-        () => timelineFunction({ points, type: 'float', range: [0, 1] }),
-        [points],
-    );
+    let fn = useMemo(() => timelineFunction({points, type: 'float', range: [0, 1]}), [points]);
     const segments = React.useMemo(() => {
-        const seg = timelineSegments({ points, type: 'float', range: [0, 1] });
+        const seg = timelineSegments({points, type: 'float', range: [0, 1]});
         console.log(seg);
         return seg;
     }, [points]);
@@ -46,7 +30,7 @@ export const Timeline = () => {
     const count = 80;
     for (let i = 0; i < count; i++) {
         const p = (i + 0.5) / count;
-        evaluated.push({ x: p * size, y: fn(p) * size });
+        evaluated.push({x: p * size, y: fn(p) * size});
     }
 
     return (

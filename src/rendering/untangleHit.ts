@@ -1,13 +1,6 @@
-import {
-    Angle,
-    backAngle,
-    isAngleBetweenAngles,
-    isInside,
-    negPiToPi,
-    sortAngles,
-} from './clipPath';
-import { anglesEqual } from './epsilonToZero';
-import { angleIsBetween, closeEnoughAngle } from './intersect';
+import {Angle, backAngle, isAngleBetweenAngles, isInside, negPiToPi, sortAngles} from './clipPath';
+import {anglesEqual} from './epsilonToZero';
+import {angleIsBetween, closeEnoughAngle} from './intersect';
 
 export class IntersectionError extends Error {
     basic: string;
@@ -89,16 +82,13 @@ export const findExit = (
     transitions: HitTransitions,
     entryId: number,
     biasInside: boolean | null,
-    exits: { [key: string]: SegmentIntersection },
+    exits: {[key: string]: SegmentIntersection},
 ): null | [SegmentIntersection, boolean | null] => {
     if (transitions.type === 'straight') {
         if (transitions.transition.entry.id !== entryId) {
             return null;
         }
-        return [
-            transitions.transition.exit,
-            transitions.transition.goingInside,
-        ];
+        return [transitions.transition.exit, transitions.transition.goingInside];
     } else if (transitions.type === 'cross') {
         const t = transitions.transitions.find((p) => p.entry.id === entryId);
         return t ? [t.exit, t.goingInside] : null;
@@ -154,7 +144,7 @@ type Cross = {
 };
 
 export type HitTransitions =
-    | { type: 'straight'; transition: Transition }
+    | {type: 'straight'; transition: Transition}
     | Cross
     // We don't know which entry is associated with which exit,
     // because the entries are the same.
@@ -171,9 +161,7 @@ export type Transition = {
     goingInside: boolean | null;
 };
 
-export const handleHitAmbiguity = ({
-    transitions: [one, two],
-}: Cross): HitTransitions => {
+export const handleHitAmbiguity = ({transitions: [one, two]}: Cross): HitTransitions => {
     // ok,
     // so actually once we have this cross,
     // we can just know inside and outside.
@@ -206,8 +194,8 @@ export const handleHitAmbiguity = ({
             return {
                 type: 'cross',
                 transitions: [
-                    { ...one, goingInside: null },
-                    { ...two, goingInside: null },
+                    {...one, goingInside: null},
+                    {...two, goingInside: null},
                 ],
             };
         }
@@ -225,16 +213,12 @@ export const handleHitAmbiguity = ({
         // AHH OK but we can, actually.
         // because one will be /coming from/ the outside.
         // const sort = sortAngles(one.entry.theta, two.entry.theta);
-        const oneInside = isInside(
-            one.entry.theta,
-            backAngle(one.exit.theta),
-            two.entry.theta,
-        );
+        const oneInside = isInside(one.entry.theta, backAngle(one.exit.theta), two.entry.theta);
         return {
             type: 'cross',
             transitions: [
-                { ...one, goingInside: !oneInside },
-                { ...two, goingInside: oneInside },
+                {...one, goingInside: !oneInside},
+                {...two, goingInside: oneInside},
             ],
         };
     }
@@ -246,18 +230,15 @@ export const handleHitAmbiguity = ({
     if (anglesEqual(two.entry.theta, backAngle(two.exit.theta))) {
         two.goingInside = null;
     }
-    return { type: 'cross', transitions: [one, two] };
+    return {type: 'cross', transitions: [one, two]};
 };
 
-export const untangleHit = (
-    entries: Array<SegmentIntersection>,
-    debug = false,
-): HitTransitions => {
+export const untangleHit = (entries: Array<SegmentIntersection>, debug = false): HitTransitions => {
     const sides: Array<HitSegment> = [];
     entries.forEach((entry) => {
         if (entry.enter) {
             sides.push({
-                kind: { type: 'enter' },
+                kind: {type: 'enter'},
                 entry,
                 // So, we could instead to `angleBetween(0, entry.theta + Math.PI, true)`
                 // which might more effectively normalize? idk.
@@ -267,7 +248,7 @@ export const untangleHit = (
         }
         if (entry.exit) {
             sides.push({
-                kind: { type: 'exit', goingInside: null },
+                kind: {type: 'exit', goingInside: null},
                 entry,
                 theta: entry.theta,
             });
@@ -282,12 +263,9 @@ export const untangleHit = (
     if (sides.length === 2) {
         const [a, b] = sides;
         if (a.kind.type === b.kind.type) {
-            throw new IntersectionError(
-                `both sides have same entry? ${a.kind.type}`,
-                entries,
-            );
+            throw new IntersectionError(`both sides have same entry? ${a.kind.type}`, entries);
         }
-        return { type: 'straight', transition: sidesPair(a, b) };
+        return {type: 'straight', transition: sidesPair(a, b)};
     }
     /**
      * So, going clockwise:
@@ -297,10 +275,7 @@ export const untangleHit = (
      */
     if (sides.length !== 4) {
         // console.log('sides', sides);
-        throw new IntersectionError(
-            `Sides neither 2 nor 4 ${sides.length}`,
-            entries,
-        );
+        throw new IntersectionError(`Sides neither 2 nor 4 ${sides.length}`, entries);
     }
 
     /**
@@ -357,9 +332,7 @@ export const untangleHit = (
 
     if (
         (a.kind.type === 'exit' && b.kind.type === 'enter') ||
-        (a.kind.type === 'enter' &&
-            b.kind.type === 'exit' &&
-            c.kind.type === 'exit')
+        (a.kind.type === 'enter' && b.kind.type === 'exit' && c.kind.type === 'exit')
     ) {
         return handleHitAmbiguity({
             type: 'cross',
@@ -381,7 +354,7 @@ export type Exit = {
  * Eh ok untangleHit could really use some unit tests.
  */
 export type HitSegment = {
-    kind: { type: 'enter' } | Exit;
+    kind: {type: 'enter'} | Exit;
     entry: SegmentIntersection;
     theta: Angle;
     // theta: number;
@@ -393,4 +366,4 @@ const sidesPair = (a: HitSegment, b: HitSegment): Transition =>
               exit: b.entry,
               goingInside: (b.kind as Exit).goingInside,
           }
-        : { entry: b.entry, exit: a.entry, goingInside: a.kind.goingInside };
+        : {entry: b.entry, exit: a.entry, goingInside: a.kind.goingInside};

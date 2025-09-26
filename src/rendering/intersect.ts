@@ -1,10 +1,10 @@
-import { isWithinLineLimit, zeroToTwoPi } from './clipPath';
-import { closeEnough } from './epsilonToZero';
-import { angleBetween, isAngleBetween } from './findNextSegments';
-import { angleTo, dist, push } from './getMirrorTransforms';
-import { Coord } from '../types';
-import { coordsEqual } from './pathsAreIdentical';
-import { numKey } from './coordKey';
+import {isWithinLineLimit, zeroToTwoPi} from './clipPath';
+import {closeEnough} from './epsilonToZero';
+import {angleBetween, isAngleBetween} from './findNextSegments';
+import {angleTo, dist, push} from './getMirrorTransforms';
+import {Coord} from '../types';
+import {coordsEqual} from './pathsAreIdentical';
+import {numKey} from './coordKey';
 
 // export const lineLine_ = (
 //     from1: Coord,
@@ -39,22 +39,13 @@ export const withinLimit = ([low, high]: [number, number], value: number) => {
 
 export const pointLine = (coord: Coord, line: SlopeIntercept) => {
     if (line.m === Infinity) {
-        return (
-            closeEnough(line.b, coord.x) &&
-            (!line.limit || withinLimit(line.limit, coord.y))
-        );
+        return closeEnough(line.b, coord.x) && (!line.limit || withinLimit(line.limit, coord.y));
     }
     if (line.m === 0) {
-        return (
-            closeEnough(line.b, coord.y) &&
-            (!line.limit || withinLimit(line.limit, coord.x))
-        );
+        return closeEnough(line.b, coord.y) && (!line.limit || withinLimit(line.limit, coord.x));
     }
     const y = line.m * coord.x + line.b;
-    return (
-        closeEnough(y, coord.y) &&
-        (!line.limit || withinLimit(line.limit, coord.x))
-    );
+    return closeEnough(y, coord.y) && (!line.limit || withinLimit(line.limit, coord.x));
 };
 
 export const lineLine = (one: SlopeIntercept, two: SlopeIntercept) => {
@@ -69,7 +60,7 @@ export const lineLine = (one: SlopeIntercept, two: SlopeIntercept) => {
         if (two.limit && !withinLimit(two.limit, one.b)) {
             return null;
         }
-        return { x: one.b, y: y };
+        return {x: one.b, y: y};
     }
     if (two.m === Infinity) {
         const y = one.m * two.b + one.b;
@@ -79,7 +70,7 @@ export const lineLine = (one: SlopeIntercept, two: SlopeIntercept) => {
         if (one.limit && !withinLimit(one.limit, two.b)) {
             return null;
         }
-        return { x: two.b, y: y };
+        return {x: two.b, y: y};
     }
     if (Math.abs(one.m - two.m) < epsilon) {
         return null;
@@ -115,29 +106,27 @@ const sq = (x: number) => x * x;
 export const epsilon = 0.000001;
 
 export const slopeToLine = (si: SlopeIntercept): [Coord, Coord] => {
-    if (!si.limit) {
-        throw new Error(
-            `cannot convert a si that doesn't have a limit back to a line`,
-        );
-    }
     if (si.m === Infinity) {
+        if (!si.limit) {
+            return [
+                {x: si.b, y: 0},
+                {x: si.b, y: 1},
+            ];
+        }
         return [
-            { x: si.b, y: si.limit[0] },
-            { x: si.b, y: si.limit[1] },
+            {x: si.b, y: si.limit[0]},
+            {x: si.b, y: si.limit[1]},
         ];
     }
+    const limit = si.limit ?? [0, 1];
     return [
-        { x: si.limit[0], y: si.m * si.limit[0] + si.b },
-        { x: si.limit[1], y: si.m * si.limit[1] + si.b },
+        {x: limit[0], y: si.m * limit[0] + si.b},
+        {x: limit[1], y: si.m * limit[1] + si.b},
     ];
 };
 
 // NOTE: if these two points are the same, we pretend it's a horizontal line.
-export const lineToSlope = (
-    p1: Coord,
-    p2: Coord,
-    limit?: boolean,
-): SlopeIntercept => {
+export const lineToSlope = (p1: Coord, p2: Coord, limit?: boolean): SlopeIntercept => {
     if (Math.abs(p1.y - p2.y) < epsilon) {
         return {
             type: 'line',
@@ -184,11 +173,7 @@ export type Primitive = SlopeIntercept | Circle;
 
 const close = (a: number, b: number) => Math.abs(a - b) < epsilon;
 
-export const intersections = (
-    one: Primitive,
-    two: Primitive,
-    debug = false,
-): Array<Coord> => {
+export const intersections = (one: Primitive, two: Primitive, debug = false): Array<Coord> => {
     if (one.type === 'line') {
         if (two.type === 'line') {
             if (closeEnough(one.m, two.m)) {
@@ -207,7 +192,7 @@ export const intersections = (
                         if (withinLimit(two.limit, one.limit[1])) {
                             res.push(one.limit[1]);
                         }
-                        const seen: { [key: string]: true } = {};
+                        const seen: {[key: string]: true} = {};
                         return res
                             .filter((v) => {
                                 const k = numKey(v);
@@ -218,8 +203,8 @@ export const intersections = (
                             })
                             .map((v) =>
                                 one.m === Infinity
-                                    ? { x: one.b, y: v }
-                                    : { x: v, y: one.m * v + one.b },
+                                    ? {x: one.b, y: v}
+                                    : {x: v, y: one.m * v + one.b},
                             );
                     }
                 }
@@ -235,11 +220,14 @@ export const intersections = (
     return circleCircle(one, two);
 };
 
+const ignoreColinearCircles = true;
+
 export const circleCircle = (one: Circle, two: Circle): Array<Coord> => {
-    if (
-        coordsEqual(one.center, two.center) &&
-        closeEnough(one.radius, two.radius)
-    ) {
+    if (coordsEqual(one.center, two.center) && closeEnough(one.radius, two.radius)) {
+        if (ignoreColinearCircles) {
+            return [];
+        }
+        // Actually I don't want this
         if (!one.limit && !two.limit) {
             return [];
         }
@@ -271,7 +259,7 @@ export const circleCircle = (one: Circle, two: Circle): Array<Coord> => {
         if (isAngleBetween(one.limit[0], two.limit[1], one.limit[1], true)) {
             angles.push(two.limit[1]);
         }
-        const seen: { [k: string]: true } = {};
+        const seen: {[k: string]: true} = {};
         return angles
             .filter((a) => {
                 const k = numKey(a);
@@ -292,20 +280,10 @@ export const circleCircle = (one: Circle, two: Circle): Array<Coord> => {
         one.limit || two.limit
             ? (pos: Coord) =>
                   (one.limit
-                      ? isAngleBetween(
-                            one.limit[0],
-                            angleTo(one.center, pos),
-                            one.limit[1],
-                            true,
-                        )
+                      ? isAngleBetween(one.limit[0], angleTo(one.center, pos), one.limit[1], true)
                       : true) &&
                   (two.limit
-                      ? isAngleBetween(
-                            two.limit[0],
-                            angleTo(two.center, pos),
-                            two.limit[1],
-                            true,
-                        )
+                      ? isAngleBetween(two.limit[0], angleTo(two.center, pos), two.limit[1], true)
                       : true)
             : (pos: Coord) => pos;
 
@@ -362,10 +340,7 @@ export const closeEnoughAngle = (one: number, two: number) => {
     return closeEnough(one, two);
 };
 
-export const angleIsBetween = (
-    angle: number,
-    [lower, upper]: [number, number],
-) => {
+export const angleIsBetween = (angle: number, [lower, upper]: [number, number]) => {
     const one = angleBetween(lower, angle, true);
     const two = angleBetween(lower, upper, true);
     return one <= two + epsilon;
@@ -373,10 +348,7 @@ export const angleIsBetween = (
 
 export const pointCircle = (point: Coord, circle: Circle) => {
     if (
-        !withinLimit(
-            [-circle.radius, circle.radius],
-            point.x - circle.center.x,
-        ) ||
+        !withinLimit([-circle.radius, circle.radius], point.x - circle.center.x) ||
         !withinLimit([-circle.radius, circle.radius], point.y - circle.center.y)
     ) {
         return false;
@@ -384,15 +356,14 @@ export const pointCircle = (point: Coord, circle: Circle) => {
     const d = dist(point, circle.center);
     return (
         closeEnough(d, circle.radius) &&
-        (!circle.limit ||
-            angleIsBetween(angleTo(circle.center, point), circle.limit))
+        (!circle.limit || angleIsBetween(angleTo(circle.center, point), circle.limit))
     );
 };
 
 // TODO: what to do about inf slope, no y intercept
 export function lineCircle(
-    { center: { x: cx, y: cy }, radius, limit: climit }: Circle,
-    { m: slope, b: intercept, limit }: SlopeIntercept,
+    {center: {x: cx, y: cy}, radius, limit: climit}: Circle,
+    {m: slope, b: intercept, limit}: SlopeIntercept,
     debug = false,
 ): Array<Coord> {
     // circle: (x - h)^2 + (y - k)^2 = r^2
@@ -411,7 +382,7 @@ export function lineCircle(
             if (limit && !withinLimit(limit, cy)) {
                 return [];
             }
-            return [{ x: intercept, y: cy }];
+            return [{x: intercept, y: cy}];
         }
 
         // Outside the radius
@@ -423,14 +394,12 @@ export function lineCircle(
             console.log('yes inf');
         }
         return [
-            { x: intercept, y: cy + y },
-            { x: intercept, y: cy - y },
+            {x: intercept, y: cy + y},
+            {x: intercept, y: cy - y},
         ].filter(
             (p) =>
                 (!limit || withinLimit(limit, p.y)) &&
-                (climit
-                    ? angleIsBetween(angleTo({ x: cx, y: cy }, p), climit)
-                    : true),
+                (climit ? angleIsBetween(angleTo({x: cx, y: cy}, p), climit) : true),
         );
     }
 
@@ -476,23 +445,14 @@ export function lineCircle(
             if (limit && !withinLimit(limit, cx)) {
                 return [];
             }
-            if (
-                climit &&
-                !angleIsBetween(
-                    angleTo({ x: cx, y: cy }, { x: cx, y: intercept }),
-                    climit,
-                )
-            ) {
+            if (climit && !angleIsBetween(angleTo({x: cx, y: cy}, {x: cx, y: intercept}), climit)) {
                 return [];
             }
-            return [{ x: cx, y: intercept }];
+            return [{x: cx, y: intercept}];
         }
     } else {
         // passing through origin of circle, perpendicular to line
-        const fromCircle = lineToSlope(
-            { x: cx, y: cy },
-            { x: cx + 1, y: cy - 1 / slope },
-        );
+        const fromCircle = lineToSlope({x: cx, y: cy}, {x: cx + 1, y: cy - 1 / slope});
 
         const intersection = lineLine(fromCircle, {
             type: 'line',
@@ -503,18 +463,12 @@ export function lineCircle(
         if (
             intersection &&
             // We're tangent!
-            close(dist({ x: cx, y: cy }, intersection), radius)
+            close(dist({x: cx, y: cy}, intersection), radius)
         ) {
-            if (
-                limit &&
-                !(limit[0] <= intersection.x && intersection.x <= limit[1])
-            ) {
+            if (limit && !(limit[0] <= intersection.x && intersection.x <= limit[1])) {
                 return [];
             }
-            if (
-                climit &&
-                !angleIsBetween(angleTo({ x: cx, y: cy }, intersection), climit)
-            ) {
+            if (climit && !angleIsBetween(angleTo({x: cx, y: cy}, intersection), climit)) {
                 return [];
             }
             return [intersection];
@@ -536,33 +490,20 @@ export function lineCircle(
     var d = sq(b) - 4 * a * c;
     if (d >= 0) {
         // insert into quadratic formula
-        var intersections = [
-            (-b + Math.sqrt(d)) / (2 * a),
-            (-b - Math.sqrt(d)) / (2 * a),
-        ].map((x) => ({ x, y: slope * x + intercept }));
+        let intersections = [(-b + Math.sqrt(d)) / (2 * a), (-b - Math.sqrt(d)) / (2 * a)].map(
+            (x) => ({x, y: slope * x + intercept}),
+        );
         if (d == 0) {
-            if (
-                limit &&
-                !(
-                    limit[0] <= intersections[0].x &&
-                    intersections[0].x <= limit[1]
-                )
-            ) {
+            if (limit && !(limit[0] <= intersections[0].x && intersections[0].x <= limit[1])) {
                 return [];
             }
-            if (
-                climit &&
-                !angleIsBetween(
-                    angleTo({ x: cx, y: cy }, intersections[0]),
-                    climit,
-                )
-            ) {
+            if (climit && !angleIsBetween(angleTo({x: cx, y: cy}, intersections[0]), climit)) {
                 return [];
             }
             // only 1 intersection
             return [intersections[0]];
         }
-        const center = { x: cx, y: cy };
+        const center = {x: cx, y: cy};
         if (debug) {
             console.log(
                 `Here we are`,

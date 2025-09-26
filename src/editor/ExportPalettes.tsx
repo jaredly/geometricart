@@ -1,22 +1,16 @@
 /* @jsx jsx */
-import { jsx } from '@emotion/react';
+import {jsx} from '@emotion/react';
 import React from 'react';
-import { Action } from '../state/Action';
+import {Action} from '../state/Action';
 
-export const generatePaletteSvg = (palettes: {
-    [key: string]: Array<string>;
-}) => {
+export const generatePaletteSvg = (palettes: {[key: string]: Array<string>}) => {
     const size = 20;
     const padding = 10;
     const xmargin = 0;
     const ymargin = 5;
-    const maxSize = Object.keys(palettes).reduce(
-        (m, k) => Math.max(m, palettes[k].length),
-        0,
-    );
+    const maxSize = Object.keys(palettes).reduce((m, k) => Math.max(m, palettes[k].length), 0);
     const width = maxSize * (size + xmargin) + padding * 2 - xmargin;
-    const height =
-        Object.keys(palettes).length * (size + ymargin) + padding * 2 - ymargin;
+    const height = Object.keys(palettes).length * (size + ymargin) + padding * 2 - ymargin;
 
     return `<svg
                 width="${width}"
@@ -45,7 +39,7 @@ export const ImportPalettes = ({
     palettes,
 }: {
     dispatch: (action: Action) => void;
-    palettes: { [key: string]: Array<string> };
+    palettes: {[key: string]: Array<string>};
 }) => {
     return (
         <div>
@@ -70,11 +64,7 @@ export const ImportPalettes = ({
     );
 };
 
-export const ExportPalettes = ({
-    palettes,
-}: {
-    palettes: { [key: string]: Array<string> };
-}) => {
+export const ExportPalettes = ({palettes}: {palettes: {[key: string]: Array<string>}}) => {
     const [url, setUrl] = React.useState(null as null | string);
     React.useEffect(() => {
         const blob = new Blob([generatePaletteSvg(palettes)], {
@@ -108,8 +98,8 @@ export const ExportPalettes = ({
 };
 
 export function importPalettes(
-    palettes: { [key: string]: string[] },
-    data: { [key: string]: string[] },
+    palettes: {[key: string]: string[]},
+    data: {[key: string]: string[]},
     dispatch: (action: Action) => void,
 ) {
     const have = Object.keys(palettes).map((k) => palettes[k].join(';;'));
@@ -137,7 +127,7 @@ export function getPalettesFromFile(
     // palettes: { [key: string]: string[] },
     // dispatch: (action: Action) => void,
     file: File,
-    done: (palettes: { [key: string]: Array<string> }) => void,
+    done: (palettes: {[key: string]: Array<string>}) => void,
 ) {
     const reader = new FileReader();
     reader.onload = () => {
@@ -149,9 +139,7 @@ export function getPalettesFromFile(
         if (!last.startsWith(`<!-- PALETTES:`) || !last.endsWith(`-->`)) {
             return;
         }
-        const data = JSON.parse(
-            last.slice(`<!-- PALETTES:`.length, -'-->'.length),
-        );
+        const data = JSON.parse(last.slice(`<!-- PALETTES:`.length, -'-->'.length));
         done(data);
     };
     reader.readAsText(file);

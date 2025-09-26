@@ -8,10 +8,10 @@
 import path from 'path';
 // @ts-ignore
 import fs from 'fs';
-import { Config } from './types';
-import { run } from './App';
-import { deserializeFixture, deserializeFixtures } from './utils';
-import { deepRoundFloats } from '../rendering/deepEqual';
+import {Config} from './types';
+import {run} from './App';
+import {deserializeFixture, deserializeFixtures} from './utils';
+import {deepRoundFloats} from '../rendering/deepEqual';
 
 export class IncompleteFixture extends Error {}
 
@@ -28,15 +28,11 @@ export const jestTests = <I, O>(config: Config<I, O>) => {
             // @ts-ignore
             it(`Fixture ${fixture.name}`, () => {
                 if (!fixture.isPassing) {
-                    throw new IncompleteFixture(
-                        `No passing output for ${fixture.name}`,
-                    );
+                    throw new IncompleteFixture(`No passing output for ${fixture.name}`);
                 }
                 const output: O = config.transform(fixture.input);
                 // @ts-ignore
-                expect(deepRoundFloats(output)).toEqual(
-                    deepRoundFloats(fixture.output),
-                );
+                expect(deepRoundFloats(output)).toEqual(deepRoundFloats(fixture.output));
             });
         });
     });

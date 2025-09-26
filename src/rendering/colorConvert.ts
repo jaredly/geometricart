@@ -9,11 +9,7 @@
  * @param   Number  b       The blue color value
  * @return  Array           The HSL representation
  */
-export function rgbToHsl(
-    r: number,
-    g: number,
-    b: number,
-): [number, number, number] {
+export function rgbToHsl(r: number, g: number, b: number): [number, number, number] {
     (r /= 255), (g /= 255), (b /= 255);
 
     var max = Math.max(r, g, b),

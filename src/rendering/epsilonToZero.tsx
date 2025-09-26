@@ -1,5 +1,5 @@
-import { closeEnoughAngle, epsilon } from './intersect';
-import { Angle } from './clipPath';
+import {closeEnoughAngle, epsilon} from './intersect';
+import {Angle} from './clipPath';
 
 // export const anglesEqual = (one: Angle, two: Angle): boolean => {
 //     if (one.type !== two.type) {
@@ -32,5 +32,4 @@ export const anglesEqual = (one: Angle, two: Angle) => {
 };
 // ok folks, here's what we're doing
 
-export const epsilonToZero = (value: number) =>
-    Math.abs(value) < epsilon ? 0 : value;
+export const epsilonToZero = (value: number) => (Math.abs(value) < epsilon ? 0 : value);

@@ -1,12 +1,12 @@
 import React from 'react';
-import { jsx } from '@emotion/react';
-import { useEffect, useRef } from 'react';
-import { Coord, Tiling } from './types';
-import { handleTiling } from './editor/handleTiling';
-import { eigenShapesToLines } from './editor/tilingPoints';
-import { plerp } from './Morph';
+import {jsx} from '@emotion/react';
+import {useEffect, useRef} from 'react';
+import {Coord, Tiling} from './types';
+import {handleTiling} from './editor/handleTiling';
+import {eigenShapesToLines} from './editor/tilingPoints';
+import {plerp} from './Morph';
 
-export const TwoPass = ({ one, two }: { one: Tiling; two: Tiling }) => {
+export const TwoPass = ({one, two}: {one: Tiling; two: Tiling}) => {
     const canvas = useRef<HTMLCanvasElement>(null);
     const size = 1000;
 
@@ -64,14 +64,12 @@ export const TwoPass = ({ one, two }: { one: Tiling; two: Tiling }) => {
             });
 
             ctx.strokeStyle = 'red';
-            eigenShapesToLines(lerped, one.shape, onez.tr, onez.bounds).forEach(
-                ([p0, p1], i) => {
-                    ctx.beginPath();
-                    ctx.moveTo(p0.x, p0.y);
-                    ctx.lineTo(p1.x, p1.y);
-                    ctx.stroke();
-                },
-            );
+            eigenShapesToLines(lerped, one.shape, onez.tr, onez.bounds).forEach(([p0, p1], i) => {
+                ctx.beginPath();
+                ctx.moveTo(p0.x, p0.y);
+                ctx.lineTo(p1.x, p1.y);
+                ctx.stroke();
+            });
 
             ctx.restore();
         };

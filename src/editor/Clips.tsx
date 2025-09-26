@@ -1,15 +1,15 @@
 /* @jsx jsx */
 /* @jsxFrag React.Fragment */
-import { jsx } from '@emotion/react';
+import {jsx} from '@emotion/react';
 import React from 'react';
-import { State } from '../types';
-import { Action } from '../state/Action';
-import { selectedPathIds } from './touchscreenControls';
-import { itemStyle } from '../sidebar/NewSidebar';
-import { Checkbox } from 'primereact/checkbox';
-import { Hover } from './Sidebar';
-import { Button } from 'primereact/button';
-import { MagicWandIcon, ScissorsCuttingIcon } from '../icons/Icon';
+import {State} from '../types';
+import {Action} from '../state/Action';
+import {selectedPathIds} from './touchscreenControls';
+import {itemStyle} from '../sidebar/NewSidebar';
+import {Checkbox} from 'primereact/checkbox';
+import {Hover} from './Sidebar';
+import {Button} from 'primereact/button';
+import {MagicWandIcon, ScissorsCuttingIcon} from '../icons/Icon';
 
 export function Clips({
     state,
@@ -28,9 +28,7 @@ export function Clips({
                     key={id}
                     className="field-radiobutton hover"
                     style={itemStyle(false)}
-                    onMouseEnter={() =>
-                        setHover({ type: 'element', kind: 'Clip', id })
-                    }
+                    onMouseEnter={() => setHover({type: 'element', kind: 'Clip', id})}
                     onMouseLeave={() => setHover(null)}
                 >
                     <Checkbox
@@ -83,7 +81,7 @@ export function Clips({
                     />
                     InsetBefore
                     <Checkbox
-                        checked={state.clips[id].defaultInsetBefore}
+                        checked={!!state.clips[id].defaultInsetBefore}
                         inputId={id}
                         onClick={(evt) => evt.stopPropagation()}
                         onChange={(evt) => {
@@ -93,15 +91,14 @@ export function Clips({
                                 id,
                                 clip: {
                                     ...state.clips[id],
-                                    defaultInsetBefore:
-                                        !state.clips[id].defaultInsetBefore,
+                                    defaultInsetBefore: !state.clips[id].defaultInsetBefore,
                                 },
                             });
                         }}
                         name="mirror"
                         value={id}
                     />
-                    <div style={{ flex: 1 }} />
+                    <div style={{flex: 1}} />
                     {state.clips[id].active ? (
                         <>
                             <Button
@@ -112,12 +109,10 @@ export function Clips({
                                     dispatch({
                                         type: 'path:create',
                                         segments: clip.shape,
-                                        origin: clip.shape[
-                                            clip.shape.length - 1
-                                        ].to,
+                                        origin: clip.shape[clip.shape.length - 1].to,
                                     });
                                 }}
-                                tooltipOptions={{ position: 'left' }}
+                                tooltipOptions={{position: 'left'}}
                                 className="p-button-text"
                                 style={{
                                     marginTop: -7,
@@ -129,9 +124,9 @@ export function Clips({
                             <Button
                                 tooltip="Cut to current clip"
                                 onClick={() => {
-                                    dispatch({ type: 'clip:cut', clip: id });
+                                    dispatch({type: 'clip:cut', clip: id});
                                 }}
-                                tooltipOptions={{ position: 'left' }}
+                                tooltipOptions={{position: 'left'}}
                                 className="p-button-text"
                                 style={{
                                     marginTop: -7,

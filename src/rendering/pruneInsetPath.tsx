@@ -1,8 +1,8 @@
-import { Coord, Segment } from '../types';
-import { isClockwise } from './pathToPoints';
-import { intersections, Primitive } from './intersect';
-import { coordsEqual } from './pathsAreIdentical';
-import { pathToPrimitives } from '../editor/findSelection';
+import {Coord, Segment} from '../types';
+import {isClockwise} from './pathToPoints';
+import {intersections, Primitive} from './intersect';
+import {coordsEqual} from './pathsAreIdentical';
+import {pathToPrimitives} from '../editor/findSelection';
 import {
     Clippable,
     getAngle,
@@ -11,8 +11,8 @@ import {
     isInside,
     sortHitsForPrimitive,
 } from './clipPath';
-import { anglesEqual } from './epsilonToZero';
-import { coordKey } from './coordKey';
+import {anglesEqual} from './epsilonToZero';
+import {coordKey} from './coordKey';
 
 /*
 
@@ -49,31 +49,23 @@ export const pruneInsetPath = (
         return [];
     }
     const primitives = pathToPrimitives(segments);
-    const hits: Array<Array<Hit>> = new Array(segments.length)
-        .fill([])
-        .map((m) => []);
+    const hits: Array<Array<Hit>> = new Array(segments.length).fill([]).map((m) => []);
     const allHits: Array<Hit> = [];
     for (let i = 0; i < segments.length; i++) {
-        const previ =
-            i === 0 ? segments[segments.length - 1].to : segments[i - 1].to;
+        const previ = i === 0 ? segments[segments.length - 1].to : segments[i - 1].to;
         for (let j = i + 1; j < segments.length; j++) {
-            const prevj =
-                j === 0 ? segments[segments.length - 1].to : segments[j - 1].to;
+            const prevj = j === 0 ? segments[segments.length - 1].to : segments[j - 1].to;
             const these = intersections(primitives[i], primitives[j]);
             these.forEach((coord) => {
-                const iend =
-                    coordsEqual(coord, previ) ||
-                    coordsEqual(coord, segments[i].to);
-                const jend =
-                    coordsEqual(coord, prevj) ||
-                    coordsEqual(coord, segments[j].to);
+                const iend = coordsEqual(coord, previ) || coordsEqual(coord, segments[i].to);
+                const jend = coordsEqual(coord, prevj) || coordsEqual(coord, segments[j].to);
                 // This is just two segments meeting. no big deal.
                 // Note that if we managed to get in a place where four lines met in the same place,
                 // this logic would break. here's hoping.
                 if (iend && jend) {
                     return;
                 }
-                const hit = { first: i, second: j, coord, idx: 0 };
+                const hit = {first: i, second: j, coord, idx: 0};
                 hits[i].push(hit);
                 hits[j].push(hit);
                 allHits.push(hit);
@@ -88,11 +80,9 @@ export const pruneInsetPath = (
         return [segments];
     }
 
-    const sorted = hits.map((hits, i) =>
-        sortHitsForPrimitive(hits, primitives[i], segments[i]),
-    );
+    const sorted = hits.map((hits, i) => sortHitsForPrimitive(hits, primitives[i], segments[i]));
 
-    const seen: { [key: string]: true } = {};
+    const seen: {[key: string]: true} = {};
 
     // const clippable: Clippable = {
     // 	segments,
@@ -114,10 +104,7 @@ export const pruneInsetPath = (
 
         const addSegment = (segment: Segment) => {
             const key = coordKey(segment.to);
-            if (
-                path.length &&
-                coordsEqual(path[path.length - 1].to, segment.to)
-            ) {
+            if (path.length && coordsEqual(path[path.length - 1].to, segment.to)) {
                 // skip immediate duplicate, probably at start or end
                 return;
             }
@@ -133,10 +120,7 @@ export const pruneInsetPath = (
         let at = startPos;
         let bad = false;
 
-        while (
-            (!path.length || !coordsEqual(path[path.length - 1].to, start)) &&
-            allHits.length
-        ) {
+        while ((!path.length || !coordsEqual(path[path.length - 1].to, start)) && allHits.length) {
             const next = at.intersection + 1;
             if (next >= sorted[at.segment].length) {
                 addSegment(segments[at.segment]);
@@ -150,7 +134,7 @@ export const pruneInsetPath = (
 
             const hit = sorted[at.segment][next];
 
-            addSegment({ ...segments[at.segment], to: hit.coord });
+            addSegment({...segments[at.segment], to: hit.coord});
 
             if (hit === startHit) {
                 // success!
@@ -175,7 +159,7 @@ export const pruneInsetPath = (
                 allHits.splice(hidx, 1);
             }
 
-            at = { segment, intersection: sorted[segment].indexOf(hit) };
+            at = {segment, intersection: sorted[segment].indexOf(hit)};
         }
 
         if (bad) {
@@ -188,7 +172,7 @@ export const pruneInsetPath = (
     return pruned;
 };
 
-export type Hit = { first: number; second: number; coord: Coord; idx: number };
+export type Hit = {first: number; second: number; coord: Coord; idx: number};
 
 export const getClockwiseExit = (
     sorted: Array<Array<Hit>>,

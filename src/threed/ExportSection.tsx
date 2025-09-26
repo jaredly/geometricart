@@ -1,15 +1,15 @@
 import '@react-three/fiber';
-import React, { useState } from 'react';
-import { State } from '../types';
-import { addMetadata } from '../editor/ExportPng';
-import { initialHistory } from '../state/initialState';
-import { serializeObj } from './serialize-obj';
-import { inToPX, mmToPX, pxToIn, pxToMM } from '../gcode/generateGcode';
-import { BlurInt } from '../editor/Forms';
+import React, {useState} from 'react';
+import {State} from '../types';
+import {addMetadata} from '../editor/ExportPng';
+import {initialHistory} from '../state/initialState';
+import {serializeObj} from './serialize-obj';
+import {inToPX, mmToPX, pxToIn, pxToMM} from '../gcode/generateGcode';
+import {BlurInt} from '../editor/Forms';
 
 type SVGPath = {
     svg: string;
-    bounds: { x: number; y: number; w: number; h: number };
+    bounds: {x: number; y: number; w: number; h: number};
 };
 
 export const ExportSection = ({
@@ -19,7 +19,7 @@ export const ExportSection = ({
     backs,
     covers,
 }: {
-    canv: { current: HTMLCanvasElement | null };
+    canv: {current: HTMLCanvasElement | null};
     backs: SVGPath[];
     covers: SVGPath[];
     state: State;
@@ -53,21 +53,14 @@ export const ExportSection = ({
 
                         let off = 0;
                         const res = stls
-                            .map(({ cells, positions }, i) => {
-                                const txt = serializeObj(
-                                    cells,
-                                    positions,
-                                    `item_${i}`,
-                                    off,
-                                );
+                            .map(({cells, positions}, i) => {
+                                const txt = serializeObj(cells, positions, `item_${i}`, off);
                                 off += positions.length;
                                 return txt;
                             })
                             .join('\n');
 
-                        node.href = URL.createObjectURL(
-                            new Blob([res], { type: 'text/plain' }),
-                        );
+                        node.href = URL.createObjectURL(new Blob([res], {type: 'text/plain'}));
                         node.click();
                     }}
                 >
@@ -77,19 +70,12 @@ export const ExportSection = ({
             {exurl ? (
                 <div>
                     <a href={exurl} download={`render-${Date.now()}.png`}>
-                        <img
-                            src={exurl}
-                            style={{ maxWidth: 200, maxHeight: 200 }}
-                        />
+                        <img src={exurl} style={{maxWidth: 200, maxHeight: 200}} />
                     </a>
                     <button onClick={() => setExport(null)}>Clear</button>
                 </div>
             ) : null}
-            <SVGPlates
-                paths={backs}
-                ppi={state.meta.ppi}
-                title={state.meta.title || 'pattern'}
-            />
+            <SVGPlates paths={backs} ppi={state.meta.ppi} title={state.meta.title || 'pattern'} />
             <SVGPlates
                 paths={covers}
                 ppi={state.meta.ppi}
@@ -112,12 +98,12 @@ const groupPaths = (
         x: number;
         y: number;
         y1: number;
-    }[] = [{ items: [], x: margin, y: margin, y1: margin * 2 }];
+    }[] = [{items: [], x: margin, y: margin, y1: margin * 2}];
     for (let path of paths) {
         let last = grouped[grouped.length - 1];
         if (last.x + path.bounds.w > width) {
             if (last.y1 + path.bounds.h > height) {
-                last = { items: [], x: margin, y: margin, y1: margin * 2 };
+                last = {items: [], x: margin, y: margin, y1: margin * 2};
                 grouped.push(last);
             } else {
                 last.y = last.y1;
@@ -126,9 +112,7 @@ const groupPaths = (
         }
         last.items.push(
             <path
-                transform={`translate(${last.x - path.bounds.x} ${
-                    last.y - path.bounds.y
-                })`}
+                transform={`translate(${last.x - path.bounds.x} ${last.y - path.bounds.y})`}
                 key={last.items.length}
                 d={path.svg}
                 stroke="red"
@@ -142,15 +126,7 @@ const groupPaths = (
     return grouped;
 };
 
-const SVGPlates = ({
-    paths,
-    ppi,
-    title,
-}: {
-    title: string;
-    paths: SVGPath[];
-    ppi: number;
-}) => {
+const SVGPlates = ({paths, ppi, title}: {title: string; paths: SVGPath[]; ppi: number}) => {
     const [width, setWidth] = useState(10);
     const [height, setHeight] = useState(8);
     const [marginMM, setMarginMM] = useState(3);
@@ -167,26 +143,17 @@ const SVGPlates = ({
         <div>
             <label>
                 Width
-                <BlurInt
-                    value={width}
-                    onChange={(w) => (w != null ? setWidth(w) : null)}
-                />
+                <BlurInt value={width} onChange={(w) => (w != null ? setWidth(w) : null)} />
                 in
             </label>
-            <label style={{ marginLeft: 8 }}>
+            <label style={{marginLeft: 8}}>
                 Height
-                <BlurInt
-                    value={height}
-                    onChange={(v) => (v != null ? setHeight(v) : null)}
-                />
+                <BlurInt value={height} onChange={(v) => (v != null ? setHeight(v) : null)} />
                 in
             </label>
-            <label style={{ marginLeft: 8 }}>
+            <label style={{marginLeft: 8}}>
                 Margin
-                <BlurInt
-                    value={marginMM}
-                    onChange={(v) => (v != null ? setMarginMM(v) : null)}
-                />
+                <BlurInt value={marginMM} onChange={(v) => (v != null ? setMarginMM(v) : null)} />
                 mm
             </label>
             <div>
@@ -197,10 +164,7 @@ const SVGPlates = ({
                         height={`${height}in`}
                         onClick={downloadSvg(title)}
                         xmlns="http://www.w3.org/2000/svg"
-                        viewBox={`${0} ${0} ${inToPX(width, ppi)} ${inToPX(
-                            height,
-                            ppi,
-                        )}`}
+                        viewBox={`${0} ${0} ${inToPX(width, ppi)} ${inToPX(height, ppi)}`}
                         style={{
                             margin: 8,
                             outline: '1px solid magenta',
@@ -216,13 +180,12 @@ const SVGPlates = ({
     );
 };
 
-const downloadSvg =
-    (name: string) => (evt: React.MouseEvent<SVGSVGElement>) => {
-        const data = evt.currentTarget.outerHTML;
-        const blob = new Blob([data], { type: 'image/svg+xml' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.download = `${name}-${Date.now()}.svg`;
-        a.href = url;
-        a.click();
-    };
+const downloadSvg = (name: string) => (evt: React.MouseEvent<SVGSVGElement>) => {
+    const data = evt.currentTarget.outerHTML;
+    const blob = new Blob([data], {type: 'image/svg+xml'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.download = `${name}-${Date.now()}.svg`;
+    a.href = url;
+    a.click();
+};

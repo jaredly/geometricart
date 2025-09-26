@@ -1,13 +1,13 @@
-import { Coord, Path, Segment } from '../types';
-import { isClockwise, reversePath, totalAngle } from './pathToPoints';
-import { angleTo } from './getMirrorTransforms';
-import { closeEnoughAngle, epsilon } from './intersect';
-import { clipTwo, HitLocation } from './clipPath';
-import { closeEnough } from './epsilonToZero';
-import { isLargeArc } from '../editor/RenderPendingPath';
-import { Hit } from './pruneInsetPath';
-import { insetSegment } from './insetSegment';
-import { simplifyPath } from './simplifyPath';
+import {Coord, Path, Segment} from '../types';
+import {isClockwise, reversePath, totalAngle} from './pathToPoints';
+import {angleTo} from './getMirrorTransforms';
+import {closeEnoughAngle, epsilon} from './intersect';
+import {clipTwo, HitLocation} from './clipPath';
+import {closeEnough} from './epsilonToZero';
+import {isLargeArc} from '../editor/RenderPendingPath';
+import {Hit} from './pruneInsetPath';
+import {insetSegment} from './insetSegment';
+import {simplifyPath} from './simplifyPath';
 
 type Pos = HitLocation;
 
@@ -120,12 +120,7 @@ type Pos = HitLocation;
 //     return result;
 // };
 
-export const hasReversed = (
-    one: Segment,
-    onep: Coord,
-    two: Segment,
-    twop: Coord,
-) => {
+export const hasReversed = (one: Segment, onep: Coord, two: Segment, twop: Coord) => {
     if (
         one.type === 'Arc' &&
         two.type === 'Arc' &&

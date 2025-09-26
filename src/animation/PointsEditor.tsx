@@ -1,7 +1,7 @@
 import React from 'react';
-import { LerpPoint, Coord } from '../types';
+import {LerpPoint, Coord} from '../types';
 
-export const mulPos = (a: Coord, b: Coord) => ({ x: a.x * b.x, y: a.y * b.y });
+export const mulPos = (a: Coord, b: Coord) => ({x: a.x * b.x, y: a.y * b.y});
 
 export const PointsEditor = ({
     current,
@@ -10,19 +10,13 @@ export const PointsEditor = ({
 }: {
     current: Array<LerpPoint>;
     // setCurrent: (p: Array<TimelinePoint>) => void;
-    setCurrentInner: (
-        p: Array<LerpPoint> | ((p: Array<LerpPoint>) => Array<LerpPoint>),
-    ) => void;
+    setCurrentInner: (p: Array<LerpPoint> | ((p: Array<LerpPoint>) => Array<LerpPoint>)) => void;
 }) => {
     // const [current, setCurrentInner] = React.useState(
     //     normalizePoints(points, 0, 1),
     // );
     const setCurrent = React.useCallback(
-        (
-            points:
-                | Array<LerpPoint>
-                | ((p: Array<LerpPoint>) => Array<LerpPoint>),
-        ) => {
+        (points: Array<LerpPoint> | ((p: Array<LerpPoint>) => Array<LerpPoint>)) => {
             if (typeof points === 'function') {
                 setCurrentInner((p) => normalizePoints(points(p), 0, 1));
             } else {
@@ -38,16 +32,13 @@ export const PointsEditor = ({
     const height = 500;
     // const scale = { x: width, y: height };
     // const normalized = normalizePoints(current, 0, 1);
-    const evtPos = React.useCallback(
-        (evt: { clientX: number; clientY: number }) => {
-            const box = svg.current!.getBoundingClientRect();
-            return {
-                x: (evt.clientX - box.left - 10) / width,
-                y: (evt.clientY - box.top - 10) / height,
-            };
-        },
-        [],
-    );
+    const evtPos = React.useCallback((evt: {clientX: number; clientY: number}) => {
+        const box = svg.current!.getBoundingClientRect();
+        return {
+            x: (evt.clientX - box.left - 10) / width,
+            y: (evt.clientY - box.top - 10) / height,
+        };
+    }, []);
 
     const changePoint = (point: LerpPoint, i: number) =>
         setCurrent((c) => {
@@ -68,7 +59,7 @@ export const PointsEditor = ({
     //     { pos: { x: width, y: 0 } },
     // ]).join(' ');
     const [moving, setMoving] = React.useState(
-        null as null | { i: number; which: 'pos' | 'leftCtrl' | 'rightCtrl' },
+        null as null | {i: number; which: 'pos' | 'leftCtrl' | 'rightCtrl'},
     );
     React.useEffect(() => {
         if (!moving) {
@@ -123,7 +114,7 @@ export const PointsEditor = ({
                         return;
                     }
                     const pos = evtPos(evt);
-                    setCurrent(current.concat([{ pos }]));
+                    setCurrent(current.concat([{pos}]));
                 }}
             >
                 <path d={path} stroke="red" strokeWidth={1} fill="none" />
@@ -158,7 +149,7 @@ export const PointsEditor = ({
                             onMouseDown={(evt) => {
                                 evt.stopPropagation();
                                 evt.preventDefault();
-                                setMoving({ i, which: 'pos' });
+                                setMoving({i, which: 'pos'});
                             }}
                             onClick={(evt) => {
                                 evt.stopPropagation();
@@ -170,7 +161,7 @@ export const PointsEditor = ({
                                 }
                                 if (evt.metaKey) {
                                     if (point.leftCtrl || point.rightCtrl) {
-                                        changePoint({ pos: point.pos }, i);
+                                        changePoint({pos: point.pos}, i);
                                     } else {
                                         changePoint(
                                             {
@@ -199,7 +190,7 @@ export const PointsEditor = ({
                                 onMouseDown={(evt) => {
                                     evt.preventDefault();
                                     evt.stopPropagation();
-                                    setMoving({ i, which: 'leftCtrl' });
+                                    setMoving({i, which: 'leftCtrl'});
                                 }}
                                 onClick={(evt) => {
                                     evt.stopPropagation();
@@ -239,7 +230,7 @@ export const PointsEditor = ({
                                     evt.preventDefault();
                                     evt.stopPropagation();
 
-                                    setMoving({ i, which: 'rightCtrl' });
+                                    setMoving({i, which: 'rightCtrl'});
                                 }}
                                 r={5}
                                 fill="green"
@@ -252,22 +243,18 @@ export const PointsEditor = ({
     );
 };
 
-export function pointsPathD(
-    height: number,
-    points: LerpPoint[],
-    width: number,
-) {
-    const scale = { x: width, y: height };
+export function pointsPathD(height: number, points: LerpPoint[], width: number) {
+    const scale = {x: width, y: height};
     const scaled: Array<LerpPoint> = points.map((p) => ({
         pos: mulPos(p.pos, scale),
         leftCtrl: p.leftCtrl ? mulPos(p.leftCtrl, scale) : undefined,
         rightCtrl: p.rightCtrl ? mulPos(p.rightCtrl, scale) : undefined,
     }));
     if (!scaled.length || scaled[0].pos.x > 0) {
-        scaled.unshift({ pos: { x: 0, y: 0 } });
+        scaled.unshift({pos: {x: 0, y: 0}});
     }
     if (!points.length || points[points.length - 1].pos.x < 1) {
-        scaled.push({ pos: { x: width, y: height } });
+        scaled.push({pos: {x: width, y: height}});
     }
     return pointsPath(scaled).join(' ');
 }
@@ -304,19 +291,13 @@ function normalizePoints(current: LerpPoint[], min: number, max: number) {
         let leftCtrl = point.leftCtrl
             ? {
                   ...point.leftCtrl,
-                  x: Math.min(
-                      0,
-                      Math.max(prev - point.pos.x, point.leftCtrl.x),
-                  ),
+                  x: Math.min(0, Math.max(prev - point.pos.x, point.leftCtrl.x)),
               }
             : undefined;
         let rightCtrl = point.rightCtrl
             ? {
                   ...point.rightCtrl,
-                  x: Math.max(
-                      0,
-                      Math.min(next - point.pos.x, point.rightCtrl.x),
-                  ),
+                  x: Math.max(0, Math.min(next - point.pos.x, point.rightCtrl.x)),
               }
             : undefined;
         return {

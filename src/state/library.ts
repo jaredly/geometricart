@@ -1,5 +1,5 @@
 import localforage from 'localforage';
-import { initialLibrary, Library } from '../types';
+import {initialLibrary, Library} from '../types';
 
 export const key = 'geometric-art:library';
 

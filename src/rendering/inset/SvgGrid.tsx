@@ -1,15 +1,10 @@
 import * as React from 'react';
 
-export const SvgGrid = ({ size }: { size: number }) => {
+export const SvgGrid = ({size}: {size: number}) => {
     return (
         <>
             <defs>
-                <pattern
-                    id="smallGrid"
-                    width={size}
-                    height={size}
-                    patternUnits="userSpaceOnUse"
-                >
+                <pattern id="smallGrid" width={size} height={size} patternUnits="userSpaceOnUse">
                     <path
                         d={`M ${size} 0 L 0 0 0 ${size}`}
                         fill="none"
@@ -17,17 +12,8 @@ export const SvgGrid = ({ size }: { size: number }) => {
                         strokeWidth="0.5"
                     />
                 </pattern>
-                <pattern
-                    id="grid"
-                    width={size * 5}
-                    height={size * 5}
-                    patternUnits="userSpaceOnUse"
-                >
-                    <rect
-                        width={size * 5}
-                        height={size * 5}
-                        fill="url(#smallGrid)"
-                    />
+                <pattern id="grid" width={size * 5} height={size * 5} patternUnits="userSpaceOnUse">
+                    <rect width={size * 5} height={size * 5} fill="url(#smallGrid)" />
                     <path
                         d={`M ${size * 5} 0 L 0 0 0 ${size * 5}`}
                         fill="none"

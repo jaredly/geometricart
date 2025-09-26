@@ -1,16 +1,16 @@
-import React, { useEffect, useMemo } from 'react';
-import { Bounds, findBoundingRect } from '../editor/Export';
-import { Text } from '../editor/Forms';
-import { canvasRender } from '../rendering/CanvasRender';
-import { Action } from '../state/Action';
-import { Path, State, StyleLine } from '../types';
-import { Toolbar } from './Toolbar';
-import { Settings } from './Settings';
-import { ItemEdit } from './ItemEdit';
-import PathKitInit, { PathKit } from 'pathkit-wasm';
-import { Canvas } from '../editor/Canvas';
-import { IconDelete } from '../icons/Icon';
-import { usePK } from '../editor/pk';
+import React, {useEffect, useMemo} from 'react';
+import {Bounds, findBoundingRect} from '../editor/Export';
+import {Text} from '../editor/Forms';
+import {canvasRender} from '../rendering/CanvasRender';
+import {Action} from '../state/Action';
+import {Path, State, StyleLine} from '../types';
+import {Toolbar} from './Toolbar';
+import {Settings} from './Settings';
+import {ItemEdit} from './ItemEdit';
+import PathKitInit, {PathKit} from 'pathkit-wasm';
+import {Canvas} from '../editor/Canvas';
+import {IconDelete} from '../icons/Icon';
+import {usePK} from '../editor/pk';
 
 const many = (value: string, m: number) => {
     const values: string[] = [];
@@ -42,9 +42,7 @@ export const GCodeEditor = ({
 
     const originalSize = 700;
 
-    const aspect = bounds
-        ? (bounds.y2 - bounds.y1) / (bounds.x2 - bounds.x1)
-        : 1;
+    const aspect = bounds ? (bounds.y2 - bounds.y1) / (bounds.x2 - bounds.x1) : 1;
 
     let h = aspect > 0 ? originalSize : originalSize * aspect;
     let w = aspect > 0 ? originalSize / aspect : originalSize;
@@ -54,39 +52,29 @@ export const GCodeEditor = ({
     // let dy = bounds ? (bounds.y1 + bounds.y2) / 2 : 0;
 
     const availableColors = useMemo(
-        () => ({ line: findLineColors(state), fill: findFillColors(state) }),
+        () => ({line: findLineColors(state), fill: findFillColors(state)}),
         [state.paths],
     );
 
     return (
-        <div style={{ display: 'flex' }}>
+        <div style={{display: 'flex'}}>
             <div>
                 <Canvas {...canvasProps} width={w} height={h} />
 
-                <div style={{ margin: 8 }}>
-                    <Settings
-                        state={state}
-                        dispatch={dispatch}
-                        bounds={bounds}
-                    />
+                <div style={{margin: 8}}>
+                    <Settings state={state} dispatch={dispatch} bounds={bounds} />
                     <div
                         style={{
                             margin: 16,
                             display: 'grid',
-                            gridTemplateColumns: many('max-content', 16).join(
-                                ' ',
-                            ),
+                            gridTemplateColumns: many('max-content', 16).join(' '),
                         }}
                     >
                         {state.gcode.items.map((item, i) => {
                             return (
-                                <div key={i} style={{ display: 'contents' }}>
-                                    <UpDown
-                                        i={i}
-                                        dispatch={dispatch}
-                                        state={state}
-                                    />
-                                    <div style={{ flexBasis: 8 }} />
+                                <div key={i} style={{display: 'contents'}}>
+                                    <UpDown i={i} dispatch={dispatch} state={state} />
+                                    <div style={{flexBasis: 8}} />
                                     {item.type === 'pause' ? (
                                         Pause(item, dispatch, i)
                                     ) : (
@@ -161,15 +149,9 @@ export const GCodeEditor = ({
                     </button>
                 </div>
             </div>
-            <div style={{ marginTop: 100 }}>
+            <div style={{marginTop: 100}}>
                 {pathKit ? (
-                    <Toolbar
-                        state={state}
-                        bounds={bounds}
-                        w={w}
-                        h={h}
-                        PathKit={pathKit}
-                    />
+                    <Toolbar state={state} bounds={bounds} w={w} h={h} PathKit={pathKit} />
                 ) : null}
             </div>
         </div>
@@ -186,7 +168,7 @@ export const UpDown = ({
     state: State;
 }) => {
     return (
-        <div style={{ display: 'flex', flexDirection: 'row' }}>
+        <div style={{display: 'flex', flexDirection: 'row'}}>
             <button
                 disabled={i === 0}
                 onClick={() => {
@@ -272,7 +254,7 @@ const findLineColors = (state: State): LineColors => {
 };
 
 function Pause(
-    item: { type: 'pause'; message: string },
+    item: {type: 'pause'; message: string},
     dispatch: React.Dispatch<Action>,
     i: number,
 ): React.ReactNode {
@@ -300,10 +282,10 @@ function Pause(
 }
 
 export function findColorPaths(insetPaths: Path[]): {
-    [key: string]: Array<{ path: Path; style: StyleLine }>;
+    [key: string]: Array<{path: Path; style: StyleLine}>;
 } {
     const colors: {
-        [key: string]: Array<{ path: Path; style: StyleLine }>;
+        [key: string]: Array<{path: Path; style: StyleLine}>;
     } = {};
     insetPaths.forEach((path) => {
         path.style.lines.forEach((line) => {

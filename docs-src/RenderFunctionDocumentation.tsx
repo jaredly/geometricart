@@ -11,7 +11,7 @@ export function RenderFunctionDocumentation({
 }: {
     values: any[];
     index: number;
-    arc: { name: string; comment?: string | undefined }[];
+    arc: {name: string; comment?: string | undefined}[];
     v: any;
 }) {
     return (
@@ -43,9 +43,7 @@ export function RenderFunctionDocumentation({
             />
             {arc.some((c) => c && c.comment) ? (
                 <>
-                    <h4 style={{ marginTop: '1em', marginBottom: '.5em' }}>
-                        Arguments
-                    </h4>
+                    <h4 style={{marginTop: '1em', marginBottom: '.5em'}}>Arguments</h4>
                     <table>
                         <tbody>
                             {arc.map((arg) => (

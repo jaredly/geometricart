@@ -1,9 +1,9 @@
-import { angleBetween } from './findNextSegments';
-import { push } from './getMirrorTransforms';
-import { Circle } from './intersect';
-import { coordsEqual } from './pathsAreIdentical';
-import { Coord } from '../types';
-import { closeEnough } from './epsilonToZero';
+import {angleBetween} from './findNextSegments';
+import {push} from './getMirrorTransforms';
+import {Circle} from './intersect';
+import {coordsEqual} from './pathsAreIdentical';
+import {Coord} from '../types';
+import {closeEnough} from './epsilonToZero';
 
 // Also returns true if we're at the top or bottom tangent and not on the top endpoint
 
@@ -31,8 +31,7 @@ export const atCircleBottomOrSomething = (coord: Coord, seg: Circle) => {
     if (atX) {
         // if we're at the summit, ignore only if we're not also at an endpoint
         return !(
-            closeEnough(seg.limit[0], -Math.PI / 2) ||
-            closeEnough(seg.limit[1], -Math.PI / 2)
+            closeEnough(seg.limit[0], -Math.PI / 2) || closeEnough(seg.limit[1], -Math.PI / 2)
         );
     }
 

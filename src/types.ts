@@ -2,6 +2,7 @@ import {UndoableAction, UndoAction} from './state/Action';
 import {Primitive} from './rendering/intersect';
 import {Matrix} from './rendering/getMirrorTransforms';
 import {SegmentWithPrev} from './rendering/clipPathNew';
+import {CompassState} from './editor/compassAndRuler';
 
 // Should I do polar coords?
 export type Coord = {x: number; y: number};
@@ -30,6 +31,7 @@ export type CircleMark = {
     p2: Coord;
     p3: Coord;
     angle: number;
+    angle2?: number;
 };
 
 export type CloneCircle = {
@@ -273,7 +275,7 @@ export type Cache = {
     intersections: Idd<{coord: Coord; prims: Array<number>}>;
 };
 
-export type Pending = PendingGuide | PendingPath;
+export type Pending = PendingGuide | PendingPath | {type: 'compass&ruler'};
 
 export type PendingGuide = {
     type: 'Guide';
@@ -281,7 +283,10 @@ export type PendingGuide = {
     kind: GuideGeom['type'];
     extent?: number;
     toggle: boolean;
+    angle?: number;
 };
+
+export const guideNeedsAngle = (type: GuideGeom['type']) => type === 'CircleMark';
 
 export type Intersect = {
     coord: Coord;
@@ -363,6 +368,7 @@ export type View = {
         combineGroups?: boolean;
         skipBacking?: boolean;
         traceAndMerge?: boolean;
+        useFills?: boolean;
     };
 };
 
@@ -403,10 +409,12 @@ export type Meta = {
         //     type: 'acrylic',
         //     thickness: number
         // },
+        cameraDistance?: number;
         thickness?: number;
         gap?: number;
         shadowZoom?: number;
         lightPosition?: [number, number, number];
+        useMultiSVG?: boolean;
     };
 };
 export type LerpPoint = {
@@ -557,6 +565,7 @@ export type State = {
     history: History;
     meta: Meta;
     pending: Pending | null;
+    compassState?: CompassState;
     paths: {[key: Id]: Path};
     // Pathgroups automatically happen when, for example, a path is created when a mirror is active.
     // SO: Paths are automatically /realized/, that is, when completing a path, the mirrored paths are also
@@ -573,7 +582,11 @@ export type State = {
     view: View;
 
     historyView?: {
+        preview?: 'corner' | number;
+        preapplyPathUpdates?: boolean;
+        hideOverlays?: boolean;
         zooms: {idx: number; view: Pick<View, 'zoom' | 'center'>}[];
+        titles?: {idx: number; title: string; duration: number; speed?: number}[];
         skips: number[];
         start?: number;
         end?: number;

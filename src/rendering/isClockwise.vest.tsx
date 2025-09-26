@@ -1,9 +1,9 @@
 import * as React from 'react';
-import { calcSegmentsD } from '../editor/calcPathD';
-import { Segment } from '../types';
-import { register } from '../vest';
-import { prevSegmentsToShape, SegmentWithPrev } from './clipPathNew';
-import { coordsEqual } from './pathsAreIdentical';
+import {calcSegmentsD} from '../editor/calcPathD';
+import {Segment} from '../types';
+import {register} from '../vest';
+import {prevSegmentsToShape, SegmentWithPrev} from './clipPathNew';
+import {coordsEqual} from './pathsAreIdentical';
 import {
     angleDifferences,
     isClockwise,
@@ -12,20 +12,16 @@ import {
     rasterSegPoints,
     totalAngle,
 } from './pathToPoints';
-import { ShapeEditor } from './ShapeEditor';
+import {ShapeEditor} from './ShapeEditor';
 
 type Input = Array<SegmentWithPrev>;
 type Output = boolean;
 
-const ShowDebug = ({ shape }: { shape: Array<SegmentWithPrev> }) => {
+const ShowDebug = ({shape}: {shape: Array<SegmentWithPrev>}) => {
     const last = shape[shape.length - 1].segment.to;
     const segs = shape
         .map((s) => s.segment)
-        .concat(
-            coordsEqual(last, shape[0].prev)
-                ? []
-                : [{ type: 'Line', to: shape[0].prev }],
-        );
+        .concat(coordsEqual(last, shape[0].prev) ? [] : [{type: 'Line', to: shape[0].prev}]);
     const points = rasterSegPoints(pathToPoints(segs, null, true));
     const angles = pointsAngles(points);
     const diffs = angleDifferences(angles);
@@ -76,13 +72,7 @@ register({
         return isClockwise(seg);
     },
     render: {
-        editor: ({
-            initial,
-            onChange,
-        }: {
-            initial: Input | null;
-            onChange: (i: Input) => void;
-        }) => {
+        editor: ({initial, onChange}: {initial: Input | null; onChange: (i: Input) => void}) => {
             return (
                 <div>
                     <ShapeEditor initial={initial} onChange={onChange}>
@@ -101,7 +91,7 @@ register({
                 </div>
             );
         },
-        fixture: ({ input, output }: { input: Input; output: Output }) => {
+        fixture: ({input, output}: {input: Input; output: Output}) => {
             return (
                 <div>
                     {output + ''}
