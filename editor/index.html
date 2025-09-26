@@ -16,12 +16,14 @@
 />
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
 <style>
+    :root {
+        --surface-ground: black;
+    }
     html,
     body {
-        --surface-ground: black;
         margin: 0;
         padding: 0;
-        background-color: black;
+        background-color: var(--surface-gound);
         color: white;
         font-family: system-ui;
         overscroll-behavior: none;
@@ -49,11 +51,9 @@
     }
 </style>
 <body>
-    <div id="root">
-        <h1>Hello</h1>
-    </div>
+    <div id="root"></div>
     <script>
         window.cwd = () => '/';
     </script>
-    <!-- <script src="run.js"></script> -->
+    <script src="/src/run.tsx" type="module"></script>
 </body>

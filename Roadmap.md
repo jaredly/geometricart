@@ -1,4 +1,36 @@
 
+# Site organization
+
+/ about page?
+/gallery/?search-params
+/gallery/pattern/[pattern-id].html
+/editor/#id or source
+/admin/#idk
+
+the about page is maybe mdx ... can I SSR it?
+yeah that would be nice.
+ssr so the index is js-free.
+
+also want to make a "pattern explorer" where you can like compare the sizes of things and ratios and such.
+
+we'll want to make redirects for old IDs if the hashing method changes.
+b/c a pattern ID should be ... like a hash of the shapes n such.
+
+# So, I want like a showcase page
+
+- have a way to ... name patterns? tag them?
+  - automatic tags
+    - shlaefli symbols
+    - major symmetry
+    - other shapes
+  - manual links to related patterns (pattern groups?)
+  - manually point out sub-shapes that should be looked for in other patterns
+  - also filter by location
+
+ok so I'll need a server
+andd like an admin section
+and then a public section
+
 # Ways to classify patternssss
 
 "hexagonal plane tiling"
