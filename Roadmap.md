@@ -1,4 +1,11 @@
 
+# hmmmm maybe using react-router will be a useful route to go?
+# hmmmm. prerender, and ssr:false
+# yeah that looks like it would work.
+# within the /editor page, I'd use a hash router.
+
+
+
 # Site organization
 
 / about page?

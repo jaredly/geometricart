@@ -26,6 +26,7 @@
                 "noUnusedImports": "off",
                 "useExhaustiveDependencies": "warn",
                 "noSwitchDeclarations": "warn",
+                "useJsxKeyInIterable": "off",
                 "noChildrenProp": "off"
             },
             "suspicious": {

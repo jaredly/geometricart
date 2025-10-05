@@ -1,6 +1,6 @@
 {
     "compilerOptions": {
-        "jsx": "react",
+        "jsx": "react-jsx",
         "target": "ESNext",
         "noEmit": true,
         "strict": true,
@@ -9,6 +9,9 @@
         "resolveJsonModule": true,
         "esModuleInterop": true,
         "skipLibCheck": true,
-        "forceConsistentCasingInFileNames": true
-    }
+        "forceConsistentCasingInFileNames": true,
+        "rootDirs": [".", "./.react-router/types"]
+    },
+
+    "include": ["**/*", "**/.server/**/*", "**/.client/**/*", ".react-router/types/**/*"]
 }
