@@ -76,6 +76,10 @@
         "vite": "^7.1.7",
         "vite-tsconfig-paths": "^5.1.4"
     },
+    "resolutions": {
+        "react": "^19.2.0",
+        "react-dom": "^19.2.0"
+    },
     "jest": {
         "verbose": true,
         "testMatch": [
