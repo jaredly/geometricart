@@ -1,4 +1,52 @@
 
+# New Idea for the website
+
+Presenting a Pattern:
+- you see a carousel of pretty versions of the pattern
+- you see the fundamental polygon, extrapolated 1x
+  - as well as hidden fundamental polygons
+- you see the polygon decomposition
+- you see related patterns
+  - by shared polygons, and shared lines / points of the fundamental polygon
+- you see a button to "Customize & Download SVG"
+- you see a button to "View interactive construction tutorial"
+  - "Inspect pattern" - maybe is just a subfeature of the construction tutorial
+
+## Customize & Download SVG
+
+you can have multiple layers
+
+You can change a layer between (lines) and (shapes)
+
+You can modify the (thickness) / (inset)
+
+It can be based on the main fundamental polygon, or hidden ones
+
+You can multiselect, and move some onto different layers
+
+You can modify the colors of stuff
+
+- there's a "Generated" layer, and an "Enumerated" layer.
+  - you start out with a generated layer, which can be flipped between stuff
+  - but as soon as you want to modify an individual shape, it becomes an
+    "enumerated layer" and you have to deal with things individually.
+    it's like "text to path" in inkscape
+
+
+##
+
+Functionality I need to come up with:
+
+- from the fundamental polygon, produce [path]s of the [shape]s
+- "                           , produce contiguous lines
+
+
+
+
+
+
+
+
 # hmmmm maybe using react-router will be a useful route to go?
 # hmmmm. prerender, and ssr:false
 # yeah that looks like it would work.

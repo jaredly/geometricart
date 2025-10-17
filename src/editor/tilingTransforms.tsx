@@ -8,7 +8,7 @@ import {
     scaleMatrix,
     translationMatrix,
 } from '../rendering/getMirrorTransforms';
-import {angleBetween} from '../rendering/findNextSegments';
+import {angleBetween} from '../rendering/isAngleBetween';
 import {transformLines} from './tilingPoints';
 
 export function replicateStandard(ty: number): Matrix[][][] {

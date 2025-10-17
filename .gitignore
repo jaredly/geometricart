@@ -3,3 +3,4 @@ build
 !build/index.html
 .react-router
 dist
+data.db

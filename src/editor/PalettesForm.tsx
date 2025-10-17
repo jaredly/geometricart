@@ -11,7 +11,8 @@ import {
 } from './ExportPalettes';
 import {useDropTarget} from './useDropTarget';
 import {rgbToHsl} from '../rendering/colorConvert';
-import {SliderPicker, SketchPicker} from 'react-color';
+import rc from 'react-color';
+const {SliderPicker, SketchPicker} = rc;
 // @ts-ignore
 import kMeans from 'kmeans-js';
 

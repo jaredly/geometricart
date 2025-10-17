@@ -7,7 +7,7 @@ import {Coord, Segment} from '../types';
 import {angleForSegment} from './clipPath';
 import {coordKey} from './coordKey';
 // import { removeContainedRegions } from './findInternalRegions';
-import {angleBetween} from './findNextSegments';
+import {angleBetween} from './isAngleBetween';
 import {angleTo, dist} from './getMirrorTransforms';
 import {intersections} from './intersect';
 import {isClockwise} from './pathToPoints';

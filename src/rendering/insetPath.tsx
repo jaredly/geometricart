@@ -1,7 +1,8 @@
 import {Coord, Path, Segment} from '../types';
 import {isClockwise, reversePath, totalAngle} from './pathToPoints';
 import {angleTo} from './getMirrorTransforms';
-import {closeEnoughAngle, epsilon} from './intersect';
+import {epsilon} from './epsilonToZero';
+import {closeEnoughAngle} from './epsilonToZero';
 import {clipTwo, HitLocation} from './clipPath';
 import {closeEnough} from './epsilonToZero';
 import {isLargeArc} from '../editor/RenderPendingPath';

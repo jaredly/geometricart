@@ -1,9 +1,10 @@
 import {arcToCircle} from '../../editor/findSelection';
 import {ArcSegment, Attachment, Coord, LineSegment, Segment} from '../../types';
-import {zeroToTwoPi} from '../clipPath';
-import {angleBetween} from '../findNextSegments';
+import {zeroToTwoPi} from '../epsilonToZero';
+import {angleBetween} from '../isAngleBetween';
 import {angleTo, dist, push} from '../getMirrorTransforms';
-import {circleCircle, closeEnoughAngle} from '../intersect';
+import {circleCircle} from '../intersect';
+import {closeEnoughAngle} from '../epsilonToZero';
 import {coordsEqual} from '../pathsAreIdentical';
 
 // @trace

@@ -4,7 +4,7 @@ import {Interpolation, Theme, jsx} from '@emotion/react';
 import {Path as PKPath, PathKit} from 'pathkit-wasm';
 import React, {useMemo, useState} from 'react';
 import * as ReactDOM from 'react-dom';
-import {pkPath} from '../sidebar/NewSidebar';
+import {pkPath} from '../sidebar/pkClipPaths';
 import {Action} from '../state/Action';
 import {initialHistory} from '../state/initialState';
 import {Fill, Path, State, StyleLine} from '../types';

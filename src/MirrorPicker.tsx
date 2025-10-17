@@ -3,7 +3,7 @@ import {ShowMirror} from './editor/MirrorForm';
 import {Mirror} from './types';
 import {getTransformsForNewMirror} from './rendering/getMirrorTransforms';
 import {SelectButton} from 'primereact/selectbutton';
-import {range} from './editor';
+import {range} from './editor.client';
 
 export type SaveDest = {type: 'local'} | {type: 'gist'; token: string};
 

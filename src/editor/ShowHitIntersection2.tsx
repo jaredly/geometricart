@@ -1,11 +1,12 @@
 import * as React from 'react';
-import {Angle, angleForSegment, backAngle, isAngleBetweenAngles} from '../rendering/clipPath';
+import {angleForSegment, backAngle, isAngleBetweenAngles} from '../rendering/clipPath';
+import {Angle} from '../rendering/epsilonToZero';
 import {anglesEqual} from '../rendering/epsilonToZero';
 import {angleTo, dist, push} from '../rendering/getMirrorTransforms';
 import {Coord} from '../types';
 import {SegmentWithPrev} from '../rendering/clipPathNew';
 import {HitTransitions} from '../rendering/untangleHit';
-import {angleBetween} from '../rendering/findNextSegments';
+import {angleBetween} from '../rendering/isAngleBetween';
 
 export const pointsList = (points: Array<Coord>) => points.map(({x, y}) => `${x},${y}`).join(' ');
 

@@ -1,9 +1,9 @@
-import {angleBetween} from './findNextSegments';
+import {angleBetween} from './isAngleBetween';
 import {angleTo, dist, push} from './getMirrorTransforms';
-import {epsilon} from './intersect';
+import {epsilon} from './epsilonToZero';
 import {reverseSegment} from './pathsAreIdentical';
 import {Coord, Segment} from '../types';
-import {negPiToPi} from './clipPath';
+import {negPiToPi} from './epsilonToZero';
 import {closeEnough} from './epsilonToZero';
 import {segmentKey} from './segmentKey';
 import {pxToMM} from '../gcode/generateGcode';

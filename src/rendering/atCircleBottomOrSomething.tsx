@@ -1,4 +1,4 @@
-import {angleBetween} from './findNextSegments';
+import {angleBetween} from './isAngleBetween';
 import {push} from './getMirrorTransforms';
 import {Circle} from './intersect';
 import {coordsEqual} from './pathsAreIdentical';

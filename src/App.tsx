@@ -15,14 +15,7 @@ import {Action} from './state/Action';
 import {useUIState} from './useUIState';
 import {OverlayEditor} from './OverelayEditor';
 import {ThreedScreen} from './threed/ThreedScreen';
-
-export const useCurrent = <T,>(value: T) => {
-    const ref = React.useRef(value);
-    React.useEffect(() => {
-        ref.current = value;
-    });
-    return ref;
-};
+import {useCurrent} from './useCurrent';
 
 export const App = ({
     initialState,

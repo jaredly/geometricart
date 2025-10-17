@@ -2,7 +2,7 @@
 /* @jsxFrag React.Fragment */
 import {jsx} from '@emotion/react';
 import React, {useRef} from 'react';
-import {useCurrent} from '../App';
+import {useCurrent} from '../useCurrent';
 import {PendingMirror, UIState} from '../useUIState';
 import {Action, PathMultiply} from '../state/Action';
 import {EditorState, screenToWorld} from './Canvas';

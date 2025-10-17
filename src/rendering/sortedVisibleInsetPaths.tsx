@@ -3,7 +3,7 @@ import {ensureClockwise} from '../rendering/pathToPoints';
 import {Coord, Path, PathGroup, Segment} from '../types';
 import {coordKey, numKey} from './coordKey';
 import {closeEnough} from './epsilonToZero';
-import {angleBetween} from './findNextSegments';
+import {angleBetween} from './isAngleBetween';
 import {
     angleTo,
     dist,
@@ -12,7 +12,9 @@ import {
     rotationMatrix,
     translationMatrix,
 } from './getMirrorTransforms';
-import {angleIsBetween, closeEnoughAngle, lineToSlope, slopeToLine, withinLimit} from './intersect';
+import {lineToSlope, slopeToLine} from './intersect';
+import {withinLimit} from './epsilonToZero';
+import {angleIsBetween, closeEnoughAngle} from './epsilonToZero';
 import {pathsAreIdentical, pathToReversedSegmentKeys, pathToSegmentKeys} from './pathsAreIdentical';
 import {pkSortedVisibleInsetPaths} from './pkInsetPaths';
 import {transformSegment} from './points';

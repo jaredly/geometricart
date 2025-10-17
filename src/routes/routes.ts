@@ -1,8 +1,12 @@
-import {type RouteConfig, route, index, layout, prefix} from '@react-router/dev/routes';
+import {type RouteConfig, index, prefix, route} from '@react-router/dev/routes';
+
+// import {Database} from 'bun:sqlite';
+// const db = new Database(join(import.meta.dirname, '../../data.db'));
+// const query = db.query('select * from Tiling');
+// const alls = query.all();
 
 export default [
     index('./home.tsx'),
-    // ...prefix('gallery', [index('./gallery.tsx'), route('pattern/:id', './pattern.tsx')]),
+    ...prefix('gallery', [index('./gallery.tsx'), route('pattern/:id', './pattern.tsx')]),
     route('editor', './editor.tsx'),
-    // route('admin', './admin.tsx'),
 ] as RouteConfig;

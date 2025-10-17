@@ -4,7 +4,7 @@ import {jsx} from '@emotion/react';
 import React, {useEffect, useMemo, useState} from 'react';
 import {Coord, Overlay, Overlay as OverlayT, State, View} from '../types';
 import {screenToWorld} from './Canvas';
-import {useCurrent} from '../App';
+import {useCurrent} from '../useCurrent';
 
 export function Overlay({
     state,

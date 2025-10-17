@@ -7,7 +7,7 @@ import {
 } from './getMirrorTransforms';
 import {Coord, Guide, GuideGeom, Id, Mirror} from '../types';
 import {getCircumCircle} from './points';
-import {angleBetween} from './findNextSegments';
+import {angleBetween} from './isAngleBetween';
 
 // These are NOT in /view/ coordinates!
 

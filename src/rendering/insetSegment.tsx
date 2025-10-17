@@ -1,14 +1,8 @@
 import {ArcSegment, Coord, LineSegment, Segment} from '../types';
 import {angleTo, dist, push} from './getMirrorTransforms';
-import {
-    angleIsBetween,
-    circleCircle,
-    closeEnoughAngle,
-    lineCircle,
-    lineLine,
-    lineToSlope,
-} from './intersect';
-import {angleBetween} from './findNextSegments';
+import {circleCircle, lineCircle, lineLine, lineToSlope} from './intersect';
+import {angleIsBetween, closeEnoughAngle} from './epsilonToZero';
+import {angleBetween} from './isAngleBetween';
 import {anglesEqual} from './epsilonToZero';
 import {coordsEqual} from './pathsAreIdentical';
 

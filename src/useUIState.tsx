@@ -3,7 +3,7 @@ import {reducer} from './state/reducer';
 import {Hover} from './editor/Sidebar';
 import {Coord, Id, State} from './types';
 import {PendingDuplication} from './editor/Guides';
-import {StyleHover} from './editor/MultiStyleForm';
+import {StyleHover} from './editor/StyleHover';
 import {Action} from './state/Action';
 
 export type UIState = {

@@ -18,9 +18,10 @@ import {
 } from '../rendering/getMirrorTransforms';
 import {PendingDuplication, PendingPathPair, primitivesForElementsAndPaths} from './Guides';
 import {CancelIcon, IconButton, MirrorIcon, ScissorsCuttingIcon} from '../icons/Icon';
-import {epsilon} from '../rendering/intersect';
+import {epsilon} from '../rendering/epsilonToZero';
 import {Bezier, createLookupTable, evaluateBezier, evaluateLookUpTable, LookUpTable} from '../lerp';
-import {mergeFills, mergeStyleLines, StyleHover} from './MultiStyleForm';
+import {mergeFills, mergeStyleLines} from './MultiStyleForm';
+import {StyleHover} from './StyleHover';
 import {PendingPathControls} from './PendingPathControls';
 import {RenderWebGL} from './RenderWebGL';
 import {Hover} from './Sidebar';
@@ -40,12 +41,12 @@ import {
 import {functionWithBuiltins} from '../animation/getAnimatedPaths';
 import {Menu} from 'primereact/menu';
 import {SVGCanvas} from './SVGCanvas';
-import {useCurrent} from '../App';
+import {useCurrent} from '../useCurrent';
 import {ToolIcons} from './ToolIcons';
 import {findAdjacentPaths, produceJointPaths} from '../animation/getBuiltins';
 import {coordsEqual} from '../rendering/pathsAreIdentical';
-import {angleBetween} from '../rendering/findNextSegments';
-import {negPiToPi} from '../rendering/clipPath';
+import {angleBetween} from '../rendering/isAngleBetween';
+import {negPiToPi} from '../rendering/epsilonToZero';
 import {closeEnough} from '../rendering/epsilonToZero';
 import {simpleExport} from './handleTiling';
 import {

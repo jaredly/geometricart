@@ -1,7 +1,7 @@
 import {PathKit, Path as PKPath} from 'pathkit-wasm';
-import {applyStyleHover, StyleHover} from '../editor/MultiStyleForm';
+import {applyStyleHover, StyleHover} from '../editor/StyleHover';
 import {PK} from '../editor/pk';
-import {pkInset, pkPath, pkPathToSegments} from '../sidebar/NewSidebar';
+import {pkInset, pkPath, pkPathToSegments} from '../sidebar/pkClipPaths';
 import {Path, PathGroup, Segment, State} from '../types';
 import {pathToSegmentKeys} from './pathsAreIdentical';
 import {

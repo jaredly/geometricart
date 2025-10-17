@@ -1,5 +1,5 @@
 import * as React from 'react';
-import {useCurrent} from '../App';
+import {useCurrent} from '../useCurrent';
 import {DrawPathState} from './DrawPath';
 import {adjustBounds, largestDimension, segmentBounds} from './Bounds';
 import {angleTo, push} from '../rendering/getMirrorTransforms';

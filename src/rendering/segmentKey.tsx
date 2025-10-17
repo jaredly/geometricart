@@ -1,6 +1,6 @@
 import {coordKey} from './coordKey';
 import {Coord, Segment} from '../types';
-import {epsilon} from './intersect';
+import {epsilon} from './epsilonToZero';
 import {reverseSegment} from './pathsAreIdentical';
 
 /*

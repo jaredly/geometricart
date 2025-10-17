@@ -6,7 +6,7 @@ import {segmentsBounds, segmentsCenter} from '../editor/Bounds';
 import {segmentToPrimitive} from '../editor/findSelection';
 import {pathSegs} from '../editor/RenderPath';
 import {coordKey} from '../rendering/coordKey';
-import {angleBetween} from '../rendering/findNextSegments';
+import {angleBetween} from '../rendering/isAngleBetween';
 import {
     angleTo,
     push,

@@ -12,7 +12,7 @@ import equal from 'fast-deep-equal';
 import {isCompass} from '../editor/RenderCompassAndRuler';
 import {angleTo, dist, push} from '../rendering/getMirrorTransforms';
 import {closeEnough} from '../rendering/epsilonToZero';
-import {angleBetween} from '../rendering/findNextSegments';
+import {angleBetween} from '../rendering/isAngleBetween';
 import {
     animateRuler,
     animateCompass,

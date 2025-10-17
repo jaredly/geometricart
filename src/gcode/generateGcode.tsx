@@ -1,6 +1,6 @@
 // import { insetPath } from '../animation/getBuiltins';
 import {findBoundingRect} from '../editor/Export';
-import {findColorPaths} from './GCodeEditor';
+import {findColorPaths} from './findColorPaths';
 import {dist} from '../rendering/getMirrorTransforms';
 import {pathToPoints, RasterSeg, rasterSegPoints} from '../rendering/pathToPoints';
 import {sortedVisibleInsetPaths} from '../rendering/sortedVisibleInsetPaths';
