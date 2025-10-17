@@ -1,4 +1,17 @@
 
+# New Fangled Pattern Vis, based just on the skeleton line segments
+
+- [x] render the lines
+- [x] make it cool
+- [ ] discover the eigenshapes from the segments
+  - [x] so cool!
+  - [ ] split lines that intersect
+  - [ ] eliminate shapes that don't *enter*/*cross* the boundary
+    - i.e. only share a point or line segment with the boundary
+  - [ ] for bonus points, calculate the percentage of the shape that is within the boundary
+    so I can like dedup, if a shape shows up half + twice, that should only count as "1" instance.
+
+
 # New Idea for the website
 
 Presenting a Pattern:

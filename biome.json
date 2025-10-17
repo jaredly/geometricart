@@ -31,7 +31,7 @@
             },
             "suspicious": {
                 "noArrayIndexKey": "off",
-                "noAssignInExpressions": "warn",
+                "noAssignInExpressions": "off",
                 "noDoubleEquals": "warn",
                 "noControlCharactersInRegex": "warn"
             }
