@@ -9,111 +9,20 @@ import {boundsForCoords} from '../editor/Bounds';
 import {angleTo, applyMatrices, push} from '../rendering/getMirrorTransforms';
 import {tilingTransforms} from '../editor/tilingTransforms';
 import {coordKey} from '../rendering/coordKey';
-import {angleBetween} from '../rendering/isAngleBetween';
-import {coordsEqual} from '../rendering/pathsAreIdentical';
+import {cutSegments, shapesFromSegments, unique} from './shapesFromSegments';
+import {useMemo} from 'react';
 
 export async function loader(_: Route.LoaderArgs) {
     return getAllPatterns();
 }
 
-const addToMap = <T,>(map: Record<string, T[]>, k: string, t: T) => {
-    if (!map[k]) map[k] = [t];
-    else map[k].push(t);
-};
-
-const shapesFromSegments = (segs: [Coord, Coord][], eigenPoints: Coord[]) => {
-    const byEndPoint: Record<string, {idx: number; theta: number; to: Coord}[]> = {};
-    segs.forEach((seg, i) => {
-        if (coordsEqual(seg[0], seg[1])) {
-            console.warn('zero-length seg, ignoring');
-            return;
-        }
-        const to = angleTo(seg[0], seg[1]);
-        const from = angleTo(seg[1], seg[0]);
-        addToMap(byEndPoint, coordKey(seg[0]), {idx: i, theta: to, to: seg[1]});
-        addToMap(byEndPoint, coordKey(seg[1]), {idx: i, theta: from, to: seg[0]});
-    });
-
-    const used: Record<string, true> = {};
-    const shapes: Coord[][] = [];
-    eigenPoints.forEach((point) => {
-        const segs = byEndPoint[coordKey(point)];
-        if (!segs) {
-            console.warn(`no segs from point`, point);
-            return;
-        }
-        for (const seg of segs) {
-            const sk = `${coordKey(point)}:${coordKey(seg.to)}`;
-            if (used[sk]) continue;
-            // console.log(`Start at ${coordKey(point)}`);
-            let at = seg;
-            const points = [point, seg.to];
-            while (points.length < 100) {
-                // console.log(points, at);
-                const nexts = byEndPoint[coordKey(at.to)]
-                    .filter((seg) => !coordsEqual(seg.to, points[points.length - 2]))
-                    .map((seg) => ({
-                        seg,
-                        cctheta: angleBetween(at.theta + Math.PI, seg.theta, true),
-                    }))
-                    .sort((a, b) => a.cctheta - b.cctheta);
-
-                if (!nexts.length) {
-                    break;
-                }
-                // console.log(`At ${coordKey(at.to)}`);
-                // console.log(nexts.map((n) => (n.cctheta * 180) / Math.PI));
-                const next = nexts[0];
-
-                const sk = `${coordKey(at.to)}:${coordKey(next.seg.to)}`;
-                if (used[sk]) {
-                    console.warn(`somehow double-using a segment`, sk);
-                }
-                used[sk] = true;
-
-                if (coordsEqual(points[0], next.seg.to)) {
-                    break;
-                }
-
-                at = next.seg;
-                points.push(at.to);
-            }
-            if (points.length === 100) {
-                console.warn('bad news, shape is bad');
-                continue;
-            }
-            shapes.push(points);
-        }
-    });
-    return shapes;
-};
-
-const unique = <T,>(l: T[], k: (t: T) => string) => {
-    const seen: Record<string, boolean> = {};
-    return l.filter((t) => {
-        const key = k(t);
-        return seen[key] ? false : (seen[key] = true);
-    });
-};
-
-const ShowTiling = ({tiling}: {tiling: Tiling}) => {
-    const pts = tilingPoints(tiling.shape);
-    const tx = getTransform(pts);
-    const bounds = pts.map((pt) => applyMatrices(pt, tx));
-    const {x0, y0, x1, y1} = boundsForCoords(...pts);
-    const w = x1 - x0;
-    const h = y1 - y0;
-    const m = Math.min(w, h) / 10;
-
-    const ttt = tilingTransforms(tiling.shape, bounds[2], bounds);
-    const eigenSegments = tiling.cache.segments.map(
-        (s) => [s.prev, s.segment.to] as [Coord, Coord],
-    );
-    const allSegments = applyTilingTransforms(eigenSegments, ttt);
-    const eigenPoints = unique(eigenSegments.flat(), coordKey);
-
-    const shapes = shapesFromSegments(allSegments, eigenPoints);
-
+const ShowTiling = ({
+    tiling,
+    data: {allSegments, shapes, bounds},
+}: {
+    tiling: Tiling;
+    data: {allSegments: [Coord, Coord][]; shapes: Coord[][]; bounds: Coord[]};
+}) => {
     return (
         <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -226,16 +135,41 @@ const ShowTiling = ({tiling}: {tiling: Tiling}) => {
 // also this one
 // 3ec9815442a44a060745e6e3388f64f7c14a3787 -- split lines that intersect
 export const Gallery = ({loaderData}: Route.ComponentProps) => {
+    const data = useMemo(() => {
+        console.time();
+        const res = Object.fromEntries(
+            loaderData.slice(0, 30).map(({tiling, hash}) => {
+                const pts = tilingPoints(tiling.shape);
+                const tx = getTransform(pts);
+                const bounds = pts.map((pt) => applyMatrices(pt, tx));
+
+                const ttt = tilingTransforms(tiling.shape, bounds[2], bounds);
+                const eigenSegments = tiling.cache.segments.map(
+                    (s) => [s.prev, s.segment.to] as [Coord, Coord],
+                );
+                const allSegments = applyTilingTransforms(eigenSegments, ttt);
+                const eigenPoints = unique(eigenSegments.flat(), coordKey);
+
+                const splitted = cutSegments(allSegments);
+                const shapes = shapesFromSegments(splitted, eigenPoints);
+                return [hash, {bounds, shapes, pts, allSegments}];
+            }),
+        );
+        console.timeEnd();
+        return res;
+    }, [loaderData]);
     return (
         <div>
             <h1> Galley page </h1>
             <div style={{display: 'flex', flexWrap: 'wrap', gap: 4}}>
-                {loaderData.slice(0, 10).map((item) => (
-                    <div key={item.hash}>
-                        <div style={{fontSize: 8}}>{item.hash}</div>
-                        <ShowTiling tiling={item.tiling} />
-                    </div>
-                ))}
+                {loaderData.map((item) =>
+                    data[item.hash] ? (
+                        <div key={item.hash}>
+                            <div style={{fontSize: 8}}>{item.hash}</div>
+                            <ShowTiling tiling={item.tiling} data={data[item.hash]} />
+                        </div>
+                    ) : null,
+                )}
             </div>
         </div>
     );
