@@ -1,16 +1,12 @@
-import {useLoaderData} from 'react-router';
-import {Route} from './+types/gallery';
-import {getAllPatterns} from './db.server';
-import {SimpleTiling} from '../editor/SimpleTiling';
-// import {ShowTiling} from '../editor/ShowTiling';
-import {Coord, Tiling} from '../types';
+import {useMemo} from 'react';
 import {applyTilingTransforms, getTransform, tilingPoints} from '../editor/tilingPoints';
-import {boundsForCoords} from '../editor/Bounds';
-import {angleTo, applyMatrices, push} from '../rendering/getMirrorTransforms';
 import {tilingTransforms} from '../editor/tilingTransforms';
 import {coordKey} from '../rendering/coordKey';
+import {angleTo, applyMatrices, push} from '../rendering/getMirrorTransforms';
+import {Coord, Tiling} from '../types';
+import {Route} from './+types/gallery';
+import {getAllPatterns} from './db.server';
 import {cutSegments, shapesFromSegments, unique} from './shapesFromSegments';
-import {useMemo} from 'react';
 
 export async function loader(_: Route.LoaderArgs) {
     return getAllPatterns();
@@ -74,7 +70,7 @@ const ShowTiling = ({
                     </>
                 );
             })}
-            {shapes.map((shape, i) => (
+            {shapes.slice(6, 8).map((shape, i) => (
                 <>
                     {shape.length === 100 ? (
                         <circle cx={shape[0].x} cy={shape[0].y} r={0.02} fill="red" />
@@ -90,7 +86,7 @@ const ShowTiling = ({
                             'Z'
                         }
                     />
-                    {shape.length === 100
+                    {shape.length === 100 || true
                         ? shape.map((p, i) => {
                               if (i === 0) return;
                               const t = angleTo(shape[i - 1], p);
@@ -134,26 +130,31 @@ const ShowTiling = ({
 // DEBUG THIS ONE
 // also this one
 // 3ec9815442a44a060745e6e3388f64f7c14a3787 -- split lines that intersect
+//
+// 11e20b0b5c2acf8fbe077271c9dab02fd69ea419
 export const Gallery = ({loaderData}: Route.ComponentProps) => {
     const data = useMemo(() => {
         console.time();
         const res = Object.fromEntries(
-            loaderData.slice(0, 30).map(({tiling, hash}) => {
-                const pts = tilingPoints(tiling.shape);
-                const tx = getTransform(pts);
-                const bounds = pts.map((pt) => applyMatrices(pt, tx));
+            loaderData
+                .filter((t) => t.hash === '11e20b0b5c2acf8fbe077271c9dab02fd69ea419')
+                // loaderData.slice(0, 100)
+                .map(({tiling, hash}) => {
+                    const pts = tilingPoints(tiling.shape);
+                    const tx = getTransform(pts);
+                    const bounds = pts.map((pt) => applyMatrices(pt, tx));
 
-                const ttt = tilingTransforms(tiling.shape, bounds[2], bounds);
-                const eigenSegments = tiling.cache.segments.map(
-                    (s) => [s.prev, s.segment.to] as [Coord, Coord],
-                );
-                const allSegments = applyTilingTransforms(eigenSegments, ttt);
-                const eigenPoints = unique(eigenSegments.flat(), coordKey);
+                    const ttt = tilingTransforms(tiling.shape, bounds[2], bounds);
+                    const eigenSegments = tiling.cache.segments.map(
+                        (s) => [s.prev, s.segment.to] as [Coord, Coord],
+                    );
+                    const allSegments = applyTilingTransforms(eigenSegments, ttt);
+                    const eigenPoints = unique(eigenSegments.flat(), coordKey);
 
-                const splitted = cutSegments(allSegments);
-                const shapes = shapesFromSegments(splitted, eigenPoints);
-                return [hash, {bounds, shapes, pts, allSegments}];
-            }),
+                    // const splitted = cutSegments(allSegments);
+                    const shapes = shapesFromSegments(allSegments, eigenPoints);
+                    return [hash, {bounds, shapes, pts, allSegments}];
+                }),
         );
         console.timeEnd();
         return res;
