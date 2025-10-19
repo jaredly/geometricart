@@ -6,7 +6,7 @@ import {angleTo, applyMatrices, push} from '../rendering/getMirrorTransforms';
 import {Coord, Tiling} from '../types';
 import {Route} from './+types/gallery';
 import {getAllPatterns} from './db.server';
-import {cutSegments, shapesFromSegments, unique} from './shapesFromSegments';
+import {cutSegments, shapesFromSegments, splitOverlappingSegs, unique} from './shapesFromSegments';
 
 export async function loader(_: Route.LoaderArgs) {
     return getAllPatterns();
@@ -14,10 +14,10 @@ export async function loader(_: Route.LoaderArgs) {
 
 const ShowTiling = ({
     tiling,
-    data: {allSegments, shapes, bounds},
+    data: {allSegments, shapes, bounds, marks},
 }: {
     tiling: Tiling;
-    data: {allSegments: [Coord, Coord][]; shapes: Coord[][]; bounds: Coord[]};
+    data: {allSegments: [Coord, Coord][]; shapes: Coord[][]; bounds: Coord[]; marks: number[]};
 }) => {
     return (
         <svg
@@ -38,7 +38,7 @@ const ShowTiling = ({
                     d={`M${a.x.toFixed(3)} ${a.y.toFixed(3)} L${b.x.toFixed(3)} ${b.y.toFixed(3)}`}
                 />
             ))}
-            {tiling.cache.segments.map((seg) => {
+            {tiling.cache.segments.map((seg, i) => {
                 // const off = push(
                 //     seg.segment.to,
                 //     angleTo(seg.prev, seg.segment.to) + (Math.PI * 8) / 9,
@@ -49,7 +49,8 @@ const ShowTiling = ({
                     <>
                         {/* <circle cx={seg.prev.x} cy={seg.prev.y} r={0.03} fill="red" /> */}
                         <path
-                            stroke="#00ff00"
+                            data-eidx={i}
+                            stroke={marks.includes(i) ? 'red' : '#00ff00'}
                             // opacity={0.5}
                             strokeLinejoin="round"
                             strokeLinecap="round"
@@ -70,9 +71,9 @@ const ShowTiling = ({
                     </>
                 );
             })}
-            {shapes.slice(6, 8).map((shape, i) => (
+            {shapes.map((shape, i) => (
                 <>
-                    {shape.length === 100 ? (
+                    {shape.length > 80 ? (
                         <circle cx={shape[0].x} cy={shape[0].y} r={0.02} fill="red" />
                     ) : null}
                     <path
@@ -86,7 +87,7 @@ const ShowTiling = ({
                             'Z'
                         }
                     />
-                    {shape.length === 100 || true
+                    {shape.length > 80
                         ? shape.map((p, i) => {
                               if (i === 0) return;
                               const t = angleTo(shape[i - 1], p);
@@ -137,23 +138,32 @@ export const Gallery = ({loaderData}: Route.ComponentProps) => {
         console.time();
         const res = Object.fromEntries(
             loaderData
-                .filter((t) => t.hash === '11e20b0b5c2acf8fbe077271c9dab02fd69ea419')
-                // loaderData.slice(0, 100)
+                // .filter((t) => t.hash === '3ec9815442a44a060745e6e3388f64f7c14a3787')
+                // .filter((t) => t.hash === '2fe167ca7e5e06c71b0bbf555a7db33897dd2422')
+                // .filter((t) => t.hash === '11e20b0b5c2acf8fbe077271c9dab02fd69ea419')
+                // .slice(0, 2)
                 .map(({tiling, hash}) => {
                     const pts = tilingPoints(tiling.shape);
                     const tx = getTransform(pts);
                     const bounds = pts.map((pt) => applyMatrices(pt, tx));
 
+                    const marks: number[] = [];
                     const ttt = tilingTransforms(tiling.shape, bounds[2], bounds);
-                    const eigenSegments = tiling.cache.segments.map(
+                    let eigenSegments = tiling.cache.segments.map(
                         (s) => [s.prev, s.segment.to] as [Coord, Coord],
                     );
-                    const allSegments = applyTilingTransforms(eigenSegments, ttt);
+                    // eigenSegments = splitOverlappingSegs(eigenSegments, marks);
                     const eigenPoints = unique(eigenSegments.flat(), coordKey);
+
+                    const allSegments = applyTilingTransforms(eigenSegments, ttt);
+
+                    // console.log(eigenSegments.length);
+                    // console.log(allSegments[147], allSegments[151]);
+                    // const allSegments = eigenSegments;
 
                     // const splitted = cutSegments(allSegments);
                     const shapes = shapesFromSegments(allSegments, eigenPoints);
-                    return [hash, {bounds, shapes, pts, allSegments}];
+                    return [hash, {bounds, shapes, pts, allSegments, marks}];
                 }),
         );
         console.timeEnd();

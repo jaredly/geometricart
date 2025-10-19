@@ -13,7 +13,7 @@ export const saveAllPatterns = (patterns: {hash: string; tiling: Tiling}[]) => {
             if (!res.changes) {
                 throw new Error(`why no change ${pattern.hash} in Tiling???`);
             }
-            up.push(res);
+            up.push(res.changes);
         }
         return up;
     });

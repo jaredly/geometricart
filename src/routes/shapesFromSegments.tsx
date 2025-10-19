@@ -1,12 +1,15 @@
 import {coordKey} from '../rendering/coordKey';
-import {closeEnough} from '../rendering/epsilonToZero';
+import {closeEnough, epsilon} from '../rendering/epsilonToZero';
 import {angleTo} from '../rendering/getMirrorTransforms';
 import {lineLine, lineToSlope} from '../rendering/intersect';
 import {angleBetween} from '../rendering/isAngleBetween';
 import {coordsEqual} from '../rendering/pathsAreIdentical';
 import {Coord} from '../types';
 
-const boundsIntersect = (l1: [Coord, Coord], l2: [Coord, Coord]) => {
+const gte = (a: number, b: number) => a >= b - epsilon;
+const lte = (a: number, b: number) => a <= b + epsilon;
+
+const boundsIntersect = (l1: [Coord, Coord], l2: [Coord, Coord], log = false) => {
     // Get bounding box for line 1
     const l1MinX = Math.min(l1[0].x, l1[1].x);
     const l1MaxX = Math.max(l1[0].x, l1[1].x);
@@ -19,8 +22,89 @@ const boundsIntersect = (l1: [Coord, Coord], l2: [Coord, Coord]) => {
     const l2MinY = Math.min(l2[0].y, l2[1].y);
     const l2MaxY = Math.max(l2[0].y, l2[1].y);
 
+    if (log) {
+        console.log(
+            `${l1MaxX} >= ${l2MinX} (${gte(l1MaxX, l2MinX)}) &&
+             ${l1MinX} <= ${l2MaxX} (${lte(l1MinX, l2MaxX)}) &&
+             ${l1MaxY} >= ${l2MinY} (${gte(l1MaxY, l2MinY)}) &&
+             ${l1MinY} <= ${l2MaxY} (${lte(l1MinY, l2MaxY)})`,
+        );
+    }
     // Check if bounding boxes intersect
-    return l1MaxX >= l2MinX && l1MinX <= l2MaxX && l1MaxY >= l2MinY && l1MinY <= l2MaxY;
+    return gte(l1MaxX, l2MinX) && lte(l1MinX, l2MaxX) && gte(l1MaxY, l2MinY) && lte(l1MinY, l2MaxY);
+};
+
+const isLargerThan = (l1: [Coord, Coord], l2: [Coord, Coord]) => {
+    // Get bounding box for line 1
+    const l1MinX = Math.min(l1[0].x, l1[1].x);
+    const l1MaxX = Math.max(l1[0].x, l1[1].x);
+    const l1MinY = Math.min(l1[0].y, l1[1].y);
+    const l1MaxY = Math.max(l1[0].y, l1[1].y);
+
+    // Get bounding box for line 2
+    const l2MinX = Math.min(l2[0].x, l2[1].x);
+    const l2MaxX = Math.max(l2[0].x, l2[1].x);
+    const l2MinY = Math.min(l2[0].y, l2[1].y);
+    const l2MaxY = Math.max(l2[0].y, l2[1].y);
+
+    return lte(l1MinX, l2MinX) && lte(l1MinY, l2MinY) && gte(l1MaxX, l2MaxX) && gte(l1MaxY, l2MaxY);
+};
+
+export const removeOverlappingSegs = (segs: [Coord, Coord][]) => {
+    const slopes = segs.map(([a, b]) => lineToSlope(a, b, true));
+    const toRemove: number[] = [];
+    for (let i = 0; i < slopes.length; i++) {
+        if (toRemove.includes(i)) continue;
+        // const ki1 = coordKey(segs[i][0]);
+        // const ki2 = coordKey(segs[i][1]);
+        for (let j = i + 1; j < slopes.length; j++) {
+            if (!boundsIntersect(segs[i], segs[j])) continue;
+            if (closeEnough(slopes[i].m, slopes[j].m)) {
+                // if one is contained by the other
+                if (isLargerThan(segs[i], segs[j])) {
+                    toRemove.push(j);
+                } else if (isLargerThan(segs[j], segs[i])) {
+                    toRemove.push(i);
+                    break;
+                }
+            }
+        }
+    }
+
+    return toRemove.length ? segs.filter((_, i) => !toRemove.includes(i)) : segs;
+};
+
+export const splitOverlappingSegs = (segs: [Coord, Coord][], marks?: number[]) => {
+    const slopes = segs.map(([a, b]) => lineToSlope(a, b, true));
+    const toRemove: number[] = [];
+    const toAdd: [Coord, Coord][] = [];
+    for (let i = 0; i < slopes.length; i++) {
+        if (toRemove.includes(i)) continue;
+        for (let j = i + 1; j < slopes.length; j++) {
+            if (!boundsIntersect(segs[i], segs[j])) {
+                continue;
+            }
+            if (closeEnough(slopes[i].m, slopes[j].m) && closeEnough(slopes[i].b, slopes[j].b)) {
+                if (!shareMidPoint(segs[i], segs[j])) {
+                    const got = splitByPoints(unique([...segs[i], ...segs[j]], coordKey));
+                    toAdd.push(...got);
+                    toRemove.push(i, j);
+                    marks?.push(i, j);
+                }
+            }
+        }
+    }
+
+    return segs.filter((_, i) => !toRemove.includes(i)).concat(toAdd);
+};
+
+const shareMidPoint = ([a1, a2]: [Coord, Coord], [b1, b2]: [Coord, Coord]) => {
+    if (closeEnough(a1.x, a2.x)) {
+        const sorted = [a1, a2, b1, b2].sort((a, b) => (closeEnough(a.y, b.y) ? 0 : a.y - b.y));
+        return coordsEqual(sorted[1], sorted[2]);
+    }
+    const sorted = [a1, a2, b1, b2].sort((a, b) => (closeEnough(a.x, b.x) ? 0 : a.x - b.x));
+    return coordsEqual(sorted[1], sorted[2]);
 };
 
 const findSplitPoints = (segs: [Coord, Coord][]) => {
@@ -121,8 +205,11 @@ export const shapesFromSegments = (segs: [Coord, Coord][], eigenPoints: Coord[])
             if (used[sk]) continue;
             let at = seg;
             const points = [point, seg.to];
+            const pks: string[] = [];
+            let ranout = false;
             while (points.length < 100) {
                 const nexts = byEndPoint[coordKey(at.to)]
+                    .filter((seg) => !pks.includes(coordKey(seg.to)))
                     .filter((seg) => !coordsEqual(seg.to, points[points.length - 2]))
                     .map((seg) => ({
                         seg,
@@ -131,9 +218,15 @@ export const shapesFromSegments = (segs: [Coord, Coord][], eigenPoints: Coord[])
                     .sort((a, b) => a.cctheta - b.cctheta);
 
                 if (!nexts.length) {
+                    // console.log('ran out');
+                    ranout = true;
                     break;
                 }
                 const next = nexts[0];
+                // if (nexts.length > 1 && closeEnough(nexts[1].cctheta, next.cctheta)) {
+                //     // throw new Error(`overlalappap`);
+                //     console.log('overlllap', nexts);
+                // }
 
                 const sk = `${coordKey(at.to)}:${coordKey(next.seg.to)}`;
                 // if (used[sk]) {
@@ -147,8 +240,9 @@ export const shapesFromSegments = (segs: [Coord, Coord][], eigenPoints: Coord[])
 
                 at = next.seg;
                 points.push(at.to);
+                pks.push(coordKey(at.to));
             }
-            if (points.length === 100) {
+            if (points.length === 100 || ranout) {
                 console.warn('bad news, shape is bad');
                 continue;
             }
