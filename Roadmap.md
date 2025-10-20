@@ -1,11 +1,19 @@
 
+# Fallery Page, how to organize
+
+"Group by" [ symmetry | none ]
+"Sort by" [ complexity up/down ]
+
+- symmetry! easy divider
+- yeah ok
+
 # Things to compare n stuff
 
 1) pattern similarity
 
 2) shape similarity
   - [x] canonical shapes!
-  - [ ] gotta remove points in lines that are just breaking things up.
+  - [x] gotta remove points in lines that are just breaking things up.
 
 
 had to add `if (b.startsWith('file:')) b = b.slice('file:'.length);`

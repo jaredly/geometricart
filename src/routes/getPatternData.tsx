@@ -1,24 +1,26 @@
 import * as martinez from 'martinez-polygon-clipping';
-import { mulPos } from '../animation/PointsEditor';
-import { applyTilingTransforms, getTransform, tilingPoints } from '../editor/tilingPoints';
-import { tilingTransforms } from '../editor/tilingTransforms';
-import { coordKey, numKey } from '../rendering/coordKey';
-import { closeEnough } from '../rendering/epsilonToZero';
+import {mulPos} from '../animation/PointsEditor';
+import {applyTilingTransforms, getTransform, tilingPoints} from '../editor/tilingPoints';
+import {tilingTransforms} from '../editor/tilingTransforms';
+import {coordKey, numKey} from '../rendering/coordKey';
+import {closeEnough} from '../rendering/epsilonToZero';
 import {
     applyMatrices,
     dist,
     scaleMatrix,
-    translationMatrix
+    translationMatrix,
 } from '../rendering/getMirrorTransforms';
-import { angleBetween } from '../rendering/isAngleBetween';
-import { pointsAngles } from '../rendering/pathToPoints';
-import { Coord, Tiling } from '../types';
-import { pk } from './pk';
-import { shapesFromSegments, unique } from './shapesFromSegments';
+import {angleBetween} from '../rendering/isAngleBetween';
+import {pointsAngles} from '../rendering/pathToPoints';
+import {Coord, Tiling} from '../types';
+import {pk} from './pk';
+import {shapesFromSegments, unique} from './shapesFromSegments';
 
 const pkPathFromCoords = (coords: Coord[]) =>
     pk.Path.MakeFromCmds([
-        pk.MOVE_VERB, coords[0].x, coords[0].y,
+        pk.MOVE_VERB,
+        coords[0].x,
+        coords[0].y,
         ...coords.slice(1).flatMap(({x, y}) => [pk.LINE_VERB, x, y]),
     ]);
 
@@ -30,14 +32,14 @@ const coordsFromPkPath = (cmds: Float32Array) => {
         switch (cmds[i++]) {
             case pk.MOVE_VERB:
                 shapes.push([{x: cmds[i++], y: cmds[i++]}]);
-                break
+                break;
             case pk.LINE_VERB:
                 shapes[shapes.length - 1].push({x: cmds[i++], y: cmds[i++]});
-                break
+                break;
             case pk.CLOSE_VERB:
-                break
+                break;
             default:
-                throw new Error(`unknown cmd ${cmds[i- 1]} at ${i}`)
+                throw new Error(`unknown cmd ${cmds[i - 1]} at ${i}`);
         }
     }
 
@@ -101,7 +103,7 @@ export const getPatternData = (tiling: Tiling) => {
         };
     });
 
-    return {bounds, shapes, pts, allSegments, marks, canons};
+    return {bounds, shapes, pts, allSegments, marks, canons, ttt};
 };
 
 function calcPolygonArea(vertices: Coord[]) {
@@ -129,22 +131,37 @@ export function findCommonFractions(value: number) {
     // it's brute force, but it's honest work
     for (let num = 1; num < 100; num++) {
         for (let denom = 2; denom < 100; denom++) {
-            if (closeEnough(num / denom, decimal)) {
+            //
+            if (closeEnough(num / denom, decimal, 0.001)) {
                 return {num: num + whole * denom, denom};
             }
         }
     }
 }
 
+const nums = '⁰¹²³⁴⁵⁶⁷⁸⁹';
+const denoms = '₀₁₂₃₄₅₆₇₈₉';
+const slash = '⁄';
+
+const getNumber = (n: number, digits: string) => {
+    let res = '';
+    while (n > 0) {
+        const out = Math.floor(n / 10);
+        res = digits[n - out * 10] + res;
+        n = out;
+    }
+    return res;
+};
+
 export const humanReadableFraction = (value: number) => {
-    if (closeEnough(Math.round(value), value)) return Math.round(value) + '';
+    if (closeEnough(Math.round(value), value, 0.001)) return Math.round(value) + '';
     const fract = findCommonFractions(value);
     if (fract) {
         const whole = Math.floor(fract.num / fract.denom);
         if (whole) {
-            return `${whole} ${fract.num - whole * fract.denom}/${fract.denom}`;
+            return `${whole} ${getNumber(fract.num - whole * fract.denom, nums)}${slash}${getNumber(fract.denom, denoms)}`;
         }
-        return `${fract.num}/${fract.denom}`;
+        return `${getNumber(fract.num, nums)}${slash}${getNumber(fract.denom, denoms)}`;
     }
     return value.toFixed(4);
 };

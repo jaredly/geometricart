@@ -11,28 +11,31 @@ import {
 import {angleBetween} from '../rendering/isAngleBetween';
 import {transformLines} from './tilingPoints';
 
-export function replicateStandard(ty: number): Matrix[][][] {
+export function replicateStandard(tx: number, ty: number): Matrix[][][] {
     return [
-        [[scaleMatrix(-1, 1), translationMatrix({x: 2, y: 0})]],
-        [[scaleMatrix(1, -1), translationMatrix({x: 0, y: ty * 2})]],
-        [[scaleMatrix(1, -1)]],
         [[scaleMatrix(-1, 1)]],
+        [[scaleMatrix(1, -1)]],
+        [
+            [-tx * 2, 0],
+            [tx * 2, 0],
+            [0, -ty * 2],
+            [0, ty * 2],
+            [-tx * 2, -ty * 2],
+            [-tx * 2, ty * 2],
+            [tx * 2, ty * 2],
+            [tx * 2, -ty * 2],
+        ].map(([x, y]) => [translationMatrix({x, y})]),
     ];
 }
 
 export function tilingTransforms(shape: TilingShape, tr: Coord, tpts: Coord[]): Matrix[][][] {
     if (tpts.length === 4) {
-        return [
-            [[scaleMatrix(-1, 1), translationMatrix({x: tr.x * 2, y: 0})]],
-            [[scaleMatrix(-1, 1)]],
-            [
-                [scaleMatrix(1, -1)],
-                [translationMatrix({x: 0, y: -tr.y * 2})],
-                [translationMatrix({x: 0, y: -tr.y * 2}), scaleMatrix(1, -1)],
-            ],
-        ];
+        return replicateStandard(tr.x, tr.y);
     } else if (shape.type === 'right-triangle' && shape.rotateHypotenuse) {
-        return [[[rotationMatrix(Math.PI), translationMatrix(tr)]], ...replicateStandard(tr.y)];
+        return [
+            [[rotationMatrix(Math.PI), translationMatrix(tr)]],
+            ...replicateStandard(tr.x, tr.y),
+        ];
     } else if (closeEnough(tr.y, -1 / Math.sqrt(3))) {
         return [
             [[scaleMatrix(1, -1), rotationMatrix(-(Math.PI / 3))]],
@@ -63,10 +66,9 @@ export function tilingTransforms(shape: TilingShape, tr: Coord, tpts: Coord[]): 
             internalAngle = 1 - internalAngle;
         }
 
-        const mx: Matrix[][][] = [];
-
         for (let j = 5; j < 10; j++) {
             if (closeEnough(internalAngle, 1 / (j * 2))) {
+                const mx: Matrix[][][] = [];
                 mx.push([[scaleMatrix(1, -1)]]);
                 mx.push([]);
                 for (let i = 1; i < j; i++) {
@@ -76,8 +78,8 @@ export function tilingTransforms(shape: TilingShape, tr: Coord, tpts: Coord[]): 
             }
         }
 
-        mx.push([[scaleMatrix(1, -1), rotationMatrix(-Math.PI / 2)]]);
-        return [...mx, ...replicateStandard(tr.y)];
+        const mx: Matrix[][][] = [[[scaleMatrix(1, -1), rotationMatrix(-Math.PI / 2)]]];
+        return [...mx, ...replicateStandard(tr.x, tr.y)];
     } else {
         const [a, b, c] = tpts;
         const d1 = dist(a, b);
@@ -126,7 +128,7 @@ export function tilingTransforms(shape: TilingShape, tr: Coord, tpts: Coord[]): 
         } else {
             return [
                 [[scaleMatrix(1, -1), rotationMatrix(-Math.PI / 2)]],
-                ...replicateStandard(tr.y),
+                ...replicateStandard(tr.x, tr.y),
             ];
         }
     }
