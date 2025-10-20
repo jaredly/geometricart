@@ -1,6 +1,6 @@
-import PathKitInit from 'pathkit-wasm';
+import CKI from 'canvaskit-wasm';
 
-export const pk = await PathKitInit({
+export const pk = await CKI({
     locateFile: (file) =>
-        (process.env.NODE_ENV === 'development' ? '/node_modules/pathkit-wasm/bin/' : '/') + file,
+        (process.env.NODE_ENV === 'development' ? '/node_modules/canvaskit-wasm/bin/' : '/') + file,
 });

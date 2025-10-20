@@ -1,45 +1,48 @@
-import PathKitInit from 'pathkit-wasm';
-import {mulPos} from '../animation/PointsEditor';
-import {tilingPoints, getTransform, applyTilingTransforms} from '../editor/tilingPoints';
-import {tilingTransforms} from '../editor/tilingTransforms';
-import {coordKey, numKey} from '../rendering/coordKey';
-import {closeEnough, epsilon} from '../rendering/epsilonToZero';
+import * as martinez from 'martinez-polygon-clipping';
+import { mulPos } from '../animation/PointsEditor';
+import { applyTilingTransforms, getTransform, tilingPoints } from '../editor/tilingPoints';
+import { tilingTransforms } from '../editor/tilingTransforms';
+import { coordKey, numKey } from '../rendering/coordKey';
+import { closeEnough } from '../rendering/epsilonToZero';
 import {
-    angleTo,
     applyMatrices,
     dist,
     scaleMatrix,
-    translationMatrix,
+    translationMatrix
 } from '../rendering/getMirrorTransforms';
-import {angleBetween} from '../rendering/isAngleBetween';
-import {angleDifferences, ensureClockwise, pointsAngles} from '../rendering/pathToPoints';
-import {Tiling, Coord} from '../types';
-import {unique, shapesFromSegments} from './shapesFromSegments';
-import {intersection} from 'greiner-hormann';
-import * as martinez from 'martinez-polygon-clipping';
-import {pk} from './pk';
-
-const check =
-    '1.000:0.785;1.000:4.712;1.000:0.785;1.000:4.712;1.000:0.785;1.000:4.712;1.000:0.785;1.000:4.712;1.000:0.785;1.000:4.712;1.000:0.785;1.000:4.712;1.000:0.785;1.000:4.712;1.000:0.785;1.000:4.712';
+import { angleBetween } from '../rendering/isAngleBetween';
+import { pointsAngles } from '../rendering/pathToPoints';
+import { Coord, Tiling } from '../types';
+import { pk } from './pk';
+import { shapesFromSegments, unique } from './shapesFromSegments';
 
 const pkPathFromCoords = (coords: Coord[]) =>
-    pk.FromCmds([
-        [pk.MOVE_VERB, coords[0].x, coords[0].y],
-        ...coords.slice(1).map(({x, y}) => [pk.LINE_VERB, x, y]),
+    pk.Path.MakeFromCmds([
+        pk.MOVE_VERB, coords[0].x, coords[0].y,
+        ...coords.slice(1).flatMap(({x, y}) => [pk.LINE_VERB, x, y]),
     ]);
 
-const coordsFromPkPath = (cmds: number[][]) => {
+const coordsFromPkPath = (cmds: Float32Array) => {
     const shapes: Coord[][] = [];
-    cmds.forEach((cmd) => {
-        if (cmd[0] === pk.MOVE_VERB) {
-            shapes.push([{x: cmd[1], y: cmd[2]}]);
-        } else if (cmd[0] === pk.LINE_VERB) {
-            if (!shapes.length) {
-                throw new Error(`no initial move`);
-            }
-            shapes[shapes.length - 1].push({x: cmd[1], y: cmd[2]});
+
+    console.log(cmds)
+
+    let i = 0;
+    while (i < cmds.length) {
+        switch (cmds[i++]) {
+            case pk.MOVE_VERB:
+                shapes.push([{x: cmds[i++], y: cmds[i++]}]);
+                break
+            case pk.LINE_VERB:
+                shapes[shapes.length - 1].push({x: cmds[i++], y: cmds[i++]});
+                break
+            case pk.CLOSE_VERB:
+                break
+            default:
+                throw new Error(`unknown cmd ${cmds[i- 1]} at ${i}`)
         }
-    });
+    }
+
     return shapes;
 };
 
@@ -48,9 +51,9 @@ const pklip = (one: Coord[], two: Coord[]): Coord[][] | null => {
         console.log('no pk');
         return null;
     }
-    const ok = pkPathFromCoords(one);
-    const tk = pkPathFromCoords(two);
-    ok.op(tk, pk.PathOp.INTERSECT);
+    const ok = pkPathFromCoords(one)!;
+    const tk = pkPathFromCoords(two)!;
+    ok.op(tk, pk.PathOp.Intersect);
     tk.delete();
     const shapes = coordsFromPkPath(ok.toCmds());
     ok.delete();
