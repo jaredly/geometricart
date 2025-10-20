@@ -4,8 +4,12 @@
 1) pattern similarity
 
 2) shape similarity
+  - [x] canonical shapes!
+  - [ ] gotta remove points in lines that are just breaking things up.
 
 
+had to add `if (b.startsWith('file:')) b = b.slice('file:'.length);`
+right before the `fs.readFileSync` call in `pathkit.js`.
 
 # New Fangled Pattern Vis, based just on the skeleton line segments
 

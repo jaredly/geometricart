@@ -17,7 +17,7 @@ import {Tiling, Coord} from '../types';
 import {unique, shapesFromSegments} from './shapesFromSegments';
 import {intersection} from 'greiner-hormann';
 import * as martinez from 'martinez-polygon-clipping';
-import {pk} from './pk.client';
+import {pk} from './pk';
 
 const check =
     '1.000:0.785;1.000:4.712;1.000:0.785;1.000:4.712;1.000:0.785;1.000:4.712;1.000:0.785;1.000:4.712;1.000:0.785;1.000:4.712;1.000:0.785;1.000:4.712;1.000:0.785;1.000:4.712;1.000:0.785;1.000:4.712';
