@@ -73,6 +73,15 @@ export const Pattern = () => {
                                             'Z'
                                         }
                                     />
+                                    {shape.scaled.map((coord, i) => (
+                                        <circle
+                                            key={i}
+                                            cx={coord.x}
+                                            cy={coord.y}
+                                            r={0.05}
+                                            fill="red"
+                                        />
+                                    ))}
                                     <circle
                                         cx={shape.scaled[0].x}
                                         cy={shape.scaled[0].y}
