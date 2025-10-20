@@ -203,7 +203,7 @@ export const totalAnglePoints = (points: Coord[]) => {
     const relatives = betweens.map((between) =>
         between > Math.PI ? between - Math.PI * 2 : between,
     );
-    let total = relatives.reduce((a, b) => a + b);
+    const total = relatives.reduce((a, b) => a + b);
     return total;
 };
 

@@ -1,15 +1,28 @@
 
+# Things to compare n stuff
+
+1) pattern similarity
+
+2) shape similarity
+
+
+
 # New Fangled Pattern Vis, based just on the skeleton line segments
 
 - [x] render the lines
 - [x] make it cool
 - [ ] discover the eigenshapes from the segments
   - [x] so cool!
-  - [ ] split lines that intersect
+  - [x] split lines that intersect
+  - [ ] join lines where only two parallel lines meet at an intersection
   - [ ] eliminate shapes that don't *enter*/*cross* the boundary
     - i.e. only share a point or line segment with the boundary
   - [ ] for bonus points, calculate the percentage of the shape that is within the boundary
     so I can like dedup, if a shape shows up half + twice, that should only count as "1" instance.
+    -> yeah actually I'll just calculate overlap percentage for every shape, and then
+      sum the percentages for the same shapes
+- [ ] trace contiguous lines
+- [ ] weave contiguous lines
 
 
 # New Idea for the website

@@ -89,6 +89,10 @@ export const zeroToTwoPi = (angle: number) => {
     }
     return angle;
 };
+
+/**
+ * Normalizes an angle to between -PI and PI
+ */
 export const negPiToPi = (angle: number) => {
     const res = zeroToTwoPi(angle);
     return res > Math.PI ? res - Math.PI * 2 : res;

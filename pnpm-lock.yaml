@@ -87,6 +87,9 @@ importers:
       fflate:
         specifier: ^0.8.2
         version: 0.8.2
+      greiner-hormann:
+        specifier: ^1.4.2
+        version: 1.4.2
       homography:
         specifier: ^1.8.0
         version: 1.8.1
@@ -108,6 +111,9 @@ importers:
       lodash:
         specifier: ^4.17.21
         version: 4.17.21
+      martinez-polygon-clipping:
+        specifier: ^0.7.4
+        version: 0.7.4
       memfs:
         specifier: ^3.4.12
         version: 3.6.0
@@ -2845,6 +2851,9 @@ packages:
   graceful-fs@4.2.11:
     resolution: {integrity: sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ==}
 
+  greiner-hormann@1.4.2:
+    resolution: {integrity: sha512-5O8TM9kVj7NjLfhLjYeaCWQzsVZfTgDrKL2+S82eqIXELIKQDAmZaiT6uCCql1ZcbHUw+L+hYhObRwTmxkgudg==}
+
   hachure-fill@0.5.2:
     resolution: {integrity: sha512-3GKBOn+m2LX9iq+JC1064cSFprJY4jL1jCXTcpnfER5HYE2l/4EfWSGzkPa/ZDBmYI0ZOEj5VHV/eKnPGkHuOg==}
 
@@ -3554,6 +3563,9 @@ packages:
   markdown-extensions@1.1.1:
     resolution: {integrity: sha512-WWC0ZuMzCyDHYCasEGs4IPvLyTGftYwh6wIEOULOF0HXcqZlhwRzrK0w2VUlxWA98xnvb/jszw4ZSkJ6ADpM6Q==}
     engines: {node: '>=0.10.0'}
+
+  martinez-polygon-clipping@0.7.4:
+    resolution: {integrity: sha512-jBEwrKtA0jTagUZj2bnmb4Yg2s4KnJGRePStgI7bAVjtcipKiF39R4LZ2V/UT61jMYWrTcBhPazexeqd6JAVtw==}
 
   material-colors@1.2.6:
     resolution: {integrity: sha512-6qE4B9deFBIa9YSpOc9O0Sgc43zTeVYbgDT5veRKSlB2+ZuHNoVVxA1L/ckMUayV9Ay9y7Z/SZCLcGteW9i7bg==}
@@ -4343,6 +4355,9 @@ packages:
     deprecated: Rimraf versions prior to v4 are no longer supported
     hasBin: true
 
+  robust-predicates@2.0.4:
+    resolution: {integrity: sha512-l4NwboJM74Ilm4VKfbAtFeGq7aEjWL+5kVFcmgFA2MrdnQWx9iE/tUGvxY5HyMI7o/WpSIUFLbC5fbeaHgSCYg==}
+
   robust-predicates@3.0.2:
     resolution: {integrity: sha512-IXgzBWvWQwE6PrDI05OvmXUIruQTcoMDzRsOd5CDvHCVLcLHMTSYvOK5Cm46kWqlV3yAbuSpBZdJ5oP5OUoStg==}
 
@@ -4510,6 +4525,9 @@ packages:
   spdx-license-ids@3.0.22:
     resolution: {integrity: sha512-4PRT4nh1EImPbt2jASOKHX7PB7I+e4IWNLvkKFDxNhJlfjbYlleYQh285Z/3mPTHSAK/AvdMmw5BNNuYH8ShgQ==}
 
+  splaytree@0.1.4:
+    resolution: {integrity: sha512-D50hKrjZgBzqD3FT2Ek53f2dcDLAQT8SSGrzj3vidNH5ISRgceeGVJ2dQIthKOuayqFXfFjXheHNo4bbt9LhRQ==}
+
   sprintf-js@1.0.3:
     resolution: {integrity: sha512-D9cPgkvLlV3t3IzL0D0YLvGA9Ahk4PcvVwUbN0dSGr1aP0Nrt4AEnTUbuGvquEC0mA64Gqt1fzirlRs5ibXx8g==}
 
@@ -4656,6 +4674,9 @@ packages:
   tinyglobby@0.2.15:
     resolution: {integrity: sha512-j2Zq4NyQYG5XMST4cbs02Ak8iJUdxRM0XI5QyxXuZOzKOINmWurp3smXu3y5wDcJrptwpSjgXHzIQxR0omXljQ==}
     engines: {node: '>=12.0.0'}
+
+  tinyqueue@1.2.3:
+    resolution: {integrity: sha512-Qz9RgWuO9l8lT+Y9xvbzhPT2efIUIFd69N7eF7tJ9lnQl0iLj1M7peK7IoUGZL9DJHw9XftqLreccfxcQgYLxA==}
 
   tinytar@https://codeload.github.com/jaredly/tinytar/tar.gz/670f4753cf9daf18a159be601d25fdde36fac465:
     resolution: {tarball: https://codeload.github.com/jaredly/tinytar/tar.gz/670f4753cf9daf18a159be601d25fdde36fac465}
@@ -8072,6 +8093,8 @@ snapshots:
 
   graceful-fs@4.2.11: {}
 
+  greiner-hormann@1.4.2: {}
+
   hachure-fill@0.5.2: {}
 
   has-bigints@1.1.0: {}
@@ -9037,6 +9060,12 @@ snapshots:
 
   markdown-extensions@1.1.1: {}
 
+  martinez-polygon-clipping@0.7.4:
+    dependencies:
+      robust-predicates: 2.0.4
+      splaytree: 0.1.4
+      tinyqueue: 1.2.3
+
   material-colors@1.2.6: {}
 
   math-intrinsics@1.1.0: {}
@@ -10000,6 +10029,8 @@ snapshots:
     dependencies:
       glob: 7.2.3
 
+  robust-predicates@2.0.4: {}
+
   robust-predicates@3.0.2: {}
 
   rollup@4.52.4:
@@ -10221,6 +10252,8 @@ snapshots:
 
   spdx-license-ids@3.0.22: {}
 
+  splaytree@0.1.4: {}
+
   sprintf-js@1.0.3: {}
 
   stack-utils@2.0.6:
@@ -10365,6 +10398,8 @@ snapshots:
     dependencies:
       fdir: 6.5.0(picomatch@4.0.3)
       picomatch: 4.0.3
+
+  tinyqueue@1.2.3: {}
 
   tinytar@https://codeload.github.com/jaredly/tinytar/tar.gz/670f4753cf9daf18a159be601d25fdde36fac465: {}
 
