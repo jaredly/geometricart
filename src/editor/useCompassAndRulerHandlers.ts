@@ -21,7 +21,7 @@ export const useCurrent = <T>(value: T) => {
 };
 
 export const useCompassAndRulerHandlers = (
-    ref: React.RefObject<SVGSVGElement>,
+    ref: React.RefObject<SVGSVGElement | null>,
     view: View,
     width: number,
     height: number,

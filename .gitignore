@@ -4,3 +4,4 @@ build
 .react-router
 dist
 data.db
+deps.json

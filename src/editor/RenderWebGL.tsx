@@ -35,7 +35,7 @@ export const RenderWebGL = ({
     }, [texture]);
     return (
         <canvas
-            ref={(node) => (ref.current = node)}
+            ref={ref}
             width={width}
             height={height}
             style={{
@@ -57,7 +57,7 @@ vec3 sdgQuad( in vec2 p, in vec2 v[4] )
 {
     float gs = cro(v[0]-v[3],v[1]-v[0]);
     vec4 res;
-    
+
     // edge 0
     {
     vec2  e = v[1]-v[0];
@@ -67,7 +67,7 @@ vec3 sdgQuad( in vec2 p, in vec2 v[4] )
     float s = gs*cro(w,e);
     res = vec4(d,q,s);
     }
-    
+
     // edge 1
     {
 	vec2  e = v[2]-v[1];
@@ -78,7 +78,7 @@ vec3 sdgQuad( in vec2 p, in vec2 v[4] )
     res = vec4( (d<res.x) ? vec3(d,q) : res.xyz,
                 (s>res.w) ?      s    : res.w );
     }
-    
+
     // edge 2
     {
 	vec2  e = v[3]-v[2];
@@ -99,11 +99,11 @@ vec3 sdgQuad( in vec2 p, in vec2 v[4] )
     float s = gs*cro(w,e);
     res = vec4( (d<res.x) ? vec3(d,q) : res.xyz,
                 (s>res.w) ?      s    : res.w );
-    }    
-    
+    }
+
     // distance and sign
     float d = sqrt(res.x)*sign(res.w);
-    
+
     return vec3(d,res.yz/d);
 }
 

@@ -816,16 +816,16 @@ function getSVGText(state: State, size: {width: number; height: number}, inner =
         : state;
     // I want this to be sync, so I need the old API
     trapWarn(() => {
-        ReactDOM.render(
-            <Canvas
-                {...blankCanvasProps}
-                {...size}
-                innerRef={(node) => (svgNode = node)}
-                ppi={state.meta.ppi}
-                state={rstate}
-            />,
-            dest,
-        );
+        // ReactDOM.render(
+        //     <Canvas
+        //         {...blankCanvasProps}
+        //         {...size}
+        //         innerRef={(node) => (svgNode = node)}
+        //         ppi={state.meta.ppi}
+        //         state={rstate}
+        //     />,
+        //     dest,
+        // );
     });
 
     return inner ? svgNode!.innerHTML : svgNode!.outerHTML;

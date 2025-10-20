@@ -417,7 +417,7 @@ export const PathForm = ({
     }, [selected]);
     return (
         <div
-            ref={(node) => (ref.current = node)}
+            ref={ref}
             style={{
                 backgroundColor: selected ? 'rgba(255,255,255,0.1)' : undefined,
             }}

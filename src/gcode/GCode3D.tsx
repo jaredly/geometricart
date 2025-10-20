@@ -143,7 +143,7 @@ export const GCode3D = ({
     const stateRef = React.useRef(null as null | any);
     const [download, setDownload] = React.useState(null as null | {url: string; img: string});
     const qsize = 500;
-    const virtualCamera = React.useRef<Camera>();
+    const virtualCamera = React.useRef<Camera >(null);
 
     return (
         <div>
@@ -219,7 +219,7 @@ export const GCode3D = ({
                         position={[0, 0, 10]}
                         args={[30, 1, 1, 1000]}
                     />
-                    <OrbitControls camera={virtualCamera.current} />
+                    <OrbitControls camera={virtualCamera.current ?? undefined} />
                 </Canvas>
             </div>
         </div>
@@ -235,7 +235,7 @@ const GetState = ({ok}: {ok: React.MutableRefObject<any>}) => {
 export function takePerspectivePictures(
     threes: any,
     ctx: CanvasRenderingContext2D,
-    canv: React.RefObject<HTMLCanvasElement>,
+    canv: React.RefObject<HTMLCanvasElement | null>,
     qsize: number,
 ) {
     threes.camera.position.set(0, 0, 10);

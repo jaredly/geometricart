@@ -146,7 +146,7 @@ export function Overlay({
             <image
                 key={id}
                 href={source ?? ''}
-                ref={(node) => (ref.current = node)}
+                ref={ref}
                 width={iwidth}
                 height={iheight}
                 opacity={isSelected ? 0.8 : overlay.opacity}

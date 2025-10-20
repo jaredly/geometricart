@@ -105,7 +105,7 @@ export const PointsEditor = ({
                     border: '1px solid magenta',
                     display: 'block',
                 }}
-                ref={(node) => (node ? (svg.current = node) : null)}
+                ref={(node) => {node ? (svg.current = node) : null}}
                 width={width + 20}
                 height={height + 20}
                 viewBox={`-10 -10 ${width + 20} ${height + 20}`}
