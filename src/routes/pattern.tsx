@@ -35,7 +35,7 @@ export const Pattern = () => {
     });
 
     return (
-        <div>
+        <div css={{padding: 10}}>
             Hello pattern {id}
             <div>
                 <ShowTiling size={500} tiling={pattern.tiling} data={data} />

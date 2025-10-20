@@ -25,8 +25,6 @@ const pkPathFromCoords = (coords: Coord[]) =>
 const coordsFromPkPath = (cmds: Float32Array) => {
     const shapes: Coord[][] = [];
 
-    console.log(cmds)
-
     let i = 0;
     while (i < cmds.length) {
         switch (cmds[i++]) {
