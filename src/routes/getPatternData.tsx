@@ -79,6 +79,7 @@ export const getPatternData = (tiling: Tiling) => {
     let eigenSegments = tiling.cache.segments.map((s) => [s.prev, s.segment.to] as [Coord, Coord]);
     // eigenSegments = splitOverlappingSegs(eigenSegments, marks);
     const eigenPoints = unique(eigenSegments.flat(), coordKey);
+    // joinBrokenSegs(eigenSegments)
 
     const allSegments = applyTilingTransforms(eigenSegments, ttt);
 

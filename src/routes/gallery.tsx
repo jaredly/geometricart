@@ -16,7 +16,7 @@ export const Gallery = ({loaderData}: Route.ComponentProps) => {
                 // .filter((t) => t.hash === '3ec9815442a44a060745e6e3388f64f7c14a3787')
                 // .filter((t) => t.hash === '2fe167ca7e5e06c71b0bbf555a7db33897dd2422')
                 // .filter((t) => t.hash === '11e20b0b5c2acf8fbe077271c9dab02fd69ea419')
-                .slice(0, 20)
+                .slice(0, 40)
                 .map(({tiling, hash}) => {
                     return [hash, getPatternData(tiling)];
                 }),

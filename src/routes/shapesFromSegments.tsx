@@ -1,5 +1,5 @@
 import {coordKey} from '../rendering/coordKey';
-import {closeEnough, epsilon} from '../rendering/epsilonToZero';
+import {closeEnough, closeEnoughAngle, epsilon} from '../rendering/epsilonToZero';
 import {angleTo} from '../rendering/getMirrorTransforms';
 import {lineLine, lineToSlope} from '../rendering/intersect';
 import {angleBetween} from '../rendering/isAngleBetween';
@@ -179,6 +179,38 @@ export const cutSegments = (segs: [Coord, Coord][]) => {
     return result;
 };
 
+// export const joinBrokenSegs = (segs: [Coord,Coord][]) => {
+//     const byEndPoint: Record<string, {idx: number; theta: number; to: Coord}[]> = {};
+//     segs.forEach((seg, i) => {
+//         if (coordsEqual(seg[0], seg[1])) {
+//             console.warn('zero-length seg, ignoring');
+//             return;
+//         }
+//         const to = angleTo(seg[0], seg[1]);
+//         const from = angleTo(seg[1], seg[0]);
+//         addToMap(byEndPoint, coordKey(seg[0]), {idx: i, theta: to, to: seg[1]});
+//         addToMap(byEndPoint, coordKey(seg[1]), {idx: i, theta: from, to: seg[0]});
+//     });
+//     const toJoin = []
+//     Object.values(byEndPoint).forEach(exits => {
+//         if (exits.length !== 2) return;
+//         if (closeEnough(angleBetween(exits[0].theta, exits[1].theta, true), Math.PI)) {
+//             console.log('would join', exits)
+//         }
+//     })
+// }
+
+export const joinAdjacentShapeSegments = (segs: Coord[]) => {
+    const thetas = segs.map((seg, i) => (
+        angleTo(segs[i === 0 ? segs.length - 1 : i - 1], segs[i])
+    ))
+    return segs.filter((_, i) => {
+        const t = thetas[i]
+        const nt = thetas[i === segs.length - 1 ? 0 : i + 1]
+        return !closeEnoughAngle(nt, t, 0.001)
+    })
+}
+
 export const shapesFromSegments = (segs: [Coord, Coord][], eigenPoints: Coord[]) => {
     const byEndPoint: Record<string, {idx: number; theta: number; to: Coord}[]> = {};
     segs.forEach((seg, i) => {
@@ -249,7 +281,7 @@ export const shapesFromSegments = (segs: [Coord, Coord][], eigenPoints: Coord[])
             shapes.push(points);
         }
     });
-    return shapes;
+    return shapes.map(joinAdjacentShapeSegments);
 };
 
 const addToMap = <T,>(map: Record<string | number, T[]>, k: string | number, t: T) => {

@@ -32,10 +32,10 @@ export const anglesEqual = (one: Angle, two: Angle) => {
 // ok folks, here's what we're doing
 
 export const epsilonToZero = (value: number) => (Math.abs(value) < epsilon ? 0 : value);
-export const closeEnoughAngle = (one: number, two: number) => {
+export const closeEnoughAngle = (one: number, two: number, eps?: number) => {
     one = zeroToTwoPi(one);
     two = zeroToTwoPi(two);
-    return closeEnough(one, two);
+    return closeEnough(one, two, eps);
 };
 
 export const angleIsBetween = (angle: number, [lower, upper]: [number, number]) => {
