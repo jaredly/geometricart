@@ -31,7 +31,7 @@ export const Slider = ({inset, onChange}: {inset: number; onChange: (value: numb
     }, [moving]);
 
     return (
-        <g ref={(n) => (ref.current = n)}>
+        <g ref={ref}>
             <circle cx={150} cy={280} r={3} stroke="currentColor" strokeWidth="2" fill="none" />
             <text
                 x={150}

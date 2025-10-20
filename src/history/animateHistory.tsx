@@ -47,7 +47,7 @@ export const animateHistory = async (
     stopped: {current: boolean},
     startAt: number,
     preimage: boolean,
-    log: React.RefObject<HTMLDivElement>,
+    log: React.RefObject<HTMLDivElement | null>,
     onStep?: (i: number) => void,
     // inputRef?: HTMLInputElement | null,
     animateTitle?: boolean,

@@ -61,4 +61,4 @@ const topRouter = createHashRouter(
 const root = (window._reactRoot =
     window._reactRoot || createRoot(document.getElementById('root')!));
 
-root.render(<RouterProvider router={router} />);
+// root.render(<RouterProvider router={router} />);

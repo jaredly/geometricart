@@ -1,7 +1,7 @@
 // The main deals
 
 import * as React from 'react';
-import {render} from 'react-dom';
+// import {render} from 'react-dom';
 import {deepEqual} from '../rendering/deepEqual';
 import {hoverBackground} from './styles.css';
 import {Config, Fixture} from './types';
@@ -302,5 +302,5 @@ const MaybeShowJson = ({input, output}: {input: any; output: any}) => {
 };
 
 export const run = (config: Config<any[], any>) => {
-    render(<App config={config} />, document.getElementById('root'));
+    // render(<App config={config} />, document.getElementById('root'));
 };
