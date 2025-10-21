@@ -43,10 +43,11 @@ export const canvasTiling = (data: ReturnType<typeof getPatternData>, size: numb
         // ctx.fillStyle = `rgba(255, 255, 255, 0.2)`;
         // ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
         ctx.fillStyle =
-            data.colorInfo.colors[i] === -1
+            data.colorInfo.colors[data.shapeIds[i]] === -1
                 ? 'black'
                 : hslToHex(
-                      (data.colorInfo.colors[i] / (data.colorInfo.maxColor + 1)) * 360,
+                      (data.colorInfo.colors[data.shapeIds[i]] / (data.colorInfo.maxColor + 1)) *
+                          360,
                       100,
                       50,
                   );

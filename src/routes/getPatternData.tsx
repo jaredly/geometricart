@@ -19,7 +19,7 @@ import {
 import {angleBetween} from '../rendering/isAngleBetween';
 import {ensureClockwise, pointsAngles, totalAnglePoints} from '../rendering/pathToPoints';
 import {Coord, Tiling} from '../types';
-import {colorShapePoints, colorShapes} from './patternColoring';
+import {colorShapePoints, colorShapes, dedupColorShapePoints} from './patternColoring';
 import {pk} from './pk';
 import {shapesFromSegments, unique} from './shapesFromSegments';
 
@@ -160,10 +160,8 @@ export const getPatternData = (tiling: Tiling) => {
 
     const shapePoints = shapes.map((shape) => shape.map((p) => pointIds[coordKey(p)]));
 
-    const {res: allShapes, count: shapeCount} = uniqueWithCount(transformedShapes, (s) =>
-        shapeKey(s.shape, minSegLength),
-    );
-    const colors = colorShapePoints(
+    const allShapes = unique(transformedShapes, (s) => shapeKey(s.shape, minSegLength));
+    const colors = dedupColorShapePoints(
         shapePoints,
         // allShapes.map((s) => s.shape),
         // minSegLength,
@@ -176,9 +174,10 @@ export const getPatternData = (tiling: Tiling) => {
     return {
         bounds,
         shapes: allShapes.map((s) => s.shape),
+        eigenPoints,
         shapeIds: allShapes.map((s) => s.i),
         shapePoints,
-        colorInfo: {shapeCount, colors, maxColor: Math.max(...colors)},
+        colorInfo: {colors, maxColor: Math.max(...colors)},
         pts,
         allSegments,
         minSegLength,

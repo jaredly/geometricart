@@ -3,6 +3,7 @@ import {angleTo, push} from '../rendering/getMirrorTransforms';
 import {Coord, Tiling} from '../types';
 import {getPatternData, shapeKey} from './getPatternData';
 import {boundsForCoords} from '../editor/Bounds';
+import {toEdges} from './patternColoring';
 
 export const TilingMask = ({
     size,
@@ -53,7 +54,11 @@ export const TilingMask = ({
 };
 
 export const shapeD = (points: Coord[]) =>
-    'M' + points.map((p) => `${p.x.toFixed(3)} ${p.y.toFixed(3)}`).join('L') + 'Z';
+    'M' +
+    points
+        .map((p) => `${Math.round(p.x * 1000) / 1000} ${Math.round(p.y * 1000) / 1000}`)
+        .join('L') +
+    'Z';
 
 export const TilingPattern = ({
     size,
@@ -101,13 +106,7 @@ export const TilingPattern = ({
                                 strokeWidth={minSegLength / 3}
                                 strokeLinejoin="round"
                                 stroke="black"
-                                d={
-                                    'M' +
-                                    shape
-                                        .map((p) => `${p.x.toFixed(3)} ${p.y.toFixed(3)}`)
-                                        .join('L') +
-                                    'Z'
-                                }
+                                d={shapeD(shape)}
                             />
                             <text
                                 fontSize={minSegLength}
@@ -116,8 +115,8 @@ export const TilingPattern = ({
                                 strokeLinejoin="round"
                                 textAnchor="middle"
                                 stroke="black"
-                                x={(bb.x1 + bb.x0) / 2}
-                                y={(bb.y1 + bb.y0) / 2}
+                                x={((bb.x1 + bb.x0) / 2).toFixed(3)}
+                                y={((bb.y1 + bb.y0) / 2).toFixed(3)}
                                 pointerEvents="none"
                             >
                                 {i}
@@ -127,8 +126,8 @@ export const TilingPattern = ({
                                 fill="white"
                                 stroke="none"
                                 textAnchor="middle"
-                                x={(bb.x1 + bb.x0) / 2}
-                                y={(bb.y1 + bb.y0) / 2}
+                                x={((bb.x1 + bb.x0) / 2).toFixed(3)}
+                                y={((bb.y1 + bb.y0) / 2).toFixed(3)}
                                 pointerEvents="none"
                             >
                                 {i}
@@ -137,20 +136,48 @@ export const TilingPattern = ({
                         </>
                     );
                 })}
-                <path
+                {data.eigenPoints.map((coord, i) => (
+                    <>
+                        <circle
+                            cx={coord.x.toFixed(3)}
+                            cy={coord.y.toFixed(3)}
+                            r={minSegLength / 3}
+                            fill="red"
+                            opacity={0.5}
+                        />
+                        <text
+                            fontSize={minSegLength / 2}
+                            fill="yellow"
+                            stroke="none"
+                            textAnchor="middle"
+                            x={coord.x.toFixed(3)}
+                            y={coord.y.toFixed(3)}
+                            pointerEvents="none"
+                        >
+                            {i}
+                        </text>
+                    </>
+                ))}
+                {/* <path
                     fill="none"
-                    strokeWidth={minSegLength / 3}
+                    strokeWidth={minSegLength / 10}
                     strokeLinejoin="round"
                     stroke="yellow"
                     pointerEvents="none"
                     d={shapeD(data.bounds)}
-                />
+                /> */}
             </svg>
             {hover != null ? (
                 <div>
                     Hover {hover}
                     <div>{data.shapeIds[hover]}</div>
-                    <div>{data.shapePoints[data.shapeIds[hover]]?.join(',')}</div>
+                    <div>
+                        {toEdges(data.shapePoints[data.shapeIds[hover]])
+                            .sort((a, b) => (a[0] !== b[0] ? a[0] - b[0] : a[1] - b[1]))
+                            .map(([a, b]) => (a < b ? `${a}:${b}` : `${b}:${a}`))
+                            // .map(([a, b]) => `${a}:${b}`)
+                            .join(' ')}
+                    </div>
                 </div>
             ) : null}
         </div>
@@ -177,12 +204,14 @@ export const ShowTiling = ({
             ) : (
                 <img src={`/gallery/pattern/${hash}/300/png`} style={{width: size, height: size}} />
             )}
-            {/* <TilingMask
-                minSegLength={data.minSegLength}
-                size={size}
-                bounds={data.bounds}
-                hash={hash}
-            /> */}
+            {!debug ? (
+                <TilingMask
+                    minSegLength={data.minSegLength}
+                    size={size}
+                    bounds={data.bounds}
+                    hash={hash}
+                />
+            ) : null}
         </div>
     );
 };
