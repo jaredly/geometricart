@@ -2,7 +2,7 @@ import {useState} from 'react';
 import {angleTo, push} from '../rendering/getMirrorTransforms';
 import {Tiling, Coord} from '../types';
 import {getPatternData} from './getPatternData';
-import {applyTilingTransforms} from '../editor/tilingPoints';
+import {applyTilingTransforms, tilingPoints} from '../editor/tilingPoints';
 
 export const ShowTiling = ({
     tiling,
@@ -31,6 +31,13 @@ export const ShowTiling = ({
                     .map(({x, y}, i) => `${i === 0 ? 'M' : 'L'}${x.toFixed(3)} ${y.toFixed(3)}`)
                     .join(' ')}
             /> */}
+                {/* {tiling.cache.segments.map(({prev, segment: {to}}) => (
+                    <path
+                        stroke="#030"
+                        strokeWidth={0.01}
+                        d={`M${prev.x.toFixed(3)} ${prev.y.toFixed(3)} L${to.x.toFixed(3)} ${to.y.toFixed(3)}`}
+                    />
+                ))} */}
                 {allSegments.map(([a, b]) => (
                     <path
                         stroke="#030"
@@ -38,6 +45,9 @@ export const ShowTiling = ({
                         d={`M${a.x.toFixed(3)} ${a.y.toFixed(3)} L${b.x.toFixed(3)} ${b.y.toFixed(3)}`}
                     />
                 ))}
+                {/* {tilingPoints(tiling.shape).map((pt) => (
+                    <circle cx={pt.x} cy={pt.y} r={0.1} fill="red" />
+                ))} */}
                 {tiling.cache.segments.map((seg, i) => {
                     // const off = push(
                     //     seg.segment.to,

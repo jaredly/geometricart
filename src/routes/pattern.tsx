@@ -12,7 +12,7 @@ import {
     scaleMatrix,
     translationMatrix,
 } from '../rendering/getMirrorTransforms';
-import {joinAdjacentShapeSegments} from './shapesFromSegments';
+import {flipPattern, joinAdjacentShapeSegments} from './shapesFromSegments';
 import {closeEnoughAngle} from '../rendering/epsilonToZero';
 import {Coord} from '../types';
 
@@ -25,9 +25,12 @@ export async function loader({params}: Route.LoaderArgs) {
 
 export const Pattern = () => {
     const {id} = useParams();
-    const pattern = useLoaderData<typeof loader>();
-    const data = useMemo(() => (pattern ? getPatternData(pattern.tiling) : null), [pattern]);
-    if (!pattern || !data) {
+    let pattern = useLoaderData<typeof loader>();
+
+    const tiling = pattern ? flipPattern(pattern.tiling) : null;
+    // if (pattern) flipPattern(pattern.tiling);
+    const data = useMemo(() => (tiling ? getPatternData(tiling) : null), [tiling]);
+    if (!pattern || !tiling || !data) {
         return <div>No data... {id}</div>;
     }
 
@@ -46,7 +49,7 @@ export const Pattern = () => {
         <div css={{padding: 10}}>
             Hello pattern {id}
             <div>
-                <ShowTiling size={500} tiling={pattern.tiling} data={data} />
+                <ShowTiling size={500} tiling={tiling} data={data} />
                 <div style={{display: 'flex', flexWrap: 'wrap'}}>
                     {
                         //data.canons

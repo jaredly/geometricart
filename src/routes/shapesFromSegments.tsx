@@ -1,10 +1,19 @@
+import {getTransform, tilingPoints} from '../editor/tilingPoints';
 import {coordKey} from '../rendering/coordKey';
 import {closeEnough, closeEnoughAngle, epsilon} from '../rendering/epsilonToZero';
-import {angleTo} from '../rendering/getMirrorTransforms';
+import {
+    angleTo,
+    applyMatrices,
+    dist,
+    rotationMatrix,
+    scaleMatrix,
+    translationMatrix,
+} from '../rendering/getMirrorTransforms';
 import {lineLine, lineToSlope} from '../rendering/intersect';
 import {angleBetween} from '../rendering/isAngleBetween';
 import {coordsEqual} from '../rendering/pathsAreIdentical';
-import {Coord} from '../types';
+import {transformSegment} from '../rendering/points';
+import {Coord, Tiling} from '../types';
 
 const gte = (a: number, b: number) => a >= b - epsilon;
 const lte = (a: number, b: number) => a <= b + epsilon;
@@ -201,15 +210,13 @@ export const cutSegments = (segs: [Coord, Coord][]) => {
 // }
 
 export const joinAdjacentShapeSegments = (segs: Coord[]) => {
-    const thetas = segs.map((seg, i) => (
-        angleTo(segs[i === 0 ? segs.length - 1 : i - 1], segs[i])
-    ))
+    const thetas = segs.map((seg, i) => angleTo(segs[i === 0 ? segs.length - 1 : i - 1], segs[i]));
     return segs.filter((_, i) => {
-        const t = thetas[i]
-        const nt = thetas[i === segs.length - 1 ? 0 : i + 1]
-        return !closeEnoughAngle(nt, t, 0.001)
-    })
-}
+        const t = thetas[i];
+        const nt = thetas[i === segs.length - 1 ? 0 : i + 1];
+        return !closeEnoughAngle(nt, t, 0.001);
+    });
+};
 
 export const shapesFromSegments = (segs: [Coord, Coord][], eigenPoints: Coord[]) => {
     const byEndPoint: Record<string, {idx: number; theta: number; to: Coord}[]> = {};
@@ -311,3 +318,99 @@ export function calcPolygonArea(vertices: Coord[]) {
 
     return Math.abs(total);
 }
+
+export const flipPattern = (tiling: Tiling): Tiling => {
+    let {shape, cache} = tiling;
+    if (shape.type === 'right-triangle' && shape.rotateHypotenuse) {
+        const pts = tilingPoints(tiling.shape);
+        const txt = getTransform(pts);
+        const bounds = pts.map((pt) => applyMatrices(pt, txt));
+        let [start, corner, end] = bounds;
+
+        let internalAngle = angleBetween(angleTo(start, corner), angleTo(start, end), true);
+        if (internalAngle > Math.PI) internalAngle = Math.PI * 2 - internalAngle;
+        if (internalAngle < Math.PI / 4 + epsilon) {
+            return tiling;
+        }
+
+        const tx = [
+            translationMatrix({x: -end.x, y: -end.y}),
+            scaleMatrix(1, -1),
+            rotationMatrix(Math.PI / 2),
+            scaleMatrix(-1 / end.y, -1 / end.y),
+        ];
+
+        shape = {...shape};
+        cache = {...cache};
+
+        start = applyMatrices(start, tx);
+        end = applyMatrices(end, tx);
+        corner = applyMatrices(corner, tx);
+
+        // const end = applyMatrices(shape.start, tx);
+        // shape.start = applyMatrices(shape.end, tx);
+        // shape.end = end;
+        // shape.corner = applyMatrices(shape.corner, tx);
+
+        cache.segments = cache.segments.map((seg) => ({
+            prev: applyMatrices(seg.prev, tx),
+            segment: transformSegment(seg.segment, tx),
+        }));
+        return {...tiling, cache, shape: {...shape, start: end, corner, end: start}};
+    }
+    if (shape.type === 'parallellogram') {
+        const [a, b, c, d] = shape.points;
+        const x1 = dist(a, b);
+        const x2 = dist(c, d);
+        const y1 = dist(b, c);
+        const y2 = dist(d, a);
+        // aspectRatio
+        let w = (x1 + x2) / 2;
+        let h = (y1 + y2) / 2;
+
+        if (closeEnough(w, h, 0.01)) {
+            return tiling;
+        }
+
+        if (w > h - epsilon) {
+            return tiling;
+        }
+
+        const tx = [
+            // translationMatrix({x: -a.x, y: -a.y}),
+            rotationMatrix(Math.PI / 2),
+            scaleMatrix(1, -1),
+            scaleMatrix(x1 / y2, x1 / y2),
+            // rotationMatrix(angleBetween(angleTo(a, b), angleTo(a, d), true)),
+            // scaleMatrix(-1 / end.y, -1 / end.y),
+        ];
+
+        shape = {...shape};
+        cache = {...cache};
+
+        const points = shape.points.map((p) => applyMatrices(p, tx));
+
+        // start = applyMatrices(start, tx);
+        // end = applyMatrices(end, tx);
+        // corner = applyMatrices(corner, tx);
+
+        // const end = applyMatrices(shape.start, tx);
+        // shape.start = applyMatrices(shape.end, tx);
+        // shape.end = end;
+        // shape.corner = applyMatrices(shape.corner, tx);
+
+        cache.segments = cache.segments.map((seg) => ({
+            prev: applyMatrices(seg.prev, tx),
+            segment: transformSegment(seg.segment, tx),
+        }));
+        return {
+            ...tiling,
+            cache,
+            shape: {
+                ...shape,
+                points: [points[0], points[3], points[2], points[1]],
+            },
+        };
+    }
+    return tiling;
+};

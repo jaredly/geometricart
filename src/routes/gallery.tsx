@@ -4,9 +4,10 @@ import {getAllPatterns} from './db.server';
 import {getPatternData} from './getPatternData';
 import {ShowTiling} from './ShowTiling';
 import {shapeKey, Tiling} from '../types';
+import {flipPattern} from './shapesFromSegments';
 
 export async function loader(_: Route.LoaderArgs) {
-    return getAllPatterns();
+    return getAllPatterns().map((p) => ({...p, tiling: flipPattern(p.tiling)}));
 }
 
 type GroupBy = 'symmetry' | null;

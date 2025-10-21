@@ -7,6 +7,9 @@
 - symmetry! easy divider
 - yeah ok
 
+- [ ] fix rectangles that are taller than wide
+- [ ] fix triangles that are taller than wide
+
 # Things to compare n stuff
 
 1) pattern similarity
