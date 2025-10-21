@@ -7,7 +7,7 @@ import {shapeKey, Tiling} from '../types';
 import {flipPattern} from './shapesFromSegments';
 
 export async function loader(_: Route.LoaderArgs) {
-    return getAllPatterns().map((p) => ({...p, tiling: flipPattern(p.tiling)}));
+    return getAllPatterns(); // .map((p) => ({...p, tiling: flipPattern(p.tiling)}));
 }
 
 type GroupBy = 'symmetry' | null;
@@ -53,7 +53,8 @@ export const Gallery = ({loaderData}: Route.ComponentProps) => {
     Object.values(groups).forEach((patterns) =>
         patterns.sort(
             (a, b) =>
-                patternsByHash[b].cache.segments.length - patternsByHash[a].cache.segments.length,
+                patternsByHash[sortBy.down ? b : a].cache.segments.length -
+                patternsByHash[sortBy.down ? a : b].cache.segments.length,
         ),
     );
 
