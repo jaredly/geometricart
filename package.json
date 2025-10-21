@@ -53,7 +53,6 @@
         "kmeans-js": "^0.1.2",
         "localforage": "^1.9.0",
         "lodash": "^4.17.21",
-        "martinez-polygon-clipping": "^0.7.4",
         "memfs": "^3.4.12",
         "memfs-browser": "^3.4.11000",
         "pathkit-wasm": "^1.0.0",

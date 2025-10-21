@@ -1,6 +1,11 @@
-import * as martinez from 'martinez-polygon-clipping';
 import {mulPos} from '../animation/PointsEditor';
-import {applyTilingTransforms, getTransform, tilingPoints} from '../editor/tilingPoints';
+import {
+    applyTilingTransforms,
+    applyTilingTransformsG,
+    getTransform,
+    tilingPoints,
+    transformShape,
+} from '../editor/tilingPoints';
 import {tilingTransforms} from '../editor/tilingTransforms';
 import {coordKey, numKey} from '../rendering/coordKey';
 import {closeEnough} from '../rendering/epsilonToZero';
@@ -60,17 +65,6 @@ const pklip = (one: Coord[], two: Coord[]): Coord[][] | null => {
     return shapes;
 };
 
-const marclip = (one: Coord[], two: Coord[]): Coord[][] | null => {
-    const rawoverlap = martinez.intersection(
-        [one.map(({x, y}) => [x, y])],
-        [two.map(({x, y}) => [x, y])],
-    );
-    const overlap = rawoverlap?.flatMap((shapes) =>
-        shapes.map((shape) => (shape as [number, number][]).map(([x, y]) => ({x, y}))),
-    );
-    return overlap;
-};
-
 export const getPatternData = (tiling: Tiling) => {
     const pts = tilingPoints(tiling.shape);
     const tx = getTransform(pts);
@@ -79,16 +73,10 @@ export const getPatternData = (tiling: Tiling) => {
     const marks: number[] = [];
     const ttt = tilingTransforms(tiling.shape, bounds[2], bounds);
     let eigenSegments = tiling.cache.segments.map((s) => [s.prev, s.segment.to] as [Coord, Coord]);
-    // eigenSegments = splitOverlappingSegs(eigenSegments, marks);
     const eigenPoints = unique(eigenSegments.flat(), coordKey);
-    // joinBrokenSegs(eigenSegments)
+    const minSegLength = Math.min(...eigenSegments.map(([a, b]) => dist(a, b)));
 
     const allSegments = applyTilingTransforms(eigenSegments, ttt);
-
-    // console.log(eigenSegments.length);
-    // console.log(allSegments[147], allSegments[151]);
-    // const allSegments = eigenSegments;
-    // const splitted = cutSegments(allSegments);
 
     const shapes = shapesFromSegments(allSegments, eigenPoints);
     const canons = shapes.map(canonicalShape).map((canon) => {
@@ -103,7 +91,16 @@ export const getPatternData = (tiling: Tiling) => {
         };
     });
 
-    return {bounds, shapes, pts, allSegments, marks, canons, ttt};
+    return {
+        bounds,
+        shapes: applyTilingTransformsG(shapes, ttt, transformShape),
+        pts,
+        allSegments,
+        minSegLength,
+        marks,
+        canons,
+        ttt,
+    };
 };
 
 function calcPolygonArea(vertices: Coord[]) {
@@ -128,7 +125,6 @@ export function findCommonFractions(value: number) {
         return;
     }
     const decimal = value - whole;
-    // it's brute force, but it's honest work
     for (let num = 1; num < 100; num++) {
         for (let denom = 2; denom < 100; denom++) {
             //
@@ -197,15 +193,3 @@ export const canonicalShape = (shape: Coord[]) => {
 
     return first;
 };
-
-// const betweens = angleDifferences(angles)
-// // converts 0..2PI to -PI..PI
-// const relatives = betweens.map((between) =>
-//     between > Math.PI ? between - Math.PI * 2 : between,
-// );
-// let total = relatives.reduce((a, b) => a + b);
-// const isClockwise = total >= Math.PI - epsilon
-// if (!isClockwise) {
-//     throw new Error(`isntt clockwise`)
-// }
-// const angles: number[] = shape.map((p, i) => angleTo(shape[i === 0 ? shape.length - 1 : i - 1], p))

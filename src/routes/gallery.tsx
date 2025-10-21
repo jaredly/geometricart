@@ -124,13 +124,8 @@ export const Gallery = ({loaderData}: Route.ComponentProps) => {
                                 {groups[key].map((id) =>
                                     data[id] ? (
                                         <div key={id}>
-                                            {/* <div style={{fontSize: 8}}>{id}</div> */}
                                             <a href={`./pattern/${id}`}>
-                                                <ShowTiling
-                                                    size={200}
-                                                    tiling={patternsByHash[id]}
-                                                    data={data[id]}
-                                                />
+                                                <ShowTiling hash={id} size={200} data={data[id]} />
                                             </a>
                                         </div>
                                     ) : null,
