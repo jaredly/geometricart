@@ -14,18 +14,42 @@ function hslToHex(h: number, s: number, l: number) {
     return `#${f(0)}${f(8)}${f(4)}`;
 }
 
+type ColorScheme = (i: number) => string;
+
+// const schemes = {
+//     'fall':
+//     ctx.fillStyle = hslToHex(((i % 7) / 7) * 60, 100, ((i % 6) / 6) * 20 + 20);
+// }
+
 export const canvasTiling = (data: ReturnType<typeof getPatternData>, size: number) => {
     const canvas = pk.MakeCanvas(size, size);
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error(`no context`);
     ctx.fillStyle = 'black';
     ctx.fillRect(0, 0, size, size);
-    ctx.scale(size / 3, size / 3);
-    ctx.translate(1.5, 1.5);
+
+    const margin = 0.5;
+    // const margin = data.minSegLength * 2;
+
+    ctx.scale(size / (2 + margin * 2), size / (2 + margin * 2));
+    ctx.translate(1 + margin, 1 + margin);
+    ctx.lineJoin = 'round';
     ctx.strokeStyle = 'black';
 
+    const colors = ['red', 'green', 'blue', 'orange'];
+
     data.shapes.forEach((shape, i) => {
-        ctx.fillStyle = hslToHex(90, 100, ((i % 6) / 6) * 80 + 20);
+        // ctx.fillStyle = hslToHex(((i % 7) / 7) * 60, 100, ((i % 6) / 6) * 20 + 20);
+        // ctx.fillStyle = `rgba(255, 255, 255, 0.2)`;
+        // ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+        ctx.fillStyle =
+            data.colorInfo.colors[i] === -1
+                ? 'black'
+                : hslToHex(
+                      (data.colorInfo.colors[i] / (data.colorInfo.maxColor + 1)) * 360,
+                      100,
+                      50,
+                  );
         ctx.beginPath();
         shape.forEach(({x, y}, i) => {
             if (i === 0) {
@@ -38,7 +62,8 @@ export const canvasTiling = (data: ReturnType<typeof getPatternData>, size: numb
     });
 
     data.shapes.forEach((shape) => {
-        ctx.lineWidth = data.minSegLength / 3;
+        ctx.lineWidth = 0.003;
+        // ctx.lineWidth = data.minSegLength / 3;
         ctx.beginPath();
         shape.forEach(({x, y}, i) => {
             if (i === 0) {

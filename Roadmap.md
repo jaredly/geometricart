@@ -1,4 +1,17 @@
 
+# ALSO, let's do coloring!
+because colors are cool
+
+soooooo I want to be able to know what sides are ... the same sides.
+which will be important for the "woven" mode.
+
+1 idea: when forming shapes, remember the ... edge IDs ...
+but could I just do the vertex IDs instead? hmmmm.
+might be more robust somehow?
+
+and a shapeKey can just be a sorted list of vertex ids.
+which is kinda cool
+
 # Fallery Page, how to organize
 
 "Group by" [ symmetry | none ]
@@ -7,8 +20,8 @@
 - symmetry! easy divider
 - yeah ok
 
-- [ ] fix rectangles that are taller than wide
-- [ ] fix triangles that are taller than wide
+- [x] fix rectangles that are taller than wide
+- [x] fix triangles that are taller than wide
 
 # Things to compare n stuff
 

@@ -9,22 +9,29 @@ import {
     translationMatrix,
 } from '../rendering/getMirrorTransforms';
 import {angleBetween} from '../rendering/isAngleBetween';
-import {transformLines} from './tilingPoints';
 
 export function replicateStandard(tx: number, ty: number): Matrix[][][] {
+    const duplicates = [
+        [-tx * 2, 0],
+        [tx * 2, 0],
+    ];
+    // console.log(`Replicate`, tx, ty);
+    for (let i = 1; i < Math.abs(tx / ty) + 1; i++) {
+        const y = ty * (i * 2);
+        duplicates.push(
+            [0, -y],
+            [-tx * 2, -y],
+            [tx * 2, y],
+
+            [0, y],
+            [-tx * 2, y],
+            [tx * 2, -y],
+        );
+    }
     return [
         [[scaleMatrix(-1, 1)]],
         [[scaleMatrix(1, -1)]],
-        [
-            [-tx * 2, 0],
-            [tx * 2, 0],
-            [0, -ty * 2],
-            [0, ty * 2],
-            [-tx * 2, -ty * 2],
-            [-tx * 2, ty * 2],
-            [tx * 2, ty * 2],
-            [tx * 2, -ty * 2],
-        ].map(([x, y]) => [translationMatrix({x, y})]),
+        duplicates.map(([x, y]) => [translationMatrix({x, y})]),
     ];
 }
 

@@ -49,7 +49,7 @@ export const Pattern = () => {
         <div css={{padding: 10}}>
             Hello pattern {id}
             <div>
-                <ShowTiling hash={id} size={500} data={data} />
+                <ShowTiling debug hash={id} size={500} data={data} />
                 <div style={{display: 'flex', flexWrap: 'wrap'}}>
                     {
                         //data.canons

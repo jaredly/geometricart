@@ -1,4 +1,5 @@
 import {mulPos} from '../animation/PointsEditor';
+import {addCoordToBounds, boundsForCoords, newPendingBounds} from '../editor/Bounds';
 import {
     applyTilingTransforms,
     applyTilingTransformsG,
@@ -8,7 +9,7 @@ import {
 } from '../editor/tilingPoints';
 import {tilingTransforms} from '../editor/tilingTransforms';
 import {coordKey, numKey} from '../rendering/coordKey';
-import {closeEnough} from '../rendering/epsilonToZero';
+import {closeEnough, epsilon} from '../rendering/epsilonToZero';
 import {
     applyMatrices,
     dist,
@@ -16,8 +17,9 @@ import {
     translationMatrix,
 } from '../rendering/getMirrorTransforms';
 import {angleBetween} from '../rendering/isAngleBetween';
-import {pointsAngles} from '../rendering/pathToPoints';
+import {ensureClockwise, pointsAngles, totalAnglePoints} from '../rendering/pathToPoints';
 import {Coord, Tiling} from '../types';
+import {colorShapePoints, colorShapes} from './patternColoring';
 import {pk} from './pk';
 import {shapesFromSegments, unique} from './shapesFromSegments';
 
@@ -65,20 +67,74 @@ const pklip = (one: Coord[], two: Coord[]): Coord[][] | null => {
     return shapes;
 };
 
+// 0.13,-0.87,0.62,-0.22
+// 0.12,-0.87,0.62,-0.22
+
+export const shapeKey = (coords: Coord[], msl: number) => {
+    const by = 100 / msl;
+    const bounds = boundsForCoords(
+        ...coords.map(({x, y}) => ({
+            x: Math.round(x * by) / by,
+            y: Math.round(y * by) / by,
+        })),
+    );
+    return `${bounds.x0.toFixed(2)},${bounds.y0.toFixed(2)},${bounds.x1.toFixed(2)},${bounds.y1.toFixed(2)}`;
+};
+
+export const uniqueWithCount = <T,>(l: T[], k: (t: T) => string) => {
+    const seen: Record<string, number> = {};
+    const count: [] = [];
+    const res: T[] = [];
+    l.forEach((t) => {
+        const key = k(t);
+        if (key in seen) {
+            count[seen[key]]++;
+            return;
+        }
+        seen[key] = res.length;
+        res.push(t);
+    });
+    return {res, count};
+};
+
+type ColorInfo = {
+    duplicates: number[];
+    colors: number[];
+    maxColor: number;
+};
+
+type Shape = {
+    id: number;
+    points: Coord[];
+    eigenPoints: number[];
+};
+
 export const getPatternData = (tiling: Tiling) => {
     const pts = tilingPoints(tiling.shape);
     const tx = getTransform(pts);
     const bounds = pts.map((pt) => applyMatrices(pt, tx));
 
-    const marks: number[] = [];
-    const ttt = tilingTransforms(tiling.shape, bounds[2], bounds);
     let eigenSegments = tiling.cache.segments.map((s) => [s.prev, s.segment.to] as [Coord, Coord]);
     const eigenPoints = unique(eigenSegments.flat(), coordKey);
-    const minSegLength = Math.min(...eigenSegments.map(([a, b]) => dist(a, b)));
+
+    const minSegLength = Math.min(
+        ...eigenSegments.map(([a, b]) => dist(a, b)).filter((l) => l > 0.001),
+    );
+
+    const pointIds: Record<string, number> = {};
+
+    const ttt = tilingTransforms(tiling.shape, bounds[2], bounds);
+
+    applyTilingTransformsG(
+        eigenPoints.map((p, i) => ({p, i})),
+        ttt,
+        ({p, i}, tx) => ({p: applyMatrices(p, tx), i}),
+    ).map(({p, i}) => (pointIds[coordKey(p)] = i));
 
     const allSegments = applyTilingTransforms(eigenSegments, ttt);
 
     const shapes = shapesFromSegments(allSegments, eigenPoints);
+
     const canons = shapes.map(canonicalShape).map((canon) => {
         const overlap = pklip(canon.points, bounds) as null | Coord[][];
         const full = calcPolygonArea(canon.points);
@@ -91,13 +147,41 @@ export const getPatternData = (tiling: Tiling) => {
         };
     });
 
+    // const shapePoints: number[][] = shapes.map(() => []);
+
+    const transformedShapes = applyTilingTransformsG(
+        shapes.map((shape, i) => ({shape, i})),
+        ttt,
+        ({shape, i}, tx) => ({
+            shape: transformShape(shape, tx),
+            i,
+        }),
+    );
+
+    const shapePoints = shapes.map((shape) => shape.map((p) => pointIds[coordKey(p)]));
+
+    const {res: allShapes, count: shapeCount} = uniqueWithCount(transformedShapes, (s) =>
+        shapeKey(s.shape, minSegLength),
+    );
+    const colors = colorShapePoints(
+        shapePoints,
+        // allShapes.map((s) => s.shape),
+        // minSegLength,
+    );
+    // const colors = colorShapes(
+    //     allShapes.map((s) => s.shape),
+    //     minSegLength,
+    // );
+
     return {
         bounds,
-        shapes: applyTilingTransformsG(shapes, ttt, transformShape),
+        shapes: allShapes.map((s) => s.shape),
+        shapeIds: allShapes.map((s) => s.i),
+        shapePoints,
+        colorInfo: {shapeCount, colors, maxColor: Math.max(...colors)},
         pts,
         allSegments,
         minSegLength,
-        marks,
         canons,
         ttt,
     };

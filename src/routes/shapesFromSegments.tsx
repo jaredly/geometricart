@@ -121,25 +121,16 @@ const findSplitPoints = (segs: [Coord, Coord][]) => {
 
     const slopes = segs.map(([a, b]) => lineToSlope(a, b, true));
     for (let i = 0; i < slopes.length; i++) {
-        // const ki1 = coordKey(segs[i][0]);
-        // const ki2 = coordKey(segs[i][1]);
         for (let j = i + 1; j < slopes.length; j++) {
-            // const kj1 = coordKey(segs[j][0]);
-            // const kj2 = coordKey(segs[j][1]);
-            // if (ki1 === kj1 || ki1 === kj2 || ki2 === kj1 || ki2 === kj2) {
-            //     continue; // unnecessary, they share an endpoint
-            // }
             if (!boundsIntersect(segs[i], segs[j])) continue;
+
             // TODO: maybe check bounding box collision first?
             const int = lineLine(slopes[i], slopes[j]);
             if (!int) continue;
-            // const ki = coordKey(int);
             if (!coordsEqual(segs[i][0], int) && !coordsEqual(segs[i][1], int)) {
-                // if (ki !== ki1 && ki !== ki2) {
                 addToMap(splitPoints, i, int);
             }
             if (!coordsEqual(segs[j][0], int) && !coordsEqual(segs[j][1], int)) {
-                // if (ki !== kj1 && ki !== kj2) {
                 addToMap(splitPoints, j, int);
             }
         }
@@ -291,10 +282,11 @@ export const shapesFromSegments = (segs: [Coord, Coord][], eigenPoints: Coord[])
     return shapes.map(joinAdjacentShapeSegments);
 };
 
-const addToMap = <T,>(map: Record<string | number, T[]>, k: string | number, t: T) => {
+export const addToMap = <T,>(map: Record<string | number, T[]>, k: string | number, t: T) => {
     if (!map[k]) map[k] = [t];
     else map[k].push(t);
 };
+
 export const unique = <T,>(l: T[], k: (t: T) => string) => {
     const seen: Record<string, boolean> = {};
     return l.filter((t) => {
