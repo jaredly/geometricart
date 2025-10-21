@@ -279,7 +279,7 @@ export const shapesFromSegments = (segs: [Coord, Coord][], eigenPoints: Coord[])
             shapes.push(points);
         }
     });
-    return shapes.map(joinAdjacentShapeSegments);
+    return shapes;
 };
 
 export const addToMap = <T,>(map: Record<string | number, T[]>, k: string | number, t: T) => {

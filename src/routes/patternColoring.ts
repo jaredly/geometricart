@@ -3,7 +3,7 @@ import {closeEnough} from '../rendering/epsilonToZero';
 import {Coord} from '../types';
 import {addToMap, unique} from './shapesFromSegments';
 
-export const colorGraph = (edges: [number, number][]) => {
+export const colorGraph = (edges: [number, number][], debug = false) => {
     const edgeMap: Record<number, number[]> = {};
     let max = 0;
     edges.forEach(([a, b]) => {
@@ -20,6 +20,9 @@ export const colorGraph = (edges: [number, number][]) => {
             return;
         }
         const used = edgeMap[idx].map((idx) => colors[idx]);
+        if (debug) {
+            console.log(`Shape ${idx}`, used);
+        }
         for (let i = 0; i < 10; i++) {
             if (!used.includes(i)) {
                 colors[idx] = i;
@@ -28,9 +31,20 @@ export const colorGraph = (edges: [number, number][]) => {
         }
         colors[idx] = -1;
     };
-    for (let i = 0; i <= max; i++) {
-        single(i);
+    const boundary = [0];
+    while (boundary.length) {
+        const next = boundary.shift()!;
+        single(next);
+        if (!edgeMap[next]) continue;
+        edgeMap[next].forEach((idx) => {
+            if (colors[idx] == null && !boundary.includes(idx)) {
+                boundary.push(idx);
+            }
+        });
     }
+    // for (let i = 0; i <= max; i++) {
+    //     single(i);
+    // }
     return colors as number[];
 };
 
@@ -46,10 +60,10 @@ export const dedupColorShapePoints = (shapes: number[][]) => {
     const uniqueShapes = unique(shapes, (s) => s.toSorted().join(','));
     const byKey: Record<string, number> = {};
     uniqueShapes.forEach((shape, i) => (byKey[shape.toSorted().join(',')] = i));
-    console.log(
-        `Dedup Mapping`,
-        shapes.map((shape) => byKey[shape.toSorted().join(',')]),
-    );
+    // console.log(
+    //     `Dedup Mapping`,
+    //     shapes.map((shape) => byKey[shape.toSorted().join(',')]),
+    // );
     const colored = colorShapePoints(uniqueShapes);
     return shapes.map((shape) => colored[byKey[shape.toSorted().join(',')]]);
 };
@@ -63,15 +77,15 @@ export const colorShapePoints = (shapes: number[][]) => {
         });
     });
 
-    console.log(`Coloring shape points`);
-    shapes.forEach((shape, i) => {
-        console.log(`shape ${i}`, shape);
-    });
-    Object.keys(byEdge)
-        .sort()
-        .forEach((key) => {
-            console.log(`edge ${key}`, byEdge[key]);
-        });
+    // console.log(`Coloring shape points`);
+    // shapes.forEach((shape, i) => {
+    //     console.log(`shape ${i}`, shape);
+    // });
+    // Object.keys(byEdge)
+    //     .sort()
+    //     .forEach((key) => {
+    //         console.log(`edge ${key}`, byEdge[key]);
+    //     });
 
     return colorGraph(
         Object.values(byEdge)
@@ -80,26 +94,36 @@ export const colorShapePoints = (shapes: number[][]) => {
     );
 };
 
-export const colorShapes = (shapes: Coord[][], minLength: number) => {
+export const colorShapes = (
+    pointNames: Record<string, number>,
+    shapes: Coord[][],
+    minLength: number,
+    debug = false,
+) => {
     const by = Math.log10(100 / minLength);
     // const by = Math.log10(100 / minLength);
     const byEdge: Record<string, number[]> = {};
     shapes.forEach((shape, i) => {
         const edges = toEdges(shape);
         edges.forEach((edge) => {
-            const k = coordKey(
-                {
-                    x: (edge[0].x + edge[1].x) / 2,
-                    y: (edge[0].y + edge[1].y) / 2,
-                },
-                by,
-            );
-            // const [a, b] = sortEdge(edge);
-            // const k = `${coordKey(a, by)}:${coordKey(b, by)}`;
+            const p1 = pointNames[coordKey(edge[0])];
+            const p2 = pointNames[coordKey(edge[1])];
+            const k = p1 < p2 ? p1 * 1000 + p2 : p2 * 1000 + p1;
+
+            // console.log(`Shape ${i} - ${k}`);
+
             addToMap(byEdge, k, i);
         });
     });
-    return colorGraph(Object.values(byEdge).filter((e) => e.length === 2) as [number, number][]);
+    if (debug) {
+        Object.keys(byEdge).forEach((key) => {
+            console.log(`edge ${key}`, byEdge[key]);
+        });
+    }
+    return colorGraph(
+        Object.values(byEdge).filter((e) => e.length === 2) as [number, number][],
+        debug,
+    );
 };
 
 // V = 4

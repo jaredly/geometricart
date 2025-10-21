@@ -21,7 +21,7 @@ import {ensureClockwise, pointsAngles, totalAnglePoints} from '../rendering/path
 import {Coord, Tiling} from '../types';
 import {colorShapePoints, colorShapes, dedupColorShapePoints} from './patternColoring';
 import {pk} from './pk';
-import {shapesFromSegments, unique} from './shapesFromSegments';
+import {joinAdjacentShapeSegments, shapesFromSegments, unique} from './shapesFromSegments';
 
 const pkPathFromCoords = (coords: Coord[]) =>
     pk.Path.MakeFromCmds([
@@ -109,7 +109,7 @@ type Shape = {
     eigenPoints: number[];
 };
 
-export const getPatternData = (tiling: Tiling) => {
+export const getPatternData = (tiling: Tiling, debug = false) => {
     const pts = tilingPoints(tiling.shape);
     const tx = getTransform(pts);
     const bounds = pts.map((pt) => applyMatrices(pt, tx));
@@ -135,17 +135,22 @@ export const getPatternData = (tiling: Tiling) => {
 
     const shapes = shapesFromSegments(allSegments, eigenPoints);
 
-    const canons = shapes.map(canonicalShape).map((canon) => {
-        const overlap = pklip(canon.points, bounds) as null | Coord[][];
-        const full = calcPolygonArea(canon.points);
-        const showing = overlap ? overlap.map(calcPolygonArea).reduce((a, b) => a + b, 0) : 0;
-        const percentage = showing / full;
-        return {
-            ...canon,
-            percentage,
-            overlap: overlap?.map((shape) => shape.map((coord) => applyMatrices(coord, canon.tx))),
-        };
-    });
+    const canons = shapes
+        .map(joinAdjacentShapeSegments)
+        .map(canonicalShape)
+        .map((canon) => {
+            const overlap = pklip(canon.points, bounds) as null | Coord[][];
+            const full = calcPolygonArea(canon.points);
+            const showing = overlap ? overlap.map(calcPolygonArea).reduce((a, b) => a + b, 0) : 0;
+            const percentage = showing / full;
+            return {
+                ...canon,
+                percentage,
+                overlap: overlap?.map((shape) =>
+                    shape.map((coord) => applyMatrices(coord, canon.tx)),
+                ),
+            };
+        });
 
     // const shapePoints: number[][] = shapes.map(() => []);
 
@@ -161,21 +166,33 @@ export const getPatternData = (tiling: Tiling) => {
     const shapePoints = shapes.map((shape) => shape.map((p) => pointIds[coordKey(p)]));
 
     const allShapes = unique(transformedShapes, (s) => shapeKey(s.shape, minSegLength));
-    const colors = dedupColorShapePoints(
-        shapePoints,
-        // allShapes.map((s) => s.shape),
-        // minSegLength,
-    );
-    // const colors = colorShapes(
-    //     allShapes.map((s) => s.shape),
-    //     minSegLength,
+    // const colors = dedupColorShapePoints(
+    //     shapePoints,
+    //     // allShapes.map((s) => s.shape),
+    //     // minSegLength,
     // );
+
+    const uniquePoints = unique(
+        // shapes.flat(),
+        allShapes.flatMap((s) => s.shape),
+        coordKey,
+    );
+    const pointNames = Object.fromEntries(uniquePoints.map((p, i) => [coordKey(p), i]));
+
+    const colors = colorShapes(
+        pointNames,
+        allShapes.map((s) => s.shape),
+        // shapes,
+        minSegLength,
+        debug,
+    );
 
     return {
         bounds,
+        uniquePoints,
         shapes: allShapes.map((s) => s.shape),
         eigenPoints,
-        shapeIds: allShapes.map((s) => s.i),
+        shapeIds: allShapes.map((s, i) => i),
         shapePoints,
         colorInfo: {colors, maxColor: Math.max(...colors)},
         pts,

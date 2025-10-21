@@ -1,4 +1,13 @@
 
+# ugh
+
+ok tracking down identity and shared edges is maybe hard
+
+let's go back to brute forcing everything
+and see how it goes
+
+
+
 # ALSO, let's do coloring!
 because colors are cool
 

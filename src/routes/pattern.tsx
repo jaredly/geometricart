@@ -29,7 +29,7 @@ export const Pattern = () => {
 
     const tiling = pattern ? flipPattern(pattern.tiling) : null;
     // if (pattern) flipPattern(pattern.tiling);
-    const data = useMemo(() => (tiling ? getPatternData(tiling) : null), [tiling]);
+    const data = useMemo(() => (tiling ? getPatternData(tiling, true) : null), [tiling]);
     if (!pattern || !tiling || !data || !id) {
         return <div>No data... {id}</div>;
     }
@@ -49,7 +49,7 @@ export const Pattern = () => {
         <div css={{padding: 10}}>
             Hello pattern {id}
             <div>
-                <ShowTiling debug hash={id} size={500} data={data} />
+                <ShowTiling debug tiling={tiling} hash={id} size={500} data={data} />
                 <div style={{display: 'flex', flexWrap: 'wrap'}}>
                     {
                         //data.canons
