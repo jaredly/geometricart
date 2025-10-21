@@ -41,14 +41,14 @@ export const TilingPattern = ({
     size,
     data: {shapes, minSegLength},
 }: {
-    size: number;
+    size?: number;
     data: {shapes: Coord[][]; minSegLength: number};
 }) => {
     return (
         <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="-1.5 -1.5 3 3"
-            style={{background: 'black', width: size, height: size}}
+            style={size ? {background: 'black', width: size, height: size} : undefined}
         >
             {shapes.map((shape, i) => (
                 <>
@@ -84,7 +84,8 @@ export const ShowTiling = ({
 }) => {
     return (
         <div className="relative">
-            <TilingPattern size={size} data={data} />
+            <img src={`/gallery/pattern/${hash}/png`} style={{width: size, height: size}} />
+            {/* <TilingPattern size={size} data={data} /> */}
             <TilingMask size={size} bounds={data.bounds} hash={hash} />
         </div>
     );

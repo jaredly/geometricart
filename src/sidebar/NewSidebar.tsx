@@ -82,10 +82,6 @@ export const NewSidebar = ({
         [],
     );
 
-    if (!state.palette) {
-        debugger;
-    }
-
     return (
         <div
             style={{

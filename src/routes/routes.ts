@@ -7,6 +7,10 @@ import {type RouteConfig, index, prefix, route} from '@react-router/dev/routes';
 
 export default [
     index('./home.tsx'),
-    ...prefix('gallery', [index('./gallery.tsx'), route('pattern/:id', './pattern.tsx')]),
+    ...prefix('gallery', [
+        index('./gallery.tsx'),
+        route('pattern/:id', './pattern.tsx'),
+        route('pattern/:id/:format', './pattern-svg.tsx'),
+    ]),
     route('editor', './editor.tsx'),
 ] as RouteConfig;
