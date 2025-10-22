@@ -17,7 +17,12 @@ import {
     translationMatrix,
 } from '../rendering/getMirrorTransforms';
 import {angleBetween} from '../rendering/isAngleBetween';
-import {ensureClockwise, pointsAngles, totalAnglePoints} from '../rendering/pathToPoints';
+import {
+    ensureClockwise,
+    isClockwisePoints,
+    pointsAngles,
+    totalAnglePoints,
+} from '../rendering/pathToPoints';
 import {Coord, Tiling} from '../types';
 import {findReflectionAxes} from './findReflectionAxes';
 import {colorShapePoints, colorShapes, dedupColorShapePoints} from './patternColoring';
@@ -264,6 +269,10 @@ export const humanReadableFraction = (value: number) => {
 };
 
 export const canonicalShape = (shape: Coord[]) => {
+    if (!isClockwisePoints(shape)) {
+        shape = shape.toReversed();
+    }
+
     const lengths: number[] = shape.map((p, i) =>
         dist(p, shape[i === 0 ? shape.length - 1 : i - 1]),
     );

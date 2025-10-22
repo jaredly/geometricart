@@ -46,11 +46,12 @@ export const ShapeDialog = ({
                                         }}
                                     >
                                         {subgroup.shapes.map((key) => (
-                                            <ShowShape
-                                                key={key}
-                                                shape={uniqueShapes[key]}
-                                                size={100}
-                                            />
+                                            <div key={key} className="relative">
+                                                <ShowShape shape={uniqueShapes[key]} size={100} />
+                                                <div className="absolute inset-0 flex items-center justify-center">
+                                                    {patternsWithShapes[key].length}
+                                                </div>
+                                            </div>
                                         ))}
                                     </div>
                                 </div>
@@ -85,21 +86,21 @@ const ShowShape = ({shape, size}: {shape: Shape; size: number}) => {
     const margin = dim / 10;
 
     return (
-        <div>
-            <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox={`${(bounds.x0 - margin).toFixed(3)} ${(bounds.y0 - margin).toFixed(3)} ${(bounds.x1 - bounds.x0 + margin * 2).toFixed(3)} ${(
-                    bounds.y1 - bounds.y0 + margin * 2
-                ).toFixed(3)}`}
-                style={{
-                    width: size,
-                    height: size,
-                    minWidth: size,
-                    minHeight: size,
-                }}
-            >
-                <path d={shapeD(shape.rotated)} fill="green" />
-                {/* <path d={shapeD(shape.scaled)} stroke="red" fill="none" strokeWidth={dim / 50} />
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox={`${(bounds.x0 - margin).toFixed(3)} ${(bounds.y0 - margin).toFixed(3)} ${(bounds.x1 - bounds.x0 + margin * 2).toFixed(3)} ${(
+                bounds.y1 - bounds.y0 + margin * 2
+            ).toFixed(3)}`}
+            data-key={shape.key}
+            style={{
+                width: size,
+                height: size,
+                minWidth: size,
+                minHeight: size,
+            }}
+        >
+            <path d={shapeD(shape.rotated)} fill="#666" />
+            {/* <path d={shapeD(shape.scaled)} stroke="red" fill="none" strokeWidth={dim / 50} />
                 <circle
                     cx={shape.axes[0].point.x}
                     cy={shape.axes[0].point.y}
@@ -118,8 +119,7 @@ const ShowShape = ({shape, size}: {shape: Shape; size: number}) => {
                     r={dim / 50}
                     fill="orange"
                 /> */}
-            </svg>
-        </div>
+        </svg>
     );
 };
 
