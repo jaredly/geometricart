@@ -6,16 +6,17 @@ import {ShowTiling} from './ShowTiling';
 import {shapeKey, Tiling} from '../types';
 import {flipPattern} from './shapesFromSegments';
 import {ShapeDialog} from './ShapeDialog';
+import {getUniqueShapes} from './getUniqueShapes';
 
 export async function loader(_: Route.LoaderArgs) {
-    return (
-        getAllPatterns()
-            // .filter((t) => t.hash === '3ec9815442a44a060745e6e3388f64f7c14a3787')
-            // .filter((t) => t.hash === '2fe167ca7e5e06c71b0bbf555a7db33897dd2422')
-            // .filter((t) => t.hash === '11e20b0b5c2acf8fbe077271c9dab02fd69ea419')
-            // .slice(0, 10)
-            .map((pattern) => ({...pattern, data: getPatternData(pattern.tiling)}))
-    );
+    const patterns = getAllPatterns()
+        // .filter((t) => t.hash === '3ec9815442a44a060745e6e3388f64f7c14a3787')
+        // .filter((t) => t.hash === '2fe167ca7e5e06c71b0bbf555a7db33897dd2422')
+        // .filter((t) => t.hash === '11e20b0b5c2acf8fbe077271c9dab02fd69ea419')
+        .slice(0, 10)
+        .map((pattern) => ({...pattern, data: getPatternData(pattern.tiling)}));
+
+    return {patterns, shapes: getUniqueShapes(patterns)};
 }
 
 type GroupBy = 'symmetry' | null;
@@ -56,7 +57,7 @@ export const Gallery = ({loaderData}: Route.ComponentProps) => {
         string,
         {hash: string; tiling: Tiling; data: ReturnType<typeof getPatternData>}
     > = {};
-    loaderData.forEach((pattern) => (patternsByHash[pattern.hash] = pattern));
+    loaderData.patterns.forEach((pattern) => (patternsByHash[pattern.hash] = pattern));
     const groups: Record<string, string[]> = {};
     if (groupBy === 'symmetry') {
         Object.entries(patternsByHash).forEach(
@@ -112,14 +113,17 @@ export const Gallery = ({loaderData}: Route.ComponentProps) => {
                 >
                     Complexity {sortBy.down ? '🔽' : '🔼'}
                 </button>
-                <button className="btn btn-sm" onClick={() => dialogRef.current?.showModal()}>
+                <button
+                    className="btn btn-sm btn-accent"
+                    onClick={() => dialogRef.current?.showModal()}
+                >
                     Filter by shape
                 </button>
             </div>
             <dialog id="filter-modal" className="modal" ref={dialogRef}>
                 <div className="modal-box flex flex-col w-11/12 max-w-5xl">
                     <h3 className="font-bold text-lg">Filter by shape</h3>
-                    {showDialog ? <ShapeDialog patterns={loaderData} /> : null}
+                    {showDialog ? <ShapeDialog data={loaderData} /> : null}
                     <div className="modal-action">
                         <form method="dialog">
                             {/* if there is a button in form, it will close the modal */}

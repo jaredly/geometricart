@@ -1,120 +1,58 @@
 import {useMemo, useState} from 'react';
 import {boundsForCoords} from '../editor/Bounds';
-import {closeEnoughAngle} from '../rendering/epsilonToZero';
-import {angleBetween} from '../rendering/isAngleBetween';
-import {pointsAngles} from '../rendering/pathToPoints';
 import {Coord} from '../types';
 import {Route} from './+types/gallery';
 import {canonicalShape} from './getPatternData';
 import {addToMap} from './shapesFromSegments';
 import {shapeD} from './ShowTiling';
 
-const shapeClasses = ['stars', 'regular', 'symmetrical', 'other'] as const;
-
-const isAlternating = (thetas: boolean[]) => {
-    return thetas.every((t, i) => t !== thetas[i === 0 ? thetas.length - 1 : i - 1]);
-};
-
-const classifyShape = (coords: Coord[]): (typeof shapeClasses)[number] => {
-    const angles = pointsAngles(coords);
-    const internalAngles = angles.map((a, i) =>
-        angleBetween(angles[i === 0 ? angles.length - 1 : i - 1], a, true),
-    );
-    if (
-        isAlternating(internalAngles.map((t) => t > Math.PI)) &&
-        internalAngles.every((angle, i) =>
-            closeEnoughAngle(angle, internalAngles[i <= 1 ? internalAngles.length - 2 + i : i - 2]),
-        )
-    ) {
-        return 'stars';
-    }
-    if (closeEnoughAngle(Math.min(...internalAngles), Math.max(...internalAngles))) {
-        return 'regular';
-    }
-    return 'other';
-};
-
-export const ShapeDialog = ({patterns}: {patterns: Route.ComponentProps['loaderData']}) => {
-    const {patternsWithShapes, uniqueShapes, shapesOrganized} = useMemo(() => {
-        const patternsWithShapes: Record<string, string[]> = {};
-        const uniqueShapes: Record<string, ReturnType<typeof canonicalShape>> = {};
-        const shapesOrganized: Record<(typeof shapeClasses)[number], string[]> = {
-            stars: [],
-            regular: [],
-            symmetrical: [],
-            other: [],
-        };
-        patterns.forEach(({data, hash}) => {
-            data.canons.forEach((shape) => {
-                if (!shape.percentage) return;
-                addToMap(patternsWithShapes, shape.key, hash);
-                if (!uniqueShapes[shape.key]) {
-                    uniqueShapes[shape.key] = shape;
-                    const cs = classifyShape(shape.scaled);
-                    shapesOrganized[cs].push(shape.key);
-                }
-            });
-        });
-        Object.values(shapesOrganized).forEach((hashes) =>
-            hashes.sort((a, b) =>
-                uniqueShapes[a].scaled.length === uniqueShapes[b].scaled.length
-                    ? Math.max(...uniqueShapes[a].angles) - Math.max(...uniqueShapes[b].angles)
-                    : uniqueShapes[b].scaled.length - uniqueShapes[a].scaled.length,
-            ),
-        );
-        return {patternsWithShapes, uniqueShapes, shapesOrganized};
-    }, [patterns]);
+export const ShapeDialog = ({
+    data: {patterns, shapes},
+}: {
+    data: Route.ComponentProps['loaderData'];
+}) => {
+    const {patternsWithShapes, uniqueShapes, shapesOrganized} = shapes;
     const [selected, setSelected] = useState([] as string[]);
+
     return (
         <div className="flex flex-1 min-h-0">
             <div className="flex flex-col gap-10 flex-1 min-h-0 overflow-auto">
-                {Object.keys(shapesOrganized).map((k) => {
-                    if (k === 'other') {
-                        const bySize: Record<number, ReturnType<typeof canonicalShape>[]> = {};
-                        shapesOrganized[k].forEach((k) => {
-                            if (patternsWithShapes[k].length < 2) return;
-                            const shape = uniqueShapes[k];
-                            addToMap(bySize, shape.scaled.length, shape);
-                        });
-                        return Object.keys(bySize)
-                            .sort((a, b) => +b - +a)
-                            .map((k) => {
-                                return (
-                                    <div className="flex flex-row flex-wrap gap-10 flex-1 " key={k}>
-                                        <h3>{k} sides</h3>
-                                        {bySize[+k]
-                                            .map((shape) => ({
-                                                shape,
-                                                key: shapePatternKey(shape.angles),
-                                                ratio:
-                                                    Math.max(
-                                                        ...shape.angles.filter((a) => a < Math.PI),
-                                                    ) / Math.min(...shape.angles),
-                                                avg:
-                                                    shape.angles
-                                                        .map((a) => Math.abs(Math.PI - a))
-                                                        .reduce((a, b) => a + b, 0) /
-                                                    shape.angles.length,
-                                            }))
-                                            .sort((a, b) =>
-                                                a.key < b.key
-                                                    ? -1
-                                                    : a.key > b.key
-                                                      ? 1
-                                                      : a.avg - b.avg,
-                                            )
-                                            .map(({shape}) => (
-                                                <ShowShape shape={shape.scaled} size={100} />
-                                            ))}
-                                    </div>
-                                );
-                            });
-                    }
+                {shapesOrganized.map((group, i) => {
                     return (
-                        <div className="flex flex-row flex-wrap gap-10 flex-1 ">
-                            <h3>{k}</h3>
-                            {shapesOrganized[k as 'stars'].map((key) => (
-                                <ShowShape shape={uniqueShapes[key].scaled} size={100} />
+                        <div className="flex-1 " key={i}>
+                            <h3>{group.title}</h3>
+                            {group.children.map((subgroup, i) => (
+                                <div
+                                    key={i}
+                                    style={{
+                                        display: 'inline-flex',
+                                        flexDirection: 'column',
+                                        gap: '0.5rem',
+                                        padding: '1rem',
+                                        margin: '0.5rem',
+                                        borderRadius: '0.5rem',
+                                    }}
+                                    className="bg-base-300"
+                                >
+                                    <div>{subgroup.title}</div>
+
+                                    <div
+                                        style={{
+                                            gap: 12,
+                                            flexDirection: 'row',
+                                            display: 'flex',
+                                            flexWrap: 'wrap',
+                                        }}
+                                    >
+                                        {subgroup.shapes.map((key) => (
+                                            <ShowShape
+                                                key={key}
+                                                shape={uniqueShapes[key].rotated}
+                                                size={100}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
                             ))}
                         </div>
                     );

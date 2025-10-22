@@ -19,6 +19,7 @@ import {
 import {angleBetween} from '../rendering/isAngleBetween';
 import {ensureClockwise, pointsAngles, totalAnglePoints} from '../rendering/pathToPoints';
 import {Coord, Tiling} from '../types';
+import {findReflectionAxes} from './findReflectionAxes';
 import {colorShapePoints, colorShapes, dedupColorShapePoints} from './patternColoring';
 import {pk} from './pk';
 import {joinAdjacentShapeSegments, shapesFromSegments, unique} from './shapesFromSegments';

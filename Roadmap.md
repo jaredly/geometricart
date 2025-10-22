@@ -1,4 +1,7 @@
 
+iiiiii want a way to 'extract all the dependencies of this new thing from the bigness of the project'
+and also probably 'extract all utility functions into their own files'
+
 # Next steps
 
 Filter by Shapes (modal dialog)
@@ -10,6 +13,26 @@ Filter by Shapes (modal dialog)
   - view the construction steps
   - show source images
   - pattern constructor with all the goodies
+
+
+# A Pattern Maker yesiree
+
+Layer
+[offset, scale]
+Source
+[pattern, extent]
+Contents
+[lines | shapes]
+Clips
+[shape, inside/outside]
+
+Lines
+- count
+- woven [manual | auto]
+
+Clip shape
+- rect / circle / oval / polygon
+- snappp
 
 
 # ugh
