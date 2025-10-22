@@ -5,6 +5,7 @@ import {Route} from './+types/gallery';
 import {canonicalShape} from './getPatternData';
 import {addToMap} from './shapesFromSegments';
 import {shapeD} from './ShowTiling';
+import {Shape} from './getUniqueShapes';
 
 export const ShapeDialog = ({
     data: {patterns, shapes},
@@ -47,7 +48,7 @@ export const ShapeDialog = ({
                                         {subgroup.shapes.map((key) => (
                                             <ShowShape
                                                 key={key}
-                                                shape={uniqueShapes[key].rotated}
+                                                shape={uniqueShapes[key]}
                                                 size={100}
                                             />
                                         ))}
@@ -78,15 +79,17 @@ export const ShapeDialog = ({
     );
 };
 
-const ShowShape = ({shape, size}: {shape: Coord[]; size: number}) => {
-    const bounds = boundsForCoords(...shape);
+const ShowShape = ({shape, size}: {shape: Shape; size: number}) => {
+    const bounds = boundsForCoords(...shape.rotated);
+    const dim = Math.max(bounds.x1 - bounds.x0, bounds.y1 - bounds.y0);
+    const margin = dim / 10;
 
     return (
         <div>
             <svg
                 xmlns="http://www.w3.org/2000/svg"
-                viewBox={`${bounds.x0.toFixed(3)} ${bounds.y0.toFixed(3)} ${(bounds.x1 - bounds.x0).toFixed(3)} ${(
-                    bounds.y1 - bounds.y0
+                viewBox={`${(bounds.x0 - margin).toFixed(3)} ${(bounds.y0 - margin).toFixed(3)} ${(bounds.x1 - bounds.x0 + margin * 2).toFixed(3)} ${(
+                    bounds.y1 - bounds.y0 + margin * 2
                 ).toFixed(3)}`}
                 style={{
                     width: size,
@@ -95,7 +98,26 @@ const ShowShape = ({shape, size}: {shape: Coord[]; size: number}) => {
                     minHeight: size,
                 }}
             >
-                <path d={shapeD(shape)} fill="green" />
+                <path d={shapeD(shape.rotated)} fill="green" />
+                {/* <path d={shapeD(shape.scaled)} stroke="red" fill="none" strokeWidth={dim / 50} />
+                <circle
+                    cx={shape.axes[0].point.x}
+                    cy={shape.axes[0].point.y}
+                    r={dim / 50}
+                    fill="white"
+                />
+                <circle
+                    cx={shape.axes[0].src.x}
+                    cy={shape.axes[0].src.y}
+                    r={dim / 20}
+                    fill="yellow"
+                />
+                <circle
+                    cx={shape.axes[0].dest.x}
+                    cy={shape.axes[0].dest.y}
+                    r={dim / 50}
+                    fill="orange"
+                /> */}
             </svg>
         </div>
     );

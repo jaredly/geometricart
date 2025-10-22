@@ -13,7 +13,7 @@ export async function loader(_: Route.LoaderArgs) {
         // .filter((t) => t.hash === '3ec9815442a44a060745e6e3388f64f7c14a3787')
         // .filter((t) => t.hash === '2fe167ca7e5e06c71b0bbf555a7db33897dd2422')
         // .filter((t) => t.hash === '11e20b0b5c2acf8fbe077271c9dab02fd69ea419')
-        .slice(0, 10)
+        // .slice(0, 10)
         .map((pattern) => ({...pattern, data: getPatternData(pattern.tiling)}));
 
     return {patterns, shapes: getUniqueShapes(patterns)};

@@ -1,5 +1,7 @@
+import {dist} from '../rendering/getMirrorTransforms';
+
 type Pt = {x: number; y: number};
-export type Axis = {src: Pt; dir: Pt; point: Pt; dest: Pt; angle: number}; // dir is unit length
+export type Axis = {src: Pt; dir: Pt; point: Pt; dest: Pt; angle: number; length: number}; // dir is unit length
 
 /**
  * Find all reflectional symmetry axes of a polygon given by ordered vertices.
@@ -11,17 +13,6 @@ export function findReflectionAxes(poly: Pt[], eps?: number): Axis[] {
     // numeric tolerance: scale with polygon size
     const scale = boundingDiameter(poly);
     const tol = eps ?? scale * 1e-9;
-
-    // Helpers
-    const add = (a: Pt, b: Pt): Pt => ({x: a.x + b.x, y: a.y + b.y});
-    const sub = (a: Pt, b: Pt): Pt => ({x: a.x - b.x, y: a.y - b.y});
-    const mul = (a: Pt, k: number): Pt => ({x: a.x * k, y: a.y * k});
-    const dot = (a: Pt, b: Pt): number => a.x * b.x + a.y * b.y;
-    const norm = (a: Pt): number => Math.hypot(a.x, a.y);
-    const unit = (a: Pt): Pt => {
-        const l = norm(a);
-        return l === 0 ? {x: 1, y: 0} : {x: a.x / l, y: a.y / l};
-    };
 
     // reflect point p about infinite line through A with direction u (unit)
     const reflect = (p: Pt, A: Pt, u: Pt): Pt => {
@@ -108,60 +99,71 @@ export function findReflectionAxes(poly: Pt[], eps?: number): Axis[] {
         if (seen.has(key)) continue;
         seen.add(key);
 
-        axes.push({point: P0, dir: u, src: A, dest: B, angle});
+        axes.push({point: P0, dir: u, src: A, dest: B, angle, length: dist(A, B)});
     }
 
     return axes;
-
-    // ---------- math utils ----------
-    function centroid(pts: Pt[]): Pt {
-        // vertex-average centroid (good enough for symmetry axis test)
-        let sx = 0,
-            sy = 0;
-        for (const p of pts) {
-            sx += p.x;
-            sy += p.y;
-        }
-        const inv = 1 / pts.length;
-        return {x: sx * inv, y: sy * inv};
-    }
-
-    function pointLineDistance(p: Pt, A: Pt, u: Pt): number {
-        const v = sub(p, A);
-        const proj = mul(u, dot(v, u));
-        const perp = sub(v, proj);
-        return norm(perp);
-    }
-
-    function signedOffset(P: Pt, u: Pt): number {
-        // Signed distance of line (through P with direction u) from origin.
-        // For normalized u, distance = (P ⟂ · u), where P⟂ = ( -P.y, P.x )
-        return -P.y * u.x + P.x * u.y;
-    }
-
-    function round(x: number, tol: number): number {
-        return Math.round(x / tol) * tol;
-    }
-
-    function almostEqual(a: number, b: number, t: number): boolean {
-        const d = Math.abs(a - b);
-        return d <= t || d <= t * Math.max(1, Math.abs(a), Math.abs(b));
-    }
-    function almostEqualPts(a: Pt, b: Pt, t: number): boolean {
-        return almostEqual(a.x, b.x, t) && almostEqual(a.y, b.y, t);
-    }
-
-    function boundingDiameter(pts: Pt[]): number {
-        let minx = Infinity,
-            miny = Infinity,
-            maxx = -Infinity,
-            maxy = -Infinity;
-        for (const p of pts) {
-            if (p.x < minx) minx = p.x;
-            if (p.y < miny) miny = p.y;
-            if (p.x > maxx) maxx = p.x;
-            if (p.y > maxy) maxy = p.y;
-        }
-        return Math.hypot(maxx - minx, maxy - miny);
-    }
 }
+
+// ---------- math utils ----------
+export function centroid(pts: Pt[]): Pt {
+    // vertex-average centroid (good enough for symmetry axis test)
+    let sx = 0,
+        sy = 0;
+    for (const p of pts) {
+        sx += p.x;
+        sy += p.y;
+    }
+    const inv = 1 / pts.length;
+    return {x: sx * inv, y: sy * inv};
+}
+
+function pointLineDistance(p: Pt, A: Pt, u: Pt): number {
+    const v = sub(p, A);
+    const proj = mul(u, dot(v, u));
+    const perp = sub(v, proj);
+    return norm(perp);
+}
+
+function signedOffset(P: Pt, u: Pt): number {
+    // Signed distance of line (through P with direction u) from origin.
+    // For normalized u, distance = (P ⟂ · u), where P⟂ = ( -P.y, P.x )
+    return -P.y * u.x + P.x * u.y;
+}
+
+function round(x: number, tol: number): number {
+    return Math.round(x / tol) * tol;
+}
+
+function almostEqual(a: number, b: number, t: number): boolean {
+    const d = Math.abs(a - b);
+    return d <= t || d <= t * Math.max(1, Math.abs(a), Math.abs(b));
+}
+function almostEqualPts(a: Pt, b: Pt, t: number): boolean {
+    return almostEqual(a.x, b.x, t) && almostEqual(a.y, b.y, t);
+}
+
+function boundingDiameter(pts: Pt[]): number {
+    let minx = Infinity,
+        miny = Infinity,
+        maxx = -Infinity,
+        maxy = -Infinity;
+    for (const p of pts) {
+        if (p.x < minx) minx = p.x;
+        if (p.y < miny) miny = p.y;
+        if (p.x > maxx) maxx = p.x;
+        if (p.y > maxy) maxy = p.y;
+    }
+    return Math.hypot(maxx - minx, maxy - miny);
+}
+
+// Helpers
+const add = (a: Pt, b: Pt): Pt => ({x: a.x + b.x, y: a.y + b.y});
+const sub = (a: Pt, b: Pt): Pt => ({x: a.x - b.x, y: a.y - b.y});
+const mul = (a: Pt, k: number): Pt => ({x: a.x * k, y: a.y * k});
+const dot = (a: Pt, b: Pt): number => a.x * b.x + a.y * b.y;
+const norm = (a: Pt): number => Math.hypot(a.x, a.y);
+const unit = (a: Pt): Pt => {
+    const l = norm(a);
+    return l === 0 ? {x: 1, y: 0} : {x: a.x / l, y: a.y / l};
+};

@@ -1,17 +1,21 @@
+import {boundsForCoords} from '../editor/Bounds';
 import {scalePos} from '../editor/scalePos';
-import {closeEnoughAngle} from '../rendering/epsilonToZero';
+import {transformShape} from '../editor/tilingPoints';
+import {closeEnough, closeEnoughAngle} from '../rendering/epsilonToZero';
 import {
+    angleTo,
     applyMatrices,
     dist,
     rotationMatrix,
+    scaleMatrix,
     translationMatrix,
 } from '../rendering/getMirrorTransforms';
 import {angleBetween} from '../rendering/isAngleBetween';
 import {pointsAngles} from '../rendering/pathToPoints';
 import {Coord} from '../types';
-import {Axis, findReflectionAxes} from './findReflectionAxes';
+import {Axis, centroid, findReflectionAxes} from './findReflectionAxes';
 import {canonicalShape} from './getPatternData';
-import {addToMap} from './shapesFromSegments';
+import {addToMap, calcPolygonArea} from './shapesFromSegments';
 
 const shapeClasses = ['Stars', 'Regular', 'Symmetrical', 'Other'] as const;
 
@@ -19,7 +23,7 @@ const isAlternating = (thetas: boolean[]) => {
     return thetas.every((t, i) => t !== thetas[i === 0 ? thetas.length - 1 : i - 1]);
 };
 
-const classifyShape = (coords: Coord[]): (typeof shapeClasses)[number] => {
+const classifyShape = (coords: Coord[], lengths: number[]): (typeof shapeClasses)[number] => {
     const angles = pointsAngles(coords);
     const internalAngles = angles.map((a, i) =>
         angleBetween(angles[i === 0 ? angles.length - 1 : i - 1], a, true),
@@ -28,28 +32,50 @@ const classifyShape = (coords: Coord[]): (typeof shapeClasses)[number] => {
     if (
         isAlternating(internalAngles.map((t) => t > Math.PI)) &&
         internalAngles.every((angle, i) =>
-            closeEnoughAngle(angle, internalAngles[i <= 1 ? internalAngles.length - 2 + i : i - 2]),
+            closeEnoughAngle(
+                angle,
+                internalAngles[i <= 1 ? internalAngles.length - 2 + i : i - 2],
+                0.001,
+            ),
         )
     ) {
         return 'Stars';
     }
 
-    if (closeEnoughAngle(Math.min(...internalAngles), Math.max(...internalAngles))) {
+    if (
+        closeEnoughAngle(Math.min(...internalAngles), Math.max(...internalAngles)) &&
+        closeEnough(Math.min(...lengths), Math.max(...lengths))
+    ) {
         return 'Regular';
     }
 
     return 'Other';
 };
 
-type Shape = ReturnType<typeof canonicalShape> & {axes: Axis[]; rotated: Coord[]};
+export type Shape = ReturnType<typeof canonicalShape> & {
+    axes: Axis[];
+    rotated: Coord[];
+    area: number;
+};
 
-const rotateForAxes = (points: Coord[], axes: Axis[]) => {
-    const lengths = axes.map((a) => dist(a.src, a.dest));
-    const max = Math.max(...lengths);
-    const longest = axes[lengths.indexOf(max)];
-    const tx = [translationMatrix(scalePos(longest.point, -1)), rotationMatrix(-longest.angle)];
+const rotateForAxis = (points: Coord[], axis: Axis) => {
+    const ct = centroid(points);
+    const rev = dist(axis.src, axis.point) < dist(axis.dest, axis.point);
+    const tx = [
+        translationMatrix(scalePos(axis.point, -1)),
+        rotationMatrix(-angleTo(axis.src, ct) + (rev ? Math.PI : 0) + Math.PI / 2),
+        translationMatrix(axis.point),
+    ];
     return points.map((pt) => applyMatrices(pt, tx));
 };
+
+const scaleToUnitSquare = (coords: Coord[]) => {
+    const bb = boundsForCoords(...coords);
+    const dim = Math.max(bb.x1 - bb.x0, bb.y1 - bb.y0);
+    return transformShape(coords, [scaleMatrix(1 / dim, 1 / dim)]);
+};
+
+const cmpOr = (a: number, b: number) => (a === 0 ? b : a);
 
 export const getUniqueShapes = (
     patterns: {
@@ -67,13 +93,16 @@ export const getUniqueShapes = (
             if (!shape.percentage) return;
             addToMap(patternsWithShapes, shape.key, hash);
             if (!uniqueShapes[shape.key]) {
-                const axes = findReflectionAxes(shape.scaled, 0.001);
+                const axes = findReflectionAxes(shape.scaled, 0.001).sort(
+                    (a, b) => b.length - a.length,
+                );
                 uniqueShapes[shape.key] = {
                     ...shape,
                     axes,
-                    rotated: rotateForAxes(shape.scaled, axes),
+                    rotated: axes.length ? rotateForAxis(shape.scaled, axes[0]) : shape.scaled,
+                    area: calcPolygonArea(scaleToUnitSquare(shape.scaled)),
                 };
-                const cs = classifyShape(shape.scaled);
+                const cs = classifyShape(shape.scaled, shape.lengths);
                 addToMap(byClass, cs, shape.key);
             }
         });
@@ -81,7 +110,26 @@ export const getUniqueShapes = (
 
     shapeClasses.forEach((sc) => {
         if (!byClass[sc]) return;
-        if (sc === 'Other') {
+        if (sc === 'Stars') {
+            const bySize: Record<number, string[]> = {};
+            byClass[sc].forEach((hash) => {
+                addToMap(bySize, uniqueShapes[hash].scaled.length, hash);
+            });
+            shapesOrganized.push({
+                title: 'Stars',
+                children: Object.keys(bySize)
+                    .sort((a, b) => +b - +a)
+                    .map((size) => ({
+                        title: `${size} Sides`,
+                        shapes: bySize[+size].sort(
+                            (a, b) => uniqueShapes[b].area - uniqueShapes[a].area,
+
+                            // Math.max(...uniqueShapes[a].angles) -
+                            // Math.max(...uniqueShapes[b].angles),
+                        ),
+                    })),
+            });
+        } else if (sc === 'Other') {
             // axes + size
             const byAxes: Record<number, string[]> = {};
             byClass[sc].forEach((hash) => {
@@ -95,15 +143,19 @@ export const getUniqueShapes = (
                         addToMap(bySize, uniqueShapes[hash].scaled.length, hash);
                     });
                     shapesOrganized.push({
-                        title: +num === 1 ? '1 Axis' : `${num} Axes`,
+                        title:
+                            +num === 0 ? 'Not symmetrical' : +num === 1 ? '1 Axis' : `${num} Axes`,
                         children: Object.keys(bySize)
                             .sort((a, b) => +b - +a)
                             .map((size) => ({
                                 title: `${size} Sides`,
-                                shapes: bySize[+size].sort(
-                                    (a, b) =>
-                                        Math.max(...uniqueShapes[a].angles) -
-                                        Math.max(...uniqueShapes[b].angles),
+                                shapes: bySize[+size].sort((a, b) =>
+                                    cmpOr(
+                                        uniqueShapes[b].angles.filter((t) => t > Math.PI).length -
+                                            uniqueShapes[a].angles.filter((t) => t > Math.PI)
+                                                .length,
+                                        uniqueShapes[b].area - uniqueShapes[a].area,
+                                    ),
                                 ),
                             })),
                     });
@@ -115,8 +167,9 @@ export const getUniqueShapes = (
                     {
                         shapes: byClass[sc].sort((a, b) =>
                             uniqueShapes[a].scaled.length === uniqueShapes[b].scaled.length
-                                ? Math.max(...uniqueShapes[a].angles) -
-                                  Math.max(...uniqueShapes[b].angles)
+                                ? //Math.max(...uniqueShapes[a].angles) -
+                                  //Math.max(...uniqueShapes[b].angles)
+                                  uniqueShapes[b].area - uniqueShapes[a].area
                                 : uniqueShapes[b].scaled.length - uniqueShapes[a].scaled.length,
                         ),
                     },
