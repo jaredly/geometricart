@@ -29,7 +29,6 @@ export const canvasTiling = (data: ReturnType<typeof getPatternData>, size: numb
     ctx.fillRect(0, 0, size, size);
 
     const margin = 0.5;
-    // const margin = data.minSegLength * 2;
 
     ctx.scale(size / (2 + margin * 2), size / (2 + margin * 2));
     ctx.translate(1 + margin, 1 + margin);
@@ -46,10 +45,13 @@ export const canvasTiling = (data: ReturnType<typeof getPatternData>, size: numb
             data.colorInfo.colors[data.shapeIds[i]] === -1
                 ? 'black'
                 : hslToHex(
-                      (data.colorInfo.colors[data.shapeIds[i]] / (data.colorInfo.maxColor + 1)) *
-                          360,
+                      //   (data.colorInfo.colors[data.shapeIds[i]] / (data.colorInfo.maxColor + 1)) *
+                      //       360,
                       100,
-                      50,
+                      0,
+                      (data.colorInfo.colors[data.shapeIds[i]] / (data.colorInfo.maxColor + 1)) *
+                          20 +
+                          30,
                   );
         ctx.beginPath();
         shape.forEach(({x, y}, i) => {
@@ -62,19 +64,19 @@ export const canvasTiling = (data: ReturnType<typeof getPatternData>, size: numb
         ctx.fill();
     });
 
-    data.shapes.forEach((shape) => {
-        ctx.lineWidth = 0.003;
-        // ctx.lineWidth = data.minSegLength / 3;
-        ctx.beginPath();
-        shape.forEach(({x, y}, i) => {
-            if (i === 0) {
-                ctx.moveTo(x, y);
-            } else {
-                ctx.lineTo(x, y);
-            }
-        });
-        ctx.stroke();
-    });
+    // data.shapes.forEach((shape) => {
+    //     ctx.lineWidth = 0.003;
+    //     // ctx.lineWidth = data.minSegLength / 3;
+    //     ctx.beginPath();
+    //     shape.forEach(({x, y}, i) => {
+    //         if (i === 0) {
+    //             ctx.moveTo(x, y);
+    //         } else {
+    //             ctx.lineTo(x, y);
+    //         }
+    //     });
+    //     ctx.stroke();
+    // });
 
     return canvas.toDataURL();
 };

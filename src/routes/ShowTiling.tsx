@@ -30,17 +30,7 @@ export const TilingMask = ({
         >
             <mask id={hash} mask-type="luminance">
                 <rect x={x} y={x} width={w} height={w} fill="white" />
-                <path
-                    fill="black"
-                    d={
-                        bounds
-                            .map(
-                                ({x, y}, i) =>
-                                    `${i === 0 ? 'M' : 'L'}${x.toFixed(3)} ${y.toFixed(3)}`,
-                            )
-                            .join(' ') + 'Z'
-                    }
-                />
+                <path fill="black" d={shapeD(bounds)} />
             </mask>
             <rect
                 x={x}
@@ -49,7 +39,7 @@ export const TilingMask = ({
                 height={w}
                 fill="white"
                 mask={`url(#${hash})`}
-                opacity={0.7}
+                opacity={0.3}
             />
         </svg>
     );

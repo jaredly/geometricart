@@ -1,32 +1,50 @@
-import {useMemo, useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 import {Route} from './+types/gallery';
 import {getAllPatterns} from './db.server';
 import {getPatternData} from './getPatternData';
 import {ShowTiling} from './ShowTiling';
 import {shapeKey, Tiling} from '../types';
 import {flipPattern} from './shapesFromSegments';
+import {ShapeDialog} from './ShapeDialog';
 
 export async function loader(_: Route.LoaderArgs) {
-    return getAllPatterns(); // .map((p) => ({...p, tiling: flipPattern(p.tiling)}));
+    return (
+        getAllPatterns()
+            // .filter((t) => t.hash === '3ec9815442a44a060745e6e3388f64f7c14a3787')
+            // .filter((t) => t.hash === '2fe167ca7e5e06c71b0bbf555a7db33897dd2422')
+            // .filter((t) => t.hash === '11e20b0b5c2acf8fbe077271c9dab02fd69ea419')
+            // .slice(0, 10)
+            .map((pattern) => ({...pattern, data: getPatternData(pattern.tiling)}))
+    );
 }
 
 type GroupBy = 'symmetry' | null;
 type SortBy = 'complexity';
 
+const useOnOpen = (onOpen: (open: boolean) => void) => {
+    const ref = useRef<HTMLDialogElement>(null);
+    useEffect(() => {
+        const dialog = ref.current!;
+        let t: NodeJS.Timeout;
+        const observer = new MutationObserver(() => {
+            clearTimeout(t);
+            if (dialog.hasAttribute('open')) {
+                onOpen(true);
+            } else {
+                console.log('setting a timeout');
+                t = setTimeout(() => onOpen(false), 300);
+            }
+        });
+        observer.observe(dialog, {attributes: true, attributeFilter: ['open']});
+
+        return () => observer.disconnect();
+    }, [onOpen]);
+    return ref;
+};
+
 export const Gallery = ({loaderData}: Route.ComponentProps) => {
-    const data = useMemo(() => {
-        const res = Object.fromEntries(
-            loaderData
-                // .filter((t) => t.hash === '3ec9815442a44a060745e6e3388f64f7c14a3787')
-                // .filter((t) => t.hash === '2fe167ca7e5e06c71b0bbf555a7db33897dd2422')
-                // .filter((t) => t.hash === '11e20b0b5c2acf8fbe077271c9dab02fd69ea419')
-                // .slice(0, 30)
-                .map(({tiling, hash}) => {
-                    return [hash, getPatternData(tiling)];
-                }),
-        );
-        return res;
-    }, [loaderData]);
+    const [showDialog, setShowDialog] = useState(false);
+    const dialogRef = useOnOpen(setShowDialog);
 
     const [groupBy, setGroupBy] = useState<GroupBy>('symmetry');
     const [sortBy, setSortBy] = useState<{by: SortBy; down: boolean}>({
@@ -34,18 +52,28 @@ export const Gallery = ({loaderData}: Route.ComponentProps) => {
         down: true,
     });
 
-    const patternsByHash: Record<string, Tiling> = {};
-    loaderData.forEach((pattern) => (patternsByHash[pattern.hash] = pattern.tiling));
+    const patternsByHash: Record<
+        string,
+        {hash: string; tiling: Tiling; data: ReturnType<typeof getPatternData>}
+    > = {};
+    loaderData.forEach((pattern) => (patternsByHash[pattern.hash] = pattern));
     const groups: Record<string, string[]> = {};
     if (groupBy === 'symmetry') {
-        Object.entries(patternsByHash).forEach(([hash, {shape}]) => {
-            const key = shapeKey(shape);
-            if (!groups[key]) {
-                groups[key] = [hash];
-            } else {
-                groups[key].push(hash);
-            }
-        });
+        Object.entries(patternsByHash).forEach(
+            ([
+                hash,
+                {
+                    tiling: {shape},
+                },
+            ]) => {
+                const key = shapeKey(shape);
+                if (!groups[key]) {
+                    groups[key] = [hash];
+                } else {
+                    groups[key].push(hash);
+                }
+            },
+        );
     } else {
         groups['All'] = Object.keys(patternsByHash);
     }
@@ -53,8 +81,8 @@ export const Gallery = ({loaderData}: Route.ComponentProps) => {
     Object.values(groups).forEach((patterns) =>
         patterns.sort(
             (a, b) =>
-                patternsByHash[sortBy.down ? b : a].cache.segments.length -
-                patternsByHash[sortBy.down ? a : b].cache.segments.length,
+                patternsByHash[sortBy.down ? b : a].tiling.cache.segments.length -
+                patternsByHash[sortBy.down ? a : b].tiling.cache.segments.length,
         ),
     );
 
@@ -84,7 +112,25 @@ export const Gallery = ({loaderData}: Route.ComponentProps) => {
                 >
                     Complexity {sortBy.down ? '🔽' : '🔼'}
                 </button>
+                <button className="btn btn-sm" onClick={() => dialogRef.current?.showModal()}>
+                    Filter by shape
+                </button>
             </div>
+            <dialog id="filter-modal" className="modal" ref={dialogRef}>
+                <div className="modal-box flex flex-col w-11/12 max-w-5xl">
+                    <h3 className="font-bold text-lg">Filter by shape</h3>
+                    {showDialog ? <ShapeDialog patterns={loaderData} /> : null}
+                    <div className="modal-action">
+                        <form method="dialog">
+                            {/* if there is a button in form, it will close the modal */}
+                            <button className="btn">Close</button>
+                        </form>
+                    </div>
+                </div>
+                <form method="dialog" className="modal-backdrop">
+                    <button>close</button>
+                </form>
+            </dialog>
             <div
                 style={
                     {
@@ -121,15 +167,18 @@ export const Gallery = ({loaderData}: Route.ComponentProps) => {
                                     flexWrap: 'wrap',
                                 }}
                             >
-                                {groups[key].map((id) =>
-                                    data[id] ? (
-                                        <div key={id}>
-                                            <a href={`./pattern/${id}`}>
-                                                <ShowTiling hash={id} size={200} data={data[id]} />
-                                            </a>
-                                        </div>
-                                    ) : null,
-                                )}
+                                {groups[key].map((id) => (
+                                    <div key={id}>
+                                        <a href={`./pattern/${id}`}>
+                                            <ShowTiling
+                                                tiling={patternsByHash[id].tiling}
+                                                hash={id}
+                                                size={200}
+                                                data={patternsByHash[id].data}
+                                            />
+                                        </a>
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     ))}

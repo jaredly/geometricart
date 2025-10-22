@@ -5,6 +5,8 @@ import {canvasTiling} from './canvasTiling';
 import {getPatternData} from './getPatternData';
 import {TilingPattern} from './ShowTiling';
 
+const pngCache: Record<string, Buffer<ArrayBuffer>> = {};
+
 export async function loader({params}: Route.LoaderArgs) {
     if (!params.id) {
         return null;
@@ -18,13 +20,24 @@ export async function loader({params}: Route.LoaderArgs) {
 
     if (format === 'svg') {
         const tiling = renderToStaticMarkup(
-            <TilingPattern size={size} data={getPatternData(pattern.tiling)} />,
+            <TilingPattern
+                tiling={pattern.tiling}
+                size={size}
+                data={getPatternData(pattern.tiling)}
+            />,
         );
         return new Response(tiling, {headers: {'Content-Type': 'image/svg+xml'}});
+    }
+
+    const k = `${size}:${format}:${params.id}`;
+    if (pngCache[k]) {
+        return new Response(pngCache[k], {headers: {'Content-type': 'image/png'}});
     }
 
     const dataUri = canvasTiling(getPatternData(pattern.tiling), size * 2);
     // return dataUri;
     const [mime, data] = dataUri.split(',');
-    return new Response(Buffer.from(data, 'base64'), {headers: {'Content-type': 'image/png'}});
+    const buffer = Buffer.from(data, 'base64');
+    pngCache[k] = buffer;
+    return new Response(buffer, {headers: {'Content-type': 'image/png'}});
 }

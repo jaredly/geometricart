@@ -1,4 +1,17 @@
 
+# Next steps
+
+Filter by Shapes (modal dialog)
+
+... should we allow filtering by shape?
+... viewing similar patterns?
+... or should we jump to the pattern page?
+  - pattern inspector
+  - view the construction steps
+  - show source images
+  - pattern constructor with all the goodies
+
+
 # ugh
 
 ok tracking down identity and shared edges is maybe hard
@@ -6,7 +19,14 @@ ok tracking down identity and shared edges is maybe hard
 let's go back to brute forcing everything
 and see how it goes
 
+- [x] yayyy we can do coloring
 
+# Deduping
+
+for patterns that can be flipped so top-right is bottom-left, and still be width >= height,
+I need to test out the flippage.
+and choose ... the one that sorts first maybe?
+(low priority)
 
 # ALSO, let's do coloring!
 because colors are cool
