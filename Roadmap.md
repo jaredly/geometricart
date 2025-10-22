@@ -2,6 +2,10 @@
 iiiiii want a way to 'extract all the dependencies of this new thing from the bigness of the project'
 and also probably 'extract all utility functions into their own files'
 
+#
+
+
+
 # Next steps
 
 Filter by Shapes (modal dialog)

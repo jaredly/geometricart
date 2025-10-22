@@ -339,11 +339,6 @@ export const flipPattern = (tiling: Tiling): Tiling => {
         end = applyMatrices(end, tx);
         corner = applyMatrices(corner, tx);
 
-        // const end = applyMatrices(shape.start, tx);
-        // shape.start = applyMatrices(shape.end, tx);
-        // shape.end = end;
-        // shape.corner = applyMatrices(shape.corner, tx);
-
         cache.segments = cache.segments.map((seg) => ({
             prev: applyMatrices(seg.prev, tx),
             segment: transformSegment(seg.segment, tx),
@@ -368,28 +363,12 @@ export const flipPattern = (tiling: Tiling): Tiling => {
             return tiling;
         }
 
-        const tx = [
-            // translationMatrix({x: -a.x, y: -a.y}),
-            rotationMatrix(Math.PI / 2),
-            scaleMatrix(1, -1),
-            scaleMatrix(x1 / y2, x1 / y2),
-            // rotationMatrix(angleBetween(angleTo(a, b), angleTo(a, d), true)),
-            // scaleMatrix(-1 / end.y, -1 / end.y),
-        ];
+        const tx = [rotationMatrix(Math.PI / 2), scaleMatrix(1, -1), scaleMatrix(x1 / y2, x1 / y2)];
 
         shape = {...shape};
         cache = {...cache};
 
         const points = shape.points.map((p) => applyMatrices(p, tx));
-
-        // start = applyMatrices(start, tx);
-        // end = applyMatrices(end, tx);
-        // corner = applyMatrices(corner, tx);
-
-        // const end = applyMatrices(shape.start, tx);
-        // shape.start = applyMatrices(shape.end, tx);
-        // shape.end = end;
-        // shape.corner = applyMatrices(shape.corner, tx);
 
         cache.segments = cache.segments.map((seg) => ({
             prev: applyMatrices(seg.prev, tx),
