@@ -25,7 +25,7 @@ export async function loader(data: Route.LoaderArgs) {
     patterns.forEach((pattern) => {
         const flip = flipPattern(pattern.tiling);
         if (flip !== pattern.tiling) {
-            flipped.push({...pattern, tiling: flip, flipped: true});
+            flipped.push({...pattern, tiling: pattern.tiling, flipped: true});
         } else {
             flipped.push(pattern);
         }
@@ -197,7 +197,7 @@ export const Gallery = ({loaderData}: Route.ComponentProps) => {
                                                 : '',
                                         }}
                                     >
-                                        <a href={`./pattern/${id}`}>
+                                        <a href={`/gallery/pattern/${id}`}>
                                             <ShowTiling
                                                 tiling={patternsByHash[id].tiling}
                                                 hash={id}

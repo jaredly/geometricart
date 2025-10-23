@@ -1,5 +1,5 @@
 import {mulPos} from '../animation/PointsEditor';
-import {addCoordToBounds, boundsForCoords, newPendingBounds} from '../editor/Bounds';
+import {boundsForCoords} from '../editor/Bounds';
 import {
     applyTilingTransforms,
     applyTilingTransformsG,
@@ -9,7 +9,7 @@ import {
 } from '../editor/tilingPoints';
 import {tilingTransforms} from '../editor/tilingTransforms';
 import {coordKey, numKey} from '../rendering/coordKey';
-import {closeEnough, epsilon} from '../rendering/epsilonToZero';
+import {closeEnough} from '../rendering/epsilonToZero';
 import {
     applyMatrices,
     dist,
@@ -17,15 +17,9 @@ import {
     translationMatrix,
 } from '../rendering/getMirrorTransforms';
 import {angleBetween} from '../rendering/isAngleBetween';
-import {
-    ensureClockwise,
-    isClockwisePoints,
-    pointsAngles,
-    totalAnglePoints,
-} from '../rendering/pathToPoints';
+import {isClockwisePoints, pointsAngles} from '../rendering/pathToPoints';
 import {Coord, Tiling} from '../types';
-import {findReflectionAxes} from './findReflectionAxes';
-import {colorShapePoints, colorShapes, dedupColorShapePoints} from './patternColoring';
+import {colorShapes} from './patternColoring';
 import {pk} from './pk';
 import {joinAdjacentShapeSegments, shapesFromSegments, unique} from './shapesFromSegments';
 

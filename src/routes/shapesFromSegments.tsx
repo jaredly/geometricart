@@ -1,3 +1,4 @@
+import {boundsForCoords} from '../editor/Bounds';
 import {getTransform, tilingPoints} from '../editor/tilingPoints';
 import {coordKey} from '../rendering/coordKey';
 import {closeEnough, closeEnoughAngle, epsilon} from '../rendering/epsilonToZero';
@@ -324,23 +325,36 @@ const shouldFlipTriangle = (
     if (internalAngle > Math.PI) internalAngle = Math.PI * 2 - internalAngle;
 
     if (closeEnough(internalAngle, Math.PI / 4, 0.001)) {
+        const lowerLeft = start.x < end.x ? start : end;
+        const upperRight = start.x < end.x ? end : start;
+        console.log(`Is lowerLeft and upperRight flipped`, start.x > end.x);
+
         console.log('isClose', internalAngle);
         const data = getPatternData(tiling);
-        const startShapes: Coord[][] = [];
-        const endShapes: Coord[][] = [];
+        const centerShapes: Coord[][] = [];
+        const outerShapes: Coord[][] = [];
         data.shapes.forEach((shape) => {
             const ct = centroid(shape);
-            if (coordsEqual(ct, start)) {
-                startShapes.push(shape);
+            if (coordsEqual(ct, lowerLeft)) {
+                centerShapes.push(shape);
             }
-            if (coordsEqual(ct, end)) {
-                endShapes.push(shape);
+            if (coordsEqual(ct, upperRight)) {
+                outerShapes.push(shape);
             }
         });
-        if (startShapes.length === 1 && endShapes.length === 1) {
-            const startArea = calcPolygonArea(startShapes[0]);
-            const endArea = calcPolygonArea(endShapes[0]);
-            if (endArea < startArea - 0.001) {
+        if (centerShapes.length === 1 && outerShapes.length === 1) {
+            const centerArea = calcPolygonArea(centerShapes[0]);
+            const outerArea = calcPolygonArea(outerShapes[0]);
+            console.log('Should I flip');
+            console.log('areas', centerArea, outerArea);
+            // console.log(
+            //     `bounds`,
+            //     boundsForCoords(...centerShapes[0]),
+            //     boundsForCoords(...outerShapes[0]),
+            // );
+            console.log(centerShapes, outerShapes);
+            if (centerArea < outerArea - 0.001) {
+                console.log('Yes flipping!');
                 return true;
             }
         }

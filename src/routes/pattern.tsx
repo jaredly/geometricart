@@ -1,20 +1,13 @@
+import {useMemo} from 'react';
 import {useLoaderData, useParams} from 'react-router';
-import {ShowTiling} from './ShowTiling';
+import {addCoordToBounds, newPendingBounds} from '../editor/Bounds';
+import {applyMatrices, scaleMatrix, translationMatrix} from '../rendering/getMirrorTransforms';
+import {Coord} from '../types';
 import type {Route} from './+types/pattern';
 import {getPattern} from './db.server';
-import {useMemo} from 'react';
 import {canonicalShape, getPatternData, humanReadableFraction} from './getPatternData';
-import {findBoundingRect} from '../editor/Export';
-import {addCoordToBounds, newPendingBounds} from '../editor/Bounds';
-import {
-    angleTo,
-    applyMatrices,
-    scaleMatrix,
-    translationMatrix,
-} from '../rendering/getMirrorTransforms';
-import {flipPattern, joinAdjacentShapeSegments} from './shapesFromSegments';
-import {closeEnoughAngle} from '../rendering/epsilonToZero';
-import {Coord} from '../types';
+import {flipPattern} from './shapesFromSegments';
+import {ShowTiling} from './ShowTiling';
 
 export async function loader({params}: Route.LoaderArgs) {
     if (!params.id) {
@@ -29,7 +22,7 @@ export const Pattern = () => {
 
     const tiling = pattern ? flipPattern(pattern.tiling) : null;
     // if (pattern) flipPattern(pattern.tiling);
-    const data = useMemo(() => (tiling ? getPatternData(tiling, true) : null), [tiling]);
+    const data = useMemo(() => (tiling ? getPatternData(tiling) : null), [tiling]);
     if (!pattern || !tiling || !data || !id) {
         return <div>No data... {id}</div>;
     }
