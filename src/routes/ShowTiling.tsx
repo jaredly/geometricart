@@ -84,11 +84,10 @@ const TilingShape = ({
                 fill={
                     hover
                         ? 'white'
-                        : colorInfo.colors[data.shapeIds[i]] === -1
+                        : colorInfo.colors[i] === -1
                           ? '#444'
                           : `hsl(${
-                                (colorInfo.colors[data.shapeIds[i]] / (colorInfo.maxColor + 1)) *
-                                360
+                                (colorInfo.colors[i] / (colorInfo.maxColor + 1)) * 360
                             } 100% 50%)`
                 }
                 // fill="white"
@@ -206,9 +205,8 @@ export const TilingPattern = ({
             {hover != null ? (
                 <div>
                     Hover {hover}
-                    <div>{data.shapeIds[hover]}</div>
                     {/* <div>
-                        {toEdges(data.shapePoints[data.shapeIds[hover]])
+                        {toEdges(data.shapePoints[hover])
                             .sort((a, b) => (a[0] !== b[0] ? a[0] - b[0] : a[1] - b[1]))
                             .map(([a, b]) => (a < b ? `${a}:${b}` : `${b}:${a}`))
                             // .map(([a, b]) => `${a}:${b}`)

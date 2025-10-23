@@ -14,6 +14,9 @@ import {angleBetween} from '../rendering/isAngleBetween';
 import {coordsEqual} from '../rendering/pathsAreIdentical';
 import {transformSegment} from '../rendering/points';
 import {Coord, Tiling} from '../types';
+import {centroid} from './findReflectionAxes';
+import {getPatternData} from './getPatternData';
+import {Shape} from './getUniqueShapes';
 
 const gte = (a: number, b: number) => a >= b - epsilon;
 const lte = (a: number, b: number) => a <= b + epsilon;
@@ -311,17 +314,57 @@ export function calcPolygonArea(vertices: Coord[]) {
     return Math.abs(total);
 }
 
+const shouldFlipTriangle = (
+    rotHyp: boolean,
+    internalAngle: number,
+    tiling: Tiling,
+    start: Coord,
+    end: Coord,
+) => {
+    if (internalAngle > Math.PI) internalAngle = Math.PI * 2 - internalAngle;
+
+    if (closeEnough(internalAngle, Math.PI / 4, 0.001)) {
+        console.log('isClose', internalAngle);
+        const data = getPatternData(tiling);
+        const startShapes: Coord[][] = [];
+        const endShapes: Coord[][] = [];
+        data.shapes.forEach((shape) => {
+            const ct = centroid(shape);
+            if (coordsEqual(ct, start)) {
+                startShapes.push(shape);
+            }
+            if (coordsEqual(ct, end)) {
+                endShapes.push(shape);
+            }
+        });
+        if (startShapes.length === 1 && endShapes.length === 1) {
+            const startArea = calcPolygonArea(startShapes[0]);
+            const endArea = calcPolygonArea(endShapes[0]);
+            if (endArea < startArea - 0.001) {
+                return true;
+            }
+        }
+    }
+
+    if (!rotHyp) return false;
+
+    if (internalAngle < Math.PI / 4 + epsilon) {
+        return false;
+    }
+
+    return true;
+};
+
 export const flipPattern = (tiling: Tiling): Tiling => {
     let {shape, cache} = tiling;
-    if (shape.type === 'right-triangle' && shape.rotateHypotenuse) {
+    if (shape.type === 'right-triangle') {
         const pts = tilingPoints(tiling.shape);
         const txt = getTransform(pts);
         const bounds = pts.map((pt) => applyMatrices(pt, txt));
         let [start, corner, end] = bounds;
 
         let internalAngle = angleBetween(angleTo(start, corner), angleTo(start, end), true);
-        if (internalAngle > Math.PI) internalAngle = Math.PI * 2 - internalAngle;
-        if (internalAngle < Math.PI / 4 + epsilon) {
+        if (!shouldFlipTriangle(shape.rotateHypotenuse, internalAngle, tiling, start, end)) {
             return tiling;
         }
 

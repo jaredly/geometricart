@@ -53,6 +53,9 @@ const doCutSegments = () => {
 };
 
 doFlipPatterns();
-// console.log(`need to save ${toSave.length}`, toSave.map(s => s.hash))
-saveAllPatterns(toSave);
+console.log(
+    `need to save ${toSave.length}`,
+    toSave.map((s) => s.hash),
+);
+// saveAllPatterns(toSave);
 db.close();

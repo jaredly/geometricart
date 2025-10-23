@@ -20,7 +20,17 @@ export async function loader(data: Route.LoaderArgs) {
             plain = plain.slice(0, +limit);
         } else [(plain = plain.filter((t) => t.hash === limit))];
     }
-    const patterns = plain.map((pattern) => ({...pattern, data: getPatternData(pattern.tiling)}));
+    let patterns = plain.map((pattern) => ({...pattern, data: getPatternData(pattern.tiling)}));
+    const flipped: ((typeof patterns)[0] & {flipped?: boolean})[] = [];
+    patterns.forEach((pattern) => {
+        const flip = flipPattern(pattern.tiling);
+        if (flip !== pattern.tiling) {
+            flipped.push({...pattern, tiling: flip, flipped: true});
+        } else {
+            flipped.push(pattern);
+        }
+    });
+    patterns = flipped;
 
     return {patterns, shapes: getUniqueShapes(patterns)};
 }
@@ -62,7 +72,7 @@ export const Gallery = ({loaderData}: Route.ComponentProps) => {
 
     const patternsByHash: Record<
         string,
-        {hash: string; tiling: Tiling; data: ReturnType<typeof getPatternData>}
+        {hash: string; tiling: Tiling; data: ReturnType<typeof getPatternData>; flipped?: boolean}
     > = {};
     loaderData.patterns.forEach((pattern) => (patternsByHash[pattern.hash] = pattern));
     const groups: Record<string, string[]> = {};
@@ -179,7 +189,14 @@ export const Gallery = ({loaderData}: Route.ComponentProps) => {
                                 }}
                             >
                                 {groups[key].map((id) => (
-                                    <div key={id}>
+                                    <div
+                                        key={id}
+                                        style={{
+                                            border: patternsByHash[id].flipped
+                                                ? '2px solid magenta'
+                                                : '',
+                                        }}
+                                    >
                                         <a href={`./pattern/${id}`}>
                                             <ShowTiling
                                                 tiling={patternsByHash[id].tiling}
