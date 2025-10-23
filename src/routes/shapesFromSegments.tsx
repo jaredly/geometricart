@@ -327,9 +327,9 @@ const shouldFlipTriangle = (
     if (closeEnough(internalAngle, Math.PI / 4, 0.001)) {
         const lowerLeft = start.x < end.x ? start : end;
         const upperRight = start.x < end.x ? end : start;
-        console.log(`Is lowerLeft and upperRight flipped`, start.x > end.x);
+        // console.log(`Is lowerLeft and upperRight flipped`, start.x > end.x);
 
-        console.log('isClose', internalAngle);
+        // console.log('isClose', internalAngle);
         const data = getPatternData(tiling);
         const centerShapes: Coord[][] = [];
         const outerShapes: Coord[][] = [];
@@ -345,8 +345,8 @@ const shouldFlipTriangle = (
         if (centerShapes.length === 1 && outerShapes.length === 1) {
             const centerArea = calcPolygonArea(centerShapes[0]);
             const outerArea = calcPolygonArea(outerShapes[0]);
-            console.log('Should I flip');
-            console.log('areas', centerArea, outerArea);
+            // console.log('Should I flip');
+            // console.log('areas', centerArea, outerArea);
             // console.log(
             //     `bounds`,
             //     boundsForCoords(...centerShapes[0]),
@@ -354,7 +354,7 @@ const shouldFlipTriangle = (
             // );
             console.log(centerShapes, outerShapes);
             if (centerArea < outerArea - 0.001) {
-                console.log('Yes flipping!');
+                // console.log('Yes flipping!');
                 return true;
             }
         }
