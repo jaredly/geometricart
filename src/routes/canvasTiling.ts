@@ -78,7 +78,9 @@ export const canvasTiling = (data: ReturnType<typeof getPatternData>, size: numb
     //     ctx.stroke();
     // });
 
-    return canvas.toDataURL();
+    const url = canvas.toDataURL();
+    canvas.dispose();
+    return url;
 };
 
 export function dataURItoBlob(dataURI: string) {

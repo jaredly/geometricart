@@ -11,6 +11,7 @@ import {segmentKey, segmentKeyReverse} from '../rendering/segmentKey';
 import {getClips} from '../rendering/pkInsetPaths';
 import {coordsEqual} from '../rendering/pathsAreIdentical';
 import {PK} from '../editor/pk';
+import {pxToMM} from './pxToMM';
 
 // NOTE: if the shape isn't closed, we pretty much bail.
 const findClosest = (shape: RasterSeg[], point: Coord) => {
@@ -113,17 +114,6 @@ export const makeDepths = (start: number, depth: number, passDepth?: number) => 
         depths.push(depth);
     }
     return depths;
-};
-
-export const pxToIn = (value: number, ppi: number) => value / ppi;
-export const inToPX = (value: number, ppi: number) => value * ppi;
-
-export const pxToMM = (value: number, ppi: number) => {
-    return (value / ppi) * 25.4;
-};
-
-export const mmToPX = (value: number, ppi: number) => {
-    return (value / 25.4) * ppi;
 };
 
 export const generateLaserInset = (state: State) => {

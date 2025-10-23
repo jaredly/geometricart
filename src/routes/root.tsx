@@ -6,6 +6,12 @@ import type {Route} from './+types/root';
 
 // import './app.css';
 
+export const meta: Route.MetaFunction = () => [
+    {
+        title: 'Pattern Gallery',
+    },
+];
+
 export const links: Route.LinksFunction = () => [
     {rel: 'preconnect', href: 'https://fonts.googleapis.com'},
     {

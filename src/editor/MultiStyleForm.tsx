@@ -7,7 +7,7 @@ import {Style, Fill, StyleLine} from '../types';
 import {colorSquare, paletteColor} from './RenderPath';
 import {Button} from 'primereact/button';
 import {Action} from '../state/Action';
-import {mmToPX, pxToMM} from '../gcode/generateGcode';
+import {mmToPX, pxToMM} from '../gcode/pxToMM';
 import {BlurInt} from './Forms';
 import {StyleHover} from './StyleHover';
 

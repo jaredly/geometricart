@@ -1,5 +1,5 @@
 import {getPatternData, canonicalShape} from './getPatternData';
-import {normShape} from './pattern';
+import {normShape} from './normShape';
 
 export const AllShapesView = ({
     data,

@@ -1,6 +1,7 @@
 import React, {useState} from 'react';
 import {Bounds} from '../editor/Export';
-import {generateGcode, generateLaserInset, pxToMM} from './generateGcode';
+import {generateGcode, generateLaserInset} from './generateGcode';
+import {pxToMM} from './pxToMM';
 import {initialState} from '../state/initialState';
 import {State} from '../types';
 import {Visualize} from './Visualize';

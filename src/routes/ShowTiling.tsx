@@ -6,18 +6,9 @@ import {boundsForCoords} from '../editor/Bounds';
 import {toEdges} from './patternColoring';
 import {useMask} from '@react-three/drei';
 import {coordKey} from '../rendering/coordKey';
+import {shapeD} from './shapeD';
 
-export const TilingMask = ({
-    size,
-    hash,
-    bounds,
-    minSegLength,
-}: {
-    minSegLength: number;
-    size: number;
-    hash: string;
-    bounds: Coord[];
-}) => {
+export const TilingMask = ({size, hash, bounds}: {size: number; hash: string; bounds: Coord[]}) => {
     const margin = 0.5; //minSegLength * 2;
     const x = -1 - margin;
     const w = 2 + margin * 2;
@@ -39,18 +30,11 @@ export const TilingMask = ({
                 height={w}
                 fill="white"
                 mask={`url(#${hash})`}
-                opacity={0.3}
+                opacity={0.6}
             />
         </svg>
     );
 };
-
-export const shapeD = (points: Coord[]) =>
-    'M' +
-    points
-        .map((p) => `${Math.round(p.x * 1000) / 1000} ${Math.round(p.y * 1000) / 1000}`)
-        .join('L') +
-    'Z';
 
 const TilingShape = ({
     shape,
@@ -136,7 +120,7 @@ const TilingShape = ({
                             <text
                                 fontSize={minSegLength / 2}
                                 stroke="white"
-                                strokeWidth={minSegLength}
+                                strokeWidth={0.03}
                                 textAnchor="middle"
                                 x={coord.x.toFixed(3)}
                                 y={coord.y.toFixed(3)}
@@ -223,32 +207,19 @@ export const ShowTiling = ({
     data,
     size = 300,
     debug,
-    tiling,
 }: {
     debug?: boolean;
     hash: string;
     size?: number;
-    data: ReturnType<typeof getPatternData>;
-    tiling: Tiling;
+    data: {bounds: Coord[]};
 }) => {
     return (
         <div className="relative">
-            {debug ? (
-                <TilingPattern size={size * 2} data={data} tiling={tiling} />
-            ) : (
-                <img
-                    src={`/gallery/pattern/${hash}/${size * 2}/png`}
-                    style={{width: size, height: size}}
-                />
-            )}
-            {!debug ? (
-                <TilingMask
-                    minSegLength={data.minSegLength}
-                    size={size}
-                    bounds={data.bounds}
-                    hash={hash}
-                />
-            ) : null}
+            <img
+                src={`/gallery/pattern/${hash}/${size * 2}/png`}
+                style={{width: size, height: size}}
+            />
+            {!debug ? <TilingMask size={size} bounds={data.bounds} hash={hash} /> : null}
         </div>
     );
 };

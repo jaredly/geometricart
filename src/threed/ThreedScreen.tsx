@@ -9,7 +9,7 @@ import {Action} from '../state/Action';
 import {PathGroup, State} from '../types';
 // @ts-ignore
 import {Hover} from '../editor/Sidebar';
-import {mmToPX} from '../gcode/generateGcode';
+import {mmToPX} from '../gcode/pxToMM';
 import {calcShapes} from './calcShapes';
 import {ExportSection} from './ExportSection';
 import {paletteColor} from '../editor/RenderPath';
@@ -208,15 +208,11 @@ export const ThreedScreen = ({
                         // shadow-mapSize={[2048, 2048]}
                         castShadow
                     >
-                    {/** @ts-ignore */}
-                        <orthographicCamera
-                            zoom={shadowZoom}
-                            attach="shadow-camera"
-                        >
-
-                    {/** @ts-ignore */}
+                        {/** @ts-ignore */}
+                        <orthographicCamera zoom={shadowZoom} attach="shadow-camera">
+                            {/** @ts-ignore */}
                         </orthographicCamera>
-                    {/** @ts-ignore */}
+                        {/** @ts-ignore */}
                     </directionalLight>
                     {/** @ts-ignore */}
                     <ambientLight intensity={0.3} />
@@ -231,14 +227,14 @@ export const ThreedScreen = ({
 
                     {/** @ts-ignore */}
                     <mesh position={[0, 0, -1]}>
-                    {/** @ts-ignore */}
+                        {/** @ts-ignore */}
                         <planeGeometry attach="geometry" args={[100, 100]} />
-                    {/** @ts-ignore */}
+                        {/** @ts-ignore */}
                         <meshPhongMaterial
                             attach="material"
                             color={paletteColor(state.palette, state.view.background)}
                         />
-                    {/** @ts-ignore */}
+                        {/** @ts-ignore */}
                     </mesh>
                     {items}
                 </Canvas>

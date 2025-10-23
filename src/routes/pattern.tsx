@@ -1,13 +1,11 @@
 import {useMemo} from 'react';
 import {useLoaderData, useParams} from 'react-router';
-import {addCoordToBounds, newPendingBounds} from '../editor/Bounds';
-import {applyMatrices, scaleMatrix, translationMatrix} from '../rendering/getMirrorTransforms';
-import {Coord} from '../types';
 import type {Route} from './+types/pattern';
 import {getPattern} from './db.server';
 import {canonicalShape, getPatternData, humanReadableFraction} from './getPatternData';
 import {flipPattern} from './shapesFromSegments';
-import {ShowTiling} from './ShowTiling';
+import {ShowTiling, TilingPattern} from './ShowTiling';
+import {normShape} from './normShape';
 
 export async function loader({params}: Route.LoaderArgs) {
     if (!params.id) {
@@ -41,7 +39,7 @@ export const Pattern = () => {
         <div css={{padding: 10}}>
             Hello pattern {id}
             <div>
-                <ShowTiling debug tiling={tiling} hash={id} size={500} data={data} />
+                <TilingPattern tiling={tiling} size={500} data={data} />
                 <div style={{display: 'flex', flexWrap: 'wrap'}}>
                     {
                         //data.canons
@@ -86,16 +84,3 @@ export const Pattern = () => {
     );
 };
 export default Pattern;
-
-export const normShape = (shape: Coord[]) => {
-    const bounds = newPendingBounds();
-    shape.forEach((coord) => addCoordToBounds(bounds, coord));
-    const w = bounds.x1! - bounds.x0!;
-    const h = bounds.y1! - bounds.y0!;
-    const dim = Math.max(w, h);
-    const tx = [
-        translationMatrix({x: -w / 2 - bounds.x0!, y: -h / 2 - bounds.y0!}),
-        scaleMatrix(1.5 / dim, 1.5 / dim),
-    ];
-    return shape.map((coord) => applyMatrices(coord, tx));
-};

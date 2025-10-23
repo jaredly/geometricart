@@ -15,7 +15,7 @@ import {maybeUrlColor} from './MultiStyleForm';
 import {lightenedColor, paletteColor} from './RenderPath';
 import {calcPPI, viewPos} from './SVGCanvas';
 import {PREFIX, SUFFIX} from './Sidebar';
-import {pxToMM} from '../gcode/generateGcode';
+import {pxToMM} from '../gcode/pxToMM';
 
 const thinnestLine = (paths: State['paths']) => {
     let width = Infinity;

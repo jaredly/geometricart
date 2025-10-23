@@ -3,7 +3,7 @@ import {Bounds} from '../editor/Export';
 import {BlurInt} from '../editor/Forms';
 import {Action} from '../state/Action';
 import {State} from '../types';
-import {pxToMM} from './generateGcode';
+import {pxToMM} from './pxToMM';
 
 export function Settings({
     state,

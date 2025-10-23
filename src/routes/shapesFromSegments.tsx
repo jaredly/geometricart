@@ -217,7 +217,7 @@ export const shapesFromSegments = (segs: [Coord, Coord][], eigenPoints: Coord[])
     const byEndPoint: Record<string, {idx: number; theta: number; to: Coord}[]> = {};
     segs.forEach((seg, i) => {
         if (coordsEqual(seg[0], seg[1])) {
-            console.warn('zero-length seg, ignoring');
+            // console.warn('zero-length seg, ignoring');
             return;
         }
         const to = angleTo(seg[0], seg[1]);
@@ -277,7 +277,7 @@ export const shapesFromSegments = (segs: [Coord, Coord][], eigenPoints: Coord[])
                 pks.push(coordKey(at.to));
             }
             if (points.length === 100 || ranout) {
-                console.warn('bad news, shape is bad');
+                // console.warn('bad news, shape is bad');
                 continue;
             }
             shapes.push(points);
@@ -404,6 +404,11 @@ export const flipPattern = (tiling: Tiling): Tiling => {
     }
     if (shape.type === 'parallellogram') {
         const [a, b, c, d] = shape.points;
+
+        // find the largest shape centered on a corner
+        // put it in the middle
+        // maybe flip if needed so its wider than tall
+
         const x1 = dist(a, b);
         const x2 = dist(c, d);
         const y1 = dist(b, c);

@@ -1,6 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import {paletteColor} from '../editor/RenderPath';
-import {makeDepths, pxToMM} from './generateGcode';
+import {makeDepths} from './generateGcode';
+import {pxToMM} from './pxToMM';
 import {GCodePath, State} from '../types';
 import {FillColors, LineColors} from './GCodeEditor';
 import {Int} from '../editor/Forms';

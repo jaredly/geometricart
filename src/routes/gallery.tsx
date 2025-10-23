@@ -3,7 +3,7 @@ import {Route} from './+types/gallery';
 import {getAllPatterns} from './db.server';
 import {getPatternData} from './getPatternData';
 import {ShowTiling} from './ShowTiling';
-import {shapeKey, Tiling} from '../types';
+import {Coord, shapeKey, Tiling} from '../types';
 import {ShapeDialog} from './ShapeDialog';
 import {getUniqueShapes} from './getUniqueShapes';
 import {useSearchParams} from 'react-router';
@@ -21,7 +21,14 @@ export async function loader(data: Route.LoaderArgs) {
     }
     const patterns = plain.map((pattern) => ({...pattern, data: getPatternData(pattern.tiling)}));
 
-    return {patterns, shapes: getUniqueShapes(patterns)};
+    return {
+        patterns: patterns.map(({hash, data: {bounds}, tiling}) => ({
+            hash,
+            tiling,
+            data: {bounds},
+        })),
+        shapes: getUniqueShapes(patterns),
+    };
 }
 
 type GroupBy = 'symmetry' | null;
@@ -59,10 +66,8 @@ export const Gallery = ({loaderData}: Route.ComponentProps) => {
         down: true,
     });
 
-    const patternsByHash: Record<
-        string,
-        {hash: string; tiling: Tiling; data: ReturnType<typeof getPatternData>}
-    > = {};
+    const patternsByHash: Record<string, {hash: string; tiling: Tiling; data: {bounds: Coord[]}}> =
+        {};
     loaderData.patterns.forEach((pattern) => (patternsByHash[pattern.hash] = pattern));
     const groups: Record<string, string[]> = {};
     if (groupBy === 'symmetry') {
@@ -127,16 +132,7 @@ export const Gallery = ({loaderData}: Route.ComponentProps) => {
                 </button>
             </div>
             <dialog id="filter-modal" className="modal" ref={dialogRef}>
-                <div className="modal-box flex flex-col w-11/12 max-w-5xl">
-                    <h3 className="font-bold text-lg">Filter by shape</h3>
-                    {showDialog ? <ShapeDialog data={loaderData} /> : null}
-                    <div className="modal-action">
-                        <form method="dialog">
-                            {/* if there is a button in form, it will close the modal */}
-                            <button className="btn">Close</button>
-                        </form>
-                    </div>
-                </div>
+                {showDialog ? <ShapeDialog data={loaderData} /> : null}
                 <form method="dialog" className="modal-backdrop">
                     <button>close</button>
                 </form>
@@ -180,11 +176,7 @@ export const Gallery = ({loaderData}: Route.ComponentProps) => {
                                 {groups[key].map((id) => (
                                     <div key={id}>
                                         <a href={`/gallery/pattern/${id}`}>
-                                            <ShowTiling
-                                                tiling={patternsByHash[id].tiling}
-                                                hash={id}
-                                                data={patternsByHash[id].data}
-                                            />
+                                            <ShowTiling hash={id} data={patternsByHash[id].data} />
                                         </a>
                                     </div>
                                 ))}

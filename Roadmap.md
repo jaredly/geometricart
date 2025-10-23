@@ -2,9 +2,20 @@
 iiiiii want a way to 'extract all the dependencies of this new thing from the bigness of the project'
 and also probably 'extract all utility functions into their own files'
 
+- [x] some solid perf stuff
+
+- [ ] re-orient rectangles
+- [ ] show shape info
+
 #
 
 
+# Shape Inspector
+
+- collinear lines (connected by dotted line)
+- similar segments (with a letter at their midpoints)
+- similar angles (color-coded)
+-
 
 # Next steps
 
