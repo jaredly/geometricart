@@ -20,8 +20,7 @@ export const Pattern = () => {
     const {id} = useParams();
     let pattern = useLoaderData<typeof loader>();
 
-    const tiling = pattern ? flipPattern(pattern.tiling) : null;
-    // if (pattern) flipPattern(pattern.tiling);
+    const tiling = pattern?.tiling;
     const data = useMemo(() => (tiling ? getPatternData(tiling) : null), [tiling]);
     if (!pattern || !tiling || !data || !id) {
         return <div>No data... {id}</div>;

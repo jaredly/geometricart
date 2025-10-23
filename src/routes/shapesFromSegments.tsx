@@ -352,7 +352,7 @@ const shouldFlipTriangle = (
             //     boundsForCoords(...centerShapes[0]),
             //     boundsForCoords(...outerShapes[0]),
             // );
-            console.log(centerShapes, outerShapes);
+            // console.log(centerShapes, outerShapes);
             if (centerArea < outerArea - 0.001) {
                 // console.log('Yes flipping!');
                 return true;

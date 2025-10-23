@@ -4,7 +4,6 @@ import {getAllPatterns} from './db.server';
 import {getPatternData} from './getPatternData';
 import {ShowTiling} from './ShowTiling';
 import {shapeKey, Tiling} from '../types';
-import {flipPattern} from './shapesFromSegments';
 import {ShapeDialog} from './ShapeDialog';
 import {getUniqueShapes} from './getUniqueShapes';
 import {useSearchParams} from 'react-router';
@@ -20,17 +19,7 @@ export async function loader(data: Route.LoaderArgs) {
             plain = plain.slice(0, +limit);
         } else [(plain = plain.filter((t) => t.hash === limit))];
     }
-    let patterns = plain.map((pattern) => ({...pattern, data: getPatternData(pattern.tiling)}));
-    const flipped: ((typeof patterns)[0] & {flipped?: boolean})[] = [];
-    patterns.forEach((pattern) => {
-        const flip = flipPattern(pattern.tiling);
-        if (flip !== pattern.tiling) {
-            flipped.push({...pattern, tiling: pattern.tiling, flipped: true});
-        } else {
-            flipped.push(pattern);
-        }
-    });
-    patterns = flipped;
+    const patterns = plain.map((pattern) => ({...pattern, data: getPatternData(pattern.tiling)}));
 
     return {patterns, shapes: getUniqueShapes(patterns)};
 }
@@ -72,7 +61,7 @@ export const Gallery = ({loaderData}: Route.ComponentProps) => {
 
     const patternsByHash: Record<
         string,
-        {hash: string; tiling: Tiling; data: ReturnType<typeof getPatternData>; flipped?: boolean}
+        {hash: string; tiling: Tiling; data: ReturnType<typeof getPatternData>}
     > = {};
     loaderData.patterns.forEach((pattern) => (patternsByHash[pattern.hash] = pattern));
     const groups: Record<string, string[]> = {};
@@ -189,14 +178,7 @@ export const Gallery = ({loaderData}: Route.ComponentProps) => {
                                 }}
                             >
                                 {groups[key].map((id) => (
-                                    <div
-                                        key={id}
-                                        style={{
-                                            border: patternsByHash[id].flipped
-                                                ? '2px solid magenta'
-                                                : '',
-                                        }}
-                                    >
+                                    <div key={id}>
                                         <a href={`/gallery/pattern/${id}`}>
                                             <ShowTiling
                                                 tiling={patternsByHash[id].tiling}
