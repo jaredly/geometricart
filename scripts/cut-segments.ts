@@ -57,5 +57,5 @@ console.log(
     `need to save ${toSave.length}`,
     toSave.map((s) => s.hash),
 );
-saveAllPatterns(toSave);
+// saveAllPatterns(toSave);
 db.close();

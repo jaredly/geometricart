@@ -236,7 +236,10 @@ export const ShowTiling = ({
             {debug ? (
                 <TilingPattern size={size * 2} data={data} tiling={tiling} />
             ) : (
-                <img src={`/gallery/pattern/${hash}/300/png`} style={{width: size, height: size}} />
+                <img
+                    src={`/gallery/pattern/${hash}/${size * 2}/png`}
+                    style={{width: size, height: size}}
+                />
             )}
             {!debug ? (
                 <TilingMask

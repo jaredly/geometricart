@@ -50,7 +50,7 @@ export const canvasTiling = (data: ReturnType<typeof getPatternData>, size: numb
                       100,
                       0,
                       (data.colorInfo.colors[data.shapeIds[i]] / (data.colorInfo.maxColor + 1)) *
-                          20 +
+                          40 +
                           30,
                   );
         ctx.beginPath();

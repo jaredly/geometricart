@@ -183,7 +183,6 @@ export const Gallery = ({loaderData}: Route.ComponentProps) => {
                                             <ShowTiling
                                                 tiling={patternsByHash[id].tiling}
                                                 hash={id}
-                                                size={200}
                                                 data={patternsByHash[id].data}
                                             />
                                         </a>
