@@ -42,28 +42,18 @@ export const InspectShape = ({shape}: {shape: Shape}) => {
         }
         anglers.push(
             <path
-                d={
-                    `
-                    ${arcPathFromCenter({
-                        center: pos,
-                        theta0: t0,
-                        theta1: t1,
-                        r: minLength / 10,
-                        clockwise,
-                    })}
-                    L${pos.x.toFixed(3)} ${pos.y.toFixed(3)}
-                    `
-                    //     shapeD([
-                    //     pos,
-                    //     push(pos, angleTo(pos, prev), minLength / 10),
-                    //     push(pos, angleTo(pos, next), minLength / 10),
-                    // ])
-                }
+                d={`${arcPathFromCenter({
+                    center: pos,
+                    theta0: t0,
+                    theta1: t1,
+                    r: minLength / 10,
+                    clockwise,
+                })}
+                    L${pos.x.toFixed(3)} ${pos.y.toFixed(3)}`}
                 fill="currentcolor"
                 style={{
                     color: `var(${colors[ci % colors.length]})`,
                 }}
-                // stroke={highlight ? 'white' : '#555'}
                 strokeWidth={dim / 50}
             />,
         );
@@ -82,36 +72,10 @@ export const InspectShape = ({shape}: {shape: Shape}) => {
                     width: 'calc(100% - 20px)',
                     height: 'calc(100% - 20px)',
                     color: 'black',
-                    // minWidth: size,
-                    // minHeight: size,
                 }}
             >
-                <path
-                    d={shapeD(shape.rotated)}
-                    fill="currentcolor"
-                    // stroke={highlight ? 'white' : '#555'}
-                    strokeWidth={dim / 50}
-                />
+                <path d={shapeD(shape.rotated)} fill="currentcolor" strokeWidth={dim / 50} />
                 {anglers}
-                {/* <path d={shapeD(shape.scaled)} stroke="red" fill="none" strokeWidth={dim / 50} />
-            <circle
-                cx={shape.axes[0].point.x}
-                cy={shape.axes[0].point.y}
-                r={dim / 50}
-                fill="white"
-            />
-            <circle
-                cx={shape.axes[0].src.x}
-                cy={shape.axes[0].src.y}
-                r={dim / 20}
-                fill="yellow"
-            />
-            <circle
-                cx={shape.axes[0].dest.x}
-                cy={shape.axes[0].dest.y}
-                r={dim / 50}
-                fill="orange"
-            /> */}
             </svg>
         </div>
     );
