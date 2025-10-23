@@ -4,6 +4,7 @@ import {Route} from './+types/gallery';
 import {canonicalShape} from './getPatternData';
 import {addToMap} from './shapesFromSegments';
 import {ShowShape} from './ShowShape';
+import {FrameInspectSharp} from '../icons/Icon';
 
 export const ShapeDialog = ({
     data: {patterns, shapes},
@@ -53,6 +54,11 @@ export const ShapeDialog = ({
                                                             ? ' bg-base-200'
                                                             : '')
                                                     }
+                                                    css={{
+                                                        '&:hover > .info': {
+                                                            display: 'flex',
+                                                        },
+                                                    }}
                                                     onClick={() =>
                                                         setSelected(
                                                             selected.includes(key)
@@ -69,6 +75,14 @@ export const ShapeDialog = ({
                                                     <div className="absolute inset-0 flex items-center justify-center">
                                                         {patternsWithShapes[key].length}
                                                     </div>
+                                                    <button
+                                                        className="info absolute text-2xl text-gray-400 hover:text-gray-200 hidden bottom-0 right-0 btn-square cursor-pointer"
+                                                        onClick={(evt) => {
+                                                            evt.stopPropagation();
+                                                        }}
+                                                    >
+                                                        <FrameInspectSharp />
+                                                    </button>
                                                 </div>
                                             ))}
                                         </div>
