@@ -1,4 +1,4 @@
-import {useEffect, useRef, useState} from 'react';
+import {useState} from 'react';
 import {Route} from './+types/gallery';
 import {getAllPatterns} from './db.server';
 import {getPatternData} from './getPatternData';
@@ -7,6 +7,7 @@ import {Coord, shapeKey, Tiling} from '../types';
 import {ShapeDialog} from './ShapeDialog';
 import {getUniqueShapes} from './getUniqueShapes';
 import {useSearchParams} from 'react-router';
+import {useOnOpen} from './useOnOpen';
 
 export async function loader(data: Route.LoaderArgs) {
     const limit = new URL(data.request.url).searchParams.get('limit');
@@ -33,27 +34,6 @@ export async function loader(data: Route.LoaderArgs) {
 
 type GroupBy = 'symmetry' | null;
 type SortBy = 'complexity';
-
-const useOnOpen = (onOpen: (open: boolean) => void) => {
-    const ref = useRef<HTMLDialogElement>(null);
-    useEffect(() => {
-        const dialog = ref.current!;
-        let t: NodeJS.Timeout;
-        const observer = new MutationObserver(() => {
-            clearTimeout(t);
-            if (dialog.hasAttribute('open')) {
-                onOpen(true);
-            } else {
-                console.log('setting a timeout');
-                t = setTimeout(() => onOpen(false), 300);
-            }
-        });
-        observer.observe(dialog, {attributes: true, attributeFilter: ['open']});
-
-        return () => observer.disconnect();
-    }, [onOpen]);
-    return ref;
-};
 
 export const Gallery = ({loaderData}: Route.ComponentProps) => {
     const [showDialog, setShowDialog] = useState(false);

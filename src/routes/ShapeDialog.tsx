@@ -5,6 +5,9 @@ import {canonicalShape} from './getPatternData';
 import {addToMap} from './shapesFromSegments';
 import {ShowShape} from './ShowShape';
 import {FrameInspectSharp} from '../icons/Icon';
+import {useOnOpen} from './useOnOpen';
+import {push} from '../rendering/getMirrorTransforms';
+import {InspectShape} from './InspectShape';
 
 export const ShapeDialog = ({
     data: {patterns, shapes},
@@ -13,6 +16,10 @@ export const ShapeDialog = ({
 }) => {
     const {patternsWithShapes, uniqueShapes, shapesOrganized} = shapes;
     const [selected, setSelected] = useState([] as string[]);
+
+    const [inspect, setInspect] = useState(null as null | string);
+    const [showDialog, setShowDialog] = useState(false);
+    const dialogRef = useOnOpen(setShowDialog);
 
     return (
         <div className="modal-box flex flex-col w-11/12 max-w-5xl">
@@ -79,6 +86,8 @@ export const ShapeDialog = ({
                                                         className="info absolute text-2xl text-gray-400 hover:text-gray-200 hidden bottom-0 right-0 btn-square cursor-pointer"
                                                         onClick={(evt) => {
                                                             evt.stopPropagation();
+                                                            setInspect(key);
+                                                            dialogRef.current?.showModal();
                                                         }}
                                                     >
                                                         <FrameInspectSharp />
@@ -115,17 +124,12 @@ export const ShapeDialog = ({
                     <button className="btn">Close</button>
                 </form>
             </div>
+            <dialog id="shape-modal" className="modal" ref={dialogRef}>
+                {inspect != null ? <InspectShape shape={uniqueShapes[inspect]} /> : null}
+                <form method="dialog" className="modal-backdrop">
+                    <button>close</button>
+                </form>
+            </dialog>
         </div>
     );
 };
-
-// const shapePatternKey = (angles: number[]) => {
-//     const larges = angles.map((a) => a > Math.PI);
-//     let k = larges.map((a) => (a ? 1 : 0)).join('');
-//     let best = k;
-//     for (let i = 1; i < k.length; i++) {
-//         const n = k.slice(i) + k.slice(0, i);
-//         if (n < best) best = n;
-//     }
-//     return best;
-// };
