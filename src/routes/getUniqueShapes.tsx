@@ -91,7 +91,10 @@ export const getUniqueShapes = (
     patterns.forEach(({data, hash}) => {
         data.canons.forEach((shape) => {
             if (!shape.percentage) return;
-            addToMap(patternsWithShapes, shape.key, hash);
+            if (!patternsWithShapes[shape.key]) patternsWithShapes[shape.key] = [hash];
+            else if (!patternsWithShapes[shape.key].includes(hash))
+                patternsWithShapes[shape.key].push(hash);
+
             if (!uniqueShapes[shape.key]) {
                 const axes = findReflectionAxes(shape.scaled, 0.001).sort(
                     (a, b) => b.length - a.length,

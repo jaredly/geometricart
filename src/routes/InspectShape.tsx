@@ -5,7 +5,6 @@ import {angleTo, push} from '../rendering/getMirrorTransforms';
 import {angleBetween} from '../rendering/isAngleBetween';
 import {Shape} from './getUniqueShapes';
 import {arcPathFromCenter, shapeD} from './shapeD';
-import {findConcyclicGroups, getTriplets} from './findConcyclicGroups';
 
 export const InspectShape = ({shape}: {shape: Shape}) => {
     const bounds = boundsForCoords(...shape.rotated);
@@ -25,26 +24,7 @@ export const InspectShape = ({shape}: {shape: Shape}) => {
         '--color-error',
     ];
 
-    // const groups = useMemo(() => {
-    //     // return getTriplets(shape.rotated);
-    //     return findConcyclicGroups(shape.rotated);
-    // }, [shape.rotated]);
-
     const anglers = findAnnotations(shape, goalLength, colors);
-
-    // groups.forEach((group) => {
-    //     anglers.push(
-    //         <circle
-    //             fill="none"
-    //             stroke="white"
-    //             strokeDasharray={`${dim / 200} ${dim / 200}`}
-    //             strokeWidth={dim / 400}
-    //             cx={group.circle.cx}
-    //             cy={group.circle.cy}
-    //             r={group.circle.r}
-    //         />,
-    //     );
-    // });
 
     return (
         <div className="modal-box flex flex-col w-11/12 max-w-5xl">
@@ -89,28 +69,14 @@ function findAnnotations(shape: Shape, goalLength: number, colors: string[]) {
             <path
                 d={shapeD([push(mid, langle, goalLength / 4), push(mid, langle, -goalLength / 4)])}
                 stroke="currentcolor"
-                // cx={mx}
-                // cy={my}
-                // r={Math.min(roundedLength / 8, goalLength / 2)}
                 strokeWidth={goalLength / 10}
                 style={{
                     color: `var(${colors[colors.length - 1 - (li % colors.length)]})`,
                 }}
             />,
         );
-        // anglers.push(
-        //     <circle
-        //         fill="currentcolor"
-        //         cx={mx}
-        //         cy={my}
-        //         r={Math.min(roundedLength / 8, goalLength / 2)}
-        //         style={{
-        //             color: `var(${colors[colors.length - 1 - (li % colors.length)]})`,
-        //         }}
-        //     />,
-        // );
+
         // Angles
-        // const angle = shape.angles[(i + 1) % shape.rotated.length];
         const t0 = angleTo(pos, prev);
         const t1 = angleTo(pos, next);
         let between = angleBetween(t0, t1, true);
@@ -149,7 +115,6 @@ function findAnnotations(shape: Shape, goalLength: number, colors: string[]) {
                           })} L${pos.x.toFixed(3)} ${pos.y.toFixed(3)}`
                 }
                 fill="currentcolor"
-                // stroke="currentcolor"
                 style={{
                     color: `var(${colors[ci % colors.length]})`,
                 }}

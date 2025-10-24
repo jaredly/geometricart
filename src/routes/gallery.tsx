@@ -8,6 +8,7 @@ import {ShapeDialog} from './ShapeDialog';
 import {getUniqueShapes} from './getUniqueShapes';
 import {useSearchParams} from 'react-router';
 import {useOnOpen} from './useOnOpen';
+import {ShowShape} from './ShowShape';
 
 export async function loader(data: Route.LoaderArgs) {
     const limit = new URL(data.request.url).searchParams.get('limit');
@@ -46,9 +47,12 @@ export const Gallery = ({loaderData}: Route.ComponentProps) => {
         down: true,
     });
 
+    const [filter, setFilter] = useState(null as null | string[]);
+
     const patternsByHash: Record<string, {hash: string; tiling: Tiling; data: {bounds: Coord[]}}> =
         {};
     loaderData.patterns.forEach((pattern) => (patternsByHash[pattern.hash] = pattern));
+
     const groups: Record<string, string[]> = {};
     if (groupBy === 'symmetry') {
         Object.entries(patternsByHash).forEach(
@@ -58,6 +62,12 @@ export const Gallery = ({loaderData}: Route.ComponentProps) => {
                     tiling: {shape},
                 },
             ]) => {
+                if (
+                    filter &&
+                    !filter.some((sid) => loaderData.shapes.patternsWithShapes[sid].includes(hash))
+                ) {
+                    return;
+                }
                 const key = shapeKey(shape);
                 if (!groups[key]) {
                     groups[key] = [hash];
@@ -67,7 +77,12 @@ export const Gallery = ({loaderData}: Route.ComponentProps) => {
             },
         );
     } else {
-        groups['All'] = Object.keys(patternsByHash);
+        groups['All'] = Object.keys(patternsByHash).filter(
+            filter
+                ? (hash) =>
+                      filter.some((sid) => loaderData.shapes.patternsWithShapes[sid].includes(hash))
+                : () => true,
+        );
     }
 
     Object.values(groups).forEach((patterns) =>
@@ -110,9 +125,19 @@ export const Gallery = ({loaderData}: Route.ComponentProps) => {
                 >
                     Filter by shape
                 </button>
+                {filter?.map((key) => (
+                    <div key={key}>
+                        <ShowShape shape={loaderData.shapes.uniqueShapes[key]} size={40} />
+                    </div>
+                ))}
+                {filter?.length ? (
+                    <button className="btn btn-square" onClick={() => setFilter(null)}>
+                        &times;
+                    </button>
+                ) : null}
             </div>
             <dialog id="filter-modal" className="modal" ref={dialogRef}>
-                {showDialog ? <ShapeDialog data={loaderData} /> : null}
+                {showDialog ? <ShapeDialog data={loaderData} setFilter={setFilter} /> : null}
                 <form method="dialog" className="modal-backdrop">
                     <button>close</button>
                 </form>
