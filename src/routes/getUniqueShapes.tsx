@@ -15,7 +15,7 @@ import {pointsAngles} from '../rendering/pathToPoints';
 import {Coord} from '../types';
 import {Axis, centroid, findReflectionAxes} from './findReflectionAxes';
 import {canonicalShape} from './getPatternData';
-import {addToMap, calcPolygonArea} from './shapesFromSegments';
+import {addToMap, calcPolygonArea, joinAdjacentShapeSegments} from './shapesFromSegments';
 
 const shapeClasses = ['Stars', 'Regular', 'Symmetrical', 'Other'] as const;
 
@@ -96,10 +96,11 @@ export const getUniqueShapes = (
                 const axes = findReflectionAxes(shape.scaled, 0.001).sort(
                     (a, b) => b.length - a.length,
                 );
+                const united = joinAdjacentShapeSegments(shape.scaled);
                 uniqueShapes[shape.key] = {
                     ...shape,
                     axes,
-                    rotated: axes.length ? rotateForAxis(shape.scaled, axes[0]) : shape.scaled,
+                    rotated: axes.length ? rotateForAxis(united, axes[0]) : united,
                     area: calcPolygonArea(scaleToUnitSquare(shape.scaled)),
                 };
                 const cs = classifyShape(shape.scaled, shape.lengths);
