@@ -1,4 +1,6 @@
+import {mulPos} from '../animation/mulPos';
 import {boundsForCoords} from '../editor/Bounds';
+import {scalePos} from '../editor/scalePos';
 import {getTransform, tilingPoints} from '../editor/tilingPoints';
 import {coordKey} from '../rendering/coordKey';
 import {closeEnough, closeEnoughAngle, epsilon} from '../rendering/epsilonToZero';
@@ -6,6 +8,7 @@ import {
     angleTo,
     applyMatrices,
     dist,
+    Matrix,
     rotationMatrix,
     scaleMatrix,
     translationMatrix,
@@ -315,6 +318,33 @@ export function calcPolygonArea(vertices: Coord[]) {
     return Math.abs(total);
 }
 
+const chooseCorner = (options: Coord[], shapes: Coord[][]) => {
+    const shapesAtPoints: (null | Coord[] | false)[] = options.map((_) => null);
+    shapes.forEach((shape) => {
+        const ct = centroid(shape);
+        for (let i = 0; i < options.length; i++) {
+            if (coordsEqual(ct, options[i])) {
+                if (shapesAtPoints[i] === null) {
+                    shapesAtPoints[i] = shape;
+                } else {
+                    shapesAtPoints[i] = false;
+                }
+                return;
+            }
+        }
+    });
+    const bySize = shapesAtPoints
+        .map((shape, i) => ({
+            i,
+            shape: shape && shape.length,
+            area: shape ? calcPolygonArea(shape) : 0,
+        }))
+        .sort((a, b) => b.area - a.area);
+
+    console.log('corners by size', bySize);
+    return bySize[0].i;
+};
+
 const shouldFlipTriangle = (
     rotHyp: boolean,
     internalAngle: number,
@@ -369,6 +399,76 @@ const shouldFlipTriangle = (
     return true;
 };
 
+const rectDims = (a: Coord, b: Coord, c: Coord, d: Coord) => {
+    const x1 = dist(a, b);
+    const x2 = dist(c, d);
+    const y1 = dist(b, c);
+    const y2 = dist(d, a);
+    // aspectRatio
+    let w = (x1 + x2) / 2;
+    let h = (y1 + y2) / 2;
+
+    return {w, h};
+};
+
+const getRectangleTransform = (tiling: Tiling, shapePoints: [Coord, Coord, Coord, Coord]) => {
+    // let {shape, cache} = tiling;
+    // if (shape.type !== 'parallellogram') {
+    //     return
+    // }
+    const {w, h} = rectDims(...shapePoints);
+
+    const tx: Matrix[] = [];
+
+    const data = getPatternData(tiling);
+    const bestCorner = chooseCorner(shapePoints, data.shapes);
+
+    console.log('got best corner', bestCorner);
+
+    if (bestCorner === 1) {
+        const mx = (shapePoints[0].x + shapePoints[1].x) / 2;
+        if (closeEnough(mx, 0)) {
+            tx.push(scaleMatrix(-1, 1));
+        } else {
+            tx.push(
+                translationMatrix({x: -mx, y: 0}),
+                scaleMatrix(-1, 1),
+                translationMatrix({x: mx, y: 0}),
+            );
+        }
+    }
+    if (bestCorner === 3) {
+        const my = (shapePoints[0].y + shapePoints[3].y) / 2;
+        if (closeEnough(my, 0)) {
+            tx.push(scaleMatrix(1, -1));
+        } else {
+            tx.push(
+                translationMatrix({x: 0, y: -my}),
+                scaleMatrix(1, -1),
+                translationMatrix({x: 0, y: my}),
+            );
+        }
+    }
+
+    if (bestCorner != null && bestCorner !== 0) {
+        // re-orient
+    }
+
+    // find the largest shape centered on a corner
+    // put it in the middle
+    // maybe flip if needed so its wider than tall
+
+    if (closeEnough(w, h, 0.01)) {
+        return tx;
+    }
+
+    if (w > h - epsilon) {
+        return tx;
+    }
+
+    return [...tx, rotationMatrix(Math.PI / 2), scaleMatrix(1, -1), scaleMatrix(w / h, w / h)];
+};
+
 export const flipPattern = (tiling: Tiling): Tiling => {
     let {shape, cache} = tiling;
     if (shape.type === 'right-triangle') {
@@ -403,29 +503,10 @@ export const flipPattern = (tiling: Tiling): Tiling => {
         return {...tiling, cache, shape: {...shape, start: end, corner, end: start}};
     }
     if (shape.type === 'parallellogram') {
-        const [a, b, c, d] = shape.points;
+        const tx = getRectangleTransform(tiling, shape.points);
+        if (!tx?.length) return tiling;
 
-        // find the largest shape centered on a corner
-        // put it in the middle
-        // maybe flip if needed so its wider than tall
-
-        const x1 = dist(a, b);
-        const x2 = dist(c, d);
-        const y1 = dist(b, c);
-        const y2 = dist(d, a);
-        // aspectRatio
-        let w = (x1 + x2) / 2;
-        let h = (y1 + y2) / 2;
-
-        if (closeEnough(w, h, 0.01)) {
-            return tiling;
-        }
-
-        if (w > h - epsilon) {
-            return tiling;
-        }
-
-        const tx = [rotationMatrix(Math.PI / 2), scaleMatrix(1, -1), scaleMatrix(x1 / y2, x1 / y2)];
+        console.log('transform para', tx);
 
         shape = {...shape};
         cache = {...cache};
@@ -441,9 +522,14 @@ export const flipPattern = (tiling: Tiling): Tiling => {
             cache,
             shape: {
                 ...shape,
-                points: [points[0], points[3], points[2], points[1]],
+                points: rectPointsInOrder(points),
             },
         };
     }
     return tiling;
+};
+
+const rectPointsInOrder = (points: Coord[]): [Coord, Coord, Coord, Coord] => {
+    const [a, b, d, c] = points.toSorted((a, b) => (closeEnough(a.x, b.x) ? a.y - b.y : a.x - b.x));
+    return [a, b, c, d];
 };

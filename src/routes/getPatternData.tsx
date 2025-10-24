@@ -1,4 +1,4 @@
-import {mulPos} from '../animation/PointsEditor';
+import {mulPos} from '../animation/mulPos';
 import {boundsForCoords} from '../editor/Bounds';
 import {
     applyTilingTransforms,

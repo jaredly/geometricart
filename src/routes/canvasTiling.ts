@@ -7,11 +7,11 @@ function hslToHex(h: number, s: number, l: number) {
     const f = (n: number) => {
         const k = (n + h / 30) % 12;
         const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
-        return Math.round(255 * color)
-            .toString(16)
-            .padStart(2, '0'); // convert to Hex and prefix "0" if needed
+        return color;
+        // .toString(16)
+        // .padStart(2, '0'); // convert to Hex and prefix "0" if needed
     };
-    return `#${f(0)}${f(8)}${f(4)}`;
+    return [f(0), f(8), f(4)];
 }
 
 type ColorScheme = (i: number) => string;
@@ -21,49 +21,86 @@ type ColorScheme = (i: number) => string;
 //     ctx.fillStyle = hslToHex(((i % 7) / 7) * 60, 100, ((i % 6) / 6) * 20 + 20);
 // }
 
-export const canvasTiling = (data: ReturnType<typeof getPatternData>, size: number) => {
-    const canvas = pk.MakeCanvas(size, size);
-    const ctx = canvas.getContext('2d');
-    if (!ctx) throw new Error(`no context`);
-    ctx.fillStyle = 'black';
-    ctx.fillRect(0, 0, size, size);
+export const canvasTiling = (
+    data: ReturnType<typeof getPatternData>,
+    size: number,
+    flipped: boolean,
+    font: ArrayBuffer,
+) => {
+    const surface = pk.MakeSurface(size, size)!;
+
+    const ctx = surface.getCanvas();
+    ctx.clear(pk.BLACK);
+
+    const paint = new pk.Paint();
+    paint.setColor(pk.BLACK);
+    paint.setStyle(pk.PaintStyle.Fill);
+    paint.setAntiAlias(true);
+    ctx.drawRect(pk.LTRBRect(0, 0, size, size), paint);
+    // const canvas = pk.MakeCanvas(size, size);
+    // pk.MakeSurface
+    // const ctx = canvas.getContext('2d');
+    // if (!ctx) throw new Error(`no context`);
+    // ctx.fillStyle = 'black';
+    // ctx.fillRect(0, 0, size, size);
 
     const margin = 0.5;
 
     ctx.scale(size / (2 + margin * 2), size / (2 + margin * 2));
     ctx.translate(1 + margin, 1 + margin);
-    ctx.lineJoin = 'round';
-    ctx.strokeStyle = 'black';
-
-    const colors = ['red', 'green', 'blue', 'orange'];
 
     data.shapes.forEach((shape, i) => {
-        // ctx.fillStyle = hslToHex(((i % 7) / 7) * 60, 100, ((i % 6) / 6) * 20 + 20);
-        // ctx.fillStyle = `rgba(255, 255, 255, 0.2)`;
-        // ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
-        ctx.fillStyle =
+        const paint = new pk.Paint();
+        paint.setStyle(pk.PaintStyle.Fill);
+        paint.setColor(
             data.colorInfo.colors[data.shapeIds[i]] === -1
-                ? 'black'
+                ? [0, 0, 0]
                 : hslToHex(
                       //   (data.colorInfo.colors[data.shapeIds[i]] / (data.colorInfo.maxColor + 1)) *
                       //       360,
                       100,
-                      0,
+                      flipped ? 50 : 0,
                       (data.colorInfo.colors[data.shapeIds[i]] / (data.colorInfo.maxColor + 1)) *
                           40 +
                           30,
-                  );
-        ctx.beginPath();
-        shape.forEach(({x, y}, i) => {
-            if (i === 0) {
-                ctx.moveTo(x, y);
-            } else {
-                ctx.lineTo(x, y);
-            }
-        });
-        ctx.fill();
+                  ),
+        );
+        ctx.drawPath(
+            pk.Path.MakeFromCmds([
+                pk.MOVE_VERB,
+                shape[0].x,
+                shape[0].y,
+                ...shape.slice(1).flatMap(({x, y}) => [pk.LINE_VERB, x, y]),
+            ])!,
+            paint,
+        );
     });
 
+    if (flipped) {
+        const typeface = pk.Typeface.MakeTypefaceFromData(font)!;
+
+        const paint = new pk.Paint();
+        paint.setStyle(pk.PaintStyle.Fill);
+        paint.setColor([1, 1, 1]);
+        paint.setAlphaf(0.1);
+        ctx.drawPath(
+            pk.Path.MakeFromCmds([
+                pk.MOVE_VERB,
+                data.bounds[0].x,
+                data.bounds[0].y,
+                ...data.bounds.slice(1).flatMap(({x, y}) => [pk.LINE_VERB, x, y]),
+            ])!,
+            paint,
+        );
+
+        paint.setStyle(pk.PaintStyle.Fill);
+        paint.setColor([0, 0, 0]);
+
+        const fonto = new pk.Font(typeface, 0.1);
+        data.bounds.forEach((coord, i) => {
+            ctx.drawText(i + '', coord.x, coord.y, paint, fonto);
+        });
+    }
     // data.shapes.forEach((shape) => {
     //     ctx.lineWidth = 0.003;
     //     // ctx.lineWidth = data.minSegLength / 3;
@@ -78,9 +115,13 @@ export const canvasTiling = (data: ReturnType<typeof getPatternData>, size: numb
     //     ctx.stroke();
     // });
 
-    const url = canvas.toDataURL();
-    canvas.dispose();
-    return url;
+    // pk.MakeImageFromCanvasImageSource(ctx)
+
+    return surface.makeImageSnapshot().encodeToBytes();
+    // const url = canvas.toDataURL();
+    // canvas.dispose();
+    // return url;
+    // return ctx.save
 };
 
 export function dataURItoBlob(dataURI: string) {

@@ -5,7 +5,11 @@ and also probably 'extract all utility functions into their own files'
 - [x] some solid perf stuff
 
 - [ ] re-orient rectangles
-- [ ] show shape info
+
+- [x] show shape info
+  - still need to show colinearity. could be nice
+- [ ] nowwww maybe allow pattern inspection?
+- [ ] and like, showing the construction tutorials, such as I have
 
 #
 

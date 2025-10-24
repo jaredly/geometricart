@@ -17,7 +17,7 @@ export const TilingMask = ({size, hash, bounds}: {size: number; hash: string; bo
             xmlns="http://www.w3.org/2000/svg"
             viewBox={`${x} ${x} ${w} ${w}`}
             style={{width: size, height: size}}
-            className="absolute inset-0 hover:opacity-100 opacity-0 transition-opacity duration-300"
+            className="absolute inset-0 opacity-0 transition-opacity duration-300 tiling-mask pointer-events-none"
         >
             <mask id={hash} mask-type="luminance">
                 <rect x={x} y={x} width={w} height={w} fill="white" />
@@ -206,20 +206,23 @@ export const ShowTiling = ({
     hash,
     data,
     size = 300,
-    debug,
 }: {
-    debug?: boolean;
     hash: string;
     size?: number;
     data: {bounds: Coord[]};
 }) => {
     return (
-        <div className="relative">
+        <div
+            className="relative"
+            css={{
+                '&:hover > .tiling-mask': {opacity: 1},
+            }}
+        >
             <img
                 src={`/gallery/pattern/${hash}/${size * 2}/png`}
                 style={{width: size, height: size}}
             />
-            {!debug ? <TilingMask size={size} bounds={data.bounds} hash={hash} /> : null}
+            <TilingMask size={size} bounds={data.bounds} hash={hash} />
         </div>
     );
 };

@@ -79,10 +79,12 @@ export function eigenShapesToSvg(
 export function tilingPoints(shape: Tiling['shape']) {
     switch (shape.type) {
         case 'right-triangle':
+            // second point is the right angle
             return [shape.start, shape.corner, shape.end];
         case 'isocelese':
             return [shape.first, shape.second, shape.third];
         case 'parallellogram':
+            // second point is the bottom-right, first is bottom-left
             return shape.points;
     }
 }

@@ -1,7 +1,6 @@
 import React from 'react';
-import {LerpPoint, Coord} from '../types';
-
-export const mulPos = (a: Coord, b: Coord) => ({x: a.x * b.x, y: a.y * b.y});
+import {LerpPoint} from '../types';
+import {mulPos} from './mulPos';
 
 export const PointsEditor = ({
     current,
@@ -105,7 +104,9 @@ export const PointsEditor = ({
                     border: '1px solid magenta',
                     display: 'block',
                 }}
-                ref={(node) => {node ? (svg.current = node) : null}}
+                ref={(node) => {
+                    node ? (svg.current = node) : null;
+                }}
                 width={width + 20}
                 height={height + 20}
                 viewBox={`-10 -10 ${width + 20} ${height + 20}`}
