@@ -7,6 +7,7 @@ import {toEdges} from './patternColoring';
 import {useMask} from '@react-three/drei';
 import {coordKey} from '../rendering/coordKey';
 import {shapeD} from './shapeD';
+import {chooseCorner, flipPattern} from './shapesFromSegments';
 
 export const TilingMask = ({size, hash, bounds}: {size: number; hash: string; bounds: Coord[]}) => {
     const margin = 0.5; //minSegLength * 2;
@@ -151,20 +152,25 @@ const TilingShape = ({
 export const TilingPattern = ({
     size,
     data,
+    tiling,
 }: {
     size?: number;
     data: ReturnType<typeof getPatternData>;
     tiling: Tiling;
 }) => {
+    const flip = flipPattern(tiling);
     const [hover, setHover] = useState(null as null | number);
     const {shapes, minSegLength} = data;
     const pointNames = Object.fromEntries(data.uniquePoints.map((p, i) => [coordKey(p), i]));
+
+    // const corners = chooseCorner(tiling.shape.type === 'parallellogram' ? tiling.shape.points : [], data.shapes)
+
     return (
         <div>
             <svg
                 xmlns="http://www.w3.org/2000/svg"
-                viewBox="-3 -3 6 6"
-                // viewBox="-1.5 -1.5 3 3"
+                // viewBox="-3 -3 6 6"
+                viewBox="-1.5 -1.5 3 3"
                 style={size ? {background: 'black', width: size, height: size} : undefined}
             >
                 {shapes.map((shape, i) => (
@@ -177,6 +183,22 @@ export const TilingPattern = ({
                         minSegLength={minSegLength}
                     />
                 ))}
+                {tiling.cache.segments.map(({prev, segment}) => (
+                    <path
+                        d={shapeD([prev, segment.to])}
+                        fill="none"
+                        stroke="black"
+                        strokeWidth={0.03}
+                    />
+                ))}
+                {flip.cache.segments.map(({prev, segment}) => (
+                    <path
+                        d={shapeD([prev, segment.to])}
+                        fill="none"
+                        stroke="green"
+                        strokeWidth={0.03}
+                    />
+                ))}
                 <path
                     fill="none"
                     strokeWidth={minSegLength / 10}
@@ -185,6 +207,7 @@ export const TilingPattern = ({
                     pointerEvents="none"
                     d={shapeD(data.bounds)}
                 />
+                {/* {corners} */}
             </svg>
             {hover != null ? (
                 <div>

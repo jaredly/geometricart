@@ -318,7 +318,7 @@ export function calcPolygonArea(vertices: Coord[]) {
     return Math.abs(total);
 }
 
-const chooseCorner = (options: Coord[], shapes: Coord[][]) => {
+export const chooseCorner = (options: Coord[], shapes: Coord[][]) => {
     const shapesAtPoints: (null | Coord[] | false)[] = options.map((_) => null);
     shapes.forEach((shape) => {
         const ct = centroid(shape);
@@ -342,7 +342,7 @@ const chooseCorner = (options: Coord[], shapes: Coord[][]) => {
         .sort((a, b) => b.area - a.area);
 
     console.log('corners by size', bySize);
-    return bySize[0].i;
+    return bySize;
 };
 
 const shouldFlipTriangle = (
@@ -411,22 +411,24 @@ const rectDims = (a: Coord, b: Coord, c: Coord, d: Coord) => {
     return {w, h};
 };
 
-const getRectangleTransform = (tiling: Tiling, shapePoints: [Coord, Coord, Coord, Coord]) => {
-    // let {shape, cache} = tiling;
-    // if (shape.type !== 'parallellogram') {
-    //     return
-    // }
+const getRectangleTransform = (tiling: Tiling, data: ReturnType<typeof getPatternData>) => {
+    let {shape, cache} = tiling;
+    if (shape.type !== 'parallellogram') {
+        return;
+    }
+
+    const shapePoints = data.bounds as [Coord, Coord, Coord, Coord];
+    const tilingPoints = shapePoints;
     const {w, h} = rectDims(...shapePoints);
 
     const tx: Matrix[] = [];
 
-    const data = getPatternData(tiling);
-    const bestCorner = chooseCorner(shapePoints, data.shapes);
+    const bestCorner = chooseCorner(shapePoints, data.shapes)[0].i;
 
     console.log('got best corner', bestCorner);
 
     if (bestCorner === 1) {
-        const mx = (shapePoints[0].x + shapePoints[1].x) / 2;
+        const mx = (tilingPoints[0].x + tilingPoints[1].x) / 2;
         if (closeEnough(mx, 0)) {
             tx.push(scaleMatrix(-1, 1));
         } else {
@@ -438,7 +440,7 @@ const getRectangleTransform = (tiling: Tiling, shapePoints: [Coord, Coord, Coord
         }
     }
     if (bestCorner === 3) {
-        const my = (shapePoints[0].y + shapePoints[3].y) / 2;
+        const my = (tilingPoints[0].y + tilingPoints[3].y) / 2;
         if (closeEnough(my, 0)) {
             tx.push(scaleMatrix(1, -1));
         } else {
@@ -503,7 +505,8 @@ export const flipPattern = (tiling: Tiling): Tiling => {
         return {...tiling, cache, shape: {...shape, start: end, corner, end: start}};
     }
     if (shape.type === 'parallellogram') {
-        const tx = getRectangleTransform(tiling, shape.points);
+        const data = getPatternData(tiling);
+        const tx = getRectangleTransform(tiling, data);
         if (!tx?.length) return tiling;
 
         console.log('transform para', tx);

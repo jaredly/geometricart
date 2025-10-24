@@ -200,6 +200,7 @@ export const getPatternData = (tiling: Tiling, debug = false) => {
         minSegLength,
         canons,
         ttt,
+        tx,
     };
 };
 

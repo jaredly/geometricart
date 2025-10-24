@@ -39,7 +39,7 @@ export const Pattern = () => {
         <div css={{padding: 10}}>
             Hello pattern {id}
             <div>
-                <TilingPattern tiling={tiling} size={500} data={data} />
+                <TilingPattern tiling={tiling} size={1000} data={data} />
                 <div style={{display: 'flex', flexWrap: 'wrap'}}>
                     {
                         //data.canons
