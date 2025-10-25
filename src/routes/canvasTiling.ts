@@ -133,7 +133,13 @@ export const canvasTiling = async (
 
     // pk.MakeImageFromCanvasImageSource(ctx)
 
-    return surface.makeImageSnapshot().encodeToBytes()!;
+    const img = surface.makeImageSnapshot();
+    const bytes = img.encodeToBytes()!;
+    img.delete();
+    ctx.delete();
+    surface.delete();
+    return bytes;
+
     // const url = canvas.toDataURL();
     // canvas.dispose();
     // return url;
