@@ -1,5 +1,5 @@
 import {getPatternData} from './getPatternData';
-import {pk, resetCanvasKit} from './pk';
+import {pk} from './pk';
 import {readFileSync} from 'fs';
 import {join} from 'path';
 
@@ -25,24 +25,24 @@ type ColorScheme = (i: number) => string;
 
 let fontCache = null as null | NonSharedBuffer;
 
-export const canvasTiling = async (
+export const canvasTiling = (
     data: ReturnType<typeof getPatternData>,
     size: number,
     flipped: boolean,
 ) => {
-    if (!fontCache) {
-        fontCache = readFileSync(join(import.meta.dirname, 'Roboto-Regular.ttf'));
-    }
     let surface = pk.MakeSurface(size, size);
-
     if (!surface) {
-        console.error(`Canvaskit is dead!!!`);
-        await resetCanvasKit();
-        surface = pk.MakeSurface(size, size);
-        if (!surface) {
-            throw new Error('canvaskit is dead and refuses to reset');
-        }
+        throw new Error(`CanvasKit is dead!`);
     }
+
+    // if (!surface) {
+    //     console.error(`Canvaskit is dead!!!`);
+    //     await resetCanvasKit();
+    //     surface = pk.MakeSurface(size, size);
+    //     if (!surface) {
+    //         throw new Error('canvaskit is dead and refuses to reset');
+    //     }
+    // }
 
     const ctx = surface.getCanvas();
     ctx.clear(pk.BLACK);
@@ -92,6 +92,10 @@ export const canvasTiling = async (
     });
 
     if (flipped) {
+        if (!fontCache) {
+            fontCache = readFileSync(join(import.meta.dirname, 'Roboto-Regular.ttf'));
+        }
+
         const typeface = pk.Typeface.MakeTypefaceFromData(fontCache.buffer)!;
 
         const paint = new pk.Paint();
@@ -135,9 +139,9 @@ export const canvasTiling = async (
 
     const img = surface.makeImageSnapshot();
     const bytes = img.encodeToBytes()!;
-    img.delete();
-    ctx.delete();
-    surface.delete();
+    // img.delete();
+    // ctx.delete();
+    // surface.dispose();
     return bytes;
 
     // const url = canvas.toDataURL();

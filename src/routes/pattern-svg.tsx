@@ -39,8 +39,14 @@ export async function loader({params, request}: Route.LoaderArgs) {
 
     pattern.tiling = preTransformTiling(pattern.tiling);
 
+    // const flip = search.get('flip') === 'no' ? pattern.tiling : flipPattern(pattern.tiling);
+    // const dataUri = await canvasTiling(getPatternData(flip), size * 2, flip !== pattern.tiling)!;
+    // const font = await fetch('https://cdn.skia.org/misc/Roboto-Regular.ttf').then((s) =>
+    //     s.arrayBuffer(),
+    // );
+
     const flip = search.get('flip') === 'no' ? pattern.tiling : flipPattern(pattern.tiling);
-    const dataUri = await canvasTiling(getPatternData(flip), size * 2, flip !== pattern.tiling)!;
+    const dataUri = canvasTiling(getPatternData(flip), size * 2, flip !== pattern.tiling)!;
     // return dataUri;
     // const [mime, data] = dataUri.split(',');
     const buffer = Buffer.from(dataUri);
