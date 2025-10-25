@@ -507,7 +507,7 @@ export const flipPattern = (tiling: Tiling): Tiling => {
     if (shape.type === 'parallellogram') {
         const data = getPatternData(tiling);
         const tx = getRectangleTransform(tiling, data);
-        if (!tx?.length) return tiling;
+        if (!tx?.length || 2 > 1) return tiling;
 
         console.log('transform para', tx);
 

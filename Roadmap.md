@@ -1,4 +1,21 @@
 
+
+I think I need to peel back the layers.
+like we do all these transforms and stuff.
+where we sometimes reverse things
+and in any case we're scaling and stuff.
+and I think we should just ditch that.
+like, let's normalize the pattern and reify it.
+
+so `getTransform` should no longer be a thing.
+yeah.
+
+and then, things will make more sense?
+
+- [ ] ^ do that!
+
+
+
 iiiiii want a way to 'extract all the dependencies of this new thing from the bigness of the project'
 and also probably 'extract all utility functions into their own files'
 
