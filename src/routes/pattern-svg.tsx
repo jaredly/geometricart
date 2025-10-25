@@ -37,7 +37,7 @@ export async function loader({params, request}: Route.LoaderArgs) {
     //     return new Response(pngCache[k], {headers: {'Content-type': 'image/png'}});
     // }
 
-    pattern.tiling = preTransformTiling(pattern.tiling);
+    // pattern.tiling = preTransformTiling(pattern.tiling);
 
     // const flip = search.get('flip') === 'no' ? pattern.tiling : flipPattern(pattern.tiling);
     // const dataUri = await canvasTiling(getPatternData(flip), size * 2, flip !== pattern.tiling)!;
@@ -46,7 +46,11 @@ export async function loader({params, request}: Route.LoaderArgs) {
     // );
 
     const flip = search.get('flip') === 'no' ? pattern.tiling : flipPattern(pattern.tiling);
-    const dataUri = canvasTiling(getPatternData(flip), size * 2, flip !== pattern.tiling)!;
+    const dataUri = canvasTiling(
+        getPatternData(pattern.tiling),
+        size * 2,
+        flip !== pattern.tiling,
+    )!;
     // return dataUri;
     // const [mime, data] = dataUri.split(',');
     const buffer = Buffer.from(dataUri);
