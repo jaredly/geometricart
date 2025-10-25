@@ -37,12 +37,12 @@ export async function loader({params, request}: Route.LoaderArgs) {
     //     return new Response(pngCache[k], {headers: {'Content-type': 'image/png'}});
     // }
 
-    const font = await fetch('https://cdn.skia.org/misc/Roboto-Regular.ttf').then((s) =>
-        s.arrayBuffer(),
-    );
+    // const font = await fetch('https://cdn.skia.org/misc/Roboto-Regular.ttf').then((s) =>
+    //     s.arrayBuffer(),
+    // );
 
     const flip = search.get('flip') === 'no' ? pattern.tiling : flipPattern(pattern.tiling);
-    const dataUri = canvasTiling(getPatternData(flip), size * 2, flip !== pattern.tiling, font)!;
+    const dataUri = canvasTiling(getPatternData(flip), size * 2, flip !== pattern.tiling)!;
     // return dataUri;
     // const [mime, data] = dataUri.split(',');
     const buffer = Buffer.from(dataUri);

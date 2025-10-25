@@ -1,5 +1,7 @@
 import {getPatternData} from './getPatternData';
 import {pk} from './pk';
+import {readFileSync} from 'fs';
+import {join} from 'path';
 
 function hslToHex(h: number, s: number, l: number) {
     l /= 100;
@@ -21,13 +23,26 @@ type ColorScheme = (i: number) => string;
 //     ctx.fillStyle = hslToHex(((i % 7) / 7) * 60, 100, ((i % 6) / 6) * 20 + 20);
 // }
 
+let fontCache = null as null | NonSharedBuffer;
+
 export const canvasTiling = (
     data: ReturnType<typeof getPatternData>,
     size: number,
     flipped: boolean,
-    font: ArrayBuffer,
 ) => {
-    const surface = pk.MakeSurface(size, size)!;
+    let surface = pk.MakeSurface(size, size);
+    if (!surface) {
+        throw new Error(`CanvasKit is dead!`);
+    }
+
+    // if (!surface) {
+    //     console.error(`Canvaskit is dead!!!`);
+    //     await resetCanvasKit();
+    //     surface = pk.MakeSurface(size, size);
+    //     if (!surface) {
+    //         throw new Error('canvaskit is dead and refuses to reset');
+    //     }
+    // }
 
     const ctx = surface.getCanvas();
     ctx.clear(pk.BLACK);
@@ -77,7 +92,11 @@ export const canvasTiling = (
     });
 
     if (flipped) {
-        const typeface = pk.Typeface.MakeTypefaceFromData(font)!;
+        if (!fontCache) {
+            fontCache = readFileSync(join(import.meta.dirname, 'Roboto-Regular.ttf'));
+        }
+
+        const typeface = pk.Typeface.MakeTypefaceFromData(fontCache.buffer)!;
 
         const paint = new pk.Paint();
         paint.setStyle(pk.PaintStyle.Fill);
@@ -101,6 +120,7 @@ export const canvasTiling = (
             ctx.drawText(i + '', coord.x, coord.y, paint, fonto);
         });
     }
+
     // data.shapes.forEach((shape) => {
     //     ctx.lineWidth = 0.003;
     //     // ctx.lineWidth = data.minSegLength / 3;
@@ -117,7 +137,13 @@ export const canvasTiling = (
 
     // pk.MakeImageFromCanvasImageSource(ctx)
 
-    return surface.makeImageSnapshot().encodeToBytes();
+    const img = surface.makeImageSnapshot();
+    const bytes = img.encodeToBytes()!;
+    // img.delete();
+    // ctx.delete();
+    // surface.dispose();
+    return bytes;
+
     // const url = canvas.toDataURL();
     // canvas.dispose();
     // return url;
