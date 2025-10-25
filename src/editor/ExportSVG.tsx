@@ -4,7 +4,7 @@ import {Interpolation, Theme, jsx} from '@emotion/react';
 import {Path as PKPath, PathKit} from 'pathkit-wasm';
 import React, {useMemo, useState} from 'react';
 import * as ReactDOM from 'react-dom';
-import {pkPath} from '../sidebar/NewSidebar';
+import {pkPath} from '../sidebar/pkClipPaths';
 import {Action} from '../state/Action';
 import {initialHistory} from '../state/initialState';
 import {Fill, Path, State, StyleLine} from '../types';
@@ -15,7 +15,7 @@ import {maybeUrlColor} from './MultiStyleForm';
 import {lightenedColor, paletteColor} from './RenderPath';
 import {calcPPI, viewPos} from './SVGCanvas';
 import {PREFIX, SUFFIX} from './Sidebar';
-import {pxToMM} from '../gcode/generateGcode';
+import {pxToMM} from '../gcode/pxToMM';
 
 const thinnestLine = (paths: State['paths']) => {
     let width = Infinity;
@@ -816,16 +816,16 @@ function getSVGText(state: State, size: {width: number; height: number}, inner =
         : state;
     // I want this to be sync, so I need the old API
     trapWarn(() => {
-        ReactDOM.render(
-            <Canvas
-                {...blankCanvasProps}
-                {...size}
-                innerRef={(node) => (svgNode = node)}
-                ppi={state.meta.ppi}
-                state={rstate}
-            />,
-            dest,
-        );
+        // ReactDOM.render(
+        //     <Canvas
+        //         {...blankCanvasProps}
+        //         {...size}
+        //         innerRef={(node) => (svgNode = node)}
+        //         ppi={state.meta.ppi}
+        //         state={rstate}
+        //     />,
+        //     dest,
+        // );
     });
 
     return inner ? svgNode!.innerHTML : svgNode!.outerHTML;

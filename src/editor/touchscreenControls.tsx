@@ -266,7 +266,7 @@ export function mirrorControls(
         fn: PendingMirror | ((m: PendingMirror | null) => PendingMirror | null) | null,
     ) => void,
     pendingMirror: PendingMirror,
-): React.ReactChild {
+): React.ReactElement {
     return (
         <div>
             <IconButton

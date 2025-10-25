@@ -6,7 +6,8 @@
         "useIgnoreFile": false
     },
     "files": {
-        "ignoreUnknown": true
+        "ignoreUnknown": true,
+        "includes": ["**/*.ts", "**/*.tsx"]
     },
     "formatter": {
         "enabled": true,
@@ -26,11 +27,12 @@
                 "noUnusedImports": "off",
                 "useExhaustiveDependencies": "warn",
                 "noSwitchDeclarations": "warn",
+                "useJsxKeyInIterable": "off",
                 "noChildrenProp": "off"
             },
             "suspicious": {
                 "noArrayIndexKey": "off",
-                "noAssignInExpressions": "warn",
+                "noAssignInExpressions": "off",
                 "noDoubleEquals": "warn",
                 "noControlCharactersInRegex": "warn"
             }

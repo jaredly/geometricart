@@ -1,11 +1,12 @@
 // The main deals
 
 import * as React from 'react';
-import {render} from 'react-dom';
+// import {render} from 'react-dom';
 import {deepEqual} from '../rendering/deepEqual';
 import {hoverBackground} from './styles.css';
 import {Config, Fixture} from './types';
 import {deserializeFixtures, serializeFixtures} from './utils';
+import {useLocalStorage} from './useLocalStorage';
 // import ReactJson from 'react-json-view';
 
 const initial: Array<unknown> = [];
@@ -300,25 +301,6 @@ const MaybeShowJson = ({input, output}: {input: any; output: any}) => {
     return null;
 };
 
-export const useLocalStorage = <T,>(
-    key: string,
-    initial: T,
-): [T, React.Dispatch<React.SetStateAction<T>>] => {
-    const [value, setValue] = React.useState((): T => {
-        const data = localStorage[key];
-        if (data) {
-            return JSON.parse(data);
-        }
-        return initial;
-    });
-    React.useEffect(() => {
-        if (value !== initial) {
-            localStorage[key] = JSON.stringify(value);
-        }
-    }, [value]);
-    return [value, setValue];
-};
-
 export const run = (config: Config<any[], any>) => {
-    render(<App config={config} />, document.getElementById('root'));
+    // render(<App config={config} />, document.getElementById('root'));
 };

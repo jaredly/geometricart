@@ -9,7 +9,7 @@ import {Action} from '../state/Action';
 import {PathGroup, State} from '../types';
 // @ts-ignore
 import {Hover} from '../editor/Sidebar';
-import {mmToPX} from '../gcode/generateGcode';
+import {mmToPX} from '../gcode/pxToMM';
 import {calcShapes} from './calcShapes';
 import {ExportSection} from './ExportSection';
 import {paletteColor} from '../editor/RenderPath';
@@ -133,8 +133,8 @@ export const ThreedScreen = ({
     // const backdrop =
 
     const canv = React.useRef<HTMLCanvasElement>(null);
-    const virtualCamera = React.useRef<TPC>();
-    const sc = React.useRef<TPC>();
+    const virtualCamera = React.useRef<TPC>(null);
+    const sc = React.useRef<TPC>(null);
 
     const dl = useRef<DirectionalLight>(null);
     const [move, setMove] = useState(false);
@@ -200,6 +200,7 @@ export const ThreedScreen = ({
                     style={{backgroundColor: 'white'}}
                     gl={{antialias: true, preserveDrawingBuffer: true}}
                 >
+                    {/** @ts-ignore */}
                     <directionalLight
                         position={lpos}
                         ref={dl}
@@ -207,30 +208,33 @@ export const ThreedScreen = ({
                         // shadow-mapSize={[2048, 2048]}
                         castShadow
                     >
-                        <orthographicCamera
-                            zoom={shadowZoom}
-                            attach="shadow-camera"
-                        ></orthographicCamera>
+                        {/** @ts-ignore */}
+                        <orthographicCamera zoom={shadowZoom} attach="shadow-camera">
+                            {/** @ts-ignore */}
+                        </orthographicCamera>
+                        {/** @ts-ignore */}
                     </directionalLight>
-                    {/* {sc.current ? <cameraHelper camera={sc.current} /> : null} */}
-                    {/* <CH camera={sc} /> */}
+                    {/** @ts-ignore */}
                     <ambientLight intensity={0.3} />
 
                     <PerspectiveCamera
                         makeDefault
-                        // @ts-expect-error
                         ref={virtualCamera}
                         position={[x, y, cameraDistance]}
                         args={[fov, 1, 1, 2000]}
                     />
-                    <OrbitControls camera={virtualCamera.current} />
+                    <OrbitControls camera={virtualCamera.current!} />
 
+                    {/** @ts-ignore */}
                     <mesh position={[0, 0, -1]}>
+                        {/** @ts-ignore */}
                         <planeGeometry attach="geometry" args={[100, 100]} />
+                        {/** @ts-ignore */}
                         <meshPhongMaterial
                             attach="material"
                             color={paletteColor(state.palette, state.view.background)}
                         />
+                        {/** @ts-ignore */}
                     </mesh>
                     {items}
                 </Canvas>

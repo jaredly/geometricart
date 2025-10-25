@@ -1,7 +1,7 @@
 import {arcToCircle} from '../../editor/findSelection';
 import {ArcSegment, Coord, LineSegment, Segment} from '../../types';
-import {zeroToTwoPi} from '../clipPath';
-import {angleBetween} from '../findNextSegments';
+import {zeroToTwoPi} from '../epsilonToZero';
+import {angleBetween} from '../isAngleBetween';
 import {angleTo, dist, push} from '../getMirrorTransforms';
 import {lineCircle, lineToSlope} from '../intersect';
 

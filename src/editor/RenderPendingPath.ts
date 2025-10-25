@@ -1,4 +1,4 @@
-import {angleBetween} from '../rendering/findNextSegments';
+import {angleBetween} from '../rendering/isAngleBetween';
 import {angleTo, dist} from '../rendering/getMirrorTransforms';
 import {ArcSegment, Coord} from '../types';
 

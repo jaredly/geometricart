@@ -1,6 +1,7 @@
-import {angleBetween} from './findNextSegments';
+import {angleBetween} from './isAngleBetween';
 import {angleTo, dist, push} from './getMirrorTransforms';
-import {closeEnoughAngle, lineLine, lineToSlope} from './intersect';
+import {lineLine, lineToSlope} from './intersect';
+import {closeEnoughAngle} from './epsilonToZero';
 import {coordsEqual} from './pathsAreIdentical';
 import {Coord, Segment} from '../types';
 

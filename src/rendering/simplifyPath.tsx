@@ -1,6 +1,6 @@
 import {Coord, Segment} from '../types';
 import {angleTo} from './getMirrorTransforms';
-import {closeEnoughAngle} from './intersect';
+import {closeEnoughAngle} from './epsilonToZero';
 import {coordsEqual} from './pathsAreIdentical';
 
 export const simplifyPath = (segments: Array<Segment>): Array<Segment> => {

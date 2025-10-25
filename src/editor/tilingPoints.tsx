@@ -14,10 +14,24 @@ import {tilingTransforms} from './tilingTransforms';
 export const transformLines = (lines: [Coord, Coord][], mx: Matrix[]) =>
     lines.map(([p1, p2]): [Coord, Coord] => [applyMatrices(p1, mx), applyMatrices(p2, mx)]);
 
+export const transformShape = (pts: Coord[], tx: Matrix[]) =>
+    pts.map((pt) => applyMatrices(pt, tx));
+
+export const transformLine = ([p1, p2]: [Coord, Coord], tx: Matrix[]) =>
+    [applyMatrices(p1, tx), applyMatrices(p2, tx)] as [Coord, Coord];
+
 export const applyTilingTransforms = (unique: [Coord, Coord][], mx: Matrix[][][]) => {
+    return applyTilingTransformsG(unique, mx, transformLine);
+};
+
+export const applyTilingTransformsG = <T,>(
+    unique: T[],
+    mx: Matrix[][][],
+    applyTransform: (t: T, tx: Matrix[]) => T,
+) => {
     let full = unique;
     mx.forEach((set) => {
-        full = full.concat(...set.map((m) => transformLines(full, m)));
+        full = full.concat(...set.map((m) => full.map((item) => applyTransform(item, m))));
     });
     return full;
 };
@@ -65,10 +79,12 @@ export function eigenShapesToSvg(
 export function tilingPoints(shape: Tiling['shape']) {
     switch (shape.type) {
         case 'right-triangle':
+            // second point is the right angle
             return [shape.start, shape.corner, shape.end];
         case 'isocelese':
             return [shape.first, shape.second, shape.third];
         case 'parallellogram':
+            // second point is the bottom-right, first is bottom-left
             return shape.points;
     }
 }

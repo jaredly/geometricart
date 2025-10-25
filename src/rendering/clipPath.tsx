@@ -1,10 +1,19 @@
 import {pathToPrimitives} from '../editor/findSelection';
 import {ArcSegment, Coord, Path, PathGroup, Segment} from '../types';
 import {coordKey, numKey} from './coordKey';
-import {epsilonToZero, anglesEqual, closeEnough} from './epsilonToZero';
-import {angleBetween} from './findNextSegments';
+import {
+    epsilonToZero,
+    anglesEqual,
+    closeEnough,
+    zeroToTwoPi,
+    negPiToPi,
+    Angle,
+} from './epsilonToZero';
+import {angleBetween} from './isAngleBetween';
 import {angleTo, dist} from './getMirrorTransforms';
-import {Primitive, SlopeIntercept, epsilon, intersections, withinLimit} from './intersect';
+import {Primitive, SlopeIntercept, intersections} from './intersect';
+import {withinLimit} from './epsilonToZero';
+import {epsilon} from './epsilonToZero';
 import {ensureClockwise, isClockwise} from './pathToPoints';
 import {coordsEqual} from './pathsAreIdentical';
 import {simplifyPath} from './simplifyPath';
@@ -20,16 +29,6 @@ export type Clippable<Hit> = {
 
 // if intersection is -1, it means we're at the start of the segment.
 export type HitLocation = {segment: number; intersection: number};
-
-export type Angle =
-    | {type: 'flat'; theta: number}
-    | {
-          type: 'arc';
-          /** the tangent line! */
-          theta: number;
-          radius: number;
-          clockwise: boolean;
-      };
 
 export const angleKey = (angle: Angle) =>
     angle.type === 'flat'
@@ -122,27 +121,6 @@ export const sortAngles = (first: Angle, second: Angle) => {
 };
 
 const sortKey = (num: number) => (num < 0 ? `-1` : num > 0 ? `1` : `0`);
-
-export const zeroToTwoPi = (angle: number) => {
-    if (angle < 0) {
-        angle += Math.PI * 2;
-    }
-    if (angle > Math.PI * 2) {
-        angle -= Math.PI * 2;
-    }
-    if (angle < epsilon) {
-        return 0;
-    }
-    if (Math.abs(Math.PI * 2 - angle) < epsilon) {
-        return 0;
-    }
-    return angle;
-};
-
-export const negPiToPi = (angle: number) => {
-    const res = zeroToTwoPi(angle);
-    return res > Math.PI ? res - Math.PI * 2 : res;
-};
 
 export const isInside = (back: Angle, forward: Angle, test: Angle, debug = false): boolean => {
     // We need to compare three things to each other.

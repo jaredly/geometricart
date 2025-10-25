@@ -7,7 +7,8 @@ import {atCircleBottomOrSomething} from './atCircleBottomOrSomething';
 import {atLineBottom} from './clipPath';
 import {SegmentWithPrev} from './clipPathNew';
 import {angleTo, dist, push} from './getMirrorTransforms';
-import {Circle, lineCircle, lineLine, lineToSlope, SlopeIntercept, withinLimit} from './intersect';
+import {Circle, lineCircle, lineLine, lineToSlope, SlopeIntercept} from './intersect';
+import {withinLimit} from './epsilonToZero';
 import {SegmentEditor, useInitialState, useOnChange} from './SegmentEditor';
 
 type Pair = [SegmentWithPrev, Coord];

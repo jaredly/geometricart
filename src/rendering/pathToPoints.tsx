@@ -1,12 +1,12 @@
-import {angleBetween} from './findNextSegments';
+import {angleBetween} from './isAngleBetween';
 import {angleTo, dist, push} from './getMirrorTransforms';
-import {epsilon} from './intersect';
+import {epsilon} from './epsilonToZero';
 import {reverseSegment} from './pathsAreIdentical';
 import {Coord, Segment} from '../types';
-import {negPiToPi} from './clipPath';
+import {negPiToPi} from './epsilonToZero';
 import {closeEnough} from './epsilonToZero';
 import {segmentKey} from './segmentKey';
-import {pxToMM} from '../gcode/generateGcode';
+import {pxToMM} from '../gcode/pxToMM';
 
 export type RasterSeg = {
     from: Coord;
@@ -203,7 +203,7 @@ export const totalAnglePoints = (points: Coord[]) => {
     const relatives = betweens.map((between) =>
         between > Math.PI ? between - Math.PI * 2 : between,
     );
-    let total = relatives.reduce((a, b) => a + b);
+    const total = relatives.reduce((a, b) => a + b);
     return total;
 };
 

@@ -3,7 +3,7 @@ import {BarePath, Coord, SegPrev, Segment, State, Tiling} from '../types';
 import {closeEnough} from '../rendering/epsilonToZero';
 import {consumePath, getVisiblePaths, pkClips} from '../rendering/pkInsetPaths';
 import {PK} from './pk';
-import {pkPath} from '../sidebar/NewSidebar';
+import {pkPath} from '../sidebar/pkClipPaths';
 import {addPrevsToSegments} from '../rendering/segmentsToNonIntersectingSegments';
 import {SlopeIntercept, lineLine, lineToSlope, slopeToLine} from '../rendering/intersect';
 import {numKey} from '../rendering/coordKey';
@@ -103,83 +103,6 @@ export const getShapesIntersectingPolygon = (state: State, pts: Coord[]) => {
             klines[slopeInterceptKey(sli)] = sli;
         });
     });
-
-    // const origSegments = paths.flatMap((id) =>
-    //     addPrevsToSegments(
-    //         state.paths[id].segments.map((seg) => transformSegment(seg, tx)),
-    //     ),
-    // );
-    // const origLines = origSegments.map((iline) =>
-    //     lineToSlope(iline.prev, iline.segment.to, true),
-    // );
-
-    // const isegs = intersections.flatMap((path) =>
-    //     addPrevsToSegments(
-    //         path.segments.map((seg) => transformSegment(seg, tx)),
-    //     ),
-    // );
-    // KEEP
-    // consoleSvg(renderSegments(origSegments));
-    // consoleSvg(renderSegments(isegs));
-
-    // isegs
-    //     .map((iline) => lineToSlope(iline.prev, iline.segment.to, true))
-    //     .forEach((sl) => {
-    //         klines[slopeInterceptKey(sl)] = sl;
-    //     });
-    //     .filter((sl) => {
-    //         if (
-    //             trilines.some(
-    //                 (tl) => closeEnough(tl.b, sl.b) && closeEnough(tl.m, sl.m),
-    //             )
-    //         ) {
-    //             const ss = slopeToLine(sl);
-    //             for (let os of origLines) {
-    //                 if (!closeEnough(os.b, sl.b) || !closeEnough(os.m, sl.m)) {
-    //                     continue;
-    //                 }
-    //                 const ol = slopeToLine(os);
-    //                 if (
-    //                     (coordsEqual(ss[0], ol[0]) ||
-    //                         coordsEqual(ss[0], ol[1])) &&
-    //                     (coordsEqual(ss[1], ol[1]) || coordsEqual(ss[1], ol[0]))
-    //                 ) {
-    //                     return true;
-    //                 }
-    //                 const int = lineLine(os, sl);
-    //                 if (int) {
-    //                     const back = slopeToLine(os);
-    //                     const first = coordsEqual(int, back[0]);
-    //                     const last = coordsEqual(int, back[1]);
-    //                     if ((!first && !last) || (first && last)) {
-    //                         // consoleSvg(
-    //                         //     renderSegments(
-    //                         //         [slopeToPseg(os), slopeToPseg(sl)],
-    //                         //         undefined,
-    //                         //         ['red', 'blue'],
-    //                         //     ),
-    //                         // );
-    //                         // console.log(
-    //                         //     'thing to remove, is maybe still good',
-    //                         //     os,
-    //                         //     sl,
-    //                         //     int,
-    //                         // );
-    //                         return true;
-    //                     }
-    //                 }
-    //             }
-    //             // const got = origSegments.some((os) => lineLine(os, sl))
-    //             // if () {
-    //             //     return true;
-    //             // }
-    //             return false;
-    //         }
-    //         return true;
-    //     })
-    //     .forEach((sl) => {
-    //         klines[slopeInterceptKey(sl)] = sl;
-    //     });
 
     return {
         shapes,

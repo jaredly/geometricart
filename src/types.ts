@@ -1,8 +1,11 @@
 import {UndoableAction, UndoAction} from './state/Action';
 import {Primitive} from './rendering/intersect';
-import {Matrix} from './rendering/getMirrorTransforms';
+import {angleTo, dist, Matrix} from './rendering/getMirrorTransforms';
 import {SegmentWithPrev} from './rendering/clipPathNew';
 import {CompassState} from './editor/compassAndRuler';
+import {angleBetween} from './rendering/isAngleBetween';
+import {closeEnough} from './rendering/epsilonToZero';
+import {findCommonFractions, humanReadableFraction} from './routes/getPatternData';
 
 // Should I do polar coords?
 export type Coord = {x: number; y: number};
@@ -621,6 +624,96 @@ export type State = {
 export type BarePath = {origin: Coord; segments: Segment[]; open?: boolean};
 
 export type SegPrev = {segment: Segment; prev: Coord};
+
+export const shapeKey = (shape: TilingShape): string => {
+    switch (shape.type) {
+        case 'parallellogram': {
+            const [a, b, c, d] = shape.points;
+            const x1 = dist(a, b);
+            const x2 = dist(c, d);
+            const y1 = dist(b, c);
+            const y2 = dist(d, a);
+            // aspectRatio
+            let w = (x1 + x2) / 2;
+            let h = (y1 + y2) / 2;
+
+            if (closeEnough(w, h, 0.01)) {
+                return `Square`;
+            }
+
+            if (w < h) [w, h] = [h, w];
+
+            const aspectRatio = w / h;
+            if (closeEnough(Math.round(aspectRatio), aspectRatio, 0.001))
+                return `Rectangle ${Math.round(aspectRatio)}:1`;
+            const fract = findCommonFractions(aspectRatio);
+            if (fract) {
+                return `Rectangle ${fract.num}:${fract.denom}`;
+            }
+            return `Rectangle ${aspectRatio.toFixed(3)}`;
+        }
+        case 'right-triangle': {
+            let internalAngle = angleBetween(
+                angleTo(shape.start, shape.corner),
+                angleTo(shape.start, shape.end),
+                true,
+            );
+            if (internalAngle > Math.PI) internalAngle = Math.PI * 2 - internalAngle;
+            return `Right Triangle ${((internalAngle / Math.PI) * 180).toFixed(1)}º${shape.rotateHypotenuse ? ' flip' : ''}`;
+        }
+        case 'isocelese': {
+            let internalAngle = angleBetween(
+                angleTo(shape.first, shape.second),
+                angleTo(shape.first, shape.third),
+                true,
+            );
+            if (internalAngle > Math.PI) internalAngle = Math.PI * 2 - internalAngle;
+            return `Isocelese Triangle ${((internalAngle / Math.PI) * 180).toFixed(1)}º ${shape.flip ? ' flip' : ''}`;
+        }
+    }
+};
+
+// export const shapeKey = (shape: TilingShape): string => {
+//     switch (shape.type) {
+//         case 'parallellogram': {
+//             const [a, b, c, d] = shape.points;
+//             const x1 = dist(a, b);
+//             const x2 = dist(c, d);
+//             const y1 = dist(b, c);
+//             const y2 = dist(d, a);
+//             // aspectRatio
+//             let w = (x1 + x2) / 2;
+//             let h = (y1 + y2) / 2;
+
+//             if (w > h) [w, h] = [h, w];
+
+//             const aspect = w / h;
+//             return `parallelogram:${aspect.toFixed(3)}`;
+//         }
+//         case 'right-triangle': {
+//             const internalAngle =
+//                 angleBetween(
+//                     angleTo(shape.start, shape.corner),
+//                     angleTo(shape.start, shape.end),
+//                     true,
+//                 ) /
+//                 Math.PI /
+//                 2;
+//             return `right-triangle:${internalAngle.toFixed(4)}:${shape.rotateHypotenuse}`;
+//         }
+//         case 'isocelese': {
+//             const internalAngle =
+//                 angleBetween(
+//                     angleTo(shape.first, shape.second),
+//                     angleTo(shape.first, shape.third),
+//                     true,
+//                 ) /
+//                 Math.PI /
+//                 2;
+//             return `isocelese:${internalAngle.toFixed(4)}:${!!shape.flip}`;
+//         }
+//     }
+// };
 
 export type TilingShape =
     | {

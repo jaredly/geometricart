@@ -2,7 +2,7 @@ import {angleTo, dist, push} from '../rendering/getMirrorTransforms';
 import {BarePath, Coord, Segment} from '../types';
 import {PathKit} from 'pathkit-wasm';
 import {coordsEqual} from '../rendering/pathsAreIdentical';
-import {angleBetween} from '../rendering/findNextSegments';
+import {angleBetween} from '../rendering/isAngleBetween';
 
 export const cmdsToSegments = (cmds: number[][], pk: PathKit): BarePath[] => {
     const points: {segments: Segment[]; origin: Coord; open: boolean}[] = [];

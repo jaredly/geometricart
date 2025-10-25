@@ -1,11 +1,11 @@
 import React, {useState} from 'react';
-import {useCurrent} from '../App';
+import {useCurrent} from '../useCurrent';
 import {evaluateAnimatedValues, getAnimatedFunctions} from '../editor/Canvas';
 import {findBoundingRect} from '../editor/Export';
 import {addMetadata, renderTexture} from '../editor/ExportPng';
 import {BlurInt, Toggle} from '../editor/Forms';
 import {CancelIcon, CheckmarkIcon, PencilIcon} from '../icons/Icon';
-import {epsilon} from '../rendering/intersect';
+import {epsilon} from '../rendering/epsilonToZero';
 import {canvasRender, paletteImages} from '../rendering/CanvasRender';
 import {Action} from '../state/Action';
 import {initialHistory} from '../state/initialState';

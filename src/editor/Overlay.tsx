@@ -2,9 +2,9 @@
 /* @jsxFrag React.Fragment */
 import {jsx} from '@emotion/react';
 import React, {useEffect, useMemo, useState} from 'react';
-import {Coord, Overlay, Overlay as OverlayT, State, View} from '../types';
+import {Coord, Overlay as OverlayT, State, View} from '../types';
 import {screenToWorld} from './Canvas';
-import {useCurrent} from '../App';
+import {useCurrent} from '../useCurrent';
 
 export function Overlay({
     state,
@@ -146,7 +146,7 @@ export function Overlay({
             <image
                 key={id}
                 href={source ?? ''}
-                ref={(node) => (ref.current = node)}
+                ref={ref}
                 width={iwidth}
                 height={iheight}
                 opacity={isSelected ? 0.8 : overlay.opacity}

@@ -1,5 +1,5 @@
 import {Bounds} from './GuideElement';
-import {isAngleBetween} from '../rendering/findNextSegments';
+import {isAngleBetween} from '../rendering/isAngleBetween';
 import {angleTo, dist, push} from '../rendering/getMirrorTransforms';
 import {Coord, Segment} from '../types';
 

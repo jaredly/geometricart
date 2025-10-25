@@ -8,7 +8,7 @@ import {calcPathD} from '../editor/calcPathD';
 import {paletteColor} from '../editor/RenderPath';
 import {Hover} from '../editor/Sidebar';
 import {cmdsToSegments} from '../gcode/cmdsToSegments';
-import {mmToPX} from '../gcode/generateGcode';
+import {mmToPX} from '../gcode/pxToMM';
 import {scaleMatrix} from '../rendering/getMirrorTransforms';
 import {
     ensureClockwise,
@@ -220,20 +220,24 @@ export const calcShapes = (
 
             return (
                 <React.Fragment key={`${n}`}>
+                    {/** @ts-ignore */}
                     <mesh
                         geometry={geometry}
                         position={[center.x, center.y, xoff]}
                         castShadow
                         receiveShadow
-                        onClick={(evt) => {
+                        onClick={(evt: any) => {
                             evt.stopPropagation();
                             if (!path) return;
                             clickItem(evt.nativeEvent.shiftKey, selectedIds, path, state, dispatch);
                         }}
                     >
+                        {/** @ts-ignore */}
                         <meshPhongMaterial flatShading color={isHovered ? 'red' : col} />
+                        {/** @ts-ignore */}
                     </mesh>
                     {isSelected ? (
+                        /** @ts-ignore */
                         <points
                             geometry={geometry}
                             position={[center.x, center.y, xoff]}

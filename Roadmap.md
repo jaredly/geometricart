@@ -1,4 +1,201 @@
 
+
+I think I need to peel back the layers.
+like we do all these transforms and stuff.
+where we sometimes reverse things
+and in any case we're scaling and stuff.
+and I think we should just ditch that.
+like, let's normalize the pattern and reify it.
+
+so `getTransform` should no longer be a thing.
+yeah.
+
+and then, things will make more sense?
+
+- [ ] ^ do that!
+
+
+
+iiiiii want a way to 'extract all the dependencies of this new thing from the bigness of the project'
+and also probably 'extract all utility functions into their own files'
+
+- [x] some solid perf stuff
+
+- [ ] re-orient rectangles
+
+- [x] show shape info
+  - still need to show colinearity. could be nice
+- [ ] nowwww maybe allow pattern inspection?
+- [ ] and like, showing the construction tutorials, such as I have
+
+#
+
+
+# Shape Inspector
+
+- collinear lines (connected by dotted line)
+- similar segments (with a letter at their midpoints)
+- similar angles (color-coded)
+-
+
+# Next steps
+
+Filter by Shapes (modal dialog)
+
+... should we allow filtering by shape?
+... viewing similar patterns?
+... or should we jump to the pattern page?
+  - pattern inspector
+  - view the construction steps
+  - show source images
+  - pattern constructor with all the goodies
+
+
+# A Pattern Maker yesiree
+
+Layer
+[offset, scale]
+Source
+[pattern, extent]
+Contents
+[lines | shapes]
+Clips
+[shape, inside/outside]
+
+Lines
+- count
+- woven [manual | auto]
+
+Clip shape
+- rect / circle / oval / polygon
+- snappp
+
+
+# ugh
+
+ok tracking down identity and shared edges is maybe hard
+
+let's go back to brute forcing everything
+and see how it goes
+
+- [x] yayyy we can do coloring
+
+# Deduping
+
+for patterns that can be flipped so top-right is bottom-left, and still be width >= height,
+I need to test out the flippage.
+and choose ... the one that sorts first maybe?
+(low priority)
+
+# ALSO, let's do coloring!
+because colors are cool
+
+soooooo I want to be able to know what sides are ... the same sides.
+which will be important for the "woven" mode.
+
+1 idea: when forming shapes, remember the ... edge IDs ...
+but could I just do the vertex IDs instead? hmmmm.
+might be more robust somehow?
+
+and a shapeKey can just be a sorted list of vertex ids.
+which is kinda cool
+
+# Fallery Page, how to organize
+
+"Group by" [ symmetry | none ]
+"Sort by" [ complexity up/down ]
+
+- symmetry! easy divider
+- yeah ok
+
+- [x] fix rectangles that are taller than wide
+- [x] fix triangles that are taller than wide
+
+# Things to compare n stuff
+
+1) pattern similarity
+
+2) shape similarity
+  - [x] canonical shapes!
+  - [x] gotta remove points in lines that are just breaking things up.
+
+
+had to add `if (b.startsWith('file:')) b = b.slice('file:'.length);`
+right before the `fs.readFileSync` call in `pathkit.js`.
+
+# New Fangled Pattern Vis, based just on the skeleton line segments
+
+- [x] render the lines
+- [x] make it cool
+- [ ] discover the eigenshapes from the segments
+  - [x] so cool!
+  - [x] split lines that intersect
+  - [ ] join lines where only two parallel lines meet at an intersection
+  - [ ] eliminate shapes that don't *enter*/*cross* the boundary
+    - i.e. only share a point or line segment with the boundary
+  - [ ] for bonus points, calculate the percentage of the shape that is within the boundary
+    so I can like dedup, if a shape shows up half + twice, that should only count as "1" instance.
+    -> yeah actually I'll just calculate overlap percentage for every shape, and then
+      sum the percentages for the same shapes
+- [ ] trace contiguous lines
+- [ ] weave contiguous lines
+
+
+# New Idea for the website
+
+Presenting a Pattern:
+- you see a carousel of pretty versions of the pattern
+- you see the fundamental polygon, extrapolated 1x
+  - as well as hidden fundamental polygons
+- you see the polygon decomposition
+- you see related patterns
+  - by shared polygons, and shared lines / points of the fundamental polygon
+- you see a button to "Customize & Download SVG"
+- you see a button to "View interactive construction tutorial"
+  - "Inspect pattern" - maybe is just a subfeature of the construction tutorial
+
+## Customize & Download SVG
+
+you can have multiple layers
+
+You can change a layer between (lines) and (shapes)
+
+You can modify the (thickness) / (inset)
+
+It can be based on the main fundamental polygon, or hidden ones
+
+You can multiselect, and move some onto different layers
+
+You can modify the colors of stuff
+
+- there's a "Generated" layer, and an "Enumerated" layer.
+  - you start out with a generated layer, which can be flipped between stuff
+  - but as soon as you want to modify an individual shape, it becomes an
+    "enumerated layer" and you have to deal with things individually.
+    it's like "text to path" in inkscape
+
+
+##
+
+Functionality I need to come up with:
+
+- from the fundamental polygon, produce [path]s of the [shape]s
+- "                           , produce contiguous lines
+
+
+
+
+
+
+
+
+# hmmmm maybe using react-router will be a useful route to go?
+# hmmmm. prerender, and ssr:false
+# yeah that looks like it would work.
+# within the /editor page, I'd use a hash router.
+
+
+
 # Site organization
 
 / about page?

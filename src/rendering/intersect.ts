@@ -1,41 +1,9 @@
-import {isWithinLineLimit, zeroToTwoPi} from './clipPath';
-import {closeEnough} from './epsilonToZero';
-import {angleBetween, isAngleBetween} from './findNextSegments';
-import {angleTo, dist, push} from './getMirrorTransforms';
 import {Coord} from '../types';
-import {coordsEqual} from './pathsAreIdentical';
 import {numKey} from './coordKey';
-
-// export const lineLine_ = (
-//     from1: Coord,
-//     to1: Coord,
-//     from2: Coord,
-//     to2: Coord,
-// ): Coord | null => {
-//     const dX: number = to1.x - from1.x;
-//     const dY: number = to1.y - from1.y;
-
-//     const determinant: number = dX * (to2.y - from2.y) - (to2.x - from2.x) * dY;
-//     if (determinant === 0) return null; // parallel lines
-
-//     const lambda: number =
-//         ((to2.y - from2.y) * (to2.x - from1.x) +
-//             (from2.x - to2.x) * (to2.y - from1.y)) /
-//         determinant;
-//     //   const gamma: number = ((from1.y - to1.y) * (to2.x - from1.x) + dX * (to2.y - from1.y)) / determinant;
-
-//     // check if there is an intersection
-//     //   if (!(0 <= lambda && lambda <= 1) || !(0 <= gamma && gamma <= 1)) return undefined;
-
-//     return {
-//         x: from1.x + lambda * dX,
-//         y: from1.y + lambda * dY,
-//     };
-// };
-
-export const withinLimit = ([low, high]: [number, number], value: number) => {
-    return low - epsilon <= value && value <= high + epsilon;
-};
+import {angleIsBetween, closeEnough, epsilon, withinLimit} from './epsilonToZero';
+import {angleTo, dist, push} from './getMirrorTransforms';
+import {isAngleBetween} from './isAngleBetween';
+import {coordsEqual} from './pathsAreIdentical';
 
 export const pointLine = (coord: Coord, line: SlopeIntercept) => {
     if (line.m === Infinity) {
@@ -96,14 +64,6 @@ export const lineLine = (one: SlopeIntercept, two: SlopeIntercept) => {
 };
 
 const sq = (x: number) => x * x;
-
-// export const convertCircle = (p1: Coord, p2: Coord): Circle => ({
-//     type: 'circle',
-//     center: p1,
-//     radius: dist(p1, p2),
-// });
-
-export const epsilon = 0.000001;
 
 export const slopeToLine = (si: SlopeIntercept): [Coord, Coord] => {
     if (si.m === Infinity) {
@@ -332,18 +292,6 @@ export const circleCircle = (one: Circle, two: Circle): Array<Coord> => {
             y: one.center.y + dy * x - dx * y,
         },
     ].filter(check);
-};
-
-export const closeEnoughAngle = (one: number, two: number) => {
-    one = zeroToTwoPi(one);
-    two = zeroToTwoPi(two);
-    return closeEnough(one, two);
-};
-
-export const angleIsBetween = (angle: number, [lower, upper]: [number, number]) => {
-    const one = angleBetween(lower, angle, true);
-    const two = angleBetween(lower, upper, true);
-    return one <= two + epsilon;
 };
 
 export const pointCircle = (point: Coord, circle: Circle) => {

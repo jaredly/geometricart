@@ -1,6 +1,6 @@
 import {Coord, Segment} from '../types';
 import {angleTo, dist, push} from './getMirrorTransforms';
-import {angleBetween} from './findNextSegments';
+import {angleBetween} from './isAngleBetween';
 
 export const segmentAngle = (
     prev: Coord,

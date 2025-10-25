@@ -1,5 +1,5 @@
 import * as React from 'react';
-import ReactMarkdown from 'react-markdown';
+// import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 
@@ -35,12 +35,12 @@ export function RenderFunctionDocumentation({
                     </code>
                 </div>
             ) : null}
-            <ReactMarkdown
-                children={v.meta.comment.replace(/^\s*\*/gm, '')}
+            {/* <ReactMarkdown
+                children={v.meta.comment.replace(/^\s*\* /gm, '')}
                 remarkPlugins={[remarkMath]}
                 rehypePlugins={[rehypeKatex]}
                 className="md"
-            />
+            /> */}
             {arc.some((c) => c && c.comment) ? (
                 <>
                     <h4 style={{marginTop: '1em', marginBottom: '.5em'}}>Arguments</h4>
@@ -58,12 +58,13 @@ export function RenderFunctionDocumentation({
                                     </td>
                                     <td>
                                         {arg.comment ? (
-                                            <ReactMarkdown
-                                                children={arg.comment}
-                                                remarkPlugins={[remarkMath]}
-                                                rehypePlugins={[rehypeKatex]}
-                                                className="md"
-                                            />
+                                            // <ReactMarkdown
+                                            //     children={arg.comment}
+                                            //     remarkPlugins={[remarkMath]}
+                                            //     rehypePlugins={[rehypeKatex]}
+                                            //     className="md"
+                                            // />
+                                            null
                                         ) : (
                                             'No documentation'
                                         )}

@@ -1,5 +1,5 @@
 import * as React from 'react';
-import {render} from 'react-dom';
+// import {render} from 'react-dom/client';
 
 const Home = ({fixtures}: {fixtures: Array<string>}) => {
     return (
@@ -24,8 +24,8 @@ const Home = ({fixtures}: {fixtures: Array<string>}) => {
     );
 };
 
-fetch('/vests')
-    .then((r) => r.json())
-    .then((fixtures) => {
-        render(<Home fixtures={fixtures} />, document.getElementById('root'));
-    });
+// fetch('/vests')
+//     .then((r) => r.json())
+//     .then((fixtures) => {
+//         render(<Home fixtures={fixtures} />, document.getElementById('root'));
+//     });

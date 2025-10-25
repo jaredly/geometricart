@@ -4,7 +4,7 @@ import {jsx} from '@emotion/react';
 import React from 'react';
 import {BlurInt, Text, Toggle} from './Forms';
 import {transparent} from './Icons';
-import {angleBetween} from '../rendering/findNextSegments';
+import {angleBetween} from '../rendering/isAngleBetween';
 import {sortedVisibleInsetPaths} from '../rendering/sortedVisibleInsetPaths';
 import {Action} from '../state/Action';
 import {State} from '../types';

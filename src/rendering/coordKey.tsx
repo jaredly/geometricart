@@ -1,4 +1,5 @@
-import {epsilon, Primitive} from './intersect';
+import {Primitive} from './intersect';
+import {epsilon} from './epsilonToZero';
 import {Coord} from '../types';
 
 let keys;

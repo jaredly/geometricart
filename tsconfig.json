@@ -1,14 +1,18 @@
 {
     "compilerOptions": {
-        "jsx": "react",
+        "jsx": "react-jsx",
+        "jsxImportSource": "@emotion/react",
         "target": "ESNext",
         "noEmit": true,
         "strict": true,
         "module": "ESNext",
-        "moduleResolution": "Node",
+        "moduleResolution": "bundler",
         "resolveJsonModule": true,
         "esModuleInterop": true,
         "skipLibCheck": true,
-        "forceConsistentCasingInFileNames": true
-    }
+        "forceConsistentCasingInFileNames": true,
+        "rootDirs": [".", "./.react-router/types"]
+    },
+
+    "include": ["**/*", "**/.server/**/*", "**/.client/**/*", ".react-router/types/**/*"]
 }

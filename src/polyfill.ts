@@ -1,3 +1,3 @@
-import {Buffer} from 'buffer';
-// @ts-ignore
-window.Buffer = Buffer;
+// import {Buffer} from 'buffer';
+// // @ts-ignore
+// window.Buffer = Buffer;

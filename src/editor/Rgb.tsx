@@ -41,7 +41,7 @@ export const ImageChooser = ({
     return (
         <div css={{position: 'relative'}}>
             <canvas
-                ref={(node) => (ref.current = node)}
+                ref={ref}
                 onMouseMove={(evt) => {
                     if (!data.current) {
                         return;

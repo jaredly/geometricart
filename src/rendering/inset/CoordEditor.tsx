@@ -64,7 +64,7 @@ export const CoordEditor = ({
 
     return (
         <>
-            <g ref={(n) => (ref.current = n)}>
+            <g ref={ref}>
                 {coords.map(({x, y}, i) => (
                     <circle
                         key={i}
