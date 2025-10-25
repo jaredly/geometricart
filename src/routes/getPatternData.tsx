@@ -118,6 +118,8 @@ export const preTransformTiling = (tiling: Tiling): Tiling => {
 };
 
 export const getPatternData = (tiling: Tiling, debug = false) => {
+    tiling = preTransformTiling(tiling);
+
     const pts = tilingPoints(tiling.shape);
     // const tx = getTransform(pts);
     const bounds = pts; // pts.map((pt) => applyMatrices(pt, tx));
