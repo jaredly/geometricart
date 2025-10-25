@@ -116,7 +116,7 @@ export function replicateStandard(full: [Coord, Coord][], ty: number) {
     return full;
 }
 
-export function getTransform(pts: Coord[]) {
+export function normalizeTilingShape(pts: Coord[]) {
     const [center, corner, top] = pts;
 
     const scale = 1 / dist(center, corner);

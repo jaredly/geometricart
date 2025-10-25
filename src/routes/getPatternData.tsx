@@ -3,7 +3,7 @@ import {boundsForCoords} from '../editor/Bounds';
 import {
     applyTilingTransforms,
     applyTilingTransformsG,
-    getTransform,
+    normalizeTilingShape,
     setTilingPoints,
     tilingPoints,
     transformShape,
@@ -112,7 +112,7 @@ type Shape = {
 
 export const preTransformTiling = (tiling: Tiling): Tiling => {
     const pts = tilingPoints(tiling.shape);
-    const tx = getTransform(pts);
+    const tx = normalizeTilingShape(pts);
     const bounds = pts.map((pt) => applyMatrices(pt, tx));
     return {...tiling, shape: setTilingPoints({...tiling.shape}, bounds)};
 };

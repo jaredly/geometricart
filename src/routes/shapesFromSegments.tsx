@@ -1,7 +1,4 @@
-import {mulPos} from '../animation/mulPos';
-import {boundsForCoords} from '../editor/Bounds';
-import {scalePos} from '../editor/scalePos';
-import {getTransform, tilingPoints} from '../editor/tilingPoints';
+import {tilingPoints} from '../editor/tilingPoints';
 import {coordKey} from '../rendering/coordKey';
 import {closeEnough, closeEnoughAngle, epsilon} from '../rendering/epsilonToZero';
 import {
@@ -20,7 +17,6 @@ import {transformSegment} from '../rendering/points';
 import {Coord, Tiling} from '../types';
 import {centroid} from './findReflectionAxes';
 import {getPatternData} from './getPatternData';
-import {Shape} from './getUniqueShapes';
 
 const gte = (a: number, b: number) => a >= b - epsilon;
 const lte = (a: number, b: number) => a <= b + epsilon;
@@ -475,8 +471,7 @@ export const flipPattern = (tiling: Tiling): Tiling => {
     let {shape, cache} = tiling;
     if (shape.type === 'right-triangle') {
         const pts = tilingPoints(tiling.shape);
-        const txt = getTransform(pts);
-        const bounds = pts.map((pt) => applyMatrices(pt, txt));
+        const bounds = pts;
         let [start, corner, end] = bounds;
 
         let internalAngle = angleBetween(angleTo(start, corner), angleTo(start, end), true);

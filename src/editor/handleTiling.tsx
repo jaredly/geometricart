@@ -9,7 +9,7 @@ import {SlopeIntercept, lineLine, lineToSlope, slopeToLine} from '../rendering/i
 import {numKey} from '../rendering/coordKey';
 import {applyMatrices, applyMatrix, scaleMatrix} from '../rendering/getMirrorTransforms';
 import {transformBarePath, transformPath, transformSegment} from '../rendering/points';
-import {tilingPoints, getTransform, eigenShapesToLines} from './tilingPoints';
+import {tilingPoints, eigenShapesToLines} from './tilingPoints';
 import {coordsEqual} from '../rendering/pathsAreIdentical';
 import {SegmentWithPrev} from '../rendering/clipPathNew';
 
@@ -49,8 +49,6 @@ export const slopeToPseg = (line: SlopeIntercept): SegmentWithPrev => {
 // the `pts` that are returned have also been transformed
 // klines is our map of deduped lines.
 export const getShapesIntersectingPolygon = (state: State, pts: Coord[]) => {
-    const tx = getTransform(pts);
-
     // PathKit doesn't have great precision at the small end. So inflate everything by 100x before calculating.
     const scale = 10000;
 
@@ -78,11 +76,11 @@ export const getShapesIntersectingPolygon = (state: State, pts: Coord[]) => {
             PK,
             pkClips(PK, pkPath(PK, big.segments, big.origin), [pkc], path)[0],
             path,
-        ).map((path) => transformBarePath(path, [scaleMatrix(1 / scale, 1 / scale), ...tx]));
+        ).map((path) => transformBarePath(path, [scaleMatrix(1 / scale, 1 / scale)]));
         if (!got.length) {
             return;
         }
-        const {origin, segments, open} = transformPath(state.paths[id], tx);
+        const {origin, segments, open} = state.paths[id];
         shapes.push({origin, segments, open});
 
         const orig = addPrevsToSegments(segments, origin).map((seg) =>
@@ -107,8 +105,8 @@ export const getShapesIntersectingPolygon = (state: State, pts: Coord[]) => {
     return {
         shapes,
         klines,
-        tr: applyMatrices(pts[2], tx),
-        pts: pts.map((pt) => applyMatrices(pt, tx)),
+        tr: pts[2],
+        pts: pts,
     };
 };
 
@@ -133,10 +131,9 @@ async function hashData(kk: string) {
 
 export function handleTiling(data: Tiling) {
     const pts = tilingPoints(data.shape);
-    const tx = getTransform(pts);
-    const bounds = pts.map((pt) => applyMatrices(pt, tx));
+    const bounds = pts;
     const lines = data.cache.segments.map((s): [Coord, Coord] => [s.prev, s.segment.to]);
-    const tr = applyMatrices(pts[2], tx);
+    const tr = pts[2];
     return {bounds, lines, tr};
 }
 

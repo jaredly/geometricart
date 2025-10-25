@@ -1,7 +1,7 @@
 import {tilingPoints} from '../src/editor/tilingPoints';
 import {dist} from '../src/rendering/getMirrorTransforms';
 import {coordsEqual} from '../src/rendering/pathsAreIdentical';
-import {db, getAllPatterns} from '../src/routes/db.server';
+import {db, getAllPatterns, saveAllPatterns} from '../src/routes/db.server';
 import {preTransformTiling} from '../src/routes/getPatternData';
 import {cutSegments, flipPattern, splitOverlappingSegs} from '../src/routes/shapesFromSegments';
 import {Coord, Tiling} from '../src/types';
