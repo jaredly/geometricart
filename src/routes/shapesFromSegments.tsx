@@ -417,8 +417,8 @@ const getRectangleTransform = (tiling: Tiling, data: ReturnType<typeof getPatter
         return;
     }
 
-    const shapePoints = data.bounds as [Coord, Coord, Coord, Coord];
-    const tilingPoints = shapePoints;
+    const shapePoints = shape.points;
+    const tilingPoints_ = shapePoints;
     const {w, h} = rectDims(...shapePoints);
 
     const tx: Matrix[] = [];
@@ -428,7 +428,7 @@ const getRectangleTransform = (tiling: Tiling, data: ReturnType<typeof getPatter
     console.log('got best corner', bestCorner);
 
     if (bestCorner === 1) {
-        const mx = (tilingPoints[0].x + tilingPoints[1].x) / 2;
+        const mx = (tilingPoints_[0].x + tilingPoints_[1].x) / 2;
         if (closeEnough(mx, 0)) {
             tx.push(scaleMatrix(-1, 1));
         } else {
@@ -440,7 +440,7 @@ const getRectangleTransform = (tiling: Tiling, data: ReturnType<typeof getPatter
         }
     }
     if (bestCorner === 3) {
-        const my = (tilingPoints[0].y + tilingPoints[3].y) / 2;
+        const my = (tilingPoints_[0].y + tilingPoints_[3].y) / 2;
         if (closeEnough(my, 0)) {
             tx.push(scaleMatrix(1, -1));
         } else {
@@ -507,7 +507,7 @@ export const flipPattern = (tiling: Tiling): Tiling => {
     if (shape.type === 'parallellogram') {
         const data = getPatternData(tiling);
         const tx = getRectangleTransform(tiling, data);
-        if (!tx?.length || 2 > 1) return tiling;
+        if (!tx?.length) return tiling;
 
         console.log('transform para', tx);
 

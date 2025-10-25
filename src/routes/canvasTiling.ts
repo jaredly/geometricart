@@ -1,5 +1,7 @@
 import {getPatternData} from './getPatternData';
-import {pk} from './pk';
+import {pk, resetCanvasKit} from './pk';
+import {readFileSync} from 'fs';
+import {join} from 'path';
 
 function hslToHex(h: number, s: number, l: number) {
     l /= 100;
@@ -21,13 +23,26 @@ type ColorScheme = (i: number) => string;
 //     ctx.fillStyle = hslToHex(((i % 7) / 7) * 60, 100, ((i % 6) / 6) * 20 + 20);
 // }
 
-export const canvasTiling = (
+// let fontCache = null as null | NonSharedBuffer;
+
+export const canvasTiling = async (
     data: ReturnType<typeof getPatternData>,
     size: number,
     flipped: boolean,
-    font: ArrayBuffer,
 ) => {
-    const surface = pk.MakeSurface(size, size)!;
+    // if (!fontCache) {
+    //     fontCache = readFileSync(join(import.meta.dirname, 'Roboto-Regular.ttf'));
+    // }
+    let surface = pk.MakeSurface(size, size);
+
+    if (!surface) {
+        console.error(`Canvaskit is dead!!!`);
+        await resetCanvasKit();
+        surface = pk.MakeSurface(size, size);
+        if (!surface) {
+            throw new Error('canvaskit is dead and refuses to reset');
+        }
+    }
 
     const ctx = surface.getCanvas();
     ctx.clear(pk.BLACK);
@@ -76,31 +91,32 @@ export const canvasTiling = (
         );
     });
 
-    if (flipped) {
-        const typeface = pk.Typeface.MakeTypefaceFromData(font)!;
+    // if (flipped) {
+    //     const typeface = pk.Typeface.MakeTypefaceFromData(fontCache.buffer)!;
 
-        const paint = new pk.Paint();
-        paint.setStyle(pk.PaintStyle.Fill);
-        paint.setColor([1, 1, 1]);
-        paint.setAlphaf(0.1);
-        ctx.drawPath(
-            pk.Path.MakeFromCmds([
-                pk.MOVE_VERB,
-                data.bounds[0].x,
-                data.bounds[0].y,
-                ...data.bounds.slice(1).flatMap(({x, y}) => [pk.LINE_VERB, x, y]),
-            ])!,
-            paint,
-        );
+    //     const paint = new pk.Paint();
+    //     paint.setStyle(pk.PaintStyle.Fill);
+    //     paint.setColor([1, 1, 1]);
+    //     paint.setAlphaf(0.1);
+    //     ctx.drawPath(
+    //         pk.Path.MakeFromCmds([
+    //             pk.MOVE_VERB,
+    //             data.bounds[0].x,
+    //             data.bounds[0].y,
+    //             ...data.bounds.slice(1).flatMap(({x, y}) => [pk.LINE_VERB, x, y]),
+    //         ])!,
+    //         paint,
+    //     );
 
-        paint.setStyle(pk.PaintStyle.Fill);
-        paint.setColor([0, 0, 0]);
+    //     paint.setStyle(pk.PaintStyle.Fill);
+    //     paint.setColor([0, 0, 0]);
 
-        const fonto = new pk.Font(typeface, 0.1);
-        data.bounds.forEach((coord, i) => {
-            ctx.drawText(i + '', coord.x, coord.y, paint, fonto);
-        });
-    }
+    //     const fonto = new pk.Font(typeface, 0.1);
+    //     data.bounds.forEach((coord, i) => {
+    //         ctx.drawText(i + '', coord.x, coord.y, paint, fonto);
+    //     });
+    // }
+
     // data.shapes.forEach((shape) => {
     //     ctx.lineWidth = 0.003;
     //     // ctx.lineWidth = data.minSegLength / 3;
@@ -117,7 +133,7 @@ export const canvasTiling = (
 
     // pk.MakeImageFromCanvasImageSource(ctx)
 
-    return surface.makeImageSnapshot().encodeToBytes();
+    return surface.makeImageSnapshot().encodeToBytes()!;
     // const url = canvas.toDataURL();
     // canvas.dispose();
     // return url;

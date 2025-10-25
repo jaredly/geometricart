@@ -76,6 +76,23 @@ export function eigenShapesToSvg(
     return svg;
 }
 
+export function setTilingPoints(shape: Tiling['shape'], points: Coord[]) {
+    switch (shape.type) {
+        case 'right-triangle':
+            // second point is the right angle
+            [shape.start, shape.corner, shape.end] = points;
+            break;
+        case 'isocelese':
+            [shape.first, shape.second, shape.third] = points;
+            break;
+        case 'parallellogram':
+            // second point is the bottom-right, first is bottom-left
+            shape.points = points as [Coord, Coord, Coord, Coord];
+            break;
+    }
+    return shape;
+}
+
 export function tilingPoints(shape: Tiling['shape']) {
     switch (shape.type) {
         case 'right-triangle':

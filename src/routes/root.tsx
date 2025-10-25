@@ -1,6 +1,7 @@
 import {isRouteErrorResponse, Links, Meta, Outlet, Scripts, ScrollRestoration} from 'react-router';
 import './index.css';
 
+// @ts-ignore
 import favicon from './favicon.png';
 import type {Route} from './+types/root';
 

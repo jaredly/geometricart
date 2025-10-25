@@ -2,7 +2,7 @@ import {renderToStaticMarkup} from 'react-dom/server';
 import type {Route} from './+types/pattern-svg';
 import {getPattern} from './db.server';
 import {canvasTiling} from './canvasTiling';
-import {getPatternData} from './getPatternData';
+import {getPatternData, preTransformTiling} from './getPatternData';
 import {TilingPattern} from './ShowTiling';
 import {flipPattern} from './shapesFromSegments';
 
@@ -37,12 +37,10 @@ export async function loader({params, request}: Route.LoaderArgs) {
     //     return new Response(pngCache[k], {headers: {'Content-type': 'image/png'}});
     // }
 
-    const font = await fetch('https://cdn.skia.org/misc/Roboto-Regular.ttf').then((s) =>
-        s.arrayBuffer(),
-    );
+    pattern.tiling = preTransformTiling(pattern.tiling);
 
     const flip = search.get('flip') === 'no' ? pattern.tiling : flipPattern(pattern.tiling);
-    const dataUri = canvasTiling(getPatternData(flip), size * 2, flip !== pattern.tiling, font)!;
+    const dataUri = await canvasTiling(getPatternData(flip), size * 2, flip !== pattern.tiling)!;
     // return dataUri;
     // const [mime, data] = dataUri.split(',');
     const buffer = Buffer.from(dataUri);

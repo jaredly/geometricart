@@ -4,6 +4,7 @@ import {
     applyTilingTransforms,
     applyTilingTransformsG,
     getTransform,
+    setTilingPoints,
     tilingPoints,
     transformShape,
 } from '../editor/tilingPoints';
@@ -109,17 +110,20 @@ type Shape = {
     eigenPoints: number[];
 };
 
-export const getPatternData = (tiling: Tiling, debug = false) => {
+export const preTransformTiling = (tiling: Tiling): Tiling => {
     const pts = tilingPoints(tiling.shape);
     const tx = getTransform(pts);
     const bounds = pts.map((pt) => applyMatrices(pt, tx));
+    return {...tiling, shape: setTilingPoints({...tiling.shape}, bounds)};
+};
+
+export const getPatternData = (tiling: Tiling, debug = false) => {
+    const pts = tilingPoints(tiling.shape);
+    // const tx = getTransform(pts);
+    const bounds = pts; // pts.map((pt) => applyMatrices(pt, tx));
 
     let eigenSegments = tiling.cache.segments.map((s) => [s.prev, s.segment.to] as [Coord, Coord]);
     const eigenPoints = unique(eigenSegments.flat(), coordKey);
-
-    const minSegLength = Math.min(
-        ...eigenSegments.map(([a, b]) => dist(a, b)).filter((l) => l > 0.001),
-    );
 
     const pointIds: Record<string, number> = {};
 
@@ -165,6 +169,10 @@ export const getPatternData = (tiling: Tiling, debug = false) => {
 
     const shapePoints = shapes.map((shape) => shape.map((p) => pointIds[coordKey(p)]));
 
+    const minSegLength = Math.min(
+        ...eigenSegments.map(([a, b]) => dist(a, b)).filter((l) => l > 0.001),
+    );
+
     const allShapes = unique(transformedShapes, (s) => shapeKey(s.shape, minSegLength));
     // const colors = dedupColorShapePoints(
     //     shapePoints,
@@ -200,7 +208,7 @@ export const getPatternData = (tiling: Tiling, debug = false) => {
         minSegLength,
         canons,
         ttt,
-        tx,
+        // tx,
     };
 };
 
