@@ -18,7 +18,8 @@ export const Pattern = () => {
     const {id} = useParams();
     let pattern = useLoaderData<typeof loader>();
 
-    const tiling = pattern?.tiling;
+    const tiling = pattern ? flipPattern(pattern.tiling) : null;
+    // const tiling = pattern?.tiling;
     const data = useMemo(() => (tiling ? getPatternData(tiling) : null), [tiling]);
     if (!pattern || !tiling || !data || !id) {
         return <div>No data... {id}</div>;
@@ -37,9 +38,10 @@ export const Pattern = () => {
 
     return (
         <div css={{padding: 10}}>
-            Hello pattern {id}
+            Noew {id}
             <div>
                 <TilingPattern tiling={tiling} size={1000} data={data} />
+                {JSON.stringify(tiling.shape)}
                 <div style={{display: 'flex', flexWrap: 'wrap'}}>
                     {
                         //data.canons

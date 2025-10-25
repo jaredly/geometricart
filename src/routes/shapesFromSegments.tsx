@@ -335,9 +335,9 @@ export const chooseCorner = (options: Coord[], shapes: Coord[][]) => {
             shape: shape && shape.length,
             area: shape ? calcPolygonArea(shape) : 0,
         }))
-        .sort((a, b) => b.area - a.area);
+        .sort((a, b) => (closeEnough(b.area, a.area) ? a.i - b.i : b.area - a.area));
 
-    console.log('corners by size', bySize);
+    // console.log('corners by size', bySize);
     return bySize;
 };
 
@@ -420,6 +420,7 @@ const getRectangleTransform = (tiling: Tiling, data: ReturnType<typeof getPatter
     const tx: Matrix[] = [];
 
     const bestCorner = chooseCorner(shapePoints, data.shapes)[0].i;
+    if (bestCorner === 0) return;
 
     console.log('got best corner', bestCorner);
 
@@ -435,21 +436,20 @@ const getRectangleTransform = (tiling: Tiling, data: ReturnType<typeof getPatter
             );
         }
     }
+    if (bestCorner === 2) {
+        tx.push(scaleMatrix(-1, -1), translationMatrix(tilingPoints_[2]));
+    }
     if (bestCorner === 3) {
         const my = (tilingPoints_[0].y + tilingPoints_[3].y) / 2;
-        if (closeEnough(my, 0)) {
-            tx.push(scaleMatrix(1, -1));
-        } else {
-            tx.push(
-                translationMatrix({x: 0, y: -my}),
-                scaleMatrix(1, -1),
-                translationMatrix({x: 0, y: my}),
-            );
-        }
-    }
-
-    if (bestCorner != null && bestCorner !== 0) {
-        // re-orient
+        // if (closeEnough(my, 0)) {
+        //     tx.push(scaleMatrix(1, -1));
+        // } else {
+        tx.push(
+            // translationMatrix({x: 0, y: -my}),
+            scaleMatrix(1, -1),
+            translationMatrix({x: 0, y: tilingPoints_[3].y}),
+        );
+        // }
     }
 
     // find the largest shape centered on a corner
@@ -464,7 +464,8 @@ const getRectangleTransform = (tiling: Tiling, data: ReturnType<typeof getPatter
         return tx;
     }
 
-    return [...tx, rotationMatrix(Math.PI / 2), scaleMatrix(1, -1), scaleMatrix(w / h, w / h)];
+    return tx;
+    // return [...tx, rotationMatrix(Math.PI / 2), scaleMatrix(1, -1), scaleMatrix(w / h, w / h)];
 };
 
 export const flipPattern = (tiling: Tiling): Tiling => {
@@ -511,6 +512,8 @@ export const flipPattern = (tiling: Tiling): Tiling => {
 
         const points = shape.points.map((p) => applyMatrices(p, tx));
 
+        console.log('transformed points', points, 'ordered', rectPointsInOrder(points));
+
         cache.segments = cache.segments.map((seg) => ({
             prev: applyMatrices(seg.prev, tx),
             segment: transformSegment(seg.segment, tx),
@@ -528,6 +531,6 @@ export const flipPattern = (tiling: Tiling): Tiling => {
 };
 
 const rectPointsInOrder = (points: Coord[]): [Coord, Coord, Coord, Coord] => {
-    const [a, b, d, c] = points.toSorted((a, b) => (closeEnough(a.x, b.x) ? a.y - b.y : a.x - b.x));
+    const [a, b, d, c] = points.toSorted((a, b) => (closeEnough(a.y, b.y) ? a.x - b.x : b.y - a.y));
     return [a, b, c, d];
 };

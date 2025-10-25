@@ -46,11 +46,7 @@ export async function loader({params, request}: Route.LoaderArgs) {
     // );
 
     const flip = search.get('flip') === 'no' ? pattern.tiling : flipPattern(pattern.tiling);
-    const dataUri = canvasTiling(
-        getPatternData(pattern.tiling),
-        size * 2,
-        flip !== pattern.tiling,
-    )!;
+    const dataUri = canvasTiling(getPatternData(flip), size * 2, flip !== pattern.tiling)!;
     // return dataUri;
     // const [mime, data] = dataUri.split(',');
     const buffer = Buffer.from(dataUri);
