@@ -10,7 +10,7 @@ export default [
     ...prefix('gallery', [
         index('./gallery.tsx'),
         route('pattern/:id', './pattern.tsx'),
-        route('pattern/:id/:size/:format', './pattern-svg.tsx'),
+        route('pattern/:id/:img', './pattern-svg.tsx'),
     ]),
     route('editor', './editor.tsx'),
 ] as RouteConfig;

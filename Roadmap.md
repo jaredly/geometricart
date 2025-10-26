@@ -1,4 +1,17 @@
 
+# Ok folks, pattern inspection next?
+
+- Tabs
+  - construction walkthrough(s)
+  - examples from around the internet
+  - similar patterns
+  - shapes
+
+# And pattern builder
+
+- yay
+
+#
 
 I think I need to peel back the layers.
 like we do all these transforms and stuff.
@@ -12,7 +25,9 @@ yeah.
 
 and then, things will make more sense?
 
-- [ ] ^ do that!
+- [x] ^ do that!
+
+Ok......nowww I should be able to get back to the
 
 
 
@@ -21,7 +36,7 @@ and also probably 'extract all utility functions into their own files'
 
 - [x] some solid perf stuff
 
-- [ ] re-orient rectangles
+- [x] re-orient rectangles
 
 - [x] show shape info
   - still need to show colinearity. could be nice

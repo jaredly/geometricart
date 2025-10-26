@@ -1,5 +1,5 @@
 import {getPatternData} from './getPatternData';
-import {pk} from './pk';
+import {pk, resetCanvasKit} from './pk';
 import {readFileSync} from 'fs';
 import {join} from 'path';
 
@@ -25,24 +25,24 @@ type ColorScheme = (i: number) => string;
 
 let fontCache = null as null | NonSharedBuffer;
 
-export const canvasTiling = (
+export const canvasTiling = async (
     data: ReturnType<typeof getPatternData>,
     size: number,
     flipped: boolean,
 ) => {
     let surface = pk.MakeSurface(size, size);
-    if (!surface) {
-        throw new Error(`CanvasKit is dead!`);
-    }
-
     // if (!surface) {
-    //     console.error(`Canvaskit is dead!!!`);
-    //     await resetCanvasKit();
-    //     surface = pk.MakeSurface(size, size);
-    //     if (!surface) {
-    //         throw new Error('canvaskit is dead and refuses to reset');
-    //     }
+    //     throw new Error(`CanvasKit is dead!`);
     // }
+
+    if (!surface) {
+        console.error(`Canvaskit is dead!!!`);
+        await resetCanvasKit();
+        surface = pk.MakeSurface(size, size);
+        if (!surface) {
+            throw new Error('canvaskit is dead and refuses to reset');
+        }
+    }
 
     const ctx = surface.getCanvas();
     ctx.clear(pk.BLACK);

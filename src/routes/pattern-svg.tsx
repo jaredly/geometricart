@@ -13,8 +13,8 @@ export async function loader({params, request}: Route.LoaderArgs) {
         return null;
     }
     const search = new URL(request.url).searchParams;
-    const size = +params.size;
-    const format = params.format;
+    const img = params.img;
+    const [size, format] = img.split('.');
     const pattern = getPattern(params.id);
     if (!pattern) {
         return null;
@@ -24,7 +24,7 @@ export async function loader({params, request}: Route.LoaderArgs) {
         const tiling = renderToStaticMarkup(
             <TilingPattern
                 tiling={pattern.tiling}
-                size={size}
+                size={+size}
                 data={getPatternData(pattern.tiling)}
             />,
         );
@@ -46,7 +46,7 @@ export async function loader({params, request}: Route.LoaderArgs) {
     // );
 
     const flip = search.get('flip') === 'no' ? pattern.tiling : flipPattern(pattern.tiling);
-    const dataUri = canvasTiling(getPatternData(flip), size * 2, flip !== pattern.tiling)!;
+    const dataUri = await canvasTiling(getPatternData(flip), +size * 2, flip !== pattern.tiling)!;
     // return dataUri;
     // const [mime, data] = dataUri.split(',');
     const buffer = Buffer.from(dataUri);
