@@ -3,7 +3,8 @@
 import {jsx} from '@emotion/react';
 import {transformGuideGeom} from '../rendering/calculateGuideElements';
 import {angleTo, applyMatrices, Matrix} from '../rendering/getMirrorTransforms';
-import {Bounds, GuideElement} from './GuideElement';
+import {GuideElement} from './GuideElement';
+import {Bounds} from './Bounds';
 import {Coord, GuideGeom, guideNeedsAngle, guidePoints, PendingGuide} from '../types';
 
 export const RenderPendingGuide = ({

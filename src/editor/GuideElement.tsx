@@ -6,8 +6,7 @@ import {angleTo, dist, push, scale} from '../rendering/getMirrorTransforms';
 import {GuideGeom} from '../types';
 import {lineLine, lineToSlope, SlopeIntercept} from '../rendering/intersect';
 import {calcPolygon, getCircumCircle, getInCircle} from '../rendering/points';
-
-export type Bounds = {x0: number; y0: number; x1: number; y1: number};
+import {Bounds} from './Bounds';
 
 export const visibleEndPoints = (si: SlopeIntercept, bounds: Bounds) => {
     if (si.m === Infinity) {

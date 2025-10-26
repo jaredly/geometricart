@@ -11,7 +11,7 @@ import {
 } from '../rendering/getMirrorTransforms';
 import {geomToPrimitives, transformBarePath} from '../rendering/points';
 import {Mirror, State} from '../types';
-import {Bounds} from './GuideElement';
+import {Bounds} from './Bounds';
 import {RenderMirror} from './RenderMirror';
 import {emptyPath, UnderlinePath} from './RenderPath';
 import {RenderPrimitive} from './RenderPrimitive';

@@ -1,3 +1,5 @@
+import {boundsForCoords, PendingBounds} from '../editor/Bounds';
+import {Bounds} from '../editor/Bounds';
 import {tilingPoints} from '../editor/tilingPoints';
 import {coordKey} from '../rendering/coordKey';
 import {closeEnough, closeEnoughAngle, epsilon} from '../rendering/epsilonToZero';
@@ -182,27 +184,6 @@ export const cutSegments = (segs: [Coord, Coord][]) => {
     return result;
 };
 
-// export const joinBrokenSegs = (segs: [Coord,Coord][]) => {
-//     const byEndPoint: Record<string, {idx: number; theta: number; to: Coord}[]> = {};
-//     segs.forEach((seg, i) => {
-//         if (coordsEqual(seg[0], seg[1])) {
-//             console.warn('zero-length seg, ignoring');
-//             return;
-//         }
-//         const to = angleTo(seg[0], seg[1]);
-//         const from = angleTo(seg[1], seg[0]);
-//         addToMap(byEndPoint, coordKey(seg[0]), {idx: i, theta: to, to: seg[1]});
-//         addToMap(byEndPoint, coordKey(seg[1]), {idx: i, theta: from, to: seg[0]});
-//     });
-//     const toJoin = []
-//     Object.values(byEndPoint).forEach(exits => {
-//         if (exits.length !== 2) return;
-//         if (closeEnough(angleBetween(exits[0].theta, exits[1].theta, true), Math.PI)) {
-//             console.log('would join', exits)
-//         }
-//     })
-// }
-
 export const joinAdjacentShapeSegments = (segs: Coord[]) => {
     const thetas = segs.map((seg, i) => angleTo(segs[i === 0 ? segs.length - 1 : i - 1], segs[i]));
     return segs.filter((_, i) => {
@@ -212,23 +193,111 @@ export const joinAdjacentShapeSegments = (segs: Coord[]) => {
     });
 };
 
-export const shapesFromSegments = (segs: [Coord, Coord][], eigenPoints: Coord[]) => {
-    const byEndPoint: Record<string, {idx: number; theta: number; to: Coord}[]> = {};
+type EndPointMap = Record<string, {exits: {idx: number; theta: number; to: Coord}[]; pos: Coord}>;
+
+export const edgesByEndpoint = (segs: [Coord, Coord][]) => {
+    const byEndPoint: EndPointMap = {};
+
+    // const coordsByKey: Record<string, Coord> = {}
     segs.forEach((seg, i) => {
         if (coordsEqual(seg[0], seg[1])) {
-            // console.warn('zero-length seg, ignoring');
             return;
         }
         const to = angleTo(seg[0], seg[1]);
         const from = angleTo(seg[1], seg[0]);
-        addToMap(byEndPoint, coordKey(seg[0]), {idx: i, theta: to, to: seg[1]});
-        addToMap(byEndPoint, coordKey(seg[1]), {idx: i, theta: from, to: seg[0]});
+        const k0 = coordKey(seg[0]);
+        if (!byEndPoint[k0]) byEndPoint[k0] = {exits: [], pos: seg[0]};
+        byEndPoint[k0].exits.push({idx: i, theta: to, to: seg[1]});
+
+        const k1 = coordKey(seg[1]);
+        if (!byEndPoint[k1]) byEndPoint[k1] = {exits: [], pos: seg[1]};
+        byEndPoint[k1].exits.push({idx: i, theta: from, to: seg[0]});
+
+        // addToMap(byEndPoint, coordKey(seg[1]), {idx: i, theta: from, to: seg[0]});
+        // coordsByKey[coordKey(seg[0])] = seg[0] coordsByKey[coordKey(seg[1])] = seg[1]
+    });
+    return byEndPoint;
+};
+
+const onEdge = (pos: Coord, bounds: Bounds) =>
+    closeEnough(pos.x, bounds.x0) ||
+    closeEnough(pos.x, bounds.x1) ||
+    closeEnough(pos.y, bounds.y0) ||
+    closeEnough(pos.y, bounds.y1);
+
+/*
+ok so for a normal two-color pattern, I could just do straight lines, presumably as a single list of Coords.
+but for other things, we'll need to supoprt like a three-way intersection, with lines going in each direction.
+Sooo the data type looks like a list of lists of Coords.
+*/
+export const pathsFromSegments = (segs: [Coord, Coord][], byEndPoint: EndPointMap) => {
+    // Ensure ordering
+    segs.forEach((seg) => seg.sort((a, b) => (closeEnough(a.x, b.x) ? a.y - b.y : a.x - b.x)));
+
+    const bounds = boundsForCoords(...segs.flat());
+
+    const segLinks: {left: number[]; right: number[]; pathId?: number}[] = segs.map((_) => ({
+        left: [],
+        right: [],
+    }));
+
+    const link = (one: number, two: number, key: string) => {
+        if (coordKey(segs[one][0]) === key) {
+            if (onEdge(segs[one][0], bounds)) return;
+            segLinks[one]!.left.push(two);
+        } else {
+            if (onEdge(segs[one][1], bounds)) return;
+            segLinks[one]!.right.push(two);
+        }
+        if (coordKey(segs[two][0]) === key) {
+            segLinks[two]!.left.push(one);
+        } else {
+            segLinks[two]!.right.push(one);
+        }
+    };
+
+    Object.entries(byEndPoint).forEach(([key, {exits}]) => {
+        if (exits.length === 2) {
+            link(exits[0].idx, exits[1].idx, key);
+        } else if (exits.length % 2 === 0) {
+            exits.sort((a, b) => a.theta - b.theta);
+            // every opposite
+            const half = exits.length / 2;
+            for (let i = 0; i < half; i++) {
+                link(exits[i].idx, exits[i + half].idx, key);
+            }
+        } else {
+            // every to every
+            for (let i = 0; i < exits.length - 1; i++) {
+                for (let j = i + 1; j < exits.length; j++) {
+                    link(exits[i].idx, exits[j].idx, key);
+                }
+            }
+        }
     });
 
+    let nextPathId = 0;
+    const follow = (at: number, pathId: number) => {
+        const link = segLinks[at];
+        if (link.pathId != null) return;
+        link.pathId = pathId;
+        link.left.forEach((id) => follow(id, pathId));
+        link.right.forEach((id) => follow(id, pathId));
+    };
+
+    segLinks.forEach((sl, i) => {
+        if (sl.pathId != null) return;
+        follow(i, nextPathId++);
+    });
+
+    return segLinks;
+};
+
+export const shapesFromSegments = (byEndPoint: EndPointMap, eigenPoints: Coord[]) => {
     const used: Record<string, true> = {};
     const shapes: Coord[][] = [];
     eigenPoints.forEach((point) => {
-        const segs = byEndPoint[coordKey(point)];
+        const segs = byEndPoint[coordKey(point)].exits;
         if (!segs) {
             console.warn(`no segs from point`, point);
             return;
@@ -241,7 +310,7 @@ export const shapesFromSegments = (segs: [Coord, Coord][], eigenPoints: Coord[])
             const pks: string[] = [];
             let ranout = false;
             while (points.length < 100) {
-                const nexts = byEndPoint[coordKey(at.to)]
+                const nexts = byEndPoint[coordKey(at.to)].exits
                     .filter((seg) => !pks.includes(coordKey(seg.to)))
                     .filter((seg) => !coordsEqual(seg.to, points[points.length - 2]))
                     .map((seg) => ({

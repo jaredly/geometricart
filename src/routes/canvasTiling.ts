@@ -10,18 +10,11 @@ function hslToHex(h: number, s: number, l: number) {
         const k = (n + h / 30) % 12;
         const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
         return color;
-        // .toString(16)
-        // .padStart(2, '0'); // convert to Hex and prefix "0" if needed
     };
     return [f(0), f(8), f(4)];
 }
 
 type ColorScheme = (i: number) => string;
-
-// const schemes = {
-//     'fall':
-//     ctx.fillStyle = hslToHex(((i % 7) / 7) * 60, 100, ((i % 6) / 6) * 20 + 20);
-// }
 
 let fontCache = null as null | NonSharedBuffer;
 
@@ -31,9 +24,6 @@ export const canvasTiling = async (
     flipped: boolean,
 ) => {
     let surface = pk.MakeSurface(size, size);
-    // if (!surface) {
-    //     throw new Error(`CanvasKit is dead!`);
-    // }
 
     if (!surface) {
         console.error(`Canvaskit is dead!!!`);
@@ -52,34 +42,25 @@ export const canvasTiling = async (
     paint.setStyle(pk.PaintStyle.Fill);
     paint.setAntiAlias(true);
     ctx.drawRect(pk.LTRBRect(0, 0, size, size), paint);
-    // const canvas = pk.MakeCanvas(size, size);
-    // pk.MakeSurface
-    // const ctx = canvas.getContext('2d');
-    // if (!ctx) throw new Error(`no context`);
-    // ctx.fillStyle = 'black';
-    // ctx.fillRect(0, 0, size, size);
 
     const margin = 0.5;
 
     ctx.scale(size / (2 + margin * 2), size / (2 + margin * 2));
     ctx.translate(1 + margin, 1 + margin);
 
+    const col = (i: number) => {
+        const ci = data.colorInfo.colors[i];
+        if (ci === -1) return [0, 0, 0];
+        const percent = ci / (data.colorInfo.maxColor + 1);
+        //   (data.colorInfo.colors[i] / (data.colorInfo.maxColor + 1)) *
+        //       360,
+        return hslToHex(100, flipped ? 50 : 0, percent * 40 + 30);
+    };
+
     data.shapes.forEach((shape, i) => {
         const paint = new pk.Paint();
         paint.setStyle(pk.PaintStyle.Fill);
-        paint.setColor(
-            data.colorInfo.colors[data.shapeIds[i]] === -1
-                ? [0, 0, 0]
-                : hslToHex(
-                      //   (data.colorInfo.colors[data.shapeIds[i]] / (data.colorInfo.maxColor + 1)) *
-                      //       360,
-                      100,
-                      flipped ? 50 : 0,
-                      (data.colorInfo.colors[data.shapeIds[i]] / (data.colorInfo.maxColor + 1)) *
-                          40 +
-                          30,
-                  ),
-        );
+        paint.setColor(col(i));
         ctx.drawPath(
             pk.Path.MakeFromCmds([
                 pk.MOVE_VERB,
@@ -121,33 +102,30 @@ export const canvasTiling = async (
         });
     }
 
-    // data.shapes.forEach((shape) => {
-    //     ctx.lineWidth = 0.003;
-    //     // ctx.lineWidth = data.minSegLength / 3;
-    //     ctx.beginPath();
-    //     shape.forEach(({x, y}, i) => {
-    //         if (i === 0) {
-    //             ctx.moveTo(x, y);
-    //         } else {
-    //             ctx.lineTo(x, y);
-    //         }
-    //     });
-    //     ctx.stroke();
-    // });
+    const showLines = false;
+    if (showLines) {
+        const byColor = data.allSegments
+            .map((seg, i) => ({seg, path: data.paths[i].pathId}))
+            .sort((a, b) => a.path! - b.path!);
 
-    // pk.MakeImageFromCanvasImageSource(ctx)
+        byColor.forEach(({seg: [a, b], path}) => {
+            const paint = new pk.Paint();
+            paint.setStyle(pk.PaintStyle.Stroke);
+            paint.setStrokeWidth(data.minSegLength / 2);
+            paint.setStrokeCap(pk.StrokeCap.Round);
+            paint.setColor(path == null ? [0, 0, 0] : hslToHex((path % 12) * 30, 100, 50));
+
+            // paint.setAlphaf(0.1);
+            ctx.drawPath(
+                pk.Path.MakeFromCmds([pk.MOVE_VERB, a.x, a.y, pk.LINE_VERB, b.x, b.y])!,
+                paint,
+            );
+        });
+    }
 
     const img = surface.makeImageSnapshot();
     const bytes = img.encodeToBytes()!;
-    // img.delete();
-    // ctx.delete();
-    // surface.dispose();
     return bytes;
-
-    // const url = canvas.toDataURL();
-    // canvas.dispose();
-    // return url;
-    // return ctx.save
 };
 
 export function dataURItoBlob(dataURI: string) {

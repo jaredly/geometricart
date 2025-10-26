@@ -5,7 +5,7 @@ import {Coord, GuideGeom, View} from '../types';
 import {EditorState} from './Canvas';
 import {CompassState, PendingMark, previewPos} from './compassAndRuler';
 import {RenderPrimitive} from './RenderPrimitive';
-import {Bounds} from './GuideElement';
+import {Bounds} from './Bounds';
 
 type Dot = {type: 'dot'; pos: Coord; active: boolean};
 

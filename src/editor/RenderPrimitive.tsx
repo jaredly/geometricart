@@ -1,7 +1,8 @@
 import {css} from '@emotion/css';
 import React from 'react';
 import {push} from '../rendering/getMirrorTransforms';
-import {Bounds, visibleEndPoints} from './GuideElement';
+import {visibleEndPoints} from './GuideElement';
+import {Bounds} from './Bounds';
 import {Primitive} from '../rendering/intersect';
 import {useTouchClick} from './RenderIntersections';
 import {arcPath} from './RenderPendingPath';

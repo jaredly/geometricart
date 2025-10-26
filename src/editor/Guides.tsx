@@ -8,7 +8,7 @@ import {Action, PathMultiply} from '../state/Action';
 import {EditorState, screenToWorld} from './Canvas';
 import {DrawPath, DrawPathState, initialState} from './DrawPath';
 import {pathToPrimitives} from './findSelection';
-import {Bounds} from './GuideElement';
+import {Bounds} from './Bounds';
 import {simplifyPath} from '../rendering/simplifyPath';
 import {lineToSlope, Primitive} from '../rendering/intersect';
 import {ensureClockwise} from '../rendering/pathToPoints';

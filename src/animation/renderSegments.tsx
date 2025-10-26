@@ -3,7 +3,7 @@ import {PSeg} from './getBuiltins';
 import {coordsEqual, reverseSegment} from '../rendering/pathsAreIdentical';
 import {arcPath} from '../editor/RenderPendingPath';
 import {mergeBounds, segmentBounds} from '../editor/Bounds';
-import {Bounds} from '../editor/GuideElement';
+import {Bounds} from '../editor/Bounds';
 
 export const segmentPath = ({prev, segment}: PSeg) => {
     if (segment.type === 'Line') {

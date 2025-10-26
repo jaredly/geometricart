@@ -242,7 +242,7 @@ export const ShowTiling = ({
             }}
         >
             <img
-                src={`/gallery/pattern/${hash}/${size * 2}/png`}
+                src={`/gallery/pattern/${hash}/${size * 2}.png`}
                 style={{width: size, height: size}}
             />
             <TilingMask size={size} bounds={data.bounds} hash={hash} />
