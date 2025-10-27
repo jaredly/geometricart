@@ -7,7 +7,7 @@ import {toEdges} from './patternColoring';
 import {useMask} from '@react-three/drei';
 import {coordKey} from '../rendering/coordKey';
 import {shapeD} from './shapeD';
-import {chooseCorner, cmpCoords, flipPattern} from './shapesFromSegments';
+import {chooseCorner, cmpCoords, flipPattern, midPoint} from './shapesFromSegments';
 
 export const TilingMask = ({size, hash, bounds}: {size: number; hash: string; bounds: Coord[]}) => {
     const margin = 0.5; //minSegLength * 2;
@@ -177,6 +177,7 @@ export const TilingPattern = ({
     }
 
     const lines: JSX.Element[] = [];
+    const texts: JSX.Element[] = [];
     const showLines = true;
     if (showLines) {
         const byColor = data.allSegments
@@ -191,6 +192,7 @@ export const TilingPattern = ({
             // paint.setStrokeWidth(data.minSegLength / 2);
             // paint.setStrokeCap(pk.StrokeCap.Round);
             // paint.setColor(path == null ? [0, 0, 0] : hslToHex((path % 12) * 30, 100, 50));
+            const mid = midPoint(a, b);
             lines.push(
                 <path
                     key={`lines-${i}`}
@@ -207,12 +209,68 @@ export const TilingPattern = ({
                     strokeLinecap="round"
                 />,
             );
+            // if (path != null) {
+            //     texts.push(
+            //         <text
+            //             x={mid.x}
+            //             y={mid.y}
+            //             fontSize={data.minSegLength / 3}
+            //             strokeWidth={data.minSegLength / 10}
+            //             strokeLinejoin="round"
+            //             textAnchor="middle"
+            //             stroke="white"
+            //         >
+            //             {path ?? '-'}
+            //         </text>,
+            //         <text x={mid.x} y={mid.y} textAnchor="middle" fontSize={data.minSegLength / 3}>
+            //             {path ?? '-'}
+            //         </text>,
+            //     );
+            // }
+        });
+    }
 
-            // paint.setAlphaf(0.1);
-            // ctx.drawPath(
-            //     pk.Path.MakeFromCmds([pk.MOVE_VERB, a.x, a.y, pk.LINE_VERB, b.x, b.y])!,
-            //     paint,
-            // );
+    const showWoven = false;
+    if (data.woven && showWoven) {
+        data.woven.forEach(({points, pathId}, i) => {
+            lines.push(
+                ...points.flatMap((path, j) => [
+                    <path
+                        key={`lines-${i}-${j}`}
+                        d={shapeD(path, false)}
+                        stroke={'black'}
+                        strokeWidth={data.minSegLength / 3}
+                        fill="none"
+                    />,
+                    <path
+                        key={`linesx-${i}-${j}`}
+                        d={shapeD(path, false)}
+                        stroke={'rgb(205,127,1)'}
+                        fill="none"
+                        strokeWidth={data.minSegLength / 5}
+                        strokeLinecap="round"
+                    />,
+                ]),
+            );
+
+            // const pathb = pk.Path.MakeFromCmds(
+            //     points.flatMap((path) =>
+            //         path.flatMap((p, i) => [
+            //             i === 0 ? pk.MOVE_VERB : pk.LINE_VERB,
+            //             p.x + off,
+            //             p.y + off,
+            //         ]),
+            //     ),
+            // )!;
+            // ctx.drawPath(pathb, back);
+
+            // const path = pk.Path.MakeFromCmds(
+            //     points.flatMap((path) =>
+            //         path.flatMap((p, i) => [i === 0 ? pk.MOVE_VERB : pk.LINE_VERB, p.x, p.y]),
+            //     ),
+            // )!;
+
+            // ctx.drawPath(path, front);
         });
     }
 
@@ -256,14 +314,6 @@ export const TilingPattern = ({
                 {/* {data.allSegments.map((seg) => (
                     <path d={shapeD(seg)} fill="none" stroke="green" strokeWidth={0.1} />
                 ))} */}
-                <path
-                    fill="none"
-                    strokeWidth={minSegLength / 10}
-                    strokeLinejoin="round"
-                    stroke="yellow"
-                    pointerEvents="none"
-                    d={shapeD(data.bounds)}
-                />
                 {data.outer ? (
                     <path
                         d={shapeD(data.outer)}
@@ -274,7 +324,24 @@ export const TilingPattern = ({
                 ) : null}
                 {/* {corners} */}
                 {lines}
+                {texts}
                 {hoverNodes}
+                <path
+                    fill="none"
+                    strokeWidth={minSegLength / 5}
+                    strokeLinejoin="round"
+                    stroke="black"
+                    pointerEvents="none"
+                    d={shapeD(data.bounds)}
+                />
+                <path
+                    fill="none"
+                    strokeWidth={minSegLength / 10}
+                    strokeLinejoin="round"
+                    stroke="yellow"
+                    pointerEvents="none"
+                    d={shapeD(data.bounds)}
+                />
             </svg>
             {hover != null ? (
                 <div>

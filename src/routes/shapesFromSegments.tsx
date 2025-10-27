@@ -271,10 +271,11 @@ export const weaveIntersections = (segs: [Coord, Coord][], segLinks: SegLink[]) 
             if (byCoord[lpos]) {
                 if (byCoord[lpos].other) {
                     weird = true;
-                    return;
+                    // return;
+                } else {
+                    byCoord[lpos].other = left.key;
+                    left.other = byCoord[lpos].key;
                 }
-                byCoord[lpos].other = left.key;
-                left.other = byCoord[lpos].key;
             } else {
                 byCoord[lpos] = left;
             }
@@ -292,25 +293,21 @@ export const weaveIntersections = (segs: [Coord, Coord][], segLinks: SegLink[]) 
             const rpos = coordKey(right.pos);
             if (byCoord[rpos]) {
                 if (byCoord[rpos].other) {
-                    // throw new Error(`other already has an other`);
                     weird = true;
-                    return;
+                    // return;
+                } else {
+                    byCoord[rpos].other = right.key;
+                    right.other = byCoord[rpos].key;
                 }
-                byCoord[rpos].other = right.key;
-                right.other = byCoord[rpos].key;
             } else {
                 byCoord[rpos] = right;
             }
         }
 
-        // if (!intersections[right.key]) {
-        //     addToMap(byCoord, coordKey(right.pos), right);
-        //     intersections[right.key] = left;
-        // }
         return [left.key, right.key];
     });
 
-    if (weird) return;
+    // if (weird) return;
 
     const first = Object.keys(intersections).find((k) => intersections[k].other != null);
     if (!first) return;
@@ -360,7 +357,7 @@ export const weaveIntersections = (segs: [Coord, Coord][], segLinks: SegLink[]) 
         .sort((a, b) => a.order - b.order);
 };
 
-const midPoint = (a: Coord, b: Coord) => ({x: (a.x + b.x) / 2, y: (a.y + b.y) / 2});
+export const midPoint = (a: Coord, b: Coord) => ({x: (a.x + b.x) / 2, y: (a.y + b.y) / 2});
 
 const allPairs = <T,>(items: T[]): [T, T][] => {
     const res: [T, T][] = [];
@@ -485,6 +482,7 @@ export const pathsFromSegments = (
     };
 
     Object.entries(byEndPoint).forEach(([key, {exits}]) => {
+        if (outerKeys.includes(key)) return;
         if (exits.length === 2) {
             link(exits[0].idx, exits[1].idx, key);
         } else if (exits.length % 2 === 0) {
@@ -505,9 +503,12 @@ export const pathsFromSegments = (
     });
 
     let nextPathId = 0;
-    const follow = (at: number, pathId: number) => {
+    const follow = (at: number, pathId?: number) => {
         const link = segLinks[at];
+        const seg = segs[at];
+        if (outerKeys.includes(coordKey(seg[0])) && outerKeys.includes(coordKey(seg[1]))) return;
         if (link.pathId != null) return;
+        if (pathId == null) pathId = nextPathId++;
         link.pathId = pathId;
         link.left.forEach((id) => follow(id, pathId));
         link.right.forEach((id) => follow(id, pathId));
@@ -515,7 +516,7 @@ export const pathsFromSegments = (
 
     segLinks.forEach((sl, i) => {
         if (sl.pathId != null) return;
-        follow(i, nextPathId++);
+        follow(i);
     });
 
     return segLinks;
