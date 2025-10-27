@@ -267,7 +267,7 @@ export const weaveIntersections = (segs: [Coord, Coord][], segLinks: SegLink[]) 
             const lpos = coordKey(left.pos);
             if (byCoord[lpos]) {
                 if (byCoord[lpos].other) {
-                    throw new Error(`other already has an other`);
+                    return;
                 }
                 byCoord[lpos].other = left.key;
                 left.other = byCoord[lpos].key;
@@ -288,7 +288,8 @@ export const weaveIntersections = (segs: [Coord, Coord][], segLinks: SegLink[]) 
             const rpos = coordKey(right.pos);
             if (byCoord[rpos]) {
                 if (byCoord[rpos].other) {
-                    throw new Error(`other already has an other`);
+                    // throw new Error(`other already has an other`);
+                    return;
                 }
                 byCoord[rpos].other = right.key;
                 right.other = byCoord[rpos].key;
@@ -316,7 +317,8 @@ export const weaveIntersections = (segs: [Coord, Coord][], segLinks: SegLink[]) 
 
     while (frontier.length) {
         const next = frontier.shift()!;
-        const [left, right] = segInts[next.seg];
+        if (!segInts[next.seg]) continue;
+        const [left, right] = segInts[next.seg]!;
         const neighbor = left === next.backKey ? right : left;
         const int = intersections[neighbor];
         if (int.elevation != null) continue;
@@ -341,8 +343,10 @@ export const weaveIntersections = (segs: [Coord, Coord][], segLinks: SegLink[]) 
     return Object.values(intersections)
         .map((int) => {
             const neighbors = int.exits
-                .map((seg) => (segInts[seg][0] === int.key ? segInts[seg][1] : segInts[seg][0]))
-                .map((key) => midPoint(intersections[key].pos, int.pos));
+                .map((seg) => (segInts[seg]?.[0] === int.key ? segInts[seg][1] : segInts[seg]?.[0]))
+                .map((key) => (key ? midPoint(intersections[key].pos, int.pos) : null))
+                .filter(Boolean) as Coord[];
+
             const pairs = allPairs(neighbors).map(([a, b]) => [a, int.pos, b]);
             return {points: pairs, order: int.elevation ?? 0, pathId: int.pathId};
         })
