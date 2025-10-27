@@ -29,6 +29,7 @@ import {
     pathsFromSegments,
     shapesFromSegments,
     unique,
+    weaveIntersections,
 } from './shapesFromSegments';
 
 const pkPathFromCoords = (coords: Coord[]) =>
@@ -140,6 +141,7 @@ export const getPatternData = (tiling: Tiling, debug = false) => {
     const byEndPoint = edgesByEndpoint(allSegments);
     const shapes = shapesFromSegments(byEndPoint, eigenPoints);
     const paths = pathsFromSegments(allSegments, byEndPoint);
+    const woven = weaveIntersections(allSegments, paths);
 
     const canons = shapes
         .map(joinAdjacentShapeSegments)
@@ -177,6 +179,7 @@ export const getPatternData = (tiling: Tiling, debug = false) => {
         allSegments,
         minSegLength,
         paths,
+        woven,
         canons,
         ttt,
     };

@@ -226,6 +226,127 @@ const onEdge = (pos: Coord, bounds: Bounds) =>
     closeEnough(pos.y, bounds.y1);
 
 /*
+weaving paths:
+each intersection needs to be annotated with (1) over (-1) under or (0) no change
+
+start at one intersection, pick one to go one way.
+add neighbors to the frontier, with (back-point) and (back-side=-1[under] or 1[over])
+then consider the fronteir
+*/
+
+export const weaveIntersections = (segs: [Coord, Coord][], segLinks: SegLink[]) => {
+    /*
+    intersection can have multiple pairs
+    pairs are identified by [segid]:[segid]
+    need a map: [seg]:neighbors[]
+
+    intersection key is segid[].sort().join(',')
+    */
+    type Inter = {elevation?: -1 | 1 | 0; pos: Coord; exits: number[]; key: string; other?: string};
+    const intersections: Record<string, Inter> = {};
+    const byCoord: Record<string, Inter> = {};
+
+    // OK first go through and produce all intersections
+    const segInts = segLinks.map((links, i) => {
+        const left: Inter = {exits: [i, ...links.left].sort(), pos: segs[i][0], key: ''};
+        left.key = left.exits.join(',');
+        if (!intersections[left.key]) {
+            intersections[left.key] = left;
+            const lpos = coordKey(left.pos);
+            if (byCoord[lpos]) {
+                if (byCoord[lpos].other) {
+                    throw new Error(`other already has an other`);
+                }
+                byCoord[lpos].other = left.key;
+                left.other = byCoord[lpos].key;
+            } else {
+                byCoord[lpos] = left;
+            }
+        }
+        const right: Inter = {exits: [i, ...links.right].sort(), pos: segs[i][1], key: ''};
+        right.key = right.exits.join(',');
+
+        if (!intersections[right.key]) {
+            intersections[right.key] = right;
+            const rpos = coordKey(right.pos);
+            if (byCoord[rpos]) {
+                if (byCoord[rpos].other) {
+                    throw new Error(`other already has an other`);
+                }
+                byCoord[rpos].other = right.key;
+                right.other = byCoord[rpos].key;
+            } else {
+                byCoord[rpos] = right;
+            }
+        }
+
+        // if (!intersections[right.key]) {
+        //     addToMap(byCoord, coordKey(right.pos), right);
+        //     intersections[right.key] = left;
+        // }
+        return [left.key, right.key];
+    });
+
+    const first = Object.keys(intersections).find((k) => intersections[k].other != null);
+    if (!first) return;
+    const int = intersections[first];
+    int.elevation = 1;
+    type Front = {seg: number; backKey: string; nextEl: 1 | -1};
+    const frontier: Front[] = int.exits.map((seg) => ({seg, backKey: int.key, nextEl: -1}));
+    const oppo = intersections[int.other!];
+    oppo.elevation = -1;
+    frontier.push(...oppo.exits.map((seg): Front => ({seg, backKey: oppo.key, nextEl: 1})));
+
+    while (frontier.length) {
+        const next = frontier.shift()!;
+        const [left, right] = segInts[next.seg];
+        const neighbor = left === next.backKey ? right : left;
+        const int = intersections[neighbor];
+        if (int.elevation != null) continue;
+        if (int.other) {
+            int.elevation = next.nextEl;
+            const rev = (next.nextEl * -1) as 1 | -1;
+            const oppo = intersections[int.other];
+            oppo.elevation = rev;
+            frontier.push(...int.exits.map((seg): Front => ({seg, backKey: int.key, nextEl: rev})));
+            frontier.push(
+                ...oppo.exits.map((seg): Front => ({seg, backKey: oppo.key, nextEl: next.nextEl})),
+            );
+        } else {
+            int.elevation = 0;
+            frontier.push(
+                ...int.exits.map((seg): Front => ({seg, backKey: int.key, nextEl: next.nextEl})),
+            );
+        }
+    }
+
+    type Woven = {points: Coord[][]; order: number};
+    return Object.values(intersections)
+        .map((int) => {
+            const neighbors = int.exits
+                .map((seg) => (segInts[seg][0] === int.key ? segInts[seg][1] : segInts[seg][0]))
+                .map((key) => midPoint(intersections[key].pos, int.pos));
+            const pairs = allPairs(neighbors).map(([a, b]) => [a, int.pos, b]);
+            return {points: pairs, order: int.elevation ?? 0};
+        })
+        .sort((a, b) => a.order - b.order);
+};
+
+const midPoint = (a: Coord, b: Coord) => ({x: (a.x + b.x) / 2, y: (a.y + b.y) / 2});
+
+const allPairs = <T,>(items: T[]): [T, T][] => {
+    const res: [T, T][] = [];
+    for (let i = 0; i < items.length; i++) {
+        for (let j = i + 1; j < items.length; j++) {
+            res.push([items[i], items[j]]);
+        }
+    }
+    return res;
+};
+
+type SegLink = {left: number[]; right: number[]; pathId?: number};
+
+/*
 ok so for a normal two-color pattern, I could just do straight lines, presumably as a single list of Coords.
 but for other things, we'll need to supoprt like a three-way intersection, with lines going in each direction.
 Sooo the data type looks like a list of lists of Coords.
@@ -236,7 +357,7 @@ export const pathsFromSegments = (segs: [Coord, Coord][], byEndPoint: EndPointMa
 
     const bounds = boundsForCoords(...segs.flat());
 
-    const segLinks: {left: number[]; right: number[]; pathId?: number}[] = segs.map((_) => ({
+    const segLinks: SegLink[] = segs.map((_) => ({
         left: [],
         right: [],
     }));

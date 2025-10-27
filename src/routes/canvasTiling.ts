@@ -122,6 +122,26 @@ export const canvasTiling = async (
             );
         });
     }
+    if (2 > 1) {
+        const back = new pk.Paint();
+        back.setStyle(pk.PaintStyle.Stroke);
+        back.setColor([0, 0, 0]);
+        back.setStrokeWidth(data.minSegLength / 1.5);
+        const front = new pk.Paint();
+        front.setStyle(pk.PaintStyle.Stroke);
+        front.setColor([1, 1, 1]);
+        front.setStrokeWidth(data.minSegLength / 3);
+
+        data.woven?.forEach(({points}) => {
+            const path = pk.Path.MakeFromCmds(
+                points.flatMap((path) =>
+                    path.flatMap((p, i) => [i === 0 ? pk.MOVE_VERB : pk.LINE_VERB, p.x, p.y]),
+                ),
+            )!;
+            ctx.drawPath(path, back);
+            ctx.drawPath(path, front);
+        });
+    }
 
     const img = surface.makeImageSnapshot();
     const bytes = img.encodeToBytes()!;
