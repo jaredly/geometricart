@@ -15,8 +15,9 @@ import {
 import {lineLine, lineToSlope} from '../rendering/intersect';
 import {angleBetween} from '../rendering/isAngleBetween';
 import {coordsEqual} from '../rendering/pathsAreIdentical';
+import {isClockwisePoints} from '../rendering/pathToPoints';
 import {transformSegment} from '../rendering/points';
-import {Coord, Tiling} from '../types';
+import {Coord, Segment, Tiling} from '../types';
 import {centroid} from './findReflectionAxes';
 import {getPatternData} from './getPatternData';
 
@@ -253,6 +254,8 @@ export const weaveIntersections = (segs: [Coord, Coord][], segLinks: SegLink[]) 
     const intersections: Record<string, Inter> = {};
     const byCoord: Record<string, Inter> = {};
 
+    let weird = false;
+
     // OK first go through and produce all intersections
     const segInts = segLinks.map((links, i) => {
         const left: Inter = {
@@ -267,6 +270,7 @@ export const weaveIntersections = (segs: [Coord, Coord][], segLinks: SegLink[]) 
             const lpos = coordKey(left.pos);
             if (byCoord[lpos]) {
                 if (byCoord[lpos].other) {
+                    weird = true;
                     return;
                 }
                 byCoord[lpos].other = left.key;
@@ -289,6 +293,7 @@ export const weaveIntersections = (segs: [Coord, Coord][], segLinks: SegLink[]) 
             if (byCoord[rpos]) {
                 if (byCoord[rpos].other) {
                     // throw new Error(`other already has an other`);
+                    weird = true;
                     return;
                 }
                 byCoord[rpos].other = right.key;
@@ -304,6 +309,8 @@ export const weaveIntersections = (segs: [Coord, Coord][], segLinks: SegLink[]) 
         // }
         return [left.key, right.key];
     });
+
+    if (weird) return;
 
     const first = Object.keys(intersections).find((k) => intersections[k].other != null);
     if (!first) return;
@@ -367,6 +374,63 @@ const allPairs = <T,>(items: T[]): [T, T][] => {
 
 type SegLink = {left: number[]; right: number[]; pathId?: number};
 
+export const outerBoundary = (
+    segs: [Coord, Coord][],
+    byEndPoint: EndPointMap,
+    pointNames: Record<string, number>,
+) => {
+    let mostest: Coord | null = null;
+    const check = (a: Coord) => {
+        if (mostest) {
+            if (closeEnough(mostest.x, a.x)) {
+                if (mostest.y > a.y) {
+                    mostest = a;
+                }
+            } else if (mostest.x > a.x) {
+                mostest = a;
+            }
+        } else {
+            mostest = a;
+        }
+        // if (!mostest || mostest.x > a.x + epsilon) mostest = a;
+    };
+    segs.forEach(([a, b]) => {
+        check(a);
+        check(b);
+    });
+    if (!mostest) {
+        return;
+    }
+    const exits = byEndPoint[coordKey(mostest)].exits;
+    console.log(`most`, pointNames[coordKey(mostest)]);
+    console.log(exits.map((e) => pointNames[coordKey(e.to)]));
+    const used: Record<string, true> = {};
+    const found = exits
+        .map((seg) => {
+            const sk = `${coordKey(mostest!)}:${coordKey(seg.to)}`;
+            if (used[sk]) return;
+            const {points, ranout} = discoverShape(mostest!, seg, used, byEndPoint, false);
+            if (points.length === 100 || ranout) {
+                console.warn('bad news, shape is bad');
+                return;
+            }
+            // return points;
+            if (!isClockwisePoints(points)) {
+                return points;
+            } else {
+                console.log('found a clockwise one');
+                return;
+            }
+        })
+        .filter(Boolean) as Coord[][];
+    console.log(
+        'boundary',
+        found.map((f) => f?.length),
+    );
+    console.log(found.map((f) => f.map((c) => pointNames[coordKey(c)])));
+    return found;
+};
+
 /*
 ok so for a normal two-color pattern, I could just do straight lines, presumably as a single list of Coords.
 but for other things, we'll need to supoprt like a three-way intersection, with lines going in each direction.
@@ -376,6 +440,9 @@ export const pathsFromSegments = (segs: [Coord, Coord][], byEndPoint: EndPointMa
     // Ensure ordering
     segs.forEach((seg) => seg.sort((a, b) => (closeEnough(a.x, b.x) ? a.y - b.y : a.x - b.x)));
 
+    // ok folks I need a better calculation of ... the boundary.
+    // probably what I should do is find a coord on the edge
+    // and do a "clockwise shape walk".
     const bounds = boundsForCoords(...segs.flat());
 
     const segLinks: SegLink[] = segs.map((_) => ({
@@ -435,9 +502,60 @@ export const pathsFromSegments = (segs: [Coord, Coord][], byEndPoint: EndPointMa
     return segLinks;
 };
 
+const discoverShape = (
+    point: Coord,
+    seg: {idx: number; theta: number; to: Coord},
+    used: Record<string, true>,
+    byEndPoint: EndPointMap,
+    clockwise = true,
+) => {
+    let at = seg;
+    const points = [point, seg.to];
+    const pks: string[] = [coordKey(seg.to)];
+    let ranout = false;
+    while (points.length < 100) {
+        const nexts = byEndPoint[coordKey(at.to)].exits
+            .filter((seg) => !pks.includes(coordKey(seg.to)))
+            .filter((seg) => !coordsEqual(seg.to, points[points.length - 2]))
+            .map((seg) => ({
+                seg,
+                cctheta: angleBetween(at.theta + Math.PI, seg.theta, clockwise),
+            }))
+            .sort((a, b) => a.cctheta - b.cctheta);
+
+        if (!nexts.length) {
+            // console.log('ran out');
+            ranout = true;
+            break;
+        }
+        const next = nexts[0];
+        // if (nexts.length > 1 && closeEnough(nexts[1].cctheta, next.cctheta)) {
+        //     // throw new Error(`overlalappap`);
+        //     console.log('overlllap', nexts);
+        // }
+
+        const sk = `${coordKey(at.to)}:${coordKey(next.seg.to)}`;
+        // if (used[sk]) {
+        //     console.warn(`somehow double-using a segment`, sk);
+        // }
+        used[sk] = true;
+
+        if (coordsEqual(points[0], next.seg.to)) {
+            break;
+        }
+
+        at = next.seg;
+        points.push(at.to);
+        pks.push(coordKey(at.to));
+    }
+
+    return {points, ranout};
+};
+
 export const shapesFromSegments = (byEndPoint: EndPointMap, eigenPoints: Coord[]) => {
     const used: Record<string, true> = {};
     const shapes: Coord[][] = [];
+    const backwards: Coord[][] = [];
     eigenPoints.forEach((point) => {
         const segs = byEndPoint[coordKey(point)].exits;
         if (!segs) {
@@ -447,50 +565,16 @@ export const shapesFromSegments = (byEndPoint: EndPointMap, eigenPoints: Coord[]
         for (const seg of segs) {
             const sk = `${coordKey(point)}:${coordKey(seg.to)}`;
             if (used[sk]) continue;
-            let at = seg;
-            const points = [point, seg.to];
-            const pks: string[] = [];
-            let ranout = false;
-            while (points.length < 100) {
-                const nexts = byEndPoint[coordKey(at.to)].exits
-                    .filter((seg) => !pks.includes(coordKey(seg.to)))
-                    .filter((seg) => !coordsEqual(seg.to, points[points.length - 2]))
-                    .map((seg) => ({
-                        seg,
-                        cctheta: angleBetween(at.theta + Math.PI, seg.theta, true),
-                    }))
-                    .sort((a, b) => a.cctheta - b.cctheta);
-
-                if (!nexts.length) {
-                    // console.log('ran out');
-                    ranout = true;
-                    break;
-                }
-                const next = nexts[0];
-                // if (nexts.length > 1 && closeEnough(nexts[1].cctheta, next.cctheta)) {
-                //     // throw new Error(`overlalappap`);
-                //     console.log('overlllap', nexts);
-                // }
-
-                const sk = `${coordKey(at.to)}:${coordKey(next.seg.to)}`;
-                // if (used[sk]) {
-                //     console.warn(`somehow double-using a segment`, sk);
-                // }
-                used[sk] = true;
-
-                if (coordsEqual(points[0], next.seg.to)) {
-                    break;
-                }
-
-                at = next.seg;
-                points.push(at.to);
-                pks.push(coordKey(at.to));
-            }
+            const {points, ranout} = discoverShape(point, seg, used, byEndPoint);
             if (points.length === 100 || ranout) {
-                // console.warn('bad news, shape is bad');
+                console.warn('bad news, shape is bad');
                 continue;
             }
-            shapes.push(points);
+            if (!isClockwisePoints(points)) {
+                shapes.push(points);
+            } else {
+                backwards.push(points);
+            }
         }
     });
     return shapes;

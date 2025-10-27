@@ -43,15 +43,18 @@ const TilingShape = ({
     data,
     i,
     pointNames,
+    setHover,
+    hover,
 }: {
+    hover: boolean;
     i: number;
     data: ReturnType<typeof getPatternData>;
     minSegLength: number;
     shape: Coord[];
     pointNames: Record<string, number>;
+    setHover: (i: number | null) => void;
 }) => {
     const {colorInfo} = data;
-    const [hover, setHover] = useState(false);
     const bb = boundsForCoords(...shape);
     // const points = useMask(() => {
     //     if (!hover) return []
@@ -63,8 +66,8 @@ const TilingShape = ({
                 <circle cx={shape[0].x} cy={shape[0].y} r={0.02} fill="red" />
             ) : null}
             <path
-                onMouseOver={() => setHover(true)}
-                onMouseLeave={() => setHover(false)}
+                onMouseOver={() => setHover(i)}
+                onMouseLeave={() => setHover(null)}
                 data-skey={shapeKey(shape, minSegLength)}
                 fill={
                     hover
@@ -83,67 +86,7 @@ const TilingShape = ({
                 stroke="black"
                 d={shapeD(shape)}
             />
-            {hover ? (
-                <>
-                    <text
-                        fontSize={minSegLength / 2}
-                        fill="none"
-                        strokeWidth={0.03}
-                        strokeLinejoin="round"
-                        textAnchor="middle"
-                        stroke="black"
-                        x={((bb.x1 + bb.x0) / 2).toFixed(3)}
-                        y={((bb.y1 + bb.y0) / 2).toFixed(3)}
-                        pointerEvents="none"
-                    >
-                        {i}
-                    </text>
-                    <text
-                        fontSize={minSegLength / 2}
-                        fill="white"
-                        stroke="none"
-                        textAnchor="middle"
-                        x={((bb.x1 + bb.x0) / 2).toFixed(3)}
-                        y={((bb.y1 + bb.y0) / 2).toFixed(3)}
-                        pointerEvents="none"
-                    >
-                        {i}
-                    </text>
-                    {shape.map((coord, i) => (
-                        <>
-                            <circle
-                                cx={coord.x.toFixed(3)}
-                                cy={coord.y.toFixed(3)}
-                                r={minSegLength / 3}
-                                fill="red"
-                                opacity={0.5}
-                            />
-                            <text
-                                fontSize={minSegLength / 2}
-                                stroke="white"
-                                strokeWidth={0.03}
-                                textAnchor="middle"
-                                x={coord.x.toFixed(3)}
-                                y={coord.y.toFixed(3)}
-                                pointerEvents="none"
-                            >
-                                {pointNames[coordKey(coord)]}
-                            </text>
-                            <text
-                                fontSize={minSegLength / 2}
-                                fill="black"
-                                stroke="none"
-                                textAnchor="middle"
-                                x={coord.x.toFixed(3)}
-                                y={coord.y.toFixed(3)}
-                                pointerEvents="none"
-                            >
-                                {pointNames[coordKey(coord)]}
-                            </text>
-                        </>
-                    ))}
-                </>
-            ) : null}
+
             {shape.length > 80 ? arrows(shape) : null}
         </>
     );
@@ -164,17 +107,88 @@ export const TilingPattern = ({
     const pointNames = Object.fromEntries(data.uniquePoints.map((p, i) => [coordKey(p), i]));
 
     // const corners = chooseCorner(tiling.shape.type === 'parallellogram' ? tiling.shape.points : [], data.shapes)
+    let hoverNodes;
+    if (hover != null) {
+        const shape = shapes[hover];
+        const i = hover;
+        const bb = boundsForCoords(...shape);
+
+        hoverNodes = (
+            <g pointerEvents={'none'}>
+                <text
+                    fontSize={minSegLength / 2}
+                    fill="none"
+                    strokeWidth={0.03}
+                    strokeLinejoin="round"
+                    textAnchor="middle"
+                    stroke="black"
+                    x={((bb.x1 + bb.x0) / 2).toFixed(3)}
+                    y={((bb.y1 + bb.y0) / 2).toFixed(3)}
+                    pointerEvents="none"
+                >
+                    {i}
+                </text>
+                <text
+                    fontSize={minSegLength / 2}
+                    fill="white"
+                    stroke="none"
+                    textAnchor="middle"
+                    x={((bb.x1 + bb.x0) / 2).toFixed(3)}
+                    y={((bb.y1 + bb.y0) / 2).toFixed(3)}
+                    pointerEvents="none"
+                >
+                    {i}
+                </text>
+                {shape.map((coord, i) => (
+                    <>
+                        <circle
+                            cx={coord.x.toFixed(3)}
+                            cy={coord.y.toFixed(3)}
+                            r={minSegLength / 3}
+                            fill="red"
+                            opacity={0.5}
+                        />
+                        <text
+                            fontSize={minSegLength / 2}
+                            stroke="white"
+                            strokeWidth={0.03}
+                            textAnchor="middle"
+                            x={coord.x.toFixed(3)}
+                            y={coord.y.toFixed(3)}
+                            pointerEvents="none"
+                        >
+                            {pointNames[coordKey(coord)]}
+                        </text>
+                        <text
+                            fontSize={minSegLength / 2}
+                            fill="black"
+                            stroke="none"
+                            textAnchor="middle"
+                            x={coord.x.toFixed(3)}
+                            y={coord.y.toFixed(3)}
+                            pointerEvents="none"
+                        >
+                            {pointNames[coordKey(coord)]}
+                        </text>
+                    </>
+                ))}
+            </g>
+        );
+    }
 
     return (
         <div>
             <svg
                 xmlns="http://www.w3.org/2000/svg"
+                viewBox="-5 -5 10 10"
                 // viewBox="-3 -3 6 6"
-                viewBox="-1.5 -1.5 3 3"
+                // viewBox="-1.5 -1.5 3 3"
                 style={size ? {background: 'black', width: size, height: size} : undefined}
             >
                 {shapes.map((shape, i) => (
                     <TilingShape
+                        hover={hover === i}
+                        setHover={setHover}
                         key={i}
                         pointNames={pointNames}
                         i={i}
@@ -183,7 +197,7 @@ export const TilingPattern = ({
                         minSegLength={minSegLength}
                     />
                 ))}
-                {tiling.cache.segments.map(({prev, segment}) => (
+                {/* {tiling.cache.segments.map(({prev, segment}) => (
                     <path
                         d={shapeD([prev, segment.to])}
                         fill="none"
@@ -198,6 +212,9 @@ export const TilingPattern = ({
                         stroke="green"
                         strokeWidth={0.03}
                     />
+                ))} */}
+                {data.allSegments.map((seg) => (
+                    <path d={shapeD(seg)} fill="none" stroke="green" strokeWidth={0.1} />
                 ))}
                 <path
                     fill="none"
@@ -207,7 +224,16 @@ export const TilingPattern = ({
                     pointerEvents="none"
                     d={shapeD(data.bounds)}
                 />
+                {data.outer?.map((shape, i) => (
+                    <path
+                        d={shapeD(shape)}
+                        fill="none"
+                        stroke="rgba(0,0,0,0.4)"
+                        strokeWidth={0.5 - (i / data.outer!.length) * 0.5}
+                    />
+                ))}
                 {/* {corners} */}
+                {hoverNodes}
             </svg>
             {hover != null ? (
                 <div>

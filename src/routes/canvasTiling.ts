@@ -43,7 +43,7 @@ export const canvasTiling = async (
     paint.setAntiAlias(true);
     ctx.drawRect(pk.LTRBRect(0, 0, size, size), paint);
 
-    const margin = 0.5;
+    const margin = 3.5;
 
     ctx.scale(size / (2 + margin * 2), size / (2 + margin * 2));
     ctx.translate(1 + margin, 1 + margin);
@@ -104,7 +104,7 @@ export const canvasTiling = async (
         });
     }
 
-    const showLines = false;
+    const showLines = true;
     if (showLines) {
         const byColor = data.allSegments
             .map((seg, i) => ({seg, path: data.paths[i].pathId}))
@@ -165,6 +165,17 @@ export const canvasTiling = async (
             ctx.drawPath(path, front);
         });
     }
+
+    data.allSegments.flat().forEach((pt) => {
+        ctx.drawCircle(pt.x, pt.y, data.minSegLength / 4, paint);
+    });
+
+    const front = new pk.Paint();
+    front.setStyle(pk.PaintStyle.Fill);
+    front.setColor([1, 1, 1]);
+    data.eigenPoints.forEach((pt) => {
+        ctx.drawCircle(pt.x, pt.y, data.minSegLength / 5, front);
+    });
 
     const img = surface.makeImageSnapshot();
     const bytes = img.encodeToBytes()!;

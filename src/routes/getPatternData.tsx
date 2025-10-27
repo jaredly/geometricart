@@ -26,6 +26,7 @@ import {pk} from './pk';
 import {
     edgesByEndpoint,
     joinAdjacentShapeSegments,
+    outerBoundary,
     pathsFromSegments,
     shapesFromSegments,
     unique,
@@ -166,6 +167,7 @@ export const getPatternData = (tiling: Tiling, debug = false) => {
 
     const uniquePoints = unique(allShapes.flat(), coordKey);
     const pointNames = Object.fromEntries(uniquePoints.map((p, i) => [coordKey(p), i]));
+    const outer = outerBoundary(allSegments, byEndPoint, pointNames);
 
     const colors = colorShapes(pointNames, allShapes, minSegLength, debug);
 
@@ -179,6 +181,7 @@ export const getPatternData = (tiling: Tiling, debug = false) => {
         allSegments,
         minSegLength,
         paths,
+        outer,
         woven,
         canons,
         ttt,
