@@ -242,13 +242,25 @@ export const weaveIntersections = (segs: [Coord, Coord][], segLinks: SegLink[]) 
 
     intersection key is segid[].sort().join(',')
     */
-    type Inter = {elevation?: -1 | 1 | 0; pos: Coord; exits: number[]; key: string; other?: string};
+    type Inter = {
+        elevation?: -1 | 1 | 0;
+        pos: Coord;
+        exits: number[];
+        key: string;
+        other?: string;
+        pathId?: number;
+    };
     const intersections: Record<string, Inter> = {};
     const byCoord: Record<string, Inter> = {};
 
     // OK first go through and produce all intersections
     const segInts = segLinks.map((links, i) => {
-        const left: Inter = {exits: [i, ...links.left].sort(), pos: segs[i][0], key: ''};
+        const left: Inter = {
+            exits: [i, ...links.left].sort(),
+            pos: segs[i][0],
+            key: '',
+            pathId: links.pathId,
+        };
         left.key = left.exits.join(',');
         if (!intersections[left.key]) {
             intersections[left.key] = left;
@@ -263,7 +275,12 @@ export const weaveIntersections = (segs: [Coord, Coord][], segLinks: SegLink[]) 
                 byCoord[lpos] = left;
             }
         }
-        const right: Inter = {exits: [i, ...links.right].sort(), pos: segs[i][1], key: ''};
+        const right: Inter = {
+            exits: [i, ...links.right].sort(),
+            pos: segs[i][1],
+            key: '',
+            pathId: links.pathId,
+        };
         right.key = right.exits.join(',');
 
         if (!intersections[right.key]) {
@@ -327,7 +344,7 @@ export const weaveIntersections = (segs: [Coord, Coord][], segLinks: SegLink[]) 
                 .map((seg) => (segInts[seg][0] === int.key ? segInts[seg][1] : segInts[seg][0]))
                 .map((key) => midPoint(intersections[key].pos, int.pos));
             const pairs = allPairs(neighbors).map(([a, b]) => [a, int.pos, b]);
-            return {points: pairs, order: int.elevation ?? 0};
+            return {points: pairs, order: int.elevation ?? 0, pathId: int.pathId};
         })
         .sort((a, b) => a.order - b.order);
 };

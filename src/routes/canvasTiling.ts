@@ -127,12 +127,17 @@ export const canvasTiling = async (
         back.setStyle(pk.PaintStyle.Stroke);
         back.setColor([0, 0, 0]);
         back.setStrokeWidth(data.minSegLength / 1.5);
+        back.setAntiAlias(true);
         const front = new pk.Paint();
         front.setStyle(pk.PaintStyle.Stroke);
         front.setColor([1, 1, 1]);
         front.setStrokeWidth(data.minSegLength / 3);
+        front.setAntiAlias(true);
+        front.setStrokeCap(pk.StrokeCap.Round);
 
-        data.woven?.forEach(({points}) => {
+        data.woven?.forEach(({points, pathId}) => {
+            front.setColor(pathId == null ? [1, 1, 1] : hslToHex((pathId % 12) * 30, 100, 50));
+
             const path = pk.Path.MakeFromCmds(
                 points.flatMap((path) =>
                     path.flatMap((p, i) => [i === 0 ? pk.MOVE_VERB : pk.LINE_VERB, p.x, p.y]),
