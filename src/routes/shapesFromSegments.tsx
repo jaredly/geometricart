@@ -2,7 +2,7 @@ import {boundsForCoords, PendingBounds} from '../editor/Bounds';
 import {Bounds} from '../editor/Bounds';
 import {tilingPoints} from '../editor/tilingPoints';
 import {coordKey} from '../rendering/coordKey';
-import {closeEnough, closeEnoughAngle, epsilon} from '../rendering/epsilonToZero';
+import {closeEnough, closeEnoughAngle, epsilon, negPiToPi} from '../rendering/epsilonToZero';
 import {
     angleTo,
     applyMatrices,
@@ -402,8 +402,8 @@ export const outerBoundary = (
         return;
     }
     const exits = byEndPoint[coordKey(mostest)].exits;
-    console.log(`most`, pointNames[coordKey(mostest)]);
-    console.log(exits.map((e) => pointNames[coordKey(e.to)]));
+    // console.log(`most`, pointNames[coordKey(mostest)]);
+    // console.log(exits.map((e) => pointNames[coordKey(e.to)]));
     const used: Record<string, true> = {};
     const found = exits
         .map((seg) => {
@@ -418,17 +418,24 @@ export const outerBoundary = (
             if (!isClockwisePoints(points)) {
                 return points;
             } else {
-                console.log('found a clockwise one');
+                // console.log('found a clockwise one');
                 return;
             }
         })
         .filter(Boolean) as Coord[][];
-    console.log(
-        'boundary',
-        found.map((f) => f?.length),
-    );
-    console.log(found.map((f) => f.map((c) => pointNames[coordKey(c)])));
-    return found;
+    // console.log(
+    //     'boundary',
+    //     found.map((f) => f?.length),
+    // );
+    // console.log(found.map((f) => f.map((c) => pointNames[coordKey(c)])));
+    if (found.length > 1) {
+        console.warn(`weird that we found multiple boundaries`);
+        const bySize = found
+            .map((points) => ({points, area: calcPolygonArea(points)}))
+            .sort((a, b) => b.area - a.area);
+        return bySize[0].points;
+    }
+    return found.length ? found[0] : null;
 };
 
 /*
@@ -508,6 +515,7 @@ const discoverShape = (
     used: Record<string, true>,
     byEndPoint: EndPointMap,
     clockwise = true,
+    // log?: Record<string, number>,
 ) => {
     let at = seg;
     const points = [point, seg.to];
@@ -519,12 +527,11 @@ const discoverShape = (
             .filter((seg) => !coordsEqual(seg.to, points[points.length - 2]))
             .map((seg) => ({
                 seg,
-                cctheta: angleBetween(at.theta + Math.PI, seg.theta, clockwise),
+                cctheta: angleBetween(negPiToPi(at.theta + Math.PI), seg.theta, clockwise),
             }))
             .sort((a, b) => a.cctheta - b.cctheta);
 
         if (!nexts.length) {
-            // console.log('ran out');
             ranout = true;
             break;
         }

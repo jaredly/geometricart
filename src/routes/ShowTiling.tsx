@@ -107,7 +107,7 @@ export const TilingPattern = ({
     const pointNames = Object.fromEntries(data.uniquePoints.map((p, i) => [coordKey(p), i]));
 
     // const corners = chooseCorner(tiling.shape.type === 'parallellogram' ? tiling.shape.points : [], data.shapes)
-    let hoverNodes;
+    let hoverNodes: JSX.Element | null = null;
     if (hover != null) {
         const shape = shapes[hover];
         const i = hover;
@@ -213,25 +213,25 @@ export const TilingPattern = ({
                         strokeWidth={0.03}
                     />
                 ))} */}
-                {data.allSegments.map((seg) => (
+                {/* {data.allSegments.map((seg) => (
                     <path d={shapeD(seg)} fill="none" stroke="green" strokeWidth={0.1} />
-                ))}
-                <path
+                ))} */}
+                {/* <path
                     fill="none"
                     strokeWidth={minSegLength / 10}
                     strokeLinejoin="round"
                     stroke="yellow"
                     pointerEvents="none"
                     d={shapeD(data.bounds)}
-                />
-                {data.outer?.map((shape, i) => (
+                /> */}
+                {/* {data.outer ? (
                     <path
-                        d={shapeD(shape)}
+                        d={shapeD(data.outer)}
                         fill="none"
-                        stroke="rgba(0,0,0,0.4)"
-                        strokeWidth={0.5 - (i / data.outer!.length) * 0.5}
+                        stroke="rgba(0,0,0)"
+                        strokeWidth={0.2}
                     />
-                ))}
+                ) : null} */}
                 {/* {corners} */}
                 {hoverNodes}
             </svg>
