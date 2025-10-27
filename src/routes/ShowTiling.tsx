@@ -7,7 +7,7 @@ import {toEdges} from './patternColoring';
 import {useMask} from '@react-three/drei';
 import {coordKey} from '../rendering/coordKey';
 import {shapeD} from './shapeD';
-import {chooseCorner, flipPattern} from './shapesFromSegments';
+import {chooseCorner, cmpCoords, flipPattern} from './shapesFromSegments';
 
 export const TilingMask = ({size, hash, bounds}: {size: number; hash: string; bounds: Coord[]}) => {
     const margin = 0.5; //minSegLength * 2;
@@ -95,13 +95,13 @@ const TilingShape = ({
 export const TilingPattern = ({
     size,
     data,
-    tiling,
+    // tiling,
 }: {
     size?: number;
     data: ReturnType<typeof getPatternData>;
     tiling: Tiling;
 }) => {
-    const flip = flipPattern(tiling);
+    // const flip = flipPattern(tiling);
     const [hover, setHover] = useState(null as null | number);
     const {shapes, minSegLength} = data;
     const pointNames = Object.fromEntries(data.uniquePoints.map((p, i) => [coordKey(p), i]));
@@ -176,6 +176,46 @@ export const TilingPattern = ({
         );
     }
 
+    const lines: JSX.Element[] = [];
+    const showLines = true;
+    if (showLines) {
+        const byColor = data.allSegments
+            .map((seg, i) => ({seg, path: data.paths[i].pathId}))
+            .sort((a, b) =>
+                a.path === b.path ? cmpCoords(a.seg[0], b.seg[0]) : a.path! - b.path!,
+            );
+
+        byColor.forEach(({seg: [a, b], path}, i) => {
+            // const paint = new pk.Paint();
+            // paint.setStyle(pk.PaintStyle.Stroke);
+            // paint.setStrokeWidth(data.minSegLength / 2);
+            // paint.setStrokeCap(pk.StrokeCap.Round);
+            // paint.setColor(path == null ? [0, 0, 0] : hslToHex((path % 12) * 30, 100, 50));
+            lines.push(
+                <path
+                    key={`lines-${i}`}
+                    d={shapeD([a, b], false)}
+                    stroke={'black'}
+                    strokeWidth={data.minSegLength / 3}
+                    strokeLinecap="round"
+                />,
+                <path
+                    key={`linesx-${i}`}
+                    d={shapeD([a, b], false)}
+                    stroke={path == null ? 'white' : `hsl(${(path % 12) * 30} 100% 50%)`}
+                    strokeWidth={data.minSegLength / 5}
+                    strokeLinecap="round"
+                />,
+            );
+
+            // paint.setAlphaf(0.1);
+            // ctx.drawPath(
+            //     pk.Path.MakeFromCmds([pk.MOVE_VERB, a.x, a.y, pk.LINE_VERB, b.x, b.y])!,
+            //     paint,
+            // );
+        });
+    }
+
     return (
         <div>
             <svg
@@ -185,18 +225,20 @@ export const TilingPattern = ({
                 // viewBox="-1.5 -1.5 3 3"
                 style={size ? {background: 'black', width: size, height: size} : undefined}
             >
-                {shapes.map((shape, i) => (
-                    <TilingShape
-                        hover={hover === i}
-                        setHover={setHover}
-                        key={i}
-                        pointNames={pointNames}
-                        i={i}
-                        shape={shape}
-                        data={data}
-                        minSegLength={minSegLength}
-                    />
-                ))}
+                {showLines
+                    ? null
+                    : shapes.map((shape, i) => (
+                          <TilingShape
+                              hover={hover === i}
+                              setHover={setHover}
+                              key={i}
+                              pointNames={pointNames}
+                              i={i}
+                              shape={shape}
+                              data={data}
+                              minSegLength={minSegLength}
+                          />
+                      ))}
                 {/* {tiling.cache.segments.map(({prev, segment}) => (
                     <path
                         d={shapeD([prev, segment.to])}
@@ -233,6 +275,7 @@ export const TilingPattern = ({
                     />
                 ) : null} */}
                 {/* {corners} */}
+                {lines}
                 {hoverNodes}
             </svg>
             {hover != null ? (

@@ -1,11 +1,11 @@
 import {Coord} from '../types';
 
-export const shapeD = (points: Coord[]) =>
+export const shapeD = (points: Coord[], z = true) =>
     'M' +
     points
         .map((p) => `${Math.round(p.x * 1000) / 1000} ${Math.round(p.y * 1000) / 1000}`)
         .join('L') +
-    'Z';
+    (z ? 'Z' : '');
 
 export function arcPathFromCenter(opts: {
     center: {x: number; y: number};

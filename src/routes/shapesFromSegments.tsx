@@ -438,6 +438,8 @@ export const outerBoundary = (
     return found.length ? found[0] : null;
 };
 
+export const cmpCoords = (a: Coord, b: Coord) => (closeEnough(a.x, b.x) ? a.y - b.y : a.x - b.x);
+
 /*
 ok so for a normal two-color pattern, I could just do straight lines, presumably as a single list of Coords.
 but for other things, we'll need to supoprt like a three-way intersection, with lines going in each direction.

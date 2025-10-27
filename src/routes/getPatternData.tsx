@@ -24,6 +24,7 @@ import {Coord, Tiling} from '../types';
 import {colorShapes} from './patternColoring';
 import {pk} from './pk';
 import {
+    cmpCoords,
     edgesByEndpoint,
     joinAdjacentShapeSegments,
     outerBoundary,
@@ -137,7 +138,9 @@ export const getPatternData = (tiling: Tiling, debug = false) => {
 
     const ttt = tilingTransforms(tiling.shape, pts[2], pts);
 
-    const allSegments = applyTilingTransforms(eigenSegments, ttt);
+    const allSegments = applyTilingTransforms(eigenSegments, ttt).map((seg) =>
+        cmpCoords(seg[0], seg[1]) === 1 ? ([seg[1], seg[0]] as [Coord, Coord]) : seg,
+    );
 
     const byEndPoint = edgesByEndpoint(allSegments);
     const shapes = shapesFromSegments(byEndPoint, eigenPoints);
