@@ -399,7 +399,8 @@ export const outerBoundary = (
         check(b);
     });
     if (!mostest) {
-        return;
+        console.error('no point?');
+        return null;
     }
     const exits = byEndPoint[coordKey(mostest)].exits;
     // console.log(`most`, pointNames[coordKey(mostest)]);
@@ -409,7 +410,7 @@ export const outerBoundary = (
         .map((seg) => {
             const sk = `${coordKey(mostest!)}:${coordKey(seg.to)}`;
             if (used[sk]) return;
-            const {points, ranout} = discoverShape(mostest!, seg, used, byEndPoint, false);
+            const {points, ranout} = discoverShape(mostest!, seg, used, byEndPoint, false, 1000);
             if (points.length === 100 || ranout) {
                 console.warn('bad news, shape is bad');
                 return;
@@ -435,6 +436,9 @@ export const outerBoundary = (
             .sort((a, b) => b.area - a.area);
         return bySize[0].points;
     }
+    if (!found.length) {
+        console.error(`no bounadry at all`);
+    }
     return found.length ? found[0] : null;
 };
 
@@ -445,14 +449,19 @@ ok so for a normal two-color pattern, I could just do straight lines, presumably
 but for other things, we'll need to supoprt like a three-way intersection, with lines going in each direction.
 Sooo the data type looks like a list of lists of Coords.
 */
-export const pathsFromSegments = (segs: [Coord, Coord][], byEndPoint: EndPointMap) => {
+export const pathsFromSegments = (
+    segs: [Coord, Coord][],
+    byEndPoint: EndPointMap,
+    outer?: Coord[],
+) => {
     // Ensure ordering
     segs.forEach((seg) => seg.sort((a, b) => (closeEnough(a.x, b.x) ? a.y - b.y : a.x - b.x)));
+    const outerKeys = outer?.map(coordKey) ?? [];
 
     // ok folks I need a better calculation of ... the boundary.
     // probably what I should do is find a coord on the edge
     // and do a "clockwise shape walk".
-    const bounds = boundsForCoords(...segs.flat());
+    // const bounds = boundsForCoords(...segs.flat());
 
     const segLinks: SegLink[] = segs.map((_) => ({
         left: [],
@@ -461,10 +470,11 @@ export const pathsFromSegments = (segs: [Coord, Coord][], byEndPoint: EndPointMa
 
     const link = (one: number, two: number, key: string) => {
         if (coordKey(segs[one][0]) === key) {
-            if (onEdge(segs[one][0], bounds)) return;
+            if (outerKeys.includes(coordKey(segs[one][0]))) return;
             segLinks[one]!.left.push(two);
         } else {
-            if (onEdge(segs[one][1], bounds)) return;
+            if (outerKeys.includes(coordKey(segs[one][1]))) return;
+            // if (onEdge(segs[one][1], bounds)) return;
             segLinks[one]!.right.push(two);
         }
         if (coordKey(segs[two][0]) === key) {
@@ -517,13 +527,14 @@ const discoverShape = (
     used: Record<string, true>,
     byEndPoint: EndPointMap,
     clockwise = true,
+    maxPoints = 100,
     // log?: Record<string, number>,
 ) => {
     let at = seg;
     const points = [point, seg.to];
     const pks: string[] = [coordKey(seg.to)];
     let ranout = false;
-    while (points.length < 100) {
+    while (points.length < maxPoints) {
         const nexts = byEndPoint[coordKey(at.to)].exits
             .filter((seg) => !pks.includes(coordKey(seg.to)))
             .filter((seg) => !coordsEqual(seg.to, points[points.length - 2]))

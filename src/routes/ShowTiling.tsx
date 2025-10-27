@@ -220,25 +220,23 @@ export const TilingPattern = ({
         <div>
             <svg
                 xmlns="http://www.w3.org/2000/svg"
-                viewBox="-5 -5 10 10"
-                // viewBox="-3 -3 6 6"
+                // viewBox="-5 -5 10 10"
+                viewBox="-3 -3 6 6"
                 // viewBox="-1.5 -1.5 3 3"
                 style={size ? {background: 'black', width: size, height: size} : undefined}
             >
-                {showLines
-                    ? null
-                    : shapes.map((shape, i) => (
-                          <TilingShape
-                              hover={hover === i}
-                              setHover={setHover}
-                              key={i}
-                              pointNames={pointNames}
-                              i={i}
-                              shape={shape}
-                              data={data}
-                              minSegLength={minSegLength}
-                          />
-                      ))}
+                {shapes.map((shape, i) => (
+                    <TilingShape
+                        hover={hover === i}
+                        setHover={setHover}
+                        key={i}
+                        pointNames={pointNames}
+                        i={i}
+                        shape={shape}
+                        data={data}
+                        minSegLength={minSegLength}
+                    />
+                ))}
                 {/* {tiling.cache.segments.map(({prev, segment}) => (
                     <path
                         d={shapeD([prev, segment.to])}
@@ -258,22 +256,22 @@ export const TilingPattern = ({
                 {/* {data.allSegments.map((seg) => (
                     <path d={shapeD(seg)} fill="none" stroke="green" strokeWidth={0.1} />
                 ))} */}
-                {/* <path
+                <path
                     fill="none"
                     strokeWidth={minSegLength / 10}
                     strokeLinejoin="round"
                     stroke="yellow"
                     pointerEvents="none"
                     d={shapeD(data.bounds)}
-                /> */}
-                {/* {data.outer ? (
+                />
+                {data.outer ? (
                     <path
                         d={shapeD(data.outer)}
                         fill="none"
                         stroke="rgba(0,0,0)"
-                        strokeWidth={0.2}
+                        strokeWidth={data.minSegLength / 2}
                     />
-                ) : null} */}
+                ) : null}
                 {/* {corners} */}
                 {lines}
                 {hoverNodes}
