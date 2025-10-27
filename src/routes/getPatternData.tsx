@@ -144,8 +144,6 @@ export const getPatternData = (tiling: Tiling, debug = false) => {
 
     const byEndPoint = edgesByEndpoint(allSegments);
     const shapes = shapesFromSegments(byEndPoint, eigenPoints);
-    const paths = pathsFromSegments(allSegments, byEndPoint);
-    const woven = weaveIntersections(allSegments, paths);
 
     const canons = shapes
         .map(joinAdjacentShapeSegments)
@@ -171,6 +169,8 @@ export const getPatternData = (tiling: Tiling, debug = false) => {
     const uniquePoints = unique(allShapes.flat(), coordKey);
     const pointNames = Object.fromEntries(uniquePoints.map((p, i) => [coordKey(p), i]));
     const outer = outerBoundary(allSegments, byEndPoint, pointNames);
+    const paths = pathsFromSegments(allSegments, byEndPoint, outer);
+    const woven = weaveIntersections(allSegments, paths);
 
     const colors = colorShapes(pointNames, allShapes, minSegLength, debug);
 

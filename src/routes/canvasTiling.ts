@@ -43,7 +43,7 @@ export const canvasTiling = async (
     paint.setAntiAlias(true);
     ctx.drawRect(pk.LTRBRect(0, 0, size, size), paint);
 
-    const margin = 3.5;
+    const margin = 0.5;
 
     ctx.scale(size / (2 + margin * 2), size / (2 + margin * 2));
     ctx.translate(1 + margin, 1 + margin);
@@ -105,7 +105,7 @@ export const canvasTiling = async (
     }
 
     const showLines = true;
-    if (showLines) {
+    if (showLines && !data.woven) {
         const byColor = data.allSegments
             .map((seg, i) => ({seg, path: data.paths[i].pathId}))
             .sort((a, b) => a.path! - b.path!);
@@ -124,7 +124,8 @@ export const canvasTiling = async (
             );
         });
     }
-    if (2 > 1) {
+
+    if (data.woven) {
         const back = new pk.Paint();
         back.setStyle(pk.PaintStyle.Stroke);
         back.setColor([0, 0, 0]);
@@ -142,7 +143,7 @@ export const canvasTiling = async (
         back.setAlphaf(0.5);
         const off = 0; //data.minSegLength / 5;
 
-        data.woven?.forEach(({points, pathId}) => {
+        data.woven.forEach(({points, pathId}) => {
             // front.setColor(pathId == null ? [1, 1, 1] : hslToHex((pathId % 12) * 30, 100, 50));
 
             const pathb = pk.Path.MakeFromCmds(
@@ -166,16 +167,16 @@ export const canvasTiling = async (
         });
     }
 
-    data.allSegments.flat().forEach((pt) => {
-        ctx.drawCircle(pt.x, pt.y, data.minSegLength / 4, paint);
-    });
+    // data.allSegments.flat().forEach((pt) => {
+    //     ctx.drawCircle(pt.x, pt.y, data.minSegLength / 4, paint);
+    // });
 
-    const front = new pk.Paint();
-    front.setStyle(pk.PaintStyle.Fill);
-    front.setColor([1, 1, 1]);
-    data.eigenPoints.forEach((pt) => {
-        ctx.drawCircle(pt.x, pt.y, data.minSegLength / 5, front);
-    });
+    // const front = new pk.Paint();
+    // front.setStyle(pk.PaintStyle.Fill);
+    // front.setColor([1, 1, 1]);
+    // data.eigenPoints.forEach((pt) => {
+    //     ctx.drawCircle(pt.x, pt.y, data.minSegLength / 5, front);
+    // });
 
     const img = surface.makeImageSnapshot();
     const bytes = img.encodeToBytes()!;

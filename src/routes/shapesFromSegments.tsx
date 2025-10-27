@@ -452,11 +452,11 @@ Sooo the data type looks like a list of lists of Coords.
 export const pathsFromSegments = (
     segs: [Coord, Coord][],
     byEndPoint: EndPointMap,
-    outer?: Coord[],
+    outer?: Coord[] | null,
 ) => {
     // Ensure ordering
     segs.forEach((seg) => seg.sort((a, b) => (closeEnough(a.x, b.x) ? a.y - b.y : a.x - b.x)));
-    const outerKeys = outer?.map(coordKey) ?? [];
+    const outerKeys = outer?.map((x) => coordKey(x)) ?? [];
 
     // ok folks I need a better calculation of ... the boundary.
     // probably what I should do is find a coord on the edge
