@@ -8,11 +8,12 @@
  * to separate non-component exports into their own files.
  *
  * Usage:
- *   bun scripts/fix-non-component-exports.ts [--dry-run] [--execute]
+ *   bun scripts/fix-non-component-exports.ts [--dry-run] [--execute] [--group-types]
  *
  * Options:
- *   --dry-run   Show what would be extracted without generating commands (default)
- *   --execute   Actually run the extract-definition commands
+ *   --dry-run      Show what would be extracted without generating commands (default)
+ *   --execute      Actually run the extract-definition commands
+ *   --group-types  Group types/interfaces together into a single file per component file
  *
  * Examples:
  *   bun scripts/fix-non-component-exports.ts
@@ -306,6 +307,7 @@ function generateTargetPath(sourceFile: string, exportName: string, kind: string
 async function main() {
     const args = process.argv.slice(2);
     const execute = args.includes('--execute');
+    const groupTypes = args.includes('--group-types');
     const dryRun = !execute;
 
     console.log('🔍 Scanning project for files with mixed component/non-component exports...\n');
@@ -345,12 +347,45 @@ async function main() {
                 // Generate extract commands for non-components
                 const nonComponents = analysis.exports.filter(e => e.type === 'non-component' && e.name !== 'default');
 
-                for (const exp of nonComponents) {
-                    const targetPath = generateTargetPath(file, exp.name, exp.kind);
-                    const relativeTarget = path.relative(process.cwd(), targetPath);
+                if (groupTypes) {
+                    // Group by type category
+                    const typeExports = nonComponents.filter(e => e.kind === 'type' || e.kind === 'interface' || e.kind === 'enum');
+                    const otherExports = nonComponents.filter(e => e.kind !== 'type' && e.kind !== 'interface' && e.kind !== 'enum');
 
-                    const command = `pnpm extract-definition "${relativePath}" "${exp.name}" "${relativeTarget}"`;
-                    commands.push(command);
+                    // Extract types together if there are multiple
+                    if (typeExports.length > 1) {
+                        const dir = path.dirname(file);
+                        const baseName = path.basename(file, path.extname(file));
+                        const targetPath = path.join(dir, `${baseName}.types.ts`);
+                        const relativeTarget = path.relative(process.cwd(), targetPath);
+                        const typeNames = typeExports.map(e => e.name).join(',');
+
+                        const command = `pnpm extract-definition "${relativePath}" "${typeNames}" "${relativeTarget}"`;
+                        commands.push(command);
+                    } else if (typeExports.length === 1) {
+                        // Single type - extract to its own file
+                        const exp = typeExports[0];
+                        const targetPath = generateTargetPath(file, exp.name, exp.kind);
+                        const relativeTarget = path.relative(process.cwd(), targetPath);
+                        const command = `pnpm extract-definition "${relativePath}" "${exp.name}" "${relativeTarget}"`;
+                        commands.push(command);
+                    }
+
+                    // Extract other non-components individually
+                    for (const exp of otherExports) {
+                        const targetPath = generateTargetPath(file, exp.name, exp.kind);
+                        const relativeTarget = path.relative(process.cwd(), targetPath);
+                        const command = `pnpm extract-definition "${relativePath}" "${exp.name}" "${relativeTarget}"`;
+                        commands.push(command);
+                    }
+                } else {
+                    // Extract each non-component individually
+                    for (const exp of nonComponents) {
+                        const targetPath = generateTargetPath(file, exp.name, exp.kind);
+                        const relativeTarget = path.relative(process.cwd(), targetPath);
+                        const command = `pnpm extract-definition "${relativePath}" "${exp.name}" "${relativeTarget}"`;
+                        commands.push(command);
+                    }
                 }
             }
         } catch (error: any) {
