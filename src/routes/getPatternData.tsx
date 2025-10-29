@@ -27,12 +27,12 @@ import {
     cmpCoords,
     edgesByEndpoint,
     joinAdjacentShapeSegments,
-    outerBoundary,
-    pathsFromSegments,
     shapesFromSegments,
     unique,
-    weaveIntersections,
 } from './shapesFromSegments';
+import {pathsFromSegments} from './pathsFromSegments';
+import {outerBoundary} from './outerBoundary';
+import {weaveIntersections} from './weaveIntersections';
 
 const pkPathFromCoords = (coords: Coord[]) =>
     pk.Path.MakeFromCmds([
@@ -138,8 +138,11 @@ export const getPatternData = (tiling: Tiling, debug = false) => {
 
     const ttt = tilingTransforms(tiling.shape, pts[2], pts);
 
-    const allSegments = applyTilingTransforms(eigenSegments, ttt).map((seg) =>
-        cmpCoords(seg[0], seg[1]) === 1 ? ([seg[1], seg[0]] as [Coord, Coord]) : seg,
+    const allSegments = unique(
+        applyTilingTransforms(eigenSegments, ttt).map((seg) =>
+            cmpCoords(seg[0], seg[1]) === 1 ? ([seg[1], seg[0]] as [Coord, Coord]) : seg,
+        ),
+        ([a, b]) => `${coordKey(a)}:${coordKey(b)}`,
     );
 
     const byEndPoint = edgesByEndpoint(allSegments);

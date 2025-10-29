@@ -133,7 +133,7 @@ export const canvasTiling = async (
     // 205, 127, 5
     front.setStrokeWidth(data.minSegLength / 3);
     front.setAntiAlias(true);
-    front.setStrokeCap(pk.StrokeCap.Round);
+    front.setStrokeCap(pk.StrokeCap.Butt);
 
     if (data.woven) {
         const back = new pk.Paint();
@@ -141,8 +141,8 @@ export const canvasTiling = async (
         back.setColor([0, 0, 0]);
         back.setStrokeWidth(data.minSegLength / 1.5);
         back.setAntiAlias(true);
-        // back.setStrokeCap(pk.StrokeCap.Round);
-        back.setAlphaf(0.5);
+        back.setStrokeCap(pk.StrokeCap.Butt);
+        // back.setAlphaf(0.5);
         const off = 0; //data.minSegLength / 5;
 
         data.woven.forEach(({points, pathId}) => {

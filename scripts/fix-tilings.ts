@@ -3,7 +3,8 @@ import {dist} from '../src/rendering/getMirrorTransforms';
 import {coordsEqual} from '../src/rendering/pathsAreIdentical';
 import {db, getAllPatterns, saveAllPatterns} from '../src/routes/db.server';
 import {preTransformTiling} from '../src/routes/getPatternData';
-import {cutSegments, flipPattern, splitOverlappingSegs} from '../src/routes/shapesFromSegments';
+import {cutSegments, splitOverlappingSegs} from '../src/routes/shapesFromSegments';
+import {flipPattern} from '../src/routes/flipPattern';
 import {Coord, Tiling} from '../src/types';
 
 const patterns = getAllPatterns();

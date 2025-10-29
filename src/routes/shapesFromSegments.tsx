@@ -1,23 +1,19 @@
 import {boundsForCoords, PendingBounds} from '../editor/Bounds';
 import {Bounds} from '../editor/Bounds';
-import {tilingPoints} from '../editor/tilingPoints';
 import {coordKey} from '../rendering/coordKey';
-import {closeEnough, closeEnoughAngle, epsilon, negPiToPi} from '../rendering/epsilonToZero';
+import {closeEnough, closeEnoughAngle, epsilon} from '../rendering/epsilonToZero';
 import {
     angleTo,
-    applyMatrices,
     dist,
     Matrix,
-    rotationMatrix,
     scaleMatrix,
     translationMatrix,
 } from '../rendering/getMirrorTransforms';
 import {lineLine, lineToSlope} from '../rendering/intersect';
-import {angleBetween} from '../rendering/isAngleBetween';
 import {coordsEqual} from '../rendering/pathsAreIdentical';
 import {isClockwisePoints} from '../rendering/pathToPoints';
-import {transformSegment} from '../rendering/points';
 import {Coord, Segment, Tiling} from '../types';
+import {discoverShape} from './discoverShape';
 import {centroid} from './findReflectionAxes';
 import {getPatternData} from './getPatternData';
 
@@ -194,7 +190,10 @@ export const joinAdjacentShapeSegments = (segs: Coord[]) => {
     });
 };
 
-type EndPointMap = Record<string, {exits: {idx: number; theta: number; to: Coord}[]; pos: Coord}>;
+export type EndPointMap = Record<
+    string,
+    {exits: {idx: number; theta: number; to: Coord}[]; pos: Coord}
+>;
 
 export const edgesByEndpoint = (segs: [Coord, Coord][]) => {
     const byEndPoint: EndPointMap = {};
@@ -226,140 +225,9 @@ const onEdge = (pos: Coord, bounds: Bounds) =>
     closeEnough(pos.y, bounds.y0) ||
     closeEnough(pos.y, bounds.y1);
 
-/*
-weaving paths:
-each intersection needs to be annotated with (1) over (-1) under or (0) no change
-
-start at one intersection, pick one to go one way.
-add neighbors to the frontier, with (back-point) and (back-side=-1[under] or 1[over])
-then consider the fronteir
-*/
-
-export const weaveIntersections = (segs: [Coord, Coord][], segLinks: SegLink[]) => {
-    /*
-    intersection can have multiple pairs
-    pairs are identified by [segid]:[segid]
-    need a map: [seg]:neighbors[]
-
-    intersection key is segid[].sort().join(',')
-    */
-    type Inter = {
-        elevation?: -1 | 1 | 0;
-        pos: Coord;
-        exits: number[];
-        key: string;
-        other?: string;
-        pathId?: number;
-    };
-    const intersections: Record<string, Inter> = {};
-    const byCoord: Record<string, Inter> = {};
-
-    let weird = false;
-
-    // OK first go through and produce all intersections
-    const segInts = segLinks.map((links, i) => {
-        const left: Inter = {
-            exits: [i, ...links.left].sort(),
-            pos: segs[i][0],
-            key: '',
-            pathId: links.pathId,
-        };
-        left.key = left.exits.join(',');
-        if (!intersections[left.key]) {
-            intersections[left.key] = left;
-            const lpos = coordKey(left.pos);
-            if (byCoord[lpos]) {
-                if (byCoord[lpos].other) {
-                    weird = true;
-                    // return;
-                } else {
-                    byCoord[lpos].other = left.key;
-                    left.other = byCoord[lpos].key;
-                }
-            } else {
-                byCoord[lpos] = left;
-            }
-        }
-        const right: Inter = {
-            exits: [i, ...links.right].sort(),
-            pos: segs[i][1],
-            key: '',
-            pathId: links.pathId,
-        };
-        right.key = right.exits.join(',');
-
-        if (!intersections[right.key]) {
-            intersections[right.key] = right;
-            const rpos = coordKey(right.pos);
-            if (byCoord[rpos]) {
-                if (byCoord[rpos].other) {
-                    weird = true;
-                    // return;
-                } else {
-                    byCoord[rpos].other = right.key;
-                    right.other = byCoord[rpos].key;
-                }
-            } else {
-                byCoord[rpos] = right;
-            }
-        }
-
-        return [left.key, right.key];
-    });
-
-    // if (weird) return;
-
-    const first = Object.keys(intersections).find((k) => intersections[k].other != null);
-    if (!first) return;
-    const int = intersections[first];
-    int.elevation = 1;
-    type Front = {seg: number; backKey: string; nextEl: 1 | -1};
-    const frontier: Front[] = int.exits.map((seg) => ({seg, backKey: int.key, nextEl: -1}));
-    const oppo = intersections[int.other!];
-    oppo.elevation = -1;
-    frontier.push(...oppo.exits.map((seg): Front => ({seg, backKey: oppo.key, nextEl: 1})));
-
-    while (frontier.length) {
-        const next = frontier.shift()!;
-        if (!segInts[next.seg]) continue;
-        const [left, right] = segInts[next.seg]!;
-        const neighbor = left === next.backKey ? right : left;
-        const int = intersections[neighbor];
-        if (int.elevation != null) continue;
-        if (int.other) {
-            int.elevation = next.nextEl;
-            const rev = (next.nextEl * -1) as 1 | -1;
-            const oppo = intersections[int.other];
-            oppo.elevation = rev;
-            frontier.push(...int.exits.map((seg): Front => ({seg, backKey: int.key, nextEl: rev})));
-            frontier.push(
-                ...oppo.exits.map((seg): Front => ({seg, backKey: oppo.key, nextEl: next.nextEl})),
-            );
-        } else {
-            int.elevation = 0;
-            frontier.push(
-                ...int.exits.map((seg): Front => ({seg, backKey: int.key, nextEl: next.nextEl})),
-            );
-        }
-    }
-
-    type Woven = {points: Coord[][]; order: number};
-    return Object.values(intersections)
-        .map((int) => {
-            const neighbors = int.exits
-                .map((seg) => (segInts[seg]?.[0] === int.key ? segInts[seg][1] : segInts[seg]?.[0]))
-                .map((key) => (key ? midPoint(intersections[key].pos, int.pos) : null))
-                .filter(Boolean) as Coord[];
-
-            const pairs = allPairs(neighbors).map(([a, b]) => [a, int.pos, b]);
-            return {points: pairs, order: int.elevation ?? 0, pathId: int.pathId};
-        })
-        .sort((a, b) => a.order - b.order);
-};
-
 export const midPoint = (a: Coord, b: Coord) => ({x: (a.x + b.x) / 2, y: (a.y + b.y) / 2});
 
-const allPairs = <T,>(items: T[]): [T, T][] => {
+export const allPairs = <T,>(items: T[]): [T, T][] => {
     const res: [T, T][] = [];
     for (let i = 0; i < items.length; i++) {
         for (let j = i + 1; j < items.length; j++) {
@@ -369,209 +237,9 @@ const allPairs = <T,>(items: T[]): [T, T][] => {
     return res;
 };
 
-type SegLink = {left: number[]; right: number[]; pathId?: number};
-
-export const outerBoundary = (
-    segs: [Coord, Coord][],
-    byEndPoint: EndPointMap,
-    pointNames: Record<string, number>,
-) => {
-    let mostest: Coord | null = null;
-    const check = (a: Coord) => {
-        if (mostest) {
-            if (closeEnough(mostest.x, a.x)) {
-                if (mostest.y > a.y) {
-                    mostest = a;
-                }
-            } else if (mostest.x > a.x) {
-                mostest = a;
-            }
-        } else {
-            mostest = a;
-        }
-        // if (!mostest || mostest.x > a.x + epsilon) mostest = a;
-    };
-    segs.forEach(([a, b]) => {
-        check(a);
-        check(b);
-    });
-    if (!mostest) {
-        console.error('no point?');
-        return null;
-    }
-    const exits = byEndPoint[coordKey(mostest)].exits;
-    // console.log(`most`, pointNames[coordKey(mostest)]);
-    // console.log(exits.map((e) => pointNames[coordKey(e.to)]));
-    const used: Record<string, true> = {};
-    const found = exits
-        .map((seg) => {
-            const sk = `${coordKey(mostest!)}:${coordKey(seg.to)}`;
-            if (used[sk]) return;
-            const {points, ranout} = discoverShape(mostest!, seg, used, byEndPoint, false, 1000);
-            if (points.length === 100 || ranout) {
-                console.warn('bad news, shape is bad');
-                return;
-            }
-            // return points;
-            if (!isClockwisePoints(points)) {
-                return points;
-            } else {
-                // console.log('found a clockwise one');
-                return;
-            }
-        })
-        .filter(Boolean) as Coord[][];
-    // console.log(
-    //     'boundary',
-    //     found.map((f) => f?.length),
-    // );
-    // console.log(found.map((f) => f.map((c) => pointNames[coordKey(c)])));
-    if (found.length > 1) {
-        console.warn(`weird that we found multiple boundaries`);
-        const bySize = found
-            .map((points) => ({points, area: calcPolygonArea(points)}))
-            .sort((a, b) => b.area - a.area);
-        return bySize[0].points;
-    }
-    if (!found.length) {
-        console.error(`no bounadry at all`);
-    }
-    return found.length ? found[0] : null;
-};
+export type SegLink = {left: number[]; right: number[]; pathId?: number};
 
 export const cmpCoords = (a: Coord, b: Coord) => (closeEnough(a.x, b.x) ? a.y - b.y : a.x - b.x);
-
-/*
-ok so for a normal two-color pattern, I could just do straight lines, presumably as a single list of Coords.
-but for other things, we'll need to supoprt like a three-way intersection, with lines going in each direction.
-Sooo the data type looks like a list of lists of Coords.
-*/
-export const pathsFromSegments = (
-    segs: [Coord, Coord][],
-    byEndPoint: EndPointMap,
-    outer?: Coord[] | null,
-) => {
-    // Ensure ordering
-    segs.forEach((seg) => seg.sort((a, b) => (closeEnough(a.x, b.x) ? a.y - b.y : a.x - b.x)));
-    const outerKeys = outer?.map((x) => coordKey(x)) ?? [];
-
-    // ok folks I need a better calculation of ... the boundary.
-    // probably what I should do is find a coord on the edge
-    // and do a "clockwise shape walk".
-    // const bounds = boundsForCoords(...segs.flat());
-
-    const segLinks: SegLink[] = segs.map((_) => ({
-        left: [],
-        right: [],
-    }));
-
-    const link = (one: number, two: number, key: string) => {
-        if (coordKey(segs[one][0]) === key) {
-            if (outerKeys.includes(coordKey(segs[one][0]))) return;
-            segLinks[one]!.left.push(two);
-        } else {
-            if (outerKeys.includes(coordKey(segs[one][1]))) return;
-            // if (onEdge(segs[one][1], bounds)) return;
-            segLinks[one]!.right.push(two);
-        }
-        if (coordKey(segs[two][0]) === key) {
-            segLinks[two]!.left.push(one);
-        } else {
-            segLinks[two]!.right.push(one);
-        }
-    };
-
-    Object.entries(byEndPoint).forEach(([key, {exits}]) => {
-        if (outerKeys.includes(key)) return;
-        if (exits.length === 2) {
-            link(exits[0].idx, exits[1].idx, key);
-        } else if (exits.length % 2 === 0) {
-            exits.sort((a, b) => a.theta - b.theta);
-            // every opposite
-            const half = exits.length / 2;
-            for (let i = 0; i < half; i++) {
-                link(exits[i].idx, exits[i + half].idx, key);
-            }
-        } else {
-            // every to every
-            for (let i = 0; i < exits.length - 1; i++) {
-                for (let j = i + 1; j < exits.length; j++) {
-                    link(exits[i].idx, exits[j].idx, key);
-                }
-            }
-        }
-    });
-
-    let nextPathId = 0;
-    const follow = (at: number, pathId?: number) => {
-        const link = segLinks[at];
-        const seg = segs[at];
-        if (outerKeys.includes(coordKey(seg[0])) && outerKeys.includes(coordKey(seg[1]))) return;
-        if (link.pathId != null) return;
-        if (pathId == null) pathId = nextPathId++;
-        link.pathId = pathId;
-        link.left.forEach((id) => follow(id, pathId));
-        link.right.forEach((id) => follow(id, pathId));
-    };
-
-    segLinks.forEach((sl, i) => {
-        if (sl.pathId != null) return;
-        follow(i);
-    });
-
-    return segLinks;
-};
-
-const discoverShape = (
-    point: Coord,
-    seg: {idx: number; theta: number; to: Coord},
-    used: Record<string, true>,
-    byEndPoint: EndPointMap,
-    clockwise = true,
-    maxPoints = 100,
-    // log?: Record<string, number>,
-) => {
-    let at = seg;
-    const points = [point, seg.to];
-    const pks: string[] = [coordKey(seg.to)];
-    let ranout = false;
-    while (points.length < maxPoints) {
-        const nexts = byEndPoint[coordKey(at.to)].exits
-            .filter((seg) => !pks.includes(coordKey(seg.to)))
-            .filter((seg) => !coordsEqual(seg.to, points[points.length - 2]))
-            .map((seg) => ({
-                seg,
-                cctheta: angleBetween(negPiToPi(at.theta + Math.PI), seg.theta, clockwise),
-            }))
-            .sort((a, b) => a.cctheta - b.cctheta);
-
-        if (!nexts.length) {
-            ranout = true;
-            break;
-        }
-        const next = nexts[0];
-        // if (nexts.length > 1 && closeEnough(nexts[1].cctheta, next.cctheta)) {
-        //     // throw new Error(`overlalappap`);
-        //     console.log('overlllap', nexts);
-        // }
-
-        const sk = `${coordKey(at.to)}:${coordKey(next.seg.to)}`;
-        // if (used[sk]) {
-        //     console.warn(`somehow double-using a segment`, sk);
-        // }
-        used[sk] = true;
-
-        if (coordsEqual(points[0], next.seg.to)) {
-            break;
-        }
-
-        at = next.seg;
-        points.push(at.to);
-        pks.push(coordKey(at.to));
-    }
-
-    return {points, ranout};
-};
 
 export const shapesFromSegments = (byEndPoint: EndPointMap, eigenPoints: Coord[]) => {
     const used: Record<string, true> = {};
@@ -657,7 +325,7 @@ export const chooseCorner = (options: Coord[], shapes: Coord[][]) => {
     return bySize;
 };
 
-const shouldFlipTriangle = (
+export const shouldFlipTriangle = (
     rotHyp: boolean,
     internalAngle: number,
     tiling: Tiling,
@@ -723,7 +391,7 @@ const rectDims = (a: Coord, b: Coord, c: Coord, d: Coord) => {
     return {w, h};
 };
 
-const getRectangleTransform = (tiling: Tiling, data: ReturnType<typeof getPatternData>) => {
+export const getRectangleTransform = (tiling: Tiling, data: ReturnType<typeof getPatternData>) => {
     let {shape, cache} = tiling;
     if (shape.type !== 'parallellogram') {
         return;
@@ -784,69 +452,7 @@ const getRectangleTransform = (tiling: Tiling, data: ReturnType<typeof getPatter
     // return [...tx, rotationMatrix(Math.PI / 2), scaleMatrix(1, -1), scaleMatrix(w / h, w / h)];
 };
 
-export const flipPattern = (tiling: Tiling): Tiling => {
-    let {shape, cache} = tiling;
-    if (shape.type === 'right-triangle') {
-        const pts = tilingPoints(tiling.shape);
-        const bounds = pts;
-        let [start, corner, end] = bounds;
-
-        let internalAngle = angleBetween(angleTo(start, corner), angleTo(start, end), true);
-        if (!shouldFlipTriangle(shape.rotateHypotenuse, internalAngle, tiling, start, end)) {
-            return tiling;
-        }
-
-        const tx = [
-            translationMatrix({x: -end.x, y: -end.y}),
-            scaleMatrix(1, -1),
-            rotationMatrix(Math.PI / 2),
-            scaleMatrix(-1 / end.y, -1 / end.y),
-        ];
-
-        shape = {...shape};
-        cache = {...cache};
-
-        start = applyMatrices(start, tx);
-        end = applyMatrices(end, tx);
-        corner = applyMatrices(corner, tx);
-
-        cache.segments = cache.segments.map((seg) => ({
-            prev: applyMatrices(seg.prev, tx),
-            segment: transformSegment(seg.segment, tx),
-        }));
-        return {...tiling, cache, shape: {...shape, start: end, corner, end: start}};
-    }
-    if (shape.type === 'parallellogram') {
-        const data = getPatternData(tiling);
-        const tx = getRectangleTransform(tiling, data);
-        if (!tx?.length) return tiling;
-
-        console.log('transform para', tx);
-
-        shape = {...shape};
-        cache = {...cache};
-
-        const points = shape.points.map((p) => applyMatrices(p, tx));
-
-        console.log('transformed points', points, 'ordered', rectPointsInOrder(points));
-
-        cache.segments = cache.segments.map((seg) => ({
-            prev: applyMatrices(seg.prev, tx),
-            segment: transformSegment(seg.segment, tx),
-        }));
-        return {
-            ...tiling,
-            cache,
-            shape: {
-                ...shape,
-                points: rectPointsInOrder(points),
-            },
-        };
-    }
-    return tiling;
-};
-
-const rectPointsInOrder = (points: Coord[]): [Coord, Coord, Coord, Coord] => {
+export const rectPointsInOrder = (points: Coord[]): [Coord, Coord, Coord, Coord] => {
     const [a, b, d, c] = points.toSorted((a, b) => (closeEnough(a.y, b.y) ? a.x - b.x : b.y - a.y));
     return [a, b, c, d];
 };

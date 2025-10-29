@@ -4,7 +4,7 @@ import {getPattern} from './db.server';
 import {canvasTiling} from './canvasTiling';
 import {getPatternData, preTransformTiling} from './getPatternData';
 import {TilingPattern} from './ShowTiling';
-import {flipPattern} from './shapesFromSegments';
+import {flipPattern} from './flipPattern';
 
 const pngCache: Record<string, Buffer<ArrayBuffer>> = {};
 
