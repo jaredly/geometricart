@@ -138,6 +138,7 @@ export const canvasTiling = async (
     if (data.woven) {
         const back = new pk.Paint();
         back.setStyle(pk.PaintStyle.Stroke);
+        // back.setColor([0.5, 0.5, 0.5]);
         back.setColor([0, 0, 0]);
         back.setStrokeWidth(data.minSegLength / 1.5);
         back.setAntiAlias(true);
@@ -145,27 +146,50 @@ export const canvasTiling = async (
         // back.setAlphaf(0.5);
         const off = 0; //data.minSegLength / 5;
 
-        data.woven.forEach(({points, pathId}) => {
+        const orders = data.woven.map((w) => w.order);
+        const minOrder = Math.min(...orders);
+        const orderScale = Math.max(...orders) - minOrder;
+
+        data.woven.forEach(({points, pathId, isBack, order}) => {
             // front.setColor(pathId == null ? [1, 1, 1] : hslToHex((pathId % 12) * 30, 100, 50));
+            // front.setColor(hslToHex(0, 100, ((order - minOrder) / orderScale) * 100));
+            // front.setColor(hslToHex(((order - minOrder) / orderScale) * 300, 100, 50));
+            front.setStrokeWidth(data.minSegLength / (isBack ? 1.5 : 3));
+            // front.setStrokeWidth(data.minSegLength / (isBack ? 3 : 8));
 
-            const pathb = pk.Path.MakeFromCmds(
-                points.flatMap((path) =>
-                    path.flatMap((p, i) => [
-                        i === 0 ? pk.MOVE_VERB : pk.LINE_VERB,
-                        p.x + off,
-                        p.y + off,
-                    ]),
-                ),
-            )!;
-            ctx.drawPath(pathb, back);
-
-            const path = pk.Path.MakeFromCmds(
-                points.flatMap((path) =>
+            points.forEach((path) => {
+                const pathb = pk.Path.MakeFromCmds(
                     path.flatMap((p, i) => [i === 0 ? pk.MOVE_VERB : pk.LINE_VERB, p.x, p.y]),
-                ),
-            )!;
+                )!;
+                // ctx.drawPath(pathb, front);
+                ctx.drawPath(pathb, isBack ? back : front);
+            });
 
-            ctx.drawPath(path, front);
+            // const pathb = pk.Path.MakeFromCmds(
+            //     points.flatMap((path) =>
+            //         path.flatMap((p, i) => [
+            //             i === 0 ? pk.MOVE_VERB : pk.LINE_VERB,
+            //             p.x + off,
+            //             p.y + off,
+            //         ]),
+            //     ),
+            // )!;
+            // ctx.drawPath(pathb, back);
+
+            // const path = pk.Path.MakeFromCmds(
+            //     points.flatMap((path) =>
+            //         path.flatMap((p, i) => [i === 0 ? pk.MOVE_VERB : pk.LINE_VERB, p.x, p.y]),
+            //     ),
+            // )!;
+
+            // points.forEach((path) => {
+            //     const pathb = pk.Path.MakeFromCmds(
+            //         path.flatMap((p, i) => [i === 0 ? pk.MOVE_VERB : pk.LINE_VERB, p.x, p.y]),
+            //     )!;
+            //     ctx.drawPath(pathb, front);
+            // });
+
+            // ctx.drawPath(path, front);
         });
     }
 

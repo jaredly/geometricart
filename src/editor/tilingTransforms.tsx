@@ -32,7 +32,7 @@ export function replicateStandard(tx: number, ty: number): Matrix[][][] {
     return [
         [[scaleMatrix(-1, 1)]],
         [[scaleMatrix(1, -1)]],
-        // duplicates.map(([x, y]) => [translationMatrix({x, y})]),
+        duplicates.map(([x, y]) => [translationMatrix({x, y})]),
     ];
 }
 

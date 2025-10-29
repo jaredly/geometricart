@@ -124,17 +124,64 @@ export const weaveIntersections = (segs: [Coord, Coord][], segLinks: SegLink[]) 
 
     // console.log('Intersections', intersections);
 
-    type Woven = {points: Coord[][]; order: number};
+    type Woven = {points: Coord[][]; order: number; isBack?: boolean; pathId?: number};
     return Object.values(intersections)
-        .map((int) => {
-            const neighbors = int.exits
-                .map((seg) => (segInts[seg]?.[0] === int.key ? segInts[seg][1] : segInts[seg]?.[0]))
-                .map((key) => (key ? midPoint(intersections[key].pos, int.pos) : null))
-                .filter(Boolean) as Coord[];
+        .flatMap((int): Woven[] => {
+            const el = int.elevation ?? -2;
+            const backOff = -0.35;
 
-            const pairs = allPairs(neighbors).map(([a, b]) => [a, int.pos, b]);
-            // console.log(`Got a ${int.key}`, pairs, int.elevation);
-            return {points: pairs, order: int.elevation ?? 0, pathId: int.pathId};
+            const mids = int.exits
+                .map((seg) => (segInts[seg][0] === int.key ? segInts[seg][1] : segInts[seg][0]))
+                .flatMap((key): Woven[] => {
+                    const other = intersections[key].elevation ?? -2;
+                    const mid = el + (other - el) * 0.3;
+                    return [
+                        {
+                            points: [
+                                [
+                                    midPoint(int.pos, intersections[key].pos, 0.26),
+                                    midPoint(int.pos, intersections[key].pos, 0.5),
+                                ],
+                            ],
+                            order: mid + backOff,
+                            pathId: int.pathId,
+                            isBack: true,
+                        },
+                        {
+                            points: [
+                                [
+                                    midPoint(int.pos, intersections[key].pos, 0.25),
+                                    midPoint(int.pos, intersections[key].pos, 0.51),
+                                ],
+                            ],
+                            order: mid,
+                            pathId: int.pathId,
+                        },
+                    ];
+                });
+
+            const neighbors = int.exits
+                .map((seg) => (segInts[seg][0] === int.key ? segInts[seg][1] : segInts[seg][0]))
+                .map((key) => midPoint(int.pos, intersections[key].pos, 0.3));
+
+            const second = int.exits
+                .map((seg) => (segInts[seg][0] === int.key ? segInts[seg][1] : segInts[seg][0]))
+                .map((key) => midPoint(int.pos, intersections[key].pos, 0.31));
+
+            return [
+                ...mids,
+                {
+                    points: allPairs(neighbors).map(([a, b]) => [a, int.pos, b]),
+                    order: el + backOff,
+                    pathId: int.pathId,
+                    isBack: true,
+                },
+                {
+                    points: allPairs(second).map(([a, b]) => [a, int.pos, b]),
+                    order: el,
+                    pathId: int.pathId,
+                },
+            ];
         })
         .sort((a, b) => a.order - b.order);
 };

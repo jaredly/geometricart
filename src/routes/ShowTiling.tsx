@@ -272,30 +272,58 @@ export const TilingPattern = ({
 
     const showWoven = true;
     if (data.woven && showWoven) {
-        data.woven.forEach(({points, pathId}, i) => {
+        data.woven.forEach(({points, pathId, order, isBack}, i) => {
             lines.push(
-                ...points.map((path, j) => (
-                    <path
-                        key={`lines-${i}-${j}`}
-                        d={shapeD(path, false)}
-                        stroke={'black'}
-                        strokeWidth={data.minSegLength / 1.5}
-                        strokeLinecap="butt"
-                        // opacity={0.5}
-                        fill="none"
-                    />
-                )),
+                // ...points.map((path, j) => (
+                //     <path
+                //         key={`lines-${i}-${j}`}
+                //         d={shapeD(path, false)}
+                //         stroke={'black'}
+                //         strokeWidth={data.minSegLength / 1.5}
+                //         strokeLinecap="butt"
+                //         // opacity={0.5}
+                //         fill="none"
+                //     />
+                // )),
                 ...points.map((path, j) => (
                     <path
                         key={`linesx-${i}-${j}`}
                         d={shapeD(path, false)}
-                        stroke={'rgb(205,127,1)'}
+                        stroke={
+                            // isBack ? 'black' : `white`
+                            // isBack ? 'black' : `hsl(${((order + 2) / 3) * 330} 100% 50%)`
+                            // order === -1
+                            //     ? 'red'
+                            //     : order === 0
+                            //       ? 'blue'
+                            //       : order === 1
+                            //         ? 'green'
+                            //         : 'yellow'
+                            isBack ? 'black' : 'rgb(205,127,1)'
+                        }
                         fill="none"
-                        strokeLinecap="butt"
-                        strokeWidth={data.minSegLength / 3}
+                        // strokeLinecap={isBack ? 'butt' : 'round'}
+                        // opacity={0.8}
+                        strokeWidth={isBack ? data.minSegLength / 1.5 : data.minSegLength / 3}
                     />
                 )),
             );
+            // texts.push(
+            //     <text
+            //         x={mid.x}
+            //         y={mid.y}
+            //         fontSize={data.minSegLength / 3}
+            //         strokeWidth={data.minSegLength / 10}
+            //         strokeLinejoin="round"
+            //         textAnchor="middle"
+            //         stroke="white"
+            //     >
+            //         {order}
+            //     </text>,
+            //     <text x={mid.x} y={mid.y} textAnchor="middle" fontSize={data.minSegLength / 3}>
+            //         {order}
+            //     </text>,
+            // );
 
             // const pathb = pk.Path.MakeFromCmds(
             //     points.flatMap((path) =>

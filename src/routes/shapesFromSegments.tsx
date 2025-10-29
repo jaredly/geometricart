@@ -225,7 +225,10 @@ const onEdge = (pos: Coord, bounds: Bounds) =>
     closeEnough(pos.y, bounds.y0) ||
     closeEnough(pos.y, bounds.y1);
 
-export const midPoint = (a: Coord, b: Coord) => ({x: (a.x + b.x) / 2, y: (a.y + b.y) / 2});
+export const midPoint = (a: Coord, b: Coord, perc = 0.5) => ({
+    x: a.x + (b.x - a.x) * perc,
+    y: a.y + (b.y - a.y) * perc,
+});
 
 export const allPairs = <T,>(items: T[]): [T, T][] => {
     const res: [T, T][] = [];
