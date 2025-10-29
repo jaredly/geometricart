@@ -313,10 +313,94 @@ async function extractDefinition(options: ExtractOptions) {
     fs.writeFileSync(targetFile, newFileContent, 'utf-8');
     console.log(`✓ Created ${targetFile}`);
 
-    // Update the source file - remove all definitions and add re-exports
-    const relativeImport = getRelativeImportPath(sourceFile, targetFile);
+    // Find all definitions in the source file (to detect same-file dependencies)
+    const allSourceDefinitions = new Set<string>();
+    traverse(ast, {
+        ExportNamedDeclaration(nodePath: NodePath<t.ExportNamedDeclaration>) {
+            const name = nodePath.node.declaration && getDeclarationName(nodePath.node.declaration);
+            if (name) allSourceDefinitions.add(name);
+        },
+        FunctionDeclaration(nodePath: NodePath<t.FunctionDeclaration>) {
+            if (nodePath.node.id?.name && (!nodePath.parent || t.isProgram(nodePath.parent))) {
+                allSourceDefinitions.add(nodePath.node.id.name);
+            }
+        },
+        ClassDeclaration(nodePath: NodePath<t.ClassDeclaration>) {
+            if (nodePath.node.id?.name && (!nodePath.parent || t.isProgram(nodePath.parent))) {
+                allSourceDefinitions.add(nodePath.node.id.name);
+            }
+        },
+        VariableDeclaration(nodePath: NodePath<t.VariableDeclaration>) {
+            nodePath.node.declarations.forEach((d: t.VariableDeclarator) => {
+                if (t.isIdentifier(d.id) && (!nodePath.parent || t.isProgram(nodePath.parent))) {
+                    allSourceDefinitions.add(d.id.name);
+                }
+            });
+        },
+        TSTypeAliasDeclaration(nodePath: NodePath<t.TSTypeAliasDeclaration>) {
+            if (!nodePath.parent || t.isProgram(nodePath.parent)) {
+                allSourceDefinitions.add(nodePath.node.id.name);
+            }
+        },
+        TSInterfaceDeclaration(nodePath: NodePath<t.TSInterfaceDeclaration>) {
+            if (!nodePath.parent || t.isProgram(nodePath.parent)) {
+                allSourceDefinitions.add(nodePath.node.id.name);
+            }
+        },
+        TSEnumDeclaration(nodePath: NodePath<t.TSEnumDeclaration>) {
+            if (!nodePath.parent || t.isProgram(nodePath.parent)) {
+                allSourceDefinitions.add(nodePath.node.id.name);
+            }
+        },
+    });
 
-    // Sort definitions by line number (descending) to safely remove them
+    // Check if extracted definitions depend on other definitions in the same file
+    const sameFileDependencies = Array.from(localDependencies).filter(dep =>
+        allSourceDefinitions.has(dep) && !definitionNamesSet.has(dep)
+    );
+
+    // Check which dependencies are NOT exported
+    const exportedNames = new Set<string>();
+    traverse(ast, {
+        ExportNamedDeclaration(nodePath: NodePath<t.ExportNamedDeclaration>) {
+            const name = nodePath.node.declaration && getDeclarationName(nodePath.node.declaration);
+            if (name) exportedNames.add(name);
+
+            // Also check for export { a, b } syntax
+            nodePath.node.specifiers.forEach(spec => {
+                if (t.isExportSpecifier(spec) && t.isIdentifier(spec.exported)) {
+                    exportedNames.add(spec.exported.name);
+                }
+            });
+        },
+    });
+
+    const needsExport = sameFileDependencies.filter(dep => !exportedNames.has(dep));
+
+    if (sameFileDependencies.length > 0) {
+        console.log(`⚠️  Warning: Extracted definitions depend on: ${sameFileDependencies.join(', ')}`);
+
+        if (needsExport.length > 0) {
+            console.log(`   These are not exported: ${needsExport.join(', ')}`);
+            console.log(`   Will add exports for them in the source file.`);
+        }
+
+        // Add imports for same-file dependencies to the new file
+        const sourceRelativeImport = getRelativeImportPath(targetFile, sourceFile);
+        necessaryImports.unshift(`import {${sameFileDependencies.join(', ')}} from '${sourceRelativeImport}';`);
+
+        // Recreate the new file with updated imports
+        const updatedNewFileContent = [
+            ...necessaryImports,
+            '',
+            allDefinitionCode,
+        ].join('\n');
+
+        fs.writeFileSync(targetFile, updatedNewFileContent, 'utf-8');
+    }
+
+    // Update the source file - just remove the extracted definitions (no re-exports!)
+    const relativeImport = getRelativeImportPath(sourceFile, targetFile);
     const sortedDefinitions = [...definitions].sort((a, b) => b.start - a.start);
 
     // Remove definitions from source file (in reverse order to maintain line numbers)
@@ -325,26 +409,112 @@ async function extractDefinition(options: ExtractOptions) {
         updatedLines.splice(def.start - 1, def.end - def.start + 1);
     }
 
-    // Determine if we should add export statement
-    const anyExported = definitions.some(d => d.code.startsWith('export'));
+    // Check if the source file still uses any of the extracted definitions
+    const remainingCode = updatedLines.join('\n');
+    const stillUsed = definitionNames.filter(name => {
+        // Simple check using regex
+        const regex = new RegExp(`\\b${name}\\b`);
+        return regex.test(remainingCode);
+    });
 
-    if (anyExported) {
-        // Add re-export for all extracted definitions
-        const exportNames = definitionNames.filter(n => n !== 'default');
+    // Add imports ONLY if definitions are still used in the source file
+    if (stillUsed.length > 0) {
+        console.log(`   Source file still uses: ${stillUsed.join(', ')} - adding import`);
+        const importStatement = `import {${stillUsed.join(', ')}} from '${relativeImport}';`;
         const importsEndIndex = findLastImportLine(updatedLines);
+        updatedLines.splice(importsEndIndex + 1, 0, importStatement);
+    }
 
-        if (exportNames.length > 0) {
-            updatedLines.splice(
-                importsEndIndex,
-                0,
-                `import {${exportNames.join(', ')}} from '${relativeImport}';`
-            );
+    // Export dependencies that need to be exported
+    if (needsExport.length > 0) {
+        // Parse the updated source code to find where dependencies are defined
+        const updatedSourceCode = updatedLines.join('\n');
+        const updatedAst = parser.parse(updatedSourceCode, {
+            sourceType: 'module',
+            plugins: ['typescript', 'jsx'],
+        });
+
+        const dependencyDefinitions: {name: string; start: number; end: number}[] = [];
+
+        traverse(updatedAst, {
+            FunctionDeclaration(nodePath: NodePath<t.FunctionDeclaration>) {
+                const name = nodePath.node.id?.name;
+                if (name && needsExport.includes(name) && nodePath.node.loc) {
+                    dependencyDefinitions.push({
+                        name,
+                        start: nodePath.node.loc.start.line,
+                        end: nodePath.node.loc.end.line,
+                    });
+                }
+            },
+            VariableDeclaration(nodePath: NodePath<t.VariableDeclaration>) {
+                nodePath.node.declarations.forEach((d: t.VariableDeclarator) => {
+                    if (t.isIdentifier(d.id) && needsExport.includes(d.id.name)) {
+                        if (nodePath.node.loc) {
+                            dependencyDefinitions.push({
+                                name: d.id.name,
+                                start: nodePath.node.loc.start.line,
+                                end: nodePath.node.loc.end.line,
+                            });
+                        }
+                    }
+                });
+            },
+            ClassDeclaration(nodePath: NodePath<t.ClassDeclaration>) {
+                const name = nodePath.node.id?.name;
+                if (name && needsExport.includes(name) && nodePath.node.loc) {
+                    dependencyDefinitions.push({
+                        name,
+                        start: nodePath.node.loc.start.line,
+                        end: nodePath.node.loc.end.line,
+                    });
+                }
+            },
+            TSTypeAliasDeclaration(nodePath: NodePath<t.TSTypeAliasDeclaration>) {
+                const name = nodePath.node.id.name;
+                if (needsExport.includes(name) && nodePath.node.loc) {
+                    dependencyDefinitions.push({
+                        name,
+                        start: nodePath.node.loc.start.line,
+                        end: nodePath.node.loc.end.line,
+                    });
+                }
+            },
+            TSInterfaceDeclaration(nodePath: NodePath<t.TSInterfaceDeclaration>) {
+                const name = nodePath.node.id.name;
+                if (needsExport.includes(name) && nodePath.node.loc) {
+                    dependencyDefinitions.push({
+                        name,
+                        start: nodePath.node.loc.start.line,
+                        end: nodePath.node.loc.end.line,
+                    });
+                }
+            },
+            TSEnumDeclaration(nodePath: NodePath<t.TSEnumDeclaration>) {
+                const name = nodePath.node.id.name;
+                if (needsExport.includes(name) && nodePath.node.loc) {
+                    dependencyDefinitions.push({
+                        name,
+                        start: nodePath.node.loc.start.line,
+                        end: nodePath.node.loc.end.line,
+                    });
+                }
+            },
+        });
+
+        // Add export keyword to each dependency definition
+        // Sort in reverse order to maintain line numbers
+        dependencyDefinitions.sort((a, b) => b.start - a.start);
+
+        for (const dep of dependencyDefinitions) {
+            const lineIndex = dep.start - 1;
+            const line = updatedLines[lineIndex];
+
+            // Add 'export ' at the beginning of the line if it doesn't already have it
+            if (!line.trim().startsWith('export ')) {
+                updatedLines[lineIndex] = line.replace(/^(\s*)/, '$1export ');
+            }
         }
-    } else {
-        // Add import statement for non-exported definitions
-        const importStatement = `import {${definitionNames.join(', ')}} from '${relativeImport}';`;
-        const importsEndIndex = findLastImportLine(updatedLines);
-        updatedLines.splice(importsEndIndex, 0, importStatement);
     }
 
     fs.writeFileSync(sourceFile, updatedLines.join('\n'), 'utf-8');

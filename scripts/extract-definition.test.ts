@@ -91,7 +91,8 @@ export function parseDate(str: string): Date {
             expect(newFile).toContain('return date.toISOString()');
 
             const sourceFile = readTestFile('utils.ts');
-            expect(sourceFile).toContain("export {formatDate} from './formatDate'");
+            // Should NOT contain re-export - completely removed!
+            expect(sourceFile).not.toContain('formatDate');
             expect(sourceFile).toContain('export function parseDate');
         });
 
@@ -187,7 +188,10 @@ export function unrelatedFunction() {
             expect(newFile).not.toContain('unrelatedFunction');
 
             const sourceFile = readTestFile('utils.ts');
-            expect(sourceFile).toContain("export {formatDate,parseDate,isValidDate} from './dates'");
+            // Should NOT contain re-export - completely removed!
+            expect(sourceFile).not.toContain('formatDate');
+            expect(sourceFile).not.toContain('parseDate');
+            expect(sourceFile).not.toContain('isValidDate');
             expect(sourceFile).toContain('export function unrelatedFunction');
         });
 
@@ -450,29 +454,62 @@ export const Button: React.FC<ButtonProps> = ({label, onClick}) => {
             expect(newFile).toContain('type ButtonProps');
 
             const buttonFile = readTestFile('Button.tsx');
-            expect(buttonFile).toContain("export {ButtonProps} from './ButtonProps'");
+            // Should NOT contain re-export - import only if still used
+            expect(buttonFile).toContain("import {ButtonProps} from './ButtonProps'");
             expect(buttonFile).toContain('export const Button');
         });
 
-        it('should preserve export keywords when re-exporting', () => {
-            createTestFile('index.ts', `
-export function publicFunction() {
-    return 'public';
-}
+        it('should handle same-file dependencies and export them', () => {
+            createTestFile('utils.ts', `
+const a = 1;
 
-function privateFunction() {
-    return 'private';
-}
+export const b = () => a;
 
-export {privateFunction as exposed};
+export function otherFunction() {
+    return 'other';
+}
 `);
 
-            const result = runExtractDefinition(['index.ts', 'publicFunction', 'publicFunction.ts']);
+            const result = runExtractDefinition(['utils.ts', 'b', 'b.ts']);
 
             expect(result.exitCode).toBe(0);
 
-            const indexFile = readTestFile('index.ts');
-            expect(indexFile).toContain("export {publicFunction} from './publicFunction'");
+            const newFile = readTestFile('b.ts');
+            // Should import 'a' dependency from original file
+            expect(newFile).toContain("import {a} from './utils'");
+            expect(newFile).toContain('const b =');
+
+            const utilsFile = readTestFile('utils.ts');
+            // Should EXPORT 'a' now (it was not exported before!)
+            expect(utilsFile).toContain('export const a = 1');
+            expect(utilsFile).toContain('otherFunction');
+            expect(utilsFile).not.toContain('const b');
+        });
+
+        it('should handle already-exported same-file dependencies', () => {
+            createTestFile('utils.ts', `
+export const PREFIX = 'app';
+
+export function getKey(id: string) {
+    return \`\${PREFIX}_\${id}\`;
+}
+`);
+
+            const result = runExtractDefinition(['utils.ts', 'getKey', 'getKey.ts']);
+
+            expect(result.exitCode).toBe(0);
+
+            const newFile = readTestFile('getKey.ts');
+            // Should import PREFIX dependency from original file
+            expect(newFile).toContain("import {PREFIX} from './utils'");
+            expect(newFile).toContain('function getKey');
+
+            const utilsFile = readTestFile('utils.ts');
+            // PREFIX should still be exported (was already exported)
+            expect(utilsFile).toContain('export const PREFIX');
+            // Should NOT add double export
+            expect(utilsFile.match(/export.*PREFIX/g)).toHaveLength(1);
+            expect(utilsFile).not.toContain('getKey');
         });
     });
 
