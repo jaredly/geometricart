@@ -43,7 +43,7 @@ export const canvasTiling = async (
     paint.setAntiAlias(true);
     ctx.drawRect(pk.LTRBRect(0, 0, size, size), paint);
 
-    const margin = 0.5;
+    const margin = 3.5;
 
     ctx.scale(size / (2 + margin * 2), size / (2 + margin * 2));
     ctx.translate(1 + margin, 1 + margin);
@@ -57,7 +57,7 @@ export const canvasTiling = async (
         return hslToHex(100, flipped ? 50 : 0, percent * 40 + 30);
     };
 
-    if (!data.woven) {
+    if (!data.woven || true) {
         data.shapes.forEach((shape, i) => {
             const paint = new pk.Paint();
             paint.setStyle(pk.PaintStyle.Fill);
@@ -105,7 +105,7 @@ export const canvasTiling = async (
     }
 
     const showLines = true;
-    if (showLines && !data.woven) {
+    if ((showLines && !data.woven) || true) {
         const byColor = data.allSegments
             .map((seg, i) => ({seg, path: data.paths[i].pathId}))
             .sort((a, b) => a.path! - b.path!);

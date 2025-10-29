@@ -9,6 +9,7 @@ import {
     translationMatrix,
 } from '../rendering/getMirrorTransforms';
 import {angleBetween} from '../rendering/isAngleBetween';
+import {scalePos} from './scalePos';
 
 export function replicateStandard(tx: number, ty: number): Matrix[][][] {
     const duplicates = [
@@ -111,6 +112,18 @@ export function tilingTransforms(shape: TilingShape, tr: Coord, tpts: Coord[]): 
                             translationMatrix({x: tr.x * 3, y: tr.y}),
                         ],
                     ],
+                    [
+                        //
+                        [
+                            scaleMatrix(-1, 1),
+                            rotationMatrix(-Math.PI / 3),
+                            translationMatrix({x: tr.x * 6, y: tr.y * 2}),
+                        ],
+                        [translationMatrix({x: tr.x * 4, y: 0})],
+                        [translationMatrix({x: tr.x * 2, y: tr.y * 2})],
+                        // [rotationMatrix(Math.PI)],
+                    ],
+
                     [
                         [scaleMatrix(-1, 1), rotationMatrix(Math.PI / 3)],
                         [scaleMatrix(-1, 1), rotationMatrix(Math.PI)],
