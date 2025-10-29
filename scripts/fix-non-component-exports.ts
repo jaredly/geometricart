@@ -8,16 +8,20 @@
  * to separate non-component exports into their own files.
  *
  * Usage:
- *   bun scripts/fix-non-component-exports.ts [--dry-run] [--execute] [--group-types]
+ *   bun scripts/fix-non-component-exports.ts [--dry-run] [--execute] [--group-types] [--group-consts]
  *
  * Options:
- *   --dry-run      Show what would be extracted without generating commands (default)
- *   --execute      Actually run the extract-definition commands
- *   --group-types  Group types/interfaces together into a single file per component file
+ *   --dry-run       Show what would be extracted without generating commands (default)
+ *   --execute       Actually run the extract-definition commands
+ *   --group-types   Group types/interfaces/enums together into a single file per component file
+ *   --group-consts  Group constants together into a single file per component file
  *
  * Examples:
  *   bun scripts/fix-non-component-exports.ts
- *   bun scripts/fix-non-component-exports.ts --execute
+ *   bun scripts/fix-non-component-exports.ts --group-types
+ *   bun scripts/fix-non-component-exports.ts --group-consts
+ *   bun scripts/fix-non-component-exports.ts --group-types --group-consts
+ *   bun scripts/fix-non-component-exports.ts --group-types --group-consts --execute
  */
 
 import * as parser from '@babel/parser';
@@ -308,6 +312,7 @@ async function main() {
     const args = process.argv.slice(2);
     const execute = args.includes('--execute');
     const groupTypes = args.includes('--group-types');
+    const groupConsts = args.includes('--group-consts');
     const dryRun = !execute;
 
     console.log('🔍 Scanning project for files with mixed component/non-component exports...\n');
@@ -347,32 +352,74 @@ async function main() {
                 // Generate extract commands for non-components
                 const nonComponents = analysis.exports.filter(e => e.type === 'non-component' && e.name !== 'default');
 
-                if (groupTypes) {
-                    // Group by type category
+                if (groupTypes || groupConsts) {
+                    // Categorize exports
                     const typeExports = nonComponents.filter(e => e.kind === 'type' || e.kind === 'interface' || e.kind === 'enum');
-                    const otherExports = nonComponents.filter(e => e.kind !== 'type' && e.kind !== 'interface' && e.kind !== 'enum');
+                    const constExports = nonComponents.filter(e => e.kind === 'const');
+                    const functionExports = nonComponents.filter(e => e.kind === 'function');
+                    const otherExports = nonComponents.filter(e =>
+                        e.kind !== 'type' &&
+                        e.kind !== 'interface' &&
+                        e.kind !== 'enum' &&
+                        e.kind !== 'const' &&
+                        e.kind !== 'function'
+                    );
 
-                    // Extract types together if there are multiple
-                    if (typeExports.length > 1) {
-                        const dir = path.dirname(file);
-                        const baseName = path.basename(file, path.extname(file));
+                    const dir = path.dirname(file);
+                    const baseName = path.basename(file, path.extname(file));
+
+                    // Extract types together if groupTypes is enabled
+                    if (groupTypes && typeExports.length > 1) {
                         const targetPath = path.join(dir, `${baseName}.types.ts`);
                         const relativeTarget = path.relative(process.cwd(), targetPath);
                         const typeNames = typeExports.map(e => e.name).join(',');
 
                         const command = `pnpm extract-definition "${relativePath}" "${typeNames}" "${relativeTarget}"`;
                         commands.push(command);
-                    } else if (typeExports.length === 1) {
+                    } else if (groupTypes && typeExports.length === 1) {
                         // Single type - extract to its own file
                         const exp = typeExports[0];
                         const targetPath = generateTargetPath(file, exp.name, exp.kind);
                         const relativeTarget = path.relative(process.cwd(), targetPath);
                         const command = `pnpm extract-definition "${relativePath}" "${exp.name}" "${relativeTarget}"`;
                         commands.push(command);
+                    } else {
+                        // Not grouping types, extract individually
+                        for (const exp of typeExports) {
+                            const targetPath = generateTargetPath(file, exp.name, exp.kind);
+                            const relativeTarget = path.relative(process.cwd(), targetPath);
+                            const command = `pnpm extract-definition "${relativePath}" "${exp.name}" "${relativeTarget}"`;
+                            commands.push(command);
+                        }
                     }
 
-                    // Extract other non-components individually
-                    for (const exp of otherExports) {
+                    // Extract consts together if groupConsts is enabled
+                    if (groupConsts && constExports.length > 1) {
+                        const targetPath = path.join(dir, `${baseName}.consts.ts`);
+                        const relativeTarget = path.relative(process.cwd(), targetPath);
+                        const constNames = constExports.map(e => e.name).join(',');
+
+                        const command = `pnpm extract-definition "${relativePath}" "${constNames}" "${relativeTarget}"`;
+                        commands.push(command);
+                    } else if (groupConsts && constExports.length === 1) {
+                        // Single const - extract to its own file
+                        const exp = constExports[0];
+                        const targetPath = generateTargetPath(file, exp.name, exp.kind);
+                        const relativeTarget = path.relative(process.cwd(), targetPath);
+                        const command = `pnpm extract-definition "${relativePath}" "${exp.name}" "${relativeTarget}"`;
+                        commands.push(command);
+                    } else {
+                        // Not grouping consts, extract individually
+                        for (const exp of constExports) {
+                            const targetPath = generateTargetPath(file, exp.name, exp.kind);
+                            const relativeTarget = path.relative(process.cwd(), targetPath);
+                            const command = `pnpm extract-definition "${relativePath}" "${exp.name}" "${relativeTarget}"`;
+                            commands.push(command);
+                        }
+                    }
+
+                    // Extract functions and other exports individually
+                    for (const exp of [...functionExports, ...otherExports]) {
                         const targetPath = generateTargetPath(file, exp.name, exp.kind);
                         const relativeTarget = path.relative(process.cwd(), targetPath);
                         const command = `pnpm extract-definition "${relativePath}" "${exp.name}" "${relativeTarget}"`;

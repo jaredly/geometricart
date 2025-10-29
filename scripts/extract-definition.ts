@@ -337,7 +337,7 @@ async function extractDefinition(options: ExtractOptions) {
             updatedLines.splice(
                 importsEndIndex,
                 0,
-                `export {${exportNames.join(', ')}} from '${relativeImport}';`
+                `import {${exportNames.join(', ')}} from '${relativeImport}';`
             );
         }
     } else {
