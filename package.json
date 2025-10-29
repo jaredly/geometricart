@@ -7,6 +7,7 @@
     "license": "MIT",
     "scripts": {
         "extract-definition": "bun scripts/extract-definition.ts",
+        "fix-non-component-exports": "bun scripts/fix-non-component-exports.ts",
         "analyze-deps": "depcruise src --output-type json > deps.json; bun an.ts",
         "deploy": "yarn run build && cd build && surge . geometric-art.surge.sh",
         "build": "vite build --outDir build",

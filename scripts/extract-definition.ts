@@ -1,31 +1,44 @@
 /**
- * Extract TypeScript Definition
+ * Extract TypeScript Definition / Move File
  *
- * A utility script for extracting a top-level definition from a TypeScript file
- * into its own file and automatically updating all imports across the project.
+ * A utility script for:
+ * 1. Extracting a top-level definition from a TypeScript file into its own file
+ * 2. Moving an entire TypeScript file to a new location
+ *
+ * Both operations automatically update all imports across the project.
  *
  * Usage:
+ *   # Extract a specific definition
  *   pnpm extract-definition <source-file> <definition-name> <target-file>
- *   bun scripts/extract-definition.ts <source-file> <definition-name> <target-file>
+ *
+ *   # Move entire file
+ *   pnpm extract-definition <source-file> <target-file>
  *
  * Examples:
- *   # Extract a function
+ *   # Extract a function to its own file
  *   pnpm extract-definition src/utils.ts formatDate src/utils/formatDate.ts
  *
  *   # Extract a type
  *   pnpm extract-definition src/types.ts UserData src/types/UserData.ts
  *
- *   # Extract a class
- *   pnpm extract-definition src/services.ts AuthService src/services/AuthService.ts
+ *   # Move entire file
+ *   pnpm extract-definition src/utils/helpers.ts src/utils/string-helpers.ts
+ *   pnpm extract-definition src/components/Button.tsx src/ui/Button.tsx
  *
- * What it does:
+ * Extract mode (3 args):
  *   1. Finds the specified definition in the source file
  *   2. Extracts it along with any required imports
  *   3. Creates a new file with the extracted definition
  *   4. Updates the source file to export from the new location
  *   5. Finds all files that import the definition and updates them to use the new path
  *
- * Supported definitions:
+ * Move mode (2 args):
+ *   1. Moves the entire file to the new location
+ *   2. Finds all files that import from the old location
+ *   3. Updates all imports to point to the new location
+ *   4. Deletes the old file
+ *
+ * Supported definitions (extract mode):
  *   - Functions (exported and non-exported)
  *   - Classes
  *   - Type aliases
@@ -478,25 +491,175 @@ function resolveImportPath(from: string, importPath: string): string {
     return importPath;
 }
 
+/**
+ * Moves an entire file to a new location and updates all imports across the project.
+ */
+async function moveFile(sourceFile: string, targetFile: string) {
+    if (!fs.existsSync(sourceFile)) {
+        throw new Error(`Source file not found: ${sourceFile}`);
+    }
+
+    // Read the source file
+    const sourceCode = fs.readFileSync(sourceFile, 'utf-8');
+
+    // Create the target directory if it doesn't exist
+    const targetDir = path.dirname(targetFile);
+    if (!fs.existsSync(targetDir)) {
+        fs.mkdirSync(targetDir, {recursive: true});
+    }
+
+    // Write to the new location
+    fs.writeFileSync(targetFile, sourceCode, 'utf-8');
+    console.log(`✓ Created ${targetFile}`);
+
+    // Find and update all imports across the project
+    const files = await glob(['src/**/*.{ts,tsx}', 'scripts/**/*.{ts,tsx}'], {
+        cwd: path.resolve(__dirname, '..'),
+        absolute: true,
+        ignore: ['**/node_modules/**', '**/build/**', '**/dist/**'],
+    });
+
+    const resolvedOldFile = path.resolve(sourceFile);
+    let updatedCount = 0;
+
+    for (const file of files) {
+        if (file === sourceFile || file === targetFile) continue;
+
+        const code = fs.readFileSync(file, 'utf-8');
+        const ast = parser.parse(code, {
+            sourceType: 'module',
+            plugins: ['typescript', 'jsx'],
+        });
+
+        let needsUpdate = false;
+        const importsToUpdate: {
+            node: t.ImportDeclaration | t.ExportNamedDeclaration | t.ExportAllDeclaration;
+            line: string;
+        }[] = [];
+
+        traverse(ast, {
+            ImportDeclaration(nodePath: NodePath<t.ImportDeclaration>) {
+                const source = nodePath.node.source.value;
+                const resolvedSource = resolveImportPath(file, source);
+
+                if (resolvedSource === resolvedOldFile ||
+                    resolvedSource === resolvedOldFile.replace(/\.tsx?$/, '')) {
+                    needsUpdate = true;
+                    if (nodePath.node.loc) {
+                        const lines = code.split('\n');
+                        const importLine = lines.slice(nodePath.node.loc.start.line - 1, nodePath.node.loc.end.line).join('\n');
+                        importsToUpdate.push({
+                            node: nodePath.node,
+                            line: importLine,
+                        });
+                    }
+                }
+            },
+            ExportNamedDeclaration(nodePath: NodePath<t.ExportNamedDeclaration>) {
+                if (nodePath.node.source) {
+                    const source = nodePath.node.source.value;
+                    const resolvedSource = resolveImportPath(file, source);
+
+                    if (resolvedSource === resolvedOldFile ||
+                        resolvedSource === resolvedOldFile.replace(/\.tsx?$/, '')) {
+                        needsUpdate = true;
+                        if (nodePath.node.loc) {
+                            const lines = code.split('\n');
+                            const exportLine = lines.slice(nodePath.node.loc.start.line - 1, nodePath.node.loc.end.line).join('\n');
+                            importsToUpdate.push({
+                                node: nodePath.node,
+                                line: exportLine,
+                            });
+                        }
+                    }
+                }
+            },
+            ExportAllDeclaration(nodePath: NodePath<t.ExportAllDeclaration>) {
+                const source = nodePath.node.source.value;
+                const resolvedSource = resolveImportPath(file, source);
+
+                if (resolvedSource === resolvedOldFile ||
+                    resolvedSource === resolvedOldFile.replace(/\.tsx?$/, '')) {
+                    needsUpdate = true;
+                    if (nodePath.node.loc) {
+                        const lines = code.split('\n');
+                        const exportLine = lines.slice(nodePath.node.loc.start.line - 1, nodePath.node.loc.end.line).join('\n');
+                        importsToUpdate.push({
+                            node: nodePath.node,
+                            line: exportLine,
+                        });
+                    }
+                }
+            },
+        });
+
+        if (needsUpdate) {
+            let updatedCode = code;
+            const newImportPath = getRelativeImportPath(file, targetFile);
+
+            for (const {node, line} of importsToUpdate) {
+                const newLine = line.replace(
+                    new RegExp(`(['"])${escapeRegex(node.source!.value)}\\1`, 'g'),
+                    `$1${newImportPath}$1`
+                );
+                updatedCode = updatedCode.replace(line, newLine);
+            }
+
+            fs.writeFileSync(file, updatedCode, 'utf-8');
+            updatedCount++;
+            console.log(`✓ Updated imports in ${path.relative(process.cwd(), file)}`);
+        }
+    }
+
+    // Delete the old file
+    fs.unlinkSync(sourceFile);
+    console.log(`✓ Deleted ${sourceFile}`);
+
+    console.log(`\n✓ Moved file and updated ${updatedCount} file(s)`);
+}
+
+function escapeRegex(str: string): string {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 // CLI
 const args = process.argv.slice(2);
 
-if (args.length < 3) {
-    console.error('Usage: node extract-definition.ts <source-file> <definition-name> <target-file>');
+if (args.length < 2) {
+    console.error('Usage:');
+    console.error('  Extract definition: node extract-definition.ts <source-file> <definition-name> <target-file>');
+    console.error('  Move file:          node extract-definition.ts <source-file> <target-file>');
     console.error('');
-    console.error('Example:');
-    console.error('  node extract-definition.ts src/utils/helpers.ts formatDate src/utils/formatDate.ts');
+    console.error('Examples:');
+    console.error('  Extract: node extract-definition.ts src/utils/helpers.ts formatDate src/utils/formatDate.ts');
+    console.error('  Move:    node extract-definition.ts src/utils/helpers.ts src/utils/string-helpers.ts');
     process.exit(1);
 }
 
-const [sourceFile, definitionName, targetFile] = args;
-
-extractDefinition({
-    sourceFile: path.resolve(sourceFile),
-    definitionName,
-    targetFile: path.resolve(targetFile),
-}).catch((error) => {
-    console.error('Error:', error.message);
+if (args.length === 2) {
+    // Move file mode
+    const [sourceFile, targetFile] = args;
+    moveFile(path.resolve(sourceFile), path.resolve(targetFile)).catch((error) => {
+        console.error('Error:', error.message);
+        process.exit(1);
+    });
+} else if (args.length === 3) {
+    // Extract definition mode
+    const [sourceFile, definitionName, targetFile] = args;
+    extractDefinition({
+        sourceFile: path.resolve(sourceFile),
+        definitionName,
+        targetFile: path.resolve(targetFile),
+    }).catch((error) => {
+        console.error('Error:', error.message);
+        process.exit(1);
+    });
+} else {
+    console.error('Error: Too many arguments provided.');
+    console.error('');
+    console.error('Usage:');
+    console.error('  Extract definition: node extract-definition.ts <source-file> <definition-name> <target-file>');
+    console.error('  Move file:          node extract-definition.ts <source-file> <target-file>');
     process.exit(1);
-});
+}
 
