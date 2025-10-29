@@ -3,6 +3,9 @@
 
 super fun
 
+- [x] more expansion of the equilateral triangle case
+- [ ] investigate why some paths aren't mrging 3-way intersections
+
 
 
 # Ok folks, pattern inspection next?

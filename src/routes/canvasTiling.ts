@@ -1,3 +1,5 @@
+import {applyTilingTransformsG} from '../editor/tilingPoints';
+import {applyMatrices} from '../rendering/getMirrorTransforms';
 import {getPatternData} from './getPatternData';
 import {pk, resetCanvasKit} from './pk';
 import {readFileSync} from 'fs';
@@ -43,7 +45,7 @@ export const canvasTiling = async (
     paint.setAntiAlias(true);
     ctx.drawRect(pk.LTRBRect(0, 0, size, size), paint);
 
-    const margin = 3.5;
+    const margin = 0.5;
 
     ctx.scale(size / (2 + margin * 2), size / (2 + margin * 2));
     ctx.translate(1 + margin, 1 + margin);
@@ -57,7 +59,7 @@ export const canvasTiling = async (
         return hslToHex(100, flipped ? 50 : 0, percent * 40 + 30);
     };
 
-    if (!data.woven || true) {
+    if (!data.woven) {
         data.shapes.forEach((shape, i) => {
             const paint = new pk.Paint();
             paint.setStyle(pk.PaintStyle.Fill);
@@ -105,7 +107,7 @@ export const canvasTiling = async (
     }
 
     const showLines = true;
-    if ((showLines && !data.woven) || true) {
+    if (showLines && !data.woven) {
         const byColor = data.allSegments
             .map((seg, i) => ({seg, path: data.paths[i].pathId}))
             .sort((a, b) => a.path! - b.path!);
@@ -124,6 +126,14 @@ export const canvasTiling = async (
             );
         });
     }
+    const front = new pk.Paint();
+    front.setStyle(pk.PaintStyle.Stroke);
+    front.setColor([1, 1, 1]);
+    front.setColor([205 / 255, 127 / 255, 1 / 255]);
+    // 205, 127, 5
+    front.setStrokeWidth(data.minSegLength / 3);
+    front.setAntiAlias(true);
+    front.setStrokeCap(pk.StrokeCap.Round);
 
     if (data.woven) {
         const back = new pk.Paint();
@@ -131,14 +141,6 @@ export const canvasTiling = async (
         back.setColor([0, 0, 0]);
         back.setStrokeWidth(data.minSegLength / 1.5);
         back.setAntiAlias(true);
-        const front = new pk.Paint();
-        front.setStyle(pk.PaintStyle.Stroke);
-        front.setColor([1, 1, 1]);
-        front.setColor([205 / 255, 127 / 255, 1 / 255]);
-        // 205, 127, 5
-        front.setStrokeWidth(data.minSegLength / 3);
-        front.setAntiAlias(true);
-        front.setStrokeCap(pk.StrokeCap.Round);
         // back.setStrokeCap(pk.StrokeCap.Round);
         back.setAlphaf(0.5);
         const off = 0; //data.minSegLength / 5;
@@ -163,6 +165,21 @@ export const canvasTiling = async (
                 ),
             )!;
 
+            ctx.drawPath(path, front);
+        });
+    }
+
+    const showBoundsTransforms = false;
+    if (showBoundsTransforms) {
+        applyTilingTransformsG([data.bounds], data.ttt, (pt, tx) =>
+            pt.map((p) => applyMatrices(p, tx)),
+        ).forEach((paths) => {
+            const path = pk.Path.MakeFromCmds(
+                paths
+                    .flatMap((p, i) => [i === 0 ? pk.MOVE_VERB : pk.LINE_VERB, p.x, p.y])
+                    .concat([pk.CLOSE_VERB]),
+            )!;
+            front.setStrokeWidth(data.minSegLength / 10);
             ctx.drawPath(path, front);
         });
     }
