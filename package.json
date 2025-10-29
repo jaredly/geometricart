@@ -16,6 +16,8 @@
         "start": "vite",
         "vest": "node src/vest/run.js",
         "test": "jest",
+        "test:scripts": "jest scripts/",
+        "test:extract": "jest scripts/extract-definition",
         "lol": "vite build && cp dist/assets/*.js dist/assets/index.js; cp dist/assets/*.css dist/assets/index.css",
         "build-docs": "node docs-src/build.js"
     },
