@@ -384,7 +384,7 @@ function findLastImportLine(lines: string[]): number {
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i].trim();
         if (line.startsWith('import ') || line.startsWith('export ') && line.includes(' from ')) {
-            lastImportLine = i + 1;
+            lastImportLine = i;
         } else if (line && !line.startsWith('//') && !line.startsWith('/*')) {
             break;
         }
