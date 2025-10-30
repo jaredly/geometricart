@@ -53,6 +53,9 @@ import * as fs from 'fs';
 import * as path from 'path';
 import {glob} from 'fast-glob';
 
+// Cache for tsconfig
+let tsconfigCache: {rootDirs?: string[]; projectRoot: string} | null = null;
+
 interface ExportInfo {
     name: string;
     filePath: string;
@@ -89,6 +92,38 @@ interface Options {
 }
 
 /**
+ * Loads and caches tsconfig rootDirs
+ */
+function loadTsConfig(): {rootDirs?: string[]; projectRoot: string} {
+    if (tsconfigCache) {
+        return tsconfigCache;
+    }
+
+    const projectRoot = path.resolve(__dirname, '..');
+    const tsconfigPath = path.resolve(projectRoot, 'tsconfig.json');
+
+    try {
+        if (fs.existsSync(tsconfigPath)) {
+            const tsconfigContent = fs.readFileSync(tsconfigPath, 'utf-8');
+            // Simple JSON parse (ignoring comments for now)
+            const tsconfig = JSON.parse(tsconfigContent);
+            const rootDirs = tsconfig.compilerOptions?.rootDirs as string[] | undefined;
+
+            tsconfigCache = {
+                rootDirs: rootDirs?.map((dir) => path.resolve(projectRoot, dir)),
+                projectRoot: projectRoot,
+            };
+        } else {
+            tsconfigCache = {projectRoot: projectRoot};
+        }
+    } catch (error) {
+        tsconfigCache = {projectRoot: projectRoot};
+    }
+
+    return tsconfigCache;
+}
+
+/**
  * Resolves an import path to an absolute file path
  */
 function resolveImportPath(importPath: string, fromFile: string): string | null {
@@ -114,6 +149,36 @@ function resolveImportPath(importPath: string, fromFile: string): string | null 
         const indexPath = path.join(resolved, `index${ext}`);
         if (fs.existsSync(indexPath)) {
             return indexPath;
+        }
+    }
+
+    // If not found, try with rootDirs from tsconfig
+    const {rootDirs, projectRoot} = loadTsConfig();
+    if (rootDirs && rootDirs.length > 1) {
+        // Get the relative path from fromFile to project root
+        const fromFileRelative = path.relative(projectRoot, fromFile);
+        const fromDirRelative = path.dirname(fromFileRelative);
+
+        // Try each rootDir
+        for (const rootDir of rootDirs) {
+            // Construct alternative path: rootDir + fromDirRelative + importPath
+            const alternativeResolved = path.resolve(rootDir, fromDirRelative, importPath);
+
+            // Try with extensions
+            for (const ext of extensions) {
+                const fullPath = alternativeResolved + ext;
+                if (fs.existsSync(fullPath) && fs.statSync(fullPath).isFile()) {
+                    return fullPath;
+                }
+            }
+
+            // Try index files
+            for (const ext of ['.ts', '.tsx', '.js', '.jsx']) {
+                const indexPath = path.join(alternativeResolved, `index${ext}`);
+                if (fs.existsSync(indexPath)) {
+                    return indexPath;
+                }
+            }
         }
     }
 
