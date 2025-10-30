@@ -9,7 +9,7 @@ import {HitCorner, untangleHit} from '../src/rendering/untangleHitAgain';
 import {Coord} from '../src/types';
 import {Fixture} from '../src/vest/types';
 import {Fixtures} from './Fixtures';
-import fixtures from './untangleHit.json';
+// import fixtures from './untangleHit.json';
 
 type I = Parameters<typeof untangleHit>;
 const mid = {x: 150, y: 150};
@@ -233,7 +233,7 @@ const ShowTransition = ({
             ))}
         </>
     );
-    return null;
+    // return null;
 };
 
 const getHit = (hits: HitsInfo['hits']) => {
@@ -248,15 +248,15 @@ const getHit = (hits: HitsInfo['hits']) => {
     return null;
 };
 
-const fx = fixtures.map((fx): Fixture<typeof untangleHit> => {
-    const {hits} = intersectSegments(fx.input as SegmentWithPrev[]);
-    const hit = getHit(hits);
-    if (!hit) {
-        throw new Error(`No valid intersection`);
-    }
-    return {...fx, input: [hit], output: [] as Array<HitCorner>};
-});
+// const fx = fixtures.map((fx): Fixture<typeof untangleHit> => {
+//     const {hits} = intersectSegments(fx.input as SegmentWithPrev[]);
+//     const hit = getHit(hits);
+//     if (!hit) {
+//         throw new Error(`No valid intersection`);
+//     }
+//     return {...fx, input: [hit], output: [] as Array<HitCorner>};
+// });
 
-export const UntangleHit = () => (
-    <Fixtures Input={Input} editDelay={100} Output={Output} run={untangleHit} fixtures={fx} />
-);
+// export const UntangleHit = () => (
+//     <Fixtures Input={Input} editDelay={100} Output={Output} run={untangleHit} fixtures={fx} />
+// );

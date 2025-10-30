@@ -3,7 +3,7 @@ import * as React from 'react';
 // import {render} from 'react-dom';
 // import { LineLine } from './LineLine';
 // import { ArcArc } from './ArcArc';
-import {UntangleHit} from './UntangleHit';
+// import {UntangleHit} from './UntangleHit';
 
 // @ts-ignore
 window.____SHOW = (what) => {
