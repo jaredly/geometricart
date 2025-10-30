@@ -106,7 +106,45 @@ export function getKey(id: string) {
 export const PREFIX = 'app';  // ✅ Stays as-is (already exported)
 ```
 
-### 4. ✅ Automatic .tsx Extension for JSX Code
+### 4. ✅ JSX Component Dependencies
+
+**Problem:** When extracting code with JSX components, the script wasn't tracking component usage as dependencies.
+
+**Example:**
+```tsx
+// router.tsx
+export const router = createHashRouter(
+    createRoutesFromElements([
+        <Route index element={<Welcome />} />,
+        <File gist dest={{...}} />
+    ])
+);
+```
+
+**Before:** The script wouldn't detect that `Welcome` and `File` are used as JSX components, resulting in missing imports.
+
+**After:** Now properly tracks JSX component usage:
+- ✅ Detects `<Welcome />` and adds `Welcome` to dependencies
+- ✅ Detects `<File />` and adds `File` to dependencies
+- ✅ Handles JSX member expressions like `<Foo.Bar />` (imports `Foo`)
+- ✅ Automatically includes these in the imports for the new file
+
+**Result:**
+```tsx
+// router.tsx (extracted file)
+import {Welcome} from './Welcome';
+import {File} from './File';
+import {Route, createHashRouter, createRoutesFromElements} from 'react-router-dom';
+
+export const router = createHashRouter(
+    createRoutesFromElements([
+        <Route index element={<Welcome />} />,
+        <File gist dest={{...}} />
+    ])
+);
+```
+
+### 5. ✅ Automatic .tsx Extension for JSX Code
 
 **Problem:** When extracting code containing JSX, the file needs a `.tsx` extension, not `.ts`.
 

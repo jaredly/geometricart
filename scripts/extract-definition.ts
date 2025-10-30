@@ -304,6 +304,23 @@ async function extractDefinition(options: ExtractOptions) {
                 localDependencies.add(nodePath.node.typeName.name);
             }
         },
+        JSXElement(nodePath: NodePath<t.JSXElement>) {
+            // Track JSX component usage (e.g., <Welcome /> or <File />)
+            const name = nodePath.node.openingElement.name;
+            if (t.isJSXIdentifier(name)) {
+                localDependencies.add(name.name);
+            } else if (t.isJSXMemberExpression(name)) {
+                // Handle JSX member expressions like <Foo.Bar />
+                // We only need to import the root object (Foo)
+                let object = name.object;
+                while (t.isJSXMemberExpression(object)) {
+                    object = object.object;
+                }
+                if (t.isJSXIdentifier(object)) {
+                    localDependencies.add(object.name);
+                }
+            }
+        },
     });
 
     // Third pass: build the necessary imports for the new file

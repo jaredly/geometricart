@@ -586,6 +586,36 @@ export const otherUtil = () => 'test';
             expect(testFileExists('formatName.tsx')).toBe(false);
         });
 
+        it('should track JSX component usage as dependencies', () => {
+            createTestFile(
+                'components.tsx',
+                `
+import {Button} from './Button';
+import {Card} from './Card';
+
+export const Dialog = () => {
+    return (
+        <Card>
+            <Button />
+        </Card>
+    );
+};
+
+export const otherComponent = () => 'test';
+`,
+            );
+
+            const result = runExtractDefinition(['components.tsx', 'Dialog', 'Dialog.tsx']);
+
+            expect(result.exitCode).toBe(0);
+
+            const dialogFile = readTestFile('Dialog.tsx');
+            // Should import both Button and Card because they're used as JSX components
+            expect(dialogFile).toContain("import {Button} from './Button'");
+            expect(dialogFile).toContain("import {Card} from './Card'");
+            expect(dialogFile).toContain('export const Dialog');
+        });
+
         it('should handle same-file dependencies and export them', () => {
             createTestFile(
                 'utils.ts',
