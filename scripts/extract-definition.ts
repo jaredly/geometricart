@@ -282,6 +282,7 @@ async function extractDefinition(options: ExtractOptions) {
         ImportDeclaration(nodePath: NodePath<t.ImportDeclaration>) {
             const source = nodePath.node.source.value;
             const neededSpecifiers: string[] = [];
+            const isTypeImport = nodePath.node.importKind === 'type';
 
             nodePath.node.specifiers.forEach((spec: t.ImportSpecifier | t.ImportDefaultSpecifier | t.ImportNamespaceSpecifier) => {
                 if (t.isImportSpecifier(spec) && t.isIdentifier(spec.imported)) {
@@ -297,18 +298,21 @@ async function extractDefinition(options: ExtractOptions) {
                 } else if (t.isImportDefaultSpecifier(spec)) {
                     const local = spec.local.name;
                     if (localDependencies.has(local)) {
-                        necessaryImports.push(`import ${local} from '${source}';`);
+                        const typeKeyword = isTypeImport ? 'type ' : '';
+                        necessaryImports.push(`import ${typeKeyword}${local} from '${source}';`);
                     }
                 } else if (t.isImportNamespaceSpecifier(spec)) {
                     const local = spec.local.name;
                     if (localDependencies.has(local)) {
-                        necessaryImports.push(`import * as ${local} from '${source}';`);
+                        const typeKeyword = isTypeImport ? 'type ' : '';
+                        necessaryImports.push(`import ${typeKeyword}* as ${local} from '${source}';`);
                     }
                 }
             });
 
             if (neededSpecifiers.length > 0) {
-                necessaryImports.push(`import {${neededSpecifiers.join(', ')}} from '${source}';`);
+                const typeKeyword = isTypeImport ? 'type ' : '';
+                necessaryImports.push(`import ${typeKeyword}{${neededSpecifiers.join(', ')}} from '${source}';`);
             }
         },
     });
@@ -642,7 +646,7 @@ async function updateAllImports(oldFile: string, newFile: string, definitionName
                 const source = nodePath.node.source.value;
                 const resolvedSource = resolveImportPath(file, source);
                 const resolvedOldFile = path.resolve(oldFile);
-                
+
                 // Normalize both paths by removing extensions for comparison
                 const normalizedSource = resolvedSource.replace(/\.tsx?$/, '');
                 const normalizedOldFile = resolvedOldFile.replace(/\.tsx?$/, '');

@@ -466,7 +466,7 @@ export const Greeting = ({name}: {name: string}) => {
 };
 
 export const SimpleFunction = () => {
-    return 'no jsx here';
+    return Greeting({name: 'World'});
 };
 `);
 
