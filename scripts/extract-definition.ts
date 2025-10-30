@@ -461,7 +461,8 @@ async function extractDefinition(options: ExtractOptions) {
         traverse(updatedAst, {
             FunctionDeclaration(nodePath: NodePath<t.FunctionDeclaration>) {
                 const name = nodePath.node.id?.name;
-                if (name && needsExport.includes(name) && nodePath.node.loc) {
+                // Only export top-level declarations (parent is Program)
+                if (name && needsExport.includes(name) && nodePath.node.loc && t.isProgram(nodePath.parent)) {
                     dependencyDefinitions.push({
                         name,
                         start: nodePath.node.loc.start.line,
@@ -470,6 +471,11 @@ async function extractDefinition(options: ExtractOptions) {
                 }
             },
             VariableDeclaration(nodePath: NodePath<t.VariableDeclaration>) {
+                // Only export top-level declarations (parent is Program)
+                if (!t.isProgram(nodePath.parent)) {
+                    return;
+                }
+                
                 nodePath.node.declarations.forEach((d: t.VariableDeclarator) => {
                     if (t.isIdentifier(d.id) && needsExport.includes(d.id.name)) {
                         if (nodePath.node.loc) {
@@ -484,7 +490,8 @@ async function extractDefinition(options: ExtractOptions) {
             },
             ClassDeclaration(nodePath: NodePath<t.ClassDeclaration>) {
                 const name = nodePath.node.id?.name;
-                if (name && needsExport.includes(name) && nodePath.node.loc) {
+                // Only export top-level declarations (parent is Program)
+                if (name && needsExport.includes(name) && nodePath.node.loc && t.isProgram(nodePath.parent)) {
                     dependencyDefinitions.push({
                         name,
                         start: nodePath.node.loc.start.line,
@@ -494,7 +501,8 @@ async function extractDefinition(options: ExtractOptions) {
             },
             TSTypeAliasDeclaration(nodePath: NodePath<t.TSTypeAliasDeclaration>) {
                 const name = nodePath.node.id.name;
-                if (needsExport.includes(name) && nodePath.node.loc) {
+                // Only export top-level declarations (parent is Program)
+                if (needsExport.includes(name) && nodePath.node.loc && t.isProgram(nodePath.parent)) {
                     dependencyDefinitions.push({
                         name,
                         start: nodePath.node.loc.start.line,
@@ -504,7 +512,8 @@ async function extractDefinition(options: ExtractOptions) {
             },
             TSInterfaceDeclaration(nodePath: NodePath<t.TSInterfaceDeclaration>) {
                 const name = nodePath.node.id.name;
-                if (needsExport.includes(name) && nodePath.node.loc) {
+                // Only export top-level declarations (parent is Program)
+                if (needsExport.includes(name) && nodePath.node.loc && t.isProgram(nodePath.parent)) {
                     dependencyDefinitions.push({
                         name,
                         start: nodePath.node.loc.start.line,
@@ -514,7 +523,8 @@ async function extractDefinition(options: ExtractOptions) {
             },
             TSEnumDeclaration(nodePath: NodePath<t.TSEnumDeclaration>) {
                 const name = nodePath.node.id.name;
-                if (needsExport.includes(name) && nodePath.node.loc) {
+                // Only export top-level declarations (parent is Program)
+                if (needsExport.includes(name) && nodePath.node.loc && t.isProgram(nodePath.parent)) {
                     dependencyDefinitions.push({
                         name,
                         start: nodePath.node.loc.start.line,

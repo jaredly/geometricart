@@ -2,7 +2,31 @@
 
 ## Fixed Issues
 
-### 1. ✅ Removed Re-Export Behavior
+### 1. ✅ Multi-Line Import Handling
+
+**Problem:** The script was breaking when encountering multi-line imports in files.
+
+**Before:** The import detection used simple line-by-line regex, which would fail on code like:
+```typescript
+import {
+    Route,
+    createRoutesFromElements,
+    RouterProvider,
+    useLoaderData,
+} from 'react-router-dom';
+```
+
+The script would:
+- Only detect the first line of the import
+- Insert new imports in the middle of existing multi-line imports
+- Break the syntax
+
+**After:** Now uses AST parsing to properly handle multi-line imports:
+- ✅ Correctly identifies the end of multi-line import blocks
+- ✅ Inserts new imports after the last complete import statement
+- ✅ Preserves all existing import formatting
+
+### 2. ✅ Removed Re-Export Behavior
 
 **Before:** Extracted definitions were re-exported from the source file:
 ```typescript
@@ -19,7 +43,7 @@ export function parseDate() { ... }  // ✅ Just the remaining code
 
 All references in other files are updated to import directly from the new file.
 
-### 2. ✅ Same-File Dependencies with Auto-Export
+### 3. ✅ Same-File Dependencies with Auto-Export
 
 **Problem:** When extracting a function that depends on another **non-exported** definition in the same file, the dependency wasn't handled and code would break.
 
@@ -82,7 +106,7 @@ export function getKey(id: string) {
 export const PREFIX = 'app';  // ✅ Stays as-is (already exported)
 ```
 
-### 3. ✅ Automatic .tsx Extension for JSX Code
+### 4. ✅ Automatic .tsx Extension for JSX Code
 
 **Problem:** When extracting code containing JSX, the file needs a `.tsx` extension, not `.ts`.
 
