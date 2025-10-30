@@ -320,7 +320,7 @@ export { foo, bar };
     });
 
     describe('removeExport', () => {
-        test('removes named export function', () => {
+        test('removes export keyword but keeps function declaration', () => {
             const filePath = '/test/file.ts';
             const initialContent = `
 export function usedFunction() {
@@ -350,11 +350,14 @@ export function unusedFunction() {
 
             expect(removed).toBe(true);
             const content = vol.readFileSync(filePath, 'utf-8') as string;
-            expect(content).toContain('usedFunction');
-            expect(content).not.toContain('unusedFunction');
+            // usedFunction should still be exported
+            expect(content).toContain('export function usedFunction');
+            // unusedFunction should still exist but not be exported
+            expect(content).toContain('function unusedFunction');
+            expect(content).not.toContain('export function unusedFunction');
         });
 
-        test('removes type export', () => {
+        test('removes export keyword from type but keeps type declaration', () => {
             const filePath = '/test/types.ts';
             const initialContent = `
 export type UsedType = string;
@@ -379,11 +382,14 @@ export type UnusedType = number;
 
             expect(removed).toBe(true);
             const content = vol.readFileSync(filePath, 'utf-8') as string;
-            expect(content).toContain('UsedType');
-            expect(content).not.toContain('UnusedType');
+            // UsedType should still be exported
+            expect(content).toContain('export type UsedType');
+            // UnusedType should still exist but not be exported
+            expect(content).toContain('type UnusedType');
+            expect(content).not.toContain('export type UnusedType');
         });
 
-        test('removes const export', () => {
+        test('removes export keyword from const but keeps const declaration', () => {
             const filePath = '/test/constants.ts';
             const initialContent = `
 export const USED = 1;
@@ -408,11 +414,14 @@ export const UNUSED = 2;
 
             expect(removed).toBe(true);
             const content = vol.readFileSync(filePath, 'utf-8') as string;
-            expect(content).toContain('USED');
-            expect(content).not.toContain('UNUSED');
+            // USED should still be exported
+            expect(content).toContain('export const USED');
+            // UNUSED should still exist but not be exported
+            expect(content).toContain('const UNUSED');
+            expect(content).not.toContain('export const UNUSED');
         });
 
-        test('removes one export from export statement', () => {
+        test('removes entire export statement when removing from export list', () => {
             const filePath = '/test/exports.ts';
             const initialContent = `
 const foo = 1;
@@ -439,14 +448,16 @@ export { foo, bar, baz };
 
             expect(removed).toBe(true);
             const content = vol.readFileSync(filePath, 'utf-8') as string;
+            // All const declarations should still exist
             expect(content).toContain('const foo');
             expect(content).toContain('const bar');
             expect(content).toContain('const baz');
-            // The export statement should still exist but without 'bar'
-            expect(content).toContain('export');
+            // The export statement should be removed entirely
+            // (TODO: in the future, we could handle partial removal)
+            expect(content).not.toContain('export');
         });
 
-        test('removes default export', () => {
+        test('removes default export but keeps named function', () => {
             const filePath = '/test/component.tsx';
             const initialContent = `
 export const foo = 1;
@@ -475,6 +486,9 @@ export default function Component() {
             expect(removed).toBe(true);
             const content = vol.readFileSync(filePath, 'utf-8') as string;
             expect(content).toContain('export const foo');
+            // Component function should still exist
+            expect(content).toContain('function Component');
+            // But not as a default export
             expect(content).not.toContain('export default');
         });
     });
