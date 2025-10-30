@@ -143,18 +143,8 @@ function analyzeFile(filePath: string): FileAnalysis {
             const declaration = nodePath.node.declaration;
 
             if (!declaration) {
-                // export { foo, bar } from './somewhere'
-                nodePath.node.specifiers.forEach((spec) => {
-                    if (t.isExportSpecifier(spec) && t.isIdentifier(spec.exported)) {
-                        const name = spec.exported.name;
-                        // Without the actual declaration, assume non-component for lowercase
-                        exports.push({
-                            name,
-                            type: name[0] === name[0].toUpperCase() ? 'component' : 'non-component',
-                            kind: 'unknown',
-                        });
-                    }
-                });
+                // Skip re-exports like: export { foo, bar } from './somewhere'
+                // These are barrel/index files and don't need refactoring
                 return;
             }
 

@@ -1,10 +1,14 @@
 
+ok so, what about doing the 'summarize and organize this proejct for me'
+
 # Some refactors n stuff
 
 - [x] remove unused imports all over
   - [x] yay biomejs can handle it
 - [x] remove unused exports all over
-- [ ] fix-non-component-exports should bring along other non-exported locals
+- [x] fix-non-component-exports should bring along other non-exported locals
+  - [ ] don't remove `loader` from routes
+  - [ ] don't remove re-exports
 
 
 # Weeeeaving
