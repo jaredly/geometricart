@@ -1,18 +1,19 @@
 import React, {useMemo, useRef, useState} from 'react';
 import {makeEven} from '../animation/makeEven';
 import {exportPNG, renderTexture} from '../editor/ExportPng.exportPNG.related';
-import {undoAction} from '../editor/history';
-import {canvasRender, makeImage, paletteImages} from '../rendering/CanvasRender';
-import {coordsEqual} from '../rendering/pathsAreIdentical';
-import {Action, UndoAction} from '../state/Action';
-import {undo} from '../state/reducer';
-import {Coord, State, View} from '../types';
+import {canvasRender, paletteImages} from '../rendering/CanvasRender';
+import {Action} from '../state/Action';
+import {Coord, State} from '../types';
 import {animateHistory} from './animateHistory';
 import {BlurInput, BlurInt} from '../editor/Forms';
 import {drawCompassAndRuler} from './animateCompassAndRuler';
 import {worldToScreen} from '../editor/worldToScreen';
 import {dist, push} from '../rendering/getMirrorTransforms';
-import {mergeViewPoints, findViewPoints, getHistoriesList} from './HistoryPlayback.mergeViewPoints.related';
+import {
+    mergeViewPoints,
+    findViewPoints,
+    getHistoriesList,
+} from './HistoryPlayback.mergeViewPoints.related';
 import {cacheOverlays} from './cacheOverlays';
 import {applyHistoryView} from './applyHistoryView';
 
@@ -584,8 +585,6 @@ const NumberInput = ({
 //     </div>
 // }
 
-
-
 function renderZooms(
     state: State,
     zoomPreview: {zoom: number; center: Coord} | null,
@@ -714,9 +713,3 @@ function renderZooms(
         </div>
     ));
 }
-
-
-
-
-
-

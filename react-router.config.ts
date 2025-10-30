@@ -1,4 +1,3 @@
-import type {Config} from '@react-router/dev/config';
 // import {Database} from 'bun:sqlite';
 
 // const db = new Database(join(import.meta.dirname, 'data.db'));

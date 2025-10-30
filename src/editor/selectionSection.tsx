@@ -1,5 +1,15 @@
 import React from 'react';
-import {BxSelectMultipleIcon, CancelIcon, DeleteForeverIcon, IconButton, LineLongerIcon, LineShorterIcon, MirrorIcon, SelectDragIcon, VectorSelectionIcon} from '../icons/Icon';
+import {
+    BxSelectMultipleIcon,
+    CancelIcon,
+    DeleteForeverIcon,
+    IconButton,
+    LineLongerIcon,
+    LineShorterIcon,
+    MirrorIcon,
+    SelectDragIcon,
+    VectorSelectionIcon,
+} from '../icons/Icon';
 import {Action, PathMultiply} from '../state/Action';
 import {Line, State} from '../types';
 import {EditorState, SelectMode} from './Canvas.MenuItem.related';

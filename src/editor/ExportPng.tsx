@@ -1,12 +1,6 @@
-import {encodeChunks, extractChunks, insertMetadata} from 'png-metadata';
 import React from 'react';
-import {canvasRender, paletteImages} from '../rendering/CanvasRender';
 import {transparent} from './Icons';
-import {setup} from './RenderWebGL.setup.related';
-import {initialHistory} from '../state/initialState';
-import {texture1, texture2} from '../rendering/textures';
-import {State, TextureConfig} from '../types';
-import {cacheOverlays} from '../history/cacheOverlays';
+import {State} from '../types';
 import {exportPNG} from './ExportPng.exportPNG.related';
 
 export function ExportPng({
@@ -88,6 +82,3 @@ export function ExportPng({
         </div>
     );
 }
-
-
-

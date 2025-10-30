@@ -961,7 +961,6 @@ function toggleViewGuides(state: State, dispatch: React.Dispatch<Action>) {
     );
 }
 
-
 const NewPalettesForm = ({
     state,
     dispatch,

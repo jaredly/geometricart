@@ -2,12 +2,10 @@ import React, {useState} from 'react';
 import {Bounds} from '../editor/Export.Bounds.related';
 import {generateGcode, generateLaserInset} from './generateGcode';
 import {pxToMM} from './pxToMM';
-import {initialState} from '../state/initialState';
 import {State} from '../types';
 import {Visualize} from './Visualize';
 import {PathKit} from 'pathkit-wasm';
 import {gcodeStateSuffix} from './gcodeStateSuffix';
-
 
 export function Toolbar({
     state,

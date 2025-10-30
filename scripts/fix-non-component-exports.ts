@@ -317,7 +317,7 @@ function generateTargetPath(sourceFile: string, exportName: string, kind: string
 
         const conflictingPath = path.join(dir, `${exportName}${possibleExt}`);
         if (fs.existsSync(conflictingPath)) {
-            return generateTargetPath(sourceFile, exportName + '.2', kind)
+            return generateTargetPath(sourceFile, exportName + '.2', kind);
         }
     }
 
@@ -409,10 +409,7 @@ function analyzeDependencies(filePath: string, exportNames: string[]): Map<strin
                     const name = identifierPath.node.name;
 
                     // Skip if it's a property key or part of a type
-                    if (
-                        identifierPath.key === 'key' ||
-                        identifierPath.key === 'property'
-                    ) {
+                    if (identifierPath.key === 'key' || identifierPath.key === 'property') {
                         return;
                     }
 
@@ -472,7 +469,7 @@ function getDeclarationName(declaration: t.Declaration): string | null {
 function groupRelatedExports(
     exportInfos: ExportInfo[],
     dependencies: Map<string, Set<string>>,
-    allNames: Set<string>
+    allNames: Set<string>,
 ): string[][] {
     // Union-Find data structure
     const parent = new Map<string, string>();
@@ -509,7 +506,7 @@ function groupRelatedExports(
 
     // Group all items by their root parent
     // Only create groups that contain at least one export
-    const exportNamesSet = new Set(exportInfos.map(e => e.name));
+    const exportNamesSet = new Set(exportInfos.map((e) => e.name));
     const groups = new Map<string, string[]>();
 
     for (const name of allNames) {
@@ -521,8 +518,8 @@ function groupRelatedExports(
     }
 
     // Filter to only groups that contain at least one export
-    return Array.from(groups.values()).filter(group =>
-        group.some(name => exportNamesSet.has(name))
+    return Array.from(groups.values()).filter((group) =>
+        group.some((name) => exportNamesSet.has(name)),
     );
 }
 
@@ -607,11 +604,13 @@ async function main() {
                     for (const [name, deps] of dependencies) {
                         if (deps.size > 0) {
                             const depsArray = Array.from(deps);
-                            const exportedDeps = depsArray.filter(d => exportNamesSet.has(d));
-                            const localDeps = depsArray.filter(d => !exportNamesSet.has(d));
+                            const exportedDeps = depsArray.filter((d) => exportNamesSet.has(d));
+                            const localDeps = depsArray.filter((d) => !exportNamesSet.has(d));
 
                             if (exportedDeps.length > 0) {
-                                console.log(`   ${name} depends on exports: ${exportedDeps.join(', ')}`);
+                                console.log(
+                                    `   ${name} depends on exports: ${exportedDeps.join(', ')}`,
+                                );
                             }
                             if (localDeps.length > 0) {
                                 console.log(`   ${name} depends on local: ${localDeps.join(', ')}`);
@@ -625,13 +624,13 @@ async function main() {
 
                     for (const group of groups) {
                         // Separate exported and non-exported names in the group
-                        const exportedInGroup = group.filter(name => exportNamesSet.has(name));
-                        const localInGroup = group.filter(name => !exportNamesSet.has(name));
+                        const exportedInGroup = group.filter((name) => exportNamesSet.has(name));
+                        const localInGroup = group.filter((name) => !exportNamesSet.has(name));
 
                         if (exportedInGroup.length === 1 && localInGroup.length === 0) {
                             // Single export with no local dependencies
                             const expName = exportedInGroup[0];
-                            const exp = nonComponents.find(e => e.name === expName)!;
+                            const exp = nonComponents.find((e) => e.name === expName)!;
 
                             // If we have groupTypes or groupConsts, collect these for further grouping
                             if (groupTypes || groupConsts) {
@@ -655,14 +654,19 @@ async function main() {
                             // Use .tsx if source is .tsx, otherwise .ts
                             const ext = path.extname(file);
 
-                            const targetPath = path.join(dir, `${baseName}.${firstExportName}.related${ext}`);
+                            const targetPath = path.join(
+                                dir,
+                                `${baseName}.${firstExportName}.related${ext}`,
+                            );
                             const relativeTarget = path.relative(process.cwd(), targetPath);
 
                             const command = `pnpm extract-definition "${relativePath}" "${groupNames}" "${relativeTarget}"`;
                             commands.push(command);
 
                             if (localInGroup.length > 0) {
-                                console.log(`   → Grouping related (with local deps): ${group.join(', ')}`);
+                                console.log(
+                                    `   → Grouping related (with local deps): ${group.join(', ')}`,
+                                );
                             } else {
                                 console.log(`   → Grouping related: ${group.join(', ')}`);
                             }
@@ -674,8 +678,12 @@ async function main() {
                         const typeExports = singleExportsForGrouping.filter(
                             (e) => e.kind === 'type' || e.kind === 'interface' || e.kind === 'enum',
                         );
-                        const constExports = singleExportsForGrouping.filter((e) => e.kind === 'const');
-                        const functionExports = singleExportsForGrouping.filter((e) => e.kind === 'function');
+                        const constExports = singleExportsForGrouping.filter(
+                            (e) => e.kind === 'const',
+                        );
+                        const functionExports = singleExportsForGrouping.filter(
+                            (e) => e.kind === 'function',
+                        );
                         const otherExports = singleExportsForGrouping.filter(
                             (e) =>
                                 e.kind !== 'type' &&

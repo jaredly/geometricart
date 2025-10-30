@@ -1,13 +1,7 @@
-import Prando from 'prando';
 import * as React from 'react';
-// import {RoughGenerator} from 'roughjs/bin/generator';
-import {rgbToHsl} from '../rendering/colorConvert';
 import {angleBetween} from '../rendering/isAngleBetween';
 import {angleTo, dist, push} from '../rendering/getMirrorTransforms';
-import {Primitive} from '../rendering/intersect';
-import {Coord, Path, PathGroup, Segment, State} from '../types';
-import {StyleHover} from './StyleHover';
-import {useTouchClick} from './RenderIntersections';
+import {Coord, Path, Segment, State} from '../types';
 // import { DebugOrigPath } from './DebugOrigPath';
 import {MenuItem} from './Canvas.MenuItem.related';
 import {Action} from '../state/Action';
@@ -15,12 +9,8 @@ import {normalizedPath} from '../rendering/sortedVisibleInsetPaths';
 import {pathToSegmentKeys} from '../rendering/pathsAreIdentical';
 import {segmentsCenter} from './Bounds';
 import {calcPathD} from './calcPathD';
-import {RoughGenerator} from './RenderPath.RoughGenerator.related';
-import {RenderPath} from './RenderPath.RenderPath.related';
 import {paletteColor} from './RenderPath.lightenedColor.related';
 import {colorSquare} from './colorSquare';
-
-
 
 // export type RoughGenerator = {
 //     path: (raw: string, options: any) => 'path';
@@ -45,7 +35,6 @@ export const UnderlinePath = ({path, zoom, color}: {path: Path; zoom: number; co
         />
     );
 };
-
 
 const normalizedKey = (path: Path) => {
     const norm = normalizedPath(path.segments);
@@ -166,13 +155,6 @@ export const itemsForPath = (path: Path, state: State, dispatch: (action: Action
     });
     return items;
 };
-
-
-
-
-
-
-
 
 function segmentArrow(prev: Coord, i: number, seg: Segment, zoom = 1, size = 2) {
     let mid;

@@ -3,11 +3,9 @@ import React from 'react';
 import {PendingMirror} from '../useUIState';
 import {Action, UndoAction} from '../state/Action';
 import {initialState} from '../state/initialState';
-import {Id, Selection, State} from '../types';
+import {State} from '../types';
 import {getStateFromFile} from './useDropTarget';
 import {Hover} from './Hover';
-
-
 
 type TabProps = {
     state: State;

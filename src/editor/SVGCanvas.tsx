@@ -1,5 +1,4 @@
-import Prando from 'prando';
-import React, {useRef} from 'react';
+import React from 'react';
 // import {RoughGenerator} from 'roughjs/bin/generator';
 import {Action} from '../state/Action';
 import {useCurrent} from '../useCurrent';
@@ -8,7 +7,10 @@ import {findSelection, pathToPrimitives} from './findSelection';
 import {angleTo, Matrix, scale} from '../rendering/getMirrorTransforms';
 import {Guides} from './Guides';
 import {calculateBounds} from './calculateBounds';
-import {handleDuplicationIntersection, PendingDuplication} from './Guides.PendingDuplication.related';
+import {
+    handleDuplicationIntersection,
+    PendingDuplication,
+} from './Guides.PendingDuplication.related';
 import {handleSelection} from './handleSelection';
 import {Primitive} from '../rendering/intersect';
 import {applyStyleHover, StyleHover} from './StyleHover';
@@ -18,15 +20,13 @@ import {RenderPath} from './RenderPath.RenderPath.related';
 import {RoughGenerator} from './RenderPath.RoughGenerator.related';
 import {showHover} from './showHover';
 import {Hover} from './Hover';
-import {sortedVisibleInsetPaths} from '../rendering/sortedVisibleInsetPaths';
-import {Coord, State, Intersect, View, Segment, guideNeedsAngle, guidePoints} from '../types';
+import {Coord, State, Intersect, Segment, guideNeedsAngle, guidePoints} from '../types';
 import {useDragSelect, useMouseDrag} from './useMouseDrag';
 import {useScrollWheel} from './useScrollWheel';
 import {EditorState, MenuItem} from './Canvas.MenuItem.related';
 import {screenToWorld} from './Canvas.screenToWorld.related';
 import {coordsEqual} from '../rendering/pathsAreIdentical';
 import {RenderIntersections} from './RenderIntersections';
-import {PKInsetCache, getClips} from '../rendering/pkInsetPaths';
 import {useCompassAndRulerHandlers} from './useCompassAndRulerHandlers';
 import {usePathsToShow} from './SVGCanvas.usePathsToShow.related';
 import {imageCache} from './imageCache';
@@ -470,10 +470,7 @@ export function SVGCanvas({
     return svgContents;
 }
 
-
 // base64
-
-
 
 const maybeReverse = (v: boolean, reverse: boolean) => (reverse ? !v : v);
 
@@ -518,7 +515,6 @@ function finishDragFn(
         });
     };
 }
-
 
 function usePalettePreload(state: State) {
     const [, setTick] = React.useState(0);

@@ -2,7 +2,7 @@ import {transformGuideGeom} from '../rendering/calculateGuideElements';
 import {angleTo, applyMatrices, Matrix} from '../rendering/getMirrorTransforms';
 import {GuideElement} from './GuideElement';
 import {Bounds} from './Bounds';
-import {Coord, GuideGeom, guideNeedsAngle, guidePoints, PendingGuide} from '../types';
+import {Coord, guideNeedsAngle, guidePoints, PendingGuide} from '../types';
 import {pendingGuide} from './pendingGuide';
 
 export const RenderPendingGuide = ({
@@ -91,4 +91,3 @@ export const RenderPendingGuide = ({
         </g>
     );
 };
-

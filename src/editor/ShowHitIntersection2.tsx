@@ -8,8 +8,6 @@ import {angleBetween} from '../rendering/isAngleBetween';
 import {pointsList} from './pointsList';
 import {arrow} from './arrow';
 
-
-
 const isInner = (enter: Angle, exit: Angle, other: {entry: Angle; exit: Angle}) => {
     const back = backAngle(enter);
     if (

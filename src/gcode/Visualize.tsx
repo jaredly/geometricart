@@ -15,7 +15,6 @@ const parseCoords = (line: string) => {
     );
 };
 
-
 const parse = (gcode: string): GCodeData['toolPaths'] => {
     const settings = {units: 'in'};
     let pos: {x?: number; y?: number; z?: number; f?: number} = {};
@@ -28,7 +27,7 @@ const parse = (gcode: string): GCodeData['toolPaths'] => {
     //     f?: number;
     //     tool?: Tool;
     // }[] = [];
-    let tool: Tool | undefined ;
+    let tool: Tool | undefined;
     gcode.split('\n').forEach((line) => {
         const good = line.split(';')[0].trim().toLowerCase();
         if (!good.length) {
@@ -198,7 +197,6 @@ export const Visualize = ({gcode, state, time}: {gcode: string; state: State; ti
     );
 };
 
-
 const ax = ['x', 'y', 'z'] as const;
 
 const findBounds = (toolPaths: GCodeData['toolPaths'], bitSize: number, margin: number) => {
@@ -221,7 +219,6 @@ const findBounds = (toolPaths: GCodeData['toolPaths'], bitSize: number, margin: 
         } as Bound,
     );
 };
-
 
 function renderCutPaths(ctx: CanvasRenderingContext2D, data: GCodeData) {
     ctx.globalCompositeOperation = 'source-over';

@@ -7,7 +7,6 @@ import {
     geomPoints,
     geomsForGiude,
 } from '../rendering/calculateGuideElements';
-import {DrawPathState} from './DrawPath';
 import {
     angleTo,
     getMirrorTransforms,
@@ -17,10 +16,7 @@ import {primitivesForElementsAndPaths} from './primitivesForElementsAndPaths';
 import {PendingPathPair} from './PendingPathPair';
 import {PendingDuplication} from './Guides.PendingDuplication.related';
 import {CancelIcon, IconButton, MirrorIcon, ScissorsCuttingIcon} from '../icons/Icon';
-import {epsilon} from '../rendering/epsilonToZero';
-import {Bezier, createLookupTable, evaluateBezier, evaluateLookUpTable, LookUpTable} from '../lerp';
-import {mergeStyleLines} from './mergeStyleLines';
-import {mergeFills} from './mergeFills';
+import {Bezier, LookUpTable} from '../lerp';
 import {StyleHover} from './StyleHover';
 import {PendingPathControls} from './PendingPathControls';
 import {RenderWebGL} from './RenderWebGL';
@@ -28,19 +24,7 @@ import {Hover} from './Hover';
 import {RadiusSelector} from './touchscreenControls';
 import {mirrorControls} from './mirrorControls';
 import {selectionSection} from './selectionSection';
-import {
-    Animations,
-    Coord,
-    FloatLerp,
-    Segment,
-    State,
-    Style,
-    LerpPoint,
-    View,
-    Mirror,
-    Tiling,
-} from '../types';
-import {functionWithBuiltins} from '../animation/getAnimatedPaths';
+import {Coord, FloatLerp, Segment, State, LerpPoint, View, Mirror, Tiling} from '../types';
 import {Menu} from 'primereact/menu';
 import {SVGCanvas} from './SVGCanvas';
 import {useCurrent} from '../useCurrent';
@@ -76,7 +60,6 @@ type Props = {
     uiState: UIState;
 };
 
-
 /*
 
 Kinds of state:
@@ -103,14 +86,10 @@ export type TLSegmentCurve = {
     x0: number;
 };
 
-
-
-
 const evaluateBetween = (left: LerpPoint, right: LerpPoint, position: number) => {
     const percent = (position - left.pos.x) / (right.pos.x - left.pos.x);
     return percent * (right.pos.y - left.pos.y) + left.pos.y;
 };
-
 
 const evaluateTimeline = (timeline: FloatLerp, position: number) => {
     if (!timeline.points.length) {
@@ -137,15 +116,9 @@ const evaluateTimeline = (timeline: FloatLerp, position: number) => {
     return y * (timeline.range[1] - timeline.range[0]) + timeline.range[0];
 };
 
-
-
-
-
-
 /**
  * This is the newfangled version of DrawPathState... probably
  */
-
 
 const initialEditorState: EditorState = {
     tmpView: null,
@@ -515,8 +488,6 @@ export const Canvas = ({
     );
 };
 
-
-
 function duplicationControls(
     setPendingDuplication: (b: null | PendingDuplication) => void,
     pendingDuplication: PendingDuplication,
@@ -630,7 +601,6 @@ function zoomPanControls(
         </div>
     );
 }
-
 
 const ClipMenu = ({
     state,

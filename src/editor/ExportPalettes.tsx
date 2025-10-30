@@ -96,5 +96,3 @@ export const ExportPalettes = ({palettes}: {palettes: {[key: string]: Array<stri
     }
     return null;
 };
-
-

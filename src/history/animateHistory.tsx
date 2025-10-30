@@ -1,7 +1,12 @@
 import {Coord, State} from '../types';
 import {applyHistoryView} from './applyHistoryView';
 import {cacheOverlays} from './cacheOverlays';
-import {findViewPoints, getHistoriesList, mergeViewPoints, StateAndAction} from './HistoryPlayback.mergeViewPoints.related';
+import {
+    findViewPoints,
+    getHistoriesList,
+    mergeViewPoints,
+    StateAndAction,
+} from './HistoryPlayback.mergeViewPoints.related';
 import {canvasRender, paletteImages} from '../rendering/CanvasRender';
 import {findBoundingRect} from '../editor/Export.Bounds.related';
 import {renderTexture} from '../editor/ExportPng.exportPNG.related';

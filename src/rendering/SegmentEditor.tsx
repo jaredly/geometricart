@@ -6,8 +6,6 @@ import {angleTo, dist, push} from './getMirrorTransforms';
 import {SvgGrid} from './inset/SvgGrid';
 import {useInitialState} from './SegmentEditor.useOnChange.related';
 
-
-
 export const SegmentEditor = ({
     initial,
     onChange,

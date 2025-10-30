@@ -1,24 +1,7 @@
-import React, {useMemo} from 'react';
-import {PendingMirror} from '../useUIState';
-import {
-    AddIcon,
-    BxSelectMultipleIcon,
-    CancelIcon,
-    DeleteForeverIcon,
-    IconButton,
-    LineLongerIcon,
-    LineShorterIcon,
-    MirrorIcon,
-    SelectDragIcon,
-    SubtractLineIcon,
-    VectorSelectionIcon,
-} from '../icons/Icon';
-import {Action, PathMultiply} from '../state/Action';
-import {Coord, Line, State} from '../types';
-import {EditorState, SelectMode} from './Canvas.MenuItem.related';
-import {PendingDuplication} from './Guides.PendingDuplication.related';
+import {useMemo} from 'react';
+import {Action} from '../state/Action';
+import {Coord, State} from '../types';
 import {closestPoint} from '../animation/getBuiltins';
-
 
 export const RadiusSelector = ({
     state,
@@ -92,5 +75,3 @@ export const RadiusSelector = ({
 
 //     return null
 // }
-
-

@@ -1,4 +1,3 @@
-
 export class RoughGenerator {
     path(raw: string, options: any): 'path' {
         return 'path';

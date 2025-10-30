@@ -1,10 +1,9 @@
 import {angleTo, dist, push, scale} from '../rendering/getMirrorTransforms';
 import {GuideGeom} from '../types';
-import {lineToSlope, SlopeIntercept} from '../rendering/intersect';
+import {lineToSlope} from '../rendering/intersect';
 import {calcPolygon, getCircumCircle, getInCircle} from '../rendering/points';
 import {Bounds} from './Bounds';
 import {visibleEndPoints} from './visibleEndPoints';
-
 
 export const GuideElement = ({
     geom,

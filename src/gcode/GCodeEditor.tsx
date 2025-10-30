@@ -196,8 +196,6 @@ const UpDown = ({
     );
 };
 
-
-
 const findFillColors = (state: State): FillColors => {
     const colors: FillColors = {};
     Object.keys(state.paths).forEach((k) => {

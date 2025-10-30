@@ -1,7 +1,6 @@
 import React from 'react';
 import {LerpPoint} from '../types';
-import {mulPos} from './mulPos';
-import {pointsPathD, pointsPath} from './PointsEditor.pointsPathD.related';
+import {pointsPathD} from './PointsEditor.pointsPathD.related';
 
 export const PointsEditor = ({
     current,
@@ -244,7 +243,6 @@ export const PointsEditor = ({
         </div>
     );
 };
-
 
 function normalizePoints(current: LerpPoint[], min: number, max: number) {
     let sorted = current.slice().sort((a, b) => a.pos.x - b.pos.x);

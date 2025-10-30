@@ -1,4 +1,3 @@
-
 export function colorSquare(full: string | undefined, i: number) {
     return (
         <div

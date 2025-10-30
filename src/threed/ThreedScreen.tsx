@@ -6,7 +6,7 @@ import {CameraHelper, DirectionalLight, PerspectiveCamera as TPC} from 'three';
 import {BlurInt} from '../editor/Forms';
 import {usePathsToShow} from '../editor/SVGCanvas.usePathsToShow.related';
 import {Action} from '../state/Action';
-import {PathGroup, State} from '../types';
+import {State} from '../types';
 // @ts-ignore
 import {Hover} from '../editor/Hover';
 import {mmToPX} from '../gcode/pxToMM';
@@ -323,7 +323,6 @@ export const ThreedScreen = ({
         </div>
     );
 };
-
 
 const CH = ({camera}: {camera: any}) => {
     useHelper(camera, CameraHelper);

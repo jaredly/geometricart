@@ -1,6 +1,9 @@
 import React, {useState} from 'react';
 import {useCurrent} from '../useCurrent';
-import {evaluateAnimatedValues, getAnimatedFunctions} from '../editor/Canvas.timelineFunction.related';
+import {
+    evaluateAnimatedValues,
+    getAnimatedFunctions,
+} from '../editor/Canvas.timelineFunction.related';
 import {findBoundingRect} from '../editor/Export.Bounds.related';
 import {addMetadata, renderTexture} from '../editor/ExportPng.exportPNG.related';
 import {BlurInt, Toggle} from '../editor/Forms';
@@ -18,7 +21,6 @@ import {Lerps} from './Lerps';
 import {tar} from 'tinytar';
 import {cacheOverlays} from '../history/cacheOverlays';
 import {makeEven} from './makeEven';
-
 
 export const AnimationEditor = ({
     state,

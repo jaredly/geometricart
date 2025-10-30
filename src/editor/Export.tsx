@@ -1,20 +1,13 @@
 import React from 'react';
 import {BlurInt, Text, Toggle} from './Forms';
 import {transparent} from './Icons';
-import {sortedVisibleInsetPaths} from '../rendering/sortedVisibleInsetPaths';
 import {Action} from '../state/Action';
 import {State} from '../types';
-import {PendingBounds, newPendingBounds, addCoordToBounds} from './Bounds';
 import {UIState} from '../useUIState';
-import {getClips} from '../rendering/pkInsetPaths';
 import {ExportSVG} from './ExportSVG';
 import {ExportPng} from './ExportPng';
 import {PK} from './pk';
 import {stateToConstructive} from './constructiveExport';
-import {Bounds} from './Export.Bounds.related';
-
-
-
 
 export const Export = ({
     state,

@@ -1,31 +1,31 @@
 import React, {useRef} from 'react';
 import {useCurrent} from '../useCurrent';
 import {PendingMirror, UIState} from '../useUIState';
-import {Action, PathMultiply} from '../state/Action';
+import {Action} from '../state/Action';
 import {EditorState} from './Canvas.MenuItem.related';
-import {screenToWorld} from './Canvas.screenToWorld.related';
 import {DrawPath, initialState} from './DrawPath';
 import {pathToPrimitives} from './findSelection';
 import {Bounds} from './Bounds';
 import {simplifyPath} from '../rendering/simplifyPath';
-import {lineToSlope, Primitive} from '../rendering/intersect';
+import {Primitive} from '../rendering/intersect';
 import {ensureClockwise} from '../rendering/pathToPoints';
-import {geomToPrimitives} from '../rendering/points';
-import {primitiveKey} from '../rendering/coordKey';
 import {calculateInactiveGuideElements} from '../rendering/calculateGuideElements';
 import {dedupString} from '../rendering/findNextSegments';
-import {angleTo, dist, Matrix} from '../rendering/getMirrorTransforms';
+import {Matrix} from '../rendering/getMirrorTransforms';
 import {RenderIntersections} from './RenderIntersections';
 import {RenderMirror} from './RenderMirror';
 import {RenderPendingGuide} from './RenderPendingGuide';
 import {RenderPendingMirror} from './RenderPendingMirror';
 import {RenderPrimitive} from './RenderPrimitive';
 import {Hover} from './Hover';
-import {Coord, GuideElement, Id, Intersect, Path, PendingSegment, State, View} from '../types';
+import {Coord, Id, Intersect, PendingSegment, State, View} from '../types';
 import {getClips} from '../rendering/pkInsetPaths';
 import {RenderCompassAndRuler} from './RenderCompassAndRuler';
 import {handleClick, handleSpace, PendingMark, previewPos} from './compassAndRuler';
-import {PendingDuplication, handleDuplicationIntersection} from './Guides.PendingDuplication.related';
+import {
+    PendingDuplication,
+    handleDuplicationIntersection,
+} from './Guides.PendingDuplication.related';
 import {PendingPathPair} from './PendingPathPair';
 import {primitivesForElementsAndPaths} from './primitivesForElementsAndPaths';
 
@@ -65,9 +65,6 @@ import {primitivesForElementsAndPaths} from './primitivesForElementsAndPaths';
 // 		})
 // 	})
 // };
-
-
-
 
 export const Guides = ({
     state,
@@ -682,5 +679,3 @@ function keyHandler(
         }
     };
 }
-
-

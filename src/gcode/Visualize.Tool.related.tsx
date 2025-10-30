@@ -1,4 +1,3 @@
-
 export type Tool = {diameter: number; vbit?: number};
 
 export type Bound = {

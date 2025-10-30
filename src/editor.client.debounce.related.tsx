@@ -1,4 +1,3 @@
-
 export let tid: NodeJS.Timeout | null = null;
 
 export const debounce = (fn: () => Promise<void>, time: number): (() => void) => {

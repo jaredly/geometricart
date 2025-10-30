@@ -9,42 +9,24 @@ import 'primereact/resources/themes/bootstrap4-dark-blue/theme.css';
 import 'primereact/resources/primereact.min.css';
 import 'primeicons/primeicons.css';
 import 'primeflex/primeflex.css';
-import {
-    Route,
-    createRoutesFromElements,
-    useLoaderData,
-    createHashRouter,
-    useParams,
-} from 'react-router-dom';
+import {useLoaderData, useParams} from 'react-router-dom';
 import localforage from 'localforage';
-import {Checkpoint, Mirror, State, Tiling} from './types';
+import {Mirror, State} from './types';
 import {Accordion} from './sidebar/Accordion';
 import {MirrorPicker} from './MirrorPicker';
 import {SaveDest} from './SaveDest';
 import {setupState} from './setupState';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import {exportPNG} from './editor/ExportPng.exportPNG.related';
 import {DesignLoader} from './DesignLoader';
 import {Button} from 'primereact/button';
 import {useGists, gistCache} from './useGists';
-import {loadGist, newGist, saveGist} from './gists';
-import {maybeMigrate} from './state/migrateState';
 import {useDropStateTarget} from './editor/useDropTarget';
 import {WithPathKit} from './editor/pk';
 import {usePK} from './editor/pk.usePK.related';
-import {key, newState, saveState, router} from './editor.client.metaPrefix.related';
+import {newState, saveState} from './editor.client.metaPrefix.related';
 import {debounce} from './editor.client.debounce.related';
 dayjs.extend(relativeTime);
-
-
-
-
-
-
-
-
-
 
 export const Welcome = () => {
     const [activeIds, setActiveIds] = React.useState({
@@ -347,4 +329,3 @@ export const AppWithSave = ({state, save}: {state: State; save: string}) => (
         />
     </WithPathKit>
 );
-

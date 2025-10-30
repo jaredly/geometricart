@@ -1,7 +1,7 @@
 /* @jsx jsx */
 import * as React from 'react';
 import {jsx} from '@emotion/react';
-import {State, Coord} from '../types';
+import {State} from '../types';
 import {Action} from '../state/Action';
 import {ExportPalettes, ImportPalettes} from './ExportPalettes';
 import {getPalettesFromFile} from './getPalettesFromFile';
@@ -10,14 +10,10 @@ import {useDropTarget} from './useDropTarget';
 import {rgbToHsl} from '../rendering/colorConvert';
 import rc from 'react-color';
 const {SliderPicker, SketchPicker} = rc;
-// @ts-ignore
-import kMeans from 'kmeans-js';
 
 import {AttachmentsChooser} from './Rgb';
 import {Rgb} from './Rgb.2';
 import {colorAt} from './PalettesForm.averageAt.related';
-
-
 
 const toHex = (n: number) => n.toString(16).padStart(2, '0');
 const rgbToHex = ({r, g, b}: Rgb) => `#${toHex(r)}${toHex(g)}${toHex(b)}`;
@@ -313,7 +309,6 @@ const ColorEditor = ({
         </div>
     );
 };
-
 
 const findMajorColors = (data: ImageData, bins: number = 50, top: number = 10) => {
     // // h, s, l

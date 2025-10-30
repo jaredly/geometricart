@@ -24,8 +24,6 @@ const getFileContents = (file: File) => {
 const PREFIX = '<!-- TILING:';
 const SUFFIX = '-->';
 
-
-
 type Moving = {idx: number; which: number; at: Coord};
 
 const Point = ({

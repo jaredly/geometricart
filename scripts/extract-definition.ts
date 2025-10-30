@@ -247,14 +247,16 @@ async function extractDefinition(options: ExtractOptions) {
     console.log(`✓ Found ${definitions.length} definition(s)`);
 
     // Combine all definition code and ensure all have export keyword
-    const allDefinitionCode = definitions.map((d) => {
-        const code = d.code;
-        // Add export keyword if not already present
-        if (!code.trim().startsWith('export ')) {
-            return 'export ' + code;
-        }
-        return code;
-    }).join('\n\n');
+    const allDefinitionCode = definitions
+        .map((d) => {
+            const code = d.code;
+            // Add export keyword if not already present
+            if (!code.trim().startsWith('export ')) {
+                return 'export ' + code;
+            }
+            return code;
+        })
+        .join('\n\n');
     const localDependencies = new Set<string>();
 
     // Second pass: find all identifiers used in all the definitions
@@ -401,7 +403,7 @@ async function extractDefinition(options: ExtractOptions) {
         if (possibleFile !== targetFile && fs.existsSync(possibleFile)) {
             throw new Error(
                 `Cannot create ${path.basename(targetFile)} because ${path.basename(possibleFile)} already exists. ` +
-                `Importing from files with different extensions can cause conflicts.`
+                    `Importing from files with different extensions can cause conflicts.`,
             );
         }
     }

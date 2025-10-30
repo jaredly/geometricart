@@ -6,7 +6,7 @@ import React, {useMemo, useState} from 'react';
 import {pkPath} from '../sidebar/pkClipPaths';
 import {Action} from '../state/Action';
 import {initialHistory} from '../state/initialState';
-import {Fill, Path, State, StyleLine} from '../types';
+import {State} from '../types';
 import {DL} from './Export';
 import {Multi} from './Multi';
 import {Bounds, findBoundingRect} from './Export.Bounds.related';
@@ -219,7 +219,6 @@ export function ExportSVG({
         </div>
     );
 }
-
 
 const parseStyleKey = (key: string | number): [string | number, number, string | number] => {
     if (typeof key === 'number') {
@@ -672,7 +671,6 @@ const traceAndMergePaths = (PK: PathKit, state: State, size: {width: number; hei
     //     })
     //     .join('\n');
 };
-
 
 function getSVGText(state: State, size: {width: number; height: number}, inner = false) {
     const dest = document.createElement('div');

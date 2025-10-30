@@ -537,7 +537,6 @@ type MultiLine = {
     lighten: Array<number | null>;
 };
 
-
 const getSingularLine = (line: MultiLine): StyleLine | null => {
     const style: StyleLine = {};
     if (line.inset.length > 1) return null;
@@ -572,8 +571,6 @@ const addIfNew = <T,>(items: Array<T>, value: T) => {
         items.push(value);
     }
 };
-
-
 
 const mergeStyles = (one: Style, two: Style) => {
     const result: Style = {fills: [], lines: []};
@@ -728,7 +725,6 @@ const MultiColor = ({
         </div>
     );
 };
-
 
 function collectMultiStyles(styles: Style[]) {
     const fills: Array<MultiFill> = [];

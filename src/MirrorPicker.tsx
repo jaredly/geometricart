@@ -6,7 +6,6 @@ import {SelectButton} from 'primereact/selectbutton';
 import {range} from './range';
 import {SaveDest} from './SaveDest';
 
-
 export function MirrorPicker({
     onClick,
     githubToken,

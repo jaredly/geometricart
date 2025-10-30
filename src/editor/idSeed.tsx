@@ -1,4 +1,3 @@
-
 export const idSeed = (id: string) => {
     if (id.startsWith('id-')) {
         return parseInt(id.slice('id-'.length));

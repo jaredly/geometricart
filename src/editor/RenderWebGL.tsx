@@ -109,14 +109,9 @@ vec3 sdgQuad( in vec2 p, in vec2 v[4] )
 
 */
 
-
-
-
-
 // Many thanks to https://github.com/tsherif/webgl2examples/
 
 export const bl = [-1.0, -1.0, 0.0];
 export const br = [1.0, -1.0, 0.0];
 export const tr = [1.0, 1.0, 0.0];
 export const tl = [-1.0, 1.0, 0.0];
-

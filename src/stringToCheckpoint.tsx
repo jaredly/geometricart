@@ -1,4 +1,3 @@
-
 export const stringToCheckpoint = (s: string) => {
     const [branchId, branchLength, undo] = s.split('-');
     return {

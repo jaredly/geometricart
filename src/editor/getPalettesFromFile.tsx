@@ -1,4 +1,3 @@
-
 export function getPalettesFromFile(
     // palettes: { [key: string]: string[] },
     // dispatch: (action: Action) => void,

@@ -1,4 +1,3 @@
-
 export type LineColors = {
     [key: string]: {
         count: number;
