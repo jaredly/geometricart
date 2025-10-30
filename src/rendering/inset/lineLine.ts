@@ -8,7 +8,7 @@ import {angleTo, push} from '../getMirrorTransforms';
  *
  * Used to calculate the inset for a line segment that's followed by another line segment.
  */
-export const insetLineLine = (
+const insetLineLine = (
     [p1, p2, p3]: [Coord, Coord, Coord],
     // prev: Coord,
     // seg: LineSegment,

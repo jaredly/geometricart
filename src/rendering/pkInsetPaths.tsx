@@ -199,7 +199,7 @@ export type PKInsetCache = {
     };
 };
 
-export const pkPathToInsetPaths = (
+const pkPathToInsetPaths = (
     PK: PathKit,
     pkp: PKPath,
     path: Path,

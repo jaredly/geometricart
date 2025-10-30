@@ -1,7 +1,7 @@
 import {getPatternData, canonicalShape} from './getPatternData';
 import {normShape} from './normShape';
 
-export const AllShapesView = ({
+const AllShapesView = ({
     data,
 }: {
     data: Record<string, ReturnType<typeof getPatternData>>;

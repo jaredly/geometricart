@@ -88,7 +88,7 @@ export function getAnimatedPaths(
     return {paths, view};
 }
 
-export type ParsedScript = {
+type ParsedScript = {
     key: string;
     fn: any;
     args: string[];

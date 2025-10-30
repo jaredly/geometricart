@@ -67,7 +67,7 @@ const Point = ({
     );
 };
 
-export const Editor = ({one, two}: {one: Tiling; two: Tiling}) => {
+const Editor = ({one, two}: {one: Tiling; two: Tiling}) => {
     const onez = useMemo(() => handleTiling(one), [one]);
     const twoz = useMemo(() => handleTiling(two), [two]);
 
@@ -377,7 +377,7 @@ export const Morph = () => {
     );
 };
 
-export const Animate = ({
+const Animate = ({
     frames,
     shape,
     tr,

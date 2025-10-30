@@ -973,7 +973,7 @@ export function itemStyle(selected: boolean, subSelected = false): React.CSSProp
     };
 }
 
-export const NewPalettesForm = ({
+const NewPalettesForm = ({
     state,
     dispatch,
     uiDispatch,

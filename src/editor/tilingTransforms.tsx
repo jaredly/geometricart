@@ -10,7 +10,7 @@ import {
 } from '../rendering/getMirrorTransforms';
 import {angleBetween} from '../rendering/isAngleBetween';
 
-export function replicateStandard(tx: number, ty: number): Matrix[][][] {
+function replicateStandard(tx: number, ty: number): Matrix[][][] {
     const duplicates = [
         [-tx * 2, 0],
         [tx * 2, 0],

@@ -6,7 +6,7 @@ const snapCoord = (coord: Coord, margin?: number) => {
     return margin ? {x: maybeSnap(coord.x, margin), y: maybeSnap(coord.y, margin)} : coord;
 };
 
-export const CoordEditor = ({
+const CoordEditor = ({
     coords,
     onSet,
     onClick,

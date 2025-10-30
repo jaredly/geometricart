@@ -155,7 +155,7 @@ export const Float = ({value, onChange}: {value: number; onChange: (v: number) =
     );
 };
 
-export const Int = ({
+const Int = ({
     value,
     onChange,
     placeholder,
@@ -186,7 +186,7 @@ export const Int = ({
     );
 };
 
-export const Label = ({text}: {text: string}) => (
+const Label = ({text}: {text: string}) => (
     <div
         css={{
             fontWeight: 'bold',
@@ -196,7 +196,7 @@ export const Label = ({text}: {text: string}) => (
     </div>
 );
 
-export const Color = ({
+const Color = ({
     color,
     onChange,
     palette,
@@ -377,7 +377,7 @@ export const PathGroupForm = ({
     );
 };
 
-export const hasNonBodyScrollParent = (node: HTMLElement) => {
+const hasNonBodyScrollParent = (node: HTMLElement) => {
     let parent = node.parentElement;
     while (parent && parent !== document.body) {
         const style = getComputedStyle(parent);
@@ -477,7 +477,7 @@ export const PathForm = ({
     );
 };
 
-export const GuideForm = ({
+const GuideForm = ({
     guide,
     selected,
     onChange,

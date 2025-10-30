@@ -536,6 +536,11 @@ async function analyzeProject(options: Options): Promise<AnalysisResult> {
             continue;
         }
 
+        // Don't mess with react-router routes
+        if (filePath.includes('/routes/') && exports.some(e =>e.name === 'loader')) {
+            continue
+        }
+
         const importedNames = resolvedImports[filePath] ?? []
 
         for (const exp of exports) {
@@ -882,7 +887,7 @@ export {
     removeExport,
 };
 
-export type {ExportInfo, ImportInfo, AnalysisResult, Options};
+export { ExportInfo };
 
 // Only run main if this is the entry point (not when imported)
 if (typeof require !== 'undefined' && require.main === module) {

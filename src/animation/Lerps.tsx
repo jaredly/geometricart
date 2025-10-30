@@ -204,7 +204,7 @@ function FloatLerp({
     );
 }
 
-export const FnViewer = ({fn, kind}: {fn: (n: number) => number; kind: 'float-fn' | 'pos-fn'}) => {
+const FnViewer = ({fn, kind}: {fn: (n: number) => number; kind: 'float-fn' | 'pos-fn'}) => {
     const width = 150;
     const height = kind === 'float-fn' ? 50 : 150;
     const margin = 5;
@@ -246,7 +246,7 @@ export const FnViewer = ({fn, kind}: {fn: (n: number) => number; kind: 'float-fn
     );
 };
 
-export const PointsViewer = ({
+const PointsViewer = ({
     points,
     onClick,
 }: {

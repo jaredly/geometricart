@@ -23,12 +23,12 @@ import {Fill, Path, State, StyleLine} from '../types';
 import {PK} from '../editor/pk';
 import {generatePathsAndOutlines} from '../editor/ExportSVG';
 
-export const unique = (v: string[]) => {
+const unique = (v: string[]) => {
     const seen: Record<string, true> = {};
     return v.filter((v) => (!seen[v] ? (seen[v] = true) : false));
 };
 
-export const matchesHover = (path: Path, hover: Hover | null) => {
+const matchesHover = (path: Path, hover: Hover | null) => {
     if (!hover) return false;
     if (hover.type !== 'element') return false;
     if (hover.kind === 'Path') {

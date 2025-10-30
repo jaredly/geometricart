@@ -8,7 +8,7 @@ import {windingNumber} from '../src/rendering/windingNumber';
 import {pathToPrimitives} from '../src/editor/findSelection';
 import {Path, State} from '../src/types';
 
-export const DebugInside = ({path}: {path: Path}) => {
+const DebugInside = ({path}: {path: Path}) => {
     const canvasRef = useRef(null as null | HTMLCanvasElement);
     const [debug, setDebug] = React.useState([] as Array<any>);
 
@@ -99,7 +99,7 @@ const save = (state: State, index: number) => (localStorage[key] = JSON.stringif
 
 const initial = load();
 
-export const Inside = () => {
+const Inside = () => {
     const [state, setState] = React.useState(initial.state);
     const [dragging, callbacks] = useDropStateTarget((state) => {
         if (state) {

@@ -447,7 +447,7 @@ export const MultiStyleForm = ({
     );
 };
 
-export const LightDark = ({
+const LightDark = ({
     lighten,
     palette,
     color,
@@ -522,7 +522,7 @@ export const LightDark = ({
     );
 };
 
-export type MultiLine = {
+type MultiLine = {
     inset: Array<number | null>;
     color: Array<null | string | number>;
     width: Array<null | number>;
@@ -546,7 +546,7 @@ export const styleMatches = (one: StyleLine, two: StyleLine): boolean => {
     );
 };
 
-export const getSingularLine = (line: MultiLine): StyleLine | null => {
+const getSingularLine = (line: MultiLine): StyleLine | null => {
     const style: StyleLine = {};
     if (line.inset.length > 1) return null;
     if (line.inset.length) style.inset = line.inset[0] ?? undefined;
@@ -567,7 +567,7 @@ export const getSingularLine = (line: MultiLine): StyleLine | null => {
     return style;
 };
 
-export type MultiFill = {
+type MultiFill = {
     color: Array<string | number | null>;
     opacity: Array<number | null>;
     colorVariation: Array<number | null>;
@@ -575,7 +575,7 @@ export type MultiFill = {
     lighten: Array<number | null>;
 };
 
-export const addIfNew = <T,>(items: Array<T>, value: T) => {
+const addIfNew = <T,>(items: Array<T>, value: T) => {
     if (!items.includes(value)) {
         items.push(value);
     }
@@ -602,7 +602,7 @@ export const mergeStyleLines = (one: StyleLine, two: null | StyleLine): StyleLin
               width: two.width ?? one.width,
           };
 
-export const mergeStyles = (one: Style, two: Style) => {
+const mergeStyles = (one: Style, two: Style) => {
     const result: Style = {fills: [], lines: []};
     one.fills.forEach((fill, i) => {
         if (fill) {
@@ -623,7 +623,7 @@ export const mergeStyles = (one: Style, two: Style) => {
     return result;
 };
 
-export const MultiNumber = ({
+const MultiNumber = ({
     value,
     onChange,
 }: {
@@ -666,9 +666,9 @@ export const MultiNumber = ({
     );
 };
 
-export const constantColors = ['black', 'white', 'transparent'];
+const constantColors = ['black', 'white', 'transparent'];
 
-export const MultiColor = ({
+const MultiColor = ({
     color,
     onChange,
     palette,
@@ -759,7 +759,7 @@ export const MultiColor = ({
 export const maybeUrlColor = (color: string) =>
     color.startsWith('http') ? `url("${color}")` : color;
 
-export function collectMultiStyles(styles: Style[]) {
+function collectMultiStyles(styles: Style[]) {
     const fills: Array<MultiFill> = [];
     const lines: Array<MultiLine> = [];
     const maxLines = styles.reduce((num, style) => Math.max(num, style.lines.length), 0);
@@ -805,7 +805,7 @@ export function collectMultiStyles(styles: Style[]) {
     return {fills, lines};
 }
 
-export function updateLine(
+function updateLine(
     styles: Style[],
     i: number,
     value: string | number | undefined,
@@ -825,7 +825,7 @@ export function updateLine(
     });
 }
 
-export function removeLine(styles: Style[], i: number): (Style | null)[] {
+function removeLine(styles: Style[], i: number): (Style | null)[] {
     return styles.map((style) => {
         if (i >= style.lines.length) {
             return null;
@@ -836,7 +836,7 @@ export function removeLine(styles: Style[], i: number): (Style | null)[] {
     });
 }
 
-export function removeFill(styles: Style[], i: number): (Style | null)[] {
+function removeFill(styles: Style[], i: number): (Style | null)[] {
     return styles.map((style) => {
         if (i >= style.fills.length) {
             return null;
@@ -847,7 +847,7 @@ export function removeFill(styles: Style[], i: number): (Style | null)[] {
     });
 }
 
-export function updateFill(
+function updateFill(
     styles: Style[],
     i: number,
     value: string | number | undefined,

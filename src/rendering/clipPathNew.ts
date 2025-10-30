@@ -20,7 +20,7 @@ import {
     untangleHit,
 } from './untangleHit';
 
-export function addPrevsToSegments(
+function addPrevsToSegments(
     segments: Segment[],
     shape: number,
     start?: Coord,
@@ -32,7 +32,7 @@ export function addPrevsToSegments(
     }));
 }
 
-export const HIGH_PRECISION = 4;
+const HIGH_PRECISION = 4;
 
 export type SegmentWithPrev = {prev: Coord; segment: Segment; shape: number};
 
@@ -236,7 +236,7 @@ export const prevSegmentsToShape = (segments: Array<SegmentWithPrev>): null | Ar
     return bad ? null : singles;
 };
 
-export function hasNonEndpointCollision(hits: {
+function hasNonEndpointCollision(hits: {
     [key: string]: {coord: Coord; parties: Array<SegmentIntersection>};
 }) {
     let hasCollision = false;

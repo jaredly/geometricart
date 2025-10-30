@@ -165,7 +165,7 @@ type Pending = {
     points: Array<Coord>;
 };
 
-export const pendingToSeg = (s: Pending): SegmentWithPrev | null => {
+const pendingToSeg = (s: Pending): SegmentWithPrev | null => {
     if (s.type === 'Line') {
         if (s.points.length > 1) {
             return {
@@ -195,9 +195,9 @@ export const pendingToSeg = (s: Pending): SegmentWithPrev | null => {
     return null;
 };
 
-export type JustPrev = {prev: Coord; shape?: number; segment?: Segment};
+type JustPrev = {prev: Coord; shape?: number; segment?: Segment};
 
-export const segToPending = (s: SegmentWithPrev | null | JustPrev, justArc: boolean): Pending =>
+const segToPending = (s: SegmentWithPrev | null | JustPrev, justArc: boolean): Pending =>
     s
         ? s.segment && s.shape
             ? {

@@ -7,7 +7,7 @@ import {MetaData, keyPrefix, metaPrefix, updateMeta, key, meta, thumbPrefix} fro
 import {Tiling} from './types';
 import {eigenShapesToSvg, tilingPoints} from './editor/tilingPoints';
 
-export function tilingCacheSvg(cache: Tiling['cache'], shape: Tiling['shape']) {
+function tilingCacheSvg(cache: Tiling['cache'], shape: Tiling['shape']) {
     const pts = tilingPoints(shape);
     return (
         <img

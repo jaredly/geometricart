@@ -8,7 +8,7 @@ import {SegmentWithPrev} from './clipPathNew';
 import {intersections} from './intersect';
 import {SegmentEditor, useInitialState} from './SegmentEditor';
 
-export type Pair = [SegmentWithPrev, SegmentWithPrev];
+type Pair = [SegmentWithPrev, SegmentWithPrev];
 
 const Input = ({initial, onChange}: {initial: Pair | null; onChange: (pair: Pair) => void}) => {
     const [current, setCurrent] = useInitialState<

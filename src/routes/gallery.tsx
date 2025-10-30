@@ -203,4 +203,3 @@ export const Gallery = ({loaderData}: Route.ComponentProps) => {
     );
 };
 
-export default Gallery;

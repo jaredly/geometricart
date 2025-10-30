@@ -825,7 +825,7 @@ export type StateAndAction = {
     undo: UndoAction | null;
 };
 
-export function simplifyHistory(
+function simplifyHistory(
     history: StateAndAction[],
     preapplyPathUpdates: boolean,
     hideOverlays: boolean,

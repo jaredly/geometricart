@@ -14,7 +14,7 @@ import {calcShapes} from './calcShapes';
 import {ExportSection} from './ExportSection';
 import {paletteColor} from '../editor/RenderPath';
 
-export const useLatest = <T,>(value: T) => {
+const useLatest = <T,>(value: T) => {
     const ref = useRef(value);
     ref.current = value;
     return ref;

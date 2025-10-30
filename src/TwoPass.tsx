@@ -5,7 +5,7 @@ import {handleTiling} from './editor/handleTiling';
 import {eigenShapesToLines} from './editor/tilingPoints';
 import {plerp} from './Morph';
 
-export const TwoPass = ({one, two}: {one: Tiling; two: Tiling}) => {
+const TwoPass = ({one, two}: {one: Tiling; two: Tiling}) => {
     const canvas = useRef<HTMLCanvasElement>(null);
     const size = 1000;
 

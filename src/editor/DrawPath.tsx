@@ -430,5 +430,5 @@ function nextForState(
         .map((a) => a.seg);
 }
 
-export const roundAlmostPi = (angle: number) =>
+const roundAlmostPi = (angle: number) =>
     Math.abs(angle - Math.PI * 2) < epsilon ? 0 : angle;

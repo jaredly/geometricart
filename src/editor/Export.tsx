@@ -162,7 +162,7 @@ const blankUIState: UIState = {
     styleHover: null,
 };
 
-export const blankCanvasProps = {
+const blankCanvasProps = {
     pendingMirror: null,
     setPendingMirror: (_: any) => {},
     dispatch: (_: any) => {},

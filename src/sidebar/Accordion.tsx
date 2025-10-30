@@ -2,14 +2,14 @@ import * as React from 'react';
 import {cx} from '@emotion/css';
 import {Button} from 'primereact/button';
 
-export type Tab = {
+type Tab = {
     key: string;
     header: React.ReactNode;
     always?: boolean;
     onHover?: (hovered: boolean) => void;
     content: (expanded: boolean) => React.ReactNode;
 };
-export type ActiveIds = {[key: string]: boolean};
+type ActiveIds = {[key: string]: boolean};
 
 export const Accordion = ({
     tabs,

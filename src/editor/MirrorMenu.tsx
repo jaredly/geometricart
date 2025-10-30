@@ -5,7 +5,7 @@ import {Action} from '../state/Action';
 import {ShowMirror} from './MirrorForm';
 import {DeleteForeverIcon, IconButton, MirrorIcon} from '../icons/Icon';
 
-export const MirrorMenu = React.memo(
+const MirrorMenu = React.memo(
     ({
         state,
         dispatch,

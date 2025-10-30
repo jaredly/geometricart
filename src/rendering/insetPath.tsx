@@ -118,7 +118,7 @@ type Pos = HitLocation;
 //     return result;
 // };
 
-export const hasReversed = (one: Segment, onep: Coord, two: Segment, twop: Coord) => {
+const hasReversed = (one: Segment, onep: Coord, two: Segment, twop: Coord) => {
     if (
         one.type === 'Arc' &&
         two.type === 'Arc' &&
@@ -186,6 +186,6 @@ export const insetSegments = (
     return [insets.flat(), simplified.map((s) => s.to)];
 };
 
-export const insetSegmentsBeta = (segments: Array<Segment>, inset: number) => {
+const insetSegmentsBeta = (segments: Array<Segment>, inset: number) => {
     return insetSegments(segments, inset)[0];
 };

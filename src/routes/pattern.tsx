@@ -85,4 +85,3 @@ export const Pattern = () => {
         </div>
     );
 };
-export default Pattern;

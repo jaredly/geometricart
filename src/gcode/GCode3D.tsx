@@ -229,7 +229,7 @@ const GetState = ({ok}: {ok: React.MutableRefObject<any>}) => {
     return null;
 };
 
-export function takePerspectivePictures(
+function takePerspectivePictures(
     threes: any,
     ctx: CanvasRenderingContext2D,
     canv: React.RefObject<HTMLCanvasElement | null>,

@@ -11,7 +11,7 @@ type Dot = {type: 'dot'; pos: Coord; active: boolean};
 
 type Shapes = ({type: 'prim'; prim: Primitive; dashed: boolean} | Dot | null)[];
 
-export const isCompass = (state: CompassState['state']) =>
+const isCompass = (state: CompassState['state']) =>
     ['PO', 'PA1', 'PA2', 'DC'].includes(state);
 
 const diamond = (p1: Coord, p2: Coord): Primitive[] => {

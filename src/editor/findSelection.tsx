@@ -21,7 +21,7 @@ export const findSelection = (
 };
 type Rect = {x1: number; y1: number; x2: number; y2: number};
 
-export const intersectsRect = (path: Path, rect: Rect, debug?: boolean) => {
+const intersectsRect = (path: Path, rect: Rect, debug?: boolean) => {
     // Options include:
     // - at least one point on the path is inside the rect
     // or
@@ -75,7 +75,7 @@ export const intersectsRect = (path: Path, rect: Rect, debug?: boolean) => {
     return false;
 };
 
-export const pointInRect = (pos: Coord, rect: Rect) =>
+const pointInRect = (pos: Coord, rect: Rect) =>
     rect.x1 <= pos.x && pos.x <= rect.x2 && rect.y1 <= pos.y && pos.y <= rect.y2;
 
 export function pathToPrimitives(segments: Array<Segment>) {

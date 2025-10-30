@@ -2,7 +2,7 @@ import {RouterProvider} from 'react-router-dom';
 import {WithPathKit} from '../editor/pk';
 import {router} from '../editor.client';
 
-export default function Editor() {
+function Editor() {
     // if (morph) {
     //     root.render(
     //         <WithPathKit>

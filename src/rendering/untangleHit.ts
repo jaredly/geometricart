@@ -155,13 +155,13 @@ export type HitTransitions =
           back: Angle;
       };
 
-export type Transition = {
+type Transition = {
     entry: SegmentIntersection;
     exit: SegmentIntersection;
     goingInside: boolean | null;
 };
 
-export const handleHitAmbiguity = ({transitions: [one, two]}: Cross): HitTransitions => {
+const handleHitAmbiguity = ({transitions: [one, two]}: Cross): HitTransitions => {
     // ok,
     // so actually once we have this cross,
     // we can just know inside and outside.

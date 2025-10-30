@@ -4,7 +4,7 @@ import {PointsEditor, pointsPathD} from '../src/animation/PointsEditor';
 import {timelineFunction, timelineSegments, } from '../src/editor/Canvas';
 import {Coord, LerpPoint} from '../src/types';
 
-export const Timeline = () => {
+const Timeline = () => {
     const [points, setPoints] = useState([] as Array<LerpPoint>);
     const size = 500;
 

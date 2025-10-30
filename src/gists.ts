@@ -17,7 +17,7 @@ const blobToBuffer = (blob: Blob): Promise<Buffer> => {
 
 export const stateFileName = `geometric-art-state.json`;
 
-export const updateGitRepo = async (id: string, token: string, blob: Blob, state?: State) => {
+const updateGitRepo = async (id: string, token: string, blob: Blob, state?: State) => {
     const dir = '/' + id;
     const args = {
         fs,

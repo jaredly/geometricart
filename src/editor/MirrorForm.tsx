@@ -81,7 +81,7 @@ export const ShowMirror = ({
     );
 };
 
-export const MirrorForm = ({
+const MirrorForm = ({
     mirror,
     onMouseOver,
     onMouseOut,

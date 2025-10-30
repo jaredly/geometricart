@@ -16,7 +16,7 @@ const parseCoords = (line: string) => {
 
 export type Tool = {diameter: number; vbit?: number};
 
-export const parse = (gcode: string): GCodeData['toolPaths'] => {
+const parse = (gcode: string): GCodeData['toolPaths'] => {
     const settings = {units: 'in'};
     let pos: {x?: number; y?: number; z?: number; f?: number} = {};
     // if f === -1, then it's a rapid move
@@ -244,7 +244,7 @@ export type GCodeData = {
     };
 };
 
-export function renderCutPaths(ctx: CanvasRenderingContext2D, data: GCodeData) {
+function renderCutPaths(ctx: CanvasRenderingContext2D, data: GCodeData) {
     ctx.globalCompositeOperation = 'source-over';
     ctx.lineWidth = 0.1;
     ctx.strokeStyle = 'black';

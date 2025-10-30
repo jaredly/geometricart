@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-export const Slider = ({inset, onChange}: {inset: number; onChange: (value: number) => void}) => {
+const Slider = ({inset, onChange}: {inset: number; onChange: (value: number) => void}) => {
     const [moving, setMoving] = React.useState(false);
     const ref = React.useRef(null as null | SVGGElement);
     React.useEffect(() => {

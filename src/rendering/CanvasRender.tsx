@@ -469,7 +469,7 @@ export function tracePath(ctx: CanvasRenderingContext2D, path: Path, zoom: numbe
 
 // This is used for making a "clip" to the line of a path.
 // for when the stroke is supposed to be an image.
-export function tracePathLine(
+function tracePathLine(
     ctx: CanvasRenderingContext2D,
     path: Path,
     zoom: number,

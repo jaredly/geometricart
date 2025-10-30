@@ -257,6 +257,6 @@ const fx = fixtures.map((fx): Fixture<typeof untangleHit> => {
     return {...fx, input: [hit], output: [] as Array<HitCorner>};
 });
 
-export const UntangleHit = () => (
+const UntangleHit = () => (
     <Fixtures Input={Input} editDelay={100} Output={Output} run={untangleHit} fixtures={fx} />
 );

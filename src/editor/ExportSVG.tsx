@@ -27,7 +27,7 @@ const thinnestLine = (paths: State['paths']) => {
     return width;
 };
 
-export const PPI = ({
+const PPI = ({
     ppi,
     onChange,
     bounds,
@@ -854,7 +854,7 @@ function calcSVGSize(
     return size;
 }
 
-export const Select = ({
+const Select = ({
     current,
     state,
     colors,

@@ -1,4 +1,4 @@
-export const pxToIn = (value: number, ppi: number) => value / ppi;
+const pxToIn = (value: number, ppi: number) => value / ppi;
 export const inToPX = (value: number, ppi: number) => value * ppi;
 
 export const pxToMM = (value: number, ppi: number) => {

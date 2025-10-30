@@ -53,7 +53,7 @@ import {
     pointsAngles,
 } from '../rendering/pathToPoints';
 
-export type Props = {
+type Props = {
     state: State;
     // dragSelect: boolean;
     // cancelDragSelect: () => void;
@@ -102,7 +102,7 @@ Kinds of state:
 
 */
 
-export type TLSegmentCurve = {
+type TLSegmentCurve = {
     type: 'curve';
     // normalized! x0 = 0, x1 = 1
     bezier: Bezier;
@@ -110,9 +110,9 @@ export type TLSegmentCurve = {
     x0: number;
 };
 
-export type TLSegment = {type: 'straight'; y0: number; span: number; x0: number} | TLSegmentCurve;
+type TLSegment = {type: 'straight'; y0: number; span: number; x0: number} | TLSegmentCurve;
 
-export const evaluateSegment = (seg: TLSegment, percent: number) => {
+const evaluateSegment = (seg: TLSegment, percent: number) => {
     if (seg.type === 'straight') {
         return seg.y0 + seg.span * percent;
     }
@@ -120,7 +120,7 @@ export const evaluateSegment = (seg: TLSegment, percent: number) => {
     return evaluateBezier(seg.bezier, t).y;
 };
 
-export const segmentForPoints = (left: LerpPoint, right: LerpPoint): TLSegment => {
+const segmentForPoints = (left: LerpPoint, right: LerpPoint): TLSegment => {
     if (!left.rightCtrl && !right.leftCtrl) {
         return {
             type: 'straight',
@@ -145,7 +145,7 @@ export const segmentForPoints = (left: LerpPoint, right: LerpPoint): TLSegment =
     };
 };
 
-export const evaluateBetween = (left: LerpPoint, right: LerpPoint, position: number) => {
+const evaluateBetween = (left: LerpPoint, right: LerpPoint, position: number) => {
     const percent = (position - left.pos.x) / (right.pos.x - left.pos.x);
     return percent * (right.pos.y - left.pos.y) + left.pos.y;
 };
@@ -171,7 +171,7 @@ export const timelineFunction = (timeline: FloatLerp) => {
     };
 };
 
-export const evaluateTimeline = (timeline: FloatLerp, position: number) => {
+const evaluateTimeline = (timeline: FloatLerp, position: number) => {
     if (!timeline.points.length) {
         return (timeline.range[1] - timeline.range[0]) * position + timeline.range[0];
     }
@@ -242,7 +242,7 @@ export type SelectMode = boolean | 'radius' | 'path';
 /**
  * This is the newfangled version of DrawPathState... probably
  */
-export type DrawShapeState = {
+type DrawShapeState = {
     type: 'shape';
     points: Coord[];
     // that's it, right?
@@ -827,7 +827,7 @@ export function timelineSegments(timeline: FloatLerp) {
     return segments;
 }
 
-export const ClipMenu = ({
+const ClipMenu = ({
     state,
     dispatch,
     pendingPath: [pendingPath, setPendingPath],

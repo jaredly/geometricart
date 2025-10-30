@@ -260,7 +260,7 @@ export function pointsPathD(height: number, points: LerpPoint[], width: number) 
     return pointsPath(scaled).join(' ');
 }
 
-export function pointsPath(current: LerpPoint[]) {
+function pointsPath(current: LerpPoint[]) {
     return current.map((p, i) => {
         if (i === 0) {
             return `M ${p.pos.x},${p.pos.y}`;
