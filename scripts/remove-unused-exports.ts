@@ -68,12 +68,13 @@ interface ImportInfo {
     localName: string;
     filePath: string;
     importedFrom: string;
-    resolvedPath: string | null;
+    resolvedPath: string ;
     isTypeOnly: boolean;
 }
 
 interface AnalysisResult {
     exports: Map<string, ExportInfo[]>; // key: filePath
+    resolvedImports: Record<string, string[]>;
     imports: ImportInfo[];
     unusedExports: ExportInfo[];
 }
@@ -115,6 +116,10 @@ function resolveImportPath(importPath: string, fromFile: string): string | null 
             return indexPath;
         }
     }
+
+                    if (importPath.startsWith('.')) {
+                        console.warn(`Unable to resolve ${importPath} from ${fromFile}`)
+                    }
 
     return null;
 }
@@ -338,6 +343,9 @@ function extractImports(filePath: string): ImportInfo[] {
                 const node = nodePath.node;
                 const importPath = node.source.value;
                 const resolvedPath = resolveImportPath(importPath, filePath);
+                if (!resolvedPath) {
+                    return
+                }
                 const isTypeOnly = node.importKind === 'type';
 
                 node.specifiers.forEach((spec) => {
@@ -383,6 +391,7 @@ function extractImports(filePath: string): ImportInfo[] {
                     if (t.isStringLiteral(arg)) {
                         const importPath = arg.value;
                         const resolvedPath = resolveImportPath(importPath, filePath);
+                        if (!resolvedPath) return
                         // Dynamic imports import the entire module
                         imports.push({
                             importedName: '*',
@@ -402,6 +411,7 @@ function extractImports(filePath: string): ImportInfo[] {
                 if (node.source) {
                     const importPath = node.source.value;
                     const resolvedPath = resolveImportPath(importPath, filePath);
+                        if (!resolvedPath) return
                     const isTypeOnly = node.exportKind === 'type';
 
                     node.specifiers.forEach((spec) => {
@@ -425,6 +435,8 @@ function extractImports(filePath: string): ImportInfo[] {
                 const node = nodePath.node;
                 const importPath = node.source.value;
                 const resolvedPath = resolveImportPath(importPath, filePath);
+                        if (!resolvedPath) return
+
                 imports.push({
                     importedName: '*',
                     localName: '*',
@@ -457,7 +469,7 @@ async function analyzeProject(options: Options): Promise<AnalysisResult> {
         ...options.ignore,
     ];
 
-    const files = await glob(['src/**/*.{ts,tsx}', 'scripts/**/*.{ts,tsx}'], {
+    const files = await glob(['**/*.{ts,tsx}'], {
         cwd: projectRoot,
         absolute: true,
         ignore: defaultIgnore,
@@ -469,7 +481,8 @@ async function analyzeProject(options: Options): Promise<AnalysisResult> {
 
     // Extract all exports and imports
     const exportsMap = new Map<string, ExportInfo[]>();
-    const allImports: ImportInfo[] = [];
+    const resolvedImports: Record<string, string[]> = {};
+    const allImports: ImportInfo[] = []
 
     for (const file of files) {
         const exports = extractExports(file);
@@ -478,14 +491,21 @@ async function analyzeProject(options: Options): Promise<AnalysisResult> {
         }
 
         const imports = extractImports(file);
-        allImports.push(...imports);
+        imports.forEach(imp => {
+            if (!resolvedImports[imp.resolvedPath]) {
+                resolvedImports[imp.resolvedPath] = []
+            }
+            if (!resolvedImports[imp.resolvedPath].includes(imp.importedName)) {
+                resolvedImports[imp.resolvedPath].push(imp.importedName)
+            }
+        })
+        allImports.push(...imports)
     }
 
     // Determine entry points
     const defaultEntryPoints = [
         'src/index.ts',
         'src/run.tsx',
-        'src/editor.client.tsx',
     ].map(p => path.resolve(projectRoot, p));
 
     const entryPointPatterns = [
@@ -507,27 +527,6 @@ async function analyzeProject(options: Options): Promise<AnalysisResult> {
         console.log('');
     }
 
-    // Build a map of what's imported
-    const importedExports = new Map<string, Set<string>>(); // Map<filePath, Set<exportName>>
-
-    for (const imp of allImports) {
-        if (!imp.resolvedPath) continue;
-
-        if (!importedExports.has(imp.resolvedPath)) {
-            importedExports.set(imp.resolvedPath, new Set());
-        }
-
-        const importedNames = importedExports.get(imp.resolvedPath)!;
-
-        // If importing namespace or export *, mark all exports as used
-        if (imp.importedName === '*') {
-            const exports = exportsMap.get(imp.resolvedPath) || [];
-            exports.forEach(exp => importedNames.add(exp.name));
-        } else {
-            importedNames.add(imp.importedName);
-        }
-    }
-
     // Find unused exports
     const unusedExports: ExportInfo[] = [];
 
@@ -537,7 +536,7 @@ async function analyzeProject(options: Options): Promise<AnalysisResult> {
             continue;
         }
 
-        const importedNames = importedExports.get(filePath) || new Set();
+        const importedNames = resolvedImports[filePath] ?? []
 
         for (const exp of exports) {
             // Skip re-export-all
@@ -546,12 +545,7 @@ async function analyzeProject(options: Options): Promise<AnalysisResult> {
             }
 
             // Skip if imported
-            if (importedNames.has(exp.name)) {
-                continue;
-            }
-
-            // Keep default exports if they're the only export
-            if (exp.exportType === 'default' && exports.length === 1) {
+            if (importedNames.includes(exp.name)) {
                 continue;
             }
 
@@ -561,6 +555,7 @@ async function analyzeProject(options: Options): Promise<AnalysisResult> {
 
     return {
         exports: exportsMap,
+        resolvedImports,
         imports: allImports,
         unusedExports,
     };
@@ -790,20 +785,8 @@ async function main() {
     const result = await analyzeProject(options);
 
     if (options.json) {
-        // Output JSON
-        const jsonResult = {
-            totalExports: Array.from(result.exports.values()).reduce((sum, arr) => sum + arr.length, 0),
-            totalImports: result.imports.length,
-            unusedExports: result.unusedExports.map(exp => ({
-                name: exp.name,
-                filePath: path.relative(process.cwd(), exp.filePath),
-                exportType: exp.exportType,
-                isTypeOnly: exp.isTypeOnly,
-                kind: exp.kind,
-                line: exp.line,
-            })),
-        };
-        console.log(JSON.stringify(jsonResult, null, 2));
+        fs.writeFileSync('./unused-exports.json', JSON.stringify(result, null, 2))
+        console.log(`Written to ./unused-exports.json`)
         return;
     }
 
