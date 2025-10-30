@@ -618,6 +618,11 @@ async function analyzeProject(options: Options): Promise<AnalysisResult> {
                 continue;
             }
 
+            // Keep default exports if they're the only export
+            if (exp.exportType === 'default' && exports.length === 1) {
+                continue;
+            }
+
             // Skip if imported
             if (importedNames.includes(exp.name)) {
                 continue;
