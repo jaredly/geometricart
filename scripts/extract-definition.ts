@@ -785,10 +785,10 @@ async function moveFile(sourceFile: string, targetFile: string) {
     console.log(`✓ Created ${targetFile}`);
 
     // Find and update all imports across the project
-    const files = await glob(['src/**/*.{ts,tsx}', 'scripts/**/*.{ts,tsx}'], {
+    const files = await glob(['**/*.{ts,tsx}'], {
         cwd: path.resolve(__dirname, '..'),
         absolute: true,
-        ignore: ['**/node_modules/**', '**/build/**', '**/dist/**'],
+        ignore: ['**/node_modules/**', '**/build/**', '**/dist/**', '**/*.d.ts'],
     });
 
     const resolvedOldFile = path.resolve(sourceFile);
@@ -814,8 +814,11 @@ async function moveFile(sourceFile: string, targetFile: string) {
                 const source = nodePath.node.source.value;
                 const resolvedSource = resolveImportPath(file, source);
 
-                if (resolvedSource === resolvedOldFile ||
-                    resolvedSource === resolvedOldFile.replace(/\.tsx?$/, '')) {
+                // Normalize both paths by removing extensions for comparison
+                const normalizedSource = resolvedSource.replace(/\.tsx?$/, '');
+                const normalizedOldFile = resolvedOldFile.replace(/\.tsx?$/, '');
+
+                if (normalizedSource === normalizedOldFile) {
                     needsUpdate = true;
                     if (nodePath.node.loc) {
                         const lines = code.split('\n');
@@ -832,8 +835,11 @@ async function moveFile(sourceFile: string, targetFile: string) {
                     const source = nodePath.node.source.value;
                     const resolvedSource = resolveImportPath(file, source);
 
-                    if (resolvedSource === resolvedOldFile ||
-                        resolvedSource === resolvedOldFile.replace(/\.tsx?$/, '')) {
+                    // Normalize both paths by removing extensions for comparison
+                    const normalizedSource = resolvedSource.replace(/\.tsx?$/, '');
+                    const normalizedOldFile = resolvedOldFile.replace(/\.tsx?$/, '');
+
+                    if (normalizedSource === normalizedOldFile) {
                         needsUpdate = true;
                         if (nodePath.node.loc) {
                             const lines = code.split('\n');
@@ -850,8 +856,11 @@ async function moveFile(sourceFile: string, targetFile: string) {
                 const source = nodePath.node.source.value;
                 const resolvedSource = resolveImportPath(file, source);
 
-                if (resolvedSource === resolvedOldFile ||
-                    resolvedSource === resolvedOldFile.replace(/\.tsx?$/, '')) {
+                // Normalize both paths by removing extensions for comparison
+                const normalizedSource = resolvedSource.replace(/\.tsx?$/, '');
+                const normalizedOldFile = resolvedOldFile.replace(/\.tsx?$/, '');
+
+                if (normalizedSource === normalizedOldFile) {
                     needsUpdate = true;
                     if (nodePath.node.loc) {
                         const lines = code.split('\n');
