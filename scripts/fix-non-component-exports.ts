@@ -8,20 +8,22 @@
  * to separate non-component exports into their own files.
  *
  * Usage:
- *   bun scripts/fix-non-component-exports.ts [--dry-run] [--execute] [--group-types] [--group-consts]
+ *   bun scripts/fix-non-component-exports.ts [--dry-run] [--execute] [--group-types] [--group-consts] [--group-related]
  *
  * Options:
- *   --dry-run       Show what would be extracted without generating commands (default)
- *   --execute       Actually run the extract-definition commands
- *   --group-types   Group types/interfaces/enums together into a single file per component file
- *   --group-consts  Group constants together into a single file per component file
+ *   --dry-run         Show what would be extracted without generating commands (default)
+ *   --execute         Actually run the extract-definition commands
+ *   --group-types     Group types/interfaces/enums together into a single file per component file
+ *   --group-consts    Group constants together into a single file per component file
+ *   --group-related   Group exports that depend on each other into the same file
  *
  * Examples:
  *   bun scripts/fix-non-component-exports.ts
  *   bun scripts/fix-non-component-exports.ts --group-types
  *   bun scripts/fix-non-component-exports.ts --group-consts
  *   bun scripts/fix-non-component-exports.ts --group-types --group-consts
- *   bun scripts/fix-non-component-exports.ts --group-types --group-consts --execute
+ *   bun scripts/fix-non-component-exports.ts --group-related
+ *   bun scripts/fix-non-component-exports.ts --group-types --group-consts --group-related --execute
  */
 
 import * as parser from '@babel/parser';
@@ -319,6 +321,143 @@ function generateTargetPath(sourceFile: string, exportName: string, kind: string
 }
 
 /**
+ * Analyzes dependencies between exports in a file
+ * Returns a map of export name -> set of other export names it depends on
+ */
+function analyzeDependencies(filePath: string, exportNames: string[]): Map<string, Set<string>> {
+    const code = fs.readFileSync(filePath, 'utf-8');
+    const ast = parser.parse(code, {
+        sourceType: 'module',
+        plugins: ['typescript', 'jsx'],
+    });
+
+    const exportNamesSet = new Set(exportNames);
+    const dependencies = new Map<string, Set<string>>();
+
+    // Initialize dependency sets
+    for (const name of exportNames) {
+        dependencies.set(name, new Set<string>());
+    }
+
+    // Find the code for each export and analyze its dependencies
+    traverse(ast, {
+        ExportNamedDeclaration(nodePath: NodePath<t.ExportNamedDeclaration>) {
+            const declaration = nodePath.node.declaration;
+            if (!declaration) return;
+
+            let exportName: string | null = null;
+
+            // Get the export name
+            if (t.isFunctionDeclaration(declaration) || t.isClassDeclaration(declaration)) {
+                exportName = declaration.id?.name || null;
+            } else if (t.isVariableDeclaration(declaration)) {
+                const declarator = declaration.declarations[0];
+                if (t.isIdentifier(declarator.id)) {
+                    exportName = declarator.id.name;
+                }
+            } else if (t.isTSTypeAliasDeclaration(declaration) || t.isTSInterfaceDeclaration(declaration)) {
+                exportName = declaration.id.name;
+            } else if (t.isTSEnumDeclaration(declaration)) {
+                exportName = declaration.id.name;
+            }
+
+            if (!exportName || !exportNamesSet.has(exportName)) return;
+
+            // Find all identifiers used in this export's definition
+            const usedIdentifiers = new Set<string>();
+
+            traverse(t.file(t.program([nodePath.node])), {
+                Identifier(identifierPath: NodePath<t.Identifier>) {
+                    const name = identifierPath.node.name;
+
+                    // Skip if it's a property key or part of a type
+                    if (
+                        identifierPath.key === 'key' ||
+                        identifierPath.key === 'property'
+                    ) {
+                        return;
+                    }
+
+                    // Check if this identifier is bound locally (parameter, local variable)
+                    const binding = identifierPath.scope.getBinding(name);
+                    if (binding && binding.path.scope.block !== ast.program) {
+                        // It's bound locally within this export, not an external dependency
+                        return;
+                    }
+
+                    usedIdentifiers.add(name);
+                },
+                TSTypeReference(typePath: NodePath<t.TSTypeReference>) {
+                    if (t.isIdentifier(typePath.node.typeName)) {
+                        usedIdentifiers.add(typePath.node.typeName.name);
+                    }
+                },
+            });
+
+            // Filter to only dependencies on other exports in this file
+            const deps = dependencies.get(exportName)!;
+            for (const identifier of usedIdentifiers) {
+                if (exportNamesSet.has(identifier) && identifier !== exportName) {
+                    deps.add(identifier);
+                }
+            }
+        },
+    });
+
+    return dependencies;
+}
+
+/**
+ * Groups related exports using union-find algorithm
+ * Returns an array of groups, where each group is an array of export names
+ */
+function groupRelatedExports(exportInfos: ExportInfo[], dependencies: Map<string, Set<string>>): ExportInfo[][] {
+    // Union-Find data structure
+    const parent = new Map<string, string>();
+
+    // Initialize each export as its own parent
+    for (const exp of exportInfos) {
+        parent.set(exp.name, exp.name);
+    }
+
+    // Find with path compression
+    function find(x: string): string {
+        if (parent.get(x) !== x) {
+            parent.set(x, find(parent.get(x)!));
+        }
+        return parent.get(x)!;
+    }
+
+    // Union two sets
+    function union(x: string, y: string) {
+        const rootX = find(x);
+        const rootY = find(y);
+        if (rootX !== rootY) {
+            parent.set(rootX, rootY);
+        }
+    }
+
+    // Build the union-find structure based on dependencies
+    for (const [exportName, deps] of dependencies) {
+        for (const dep of deps) {
+            union(exportName, dep);
+        }
+    }
+
+    // Group exports by their root parent
+    const groups = new Map<string, ExportInfo[]>();
+    for (const exp of exportInfos) {
+        const root = find(exp.name);
+        if (!groups.has(root)) {
+            groups.set(root, []);
+        }
+        groups.get(root)!.push(exp);
+    }
+
+    return Array.from(groups.values());
+}
+
+/**
  * Main function
  */
 async function main() {
@@ -326,6 +465,7 @@ async function main() {
     const execute = args.includes('--execute');
     const groupTypes = args.includes('--group-types');
     const groupConsts = args.includes('--group-consts');
+    const groupRelated = args.includes('--group-related');
     const dryRun = !execute;
 
     console.log('🔍 Scanning project for files with mixed component/non-component exports...\n');
@@ -377,7 +517,51 @@ async function main() {
                     (e) => e.type === 'non-component' && e.name !== 'default',
                 );
 
-                if (groupTypes || groupConsts) {
+                if (groupRelated) {
+                    // Analyze dependencies and group related exports
+                    const exportNames = nonComponents.map((e) => e.name);
+                    const dependencies = analyzeDependencies(file, exportNames);
+                    const groups = groupRelatedExports(nonComponents, dependencies);
+
+                    // Log dependency information
+                    for (const [name, deps] of dependencies) {
+                        if (deps.size > 0) {
+                            console.log(`   ${name} depends on: ${Array.from(deps).join(', ')}`);
+                        }
+                    }
+
+                    // Generate commands for each group
+                    for (const group of groups) {
+                        if (group.length === 1) {
+                            // Single export - extract to its own file
+                            const exp = group[0];
+                            const targetPath = generateTargetPath(file, exp.name, exp.kind);
+                            const relativeTarget = path.relative(process.cwd(), targetPath);
+                            const command = `pnpm extract-definition "${relativePath}" "${exp.name}" "${relativeTarget}"`;
+                            commands.push(command);
+                        } else {
+                            // Multiple related exports - group them together
+                            const groupNames = group.map((e) => e.name).join(',');
+
+                            // Generate a suitable name for the group file
+                            // Use the first export's name as the base
+                            const baseName = path.basename(file, path.extname(file));
+                            const firstExportName = group[0].name;
+                            const dir = path.dirname(file);
+
+                            // Determine extension based on whether the group contains any JSX/functions
+                            const hasFunction = group.some((e) => e.kind === 'function' || e.kind === 'const');
+                            const ext = hasFunction ? path.extname(file) : '.ts';
+
+                            const targetPath = path.join(dir, `${baseName}.${firstExportName}.related${ext}`);
+                            const relativeTarget = path.relative(process.cwd(), targetPath);
+
+                            const command = `pnpm extract-definition "${relativePath}" "${groupNames}" "${relativeTarget}"`;
+                            commands.push(command);
+                            console.log(`   → Grouping related: ${group.map((e) => e.name).join(', ')}`);
+                        }
+                    }
+                } else if (groupTypes || groupConsts) {
                     // Categorize exports
                     const typeExports = nonComponents.filter(
                         (e) => e.kind === 'type' || e.kind === 'interface' || e.kind === 'enum',
