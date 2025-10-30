@@ -421,7 +421,7 @@ export const UNUSED = 2;
             expect(content).not.toContain('export const UNUSED');
         });
 
-        test('removes entire export statement when removing from export list', () => {
+        test('removes one item from export statement, keeps others', () => {
             const filePath = '/test/exports.ts';
             const initialContent = `
 const foo = 1;
@@ -452,9 +452,10 @@ export { foo, bar, baz };
             expect(content).toContain('const foo');
             expect(content).toContain('const bar');
             expect(content).toContain('const baz');
-            // The export statement should be removed entirely
-            // (TODO: in the future, we could handle partial removal)
-            expect(content).not.toContain('export');
+            // The export statement should still exist but only with foo and baz
+            expect(content).toContain('export { foo, baz }');
+            // bar should not be in the export list
+            expect(content).not.toContain('export { foo, bar, baz }');
         });
 
         test('removes default export but keeps named function', () => {

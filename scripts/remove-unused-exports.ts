@@ -594,7 +594,7 @@ function removeExport(exportInfo: ExportInfo): boolean {
                     });
 
                     if (specifiersToKeep.length === 0) {
-                        // Remove entire export statement (it's just a re-export list)
+                        // Remove entire export statement (nothing left to export)
                         if (node.start != null && node.end != null) {
                             // Find the full line(s) to remove
                             let start = node.start;
@@ -617,21 +617,34 @@ function removeExport(exportInfo: ExportInfo): boolean {
                             modified = true;
                         }
                     } else if (specifiersToKeep.length !== node.specifiers.length) {
-                        // Would need to regenerate the export statement with fewer items
-                        // For now, just remove the whole line (TODO: handle partial removal)
+                        // Regenerate the export statement with only the kept items
                         if (node.start != null && node.end != null) {
-                            let start = node.start;
-                            let end = node.end;
-                            while (start > 0 && code[start - 1] !== '\n') {
-                                start--;
-                            }
-                            while (end < code.length && code[end] !== '\n') {
-                                end++;
-                            }
-                            if (end < code.length) {
-                                end++;
-                            }
-                            modifications.push({start, end, replacement: ''});
+                            // Get the names to keep
+                            const keptNames = specifiersToKeep.map((spec) => {
+                                if (t.isExportSpecifier(spec)) {
+                                    // In ExportSpecifier, local is always an Identifier
+                                    const local = spec.local.name;
+                                    // exported can be Identifier or StringLiteral (for string exports like "default")
+                                    const exported = t.isIdentifier(spec.exported)
+                                        ? spec.exported.name
+                                        : spec.exported.value;
+                                    // If local and exported are different, use "local as exported"
+                                    return local === exported ? local : `${local} as ${exported}`;
+                                }
+                                return '';
+                            }).filter(Boolean);
+
+                            // Check if this is a re-export (has a 'from' clause)
+                            const fromClause = node.source ? ` from '${node.source.value}'` : '';
+
+                            // Reconstruct the export statement
+                            const replacement = `export { ${keptNames.join(', ')} }${fromClause};`;
+
+                            modifications.push({
+                                start: node.start,
+                                end: node.end,
+                                replacement
+                            });
                             modified = true;
                         }
                     }
