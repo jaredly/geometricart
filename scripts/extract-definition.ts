@@ -266,6 +266,13 @@ async function extractDefinition(options: ExtractOptions) {
                 return;
             }
 
+            // Skip if it's a function parameter or a locally bound variable
+            const binding = nodePath.scope.getBinding(name);
+            if (binding && binding.scope !== nodePath.scope.getProgramParent()) {
+                // This identifier is bound locally within the extracted code (e.g., a parameter or local variable)
+                return;
+            }
+
             localDependencies.add(name);
         },
         TSTypeReference(nodePath: NodePath<t.TSTypeReference>) {
@@ -475,7 +482,7 @@ async function extractDefinition(options: ExtractOptions) {
                 if (!t.isProgram(nodePath.parent)) {
                     return;
                 }
-                
+
                 nodePath.node.declarations.forEach((d: t.VariableDeclarator) => {
                     if (t.isIdentifier(d.id) && needsExport.includes(d.id.name)) {
                         if (nodePath.node.loc) {

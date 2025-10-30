@@ -8,6 +8,7 @@
     "scripts": {
         "extract-definition": "bun scripts/extract-definition.ts",
         "fix-non-component-exports": "bun scripts/fix-non-component-exports.ts",
+        "remove-unused-imports": "bun scripts/remove-unused-imports.ts",
         "analyze-deps": "depcruise src --output-type json > deps.json; bun an.ts",
         "deploy": "yarn run build && cd build && surge . geometric-art.surge.sh",
         "build": "vite build --outDir build",
@@ -18,6 +19,7 @@
         "test": "jest",
         "test:scripts": "jest scripts/",
         "test:extract": "jest scripts/extract-definition",
+        "test:remove-unused": "jest scripts/remove-unused-imports",
         "lol": "vite build && cp dist/assets/*.js dist/assets/index.js; cp dist/assets/*.css dist/assets/index.css",
         "build-docs": "node docs-src/build.js"
     },
