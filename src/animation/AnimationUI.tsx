@@ -451,7 +451,7 @@ export const Editable = ({text, onChange}: {text: string; onChange: (t: string) 
     );
 };
 
-export function tarImages(images: Uint8Array[], fps: number, state: State) {
+function tarImages(images: Uint8Array[], fps: number, state: State) {
     // @ts-ignore
     // const tar = import('tinytar').tar;
 
@@ -574,7 +574,7 @@ export const AddVbl = ({onAdd}: {onAdd: (name: string, v: Animations['lerps'][''
     );
 };
 
-export const TickTock = ({
+const TickTock = ({
     t,
     set,
     increment,
@@ -613,7 +613,7 @@ export const TickTock = ({
     );
 };
 
-export function convertDataURIToBinary(dataURI: string) {
+function convertDataURIToBinary(dataURI: string) {
     var base64 = dataURI.replace(/^data[^,]+,/, '');
     var raw = window.atob(base64);
     var rawLength = raw.length;

@@ -97,7 +97,7 @@ export function renderCutDepths(
     });
 }
 
-export function circleGradient(
+function circleGradient(
     ctx: CanvasRenderingContext2D,
     last: {x: number; y: number},
     radius: number,

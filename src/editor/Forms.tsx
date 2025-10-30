@@ -198,7 +198,7 @@ export const Label = ({text}: {text: string}) => (
     </div>
 );
 
-export const Color = ({
+const Color = ({
     color,
     onChange,
     palette,
@@ -379,7 +379,7 @@ export const PathGroupForm = ({
     );
 };
 
-export const hasNonBodyScrollParent = (node: HTMLElement) => {
+const hasNonBodyScrollParent = (node: HTMLElement) => {
     let parent = node.parentElement;
     while (parent && parent !== document.body) {
         const style = getComputedStyle(parent);
@@ -479,7 +479,7 @@ export const PathForm = ({
     );
 };
 
-export const GuideForm = ({
+const GuideForm = ({
     guide,
     selected,
     onChange,

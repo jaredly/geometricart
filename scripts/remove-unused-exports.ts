@@ -606,7 +606,10 @@ async function analyzeProject(options: Options): Promise<AnalysisResult> {
         }
 
         // Don't mess with react-router routes
-        if (filePath.includes('/routes/') && exports.some((e) => e.name === 'loader')) {
+        if (
+            filePath.includes('/routes/') &&
+            exports.some((e) => e.name === 'meta' || e.name === 'links' || e.name === 'loader')
+        ) {
             continue;
         }
         // Don't mess with config files

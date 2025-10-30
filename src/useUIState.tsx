@@ -22,7 +22,7 @@ export type UIState = {
     previewActions: Action[];
 };
 
-export const applyActions = (actions: Action[], state: State) => {
+const applyActions = (actions: Action[], state: State) => {
     for (let action of actions) {
         state = reducer(state, action);
     }

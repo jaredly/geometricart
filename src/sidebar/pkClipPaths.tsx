@@ -25,7 +25,7 @@ export const pkInset = (PK: PathKit, path: PKPath, inset: number) => {
     return path;
 };
 
-export const pkClipPath = (
+const pkClipPath = (
     PK: PathKit,
     pkp: PKPath,
     pkClip: PKPath,

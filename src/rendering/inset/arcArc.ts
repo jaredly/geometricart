@@ -16,7 +16,7 @@ import {coordsEqual} from '../pathsAreIdentical';
  * If there is no intersection between the circles after adjusting radii for the inset,
  * the two arcs will be connected with a semicircle.
  */
-export const insetArcArc = (
+const insetArcArc = (
     [, seg, next]: [Coord, ArcSegment, ArcSegment],
     amount: number,
 ): Array<Segment> => {
@@ -122,6 +122,6 @@ export const insetArcArc = (
     ];
 };
 
-export const midPoint = (c1: Coord, c2: Coord) => {
+const midPoint = (c1: Coord, c2: Coord) => {
     return {x: (c1.x + c2.x) / 2, y: (c1.y + c2.y) / 2};
 };

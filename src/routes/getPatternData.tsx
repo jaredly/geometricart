@@ -92,7 +92,7 @@ export const shapeKey = (coords: Coord[], msl: number) => {
     return `${bounds.x0.toFixed(2)},${bounds.y0.toFixed(2)},${bounds.x1.toFixed(2)},${bounds.y1.toFixed(2)}`;
 };
 
-export const uniqueWithCount = <T,>(l: T[], k: (t: T) => string) => {
+const uniqueWithCount = <T,>(l: T[], k: (t: T) => string) => {
     const seen: Record<string, number> = {};
     const count: [] = [];
     const res: T[] = [];
@@ -194,7 +194,7 @@ export const getPatternData = (tiling: Tiling, debug = false) => {
     };
 };
 
-export function calcOverlap(canon: ReturnType<typeof canonicalShape>, pts: Coord[]) {
+function calcOverlap(canon: ReturnType<typeof canonicalShape>, pts: Coord[]) {
     const overlap = pklip(canon.points, pts) as null | Coord[][];
     const full = calcPolygonArea(canon.points);
     const showing = overlap ? overlap.map(calcPolygonArea).reduce((a, b) => a + b, 0) : 0;

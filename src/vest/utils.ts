@@ -1,6 +1,6 @@
 import {Config, Fixture} from './types';
 
-export const findFixtureDivider = (chunks: Array<string>) => {
+const findFixtureDivider = (chunks: Array<string>) => {
     let divider = '===';
     while (chunks.some((c) => c.includes(divider))) {
         divider += '=';
@@ -8,7 +8,7 @@ export const findFixtureDivider = (chunks: Array<string>) => {
     return divider;
 };
 
-export const findDivider = (chunks: Array<string>) => {
+const findDivider = (chunks: Array<string>) => {
     let divider = '---';
     while (chunks.some((c) => c.includes(divider))) {
         divider += '-';
@@ -34,7 +34,7 @@ export const deserializeFixtures = <I, O>(raw: string, serde: Config<I, O>['serd
     return chunks.map((chunk) => deserializeFixture(chunk, serde));
 };
 
-export const parseDivider = (raw: string) => {
+const parseDivider = (raw: string) => {
     const first = raw.indexOf('\n');
     if (first === raw.length - 1) {
         return [];
@@ -44,7 +44,7 @@ export const parseDivider = (raw: string) => {
     return parts;
 };
 
-export const serializeFixture = <I, O>(
+const serializeFixture = <I, O>(
     // @ts-ignore
     fixture: Fixture<I, O>,
     serde: Config<I, O>['serde'],

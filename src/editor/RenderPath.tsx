@@ -331,7 +331,7 @@ const selectPathIds = (state: State, event: React.MouseEvent, ids: string[]): Ac
     };
 };
 
-export const itemsForPath = (path: Path, state: State, dispatch: (action: Action) => void) => {
+const itemsForPath = (path: Path, state: State, dispatch: (action: Action) => void) => {
     console.log('ok', path);
     const select: MenuItem[] = [];
 
@@ -532,7 +532,7 @@ export function colorSquare(full: string | undefined, i: number) {
     );
 }
 
-export function segmentArrow(prev: Coord, i: number, seg: Segment, zoom = 1, size = 2) {
+function segmentArrow(prev: Coord, i: number, seg: Segment, zoom = 1, size = 2) {
     let mid;
     if (seg.type === 'Line') {
         mid = {

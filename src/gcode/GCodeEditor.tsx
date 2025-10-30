@@ -158,7 +158,7 @@ export const GCodeEditor = ({
     );
 };
 
-export const UpDown = ({
+const UpDown = ({
     i,
     dispatch,
     state,

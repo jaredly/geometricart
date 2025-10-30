@@ -57,7 +57,7 @@ export function Settings({
     );
 }
 
-export function showBounds(bounds: Bounds | null, ppi: number): React.ReactNode {
+function showBounds(bounds: Bounds | null, ppi: number): React.ReactNode {
     return (
         <div style={{marginTop: 8, marginBottom: 16}}>
             Content Size: {bounds ? pxToMM(bounds.x2 - bounds.x1, ppi).toFixed(1) : 'unknown'}

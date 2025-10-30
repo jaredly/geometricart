@@ -55,7 +55,7 @@ export type InsetCache = {
     };
 };
 
-export const addToUsed = (path: Path, used: Used, pi: number) => {
+const addToUsed = (path: Path, used: Used, pi: number) => {
     path.segments.forEach((seg, i) => {
         const prev = i === 0 ? path.origin : path.segments[i - 1].to;
         const [key, limit] = segmentKeyAndLimit(prev, seg);
@@ -116,7 +116,7 @@ export const pathToSingles = (path: Path) => {
     return singles;
 };
 
-export const segmentKeyAndLimit = (prev: Coord, seg: Segment): [string, [number, number]] => {
+const segmentKeyAndLimit = (prev: Coord, seg: Segment): [string, [number, number]] => {
     if (seg.type === 'Line') {
         const si = lineToSlope(prev, seg.to, true);
         const key = `l:${numKey(si.m)}:${numKey(si.b)}`;
@@ -135,7 +135,7 @@ export const segmentKeyAndLimit = (prev: Coord, seg: Segment): [string, [number,
 };
 
 // Is l1 inside of l2?
-export const isEntirelyWithinInner = (
+const isEntirelyWithinInner = (
     l1: [number, number],
     i1: number,
     l2: [number, number],
@@ -160,7 +160,7 @@ export const isEntirelyWithinInner = (
     return withinLimit(l2, l1[0]) && withinLimit(l2, l1[1]);
 };
 
-export const isEntirelyWithin = (
+const isEntirelyWithin = (
     key: string,
     limit: [number, number],
     // prev: Coord,
@@ -178,7 +178,7 @@ export const isEntirelyWithin = (
     );
 };
 
-export const removeFullOverlaps = (path: Path, pi: number, used: Used, other?: Used) => {
+const removeFullOverlaps = (path: Path, pi: number, used: Used, other?: Used) => {
     const finished: Array<Path> = [];
     let current: Path = {...path, segments: [], open: true};
     let droppedAny = false;
@@ -220,7 +220,7 @@ export const removeFullOverlaps = (path: Path, pi: number, used: Used, other?: U
     }
 };
 
-export const findNewLower = (lower: number, seg: Segment, other: Uses) => {
+const findNewLower = (lower: number, seg: Segment, other: Uses) => {
     if (seg.type === 'Line') {
         let max = null;
         for (let [limit, _] of other) {
@@ -243,7 +243,7 @@ export const findNewLower = (lower: number, seg: Segment, other: Uses) => {
     }
 };
 
-export const findNewUpper = (upper: number, seg: Segment, other: Uses) => {
+const findNewUpper = (upper: number, seg: Segment, other: Uses) => {
     if (seg.type === 'Line') {
         let min = null;
         for (let [limit, _] of other) {
@@ -266,14 +266,14 @@ export const findNewUpper = (upper: number, seg: Segment, other: Uses) => {
     }
 };
 
-export const isUpOrToTheRight = (p1: Coord, p2: Coord) => {
+const isUpOrToTheRight = (p1: Coord, p2: Coord) => {
     if (closeEnough(p1.x, p2.x)) {
         return p1.y > p2.y;
     }
     return p1.x > p2.x;
 };
 
-export const adjustSeg = (
+const adjustSeg = (
     prev: Coord,
     segment: Segment,
     newLower: number | null,
@@ -328,7 +328,7 @@ export const adjustSeg = (
     return {prev: newPrev, seg: {...segment, to: newTo}};
 };
 
-export const removePartialOverlaps = (path: Path, pi: number, used: Used, other?: Used) => {
+const removePartialOverlaps = (path: Path, pi: number, used: Used, other?: Used) => {
     const finished: Array<Path> = [];
     let current: Path = {...path, segments: [], open: true};
     let droppedAny = false;

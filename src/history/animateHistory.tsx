@@ -39,7 +39,7 @@ export type AnimateState = {
     lastSelection?: {type: 'Path' | 'PathGroup'; ids: string[]};
 };
 
-export type PreviewT = 'corner' | number | null;
+type PreviewT = 'corner' | number | null;
 
 export const animateHistory = async (
     originalState: State,
@@ -368,7 +368,7 @@ export const animateHistory = async (
     console.log('ok', Date.now() - now);
 };
 
-export const overlay = (
+const overlay = (
     ctx: CanvasRenderingContext2D,
     state: AnimateState,
     historyView: State['historyView'],
@@ -396,7 +396,7 @@ export const overlay = (
     }
 };
 
-export const underlay = (
+const underlay = (
     ctx: CanvasRenderingContext2D,
     state: AnimateState,
     lastScene: ImageBitmap,

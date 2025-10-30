@@ -2,7 +2,7 @@ import * as React from 'react';
 import {Coord} from '../../types';
 import {SvgGrid} from './SvgGrid';
 
-export const CoordPicker = ({
+const CoordPicker = ({
     coords,
     onSet,
     children,

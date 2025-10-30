@@ -4,7 +4,7 @@ import {Coord, Segment} from '../types';
 import {SegmentWithPrev} from './clipPathNew';
 import {SegmentEditor, useInitialState} from './SegmentEditor';
 
-export const validSegments = (seg: Array<SegmentWithPrev>) => {
+const validSegments = (seg: Array<SegmentWithPrev>) => {
     if (seg.length === 0) {
         return false;
     }

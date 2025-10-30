@@ -5,9 +5,9 @@ import {closeEnoughAngle} from './epsilonToZero';
 import {coordsEqual} from './pathsAreIdentical';
 import {Coord, Segment} from '../types';
 
-export type Line = {type: 'Line'; p0: Coord; p1: Coord};
-export type Full = Line | Arc;
-export type Arc = {
+type Line = {type: 'Line'; p0: Coord; p1: Coord};
+type Full = Line | Arc;
+type Arc = {
     type: 'Arc';
     center: Coord;
     t0: number;

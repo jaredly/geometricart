@@ -14,7 +14,7 @@ const namedColors: {[key: string]: Rgb} = {
     white: {r: 1, g: 1, b: 1},
     black: {r: 0, g: 0, b: 0},
 };
-export const parseColor = (color?: string): null | Rgb => {
+const parseColor = (color?: string): null | Rgb => {
     if (color == null) {
         return null;
     }
@@ -30,7 +30,7 @@ export const parseColor = (color?: string): null | Rgb => {
     return {r: r / 255, g: g / 255, b: b / 255};
 };
 
-export const lightDark = ({r, g, b}: Rgb, lighten?: number): Rgb => {
+const lightDark = ({r, g, b}: Rgb, lighten?: number): Rgb => {
     if (!lighten) {
         return {r, g, b};
     }
@@ -138,15 +138,15 @@ void main() {
     ];
 };
 
-export const vec2 = (v: Coord) => `vec2(${v.x.toFixed(1)}, ${v.y.toFixed(1)})`;
-export const vec3 = (v: Rgb) => `vec3(${v.r.toFixed(2)}, ${v.g.toFixed(2)}, ${v.b.toFixed(2)})`;
-export const sub = (a: Coord, b: Coord) => ({x: a.x - b.x, y: a.y - b.y});
-export const add = (a: Coord, b: Coord) => ({x: a.x + b.x, y: a.y + b.y});
-export const mul = (a: Coord, b: Coord) => ({x: a.x * b.x, y: a.y * b.y});
-export const scale = (a: Coord, by: number) => ({x: a.x * by, y: a.y * by});
-export const cross = (a: Coord, b: Coord) => a.x * b.y - a.y * b.x;
+const vec2 = (v: Coord) => `vec2(${v.x.toFixed(1)}, ${v.y.toFixed(1)})`;
+const vec3 = (v: Rgb) => `vec3(${v.r.toFixed(2)}, ${v.g.toFixed(2)}, ${v.b.toFixed(2)})`;
+const sub = (a: Coord, b: Coord) => ({x: a.x - b.x, y: a.y - b.y});
+const add = (a: Coord, b: Coord) => ({x: a.x + b.x, y: a.y + b.y});
+const mul = (a: Coord, b: Coord) => ({x: a.x * b.x, y: a.y * b.y});
+const scale = (a: Coord, by: number) => ({x: a.x * by, y: a.y * by});
+const cross = (a: Coord, b: Coord) => a.x * b.y - a.y * b.x;
 
-export function makePathFunctions(paths: Path[], state: State, palette: string[], maxSegs: number) {
+function makePathFunctions(paths: Path[], state: State, palette: string[], maxSegs: number) {
     // const worldPos = (pos: Coord) =>
     //     add(mul(pos, { x: state.view.zoom, y: -state.view.zoom }), coff);
 
@@ -216,7 +216,7 @@ export function makePathFunctions(paths: Path[], state: State, palette: string[]
     );
 }
 
-export const transformPrim = (prim: Primitive, zoom: number): Primitive => {
+const transformPrim = (prim: Primitive, zoom: number): Primitive => {
     const wx = (x: number) => x * zoom;
     const wy = (y: number) => y * zoom;
     if (prim.type === 'line') {
@@ -241,7 +241,7 @@ export const transformPrim = (prim: Primitive, zoom: number): Primitive => {
     }
 };
 
-export const primToGlsl = (prim: Primitive) =>
+const primToGlsl = (prim: Primitive) =>
     `Segment(${prim.type === 'circle' ? 'true' : 'false'}, ${vec2({
         x: prim.limit![0],
         y: prim.limit![1],

@@ -10,7 +10,7 @@ import {shapeD} from './shapeD';
 import {chooseCorner, cmpCoords, midPoint} from './shapesFromSegments';
 import {flipPattern} from './flipPattern';
 
-export const TilingMask = ({size, hash, bounds}: {size: number; hash: string; bounds: Coord[]}) => {
+const TilingMask = ({size, hash, bounds}: {size: number; hash: string; bounds: Coord[]}) => {
     const margin = 0.5; //minSegLength * 2;
     const x = -1 - margin;
     const w = 2 + margin * 2;

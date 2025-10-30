@@ -82,7 +82,7 @@ export const calculateGuideElements = (
     return elements;
 };
 
-export type GuideElement = {
+type GuideElement = {
     id: Id;
     geom: GuideGeom;
     active: boolean;

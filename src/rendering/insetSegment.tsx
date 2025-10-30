@@ -6,7 +6,7 @@ import {angleBetween} from './isAngleBetween';
 import {anglesEqual} from './epsilonToZero';
 import {coordsEqual} from './pathsAreIdentical';
 
-export const insetLineLine = (
+const insetLineLine = (
     prev: Coord,
     seg: LineSegment,
     next: LineSegment,
@@ -40,7 +40,7 @@ export const insetLineLine = (
     return {...seg, to: intersection};
 };
 
-export const insetLineArc = (
+const insetLineArc = (
     prev: Coord,
     seg: LineSegment,
     next: ArcSegment,
@@ -125,7 +125,7 @@ export const insetLineArc = (
     return {...seg, to: target};
 };
 
-export const insetArcLine = (
+const insetArcLine = (
     prev: Coord,
     seg: ArcSegment,
     next: LineSegment,
@@ -243,7 +243,7 @@ export const insetArcLine = (
 
 // }
 
-export const insetArcArc = (
+const insetArcArc = (
     prev: Coord,
     seg: ArcSegment,
     next: ArcSegment,

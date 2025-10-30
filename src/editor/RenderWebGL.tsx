@@ -196,7 +196,7 @@ void main() {
     gl_Position = position;
 }`;
 
-export type BufferInfo = {
+type BufferInfo = {
     fb: WebGLFramebuffer;
     texture: WebGLTexture;
     i: number;

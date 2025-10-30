@@ -210,7 +210,7 @@ const point = (
     );
 };
 
-export const segmentMindpoint = (segment: SegmentWithPrev) => {
+const segmentMindpoint = (segment: SegmentWithPrev) => {
     if (segment.segment.type === 'Line') {
         return {
             x: (segment.prev.x + segment.segment.to.x) / 2,
@@ -230,7 +230,7 @@ export const segmentMindpoint = (segment: SegmentWithPrev) => {
     }
 };
 
-export const segmentAngles = (segments: Array<SegmentWithPrev>, coord: Coord) => {
+const segmentAngles = (segments: Array<SegmentWithPrev>, coord: Coord) => {
     return segments.map((segment) => {
         // const first = coordsEqual(segment.prev, coord);
         const mid = segmentMindpoint(segment);
@@ -244,7 +244,7 @@ export const segmentAngles = (segments: Array<SegmentWithPrev>, coord: Coord) =>
     });
 };
 
-export const findSegmentMidpoint = (
+const findSegmentMidpoint = (
     segments: Array<{
         segment: SegmentWithPrev;
         mid: Coord;
@@ -256,7 +256,7 @@ export const findSegmentMidpoint = (
     return segments?.find((s) => anglesEqual(s.angle, angle));
 };
 
-export const midPoint = (
+const midPoint = (
     segsWithAngles: Array<{
         segment: SegmentWithPrev;
         atMid: Angle;

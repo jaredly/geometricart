@@ -123,7 +123,7 @@ export const mirrorTransforms = (mirror: Mirror): Array<Array<Transform>> => {
 };
 
 // export type Transform = Array<Array<number>>;
-export type Transform =
+type Transform =
     | {type: 'rotate'; center: Coord; theta: number}
     | {type: 'reflect'; p1: Coord; p2: Coord};
 
@@ -148,7 +148,7 @@ export const reverseTransform = (mx: Matrix[]): Matrix[] => {
     return mx.slice().reverse().map(invertMatrix);
 };
 
-export const invertMatrix = (matrix: Matrix): Matrix => {
+const invertMatrix = (matrix: Matrix): Matrix => {
     const [[a, b, c], [d, e, f]] = matrix;
     // translation
     if (a === 1 && b === 0 && d === 0 && e === 1) {
@@ -178,7 +178,7 @@ export const invertMatrix = (matrix: Matrix): Matrix => {
     // return null;
 };
 
-export const transformToMatrices = (t: Transform) => {
+const transformToMatrices = (t: Transform) => {
     switch (t.type) {
         case 'rotate':
             return [

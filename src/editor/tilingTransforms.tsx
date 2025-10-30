@@ -11,7 +11,7 @@ import {
 import {angleBetween} from '../rendering/isAngleBetween';
 import {scalePos} from './scalePos';
 
-export function replicateStandard(tx: number, ty: number): Matrix[][][] {
+function replicateStandard(tx: number, ty: number): Matrix[][][] {
     const duplicates = [
         [-tx * 2, 0],
         [tx * 2, 0],

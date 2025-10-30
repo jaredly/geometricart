@@ -531,7 +531,7 @@ export const Guides = ({
     );
 };
 
-export const RenderPrimitives = React.memo(
+const RenderPrimitives = React.memo(
     ({
         primitives,
         zoom,

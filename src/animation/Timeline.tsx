@@ -10,7 +10,7 @@ import eq from 'fast-deep-equal';
 import {SlotEditor} from './SlotEditor';
 import {EyeIcon, EyeInvisibleIcon} from '../icons/Eyes';
 
-export const Item = ({
+const Item = ({
     item,
     onChange,
     onDelete,

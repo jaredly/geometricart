@@ -11,7 +11,7 @@ import {SegmentWithPrev} from './clipPathNew';
 
 // export type Intersection = { entering: Array<number>; exiting: Array<number> };
 
-export const splitSegmentsByIntersections = (
+const splitSegmentsByIntersections = (
     segments: Array<Segment>,
     sorted: Array<Array<Hit>>,
 ) => {
@@ -74,13 +74,13 @@ export const splitSegmentsByIntersections = (
 
 // export const addPrevsToSegments =
 
-export const segmentsToNonIntersectingSegments = (segments: Array<Segment>) => {
+const segmentsToNonIntersectingSegments = (segments: Array<Segment>) => {
     const {sorted} = calculateSortedHitsForSegments(addPrevsToSegments(segments));
 
     return splitSegmentsByIntersections(segments, sorted);
 };
 
-export const HIGH_PRECISION = 4;
+const HIGH_PRECISION = 4;
 // Ok, so now the game plan is:
 // take those segments, follow them around ...
 // and ... hmmm
@@ -89,7 +89,7 @@ export const HIGH_PRECISION = 4;
 // I mean, we could say:
 // if there's one to the right or left, then take it?
 
-export type Froms = {
+type Froms = {
     [key: string]: {
         coord: Coord;
         exits: Array<number>;
@@ -98,7 +98,7 @@ export type Froms = {
 // So there's probably a weird edge case if two corners happen to touch
 // ... not super likely, but idk what would happen.
 
-export type PartialSegment = {
+type PartialSegment = {
     prev: Coord;
     segment: Segment;
     sourceIdx: number;
@@ -116,7 +116,7 @@ export function addPrevsToSegments(segments: Segment[], origin?: Coord): Segment
     }));
 }
 
-export function calculateSortedHitsForSegments(
+function calculateSortedHitsForSegments(
     segments: SegmentWithPrev[],
     /** Do we want to include intersections that are just two endpoints meeting? */
     allowEndpoints = false,

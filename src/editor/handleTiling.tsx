@@ -40,7 +40,7 @@ export const simpleExport = async (state: State, shape: Tiling['shape']) => {
     };
 };
 
-export const slopeToPseg = (line: SlopeIntercept): SegmentWithPrev => {
+const slopeToPseg = (line: SlopeIntercept): SegmentWithPrev => {
     const [p1, p2] = slopeToLine(line);
     return {prev: p1, segment: {type: 'Line', to: p2}, shape: -1};
 };
@@ -48,7 +48,7 @@ export const slopeToPseg = (line: SlopeIntercept): SegmentWithPrev => {
 // Shapes *has* been transformed, by `getTransform(pts)`
 // the `pts` that are returned have also been transformed
 // klines is our map of deduped lines.
-export const getShapesIntersectingPolygon = (state: State, pts: Coord[]) => {
+const getShapesIntersectingPolygon = (state: State, pts: Coord[]) => {
     // PathKit doesn't have great precision at the small end. So inflate everything by 100x before calculating.
     const scale = 10000;
 

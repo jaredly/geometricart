@@ -99,7 +99,7 @@ export function Toolbar({
     );
 }
 
-export function showLaserSvg(
+function showLaserSvg(
     bounds: Bounds,
     state: State,
     w: number,
@@ -123,7 +123,7 @@ export function showLaserSvg(
     );
 }
 
-export function wrapSvg(bounds: Bounds, state: State, svg: string): BlobPart {
+function wrapSvg(bounds: Bounds, state: State, svg: string): BlobPart {
     return `<svg
         xmlns="http://www.w3.org/2000/svg"
         width="${pxToMM(bounds.x2 - bounds.x1, state.meta.ppi).toFixed(1) + 'mm'}"

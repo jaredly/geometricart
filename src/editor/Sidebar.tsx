@@ -20,7 +20,7 @@ export type Hover =
       }
     | {type: 'guides'; ids?: string[]};
 
-export type TabProps = {
+type TabProps = {
     state: State;
     dispatch: (action: Action) => unknown;
     canvasRef: {current: SVGSVGElement | null};
@@ -31,7 +31,7 @@ export type TabProps = {
     setPendingMirror: (mirror: PendingMirror | null) => void;
 };
 
-export const showDiff = (diff: any[]) => {
+const showDiff = (diff: any[]) => {
     return diff.map((item) =>
         item.type === 'UPDATE'
             ? `Update ${item.key}`
@@ -53,7 +53,7 @@ export const UndoItem = ({item}: {item: UndoAction}) => {
     return <span>{item.type}</span>;
 };
 
-export const ReallyButton = ({
+const ReallyButton = ({
     label,
     onClick,
     className,
@@ -88,7 +88,7 @@ export const ReallyButton = ({
     );
 };
 
-export function Sidebar({dispatch}: {dispatch: (action: Action) => void}) {
+function Sidebar({dispatch}: {dispatch: (action: Action) => void}) {
     return (
         <div
             style={{

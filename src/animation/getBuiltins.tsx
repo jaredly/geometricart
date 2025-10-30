@@ -151,7 +151,7 @@ export const closestPoint = (center: Coord, segments: Array<Segment>): [number, 
     return best!;
 };
 
-export const farthestPoint = (center: Coord, segments: Array<Segment>) => {
+const farthestPoint = (center: Coord, segments: Array<Segment>) => {
     let best = null as null | [number, Coord];
     rasterSegPoints(pathToPoints(segments, null)).forEach((point) => {
         const d = dist(point, center);

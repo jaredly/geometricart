@@ -8,7 +8,7 @@ import {Tiling} from './types';
 import {eigenShapesToSvg, tilingPoints} from './editor/tilingPoints';
 import {applyMatrices} from './rendering/getMirrorTransforms';
 
-export function tilingCacheSvg(cache: Tiling['cache'], shape: Tiling['shape']) {
+function tilingCacheSvg(cache: Tiling['cache'], shape: Tiling['shape']) {
     const pts = tilingPoints(shape);
     return (
         <img

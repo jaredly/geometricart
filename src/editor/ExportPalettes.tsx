@@ -3,7 +3,7 @@ import {jsx} from '@emotion/react';
 import React from 'react';
 import {Action} from '../state/Action';
 
-export const generatePaletteSvg = (palettes: {[key: string]: Array<string>}) => {
+const generatePaletteSvg = (palettes: {[key: string]: Array<string>}) => {
     const size = 20;
     const padding = 10;
     const xmargin = 0;

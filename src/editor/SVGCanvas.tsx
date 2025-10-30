@@ -520,9 +520,9 @@ export function getSelectedIds(paths: State['paths'], selection: State['selectio
     return selectedIds;
 }
 
-export const maybeReverse = (v: boolean, reverse: boolean) => (reverse ? !v : v);
+const maybeReverse = (v: boolean, reverse: boolean) => (reverse ? !v : v);
 
-export function rectForCorners(pos: {x: number; y: number}, drag: Coord) {
+function rectForCorners(pos: {x: number; y: number}, drag: Coord) {
     return {
         x1: Math.min(pos.x, drag.x),
         y1: Math.min(pos.y, drag.y),
@@ -531,7 +531,7 @@ export function rectForCorners(pos: {x: number; y: number}, drag: Coord) {
     };
 }
 
-export function finishDragFn(
+function finishDragFn(
     setEditorState: React.Dispatch<React.SetStateAction<EditorState>>,
     currentDrag: React.MutableRefObject<{pos: Coord; drag: Coord | null}>,
     currentState: React.MutableRefObject<State>,
@@ -570,7 +570,7 @@ export function viewPos(view: View, width: number, height: number) {
     return {x, y};
 }
 
-export function usePalettePreload(state: State) {
+function usePalettePreload(state: State) {
     const [, setTick] = React.useState(0);
 
     React.useEffect(() => {

@@ -13,8 +13,8 @@ import {
 } from './compassAndRuler';
 import {Action} from '../state/Action';
 
-export const genId = () => Math.random().toString(36).slice(2);
-export const useCurrent = <T>(value: T) => {
+const genId = () => Math.random().toString(36).slice(2);
+const useCurrent = <T>(value: T) => {
     const ref = useRef(value);
     ref.current = value;
     return ref;

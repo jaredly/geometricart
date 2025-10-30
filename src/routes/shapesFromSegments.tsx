@@ -61,7 +61,7 @@ const isLargerThan = (l1: [Coord, Coord], l2: [Coord, Coord]) => {
     return lte(l1MinX, l2MinX) && lte(l1MinY, l2MinY) && gte(l1MaxX, l2MaxX) && gte(l1MaxY, l2MaxY);
 };
 
-export const removeOverlappingSegs = (segs: [Coord, Coord][]) => {
+const removeOverlappingSegs = (segs: [Coord, Coord][]) => {
     const slopes = segs.map(([a, b]) => lineToSlope(a, b, true));
     const toRemove: number[] = [];
     for (let i = 0; i < slopes.length; i++) {

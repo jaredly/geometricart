@@ -30,7 +30,7 @@ const findClosest = (shape: RasterSeg[], point: Coord) => {
     return {dist: best![0], idx: best![1]};
 };
 
-export const greedyPaths = (paths: Array<{path: Path; style: StyleLine}>, ppi: number) => {
+const greedyPaths = (paths: Array<{path: Path; style: StyleLine}>, ppi: number) => {
     console.log('greedy it up', paths);
     const pathPoints: Array<Array<RasterSeg>> = [];
     paths.forEach(({path, style}) => {
@@ -484,7 +484,7 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
     return {time, text: lines.join('\n')};
 };
 
-export const cmdBounds = (cmds: GCode[]) => {
+const cmdBounds = (cmds: GCode[]) => {
     return cmds.reduce(
         (bounds, cmd) => {
             switch (cmd.type) {
@@ -621,7 +621,7 @@ const svgPathPoints = (outer: SVGSVGElement, d: string, ppd: number = 0.2): Coor
 // https://github.com/google/skia/blob/main/src/effects/SkCornerPathEffect.cpp
 // https://github.com/google/skia/blob/main/modules/pathkit/pathkit_wasm_bindings.cpp#L358
 
-export const cmdsToPoints = (cmds: number[][], pk: PathKit, outer: SVGSVGElement): Coord[][] => {
+const cmdsToPoints = (cmds: number[][], pk: PathKit, outer: SVGSVGElement): Coord[][] => {
     const points: Coord[][] = [];
 
     for (let cmd of cmds) {

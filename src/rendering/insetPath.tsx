@@ -189,6 +189,6 @@ export const insetSegments = (
     return [insets.flat(), simplified.map((s) => s.to)];
 };
 
-export const insetSegmentsBeta = (segments: Array<Segment>, inset: number) => {
+const insetSegmentsBeta = (segments: Array<Segment>, inset: number) => {
     return insetSegments(segments, inset)[0];
 };

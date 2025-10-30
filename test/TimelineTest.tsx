@@ -5,7 +5,7 @@ import {timelineFunction, timelineSegments, TLSegment, TLSegmentCurve} from '../
 import {createLookupTable, evaluateBezier, evaluateLookUpTable} from '../src/lerp';
 import {Coord, LerpPoint} from '../src/types';
 
-export const Timeline = () => {
+const Timeline = () => {
     const [points, setPoints] = useState([] as Array<LerpPoint>);
     const size = 500;
 

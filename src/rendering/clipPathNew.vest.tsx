@@ -26,7 +26,7 @@ type Output = Array<{
 
 const empty: Input = [[], []];
 
-export const Editor = ({
+const Editor = ({
     initial,
     onChange,
 }: {
@@ -116,7 +116,7 @@ export const Editor = ({
         </div>
     );
 };
-export const Fixture = ({input, output}: {input: Input; output: Output}) => {
+const Fixture = ({input, output}: {input: Input; output: Output}) => {
     const first = prevSegmentsToShape(input[0]);
     const second = prevSegmentsToShape(input[1]);
     return (

@@ -6,7 +6,7 @@ import {createPortal} from 'react-dom';
 import {hslToRgb} from '../rendering/colorConvert';
 import {averageAt, findMajorColorsExpensive, rgbToString} from './PalettesForm';
 
-export const ImageChooser = ({
+const ImageChooser = ({
     contents,
     onChoose,
 }: {

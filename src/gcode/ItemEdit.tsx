@@ -343,7 +343,7 @@ const Tabs = ({tabs, onChange}: {tabs?: Tabs; onChange: (tabs?: Tabs) => void}) 
     );
 };
 
-export const Float = ({
+const Float = ({
     value,
     onChange,
     placeholder,

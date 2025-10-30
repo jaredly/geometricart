@@ -21,14 +21,14 @@ export type Line = {
     extent?: number;
 };
 
-export type Split = {
+type Split = {
     type: 'Split';
     p1: Coord;
     p2: Coord;
     count: number;
 };
 
-export type CircleMark = {
+type CircleMark = {
     type: 'CircleMark';
     p1: Coord;
     p2: Coord;
@@ -37,7 +37,7 @@ export type CircleMark = {
     angle2?: number;
 };
 
-export type CloneCircle = {
+type CloneCircle = {
     type: 'CloneCircle';
     p1: Coord;
     p2: Coord;
@@ -57,13 +57,13 @@ export type GuideGeom =
     | Polygon
     | CircumCircle;
 
-export type Perpendicular = {
+type Perpendicular = {
     type: 'Perpendicular';
     p1: Coord;
     p2: Coord;
 };
 
-export type Polygon = {
+type Polygon = {
     type: 'Polygon';
     p1: Coord;
     p2: Coord;
@@ -71,14 +71,14 @@ export type Polygon = {
     toCenter: boolean;
 };
 
-export type InCicle = {
+type InCicle = {
     type: 'InCircle';
     p1: Coord;
     p2: Coord;
     p3: Coord;
 };
 
-export type CircumCircle = {
+type CircumCircle = {
     type: 'CircumCircle';
     p1: Coord;
     p2: Coord;
@@ -123,13 +123,13 @@ export type Circle = {
     multiples: number;
 };
 
-export type AngleBisector = {
+type AngleBisector = {
     type: 'AngleBisector';
     p1: Coord;
     p2: Coord;
     p3: Coord;
 };
-export type PerpendicularBisector = {
+type PerpendicularBisector = {
     type: 'PerpendicularBisector';
     p1: Coord;
     p2: Coord;
@@ -233,7 +233,7 @@ export type ArcSegment = {
     // large
 };
 
-export type QuadSegment = {
+type QuadSegment = {
     type: 'Quad';
     control: Coord;
     to: Coord;
@@ -259,12 +259,12 @@ export type GuideElement = {
     original: boolean;
 };
 
-export type Idd<T> = {
+type Idd<T> = {
     items: {[key: number]: T};
     next: number;
 };
 
-export type Cache = {
+type Cache = {
     guides: Idd<GuideElement>;
     // is it fine to dedup these primitives?
     // or do I need to keep them?
@@ -307,7 +307,7 @@ export type PendingPath = {
     parts: Array<PendingSegment>;
 };
 
-export type HistoryItem = {
+type HistoryItem = {
     action: UndoableAction;
     id: number;
     // parent: number;
@@ -456,7 +456,7 @@ export type TimelineLane = {
     items: Array<TimelineSlot>;
 };
 
-export type Lerp = FloatLerp | ScriptLerp | PosScript;
+type Lerp = FloatLerp | ScriptLerp | PosScript;
 
 export type ScriptLerp = {
     type: 'float-fn';
@@ -495,7 +495,7 @@ export type Animations = {
     };
 };
 
-export type ScriptVbl =
+type ScriptVbl =
     | {
           type: 'int' | 'float';
           defaultValue: number;
