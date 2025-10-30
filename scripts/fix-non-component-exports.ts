@@ -336,7 +336,7 @@ function generateTargetPath(sourceFile: string, exportName: string, kind: string
 
 /**
  * Analyzes dependencies between exports in a file
- * Returns a map of export name -> set of other export names it depends on
+ * Returns a map of export name -> set of other names (exported or local) it depends on
  */
 function analyzeDependencies(filePath: string, exportNames: string[]): Map<string, Set<string>> {
     const code = fs.readFileSync(filePath, 'utf-8');
@@ -347,6 +347,55 @@ function analyzeDependencies(filePath: string, exportNames: string[]): Map<strin
 
     const exportNamesSet = new Set(exportNames);
     const dependencies = new Map<string, Set<string>>();
+
+    // Collect all top-level definitions (both exported and non-exported)
+    const allDefinitions = new Set<string>();
+
+    traverse(ast, {
+        // Exported definitions
+        ExportNamedDeclaration(nodePath: NodePath<t.ExportNamedDeclaration>) {
+            const declaration = nodePath.node.declaration;
+            if (!declaration) return;
+
+            const name = getDeclarationName(declaration);
+            if (name) allDefinitions.add(name);
+        },
+        // Non-exported top-level definitions
+        FunctionDeclaration(nodePath: NodePath<t.FunctionDeclaration>) {
+            if (nodePath.node.id?.name && t.isProgram(nodePath.parent)) {
+                allDefinitions.add(nodePath.node.id.name);
+            }
+        },
+        VariableDeclaration(nodePath: NodePath<t.VariableDeclaration>) {
+            if (!t.isProgram(nodePath.parent)) return;
+
+            nodePath.node.declarations.forEach((declarator: t.VariableDeclarator) => {
+                if (t.isIdentifier(declarator.id)) {
+                    allDefinitions.add(declarator.id.name);
+                }
+            });
+        },
+        ClassDeclaration(nodePath: NodePath<t.ClassDeclaration>) {
+            if (nodePath.node.id?.name && t.isProgram(nodePath.parent)) {
+                allDefinitions.add(nodePath.node.id.name);
+            }
+        },
+        TSTypeAliasDeclaration(nodePath: NodePath<t.TSTypeAliasDeclaration>) {
+            if (t.isProgram(nodePath.parent)) {
+                allDefinitions.add(nodePath.node.id.name);
+            }
+        },
+        TSInterfaceDeclaration(nodePath: NodePath<t.TSInterfaceDeclaration>) {
+            if (t.isProgram(nodePath.parent)) {
+                allDefinitions.add(nodePath.node.id.name);
+            }
+        },
+        TSEnumDeclaration(nodePath: NodePath<t.TSEnumDeclaration>) {
+            if (t.isProgram(nodePath.parent)) {
+                allDefinitions.add(nodePath.node.id.name);
+            }
+        },
+    });
 
     // Initialize dependency sets
     for (const name of exportNames) {
@@ -359,22 +408,7 @@ function analyzeDependencies(filePath: string, exportNames: string[]): Map<strin
             const declaration = nodePath.node.declaration;
             if (!declaration) return;
 
-            let exportName: string | null = null;
-
-            // Get the export name
-            if (t.isFunctionDeclaration(declaration) || t.isClassDeclaration(declaration)) {
-                exportName = declaration.id?.name || null;
-            } else if (t.isVariableDeclaration(declaration)) {
-                const declarator = declaration.declarations[0];
-                if (t.isIdentifier(declarator.id)) {
-                    exportName = declarator.id.name;
-                }
-            } else if (t.isTSTypeAliasDeclaration(declaration) || t.isTSInterfaceDeclaration(declaration)) {
-                exportName = declaration.id.name;
-            } else if (t.isTSEnumDeclaration(declaration)) {
-                exportName = declaration.id.name;
-            }
-
+            const exportName = getDeclarationName(declaration);
             if (!exportName || !exportNamesSet.has(exportName)) return;
 
             // Find all identifiers used in this export's definition
@@ -408,10 +442,10 @@ function analyzeDependencies(filePath: string, exportNames: string[]): Map<strin
                 },
             });
 
-            // Filter to only dependencies on other exports in this file
+            // Include dependencies on any definition in this file (exported or not)
             const deps = dependencies.get(exportName)!;
             for (const identifier of usedIdentifiers) {
-                if (exportNamesSet.has(identifier) && identifier !== exportName) {
+                if (allDefinitions.has(identifier) && identifier !== exportName) {
                     deps.add(identifier);
                 }
             }
@@ -422,20 +456,45 @@ function analyzeDependencies(filePath: string, exportNames: string[]): Map<strin
 }
 
 /**
- * Groups related exports using union-find algorithm
- * Returns an array of groups, where each group is an array of export names
+ * Helper to get declaration name
  */
-function groupRelatedExports(exportInfos: ExportInfo[], dependencies: Map<string, Set<string>>): ExportInfo[][] {
+function getDeclarationName(declaration: t.Declaration): string | null {
+    if (t.isFunctionDeclaration(declaration) || t.isClassDeclaration(declaration)) {
+        return declaration.id?.name || null;
+    } else if (t.isVariableDeclaration(declaration)) {
+        const declarator = declaration.declarations[0];
+        if (t.isIdentifier(declarator.id)) {
+            return declarator.id.name;
+        }
+    } else if (t.isTSTypeAliasDeclaration(declaration) || t.isTSInterfaceDeclaration(declaration)) {
+        return declaration.id.name;
+    } else if (t.isTSEnumDeclaration(declaration)) {
+        return declaration.id.name;
+    }
+    return null;
+}
+
+/**
+ * Groups related exports using union-find algorithm
+ * Also includes non-exported items that the exports depend on
+ * Returns an array of groups, where each group is an array of names (both exported and non-exported)
+ */
+function groupRelatedExports(
+    exportInfos: ExportInfo[],
+    dependencies: Map<string, Set<string>>,
+    allNames: Set<string>
+): string[][] {
     // Union-Find data structure
     const parent = new Map<string, string>();
 
-    // Initialize each export as its own parent
-    for (const exp of exportInfos) {
-        parent.set(exp.name, exp.name);
+    // Initialize all items (exported and their dependencies) as their own parent
+    for (const name of allNames) {
+        parent.set(name, name);
     }
 
     // Find with path compression
     function find(x: string): string {
+        if (!parent.has(x)) return x;
         if (parent.get(x) !== x) {
             parent.set(x, find(parent.get(x)!));
         }
@@ -458,17 +517,23 @@ function groupRelatedExports(exportInfos: ExportInfo[], dependencies: Map<string
         }
     }
 
-    // Group exports by their root parent
-    const groups = new Map<string, ExportInfo[]>();
-    for (const exp of exportInfos) {
-        const root = find(exp.name);
+    // Group all items by their root parent
+    // Only create groups that contain at least one export
+    const exportNamesSet = new Set(exportInfos.map(e => e.name));
+    const groups = new Map<string, string[]>();
+
+    for (const name of allNames) {
+        const root = find(name);
         if (!groups.has(root)) {
             groups.set(root, []);
         }
-        groups.get(root)!.push(exp);
+        groups.get(root)!.push(name);
     }
 
-    return Array.from(groups.values());
+    // Filter to only groups that contain at least one export
+    return Array.from(groups.values()).filter(group =>
+        group.some(name => exportNamesSet.has(name))
+    );
 }
 
 /**
@@ -535,44 +600,72 @@ async function main() {
                     // Analyze dependencies and group related exports
                     const exportNames = nonComponents.map((e) => e.name);
                     const dependencies = analyzeDependencies(file, exportNames);
-                    const groups = groupRelatedExports(nonComponents, dependencies);
+
+                    // Collect all names (exported and their dependencies)
+                    const allNames = new Set<string>(exportNames);
+                    for (const deps of dependencies.values()) {
+                        for (const dep of deps) {
+                            allNames.add(dep);
+                        }
+                    }
+
+                    const groups = groupRelatedExports(nonComponents, dependencies, allNames);
+
+                    const exportNamesSet = new Set(exportNames);
 
                     // Log dependency information
                     for (const [name, deps] of dependencies) {
                         if (deps.size > 0) {
-                            console.log(`   ${name} depends on: ${Array.from(deps).join(', ')}`);
+                            const depsArray = Array.from(deps);
+                            const exportedDeps = depsArray.filter(d => exportNamesSet.has(d));
+                            const localDeps = depsArray.filter(d => !exportNamesSet.has(d));
+
+                            if (exportedDeps.length > 0) {
+                                console.log(`   ${name} depends on exports: ${exportedDeps.join(', ')}`);
+                            }
+                            if (localDeps.length > 0) {
+                                console.log(`   ${name} depends on local: ${localDeps.join(', ')}`);
+                            }
                         }
                     }
 
                     // Generate commands for each group
                     for (const group of groups) {
-                        if (group.length === 1) {
-                            // Single export - extract to its own file
-                            const exp = group[0];
+                        // Separate exported and non-exported names in the group
+                        const exportedInGroup = group.filter(name => exportNamesSet.has(name));
+                        const localInGroup = group.filter(name => !exportNamesSet.has(name));
+
+                        if (exportedInGroup.length === 1 && localInGroup.length === 0) {
+                            // Single export with no local dependencies - extract to its own file
+                            const expName = exportedInGroup[0];
+                            const exp = nonComponents.find(e => e.name === expName)!;
                             const targetPath = generateTargetPath(file, exp.name, exp.kind);
                             const relativeTarget = path.relative(process.cwd(), targetPath);
                             const command = `pnpm extract-definition "${relativePath}" "${exp.name}" "${relativeTarget}"`;
                             commands.push(command);
                         } else {
-                            // Multiple related exports - group them together
-                            const groupNames = group.map((e) => e.name).join(',');
+                            // Multiple items or has local dependencies - group them together
+                            const groupNames = group.join(',');
 
                             // Generate a suitable name for the group file
-                            // Use the first export's name as the base
                             const baseName = path.basename(file, path.extname(file));
-                            const firstExportName = group[0].name;
+                            const firstExportName = exportedInGroup[0];
                             const dir = path.dirname(file);
 
-                            // Determine extension based on whether the group contains any JSX/functions
-                            const hasFunction = group.some((e) => e.kind === 'function' || e.kind === 'const');
-                            const ext = hasFunction ? path.extname(file) : '.ts';
+                            // Use .tsx if source is .tsx, otherwise .ts
+                            const ext = path.extname(file);
 
                             const targetPath = path.join(dir, `${baseName}.${firstExportName}.related${ext}`);
                             const relativeTarget = path.relative(process.cwd(), targetPath);
 
                             const command = `pnpm extract-definition "${relativePath}" "${groupNames}" "${relativeTarget}"`;
                             commands.push(command);
-                            console.log(`   → Grouping related: ${group.map((e) => e.name).join(', ')}`);
+
+                            if (localInGroup.length > 0) {
+                                console.log(`   → Grouping related (with local deps): ${group.join(', ')}`);
+                            } else {
+                                console.log(`   → Grouping related: ${group.join(', ')}`);
+                            }
                         }
                     }
                 } else if (groupTypes || groupConsts) {
