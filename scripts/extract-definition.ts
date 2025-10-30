@@ -246,8 +246,15 @@ async function extractDefinition(options: ExtractOptions) {
 
     console.log(`✓ Found ${definitions.length} definition(s)`);
 
-    // Combine all definition code
-    const allDefinitionCode = definitions.map((d) => d.code).join('\n\n');
+    // Combine all definition code and ensure all have export keyword
+    const allDefinitionCode = definitions.map((d) => {
+        const code = d.code;
+        // Add export keyword if not already present
+        if (!code.trim().startsWith('export ')) {
+            return 'export ' + code;
+        }
+        return code;
+    }).join('\n\n');
     const localDependencies = new Set<string>();
 
     // Second pass: find all identifiers used in all the definitions

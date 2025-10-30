@@ -672,6 +672,41 @@ export const toRgb = (hsv: Hsv) => [0, 0, 0] as const;
             expect(result.stderr).toContain('different extensions can cause conflicts');
         });
 
+        it('should export non-exported definitions when extracting them', () => {
+            createTestFile(
+                'helpers.tsx',
+                `
+import React from 'react';
+
+// Non-exported helper
+function localHelper(value: number) {
+    return value * 2;
+}
+
+// Exported function that uses the helper
+export const calculate = (input: number) => {
+    return localHelper(input);
+};
+
+export const MyComponent = () => <div>Test</div>;
+`,
+            );
+
+            // Extract both the exported function and the non-exported helper
+            const result = runExtractDefinition([
+                'helpers.tsx',
+                'calculate,localHelper',
+                'calculate.tsx',
+            ]);
+
+            expect(result.exitCode).toBe(0);
+
+            const calculatedFile = readTestFile('calculate.tsx');
+            // Both should be exported in the new file
+            expect(calculatedFile).toContain('export function localHelper');
+            expect(calculatedFile).toContain('export const calculate');
+        });
+
         it('should handle already-exported same-file dependencies', () => {
             createTestFile(
                 'utils.ts',
