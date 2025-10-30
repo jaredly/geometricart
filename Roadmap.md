@@ -3,8 +3,8 @@
 
 - [x] remove unused imports all over
   - [x] yay biomejs can handle it
-- [ ] remove unused exports all over
-- [ ]
+- [x] remove unused exports all over
+- [ ] fix-non-component-exports should bring along other non-exported locals
 
 
 # Weeeeaving
