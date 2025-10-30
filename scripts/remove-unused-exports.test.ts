@@ -571,13 +571,27 @@ console.log(utils);
             const consumerImports = extractImports(consumerPath);
 
             // Original file exports foo
-            expect(originalExports.some(exp => exp.name === 'foo')).toBe(true);
+            expect(originalExports).toHaveLength(1);
+            expect(originalExports[0].name).toBe('foo');
 
-            // Index re-exports it (which counts as an import)
-            expect(indexImports.some(imp => imp.importedName === 'foo')).toBe(true);
+            // Index re-exports it (which counts as an import from original)
+            const importFromOriginal = indexImports.find(imp =>
+                imp.importedName === 'foo' && imp.resolvedPath === originalPath
+            );
+            expect(importFromOriginal).toBeDefined();
 
-            // Consumer imports from index
-            expect(consumerImports.some(imp => imp.importedName === 'foo')).toBe(true);
+            // Consumer imports from index (not original)
+            const importFromIndex = consumerImports.find(imp =>
+                imp.importedName === 'foo' && imp.resolvedPath === indexPath
+            );
+            expect(importFromIndex).toBeDefined();
+
+            // The chain means foo in original.ts should be considered "used"
+            // because index.ts imports it, even though consumer doesn't directly import from original
+            const originalIsImportedByIndex = indexImports.some(
+                imp => imp.resolvedPath === originalPath && imp.importedName === 'foo'
+            );
+            expect(originalIsImportedByIndex).toBe(true);
         });
     });
 });
