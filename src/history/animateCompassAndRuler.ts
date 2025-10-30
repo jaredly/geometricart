@@ -384,7 +384,7 @@ const circle = (ctx: CanvasRenderingContext2D, p: Coord, r: number, color = 'rgb
     ctx.stroke();
 };
 
-const drawRuler = (p1: Coord, p2: Coord, ctx: CanvasRenderingContext2D) => {
+export const drawRuler = (p1: Coord, p2: Coord, ctx: CanvasRenderingContext2D) => {
     circle(ctx, p1, 20);
     circle(ctx, p2, 20);
 
@@ -399,7 +399,7 @@ const drawRuler = (p1: Coord, p2: Coord, ctx: CanvasRenderingContext2D) => {
     ctx.stroke();
 };
 
-const drawCompassTemplate = (origin: Coord, pd: Coord, ctx: CanvasRenderingContext2D) => {
+export const drawCompassTemplate = (origin: Coord, pd: Coord, ctx: CanvasRenderingContext2D) => {
     // circle(ctx, origin, 20);
     // circle(ctx, pd, 20);
     const angle = angleTo(origin, pd);
@@ -435,7 +435,7 @@ const drawCompassTemplate = (origin: Coord, pd: Coord, ctx: CanvasRenderingConte
     // ctx.setLineDash([]);
 };
 
-const drawCompassCircle = (p0: Coord, pd: Coord, ctx: CanvasRenderingContext2D) => {
+export const drawCompassCircle = (p0: Coord, pd: Coord, ctx: CanvasRenderingContext2D) => {
     const radius = dist(p0, pd);
 
     ctx.strokeStyle = 'rgba(255,255,255,0.2)';
@@ -447,7 +447,12 @@ const drawCompassCircle = (p0: Coord, pd: Coord, ctx: CanvasRenderingContext2D) 
     ctx.setLineDash([]);
 };
 
-const drawCompass = (p0: Coord, pd: Coord, ctx: CanvasRenderingContext2D, destCircle = false) => {
+export const drawCompass = (
+    p0: Coord,
+    pd: Coord,
+    ctx: CanvasRenderingContext2D,
+    destCircle = false,
+) => {
     circle(ctx, p0, 20);
 
     const angle = angleTo(p0, pd);

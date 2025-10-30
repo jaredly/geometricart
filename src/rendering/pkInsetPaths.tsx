@@ -2,10 +2,11 @@ import {PathKit, Path as PKPath} from 'pathkit-wasm';
 import {applyStyleHover, StyleHover} from '../editor/StyleHover';
 import {PK} from '../editor/pk';
 import {pkInset, pkPath, pkPathToSegments} from '../sidebar/pkClipPaths';
-import {Path, PathGroup, State} from '../types';
+import {Path, PathGroup, Segment, State} from '../types';
 import {pathToSegmentKeys} from './pathsAreIdentical';
 import {
     applyColorVariations,
+    InsetCache,
     normalizedPath,
     pathToSingles,
     removeDuplicatePaths,
@@ -199,7 +200,12 @@ export type PKInsetCache = {
     };
 };
 
-const pkPathToInsetPaths = (PK: PathKit, pkp: PKPath, path: Path, insetCache: PKInsetCache) => {
+export const pkPathToInsetPaths = (
+    PK: PathKit,
+    pkp: PKPath,
+    path: Path,
+    insetCache: PKInsetCache,
+) => {
     // console.log('hm to inset paths');
     const res = pathToSingles(path).map(([path, inset]) => {
         if (!inset || Math.abs(inset) < 0.005) {

@@ -1,18 +1,20 @@
-import {useMemo, useRef, useState} from 'react';
+import {useEffect, useMemo, useRef, useState} from 'react';
 import {State, View} from '../types';
-import {EditorState} from './Canvas.MenuItem.related';
-import {screenToWorld} from './Canvas.screenToWorld.related';
+import {EditorState, screenToWorld} from './Canvas';
 import {
     canFreeClick,
+    dragPos,
+    handleClick,
     markToGeom,
     mouseDownMark,
     mouseMoveMark,
     PendingMark,
+    previewPos,
 } from './compassAndRuler';
 import {Action} from '../state/Action';
 
-const genId = () => Math.random().toString(36).slice(2);
-const useCurrent = <T>(value: T) => {
+export const genId = () => Math.random().toString(36).slice(2);
+export const useCurrent = <T>(value: T) => {
     const ref = useRef(value);
     ref.current = value;
     return ref;

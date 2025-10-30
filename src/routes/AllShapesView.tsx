@@ -1,7 +1,11 @@
 import {getPatternData, canonicalShape} from './getPatternData';
 import {normShape} from './normShape';
 
-const AllShapesView = ({data}: {data: Record<string, ReturnType<typeof getPatternData>>}) => {
+export const AllShapesView = ({
+    data,
+}: {
+    data: Record<string, ReturnType<typeof getPatternData>>;
+}) => {
     const allShapes: Record<
         string,
         {shape: ReturnType<typeof canonicalShape>; patterns: {hash: string; count: number}[]}

@@ -1,13 +1,26 @@
+/* @jsx jsx */
+/* @jsxFrag React.Fragment */
+import {jsx} from '@emotion/react';
 import {diff} from 'json-diff-ts';
 import React from 'react';
 import {PendingMirror} from '../useUIState';
 import {Action, UndoAction} from '../state/Action';
 import {initialState} from '../state/initialState';
-import {State} from '../types';
+import {Id, Selection, State} from '../types';
 import {getStateFromFile} from './useDropTarget';
-import {Hover} from './Hover';
 
-type TabProps = {
+export const PREFIX = `<!-- STATE:`;
+export const SUFFIX = '-->';
+
+export type Hover =
+    | {
+          type: 'element';
+          kind: Selection['type'] | 'Clip' | 'Tiling';
+          id: Id;
+      }
+    | {type: 'guides'; ids?: string[]};
+
+export type TabProps = {
     state: State;
     dispatch: (action: Action) => unknown;
     canvasRef: {current: SVGSVGElement | null};
@@ -18,7 +31,7 @@ type TabProps = {
     setPendingMirror: (mirror: PendingMirror | null) => void;
 };
 
-const showDiff = (diff: any[]) => {
+export const showDiff = (diff: any[]) => {
     return diff.map((item) =>
         item.type === 'UPDATE'
             ? `Update ${item.key}`
@@ -40,7 +53,7 @@ export const UndoItem = ({item}: {item: UndoAction}) => {
     return <span>{item.type}</span>;
 };
 
-const ReallyButton = ({
+export const ReallyButton = ({
     label,
     onClick,
     className,
@@ -75,7 +88,7 @@ const ReallyButton = ({
     );
 };
 
-function Sidebar({dispatch}: {dispatch: (action: Action) => void}) {
+export function Sidebar({dispatch}: {dispatch: (action: Action) => void}) {
     return (
         <div
             style={{

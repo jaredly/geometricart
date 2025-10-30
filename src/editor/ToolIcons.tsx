@@ -1,11 +1,13 @@
+/* @jsx jsx */
+/* @jsxFrag React.Fragment */
+import {jsx} from '@emotion/react';
 import React from 'react';
 import {Action} from '../state/Action';
 import {push} from '../rendering/getMirrorTransforms';
 import {State, GuideGeom} from '../types';
 import {Button} from 'primereact/button';
 import {toTypeRev} from '../handleKeyboard';
-import {ToolIcon} from './Canvas';
-import {EditorState} from './Canvas.MenuItem.related';
+import {EditorState, ToolIcon} from './Canvas';
 import {findAdjacentPaths} from '../animation/getBuiltins';
 
 export function ToolIcons({

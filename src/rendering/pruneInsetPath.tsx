@@ -41,7 +41,10 @@ if you get to an intersection where switching /isn't/ better, then you bail, and
 
 */
 
-const pruneInsetPath = (segments: Array<Segment>, debug?: boolean): Array<Array<Segment>> => {
+export const pruneInsetPath = (
+    segments: Array<Segment>,
+    debug?: boolean,
+): Array<Array<Segment>> => {
     if (!segments.length) {
         return [];
     }
@@ -171,7 +174,7 @@ const pruneInsetPath = (segments: Array<Segment>, debug?: boolean): Array<Array<
 
 export type Hit = {first: number; second: number; coord: Coord; idx: number};
 
-const getClockwiseExit = (
+export const getClockwiseExit = (
     sorted: Array<Array<Hit>>,
     segments: Array<Segment>,
     primitives: Array<Primitive>,

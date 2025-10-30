@@ -1,10 +1,13 @@
+/* @jsx jsx */
+/* @jsxFrag React.Fragment */
+import {jsx} from '@emotion/react';
 import React from 'react';
 import {State} from '../types';
 import {Action} from '../state/Action';
-import {selectedPathIds} from './selectedPathIds';
-import {itemStyle} from '../sidebar/itemStyle';
+import {selectedPathIds} from './touchscreenControls';
+import {itemStyle} from '../sidebar/NewSidebar';
 import {Checkbox} from 'primereact/checkbox';
-import {Hover} from './Hover';
+import {Hover} from './Sidebar';
 import {Button} from 'primereact/button';
 import {MagicWandIcon, ScissorsCuttingIcon} from '../icons/Icon';
 

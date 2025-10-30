@@ -9,8 +9,9 @@ import {
     translationMatrix,
 } from '../rendering/getMirrorTransforms';
 import {angleBetween} from '../rendering/isAngleBetween';
+import {scalePos} from './scalePos';
 
-function replicateStandard(tx: number, ty: number): Matrix[][][] {
+export function replicateStandard(tx: number, ty: number): Matrix[][][] {
     const duplicates = [
         [-tx * 2, 0],
         [tx * 2, 0],

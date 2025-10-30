@@ -1,10 +1,11 @@
 import {UndoableAction, UndoAction} from './state/Action';
 import {Primitive} from './rendering/intersect';
 import {angleTo, dist, Matrix} from './rendering/getMirrorTransforms';
+import {SegmentWithPrev} from './rendering/clipPathNew';
 import {CompassState} from './editor/compassAndRuler';
 import {angleBetween} from './rendering/isAngleBetween';
 import {closeEnough} from './rendering/epsilonToZero';
-import {findCommonFractions} from './routes/getPatternData';
+import {findCommonFractions, humanReadableFraction} from './routes/getPatternData';
 
 // Should I do polar coords?
 export type Coord = {x: number; y: number};
@@ -20,14 +21,14 @@ export type Line = {
     extent?: number;
 };
 
-type Split = {
+export type Split = {
     type: 'Split';
     p1: Coord;
     p2: Coord;
     count: number;
 };
 
-type CircleMark = {
+export type CircleMark = {
     type: 'CircleMark';
     p1: Coord;
     p2: Coord;
@@ -36,7 +37,7 @@ type CircleMark = {
     angle2?: number;
 };
 
-type CloneCircle = {
+export type CloneCircle = {
     type: 'CloneCircle';
     p1: Coord;
     p2: Coord;
@@ -56,13 +57,13 @@ export type GuideGeom =
     | Polygon
     | CircumCircle;
 
-type Perpendicular = {
+export type Perpendicular = {
     type: 'Perpendicular';
     p1: Coord;
     p2: Coord;
 };
 
-type Polygon = {
+export type Polygon = {
     type: 'Polygon';
     p1: Coord;
     p2: Coord;
@@ -70,21 +71,21 @@ type Polygon = {
     toCenter: boolean;
 };
 
-type InCicle = {
+export type InCicle = {
     type: 'InCircle';
     p1: Coord;
     p2: Coord;
     p3: Coord;
 };
 
-type CircumCircle = {
+export type CircumCircle = {
     type: 'CircumCircle';
     p1: Coord;
     p2: Coord;
     p3: Coord;
 };
 
-const guideTypes: Array<GuideGeom['type']> = [
+export const guideTypes: Array<GuideGeom['type']> = [
     'Line',
     'Split',
     'AngleBisector',
@@ -122,13 +123,13 @@ export type Circle = {
     multiples: number;
 };
 
-type AngleBisector = {
+export type AngleBisector = {
     type: 'AngleBisector';
     p1: Coord;
     p2: Coord;
     p3: Coord;
 };
-type PerpendicularBisector = {
+export type PerpendicularBisector = {
     type: 'PerpendicularBisector';
     p1: Coord;
     p2: Coord;
@@ -232,7 +233,7 @@ export type ArcSegment = {
     // large
 };
 
-type QuadSegment = {
+export type QuadSegment = {
     type: 'Quad';
     control: Coord;
     to: Coord;
@@ -258,12 +259,12 @@ export type GuideElement = {
     original: boolean;
 };
 
-type Idd<T> = {
+export type Idd<T> = {
     items: {[key: number]: T};
     next: number;
 };
 
-type Cache = {
+export type Cache = {
     guides: Idd<GuideElement>;
     // is it fine to dedup these primitives?
     // or do I need to keep them?
@@ -306,7 +307,7 @@ export type PendingPath = {
     parts: Array<PendingSegment>;
 };
 
-type HistoryItem = {
+export type HistoryItem = {
     action: UndoableAction;
     id: number;
     // parent: number;
@@ -455,7 +456,7 @@ export type TimelineLane = {
     items: Array<TimelineSlot>;
 };
 
-type Lerp = FloatLerp | ScriptLerp | PosScript;
+export type Lerp = FloatLerp | ScriptLerp | PosScript;
 
 export type ScriptLerp = {
     type: 'float-fn';
@@ -494,7 +495,7 @@ export type Animations = {
     };
 };
 
-type ScriptVbl =
+export type ScriptVbl =
     | {
           type: 'int' | 'float';
           defaultValue: number;

@@ -3,7 +3,7 @@ import {closeEnough} from '../rendering/epsilonToZero';
 import {Coord} from '../types';
 import {addToMap, unique} from './shapesFromSegments';
 
-const colorGraph = (edges: [number, number][], debug = false) => {
+export const colorGraph = (edges: [number, number][], debug = false) => {
     const edgeMap: Record<number, number[]> = {};
     let max = 0;
     edges.forEach(([a, b]) => {
@@ -48,7 +48,7 @@ const colorGraph = (edges: [number, number][], debug = false) => {
     return colors as number[];
 };
 
-const toEdges = <T>(shape: T[]): [T, T][] =>
+export const toEdges = <T>(shape: T[]): [T, T][] =>
     shape.map((coord, i) => [shape[i === 0 ? shape.length - 1 : i - 1], coord]);
 
 const sortEdge = (edge: [Coord, Coord]) =>
@@ -56,7 +56,7 @@ const sortEdge = (edge: [Coord, Coord]) =>
         ? edge
         : [edge[1], edge[1]];
 
-const dedupColorShapePoints = (shapes: number[][]) => {
+export const dedupColorShapePoints = (shapes: number[][]) => {
     const uniqueShapes = unique(shapes, (s) => s.toSorted().join(','));
     const byKey: Record<string, number> = {};
     uniqueShapes.forEach((shape, i) => (byKey[shape.toSorted().join(',')] = i));
@@ -68,7 +68,7 @@ const dedupColorShapePoints = (shapes: number[][]) => {
     return shapes.map((shape) => colored[byKey[shape.toSorted().join(',')]]);
 };
 
-const colorShapePoints = (shapes: number[][]) => {
+export const colorShapePoints = (shapes: number[][]) => {
     const byEdge: Record<string, number[]> = {};
     shapes.forEach((shape, i) => {
         const edges = toEdges(shape).map(([a, b]) => (a < b ? `${a}:${b}` : `${b}:${a}`));

@@ -1,7 +1,11 @@
+/* @jsx jsx */
+/* @jsxFrag React.Fragment */
+import * as React from 'react';
+import {jsx} from '@emotion/react';
 import {State} from '../types';
 import {Action} from '../state/Action';
 import {useDropTarget} from './useDropTarget';
-import {Float, Toggle} from './Forms';
+import {Float, Int, Toggle} from './Forms';
 import {Button} from 'primereact/button';
 import {DeleteForeverIcon} from '../icons/Icon';
 
@@ -9,7 +13,7 @@ export const OverlaysForm = ({state, dispatch}: {state: State; dispatch: (a: Act
     const [dragging, callbacks] = useDropTarget((file) => {
         var reader = new FileReader();
         reader.readAsDataURL(file);
-        reader.onloadend = () => {
+        reader.onloadend = function () {
             var base64data = reader.result as string;
             const id = Math.random().toString(36).slice(2);
             const image = new Image();

@@ -1,12 +1,20 @@
 import * as React from 'react';
-import {calcSegmentsD} from '../editor/calcPathD';
+import {segmentsBounds} from '../editor/Bounds';
+import {pathSegs} from '../editor/RenderPath';
+import {calcPathD, calcSegmentsD} from '../editor/calcPathD';
 import {Segment} from '../types';
 import {register} from '../vest';
-import {collectRegions, getSomeHits, prevSegmentsToShape, SegmentWithPrev} from './clipPathNew';
+import {
+    addPrevsToSegments,
+    collectRegions,
+    getSomeHits,
+    prevSegmentsToShape,
+    SegmentWithPrev,
+} from './clipPathNew';
 import {angleTo, dist, push} from './getMirrorTransforms';
 import {coordsEqual} from './pathsAreIdentical';
-import {isClockwise} from './pathToPoints';
-import {useInitialState} from './SegmentEditor.useOnChange.related';
+import {ensureClockwise, isClockwise} from './pathToPoints';
+import {useInitialState} from './SegmentEditor';
 import {ShapeEditor} from './ShapeEditor';
 
 type Input = [Array<SegmentWithPrev>, Array<SegmentWithPrev>];
@@ -18,7 +26,13 @@ type Output = Array<{
 
 const empty: Input = [[], []];
 
-const Editor = ({initial, onChange}: {initial: Input | null; onChange: (i: Input) => void}) => {
+export const Editor = ({
+    initial,
+    onChange,
+}: {
+    initial: Input | null;
+    onChange: (i: Input) => void;
+}) => {
     const [current, setCurrent] = useInitialState(initial || empty);
     const [first, setFirst] = React.useState(true);
     const [showShapes, setShowShapes] = React.useState(true);
@@ -102,7 +116,7 @@ const Editor = ({initial, onChange}: {initial: Input | null; onChange: (i: Input
         </div>
     );
 };
-const Fixture = ({input, output}: {input: Input; output: Output}) => {
+export const Fixture = ({input, output}: {input: Input; output: Output}) => {
     const first = prevSegmentsToShape(input[0]);
     const second = prevSegmentsToShape(input[1]);
     return (

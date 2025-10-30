@@ -2,7 +2,7 @@ import {renderToStaticMarkup} from 'react-dom/server';
 import type {Route} from './+types/pattern-svg';
 import {getPattern} from './db.server';
 import {canvasTiling} from './canvasTiling';
-import {getPatternData} from './getPatternData';
+import {getPatternData, preTransformTiling} from './getPatternData';
 import {TilingPattern} from './ShowTiling';
 import {flipPattern} from './flipPattern';
 

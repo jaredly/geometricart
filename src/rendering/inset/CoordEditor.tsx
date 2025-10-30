@@ -1,12 +1,13 @@
 import * as React from 'react';
 import {Coord} from '../../types';
 import {maybeSnap} from './CoordPicker';
+import {SvgGrid} from './SvgGrid';
 
 const snapCoord = (coord: Coord, margin?: number) => {
     return margin ? {x: maybeSnap(coord.x, margin), y: maybeSnap(coord.y, margin)} : coord;
 };
 
-const CoordEditor = ({
+export const CoordEditor = ({
     coords,
     onSet,
     onClick,

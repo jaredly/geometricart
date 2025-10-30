@@ -1,12 +1,20 @@
 import * as React from 'react';
-import {backAngle, isAngleBetweenAngles} from '../rendering/clipPath';
+import {angleForSegment, backAngle, isAngleBetweenAngles} from '../rendering/clipPath';
 import {Angle} from '../rendering/epsilonToZero';
-import {push} from '../rendering/getMirrorTransforms';
+import {anglesEqual} from '../rendering/epsilonToZero';
+import {angleTo, dist, push} from '../rendering/getMirrorTransforms';
 import {Coord} from '../types';
+import {SegmentWithPrev} from '../rendering/clipPathNew';
 import {HitTransitions} from '../rendering/untangleHit';
 import {angleBetween} from '../rendering/isAngleBetween';
-import {pointsList} from './pointsList';
-import {arrow} from './arrow';
+
+export const pointsList = (points: Array<Coord>) => points.map(({x, y}) => `${x},${y}`).join(' ');
+
+export const arrow = (coord: Coord, theta: number, size: number, wsize = 1) => [
+    push(coord, theta, size),
+    push(coord, theta + (Math.PI * 2) / 3, size * wsize),
+    push(coord, theta - (Math.PI * 2) / 3, size * wsize),
+];
 
 const isInner = (enter: Angle, exit: Angle, other: {entry: Angle; exit: Angle}) => {
     const back = backAngle(enter);

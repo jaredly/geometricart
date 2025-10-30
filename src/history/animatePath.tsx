@@ -1,7 +1,7 @@
 import {Coord, State} from '../types';
 import {tracePath} from '../rendering/CanvasRender';
-import {PathCreate, PathCreateMany} from '../state/Action';
-import {emptyPath} from '../editor/emptyPath';
+import {Action, PathCreate, PathCreateMany} from '../state/Action';
+import {emptyPath} from '../editor/RenderPath';
 import {
     applyMatrices,
     mirrorTransforms,

@@ -1,3 +1,6 @@
+/* @jsx jsx */
+/* @jsxFrag React.Fragment */
+import {jsx} from '@emotion/react';
 import React, {useEffect, useState} from 'react';
 import {Action, PathCreateMany} from '../state/Action';
 import {PendingMirror, UIState} from '../useUIState';
@@ -7,24 +10,35 @@ import {
     geomPoints,
     geomsForGiude,
 } from '../rendering/calculateGuideElements';
+import {DrawPathState} from './DrawPath';
 import {
     angleTo,
     getMirrorTransforms,
     getTransformsForNewMirror,
 } from '../rendering/getMirrorTransforms';
-import {primitivesForElementsAndPaths} from './primitivesForElementsAndPaths';
-import {PendingPathPair} from './PendingPathPair';
-import {PendingDuplication} from './Guides.PendingDuplication.related';
+import {PendingDuplication, PendingPathPair, primitivesForElementsAndPaths} from './Guides';
 import {CancelIcon, IconButton, MirrorIcon, ScissorsCuttingIcon} from '../icons/Icon';
-import {Bezier, LookUpTable} from '../lerp';
+import {epsilon} from '../rendering/epsilonToZero';
+import {Bezier, createLookupTable, evaluateBezier, evaluateLookUpTable, LookUpTable} from '../lerp';
+import {mergeFills, mergeStyleLines} from './MultiStyleForm';
 import {StyleHover} from './StyleHover';
 import {PendingPathControls} from './PendingPathControls';
 import {RenderWebGL} from './RenderWebGL';
-import {Hover} from './Hover';
-import {RadiusSelector} from './touchscreenControls';
-import {mirrorControls} from './mirrorControls';
-import {selectionSection} from './selectionSection';
-import {Coord, FloatLerp, Segment, State, LerpPoint, View, Mirror, Tiling} from '../types';
+import {Hover} from './Sidebar';
+import {mirrorControls, selectionSection, RadiusSelector} from './touchscreenControls';
+import {
+    Animations,
+    Coord,
+    FloatLerp,
+    Segment,
+    State,
+    Style,
+    LerpPoint,
+    View,
+    Mirror,
+    Tiling,
+} from '../types';
+import {functionWithBuiltins} from '../animation/getAnimatedPaths';
 import {Menu} from 'primereact/menu';
 import {SVGCanvas} from './SVGCanvas';
 import {useCurrent} from '../useCurrent';
@@ -35,10 +49,14 @@ import {angleBetween} from '../rendering/isAngleBetween';
 import {negPiToPi} from '../rendering/epsilonToZero';
 import {closeEnough} from '../rendering/epsilonToZero';
 import {simpleExport} from './handleTiling';
-import {angleDifferences, isClockwisePoints, pointsAngles} from '../rendering/pathToPoints';
-import {MenuItem, EditorState} from './Canvas.MenuItem.related';
+import {
+    angleDifferences,
+    isClockwise,
+    isClockwisePoints,
+    pointsAngles,
+} from '../rendering/pathToPoints';
 
-type Props = {
+export type Props = {
     state: State;
     // dragSelect: boolean;
     // cancelDragSelect: () => void;
@@ -59,6 +77,15 @@ type Props = {
     styleHover: StyleHover | null;
     uiState: UIState;
 };
+
+export const worldToScreen = (width: number, height: number, pos: Coord, view: View) => ({
+    x: width / 2 + (pos.x + view.center.x) * view.zoom,
+    y: height / 2 + (pos.y + view.center.y) * view.zoom,
+});
+export const screenToWorld = (width: number, height: number, pos: Coord, view: View) => ({
+    x: (pos.x - width / 2) / view.zoom - view.center.x,
+    y: (pos.y - height / 2) / view.zoom - view.center.y,
+});
 
 /*
 
@@ -86,12 +113,68 @@ export type TLSegmentCurve = {
     x0: number;
 };
 
-const evaluateBetween = (left: LerpPoint, right: LerpPoint, position: number) => {
+export type TLSegment = {type: 'straight'; y0: number; span: number; x0: number} | TLSegmentCurve;
+
+export const evaluateSegment = (seg: TLSegment, percent: number) => {
+    if (seg.type === 'straight') {
+        return seg.y0 + seg.span * percent;
+    }
+    const t = evaluateLookUpTable(seg.lookUpTable, percent);
+    return evaluateBezier(seg.bezier, t).y;
+};
+
+export const segmentForPoints = (left: LerpPoint, right: LerpPoint): TLSegment => {
+    if (!left.rightCtrl && !right.leftCtrl) {
+        return {
+            type: 'straight',
+            y0: left.pos.y,
+            span: right.pos.y - left.pos.y,
+            x0: left.pos.x,
+        };
+    }
+    const dx = right.pos.x - left.pos.x;
+    const c1 = left.rightCtrl
+        ? {x: left.rightCtrl.x / dx, y: left.rightCtrl.y + left.pos.y}
+        : {x: 0, y: left.pos.y};
+    const c2 = right.leftCtrl
+        ? {x: (dx + right.leftCtrl.x) / dx, y: right.leftCtrl.y + right.pos.y}
+        : {x: 1, y: right.pos.y};
+    const bezier: Bezier = {y0: left.pos.y, c1, c2, y1: right.pos.y};
+    return {
+        type: 'curve',
+        bezier,
+        lookUpTable: createLookupTable(bezier, 10),
+        x0: left.pos.x,
+    };
+};
+
+export const evaluateBetween = (left: LerpPoint, right: LerpPoint, position: number) => {
     const percent = (position - left.pos.x) / (right.pos.x - left.pos.x);
     return percent * (right.pos.y - left.pos.y) + left.pos.y;
 };
 
-const evaluateTimeline = (timeline: FloatLerp, position: number) => {
+export const timelineFunction = (timeline: FloatLerp) => {
+    const segments: Array<TLSegment> = timelineSegments(timeline);
+    // console.log(segments);
+    return (x: number) => {
+        for (let i = 0; i < segments.length; i++) {
+            const x0 = segments[i].x0;
+            const next = i === segments.length - 1 ? 1 : segments[i + 1].x0;
+            if (x < next) {
+                // const x1 = i === segments.length - 1 ? 1 : segments[i + 1].x0;
+                const percent = (x - x0) / (next - x0);
+                return evaluateSegment(segments[i], percent);
+            }
+        }
+        const last = segments[segments.length - 1];
+        if (last.type === 'straight') {
+            return last.y0 + last.span;
+        }
+        return last.bezier.y1;
+    };
+};
+
+export const evaluateTimeline = (timeline: FloatLerp, position: number) => {
     if (!timeline.points.length) {
         return (timeline.range[1] - timeline.range[0]) * position + timeline.range[0];
     }
@@ -116,9 +199,81 @@ const evaluateTimeline = (timeline: FloatLerp, position: number) => {
     return y * (timeline.range[1] - timeline.range[0]) + timeline.range[0];
 };
 
+export type AnimatedFunctions = {
+    [key: string]: ((n: number) => number) | ((n: Coord) => Coord) | ((n: number) => Coord);
+};
+
+export const getAnimatedFunctions = (animations: Animations): AnimatedFunctions => {
+    const fn: AnimatedFunctions = {};
+    Object.keys(animations.lerps).forEach((key) => {
+        if (key === 't') {
+            console.warn(`Can't have a custom vbl named t. Ignoring`);
+            return;
+        }
+        const vbl = animations.lerps[key];
+        if (vbl.type === 'float') {
+            fn[key] = timelineFunction(vbl);
+        } else {
+            try {
+                const k = functionWithBuiltins(vbl.code);
+                fn[key] = k as (n: number) => number;
+            } catch (err) {
+                console.warn(`Zeroing out ${key}, there was an error evaliation.`);
+                console.error(err);
+                fn[key] = (n: number) => {
+                    return 0;
+                };
+            }
+        }
+    });
+    return fn;
+};
+
+export type MenuItem = {
+    label: React.ReactNode;
+    icon?: string;
+    command?: (event: {originalEvent: React.MouseEvent; item: MenuItem}) => void;
+    items?: MenuItem[];
+};
+
+export const evaluateAnimatedValues = (animatedFunctions: AnimatedFunctions, position: number) => {
+    return {...animatedFunctions, t: position};
+};
+
+export type SelectMode = boolean | 'radius' | 'path';
+
 /**
  * This is the newfangled version of DrawPathState... probably
  */
+export type DrawShapeState = {
+    type: 'shape';
+    points: Coord[];
+    // that's it, right?
+    // the adjacency matrix gets just memoized, right?
+};
+
+export type EditorState = {
+    tmpView: null | View;
+    items: Array<MenuItem>;
+    zooming: boolean;
+
+    // mouse pos
+    pos: Coord;
+    dragPos: null | {view: View; coord: Coord};
+
+    dragSelectPos: null | Coord;
+    selectMode: SelectMode;
+    multiSelect: boolean;
+    pending:
+        | null
+        | {type: 'waiting'}
+        | DrawPathState
+        | DrawShapeState
+        | {
+              type: 'tiling';
+              points: Coord[];
+          };
+};
 
 const initialEditorState: EditorState = {
     tmpView: null,
@@ -488,6 +643,62 @@ export const Canvas = ({
     );
 };
 
+export const combineStyles = (styles: Array<Style>): Style => {
+    const result: Style = {
+        fills: [],
+        lines: [],
+    };
+    styles.forEach((style) => {
+        style.fills.forEach((fill, i) => {
+            if (fill != null) {
+                result.fills[i] = result.fills[i] ? mergeFills(result.fills[i]!, fill) : fill;
+            }
+        });
+        style.lines.forEach((line, i) => {
+            if (line != null) {
+                result.lines[i] = result.lines[i] ? mergeStyleLines(result.lines[i]!, line) : line;
+            }
+        });
+    });
+
+    return result;
+};
+
+export const dragView = (
+    prev: View | null,
+    dragPos: {view: View; coord: Coord},
+    clientX: number,
+    rect: DOMRect,
+    clientY: number,
+    width: number,
+    height: number,
+) => {
+    let view = dragPos.view;
+
+    const screenPos = {
+        x: clientX - rect.left,
+        y: clientY - rect.top,
+    };
+
+    const newPos = screenToWorld(width, height, screenPos, view);
+    const offset = Math.max(
+        Math.abs(newPos.x - dragPos.coord.x),
+        Math.abs(newPos.y - dragPos.coord.y),
+    );
+    if (!prev && offset * view.zoom < 10) {
+        return null;
+    }
+
+    const res = {
+        ...view,
+        center: {
+            x: view.center.x + (newPos.x - dragPos.coord.x),
+            y: view.center.y + (newPos.y - dragPos.coord.y),
+        },
+    };
+    return res;
+};
+
 function duplicationControls(
     setPendingDuplication: (b: null | PendingDuplication) => void,
     pendingDuplication: PendingDuplication,
@@ -602,7 +813,24 @@ function zoomPanControls(
     );
 }
 
-const ClipMenu = ({
+export function timelineSegments(timeline: FloatLerp) {
+    const segments: Array<TLSegment> = [];
+    const points = timeline.points.slice();
+    if (!points.length || points[0].pos.x > 0) {
+        points.unshift({pos: {x: 0, y: 0}});
+    }
+    if (points[points.length - 1].pos.x < 1 - epsilon) {
+        points.push({pos: {x: 1, y: 1}});
+    }
+    for (let i = 1; i < points.length; i++) {
+        const prev = points[i - 1];
+        const now = points[i];
+        segments.push(segmentForPoints(prev, now));
+    }
+    return segments;
+}
+
+export const ClipMenu = ({
     state,
     dispatch,
     pendingPath: [pendingPath, setPendingPath],

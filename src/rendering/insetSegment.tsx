@@ -1,11 +1,12 @@
 import {ArcSegment, Coord, LineSegment, Segment} from '../types';
 import {angleTo, dist, push} from './getMirrorTransforms';
 import {circleCircle, lineCircle, lineLine, lineToSlope} from './intersect';
-import {closeEnoughAngle} from './epsilonToZero';
+import {angleIsBetween, closeEnoughAngle} from './epsilonToZero';
 import {angleBetween} from './isAngleBetween';
+import {anglesEqual} from './epsilonToZero';
 import {coordsEqual} from './pathsAreIdentical';
 
-const insetLineLine = (
+export const insetLineLine = (
     prev: Coord,
     seg: LineSegment,
     next: LineSegment,
@@ -39,7 +40,7 @@ const insetLineLine = (
     return {...seg, to: intersection};
 };
 
-const insetLineArc = (
+export const insetLineArc = (
     prev: Coord,
     seg: LineSegment,
     next: ArcSegment,
@@ -124,7 +125,7 @@ const insetLineArc = (
     return {...seg, to: target};
 };
 
-const insetArcLine = (
+export const insetArcLine = (
     prev: Coord,
     seg: ArcSegment,
     next: LineSegment,
@@ -242,7 +243,7 @@ const insetArcLine = (
 
 // }
 
-const insetArcArc = (
+export const insetArcArc = (
     prev: Coord,
     seg: ArcSegment,
     next: ArcSegment,

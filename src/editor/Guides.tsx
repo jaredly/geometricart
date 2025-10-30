@@ -1,33 +1,32 @@
+/* @jsx jsx */
+/* @jsxFrag React.Fragment */
+import {jsx} from '@emotion/react';
 import React, {useRef} from 'react';
 import {useCurrent} from '../useCurrent';
 import {PendingMirror, UIState} from '../useUIState';
-import {Action} from '../state/Action';
-import {EditorState} from './Canvas.MenuItem.related';
-import {DrawPath, initialState} from './DrawPath';
+import {Action, PathMultiply} from '../state/Action';
+import {EditorState, screenToWorld} from './Canvas';
+import {DrawPath, DrawPathState, initialState} from './DrawPath';
 import {pathToPrimitives} from './findSelection';
 import {Bounds} from './Bounds';
 import {simplifyPath} from '../rendering/simplifyPath';
-import {Primitive} from '../rendering/intersect';
+import {lineToSlope, Primitive} from '../rendering/intersect';
 import {ensureClockwise} from '../rendering/pathToPoints';
+import {geomToPrimitives} from '../rendering/points';
+import {primitiveKey} from '../rendering/coordKey';
 import {calculateInactiveGuideElements} from '../rendering/calculateGuideElements';
 import {dedupString} from '../rendering/findNextSegments';
-import {Matrix} from '../rendering/getMirrorTransforms';
+import {angleTo, dist, Matrix} from '../rendering/getMirrorTransforms';
 import {RenderIntersections} from './RenderIntersections';
 import {RenderMirror} from './RenderMirror';
 import {RenderPendingGuide} from './RenderPendingGuide';
 import {RenderPendingMirror} from './RenderPendingMirror';
 import {RenderPrimitive} from './RenderPrimitive';
-import {Hover} from './Hover';
-import {Coord, Id, Intersect, PendingSegment, State, View} from '../types';
+import {Hover} from './Sidebar';
+import {Coord, GuideElement, Id, Intersect, Path, PendingSegment, State, View} from '../types';
 import {getClips} from '../rendering/pkInsetPaths';
 import {RenderCompassAndRuler} from './RenderCompassAndRuler';
 import {handleClick, handleSpace, PendingMark, previewPos} from './compassAndRuler';
-import {
-    PendingDuplication,
-    handleDuplicationIntersection,
-} from './Guides.PendingDuplication.related';
-import {PendingPathPair} from './PendingPathPair';
-import {primitivesForElementsAndPaths} from './primitivesForElementsAndPaths';
 
 // This /will/ contain duplicates!
 // export const calculatePathElements = (
@@ -65,6 +64,76 @@ import {primitivesForElementsAndPaths} from './primitivesForElementsAndPaths';
 // 		})
 // 	})
 // };
+
+export function primitivesForElementsAndPaths(
+    guideElements: GuideElement[],
+    paths: Array<Path>,
+): Array<{prim: Primitive; guides: Array<Id>}> {
+    const seen: {[key: string]: Array<Id>} = {};
+    return ([] as Array<{prim: Primitive; guide: Id}>)
+        .concat(
+            ...guideElements.map((el: GuideElement) =>
+                geomToPrimitives(el.geom).map((prim) => ({
+                    prim,
+                    guide: el.id,
+                })),
+            ),
+        )
+        .map((prim) => {
+            const k = primitiveKey(prim.prim);
+            if (seen[k]) {
+                seen[k].push(prim.guide);
+                return null;
+            }
+            seen[k] = [prim.guide];
+            return {prim: prim.prim, guides: seen[k]};
+        })
+        .concat(
+            paths
+                .map((path) => {
+                    return path.segments.map(
+                        (seg, i): null | {prim: Primitive; guides: Array<Id>} => {
+                            const prev = i === 0 ? path.origin : path.segments[i - 1].to;
+                            let prim: Primitive;
+                            if (seg.type === 'Line') {
+                                prim = lineToSlope(prev, seg.to, true);
+                            } else if (seg.type === 'Quad') {
+                                throw new Error('noa');
+                            } else {
+                                const t0 = angleTo(seg.center, prev);
+                                const t1 = angleTo(seg.center, seg.to);
+                                prim = {
+                                    type: 'circle',
+                                    center: seg.center,
+                                    radius: dist(seg.center, seg.to),
+                                    limit: seg.clockwise ? [t0, t1] : [t1, t0],
+                                };
+                            }
+                            const k = primitiveKey(prim);
+                            if (seen[k]) {
+                                return null;
+                            }
+                            seen[k] = [];
+                            return {prim, guides: seen[k]};
+                        },
+                    );
+                })
+                .flat(),
+        )
+        .filter(Boolean) as Array<{prim: Primitive; guides: Array<Id>}>;
+}
+
+export type PendingPathPair = [
+    EditorState['pending'],
+    (
+        fn: EditorState['pending'] | ((state: EditorState['pending']) => EditorState['pending']),
+    ) => void,
+];
+
+export type PendingDuplication = {
+    reflect: boolean;
+    p0: Coord | null;
+};
 
 export const Guides = ({
     state,
@@ -462,7 +531,7 @@ export const Guides = ({
     );
 };
 
-const RenderPrimitives = React.memo(
+export const RenderPrimitives = React.memo(
     ({
         primitives,
         zoom,
@@ -679,3 +748,47 @@ function keyHandler(
         }
     };
 }
+
+export function calculateBounds(width: number, height: number, view: View) {
+    const {x: x0, y: y0} = screenToWorld(width, height, {x: 0, y: 0}, view);
+    const {x: x1, y: y1} = screenToWorld(width, height, {x: width, y: height}, view);
+
+    return {x0, y0, x1, y1};
+}
+
+export const handleDuplicationIntersection = (
+    coord: Intersect,
+    state: State,
+    duplication: PendingDuplication,
+    setPendingDuplication: (pd: PendingDuplication | null) => void,
+    dispatch: React.Dispatch<Action>,
+) => {
+    if (!['Path', 'PathGroup'].includes(state.selection?.type ?? '')) {
+        console.log('um selection idk what', state.selection);
+        return;
+    }
+    if (duplication.reflect && !duplication.p0) {
+        console.log('got a p0', coord.coord);
+        setPendingDuplication({
+            reflect: true,
+            p0: coord.coord,
+        });
+        return;
+    }
+    setPendingDuplication(null);
+    dispatch({
+        type: 'path:multiply',
+        selection: state.selection as PathMultiply['selection'],
+        mirror: {
+            id: 'tmp',
+            origin: coord.coord,
+            parent: null,
+            point: duplication.p0 ?? {
+                x: 100,
+                y: 0,
+            },
+            reflect: duplication.reflect,
+            rotational: duplication.reflect ? [] : [true],
+        },
+    });
+};

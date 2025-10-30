@@ -1,14 +1,16 @@
 /* @jsx jsx */
 /* @jsxFrag React.Fragment */
 import * as React from 'react';
+import {jsx} from '@emotion/react';
+import {PendingPathPair} from './Guides';
 import {Coord, Id, Intersect, Segment} from '../types';
-import {backUp, goForward, goLeft, goRight, isComplete} from './DrawPath';
+import {backUp, DrawPathState, goForward, goLeft, goRight, isComplete} from './DrawPath';
 import {Primitive} from '../rendering/intersect';
 import {simplifyPath} from '../rendering/simplifyPath';
 import {ensureClockwise} from '../rendering/pathToPoints';
 import {PendingPreview} from './PendingPreview';
 import {IconButton, RedoIcon, UndoIcon} from '../icons/Icon';
-import {EditorState} from './Canvas.MenuItem.related';
+import {EditorState} from './Canvas';
 
 export const PendingPathControls = ({
     editorState,

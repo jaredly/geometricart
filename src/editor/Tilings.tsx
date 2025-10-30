@@ -1,10 +1,13 @@
+/* @jsx jsx */
+/* @jsxFrag React.Fragment */
+import {jsx} from '@emotion/react';
 import React, {useState} from 'react';
 import {Action} from '../state/Action';
 import {Path, State, Tiling} from '../types';
 import {applyMatrices} from '../rendering/getMirrorTransforms';
 import {transformSegment} from '../rendering/points';
 import {UIDispatch} from '../useUIState';
-import {emptyPath} from './emptyPath';
+import {emptyPath} from './RenderPath';
 import {tilingTransforms} from './tilingTransforms';
 import {handleTiling, simpleExport} from './handleTiling';
 import {SimpleTiling} from './SimpleTiling';

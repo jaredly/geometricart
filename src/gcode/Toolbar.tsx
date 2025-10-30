@@ -1,11 +1,18 @@
 import React, {useState} from 'react';
-import {Bounds} from '../editor/Export.Bounds.related';
+import {Bounds} from '../editor/Export';
 import {generateGcode, generateLaserInset} from './generateGcode';
 import {pxToMM} from './pxToMM';
+import {initialState} from '../state/initialState';
 import {State} from '../types';
 import {Visualize} from './Visualize';
 import {PathKit} from 'pathkit-wasm';
-import {gcodeStateSuffix} from './gcodeStateSuffix';
+
+export const gcodeStateSuffix = (state: State) =>
+    '\n;; ** STATE **\n;; ' +
+    JSON.stringify({
+        ...state,
+        history: initialState.history,
+    });
 
 export function Toolbar({
     state,
@@ -92,7 +99,7 @@ export function Toolbar({
     );
 }
 
-function showLaserSvg(
+export function showLaserSvg(
     bounds: Bounds,
     state: State,
     w: number,
@@ -116,7 +123,7 @@ function showLaserSvg(
     );
 }
 
-function wrapSvg(bounds: Bounds, state: State, svg: string): BlobPart {
+export function wrapSvg(bounds: Bounds, state: State, svg: string): BlobPart {
     return `<svg
         xmlns="http://www.w3.org/2000/svg"
         width="${pxToMM(bounds.x2 - bounds.x1, state.meta.ppi).toFixed(1) + 'mm'}"

@@ -1,3 +1,4 @@
+import {boundsForCoords, PendingBounds} from '../editor/Bounds';
 import {Bounds} from '../editor/Bounds';
 import {coordKey} from '../rendering/coordKey';
 import {closeEnough, closeEnoughAngle, epsilon} from '../rendering/epsilonToZero';
@@ -11,7 +12,7 @@ import {
 import {lineLine, lineToSlope} from '../rendering/intersect';
 import {coordsEqual} from '../rendering/pathsAreIdentical';
 import {isClockwisePoints} from '../rendering/pathToPoints';
-import {Coord, Tiling} from '../types';
+import {Coord, Segment, Tiling} from '../types';
 import {discoverShape} from './discoverShape';
 import {centroid} from './findReflectionAxes';
 import {getPatternData} from './getPatternData';
@@ -60,7 +61,7 @@ const isLargerThan = (l1: [Coord, Coord], l2: [Coord, Coord]) => {
     return lte(l1MinX, l2MinX) && lte(l1MinY, l2MinY) && gte(l1MaxX, l2MaxX) && gte(l1MaxY, l2MaxY);
 };
 
-const removeOverlappingSegs = (segs: [Coord, Coord][]) => {
+export const removeOverlappingSegs = (segs: [Coord, Coord][]) => {
     const slopes = segs.map(([a, b]) => lineToSlope(a, b, true));
     const toRemove: number[] = [];
     for (let i = 0; i < slopes.length; i++) {
@@ -300,7 +301,7 @@ export function calcPolygonArea(vertices: Coord[]) {
     return Math.abs(total);
 }
 
-const chooseCorner = (options: Coord[], shapes: Coord[][]) => {
+export const chooseCorner = (options: Coord[], shapes: Coord[][]) => {
     const shapesAtPoints: (null | Coord[] | false)[] = options.map((_) => null);
     shapes.forEach((shape) => {
         const ct = centroid(shape);

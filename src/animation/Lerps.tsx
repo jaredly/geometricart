@@ -6,8 +6,7 @@ import babel from 'prettier/parser-babel';
 import {BlurInt} from '../editor/Forms';
 import {Action} from '../state/Action';
 import {FloatLerp as FLT, ScriptLerp as SLT, LerpPoint, State, PosScript} from '../types';
-import {PointsEditor} from './PointsEditor';
-import {pointsPathD} from './PointsEditor.pointsPathD.related';
+import {PointsEditor, pointsPathD} from './PointsEditor';
 import {AddVbl} from './AnimationUI';
 import {functionWithBuiltins} from './getAnimatedPaths';
 
@@ -205,7 +204,7 @@ function FloatLerp({
     );
 }
 
-const FnViewer = ({fn, kind}: {fn: (n: number) => number; kind: 'float-fn' | 'pos-fn'}) => {
+export const FnViewer = ({fn, kind}: {fn: (n: number) => number; kind: 'float-fn' | 'pos-fn'}) => {
     const width = 150;
     const height = kind === 'float-fn' ? 50 : 150;
     const margin = 5;
@@ -247,7 +246,13 @@ const FnViewer = ({fn, kind}: {fn: (n: number) => number; kind: 'float-fn' | 'po
     );
 };
 
-const PointsViewer = ({points, onClick}: {points: Array<LerpPoint>; onClick: () => void}) => {
+export const PointsViewer = ({
+    points,
+    onClick,
+}: {
+    points: Array<LerpPoint>;
+    onClick: () => void;
+}) => {
     const width = 50;
     const height = 50;
 

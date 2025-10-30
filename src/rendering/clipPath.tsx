@@ -19,7 +19,7 @@ import {coordsEqual} from './pathsAreIdentical';
 import {simplifyPath} from './simplifyPath';
 import {windingNumber} from './windingNumber';
 
-type Hit = {i: number; j: number; coord: Coord};
+export type Hit = {i: number; j: number; coord: Coord};
 
 export type Clippable<Hit> = {
     primitives: Array<Primitive>;
@@ -41,7 +41,7 @@ export const angleKey = (angle: Angle) =>
 // 0 for "same amount of clockwise"
 // 1 for "first is more clockwise"
 */
-const sortAnglesWithSameTheta = (first: Angle, second: Angle) => {
+export const sortAnglesWithSameTheta = (first: Angle, second: Angle) => {
     if (first.type === 'flat') {
         return second.type === 'flat' ? 0 : second.clockwise ? -1 : 1;
     }
@@ -173,7 +173,7 @@ export const isInside = (back: Angle, forward: Angle, test: Angle, debug = false
     }
 };
 
-const getSegment = (segments: Array<Segment>, i: number) =>
+export const getSegment = (segments: Array<Segment>, i: number) =>
     i < 0 ? segments[segments.length + i] : segments[i % segments.length];
 
 export const getBackAngle = <T extends {coord: Coord}>(
@@ -310,7 +310,7 @@ export const angleForSegment = (prev: Coord, segment: Segment, coord: Coord): An
  * to examine the /next/ segment in the list. If we're at the start of a segment, we do need
  * to check the previous segment, however.
  */
-const isGoingInside = <T extends {coord: Coord}>(
+export const isGoingInside = <T extends {coord: Coord}>(
     one: Clippable<T>,
     oneLocation: HitLocation,
     test: Clippable<T>,
@@ -374,17 +374,17 @@ If both are, we're on a shared edge.
 */
 
 // let's return `clipInformation` along with it, I think. like `{path, clipped: Array<segment index>}`
-const findHit = (clip: Clippable<Hit>, hit: Hit, idx: number): HitLocation => {
+export const findHit = (clip: Clippable<Hit>, hit: Hit, idx: number): HitLocation => {
     return {segment: idx, intersection: clip.hits[idx].indexOf(hit)};
 };
 
 // Ok so here's a theory:
 // we're breaking, because start/stop points are being counted twice ... and then not at all? idk.
 
-const prevPos = (segments: Array<Segment>, idx: number) =>
+export const prevPos = (segments: Array<Segment>, idx: number) =>
     idx === 0 ? segments[segments.length - 1].to : segments[idx - 1].to;
 
-const clipTwo = (
+export const clipTwo = (
     clip: Clippable<Hit>,
     path: Clippable<Hit>,
     idx: number,
@@ -765,7 +765,7 @@ export const atLineBottom = (coord: Coord, seg: SlopeIntercept) => {
 //     }
 //     return closeEnough(line.m * coord.x + line.b, coord.y);
 // };
-const isWithinLineLimit = (coord: Coord, line: SlopeIntercept) => {
+export const isWithinLineLimit = (coord: Coord, line: SlopeIntercept) => {
     if (!line.limit) {
         return true;
     }
@@ -800,7 +800,7 @@ const isWithinLineLimit = (coord: Coord, line: SlopeIntercept) => {
 
 // prims are the primitives of segments.
 // Segments are expected to be CLOCKWISE
-const insidePath = (coord: Coord, prims: Array<Primitive>, segments: Array<Segment>) => {
+export const insidePath = (coord: Coord, prims: Array<Primitive>, segments: Array<Segment>) => {
     const wind = windingNumber(coord, prims, segments);
     const wcount = wind.reduce((c, w) => (w.up ? 1 : -1) + c, 0);
     return wcount > 0;
@@ -938,7 +938,7 @@ const insidePath = (coord: Coord, prims: Array<Primitive>, segments: Array<Segme
 /**
  * Finds the {index} of the {Segment} whose /start/ position (not to) is inside the clip.
  */
-const findInsideStart = (
+export const findInsideStart = (
     segments: Array<Segment>,
     clip: Array<Primitive>,
     clipSegments: Array<Segment>,
@@ -1003,7 +1003,7 @@ export const sortHitsForPrimitive = <T extends {coord: Coord}>(
     }
 };
 
-const linePosAt = (line: SlopeIntercept, pos: number) => {
+export const linePosAt = (line: SlopeIntercept, pos: number) => {
     if (line.m === Infinity) {
         return {x: line.b, y: pos};
     }

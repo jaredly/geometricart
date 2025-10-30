@@ -1,10 +1,10 @@
-import {Hover} from './editor/Hover';
+import {Hover} from './editor/Sidebar';
 import {GuideGeom, Id, State} from './types';
 import {Action, GroupRegroup} from './state/Action';
-import {PendingDuplication} from './editor/Guides.PendingDuplication.related';
+import {PendingDuplication} from './editor/Guides';
 import {PendingMirror} from './useUIState';
 
-const toType: {[key: string]: GuideGeom['type'] | 'compass&ruler'} = {
+export const toType: {[key: string]: GuideGeom['type'] | 'compass&ruler'} = {
     l: 'Line',
     s: 'Split',
     c: 'Circle',

@@ -1,37 +1,30 @@
-import React from 'react';
+import {jsx} from '@emotion/react';
+import Prando from 'prando';
+import React, {useMemo, useRef} from 'react';
 // import {RoughGenerator} from 'roughjs/bin/generator';
 import {Action} from '../state/Action';
 import {useCurrent} from '../useCurrent';
 import {PendingMirror, UIState} from '../useUIState';
 import {findSelection, pathToPrimitives} from './findSelection';
 import {angleTo, Matrix, scale} from '../rendering/getMirrorTransforms';
-import {Guides} from './Guides';
-import {calculateBounds} from './calculateBounds';
-import {
-    handleDuplicationIntersection,
-    PendingDuplication,
-} from './Guides.PendingDuplication.related';
+import {calculateBounds, Guides, handleDuplicationIntersection, PendingDuplication} from './Guides';
 import {handleSelection} from './handleSelection';
 import {Primitive} from '../rendering/intersect';
 import {applyStyleHover, StyleHover} from './StyleHover';
 import {Overlay} from '../editor/Overlay';
-import {paletteColor} from './RenderPath.lightenedColor.related';
-import {RenderPath} from './RenderPath.RenderPath.related';
-import {RoughGenerator} from './RenderPath.RoughGenerator.related';
+import {paletteColor, RenderPath, RoughGenerator} from './RenderPath';
 import {showHover} from './showHover';
-import {Hover} from './Hover';
-import {Coord, State, Intersect, Segment, guideNeedsAngle, guidePoints} from '../types';
+import {Hover} from './Sidebar';
+import {InsetCache, sortedVisibleInsetPaths} from '../rendering/sortedVisibleInsetPaths';
+import {Coord, State, Intersect, View, Segment, guideNeedsAngle, guidePoints} from '../types';
 import {useDragSelect, useMouseDrag} from './useMouseDrag';
 import {useScrollWheel} from './useScrollWheel';
-import {EditorState, MenuItem} from './Canvas.MenuItem.related';
-import {screenToWorld} from './Canvas.screenToWorld.related';
+import {EditorState, MenuItem, screenToWorld} from './Canvas';
 import {coordsEqual} from '../rendering/pathsAreIdentical';
 import {RenderIntersections} from './RenderIntersections';
+import {PKInsetCache, getClips} from '../rendering/pkInsetPaths';
+import {canFreeClick, handleClick, previewPos} from './compassAndRuler';
 import {useCompassAndRulerHandlers} from './useCompassAndRulerHandlers';
-import {usePathsToShow} from './SVGCanvas.usePathsToShow.related';
-import {imageCache} from './imageCache';
-import {calcPPI} from './calcPPI';
-import {viewPos} from './viewPos';
 
 export function SVGCanvas({
     state,
@@ -470,11 +463,66 @@ export function SVGCanvas({
     return svgContents;
 }
 
+export const calcPPI = (ppi: number, pixels: number, zoom: number) => {
+    return `${(pixels / ppi).toFixed(3)}in`;
+};
+
 // base64
+export const imageCache: {[href: string]: string | false} = {};
 
-const maybeReverse = (v: boolean, reverse: boolean) => (reverse ? !v : v);
+export function usePathsToShow(state: State) {
+    const selectedIds = React.useMemo(() => {
+        return getSelectedIds(state.paths, state.selection);
+    }, [state.selection, state.paths]);
 
-function rectForCorners(pos: {x: number; y: number}, drag: Coord) {
+    const rand = React.useRef(new Prando('ok'));
+    rand.current.reset();
+
+    const insetCache = useRef({} as PKInsetCache);
+
+    let {res: pathsToShow, clip} = React.useMemo(() => {
+        const clip = getClips(state);
+        const now = performance.now();
+        const res = sortedVisibleInsetPaths(
+            state.paths,
+            state.pathGroups,
+            rand.current,
+            clip,
+            state.view.hideDuplicatePaths,
+            state.view.laserCutMode ? state.palette : undefined,
+            undefined,
+            selectedIds,
+            insetCache.current,
+        );
+        return {res, clip};
+    }, [
+        state.paths,
+        state.pathGroups,
+        state.clips,
+        state.view.hideDuplicatePaths,
+        state.view.laserCutMode,
+        selectedIds,
+    ]);
+    return {pathsToShow, selectedIds, clip, rand};
+}
+
+export function getSelectedIds(paths: State['paths'], selection: State['selection']) {
+    const selectedIds: {[key: string]: boolean} = {};
+    if (selection?.type === 'Path') {
+        selection.ids.forEach((id) => (selectedIds[id] = true));
+    } else if (selection?.type === 'PathGroup') {
+        Object.keys(paths).forEach((id) => {
+            if (selection!.ids.includes(paths[id].group!)) {
+                selectedIds[id] = true;
+            }
+        });
+    }
+    return selectedIds;
+}
+
+export const maybeReverse = (v: boolean, reverse: boolean) => (reverse ? !v : v);
+
+export function rectForCorners(pos: {x: number; y: number}, drag: Coord) {
     return {
         x1: Math.min(pos.x, drag.x),
         y1: Math.min(pos.y, drag.y),
@@ -483,7 +531,7 @@ function rectForCorners(pos: {x: number; y: number}, drag: Coord) {
     };
 }
 
-function finishDragFn(
+export function finishDragFn(
     setEditorState: React.Dispatch<React.SetStateAction<EditorState>>,
     currentDrag: React.MutableRefObject<{pos: Coord; drag: Coord | null}>,
     currentState: React.MutableRefObject<State>,
@@ -516,7 +564,13 @@ function finishDragFn(
     };
 }
 
-function usePalettePreload(state: State) {
+export function viewPos(view: View, width: number, height: number) {
+    const x = view.center.x * view.zoom + width / 2;
+    const y = view.center.y * view.zoom + height / 2;
+    return {x, y};
+}
+
+export function usePalettePreload(state: State) {
     const [, setTick] = React.useState(0);
 
     React.useEffect(() => {
@@ -531,7 +585,7 @@ function usePalettePreload(state: State) {
                     .then((blob) => {
                         var reader = new FileReader();
                         reader.readAsDataURL(blob);
-                        reader.onloadend = () => {
+                        reader.onloadend = function () {
                             var base64data = reader.result;
                             imageCache[color] = base64data as string;
                             setTick((t) => t + 1);

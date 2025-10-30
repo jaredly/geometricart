@@ -7,13 +7,13 @@ import type {Route} from './+types/root';
 
 // import './app.css';
 
-const meta: Route.MetaFunction = () => [
+export const meta: Route.MetaFunction = () => [
     {
         title: 'Pattern Gallery',
     },
 ];
 
-const links: Route.LinksFunction = () => [
+export const links: Route.LinksFunction = () => [
     {rel: 'preconnect', href: 'https://fonts.googleapis.com'},
     {
         rel: 'preconnect',
@@ -32,7 +32,7 @@ const links: Route.LinksFunction = () => [
     },
 ];
 
-function Layout({children}: {children: React.ReactNode}) {
+export function Layout({children}: {children: React.ReactNode}) {
     return (
         <html lang="en">
             <head>
@@ -50,11 +50,11 @@ function Layout({children}: {children: React.ReactNode}) {
     );
 }
 
-function App() {
+export default function App() {
     return <Outlet />;
 }
 
-function ErrorBoundary({error}: Route.ErrorBoundaryProps) {
+export function ErrorBoundary({error}: Route.ErrorBoundaryProps) {
     let message = 'Oops!';
     let details = 'An unexpected error occurred.';
     let stack: string | undefined;

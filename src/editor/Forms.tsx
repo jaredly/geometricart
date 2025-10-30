@@ -1,6 +1,9 @@
+/* @jsx jsx */
+/* @jsxFrag React.Fragment */
+import {jsx} from '@emotion/react';
 import * as React from 'react';
 import {transparent} from './Icons';
-import {Circle, Guide, Line, Path, PathGroup, View} from '../types';
+import {Circle, Guide, Line, Path, PathGroup, Style, View} from '../types';
 
 export const Text = ({
     value,
@@ -154,7 +157,7 @@ export const Float = ({value, onChange}: {value: number; onChange: (v: number) =
     );
 };
 
-const Int = ({
+export const Int = ({
     value,
     onChange,
     placeholder,
@@ -185,7 +188,7 @@ const Int = ({
     );
 };
 
-const Label = ({text}: {text: string}) => (
+export const Label = ({text}: {text: string}) => (
     <div
         css={{
             fontWeight: 'bold',
@@ -195,7 +198,7 @@ const Label = ({text}: {text: string}) => (
     </div>
 );
 
-const Color = ({
+export const Color = ({
     color,
     onChange,
     palette,
@@ -376,7 +379,7 @@ export const PathGroupForm = ({
     );
 };
 
-const hasNonBodyScrollParent = (node: HTMLElement) => {
+export const hasNonBodyScrollParent = (node: HTMLElement) => {
     let parent = node.parentElement;
     while (parent && parent !== document.body) {
         const style = getComputedStyle(parent);
@@ -476,7 +479,7 @@ export const PathForm = ({
     );
 };
 
-const GuideForm = ({
+export const GuideForm = ({
     guide,
     selected,
     onChange,

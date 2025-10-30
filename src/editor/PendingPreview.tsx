@@ -123,7 +123,7 @@ export const PendingPreview = ({state, size}: {state: DrawPathState; size: numbe
         </svg>
     );
 };
-const Arrow = ({
+export const Arrow = ({
     size,
     at,
     direction,

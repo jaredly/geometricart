@@ -1,10 +1,10 @@
 import * as React from 'react';
 import {RenderSegmentBasic} from '../editor/RenderSegment';
+import {Coord, Segment} from '../types';
 import {SegmentWithPrev} from './clipPathNew';
-import {SegmentEditor} from './SegmentEditor';
-import {useInitialState} from './SegmentEditor.useOnChange.related';
+import {SegmentEditor, useInitialState} from './SegmentEditor';
 
-const validSegments = (seg: Array<SegmentWithPrev>) => {
+export const validSegments = (seg: Array<SegmentWithPrev>) => {
     if (seg.length === 0) {
         return false;
     }

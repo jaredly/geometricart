@@ -31,7 +31,7 @@ export const simplifyPath = (segments: Array<Segment>): Array<Segment> => {
     return result;
 };
 
-const areContiguous = (prev: Coord, one: Segment, two: Segment) => {
+export const areContiguous = (prev: Coord, one: Segment, two: Segment) => {
     if (one.type !== two.type) {
         return false;
     }

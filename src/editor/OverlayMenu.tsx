@@ -1,3 +1,6 @@
+/* @jsx jsx */
+/* @jsxFrag React.Fragment */
+import {jsx} from '@emotion/react';
 import React from 'react';
 import {EyeIcon, EyeInvisibleIcon} from '../icons/Eyes';
 import {
@@ -8,12 +11,12 @@ import {
     LibraryAddIcon,
     SendToBackIcon,
 } from '../icons/Icon';
-import {Hover} from './Hover';
+import {Hover} from './Sidebar';
 import {State} from '../types';
 import {Action} from '../state/Action';
 import {parseAttachment} from './useDropTarget';
 
-const openFile = (onSuccess: (files: FileList | null) => void) => {
+export const openFile = (onSuccess: (files: FileList | null) => void) => {
     const input = document.createElement('input');
     input.type = 'file';
     document.body.appendChild(input);
@@ -26,7 +29,7 @@ const openFile = (onSuccess: (files: FileList | null) => void) => {
     input.click();
 };
 
-const OverlayMenu = ({
+export const OverlayMenu = ({
     state,
     dispatch,
     setHover,

@@ -1,7 +1,8 @@
-import {useMemo} from 'react';
+import React, {useMemo} from 'react';
+import {closeEnough} from '../rendering/epsilonToZero';
 import {dist} from '../rendering/getMirrorTransforms';
 import {Guide, State} from '../types';
-import {Hover} from '../editor/Hover';
+import {Hover} from '../editor/Sidebar';
 
 export const GuideInspector = ({
     state,

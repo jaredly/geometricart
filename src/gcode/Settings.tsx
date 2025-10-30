@@ -1,5 +1,5 @@
 import React from 'react';
-import {Bounds} from '../editor/Export.Bounds.related';
+import {Bounds} from '../editor/Export';
 import {BlurInt} from '../editor/Forms';
 import {Action} from '../state/Action';
 import {State} from '../types';
@@ -57,7 +57,7 @@ export function Settings({
     );
 }
 
-function showBounds(bounds: Bounds | null, ppi: number): React.ReactNode {
+export function showBounds(bounds: Bounds | null, ppi: number): React.ReactNode {
     return (
         <div style={{marginTop: 8, marginBottom: 16}}>
             Content Size: {bounds ? pxToMM(bounds.x2 - bounds.x1, ppi).toFixed(1) : 'unknown'}

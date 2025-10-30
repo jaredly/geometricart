@@ -97,7 +97,7 @@ export const segmentBounds = (prev: Coord, segment: Segment): Bounds => {
     }
 };
 
-function boundsMidpoint(bounds: Bounds): Coord {
+export function boundsMidpoint(bounds: Bounds): Coord {
     return {x: (bounds.x0 + bounds.x1) / 2, y: (bounds.y0 + bounds.y1) / 2};
 }
 export type Bounds = {x0: number; y0: number; x1: number; y1: number};

@@ -2,6 +2,7 @@ import {Coord, Mirror, State} from '../types';
 import {tracePath} from '../rendering/CanvasRender';
 import {PathMultiply} from '../state/Action';
 import {AnimateState, wait} from './animateHistory';
+import {handlePathMultiply} from '../state/reducer';
 
 export async function animateMultiply(
     state: AnimateState,
@@ -86,6 +87,7 @@ async function highlightPaths(
         ctx.lineCap = 'round';
         ctx.stroke();
         if (noWait) {
+            continue;
         }
 
         // if (by < minWait) {

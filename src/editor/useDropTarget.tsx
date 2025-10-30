@@ -2,7 +2,7 @@ import React from 'react';
 import {State, Tiling} from '../types';
 import {migrateState} from '../state/migrateState';
 import {readMetadata} from 'png-metadata';
-import {PREFIX, SUFFIX} from './Sidebar.consts';
+import {PREFIX, SUFFIX} from './Sidebar';
 import {initialState} from '../state/initialState';
 
 export const useDropTarget = (

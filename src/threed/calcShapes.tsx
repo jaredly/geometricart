@@ -1,12 +1,12 @@
 import '@react-three/fiber';
 import earcut from 'earcut';
-import {Path as PKPath} from 'pathkit-wasm';
+import {Path as PKPath, PathKit} from 'pathkit-wasm';
 import React from 'react';
 import {BufferAttribute, BufferGeometry, PointsMaterial} from 'three';
 import {segmentsBounds} from '../editor/Bounds';
 import {calcPathD} from '../editor/calcPathD';
-import {paletteColor} from '../editor/RenderPath.lightenedColor.related';
-import {Hover} from '../editor/Hover';
+import {paletteColor} from '../editor/RenderPath';
+import {Hover} from '../editor/Sidebar';
 import {cmdsToSegments} from '../gcode/cmdsToSegments';
 import {mmToPX} from '../gcode/pxToMM';
 import {scaleMatrix} from '../rendering/getMirrorTransforms';
@@ -19,16 +19,16 @@ import {
 } from '../rendering/pathToPoints';
 import {transformBarePath} from '../rendering/points';
 import {Action} from '../state/Action';
-import {Fill, Path, State, StyleLine} from '../types';
+import {Fill, Path, State, Style, StyleLine} from '../types';
 import {PK} from '../editor/pk';
-import {generatePathsAndOutlines} from '../editor/ExportSVG.generatePathsAndOutlines.related';
+import {generatePathsAndOutlines} from '../editor/ExportSVG';
 
-const unique = (v: string[]) => {
+export const unique = (v: string[]) => {
     const seen: Record<string, true> = {};
     return v.filter((v) => (!seen[v] ? (seen[v] = true) : false));
 };
 
-const matchesHover = (path: Path, hover: Hover | null) => {
+export const matchesHover = (path: Path, hover: Hover | null) => {
     if (!hover) return false;
     if (hover.type !== 'element') return false;
     if (hover.kind === 'Path') {

@@ -1,17 +1,17 @@
 import localforage from 'localforage';
 import {initialLibrary, Library} from '../types';
 
-const key = 'geometric-art:library';
+export const key = 'geometric-art:library';
 
-const migrateLibrary = (library: Library) => {
+export const migrateLibrary = (library: Library) => {
     // TODO
 };
 
-const saveLibrary = (library: Library) => {
+export const saveLibrary = (library: Library) => {
     localforage.setItem(key, JSON.stringify(library));
 };
 
-const loadLibrary = async () => {
+export const loadLibrary = async () => {
     const raw = await localforage.getItem(key);
     if (!raw || typeof raw !== 'string') {
         return initialLibrary;

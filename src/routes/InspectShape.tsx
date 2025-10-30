@@ -1,3 +1,4 @@
+import {useMemo} from 'react';
 import {boundsForCoords} from '../editor/Bounds';
 import {closeEnough} from '../rendering/epsilonToZero';
 import {angleTo, push} from '../rendering/getMirrorTransforms';

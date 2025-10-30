@@ -1,3 +1,7 @@
+/* @jsx jsx */
+/* @jsxFrag React.Fragment */
+import {jsx} from '@emotion/react';
+import React from 'react';
 import {State, TimelineSlot} from '../types';
 
 export const SlotEditor = ({

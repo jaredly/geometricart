@@ -11,13 +11,13 @@ import {
 import {scalePos} from './scalePos';
 import {tilingTransforms} from './tilingTransforms';
 
-const transformLines = (lines: [Coord, Coord][], mx: Matrix[]) =>
+export const transformLines = (lines: [Coord, Coord][], mx: Matrix[]) =>
     lines.map(([p1, p2]): [Coord, Coord] => [applyMatrices(p1, mx), applyMatrices(p2, mx)]);
 
 export const transformShape = (pts: Coord[], tx: Matrix[]) =>
     pts.map((pt) => applyMatrices(pt, tx));
 
-const transformLine = ([p1, p2]: [Coord, Coord], tx: Matrix[]) =>
+export const transformLine = ([p1, p2]: [Coord, Coord], tx: Matrix[]) =>
     [applyMatrices(p1, tx), applyMatrices(p2, tx)] as [Coord, Coord];
 
 export const applyTilingTransforms = (unique: [Coord, Coord][], mx: Matrix[][][]) => {
@@ -106,7 +106,7 @@ export function tilingPoints(shape: Tiling['shape']) {
     }
 }
 
-function replicateStandard(full: [Coord, Coord][], ty: number) {
+export function replicateStandard(full: [Coord, Coord][], ty: number) {
     full = full.concat(transformLines(full, [scaleMatrix(-1, 1), translationMatrix({x: 2, y: 0})]));
     full = full.concat(
         transformLines(full, [scaleMatrix(1, -1), translationMatrix({x: 0, y: ty * 2})]),

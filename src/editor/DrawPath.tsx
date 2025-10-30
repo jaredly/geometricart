@@ -6,14 +6,14 @@ import {findNextSegments} from '../rendering/findNextSegments';
 import {angleBetween} from '../rendering/isAngleBetween';
 import {applyMatrices, Matrix} from '../rendering/getMirrorTransforms';
 import {coordsEqual, segmentsEqual} from '../rendering/pathsAreIdentical';
-import {RenderPath} from './RenderPath.RenderPath.related';
+import {RenderPath} from '../editor/RenderPath';
 import {RenderSegment} from '../editor/RenderSegment';
 import {segmentKey, segmentKeyReverse} from '../rendering/segmentKey';
 import {ArcSegment, Id, Intersect, PendingSegment, View} from '../types';
 import {segmentAngle} from '../rendering/segmentAngle';
 import {Primitive} from '../rendering/intersect';
 import {epsilon} from '../rendering/epsilonToZero';
-import {EditorState} from './Canvas.MenuItem.related';
+import {EditorState} from './Canvas';
 
 export type DrawPathState = {
     type: 'path';
@@ -355,10 +355,12 @@ function nextForState(
 ) {
     const covered = parts.map((part) => coordKey(part.to.coord));
     // const butLast = covered.slice(0, -1);
-    const used = parts.flatMap((part, i) => {
-        const prev = i === 0 ? origin.coord : parts[i - 1].to.coord;
-        return [segmentKey(prev, part.segment), segmentKeyReverse(prev, part.segment)];
-    });
+    const used = parts
+        .map((part, i) => {
+            const prev = i === 0 ? origin.coord : parts[i - 1].to.coord;
+            return [segmentKey(prev, part.segment), segmentKeyReverse(prev, part.segment)];
+        })
+        .flat();
     const current = parts.length == 0 ? origin : parts[parts.length - 1].to;
 
     let next = findNextSegments(
@@ -428,4 +430,5 @@ function nextForState(
         .map((a) => a.seg);
 }
 
-const roundAlmostPi = (angle: number) => (Math.abs(angle - Math.PI * 2) < epsilon ? 0 : angle);
+export const roundAlmostPi = (angle: number) =>
+    Math.abs(angle - Math.PI * 2) < epsilon ? 0 : angle;

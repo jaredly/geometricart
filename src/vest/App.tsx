@@ -13,7 +13,7 @@ const initial: Array<unknown> = [];
 
 const slugify = (name: string) => name.replace(/[^a-zA-Z0-9_.-]/g, '-');
 
-const Sidebar = () => {
+export const Sidebar = () => {
     const [vests, setVests] = React.useState([]);
     React.useEffect(() => {
         fetch(`/vests`)
@@ -47,7 +47,7 @@ const Sidebar = () => {
     );
 };
 
-const App = <Fn extends (...args: any) => any>({
+export const App = <Fn extends (...args: any) => any>({
     config,
 }: {
     config: Config<Parameters<Fn>, ReturnType<Fn>>;

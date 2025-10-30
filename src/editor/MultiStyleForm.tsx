@@ -1,18 +1,15 @@
 /* @jsx jsx */
 /* @jsxFrag React.Fragment */
 import * as React from 'react';
+import {jsx} from '@emotion/react';
 import {transparent} from './Icons';
 import {Style, Fill, StyleLine} from '../types';
-import {colorSquare} from './colorSquare';
-import {paletteColor} from './RenderPath.lightenedColor.related';
+import {colorSquare, paletteColor} from './RenderPath';
 import {Button} from 'primereact/button';
 import {Action} from '../state/Action';
 import {mmToPX, pxToMM} from '../gcode/pxToMM';
 import {BlurInt} from './Forms';
 import {StyleHover} from './StyleHover';
-import {mergeFills} from './mergeFills';
-import {mergeStyleLines} from './mergeStyleLines';
-import {maybeUrlColor} from './maybeUrlColor';
 
 export const MultiStyleForm = ({
     styles,
@@ -451,7 +448,7 @@ export const MultiStyleForm = ({
     );
 };
 
-const LightDark = ({
+export const LightDark = ({
     lighten,
     palette,
     color,
@@ -526,7 +523,7 @@ const LightDark = ({
     );
 };
 
-type MultiLine = {
+export type MultiLine = {
     inset: Array<number | null>;
     color: Array<null | string | number>;
     width: Array<null | number>;
@@ -537,7 +534,20 @@ type MultiLine = {
     lighten: Array<number | null>;
 };
 
-const getSingularLine = (line: MultiLine): StyleLine | null => {
+export const styleMatches = (one: StyleLine, two: StyleLine): boolean => {
+    return (
+        (one.inset ?? 0) === (two.inset ?? 0) &&
+        one.color === two.color &&
+        one.width === two.width &&
+        one.dash === two.dash &&
+        one.opacity === two.opacity &&
+        one.joinStyle === two.joinStyle &&
+        one.colorVariation === two.colorVariation &&
+        one.lighten === two.lighten
+    );
+};
+
+export const getSingularLine = (line: MultiLine): StyleLine | null => {
     const style: StyleLine = {};
     if (line.inset.length > 1) return null;
     if (line.inset.length) style.inset = line.inset[0] ?? undefined;
@@ -558,7 +568,7 @@ const getSingularLine = (line: MultiLine): StyleLine | null => {
     return style;
 };
 
-type MultiFill = {
+export type MultiFill = {
     color: Array<string | number | null>;
     opacity: Array<number | null>;
     colorVariation: Array<number | null>;
@@ -566,13 +576,34 @@ type MultiFill = {
     lighten: Array<number | null>;
 };
 
-const addIfNew = <T,>(items: Array<T>, value: T) => {
+export const addIfNew = <T,>(items: Array<T>, value: T) => {
     if (!items.includes(value)) {
         items.push(value);
     }
 };
 
-const mergeStyles = (one: Style, two: Style) => {
+export const mergeFills = (one: Fill, two: Fill | null): Fill =>
+    !two
+        ? one
+        : {
+              color: two.color != null ? two.color : one.color,
+              inset: two.inset != null ? two.inset : one.inset,
+              opacity: two.opacity != null ? two.opacity : one.opacity,
+              lighten: two.lighten != null ? two.lighten : one.lighten,
+          };
+
+export const mergeStyleLines = (one: StyleLine, two: null | StyleLine): StyleLine =>
+    !two
+        ? one
+        : {
+              color: two.color ?? one.color,
+              dash: two.dash ?? one.dash,
+              inset: two.inset ?? one.inset,
+              joinStyle: two.joinStyle ?? one.joinStyle,
+              width: two.width ?? one.width,
+          };
+
+export const mergeStyles = (one: Style, two: Style) => {
     const result: Style = {fills: [], lines: []};
     one.fills.forEach((fill, i) => {
         if (fill) {
@@ -593,7 +624,7 @@ const mergeStyles = (one: Style, two: Style) => {
     return result;
 };
 
-const MultiNumber = ({
+export const MultiNumber = ({
     value,
     onChange,
 }: {
@@ -636,9 +667,9 @@ const MultiNumber = ({
     );
 };
 
-const constantColors = ['black', 'white', 'transparent'];
+export const constantColors = ['black', 'white', 'transparent'];
 
-const MultiColor = ({
+export const MultiColor = ({
     color,
     onChange,
     palette,
@@ -726,7 +757,10 @@ const MultiColor = ({
     );
 };
 
-function collectMultiStyles(styles: Style[]) {
+export const maybeUrlColor = (color: string) =>
+    color.startsWith('http') ? `url("${color}")` : color;
+
+export function collectMultiStyles(styles: Style[]) {
     const fills: Array<MultiFill> = [];
     const lines: Array<MultiLine> = [];
     const maxLines = styles.reduce((num, style) => Math.max(num, style.lines.length), 0);
@@ -772,7 +806,7 @@ function collectMultiStyles(styles: Style[]) {
     return {fills, lines};
 }
 
-function updateLine(
+export function updateLine(
     styles: Style[],
     i: number,
     value: string | number | undefined,
@@ -792,7 +826,7 @@ function updateLine(
     });
 }
 
-function removeLine(styles: Style[], i: number): (Style | null)[] {
+export function removeLine(styles: Style[], i: number): (Style | null)[] {
     return styles.map((style) => {
         if (i >= style.lines.length) {
             return null;
@@ -803,7 +837,7 @@ function removeLine(styles: Style[], i: number): (Style | null)[] {
     });
 }
 
-function removeFill(styles: Style[], i: number): (Style | null)[] {
+export function removeFill(styles: Style[], i: number): (Style | null)[] {
     return styles.map((style) => {
         if (i >= style.fills.length) {
             return null;
@@ -814,7 +848,7 @@ function removeFill(styles: Style[], i: number): (Style | null)[] {
     });
 }
 
-function updateFill(
+export function updateFill(
     styles: Style[],
     i: number,
     value: string | number | undefined,

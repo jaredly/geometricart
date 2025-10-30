@@ -2,7 +2,7 @@ import {History} from '../types';
 import {UndoableAction, UndoAction} from '../state/Action';
 
 /** Returns the things to undo to get to a common parent, and then the things to do to get up to the new branch. */
-const switchBranches = (
+export const switchBranches = (
     history: History,
     newBranch: number,
 ): {undo: Array<UndoableAction>; do: Array<UndoableAction>} => {
@@ -15,7 +15,7 @@ const switchBranches = (
     throw new Error('not impl');
 };
 
-const getHistoricalAction = (
+export const getHistoricalAction = (
     history: History,
     at: number,
 ): {action: UndoAction; idx: number; branch: number} | null => {

@@ -1,9 +1,10 @@
 import React, {useEffect, useState} from 'react';
-import {paletteColor} from '../editor/RenderPath.lightenedColor.related';
+import {paletteColor} from '../editor/RenderPath';
 import {makeDepths} from './generateGcode';
 import {pxToMM} from './pxToMM';
 import {GCodePath, State} from '../types';
-import {FillColors, LineColors} from './GCodeEditor.types';
+import {FillColors, LineColors} from './GCodeEditor';
+import {Int} from '../editor/Forms';
 import {
     CheckmarkIcon,
     IconAngleAcute,
@@ -342,7 +343,7 @@ const Tabs = ({tabs, onChange}: {tabs?: Tabs; onChange: (tabs?: Tabs) => void}) 
     );
 };
 
-const Float = ({
+export const Float = ({
     value,
     onChange,
     placeholder,

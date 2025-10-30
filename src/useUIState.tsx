@@ -1,8 +1,8 @@
 import React from 'react';
 import {reducer} from './state/reducer';
-import {Hover} from './editor/Hover';
+import {Hover} from './editor/Sidebar';
 import {Coord, Id, State} from './types';
-import {PendingDuplication} from './editor/Guides.PendingDuplication.related';
+import {PendingDuplication} from './editor/Guides';
 import {StyleHover} from './editor/StyleHover';
 import {Action} from './state/Action';
 
@@ -22,7 +22,7 @@ export type UIState = {
     previewActions: Action[];
 };
 
-const applyActions = (actions: Action[], state: State) => {
+export const applyActions = (actions: Action[], state: State) => {
     for (let action of actions) {
         state = reducer(state, action);
     }

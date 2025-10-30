@@ -1,5 +1,5 @@
 import {angleTo, push} from '../rendering/getMirrorTransforms';
-import {GCodeData, Tool} from './Visualize.Tool.related';
+import {GCodeData, Tool} from './Visualize';
 
 export function renderCutDepths(
     ctx: CanvasRenderingContext2D,
@@ -97,7 +97,7 @@ export function renderCutDepths(
     });
 }
 
-function circleGradient(
+export function circleGradient(
     ctx: CanvasRenderingContext2D,
     last: {x: number; y: number},
     radius: number,

@@ -66,64 +66,64 @@ export type UndoAddRemoveEdit<T, Key> =
     | {type: 'edit'; prev: Partial<T>; key: Key}
     | {type: 'remove'; prev: T; key: Key};
 
-type GCodeConfig = {
+export type GCodeConfig = {
     type: 'gcode:config';
     config: Partial<State['gcode']>;
 };
 
-type UndoGCodeConfig = {
+export type UndoGCodeConfig = {
     type: GCodeConfig['type'];
     action: GCodeConfig;
     prev: Partial<State['gcode']>;
 };
 
-type TimelineLaneARE = {
+export type TimelineLaneARE = {
     type: 'timeline:lane:are';
     action: AddRemoveEdit<TimelineLane, number>;
 };
-type UndoTimelineLaneARE = {
+export type UndoTimelineLaneARE = {
     type: TimelineLaneARE['type'];
     action: TimelineLaneARE;
     undo: UndoAddRemoveEdit<TimelineLane, number>;
 };
 
-type HistoryViewUpdate = {
+export type HistoryViewUpdate = {
     type: 'history-view:update';
     view: State['historyView'];
 };
 
-type UndoHistoryViewUpdate = {
+export type UndoHistoryViewUpdate = {
     type: HistoryViewUpdate['type'];
     action: HistoryViewUpdate;
     prev: State['historyView'];
 };
 
-type TimelineSlotARE = {
+export type TimelineSlotARE = {
     type: 'timeline:slot:are';
     timeline: number;
     action: AddRemoveEdit<TimelineSlot, number>;
 };
 
-type UndoTimelineSlotARE = {
+export type UndoTimelineSlotARE = {
     type: TimelineSlotARE['type'];
     action: TimelineSlotARE;
     undo: UndoAddRemoveEdit<TimelineSlot, number>;
 };
 
-type GCodeItemOrder = {
+export type GCodeItemOrder = {
     type: 'gcode:item:order';
     oldIndex: number;
     newIndex: number;
 };
-type UndoGCodeItemOrder = {
+export type UndoGCodeItemOrder = {
     type: GCodeItemOrder['type'];
     action: GCodeItemOrder;
 };
-type GCodeItemARE = {
+export type GCodeItemARE = {
     type: 'gcode:item:are';
     item: AddRemoveEdit<State['gcode']['items'][0], number>;
 };
-type UndoGCodeItemARE = {
+export type UndoGCodeItemARE = {
     type: GCodeItemARE['type'];
     action: GCodeItemARE;
     undo: UndoAddRemoveEdit<State['gcode']['items'][0], number>;
@@ -158,137 +158,137 @@ type UndoGCodeItemARE = {
 //     prev: TimelineLane;
 // };
 
-type ClipUpdate = {type: 'clip:update'; id: string; clip: Clip};
-type UndoClipUpdate = {
+export type ClipUpdate = {type: 'clip:update'; id: string; clip: Clip};
+export type UndoClipUpdate = {
     type: ClipUpdate['type'];
     action: ClipUpdate;
     prev: Clip;
 };
 
-type ViewUpdate = {type: 'view:update'; view: View};
-type UndoViewUpdate = {
+export type ViewUpdate = {type: 'view:update'; view: View};
+export type UndoViewUpdate = {
     type: ViewUpdate['type'];
     action: ViewUpdate;
     prev: View;
 };
 
-type ScriptRename = {
+export type ScriptRename = {
     type: 'script:rename';
     key: string;
     newKey: string;
 };
-type UndoScriptRename = {
+export type UndoScriptRename = {
     type: ScriptRename['type'];
     action: ScriptRename;
 };
 
-type ScriptUpdate = {
+export type ScriptUpdate = {
     type: 'script:update';
     key: string;
     script: Animations['scripts'][''] | null;
 };
-type UndoScriptUpdate = {
+export type UndoScriptUpdate = {
     type: ScriptUpdate['type'];
     action: ScriptUpdate;
     prev: Animations['scripts'][''] | null;
 };
 
-type AnimationConfig = {
+export type AnimationConfig = {
     type: 'animation:config';
     config: Animations['config'];
 };
-type UndoAnimationConfig = {
+export type UndoAnimationConfig = {
     type: AnimationConfig['type'];
     action: AnimationConfig;
     prev: Animations['config'];
 };
 
-type TimelineUpdate = {
+export type TimelineUpdate = {
     type: 'timeline:update';
     key: string;
     vbl: Animations['lerps'][''] | null;
 };
-type UndoTimelineUpdate = {
+export type UndoTimelineUpdate = {
     type: TimelineUpdate['type'];
     action: TimelineUpdate;
     prev: TimelineUpdate['vbl'];
 };
 
-type ClipAdd = {type: 'clip:add'; clip: Array<Segment>};
-type UndoClipAdd = {
+export type ClipAdd = {type: 'clip:add'; clip: Array<Segment>};
+export type UndoClipAdd = {
     type: ClipAdd['type'];
     action: ClipAdd;
     added: [string, number];
 };
 
-type OverlayDelete = {type: 'overlay:delete'; id: Id};
-type UndoOverlayDelete = {
+export type OverlayDelete = {type: 'overlay:delete'; id: Id};
+export type UndoOverlayDelete = {
     type: OverlayDelete['type'];
     action: OverlayDelete;
     removed: Overlay;
 };
 
-type OverlyAdd = {type: 'overlay:add'; attachment: Id};
-type UndoOverlayAdd = {
+export type OverlyAdd = {type: 'overlay:add'; attachment: Id};
+export type UndoOverlayAdd = {
     type: OverlyAdd['type'];
     action: OverlyAdd;
     added: [string, number];
 };
 
-type UndoOverlayUpdate = {
+export type UndoOverlayUpdate = {
     type: OverlayUpdate['type'];
     action: OverlayUpdate;
     prev: Overlay;
 };
-type OverlayUpdate = {
+export type OverlayUpdate = {
     type: 'overlay:update';
     overlay: Overlay;
 };
 
-type UndoGuideUpdate = {
+export type UndoGuideUpdate = {
     type: GuideUpdate['type'];
     action: GuideUpdate;
     prev: Guide;
 };
-type GuideUpdate = {
+export type GuideUpdate = {
     type: 'guide:update';
     id: Id;
     guide: Guide;
 };
 
-type UndoPathGroupUpdateMany = {
+export type UndoPathGroupUpdateMany = {
     type: PathGroupUpdateMany['type'];
     action: PathGroupUpdateMany;
     prev: {[key: string]: PathGroup};
 };
-type PathGroupUpdateMany = {
+export type PathGroupUpdateMany = {
     type: 'pathGroup:update:many';
     changed: {[key: string]: PathGroup};
 };
 
-type UndoPathDeleteMany = {
+export type UndoPathDeleteMany = {
     type: PathDeleteMany['type'];
     action: PathDeleteMany;
     prev: {[key: string]: Path};
 };
-type PathDeleteMany = {
+export type PathDeleteMany = {
     type: 'path:delete:many';
     ids: Array<Id>;
 };
 
-type UndoPathUpdateMany = {
+export type UndoPathUpdateMany = {
     type: PathUpdateMany['type'];
     action: PathUpdateMany;
     prev: {[key: string]: Path};
     prevNextId?: number;
 };
-type PathUpdateMany = {
+export type PathUpdateMany = {
     type: 'path:update:many';
     changed: {[key: string]: Path | null};
     nextId?: number;
 };
 
-type UndoGlobalTransform = {
+export type UndoGlobalTransform = {
     type: GlobalTransform['type'];
     action: GlobalTransform;
 };
@@ -298,54 +298,54 @@ export type GlobalTransform = {
     flip: 'V' | 'H' | null;
 };
 
-type UndoPathUpdate = {
+export type UndoPathUpdate = {
     type: PathUpdate['type'];
     action: PathUpdate;
     prev: Path;
 };
-type PathUpdate = {
+export type PathUpdate = {
     type: 'path:update';
     id: Id;
     path: Path;
 };
 
-type UndoGroupUpdate = {
+export type UndoGroupUpdate = {
     type: GroupUpdate['type'];
     action: GroupUpdate;
     prev: PathGroup;
 };
-type GroupUpdate = {
+export type GroupUpdate = {
     type: 'group:update';
     id: Id;
     group: PathGroup;
 };
 
-type UndoGroupsOrder = {
+export type UndoGroupsOrder = {
     type: GroupsOrder['type'];
     action: GroupsOrder;
     prev: Record<string, number | undefined>;
 };
-type GroupsOrder = {
+export type GroupsOrder = {
     type: 'groups:order';
     order: Record<string, number>;
 };
 
-type ClipCut = {
+export type ClipCut = {
     type: 'clip:cut';
     clip: Id;
 };
-type UndoClipCut = {
+export type UndoClipCut = {
     type: ClipCut['type'];
     action: ClipCut;
     paths: {[key: Id]: Path};
     added: Array<Id>;
 };
 
-type GroupDuplicate = {
+export type GroupDuplicate = {
     type: 'group:duplicate';
     selection: {type: 'Path' | 'PathGroup'; ids: Array<Id>};
 };
-type UndoGroupDuplicate = {
+export type UndoGroupDuplicate = {
     type: GroupDuplicate['type'];
     action: GroupDuplicate;
     created: null | [Id, number, Id[]];
@@ -355,35 +355,35 @@ export type GroupRegroup = {
     type: 'group:regroup';
     selection: {type: 'Path' | 'PathGroup'; ids: Array<Id>};
 };
-type UndoGroupRegroup = {
+export type UndoGroupRegroup = {
     type: GroupRegroup['type'];
     action: GroupRegroup;
     created: null | [Id, number];
     prevGroups: {[key: Id]: Id | null};
 };
 
-type PathDelete = {
+export type PathDelete = {
     type: 'path:delete';
     id: Id;
 };
-type UndoPathDelete = {
+export type UndoPathDelete = {
     type: PathDelete['type'];
     action: PathDelete;
     path: Path;
 };
 
-type GroupDelete = {
+export type GroupDelete = {
     type: 'group:delete';
     id: Id;
 };
-type UndoGroupDelete = {
+export type UndoGroupDelete = {
     type: GroupDelete['type'];
     action: GroupDelete;
     group: PathGroup;
     paths: {[key: Id]: Path};
 };
 
-type UndoGuideAdd = {action: GuideAdd; type: GuideAdd['type']};
+export type UndoGuideAdd = {action: GuideAdd; type: GuideAdd['type']};
 export type GuideAdd = {
     type: 'guide:add';
     id: Id;
@@ -396,7 +396,7 @@ export type GuideAdd = {
 //     prev: Pending | null;
 // };
 
-type UndoPendingPoint = {
+export type UndoPendingPoint = {
     type: PendingPoint['type'];
     action: PendingPoint;
     added: [Id, number] | null;
@@ -408,7 +408,7 @@ export type PendingPoint = {
     shiftKey: boolean;
 };
 
-type UndoPendingAngle = {
+export type UndoPendingAngle = {
     type: PendingAngle['type'];
     action: PendingAngle;
     added: [Id, number] | null;
@@ -420,21 +420,21 @@ export type PendingAngle = {
     // shiftKey: boolean;
 };
 
-type UndoPendingCompassAndRuler = {
+export type UndoPendingCompassAndRuler = {
     type: PendingCompassAndRuler['type'];
     action: PendingCompassAndRuler;
     prev?: CompassState;
 };
-type PendingCompassAndRuler = {
+export type PendingCompassAndRuler = {
     type: 'pending:compass&ruler';
     state: CompassState;
 };
 
-type MetaUpdate = {
+export type MetaUpdate = {
     type: 'meta:update';
     meta: Meta;
 };
-type UndoMetaUpdate = {
+export type UndoMetaUpdate = {
     type: MetaUpdate['type'];
     action: MetaUpdate;
     prev: Meta;
@@ -447,7 +447,7 @@ export type PathCreateMany = {
     trace?: boolean;
 };
 
-type UndoPathCreateMany = {
+export type UndoPathCreateMany = {
     type: PathCreateMany['type'];
     action: PathCreateMany;
     added: [Array<Id>, Id | null, number];
@@ -459,7 +459,7 @@ export type PathCreate = {
     segments: Array<Segment>;
 };
 
-type UndoPathCreate = {
+export type UndoPathCreate = {
     type: PathCreate['type'];
     action: PathCreate;
     added: [Array<Id>, Id | null, number];
@@ -470,27 +470,27 @@ export type PathMultiply = {
     selection: {type: 'Path' | 'PathGroup'; ids: Array<Id>};
     mirror: Id | Mirror;
 };
-type UndoPathMultiply = {
+export type UndoPathMultiply = {
     type: PathMultiply['type'];
     action: PathMultiply;
     added: [Array<Id>, Id | null, number];
 };
 
-type PendingToggle = {
+export type PendingToggle = {
     type: 'pending:toggle';
 };
 
-type UndoPendingToggle = {
+export type UndoPendingToggle = {
     type: PendingToggle['type'];
     action: PendingToggle;
 };
 
-type PendingExtent = {
+export type PendingExtent = {
     type: 'pending:extent';
     delta: number;
 };
 
-type UndoPendingExtent = {
+export type UndoPendingExtent = {
     type: PendingExtent['type'];
     action: PendingExtent;
 };
@@ -504,18 +504,18 @@ type UndoPendingExtent = {
 //     added: [Array<Id>, Id | null, number, PendingPath] | null;
 // };
 
-type UndoMirrorDelete = {
+export type UndoMirrorDelete = {
     type: MirrorDelete['type'];
     action: MirrorDelete;
     mirror: Mirror;
     prevActive: Id | null;
 };
-type MirrorDelete = {
+export type MirrorDelete = {
     type: 'mirror:delete';
     id: Id;
 };
 
-type UndoMirrorAdd = {
+export type UndoMirrorAdd = {
     type: MirrorAdd['type'];
     action: MirrorAdd;
     added: [Id, number];
@@ -526,94 +526,94 @@ export type MirrorAdd = {
     activate?: boolean;
 };
 
-type UndoMirrorActive = {
+export type UndoMirrorActive = {
     type: MirrorActive['type'];
     action: MirrorActive;
     prev: Id | null;
 };
-type MirrorActive = {
+export type MirrorActive = {
     type: 'mirror:active';
     id: Id | null;
 };
 
-type UndoMirrorUpdate = {
+export type UndoMirrorUpdate = {
     type: MirrorUpdate['type'];
     action: MirrorUpdate;
     prev: Mirror;
 };
-type MirrorUpdate = {
+export type MirrorUpdate = {
     type: 'mirror:change';
     id: Id;
     mirror: Mirror;
 };
 
-type UndoPendingType = {
+export type UndoPendingType = {
     type: PendingType['type'];
     action: PendingType;
     prev: Pending | null;
 };
-type PendingType = {
+export type PendingType = {
     type: 'pending:type';
     kind: GuideGeom['type'] | null | 'compass&ruler';
     shiftKey?: boolean;
 };
 
-type UndoGuideDelete = {
+export type UndoGuideDelete = {
     type: GuideDelete['type'];
     action: GuideDelete;
     prev: Guide;
 };
-type GuideDelete = {
+export type GuideDelete = {
     type: 'guide:delete';
     id: Id;
 };
 
-type UndoGuideToggle = {
+export type UndoGuideToggle = {
     type: GuideToggle['type'];
     action: GuideToggle;
     prev: boolean;
 };
-type GuideToggle = {
+export type GuideToggle = {
     type: 'guide:toggle';
     id: Id;
 };
 
-type PaletteUpdate = {
+export type PaletteUpdate = {
     type: 'palette:update';
     colors: string[];
 };
-type UndoPaletteUpdate = {
+export type UndoPaletteUpdate = {
     type: PaletteUpdate['type'];
     action: PaletteUpdate;
     prev: string[];
 };
 
-type TilingDelete = {
+export type TilingDelete = {
     type: 'tiling:delete';
     id: string;
 };
-type UndoTilingDelete = {
+export type UndoTilingDelete = {
     type: TilingDelete['type'];
     action: TilingDelete;
     removed: Tiling;
 };
 
-type TilingAdd = {
+export type TilingAdd = {
     type: 'tiling:add';
     shape: Tiling['shape'];
     cache: Tiling['cache'];
 };
-type UndoTilingAdd = {
+export type UndoTilingAdd = {
     type: TilingAdd['type'];
     action: TilingAdd;
     added: [Id, number];
 };
 
-type TilingUpdate = {
+export type TilingUpdate = {
     type: 'tiling:update';
     tiling: Tiling;
 };
-type UndoTilingUpdate = {
+export type UndoTilingUpdate = {
     type: TilingUpdate['type'];
     action: TilingUpdate;
     prev: Tiling;

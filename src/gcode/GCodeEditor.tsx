@@ -1,15 +1,16 @@
-import React, {useMemo} from 'react';
-import {findBoundingRect} from '../editor/Export.Bounds.related';
+import React, {useEffect, useMemo} from 'react';
+import {Bounds, findBoundingRect} from '../editor/Export';
 import {Text} from '../editor/Forms';
+import {canvasRender} from '../rendering/CanvasRender';
 import {Action} from '../state/Action';
 import {State} from '../types';
 import {Toolbar} from './Toolbar';
 import {Settings} from './Settings';
 import {ItemEdit} from './ItemEdit';
+import PathKitInit, {PathKit} from 'pathkit-wasm';
 import {Canvas} from '../editor/Canvas';
 import {IconDelete} from '../icons/Icon';
-import {usePK} from '../editor/pk.usePK.related';
-import {LineColors, FillColors} from './GCodeEditor.types';
+import {usePK} from '../editor/pk';
 
 const many = (value: string, m: number) => {
     const values: string[] = [];
@@ -157,7 +158,7 @@ export const GCodeEditor = ({
     );
 };
 
-const UpDown = ({
+export const UpDown = ({
     i,
     dispatch,
     state,
@@ -194,6 +195,22 @@ const UpDown = ({
             </button>
         </div>
     );
+};
+
+export type LineColors = {
+    [key: string]: {
+        count: number;
+        color: string | number;
+        width?: number;
+    };
+};
+
+export type FillColors = {
+    [key: string]: {
+        count: number;
+        color: string | number;
+        lighten?: number;
+    };
 };
 
 const findFillColors = (state: State): FillColors => {

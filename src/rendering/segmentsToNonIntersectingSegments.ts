@@ -11,7 +11,10 @@ import {SegmentWithPrev} from './clipPathNew';
 
 // export type Intersection = { entering: Array<number>; exiting: Array<number> };
 
-const splitSegmentsByIntersections = (segments: Array<Segment>, sorted: Array<Array<Hit>>) => {
+export const splitSegmentsByIntersections = (
+    segments: Array<Segment>,
+    sorted: Array<Array<Hit>>,
+) => {
     // So, I return a list of segments, and a mapping [fromcoord] -> [exiting segments]
     const result: Array<PartialSegment> = [];
 
@@ -71,13 +74,13 @@ const splitSegmentsByIntersections = (segments: Array<Segment>, sorted: Array<Ar
 
 // export const addPrevsToSegments =
 
-const segmentsToNonIntersectingSegments = (segments: Array<Segment>) => {
+export const segmentsToNonIntersectingSegments = (segments: Array<Segment>) => {
     const {sorted} = calculateSortedHitsForSegments(addPrevsToSegments(segments));
 
     return splitSegmentsByIntersections(segments, sorted);
 };
 
-const HIGH_PRECISION = 4;
+export const HIGH_PRECISION = 4;
 // Ok, so now the game plan is:
 // take those segments, follow them around ...
 // and ... hmmm
@@ -86,7 +89,7 @@ const HIGH_PRECISION = 4;
 // I mean, we could say:
 // if there's one to the right or left, then take it?
 
-type Froms = {
+export type Froms = {
     [key: string]: {
         coord: Coord;
         exits: Array<number>;
@@ -95,7 +98,7 @@ type Froms = {
 // So there's probably a weird edge case if two corners happen to touch
 // ... not super likely, but idk what would happen.
 
-type PartialSegment = {
+export type PartialSegment = {
     prev: Coord;
     segment: Segment;
     sourceIdx: number;
@@ -113,7 +116,7 @@ export function addPrevsToSegments(segments: Segment[], origin?: Coord): Segment
     }));
 }
 
-function calculateSortedHitsForSegments(
+export function calculateSortedHitsForSegments(
     segments: SegmentWithPrev[],
     /** Do we want to include intersections that are just two endpoints meeting? */
     allowEndpoints = false,

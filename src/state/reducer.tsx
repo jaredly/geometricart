@@ -1,7 +1,7 @@
 import {pathToPrimitives} from '../editor/findSelection';
 import {addAction, redoAction, undoAction} from '../editor/history';
-import {styleMatches} from '../editor/styleMatches';
-import {pendingGuide} from '../editor/pendingGuide';
+import {styleMatches} from '../editor/MultiStyleForm';
+import {pendingGuide} from '../editor/RenderPendingGuide';
 import {transformGuide, transformMirror} from '../rendering/calculateGuideElements';
 import {clipPath} from '../rendering/clipPath';
 import {
@@ -175,7 +175,10 @@ const guideAgain = (kind: GuideGeom['type'], state: State, shiftKey?: boolean): 
     };
 };
 
-const reduceWithoutUndo = (state: State, action: UndoableAction): [State, UndoAction | null] => {
+export const reduceWithoutUndo = (
+    state: State,
+    action: UndoableAction,
+): [State, UndoAction | null] => {
     // console.log('🤔 an action', action);
     switch (action.type) {
         case 'mirror:change':
@@ -908,7 +911,7 @@ const reduceWithoutUndo = (state: State, action: UndoableAction): [State, UndoAc
                 {type: action.type, action},
             ];
         }
-        case 'gcode:config': {
+        case 'gcode:config':
             const prev: Partial<State['gcode']> = {};
             Object.keys(action.config).forEach((k) => {
                 // @ts-ignore
@@ -918,7 +921,6 @@ const reduceWithoutUndo = (state: State, action: UndoableAction): [State, UndoAc
                 {...state, gcode: {...state.gcode, ...action.config}},
                 {type: action.type, action, prev},
             ];
-        }
         case 'gcode:item:order': {
             const items = state.gcode.items.slice();
             const item = items.splice(action.oldIndex, 1)[0];
@@ -995,23 +997,21 @@ const reduceWithoutUndo = (state: State, action: UndoableAction): [State, UndoAc
                 {type: action.type, action, prev},
             ];
         }
-        default: {
+        default:
             let _x: never = action;
             console.log(`SKIPPING ${(action as any).type}`);
-        }
     }
     return [state, null];
 };
 
 export const undo = (state: State, action: UndoAction): State => {
     switch (action.type) {
-        case 'groups:order': {
+        case 'groups:order':
             const pathGroups = {...state.pathGroups};
             Object.entries(action.prev).forEach(([key, ordering]) => {
                 pathGroups[key] = {...pathGroups[key], ordering};
             });
             return {...state, pathGroups};
-        }
         case 'history-view:update':
             return {...state, historyView: action.prev};
         case 'tiling:update':
@@ -1187,13 +1187,12 @@ export const undo = (state: State, action: UndoAction): State => {
             });
             return state;
         }
-        case 'pending:toggle': {
+        case 'pending:toggle':
             const pending = state.pending as PendingGuide;
             return {
                 ...state,
                 pending: {...pending, toggle: !pending.toggle},
             };
-        }
         case 'pending:extent': {
             const pending = state.pending as PendingGuide;
             return {
@@ -1435,7 +1434,7 @@ function renameScriptInTimelines(timelines: Array<TimelineLane>, key: string, ne
     });
 }
 
-function handlePathMultiply(state: State, action: PathMultiply): [State, UndoAction | null] {
+export function handlePathMultiply(state: State, action: PathMultiply): [State, UndoAction | null] {
     let nextId = state.nextId;
 
     const transforms = getTransformsForMirror(action.mirror, state.mirrors);
@@ -1525,7 +1524,7 @@ function handlePathMultiply(state: State, action: PathMultiply): [State, UndoAct
     ];
 }
 
-function handlePathCreate(
+export function handlePathCreate(
     state: State,
     origAction: PathCreateMany | PathCreate,
 ): [State, UndoAction | null] {
@@ -1648,7 +1647,7 @@ export const reifyMirror = (mirrors: {[key: Id]: Mirror}, id: Id): Mirror => {
     return mirror;
 };
 
-const handleARE = <T, Key, Result>(
+export const handleARE = <T, Key, Result>(
     are: AddRemoveEdit<T, Key>,
     handlers: {
         add: (key: Key, value?: T) => Result;
@@ -1667,7 +1666,7 @@ const handleARE = <T, Key, Result>(
     }
 };
 
-const undoListARE = <T,>(are: UndoAddRemoveEdit<T, number>, list: Array<T>) => {
+export const undoListARE = <T,>(are: UndoAddRemoveEdit<T, number>, list: Array<T>) => {
     if (are.type === 'add') {
         list.splice(are.key, 1);
         return list;
@@ -1680,7 +1679,7 @@ const undoListARE = <T,>(are: UndoAddRemoveEdit<T, number>, list: Array<T>) => {
     }
 };
 
-const handleListARE = <T,>(are: AddRemoveEdit<T, number>, list: Array<T>, blank: T) => {
+export const handleListARE = <T,>(are: AddRemoveEdit<T, number>, list: Array<T>, blank: T) => {
     return handleARE(are, {
         add: (index, value) => {
             list.splice(index, 0, value ?? blank);
@@ -1699,7 +1698,7 @@ const handleListARE = <T,>(are: AddRemoveEdit<T, number>, list: Array<T>, blank:
     });
 };
 
-const transformMatrix = (action: GlobalTransform, reverse?: boolean) => {
+export const transformMatrix = (action: GlobalTransform, reverse?: boolean) => {
     if (action.flip) {
         return [action.flip === 'H' ? scaleMatrix(-1, 1) : scaleMatrix(1, -1)];
     }
@@ -1709,7 +1708,7 @@ const transformMatrix = (action: GlobalTransform, reverse?: boolean) => {
     return [];
 };
 
-const transformState = (state: State, mx: Matrix[]) => {
+export const transformState = (state: State, mx: Matrix[]) => {
     const paths = {...state.paths};
     const guides = {...state.guides};
     const clips = {...state.clips};
@@ -1733,7 +1732,7 @@ const transformState = (state: State, mx: Matrix[]) => {
     return {...state, paths, guides, clips, mirrors};
 };
 
-const completePendingGuide = (
+export const completePendingGuide = (
     state: State,
     action: PendingPoint | PendingAngle,
     geom: GuideGeom,

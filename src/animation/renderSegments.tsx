@@ -1,11 +1,11 @@
 import {Coord} from '../types';
 import {PSeg} from './getBuiltins';
-import {coordsEqual} from '../rendering/pathsAreIdentical';
+import {coordsEqual, reverseSegment} from '../rendering/pathsAreIdentical';
 import {arcPath} from '../editor/RenderPendingPath';
 import {mergeBounds, segmentBounds} from '../editor/Bounds';
 import {Bounds} from '../editor/Bounds';
 
-const segmentPath = ({prev, segment}: PSeg) => {
+export const segmentPath = ({prev, segment}: PSeg) => {
     if (segment.type === 'Line') {
         return `M${prev.x} ${prev.y}L${segment.to.x} ${segment.to.y}`;
     }
@@ -22,7 +22,7 @@ const segmentPath = ({prev, segment}: PSeg) => {
     return arcPath(segment, prev, 1, true);
 };
 
-const renderSegment = (pseg: PSeg, point?: Coord) => {
+export const renderSegment = (pseg: PSeg, point?: Coord) => {
     const bounds = segmentBounds(
         pseg.segment.type === 'Arc' ? pseg.segment.to : pseg.prev,
         pseg.segment,
@@ -47,7 +47,7 @@ const renderSegment = (pseg: PSeg, point?: Coord) => {
     `;
 };
 
-const psegmentsBounds = (segments: Array<PSeg>): Bounds => {
+export const psegmentsBounds = (segments: Array<PSeg>): Bounds => {
     let bounds = segmentBounds(segments[0].prev, segments[0].segment);
     for (let i = 1; i < segments.length; i++) {
         const next = segmentBounds(segments[i].prev, segments[i].segment);
@@ -56,7 +56,7 @@ const psegmentsBounds = (segments: Array<PSeg>): Bounds => {
     return bounds;
 };
 
-const renderSegments = (pseg: PSeg[], points?: Coord[], colors?: string[]) => {
+export const renderSegments = (pseg: PSeg[], points?: Coord[], colors?: string[]) => {
     const bounds = psegmentsBounds(pseg);
     const w = bounds.x1 - bounds.x0;
     const h = bounds.y1 - bounds.y0;
@@ -84,7 +84,7 @@ const renderSegments = (pseg: PSeg[], points?: Coord[], colors?: string[]) => {
     `;
 };
 
-const consoleSegment = (seg: PSeg, point?: Coord) => {
+export const consoleSegment = (seg: PSeg, point?: Coord) => {
     const bgi = `data:image/svg+xml;base64,${btoa(renderSegment(seg, point))}`;
     const img = new Image();
     img.src = bgi;
@@ -92,7 +92,7 @@ const consoleSegment = (seg: PSeg, point?: Coord) => {
     console.log('%c ', `background-image: url("${bgi}");background-size:cover;padding:20px`);
 };
 
-const consoleSvg = (svg: string) => {
+export const consoleSvg = (svg: string) => {
     const bgi = `data:image/svg+xml;base64,${btoa(svg)}`;
     // const img = new Image();
     // img.src = bgi;

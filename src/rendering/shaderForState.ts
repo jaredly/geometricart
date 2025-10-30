@@ -3,8 +3,9 @@ import {pathToPoints, rasterSegPoints} from './pathToPoints';
 import {hslToRgb, rgbToHsl} from './colorConvert';
 import {pathToPrimitives} from '../editor/findSelection';
 import {Primitive} from './intersect';
-import {Rgb} from '../editor/Rgb.2';
-import {paletteColor} from '../editor/RenderPath.lightenedColor.related';
+import {Rgb} from '../editor/Rgb';
+import {transformSegment} from './points';
+import {paletteColor} from '../editor/RenderPath';
 import {shaderFunctions} from './shaderFunctions';
 import {Coord, Fill, Path, State, StyleLine} from '../types';
 import {getClips} from './pkInsetPaths';
@@ -13,7 +14,7 @@ const namedColors: {[key: string]: Rgb} = {
     white: {r: 1, g: 1, b: 1},
     black: {r: 0, g: 0, b: 0},
 };
-const parseColor = (color?: string): null | Rgb => {
+export const parseColor = (color?: string): null | Rgb => {
     if (color == null) {
         return null;
     }
@@ -29,7 +30,7 @@ const parseColor = (color?: string): null | Rgb => {
     return {r: r / 255, g: g / 255, b: b / 255};
 };
 
-const lightDark = ({r, g, b}: Rgb, lighten?: number): Rgb => {
+export const lightDark = ({r, g, b}: Rgb, lighten?: number): Rgb => {
     if (!lighten) {
         return {r, g, b};
     }
@@ -40,7 +41,7 @@ const lightDark = ({r, g, b}: Rgb, lighten?: number): Rgb => {
     return {r: r / 255, g: g / 255, b: b / 255};
 };
 
-const shaderForState = (state: State): [number, string] => {
+export const shaderForState = (state: State): [number, string] => {
     // ok, so this is gonna be a mega-function
 
     const paths = sortedVisibleInsetPaths(
@@ -137,15 +138,15 @@ void main() {
     ];
 };
 
-const vec2 = (v: Coord) => `vec2(${v.x.toFixed(1)}, ${v.y.toFixed(1)})`;
-const vec3 = (v: Rgb) => `vec3(${v.r.toFixed(2)}, ${v.g.toFixed(2)}, ${v.b.toFixed(2)})`;
-const sub = (a: Coord, b: Coord) => ({x: a.x - b.x, y: a.y - b.y});
-const add = (a: Coord, b: Coord) => ({x: a.x + b.x, y: a.y + b.y});
-const mul = (a: Coord, b: Coord) => ({x: a.x * b.x, y: a.y * b.y});
-const scale = (a: Coord, by: number) => ({x: a.x * by, y: a.y * by});
-const cross = (a: Coord, b: Coord) => a.x * b.y - a.y * b.x;
+export const vec2 = (v: Coord) => `vec2(${v.x.toFixed(1)}, ${v.y.toFixed(1)})`;
+export const vec3 = (v: Rgb) => `vec3(${v.r.toFixed(2)}, ${v.g.toFixed(2)}, ${v.b.toFixed(2)})`;
+export const sub = (a: Coord, b: Coord) => ({x: a.x - b.x, y: a.y - b.y});
+export const add = (a: Coord, b: Coord) => ({x: a.x + b.x, y: a.y + b.y});
+export const mul = (a: Coord, b: Coord) => ({x: a.x * b.x, y: a.y * b.y});
+export const scale = (a: Coord, by: number) => ({x: a.x * by, y: a.y * by});
+export const cross = (a: Coord, b: Coord) => a.x * b.y - a.y * b.x;
 
-function makePathFunctions(paths: Path[], state: State, palette: string[], maxSegs: number) {
+export function makePathFunctions(paths: Path[], state: State, palette: string[], maxSegs: number) {
     // const worldPos = (pos: Coord) =>
     //     add(mul(pos, { x: state.view.zoom, y: -state.view.zoom }), coff);
 
@@ -215,7 +216,7 @@ function makePathFunctions(paths: Path[], state: State, palette: string[], maxSe
     );
 }
 
-const transformPrim = (prim: Primitive, zoom: number): Primitive => {
+export const transformPrim = (prim: Primitive, zoom: number): Primitive => {
     const wx = (x: number) => x * zoom;
     const wy = (y: number) => y * zoom;
     if (prim.type === 'line') {
@@ -240,7 +241,7 @@ const transformPrim = (prim: Primitive, zoom: number): Primitive => {
     }
 };
 
-const primToGlsl = (prim: Primitive) =>
+export const primToGlsl = (prim: Primitive) =>
     `Segment(${prim.type === 'circle' ? 'true' : 'false'}, ${vec2({
         x: prim.limit![0],
         y: prim.limit![1],

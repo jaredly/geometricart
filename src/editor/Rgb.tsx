@@ -1,13 +1,12 @@
 /* @jsx jsx */
 import * as React from 'react';
+import {jsx} from '@emotion/react';
 import {Attachment, Coord} from '../types';
 import {createPortal} from 'react-dom';
 import {hslToRgb} from '../rendering/colorConvert';
-import {rgbToString} from './rgbToString';
-import {averageAt, findMajorColorsExpensive} from './PalettesForm.averageAt.related';
-import {Rgb} from './Rgb.2';
+import {averageAt, findMajorColorsExpensive, rgbToString} from './PalettesForm';
 
-const ImageChooser = ({
+export const ImageChooser = ({
     contents,
     onChoose,
 }: {
@@ -123,6 +122,7 @@ const ImageChooser = ({
     );
 };
 
+export type Rgb = {r: number; g: number; b: number};
 export const AttachmentsChooser = ({
     onChoose,
     attachments,

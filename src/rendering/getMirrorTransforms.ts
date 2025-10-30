@@ -123,7 +123,7 @@ export const mirrorTransforms = (mirror: Mirror): Array<Array<Transform>> => {
 };
 
 // export type Transform = Array<Array<number>>;
-type Transform =
+export type Transform =
     | {type: 'rotate'; center: Coord; theta: number}
     | {type: 'reflect'; p1: Coord; p2: Coord};
 
@@ -144,11 +144,11 @@ export const scaleMatrix = (sx: number, sy: number): Matrix => [
     [0, sy, 0],
 ];
 
-const reverseTransform = (mx: Matrix[]): Matrix[] => {
+export const reverseTransform = (mx: Matrix[]): Matrix[] => {
     return mx.slice().reverse().map(invertMatrix);
 };
 
-const invertMatrix = (matrix: Matrix): Matrix => {
+export const invertMatrix = (matrix: Matrix): Matrix => {
     const [[a, b, c], [d, e, f]] = matrix;
     // translation
     if (a === 1 && b === 0 && d === 0 && e === 1) {
@@ -178,7 +178,7 @@ const invertMatrix = (matrix: Matrix): Matrix => {
     // return null;
 };
 
-const transformToMatrices = (t: Transform) => {
+export const transformToMatrices = (t: Transform) => {
     switch (t.type) {
         case 'rotate':
             return [
@@ -188,7 +188,7 @@ const transformToMatrices = (t: Transform) => {
                 // translate back
                 translationMatrix(t.center),
             ];
-        case 'reflect': {
+        case 'reflect':
             const theta = angleTo(t.p1, t.p2);
             return [
                 // translate to origin
@@ -202,7 +202,6 @@ const transformToMatrices = (t: Transform) => {
                 // translate back
                 translationMatrix(t.p1),
             ];
-        }
     }
 };
 

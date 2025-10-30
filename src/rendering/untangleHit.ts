@@ -1,6 +1,8 @@
-import {backAngle, isInside, sortAngles} from './clipPath';
+import {backAngle, isAngleBetweenAngles, isInside, sortAngles} from './clipPath';
 import {Angle} from './epsilonToZero';
+import {negPiToPi} from './epsilonToZero';
 import {anglesEqual} from './epsilonToZero';
+import {angleIsBetween, closeEnoughAngle} from './epsilonToZero';
 
 export class IntersectionError extends Error {
     basic: string;
@@ -155,13 +157,13 @@ export type HitTransitions =
           back: Angle;
       };
 
-type Transition = {
+export type Transition = {
     entry: SegmentIntersection;
     exit: SegmentIntersection;
     goingInside: boolean | null;
 };
 
-const handleHitAmbiguity = ({transitions: [one, two]}: Cross): HitTransitions => {
+export const handleHitAmbiguity = ({transitions: [one, two]}: Cross): HitTransitions => {
     // ok,
     // so actually once we have this cross,
     // we can just know inside and outside.

@@ -3,11 +3,14 @@ import {angleTo, push} from '../rendering/getMirrorTransforms';
 import {Coord, Tiling} from '../types';
 import {getPatternData, shapeKey} from './getPatternData';
 import {boundsForCoords} from '../editor/Bounds';
+import {toEdges} from './patternColoring';
+import {useMask} from '@react-three/drei';
 import {coordKey} from '../rendering/coordKey';
 import {shapeD} from './shapeD';
-import {cmpCoords, midPoint} from './shapesFromSegments';
+import {chooseCorner, cmpCoords, midPoint} from './shapesFromSegments';
+import {flipPattern} from './flipPattern';
 
-const TilingMask = ({size, hash, bounds}: {size: number; hash: string; bounds: Coord[]}) => {
+export const TilingMask = ({size, hash, bounds}: {size: number; hash: string; bounds: Coord[]}) => {
     const margin = 0.5; //minSegLength * 2;
     const x = -1 - margin;
     const w = 2 + margin * 2;

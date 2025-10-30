@@ -4,7 +4,7 @@ import {transformSegment} from '../rendering/points';
 import {Coord, Fill, Path, Segment, State} from '../types';
 import {segmentsBounds, segmentsCenter} from '../editor/Bounds';
 import {segmentToPrimitive} from '../editor/findSelection';
-import {pathSegs} from '../editor/pathSegs';
+import {pathSegs} from '../editor/RenderPath';
 import {coordKey} from '../rendering/coordKey';
 import {angleBetween} from '../rendering/isAngleBetween';
 import {
@@ -151,7 +151,7 @@ export const closestPoint = (center: Coord, segments: Array<Segment>): [number, 
     return best!;
 };
 
-const farthestPoint = (center: Coord, segments: Array<Segment>) => {
+export const farthestPoint = (center: Coord, segments: Array<Segment>) => {
     let best = null as null | [number, Coord];
     rasterSegPoints(pathToPoints(segments, null)).forEach((point) => {
         const d = dist(point, center);

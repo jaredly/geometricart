@@ -1,23 +1,21 @@
 /* @jsx jsx */
 /* @jsxFrag React.Fragment */
-import {Interpolation, Theme} from '@emotion/react';
+import {Interpolation, Theme, jsx} from '@emotion/react';
 import {Path as PKPath, PathKit} from 'pathkit-wasm';
 import React, {useMemo, useState} from 'react';
+import * as ReactDOM from 'react-dom';
 import {pkPath} from '../sidebar/pkClipPaths';
 import {Action} from '../state/Action';
 import {initialHistory} from '../state/initialState';
-import {State} from '../types';
-import {DL} from './Export';
-import {Multi} from './Multi';
-import {Bounds, findBoundingRect} from './Export.Bounds.related';
+import {Fill, Path, State, StyleLine} from '../types';
+import {Canvas} from './Canvas';
+import {Bounds, DL, Multi, blankCanvasProps, findBoundingRect} from './Export';
 import {BlurInt, Toggle} from './Forms';
-import {maybeUrlColor} from './maybeUrlColor';
-import {lightenedColor, paletteColor} from './RenderPath.lightenedColor.related';
-import {viewPos} from './viewPos';
-import {calcPPI} from './calcPPI';
-import {PREFIX, SUFFIX} from './Sidebar.consts';
+import {maybeUrlColor} from './MultiStyleForm';
+import {lightenedColor, paletteColor} from './RenderPath';
+import {calcPPI, viewPos} from './SVGCanvas';
+import {PREFIX, SUFFIX} from './Sidebar';
 import {pxToMM} from '../gcode/pxToMM';
-import {generatePathsAndOutlines, styleKey} from './ExportSVG.generatePathsAndOutlines.related';
 
 const thinnestLine = (paths: State['paths']) => {
     let width = Infinity;
@@ -31,7 +29,7 @@ const thinnestLine = (paths: State['paths']) => {
     return width;
 };
 
-const PPI = ({
+export const PPI = ({
     ppi,
     onChange,
     bounds,
@@ -219,6 +217,11 @@ export function ExportSVG({
         </div>
     );
 }
+
+const styleKey = (s: StyleLine | Fill) => {
+    const lighten = s.lighten ?? 0;
+    return lighten === 0 ? (s.color ?? 0) : `${s.color}${'/' + lighten}`;
+};
 
 const parseStyleKey = (key: string | number): [string | number, number, string | number] => {
     if (typeof key === 'number') {
@@ -672,6 +675,127 @@ const traceAndMergePaths = (PK: PathKit, state: State, size: {width: number; hei
     //     .join('\n');
 };
 
+export function generatePathsAndOutlines(
+    multi: State['view']['multi'] & {},
+    paths: Path[],
+): {pathsToRender: Path[][]; outlines: Path[]} {
+    // const outlines: Path[] = [];
+    const pathsToRender: Path[][] = [];
+    if (!multi.skipBacking) {
+        pathsToRender.push([]);
+    }
+
+    const byStyleKey: Record<string, {style: StyleLine; paths: Path[]}> = {};
+
+    paths.forEach((path) => {
+        (multi.useFills ? path.style.fills : path.style.lines).forEach((style) => {
+            if (style) {
+                const k = styleKey(style);
+                if (!byStyleKey[k]) {
+                    byStyleKey[k] = {style, paths: []};
+                }
+                byStyleKey[k].paths.push(path);
+            }
+        });
+    });
+    // console.log("organized", byStyleKey);
+
+    // console.log("multis", multi);
+    const byGroup: {[key: string]: Path[]} = {};
+
+    const outlines =
+        multi.outline != null
+            ? (byStyleKey[multi.outline]?.paths?.map((path) => ({
+                  ...path,
+                  style: {fills: [], lines: [byStyleKey[multi.outline!].style]},
+              })) ?? [])
+            : [];
+
+    multi.shapes.forEach((shape, i) => {
+        if (shape == null) return console.log('ignoring cause no shape');
+
+        // const line = (multi.useFills ? path.style.fills : path.style.lines).find(
+        //     (s) => s && styleKey(s) === shape,
+        // );
+        // if (!line) {
+        //     // console.log(
+        //     // 	multi.useFills ? path.style.fills : path.style.lines,
+        //     // 	shape,
+        //     // );
+        //     return console.log("ignoring caus no matching style");
+        // }
+        if (!byStyleKey[shape]) {
+            console.log('Nothing for', shape, byStyleKey);
+        }
+
+        byStyleKey[shape]?.paths.forEach((path) => {
+            const oneLine = {
+                ...path,
+                style: {fills: [], lines: [byStyleKey[shape].style]},
+            };
+            const prefix = i.toString().padStart(2, '0') + ':';
+            const group = multi.combineGroups ? 'aa' : path.group;
+            if (group) {
+                if (!byGroup[prefix + group + ':' + shape]) {
+                    byGroup[prefix + group + ':' + shape] = [];
+                }
+                byGroup[prefix + group + ':' + shape].push(oneLine);
+            } else {
+                pathsToRender.push([oneLine]);
+            }
+        });
+    });
+
+    // paths.forEach((path) => {
+    // 	// if (path.style.fills.length && !multi.useFills) {
+    // 	// 	console.log("ignoring cause its filled");
+    // 	// 	return;
+    // 	// }
+    // 	// const out = (multi.useFills ? path.style.fills : path.style.lines).find(
+    // 	// 	(s) => s && styleKey(s) === multi.outline,
+    // 	// );
+    // 	// if (out) {
+    // 	// 	outlines.push({ ...path, style: { fills: [], lines: [out] } });
+    // 	// }
+    // 	multi.shapes.forEach((shape, i) => {
+    // 		if (shape == null) return console.log("ignoring cause no shape");
+
+    // 		const line = (multi.useFills ? path.style.fills : path.style.lines).find(
+    // 			(s) => s && styleKey(s) === shape,
+    // 		);
+    // 		if (!line) {
+    // 			// console.log(
+    // 			// 	multi.useFills ? path.style.fills : path.style.lines,
+    // 			// 	shape,
+    // 			// );
+    // 			return console.log("ignoring caus no matching style");
+    // 		}
+    // 		const oneLine = {
+    // 			...path,
+    // 			style: { fills: [], lines: [line] },
+    // 		};
+    // 		const prefix = i.toString().padStart(2, "0") + ":";
+    // 		const group = multi.combineGroups ? "aa" : path.group;
+    // 		if (group) {
+    // 			if (!byGroup[prefix + group + ":" + shape]) {
+    // 				byGroup[prefix + group + ":" + shape] = [];
+    // 			}
+    // 			byGroup[prefix + group + ":" + shape].push(oneLine);
+    // 		} else {
+    // 			pathsToRender.push([oneLine]);
+    // 		}
+    // 	});
+    // });
+
+    console.log('bygrouped', byGroup);
+    pathsToRender.push(
+        ...Object.keys(byGroup)
+            .sort()
+            .map((k) => byGroup[k]),
+    );
+    return {pathsToRender, outlines};
+}
+
 function getSVGText(state: State, size: {width: number; height: number}, inner = false) {
     const dest = document.createElement('div');
     let svgNode: SVGElement | null = null;
@@ -732,7 +856,7 @@ function calcSVGSize(
     return size;
 }
 
-const Select = ({
+export const Select = ({
     current,
     state,
     colors,

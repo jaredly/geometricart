@@ -65,6 +65,12 @@ and it's called from e.g. sp_selected_path_do_offset in https://gitlab.com/inksc
 
 */
 
+import {isClockwise, reversePath} from './pathToPoints';
+import {hasReversed} from './insetPath';
+import {simplifyPath} from './simplifyPath';
+import {insetSegment} from './insetSegment';
+import {Coord, Segment} from '../types';
+
 // // MUST BE CLOCKWISE. this is signed
 // export const signedDistanceToSegment = (
 //     prev: Coord,

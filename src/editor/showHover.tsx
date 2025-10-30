@@ -1,16 +1,23 @@
+/* @jsx jsx */
+/* @jsxFrag React.Fragment */
+import {jsx} from '@emotion/react';
 import * as React from 'react';
 import {geomsForGiude} from '../rendering/calculateGuideElements';
-import {getTransformsForNewMirror, Matrix} from '../rendering/getMirrorTransforms';
-import {geomToPrimitives} from '../rendering/points';
+import {
+    applyMatrices,
+    getTransformsForNewMirror,
+    Matrix,
+    reverseTransform,
+} from '../rendering/getMirrorTransforms';
+import {geomToPrimitives, transformBarePath} from '../rendering/points';
 import {Mirror, State} from '../types';
 import {Bounds} from './Bounds';
 import {RenderMirror} from './RenderMirror';
-import {UnderlinePath} from './RenderPath';
-import {emptyPath} from './emptyPath';
+import {emptyPath, UnderlinePath} from './RenderPath';
 import {RenderPrimitive} from './RenderPrimitive';
-import {Hover} from './Hover';
+import {Hover} from './Sidebar';
 import {eigenShapesToLines, tilingPoints} from './tilingPoints';
-import {calcPathD} from './calcPathD';
+import {calcPathD, calcSegmentsD} from './calcPathD';
 
 export const showHover = (
     key: string,

@@ -1,12 +1,13 @@
+/* @jsx jsx */
+import {jsx} from '@emotion/react';
 import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {useDropTarget} from './editor/useDropTarget';
 import {Coord, Tiling} from './types';
 import {useLocalStorage} from './vest/useLocalStorage';
 import {TilingSvg} from './editor/TilingSvg';
-import {handleTiling} from './editor/handleTiling';
+import {getSvgData, handleTiling} from './editor/handleTiling';
 import {eigenShapesToLines} from './editor/tilingPoints';
 import {coordKey} from './rendering/coordKey';
-import {plerp} from './Morph.plerp.related';
 
 const getFileContents = (file: File) => {
     return new Promise<string>((res, rej) => {
@@ -23,6 +24,13 @@ const getFileContents = (file: File) => {
 
 const PREFIX = '<!-- TILING:';
 const SUFFIX = '-->';
+
+const lerp = (a: number, b: number, i: number) => a + (b - a) * i;
+
+export const plerp = (p0: Coord, p1: Coord, i: number) => ({
+    x: lerp(p0.x, p1.x, i),
+    y: lerp(p0.y, p1.y, i),
+});
 
 type Moving = {idx: number; which: number; at: Coord};
 
@@ -60,7 +68,7 @@ const Point = ({
     );
 };
 
-const Editor = ({one, two}: {one: Tiling; two: Tiling}) => {
+export const Editor = ({one, two}: {one: Tiling; two: Tiling}) => {
     const onez = useMemo(() => handleTiling(one), [one]);
     const twoz = useMemo(() => handleTiling(two), [two]);
 
@@ -370,7 +378,7 @@ export const Morph = () => {
     );
 };
 
-const Animate = ({
+export const Animate = ({
     frames,
     shape,
     tr,

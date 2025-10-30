@@ -3,7 +3,6 @@ import * as React from 'react';
 import {State} from '../types';
 import {GCode3D} from './GCode3D';
 import {renderCutDepths} from './renderCutDepths';
-import {Tool, GCodeData, Bound} from './Visualize.Tool.related';
 
 const parseCoords = (line: string) => {
     return [...line.matchAll(/([xyzf])(-?[0-9.]+)/g)].reduce(
@@ -15,7 +14,9 @@ const parseCoords = (line: string) => {
     );
 };
 
-const parse = (gcode: string): GCodeData['toolPaths'] => {
+export type Tool = {diameter: number; vbit?: number};
+
+export const parse = (gcode: string): GCodeData['toolPaths'] => {
     const settings = {units: 'in'};
     let pos: {x?: number; y?: number; z?: number; f?: number} = {};
     // if f === -1, then it's a rapid move
@@ -27,7 +28,7 @@ const parse = (gcode: string): GCodeData['toolPaths'] => {
     //     f?: number;
     //     tool?: Tool;
     // }[] = [];
-    let tool: Tool | undefined;
+    let tool: Tool | undefined = undefined;
     gcode.split('\n').forEach((line) => {
         const good = line.split(';')[0].trim().toLowerCase();
         if (!good.length) {
@@ -197,6 +198,11 @@ export const Visualize = ({gcode, state, time}: {gcode: string; state: State; ti
     );
 };
 
+type Bound = {
+    min: {x: number | null; y: number | null; z: number | null};
+    max: {x: number | null; y: number | null; z: number | null};
+};
+
 const ax = ['x', 'y', 'z'] as const;
 
 const findBounds = (toolPaths: GCodeData['toolPaths'], bitSize: number, margin: number) => {
@@ -220,7 +226,25 @@ const findBounds = (toolPaths: GCodeData['toolPaths'], bitSize: number, margin: 
     );
 };
 
-function renderCutPaths(ctx: CanvasRenderingContext2D, data: GCodeData) {
+export type GCodeData = {
+    toolPaths: {
+        tool: Tool;
+        positions: {
+            x: number;
+            y: number;
+            z: number;
+            f?: number | undefined;
+        }[];
+    }[];
+    bounds: Bound;
+    dims: {
+        width: number;
+        height: number;
+        depth: number;
+    };
+};
+
+export function renderCutPaths(ctx: CanvasRenderingContext2D, data: GCodeData) {
     ctx.globalCompositeOperation = 'source-over';
     ctx.lineWidth = 0.1;
     ctx.strokeStyle = 'black';

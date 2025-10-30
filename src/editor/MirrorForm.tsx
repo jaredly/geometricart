@@ -1,7 +1,8 @@
 /* @jsx jsx */
 import * as React from 'react';
+import {jsx} from '@emotion/react';
 import {Coord, Id, Mirror} from '../types';
-import {Toggle} from './Forms';
+import {Toggle, Label, Int} from './Forms';
 import {
     angleTo,
     applyMatrices,
@@ -81,7 +82,7 @@ export const ShowMirror = ({
     );
 };
 
-const MirrorForm = ({
+export const MirrorForm = ({
     mirror,
     onMouseOver,
     onMouseOut,

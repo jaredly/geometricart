@@ -10,12 +10,12 @@ import path from 'path';
 import fs from 'fs';
 import {Config} from './types';
 import {run} from './App';
-import {deserializeFixtures} from './utils';
+import {deserializeFixture, deserializeFixtures} from './utils';
 import {deepRoundFloats} from '../rendering/deepEqual';
 
-class IncompleteFixture extends Error {}
+export class IncompleteFixture extends Error {}
 
-const jestTests = <I, O>(config: Config<I, O>) => {
+export const jestTests = <I, O>(config: Config<I, O>) => {
     // @ts-ignore
     describe(`Vest ${config.id}`, () => {
         const file = path.join(config.dir, '__vest__', config.id + '.txt');
@@ -38,7 +38,7 @@ const jestTests = <I, O>(config: Config<I, O>) => {
     });
 };
 
-const vestUI = <I, O>(config: Config<I, O>) => {
+export const vestUI = <I, O>(config: Config<I, O>) => {
     run(config as any);
 };
 

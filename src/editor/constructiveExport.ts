@@ -1,17 +1,18 @@
 import {coordKey} from '../rendering/coordKey';
-import {slopeToLine} from '../rendering/intersect';
+import {dist} from '../rendering/getMirrorTransforms';
+import {lineToSlope, slopeToLine} from '../rendering/intersect';
 import {geomToPrimitives} from '../rendering/points';
 import {State} from '../types';
 
-type Coord = {x: number; y: number};
-type Provenance = {id: number; parents: number[]};
-type Circle = {
+export type Coord = {x: number; y: number};
+export type Provenance = {id: number; parents: number[]};
+export type Circle = {
     type: 'circle';
     center: Coord;
     radius: {p1: Coord; p2: Coord; dist: number};
     p: Provenance;
 };
-type Line = {
+export type Line = {
     type: 'line';
     m: number;
     x: number;
@@ -23,14 +24,14 @@ type Line = {
     };
     p: Provenance;
 };
-type Shape = Circle | Line;
-type Point = {
+export type Shape = Circle | Line;
+export type Point = {
     type: 'point';
     coord: Coord;
     inDest?: boolean;
     p: Provenance;
 };
-type Step = Shape | Point;
+export type Step = Shape | Point;
 
 export const stateToConstructive = (state: State) => {
     const dest: Coord[] = [];

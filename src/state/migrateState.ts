@@ -1,7 +1,7 @@
 import {ensureClockwise} from '../rendering/pathToPoints';
 import {initialState} from './initialState';
 import {simplifyPath} from '../rendering/simplifyPath';
-import {combineStyles} from '../editor/combineStyles';
+import {combineStyles} from '../editor/Canvas';
 import {State, Path, PathGroup} from '../types';
 
 export const maybeMigrate = (state: State | undefined): State | undefined => {

@@ -25,19 +25,19 @@ export const maybeReverseSegment = (prev: Coord, segment: Segment) => {
     return {prev, segment};
 };
 
-const shouldReverseSegment = (prev: Coord, segment: Segment) => {
+export const shouldReverseSegment = (prev: Coord, segment: Segment) => {
     const dx = prev.x - segment.to.x;
     const dy = prev.y - segment.to.y;
     return Math.abs(dx) < epsilon ? dy > 0 : dx > 0;
 };
 
-const orderedSegmentKey = (prev: Coord, segment: Segment) => {
+export const orderedSegmentKey = (prev: Coord, segment: Segment) => {
     return shouldReverseSegment(prev, segment)
         ? segmentKey(prev, segment)
         : segmentKeyReverse(prev, segment);
 };
 
-const segmentKeyInner = (segment: Segment) =>
+export const segmentKeyInner = (segment: Segment) =>
     ` ${segment.type} ` +
     (segment.type === 'Line'
         ? ''

@@ -1,3 +1,4 @@
+import {jsx} from '@emotion/react';
 import {useMemo} from 'react';
 import {translationMatrix} from '../rendering/getMirrorTransforms';
 import {transformBarePath} from '../rendering/points';

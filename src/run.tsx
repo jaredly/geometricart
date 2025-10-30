@@ -1,7 +1,5 @@
 import {RouterProvider} from 'react-router-dom';
-import {AppWithSave} from './editor.client';
-import {getForeignState} from './getForeignState';
-import {router} from './editor.client.metaPrefix.related';
+import {AppWithSave, getForeignState, router} from './editor.client';
 import {WithPathKit} from './editor/pk';
 import {Morph} from './Morph';
 import {createRoot} from 'react-dom/client';

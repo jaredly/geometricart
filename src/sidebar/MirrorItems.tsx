@@ -2,8 +2,8 @@ import * as React from 'react';
 import {Action} from '../state/Action';
 import {State} from '../types';
 import {Checkbox} from 'primereact/checkbox';
-import {Hover} from '../editor/Hover';
-import {itemStyle} from './itemStyle';
+import {Hover} from '../editor/Sidebar';
+import {itemStyle} from './NewSidebar';
 import {Button} from 'primereact/button';
 
 export function MirrorItems({

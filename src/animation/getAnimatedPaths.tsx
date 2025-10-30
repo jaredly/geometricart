@@ -1,4 +1,4 @@
-import {getSelectedIds} from '../editor/SVGCanvas.usePathsToShow.related';
+import {getSelectedIds} from '../editor/SVGCanvas';
 import {animationTimer, getBuiltins} from './getBuiltins';
 import {State} from '../types';
 
@@ -88,7 +88,7 @@ export function getAnimatedPaths(
     return {paths, view};
 }
 
-type ParsedScript = {
+export type ParsedScript = {
     key: string;
     fn: any;
     args: string[];

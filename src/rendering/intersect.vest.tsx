@@ -1,15 +1,15 @@
 import * as React from 'react';
 import {segmentToPrimitive} from '../editor/findSelection';
+import {RenderPrimitive} from '../editor/RenderPrimitive';
 import {RenderSegmentBasic} from '../editor/RenderSegment';
 import {Coord} from '../types';
 import {Config} from '../vest/types';
 import {register} from '../vest';
 import {SegmentWithPrev} from './clipPathNew';
 import {intersections} from './intersect';
-import {SegmentEditor} from './SegmentEditor';
-import {useInitialState} from './SegmentEditor.useOnChange.related';
+import {SegmentEditor, useInitialState} from './SegmentEditor';
 
-type Pair = [SegmentWithPrev, SegmentWithPrev];
+export type Pair = [SegmentWithPrev, SegmentWithPrev];
 
 const Input = ({initial, onChange}: {initial: Pair | null; onChange: (pair: Pair) => void}) => {
     const [current, setCurrent] = useInitialState<

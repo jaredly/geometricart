@@ -4,7 +4,25 @@ import {Coord, Segment} from '../types';
 import {SegmentWithPrev} from './clipPathNew';
 import {angleTo, dist, push} from './getMirrorTransforms';
 import {SvgGrid} from './inset/SvgGrid';
-import {useInitialState} from './SegmentEditor.useOnChange.related';
+
+export const useOnChange = <T,>(v: T, fn: (v: T) => void) => {
+    const prev = React.useRef(v);
+    React.useEffect(() => {
+        if (prev.current !== v) {
+            prev.current = v;
+            fn(v);
+        }
+    }, [v]);
+};
+
+export const useInitialState = <T, R = T>(
+    v: T,
+    transform?: (t: T) => R,
+): [R, React.Dispatch<React.SetStateAction<R>>] => {
+    const [current, set] = React.useState(transform ? transform(v) : (v as any as R));
+    useOnChange(v, (v) => set(transform ? transform(v) : (v as any as R)));
+    return [current, set];
+};
 
 export const SegmentEditor = ({
     initial,
@@ -147,7 +165,7 @@ type Pending = {
     points: Array<Coord>;
 };
 
-const pendingToSeg = (s: Pending): SegmentWithPrev | null => {
+export const pendingToSeg = (s: Pending): SegmentWithPrev | null => {
     if (s.type === 'Line') {
         if (s.points.length > 1) {
             return {
@@ -177,9 +195,9 @@ const pendingToSeg = (s: Pending): SegmentWithPrev | null => {
     return null;
 };
 
-type JustPrev = {prev: Coord; shape?: number; segment?: Segment};
+export type JustPrev = {prev: Coord; shape?: number; segment?: Segment};
 
-const segToPending = (s: SegmentWithPrev | null | JustPrev, justArc: boolean): Pending =>
+export const segToPending = (s: SegmentWithPrev | null | JustPrev, justArc: boolean): Pending =>
     s
         ? s.segment && s.shape
             ? {

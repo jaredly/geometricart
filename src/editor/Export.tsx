@@ -1,13 +1,54 @@
+/* @jsx jsx */
+/* @jsxFrag React.Fragment */
+import {jsx} from '@emotion/react';
 import React from 'react';
 import {BlurInt, Text, Toggle} from './Forms';
 import {transparent} from './Icons';
+import {angleBetween} from '../rendering/isAngleBetween';
+import {sortedVisibleInsetPaths} from '../rendering/sortedVisibleInsetPaths';
 import {Action} from '../state/Action';
 import {State} from '../types';
+import {PendingBounds, newPendingBounds, addCoordToBounds} from './Bounds';
+import {MultiColor, constantColors, maybeUrlColor} from './MultiStyleForm';
 import {UIState} from '../useUIState';
+import {getClips} from '../rendering/pkInsetPaths';
 import {ExportSVG} from './ExportSVG';
 import {ExportPng} from './ExportPng';
+import {applyMatrix} from '../rendering/getMirrorTransforms';
+import {EditorState} from './Canvas';
 import {PK} from './pk';
 import {stateToConstructive} from './constructiveExport';
+
+export type Bounds = {
+    x1: number;
+    y1: number;
+    x2: number;
+    y2: number;
+};
+
+export const findBoundingRect = (state: State): Bounds | null => {
+    const clip = getClips(state);
+
+    let bounds: PendingBounds = newPendingBounds();
+    // NOTE: This won't totally cover arcs, but that's just too bad folks.
+    sortedVisibleInsetPaths(state.paths, state.pathGroups, {next: (_, __) => 0}, clip).forEach(
+        (path) => {
+            let offset = path.style.lines[0]?.width;
+            if (offset != null) {
+                offset = offset / 2 / 100;
+            }
+            addCoordToBounds(bounds, path.origin, offset);
+            // TODO: Get proper bounding box for arc segments.
+            path.segments.forEach((t) => addCoordToBounds(bounds, t.to, offset));
+        },
+    );
+    if (bounds.x0 == null || bounds.y0 == null) {
+        return null;
+    }
+    return {x1: bounds.x0!, y1: bounds.y0!, x2: bounds.x1!, y2: bounds.y1!};
+};
+
+export type Multi = NonNullable<State['view']['multi']>;
 
 export const Export = ({
     state,
@@ -127,7 +168,7 @@ const blankUIState: UIState = {
     styleHover: null,
 };
 
-const blankCanvasProps = {
+export const blankCanvasProps = {
     pendingMirror: null,
     setPendingMirror: (_: any) => {},
     dispatch: (_: any) => {},

@@ -1,9 +1,10 @@
 import * as React from 'react';
-import {Canvas, useLoader, useThree} from '@react-three/fiber';
+import {Canvas, useFrame, useLoader, useThree} from '@react-three/fiber';
 import {
     Camera,
     CanvasTexture,
     DoubleSide,
+    LinearFilter,
     Mesh,
     RepeatWrapping,
     ShaderMaterial,
@@ -11,11 +12,13 @@ import {
     TextureLoader,
     Vector3,
 } from 'three';
-import {GCodeData} from './Visualize.Tool.related';
+import {GCodeData} from './Visualize';
 import {renderCutDepths} from './renderCutDepths';
 import {OrbitControls, PerspectiveCamera} from '@react-three/drei';
+import {addMetadata} from '../editor/ExportPng';
+import {initialHistory} from '../state/initialState';
 import {State} from '../types';
-import {gcodeStateSuffix} from './gcodeStateSuffix';
+import {gcodeStateSuffix} from './Toolbar';
 
 // Based on https://stemkoski.github.io/Three.js/Shader-Heightmap-Textures.html
 const vertext = `
@@ -140,7 +143,7 @@ export const GCode3D = ({
     const stateRef = React.useRef(null as null | any);
     const [download, setDownload] = React.useState(null as null | {url: string; img: string});
     const qsize = 500;
-    const virtualCamera = React.useRef<Camera>(null);
+    const virtualCamera = React.useRef<Camera >(null);
 
     return (
         <div>
@@ -229,7 +232,7 @@ const GetState = ({ok}: {ok: React.MutableRefObject<any>}) => {
     return null;
 };
 
-function takePerspectivePictures(
+export function takePerspectivePictures(
     threes: any,
     ctx: CanvasRenderingContext2D,
     canv: React.RefObject<HTMLCanvasElement | null>,

@@ -2,13 +2,15 @@ import {Button} from 'primereact/button';
 import {OverlayPanel} from 'primereact/overlaypanel';
 import * as React from 'react';
 import {Clips} from '../editor/Clips';
-import {Hover} from '../editor/Hover';
+import {Hover} from '../editor/Sidebar';
 import {UndoPanel} from '../editor/UndoPanel';
 import {Action, GlobalTransform} from '../state/Action';
 import {Mirror, Path, PathGroup, State} from '../types';
 import {Accordion as MyAccordion} from './Accordion';
 
+import type * as CSS from 'csstype';
 import dayjs from 'dayjs';
+import PathKitInit from 'pathkit-wasm';
 import reactColor from 'react-color';
 import {Export} from '../editor/Export';
 import {PathForm, PathGroupForm, ViewForm} from '../editor/Forms';
@@ -16,9 +18,9 @@ import {ShowMirror} from '../editor/MirrorForm';
 import {MultiStyleForm} from '../editor/MultiStyleForm';
 import {OverlaysForm} from '../editor/OverlaysForm';
 import {PalettesForm} from '../editor/PalettesForm';
-import {paletteColor} from '../editor/RenderPath.lightenedColor.related';
+import {paletteColor} from '../editor/RenderPath';
 import {Tilings} from '../editor/Tilings';
-import {selectedPathIds} from '../editor/selectedPathIds';
+import {selectedPathIds} from '../editor/touchscreenControls';
 import {getStateFromFile} from '../editor/useDropTarget';
 import {
     CubeIcon,
@@ -31,13 +33,12 @@ import {
     UndoIcon,
 } from '../icons/Icon';
 import {getMirrorTransforms} from '../rendering/getMirrorTransforms';
-import {groupSort} from '../threed/groupSort';
+import {groupSort} from '../threed/ThreedScreen';
 import {Screen, UIDispatch, UIState} from '../useUIState';
 import {useLocalStorage} from '../vest/useLocalStorage';
 import {MirrorItems} from './MirrorItems';
 import {GuideInspector} from './GuideInspector';
 import {pkClipPaths} from './pkClipPaths';
-import {itemStyle} from './itemStyle';
 
 declare module 'csstype' {
     interface Properties {
@@ -961,7 +962,20 @@ function toggleViewGuides(state: State, dispatch: React.Dispatch<Action>) {
     );
 }
 
-const NewPalettesForm = ({
+export function itemStyle(selected: boolean, subSelected = false): React.CSSProperties | undefined {
+    return {
+        padding: 8,
+        cursor: 'pointer',
+        marginBottom: 0,
+        '--hover-color': 'var(--surface-hover)',
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: selected ? '#555' : subSelected ? '#055' : '',
+    };
+}
+
+export const NewPalettesForm = ({
     state,
     dispatch,
     uiDispatch,

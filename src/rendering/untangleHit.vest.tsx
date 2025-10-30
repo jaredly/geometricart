@@ -1,14 +1,12 @@
 import * as React from 'react';
+import {ShowHitIntersection} from '../editor/ShowHitIntersection';
 import {RenderSegmentBasic} from '../editor/RenderSegment';
 import {Coord} from '../types';
 import {register} from '../vest';
 import {HitsInfo, intersectSegments, SegmentWithPrev} from './clipPathNew';
-import {SegmentEditor} from './SegmentEditor';
-import {useInitialState} from './SegmentEditor.useOnChange.related';
+import {SegmentEditor, useInitialState} from './SegmentEditor';
 import {HitTransitions, untangleHit} from './untangleHit';
-import {ShowHitIntersection2} from '../editor/ShowHitIntersection2';
-import {arrow} from '../editor/arrow';
-import {pointsList} from '../editor/pointsList';
+import {arrow, pointsList, ShowHitIntersection2} from '../editor/ShowHitIntersection2';
 import {coordsEqual} from './pathsAreIdentical';
 import {angleForSegment} from './clipPath';
 

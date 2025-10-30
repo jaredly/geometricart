@@ -1,3 +1,4 @@
+import {jsx} from '@emotion/react';
 import {Tiling} from '../types';
 import {boundsForCoords} from './Bounds';
 import {tilingPoints} from './tilingPoints';

@@ -1,10 +1,12 @@
+import React from 'react';
+import {jsx} from '@emotion/react';
 import {useEffect, useRef} from 'react';
 import {Coord, Tiling} from './types';
 import {handleTiling} from './editor/handleTiling';
 import {eigenShapesToLines} from './editor/tilingPoints';
-import {plerp} from './Morph.plerp.related';
+import {plerp} from './Morph';
 
-const TwoPass = ({one, two}: {one: Tiling; two: Tiling}) => {
+export const TwoPass = ({one, two}: {one: Tiling; two: Tiling}) => {
     const canvas = useRef<HTMLCanvasElement>(null);
     const size = 1000;
 

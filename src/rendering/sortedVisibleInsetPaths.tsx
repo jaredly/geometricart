@@ -1,4 +1,4 @@
-import {paletteColor} from '../editor/RenderPath.lightenedColor.related';
+import {paletteColor} from '../editor/RenderPath';
 import {ensureClockwise} from '../rendering/pathToPoints';
 import {Coord, Path, PathGroup, Segment} from '../types';
 import {coordKey, numKey} from './coordKey';
@@ -46,7 +46,7 @@ export const normalizedPath = (
     return [normalized, backward];
 };
 
-type InsetCache = {
+export type InsetCache = {
     [key: string]: {
         segments: Array<Segment>;
         insets: {
@@ -55,7 +55,7 @@ type InsetCache = {
     };
 };
 
-const addToUsed = (path: Path, used: Used, pi: number) => {
+export const addToUsed = (path: Path, used: Used, pi: number) => {
     path.segments.forEach((seg, i) => {
         const prev = i === 0 ? path.origin : path.segments[i - 1].to;
         const [key, limit] = segmentKeyAndLimit(prev, seg);
@@ -116,7 +116,7 @@ export const pathToSingles = (path: Path) => {
     return singles;
 };
 
-const segmentKeyAndLimit = (prev: Coord, seg: Segment): [string, [number, number]] => {
+export const segmentKeyAndLimit = (prev: Coord, seg: Segment): [string, [number, number]] => {
     if (seg.type === 'Line') {
         const si = lineToSlope(prev, seg.to, true);
         const key = `l:${numKey(si.m)}:${numKey(si.b)}`;
@@ -135,7 +135,7 @@ const segmentKeyAndLimit = (prev: Coord, seg: Segment): [string, [number, number
 };
 
 // Is l1 inside of l2?
-const isEntirelyWithinInner = (
+export const isEntirelyWithinInner = (
     l1: [number, number],
     i1: number,
     l2: [number, number],
@@ -160,7 +160,7 @@ const isEntirelyWithinInner = (
     return withinLimit(l2, l1[0]) && withinLimit(l2, l1[1]);
 };
 
-const isEntirelyWithin = (
+export const isEntirelyWithin = (
     key: string,
     limit: [number, number],
     // prev: Coord,
@@ -178,7 +178,7 @@ const isEntirelyWithin = (
     );
 };
 
-const removeFullOverlaps = (path: Path, pi: number, used: Used, other?: Used) => {
+export const removeFullOverlaps = (path: Path, pi: number, used: Used, other?: Used) => {
     const finished: Array<Path> = [];
     let current: Path = {...path, segments: [], open: true};
     let droppedAny = false;
@@ -220,7 +220,7 @@ const removeFullOverlaps = (path: Path, pi: number, used: Used, other?: Used) =>
     }
 };
 
-const findNewLower = (lower: number, seg: Segment, other: Uses) => {
+export const findNewLower = (lower: number, seg: Segment, other: Uses) => {
     if (seg.type === 'Line') {
         let max = null;
         for (let [limit, _] of other) {
@@ -243,7 +243,7 @@ const findNewLower = (lower: number, seg: Segment, other: Uses) => {
     }
 };
 
-const findNewUpper = (upper: number, seg: Segment, other: Uses) => {
+export const findNewUpper = (upper: number, seg: Segment, other: Uses) => {
     if (seg.type === 'Line') {
         let min = null;
         for (let [limit, _] of other) {
@@ -266,14 +266,14 @@ const findNewUpper = (upper: number, seg: Segment, other: Uses) => {
     }
 };
 
-const isUpOrToTheRight = (p1: Coord, p2: Coord) => {
+export const isUpOrToTheRight = (p1: Coord, p2: Coord) => {
     if (closeEnough(p1.x, p2.x)) {
         return p1.y > p2.y;
     }
     return p1.x > p2.x;
 };
 
-const adjustSeg = (
+export const adjustSeg = (
     prev: Coord,
     segment: Segment,
     newLower: number | null,
@@ -328,7 +328,7 @@ const adjustSeg = (
     return {prev: newPrev, seg: {...segment, to: newTo}};
 };
 
-const removePartialOverlaps = (path: Path, pi: number, used: Used, other?: Used) => {
+export const removePartialOverlaps = (path: Path, pi: number, used: Used, other?: Used) => {
     const finished: Array<Path> = [];
     let current: Path = {...path, segments: [], open: true};
     let droppedAny = false;
@@ -413,8 +413,8 @@ export function sortForLaserCutting(processed: Path[], laserCutPalette: string[]
     red.forEach((path, pi) => addToUsed(path, used.red, pi));
     blue.forEach((path, pi) => addToUsed(path, used.blue, pi));
 
-    red = red.flatMap((path, pi) => removeFullOverlaps(path, pi, used.red));
-    blue = blue.flatMap((path, pi) => removeFullOverlaps(path, pi, used.blue, used.red));
+    red = red.map((path, pi) => removeFullOverlaps(path, pi, used.red)).flat();
+    blue = blue.map((path, pi) => removeFullOverlaps(path, pi, used.blue, used.red)).flat();
 
     // reset for the new, reduced paths
     used = {red: {}, blue: {}};
@@ -422,8 +422,8 @@ export function sortForLaserCutting(processed: Path[], laserCutPalette: string[]
     blue.forEach((path, pi) => addToUsed(path, used.blue, pi));
 
     // console.log(used);
-    red = red.flatMap((path, pi) => removePartialOverlaps(path, pi, used.red));
-    blue = blue.flatMap((path, pi) => removePartialOverlaps(path, pi, used.blue, used.red));
+    red = red.map((path, pi) => removePartialOverlaps(path, pi, used.red)).flat();
+    blue = blue.map((path, pi) => removePartialOverlaps(path, pi, used.blue, used.red)).flat();
 
     return others.concat(blue).concat(red);
 }

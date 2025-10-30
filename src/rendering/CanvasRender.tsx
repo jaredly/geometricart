@@ -2,20 +2,18 @@ import Prando from 'prando';
 // import {RoughCanvas} from 'roughjs/bin/canvas';
 import {calcAllIntersections} from './calcAllIntersections';
 import {calculateGuideElements, calculateInactiveGuideElements} from './calculateGuideElements';
-import {AnimatedFunctions, evaluateAnimatedValues} from '../editor/Canvas.timelineFunction.related';
+import {AnimatedFunctions, evaluateAnimatedValues} from '../editor/Canvas';
 import {pathToPrimitives} from '../editor/findSelection';
 import {getAnimatedPaths, getAnimationScripts} from '../animation/getAnimatedPaths';
 import {angleTo, dist, getMirrorTransforms, push} from './getMirrorTransforms';
-import {primitivesForElementsAndPaths} from '../editor/primitivesForElementsAndPaths';
+import {primitivesForElementsAndPaths} from '../editor/Guides';
 import {Primitive} from './intersect';
 import {isClockwise, pathToPoints, rasterSegPoints, reversePath} from './pathToPoints';
-import {idSeed} from '../editor/idSeed';
-import {lightenedColor} from '../editor/RenderPath.lightenedColor.related';
-import {RoughCanvas} from '../editor/RenderPath.RoughGenerator.related';
+import {idSeed, lightenedColor, RoughCanvas} from '../editor/RenderPath';
 import {calcPathD} from '../editor/calcPathD';
 import {sortedVisibleInsetPaths} from './sortedVisibleInsetPaths';
 import {ArcSegment, Overlay, Path, State} from '../types';
-import {imageCache} from '../editor/imageCache';
+import {imageCache} from '../editor/SVGCanvas';
 import {getClips} from './pkInsetPaths';
 
 export const makeImage = (href: string): Promise<HTMLImageElement> => {
@@ -471,7 +469,7 @@ export function tracePath(ctx: CanvasRenderingContext2D, path: Path, zoom: numbe
 
 // This is used for making a "clip" to the line of a path.
 // for when the stroke is supposed to be an image.
-function tracePathLine(
+export function tracePathLine(
     ctx: CanvasRenderingContext2D,
     path: Path,
     zoom: number,

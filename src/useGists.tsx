@@ -69,7 +69,7 @@ export type SmallGist = {
     preview_sha: string;
 };
 
-type Gist = {
+export type Gist = {
     url: string;
     forks_url: string;
     commits_url: string;

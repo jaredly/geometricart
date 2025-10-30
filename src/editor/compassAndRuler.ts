@@ -1,8 +1,8 @@
 import {angleBetween} from '../rendering/isAngleBetween';
 import {angleTo, dist} from '../rendering/getMirrorTransforms';
-import {Coord, GuideGeom} from '../types';
+import {Coord, Guide, GuideGeom} from '../types';
 
-type States = 'PO' | 'PA1' | 'PA2' | 'DC' | 'R1' | 'R2' | 'DR';
+export type States = 'PO' | 'PA1' | 'PA2' | 'DC' | 'R1' | 'R2' | 'DR';
 
 export type PendingMark =
     | {type: 'circle'; t1: number; t2: number; clockwise: boolean}
@@ -177,7 +177,7 @@ export const mouseMoveMark = (
     return {...mark, t2: theta, clockwise};
 };
 
-const dragPos = (state: CompassState, coord: Coord): CompassState => {
+export const dragPos = (state: CompassState, coord: Coord): CompassState => {
     if (state.state === 'DR' && state.pendingMark?.type === 'line') {
         const p2 = projectPointOntoLine(coord, state.rulerP1, state.rulerP2);
         return {...state, pendingMark: {...state.pendingMark, p2}};

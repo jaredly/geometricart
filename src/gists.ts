@@ -1,4 +1,5 @@
 import * as git from 'isomorphic-git';
+import LighteningFS from '@isomorphic-git/lightning-fs';
 import {State} from './types';
 import http from 'isomorphic-git/http/web';
 import {fs} from 'memfs-browser';
@@ -17,7 +18,7 @@ const blobToBuffer = (blob: Blob): Promise<Buffer> => {
 
 export const stateFileName = `geometric-art-state.json`;
 
-const updateGitRepo = async (id: string, token: string, blob: Blob, state?: State) => {
+export const updateGitRepo = async (id: string, token: string, blob: Blob, state?: State) => {
     const dir = '/' + id;
     const args = {
         fs,

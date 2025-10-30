@@ -1,5 +1,5 @@
 import {Coord, State} from '../types';
-import {MirrorAdd} from '../state/Action';
+import {Action, MirrorAdd} from '../state/Action';
 import {
     angleTo,
     applyMatrices,

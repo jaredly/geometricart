@@ -1,11 +1,8 @@
 import React, {useState} from 'react';
 import {useCurrent} from '../useCurrent';
-import {
-    evaluateAnimatedValues,
-    getAnimatedFunctions,
-} from '../editor/Canvas.timelineFunction.related';
-import {findBoundingRect} from '../editor/Export.Bounds.related';
-import {addMetadata, renderTexture} from '../editor/ExportPng.exportPNG.related';
+import {evaluateAnimatedValues, getAnimatedFunctions} from '../editor/Canvas';
+import {findBoundingRect} from '../editor/Export';
+import {addMetadata, renderTexture} from '../editor/ExportPng';
 import {BlurInt, Toggle} from '../editor/Forms';
 import {CancelIcon, CheckmarkIcon, PencilIcon} from '../icons/Icon';
 import {epsilon} from '../rendering/epsilonToZero';
@@ -19,8 +16,12 @@ import {Scripts} from './Scripts';
 import {Lerps} from './Lerps';
 // @ts-ignore
 import {tar} from 'tinytar';
-import {cacheOverlays} from '../history/cacheOverlays';
-import {makeEven} from './makeEven';
+import {cacheOverlays} from '../history/HistoryPlayback';
+
+export const makeEven = (v: number) => {
+    v = Math.ceil(v);
+    return v % 2 === 0 ? v : v + 1;
+};
 
 export const AnimationEditor = ({
     state,
@@ -450,7 +451,7 @@ export const Editable = ({text, onChange}: {text: string; onChange: (t: string) 
     );
 };
 
-function tarImages(images: Uint8Array[], fps: number, state: State) {
+export function tarImages(images: Uint8Array[], fps: number, state: State) {
     // @ts-ignore
     // const tar = import('tinytar').tar;
 
@@ -479,7 +480,7 @@ function tarImages(images: Uint8Array[], fps: number, state: State) {
             .concat([
                 {
                     name: 'run_ffmpeg.bash',
-                    mode: 0o777,
+                    mode: parseInt('777', 8),
                     data: `#!/bin/bash
                                     set -ex
                                     ffmpeg ${args.map((a) => (a[0] === '-' ? a : `"${a}"`)).join(' ')}
@@ -573,7 +574,7 @@ export const AddVbl = ({onAdd}: {onAdd: (name: string, v: Animations['lerps'][''
     );
 };
 
-const TickTock = ({
+export const TickTock = ({
     t,
     set,
     increment,
@@ -612,7 +613,7 @@ const TickTock = ({
     );
 };
 
-function convertDataURIToBinary(dataURI: string) {
+export function convertDataURIToBinary(dataURI: string) {
     var base64 = dataURI.replace(/^data[^,]+,/, '');
     var raw = window.atob(base64);
     var rawLength = raw.length;

@@ -1,7 +1,8 @@
-import {angleTo, dist, push} from '../rendering/getMirrorTransforms';
-import {lineToSlope, Primitive} from '../rendering/intersect';
-import {Coord, View} from '../types';
-import {EditorState} from './Canvas.MenuItem.related';
+import React from 'react';
+import {angleTo, dist, posOffset, push} from '../rendering/getMirrorTransforms';
+import {Circle, lineToSlope, Primitive} from '../rendering/intersect';
+import {Coord, GuideGeom, View} from '../types';
+import {EditorState} from './Canvas';
 import {CompassState, PendingMark, previewPos} from './compassAndRuler';
 import {RenderPrimitive} from './RenderPrimitive';
 import {Bounds} from './Bounds';
@@ -10,7 +11,8 @@ type Dot = {type: 'dot'; pos: Coord; active: boolean};
 
 type Shapes = ({type: 'prim'; prim: Primitive; dashed: boolean} | Dot | null)[];
 
-const isCompass = (state: CompassState['state']) => ['PO', 'PA1', 'PA2', 'DC'].includes(state);
+export const isCompass = (state: CompassState['state']) =>
+    ['PO', 'PA1', 'PA2', 'DC'].includes(state);
 
 const diamond = (p1: Coord, p2: Coord): Primitive[] => {
     const theta = angleTo(p1, p2);

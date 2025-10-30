@@ -1,5 +1,7 @@
 // Types for vest
 
+import React from 'react';
+
 export type Config<Input, Output> = {
     id: string;
     dir: string;

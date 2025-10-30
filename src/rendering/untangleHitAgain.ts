@@ -1,7 +1,9 @@
-import {Exit, SegmentIntersection, HitSegment} from './untangleHit';
-import {backAngle, sortAngles} from './clipPath';
+import {Exit, IntersectionError, SegmentIntersection, HitSegment} from './untangleHit';
+import {backAngle, isAngleBetweenAngles, isInside, sortAngles} from './clipPath';
 import {Angle} from './epsilonToZero';
+import {negPiToPi} from './epsilonToZero';
 import {anglesEqual} from './epsilonToZero';
+import {angleIsBetween, closeEnoughAngle} from './epsilonToZero';
 
 // @trace
 /**
@@ -161,15 +163,17 @@ export const untangleHit = (entries: Array<SegmentIntersection>): Array<HitCorne
             result.push({
                 entries: segmentGroups
                     .filter((g) => g.kind.type === 'enter')
-                    .flatMap((g) => g.entries),
+                    .map((g) => g.entries)
+                    .flat(),
                 exits: segmentGroups
                     .filter((g) => g.kind.type === 'exit')
-                    .flatMap((g) =>
+                    .map((g) =>
                         g.entries.map((exit) => ({
                             exit,
                             goingInside: (g.kind as Exit).goingInside,
                         })),
-                    ),
+                    )
+                    .flat(),
             });
             break;
         }

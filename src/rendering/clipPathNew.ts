@@ -10,6 +10,7 @@ import {coordKey} from './coordKey';
 import {angleBetween} from './isAngleBetween';
 import {angleTo, dist} from './getMirrorTransforms';
 import {intersections} from './intersect';
+import {isClockwise} from './pathToPoints';
 import {coordsEqual} from './pathsAreIdentical';
 import {
     HitTransitions,
@@ -20,7 +21,11 @@ import {
     untangleHit,
 } from './untangleHit';
 
-function addPrevsToSegments(segments: Segment[], shape: number, start?: Coord): SegmentWithPrev[] {
+export function addPrevsToSegments(
+    segments: Segment[],
+    shape: number,
+    start?: Coord,
+): SegmentWithPrev[] {
     return segments.map((s, i) => ({
         shape,
         prev: i === 0 ? (start ?? segments[segments.length - 1].to) : segments[i - 1].to,
@@ -28,7 +33,7 @@ function addPrevsToSegments(segments: Segment[], shape: number, start?: Coord): 
     }));
 }
 
-const HIGH_PRECISION = 4;
+export const HIGH_PRECISION = 4;
 
 export type SegmentWithPrev = {prev: Coord; segment: Segment; shape: number};
 
@@ -232,7 +237,7 @@ export const prevSegmentsToShape = (segments: Array<SegmentWithPrev>): null | Ar
     return bad ? null : singles;
 };
 
-function hasNonEndpointCollision(hits: {
+export function hasNonEndpointCollision(hits: {
     [key: string]: {coord: Coord; parties: Array<SegmentIntersection>};
 }) {
     let hasCollision = false;

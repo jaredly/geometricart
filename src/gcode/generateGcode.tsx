@@ -1,11 +1,11 @@
 // import { insetPath } from '../animation/getBuiltins';
-import {findBoundingRect} from '../editor/Export.Bounds.related';
+import {findBoundingRect} from '../editor/Export';
 import {findColorPaths} from './findColorPaths';
 import {dist} from '../rendering/getMirrorTransforms';
 import {pathToPoints, RasterSeg, rasterSegPoints} from '../rendering/pathToPoints';
 import {sortedVisibleInsetPaths} from '../rendering/sortedVisibleInsetPaths';
 import {Coord, Path, State, StyleLine} from '../types';
-import {PathKit} from 'pathkit-wasm';
+import PathKitInit, {PathKit} from 'pathkit-wasm';
 import {calcPathD} from '../editor/calcPathD';
 import {segmentKey, segmentKeyReverse} from '../rendering/segmentKey';
 import {getClips} from '../rendering/pkInsetPaths';
@@ -30,7 +30,7 @@ const findClosest = (shape: RasterSeg[], point: Coord) => {
     return {dist: best![0], idx: best![1]};
 };
 
-const greedyPaths = (paths: Array<{path: Path; style: StyleLine}>, ppi: number) => {
+export const greedyPaths = (paths: Array<{path: Path; style: StyleLine}>, ppi: number) => {
     console.log('greedy it up', paths);
     const pathPoints: Array<Array<RasterSeg>> = [];
     paths.forEach(({path, style}) => {
@@ -484,7 +484,7 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
     return {time, text: lines.join('\n')};
 };
 
-const cmdBounds = (cmds: GCode[]) => {
+export const cmdBounds = (cmds: GCode[]) => {
     return cmds.reduce(
         (bounds, cmd) => {
             switch (cmd.type) {
@@ -621,7 +621,7 @@ const svgPathPoints = (outer: SVGSVGElement, d: string, ppd: number = 0.2): Coor
 // https://github.com/google/skia/blob/main/src/effects/SkCornerPathEffect.cpp
 // https://github.com/google/skia/blob/main/modules/pathkit/pathkit_wasm_bindings.cpp#L358
 
-const cmdsToPoints = (cmds: number[][], pk: PathKit, outer: SVGSVGElement): Coord[][] => {
+export const cmdsToPoints = (cmds: number[][], pk: PathKit, outer: SVGSVGElement): Coord[][] => {
     const points: Coord[][] = [];
 
     for (let cmd of cmds) {
@@ -650,6 +650,7 @@ const cmdsToPoints = (cmds: number[][], pk: PathKit, outer: SVGSVGElement): Coor
             path.delete();
         } else if (cmd[0] === pk.CLOSE_VERB) {
             points[points.length - 1].push({...points[points.length - 1][0]});
+            continue;
         } else {
             throw new Error('unknown cmd ' + cmd[0]);
         }

@@ -1,13 +1,16 @@
+import {jsx} from '@emotion/react';
 import {BarePath, Coord, SegPrev, Segment, State, Tiling} from '../types';
+import {closeEnough} from '../rendering/epsilonToZero';
 import {consumePath, getVisiblePaths, pkClips} from '../rendering/pkInsetPaths';
 import {PK} from './pk';
 import {pkPath} from '../sidebar/pkClipPaths';
 import {addPrevsToSegments} from '../rendering/segmentsToNonIntersectingSegments';
-import {SlopeIntercept, lineToSlope, slopeToLine} from '../rendering/intersect';
+import {SlopeIntercept, lineLine, lineToSlope, slopeToLine} from '../rendering/intersect';
 import {numKey} from '../rendering/coordKey';
-import {applyMatrix, scaleMatrix} from '../rendering/getMirrorTransforms';
-import {transformBarePath} from '../rendering/points';
+import {applyMatrices, applyMatrix, scaleMatrix} from '../rendering/getMirrorTransforms';
+import {transformBarePath, transformPath, transformSegment} from '../rendering/points';
 import {tilingPoints, eigenShapesToLines} from './tilingPoints';
+import {coordsEqual} from '../rendering/pathsAreIdentical';
 import {SegmentWithPrev} from '../rendering/clipPathNew';
 
 export const simpleExport = async (state: State, shape: Tiling['shape']) => {
@@ -37,7 +40,7 @@ export const simpleExport = async (state: State, shape: Tiling['shape']) => {
     };
 };
 
-const slopeToPseg = (line: SlopeIntercept): SegmentWithPrev => {
+export const slopeToPseg = (line: SlopeIntercept): SegmentWithPrev => {
     const [p1, p2] = slopeToLine(line);
     return {prev: p1, segment: {type: 'Line', to: p2}, shape: -1};
 };
@@ -45,7 +48,7 @@ const slopeToPseg = (line: SlopeIntercept): SegmentWithPrev => {
 // Shapes *has* been transformed, by `getTransform(pts)`
 // the `pts` that are returned have also been transformed
 // klines is our map of deduped lines.
-const getShapesIntersectingPolygon = (state: State, pts: Coord[]) => {
+export const getShapesIntersectingPolygon = (state: State, pts: Coord[]) => {
     // PathKit doesn't have great precision at the small end. So inflate everything by 100x before calculating.
     const scale = 10000;
 

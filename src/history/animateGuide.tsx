@@ -7,7 +7,7 @@ import {
     push,
     transformsToMatrices,
 } from '../rendering/getMirrorTransforms';
-import {pendingGuide} from '../editor/pendingGuide';
+import {pendingGuide} from '../editor/RenderPendingGuide';
 import {geomToPrimitives} from '../rendering/points';
 import {renderPrimitive} from '../rendering/CanvasRender';
 import {geomPoints, transformGuideGeom} from '../rendering/calculateGuideElements';

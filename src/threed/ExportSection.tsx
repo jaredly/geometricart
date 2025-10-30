@@ -1,10 +1,10 @@
 import '@react-three/fiber';
 import React, {useState} from 'react';
 import {State} from '../types';
-import {addMetadata} from '../editor/ExportPng.exportPNG.related';
+import {addMetadata} from '../editor/ExportPng';
 import {initialHistory} from '../state/initialState';
 import {serializeObj} from './serialize-obj';
-import {inToPX, mmToPX} from '../gcode/pxToMM';
+import {inToPX, mmToPX, pxToIn, pxToMM} from '../gcode/pxToMM';
 import {BlurInt} from '../editor/Forms';
 
 type SVGPath = {

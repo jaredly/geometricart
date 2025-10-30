@@ -8,7 +8,7 @@ import {Action} from '../state/Action';
 import {State} from '../types';
 import {Editable} from './AnimationUI';
 
-const ScriptEditor = ({
+export const ScriptEditor = ({
     id,
     code,
     dispatch,
