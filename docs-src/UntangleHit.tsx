@@ -1,6 +1,6 @@
+import * as React from 'react';
 import {arcPath} from '../src/editor/RenderPendingPath';
-import {arrow} from '../src/editor/arrow';
-import {pointsList} from '../src/editor/pointsList';
+import {arrow, pointsList} from '../src/editor/ShowHitIntersection2';
 import {Angle} from '../src/rendering/epsilonToZero';
 import {HitsInfo, intersectSegments, SegmentWithPrev} from '../src/rendering/clipPathNew';
 import {push} from '../src/rendering/getMirrorTransforms';
@@ -257,6 +257,6 @@ const fx = fixtures.map((fx): Fixture<typeof untangleHit> => {
     return {...fx, input: [hit], output: [] as Array<HitCorner>};
 });
 
-const UntangleHit = () => (
+export const UntangleHit = () => (
     <Fixtures Input={Input} editDelay={100} Output={Output} run={untangleHit} fixtures={fx} />
 );

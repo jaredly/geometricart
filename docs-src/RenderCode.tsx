@@ -3,6 +3,9 @@ import Highlight, {defaultProps} from 'prism-react-renderer';
 import {DOC_COMMENT, EXAMPLES, FullToken, organizeTokens, SHOW} from './organizeTokens';
 import {Info, ByStart, TraceOutput, getWidget, hasVisual} from './Fixtures';
 
+// import ReactMarkdown from 'react-markdown';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
 import {widgets} from './functionWidgets';
 
 export const RenderCode = React.memo(

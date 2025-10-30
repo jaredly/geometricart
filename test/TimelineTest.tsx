@@ -1,11 +1,11 @@
 import React, {useMemo} from 'react';
 import {useState} from 'react';
-import {PointsEditor} from '../src/animation/PointsEditor';
-import {pointsPathD} from '../src/animation/PointsEditor.pointsPathD.related';
-import {timelineFunction, timelineSegments} from '../src/editor/Canvas.timelineFunction.related';
+import {PointsEditor, pointsPath, pointsPathD} from '../src/animation/PointsEditor';
+import {timelineFunction, timelineSegments, TLSegment, TLSegmentCurve} from '../src/editor/Canvas';
+import {createLookupTable, evaluateBezier, evaluateLookUpTable} from '../src/lerp';
 import {Coord, LerpPoint} from '../src/types';
 
-const Timeline = () => {
+export const Timeline = () => {
     const [points, setPoints] = useState([] as Array<LerpPoint>);
     const size = 500;
 

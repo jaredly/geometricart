@@ -1,6 +1,6 @@
 import {Segment} from '../src/types';
 
-const fixture: Array<Segment> = [
+export const fixture: Array<Segment> = [
     {
         type: 'Arc',
         center: {
@@ -51,7 +51,7 @@ const fixture: Array<Segment> = [
     },
 ];
 
-const fixture__: Array<Segment> = [
+export const fixture__: Array<Segment> = [
     {
         type: 'Arc',
         center: {
@@ -184,7 +184,7 @@ const fixture__: Array<Segment> = [
     },
 ];
 
-const fixture_: Array<Segment> = [
+export const fixture_: Array<Segment> = [
     {
         type: 'Arc',
         center: {

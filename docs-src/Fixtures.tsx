@@ -1,6 +1,7 @@
 import * as React from 'react';
 import {Fixture} from '../src/vest/types';
 import {visuals, widgets} from './functionWidgets';
+import {useInitialState} from '../src/rendering/SegmentEditor';
 import {RenderCode} from './RenderCode';
 
 import {RenderSidebar} from './RenderSidebar';

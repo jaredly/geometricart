@@ -1,3 +1,8 @@
+import * as React from 'react';
+// import ReactMarkdown from 'react-markdown';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+
 export function RenderFunctionDocumentation({
     values,
     index,
@@ -52,15 +57,17 @@ export function RenderFunctionDocumentation({
                                         {arg.name}
                                     </td>
                                     <td>
-                                        {arg.comment
-                                            ? // <ReactMarkdown
-                                              //     children={arg.comment}
-                                              //     remarkPlugins={[remarkMath]}
-                                              //     rehypePlugins={[rehypeKatex]}
-                                              //     className="md"
-                                              // />
-                                              null
-                                            : 'No documentation'}
+                                        {arg.comment ? (
+                                            // <ReactMarkdown
+                                            //     children={arg.comment}
+                                            //     remarkPlugins={[remarkMath]}
+                                            //     rehypePlugins={[rehypeKatex]}
+                                            //     className="md"
+                                            // />
+                                            null
+                                        ) : (
+                                            'No documentation'
+                                        )}
                                     </td>
                                 </tr>
                             ))}
