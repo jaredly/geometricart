@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {Id, State} from '../types';
 import {Action} from '../state/Action';

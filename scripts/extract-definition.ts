@@ -128,7 +128,12 @@ async function extractDefinition(options: ExtractOptions) {
         },
         FunctionDeclaration(nodePath: NodePath<t.FunctionDeclaration>) {
             const name = nodePath.node.id?.name;
-            if (name && definitionNamesSet.has(name) && nodePath.node.loc && (!nodePath.parent || t.isProgram(nodePath.parent))) {
+            if (
+                name &&
+                definitionNamesSet.has(name) &&
+                nodePath.node.loc &&
+                (!nodePath.parent || t.isProgram(nodePath.parent))
+            ) {
                 const start = nodePath.node.loc.start.line;
                 const end = nodePath.node.loc.end.line;
                 definitions.push({
@@ -142,7 +147,12 @@ async function extractDefinition(options: ExtractOptions) {
         },
         ClassDeclaration(nodePath: NodePath<t.ClassDeclaration>) {
             const name = nodePath.node.id?.name;
-            if (name && definitionNamesSet.has(name) && nodePath.node.loc && (!nodePath.parent || t.isProgram(nodePath.parent))) {
+            if (
+                name &&
+                definitionNamesSet.has(name) &&
+                nodePath.node.loc &&
+                (!nodePath.parent || t.isProgram(nodePath.parent))
+            ) {
                 const start = nodePath.node.loc.start.line;
                 const end = nodePath.node.loc.end.line;
                 definitions.push({
@@ -173,7 +183,11 @@ async function extractDefinition(options: ExtractOptions) {
         },
         TSTypeAliasDeclaration(nodePath: NodePath<t.TSTypeAliasDeclaration>) {
             const name = nodePath.node.id.name;
-            if (definitionNamesSet.has(name) && nodePath.node.loc && (!nodePath.parent || t.isProgram(nodePath.parent))) {
+            if (
+                definitionNamesSet.has(name) &&
+                nodePath.node.loc &&
+                (!nodePath.parent || t.isProgram(nodePath.parent))
+            ) {
                 const start = nodePath.node.loc.start.line;
                 const end = nodePath.node.loc.end.line;
                 definitions.push({
@@ -187,7 +201,11 @@ async function extractDefinition(options: ExtractOptions) {
         },
         TSInterfaceDeclaration(nodePath: NodePath<t.TSInterfaceDeclaration>) {
             const name = nodePath.node.id.name;
-            if (definitionNamesSet.has(name) && nodePath.node.loc && (!nodePath.parent || t.isProgram(nodePath.parent))) {
+            if (
+                definitionNamesSet.has(name) &&
+                nodePath.node.loc &&
+                (!nodePath.parent || t.isProgram(nodePath.parent))
+            ) {
                 const start = nodePath.node.loc.start.line;
                 const end = nodePath.node.loc.end.line;
                 definitions.push({
@@ -201,7 +219,11 @@ async function extractDefinition(options: ExtractOptions) {
         },
         TSEnumDeclaration(nodePath: NodePath<t.TSEnumDeclaration>) {
             const name = nodePath.node.id.name;
-            if (definitionNamesSet.has(name) && nodePath.node.loc && (!nodePath.parent || t.isProgram(nodePath.parent))) {
+            if (
+                definitionNamesSet.has(name) &&
+                nodePath.node.loc &&
+                (!nodePath.parent || t.isProgram(nodePath.parent))
+            ) {
                 const start = nodePath.node.loc.start.line;
                 const end = nodePath.node.loc.end.line;
                 definitions.push({
@@ -216,8 +238,8 @@ async function extractDefinition(options: ExtractOptions) {
     });
 
     // Check that all definitions were found
-    const foundNames = new Set(definitions.map(d => d.name));
-    const missing = definitionNames.filter(name => !foundNames.has(name));
+    const foundNames = new Set(definitions.map((d) => d.name));
+    const missing = definitionNames.filter((name) => !foundNames.has(name));
     if (missing.length > 0) {
         throw new Error(`Definitions not found in ${sourceFile}: ${missing.join(', ')}`);
     }
@@ -225,7 +247,7 @@ async function extractDefinition(options: ExtractOptions) {
     console.log(`✓ Found ${definitions.length} definition(s)`);
 
     // Combine all definition code
-    const allDefinitionCode = definitions.map(d => d.code).join('\n\n');
+    const allDefinitionCode = definitions.map((d) => d.code).join('\n\n');
     const localDependencies = new Set<string>();
 
     // Second pass: find all identifiers used in all the definitions
@@ -248,7 +270,9 @@ async function extractDefinition(options: ExtractOptions) {
     // If code has JSX but target file ends with .ts, change to .tsx
     if (hasJSX && targetFile.endsWith('.ts')) {
         const newTargetFile = targetFile.replace(/\.ts$/, '.tsx');
-        console.log(`⚠️  Extracted code contains JSX, changing extension: ${path.basename(targetFile)} → ${path.basename(newTargetFile)}`);
+        console.log(
+            `⚠️  Extracted code contains JSX, changing extension: ${path.basename(targetFile)} → ${path.basename(newTargetFile)}`,
+        );
         targetFile = newTargetFile;
     }
 
@@ -261,7 +285,7 @@ async function extractDefinition(options: ExtractOptions) {
             if (
                 nodePath.key === 'key' ||
                 nodePath.key === 'property' ||
-                t.isObjectProperty(nodePath.parent) && nodePath.parent.key === nodePath.node
+                (t.isObjectProperty(nodePath.parent) && nodePath.parent.key === nodePath.node)
             ) {
                 return;
             }
@@ -291,35 +315,45 @@ async function extractDefinition(options: ExtractOptions) {
             const neededSpecifiers: string[] = [];
             const isTypeImport = nodePath.node.importKind === 'type';
 
-            nodePath.node.specifiers.forEach((spec: t.ImportSpecifier | t.ImportDefaultSpecifier | t.ImportNamespaceSpecifier) => {
-                if (t.isImportSpecifier(spec) && t.isIdentifier(spec.imported)) {
-                    const imported = spec.imported.name;
-                    const local = spec.local.name;
-                    if (localDependencies.has(local)) {
-                        if (imported === local) {
-                            neededSpecifiers.push(imported);
-                        } else {
-                            neededSpecifiers.push(`${imported} as ${local}`);
+            nodePath.node.specifiers.forEach(
+                (
+                    spec: t.ImportSpecifier | t.ImportDefaultSpecifier | t.ImportNamespaceSpecifier,
+                ) => {
+                    if (t.isImportSpecifier(spec) && t.isIdentifier(spec.imported)) {
+                        const imported = spec.imported.name;
+                        const local = spec.local.name;
+                        if (localDependencies.has(local)) {
+                            if (imported === local) {
+                                neededSpecifiers.push(imported);
+                            } else {
+                                neededSpecifiers.push(`${imported} as ${local}`);
+                            }
+                        }
+                    } else if (t.isImportDefaultSpecifier(spec)) {
+                        const local = spec.local.name;
+                        if (localDependencies.has(local)) {
+                            const typeKeyword = isTypeImport ? 'type ' : '';
+                            necessaryImports.push(
+                                `import ${typeKeyword}${local} from '${source}';`,
+                            );
+                        }
+                    } else if (t.isImportNamespaceSpecifier(spec)) {
+                        const local = spec.local.name;
+                        if (localDependencies.has(local)) {
+                            const typeKeyword = isTypeImport ? 'type ' : '';
+                            necessaryImports.push(
+                                `import ${typeKeyword}* as ${local} from '${source}';`,
+                            );
                         }
                     }
-                } else if (t.isImportDefaultSpecifier(spec)) {
-                    const local = spec.local.name;
-                    if (localDependencies.has(local)) {
-                        const typeKeyword = isTypeImport ? 'type ' : '';
-                        necessaryImports.push(`import ${typeKeyword}${local} from '${source}';`);
-                    }
-                } else if (t.isImportNamespaceSpecifier(spec)) {
-                    const local = spec.local.name;
-                    if (localDependencies.has(local)) {
-                        const typeKeyword = isTypeImport ? 'type ' : '';
-                        necessaryImports.push(`import ${typeKeyword}* as ${local} from '${source}';`);
-                    }
-                }
-            });
+                },
+            );
 
             if (neededSpecifiers.length > 0) {
                 const typeKeyword = isTypeImport ? 'type ' : '';
-                necessaryImports.push(`import ${typeKeyword}{${neededSpecifiers.join(', ')}} from '${source}';`);
+                necessaryImports.push(
+                    `import ${typeKeyword}{${neededSpecifiers.join(', ')}} from '${source}';`,
+                );
             }
         },
     });
@@ -333,11 +367,7 @@ async function extractDefinition(options: ExtractOptions) {
         throw new Error(`existing files exists already`);
     }
 
-    const newFileContent = [
-        ...necessaryImports,
-        '',
-        allDefinitionCode,
-    ].join('\n');
+    const newFileContent = [...necessaryImports, '', allDefinitionCode].join('\n');
 
     fs.writeFileSync(targetFile, newFileContent, 'utf-8');
     console.log(`✓ Created ${targetFile}`);
@@ -384,8 +414,8 @@ async function extractDefinition(options: ExtractOptions) {
     });
 
     // Check if extracted definitions depend on other definitions in the same file
-    const sameFileDependencies = Array.from(localDependencies).filter(dep =>
-        allSourceDefinitions.has(dep) && !definitionNamesSet.has(dep)
+    const sameFileDependencies = Array.from(localDependencies).filter(
+        (dep) => allSourceDefinitions.has(dep) && !definitionNamesSet.has(dep),
     );
 
     // Check which dependencies are NOT exported
@@ -396,7 +426,7 @@ async function extractDefinition(options: ExtractOptions) {
             if (name) exportedNames.add(name);
 
             // Also check for export { a, b } syntax
-            nodePath.node.specifiers.forEach(spec => {
+            nodePath.node.specifiers.forEach((spec) => {
                 if (t.isExportSpecifier(spec) && t.isIdentifier(spec.exported)) {
                     exportedNames.add(spec.exported.name);
                 }
@@ -404,10 +434,12 @@ async function extractDefinition(options: ExtractOptions) {
         },
     });
 
-    const needsExport = sameFileDependencies.filter(dep => !exportedNames.has(dep));
+    const needsExport = sameFileDependencies.filter((dep) => !exportedNames.has(dep));
 
     if (sameFileDependencies.length > 0) {
-        console.log(`⚠️  Warning: Extracted definitions depend on: ${sameFileDependencies.join(', ')}`);
+        console.log(
+            `⚠️  Warning: Extracted definitions depend on: ${sameFileDependencies.join(', ')}`,
+        );
 
         if (needsExport.length > 0) {
             console.log(`   These are not exported: ${needsExport.join(', ')}`);
@@ -416,14 +448,12 @@ async function extractDefinition(options: ExtractOptions) {
 
         // Add imports for same-file dependencies to the new file
         const sourceRelativeImport = getRelativeImportPath(targetFile, sourceFile);
-        necessaryImports.unshift(`import {${sameFileDependencies.join(', ')}} from '${sourceRelativeImport}';`);
+        necessaryImports.unshift(
+            `import {${sameFileDependencies.join(', ')}} from '${sourceRelativeImport}';`,
+        );
 
         // Recreate the new file with updated imports
-        const updatedNewFileContent = [
-            ...necessaryImports,
-            '',
-            allDefinitionCode,
-        ].join('\n');
+        const updatedNewFileContent = [...necessaryImports, '', allDefinitionCode].join('\n');
 
         fs.writeFileSync(targetFile, updatedNewFileContent, 'utf-8');
     }
@@ -440,7 +470,7 @@ async function extractDefinition(options: ExtractOptions) {
 
     // Check if the source file still uses any of the extracted definitions
     const remainingCode = updatedLines.join('\n');
-    const stillUsed = definitionNames.filter(name => {
+    const stillUsed = definitionNames.filter((name) => {
         // Simple check using regex
         const regex = new RegExp(`\\b${name}\\b`);
         return regex.test(remainingCode);
@@ -469,7 +499,12 @@ async function extractDefinition(options: ExtractOptions) {
             FunctionDeclaration(nodePath: NodePath<t.FunctionDeclaration>) {
                 const name = nodePath.node.id?.name;
                 // Only export top-level declarations (parent is Program)
-                if (name && needsExport.includes(name) && nodePath.node.loc && t.isProgram(nodePath.parent)) {
+                if (
+                    name &&
+                    needsExport.includes(name) &&
+                    nodePath.node.loc &&
+                    t.isProgram(nodePath.parent)
+                ) {
                     dependencyDefinitions.push({
                         name,
                         start: nodePath.node.loc.start.line,
@@ -498,7 +533,12 @@ async function extractDefinition(options: ExtractOptions) {
             ClassDeclaration(nodePath: NodePath<t.ClassDeclaration>) {
                 const name = nodePath.node.id?.name;
                 // Only export top-level declarations (parent is Program)
-                if (name && needsExport.includes(name) && nodePath.node.loc && t.isProgram(nodePath.parent)) {
+                if (
+                    name &&
+                    needsExport.includes(name) &&
+                    nodePath.node.loc &&
+                    t.isProgram(nodePath.parent)
+                ) {
                     dependencyDefinitions.push({
                         name,
                         start: nodePath.node.loc.start.line,
@@ -509,7 +549,11 @@ async function extractDefinition(options: ExtractOptions) {
             TSTypeAliasDeclaration(nodePath: NodePath<t.TSTypeAliasDeclaration>) {
                 const name = nodePath.node.id.name;
                 // Only export top-level declarations (parent is Program)
-                if (needsExport.includes(name) && nodePath.node.loc && t.isProgram(nodePath.parent)) {
+                if (
+                    needsExport.includes(name) &&
+                    nodePath.node.loc &&
+                    t.isProgram(nodePath.parent)
+                ) {
                     dependencyDefinitions.push({
                         name,
                         start: nodePath.node.loc.start.line,
@@ -520,7 +564,11 @@ async function extractDefinition(options: ExtractOptions) {
             TSInterfaceDeclaration(nodePath: NodePath<t.TSInterfaceDeclaration>) {
                 const name = nodePath.node.id.name;
                 // Only export top-level declarations (parent is Program)
-                if (needsExport.includes(name) && nodePath.node.loc && t.isProgram(nodePath.parent)) {
+                if (
+                    needsExport.includes(name) &&
+                    nodePath.node.loc &&
+                    t.isProgram(nodePath.parent)
+                ) {
                     dependencyDefinitions.push({
                         name,
                         start: nodePath.node.loc.start.line,
@@ -531,7 +579,11 @@ async function extractDefinition(options: ExtractOptions) {
             TSEnumDeclaration(nodePath: NodePath<t.TSEnumDeclaration>) {
                 const name = nodePath.node.id.name;
                 // Only export top-level declarations (parent is Program)
-                if (needsExport.includes(name) && nodePath.node.loc && t.isProgram(nodePath.parent)) {
+                if (
+                    needsExport.includes(name) &&
+                    nodePath.node.loc &&
+                    t.isProgram(nodePath.parent)
+                ) {
                     dependencyDefinitions.push({
                         name,
                         start: nodePath.node.loc.start.line,
@@ -621,7 +673,10 @@ function findLastImportLine(lines: string[]): number {
         let lastImportLine = 0;
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i].trim();
-            if (line.startsWith('import ') || line.startsWith('export ') && line.includes(' from ')) {
+            if (
+                line.startsWith('import ') ||
+                (line.startsWith('export ') && line.includes(' from '))
+            ) {
                 lastImportLine = i;
             } else if (line && !line.startsWith('//') && !line.startsWith('/*')) {
                 break;
@@ -670,34 +725,67 @@ async function updateAllImports(oldFile: string, newFile: string, definitionName
 
                 if (normalizedSource === normalizedOldFile) {
                     // Check if this import includes any of our definitions
-                    const hasDefinition = nodePath.node.specifiers.some((spec: t.ImportSpecifier | t.ImportDefaultSpecifier | t.ImportNamespaceSpecifier) => {
-                        if (t.isImportSpecifier(spec) && t.isIdentifier(spec.imported)) {
-                            return definitionNamesSet.has(spec.imported.name);
-                        }
-                        if (t.isImportDefaultSpecifier(spec) && definitionNamesSet.has('default')) {
-                            return true;
-                        }
-                        return false;
-                    });
+                    const hasDefinition = nodePath.node.specifiers.some(
+                        (
+                            spec:
+                                | t.ImportSpecifier
+                                | t.ImportDefaultSpecifier
+                                | t.ImportNamespaceSpecifier,
+                        ) => {
+                            if (t.isImportSpecifier(spec) && t.isIdentifier(spec.imported)) {
+                                return definitionNamesSet.has(spec.imported.name);
+                            }
+                            if (
+                                t.isImportDefaultSpecifier(spec) &&
+                                definitionNamesSet.has('default')
+                            ) {
+                                return true;
+                            }
+                            return false;
+                        },
+                    );
 
                     if (hasDefinition) {
                         needsUpdate = true;
                         const specifierNames = nodePath.node.specifiers
-                            .filter((spec: t.ImportSpecifier | t.ImportDefaultSpecifier | t.ImportNamespaceSpecifier) => {
-                                if (t.isImportSpecifier(spec) && t.isIdentifier(spec.imported)) {
-                                    return definitionNamesSet.has(spec.imported.name);
-                                }
-                                if (t.isImportDefaultSpecifier(spec) && definitionNamesSet.has('default')) {
-                                    return true;
-                                }
-                                return false;
-                            })
-                            .map((spec: t.ImportSpecifier | t.ImportDefaultSpecifier | t.ImportNamespaceSpecifier) => {
-                                if (t.isImportSpecifier(spec) && t.isIdentifier(spec.imported)) {
-                                    return spec.imported.name;
-                                }
-                                return 'default';
-                            });
+                            .filter(
+                                (
+                                    spec:
+                                        | t.ImportSpecifier
+                                        | t.ImportDefaultSpecifier
+                                        | t.ImportNamespaceSpecifier,
+                                ) => {
+                                    if (
+                                        t.isImportSpecifier(spec) &&
+                                        t.isIdentifier(spec.imported)
+                                    ) {
+                                        return definitionNamesSet.has(spec.imported.name);
+                                    }
+                                    if (
+                                        t.isImportDefaultSpecifier(spec) &&
+                                        definitionNamesSet.has('default')
+                                    ) {
+                                        return true;
+                                    }
+                                    return false;
+                                },
+                            )
+                            .map(
+                                (
+                                    spec:
+                                        | t.ImportSpecifier
+                                        | t.ImportDefaultSpecifier
+                                        | t.ImportNamespaceSpecifier,
+                                ) => {
+                                    if (
+                                        t.isImportSpecifier(spec) &&
+                                        t.isIdentifier(spec.imported)
+                                    ) {
+                                        return spec.imported.name;
+                                    }
+                                    return 'default';
+                                },
+                            );
 
                         importToUpdate.push({
                             node: nodePath.node,
@@ -715,19 +803,28 @@ async function updateAllImports(oldFile: string, newFile: string, definitionName
             for (const {node, specifiers} of importToUpdate) {
                 if (!node.loc) continue;
 
-                const oldImportLine = lines.slice(node.loc.start.line - 1, node.loc.end.line).join('\n');
-                const otherSpecifiers = node.specifiers.filter((spec: t.ImportSpecifier | t.ImportDefaultSpecifier | t.ImportNamespaceSpecifier) => {
-                    if (t.isImportSpecifier(spec) && t.isIdentifier(spec.imported)) {
-                        return !definitionNamesSet.has(spec.imported.name);
-                    }
-                    if (t.isImportDefaultSpecifier(spec) && definitionNamesSet.has('default')) {
-                        return false;
-                    }
-                    return true;
-                });
+                const oldImportLine = lines
+                    .slice(node.loc.start.line - 1, node.loc.end.line)
+                    .join('\n');
+                const otherSpecifiers = node.specifiers.filter(
+                    (
+                        spec:
+                            | t.ImportSpecifier
+                            | t.ImportDefaultSpecifier
+                            | t.ImportNamespaceSpecifier,
+                    ) => {
+                        if (t.isImportSpecifier(spec) && t.isIdentifier(spec.imported)) {
+                            return !definitionNamesSet.has(spec.imported.name);
+                        }
+                        if (t.isImportDefaultSpecifier(spec) && definitionNamesSet.has('default')) {
+                            return false;
+                        }
+                        return true;
+                    },
+                );
 
                 const newImportPath = getRelativeImportPath(file, newFile);
-                const newImportLine = `import {${specifiers.filter(s => s !== 'default').join(', ')}} from '${newImportPath}';`;
+                const newImportLine = `import {${specifiers.filter((s) => s !== 'default').join(', ')}} from '${newImportPath}';`;
 
                 if (otherSpecifiers.length === 0) {
                     // Replace the entire import
@@ -735,24 +832,36 @@ async function updateAllImports(oldFile: string, newFile: string, definitionName
                 } else {
                     // Keep the old import but remove the extracted definitions, add new import
                     const otherSpecifierNames = otherSpecifiers
-                        .map((spec: t.ImportSpecifier | t.ImportDefaultSpecifier | t.ImportNamespaceSpecifier) => {
-                            if (t.isImportSpecifier(spec) && t.isIdentifier(spec.imported)) {
-                                const imported = spec.imported.name;
-                                const local = spec.local.name;
-                                return imported === local ? imported : `${imported} as ${local}`;
-                            }
-                            if (t.isImportDefaultSpecifier(spec)) {
-                                return spec.local.name;
-                            }
-                            if (t.isImportNamespaceSpecifier(spec)) {
-                                return `* as ${spec.local.name}`;
-                            }
-                            return '';
-                        })
+                        .map(
+                            (
+                                spec:
+                                    | t.ImportSpecifier
+                                    | t.ImportDefaultSpecifier
+                                    | t.ImportNamespaceSpecifier,
+                            ) => {
+                                if (t.isImportSpecifier(spec) && t.isIdentifier(spec.imported)) {
+                                    const imported = spec.imported.name;
+                                    const local = spec.local.name;
+                                    return imported === local
+                                        ? imported
+                                        : `${imported} as ${local}`;
+                                }
+                                if (t.isImportDefaultSpecifier(spec)) {
+                                    return spec.local.name;
+                                }
+                                if (t.isImportNamespaceSpecifier(spec)) {
+                                    return `* as ${spec.local.name}`;
+                                }
+                                return '';
+                            },
+                        )
                         .filter(Boolean);
 
                     const updatedOldImport = `import {${otherSpecifierNames.join(', ')}} from '${node.source.value}';`;
-                    updatedCode = updatedCode.replace(oldImportLine, `${updatedOldImport}\n${newImportLine}`);
+                    updatedCode = updatedCode.replace(
+                        oldImportLine,
+                        `${updatedOldImport}\n${newImportLine}`,
+                    );
                 }
             }
 
@@ -839,7 +948,9 @@ async function moveFile(sourceFile: string, targetFile: string) {
                     needsUpdate = true;
                     if (nodePath.node.loc) {
                         const lines = code.split('\n');
-                        const importLine = lines.slice(nodePath.node.loc.start.line - 1, nodePath.node.loc.end.line).join('\n');
+                        const importLine = lines
+                            .slice(nodePath.node.loc.start.line - 1, nodePath.node.loc.end.line)
+                            .join('\n');
                         importsToUpdate.push({
                             node: nodePath.node,
                             line: importLine,
@@ -860,7 +971,9 @@ async function moveFile(sourceFile: string, targetFile: string) {
                         needsUpdate = true;
                         if (nodePath.node.loc) {
                             const lines = code.split('\n');
-                            const exportLine = lines.slice(nodePath.node.loc.start.line - 1, nodePath.node.loc.end.line).join('\n');
+                            const exportLine = lines
+                                .slice(nodePath.node.loc.start.line - 1, nodePath.node.loc.end.line)
+                                .join('\n');
                             importsToUpdate.push({
                                 node: nodePath.node,
                                 line: exportLine,
@@ -881,7 +994,9 @@ async function moveFile(sourceFile: string, targetFile: string) {
                     needsUpdate = true;
                     if (nodePath.node.loc) {
                         const lines = code.split('\n');
-                        const exportLine = lines.slice(nodePath.node.loc.start.line - 1, nodePath.node.loc.end.line).join('\n');
+                        const exportLine = lines
+                            .slice(nodePath.node.loc.start.line - 1, nodePath.node.loc.end.line)
+                            .join('\n');
                         importsToUpdate.push({
                             node: nodePath.node,
                             line: exportLine,
@@ -898,7 +1013,7 @@ async function moveFile(sourceFile: string, targetFile: string) {
             for (const {node, line} of importsToUpdate) {
                 const newLine = line.replace(
                     new RegExp(`(['"])${escapeRegex(node.source!.value)}\\1`, 'g'),
-                    `$1${newImportPath}$1`
+                    `$1${newImportPath}$1`,
                 );
                 updatedCode = updatedCode.replace(line, newLine);
             }
@@ -925,14 +1040,24 @@ const args = process.argv.slice(2);
 
 if (args.length < 2) {
     console.error('Usage:');
-    console.error('  Extract single:     node extract-definition.ts <source-file> <definition-name> <target-file>');
-    console.error('  Extract multiple:   node extract-definition.ts <source-file> <name1,name2,name3> <target-file>');
+    console.error(
+        '  Extract single:     node extract-definition.ts <source-file> <definition-name> <target-file>',
+    );
+    console.error(
+        '  Extract multiple:   node extract-definition.ts <source-file> <name1,name2,name3> <target-file>',
+    );
     console.error('  Move file:          node extract-definition.ts <source-file> <target-file>');
     console.error('');
     console.error('Examples:');
-    console.error('  Extract single:   node extract-definition.ts src/utils/helpers.ts formatDate src/utils/formatDate.ts');
-    console.error('  Extract multiple: node extract-definition.ts src/utils.ts "formatDate,parseDate" src/utils/dates.ts');
-    console.error('  Move:             node extract-definition.ts src/utils/helpers.ts src/utils/string-helpers.ts');
+    console.error(
+        '  Extract single:   node extract-definition.ts src/utils/helpers.ts formatDate src/utils/formatDate.ts',
+    );
+    console.error(
+        '  Extract multiple: node extract-definition.ts src/utils.ts "formatDate,parseDate" src/utils/dates.ts',
+    );
+    console.error(
+        '  Move:             node extract-definition.ts src/utils/helpers.ts src/utils/string-helpers.ts',
+    );
     process.exit(1);
 }
 
@@ -948,7 +1073,10 @@ if (args.length === 2) {
     const [sourceFile, definitionNamesArg, targetFile] = args;
 
     // Parse comma-separated names
-    const definitionNames = definitionNamesArg.split(',').map(name => name.trim()).filter(Boolean);
+    const definitionNames = definitionNamesArg
+        .split(',')
+        .map((name) => name.trim())
+        .filter(Boolean);
 
     if (definitionNames.length === 0) {
         console.error('Error: No definition names provided.');
@@ -967,9 +1095,12 @@ if (args.length === 2) {
     console.error('Error: Too many arguments provided.');
     console.error('');
     console.error('Usage:');
-    console.error('  Extract single:     node extract-definition.ts <source-file> <definition-name> <target-file>');
-    console.error('  Extract multiple:   node extract-definition.ts <source-file> <name1,name2,name3> <target-file>');
+    console.error(
+        '  Extract single:     node extract-definition.ts <source-file> <definition-name> <target-file>',
+    );
+    console.error(
+        '  Extract multiple:   node extract-definition.ts <source-file> <name1,name2,name3> <target-file>',
+    );
     console.error('  Move file:          node extract-definition.ts <source-file> <target-file>');
     process.exit(1);
 }
-

@@ -430,5 +430,4 @@ function nextForState(
         .map((a) => a.seg);
 }
 
-const roundAlmostPi = (angle: number) =>
-    Math.abs(angle - Math.PI * 2) < epsilon ? 0 : angle;
+const roundAlmostPi = (angle: number) => (Math.abs(angle - Math.PI * 2) < epsilon ? 0 : angle);

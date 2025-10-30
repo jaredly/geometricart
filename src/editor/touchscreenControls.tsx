@@ -1,4 +1,3 @@
-
 import React, {useMemo} from 'react';
 import {PendingMirror} from '../useUIState';
 import {
@@ -14,7 +13,7 @@ import {
     SubtractLineIcon,
     VectorSelectionIcon,
 } from '../icons/Icon';
-import {Action, PathMultiply, } from '../state/Action';
+import {Action, PathMultiply} from '../state/Action';
 import {Coord, Line, State} from '../types';
 import {EditorState, SelectMode} from './Canvas';
 import {PendingDuplication} from './Guides';

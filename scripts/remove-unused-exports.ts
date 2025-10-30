@@ -68,7 +68,7 @@ interface ImportInfo {
     localName: string;
     filePath: string;
     importedFrom: string;
-    resolvedPath: string ;
+    resolvedPath: string;
     isTypeOnly: boolean;
 }
 
@@ -117,9 +117,9 @@ function resolveImportPath(importPath: string, fromFile: string): string | null 
         }
     }
 
-                    if (importPath.startsWith('.')) {
-                        console.warn(`Unable to resolve ${importPath} from ${fromFile}`)
-                    }
+    if (importPath.startsWith('.')) {
+        console.warn(`Unable to resolve ${importPath} from ${fromFile}`);
+    }
 
     return null;
 }
@@ -151,8 +151,8 @@ function extractExports(filePath: string): ExportInfo[] {
                             const exportedName = t.isIdentifier(spec.exported)
                                 ? spec.exported.name
                                 : t.isStringLiteral(spec.exported)
-                                    ? spec.exported.value
-                                    : 'unknown';
+                                  ? spec.exported.value
+                                  : 'unknown';
                             const localName = spec.local.name;
 
                             exports.push({
@@ -176,8 +176,8 @@ function extractExports(filePath: string): ExportInfo[] {
                             const exportedName = t.isIdentifier(spec.exported)
                                 ? spec.exported.name
                                 : t.isStringLiteral(spec.exported)
-                                    ? spec.exported.value
-                                    : 'unknown';
+                                  ? spec.exported.value
+                                  : 'unknown';
 
                             exports.push({
                                 name: exportedName,
@@ -344,7 +344,7 @@ function extractImports(filePath: string): ImportInfo[] {
                 const importPath = node.source.value;
                 const resolvedPath = resolveImportPath(importPath, filePath);
                 if (!resolvedPath) {
-                    return
+                    return;
                 }
                 const isTypeOnly = node.importKind === 'type';
 
@@ -391,7 +391,7 @@ function extractImports(filePath: string): ImportInfo[] {
                     if (t.isStringLiteral(arg)) {
                         const importPath = arg.value;
                         const resolvedPath = resolveImportPath(importPath, filePath);
-                        if (!resolvedPath) return
+                        if (!resolvedPath) return;
                         // Dynamic imports import the entire module
                         imports.push({
                             importedName: '*',
@@ -411,12 +411,12 @@ function extractImports(filePath: string): ImportInfo[] {
                 if (node.source) {
                     const importPath = node.source.value;
                     const resolvedPath = resolveImportPath(importPath, filePath);
-                        if (!resolvedPath) return
+                    if (!resolvedPath) return;
                     const isTypeOnly = node.exportKind === 'type';
 
                     node.specifiers.forEach((spec) => {
                         if (t.isExportSpecifier(spec)) {
-                            const importedName = spec.local.name
+                            const importedName = spec.local.name;
                             imports.push({
                                 importedName,
                                 localName: importedName,
@@ -435,7 +435,7 @@ function extractImports(filePath: string): ImportInfo[] {
                 const node = nodePath.node;
                 const importPath = node.source.value;
                 const resolvedPath = resolveImportPath(importPath, filePath);
-                        if (!resolvedPath) return
+                if (!resolvedPath) return;
 
                 imports.push({
                     importedName: '*',
@@ -482,7 +482,7 @@ async function analyzeProject(options: Options): Promise<AnalysisResult> {
     // Extract all exports and imports
     const exportsMap = new Map<string, ExportInfo[]>();
     const resolvedImports: Record<string, string[]> = {};
-    const allImports: ImportInfo[] = []
+    const allImports: ImportInfo[] = [];
 
     for (const file of files) {
         const exports = extractExports(file);
@@ -491,39 +491,43 @@ async function analyzeProject(options: Options): Promise<AnalysisResult> {
         }
 
         const imports = extractImports(file);
-        imports.forEach(imp => {
+        imports.forEach((imp) => {
             if (!resolvedImports[imp.resolvedPath]) {
-                resolvedImports[imp.resolvedPath] = []
+                resolvedImports[imp.resolvedPath] = [];
             }
             if (!resolvedImports[imp.resolvedPath].includes(imp.importedName)) {
-                resolvedImports[imp.resolvedPath].push(imp.importedName)
+                resolvedImports[imp.resolvedPath].push(imp.importedName);
             }
-        })
-        allImports.push(...imports)
+        });
+        allImports.push(...imports);
     }
 
     // Determine entry points
-    const defaultEntryPoints = [
-        'src/index.ts',
-        'src/run.tsx',
-    ].map(p => path.resolve(projectRoot, p));
+    const defaultEntryPoints = ['src/index.ts', 'src/run.tsx'].map((p) =>
+        path.resolve(projectRoot, p),
+    );
 
     const entryPointPatterns = [
         ...defaultEntryPoints,
-        ...options.entryPoints.map(p => path.resolve(projectRoot, p)),
+        ...options.entryPoints.map((p) => path.resolve(projectRoot, p)),
     ];
 
     const entryPointFiles = new Set<string>();
     for (const file of files) {
         // Check if file matches any entry point pattern
-        if (entryPointPatterns.some(pattern => file === pattern || file.includes('client.tsx') || file.includes('server.tsx'))) {
+        if (
+            entryPointPatterns.some(
+                (pattern) =>
+                    file === pattern || file.includes('client.tsx') || file.includes('server.tsx'),
+            )
+        ) {
             entryPointFiles.add(file);
         }
     }
 
     if (options.verbose) {
         console.log('Entry points:');
-        entryPointFiles.forEach(f => console.log(`  - ${path.relative(projectRoot, f)}`));
+        entryPointFiles.forEach((f) => console.log(`  - ${path.relative(projectRoot, f)}`));
         console.log('');
     }
 
@@ -537,11 +541,11 @@ async function analyzeProject(options: Options): Promise<AnalysisResult> {
         }
 
         // Don't mess with react-router routes
-        if (filePath.includes('/routes/') && exports.some(e =>e.name === 'loader')) {
-            continue
+        if (filePath.includes('/routes/') && exports.some((e) => e.name === 'loader')) {
+            continue;
         }
 
-        const importedNames = resolvedImports[filePath] ?? []
+        const importedNames = resolvedImports[filePath] ?? [];
 
         for (const exp of exports) {
             // Skip re-export-all
@@ -591,8 +595,8 @@ function removeExport(exportInfo: ExportInfo): boolean {
                             const exportedName = t.isIdentifier(spec.exported)
                                 ? spec.exported.name
                                 : t.isStringLiteral(spec.exported)
-                                    ? spec.exported.value
-                                    : 'unknown';
+                                  ? spec.exported.value
+                                  : 'unknown';
                             return exportedName !== exportInfo.name;
                         }
                         return true;
@@ -625,19 +629,23 @@ function removeExport(exportInfo: ExportInfo): boolean {
                         // Regenerate the export statement with only the kept items
                         if (node.start != null && node.end != null) {
                             // Get the names to keep
-                            const keptNames = specifiersToKeep.map((spec) => {
-                                if (t.isExportSpecifier(spec)) {
-                                    // In ExportSpecifier, local is always an Identifier
-                                    const local = spec.local.name;
-                                    // exported can be Identifier or StringLiteral (for string exports like "default")
-                                    const exported = t.isIdentifier(spec.exported)
-                                        ? spec.exported.name
-                                        : spec.exported.value;
-                                    // If local and exported are different, use "local as exported"
-                                    return local === exported ? local : `${local} as ${exported}`;
-                                }
-                                return '';
-                            }).filter(Boolean);
+                            const keptNames = specifiersToKeep
+                                .map((spec) => {
+                                    if (t.isExportSpecifier(spec)) {
+                                        // In ExportSpecifier, local is always an Identifier
+                                        const local = spec.local.name;
+                                        // exported can be Identifier or StringLiteral (for string exports like "default")
+                                        const exported = t.isIdentifier(spec.exported)
+                                            ? spec.exported.name
+                                            : spec.exported.value;
+                                        // If local and exported are different, use "local as exported"
+                                        return local === exported
+                                            ? local
+                                            : `${local} as ${exported}`;
+                                    }
+                                    return '';
+                                })
+                                .filter(Boolean);
 
                             // Check if this is a re-export (has a 'from' clause)
                             const fromClause = node.source ? ` from '${node.source.value}'` : '';
@@ -648,7 +656,7 @@ function removeExport(exportInfo: ExportInfo): boolean {
                             modifications.push({
                                 start: node.start,
                                 end: node.end,
-                                replacement
+                                replacement,
                             });
                             modified = true;
                         }
@@ -662,9 +670,15 @@ function removeExport(exportInfo: ExportInfo): boolean {
                 // For declarations, just remove the "export " keyword
                 let shouldRemoveExport = false;
 
-                if (t.isFunctionDeclaration(declaration) && declaration.id?.name === exportInfo.name) {
+                if (
+                    t.isFunctionDeclaration(declaration) &&
+                    declaration.id?.name === exportInfo.name
+                ) {
                     shouldRemoveExport = true;
-                } else if (t.isClassDeclaration(declaration) && declaration.id?.name === exportInfo.name) {
+                } else if (
+                    t.isClassDeclaration(declaration) &&
+                    declaration.id?.name === exportInfo.name
+                ) {
                     shouldRemoveExport = true;
                 } else if (t.isVariableDeclaration(declaration)) {
                     // For variable declarations with multiple declarators, check if this one matches
@@ -685,11 +699,20 @@ function removeExport(exportInfo: ExportInfo): boolean {
                             shouldRemoveExport = true;
                         }
                     }
-                } else if (t.isTSTypeAliasDeclaration(declaration) && declaration.id.name === exportInfo.name) {
+                } else if (
+                    t.isTSTypeAliasDeclaration(declaration) &&
+                    declaration.id.name === exportInfo.name
+                ) {
                     shouldRemoveExport = true;
-                } else if (t.isTSInterfaceDeclaration(declaration) && declaration.id.name === exportInfo.name) {
+                } else if (
+                    t.isTSInterfaceDeclaration(declaration) &&
+                    declaration.id.name === exportInfo.name
+                ) {
                     shouldRemoveExport = true;
-                } else if (t.isTSEnumDeclaration(declaration) && declaration.id.name === exportInfo.name) {
+                } else if (
+                    t.isTSEnumDeclaration(declaration) &&
+                    declaration.id.name === exportInfo.name
+                ) {
                     shouldRemoveExport = true;
                 }
 
@@ -698,27 +721,33 @@ function removeExport(exportInfo: ExportInfo): boolean {
                     modifications.push({
                         start: node.start,
                         end: declaration.start,
-                        replacement: ''
+                        replacement: '',
                     });
                     modified = true;
                 }
             },
 
             ExportDefaultDeclaration(nodePath: NodePath<t.ExportDefaultDeclaration>) {
-                if (exportInfo.exportType === 'default' && nodePath.node.start != null && nodePath.node.end != null) {
+                if (
+                    exportInfo.exportType === 'default' &&
+                    nodePath.node.start != null &&
+                    nodePath.node.end != null
+                ) {
                     const node = nodePath.node;
                     const declaration = node.declaration;
 
                     // For default exports, we need to handle them specially
                     // If it's a named declaration, keep it but remove "export default"
-                    if ((t.isFunctionDeclaration(declaration) && declaration.id) ||
-                        (t.isClassDeclaration(declaration) && declaration.id)) {
+                    if (
+                        (t.isFunctionDeclaration(declaration) && declaration.id) ||
+                        (t.isClassDeclaration(declaration) && declaration.id)
+                    ) {
                         // Remove "export default " and keep the declaration
                         if (declaration.start != null && node.start != null) {
                             modifications.push({
                                 start: node.start,
                                 end: declaration.start,
-                                replacement: ''
+                                replacement: '',
                             });
                             modified = true;
                         }
@@ -755,7 +784,8 @@ function removeExport(exportInfo: ExportInfo): boolean {
 
             let newCode = code;
             for (const mod of modifications) {
-                newCode = newCode.substring(0, mod.start) + mod.replacement + newCode.substring(mod.end);
+                newCode =
+                    newCode.substring(0, mod.start) + mod.replacement + newCode.substring(mod.end);
             }
 
             fs.writeFileSync(exportInfo.filePath, newCode, 'utf-8');
@@ -787,13 +817,13 @@ async function main() {
     // Parse entry points
     const entryIndex = args.indexOf('--entry');
     if (entryIndex !== -1 && args[entryIndex + 1]) {
-        options.entryPoints = args[entryIndex + 1].split(',').map(s => s.trim());
+        options.entryPoints = args[entryIndex + 1].split(',').map((s) => s.trim());
     }
 
     // Parse ignore patterns
     const ignoreIndex = args.indexOf('--ignore');
     if (ignoreIndex !== -1 && args[ignoreIndex + 1]) {
-        options.ignore = args[ignoreIndex + 1].split(',').map(s => s.trim());
+        options.ignore = args[ignoreIndex + 1].split(',').map((s) => s.trim());
     }
 
     if (!options.json) {
@@ -803,8 +833,8 @@ async function main() {
     const result = await analyzeProject(options);
 
     if (options.json) {
-        fs.writeFileSync('./unused-exports.json', JSON.stringify(result, null, 2))
-        console.log(`Written to ./unused-exports.json`)
+        fs.writeFileSync('./unused-exports.json', JSON.stringify(result, null, 2));
+        console.log(`Written to ./unused-exports.json`);
         return;
     }
 
@@ -821,7 +851,9 @@ async function main() {
 
     console.log(`📊 Analysis Results:`);
     console.log(`   Total files: ${result.exports.size}`);
-    console.log(`   Total exports: ${Array.from(result.exports.values()).reduce((sum, arr) => sum + arr.length, 0)}`);
+    console.log(
+        `   Total exports: ${Array.from(result.exports.values()).reduce((sum, arr) => sum + arr.length, 0)}`,
+    );
     console.log(`   Total imports: ${result.imports.length}`);
     console.log(`   Unused exports: ${result.unusedExports.length}`);
     console.log('');
@@ -840,7 +872,9 @@ async function main() {
         for (const exp of exports) {
             const typeLabel = exp.isTypeOnly ? ' [type]' : '';
             const exportTypeLabel = exp.exportType === 'default' ? 'default' : 'named';
-            console.log(`   - ${exp.name} (${exp.kind}, ${exportTypeLabel}${typeLabel}) at line ${exp.line}`);
+            console.log(
+                `   - ${exp.name} (${exp.kind}, ${exportTypeLabel}${typeLabel}) at line ${exp.line}`,
+            );
 
             if (options.verbose) {
                 console.log(`     ${exp.code.split('\n')[0]}`);
@@ -871,7 +905,9 @@ async function main() {
             }
         }
 
-        console.log(`\n✅ Completed: ${successCount} export keywords removed, ${errorCount} errors`);
+        console.log(
+            `\n✅ Completed: ${successCount} export keywords removed, ${errorCount} errors`,
+        );
     } else {
         console.log('💡 Tip: Run with --fix to automatically remove unused export keywords');
         console.log('   Example: bun scripts/remove-unused-exports.ts --fix');
@@ -880,14 +916,9 @@ async function main() {
 }
 
 // Export for testing
-export {
-    extractExports,
-    extractImports,
-    resolveImportPath,
-    removeExport,
-};
+export {extractExports, extractImports, resolveImportPath, removeExport};
 
-export { ExportInfo };
+export {ExportInfo};
 
 // Only run main if this is the entry point (not when imported)
 if (typeof require !== 'undefined' && require.main === module) {
@@ -896,4 +927,3 @@ if (typeof require !== 'undefined' && require.main === module) {
         process.exit(1);
     });
 }
-

@@ -175,10 +175,7 @@ const guideAgain = (kind: GuideGeom['type'], state: State, shiftKey?: boolean): 
     };
 };
 
-const reduceWithoutUndo = (
-    state: State,
-    action: UndoableAction,
-): [State, UndoAction | null] => {
+const reduceWithoutUndo = (state: State, action: UndoableAction): [State, UndoAction | null] => {
     // console.log('🤔 an action', action);
     switch (action.type) {
         case 'mirror:change':

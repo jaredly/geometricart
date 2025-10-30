@@ -4,7 +4,7 @@ import {angleTo, dist, Matrix} from './rendering/getMirrorTransforms';
 import {CompassState} from './editor/compassAndRuler';
 import {angleBetween} from './rendering/isAngleBetween';
 import {closeEnough} from './rendering/epsilonToZero';
-import {findCommonFractions, } from './routes/getPatternData';
+import {findCommonFractions} from './routes/getPatternData';
 
 // Should I do polar coords?
 export type Coord = {x: number; y: number};

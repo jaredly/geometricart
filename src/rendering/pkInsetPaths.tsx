@@ -199,12 +199,7 @@ export type PKInsetCache = {
     };
 };
 
-const pkPathToInsetPaths = (
-    PK: PathKit,
-    pkp: PKPath,
-    path: Path,
-    insetCache: PKInsetCache,
-) => {
+const pkPathToInsetPaths = (PK: PathKit, pkp: PKPath, path: Path, insetCache: PKInsetCache) => {
     // console.log('hm to inset paths');
     const res = pathToSingles(path).map(([path, inset]) => {
         if (!inset || Math.abs(inset) < 0.005) {

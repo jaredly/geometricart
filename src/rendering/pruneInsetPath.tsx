@@ -41,10 +41,7 @@ if you get to an intersection where switching /isn't/ better, then you bail, and
 
 */
 
-const pruneInsetPath = (
-    segments: Array<Segment>,
-    debug?: boolean,
-): Array<Array<Segment>> => {
+const pruneInsetPath = (segments: Array<Segment>, debug?: boolean): Array<Array<Segment>> => {
     if (!segments.length) {
         return [];
     }

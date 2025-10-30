@@ -65,7 +65,6 @@ and it's called from e.g. sp_selected_path_do_offset in https://gitlab.com/inksc
 
 */
 
-
 // // MUST BE CLOCKWISE. this is signed
 // export const signedDistanceToSegment = (
 //     prev: Coord,

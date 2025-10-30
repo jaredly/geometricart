@@ -1,5 +1,3 @@
-
-
 // @ts-ignore
 window.____SHOW = (what) => {
     console.warn('OK', what);

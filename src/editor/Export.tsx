@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {BlurInt, Text, Toggle} from './Forms';
 import {transparent} from './Icons';

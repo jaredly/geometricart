@@ -1,4 +1,3 @@
-
 import {encodeChunks, extractChunks, insertMetadata} from 'png-metadata';
 import React from 'react';
 import {canvasRender, paletteImages} from '../rendering/CanvasRender';

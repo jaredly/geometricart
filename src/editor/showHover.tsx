@@ -1,11 +1,7 @@
-
 import * as React from 'react';
 import {geomsForGiude} from '../rendering/calculateGuideElements';
-import {
-    getTransformsForNewMirror,
-    Matrix,
-} from '../rendering/getMirrorTransforms';
-import {geomToPrimitives, } from '../rendering/points';
+import {getTransformsForNewMirror, Matrix} from '../rendering/getMirrorTransforms';
+import {geomToPrimitives} from '../rendering/points';
 import {Mirror, State} from '../types';
 import {Bounds} from './Bounds';
 import {RenderMirror} from './RenderMirror';
@@ -13,7 +9,7 @@ import {emptyPath, UnderlinePath} from './RenderPath';
 import {RenderPrimitive} from './RenderPrimitive';
 import {Hover} from './Sidebar';
 import {eigenShapesToLines, tilingPoints} from './tilingPoints';
-import {calcPathD, } from './calcPathD';
+import {calcPathD} from './calcPathD';
 
 export const showHover = (
     key: string,

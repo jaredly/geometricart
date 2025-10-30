@@ -1,5 +1,5 @@
 import React from 'react';
-import {State, } from '../types';
+import {State} from '../types';
 import {EditorState, screenToWorld} from './Canvas';
 
 export function useScrollWheel(

@@ -1,5 +1,3 @@
-
-
 export function RenderFunctionDocumentation({
     values,
     index,
@@ -54,17 +52,15 @@ export function RenderFunctionDocumentation({
                                         {arg.name}
                                     </td>
                                     <td>
-                                        {arg.comment ? (
-                                            // <ReactMarkdown
-                                            //     children={arg.comment}
-                                            //     remarkPlugins={[remarkMath]}
-                                            //     rehypePlugins={[rehypeKatex]}
-                                            //     className="md"
-                                            // />
-                                            null
-                                        ) : (
-                                            'No documentation'
-                                        )}
+                                        {arg.comment
+                                            ? // <ReactMarkdown
+                                              //     children={arg.comment}
+                                              //     remarkPlugins={[remarkMath]}
+                                              //     rehypePlugins={[rehypeKatex]}
+                                              //     className="md"
+                                              // />
+                                              null
+                                            : 'No documentation'}
                                     </td>
                                 </tr>
                             ))}

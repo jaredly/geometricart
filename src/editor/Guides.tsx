@@ -1,4 +1,3 @@
-
 import React, {useRef} from 'react';
 import {useCurrent} from '../useCurrent';
 import {PendingMirror, UIState} from '../useUIState';

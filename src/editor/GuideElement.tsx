@@ -1,4 +1,3 @@
-
 import {angleTo, dist, push, scale} from '../rendering/getMirrorTransforms';
 import {GuideGeom} from '../types';
 import {lineToSlope, SlopeIntercept} from '../rendering/intersect';

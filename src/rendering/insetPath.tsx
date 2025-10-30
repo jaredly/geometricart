@@ -1,5 +1,5 @@
 import {Coord, Segment} from '../types';
-import {isClockwise, reversePath, } from './pathToPoints';
+import {isClockwise, reversePath} from './pathToPoints';
 import {angleTo} from './getMirrorTransforms';
 import {HitLocation} from './clipPath';
 import {closeEnough} from './epsilonToZero';

@@ -2,12 +2,7 @@ import * as React from 'react';
 import {calcSegmentsD} from '../editor/calcPathD';
 import {Segment} from '../types';
 import {register} from '../vest';
-import {
-    collectRegions,
-    getSomeHits,
-    prevSegmentsToShape,
-    SegmentWithPrev,
-} from './clipPathNew';
+import {collectRegions, getSomeHits, prevSegmentsToShape, SegmentWithPrev} from './clipPathNew';
 import {angleTo, dist, push} from './getMirrorTransforms';
 import {coordsEqual} from './pathsAreIdentical';
 import {isClockwise} from './pathToPoints';
@@ -23,13 +18,7 @@ type Output = Array<{
 
 const empty: Input = [[], []];
 
-const Editor = ({
-    initial,
-    onChange,
-}: {
-    initial: Input | null;
-    onChange: (i: Input) => void;
-}) => {
+const Editor = ({initial, onChange}: {initial: Input | null; onChange: (i: Input) => void}) => {
     const [current, setCurrent] = useInitialState(initial || empty);
     const [first, setFirst] = React.useState(true);
     const [showShapes, setShowShapes] = React.useState(true);

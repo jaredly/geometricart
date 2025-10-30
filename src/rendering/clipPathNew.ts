@@ -20,11 +20,7 @@ import {
     untangleHit,
 } from './untangleHit';
 
-function addPrevsToSegments(
-    segments: Segment[],
-    shape: number,
-    start?: Coord,
-): SegmentWithPrev[] {
+function addPrevsToSegments(segments: Segment[], shape: number, start?: Coord): SegmentWithPrev[] {
     return segments.map((s, i) => ({
         shape,
         prev: i === 0 ? (start ?? segments[segments.length - 1].to) : segments[i - 1].to,

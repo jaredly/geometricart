@@ -1,4 +1,3 @@
-
 import React, {useEffect, useState} from 'react';
 import {Action, PathCreateMany} from '../state/Action';
 import {PendingMirror, UIState} from '../useUIState';
@@ -47,11 +46,7 @@ import {angleBetween} from '../rendering/isAngleBetween';
 import {negPiToPi} from '../rendering/epsilonToZero';
 import {closeEnough} from '../rendering/epsilonToZero';
 import {simpleExport} from './handleTiling';
-import {
-    angleDifferences,
-    isClockwisePoints,
-    pointsAngles,
-} from '../rendering/pathToPoints';
+import {angleDifferences, isClockwisePoints, pointsAngles} from '../rendering/pathToPoints';
 
 type Props = {
     state: State;

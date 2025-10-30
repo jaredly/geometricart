@@ -15,13 +15,10 @@ const TEST_DIR = path.resolve(__dirname, '../test-fixtures/extract-definition');
 // Helper function to run the extract-definition script
 function runExtractDefinition(args: string[]): {stdout: string; stderr: string; exitCode: number} {
     try {
-        const result = execSync(
-            `bun ${SCRIPT_PATH} ${args.join(' ')}`,
-            {
-                cwd: TEST_DIR,
-                encoding: 'utf-8',
-            }
-        );
+        const result = execSync(`bun ${SCRIPT_PATH} ${args.join(' ')}`, {
+            cwd: TEST_DIR,
+            encoding: 'utf-8',
+        });
         return {stdout: result, stderr: '', exitCode: 0};
     } catch (error: any) {
         return {
@@ -71,7 +68,9 @@ describe('extract-definition', () => {
 
     describe('Single Definition Extraction', () => {
         it('should extract a single function to a new file', () => {
-            createTestFile('utils.ts', `
+            createTestFile(
+                'utils.ts',
+                `
 export function formatDate(date: Date): string {
     return date.toISOString();
 }
@@ -79,7 +78,8 @@ export function formatDate(date: Date): string {
 export function parseDate(str: string): Date {
     return new Date(str);
 }
-`);
+`,
+            );
 
             const result = runExtractDefinition(['utils.ts', 'formatDate', 'formatDate.ts']);
 
@@ -97,7 +97,9 @@ export function parseDate(str: string): Date {
         });
 
         it('should extract a type definition to a new file', () => {
-            createTestFile('types.ts', `
+            createTestFile(
+                'types.ts',
+                `
 export type User = {
     id: string;
     name: string;
@@ -107,7 +109,8 @@ export type Post = {
     id: string;
     title: string;
 };
-`);
+`,
+            );
 
             const result = runExtractDefinition(['types.ts', 'User', 'User.ts']);
 
@@ -120,7 +123,9 @@ export type Post = {
         });
 
         it('should extract an interface to a new file', () => {
-            createTestFile('interfaces.ts', `
+            createTestFile(
+                'interfaces.ts',
+                `
 export interface Config {
     apiUrl: string;
     timeout: number;
@@ -129,7 +134,8 @@ export interface Config {
 export interface Theme {
     primaryColor: string;
 }
-`);
+`,
+            );
 
             const result = runExtractDefinition(['interfaces.ts', 'Config', 'Config.ts']);
 
@@ -139,12 +145,15 @@ export interface Theme {
         });
 
         it('should extract a const with its dependencies', () => {
-            createTestFile('constants.ts', `
+            createTestFile(
+                'constants.ts',
+                `
 const PREFIX = 'app';
 
 export const API_KEY = \`\${PREFIX}_key\`;
 export const API_SECRET = 'secret';
-`);
+`,
+            );
 
             const result = runExtractDefinition(['constants.ts', 'API_KEY', 'apiKey.ts']);
 
@@ -158,7 +167,9 @@ export const API_SECRET = 'secret';
 
     describe('Multiple Definition Extraction', () => {
         it('should extract multiple functions to a single file', () => {
-            createTestFile('utils.ts', `
+            createTestFile(
+                'utils.ts',
+                `
 export function formatDate(date: Date): string {
     return date.toISOString();
 }
@@ -174,9 +185,14 @@ export function isValidDate(date: any): boolean {
 export function unrelatedFunction() {
     return 'stay here';
 }
-`);
+`,
+            );
 
-            const result = runExtractDefinition(['utils.ts', 'formatDate,parseDate,isValidDate', 'dates.ts']);
+            const result = runExtractDefinition([
+                'utils.ts',
+                'formatDate,parseDate,isValidDate',
+                'dates.ts',
+            ]);
 
             expect(result.exitCode).toBe(0);
             expect(testFileExists('dates.ts')).toBe(true);
@@ -196,14 +212,21 @@ export function unrelatedFunction() {
         });
 
         it('should extract multiple types to a single file', () => {
-            createTestFile('types.ts', `
+            createTestFile(
+                'types.ts',
+                `
 export type User = {id: string; name: string};
 export type UserRole = 'admin' | 'user';
 export type UserPermissions = string[];
 export type Post = {id: string; title: string};
-`);
+`,
+            );
 
-            const result = runExtractDefinition(['types.ts', 'User,UserRole,UserPermissions', 'user.ts']);
+            const result = runExtractDefinition([
+                'types.ts',
+                'User,UserRole,UserPermissions',
+                'user.ts',
+            ]);
 
             expect(result.exitCode).toBe(0);
             const newFile = readTestFile('user.ts');
@@ -214,14 +237,17 @@ export type Post = {id: string; title: string};
         });
 
         it('should handle mixed types and interfaces', () => {
-            createTestFile('definitions.ts', `
+            createTestFile(
+                'definitions.ts',
+                `
 export type UserId = string;
 export interface User {
     id: UserId;
     name: string;
 }
 export const DEFAULT_USER: User = {id: '1', name: 'Default'};
-`);
+`,
+            );
 
             const result = runExtractDefinition(['definitions.ts', 'UserId,User', 'user-types.ts']);
 
@@ -234,19 +260,25 @@ export const DEFAULT_USER: User = {id: '1', name: 'Default'};
 
     describe('Import Updates', () => {
         it('should update imports in other files', () => {
-            createTestFile('utils.ts', `
+            createTestFile(
+                'utils.ts',
+                `
 export function formatDate(date: Date): string {
     return date.toISOString();
 }
-`);
+`,
+            );
 
-            createTestFile('consumer.ts', `
+            createTestFile(
+                'consumer.ts',
+                `
 import {formatDate} from './utils';
 
 export function useDate() {
     return formatDate(new Date());
 }
-`);
+`,
+            );
 
             const result = runExtractDefinition(['utils.ts', 'formatDate', 'formatDate.ts']);
 
@@ -258,7 +290,9 @@ export function useDate() {
         });
 
         it('should handle multiple imports from the same file', () => {
-            createTestFile('utils.ts', `
+            createTestFile(
+                'utils.ts',
+                `
 export function formatDate(date: Date): string {
     return date.toISOString();
 }
@@ -266,9 +300,12 @@ export function formatDate(date: Date): string {
 export function parseDate(str: string): Date {
     return new Date(str);
 }
-`);
+`,
+            );
 
-            createTestFile('consumer.ts', `
+            createTestFile(
+                'consumer.ts',
+                `
 import {formatDate, parseDate} from './utils';
 
 export function useDate() {
@@ -277,7 +314,8 @@ export function useDate() {
         parse: parseDate('2024-01-01')
     };
 }
-`);
+`,
+            );
 
             const result = runExtractDefinition(['utils.ts', 'formatDate', 'formatDate.ts']);
 
@@ -289,19 +327,25 @@ export function useDate() {
         });
 
         it('should update nested directory imports', () => {
-            createTestFile('src/utils.ts', `
+            createTestFile(
+                'src/utils.ts',
+                `
 export function helper() {
     return 'help';
 }
-`);
+`,
+            );
 
-            createTestFile('src/components/Component.tsx', `
+            createTestFile(
+                'src/components/Component.tsx',
+                `
 import {helper} from '../utils';
 
 export function Component() {
     return helper();
 }
-`);
+`,
+            );
 
             const result = runExtractDefinition(['src/utils.ts', 'helper', 'src/helper.ts']);
 
@@ -314,7 +358,9 @@ export function Component() {
 
     describe('File Moving', () => {
         it('should move an entire file to a new location', () => {
-            createTestFile('utils.ts', `
+            createTestFile(
+                'utils.ts',
+                `
 export function formatDate(date: Date): string {
     return date.toISOString();
 }
@@ -322,7 +368,8 @@ export function formatDate(date: Date): string {
 export function parseDate(str: string): Date {
     return new Date(str);
 }
-`);
+`,
+            );
 
             const result = runExtractDefinition(['utils.ts', 'date-utils.ts']);
 
@@ -336,19 +383,25 @@ export function parseDate(str: string): Date {
         });
 
         it('should update imports when moving a file', () => {
-            createTestFile('utils.ts', `
+            createTestFile(
+                'utils.ts',
+                `
 export function helper() {
     return 'help';
 }
-`);
+`,
+            );
 
-            createTestFile('consumer.ts', `
+            createTestFile(
+                'consumer.ts',
+                `
 import {helper} from './utils';
 
 export function use() {
     return helper();
 }
-`);
+`,
+            );
 
             const result = runExtractDefinition(['utils.ts', 'helpers.ts']);
 
@@ -361,11 +414,14 @@ export function use() {
 
     describe('Error Handling', () => {
         it('should error when definition is not found', () => {
-            createTestFile('utils.ts', `
+            createTestFile(
+                'utils.ts',
+                `
 export function formatDate(date: Date): string {
     return date.toISOString();
 }
-`);
+`,
+            );
 
             const result = runExtractDefinition(['utils.ts', 'nonExistent', 'output.ts']);
 
@@ -374,11 +430,14 @@ export function formatDate(date: Date): string {
         });
 
         it('should error when extracting to an existing file', () => {
-            createTestFile('utils.ts', `
+            createTestFile(
+                'utils.ts',
+                `
 export function formatDate(date: Date): string {
     return date.toISOString();
 }
-`);
+`,
+            );
 
             createTestFile('formatDate.ts', 'existing content');
 
@@ -395,13 +454,20 @@ export function formatDate(date: Date): string {
         });
 
         it('should error when multiple definitions requested but one is missing', () => {
-            createTestFile('utils.ts', `
+            createTestFile(
+                'utils.ts',
+                `
 export function formatDate(date: Date): string {
     return date.toISOString();
 }
-`);
+`,
+            );
 
-            const result = runExtractDefinition(['utils.ts', 'formatDate,nonExistent', 'output.ts']);
+            const result = runExtractDefinition([
+                'utils.ts',
+                'formatDate,nonExistent',
+                'output.ts',
+            ]);
 
             expect(result.exitCode).not.toBe(0);
             expect(result.stderr).toContain('not found');
@@ -410,18 +476,24 @@ export function formatDate(date: Date): string {
 
     describe('Edge Cases', () => {
         it('should handle functions with complex imports', () => {
-            createTestFile('utils.ts', `
+            createTestFile(
+                'utils.ts',
+                `
 import {format} from 'date-fns';
 import type {Options} from './options';
 
 export function formatDate(date: Date, options: Options): string {
     return format(date, 'yyyy-MM-dd');
 }
-`);
+`,
+            );
 
-            createTestFile('options.ts', `
+            createTestFile(
+                'options.ts',
+                `
 export type Options = {locale?: string};
-`);
+`,
+            );
 
             const result = runExtractDefinition(['utils.ts', 'formatDate', 'formatDate.ts']);
 
@@ -433,7 +505,9 @@ export type Options = {locale?: string};
         });
 
         it('should handle React components', () => {
-            createTestFile('Button.tsx', `
+            createTestFile(
+                'Button.tsx',
+                `
 import React from 'react';
 
 export type ButtonProps = {
@@ -444,7 +518,8 @@ export type ButtonProps = {
 export const Button: React.FC<ButtonProps> = ({label, onClick}) => {
     return <button onClick={onClick}>{label}</button>;
 };
-`);
+`,
+            );
 
             const result = runExtractDefinition(['Button.tsx', 'ButtonProps', 'ButtonProps.ts']);
 
@@ -460,7 +535,9 @@ export const Button: React.FC<ButtonProps> = ({label, onClick}) => {
         });
 
         it('should automatically change .ts to .tsx when extracting JSX code', () => {
-            createTestFile('components.tsx', `
+            createTestFile(
+                'components.tsx',
+                `
 export const Greeting = ({name}: {name: string}) => {
     return <div>Hello {name}</div>;
 };
@@ -468,7 +545,8 @@ export const Greeting = ({name}: {name: string}) => {
 export const SimpleFunction = () => {
     return Greeting({name: 'World'});
 };
-`);
+`,
+            );
 
             // User specifies .ts but code has JSX
             const result = runExtractDefinition(['components.tsx', 'Greeting', 'Greeting.ts']);
@@ -488,13 +566,16 @@ export const SimpleFunction = () => {
         });
 
         it('should keep .ts extension when no JSX present', () => {
-            createTestFile('utils.ts', `
+            createTestFile(
+                'utils.ts',
+                `
 export const formatName = (name: string) => {
     return name.toUpperCase();
 };
 
 export const otherUtil = () => 'test';
-`);
+`,
+            );
 
             const result = runExtractDefinition(['utils.ts', 'formatName', 'formatName.ts']);
 
@@ -506,7 +587,9 @@ export const otherUtil = () => 'test';
         });
 
         it('should handle same-file dependencies and export them', () => {
-            createTestFile('utils.ts', `
+            createTestFile(
+                'utils.ts',
+                `
 const a = 1;
 
 export const b = () => a;
@@ -514,7 +597,8 @@ export const b = () => a;
 export function otherFunction() {
     return 'other';
 }
-`);
+`,
+            );
 
             const result = runExtractDefinition(['utils.ts', 'b', 'b.ts']);
 
@@ -533,13 +617,16 @@ export function otherFunction() {
         });
 
         it('should handle already-exported same-file dependencies', () => {
-            createTestFile('utils.ts', `
+            createTestFile(
+                'utils.ts',
+                `
 export const PREFIX = 'app';
 
 export function getKey(id: string) {
     return \`\${PREFIX}_\${id}\`;
 }
-`);
+`,
+            );
 
             const result = runExtractDefinition(['utils.ts', 'getKey', 'getKey.ts']);
 
@@ -575,4 +662,3 @@ export function getKey(id: string) {
         });
     });
 });
-

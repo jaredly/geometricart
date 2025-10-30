@@ -202,4 +202,3 @@ export const Gallery = ({loaderData}: Route.ComponentProps) => {
         </div>
     );
 };
-

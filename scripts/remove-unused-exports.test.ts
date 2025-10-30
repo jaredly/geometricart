@@ -5,7 +5,12 @@
  */
 
 import {vol} from 'memfs';
-import {extractExports, extractImports, resolveImportPath, removeExport} from './remove-unused-exports';
+import {
+    extractExports,
+    extractImports,
+    resolveImportPath,
+    removeExport,
+} from './remove-unused-exports';
 import type {ExportInfo} from './remove-unused-exports';
 
 // Mock fs with memfs
@@ -186,8 +191,8 @@ export { foo, bar };
             const imports = extractImports(filePath);
 
             expect(imports.length).toBeGreaterThanOrEqual(2);
-            const fooImport = imports.find(imp => imp.importedName === 'foo');
-            const barImport = imports.find(imp => imp.importedName === 'bar');
+            const fooImport = imports.find((imp) => imp.importedName === 'foo');
+            const barImport = imports.find((imp) => imp.importedName === 'bar');
             expect(fooImport).toBeDefined();
             expect(fooImport?.localName).toBe('foo');
             expect(barImport).toBeDefined();
@@ -203,7 +208,7 @@ export { foo, bar };
             const imports = extractImports(filePath);
 
             expect(imports.length).toBeGreaterThanOrEqual(1);
-            const defaultImport = imports.find(imp => imp.importedName === 'default');
+            const defaultImport = imports.find((imp) => imp.importedName === 'default');
             expect(defaultImport).toBeDefined();
             expect(defaultImport?.localName).toBe('Component');
         });
@@ -218,7 +223,7 @@ export { foo, bar };
             const imports = extractImports(filePath);
 
             expect(imports.length).toBeGreaterThanOrEqual(1);
-            const namespaceImport = imports.find(imp => imp.importedName === '*');
+            const namespaceImport = imports.find((imp) => imp.importedName === '*');
             expect(namespaceImport).toBeDefined();
             expect(namespaceImport?.localName).toBe('utils');
         });
@@ -233,7 +238,7 @@ export { foo, bar };
             const imports = extractImports(filePath);
 
             expect(imports.length).toBeGreaterThanOrEqual(1);
-            const typeImport = imports.find(imp => imp.importedName === 'MyType');
+            const typeImport = imports.find((imp) => imp.importedName === 'MyType');
             expect(typeImport).toBeDefined();
             expect(typeImport?.isTypeOnly).toBe(true);
         });
@@ -248,7 +253,7 @@ export { foo, bar };
             const imports = extractImports(filePath);
 
             expect(imports.length).toBeGreaterThanOrEqual(1);
-            const reExport = imports.find(imp => imp.importedName === 'foo');
+            const reExport = imports.find((imp) => imp.importedName === 'foo');
             expect(reExport).toBeDefined();
         });
 
@@ -262,7 +267,7 @@ export { foo, bar };
             const imports = extractImports(filePath);
 
             expect(imports.length).toBeGreaterThanOrEqual(1);
-            const exportAll = imports.find(imp => imp.importedName === '*');
+            const exportAll = imports.find((imp) => imp.importedName === '*');
             expect(exportAll).toBeDefined();
         });
     });
@@ -519,12 +524,10 @@ console.log(usedFunction());
             const exports = extractExports(utilsPath);
             const imports = extractImports(consumerPath);
 
-            const importedFromUtils = imports.filter(
-                imp => imp.resolvedPath === utilsPath
-            );
-            const importedNames = new Set(importedFromUtils.map(imp => imp.importedName));
+            const importedFromUtils = imports.filter((imp) => imp.resolvedPath === utilsPath);
+            const importedNames = new Set(importedFromUtils.map((imp) => imp.importedName));
 
-            const unusedExports = exports.filter(exp => !importedNames.has(exp.name));
+            const unusedExports = exports.filter((exp) => !importedNames.has(exp.name));
 
             expect(unusedExports).toHaveLength(1);
             expect(unusedExports[0].name).toBe('unusedFunction');
@@ -549,23 +552,21 @@ console.log(utils);
             const exports = extractExports(utilsPath);
             const imports = extractImports(consumerPath);
 
-            const importedFromUtils = imports.filter(
-                imp => imp.resolvedPath === utilsPath
-            );
+            const importedFromUtils = imports.filter((imp) => imp.resolvedPath === utilsPath);
 
             // Namespace import should be detected
-            const hasNamespaceImport = importedFromUtils.some(imp => imp.importedName === '*');
+            const hasNamespaceImport = importedFromUtils.some((imp) => imp.importedName === '*');
             expect(hasNamespaceImport).toBe(true);
 
             // When there's a namespace import, simulate marking all exports as used
             const importedNames = new Set<string>();
             if (hasNamespaceImport) {
                 // Namespace import marks ALL exports as used
-                exports.forEach(exp => importedNames.add(exp.name));
+                exports.forEach((exp) => importedNames.add(exp.name));
             }
 
             // Check that all exports are now marked as used
-            const unusedExports = exports.filter(exp => !importedNames.has(exp.name));
+            const unusedExports = exports.filter((exp) => !importedNames.has(exp.name));
             expect(unusedExports).toHaveLength(0);
             expect(importedNames.size).toBe(2); // Both func1 and func2 should be marked as used
         });
@@ -590,21 +591,21 @@ console.log(utils);
             expect(originalExports[0].name).toBe('foo');
 
             // Index re-exports it (which counts as an import from original)
-            const importFromOriginal = indexImports.find(imp =>
-                imp.importedName === 'foo' && imp.resolvedPath === originalPath
+            const importFromOriginal = indexImports.find(
+                (imp) => imp.importedName === 'foo' && imp.resolvedPath === originalPath,
             );
             expect(importFromOriginal).toBeDefined();
 
             // Consumer imports from index (not original)
-            const importFromIndex = consumerImports.find(imp =>
-                imp.importedName === 'foo' && imp.resolvedPath === indexPath
+            const importFromIndex = consumerImports.find(
+                (imp) => imp.importedName === 'foo' && imp.resolvedPath === indexPath,
             );
             expect(importFromIndex).toBeDefined();
 
             // The chain means foo in original.ts should be considered "used"
             // because index.ts imports it, even though consumer doesn't directly import from original
             const originalIsImportedByIndex = indexImports.some(
-                imp => imp.resolvedPath === originalPath && imp.importedName === 'foo'
+                (imp) => imp.resolvedPath === originalPath && imp.importedName === 'foo',
             );
             expect(originalIsImportedByIndex).toBe(true);
         });

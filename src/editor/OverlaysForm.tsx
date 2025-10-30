@@ -1,4 +1,3 @@
-
 import {State} from '../types';
 import {Action} from '../state/Action';
 import {useDropTarget} from './useDropTarget';

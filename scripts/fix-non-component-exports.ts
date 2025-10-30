@@ -48,7 +48,10 @@ interface FileAnalysis {
 /**
  * Determines if a function declaration is likely a React component
  */
-function isFunctionComponent(node: t.FunctionDeclaration | t.ArrowFunctionExpression | t.FunctionExpression, body?: string): boolean {
+function isFunctionComponent(
+    node: t.FunctionDeclaration | t.ArrowFunctionExpression | t.FunctionExpression,
+    body?: string,
+): boolean {
     // Check if function name starts with capital letter
     if (t.isFunctionDeclaration(node) && node.id) {
         const name = node.id.name;
@@ -60,7 +63,7 @@ function isFunctionComponent(node: t.FunctionDeclaration | t.ArrowFunctionExpres
     // Check if the function body contains JSX
     if (body) {
         // Look for JSX patterns in the body
-        if (body.includes('<') && body.includes('/>') || body.includes('</')) {
+        if ((body.includes('<') && body.includes('/>')) || body.includes('</')) {
             return true;
         }
     }
@@ -91,7 +94,11 @@ function isFunctionComponent(node: t.FunctionDeclaration | t.ArrowFunctionExpres
 /**
  * Determines if a variable declaration is a React component
  */
-function isComponentVariable(declarator: t.VariableDeclarator, name: string, code: string): boolean {
+function isComponentVariable(
+    declarator: t.VariableDeclarator,
+    name: string,
+    code: string,
+): boolean {
     // Must start with capital letter
     if (name[0] !== name[0].toUpperCase()) {
         return false;
@@ -167,14 +174,16 @@ function analyzeFile(filePath: string): FileAnalysis {
                 let isComponent = false;
                 if (declaration.superClass) {
                     if (t.isIdentifier(declaration.superClass)) {
-                        isComponent = declaration.superClass.name === 'Component' ||
-                                     declaration.superClass.name === 'PureComponent';
+                        isComponent =
+                            declaration.superClass.name === 'Component' ||
+                            declaration.superClass.name === 'PureComponent';
                     } else if (t.isMemberExpression(declaration.superClass)) {
                         const obj = declaration.superClass.object;
                         const prop = declaration.superClass.property;
                         if (t.isIdentifier(obj) && t.isIdentifier(prop)) {
-                            isComponent = obj.name === 'React' &&
-                                         (prop.name === 'Component' || prop.name === 'PureComponent');
+                            isComponent =
+                                obj.name === 'React' &&
+                                (prop.name === 'Component' || prop.name === 'PureComponent');
                         }
                     }
                 }
@@ -194,10 +203,12 @@ function analyzeFile(filePath: string): FileAnalysis {
                         exports.push({
                             name,
                             type: isComponent ? 'component' : 'non-component',
-                            kind: declarator.init && (t.isArrowFunctionExpression(declarator.init) ||
-                                                      t.isFunctionExpression(declarator.init))
-                                ? 'function'
-                                : 'const',
+                            kind:
+                                declarator.init &&
+                                (t.isArrowFunctionExpression(declarator.init) ||
+                                    t.isFunctionExpression(declarator.init))
+                                    ? 'function'
+                                    : 'const',
                         });
                     }
                 });
@@ -251,14 +262,16 @@ function analyzeFile(filePath: string): FileAnalysis {
                 let isComponent = false;
                 if (declaration.superClass) {
                     if (t.isIdentifier(declaration.superClass)) {
-                        isComponent = declaration.superClass.name === 'Component' ||
-                                     declaration.superClass.name === 'PureComponent';
+                        isComponent =
+                            declaration.superClass.name === 'Component' ||
+                            declaration.superClass.name === 'PureComponent';
                     } else if (t.isMemberExpression(declaration.superClass)) {
                         const obj = declaration.superClass.object;
                         const prop = declaration.superClass.property;
                         if (t.isIdentifier(obj) && t.isIdentifier(prop)) {
-                            isComponent = obj.name === 'React' &&
-                                         (prop.name === 'Component' || prop.name === 'PureComponent');
+                            isComponent =
+                                obj.name === 'React' &&
+                                (prop.name === 'Component' || prop.name === 'PureComponent');
                         }
                     }
                 }
@@ -281,8 +294,8 @@ function analyzeFile(filePath: string): FileAnalysis {
         },
     });
 
-    const hasComponents = exports.some(e => e.type === 'component');
-    const hasNonComponents = exports.some(e => e.type === 'non-component');
+    const hasComponents = exports.some((e) => e.type === 'component');
+    const hasNonComponents = exports.some((e) => e.type === 'non-component');
 
     return {
         filePath,
@@ -300,7 +313,7 @@ function generateTargetPath(sourceFile: string, exportName: string, kind: string
     const ext = path.extname(sourceFile);
 
     // For types and interfaces, use .ts extension
-    const targetExt = (kind === 'type' || kind === 'interface' || kind === 'enum') ? '.ts' : ext;
+    const targetExt = kind === 'type' || kind === 'interface' || kind === 'enum' ? '.ts' : ext;
 
     return path.join(dir, `${exportName}${targetExt}`);
 }
@@ -345,24 +358,39 @@ async function main() {
 
                 const relativePath = path.relative(process.cwd(), file);
                 console.log(`📦 ${relativePath}`);
-                console.log(`   Components: ${analysis.exports.filter(e => e.type === 'component').map(e => e.name).join(', ')}`);
-                console.log(`   Non-components: ${analysis.exports.filter(e => e.type === 'non-component').map(e => `${e.name} (${e.kind})`).join(', ')}`);
+                console.log(
+                    `   Components: ${analysis.exports
+                        .filter((e) => e.type === 'component')
+                        .map((e) => e.name)
+                        .join(', ')}`,
+                );
+                console.log(
+                    `   Non-components: ${analysis.exports
+                        .filter((e) => e.type === 'non-component')
+                        .map((e) => `${e.name} (${e.kind})`)
+                        .join(', ')}`,
+                );
                 console.log('');
 
                 // Generate extract commands for non-components
-                const nonComponents = analysis.exports.filter(e => e.type === 'non-component' && e.name !== 'default');
+                const nonComponents = analysis.exports.filter(
+                    (e) => e.type === 'non-component' && e.name !== 'default',
+                );
 
                 if (groupTypes || groupConsts) {
                     // Categorize exports
-                    const typeExports = nonComponents.filter(e => e.kind === 'type' || e.kind === 'interface' || e.kind === 'enum');
-                    const constExports = nonComponents.filter(e => e.kind === 'const');
-                    const functionExports = nonComponents.filter(e => e.kind === 'function');
-                    const otherExports = nonComponents.filter(e =>
-                        e.kind !== 'type' &&
-                        e.kind !== 'interface' &&
-                        e.kind !== 'enum' &&
-                        e.kind !== 'const' &&
-                        e.kind !== 'function'
+                    const typeExports = nonComponents.filter(
+                        (e) => e.kind === 'type' || e.kind === 'interface' || e.kind === 'enum',
+                    );
+                    const constExports = nonComponents.filter((e) => e.kind === 'const');
+                    const functionExports = nonComponents.filter((e) => e.kind === 'function');
+                    const otherExports = nonComponents.filter(
+                        (e) =>
+                            e.kind !== 'type' &&
+                            e.kind !== 'interface' &&
+                            e.kind !== 'enum' &&
+                            e.kind !== 'const' &&
+                            e.kind !== 'function',
                     );
 
                     const dir = path.dirname(file);
@@ -372,7 +400,7 @@ async function main() {
                     if (groupTypes && typeExports.length > 1) {
                         const targetPath = path.join(dir, `${baseName}.types.ts`);
                         const relativeTarget = path.relative(process.cwd(), targetPath);
-                        const typeNames = typeExports.map(e => e.name).join(',');
+                        const typeNames = typeExports.map((e) => e.name).join(',');
 
                         const command = `pnpm extract-definition "${relativePath}" "${typeNames}" "${relativeTarget}"`;
                         commands.push(command);
@@ -397,7 +425,7 @@ async function main() {
                     if (groupConsts && constExports.length > 1) {
                         const targetPath = path.join(dir, `${baseName}.consts.ts`);
                         const relativeTarget = path.relative(process.cwd(), targetPath);
-                        const constNames = constExports.map(e => e.name).join(',');
+                        const constNames = constExports.map((e) => e.name).join(',');
 
                         const command = `pnpm extract-definition "${relativePath}" "${constNames}" "${relativeTarget}"`;
                         commands.push(command);
@@ -452,7 +480,7 @@ async function main() {
     if (dryRun) {
         console.log('🔧 Commands to run (use --execute to run them automatically):\n');
         console.log('#!/bin/bash\n');
-        commands.forEach(cmd => console.log(cmd));
+        commands.forEach((cmd) => console.log(cmd));
         console.log('\n💡 Tip: Save these commands to a file and review before executing:');
         console.log('   bun scripts/fix-non-component-exports.ts > fix-exports.sh');
         console.log('   # Review fix-exports.sh, then run it');
@@ -464,7 +492,7 @@ async function main() {
         for (const command of commands) {
             try {
                 console.log(`Running: ${command}`);
-                execSync(command, { stdio: 'inherit', cwd: process.cwd() });
+                execSync(command, {stdio: 'inherit', cwd: process.cwd()});
                 successCount++;
             } catch (error) {
                 console.error(`❌ Failed: ${command}`);
@@ -480,4 +508,3 @@ main().catch((error) => {
     console.error('Fatal error:', error);
     process.exit(1);
 });
-

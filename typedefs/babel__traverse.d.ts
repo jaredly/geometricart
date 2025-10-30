@@ -21,4 +21,3 @@ declare module '@babel/traverse' {
 
     export {NodePath};
 }
-

@@ -1,4 +1,3 @@
-
 import {transformGuideGeom} from '../rendering/calculateGuideElements';
 import {angleTo, applyMatrices, Matrix} from '../rendering/getMirrorTransforms';
 import {GuideElement} from './GuideElement';

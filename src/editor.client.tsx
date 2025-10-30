@@ -27,7 +27,7 @@ import {exportPNG} from './editor/ExportPng';
 import {DesignLoader} from './DesignLoader';
 import {Button} from 'primereact/button';
 import {useGists, gistCache} from './useGists';
-import {loadGist, newGist, saveGist, } from './gists';
+import {loadGist, newGist, saveGist} from './gists';
 import {maybeMigrate} from './state/migrateState';
 import {useDropStateTarget} from './editor/useDropTarget';
 import {usePK, WithPathKit} from './editor/pk';

@@ -1,4 +1,3 @@
-
 import React, {useEffect, useMemo, useState} from 'react';
 import {Coord, Overlay as OverlayT, State, View} from '../types';
 import {screenToWorld} from './Canvas';

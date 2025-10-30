@@ -1,4 +1,3 @@
-
 import * as React from 'react';
 import {useTouchClick} from '../editor/RenderIntersections';
 

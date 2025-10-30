@@ -1,4 +1,3 @@
-
 import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {useDropTarget} from './editor/useDropTarget';
 import {Coord, Tiling} from './types';

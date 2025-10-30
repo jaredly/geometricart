@@ -1,4 +1,3 @@
-
 import React, {useState} from 'react';
 import {Action} from '../state/Action';
 import {Path, State, Tiling} from '../types';

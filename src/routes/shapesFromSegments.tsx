@@ -1,4 +1,3 @@
-
 import {Bounds} from '../editor/Bounds';
 import {coordKey} from '../rendering/coordKey';
 import {closeEnough, closeEnoughAngle, epsilon} from '../rendering/epsilonToZero';

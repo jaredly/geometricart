@@ -1,6 +1,6 @@
 import {Coord} from '../types';
 import {PSeg} from './getBuiltins';
-import {coordsEqual, } from '../rendering/pathsAreIdentical';
+import {coordsEqual} from '../rendering/pathsAreIdentical';
 import {arcPath} from '../editor/RenderPendingPath';
 import {mergeBounds, segmentBounds} from '../editor/Bounds';
 import {Bounds} from '../editor/Bounds';

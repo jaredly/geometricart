@@ -20,20 +20,29 @@ describe('extract-definition integration', () => {
         it('should parse comma-separated definition names', () => {
             const input = 'formatDate,parseDate,isValidDate';
             const expected = ['formatDate', 'parseDate', 'isValidDate'];
-            const result = input.split(',').map(name => name.trim()).filter(Boolean);
+            const result = input
+                .split(',')
+                .map((name) => name.trim())
+                .filter(Boolean);
             expect(result).toEqual(expected);
         });
 
         it('should handle single definition name', () => {
             const input = 'formatDate';
-            const result = input.split(',').map(name => name.trim()).filter(Boolean);
+            const result = input
+                .split(',')
+                .map((name) => name.trim())
+                .filter(Boolean);
             expect(result).toEqual(['formatDate']);
         });
 
         it('should handle whitespace in comma-separated names', () => {
             const input = 'formatDate, parseDate , isValidDate';
             const expected = ['formatDate', 'parseDate', 'isValidDate'];
-            const result = input.split(',').map(name => name.trim()).filter(Boolean);
+            const result = input
+                .split(',')
+                .map((name) => name.trim())
+                .filter(Boolean);
             expect(result).toEqual(expected);
         });
     });
@@ -205,4 +214,3 @@ export function formatDate(date: Date): string {
         });
     });
 });
-

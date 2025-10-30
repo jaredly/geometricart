@@ -1,4 +1,3 @@
-
 import {angleTo, dist, push} from '../rendering/getMirrorTransforms';
 import {lineToSlope, Primitive} from '../rendering/intersect';
 import {Coord, View} from '../types';
@@ -11,8 +10,7 @@ type Dot = {type: 'dot'; pos: Coord; active: boolean};
 
 type Shapes = ({type: 'prim'; prim: Primitive; dashed: boolean} | Dot | null)[];
 
-const isCompass = (state: CompassState['state']) =>
-    ['PO', 'PA1', 'PA2', 'DC'].includes(state);
+const isCompass = (state: CompassState['state']) => ['PO', 'PA1', 'PA2', 'DC'].includes(state);
 
 const diamond = (p1: Coord, p2: Coord): Primitive[] => {
     const theta = angleTo(p1, p2);

@@ -1,4 +1,3 @@
-
 import * as React from 'react';
 import {transparent} from './Icons';
 import {Circle, Guide, Line, Path, PathGroup, View} from '../types';

@@ -1,4 +1,3 @@
-
 import {BarePath, Coord, SegPrev, Segment, State, Tiling} from '../types';
 import {consumePath, getVisiblePaths, pkClips} from '../rendering/pkInsetPaths';
 import {PK} from './pk';
@@ -7,7 +6,7 @@ import {addPrevsToSegments} from '../rendering/segmentsToNonIntersectingSegments
 import {SlopeIntercept, lineToSlope, slopeToLine} from '../rendering/intersect';
 import {numKey} from '../rendering/coordKey';
 import {applyMatrix, scaleMatrix} from '../rendering/getMirrorTransforms';
-import {transformBarePath, } from '../rendering/points';
+import {transformBarePath} from '../rendering/points';
 import {tilingPoints, eigenShapesToLines} from './tilingPoints';
 import {SegmentWithPrev} from '../rendering/clipPathNew';
 

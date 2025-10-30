@@ -246,13 +246,7 @@ const FnViewer = ({fn, kind}: {fn: (n: number) => number; kind: 'float-fn' | 'po
     );
 };
 
-const PointsViewer = ({
-    points,
-    onClick,
-}: {
-    points: Array<LerpPoint>;
-    onClick: () => void;
-}) => {
+const PointsViewer = ({points, onClick}: {points: Array<LerpPoint>; onClick: () => void}) => {
     const width = 50;
     const height = 50;
 

@@ -1,4 +1,4 @@
-import {Coord, State, } from '../types';
+import {Coord, State} from '../types';
 import {tracePath} from '../rendering/CanvasRender';
 import {Action} from '../state/Action';
 import {emptyPath} from '../editor/RenderPath';

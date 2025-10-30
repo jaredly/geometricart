@@ -1,6 +1,6 @@
 /* @jsx jsx */
 /* @jsxFrag React.Fragment */
-import {Interpolation, Theme, } from '@emotion/react';
+import {Interpolation, Theme} from '@emotion/react';
 import {Path as PKPath, PathKit} from 'pathkit-wasm';
 import React, {useMemo, useState} from 'react';
 import {pkPath} from '../sidebar/pkClipPaths';

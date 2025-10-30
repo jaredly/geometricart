@@ -1,6 +1,6 @@
 import '@react-three/fiber';
 import earcut from 'earcut';
-import {Path as PKPath, } from 'pathkit-wasm';
+import {Path as PKPath} from 'pathkit-wasm';
 import React from 'react';
 import {BufferAttribute, BufferGeometry, PointsMaterial} from 'three';
 import {segmentsBounds} from '../editor/Bounds';

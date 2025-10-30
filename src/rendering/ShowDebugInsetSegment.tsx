@@ -1,4 +1,3 @@
-
 // import { asArray } from './insetSegment.vest';
 
 // export const insetPrev = (prev: Coord, segment: Segment, amount: number) => {

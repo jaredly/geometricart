@@ -1,6 +1,5 @@
 // Types for vest
 
-
 export type Config<Input, Output> = {
     id: string;
     dir: string;

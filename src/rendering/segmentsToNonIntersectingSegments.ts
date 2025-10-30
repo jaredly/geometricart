@@ -11,10 +11,7 @@ import {SegmentWithPrev} from './clipPathNew';
 
 // export type Intersection = { entering: Array<number>; exiting: Array<number> };
 
-const splitSegmentsByIntersections = (
-    segments: Array<Segment>,
-    sorted: Array<Array<Hit>>,
-) => {
+const splitSegmentsByIntersections = (segments: Array<Segment>, sorted: Array<Array<Hit>>) => {
     // So, I return a list of segments, and a mapping [fromcoord] -> [exiting segments]
     const result: Array<PartialSegment> = [];
 

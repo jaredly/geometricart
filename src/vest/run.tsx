@@ -1,4 +1,3 @@
-
 // import {render} from 'react-dom/client';
 
 const Home = ({fixtures}: {fixtures: Array<string>}) => {
