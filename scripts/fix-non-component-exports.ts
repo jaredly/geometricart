@@ -630,19 +630,29 @@ async function main() {
                     }
 
                     // Generate commands for each group
+                    // Collect single exports with no dependencies for further grouping
+                    const singleExportsForGrouping: ExportInfo[] = [];
+
                     for (const group of groups) {
                         // Separate exported and non-exported names in the group
                         const exportedInGroup = group.filter(name => exportNamesSet.has(name));
                         const localInGroup = group.filter(name => !exportNamesSet.has(name));
 
                         if (exportedInGroup.length === 1 && localInGroup.length === 0) {
-                            // Single export with no local dependencies - extract to its own file
+                            // Single export with no local dependencies
                             const expName = exportedInGroup[0];
                             const exp = nonComponents.find(e => e.name === expName)!;
-                            const targetPath = generateTargetPath(file, exp.name, exp.kind);
-                            const relativeTarget = path.relative(process.cwd(), targetPath);
-                            const command = `pnpm extract-definition "${relativePath}" "${exp.name}" "${relativeTarget}"`;
-                            commands.push(command);
+
+                            // If we have groupTypes or groupConsts, collect these for further grouping
+                            if (groupTypes || groupConsts) {
+                                singleExportsForGrouping.push(exp);
+                            } else {
+                                // Otherwise extract to its own file
+                                const targetPath = generateTargetPath(file, exp.name, exp.kind);
+                                const relativeTarget = path.relative(process.cwd(), targetPath);
+                                const command = `pnpm extract-definition "${relativePath}" "${exp.name}" "${relativeTarget}"`;
+                                commands.push(command);
+                            }
                         } else {
                             // Multiple items or has local dependencies - group them together
                             const groupNames = group.join(',');
@@ -666,6 +676,67 @@ async function main() {
                             } else {
                                 console.log(`   → Grouping related: ${group.join(', ')}`);
                             }
+                        }
+                    }
+
+                    // Apply type/const grouping to single exports that weren't grouped by dependencies
+                    if (singleExportsForGrouping.length > 0) {
+                        const typeExports = singleExportsForGrouping.filter(
+                            (e) => e.kind === 'type' || e.kind === 'interface' || e.kind === 'enum',
+                        );
+                        const constExports = singleExportsForGrouping.filter((e) => e.kind === 'const');
+                        const functionExports = singleExportsForGrouping.filter((e) => e.kind === 'function');
+                        const otherExports = singleExportsForGrouping.filter(
+                            (e) =>
+                                e.kind !== 'type' &&
+                                e.kind !== 'interface' &&
+                                e.kind !== 'enum' &&
+                                e.kind !== 'const' &&
+                                e.kind !== 'function',
+                        );
+
+                        const dir = path.dirname(file);
+                        const baseName = path.basename(file, path.extname(file));
+
+                        // Group types if enabled
+                        if (groupTypes && typeExports.length > 1) {
+                            const targetPath = path.join(dir, `${baseName}.types.ts`);
+                            const relativeTarget = path.relative(process.cwd(), targetPath);
+                            const typeNames = typeExports.map((e) => e.name).join(',');
+                            const command = `pnpm extract-definition "${relativePath}" "${typeNames}" "${relativeTarget}"`;
+                            commands.push(command);
+                        } else {
+                            for (const exp of typeExports) {
+                                const targetPath = generateTargetPath(file, exp.name, exp.kind);
+                                const relativeTarget = path.relative(process.cwd(), targetPath);
+                                const command = `pnpm extract-definition "${relativePath}" "${exp.name}" "${relativeTarget}"`;
+                                commands.push(command);
+                            }
+                        }
+
+                        // Group consts if enabled
+                        if (groupConsts && constExports.length > 1) {
+                            const targetPath = path.join(dir, `${baseName}.consts.ts`);
+                            const relativeTarget = path.relative(process.cwd(), targetPath);
+                            const constNames = constExports.map((e) => e.name).join(',');
+                            const command = `pnpm extract-definition "${relativePath}" "${constNames}" "${relativeTarget}"`;
+                            commands.push(command);
+                            console.log(`   → Grouping consts: ${constNames}`);
+                        } else {
+                            for (const exp of constExports) {
+                                const targetPath = generateTargetPath(file, exp.name, exp.kind);
+                                const relativeTarget = path.relative(process.cwd(), targetPath);
+                                const command = `pnpm extract-definition "${relativePath}" "${exp.name}" "${relativeTarget}"`;
+                                commands.push(command);
+                            }
+                        }
+
+                        // Extract functions and others individually
+                        for (const exp of [...functionExports, ...otherExports]) {
+                            const targetPath = generateTargetPath(file, exp.name, exp.kind);
+                            const relativeTarget = path.relative(process.cwd(), targetPath);
+                            const command = `pnpm extract-definition "${relativePath}" "${exp.name}" "${relativeTarget}"`;
+                            commands.push(command);
                         }
                     }
                 } else if (groupTypes || groupConsts) {
