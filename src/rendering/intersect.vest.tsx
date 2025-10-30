@@ -6,7 +6,8 @@ import {Config} from '../vest/types';
 import {register} from '../vest';
 import {SegmentWithPrev} from './clipPathNew';
 import {intersections} from './intersect';
-import {SegmentEditor, useInitialState} from './SegmentEditor';
+import {SegmentEditor} from './SegmentEditor';
+import {useInitialState} from './SegmentEditor.useOnChange.related';
 
 type Pair = [SegmentWithPrev, SegmentWithPrev];
 

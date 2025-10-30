@@ -1,5 +1,5 @@
 import {angleTo, push} from '../rendering/getMirrorTransforms';
-import {GCodeData, Tool} from './Visualize';
+import {GCodeData, Tool} from './Visualize.Tool.related';
 
 export function renderCutDepths(
     ctx: CanvasRenderingContext2D,

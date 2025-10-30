@@ -4,7 +4,7 @@ import {transformSegment} from '../rendering/points';
 import {Coord, Fill, Path, Segment, State} from '../types';
 import {segmentsBounds, segmentsCenter} from '../editor/Bounds';
 import {segmentToPrimitive} from '../editor/findSelection';
-import {pathSegs} from '../editor/RenderPath';
+import {pathSegs} from '../editor/pathSegs';
 import {coordKey} from '../rendering/coordKey';
 import {angleBetween} from '../rendering/isAngleBetween';
 import {

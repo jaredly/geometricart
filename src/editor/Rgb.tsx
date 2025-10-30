@@ -3,7 +3,9 @@ import * as React from 'react';
 import {Attachment, Coord} from '../types';
 import {createPortal} from 'react-dom';
 import {hslToRgb} from '../rendering/colorConvert';
-import {averageAt, findMajorColorsExpensive, rgbToString} from './PalettesForm';
+import {rgbToString} from './rgbToString';
+import {averageAt, findMajorColorsExpensive} from './PalettesForm.averageAt.related';
+import {Rgb} from './Rgb.2';
 
 const ImageChooser = ({
     contents,
@@ -121,7 +123,6 @@ const ImageChooser = ({
     );
 };
 
-export type Rgb = {r: number; g: number; b: number};
 export const AttachmentsChooser = ({
     onChoose,
     attachments,

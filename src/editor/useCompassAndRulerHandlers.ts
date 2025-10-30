@@ -1,6 +1,7 @@
 import {useMemo, useRef, useState} from 'react';
 import {State, View} from '../types';
-import {EditorState, screenToWorld} from './Canvas';
+import {EditorState} from './Canvas.MenuItem.related';
+import {screenToWorld} from './Canvas.screenToWorld.related';
 import {
     canFreeClick,
     markToGeom,

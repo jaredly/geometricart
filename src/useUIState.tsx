@@ -1,8 +1,8 @@
 import React from 'react';
 import {reducer} from './state/reducer';
-import {Hover} from './editor/Sidebar';
+import {Hover} from './editor/Hover';
 import {Coord, Id, State} from './types';
-import {PendingDuplication} from './editor/Guides';
+import {PendingDuplication} from './editor/Guides.PendingDuplication.related';
 import {StyleHover} from './editor/StyleHover';
 import {Action} from './state/Action';
 

@@ -8,7 +8,7 @@ import {
     LibraryAddIcon,
     SendToBackIcon,
 } from '../icons/Icon';
-import {Hover} from './Sidebar';
+import {Hover} from './Hover';
 import {State} from '../types';
 import {Action} from '../state/Action';
 import {parseAttachment} from './useDropTarget';

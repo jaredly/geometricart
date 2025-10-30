@@ -1,7 +1,7 @@
 import {Coord, State} from '../types';
 import {tracePath} from '../rendering/CanvasRender';
 import {Action} from '../state/Action';
-import {emptyPath} from '../editor/RenderPath';
+import {emptyPath} from '../editor/emptyPath';
 import {animateGuide} from './animateGuide';
 import {closer, closerOne, followPoints} from './followPoint';
 import {animateMirror} from './animateMirror';

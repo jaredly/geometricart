@@ -8,7 +8,7 @@ import {simplifyPath} from '../rendering/simplifyPath';
 import {ensureClockwise} from '../rendering/pathToPoints';
 import {PendingPreview} from './PendingPreview';
 import {IconButton, RedoIcon, UndoIcon} from '../icons/Icon';
-import {EditorState} from './Canvas';
+import {EditorState} from './Canvas.MenuItem.related';
 
 export const PendingPathControls = ({
     editorState,

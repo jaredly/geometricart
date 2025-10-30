@@ -1,5 +1,5 @@
 import * as React from 'react';
-import {useInitialState} from '../src/rendering/SegmentEditor';
+import {useInitialState} from '../src/rendering/SegmentEditor.useOnChange.related';
 import {Fixture} from '../src/vest/types';
 import {colors, getWidget, hasVisual, TraceOutput} from './Fixtures';
 import {visuals} from './functionWidgets';

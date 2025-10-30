@@ -3,9 +3,12 @@ import {RenderSegmentBasic} from '../editor/RenderSegment';
 import {Coord} from '../types';
 import {register} from '../vest';
 import {HitsInfo, intersectSegments, SegmentWithPrev} from './clipPathNew';
-import {SegmentEditor, useInitialState} from './SegmentEditor';
+import {SegmentEditor} from './SegmentEditor';
+import {useInitialState} from './SegmentEditor.useOnChange.related';
 import {HitTransitions, untangleHit} from './untangleHit';
-import {arrow, pointsList, ShowHitIntersection2} from '../editor/ShowHitIntersection2';
+import {ShowHitIntersection2} from '../editor/ShowHitIntersection2';
+import {arrow} from '../editor/arrow';
+import {pointsList} from '../editor/pointsList';
 import {coordsEqual} from './pathsAreIdentical';
 import {angleForSegment} from './clipPath';
 

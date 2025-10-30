@@ -1,4 +1,4 @@
-import {getSelectedIds} from '../editor/SVGCanvas';
+import {getSelectedIds} from '../editor/SVGCanvas.usePathsToShow.related';
 import {animationTimer, getBuiltins} from './getBuiltins';
 import {State} from '../types';
 

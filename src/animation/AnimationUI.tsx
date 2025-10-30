@@ -1,8 +1,8 @@
 import React, {useState} from 'react';
 import {useCurrent} from '../useCurrent';
-import {evaluateAnimatedValues, getAnimatedFunctions} from '../editor/Canvas';
-import {findBoundingRect} from '../editor/Export';
-import {addMetadata, renderTexture} from '../editor/ExportPng';
+import {evaluateAnimatedValues, getAnimatedFunctions} from '../editor/Canvas.timelineFunction.related';
+import {findBoundingRect} from '../editor/Export.Bounds.related';
+import {addMetadata, renderTexture} from '../editor/ExportPng.exportPNG.related';
 import {BlurInt, Toggle} from '../editor/Forms';
 import {CancelIcon, CheckmarkIcon, PencilIcon} from '../icons/Icon';
 import {epsilon} from '../rendering/epsilonToZero';
@@ -16,12 +16,9 @@ import {Scripts} from './Scripts';
 import {Lerps} from './Lerps';
 // @ts-ignore
 import {tar} from 'tinytar';
-import {cacheOverlays} from '../history/HistoryPlayback';
+import {cacheOverlays} from '../history/cacheOverlays';
+import {makeEven} from './makeEven';
 
-export const makeEven = (v: number) => {
-    v = Math.ceil(v);
-    return v % 2 === 0 ? v : v + 1;
-};
 
 export const AnimationEditor = ({
     state,

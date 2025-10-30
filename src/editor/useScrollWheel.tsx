@@ -1,6 +1,7 @@
 import React from 'react';
 import {State} from '../types';
-import {EditorState, screenToWorld} from './Canvas';
+import {EditorState} from './Canvas.MenuItem.related';
+import {screenToWorld} from './Canvas.screenToWorld.related';
 
 export function useScrollWheel(
     ref: React.MutableRefObject<SVGSVGElement | null>,

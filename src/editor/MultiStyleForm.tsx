@@ -3,12 +3,16 @@
 import * as React from 'react';
 import {transparent} from './Icons';
 import {Style, Fill, StyleLine} from '../types';
-import {colorSquare, paletteColor} from './RenderPath';
+import {colorSquare} from './colorSquare';
+import {paletteColor} from './RenderPath.lightenedColor.related';
 import {Button} from 'primereact/button';
 import {Action} from '../state/Action';
 import {mmToPX, pxToMM} from '../gcode/pxToMM';
 import {BlurInt} from './Forms';
 import {StyleHover} from './StyleHover';
+import {mergeFills} from './mergeFills';
+import {mergeStyleLines} from './mergeStyleLines';
+import {maybeUrlColor} from './maybeUrlColor';
 
 export const MultiStyleForm = ({
     styles,
@@ -533,18 +537,6 @@ type MultiLine = {
     lighten: Array<number | null>;
 };
 
-export const styleMatches = (one: StyleLine, two: StyleLine): boolean => {
-    return (
-        (one.inset ?? 0) === (two.inset ?? 0) &&
-        one.color === two.color &&
-        one.width === two.width &&
-        one.dash === two.dash &&
-        one.opacity === two.opacity &&
-        one.joinStyle === two.joinStyle &&
-        one.colorVariation === two.colorVariation &&
-        one.lighten === two.lighten
-    );
-};
 
 const getSingularLine = (line: MultiLine): StyleLine | null => {
     const style: StyleLine = {};
@@ -581,26 +573,7 @@ const addIfNew = <T,>(items: Array<T>, value: T) => {
     }
 };
 
-export const mergeFills = (one: Fill, two: Fill | null): Fill =>
-    !two
-        ? one
-        : {
-              color: two.color != null ? two.color : one.color,
-              inset: two.inset != null ? two.inset : one.inset,
-              opacity: two.opacity != null ? two.opacity : one.opacity,
-              lighten: two.lighten != null ? two.lighten : one.lighten,
-          };
 
-export const mergeStyleLines = (one: StyleLine, two: null | StyleLine): StyleLine =>
-    !two
-        ? one
-        : {
-              color: two.color ?? one.color,
-              dash: two.dash ?? one.dash,
-              inset: two.inset ?? one.inset,
-              joinStyle: two.joinStyle ?? one.joinStyle,
-              width: two.width ?? one.width,
-          };
 
 const mergeStyles = (one: Style, two: Style) => {
     const result: Style = {fills: [], lines: []};
@@ -756,8 +729,6 @@ const MultiColor = ({
     );
 };
 
-export const maybeUrlColor = (color: string) =>
-    color.startsWith('http') ? `url("${color}")` : color;
 
 function collectMultiStyles(styles: Style[]) {
     const fills: Array<MultiFill> = [];

@@ -5,9 +5,10 @@ import {geomToPrimitives} from '../rendering/points';
 import {Mirror, State} from '../types';
 import {Bounds} from './Bounds';
 import {RenderMirror} from './RenderMirror';
-import {emptyPath, UnderlinePath} from './RenderPath';
+import {UnderlinePath} from './RenderPath';
+import {emptyPath} from './emptyPath';
 import {RenderPrimitive} from './RenderPrimitive';
-import {Hover} from './Sidebar';
+import {Hover} from './Hover';
 import {eigenShapesToLines, tilingPoints} from './tilingPoints';
 import {calcPathD} from './calcPathD';
 

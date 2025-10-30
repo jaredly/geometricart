@@ -4,7 +4,8 @@ import {push} from '../rendering/getMirrorTransforms';
 import {State, GuideGeom} from '../types';
 import {Button} from 'primereact/button';
 import {toTypeRev} from '../handleKeyboard';
-import {EditorState, ToolIcon} from './Canvas';
+import {ToolIcon} from './Canvas';
+import {EditorState} from './Canvas.MenuItem.related';
 import {findAdjacentPaths} from '../animation/getBuiltins';
 
 export function ToolIcons({

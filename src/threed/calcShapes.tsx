@@ -5,8 +5,8 @@ import React from 'react';
 import {BufferAttribute, BufferGeometry, PointsMaterial} from 'three';
 import {segmentsBounds} from '../editor/Bounds';
 import {calcPathD} from '../editor/calcPathD';
-import {paletteColor} from '../editor/RenderPath';
-import {Hover} from '../editor/Sidebar';
+import {paletteColor} from '../editor/RenderPath.lightenedColor.related';
+import {Hover} from '../editor/Hover';
 import {cmdsToSegments} from '../gcode/cmdsToSegments';
 import {mmToPX} from '../gcode/pxToMM';
 import {scaleMatrix} from '../rendering/getMirrorTransforms';
@@ -21,7 +21,7 @@ import {transformBarePath} from '../rendering/points';
 import {Action} from '../state/Action';
 import {Fill, Path, State, StyleLine} from '../types';
 import {PK} from '../editor/pk';
-import {generatePathsAndOutlines} from '../editor/ExportSVG';
+import {generatePathsAndOutlines} from '../editor/ExportSVG.generatePathsAndOutlines.related';
 
 const unique = (v: string[]) => {
     const seen: Record<string, true> = {};

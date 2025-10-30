@@ -1,7 +1,7 @@
 import {pathToPrimitives} from '../editor/findSelection';
 import {addAction, redoAction, undoAction} from '../editor/history';
-import {styleMatches} from '../editor/MultiStyleForm';
-import {pendingGuide} from '../editor/RenderPendingGuide';
+import {styleMatches} from '../editor/styleMatches';
+import {pendingGuide} from '../editor/pendingGuide';
 import {transformGuide, transformMirror} from '../rendering/calculateGuideElements';
 import {clipPath} from '../rendering/clipPath';
 import {

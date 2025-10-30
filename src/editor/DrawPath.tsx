@@ -6,14 +6,14 @@ import {findNextSegments} from '../rendering/findNextSegments';
 import {angleBetween} from '../rendering/isAngleBetween';
 import {applyMatrices, Matrix} from '../rendering/getMirrorTransforms';
 import {coordsEqual, segmentsEqual} from '../rendering/pathsAreIdentical';
-import {RenderPath} from '../editor/RenderPath';
+import {RenderPath} from './RenderPath.RenderPath.related';
 import {RenderSegment} from '../editor/RenderSegment';
 import {segmentKey, segmentKeyReverse} from '../rendering/segmentKey';
 import {ArcSegment, Id, Intersect, PendingSegment, View} from '../types';
 import {segmentAngle} from '../rendering/segmentAngle';
 import {Primitive} from '../rendering/intersect';
 import {epsilon} from '../rendering/epsilonToZero';
-import {EditorState} from './Canvas';
+import {EditorState} from './Canvas.MenuItem.related';
 
 export type DrawPathState = {
     type: 'path';

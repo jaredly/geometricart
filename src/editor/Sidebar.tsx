@@ -5,17 +5,9 @@ import {Action, UndoAction} from '../state/Action';
 import {initialState} from '../state/initialState';
 import {Id, Selection, State} from '../types';
 import {getStateFromFile} from './useDropTarget';
+import {Hover} from './Hover';
 
-export const PREFIX = `<!-- STATE:`;
-export const SUFFIX = '-->';
 
-export type Hover =
-    | {
-          type: 'element';
-          kind: Selection['type'] | 'Clip' | 'Tiling';
-          id: Id;
-      }
-    | {type: 'guides'; ids?: string[]};
 
 type TabProps = {
     state: State;

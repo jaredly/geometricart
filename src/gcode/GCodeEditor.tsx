@@ -1,5 +1,5 @@
 import React, {useMemo} from 'react';
-import {findBoundingRect} from '../editor/Export';
+import {findBoundingRect} from '../editor/Export.Bounds.related';
 import {Text} from '../editor/Forms';
 import {Action} from '../state/Action';
 import {State} from '../types';
@@ -8,7 +8,8 @@ import {Settings} from './Settings';
 import {ItemEdit} from './ItemEdit';
 import {Canvas} from '../editor/Canvas';
 import {IconDelete} from '../icons/Icon';
-import {usePK} from '../editor/pk';
+import {usePK} from '../editor/pk.usePK.related';
+import {LineColors, FillColors} from './GCodeEditor.types';
 
 const many = (value: string, m: number) => {
     const values: string[] = [];
@@ -195,21 +196,7 @@ const UpDown = ({
     );
 };
 
-export type LineColors = {
-    [key: string]: {
-        count: number;
-        color: string | number;
-        width?: number;
-    };
-};
 
-export type FillColors = {
-    [key: string]: {
-        count: number;
-        color: string | number;
-        lighten?: number;
-    };
-};
 
 const findFillColors = (state: State): FillColors => {
     const colors: FillColors = {};

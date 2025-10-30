@@ -1,5 +1,5 @@
 import React from 'react';
-import {Bounds} from '../editor/Export';
+import {Bounds} from '../editor/Export.Bounds.related';
 import {BlurInt} from '../editor/Forms';
 import {Action} from '../state/Action';
 import {State} from '../types';

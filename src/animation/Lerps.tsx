@@ -6,7 +6,8 @@ import babel from 'prettier/parser-babel';
 import {BlurInt} from '../editor/Forms';
 import {Action} from '../state/Action';
 import {FloatLerp as FLT, ScriptLerp as SLT, LerpPoint, State, PosScript} from '../types';
-import {PointsEditor, pointsPathD} from './PointsEditor';
+import {PointsEditor} from './PointsEditor';
+import {pointsPathD} from './PointsEditor.pointsPathD.related';
 import {AddVbl} from './AnimationUI';
 import {functionWithBuiltins} from './getAnimatedPaths';
 

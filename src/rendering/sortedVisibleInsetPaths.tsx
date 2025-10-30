@@ -1,4 +1,4 @@
-import {paletteColor} from '../editor/RenderPath';
+import {paletteColor} from '../editor/RenderPath.lightenedColor.related';
 import {ensureClockwise} from '../rendering/pathToPoints';
 import {Coord, Path, PathGroup, Segment} from '../types';
 import {coordKey, numKey} from './coordKey';

@@ -19,124 +19,34 @@ import {
 import localforage from 'localforage';
 import {Checkpoint, Mirror, State, Tiling} from './types';
 import {Accordion} from './sidebar/Accordion';
-import {MirrorPicker, SaveDest} from './MirrorPicker';
+import {MirrorPicker} from './MirrorPicker';
+import {SaveDest} from './SaveDest';
 import {setupState} from './setupState';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import {exportPNG} from './editor/ExportPng';
+import {exportPNG} from './editor/ExportPng.exportPNG.related';
 import {DesignLoader} from './DesignLoader';
 import {Button} from 'primereact/button';
 import {useGists, gistCache} from './useGists';
 import {loadGist, newGist, saveGist} from './gists';
 import {maybeMigrate} from './state/migrateState';
 import {useDropStateTarget} from './editor/useDropTarget';
-import {usePK, WithPathKit} from './editor/pk';
+import {WithPathKit} from './editor/pk';
+import {usePK} from './editor/pk.usePK.related';
+import {key, newState, saveState, router} from './editor.client.metaPrefix.related';
+import {debounce} from './editor.client.debounce.related';
 dayjs.extend(relativeTime);
 
-export const metaPrefix = 'meta:';
-export const keyPrefix = 'geometric-art-';
-export const thumbPrefix = 'thumb:';
-export const snapshotPrefix = 'snapshot:';
-export const key = (id: string) => keyPrefix + id;
-export const meta = (id: string) => metaPrefix + key(id);
-export const snapshotKey = (id: string, checkpoint: Checkpoint) =>
-    snapshotPrefix + key(id) + ':' + checkpointToString(checkpoint);
 
-export const updateMeta = async (
-    id: string,
-    update: Partial<MetaData> | ((v: MetaData) => Partial<MetaData>),
-) => {
-    const current = await localforage.getItem<MetaData>(meta(id));
-    if (!current) {
-        return;
-    }
-    return localforage.setItem(meta(id), {
-        ...current,
-        ...(typeof update === 'function' ? update(current) : update),
-    });
-};
 
-export const newState = async (state: State, dest: SaveDest) => {
-    // if (!state) {
-    //     state = setupState(mirror);
-    // }
-    const blob = await exportPNG(400, state, 1000, false, false, 0);
-    if (dest.type === 'local') {
-        const id = genid();
-        localforage.setItem(thumbPrefix + key(id), blob);
-        localforage.setItem<MetaData>(metaPrefix + key(id), newMetaData(id, state));
-        return localforage.setItem(key(id), state).then(() => '/' + id);
-    } else {
-        return newGist(state, blob, dest.token).then((id) => '/gist/' + id);
-    }
-};
 
-export const addSnapshot = async (id: string, state: State) => {
-    const checkpoint: Checkpoint = {
-        branchId: state.history.currentBranch,
-        undo: state.history.undo,
-        branchLength: state.history.branches[state.history.currentBranch].items.length,
-    };
-    const blob = await exportPNG(400, state, 1000, false, false, 0);
-    updateMeta(id, (meta) => ({
-        checkpoints: [...(meta.checkpoints || []), checkpoint],
-    }));
-    localforage.setItem(snapshotKey(id, checkpoint), blob);
-};
 
-export const saveState = async (state: State, id: string, dest: SaveDest) => {
-    const blob = await exportPNG(
-        400,
-        {...state, view: {...state.view, guides: false}},
-        1000,
-        false,
-        false,
-        0,
-    );
-    if (dest.type === 'local') {
-        localforage.setItem(key(id), state);
-        updateMeta(id, {
-            updatedAt: Date.now(),
-            size: JSON.stringify(state).length,
-            tilings: Object.values(state.tilings),
-        });
-        localforage.setItem(thumbPrefix + key(id), blob);
-    } else {
-        return await saveGist(id, state, blob, dest.token);
-    }
-};
 
-export const range = (start: number, end: number) => {
-    const result = [];
-    for (let i = start; i < end; i++) {
-        result.push(i);
-    }
-    return result;
-};
 
-const genid = () => Math.random().toString(36).substring(2, 15);
 
-export type MetaData = {
-    createdAt: number;
-    updatedAt: number;
-    openedAt: number;
-    id: string;
-    size: number;
-    tilings: Tiling[];
-    checkpoints?: Array<Checkpoint>;
-};
 
-export const checkpointToString = (c: Checkpoint) => `${c.branchId}-${c.branchLength}-${c.undo}`;
-export const stringToCheckpoint = (s: string) => {
-    const [branchId, branchLength, undo] = s.split('-');
-    return {
-        branchId: parseInt(branchId),
-        branchLength: parseInt(branchLength),
-        undo: parseInt(undo),
-    };
-};
 
-const Welcome = () => {
+export const Welcome = () => {
     const [activeIds, setActiveIds] = React.useState({
         new: false,
         open: true,
@@ -262,7 +172,7 @@ const GistLoader = () => {
     );
 };
 
-const File = ({gist, dest}: {gist?: boolean; dest: SaveDest}) => {
+export const File = ({gist, dest}: {gist?: boolean; dest: SaveDest}) => {
     const data = useLoaderData();
     const params = useParams();
 
@@ -324,25 +234,8 @@ function usePreventNavAway(lastSaved: {
 /**
  * Debounce a function.
  */
-let tid: NodeJS.Timeout | null = null;
-export const debounce = (fn: () => Promise<void>, time: number): (() => void) => {
-    if (tid != null) {
-        clearTimeout(tid);
-    }
-    tid = setTimeout(() => {
-        tid = null;
-        fn();
-    }, time);
-    return () => {
-        if (tid != null) {
-            clearTimeout(tid);
-            tid = null;
-            fn();
-        }
-    };
-};
 
-const PkDebug = () => {
+export const PkDebug = () => {
     const PK = usePK();
     const [text, setText] = React.useState(
         `L10 10L5 0Z`,
@@ -388,36 +281,6 @@ const PkDebug = () => {
 };
 
 /* then we can do useOutletContext() for state & dispatch ... is that it? */
-export const router = createHashRouter(
-    createRoutesFromElements([
-        <Route index element={<Welcome />} />,
-        <Route
-            path="gist/:id"
-            element={
-                <File
-                    gist
-                    dest={{
-                        type: 'gist',
-                        token: localStorage.github_access_token,
-                    }}
-                />
-            }
-            loader={({params}) =>
-                loadGist(params.id!, localStorage.github_access_token).then((state) =>
-                    maybeMigrate(state as State),
-                )
-            }
-        />,
-        <Route
-            path=":id"
-            element={<File dest={{type: 'local'}} />}
-            loader={({params}) =>
-                localforage.getItem(key(params.id!)).then((state) => maybeMigrate(state as State))
-            }
-        />,
-        <Route path="pk" element={<PkDebug />} />,
-    ]),
-);
 
 declare global {
     interface Window {
@@ -458,49 +321,6 @@ const save = params.get('save');
 const load = params.get('load');
 const back = params.get('back');
 
-export const getForeignState = async (image: string | null, load: string | null) => {
-    if (load) {
-        try {
-            const state: State = await (await fetch(load)).json();
-            Object.values(state.attachments).forEach((att) => {
-                console.log(att.contents);
-                if (att.contents.startsWith('/')) {
-                    att.contents = 'http://localhost:3000' + att.contents;
-                }
-            });
-            return state;
-        } catch (err) {
-            // ignore I think
-        }
-    }
-    if (image) {
-        const img = new Image();
-        img.crossOrigin = 'Anonymous';
-        img.src = image;
-        await new Promise((res) => (img.onload = res));
-
-        const state = setupState(null);
-        state.attachments['pattern'] = {
-            id: 'pattern',
-            name: 'pattern',
-            width: img.naturalWidth,
-            height: img.naturalHeight,
-            contents: image,
-        };
-        state.overlays['overlay'] = {
-            id: 'overlay',
-            source: 'pattern',
-            scale: {x: 1, y: 1},
-            center: {x: 0, y: 0},
-            hide: false,
-            over: false,
-            opacity: 1,
-        };
-        state.selection = null;
-        return state;
-    }
-    return setupState(null);
-};
 const morph = false;
 
 export const AppWithSave = ({state, save}: {state: State; save: string}) => (
@@ -528,13 +348,3 @@ export const AppWithSave = ({state, save}: {state: State; save: string}) => (
     </WithPathKit>
 );
 
-function newMetaData(id: string, state: State): MetaData {
-    return {
-        id,
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-        openedAt: Date.now(),
-        size: JSON.stringify(state).length,
-        tilings: [],
-    };
-}

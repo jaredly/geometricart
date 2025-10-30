@@ -1,5 +1,5 @@
 // import { insetPath } from '../animation/getBuiltins';
-import {findBoundingRect} from '../editor/Export';
+import {findBoundingRect} from '../editor/Export.Bounds.related';
 import {findColorPaths} from './findColorPaths';
 import {dist} from '../rendering/getMirrorTransforms';
 import {pathToPoints, RasterSeg, rasterSegPoints} from '../rendering/pathToPoints';

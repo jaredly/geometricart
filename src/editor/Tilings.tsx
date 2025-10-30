@@ -4,7 +4,7 @@ import {Path, State, Tiling} from '../types';
 import {applyMatrices} from '../rendering/getMirrorTransforms';
 import {transformSegment} from '../rendering/points';
 import {UIDispatch} from '../useUIState';
-import {emptyPath} from './RenderPath';
+import {emptyPath} from './emptyPath';
 import {tilingTransforms} from './tilingTransforms';
 import {handleTiling, simpleExport} from './handleTiling';
 import {SimpleTiling} from './SimpleTiling';

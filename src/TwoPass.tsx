@@ -2,7 +2,7 @@ import {useEffect, useRef} from 'react';
 import {Coord, Tiling} from './types';
 import {handleTiling} from './editor/handleTiling';
 import {eigenShapesToLines} from './editor/tilingPoints';
-import {plerp} from './Morph';
+import {plerp} from './Morph.plerp.related';
 
 const TwoPass = ({one, two}: {one: Tiling; two: Tiling}) => {
     const canvas = useRef<HTMLCanvasElement>(null);

@@ -11,11 +11,11 @@ import {
     TextureLoader,
     Vector3,
 } from 'three';
-import {GCodeData} from './Visualize';
+import {GCodeData} from './Visualize.Tool.related';
 import {renderCutDepths} from './renderCutDepths';
 import {OrbitControls, PerspectiveCamera} from '@react-three/drei';
 import {State} from '../types';
-import {gcodeStateSuffix} from './Toolbar';
+import {gcodeStateSuffix} from './gcodeStateSuffix';
 
 // Based on https://stemkoski.github.io/Three.js/Shader-Heightmap-Textures.html
 const vertext = `

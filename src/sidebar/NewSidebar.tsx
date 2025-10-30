@@ -2,7 +2,7 @@ import {Button} from 'primereact/button';
 import {OverlayPanel} from 'primereact/overlaypanel';
 import * as React from 'react';
 import {Clips} from '../editor/Clips';
-import {Hover} from '../editor/Sidebar';
+import {Hover} from '../editor/Hover';
 import {UndoPanel} from '../editor/UndoPanel';
 import {Action, GlobalTransform} from '../state/Action';
 import {Mirror, Path, PathGroup, State} from '../types';
@@ -16,9 +16,9 @@ import {ShowMirror} from '../editor/MirrorForm';
 import {MultiStyleForm} from '../editor/MultiStyleForm';
 import {OverlaysForm} from '../editor/OverlaysForm';
 import {PalettesForm} from '../editor/PalettesForm';
-import {paletteColor} from '../editor/RenderPath';
+import {paletteColor} from '../editor/RenderPath.lightenedColor.related';
 import {Tilings} from '../editor/Tilings';
-import {selectedPathIds} from '../editor/touchscreenControls';
+import {selectedPathIds} from '../editor/selectedPathIds';
 import {getStateFromFile} from '../editor/useDropTarget';
 import {
     CubeIcon,
@@ -31,12 +31,13 @@ import {
     UndoIcon,
 } from '../icons/Icon';
 import {getMirrorTransforms} from '../rendering/getMirrorTransforms';
-import {groupSort} from '../threed/ThreedScreen';
+import {groupSort} from '../threed/groupSort';
 import {Screen, UIDispatch, UIState} from '../useUIState';
 import {useLocalStorage} from '../vest/useLocalStorage';
 import {MirrorItems} from './MirrorItems';
 import {GuideInspector} from './GuideInspector';
 import {pkClipPaths} from './pkClipPaths';
+import {itemStyle} from './itemStyle';
 
 declare module 'csstype' {
     interface Properties {
@@ -960,18 +961,6 @@ function toggleViewGuides(state: State, dispatch: React.Dispatch<Action>) {
     );
 }
 
-export function itemStyle(selected: boolean, subSelected = false): React.CSSProperties | undefined {
-    return {
-        padding: 8,
-        cursor: 'pointer',
-        marginBottom: 0,
-        '--hover-color': 'var(--surface-hover)',
-        display: 'flex',
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: selected ? '#555' : subSelected ? '#055' : '',
-    };
-}
 
 const NewPalettesForm = ({
     state,

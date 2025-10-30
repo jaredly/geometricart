@@ -1,7 +1,7 @@
 import {angleTo, dist, push} from '../rendering/getMirrorTransforms';
 import {lineToSlope, Primitive} from '../rendering/intersect';
 import {Coord, View} from '../types';
-import {EditorState} from './Canvas';
+import {EditorState} from './Canvas.MenuItem.related';
 import {CompassState, PendingMark, previewPos} from './compassAndRuler';
 import {RenderPrimitive} from './RenderPrimitive';
 import {Bounds} from './Bounds';

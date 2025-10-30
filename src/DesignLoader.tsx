@@ -3,7 +3,7 @@ import localforage from 'localforage';
 import dayjs from 'dayjs';
 import {Button} from 'primereact/button';
 import {confirmPopup, ConfirmPopup} from 'primereact/confirmpopup';
-import {MetaData, keyPrefix, metaPrefix, updateMeta, key, meta, thumbPrefix} from './editor.client';
+import {MetaData, keyPrefix, metaPrefix, updateMeta, key, meta, thumbPrefix} from './editor.client.metaPrefix.related';
 import {Tiling} from './types';
 import {eigenShapesToSvg, tilingPoints} from './editor/tilingPoints';
 

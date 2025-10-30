@@ -1,16 +1,12 @@
 import {Coord, State} from '../types';
-import {
-    applyHistoryView,
-    cacheOverlays,
-    findViewPoints,
-    getHistoriesList,
-    mergeViewPoints,
-    StateAndAction,
-} from './HistoryPlayback';
+import {applyHistoryView} from './applyHistoryView';
+import {cacheOverlays} from './cacheOverlays';
+import {findViewPoints, getHistoriesList, mergeViewPoints, StateAndAction} from './HistoryPlayback.mergeViewPoints.related';
 import {canvasRender, paletteImages} from '../rendering/CanvasRender';
-import {findBoundingRect} from '../editor/Export';
-import {renderTexture} from '../editor/ExportPng';
-import {screenToWorld, worldToScreen} from '../editor/Canvas';
+import {findBoundingRect} from '../editor/Export.Bounds.related';
+import {renderTexture} from '../editor/ExportPng.exportPNG.related';
+import {worldToScreen} from '../editor/worldToScreen';
+import {screenToWorld} from '../editor/Canvas.screenToWorld.related';
 import {Action} from '../state/Action';
 import React from 'react';
 import {followPoint} from './followPoint';

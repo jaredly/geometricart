@@ -6,7 +6,7 @@ import {collectRegions, getSomeHits, prevSegmentsToShape, SegmentWithPrev} from 
 import {angleTo, dist, push} from './getMirrorTransforms';
 import {coordsEqual} from './pathsAreIdentical';
 import {isClockwise} from './pathToPoints';
-import {useInitialState} from './SegmentEditor';
+import {useInitialState} from './SegmentEditor.useOnChange.related';
 import {ShapeEditor} from './ShapeEditor';
 
 type Input = [Array<SegmentWithPrev>, Array<SegmentWithPrev>];

@@ -1,7 +1,8 @@
 import React, {useMemo} from 'react';
 import {useState} from 'react';
-import {PointsEditor, pointsPathD} from '../src/animation/PointsEditor';
-import {timelineFunction, timelineSegments} from '../src/editor/Canvas';
+import {PointsEditor} from '../src/animation/PointsEditor';
+import {pointsPathD} from '../src/animation/PointsEditor.pointsPathD.related';
+import {timelineFunction, timelineSegments} from '../src/editor/Canvas.timelineFunction.related';
 import {Coord, LerpPoint} from '../src/types';
 
 const Timeline = () => {

@@ -1,7 +1,8 @@
 import * as React from 'react';
 import {RenderSegmentBasic} from '../editor/RenderSegment';
 import {SegmentWithPrev} from './clipPathNew';
-import {SegmentEditor, useInitialState} from './SegmentEditor';
+import {SegmentEditor} from './SegmentEditor';
+import {useInitialState} from './SegmentEditor.useOnChange.related';
 
 const validSegments = (seg: Array<SegmentWithPrev>) => {
     if (seg.length === 0) {

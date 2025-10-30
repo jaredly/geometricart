@@ -8,7 +8,8 @@ import {atLineBottom} from './clipPath';
 import {SegmentWithPrev} from './clipPathNew';
 import {angleTo, dist, push} from './getMirrorTransforms';
 import {Circle, lineCircle, lineLine, lineToSlope, SlopeIntercept} from './intersect';
-import {SegmentEditor, useInitialState, useOnChange} from './SegmentEditor';
+import {SegmentEditor} from './SegmentEditor';
+import {useInitialState, useOnChange} from './SegmentEditor.useOnChange.related';
 
 type Pair = [SegmentWithPrev, Coord];
 type Which = 'segment' | 'coord';

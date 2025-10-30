@@ -1,5 +1,6 @@
 import {arcPath} from '../src/editor/RenderPendingPath';
-import {arrow, pointsList} from '../src/editor/ShowHitIntersection2';
+import {arrow} from '../src/editor/arrow';
+import {pointsList} from '../src/editor/pointsList';
 import {Angle} from '../src/rendering/epsilonToZero';
 import {HitsInfo, intersectSegments, SegmentWithPrev} from '../src/rendering/clipPathNew';
 import {push} from '../src/rendering/getMirrorTransforms';

@@ -1,10 +1,10 @@
 import React from 'react';
 import {State} from '../types';
 import {Action} from '../state/Action';
-import {selectedPathIds} from './touchscreenControls';
-import {itemStyle} from '../sidebar/NewSidebar';
+import {selectedPathIds} from './selectedPathIds';
+import {itemStyle} from '../sidebar/itemStyle';
 import {Checkbox} from 'primereact/checkbox';
-import {Hover} from './Sidebar';
+import {Hover} from './Hover';
 import {Button} from 'primereact/button';
 import {MagicWandIcon, ScissorsCuttingIcon} from '../icons/Icon';
 

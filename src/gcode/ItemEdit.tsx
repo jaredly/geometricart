@@ -1,9 +1,9 @@
 import React, {useEffect, useState} from 'react';
-import {paletteColor} from '../editor/RenderPath';
+import {paletteColor} from '../editor/RenderPath.lightenedColor.related';
 import {makeDepths} from './generateGcode';
 import {pxToMM} from './pxToMM';
 import {GCodePath, State} from '../types';
-import {FillColors, LineColors} from './GCodeEditor';
+import {FillColors, LineColors} from './GCodeEditor.types';
 import {
     CheckmarkIcon,
     IconAngleAcute,

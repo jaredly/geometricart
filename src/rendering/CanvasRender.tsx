@@ -2,18 +2,20 @@ import Prando from 'prando';
 // import {RoughCanvas} from 'roughjs/bin/canvas';
 import {calcAllIntersections} from './calcAllIntersections';
 import {calculateGuideElements, calculateInactiveGuideElements} from './calculateGuideElements';
-import {AnimatedFunctions, evaluateAnimatedValues} from '../editor/Canvas';
+import {AnimatedFunctions, evaluateAnimatedValues} from '../editor/Canvas.timelineFunction.related';
 import {pathToPrimitives} from '../editor/findSelection';
 import {getAnimatedPaths, getAnimationScripts} from '../animation/getAnimatedPaths';
 import {angleTo, dist, getMirrorTransforms, push} from './getMirrorTransforms';
-import {primitivesForElementsAndPaths} from '../editor/Guides';
+import {primitivesForElementsAndPaths} from '../editor/primitivesForElementsAndPaths';
 import {Primitive} from './intersect';
 import {isClockwise, pathToPoints, rasterSegPoints, reversePath} from './pathToPoints';
-import {idSeed, lightenedColor, RoughCanvas} from '../editor/RenderPath';
+import {idSeed} from '../editor/idSeed';
+import {lightenedColor} from '../editor/RenderPath.lightenedColor.related';
+import {RoughCanvas} from '../editor/RenderPath.RoughGenerator.related';
 import {calcPathD} from '../editor/calcPathD';
 import {sortedVisibleInsetPaths} from './sortedVisibleInsetPaths';
 import {ArcSegment, Overlay, Path, State} from '../types';
-import {imageCache} from '../editor/SVGCanvas';
+import {imageCache} from '../editor/imageCache';
 import {getClips} from './pkInsetPaths';
 
 export const makeImage = (href: string): Promise<HTMLImageElement> => {

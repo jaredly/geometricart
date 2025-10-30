@@ -2,7 +2,9 @@
 
 import * as React from 'react';
 import {arcPath} from '../src/editor/RenderPendingPath';
-import {Arrow, arrow, pointsList} from '../src/editor/ShowHitIntersection2';
+import {Arrow} from '../src/editor/ShowHitIntersection2';
+import {arrow} from '../src/editor/arrow';
+import {pointsList} from '../src/editor/pointsList';
 import {angleKey, backAngle} from '../src/rendering/clipPath';
 import {Angle} from '../src/rendering/epsilonToZero';
 import {angleTo, dist, push} from '../src/rendering/getMirrorTransforms';
