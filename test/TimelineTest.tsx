@@ -1,8 +1,7 @@
 import React, {useMemo} from 'react';
 import {useState} from 'react';
-import {PointsEditor, pointsPath, pointsPathD} from '../src/animation/PointsEditor';
-import {timelineFunction, timelineSegments, TLSegment, TLSegmentCurve} from '../src/editor/Canvas';
-import {createLookupTable, evaluateBezier, evaluateLookUpTable} from '../src/lerp';
+import {PointsEditor, pointsPathD} from '../src/animation/PointsEditor';
+import {timelineFunction, timelineSegments, } from '../src/editor/Canvas';
 import {Coord, LerpPoint} from '../src/types';
 
 export const Timeline = () => {

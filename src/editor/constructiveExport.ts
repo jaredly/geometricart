@@ -1,6 +1,5 @@
 import {coordKey} from '../rendering/coordKey';
-import {dist} from '../rendering/getMirrorTransforms';
-import {lineToSlope, slopeToLine} from '../rendering/intersect';
+import {slopeToLine} from '../rendering/intersect';
 import {geomToPrimitives} from '../rendering/points';
 import {State} from '../types';
 

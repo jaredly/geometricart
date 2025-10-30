@@ -1,10 +1,19 @@
 
+# Some refactors n stuff
+
+- [x] remove unused imports all over
+  - [x] yay biomejs can handle it
+- [ ] remove unused exports all over
+- [ ]
+
+
 # Weeeeaving
 
 super fun
 
 - [x] more expansion of the equilateral triangle case
 - [ ] investigate why some paths aren't mrging 3-way intersections
+- [ ] add configs for [woven | colored | etc]
 
 
 

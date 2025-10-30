@@ -1,6 +1,5 @@
 import * as React from 'react';
 import {calcSegmentsD} from '../editor/calcPathD';
-import {Segment} from '../types';
 import {register} from '../vest';
 import {prevSegmentsToShape, SegmentWithPrev} from './clipPathNew';
 import {coordsEqual} from './pathsAreIdentical';

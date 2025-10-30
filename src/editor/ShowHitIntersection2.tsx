@@ -1,10 +1,8 @@
 import * as React from 'react';
-import {angleForSegment, backAngle, isAngleBetweenAngles} from '../rendering/clipPath';
+import {backAngle, isAngleBetweenAngles} from '../rendering/clipPath';
 import {Angle} from '../rendering/epsilonToZero';
-import {anglesEqual} from '../rendering/epsilonToZero';
-import {angleTo, dist, push} from '../rendering/getMirrorTransforms';
+import {push} from '../rendering/getMirrorTransforms';
 import {Coord} from '../types';
-import {SegmentWithPrev} from '../rendering/clipPathNew';
 import {HitTransitions} from '../rendering/untangleHit';
 import {angleBetween} from '../rendering/isAngleBetween';
 

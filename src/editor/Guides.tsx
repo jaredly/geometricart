@@ -1,12 +1,10 @@
-/* @jsx jsx */
-/* @jsxFrag React.Fragment */
-import {jsx} from '@emotion/react';
+
 import React, {useRef} from 'react';
 import {useCurrent} from '../useCurrent';
 import {PendingMirror, UIState} from '../useUIState';
 import {Action, PathMultiply} from '../state/Action';
 import {EditorState, screenToWorld} from './Canvas';
-import {DrawPath, DrawPathState, initialState} from './DrawPath';
+import {DrawPath, initialState} from './DrawPath';
 import {pathToPrimitives} from './findSelection';
 import {Bounds} from './Bounds';
 import {simplifyPath} from '../rendering/simplifyPath';

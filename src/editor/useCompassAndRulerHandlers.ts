@@ -1,15 +1,12 @@
-import {useEffect, useMemo, useRef, useState} from 'react';
+import {useMemo, useRef, useState} from 'react';
 import {State, View} from '../types';
 import {EditorState, screenToWorld} from './Canvas';
 import {
     canFreeClick,
-    dragPos,
-    handleClick,
     markToGeom,
     mouseDownMark,
     mouseMoveMark,
     PendingMark,
-    previewPos,
 } from './compassAndRuler';
 import {Action} from '../state/Action';
 

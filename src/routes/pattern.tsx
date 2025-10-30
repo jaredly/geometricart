@@ -4,7 +4,7 @@ import type {Route} from './+types/pattern';
 import {getPattern} from './db.server';
 import {canonicalShape, getPatternData, humanReadableFraction} from './getPatternData';
 import {flipPattern} from './flipPattern';
-import {ShowTiling, TilingPattern} from './ShowTiling';
+import {TilingPattern} from './ShowTiling';
 import {normShape} from './normShape';
 
 export async function loader({params}: Route.LoaderArgs) {

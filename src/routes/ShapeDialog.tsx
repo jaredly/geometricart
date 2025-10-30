@@ -1,12 +1,8 @@
-import {useMemo, useState} from 'react';
-import {Coord} from '../types';
+import {useState} from 'react';
 import {Route} from './+types/gallery';
-import {canonicalShape} from './getPatternData';
-import {addToMap} from './shapesFromSegments';
 import {ShowShape} from './ShowShape';
 import {FrameInspectSharp} from '../icons/Icon';
 import {useOnOpen} from './useOnOpen';
-import {push} from '../rendering/getMirrorTransforms';
 import {InspectShape} from './InspectShape';
 
 export const ShapeDialog = ({

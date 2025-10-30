@@ -1,9 +1,7 @@
-/* @jsx jsx */
-/* @jsxFrag React.Fragment */
-import {jsx} from '@emotion/react';
+
 import * as React from 'react';
 import {transparent} from './Icons';
-import {Circle, Guide, Line, Path, PathGroup, Style, View} from '../types';
+import {Circle, Guide, Line, Path, PathGroup, View} from '../types';
 
 export const Text = ({
     value,

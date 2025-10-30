@@ -1,6 +1,4 @@
-/* @jsx jsx */
-/* @jsxFrag React.Fragment */
-import {jsx} from '@emotion/react';
+
 import {Coord, Segment} from '../types';
 import {arcPath} from './RenderPendingPath';
 import React from 'react';

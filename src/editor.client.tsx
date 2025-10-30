@@ -12,13 +12,12 @@ import 'primeflex/primeflex.css';
 import {
     Route,
     createRoutesFromElements,
-    RouterProvider,
     useLoaderData,
     createHashRouter,
     useParams,
 } from 'react-router-dom';
 import localforage from 'localforage';
-import {Checkpoint, Meta, Mirror, State, Tiling} from './types';
+import {Checkpoint, Mirror, State, Tiling} from './types';
 import {Accordion} from './sidebar/Accordion';
 import {MirrorPicker, SaveDest} from './MirrorPicker';
 import {setupState} from './setupState';
@@ -28,10 +27,8 @@ import {exportPNG} from './editor/ExportPng';
 import {DesignLoader} from './DesignLoader';
 import {Button} from 'primereact/button';
 import {useGists, gistCache} from './useGists';
-import {loadGist, newGist, saveGist, stateFileName} from './gists';
+import {loadGist, newGist, saveGist, } from './gists';
 import {maybeMigrate} from './state/migrateState';
-import {initialState} from './state/initialState';
-import {Morph} from './Morph';
 import {useDropStateTarget} from './editor/useDropTarget';
 import {usePK, WithPathKit} from './editor/pk';
 dayjs.extend(relativeTime);

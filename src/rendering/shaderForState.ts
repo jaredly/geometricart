@@ -4,7 +4,6 @@ import {hslToRgb, rgbToHsl} from './colorConvert';
 import {pathToPrimitives} from '../editor/findSelection';
 import {Primitive} from './intersect';
 import {Rgb} from '../editor/Rgb';
-import {transformSegment} from './points';
 import {paletteColor} from '../editor/RenderPath';
 import {shaderFunctions} from './shaderFunctions';
 import {Coord, Fill, Path, State, StyleLine} from '../types';

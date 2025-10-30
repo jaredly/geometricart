@@ -14,7 +14,6 @@ import {closeEnough} from '../rendering/epsilonToZero';
 import {
     applyMatrices,
     dist,
-    Matrix,
     scaleMatrix,
     translationMatrix,
 } from '../rendering/getMirrorTransforms';

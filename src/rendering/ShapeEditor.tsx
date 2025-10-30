@@ -1,6 +1,5 @@
 import * as React from 'react';
 import {RenderSegmentBasic} from '../editor/RenderSegment';
-import {Coord, Segment} from '../types';
 import {SegmentWithPrev} from './clipPathNew';
 import {SegmentEditor, useInitialState} from './SegmentEditor';
 

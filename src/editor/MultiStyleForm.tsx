@@ -1,7 +1,6 @@
 /* @jsx jsx */
 /* @jsxFrag React.Fragment */
 import * as React from 'react';
-import {jsx} from '@emotion/react';
 import {transparent} from './Icons';
 import {Style, Fill, StyleLine} from '../types';
 import {colorSquare, paletteColor} from './RenderPath';

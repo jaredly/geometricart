@@ -1,4 +1,4 @@
-import * as React from 'react';
+
 import {arcPath} from '../src/editor/RenderPendingPath';
 import {arrow, pointsList} from '../src/editor/ShowHitIntersection2';
 import {Angle} from '../src/rendering/epsilonToZero';

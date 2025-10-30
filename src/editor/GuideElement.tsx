@@ -1,10 +1,7 @@
-/* @jsx jsx */
-/* @jsxFrag React.Fragment */
-import * as React from 'react';
-import {jsx} from '@emotion/react';
+
 import {angleTo, dist, push, scale} from '../rendering/getMirrorTransforms';
 import {GuideGeom} from '../types';
-import {lineLine, lineToSlope, SlopeIntercept} from '../rendering/intersect';
+import {lineToSlope, SlopeIntercept} from '../rendering/intersect';
 import {calcPolygon, getCircumCircle, getInCircle} from '../rendering/points';
 import {Bounds} from './Bounds';
 

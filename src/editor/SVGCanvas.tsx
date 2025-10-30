@@ -1,6 +1,6 @@
-import {jsx} from '@emotion/react';
+
 import Prando from 'prando';
-import React, {useMemo, useRef} from 'react';
+import React, {useRef} from 'react';
 // import {RoughGenerator} from 'roughjs/bin/generator';
 import {Action} from '../state/Action';
 import {useCurrent} from '../useCurrent';
@@ -15,7 +15,7 @@ import {Overlay} from '../editor/Overlay';
 import {paletteColor, RenderPath, RoughGenerator} from './RenderPath';
 import {showHover} from './showHover';
 import {Hover} from './Sidebar';
-import {InsetCache, sortedVisibleInsetPaths} from '../rendering/sortedVisibleInsetPaths';
+import {sortedVisibleInsetPaths} from '../rendering/sortedVisibleInsetPaths';
 import {Coord, State, Intersect, View, Segment, guideNeedsAngle, guidePoints} from '../types';
 import {useDragSelect, useMouseDrag} from './useMouseDrag';
 import {useScrollWheel} from './useScrollWheel';
@@ -23,7 +23,6 @@ import {EditorState, MenuItem, screenToWorld} from './Canvas';
 import {coordsEqual} from '../rendering/pathsAreIdentical';
 import {RenderIntersections} from './RenderIntersections';
 import {PKInsetCache, getClips} from '../rendering/pkInsetPaths';
-import {canFreeClick, handleClick, previewPos} from './compassAndRuler';
 import {useCompassAndRulerHandlers} from './useCompassAndRulerHandlers';
 
 export function SVGCanvas({

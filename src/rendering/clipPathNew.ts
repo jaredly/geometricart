@@ -10,7 +10,6 @@ import {coordKey} from './coordKey';
 import {angleBetween} from './isAngleBetween';
 import {angleTo, dist} from './getMirrorTransforms';
 import {intersections} from './intersect';
-import {isClockwise} from './pathToPoints';
 import {coordsEqual} from './pathsAreIdentical';
 import {
     HitTransitions,

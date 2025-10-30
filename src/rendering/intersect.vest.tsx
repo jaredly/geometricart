@@ -1,6 +1,5 @@
 import * as React from 'react';
 import {segmentToPrimitive} from '../editor/findSelection';
-import {RenderPrimitive} from '../editor/RenderPrimitive';
 import {RenderSegmentBasic} from '../editor/RenderSegment';
 import {Coord} from '../types';
 import {Config} from '../vest/types';

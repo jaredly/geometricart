@@ -8,9 +8,7 @@ import {Action, GlobalTransform} from '../state/Action';
 import {Mirror, Path, PathGroup, State} from '../types';
 import {Accordion as MyAccordion} from './Accordion';
 
-import type * as CSS from 'csstype';
 import dayjs from 'dayjs';
-import PathKitInit from 'pathkit-wasm';
 import reactColor from 'react-color';
 import {Export} from '../editor/Export';
 import {PathForm, PathGroupForm, ViewForm} from '../editor/Forms';

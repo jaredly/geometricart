@@ -1,5 +1,4 @@
-/* @jsx jsx */
-import {jsx} from '@emotion/react';
+
 import React from 'react';
 import {Canvas} from './editor/Canvas';
 import {reducer} from './state/reducer';

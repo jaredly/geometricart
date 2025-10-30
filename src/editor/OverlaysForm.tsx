@@ -1,11 +1,8 @@
-/* @jsx jsx */
-/* @jsxFrag React.Fragment */
-import * as React from 'react';
-import {jsx} from '@emotion/react';
+
 import {State} from '../types';
 import {Action} from '../state/Action';
 import {useDropTarget} from './useDropTarget';
-import {Float, Int, Toggle} from './Forms';
+import {Float, Toggle} from './Forms';
 import {Button} from 'primereact/button';
 import {DeleteForeverIcon} from '../icons/Icon';
 

@@ -1,9 +1,5 @@
-import {angleBetween} from './isAngleBetween';
-import {angleTo, dist, push} from './getMirrorTransforms';
-import {lineLine, lineToSlope} from './intersect';
-import {closeEnoughAngle} from './epsilonToZero';
-import {coordsEqual} from './pathsAreIdentical';
-import {Coord, Segment} from '../types';
+
+import {Coord, } from '../types';
 
 export type Line = {type: 'Line'; p0: Coord; p1: Coord};
 export type Full = Line | Arc;

@@ -1,4 +1,4 @@
-import {boundsForCoords, PendingBounds} from '../editor/Bounds';
+
 import {Bounds} from '../editor/Bounds';
 import {coordKey} from '../rendering/coordKey';
 import {closeEnough, closeEnoughAngle, epsilon} from '../rendering/epsilonToZero';
@@ -12,7 +12,7 @@ import {
 import {lineLine, lineToSlope} from '../rendering/intersect';
 import {coordsEqual} from '../rendering/pathsAreIdentical';
 import {isClockwisePoints} from '../rendering/pathToPoints';
-import {Coord, Segment, Tiling} from '../types';
+import {Coord, Tiling} from '../types';
 import {discoverShape} from './discoverShape';
 import {centroid} from './findReflectionAxes';
 import {getPatternData} from './getPatternData';

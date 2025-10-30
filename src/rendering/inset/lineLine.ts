@@ -1,5 +1,4 @@
-import {Coord, LineSegment, Segment} from '../../types';
-import {zeroToTwoPi} from '../epsilonToZero';
+import {Coord, Segment} from '../../types';
 import {angleBetween} from '../isAngleBetween';
 import {angleTo, push} from '../getMirrorTransforms';
 

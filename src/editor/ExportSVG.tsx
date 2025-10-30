@@ -1,15 +1,13 @@
 /* @jsx jsx */
 /* @jsxFrag React.Fragment */
-import {Interpolation, Theme, jsx} from '@emotion/react';
+import {Interpolation, Theme, } from '@emotion/react';
 import {Path as PKPath, PathKit} from 'pathkit-wasm';
 import React, {useMemo, useState} from 'react';
-import * as ReactDOM from 'react-dom';
 import {pkPath} from '../sidebar/pkClipPaths';
 import {Action} from '../state/Action';
 import {initialHistory} from '../state/initialState';
 import {Fill, Path, State, StyleLine} from '../types';
-import {Canvas} from './Canvas';
-import {Bounds, DL, Multi, blankCanvasProps, findBoundingRect} from './Export';
+import {Bounds, DL, Multi, findBoundingRect} from './Export';
 import {BlurInt, Toggle} from './Forms';
 import {maybeUrlColor} from './MultiStyleForm';
 import {lightenedColor, paletteColor} from './RenderPath';
