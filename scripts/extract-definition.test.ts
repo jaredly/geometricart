@@ -646,6 +646,32 @@ export function otherFunction() {
             expect(utilsFile).not.toContain('const b');
         });
 
+        it('should prevent creating files with conflicting extensions', () => {
+            // Create Rgb.tsx first
+            createTestFile(
+                'Rgb.tsx',
+                `
+export type Rgb = [number, number, number];
+`,
+            );
+
+            // Try to extract something to Rgb.ts (which would conflict)
+            createTestFile(
+                'colors.tsx',
+                `
+export type Hsv = [number, number, number];
+export const toRgb = (hsv: Hsv) => [0, 0, 0] as const;
+`,
+            );
+
+            const result = runExtractDefinition(['colors.tsx', 'Hsv', 'Rgb.ts']);
+
+            // Should fail with a helpful error message
+            expect(result.exitCode).toBe(1);
+            expect(result.stderr).toContain('Rgb.tsx already exists');
+            expect(result.stderr).toContain('different extensions can cause conflicts');
+        });
+
         it('should handle already-exported same-file dependencies', () => {
             createTestFile(
                 'utils.ts',

@@ -2,7 +2,41 @@
 
 ## Fixed Issues
 
-### 1. ✅ Multi-Line Import Handling
+### 1. ✅ File Extension Conflict Prevention
+
+**Problem:** The script could create files with different extensions but the same base name (e.g., `Rgb.ts` when `Rgb.tsx` already exists), causing import confusion.
+
+**Example of the issue:**
+```bash
+# Rgb.tsx already exists
+ls src/editor/Rgb.tsx  # exists
+
+# Script tries to create Rgb.ts
+pnpm extract-definition src/file.tsx SomeType src/editor/Rgb.ts
+# ❌ Would create Rgb.ts, causing import ambiguity
+```
+
+**The confusion:**
+```tsx
+// Which file does this import from?
+import {Rgb} from './Rgb';  // Rgb.ts or Rgb.tsx? 🤔
+```
+
+**Solution:** The script now:
+- ✅ Checks for files with different extensions (`.ts`, `.tsx`, `.js`, `.jsx`) before creating
+- ✅ Prevents creation with a clear error message
+- ✅ In `fix-non-component-exports`: automatically uses the existing file's extension
+
+**Now you get a helpful error:**
+```bash
+Error: Cannot create Rgb.ts because Rgb.tsx already exists.
+Importing from files with different extensions can cause conflicts.
+```
+
+**In `fix-non-component-exports`:**
+If `Rgb.tsx` exists and it wants to extract a type named `Rgb`, it will use `Rgb.tsx` as the target instead of creating `Rgb.ts`.
+
+### 2. ✅ Multi-Line Import Handling
 
 **Problem:** The script was breaking when encountering multi-line imports in files.
 
@@ -43,7 +77,7 @@ export function parseDate() { ... }  // ✅ Just the remaining code
 
 All references in other files are updated to import directly from the new file.
 
-### 3. ✅ Same-File Dependencies with Auto-Export
+### 4. ✅ Same-File Dependencies with Auto-Export
 
 **Problem:** When extracting a function that depends on another **non-exported** definition in the same file, the dependency wasn't handled and code would break.
 
@@ -106,7 +140,7 @@ export function getKey(id: string) {
 export const PREFIX = 'app';  // ✅ Stays as-is (already exported)
 ```
 
-### 4. ✅ JSX Component Dependencies
+### 5. ✅ JSX Component Dependencies
 
 **Problem:** When extracting code with JSX components, the script wasn't tracking component usage as dependencies.
 
@@ -144,7 +178,7 @@ export const router = createHashRouter(
 );
 ```
 
-### 5. ✅ Automatic .tsx Extension for JSX Code
+### 6. ✅ Automatic .tsx Extension for JSX Code
 
 **Problem:** When extracting code containing JSX, the file needs a `.tsx` extension, not `.ts`.
 

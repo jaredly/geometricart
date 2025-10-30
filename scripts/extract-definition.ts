@@ -384,6 +384,21 @@ async function extractDefinition(options: ExtractOptions) {
         throw new Error(`existing files exists already`);
     }
 
+    // Check for files with different extensions but same base name
+    const targetBaseName = path.basename(targetFile, path.extname(targetFile));
+    const targetDirName = path.dirname(targetFile);
+    const possibleExtensions = ['.ts', '.tsx', '.js', '.jsx'];
+
+    for (const ext of possibleExtensions) {
+        const possibleFile = path.join(targetDirName, targetBaseName + ext);
+        if (possibleFile !== targetFile && fs.existsSync(possibleFile)) {
+            throw new Error(
+                `Cannot create ${path.basename(targetFile)} because ${path.basename(possibleFile)} already exists. ` +
+                `Importing from files with different extensions can cause conflicts.`
+            );
+        }
+    }
+
     const newFileContent = [...necessaryImports, '', allDefinitionCode].join('\n');
 
     fs.writeFileSync(targetFile, newFileContent, 'utf-8');

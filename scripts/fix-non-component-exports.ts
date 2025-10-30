@@ -309,6 +309,7 @@ function analyzeFile(filePath: string): FileAnalysis {
 
 /**
  * Generates a target file path for an extracted export
+ * Checks for existing files with different extensions to avoid conflicts
  */
 function generateTargetPath(sourceFile: string, exportName: string, kind: string): string {
     const dir = path.dirname(sourceFile);
@@ -317,7 +318,20 @@ function generateTargetPath(sourceFile: string, exportName: string, kind: string
     // For types and interfaces, use .ts extension
     const targetExt = kind === 'type' || kind === 'interface' || kind === 'enum' ? '.ts' : ext;
 
-    return path.join(dir, `${exportName}${targetExt}`);
+    const targetPath = path.join(dir, `${exportName}${targetExt}`);
+
+    // Check if a file with a different extension already exists
+    const possibleExtensions = ['.ts', '.tsx', '.js', '.jsx'];
+    for (const possibleExt of possibleExtensions) {
+        if (possibleExt === targetExt) continue;
+
+        const conflictingPath = path.join(dir, `${exportName}${possibleExt}`);
+        if (fs.existsSync(conflictingPath)) {
+            return generateTargetPath(sourceFile, exportName + '.2', kind)
+        }
+    }
+
+    return targetPath;
 }
 
 /**
