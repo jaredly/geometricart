@@ -8,7 +8,7 @@ import {flipPattern} from './flipPattern';
 
 const pngCache: Record<string, Buffer<ArrayBuffer>> = {};
 
-async function loader({params, request}: Route.LoaderArgs) {
+export async function loader({params, request}: Route.LoaderArgs) {
     if (!params.id) {
         return null;
     }
