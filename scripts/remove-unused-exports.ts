@@ -104,7 +104,7 @@ function resolveImportPath(importPath: string, fromFile: string): string | null 
     const extensions = ['.ts', '.tsx', '.js', '.jsx', ''];
     for (const ext of extensions) {
         const fullPath = resolved + ext;
-        if (fs.existsSync(fullPath)) {
+        if (fs.existsSync(fullPath) && fs.statSync(fullPath).isFile()) {
             return fullPath;
         }
     }

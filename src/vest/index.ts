@@ -13,9 +13,9 @@ import {run} from './App';
 import {deserializeFixtures} from './utils';
 import {deepRoundFloats} from '../rendering/deepEqual';
 
-export class IncompleteFixture extends Error {}
+class IncompleteFixture extends Error {}
 
-export const jestTests = <I, O>(config: Config<I, O>) => {
+const jestTests = <I, O>(config: Config<I, O>) => {
     // @ts-ignore
     describe(`Vest ${config.id}`, () => {
         const file = path.join(config.dir, '__vest__', config.id + '.txt');
@@ -38,7 +38,7 @@ export const jestTests = <I, O>(config: Config<I, O>) => {
     });
 };
 
-export const vestUI = <I, O>(config: Config<I, O>) => {
+const vestUI = <I, O>(config: Config<I, O>) => {
     run(config as any);
 };
 
