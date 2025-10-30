@@ -29,7 +29,7 @@ export function primitivesForElementsAndPaths(
         })
         .concat(
             paths
-                .map((path) => {
+                .flatMap((path) => {
                     return path.segments.map(
                         (seg, i): null | {prim: Primitive; guides: Array<Id>} => {
                             const prev = i === 0 ? path.origin : path.segments[i - 1].to;
@@ -56,8 +56,7 @@ export function primitivesForElementsAndPaths(
                             return {prim, guides: seen[k]};
                         },
                     );
-                })
-                .flat(),
+                }),
         )
         .filter(Boolean) as Array<{prim: Primitive; guides: Array<Id>}>;
 }

@@ -477,7 +477,7 @@ function tarImages(images: Uint8Array[], fps: number, state: State) {
             .concat([
                 {
                     name: 'run_ffmpeg.bash',
-                    mode: parseInt('777', 8),
+                    mode: 0o777,
                     data: `#!/bin/bash
                                     set -ex
                                     ffmpeg ${args.map((a) => (a[0] === '-' ? a : `"${a}"`)).join(' ')}

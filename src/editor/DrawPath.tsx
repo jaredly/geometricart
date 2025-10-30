@@ -356,11 +356,10 @@ function nextForState(
     const covered = parts.map((part) => coordKey(part.to.coord));
     // const butLast = covered.slice(0, -1);
     const used = parts
-        .map((part, i) => {
+        .flatMap((part, i) => {
             const prev = i === 0 ? origin.coord : parts[i - 1].to.coord;
             return [segmentKey(prev, part.segment), segmentKeyReverse(prev, part.segment)];
-        })
-        .flat();
+        });
     const current = parts.length == 0 ? origin : parts[parts.length - 1].to;
 
     let next = findNextSegments(

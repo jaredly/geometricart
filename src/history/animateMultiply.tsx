@@ -86,7 +86,6 @@ async function highlightPaths(
         ctx.lineCap = 'round';
         ctx.stroke();
         if (noWait) {
-            continue;
         }
 
         // if (by < minWait) {

@@ -650,7 +650,6 @@ const cmdsToPoints = (cmds: number[][], pk: PathKit, outer: SVGSVGElement): Coor
             path.delete();
         } else if (cmd[0] === pk.CLOSE_VERB) {
             points[points.length - 1].push({...points[points.length - 1][0]});
-            continue;
         } else {
             throw new Error('unknown cmd ' + cmd[0]);
         }

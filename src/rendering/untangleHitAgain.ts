@@ -161,17 +161,15 @@ export const untangleHit = (entries: Array<SegmentIntersection>): Array<HitCorne
             result.push({
                 entries: segmentGroups
                     .filter((g) => g.kind.type === 'enter')
-                    .map((g) => g.entries)
-                    .flat(),
+                    .flatMap((g) => g.entries),
                 exits: segmentGroups
                     .filter((g) => g.kind.type === 'exit')
-                    .map((g) =>
+                    .flatMap((g) =>
                         g.entries.map((exit) => ({
                             exit,
                             goingInside: (g.kind as Exit).goingInside,
                         })),
-                    )
-                    .flat(),
+                    ),
             });
             break;
         }

@@ -67,8 +67,6 @@ const intersectsRect = (path: Path, rect: Rect, debug?: boolean) => {
                     }
                     return true;
                 }
-                // Not supported yet!!
-                continue;
             }
         }
     }

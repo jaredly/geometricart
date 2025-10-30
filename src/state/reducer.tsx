@@ -908,7 +908,7 @@ const reduceWithoutUndo = (state: State, action: UndoableAction): [State, UndoAc
                 {type: action.type, action},
             ];
         }
-        case 'gcode:config':
+        case 'gcode:config': {
             const prev: Partial<State['gcode']> = {};
             Object.keys(action.config).forEach((k) => {
                 // @ts-ignore
@@ -918,6 +918,7 @@ const reduceWithoutUndo = (state: State, action: UndoableAction): [State, UndoAc
                 {...state, gcode: {...state.gcode, ...action.config}},
                 {type: action.type, action, prev},
             ];
+        }
         case 'gcode:item:order': {
             const items = state.gcode.items.slice();
             const item = items.splice(action.oldIndex, 1)[0];
@@ -994,21 +995,23 @@ const reduceWithoutUndo = (state: State, action: UndoableAction): [State, UndoAc
                 {type: action.type, action, prev},
             ];
         }
-        default:
+        default: {
             let _x: never = action;
             console.log(`SKIPPING ${(action as any).type}`);
+        }
     }
     return [state, null];
 };
 
 export const undo = (state: State, action: UndoAction): State => {
     switch (action.type) {
-        case 'groups:order':
+        case 'groups:order': {
             const pathGroups = {...state.pathGroups};
             Object.entries(action.prev).forEach(([key, ordering]) => {
                 pathGroups[key] = {...pathGroups[key], ordering};
             });
             return {...state, pathGroups};
+        }
         case 'history-view:update':
             return {...state, historyView: action.prev};
         case 'tiling:update':
@@ -1184,12 +1187,13 @@ export const undo = (state: State, action: UndoAction): State => {
             });
             return state;
         }
-        case 'pending:toggle':
+        case 'pending:toggle': {
             const pending = state.pending as PendingGuide;
             return {
                 ...state,
                 pending: {...pending, toggle: !pending.toggle},
             };
+        }
         case 'pending:extent': {
             const pending = state.pending as PendingGuide;
             return {

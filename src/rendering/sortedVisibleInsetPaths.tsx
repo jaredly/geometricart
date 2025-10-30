@@ -413,8 +413,8 @@ export function sortForLaserCutting(processed: Path[], laserCutPalette: string[]
     red.forEach((path, pi) => addToUsed(path, used.red, pi));
     blue.forEach((path, pi) => addToUsed(path, used.blue, pi));
 
-    red = red.map((path, pi) => removeFullOverlaps(path, pi, used.red)).flat();
-    blue = blue.map((path, pi) => removeFullOverlaps(path, pi, used.blue, used.red)).flat();
+    red = red.flatMap((path, pi) => removeFullOverlaps(path, pi, used.red));
+    blue = blue.flatMap((path, pi) => removeFullOverlaps(path, pi, used.blue, used.red));
 
     // reset for the new, reduced paths
     used = {red: {}, blue: {}};
@@ -422,8 +422,8 @@ export function sortForLaserCutting(processed: Path[], laserCutPalette: string[]
     blue.forEach((path, pi) => addToUsed(path, used.blue, pi));
 
     // console.log(used);
-    red = red.map((path, pi) => removePartialOverlaps(path, pi, used.red)).flat();
-    blue = blue.map((path, pi) => removePartialOverlaps(path, pi, used.blue, used.red)).flat();
+    red = red.flatMap((path, pi) => removePartialOverlaps(path, pi, used.red));
+    blue = blue.flatMap((path, pi) => removePartialOverlaps(path, pi, used.blue, used.red));
 
     return others.concat(blue).concat(red);
 }

@@ -535,7 +535,7 @@ function usePalettePreload(state: State) {
                     .then((blob) => {
                         var reader = new FileReader();
                         reader.readAsDataURL(blob);
-                        reader.onloadend = function () {
+                        reader.onloadend = () => {
                             var base64data = reader.result;
                             imageCache[color] = base64data as string;
                             setTick((t) => t + 1);

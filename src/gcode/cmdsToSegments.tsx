@@ -78,7 +78,6 @@ export const cmdsToSegments = (cmds: number[][], pk: PathKit): BarePath[] => {
                     to: latest.origin,
                 });
             }
-            continue;
         } else {
             throw new Error('unknown cmd ' + cmd[0]);
         }

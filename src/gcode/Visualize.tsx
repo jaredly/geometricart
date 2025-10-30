@@ -28,7 +28,7 @@ const parse = (gcode: string): GCodeData['toolPaths'] => {
     //     f?: number;
     //     tool?: Tool;
     // }[] = [];
-    let tool: Tool | undefined = undefined;
+    let tool: Tool | undefined ;
     gcode.split('\n').forEach((line) => {
         const good = line.split(';')[0].trim().toLowerCase();
         if (!good.length) {

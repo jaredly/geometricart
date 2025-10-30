@@ -9,7 +9,7 @@ export const OverlaysForm = ({state, dispatch}: {state: State; dispatch: (a: Act
     const [dragging, callbacks] = useDropTarget((file) => {
         var reader = new FileReader();
         reader.readAsDataURL(file);
-        reader.onloadend = function () {
+        reader.onloadend = () => {
             var base64data = reader.result as string;
             const id = Math.random().toString(36).slice(2);
             const image = new Image();

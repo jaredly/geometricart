@@ -188,7 +188,7 @@ const transformToMatrices = (t: Transform) => {
                 // translate back
                 translationMatrix(t.center),
             ];
-        case 'reflect':
+        case 'reflect': {
             const theta = angleTo(t.p1, t.p2);
             return [
                 // translate to origin
@@ -202,6 +202,7 @@ const transformToMatrices = (t: Transform) => {
                 // translate back
                 translationMatrix(t.p1),
             ];
+        }
     }
 };
 
