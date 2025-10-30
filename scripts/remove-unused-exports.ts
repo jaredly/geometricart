@@ -609,6 +609,10 @@ async function analyzeProject(options: Options): Promise<AnalysisResult> {
         if (filePath.includes('/routes/') && exports.some((e) => e.name === 'loader')) {
             continue;
         }
+        // Don't mess with config files
+        if (filePath.includes('.config.')) {
+            continue;
+        }
 
         const importedNames = resolvedImports[filePath] ?? [];
 
