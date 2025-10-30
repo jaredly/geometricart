@@ -82,6 +82,52 @@ export function getKey(id: string) {
 export const PREFIX = 'app';  // ✅ Stays as-is (already exported)
 ```
 
+### 3. ✅ Automatic .tsx Extension for JSX Code
+
+**Problem:** When extracting code containing JSX, the file needs a `.tsx` extension, not `.ts`.
+
+**Solution:** The script now automatically detects JSX in the extracted code and changes the extension.
+
+**Before:**
+```bash
+# User specifies .ts but code has JSX
+pnpm extract-definition components.tsx Greeting Greeting.ts
+# Would fail because JSX needs .tsx
+```
+
+**Now:**
+```bash
+pnpm extract-definition components.tsx Greeting Greeting.ts
+# Auto-detects JSX and creates Greeting.tsx instead!
+```
+
+**Console output:**
+```
+✓ Found 1 definition(s)
+⚠️  Extracted code contains JSX, changing extension: Greeting.ts → Greeting.tsx
+✓ Created Greeting.tsx
+✓ Updated components.tsx
+```
+
+**Example:**
+```typescript
+// components.tsx (before)
+export const Greeting = ({name}: {name: string}) => {
+    return <div>Hello {name}</div>;
+};
+```
+
+After extraction:
+- Creates `Greeting.tsx` (not .ts!)
+- Works correctly with JSX syntax
+- All imports updated to use correct extension
+
+**Smart detection:**
+- Detects JSX elements: `<div>`, `<Component />`
+- Detects JSX fragments: `<>...</>`
+- Only changes .ts → .tsx (won't change other extensions)
+- If no JSX, keeps `.ts` extension as specified
+
 ## New Behavior Examples
 
 ### Example 1: Non-Exported Dependencies (The Classic Case)

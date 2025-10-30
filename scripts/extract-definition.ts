@@ -78,7 +78,7 @@ interface DefinitionInfo {
  * and updates all imports across the project.
  */
 async function extractDefinition(options: ExtractOptions) {
-    const {sourceFile, definitionNames, targetFile} = options;
+    let {sourceFile, definitionNames, targetFile} = options;
 
     // Read the source file
     const sourceCode = fs.readFileSync(sourceFile, 'utf-8');
@@ -233,6 +233,24 @@ async function extractDefinition(options: ExtractOptions) {
         sourceType: 'module',
         plugins: ['typescript', 'jsx'],
     });
+
+    // Check if the code contains JSX
+    let hasJSX = false;
+    traverse(definitionsAst, {
+        JSXElement() {
+            hasJSX = true;
+        },
+        JSXFragment() {
+            hasJSX = true;
+        },
+    });
+
+    // If code has JSX but target file ends with .ts, change to .tsx
+    if (hasJSX && targetFile.endsWith('.ts')) {
+        const newTargetFile = targetFile.replace(/\.ts$/, '.tsx');
+        console.log(`⚠️  Extracted code contains JSX, changing extension: ${path.basename(targetFile)} → ${path.basename(newTargetFile)}`);
+        targetFile = newTargetFile;
+    }
 
     traverse(definitionsAst, {
         Identifier(nodePath: NodePath<t.Identifier>) {
@@ -550,24 +568,54 @@ function getRelativeImportPath(from: string, to: string): string {
 }
 
 function findLastImportLine(lines: string[]): number {
-    let lastImportLine = 0;
-    for (let i = 0; i < lines.length; i++) {
-        const line = lines[i].trim();
-        if (line.startsWith('import ') || line.startsWith('export ') && line.includes(' from ')) {
-            lastImportLine = i;
-        } else if (line && !line.startsWith('//') && !line.startsWith('/*')) {
-            break;
+    const code = lines.join('\n');
+    try {
+        const ast = parser.parse(code, {
+            sourceType: 'module',
+            plugins: ['typescript', 'jsx'],
+        });
+
+        let lastImportLine = 0;
+        traverse(ast, {
+            ImportDeclaration(nodePath: NodePath<t.ImportDeclaration>) {
+                if (nodePath.node.loc) {
+                    lastImportLine = Math.max(lastImportLine, nodePath.node.loc.end.line - 1);
+                }
+            },
+            ExportNamedDeclaration(nodePath: NodePath<t.ExportNamedDeclaration>) {
+                // Also consider export ... from statements
+                if (nodePath.node.source && nodePath.node.loc) {
+                    lastImportLine = Math.max(lastImportLine, nodePath.node.loc.end.line - 1);
+                }
+            },
+            ExportAllDeclaration(nodePath: NodePath<t.ExportAllDeclaration>) {
+                if (nodePath.node.loc) {
+                    lastImportLine = Math.max(lastImportLine, nodePath.node.loc.end.line - 1);
+                }
+            },
+        });
+        return lastImportLine;
+    } catch (err) {
+        // Fallback to simple line-by-line parsing if AST parsing fails
+        let lastImportLine = 0;
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (line.startsWith('import ') || line.startsWith('export ') && line.includes(' from ')) {
+                lastImportLine = i;
+            } else if (line && !line.startsWith('//') && !line.startsWith('/*')) {
+                break;
+            }
         }
+        return lastImportLine;
     }
-    return lastImportLine;
 }
 
 async function updateAllImports(oldFile: string, newFile: string, definitionNames: string[]) {
     // Find all TypeScript files in the project
-    const files = await glob(['src/**/*.{ts,tsx}', 'scripts/**/*.{ts,tsx}'], {
+    const files = await glob(['**/*.{ts,tsx}'], {
         cwd: path.resolve(__dirname, '..'),
         absolute: true,
-        ignore: ['**/node_modules/**', '**/build/**', '**/dist/**'],
+        ignore: ['**/node_modules/**', '**/build/**', '**/dist/**', '**/*.d.ts'],
     });
 
     const definitionNamesSet = new Set(definitionNames);
@@ -594,9 +642,12 @@ async function updateAllImports(oldFile: string, newFile: string, definitionName
                 const source = nodePath.node.source.value;
                 const resolvedSource = resolveImportPath(file, source);
                 const resolvedOldFile = path.resolve(oldFile);
+                
+                // Normalize both paths by removing extensions for comparison
+                const normalizedSource = resolvedSource.replace(/\.tsx?$/, '');
+                const normalizedOldFile = resolvedOldFile.replace(/\.tsx?$/, '');
 
-                if (resolvedSource === resolvedOldFile ||
-                    resolvedSource === resolvedOldFile.replace(/\.tsx?$/, '')) {
+                if (normalizedSource === normalizedOldFile) {
                     // Check if this import includes any of our definitions
                     const hasDefinition = nodePath.node.specifiers.some((spec: t.ImportSpecifier | t.ImportDefaultSpecifier | t.ImportNamespaceSpecifier) => {
                         if (t.isImportSpecifier(spec) && t.isIdentifier(spec.imported)) {

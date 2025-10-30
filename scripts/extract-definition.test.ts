@@ -459,6 +459,52 @@ export const Button: React.FC<ButtonProps> = ({label, onClick}) => {
             expect(buttonFile).toContain('export const Button');
         });
 
+        it('should automatically change .ts to .tsx when extracting JSX code', () => {
+            createTestFile('components.tsx', `
+export const Greeting = ({name}: {name: string}) => {
+    return <div>Hello {name}</div>;
+};
+
+export const SimpleFunction = () => {
+    return 'no jsx here';
+};
+`);
+
+            // User specifies .ts but code has JSX
+            const result = runExtractDefinition(['components.tsx', 'Greeting', 'Greeting.ts']);
+
+            expect(result.exitCode).toBe(0);
+
+            // Should create .tsx file instead
+            expect(testFileExists('Greeting.tsx')).toBe(true);
+            expect(testFileExists('Greeting.ts')).toBe(false);
+
+            const greetingFile = readTestFile('Greeting.tsx');
+            expect(greetingFile).toContain('const Greeting =');
+            expect(greetingFile).toContain('<div>');
+
+            const componentsFile = readTestFile('components.tsx');
+            expect(componentsFile).toContain("import {Greeting} from './Greeting'");
+        });
+
+        it('should keep .ts extension when no JSX present', () => {
+            createTestFile('utils.ts', `
+export const formatName = (name: string) => {
+    return name.toUpperCase();
+};
+
+export const otherUtil = () => 'test';
+`);
+
+            const result = runExtractDefinition(['utils.ts', 'formatName', 'formatName.ts']);
+
+            expect(result.exitCode).toBe(0);
+
+            // Should keep .ts since no JSX
+            expect(testFileExists('formatName.ts')).toBe(true);
+            expect(testFileExists('formatName.tsx')).toBe(false);
+        });
+
         it('should handle same-file dependencies and export them', () => {
             createTestFile('utils.ts', `
 const a = 1;
