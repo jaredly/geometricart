@@ -1,6 +1,6 @@
 import {RouterProvider} from 'react-router-dom';
 import {AppWithSave, getForeignState, router} from './editor.client';
-import {WithPathKit} from './editor/pk';
+// import {WithPathKit} from './editor/pk';
 import {Morph} from './Morph';
 import {createRoot} from 'react-dom/client';
 
@@ -18,9 +18,9 @@ const root = (window._reactRoot =
 
 if (morph) {
     root.render(
-        <WithPathKit>
-            <Morph />
-        </WithPathKit>,
+        // <WithPathKit>
+        <Morph />,
+        // </WithPathKit>,
     );
 } else if (save) {
     getForeignState(image, load).then(
@@ -34,8 +34,8 @@ if (morph) {
     );
 } else {
     root.render(
-        <WithPathKit>
-            <RouterProvider router={router} />{' '}
-        </WithPathKit>,
+        // <WithPathKit>
+        <RouterProvider router={router} />,
+        // </WithPathKit>,
     );
 }

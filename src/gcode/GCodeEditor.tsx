@@ -8,7 +8,7 @@ import {Settings} from './Settings';
 import {ItemEdit} from './ItemEdit';
 import {Canvas} from '../editor/Canvas';
 import {IconDelete} from '../icons/Icon';
-import {usePK} from '../editor/pk';
+// import {usePK} from '../editor/pk';
 
 const many = (value: string, m: number) => {
     const values: string[] = [];
@@ -36,7 +36,7 @@ export const GCodeEditor = ({
         [state.view, state.paths, state.pathGroups],
     );
 
-    const pathKit = usePK();
+    // const pathKit = usePK();
 
     const originalSize = 700;
 
@@ -148,9 +148,7 @@ export const GCodeEditor = ({
                 </div>
             </div>
             <div style={{marginTop: 100}}>
-                {pathKit ? (
-                    <Toolbar state={state} bounds={bounds} w={w} h={h} PathKit={pathKit} />
-                ) : null}
+                <Toolbar state={state} bounds={bounds} w={w} h={h} />
             </div>
         </div>
     );

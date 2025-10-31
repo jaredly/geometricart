@@ -1,6 +1,6 @@
 import '@react-three/fiber';
 import earcut from 'earcut';
-import {Path as PKPath, } from 'pathkit-wasm';
+import {Path as PKPath} from 'canvaskit-wasm';
 import React from 'react';
 import {BufferAttribute, BufferGeometry, PointsMaterial} from 'three';
 import {segmentsBounds} from '../editor/Bounds';
@@ -20,7 +20,7 @@ import {
 import {transformBarePath} from '../rendering/points';
 import {Action} from '../state/Action';
 import {Fill, Path, State, StyleLine} from '../types';
-import {PK} from '../editor/pk';
+import {pk as PK} from '../routes/pk';
 import {generatePathsAndOutlines} from '../editor/ExportSVG';
 
 const unique = (v: string[]) => {
@@ -47,10 +47,10 @@ const byMultiSvg = (pathsToShow: Path[], multi: State['view']['multi'] & {}): Sh
 
     // console.log("grp", grouped, multi, pathsToShow);
 
-    const outline = PK.NewPath();
+    const outline = new PK.Path();
     grouped.outlines.forEach((path) => {
-        const pkpath = PK.FromSVGString(calcPathD(path, 1));
-        outline.op(pkpath, PK.PathOp.UNION);
+        const pkpath = PK.Path.MakeFromSVGString(calcPathD(path, 1))!;
+        outline.op(pkpath, PK.PathOp.Union);
         pkpath.delete();
     });
 
@@ -75,14 +75,14 @@ const byMultiSvg = (pathsToShow: Path[], multi: State['view']['multi'] & {}): Sh
             // const pkpath = PK.NewPath();
             const pkpath = outline.copy();
             paths.forEach((path) => {
-                const single = PK.FromSVGString(calcPathD(path, 1));
+                const single = PK.Path.MakeFromSVGString(calcPathD(path, 1))!;
 
                 if (style.color === 2 && style.lighten === 1) {
                     console.log(calcPathD(path, 1));
                     console.log(single.getBounds());
                 }
 
-                pkpath.op(single, PK.PathOp.DIFFERENCE);
+                pkpath.op(single, PK.PathOp.Difference);
                 single.delete();
             });
 
@@ -141,13 +141,13 @@ const byGroupShapes = (pathsToShow: Path[]): Shapes => {
 
             if (!style) return null;
 
-            const pkpath = PK.FromSVGString(calcPathD(path, 1));
+            const pkpath = PK.Path.MakeFromSVGString(calcPathD(path, 1))!;
 
             if (style.type === 'line') {
                 pkpath.stroke({
                     width: (style.style.width || 5) / 100,
-                    cap: PK.StrokeCap.BUTT,
-                    join: PK.StrokeJoin.MITER,
+                    cap: PK.StrokeCap.Butt,
+                    join: PK.StrokeJoin.Miter,
                 });
                 pkpath.simplify();
             }
@@ -271,10 +271,10 @@ export const calcShapes = (
         if (!svgs[gat]) {
             svgs[gat] = pkpath;
             if (border && fullThicknessGat != null && gat < fullThicknessGat) {
-                svgs[gat].op(border, PK.PathOp.UNION);
+                svgs[gat].op(border, PK.PathOp.Union);
             }
         } else {
-            svgs[gat].op(pkpath, PK.PathOp.UNION);
+            svgs[gat].op(pkpath, PK.PathOp.Union);
         }
     });
     const svgPathWithBounds = (pk: PKPath) => {
@@ -283,10 +283,10 @@ export const calcShapes = (
         return {
             svg,
             bounds: {
-                x: bounds.fLeft,
-                y: bounds.fTop,
-                w: bounds.fRight - bounds.fLeft,
-                h: bounds.fBottom - bounds.fTop,
+                x: bounds[0],
+                y: bounds[1],
+                w: bounds[3] - bounds[0],
+                h: bounds[4] - bounds[1],
             },
         };
     };
@@ -310,7 +310,7 @@ function pathToGeometry({
     xoff: number;
     thick: number;
 }) {
-    const clipped = cmdsToSegments(pkpath.toCmds(), PK)
+    const clipped = cmdsToSegments([...pkpath.toCmds()])
         .map((r) => transformBarePath(r, [scaleMatrix(1, -1)]))
         .map((r) => ({
             ...r,

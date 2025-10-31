@@ -1,7 +1,7 @@
 /* @jsx jsx */
 /* @jsxFrag React.Fragment */
-import {Interpolation, Theme, } from '@emotion/react';
-import {Path as PKPath, PathKit} from 'pathkit-wasm';
+import {Interpolation, Theme} from '@emotion/react';
+import {Path as PKPath, pk as PK} from '../routes/pk';
 import React, {useMemo, useState} from 'react';
 import {pkPath} from '../sidebar/pkClipPaths';
 import {Action} from '../state/Action';
@@ -76,7 +76,6 @@ export function ExportSVG({
     embed,
     history,
     name,
-    PK,
 }: {
     state: State;
     dispatch: (action: Action) => void;
@@ -84,7 +83,6 @@ export function ExportSVG({
     embed: boolean;
     history: boolean;
     name: string;
-    PK: PathKit;
 }) {
     const [url, setUrl] = React.useState(null as null | {url: string; info: string}[]);
     const boundingRect = React.useMemo(
@@ -182,7 +180,6 @@ export function ExportSVG({
                         history,
                         setUrl,
                         multi: state.view.multi,
-                        PK,
                     })
                 }
             >
@@ -527,7 +524,6 @@ async function runSVGExport({
     history,
     setUrl,
     multi,
-    PK,
 }: {
     crop: number | null;
     boundingRect: Bounds | null;
@@ -537,7 +533,6 @@ async function runSVGExport({
     history: boolean;
     setUrl: React.Dispatch<React.SetStateAction<null | {url: string; info: string}[]>>;
     multi?: null | Multi;
-    PK: PathKit;
 }) {
     const size = calcSVGSize(crop, boundingRect, state, originalSize);
 
@@ -571,7 +566,7 @@ async function runSVGExport({
 
             return `<g transform="translate(${size.width * c}, ${size.height * r})">${
                 multi.traceAndMerge
-                    ? traceAndMergePaths(PK, {...state, paths: map}, size)
+                    ? traceAndMergePaths({...state, paths: map}, size)
                     : getSVGText({...state, paths: map}, size, true)
             }</g>`;
         });
@@ -604,7 +599,7 @@ async function runSVGExport({
     return;
 }
 
-const traceAndMergePaths = (PK: PathKit, state: State, size: {width: number; height: number}) => {
+const traceAndMergePaths = (state: State, size: {width: number; height: number}) => {
     const zoom = state.view.zoom;
     const {x, y} = viewPos(state.view, size.width, size.height);
 
@@ -621,15 +616,15 @@ const traceAndMergePaths = (PK: PathKit, state: State, size: {width: number; hei
         w = w ? (w / 100) * zoom : 2;
         c = paletteColor(state.palette, st?.color ?? 0, st?.lighten ?? 0);
         // const d = calcPathD(path, state.view.zoom)
-        const p = pkPath(PK, path.segments, path.origin, path.open);
+        const p = pkPath(path.segments, path.origin, path.open);
         const stroke = {
             width: w / zoom,
-            join: PK.StrokeJoin.MITER,
-            cap: PK.StrokeCap.ROUND,
+            join: PK.StrokeJoin.Miter,
+            cap: PK.StrokeCap.Round,
         };
         if (backer) {
-            const s = p.copy().stroke(stroke);
-            p.op(s, PK.PathOp.UNION);
+            const s = p.copy().stroke(stroke)!;
+            p.op(s, PK.PathOp.Union);
             s.delete();
         } else {
             p.stroke(stroke);
@@ -637,7 +632,7 @@ const traceAndMergePaths = (PK: PathKit, state: State, size: {width: number; hei
         if (pk == null) {
             pk = p;
         } else {
-            pk.op(p, PK.PathOp.UNION);
+            pk.op(p, PK.PathOp.Union);
             p.delete();
         }
     });

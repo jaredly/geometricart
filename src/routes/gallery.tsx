@@ -94,9 +94,9 @@ export const Gallery = ({loaderData}: Route.ComponentProps) => {
     );
 
     return (
-        <div>
-            <h1> Galley page </h1>
-            <div style={{display: 'flex', alignItems: 'center', gap: 4, padding: 12}}>
+        <div className="mx-auto w-6xl p-4 bg-base-200">
+            <h1>Pattern Gallery</h1>
+            <div className="gap-4 flex items-center p-4">
                 Group
                 <button
                     className={`btn btn-sm ${groupBy === 'symmetry' ? 'btn-accent' : ''}`}

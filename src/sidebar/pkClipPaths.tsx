@@ -1,43 +1,41 @@
-import {PathKit, Path as PKPath} from 'pathkit-wasm';
 import * as React from 'react';
 import {calcSegmentsD} from '../editor/calcPathD';
-import {PK} from '../editor/pk';
+import {pk as PK, type Path as PKPath} from '../routes/pk';
 import {cmdsToSegments} from '../gcode/cmdsToSegments';
 import {coordsEqual} from '../rendering/pathsAreIdentical';
 import {ensureClockwise} from '../rendering/pathToPoints';
 import {Action} from '../state/Action';
 import {Segment, Coord, State, Path} from '../types';
 
-export const pkPath = (PK: PathKit, segments: Segment[], origin?: Coord, open?: boolean) => {
+export const pkPath = (segments: Segment[], origin?: Coord, open?: boolean) => {
     const d = calcSegmentsD(segments, origin ?? segments[segments.length - 1].to, open, 1);
-    return PK.FromSVGString(d);
+    return PK.Path.MakeFromSVGString(d)!;
 };
 
-export const pkInset = (PK: PathKit, path: PKPath, inset: number) => {
+export const pkInset = (path: PKPath, inset: number) => {
     const line = path.copy();
     line.stroke({
         width: inset < 0 ? -inset : inset,
-        join: PK.StrokeJoin.MITER,
-        cap: PK.StrokeCap.SQUARE,
+        join: PK.StrokeJoin.Miter,
+        cap: PK.StrokeCap.Square,
     });
-    path.op(line, inset < 0 ? PK.PathOp.UNION : PK.PathOp.DIFFERENCE);
+    path.op(line, inset < 0 ? PK.PathOp.Union : PK.PathOp.Difference);
     line.delete();
     return path;
 };
 
 const pkClipPath = (
-    PK: PathKit,
     pkp: PKPath,
     pkClip: PKPath,
     outside = false,
 ): {segments: Segment[]; origin: Coord}[] => {
-    pkp.op(pkClip, outside ? PK.PathOp.DIFFERENCE : PK.PathOp.INTERSECT);
+    pkp.op(pkClip, outside ? PK.PathOp.Difference : PK.PathOp.Intersect);
 
-    return pkPathToSegments(PK, pkp);
+    return pkPathToSegments(pkp);
 };
 
-export const pkPathToSegments = (PK: PathKit, pkp: PKPath) => {
-    const clipped = cmdsToSegments(pkp.toCmds(), PK);
+export const pkPathToSegments = (pkp: PKPath) => {
+    const clipped = cmdsToSegments([...pkp.toCmds()]);
 
     clipped.forEach((region) => {
         const {segments, origin, open} = region;
@@ -63,9 +61,9 @@ export const pkClipPaths = (
     dispatch: React.Dispatch<Action>,
     outside = false,
 ) => {
-    const pkClip = pkPath(PK, clip);
+    const pkClip = pkPath(clip);
     if (inset != 0) {
-        pkInset(PK, pkClip, inset / 100);
+        pkInset(pkClip, inset / 100);
     }
 
     const paths: {[key: string]: Path | null} = {};
@@ -73,9 +71,9 @@ export const pkClipPaths = (
 
     pathIds.forEach((id) => {
         const path = state.paths[id];
-        const pkp = pkPath(PK, path.segments, path.origin, path.open);
+        const pkp = pkPath(path.segments, path.origin, path.open);
 
-        const clipped = pkClipPath(PK, pkp, pkClip, outside);
+        const clipped = pkClipPath(pkp, pkClip, outside);
 
         console.log(`Path ${id} clip`);
         console.log('Started as', path.segments);

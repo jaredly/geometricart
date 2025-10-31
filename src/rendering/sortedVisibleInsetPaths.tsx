@@ -476,9 +476,9 @@ export function applyColorVariations(
     path: Path,
     rand: {next: (min: number, max: number) => number},
 ) {
-    if (!path) {
-        debugger;
-    }
+    // if (!path) {
+    //     debugger;
+    // }
     path = {
         ...path,
         style: {

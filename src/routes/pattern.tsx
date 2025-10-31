@@ -6,9 +6,10 @@ import {flipPattern} from './flipPattern';
 import {canonicalShape, getPatternData, humanReadableFraction} from './getPatternData';
 import {normShape} from './normShape';
 import {TilingPattern} from './ShowTiling';
-import {shapeKey, Tiling} from '../types';
+import {shapeKey, State, Tiling} from '../types';
 import {pk} from './pk';
 import {drawBounds, drawLines, drawShapes, drawWoven} from './canvasDraw';
+import {canvasRender} from '../rendering/CanvasRender';
 
 export async function loader({params}: Route.LoaderArgs) {
     if (!params.id) {
@@ -95,7 +96,7 @@ export const Pattern = () => {
                             className="range"
                             type="range"
                             value={display.lineWidth}
-                            min={0.1}
+                            min={0}
                             step={0.01}
                             max={1}
                             onChange={(evt) =>
@@ -168,10 +169,12 @@ export const Pattern = () => {
                                     />
                                     <table className="table">
                                         <tbody>
-                                            <tr>
-                                                <td>Location</td>
-                                                <td>{image.location}</td>
-                                            </tr>
+                                            {image.location ? (
+                                                <tr>
+                                                    <td>Location</td>
+                                                    <td>{image.location}</td>
+                                                </tr>
+                                            ) : null}
                                             <tr>
                                                 <td>Source</td>
                                                 <td>
@@ -200,9 +203,27 @@ export const Pattern = () => {
                             ))}
                         </div>
                     ) : null}
+                    {Object.entries(pattern.imageDrawings).map(([key, state]) => (
+                        <SimpleRender state={state} size={600} />
+                    ))}
                 </div>
             </div>
         </div>
+    );
+};
+
+const SimpleRender = ({state, size}: {size: number; state: State}) => {
+    const ref = useRef<HTMLCanvasElement>(null);
+    useEffect(() => {
+        const canvas = ref.current!;
+        const ctx = canvas.getContext('2d')!;
+
+        ctx.save();
+        canvasRender(ctx, state, size, size, size / 1000, {}, 0, {}, []);
+        ctx.restore();
+    }, [state, size]);
+    return (
+        <canvas ref={ref} width={size} height={size} style={{width: size / 2, height: size / 2}} />
     );
 };
 

@@ -2,6 +2,7 @@
 // import {pk as pks} from './pk.server';
 // import { serverOnly$ } from "vite-env-only";
 import CKI from 'canvaskit-wasm';
+export {type Path} from 'canvaskit-wasm';
 
 export let pk = await CKI({
     locateFile: (file) =>

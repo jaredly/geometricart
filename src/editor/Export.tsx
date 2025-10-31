@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {BlurInt, Text, Toggle} from './Forms';
 import {transparent} from './Icons';
@@ -10,7 +9,6 @@ import {UIState} from '../useUIState';
 import {getClips} from '../rendering/pkInsetPaths';
 import {ExportSVG} from './ExportSVG';
 import {ExportPng} from './ExportPng';
-import {PK} from './pk';
 import {stateToConstructive} from './constructiveExport';
 
 export type Bounds = {
@@ -121,7 +119,6 @@ export const Export = ({
                 name={name}
             />
             <ExportSVG
-                PK={PK}
                 state={state}
                 dispatch={dispatch}
                 originalSize={originalSize}

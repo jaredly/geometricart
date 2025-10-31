@@ -86,6 +86,7 @@ export const canvasTiling = async (
     data: ReturnType<typeof getPatternData>,
     size: number,
     flipped: boolean,
+    config: {woven?: number; lines?: number; shapes?: number},
 ) => {
     let surface = pk.MakeSurface(size, size);
 
@@ -105,38 +106,37 @@ export const canvasTiling = async (
     ctx.scale(size / (2 + margin * 2), size / (2 + margin * 2));
     ctx.translate(1 + margin, 1 + margin);
 
-    // const paint = new pk.Paint();
-    // paint.setColor(pk.BLACK);
-    // paint.setStyle(pk.PaintStyle.Fill);
-    // paint.setAntiAlias(true);
-    // ctx.drawRect(pk.LTRBRect(0, 0, size, size), paint);
-
-    if (!data.woven) {
-        drawShapes(ctx, data, flipped);
+    if (config.shapes || (!config.lines && !config.woven)) {
+        drawShapes(
+            ctx,
+            data,
+            flipped,
+            config.shapes ? data.minSegLength * config.shapes : undefined,
+        );
     }
 
-    if (flipped) {
-        drawFlips(ctx, data);
+    // if (flipped) {
+    //     drawFlips(ctx, data);
+    // }
+
+    // const showLines = true;
+    if (config.lines) {
+        drawLines(ctx, data, data.minSegLength * config.lines);
     }
 
-    const showLines = true;
-    if (showLines && !data.woven) {
-        drawLines(ctx, data);
+    if (data.woven && config.woven) {
+        drawWoven(ctx, data, data.minSegLength * config.woven);
     }
 
-    if (data.woven) {
-        drawWoven(ctx, data);
-    }
+    // const showBoundsTransforms = false;
+    // if (showBoundsTransforms) {
+    //     drawBoundsTransform(ctx, data);
+    // }
 
-    const showBoundsTransforms = false;
-    if (showBoundsTransforms) {
-        drawBoundsTransform(ctx, data);
-    }
-
-    const showSegmentsEndpoints = false;
-    if (showSegmentsEndpoints) {
-        drawSegmentsEndpoints(ctx, data);
-    }
+    // const showSegmentsEndpoints = false;
+    // if (showSegmentsEndpoints) {
+    //     drawSegmentsEndpoints(ctx, data);
+    // }
 
     const img = surface.makeImageSnapshot();
     const bytes = img.encodeToBytes()!;

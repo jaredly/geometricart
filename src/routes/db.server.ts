@@ -1,6 +1,8 @@
 import {join} from 'path';
-import {Tiling} from '../types';
+import {State, Tiling} from '../types';
 import {Database} from 'bun:sqlite';
+import {existsSync, readFileSync} from 'fs';
+import {migrateState} from '../state/migrateState';
 
 export const db = new Database(join(import.meta.dirname, '../../data.db'));
 
@@ -54,7 +56,22 @@ export const getPattern = (hash: string) => {
         date: string;
         url: string;
     }[];
-    return {hash, tiling, images};
+    const uploadRoot = join(import.meta.dirname, '../../../../apps/pattern-db/public');
+    const imageDrawings = Object.fromEntries(
+        images
+            .map((image) => {
+                const path = join(uploadRoot, image.url.replace(/^\//, ''));
+                if (existsSync(path + '.json')) {
+                    return [
+                        image.url,
+                        migrateState(JSON.parse(readFileSync(path + '.json', 'utf-8'))),
+                    ];
+                }
+                return null;
+            })
+            .filter(Boolean) as [string, State][],
+    );
+    return {hash, tiling, images, imageDrawings};
 };
 
 // const query = db.query('select id, hash, json from Tiling');

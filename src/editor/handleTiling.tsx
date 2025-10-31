@@ -1,13 +1,11 @@
-
 import {BarePath, Coord, SegPrev, Segment, State, Tiling} from '../types';
 import {consumePath, getVisiblePaths, pkClips} from '../rendering/pkInsetPaths';
-import {PK} from './pk';
 import {pkPath} from '../sidebar/pkClipPaths';
 import {addPrevsToSegments} from '../rendering/segmentsToNonIntersectingSegments';
 import {SlopeIntercept, lineToSlope, slopeToLine} from '../rendering/intersect';
 import {numKey} from '../rendering/coordKey';
 import {applyMatrix, scaleMatrix} from '../rendering/getMirrorTransforms';
-import {transformBarePath, } from '../rendering/points';
+import {transformBarePath} from '../rendering/points';
 import {tilingPoints, eigenShapesToLines} from './tilingPoints';
 import {SegmentWithPrev} from '../rendering/clipPathNew';
 
@@ -62,7 +60,7 @@ const getShapesIntersectingPolygon = (state: State, pts: Coord[]) => {
 
     const paths = getVisiblePaths(state.paths, state.pathGroups);
     const pkc = {
-        path: pkPath(PK, segments, origin),
+        path: pkPath(segments, origin),
         outside: false,
     };
     const shapes: BarePath[] = [];
@@ -71,8 +69,7 @@ const getShapesIntersectingPolygon = (state: State, pts: Coord[]) => {
         const big = transformBarePath(path, [scaleMatrix(scale, scale)]);
 
         const got = consumePath(
-            PK,
-            pkClips(PK, pkPath(PK, big.segments, big.origin), [pkc], path)[0],
+            pkClips(pkPath(big.segments, big.origin), [pkc], path)[0],
             path,
         ).map((path) => transformBarePath(path, [scaleMatrix(1 / scale, 1 / scale)]));
         if (!got.length) {

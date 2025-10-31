@@ -27,10 +27,11 @@ import {exportPNG} from './editor/ExportPng';
 import {DesignLoader} from './DesignLoader';
 import {Button} from 'primereact/button';
 import {useGists, gistCache} from './useGists';
-import {loadGist, newGist, saveGist, } from './gists';
+import {loadGist, newGist, saveGist} from './gists';
 import {maybeMigrate} from './state/migrateState';
 import {useDropStateTarget} from './editor/useDropTarget';
-import {usePK, WithPathKit} from './editor/pk';
+import {pk} from './routes/pk';
+// import {usePK, WithPathKit} from './editor/pk';
 dayjs.extend(relativeTime);
 
 export const metaPrefix = 'meta:';
@@ -343,14 +344,14 @@ export const debounce = (fn: () => Promise<void>, time: number): (() => void) =>
 };
 
 const PkDebug = () => {
-    const PK = usePK();
+    // const PK = usePK();
     const [text, setText] = React.useState(
         `L10 10L5 0Z`,
         // `p.lineTo(10, 10)\np.conicTo(0, 0, 0, 10, 0.2)\np.close()`,
     );
     const d = React.useMemo(() => {
         try {
-            const p = PK.FromSVGString(text);
+            const p = pk.Path.MakeFromSVGString(text)!;
             // const fn = new Function('p', text);
             // fn(p);
             const d = p.toSVGString();
@@ -377,7 +378,7 @@ const PkDebug = () => {
                     >
                         <path d={d.d} />
                     </svg>
-                    <pre>{d.cmds.map((m) => JSON.stringify(m)).join('\n')}</pre>
+                    <pre>{[...d.cmds].map((m) => JSON.stringify(m)).join('\n')}</pre>
                     <pre>{d.d.split(/(?=[MLQ])/g).join('\n')}</pre>
                 </div>
             ) : (
@@ -504,28 +505,26 @@ export const getForeignState = async (image: string | null, load: string | null)
 const morph = false;
 
 export const AppWithSave = ({state, save}: {state: State; save: string}) => (
-    <WithPathKit>
-        <App
-            closeFile={() => {
-                if (back) {
-                    location.href = back;
-                } else {
-                    history.back();
-                }
-            }}
-            initialState={state}
-            lastSaved={null}
-            saveState={async (state) => {
-                fetch(save, {
-                    method: 'POST',
-                    body: JSON.stringify(state),
-                    headers: {
-                        'Content-type': 'application/json',
-                    },
-                });
-            }}
-        />
-    </WithPathKit>
+    <App
+        closeFile={() => {
+            if (back) {
+                location.href = back;
+            } else {
+                history.back();
+            }
+        }}
+        initialState={state}
+        lastSaved={null}
+        saveState={async (state) => {
+            fetch(save, {
+                method: 'POST',
+                body: JSON.stringify(state),
+                headers: {
+                    'Content-type': 'application/json',
+                },
+            });
+        }}
+    />
 );
 
 function newMetaData(id: string, state: State): MetaData {
