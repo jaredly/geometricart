@@ -1,9 +1,6 @@
-/* @jsx jsx */
-/* @jsxFrag React.Fragment */
-import {jsx} from '@emotion/react';
+
 import React, {useMemo} from 'react';
 import {PendingMirror} from '../useUIState';
-import {EyeIcon, EyeInvisibleIcon} from '../icons/Eyes';
 import {
     AddIcon,
     BxSelectMultipleIcon,
@@ -13,16 +10,14 @@ import {
     LineLongerIcon,
     LineShorterIcon,
     MirrorIcon,
-    PaintFillIcon,
     SelectDragIcon,
     SubtractLineIcon,
     VectorSelectionIcon,
 } from '../icons/Icon';
-import {Action, PathMultiply, PendingType} from '../state/Action';
-import {Coord, guideTypes, Line, State} from '../types';
+import {Action, PathMultiply, } from '../state/Action';
+import {Coord, Line, State} from '../types';
 import {EditorState, SelectMode} from './Canvas';
 import {PendingDuplication} from './Guides';
-import {Hover} from './Sidebar';
 import {closestPoint} from '../animation/getBuiltins';
 
 export const selectedPathIds = (state: State) => {

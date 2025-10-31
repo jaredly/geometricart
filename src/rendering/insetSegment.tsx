@@ -1,9 +1,8 @@
 import {ArcSegment, Coord, LineSegment, Segment} from '../types';
 import {angleTo, dist, push} from './getMirrorTransforms';
 import {circleCircle, lineCircle, lineLine, lineToSlope} from './intersect';
-import {angleIsBetween, closeEnoughAngle} from './epsilonToZero';
+import {closeEnoughAngle} from './epsilonToZero';
 import {angleBetween} from './isAngleBetween';
-import {anglesEqual} from './epsilonToZero';
 import {coordsEqual} from './pathsAreIdentical';
 
 const insetLineLine = (

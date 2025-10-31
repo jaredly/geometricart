@@ -1,4 +1,4 @@
-import * as React from 'react';
+
 
 export const SvgGrid = ({size}: {size: number}) => {
     return (

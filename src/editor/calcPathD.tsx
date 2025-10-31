@@ -1,5 +1,5 @@
 import {angleTo, dist, push} from '../rendering/getMirrorTransforms';
-import {BarePath, Coord, Path, Segment} from '../types';
+import {BarePath, Coord, Segment} from '../types';
 import {arcPath} from './RenderPendingPath';
 
 export const calcPathD = (path: BarePath, zoom: number): string => {

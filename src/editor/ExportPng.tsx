@@ -1,6 +1,4 @@
-/* @jsx jsx */
-/* @jsxFrag React.Fragment */
-import {jsx} from '@emotion/react';
+
 import {encodeChunks, extractChunks, insertMetadata} from 'png-metadata';
 import React from 'react';
 import {canvasRender, paletteImages} from '../rendering/CanvasRender';

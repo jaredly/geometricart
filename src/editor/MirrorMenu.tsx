@@ -1,6 +1,4 @@
-/* @jsx jsx */
-/* @jsxFrag React.Fragment */
-import {jsx} from '@emotion/react';
+
 import React from 'react';
 import {Id, State} from '../types';
 import {Action} from '../state/Action';

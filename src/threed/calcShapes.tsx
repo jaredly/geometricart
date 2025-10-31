@@ -1,6 +1,6 @@
 import '@react-three/fiber';
 import earcut from 'earcut';
-import {Path as PKPath, PathKit} from 'pathkit-wasm';
+import {Path as PKPath, } from 'pathkit-wasm';
 import React from 'react';
 import {BufferAttribute, BufferGeometry, PointsMaterial} from 'three';
 import {segmentsBounds} from '../editor/Bounds';
@@ -19,7 +19,7 @@ import {
 } from '../rendering/pathToPoints';
 import {transformBarePath} from '../rendering/points';
 import {Action} from '../state/Action';
-import {Fill, Path, State, Style, StyleLine} from '../types';
+import {Fill, Path, State, StyleLine} from '../types';
 import {PK} from '../editor/pk';
 import {generatePathsAndOutlines} from '../editor/ExportSVG';
 

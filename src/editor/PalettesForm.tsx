@@ -16,7 +16,6 @@ const {SliderPicker, SketchPicker} = rc;
 // @ts-ignore
 import kMeans from 'kmeans-js';
 
-import {ColorPicker} from 'primereact/colorpicker';
 import {Rgb, AttachmentsChooser} from './Rgb';
 
 export const averageAt = (data: ImageData, pos: Coord): Rgb => {

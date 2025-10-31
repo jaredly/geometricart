@@ -4,7 +4,6 @@ import {makeDepths} from './generateGcode';
 import {pxToMM} from './pxToMM';
 import {GCodePath, State} from '../types';
 import {FillColors, LineColors} from './GCodeEditor';
-import {Int} from '../editor/Forms';
 import {
     CheckmarkIcon,
     IconAngleAcute,

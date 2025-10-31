@@ -1,6 +1,4 @@
-/* @jsx jsx */
-/* @jsxFrag React.Fragment */
-import {jsx} from '@emotion/react';
+
 import React, {useEffect, useMemo, useState} from 'react';
 import {Coord, Overlay as OverlayT, State, View} from '../types';
 import {screenToWorld} from './Canvas';

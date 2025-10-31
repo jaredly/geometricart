@@ -5,7 +5,6 @@ import {reverseSegment} from './pathsAreIdentical';
 import {Coord, Segment} from '../types';
 import {negPiToPi} from './epsilonToZero';
 import {closeEnough} from './epsilonToZero';
-import {segmentKey} from './segmentKey';
 import {pxToMM} from '../gcode/pxToMM';
 
 export type RasterSeg = {

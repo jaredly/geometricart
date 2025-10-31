@@ -1,6 +1,4 @@
-/* @jsx jsx */
-/* @jsxFrag React.Fragment */
-import {jsx} from '@emotion/react';
+
 import {diff} from 'json-diff-ts';
 import React from 'react';
 import {PendingMirror} from '../useUIState';

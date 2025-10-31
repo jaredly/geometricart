@@ -10,7 +10,7 @@ import path from 'path';
 import fs from 'fs';
 import {Config} from './types';
 import {run} from './App';
-import {deserializeFixture, deserializeFixtures} from './utils';
+import {deserializeFixtures} from './utils';
 import {deepRoundFloats} from '../rendering/deepEqual';
 
 class IncompleteFixture extends Error {}

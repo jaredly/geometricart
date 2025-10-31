@@ -1,10 +1,8 @@
 /* @jsx jsx */
 /* @jsxFrag React.Fragment */
 import * as React from 'react';
-import {jsx} from '@emotion/react';
-import {PendingPathPair} from './Guides';
 import {Coord, Id, Intersect, Segment} from '../types';
-import {backUp, DrawPathState, goForward, goLeft, goRight, isComplete} from './DrawPath';
+import {backUp, goForward, goLeft, goRight, isComplete} from './DrawPath';
 import {Primitive} from '../rendering/intersect';
 import {simplifyPath} from '../rendering/simplifyPath';
 import {ensureClockwise} from '../rendering/pathToPoints';

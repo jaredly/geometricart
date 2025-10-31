@@ -1,6 +1,4 @@
-/* @jsx jsx */
-/* @jsxFrag React.Fragment */
-import {jsx} from '@emotion/react';
+
 import * as React from 'react';
 import {useTouchClick} from '../editor/RenderIntersections';
 

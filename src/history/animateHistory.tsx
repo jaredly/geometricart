@@ -5,10 +5,9 @@ import {
     findViewPoints,
     getHistoriesList,
     mergeViewPoints,
-    simplifyHistory,
     StateAndAction,
 } from './HistoryPlayback';
-import {canvasRender, makeImage, paletteImages} from '../rendering/CanvasRender';
+import {canvasRender, paletteImages} from '../rendering/CanvasRender';
 import {findBoundingRect} from '../editor/Export';
 import {renderTexture} from '../editor/ExportPng';
 import {screenToWorld, worldToScreen} from '../editor/Canvas';

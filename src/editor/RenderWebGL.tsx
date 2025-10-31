@@ -1,5 +1,4 @@
 import * as React from 'react';
-import {shaderForState} from '../rendering/shaderForState';
 import {texture1, texture2} from '../rendering/textures';
 import {State} from '../types';
 

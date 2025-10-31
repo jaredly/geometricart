@@ -1,11 +1,10 @@
-/* @jsx jsx */
-import {jsx} from '@emotion/react';
+
 import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {useDropTarget} from './editor/useDropTarget';
 import {Coord, Tiling} from './types';
 import {useLocalStorage} from './vest/useLocalStorage';
 import {TilingSvg} from './editor/TilingSvg';
-import {getSvgData, handleTiling} from './editor/handleTiling';
+import {handleTiling} from './editor/handleTiling';
 import {eigenShapesToLines} from './editor/tilingPoints';
 import {coordKey} from './rendering/coordKey';
 

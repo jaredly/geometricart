@@ -1,4 +1,4 @@
-import * as React from 'react';
+
 import {angleForSegment} from '../rendering/clipPath';
 import {Angle} from '../rendering/epsilonToZero';
 import {anglesEqual} from '../rendering/epsilonToZero';

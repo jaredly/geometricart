@@ -1,6 +1,4 @@
-/* @jsx jsx */
-/* @jsxFrag React.Fragment */
-import {jsx} from '@emotion/react';
+
 import {transformGuideGeom} from '../rendering/calculateGuideElements';
 import {angleTo, applyMatrices, Matrix} from '../rendering/getMirrorTransforms';
 import {GuideElement} from './GuideElement';

@@ -1,5 +1,4 @@
 import * as React from 'react';
-import {ShowHitIntersection} from '../editor/ShowHitIntersection';
 import {RenderSegmentBasic} from '../editor/RenderSegment';
 import {Coord} from '../types';
 import {register} from '../vest';

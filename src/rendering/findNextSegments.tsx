@@ -3,7 +3,7 @@ import {segmentKey} from './segmentKey';
 import {angleTo} from './getMirrorTransforms';
 import {Primitive} from './intersect';
 import {closeEnoughAngle} from './epsilonToZero';
-import {Coord, Intersect, PendingPath, PendingSegment, Segment} from '../types';
+import {Intersect, PendingPath, PendingSegment, } from '../types';
 
 const dedup = (numbers: Array<number>) => {
     const seen: {[k: number]: true} = {};

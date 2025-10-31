@@ -3,7 +3,6 @@ import {
     applyMatrices,
     getTransformsForNewMirror,
     Matrix,
-    push,
 } from './getMirrorTransforms';
 import {Coord, Guide, GuideGeom, Id, Mirror} from '../types';
 import {getCircumCircle} from './points';

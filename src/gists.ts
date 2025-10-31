@@ -1,5 +1,4 @@
 import * as git from 'isomorphic-git';
-import LighteningFS from '@isomorphic-git/lightning-fs';
 import {State} from './types';
 import http from 'isomorphic-git/http/web';
 import {fs} from 'memfs-browser';

@@ -2,10 +2,10 @@ import {useMemo} from 'react';
 import {useLoaderData, useParams} from 'react-router';
 import type {Route} from './+types/pattern';
 import {getPattern} from './db.server';
-import {canonicalShape, getPatternData, humanReadableFraction} from './getPatternData';
 import {flipPattern} from './flipPattern';
-import {ShowTiling, TilingPattern} from './ShowTiling';
+import {canonicalShape, getPatternData, humanReadableFraction} from './getPatternData';
 import {normShape} from './normShape';
+import {TilingPattern} from './ShowTiling';
 
 export async function loader({params}: Route.LoaderArgs) {
     if (!params.id) {

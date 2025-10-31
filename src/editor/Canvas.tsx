@@ -1,6 +1,4 @@
-/* @jsx jsx */
-/* @jsxFrag React.Fragment */
-import {jsx} from '@emotion/react';
+
 import React, {useEffect, useState} from 'react';
 import {Action, PathCreateMany} from '../state/Action';
 import {PendingMirror, UIState} from '../useUIState';
@@ -51,7 +49,6 @@ import {closeEnough} from '../rendering/epsilonToZero';
 import {simpleExport} from './handleTiling';
 import {
     angleDifferences,
-    isClockwise,
     isClockwisePoints,
     pointsAngles,
 } from '../rendering/pathToPoints';
