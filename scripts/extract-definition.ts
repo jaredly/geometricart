@@ -30,11 +30,15 @@
  *   # Move entire file
  *   pnpm extract-definition src/utils/helpers.ts src/utils/string-helpers.ts
  *
+ *   # Append to existing file (automatically merges imports)
+ *   pnpm extract-definition src/utils.ts helper1 src/utils/shared.ts
+ *   pnpm extract-definition src/utils.ts helper2 src/utils/shared.ts  # Appends to existing file
+ *
  * Extract mode (3 args):
  *   1. Finds the specified definition(s) in the source file
  *   2. Extracts them along with any required imports
- *   3. Creates a new file with the extracted definitions
- *   4. Updates the source file to export from the new location
+ *   3. Creates a new file OR appends to existing file (with import deduplication)
+ *   4. Updates the source file to remove extracted definitions
  *   5. Finds all files that import the definitions and updates them to use the new path
  *
  * Move mode (2 args):
@@ -42,6 +46,12 @@
  *   2. Finds all files that import from the old location
  *   3. Updates all imports to point to the new location
  *   4. Deletes the old file
+ *
+ * Features:
+ *   - Automatic import deduplication when appending to existing files
+ *   - Detects and prevents duplicate definition names
+ *   - Auto-detects JSX and changes .ts to .tsx as needed
+ *   - Handles same-file dependencies by auto-exporting them
  *
  * Supported definitions (extract mode):
  *   - Functions (exported and non-exported)
@@ -95,147 +105,7 @@ async function extractDefinition(options: ExtractOptions) {
     const definitionNamesSet = new Set(definitionNames);
 
     // First pass: find all definitions
-    traverse(ast, {
-        ExportNamedDeclaration(nodePath: NodePath<t.ExportNamedDeclaration>) {
-            const declaration = nodePath.node.declaration;
-            if (!declaration) return;
-
-            const name = getDeclarationName(declaration);
-            if (name && definitionNamesSet.has(name) && nodePath.node.loc) {
-                const start = nodePath.node.loc.start.line;
-                const end = nodePath.node.loc.end.line;
-                definitions.push({
-                    name,
-                    node: nodePath.node,
-                    start,
-                    end,
-                    code: lines.slice(start - 1, end).join('\n'),
-                });
-            }
-        },
-        ExportDefaultDeclaration(nodePath: NodePath<t.ExportDefaultDeclaration>) {
-            if (definitionNamesSet.has('default') && nodePath.node.loc) {
-                const start = nodePath.node.loc.start.line;
-                const end = nodePath.node.loc.end.line;
-                definitions.push({
-                    name: 'default',
-                    node: nodePath.node,
-                    start,
-                    end,
-                    code: lines.slice(start - 1, end).join('\n'),
-                });
-            }
-        },
-        FunctionDeclaration(nodePath: NodePath<t.FunctionDeclaration>) {
-            const name = nodePath.node.id?.name;
-            if (
-                name &&
-                definitionNamesSet.has(name) &&
-                nodePath.node.loc &&
-                (!nodePath.parent || t.isProgram(nodePath.parent))
-            ) {
-                const start = nodePath.node.loc.start.line;
-                const end = nodePath.node.loc.end.line;
-                definitions.push({
-                    name,
-                    node: nodePath.node,
-                    start,
-                    end,
-                    code: lines.slice(start - 1, end).join('\n'),
-                });
-            }
-        },
-        ClassDeclaration(nodePath: NodePath<t.ClassDeclaration>) {
-            const name = nodePath.node.id?.name;
-            if (
-                name &&
-                definitionNamesSet.has(name) &&
-                nodePath.node.loc &&
-                (!nodePath.parent || t.isProgram(nodePath.parent))
-            ) {
-                const start = nodePath.node.loc.start.line;
-                const end = nodePath.node.loc.end.line;
-                definitions.push({
-                    name,
-                    node: nodePath.node,
-                    start,
-                    end,
-                    code: lines.slice(start - 1, end).join('\n'),
-                });
-            }
-        },
-        VariableDeclaration(nodePath: NodePath<t.VariableDeclaration>) {
-            nodePath.node.declarations.forEach((d: t.VariableDeclarator) => {
-                if (t.isIdentifier(d.id) && definitionNamesSet.has(d.id.name)) {
-                    if (nodePath.node.loc && (!nodePath.parent || t.isProgram(nodePath.parent))) {
-                        const start = nodePath.node.loc.start.line;
-                        const end = nodePath.node.loc.end.line;
-                        definitions.push({
-                            name: d.id.name,
-                            node: nodePath.node,
-                            start,
-                            end,
-                            code: lines.slice(start - 1, end).join('\n'),
-                        });
-                    }
-                }
-            });
-        },
-        TSTypeAliasDeclaration(nodePath: NodePath<t.TSTypeAliasDeclaration>) {
-            const name = nodePath.node.id.name;
-            if (
-                definitionNamesSet.has(name) &&
-                nodePath.node.loc &&
-                (!nodePath.parent || t.isProgram(nodePath.parent))
-            ) {
-                const start = nodePath.node.loc.start.line;
-                const end = nodePath.node.loc.end.line;
-                definitions.push({
-                    name,
-                    node: nodePath.node,
-                    start,
-                    end,
-                    code: lines.slice(start - 1, end).join('\n'),
-                });
-            }
-        },
-        TSInterfaceDeclaration(nodePath: NodePath<t.TSInterfaceDeclaration>) {
-            const name = nodePath.node.id.name;
-            if (
-                definitionNamesSet.has(name) &&
-                nodePath.node.loc &&
-                (!nodePath.parent || t.isProgram(nodePath.parent))
-            ) {
-                const start = nodePath.node.loc.start.line;
-                const end = nodePath.node.loc.end.line;
-                definitions.push({
-                    name,
-                    node: nodePath.node,
-                    start,
-                    end,
-                    code: lines.slice(start - 1, end).join('\n'),
-                });
-            }
-        },
-        TSEnumDeclaration(nodePath: NodePath<t.TSEnumDeclaration>) {
-            const name = nodePath.node.id.name;
-            if (
-                definitionNamesSet.has(name) &&
-                nodePath.node.loc &&
-                (!nodePath.parent || t.isProgram(nodePath.parent))
-            ) {
-                const start = nodePath.node.loc.start.line;
-                const end = nodePath.node.loc.end.line;
-                definitions.push({
-                    name,
-                    node: nodePath.node,
-                    start,
-                    end,
-                    code: lines.slice(start - 1, end).join('\n'),
-                });
-            }
-        },
-    });
+    findDefinitions(ast, definitionNamesSet, definitions, lines);
 
     // Check that all definitions were found
     const foundNames = new Set(definitions.map((d) => d.name));
@@ -333,64 +203,12 @@ async function extractDefinition(options: ExtractOptions) {
     });
 
     // Third pass: build the necessary imports for the new file
-    const necessaryImports: string[] = [];
+    const necessaryImports: string[] = findNecessaryImports(ast, localDependencies);
 
-    traverse(ast, {
-        ImportDeclaration(nodePath: NodePath<t.ImportDeclaration>) {
-            const source = nodePath.node.source.value;
-            const neededSpecifiers: string[] = [];
-            const isTypeImport = nodePath.node.importKind === 'type';
-
-            nodePath.node.specifiers.forEach(
-                (
-                    spec: t.ImportSpecifier | t.ImportDefaultSpecifier | t.ImportNamespaceSpecifier,
-                ) => {
-                    if (t.isImportSpecifier(spec) && t.isIdentifier(spec.imported)) {
-                        const imported = spec.imported.name;
-                        const local = spec.local.name;
-                        if (localDependencies.has(local)) {
-                            if (imported === local) {
-                                neededSpecifiers.push(imported);
-                            } else {
-                                neededSpecifiers.push(`${imported} as ${local}`);
-                            }
-                        }
-                    } else if (t.isImportDefaultSpecifier(spec)) {
-                        const local = spec.local.name;
-                        if (localDependencies.has(local)) {
-                            const typeKeyword = isTypeImport ? 'type ' : '';
-                            necessaryImports.push(
-                                `import ${typeKeyword}${local} from '${source}';`,
-                            );
-                        }
-                    } else if (t.isImportNamespaceSpecifier(spec)) {
-                        const local = spec.local.name;
-                        if (localDependencies.has(local)) {
-                            const typeKeyword = isTypeImport ? 'type ' : '';
-                            necessaryImports.push(
-                                `import ${typeKeyword}* as ${local} from '${source}';`,
-                            );
-                        }
-                    }
-                },
-            );
-
-            if (neededSpecifiers.length > 0) {
-                const typeKeyword = isTypeImport ? 'type ' : '';
-                necessaryImports.push(
-                    `import ${typeKeyword}{${neededSpecifiers.join(', ')}} from '${source}';`,
-                );
-            }
-        },
-    });
-
-    // Create the new file
+    // Create or update the target file
     const targetDir = path.dirname(targetFile);
     if (!fs.existsSync(targetDir)) {
         fs.mkdirSync(targetDir, {recursive: true});
-    }
-    if (fs.existsSync(targetFile)) {
-        throw new Error(`existing files exists already`);
     }
 
     // Check for files with different extensions but same base name
@@ -408,51 +226,29 @@ async function extractDefinition(options: ExtractOptions) {
         }
     }
 
-    const newFileContent = [...necessaryImports, '', allDefinitionCode].join('\n');
+    // let finalFileContent: string;
+    let existingDefinitionNames: Set<string> = new Set();
+    let newFileImports: string[] = necessaryImports
+    let existingCode: string = ''
 
-    fs.writeFileSync(targetFile, newFileContent, 'utf-8');
-    console.log(`✓ Created ${targetFile}`);
+    if (fs.existsSync(targetFile)) {
+        // File exists - merge imports and append definitions
+        console.log(`⚠️  Target file already exists, appending definitions...`);
+        const result = constructMergedFileContent(targetFile, existingDefinitionNames, definitionNames, sourceFile, necessaryImports, );
+        newFileImports = result.imports
+        existingCode = result.existingCode
+        // console.log(finalFileContent)
+    } else {
+        // New file - just write imports and definitions
+        // finalFileContent = [...necessaryImports, '', allDefinitionCode].join('\n');
+    }
+
+    // console.log('writing to', targetFile)
+    fs.writeFileSync(targetFile, [...newFileImports, existingCode, allDefinitionCode].join('\n'), 'utf-8');
+    console.log(`✓ Wrote ${targetFile}`);
 
     // Find all definitions in the source file (to detect same-file dependencies)
-    const allSourceDefinitions = new Set<string>();
-    traverse(ast, {
-        ExportNamedDeclaration(nodePath: NodePath<t.ExportNamedDeclaration>) {
-            const name = nodePath.node.declaration && getDeclarationName(nodePath.node.declaration);
-            if (name) allSourceDefinitions.add(name);
-        },
-        FunctionDeclaration(nodePath: NodePath<t.FunctionDeclaration>) {
-            if (nodePath.node.id?.name && (!nodePath.parent || t.isProgram(nodePath.parent))) {
-                allSourceDefinitions.add(nodePath.node.id.name);
-            }
-        },
-        ClassDeclaration(nodePath: NodePath<t.ClassDeclaration>) {
-            if (nodePath.node.id?.name && (!nodePath.parent || t.isProgram(nodePath.parent))) {
-                allSourceDefinitions.add(nodePath.node.id.name);
-            }
-        },
-        VariableDeclaration(nodePath: NodePath<t.VariableDeclaration>) {
-            nodePath.node.declarations.forEach((d: t.VariableDeclarator) => {
-                if (t.isIdentifier(d.id) && (!nodePath.parent || t.isProgram(nodePath.parent))) {
-                    allSourceDefinitions.add(d.id.name);
-                }
-            });
-        },
-        TSTypeAliasDeclaration(nodePath: NodePath<t.TSTypeAliasDeclaration>) {
-            if (!nodePath.parent || t.isProgram(nodePath.parent)) {
-                allSourceDefinitions.add(nodePath.node.id.name);
-            }
-        },
-        TSInterfaceDeclaration(nodePath: NodePath<t.TSInterfaceDeclaration>) {
-            if (!nodePath.parent || t.isProgram(nodePath.parent)) {
-                allSourceDefinitions.add(nodePath.node.id.name);
-            }
-        },
-        TSEnumDeclaration(nodePath: NodePath<t.TSEnumDeclaration>) {
-            if (!nodePath.parent || t.isProgram(nodePath.parent)) {
-                allSourceDefinitions.add(nodePath.node.id.name);
-            }
-        },
-    });
+    const allSourceDefinitions = getAllSourceDefinitions(ast);
 
     // Check if extracted definitions depend on other definitions in the same file
     const sameFileDependencies = Array.from(localDependencies).filter(
@@ -489,13 +285,15 @@ async function extractDefinition(options: ExtractOptions) {
 
         // Add imports for same-file dependencies to the new file
         const sourceRelativeImport = getRelativeImportPath(targetFile, sourceFile);
-        necessaryImports.unshift(
+        newFileImports.unshift(
             `import {${sameFileDependencies.join(', ')}} from '${sourceRelativeImport}';`,
         );
 
         // Recreate the new file with updated imports
-        const updatedNewFileContent = [...necessaryImports, '', allDefinitionCode].join('\n');
+        const updatedNewFileContent = [...newFileImports, '', existingCode, allDefinitionCode].join('\n');
 
+        // NOTE HERE IS THE ISSUE! We need to RE_READ the targetfile.
+        console.log(`Updating with same-file dependencies ${targetFile}`)
         fs.writeFileSync(targetFile, updatedNewFileContent, 'utf-8');
     }
 
@@ -656,6 +454,352 @@ async function extractDefinition(options: ExtractOptions) {
     await updateAllImports(sourceFile, targetFile, definitionNames);
 }
 
+function getAllSourceDefinitions(ast: parser.ParseResult<t.File>) {
+    const allSourceDefinitions = new Set<string>();
+    traverse(ast, {
+        ExportNamedDeclaration(nodePath: NodePath<t.ExportNamedDeclaration>) {
+            const name = nodePath.node.declaration && getDeclarationName(nodePath.node.declaration);
+            if (name) allSourceDefinitions.add(name);
+        },
+        FunctionDeclaration(nodePath: NodePath<t.FunctionDeclaration>) {
+            if (nodePath.node.id?.name && (!nodePath.parent || t.isProgram(nodePath.parent))) {
+                allSourceDefinitions.add(nodePath.node.id.name);
+            }
+        },
+        ClassDeclaration(nodePath: NodePath<t.ClassDeclaration>) {
+            if (nodePath.node.id?.name && (!nodePath.parent || t.isProgram(nodePath.parent))) {
+                allSourceDefinitions.add(nodePath.node.id.name);
+            }
+        },
+        VariableDeclaration(nodePath: NodePath<t.VariableDeclaration>) {
+            nodePath.node.declarations.forEach((d: t.VariableDeclarator) => {
+                if (t.isIdentifier(d.id) && (!nodePath.parent || t.isProgram(nodePath.parent))) {
+                    allSourceDefinitions.add(d.id.name);
+                }
+            });
+        },
+        TSTypeAliasDeclaration(nodePath: NodePath<t.TSTypeAliasDeclaration>) {
+            if (!nodePath.parent || t.isProgram(nodePath.parent)) {
+                allSourceDefinitions.add(nodePath.node.id.name);
+            }
+        },
+        TSInterfaceDeclaration(nodePath: NodePath<t.TSInterfaceDeclaration>) {
+            if (!nodePath.parent || t.isProgram(nodePath.parent)) {
+                allSourceDefinitions.add(nodePath.node.id.name);
+            }
+        },
+        TSEnumDeclaration(nodePath: NodePath<t.TSEnumDeclaration>) {
+            if (!nodePath.parent || t.isProgram(nodePath.parent)) {
+                allSourceDefinitions.add(nodePath.node.id.name);
+            }
+        },
+    });
+    return allSourceDefinitions;
+}
+
+function constructMergedFileContent(targetFile: string, existingDefinitionNames: Set<string>, definitionNames: string[], sourceFile: string, necessaryImports: string[], ) {
+    const existingContent = fs.readFileSync(targetFile, 'utf-8');
+    const existingLines = existingContent.split('\n');
+
+    // Parse existing file to find what's already imported and defined
+    const existingAst = parser.parse(existingContent, {
+        sourceType: 'module',
+        plugins: ['typescript', 'jsx'],
+    });
+
+    // Collect existing imports
+    const existingImports = new Map<
+        string,
+        { specifiers: Set<string>; isTypeImport: boolean; isDefault: boolean; isNamespace: boolean; }
+    >();
+
+    traverse(existingAst, {
+        ImportDeclaration(nodePath: NodePath<t.ImportDeclaration>) {
+            const source = nodePath.node.source.value;
+            const isTypeImport = nodePath.node.importKind === 'type';
+
+            if (!existingImports.has(source)) {
+                existingImports.set(source, {
+                    specifiers: new Set(),
+                    isTypeImport,
+                    isDefault: false,
+                    isNamespace: false,
+                });
+            }
+
+            const importInfo = existingImports.get(source)!;
+
+            nodePath.node.specifiers.forEach((spec) => {
+                if (t.isImportSpecifier(spec) && t.isIdentifier(spec.imported)) {
+                    const imported = spec.imported.name;
+                    const local = spec.local.name;
+                    if (imported === local) {
+                        importInfo.specifiers.add(imported);
+                    } else {
+                        importInfo.specifiers.add(`${imported} as ${local}`);
+                    }
+                } else if (t.isImportDefaultSpecifier(spec)) {
+                    importInfo.isDefault = true;
+                } else if (t.isImportNamespaceSpecifier(spec)) {
+                    importInfo.isNamespace = true;
+                }
+            });
+        },
+    });
+
+    // Collect existing definition names to detect duplicates
+    traverse(existingAst, {
+        ExportNamedDeclaration(nodePath: NodePath<t.ExportNamedDeclaration>) {
+            const name = nodePath.node.declaration && getDeclarationName(nodePath.node.declaration);
+            if (name) existingDefinitionNames.add(name);
+        },
+        ExportDefaultDeclaration() {
+            existingDefinitionNames.add('default');
+        },
+    });
+
+    // Check for duplicate definitions
+    const duplicates = definitionNames.filter((name) => existingDefinitionNames.has(name));
+    if (duplicates.length > 0) {
+        throw new Error(
+            `Cannot append - definitions already exist in ${path.basename(targetFile)}: ${duplicates.join(', ')}`
+        );
+    }
+
+    // Find where existing imports end (do this before modifying existingImports)
+    const lastImportIndex = findLastImportLine(existingLines);
+    const originalHadImports = existingImports.size > 0;
+
+    // Remove imports from source file that are now being added to target
+    // (i.e., if target imports X from source, and we're now adding X to target, remove that import)
+    const sourceFileImportPath = getRelativeImportPath(targetFile, sourceFile);
+
+    if (existingImports.has(sourceFileImportPath)) {
+        const sourceImport = existingImports.get(sourceFileImportPath)!;
+        // Remove any specifiers that match our extracted definitions
+        for (const defName of definitionNames) {
+            sourceImport.specifiers.delete(defName);
+        }
+        // If no specifiers left, remove the entire import
+        if (sourceImport.specifiers.size === 0) {
+            existingImports.delete(sourceFileImportPath);
+        }
+    }
+
+    // Merge imports
+    const mergedImports = mergeImports(existingImports, necessaryImports);
+
+    // Get content after imports (existing definitions)
+    // Use originalHadImports to decide where to slice (based on original file structure)
+    const importsEndIndex = originalHadImports ? lastImportIndex + 1 : 0;
+    let contentAfterImports = existingLines.slice(importsEndIndex).join('\n').trim();
+
+    console.log('AFTER IMPORTS', importsEndIndex, existingLines.length);
+    console.log(contentAfterImports);
+    console.log();
+
+    // // Rebuild the file
+    // finalFileContent = [
+    //     ...mergedImports,
+    //     '',
+    //     contentAfterImports,
+    //     '',
+    //     allDefinitionCode,
+    // ].join('\n');
+
+    console.log(`✓ Appended to existing ${targetFile}`);
+    // return finalFileContent;
+    return {imports: mergedImports, existingCode: contentAfterImports}
+}
+
+function findNecessaryImports(ast: parser.ParseResult<t.File>, localDependencies: Set<string>) {
+    const necessaryImports: string[] = [];
+
+    traverse(ast, {
+        ImportDeclaration(nodePath: NodePath<t.ImportDeclaration>) {
+            const source = nodePath.node.source.value;
+            const neededSpecifiers: string[] = [];
+            const isTypeImport = nodePath.node.importKind === 'type';
+
+            nodePath.node.specifiers.forEach(
+                (
+                    spec: t.ImportSpecifier | t.ImportDefaultSpecifier | t.ImportNamespaceSpecifier
+                ) => {
+                    if (t.isImportSpecifier(spec) && t.isIdentifier(spec.imported)) {
+                        const imported = spec.imported.name;
+                        const local = spec.local.name;
+                        if (localDependencies.has(local)) {
+                            if (imported === local) {
+                                neededSpecifiers.push(imported);
+                            } else {
+                                neededSpecifiers.push(`${imported} as ${local}`);
+                            }
+                        }
+                    } else if (t.isImportDefaultSpecifier(spec)) {
+                        const local = spec.local.name;
+                        if (localDependencies.has(local)) {
+                            const typeKeyword = isTypeImport ? 'type ' : '';
+                            necessaryImports.push(
+                                `import ${typeKeyword}${local} from '${source}';`
+                            );
+                        }
+                    } else if (t.isImportNamespaceSpecifier(spec)) {
+                        const local = spec.local.name;
+                        if (localDependencies.has(local)) {
+                            const typeKeyword = isTypeImport ? 'type ' : '';
+                            necessaryImports.push(
+                                `import ${typeKeyword}* as ${local} from '${source}';`
+                            );
+                        }
+                    }
+                }
+            );
+
+            if (neededSpecifiers.length > 0) {
+                const typeKeyword = isTypeImport ? 'type ' : '';
+                necessaryImports.push(
+                    `import ${typeKeyword}{${neededSpecifiers.join(', ')}} from '${source}';`
+                );
+            }
+        },
+    });
+    return necessaryImports;
+}
+
+function findDefinitions(ast: parser.ParseResult<t.File>, definitionNamesSet: Set<string>, definitions: DefinitionInfo[], lines: string[]) {
+    traverse(ast, {
+        ExportNamedDeclaration(nodePath: NodePath<t.ExportNamedDeclaration>) {
+            const declaration = nodePath.node.declaration;
+            if (!declaration) return;
+
+            const name = getDeclarationName(declaration);
+            if (name && definitionNamesSet.has(name) && nodePath.node.loc) {
+                const start = nodePath.node.loc.start.line;
+                const end = nodePath.node.loc.end.line;
+                definitions.push({
+                    name,
+                    node: nodePath.node,
+                    start,
+                    end,
+                    code: lines.slice(start - 1, end).join('\n'),
+                });
+            }
+        },
+        ExportDefaultDeclaration(nodePath: NodePath<t.ExportDefaultDeclaration>) {
+            if (definitionNamesSet.has('default') && nodePath.node.loc) {
+                const start = nodePath.node.loc.start.line;
+                const end = nodePath.node.loc.end.line;
+                definitions.push({
+                    name: 'default',
+                    node: nodePath.node,
+                    start,
+                    end,
+                    code: lines.slice(start - 1, end).join('\n'),
+                });
+            }
+        },
+        FunctionDeclaration(nodePath: NodePath<t.FunctionDeclaration>) {
+            const name = nodePath.node.id?.name;
+            if (name &&
+                definitionNamesSet.has(name) &&
+                nodePath.node.loc &&
+                (!nodePath.parent || t.isProgram(nodePath.parent))) {
+                const start = nodePath.node.loc.start.line;
+                const end = nodePath.node.loc.end.line;
+                definitions.push({
+                    name,
+                    node: nodePath.node,
+                    start,
+                    end,
+                    code: lines.slice(start - 1, end).join('\n'),
+                });
+            }
+        },
+        ClassDeclaration(nodePath: NodePath<t.ClassDeclaration>) {
+            const name = nodePath.node.id?.name;
+            if (name &&
+                definitionNamesSet.has(name) &&
+                nodePath.node.loc &&
+                (!nodePath.parent || t.isProgram(nodePath.parent))) {
+                const start = nodePath.node.loc.start.line;
+                const end = nodePath.node.loc.end.line;
+                definitions.push({
+                    name,
+                    node: nodePath.node,
+                    start,
+                    end,
+                    code: lines.slice(start - 1, end).join('\n'),
+                });
+            }
+        },
+        VariableDeclaration(nodePath: NodePath<t.VariableDeclaration>) {
+            nodePath.node.declarations.forEach((d: t.VariableDeclarator) => {
+                if (t.isIdentifier(d.id) && definitionNamesSet.has(d.id.name)) {
+                    if (nodePath.node.loc && (!nodePath.parent || t.isProgram(nodePath.parent))) {
+                        const start = nodePath.node.loc.start.line;
+                        const end = nodePath.node.loc.end.line;
+                        definitions.push({
+                            name: d.id.name,
+                            node: nodePath.node,
+                            start,
+                            end,
+                            code: lines.slice(start - 1, end).join('\n'),
+                        });
+                    }
+                }
+            });
+        },
+        TSTypeAliasDeclaration(nodePath: NodePath<t.TSTypeAliasDeclaration>) {
+            const name = nodePath.node.id.name;
+            if (definitionNamesSet.has(name) &&
+                nodePath.node.loc &&
+                (!nodePath.parent || t.isProgram(nodePath.parent))) {
+                const start = nodePath.node.loc.start.line;
+                const end = nodePath.node.loc.end.line;
+                definitions.push({
+                    name,
+                    node: nodePath.node,
+                    start,
+                    end,
+                    code: lines.slice(start - 1, end).join('\n'),
+                });
+            }
+        },
+        TSInterfaceDeclaration(nodePath: NodePath<t.TSInterfaceDeclaration>) {
+            const name = nodePath.node.id.name;
+            if (definitionNamesSet.has(name) &&
+                nodePath.node.loc &&
+                (!nodePath.parent || t.isProgram(nodePath.parent))) {
+                const start = nodePath.node.loc.start.line;
+                const end = nodePath.node.loc.end.line;
+                definitions.push({
+                    name,
+                    node: nodePath.node,
+                    start,
+                    end,
+                    code: lines.slice(start - 1, end).join('\n'),
+                });
+            }
+        },
+        TSEnumDeclaration(nodePath: NodePath<t.TSEnumDeclaration>) {
+            const name = nodePath.node.id.name;
+            if (definitionNamesSet.has(name) &&
+                nodePath.node.loc &&
+                (!nodePath.parent || t.isProgram(nodePath.parent))) {
+                const start = nodePath.node.loc.start.line;
+                const end = nodePath.node.loc.end.line;
+                definitions.push({
+                    name,
+                    node: nodePath.node,
+                    start,
+                    end,
+                    code: lines.slice(start - 1, end).join('\n'),
+                });
+            }
+        },
+    });
+}
+
 function getDeclarationName(declaration: t.Declaration): string | null {
     if (t.isFunctionDeclaration(declaration) || t.isClassDeclaration(declaration)) {
         return declaration.id?.name || null;
@@ -679,6 +823,106 @@ function getRelativeImportPath(from: string, to: string): string {
     const relative = path.relative(path.dirname(from), to);
     const withoutExt = relative.replace(/\.tsx?$/, '');
     return withoutExt.startsWith('.') ? withoutExt : `./${withoutExt}`;
+}
+
+/**
+ * Merges existing imports with new imports, deduplicating as necessary
+ */
+function mergeImports(
+    existingImports: Map<
+        string,
+        {specifiers: Set<string>; isTypeImport: boolean; isDefault: boolean; isNamespace: boolean}
+    >,
+    newImports: string[],
+): string[] {
+    // Parse new imports
+    const newImportsMap = new Map<
+        string,
+        {specifiers: Set<string>; isTypeImport: boolean; isDefault: boolean; isNamespace: boolean; defaultName?: string; namespaceName?: string}
+    >();
+
+    for (const importStatement of newImports) {
+        // Parse import statement to extract source and specifiers
+        // Format: import {a, b} from 'source';
+        // Format: import type {a, b} from 'source';
+        // Format: import default from 'source';
+        // Format: import * as name from 'source';
+        const match = importStatement.match(/import\s+(type\s+)?(.+?)\s+from\s+['"](.+?)['"]/);
+        if (!match) continue;
+
+        const isTypeImport = !!match[1];
+        const imported = match[2].trim();
+        const source = match[3];
+
+        if (!newImportsMap.has(source)) {
+            newImportsMap.set(source, {
+                specifiers: new Set(),
+                isTypeImport,
+                isDefault: false,
+                isNamespace: false,
+            });
+        }
+
+        const importInfo = newImportsMap.get(source)!;
+
+        // Check for different import types
+        if (imported.startsWith('{') && imported.endsWith('}')) {
+            // Named imports
+            const specifiers = imported
+                .slice(1, -1)
+                .split(',')
+                .map((s) => s.trim())
+                .filter(Boolean);
+            specifiers.forEach((spec) => importInfo.specifiers.add(spec));
+        } else if (imported.startsWith('* as ')) {
+            // Namespace import
+            importInfo.isNamespace = true;
+            importInfo.namespaceName = imported.replace('* as ', '').trim();
+        } else {
+            // Default import
+            importInfo.isDefault = true;
+            importInfo.defaultName = imported;
+        }
+    }
+
+    // Merge with existing imports
+    for (const [source, newInfo] of newImportsMap) {
+        if (existingImports.has(source)) {
+            const existingInfo = existingImports.get(source)!;
+            // Add new specifiers to existing ones
+            newInfo.specifiers.forEach((spec) => existingInfo.specifiers.add(spec));
+            // Update flags if needed
+            if (newInfo.isDefault) existingInfo.isDefault = true;
+            if (newInfo.isNamespace) existingInfo.isNamespace = true;
+        } else {
+            // New source - add to existing imports
+            existingImports.set(source, {
+                specifiers: newInfo.specifiers,
+                isTypeImport: newInfo.isTypeImport,
+                isDefault: newInfo.isDefault,
+                isNamespace: newInfo.isNamespace,
+            });
+        }
+    }
+
+    // Generate merged import statements
+    const mergedImports: string[] = [];
+    const sortedSources = Array.from(existingImports.keys()).sort();
+
+    for (const source of sortedSources) {
+        const info = existingImports.get(source)!;
+        const typeKeyword = info.isTypeImport ? 'type ' : '';
+
+        if (info.specifiers.size > 0) {
+            const specifiers = Array.from(info.specifiers).sort().join(', ');
+            mergedImports.push(`import ${typeKeyword}{${specifiers}} from '${source}';`);
+        }
+
+        // Note: We don't handle default/namespace imports in merge since they're rare in this use case
+        // and would require tracking the variable names
+    }
+
+    return mergedImports;
 }
 
 function findLastImportLine(lines: string[]): number {
@@ -906,6 +1150,7 @@ async function updateAllImports(oldFile: string, newFile: string, definitionName
                 }
             }
 
+            console.log(`Writimg 1139 ${file}`)
             fs.writeFileSync(file, updatedCode, 'utf-8');
             updatedCount++;
             console.log(`✓ Updated imports in ${path.relative(process.cwd(), file)}`);
