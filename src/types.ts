@@ -3,8 +3,8 @@ import {Primitive} from './rendering/intersect';
 import {angleTo, dist, Matrix} from './rendering/getMirrorTransforms';
 import {CompassState} from './editor/compassAndRuler';
 import {angleBetween} from './rendering/isAngleBetween';
-import {closeEnough} from './rendering/epsilonToZero';
-import {findCommonFractions, } from './routes/getPatternData';
+import {closeEnough, closeEnoughAngle} from './rendering/epsilonToZero';
+import {findCommonFractions} from './routes/getPatternData';
 
 // Should I do polar coords?
 export type Coord = {x: number; y: number};
@@ -667,6 +667,9 @@ export const shapeKey = (shape: TilingShape): string => {
                 true,
             );
             if (internalAngle > Math.PI) internalAngle = Math.PI * 2 - internalAngle;
+            if (closeEnoughAngle(internalAngle, Math.PI / 3)) {
+                return `Equilateral Triangle`;
+            }
             return `Isocelese Triangle ${((internalAngle / Math.PI) * 180).toFixed(1)}º ${shape.flip ? ' flip' : ''}`;
         }
     }

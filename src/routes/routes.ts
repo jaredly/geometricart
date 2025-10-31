@@ -12,5 +12,6 @@ export default [
         route('pattern/:id', './pattern.tsx'),
         route('pattern/:id/:img', './pattern-svg.tsx'),
     ]),
+    route('uploads/:fname', './uploads-image.ts'),
     route('editor', './editor.tsx'),
 ] as RouteConfig;
