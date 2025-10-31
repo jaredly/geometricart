@@ -259,7 +259,7 @@ export const shapesFromSegments = (byEndPoint: EndPointMap, eigenPoints: Coord[]
             if (used[sk]) continue;
             const {points, ranout} = discoverShape(point, seg, used, byEndPoint);
             if (points.length === 100 || ranout) {
-                console.warn('bad news, shape is bad');
+                // console.warn('bad news, shape is bad');
                 continue;
             }
             if (!isClockwisePoints(points)) {

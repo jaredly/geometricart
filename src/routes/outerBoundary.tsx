@@ -68,7 +68,7 @@ export const outerBoundary = (
         return bySize[0].points;
     }
     if (!found.length) {
-        console.error(`no bounadry at all`);
+        // console.error(`no bounadry at all`);
     }
     return found.length ? found[0] : null;
 };
