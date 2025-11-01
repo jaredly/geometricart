@@ -126,6 +126,7 @@ export const preTransformTiling = (tiling: Tiling): Tiling => {
     return {...tiling, shape: setTilingPoints({...tiling.shape}, bounds)};
 };
 
+export type PatternData = ReturnType<typeof getPatternData>;
 export const getPatternData = (tiling: Tiling, debug = false) => {
     tiling = preTransformTiling(tiling);
 

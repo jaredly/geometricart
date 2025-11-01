@@ -1,5 +1,5 @@
 import {RouterProvider} from 'react-router-dom';
-import {WithPathKit} from '../editor/pk';
+// import {WithPathKit} from '../editor/pk';
 import {router} from '../editor.client';
 
 export default function Editor() {
@@ -28,8 +28,8 @@ export default function Editor() {
     // }
 
     return (
-        <WithPathKit>
-            <RouterProvider router={router} />
-        </WithPathKit>
+        // <WithPathKit>
+        <RouterProvider router={router} />
+        // </WithPathKit>
     );
 }

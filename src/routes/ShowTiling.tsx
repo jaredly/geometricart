@@ -492,18 +492,15 @@ export const ShowTiling = ({
     data: {bounds: Coord[]};
 }) => {
     return (
-        <div
-            className="relative"
-            css={{
-                '&:hover > .tiling-mask': {opacity: 1},
-            }}
-        >
-            <img
-                src={`/gallery/pattern/${hash}/${size * 2}.png`}
-                style={{width: size, height: size}}
-            />
-            <TilingMask size={size} bounds={data.bounds} hash={hash} />
-        </div>
+        // <div
+        //     className="relative"
+        //     // css={{
+        //     //     '&:hover > .tiling-mask': {opacity: 1},
+        //     // }}
+        // >
+        <img src={`/gallery/pattern/${hash}/${size * 2}.png`} style={{width: size, height: size}} />
+        // {/* <TilingMask size={size} bounds={data.bounds} hash={hash} /> */}
+        // </div>
     );
 };
 

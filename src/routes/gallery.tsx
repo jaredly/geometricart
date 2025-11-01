@@ -1,6 +1,6 @@
 import {useState} from 'react';
 import {Route} from './+types/gallery';
-import {getAllPatterns} from './db.server';
+import {getAllPatterns, getCachedPatternData} from './db.server';
 import {getPatternData} from './getPatternData';
 import {ShowTiling} from './ShowTiling';
 import {Coord, shapeKey, Tiling} from '../types';
@@ -21,7 +21,10 @@ export async function loader(data: Route.LoaderArgs) {
             plain = plain.slice(0, +limit);
         } else [(plain = plain.filter((t) => t.hash === limit))];
     }
-    const patterns = plain.map((pattern) => ({...pattern, data: getPatternData(pattern.tiling)}));
+    const patterns = plain.map((pattern) => ({
+        ...pattern,
+        data: getCachedPatternData(pattern.hash, pattern.tiling),
+    }));
 
     return {
         patterns: patterns.map(({hash, data: {bounds}, tiling}) => ({

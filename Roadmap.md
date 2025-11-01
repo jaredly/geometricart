@@ -1,4 +1,11 @@
 
+
+# Similar patterns
+and gallery view
+
+- [ ] hover to see the list of their unique shapes
+
+
 ok so, what about doing the 'summarize and organize this proejct for me'
 
 # Some refactors n stuff

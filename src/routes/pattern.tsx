@@ -1,7 +1,7 @@
 import {useEffect, useMemo, useRef, useState} from 'react';
 import {useLoaderData, useParams} from 'react-router';
 import type {Route} from './+types/pattern';
-import {getPattern} from './db.server';
+import {getCachedPatternData, getPattern, getSimilarPatterns} from './db.server';
 import {flipPattern} from './flipPattern';
 import {canonicalShape, getPatternData, humanReadableFraction} from './getPatternData';
 import {normShape} from './normShape';
@@ -15,7 +15,10 @@ export async function loader({params}: Route.LoaderArgs) {
     if (!params.id) {
         return null;
     }
-    return getPattern(params.id);
+    const pattern = getPattern(params.id);
+    if (!pattern) return null;
+    const data = getCachedPatternData(pattern.hash, pattern.tiling);
+    return {pattern, data: data, similar: getSimilarPatterns(pattern.hash, data)};
 }
 
 type Display = {
@@ -26,7 +29,7 @@ type Display = {
 
 export const Pattern = () => {
     const {id} = useParams();
-    let pattern = useLoaderData<typeof loader>();
+    let loaderData = useLoaderData<typeof loader>();
 
     const [display, setDisplay] = useState<Display>({
         bounds: false,
@@ -34,12 +37,12 @@ export const Pattern = () => {
         lineWidth: 0.1,
     });
 
-    const tiling = pattern ? flipPattern(pattern.tiling) : null;
-    // const tiling = pattern?.tiling;
-    const data = useMemo(() => (tiling ? getPatternData(tiling) : null), [tiling]);
-    if (!pattern || !tiling || !data || !id) {
+    if (!id || !loaderData) {
         return <div>No data... {id}</div>;
     }
+
+    const {pattern, data, similar} = loaderData;
+    const tiling = pattern.tiling; // flipPattern(pattern.tiling);
 
     const canonKeys: Record<string, ReturnType<typeof canonicalShape> & {percentage: number}> = {};
     data.canons.forEach((c) => {
@@ -71,7 +74,7 @@ export const Pattern = () => {
                         showWoven={display.draw === 'woven'}
                         lineWidth={display.lineWidth}
                     />
-                    <label>
+                    {/* <label>
                         <input
                             className="checkbox mr-4"
                             type="checkbox"
@@ -79,7 +82,7 @@ export const Pattern = () => {
                             onChange={() => setDisplay({...display, bounds: !display.bounds})}
                         />
                         Show Bounds
-                    </label>
+                    </label> */}
                     <div>
                         {(['shapes', 'color-lines', 'woven'] as const).map((kind) => (
                             <button
@@ -110,6 +113,12 @@ export const Pattern = () => {
                 <div className="flex-1 px-2 gap-2 flex flex-col">
                     <div className="bg-base-100 p-4 rounded-xl shadow-md shadow-base-300">
                         Fundamental symmetry: {shapeKey(tiling.shape)}
+                        <button
+                            className="btn ml-4"
+                            onClick={() => setDisplay({...display, bounds: !display.bounds})}
+                        >
+                            {display.bounds ? 'Hide' : 'Show'}
+                        </button>
                     </div>
 
                     <div className="bg-base-100 p-4 rounded-xl shadow-md shadow-base-300">
@@ -208,6 +217,25 @@ export const Pattern = () => {
                     ))}
                 </div>
             </div>
+            {similar.length ? (
+                <div>
+                    <h1 className="text-4xl">Similar Patterns</h1>
+                    <div className="flex flex-wrap gap-4 mt-4">
+                        {similar.map(({score, hash}) => (
+                            <div key={hash}>
+                                <a href={`/gallery/pattern/${hash}`}>
+                                    <img
+                                        src={`/gallery/pattern/${hash}/${400}.png`}
+                                        style={{width: 200, height: 200}}
+                                        className="rounded-md"
+                                    />
+                                    {score.toFixed(2)}
+                                </a>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            ) : null}
         </div>
     );
 };

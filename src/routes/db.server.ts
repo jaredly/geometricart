@@ -3,6 +3,8 @@ import {State, Tiling} from '../types';
 import {Database} from 'bun:sqlite';
 import {existsSync, readFileSync} from 'fs';
 import {migrateState} from '../state/migrateState';
+import {getPatternData, PatternData} from './getPatternData';
+import {unique} from './shapesFromSegments';
 
 export const db = new Database(join(import.meta.dirname, '../../data.db'));
 
@@ -36,6 +38,40 @@ export const getAllPatterns = () => {
         hash,
         tiling: JSON.parse(json) as Tiling,
     }));
+};
+
+const patternCache: Record<string, PatternData> = {};
+export const getCachedPatternData = (hash: string, tiling: Tiling) => {
+    if (!patternCache[hash]) patternCache[hash] = getPatternData(tiling);
+    return patternCache[hash];
+};
+
+export const getSimilarPatterns = (hash: string, data: PatternData) => {
+    const sourceKeys = new Set(
+        unique(
+            data.canons.map((s) => s.key),
+            (x) => x,
+        ),
+    );
+    const scored = getAllPatterns()
+        .map((pattern) => {
+            if (pattern.hash === hash) return {score: 0, hash, countDiff: 0};
+            const otherData = getCachedPatternData(pattern.hash, pattern.tiling);
+            const otherKeys = unique(
+                otherData.canons.map((c) => c.key),
+                (x) => x,
+            );
+            const overlap = otherKeys.filter((k) => sourceKeys.has(k));
+            if (overlap.length === 1) return {score: 0, hash: pattern.hash, countDiff: 0};
+            return {
+                score: overlap.length / sourceKeys.size + overlap.length / otherKeys.length,
+                countDiff: Math.abs(data.canons.length - otherData.canons.length),
+                hash: pattern.hash,
+            };
+        })
+        .sort((a, b) => (b.score === a.score ? a.countDiff - b.countDiff : b.score - a.score))
+        .filter((s) => s.score > 0);
+    return scored.slice(0, 10);
 };
 
 export const getPattern = (hash: string) => {

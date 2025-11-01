@@ -4,19 +4,21 @@ import {pk} from './pk';
 import {cmpCoords} from './shapesFromSegments';
 
 export const drawBounds = (ctx: Canvas, data: ReturnType<typeof getPatternData>) => {
+    const path = pk.Path.MakeFromCmds([
+        pk.MOVE_VERB,
+        data.bounds[0].x,
+        data.bounds[0].y,
+        ...data.bounds.slice(1).flatMap(({x, y}) => [pk.LINE_VERB, x, y]),
+        pk.CLOSE_VERB,
+    ])!;
     const paint = new pk.Paint();
-    paint.setStyle(pk.PaintStyle.Fill);
+    paint.setStyle(pk.PaintStyle.Stroke);
+    paint.setStrokeWidth(data.minSegLength / 2);
+    paint.setColor([0, 0, 0]);
+    ctx.drawPath(path, paint);
+    paint.setStrokeWidth(data.minSegLength / 3);
     paint.setColor([1, 1, 1]);
-    paint.setAlphaf(0.2);
-    ctx.drawPath(
-        pk.Path.MakeFromCmds([
-            pk.MOVE_VERB,
-            data.bounds[0].x,
-            data.bounds[0].y,
-            ...data.bounds.slice(1).flatMap(({x, y}) => [pk.LINE_VERB, x, y]),
-        ])!,
-        paint,
-    );
+    ctx.drawPath(path, paint);
 };
 
 export function hslToHex(h: number, s: number, l: number) {
