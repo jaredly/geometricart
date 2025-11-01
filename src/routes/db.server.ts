@@ -5,8 +5,49 @@ import {existsSync, readFileSync} from 'fs';
 import {migrateState} from '../state/migrateState';
 import {getPatternData, PatternData} from './getPatternData';
 import {unique} from './shapesFromSegments';
+import {State as Animated} from './screens/animator';
 
 export const db = new Database(join(import.meta.dirname, '../../data.db'));
+
+export const saveAnimated = (id: string, animated: Animated | string) => {
+    const query = db.query(
+        `INSERT INTO Animated (id, json, updated) VALUES ($id, $json, CURRENT_TIMESTAMP)
+         ON CONFLICT(id) DO UPDATE SET json = excluded.json, updated = CURRENT_TIMESTAMP`,
+    );
+    query.run({$id: id, $json: typeof animated === 'string' ? animated : JSON.stringify(animated)});
+};
+
+export const getAnimated = (id: string) => {
+    const query = db.query('SELECT json FROM Animated WHERE id = $id');
+    const row = query.get({$id: id}) as {json?: string} | undefined;
+    if (!row || !row.json) {
+        return null;
+    }
+    try {
+        return JSON.parse(row.json) as Animated;
+    } catch (e) {
+        console.error('Failed to parse Animated JSON for id', id, e);
+        return null;
+    }
+};
+
+export const listAnimateds = () => {
+    const query = db.query('SELECT id, json, updated FROM Animated');
+    const rows = query.all() as {id: string; json: string; updated: string}[];
+    return rows.map((row) => {
+        let animated: Animated | null = null;
+        try {
+            animated = JSON.parse(row.json) as Animated;
+        } catch (e) {
+            console.error('Failed to parse Animated JSON for id', row.id, e);
+        }
+        return {
+            id: row.id,
+            animated,
+            updated: row.updated,
+        };
+    });
+};
 
 export const saveAllPatterns = (patterns: {hash: string; tiling: Tiling}[]) => {
     const query = db.query('update Tiling set json = $json where hash = $hash');

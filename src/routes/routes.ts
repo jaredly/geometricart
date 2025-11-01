@@ -12,7 +12,8 @@ export default [
         route('pattern/:id', './screens/pattern.tsx'),
         route('pattern/:id/:img', './screens/pattern-svg.tsx'),
     ]),
-    route('animator', './screens/animator.tsx'),
+    route('animator', './screens/animators.tsx'),
+    route('animator/:id', './screens/animator.tsx'),
     route('uploads/:fname', './screens/uploads-image.ts'),
     route('editor', './screens/editor.tsx'),
 ] as RouteConfig;

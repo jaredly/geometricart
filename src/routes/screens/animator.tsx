@@ -1,19 +1,29 @@
 import type {Route} from './+types/animator';
-import {getAllPatterns, getCachedPatternData} from '../db.server';
-import {Coord} from '../../types';
+import React, {useRef} from 'react';
+import {getAllPatterns, getAnimated, getCachedPatternData, saveAnimated} from '../db.server';
+import {Coord, Tiling} from '../../types';
 import {useLocalStorage} from '../../vest/useLocalStorage';
-import {useEffect, useState} from 'react';
+import {useEffect, useMemo, useState} from 'react';
 import {shapeD} from '../shapeD';
 import {useOnOpen} from '../useOnOpen';
 import {coordKey} from '../../rendering/coordKey';
+import {plerp} from '../../plerp';
+import {tilingTransforms} from '../../editor/tilingTransforms';
+import {applyTilingTransformsG, tilingPoints} from '../../editor/tilingPoints';
+import {applyMatrices} from '../../rendering/getMirrorTransforms';
+import {IconEye, IconEyeInvisible} from '../../icons/Icon';
+import {useFetcher} from 'react-router';
 
 export async function loader({params}: Route.LoaderArgs) {
+    const got = getAnimated(params.id);
+    if (!got) throw new Error(`Unknown id ${params.id}`);
     return {
         patterns: getAllPatterns(),
+        initialState: got,
     };
 }
 
-type State = {
+export type State = {
     layers: {pattern: string; visible: boolean}[];
     lines: {
         keyframes: {
@@ -23,18 +33,157 @@ type State = {
     }[];
 };
 
-export default function Wrapper(props: Route.ComponentProps) {
-    const [loaded, setLoaded] = useState(false);
-    useEffect(() => setLoaded(true), []);
-    return loaded ? <Animator {...props} /> : null;
+const findExtraPoints = (line: Coord[], count: number) => {
+    const first = line.slice(0, -1);
+    const next = line[line.length - 2];
+    const last = line[line.length - 1];
+    const dx = (last.x - next.x) / (count + 1);
+    const dy = (last.y - next.y) / (count + 1);
+    for (let i = 1; i <= count; i++) {
+        first.push({x: next.x + dx * i, y: next.y + dy * i});
+    }
+    first.push(last);
+    return first;
+};
+
+const lineAt = (frames: {at: number; points: Coord[]}[], at: number) => {
+    const exact = frames.find((f) => f.at === at);
+    if (exact) return exact.points;
+    const after = frames.findIndex((f) => f.at > at);
+    if (after === 0 || after === -1) return;
+    let prev = frames[after - 1];
+    let post = frames[after];
+    const btw = (at - prev.at) / (post.at - prev.at);
+    let left = prev.points;
+    let right = post.points;
+    if (left.length < right.length) left = findExtraPoints(left, right.length - left.length);
+    if (right.length < left.length) right = findExtraPoints(right, left.length - right.length);
+    return left.map((p, i) => plerp(p, right[i], btw));
+};
+
+const SimplePreview = React.memo(
+    ({tiling, size, color}: {color: string; tiling: Tiling; size: number}) => {
+        const all = useMemo(() => {
+            const pts = tilingPoints(tiling.shape);
+            const ttt = tilingTransforms(tiling.shape, pts[2], pts);
+
+            return applyTilingTransformsG(
+                tiling.cache.segments.map((s) => [s.prev, s.segment.to]),
+                ttt,
+                (line, tx) => line.map((coord) => applyMatrices(coord, tx)),
+            );
+        }, [tiling]);
+        return (
+            <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="-1.5 -1.5 3 3"
+                style={{background: 'black', width: size, height: size}}
+            >
+                {all.map((line, i) => (
+                    <path
+                        key={i}
+                        d={shapeD(line, false)}
+                        fill="none"
+                        stroke={color}
+                        strokeWidth={0.02}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                    />
+                ))}
+            </svg>
+        );
+    },
+);
+
+const col = (i: number) => ['red', 'yellow', 'blue'][i % 3];
+
+export async function action({request, params}: Route.ActionArgs) {
+    const data = await request.formData();
+    const state = data.get('state') as string;
+    if (!params.id) throw new Error(`no id`);
+    saveAnimated(params.id, state);
 }
 
-function Animator({loaderData: {patterns}}: Route.ComponentProps) {
-    const [state, setState] = useLocalStorage<State>('animator-state', {layers: [], lines: []});
+const debounce = (act: () => void, wait: number, max: number) => {
+    let last = 0;
+    let tid: NodeJS.Timeout | null = null;
+    return () => {
+        if (tid) {
+            clearTimeout(tid);
+            tid = null;
+        }
+        if (Date.now() - last > max) {
+            last = Date.now();
+            act();
+            return;
+        }
+        tid = setTimeout(() => {
+            last = Date.now();
+            tid = null;
+            act();
+        }, wait);
+    };
+};
+
+export default function Animator({loaderData: {patterns, initialState}}: Route.ComponentProps) {
+    // const [state, setState] = useLocalStorage<State>('animator-state', {layers: [], lines: []});
+    const [hover, setHover] = useState(null as null | number);
+
+    const fetcher = useFetcher();
+
+    const [state, setState] = useState(initialState);
+
+    const fref = useRef(fetcher);
+    const firstLoad = useRef(true);
+    const latest = useRef(state);
+    latest.current = state;
+
+    const bouncer = useMemo(
+        () =>
+            debounce(
+                () =>
+                    fref.current.submit({state: JSON.stringify(latest.current)}, {method: 'POST'}),
+                300,
+                5000,
+            ),
+        [],
+    );
+
+    useEffect(() => {
+        if (firstLoad.current) {
+            firstLoad.current = false;
+            return;
+        }
+
+        const _changed = state;
+        console.log('we have a state it is here');
+        // persist!
+        bouncer();
+    }, [state, bouncer]);
+
+    const [animate, setAnimate] = useState(false);
+
+    useEffect(() => {
+        if (!animate) return;
+        let at = 0;
+        let it = setInterval(() => {
+            at += 0.01;
+            if (at >= 1) {
+                clearInterval(it);
+                setAnimate(false);
+            }
+            setPreview(1 - (Math.cos(at * Math.PI * 2) + 1) / 2);
+        }, 40);
+
+        return () => clearInterval(it);
+    }, [animate]);
 
     const [preview, setPreview] = useState(0);
     const [pending, setPending] = useState<null | {selected?: number; points: Coord[]}>(null);
-    const patternMap = Object.fromEntries(patterns.map((p) => [p.hash, p.tiling]));
+    const patternMap = useMemo(
+        () => Object.fromEntries(patterns.map((p) => [p.hash, p.tiling])),
+        [patterns],
+    );
     const size = 600;
 
     const [showDialog, setShowDialog] = useState(false);
@@ -54,6 +203,20 @@ function Animator({loaderData: {patterns}}: Route.ComponentProps) {
     });
     const pendingPoints: Record<string, true> = {};
     pending?.points.forEach((coord) => (pendingPoints[coordKey(coord)] = true));
+
+    const ats = useMemo(
+        () => state.lines.map((line) => lineAt(line.keyframes, preview)),
+        [state.lines, preview],
+    );
+
+    const full = useMemo(() => {
+        const pt = patternMap[state.layers[0].pattern];
+        const pts = tilingPoints(pt.shape);
+        const ttt = tilingTransforms(pt.shape, pts[2], pts);
+        return applyTilingTransformsG(ats.filter(Boolean) as Coord[][], ttt, (line, tx) =>
+            line.map((coord) => applyMatrices(coord, tx)),
+        );
+    }, [ats, patternMap, state.layers]);
 
     return (
         <div className="mx-auto w-6xl p-4 pt-0 bg-base-200 shadow-base-300 shadow-md">
@@ -75,6 +238,17 @@ function Animator({loaderData: {patterns}}: Route.ComponentProps) {
                     viewBox="-1.5 -1.5 3 3"
                     style={size ? {background: 'black', width: size, height: size} : undefined}
                 >
+                    {full.map((line, i) => (
+                        <path
+                            key={i}
+                            d={shapeD(line, false)}
+                            fill="none"
+                            stroke={'#555'}
+                            strokeWidth={0.03}
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                        />
+                    ))}
                     {state.layers.map((layer, i) =>
                         !layer.visible
                             ? null
@@ -83,8 +257,8 @@ function Animator({loaderData: {patterns}}: Route.ComponentProps) {
                                       key={`${i}-${j}`}
                                       d={shapeD([prev, segment.to], false)}
                                       fill="none"
-                                      stroke={['red', 'yellow', 'blue'][i % 3]}
-                                      opacity={0.5}
+                                      stroke={col(i)}
+                                      //   opacity={0.5}
                                       strokeWidth={0.03}
                                       strokeLinecap="round"
                                       strokeLinejoin="round"
@@ -117,6 +291,30 @@ function Animator({loaderData: {patterns}}: Route.ComponentProps) {
                               />
                           ))
                         : null}
+                    {/* {ats.map((at, i) =>
+                        at ? (
+                            <path
+                                d={shapeD(at, false)}
+                                fill="none"
+                                stroke={hover === i ? 'yellow' : 'green'}
+                                strokeWidth={0.01}
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                            />
+                        ) : null,
+                    )} */}
+                    {hover
+                        ? ats[hover]?.map((coord, i) => (
+                              <circle
+                                  key={i}
+                                  cx={coord.x.toFixed(3)}
+                                  cy={coord.y.toFixed(3)}
+                                  r={0.03}
+                                  className="cursor-pointer"
+                                  fill={i === 0 ? 'red' : 'orange'}
+                              />
+                          ))
+                        : null}
                 </svg>
                 <div>
                     <label className="flex gap-4 block">
@@ -130,11 +328,15 @@ function Animator({loaderData: {patterns}}: Route.ComponentProps) {
                             onChange={(evt) => setPreview(+evt.target.value)}
                         />
                         <div className="w-10">{preview}</div>
+                        <button className="btn" onClick={() => setAnimate(true)}>
+                            Animate
+                        </button>
                     </label>
                     <div>Layers</div>
-                    <table className="table">
+                    <table className="table" style={{display: 'inline'}}>
                         <tbody>
                             <tr>
+                                <th></th>
                                 <td>
                                     <button
                                         className="btn"
@@ -146,8 +348,7 @@ function Animator({loaderData: {patterns}}: Route.ComponentProps) {
                             </tr>
                             {state.layers.map((layer, i) => (
                                 <tr key={i}>
-                                    <td>{layer.pattern.slice(0, 10)}</td>
-                                    <td>
+                                    <th>
                                         <button
                                             className="btn"
                                             onClick={() => {
@@ -159,8 +360,16 @@ function Animator({loaderData: {patterns}}: Route.ComponentProps) {
                                                 });
                                             }}
                                         >
-                                            {layer.visible ? 'hide' : 'show'}
+                                            {layer.visible ? <IconEye /> : <IconEyeInvisible />}
                                         </button>
+                                    </th>
+                                    <td>
+                                        <SimplePreview
+                                            tiling={patternMap[layer.pattern]}
+                                            size={80}
+                                            color={layer.visible ? col(i) : 'white'}
+                                        />
+                                        {/* {layer.pattern.slice(0, 10)} */}
                                     </td>
                                 </tr>
                             ))}
@@ -170,7 +379,7 @@ function Animator({loaderData: {patterns}}: Route.ComponentProps) {
                     <table className="table">
                         <tbody>
                             <tr>
-                                <td>
+                                <td className="flex" rowSpan={3}>
                                     <button
                                         className="btn"
                                         onClick={() =>
@@ -249,7 +458,11 @@ function Animator({loaderData: {patterns}}: Route.ComponentProps) {
                                 </td>
                             </tr>
                             {state.lines.map((line, i) => (
-                                <tr key={i}>
+                                <tr
+                                    key={i}
+                                    onMouseEnter={() => setHover(i)}
+                                    onMouseLeave={() => setHover(null)}
+                                >
                                     <td>Line #{i + 1}</td>
                                     <td>
                                         <svg style={{width: 110, height: 20}}>
@@ -291,12 +504,30 @@ function Animator({loaderData: {patterns}}: Route.ComponentProps) {
                                     <td>
                                         <button
                                             className="btn"
-                                            onClick={() =>
-                                                setState({
-                                                    ...state,
-                                                    lines: state.lines.filter((_, j) => j !== i),
-                                                })
-                                            }
+                                            onClick={() => {
+                                                if (line.keyframes.length === 1) {
+                                                    setState({
+                                                        ...state,
+                                                        lines: state.lines.filter(
+                                                            (_, j) => j !== i,
+                                                        ),
+                                                    });
+                                                } else {
+                                                    let next = line.keyframes.findIndex(
+                                                        (f) => f.at >= preview,
+                                                    );
+                                                    if (next === -1)
+                                                        next = line.keyframes.length - 1;
+                                                    const lines = state.lines.slice();
+                                                    lines[i] = {
+                                                        ...line,
+                                                        keyframes: line.keyframes.filter(
+                                                            (_, k) => k !== next,
+                                                        ),
+                                                    };
+                                                    setState({...state, lines});
+                                                }
+                                            }}
                                         >
                                             &times;
                                         </button>
