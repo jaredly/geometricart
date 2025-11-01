@@ -35,8 +35,14 @@ export type State = {
 
 const findExtraPoints = (line: Coord[], count: number) => {
     const first = line.slice(0, -1);
-    const next = line[line.length - 2];
     const last = line[line.length - 1];
+    if (line.length === 1) {
+        for (let i = 0; i <= count; i++) {
+            first.push(last);
+        }
+        return first;
+    }
+    const next = line[line.length - 2];
     const dx = (last.x - next.x) / (count + 1);
     const dy = (last.y - next.y) / (count + 1);
     for (let i = 1; i <= count; i++) {
@@ -392,7 +398,7 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                                     >
                                         {pending ? 'Cancel' : 'Add new line'}
                                     </button>
-                                    {pending?.points.length && pending.points.length > 1 ? (
+                                    {pending?.points.length ? (
                                         <button
                                             className="btn"
                                             onClick={() => {
