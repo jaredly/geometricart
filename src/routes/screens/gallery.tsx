@@ -1,14 +1,14 @@
 import {useState} from 'react';
 import {Route} from './+types/gallery';
-import {getAllPatterns, getCachedPatternData} from './db.server';
-import {getPatternData} from './getPatternData';
-import {ShowTiling} from './ShowTiling';
-import {Coord, shapeKey, Tiling} from '../types';
-import {ShapeDialog} from './ShapeDialog';
-import {getUniqueShapes} from './getUniqueShapes';
+import {getAllPatterns, getCachedPatternData} from '../db.server';
+import {getPatternData} from '../getPatternData';
+import {ShowTiling} from '../ShowTiling';
+import {Coord, shapeKey, Tiling} from '../../types';
+import {ShapeDialog} from '../ShapeDialog';
+import {getUniqueShapes} from '../getUniqueShapes';
 import {useSearchParams} from 'react-router';
-import {useOnOpen} from './useOnOpen';
-import {ShowShape} from './ShowShape';
+import {useOnOpen} from '../useOnOpen';
+import {ShowShape} from '../ShowShape';
 
 export async function loader(data: Route.LoaderArgs) {
     const limit = new URL(data.request.url).searchParams.get('limit');
@@ -97,8 +97,19 @@ export const Gallery = ({loaderData}: Route.ComponentProps) => {
     );
 
     return (
-        <div className="mx-auto w-6xl p-4 bg-base-200">
-            <h1>Pattern Gallery</h1>
+        <div className="mx-auto w-6xl p-4 pt-0 bg-base-200 shadow-base-300 shadow-md">
+            <div className="sticky top-0 py-2 mb-2 bg-base-200 shadow-md shadow-base-200 z-10">
+                <div className="breadcrumbs text-sm">
+                    <ul>
+                        <li>
+                            <a href="/">Geometric Art</a>
+                        </li>
+                        <li> Gallery </li>
+                    </ul>
+                </div>
+                {/* <h1 className="text-4xl">Pattern View</h1> */}
+            </div>
+
             <div className="gap-4 flex items-center p-4">
                 Group
                 <button

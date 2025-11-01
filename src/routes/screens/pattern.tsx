@@ -1,15 +1,15 @@
 import {useEffect, useMemo, useRef, useState} from 'react';
 import {useLoaderData, useParams} from 'react-router';
 import type {Route} from './+types/pattern';
-import {getCachedPatternData, getPattern, getSimilarPatterns} from './db.server';
-import {flipPattern} from './flipPattern';
-import {canonicalShape, getPatternData, humanReadableFraction} from './getPatternData';
-import {normShape} from './normShape';
-import {TilingPattern} from './ShowTiling';
-import {shapeKey, State, Tiling} from '../types';
-import {pk} from './pk';
-import {drawBounds, drawLines, drawShapes, drawWoven} from './canvasDraw';
-import {canvasRender} from '../rendering/CanvasRender';
+import {getCachedPatternData, getPattern, getSimilarPatterns} from '../db.server';
+import {flipPattern} from '../flipPattern';
+import {canonicalShape, getPatternData, humanReadableFraction} from '../getPatternData';
+import {normShape} from '../normShape';
+import {TilingPattern} from '../ShowTiling';
+import {shapeKey, State, Tiling} from '../../types';
+import {pk} from '../pk';
+import {drawBounds, drawLines, drawShapes, drawWoven} from '../canvasDraw';
+import {canvasRender} from '../../rendering/CanvasRender';
 
 export async function loader({params}: Route.LoaderArgs) {
     if (!params.id) {
@@ -56,11 +56,22 @@ export const Pattern = () => {
     });
 
     return (
-        <div className="mx-auto w-6xl p-4 bg-base-200">
-            <div className="navbar">
-                <h1 className="text-4xl">Pattern View</h1>
+        <div className="mx-auto w-6xl p-4 pt-0 bg-base-200 shadow-base-300 shadow-md">
+            <div className="sticky top-0 py-2 mb-2 bg-base-200 shadow-md shadow-base-200">
+                <div className="breadcrumbs text-sm">
+                    <ul>
+                        <li>
+                            <a href="/">Geometric Art</a>
+                        </li>
+                        <li>
+                            <a href="/gallery/">Gallery</a>
+                        </li>
+                        <li>Pattern {id}</li>
+                    </ul>
+                </div>
+                {/* <h1 className="text-4xl">Pattern View</h1> */}
             </div>
-            <div className="text-sm mb-3">ID {id}</div>
+            {/* <div className="text-sm mb-3">ID {id}</div> */}
             <div className="flex items-start gap-2">
                 <div className="flex flex-col gap-4">
                     {/* <TilingPattern tiling={tiling} size={400} data={data} showLines /> */}
@@ -229,7 +240,7 @@ export const Pattern = () => {
                                         style={{width: 200, height: 200}}
                                         className="rounded-md"
                                     />
-                                    {score.toFixed(2)}
+                                    {/* {score.toFixed(2)} */}
                                 </a>
                             </div>
                         ))}

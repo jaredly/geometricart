@@ -1,5 +1,5 @@
 import {useState} from 'react';
-import {Route} from './+types/gallery';
+import {Route} from './screens/+types/gallery';
 import {ShowShape} from './ShowShape';
 import {FrameInspectSharp} from '../icons/Icon';
 import {useOnOpen} from './useOnOpen';

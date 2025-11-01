@@ -5,7 +5,7 @@ import type {Route} from './+types/uploads-image';
 export async function loader({params}: Route.LoaderArgs) {
     const full = join(
         import.meta.dirname,
-        '../../../../apps/pattern-db/public/uploads',
+        '../../../../../apps/pattern-db/public/uploads',
         params.fname,
     );
     if (!fs.existsSync(full)) {
