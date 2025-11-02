@@ -1,7 +1,7 @@
 import {useMemo, useState} from 'react';
 import {applyTilingTransformsG, tilingPoints} from '../../editor/tilingPoints';
 import {tilingTransforms} from '../../editor/tilingTransforms';
-import {IconEye, IconEyeInvisible} from '../../icons/Icon';
+import {IconEye, IconEyeInvisible, RoundPlus} from '../../icons/Icon';
 import {coordKey} from '../../rendering/coordKey';
 import {applyMatrices} from '../../rendering/getMirrorTransforms';
 import {Coord} from '../../types';
@@ -182,7 +182,7 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                           ))
                         : null}
                 </svg>
-                <div>
+                <div className="flex flex-col gap-4">
                     <label className="flex gap-4 block">
                         <input
                             className="range"
@@ -198,81 +198,97 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                             Animate
                         </button>
                     </label>
-                    <div>Layers</div>
-                    <table className="table" style={{display: 'inline'}}>
-                        <tbody>
-                            <tr>
-                                <th></th>
-                                <td>
-                                    <button
-                                        className="btn"
-                                        onClick={() => layerDialog.current?.showModal()}
-                                    >
-                                        Add new layer
-                                    </button>
-                                </td>
-                            </tr>
-                            {state.layers.map((layer, i) => (
-                                <tr key={i}>
-                                    <th>
-                                        <button
-                                            className="btn"
-                                            onClick={() => {
-                                                setState({
-                                                    ...state,
-                                                    layers: state.layers.map((l, j) =>
-                                                        j === i ? {...l, visible: !l.visible} : l,
-                                                    ),
-                                                });
-                                            }}
-                                        >
-                                            {layer.visible ? <IconEye /> : <IconEyeInvisible />}
-                                        </button>
-                                    </th>
-                                    <td>
-                                        <SimplePreview
-                                            tiling={patternMap[layer.pattern]}
-                                            size={80}
-                                            color={layer.visible ? col(i) : 'white'}
-                                        />
-                                        {/* {layer.pattern.slice(0, 10)} */}
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                    <div>Lines</div>
-                    <div>
-                        <button
-                            className="btn"
-                            onClick={() =>
-                                pending
-                                    ? setPending(null)
-                                    : setPending({
-                                          type: 'line',
-                                          points: [],
-                                      })
-                            }
-                        >
-                            {pending ? 'Cancel' : 'Add new line'}
-                        </button>
-                        {pending?.type === 'line' && pending.points.length ? (
-                            <SaveLinesButton
-                                setPending={setPending}
-                                pending={pending}
-                                setState={setState}
-                                state={state}
-                                preview={preview}
-                            />
-                        ) : null}
+                    <div className="bg-base-100 p-4 rounded-xl shadow-md shadow-base-300">
+                        <div className="mb-4">
+                            Layers
+                            <button
+                                className="btn btn-square ml-4"
+                                onClick={() => layerDialog.current?.showModal()}
+                            >
+                                <RoundPlus />
+                            </button>
+                        </div>
+                        <table className="table" style={{display: 'inline'}}>
+                            <tbody>
+                                {state.layers.map((layer, i) => (
+                                    <tr key={i}>
+                                        <th>
+                                            <button
+                                                className="btn"
+                                                onClick={() => {
+                                                    setState({
+                                                        ...state,
+                                                        layers: state.layers.map((l, j) =>
+                                                            j === i
+                                                                ? {...l, visible: !l.visible}
+                                                                : l,
+                                                        ),
+                                                    });
+                                                }}
+                                            >
+                                                {layer.visible ? <IconEye /> : <IconEyeInvisible />}
+                                            </button>
+                                        </th>
+                                        <td>
+                                            <SimplePreview
+                                                tiling={patternMap[layer.pattern]}
+                                                size={80}
+                                                color={layer.visible ? col(i) : 'white'}
+                                            />
+                                            {/* {layer.pattern.slice(0, 10)} */}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
                     </div>
-                    <LinesTable
-                        state={state}
-                        setHover={setHover}
-                        preview={preview}
-                        setPending={setPending}
-                        setState={setState}
-                    />
+                    <div className="bg-base-100 p-4 rounded-xl shadow-md shadow-base-300">
+                        <div className="mb-4">
+                            Guides
+                            <button
+                                className="btn btn-square ml-4"
+                                onClick={() => layerDialog.current?.showModal()}
+                            >
+                                <RoundPlus />
+                            </button>
+                        </div>
+                        <div></div>
+                    </div>
+                    <div className="bg-base-100 p-4 rounded-xl shadow-md shadow-base-300">
+                        <div className="mb-4">
+                            Lines
+                            <button
+                                className="btn mx-4"
+                                onClick={() =>
+                                    pending
+                                        ? setPending(null)
+                                        : setPending({
+                                              type: 'line',
+                                              points: [],
+                                          })
+                                }
+                            >
+                                {pending ? <span>&times;</span> : <RoundPlus />}
+                            </button>
+                            {pending?.type === 'line' && pending.points.length ? (
+                                <SaveLinesButton
+                                    setPending={setPending}
+                                    pending={pending}
+                                    setState={setState}
+                                    state={state}
+                                    preview={preview}
+                                />
+                            ) : null}
+                        </div>
+                        <div></div>
+                        <LinesTable
+                            state={state}
+                            setHover={setHover}
+                            preview={preview}
+                            setPending={setPending}
+                            setState={setState}
+                        />
+                    </div>
                 </div>
             </div>
             <dialog id="layer-modal" className="modal" ref={layerDialog}>
