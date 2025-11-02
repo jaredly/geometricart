@@ -5,7 +5,7 @@ import {existsSync, readFileSync} from 'fs';
 import {migrateState} from '../state/migrateState';
 import {getPatternData, PatternData} from './getPatternData';
 import {unique} from './shapesFromSegments';
-import {State as Animated} from './screens/animator';
+import {State as Animated} from './screens/animator.utils';
 
 export const db = new Database(join(import.meta.dirname, '../../data.db'));
 

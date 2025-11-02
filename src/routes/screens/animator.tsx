@@ -1,7 +1,7 @@
 import type {Route} from './+types/animator';
 import React, {useRef} from 'react';
 import {getAllPatterns, getAnimated, getCachedPatternData, saveAnimated} from '../db.server';
-import {Coord, Tiling} from '../../types';
+import {Coord} from '../../types';
 import {useLocalStorage} from '../../vest/useLocalStorage';
 import {useEffect, useMemo, useState} from 'react';
 import {shapeD} from '../shapeD';
@@ -13,6 +13,11 @@ import {applyTilingTransformsG, tilingPoints} from '../../editor/tilingPoints';
 import {applyMatrices} from '../../rendering/getMirrorTransforms';
 import {IconEye, IconEyeInvisible} from '../../icons/Icon';
 import {useFetcher} from 'react-router';
+import {SaveLinesButton} from './SaveLinesButton';
+import {LinesTable} from './LinesTable';
+import {LayerDialog} from './LayerDialog';
+import {SimplePreview} from './SimplePreview';
+import {useAnimate, useFetchBounceState, State, lineAt} from './animator.utils';
 
 export async function loader({params}: Route.LoaderArgs) {
     const got = getAnimated(params.id);
@@ -23,86 +28,6 @@ export async function loader({params}: Route.LoaderArgs) {
     };
 }
 
-export type State = {
-    layers: {pattern: string; visible: boolean}[];
-    lines: {
-        keyframes: {
-            at: number;
-            points: Coord[];
-        }[];
-    }[];
-};
-
-const findExtraPoints = (line: Coord[], count: number) => {
-    const first = line.slice(0, -1);
-    const last = line[line.length - 1];
-    if (line.length === 1) {
-        for (let i = 0; i <= count; i++) {
-            first.push(last);
-        }
-        return first;
-    }
-    const next = line[line.length - 2];
-    const dx = (last.x - next.x) / (count + 1);
-    const dy = (last.y - next.y) / (count + 1);
-    for (let i = 1; i <= count; i++) {
-        first.push({x: next.x + dx * i, y: next.y + dy * i});
-    }
-    first.push(last);
-    return first;
-};
-
-const lineAt = (frames: {at: number; points: Coord[]}[], at: number) => {
-    const exact = frames.find((f) => f.at === at);
-    if (exact) return exact.points;
-    const after = frames.findIndex((f) => f.at > at);
-    if (after === 0 || after === -1) return;
-    let prev = frames[after - 1];
-    let post = frames[after];
-    const btw = (at - prev.at) / (post.at - prev.at);
-    let left = prev.points;
-    let right = post.points;
-    if (left.length < right.length) left = findExtraPoints(left, right.length - left.length);
-    if (right.length < left.length) right = findExtraPoints(right, left.length - right.length);
-    return left.map((p, i) => plerp(p, right[i], btw));
-};
-
-const SimplePreview = React.memo(
-    ({tiling, size, color}: {color: string; tiling: Tiling; size: number}) => {
-        const all = useMemo(() => {
-            const pts = tilingPoints(tiling.shape);
-            const ttt = tilingTransforms(tiling.shape, pts[2], pts);
-
-            return applyTilingTransformsG(
-                tiling.cache.segments.map((s) => [s.prev, s.segment.to]),
-                ttt,
-                (line, tx) => line.map((coord) => applyMatrices(coord, tx)),
-            );
-        }, [tiling]);
-        return (
-            <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="-1.5 -1.5 3 3"
-                style={{background: 'black', width: size, height: size}}
-            >
-                {all.map((line, i) => (
-                    <path
-                        key={i}
-                        d={shapeD(line, false)}
-                        fill="none"
-                        stroke={color}
-                        strokeWidth={0.02}
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                    />
-                ))}
-            </svg>
-        );
-    },
-);
-
-const col = (i: number) => ['red', 'yellow', 'blue'][i % 3];
-
 export async function action({request, params}: Route.ActionArgs) {
     const data = await request.formData();
     const state = data.get('state') as string;
@@ -110,81 +35,18 @@ export async function action({request, params}: Route.ActionArgs) {
     saveAnimated(params.id, state);
 }
 
-const debounce = (act: () => void, wait: number, max: number) => {
-    let last = 0;
-    let tid: NodeJS.Timeout | null = null;
-    return () => {
-        if (tid) {
-            clearTimeout(tid);
-            tid = null;
-        }
-        if (Date.now() - last > max) {
-            last = Date.now();
-            act();
-            return;
-        }
-        tid = setTimeout(() => {
-            last = Date.now();
-            tid = null;
-            act();
-        }, wait);
-    };
-};
+const col = (i: number) => ['red', 'yellow', 'blue'][i % 3];
 
 export default function Animator({loaderData: {patterns, initialState}}: Route.ComponentProps) {
     // const [state, setState] = useLocalStorage<State>('animator-state', {layers: [], lines: []});
     const [hover, setHover] = useState(null as null | number);
-
-    const fetcher = useFetcher();
-
     const [state, setState] = useState(initialState);
-
-    const fref = useRef(fetcher);
-    const firstLoad = useRef(true);
-    const latest = useRef(state);
-    latest.current = state;
-
-    const bouncer = useMemo(
-        () =>
-            debounce(
-                () =>
-                    fref.current.submit({state: JSON.stringify(latest.current)}, {method: 'POST'}),
-                300,
-                5000,
-            ),
-        [],
-    );
-
-    useEffect(() => {
-        if (firstLoad.current) {
-            firstLoad.current = false;
-            return;
-        }
-
-        const _changed = state;
-        console.log('we have a state it is here');
-        // persist!
-        bouncer();
-    }, [state, bouncer]);
-
-    const [animate, setAnimate] = useState(false);
-
-    useEffect(() => {
-        if (!animate) return;
-        let at = 0;
-        let it = setInterval(() => {
-            at += 0.01;
-            if (at >= 1) {
-                clearInterval(it);
-                setAnimate(false);
-            }
-            setPreview(1 - (Math.cos(at * Math.PI * 2) + 1) / 2);
-        }, 40);
-
-        return () => clearInterval(it);
-    }, [animate]);
+    useFetchBounceState(state);
 
     const [preview, setPreview] = useState(0);
+    const [animate, setAnimate] = useState(false);
+    useAnimate(animate, setAnimate, setPreview);
+
     const [pending, setPending] = useState<null | {selected?: number; points: Coord[]}>(null);
     const patternMap = useMemo(
         () => Object.fromEntries(patterns.map((p) => [p.hash, p.tiling])),
@@ -215,13 +77,17 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
         [state.lines, preview],
     );
 
-    const full = useMemo(() => {
+    const {full, pts} = useMemo(() => {
+        if (!state.layers.length) return {full: [], pts: []};
         const pt = patternMap[state.layers[0].pattern];
         const pts = tilingPoints(pt.shape);
         const ttt = tilingTransforms(pt.shape, pts[2], pts);
-        return applyTilingTransformsG(ats.filter(Boolean) as Coord[][], ttt, (line, tx) =>
-            line.map((coord) => applyMatrices(coord, tx)),
-        );
+        return {
+            full: applyTilingTransformsG(ats.filter(Boolean) as Coord[][], ttt, (line, tx) =>
+                line.map((coord) => applyMatrices(coord, tx)),
+            ),
+            pts,
+        };
     }, [ats, patternMap, state.layers]);
 
     return (
@@ -239,11 +105,19 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
             <div className="gap-4 flex items-start p-4">
                 <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    // viewBox="-5 -5 10 10"
+                    viewBox="-5 -5 10 10"
                     // viewBox="-3 -3 6 6"
-                    viewBox="-1.5 -1.5 3 3"
+                    // viewBox="-1.5 -1.5 3 3"
                     style={size ? {background: 'black', width: size, height: size} : undefined}
                 >
+                    <path
+                        d={shapeD(pts, true)}
+                        fill="none"
+                        stroke={'white'}
+                        strokeWidth={0.01}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                    />
                     {full.map((line, i) => (
                         <path
                             key={i}
@@ -297,18 +171,6 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                               />
                           ))
                         : null}
-                    {/* {ats.map((at, i) =>
-                        at ? (
-                            <path
-                                d={shapeD(at, false)}
-                                fill="none"
-                                stroke={hover === i ? 'yellow' : 'green'}
-                                strokeWidth={0.01}
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                            />
-                        ) : null,
-                    )} */}
                     {hover
                         ? ats[hover]?.map((coord, i) => (
                               <circle
@@ -382,166 +244,36 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                         </tbody>
                     </table>
                     <div>Lines</div>
-                    <table className="table">
-                        <tbody>
-                            <tr>
-                                <td className="flex" rowSpan={3}>
-                                    <button
-                                        className="btn"
-                                        onClick={() =>
-                                            pending
-                                                ? setPending(null)
-                                                : setPending({
-                                                      points: [],
-                                                  })
-                                        }
-                                    >
-                                        {pending ? 'Cancel' : 'Add new line'}
-                                    </button>
-                                    {pending?.points.length ? (
-                                        <button
-                                            className="btn"
-                                            onClick={() => {
-                                                setPending(null);
-                                                if (pending.selected != null) {
-                                                    setState({
-                                                        ...state,
-                                                        lines: state.lines.map((line, i) =>
-                                                            i === pending.selected
-                                                                ? line.keyframes.some(
-                                                                      (k) => k.at === preview,
-                                                                  )
-                                                                    ? {
-                                                                          ...line,
-                                                                          keyframes:
-                                                                              line.keyframes.map(
-                                                                                  (k) =>
-                                                                                      k.at ===
-                                                                                      preview
-                                                                                          ? {
-                                                                                                ...k,
-                                                                                                points: pending.points,
-                                                                                            }
-                                                                                          : k,
-                                                                              ),
-                                                                      }
-                                                                    : {
-                                                                          ...line,
-                                                                          keyframes: [
-                                                                              ...line.keyframes,
-                                                                              {
-                                                                                  at: preview,
-                                                                                  points: pending.points,
-                                                                              },
-                                                                          ].sort(
-                                                                              (a, b) => a.at - b.at,
-                                                                          ),
-                                                                      }
-                                                                : line,
-                                                        ),
-                                                    });
-                                                } else {
-                                                    setState({
-                                                        ...state,
-                                                        lines: [
-                                                            ...state.lines,
-                                                            {
-                                                                keyframes: [
-                                                                    {
-                                                                        at: preview,
-                                                                        points: pending.points,
-                                                                    },
-                                                                ],
-                                                            },
-                                                        ],
-                                                    });
-                                                }
-                                            }}
-                                        >
-                                            Finish
-                                        </button>
-                                    ) : null}
-                                </td>
-                            </tr>
-                            {state.lines.map((line, i) => (
-                                <tr
-                                    key={i}
-                                    onMouseEnter={() => setHover(i)}
-                                    onMouseLeave={() => setHover(null)}
-                                >
-                                    <td>Line #{i + 1}</td>
-                                    <td>
-                                        <svg style={{width: 110, height: 20}}>
-                                            <line
-                                                x1={
-                                                    Math.min(...line.keyframes.map((k) => k.at)) *
-                                                        100 +
-                                                    5
-                                                }
-                                                x2={
-                                                    Math.max(...line.keyframes.map((k) => k.at)) *
-                                                        100 +
-                                                    5
-                                                }
-                                                y1={10}
-                                                y2={10}
-                                                stroke={'#555'}
-                                                strokeWidth={1}
-                                            />
-                                            {line.keyframes.map((kf) => (
-                                                <circle
-                                                    cx={kf.at * 100 + 5}
-                                                    cy={10}
-                                                    r={5}
-                                                    fill={kf.at === preview ? 'white' : 'red'}
-                                                    key={kf.at}
-                                                />
-                                            ))}
-                                        </svg>
-                                    </td>
-                                    <td>
-                                        <button
-                                            className="btn"
-                                            onClick={() => setPending({selected: i, points: []})}
-                                        >
-                                            +
-                                        </button>
-                                    </td>
-                                    <td>
-                                        <button
-                                            className="btn"
-                                            onClick={() => {
-                                                if (line.keyframes.length === 1) {
-                                                    setState({
-                                                        ...state,
-                                                        lines: state.lines.filter(
-                                                            (_, j) => j !== i,
-                                                        ),
-                                                    });
-                                                } else {
-                                                    let next = line.keyframes.findIndex(
-                                                        (f) => f.at >= preview,
-                                                    );
-                                                    if (next === -1)
-                                                        next = line.keyframes.length - 1;
-                                                    const lines = state.lines.slice();
-                                                    lines[i] = {
-                                                        ...line,
-                                                        keyframes: line.keyframes.filter(
-                                                            (_, k) => k !== next,
-                                                        ),
-                                                    };
-                                                    setState({...state, lines});
-                                                }
-                                            }}
-                                        >
-                                            &times;
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                    <div>
+                        <button
+                            className="btn"
+                            onClick={() =>
+                                pending
+                                    ? setPending(null)
+                                    : setPending({
+                                          points: [],
+                                      })
+                            }
+                        >
+                            {pending ? 'Cancel' : 'Add new line'}
+                        </button>
+                        {pending?.points.length ? (
+                            <SaveLinesButton
+                                setPending={setPending}
+                                pending={pending}
+                                setState={setState}
+                                state={state}
+                                preview={preview}
+                            />
+                        ) : null}
+                    </div>
+                    <LinesTable
+                        state={state}
+                        setHover={setHover}
+                        preview={preview}
+                        setPending={setPending}
+                        setState={setState}
+                    />
                 </div>
             </div>
             <dialog id="layer-modal" className="modal" ref={layerDialog}>
@@ -563,48 +295,3 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
         </div>
     );
 }
-
-const LayerDialog = ({
-    addLayer,
-    patterns,
-}: {
-    addLayer: (hash: string) => void;
-    patterns: string[];
-}) => {
-    return (
-        <div className="modal-box flex flex-col w-11/12 max-w-5xl h-full max-h-full overflow-auto">
-            <form method="dialog" className="contents">
-                <div className="mb-4">
-                    <input className="input mr-4" type="text" name="id" />
-                    <button
-                        className="btn"
-                        onClick={(evt) => {
-                            const data = new FormData(evt.currentTarget.form!);
-                            const id = data.get('id') as string;
-                            if (id && patterns.includes(id)) {
-                                addLayer(id);
-                            }
-                        }}
-                    >
-                        Add by id
-                    </button>
-                </div>
-                <div className="flex flex-wrap gap-4">
-                    {patterns.map((hash) => (
-                        <button
-                            onClick={() => {
-                                addLayer(hash);
-                            }}
-                        >
-                            <img
-                                src={`/gallery/pattern/${hash}/320.png`}
-                                className="w-40 h-40"
-                                key={hash}
-                            />
-                        </button>
-                    ))}
-                </div>
-            </form>
-        </div>
-    );
-};
