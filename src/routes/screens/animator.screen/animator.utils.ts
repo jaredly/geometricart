@@ -1,7 +1,7 @@
 import {useEffect, useMemo, useRef} from 'react';
 import {useFetcher} from 'react-router';
-import {plerp} from '../../plerp';
-import {Coord} from '../../types';
+import {plerp} from '../../../plerp';
+import {Coord} from '../../../types';
 
 export const findExtraPoints = (line: Coord[], count: number) => {
     const first = line.slice(0, -1);

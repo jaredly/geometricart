@@ -1,5 +1,5 @@
 import React from 'react';
-import {Coord} from '../../types';
+import {Coord} from '../../../types';
 import {State} from './animator.utils';
 
 export function SaveLinesButton({

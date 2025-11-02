@@ -13,11 +13,11 @@ import {applyTilingTransformsG, tilingPoints} from '../../editor/tilingPoints';
 import {applyMatrices} from '../../rendering/getMirrorTransforms';
 import {IconEye, IconEyeInvisible} from '../../icons/Icon';
 import {useFetcher} from 'react-router';
-import {SaveLinesButton} from './SaveLinesButton';
-import {LinesTable} from './LinesTable';
-import {LayerDialog} from './LayerDialog';
-import {SimplePreview} from './SimplePreview';
-import {useAnimate, useFetchBounceState, State, lineAt} from './animator.utils';
+import {SaveLinesButton} from './animator.screen/SaveLinesButton';
+import {LinesTable} from './animator.screen/LinesTable';
+import {LayerDialog} from './animator.screen/LayerDialog';
+import {SimplePreview} from './animator.screen/SimplePreview';
+import {useAnimate, useFetchBounceState, State, lineAt} from './animator.screen/animator.utils';
 
 export async function loader({params}: Route.LoaderArgs) {
     const got = getAnimated(params.id);

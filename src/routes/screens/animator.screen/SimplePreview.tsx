@@ -1,9 +1,9 @@
 import React, {useMemo} from 'react';
-import {tilingPoints, applyTilingTransformsG} from '../../editor/tilingPoints';
-import {tilingTransforms} from '../../editor/tilingTransforms';
-import {applyMatrices} from '../../rendering/getMirrorTransforms';
-import {Tiling} from '../../types';
-import {shapeD} from '../shapeD';
+import {tilingPoints, applyTilingTransformsG} from '../../../editor/tilingPoints';
+import {tilingTransforms} from '../../../editor/tilingTransforms';
+import {applyMatrices} from '../../../rendering/getMirrorTransforms';
+import {Tiling} from '../../../types';
+import {shapeD} from '../../shapeD';
 
 export const SimplePreview = React.memo(
     ({tiling, size, color}: {color: string; tiling: Tiling; size: number}) => {
