@@ -56,6 +56,20 @@ export type GuideGeom =
     | Polygon
     | CircumCircle;
 
+export const GuideGeomTypes: Record<GuideGeom['type'], true | string> = {
+    AngleBisector: true,
+    Circle: true,
+    CircleMark: true,
+    CircumCircle: true,
+    CloneCircle: true,
+    InCircle: true,
+    Line: true,
+    Perpendicular: true,
+    PerpendicularBisector: true,
+    Polygon: true,
+    Split: true,
+};
+
 type Perpendicular = {
     type: 'Perpendicular';
     p1: Coord;

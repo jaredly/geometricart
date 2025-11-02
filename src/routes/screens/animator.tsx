@@ -4,7 +4,7 @@ import {tilingTransforms} from '../../editor/tilingTransforms';
 import {IconEye, IconEyeInvisible, RoundPlus} from '../../icons/Icon';
 import {coordKey} from '../../rendering/coordKey';
 import {applyMatrices} from '../../rendering/getMirrorTransforms';
-import {Coord} from '../../types';
+import {Coord, GuideGeomTypes} from '../../types';
 import {getAllPatterns, getAnimated, saveAnimated} from '../db.server';
 import {shapeD} from '../shapeD';
 import {useOnOpen} from '../useOnOpen';
@@ -13,7 +13,15 @@ import {LayerDialog} from './animator.screen/LayerDialog';
 import {LinesTable} from './animator.screen/LinesTable';
 import {SaveLinesButton} from './animator.screen/SaveLinesButton';
 import {SimplePreview} from './animator.screen/SimplePreview';
-import {lineAt, Pending, useAnimate, useFetchBounceState} from './animator.screen/animator.utils';
+import {
+    lineAt,
+    Pending,
+    useAnimate,
+    useFetchBounceState,
+    State,
+} from './animator.screen/animator.utils';
+import {pendingGuide, RenderPendingGuide} from '../../editor/RenderPendingGuide';
+import {GuideElement} from '../../editor/GuideElement';
 
 export async function loader({params}: Route.LoaderArgs) {
     const got = getAnimated(params.id);
@@ -38,6 +46,10 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
     const [hover, setHover] = useState(null as null | number);
     const [state, setState] = useState(initialState);
     useFetchBounceState(state);
+
+    const [showGuides, setShowGuides] = useState(true);
+
+    const [pos, setPos] = useState({x: 0, y: 0});
 
     const [preview, setPreview] = useState(0);
     const [animate, setAnimate] = useState(false);
@@ -66,7 +78,7 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
         });
     });
     const pendingPoints: Record<string, true> = {};
-    if (pending?.type === 'line') {
+    if (pending) {
         pending.points.forEach((coord) => (pendingPoints[coordKey(coord)] = true));
     }
 
@@ -107,15 +119,24 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                     // viewBox="-3 -3 6 6"
                     viewBox="-1.5 -1.5 3 3"
                     style={size ? {background: 'black', width: size, height: size} : undefined}
+                    onMouseMove={(evt) => {
+                        const box = evt.currentTarget.getBoundingClientRect();
+                        setPos({
+                            x: ((evt.clientX - box.left) / box.width - 0.5) * 3,
+                            y: ((evt.clientY - box.top) / box.height - 0.5) * 3,
+                        });
+                    }}
                 >
-                    <path
-                        d={shapeD(pts, true)}
-                        fill="none"
-                        stroke={'white'}
-                        strokeWidth={0.01}
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                    />
+                    {showGuides && (
+                        <path
+                            d={shapeD(pts, true)}
+                            fill="none"
+                            stroke={'white'}
+                            strokeWidth={0.01}
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                        />
+                    )}
                     {full.map((line, i) => (
                         <path
                             key={i}
@@ -143,6 +164,17 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                                   />
                               )),
                     )}
+                    {showGuides &&
+                        state.guides?.map((guide, i) => (
+                            <GuideElement
+                                key={i}
+                                geom={guide}
+                                zoom={1}
+                                stroke={0.01}
+                                bounds={{x0: -1, y0: -1, x1: 1, y1: 1}}
+                                original
+                            />
+                        ))}
                     {pending?.type === 'line' ? (
                         <path
                             d={shapeD(pending.points, false)}
@@ -153,7 +185,18 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                             strokeLinejoin="round"
                         />
                     ) : null}
-                    {pending?.type === 'line'
+                    {pending?.type === 'Guide' ? (
+                        <RenderPendingGuide
+                            guide={pending}
+                            zoom={1}
+                            bounds={{x0: -1, y0: -1, x1: 1, y1: 1}}
+                            mirror={null}
+                            shiftKey={false}
+                            stroke={0.01}
+                            pos={pos}
+                        />
+                    ) : null}
+                    {pending
                         ? Object.entries(visiblePoints).map(([key, coord]) => (
                               <circle
                                   key={key}
@@ -226,14 +269,18 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                                                     });
                                                 }}
                                             >
-                                                {layer.visible ? <IconEye /> : <IconEyeInvisible />}
+                                                {layer.visible ? (
+                                                    <IconEye />
+                                                ) : (
+                                                    <IconEyeInvisible color={'#555'} />
+                                                )}
                                             </button>
                                         </th>
                                         <td>
                                             <SimplePreview
                                                 tiling={patternMap[layer.pattern]}
                                                 size={80}
-                                                color={layer.visible ? col(i) : 'white'}
+                                                color={layer.visible ? col(i) : '#555'}
                                             />
                                             {/* {layer.pattern.slice(0, 10)} */}
                                         </td>
@@ -246,13 +293,102 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                         <div className="mb-4">
                             Guides
                             <button
-                                className="btn btn-square ml-4"
-                                onClick={() => layerDialog.current?.showModal()}
+                                className="btn"
+                                onClick={() => {
+                                    setShowGuides(!showGuides);
+                                }}
                             >
-                                <RoundPlus />
+                                {showGuides ? <IconEye /> : <IconEyeInvisible color={'#555'} />}
                             </button>
+                            <ul className="menu ml-4 lg:menu-horizontal bg-base-200 rounded-box">
+                                <li>
+                                    <details
+                                        onClick={(evt) => {
+                                            evt.currentTarget.open = !evt.currentTarget.open;
+                                        }}
+                                    >
+                                        <summary onClick={(evt) => evt.stopPropagation()}>
+                                            Add Guide
+                                        </summary>
+                                        <ul className="shadow-md shadow-base-300 z-10">
+                                            {Object.entries(GuideGeomTypes).map(([key, name]) => (
+                                                <li>
+                                                    <button
+                                                        onClick={(evt) => {
+                                                            // let details: HTMLDetailsElement;
+                                                            // let node = evt.currentTarget
+                                                            // evt.currentTarget
+                                                            setPending({
+                                                                type: 'Guide',
+                                                                kind: key as 'Line',
+                                                                points: [],
+                                                                toggle: false,
+                                                            });
+                                                        }}
+                                                    >
+                                                        {name === true ? key : name}
+                                                    </button>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </details>
+                                </li>
+                            </ul>
+                            {pending?.type === 'Guide' && (
+                                <>
+                                    <button
+                                        className="btn btn-square ml-4"
+                                        onClick={() => setPending(null)}
+                                    >
+                                        &times;
+                                    </button>
+                                    <button
+                                        className="btn btn-square ml-4"
+                                        onClick={() => {
+                                            const guide = pendingGuide(
+                                                pending.kind,
+                                                pending.points,
+                                                false,
+                                                undefined,
+                                                false,
+                                                0,
+                                            );
+                                            setState({
+                                                ...state,
+                                                guides: [...(state.guides ?? []), guide],
+                                            });
+                                            setPending(null);
+                                        }}
+                                    >
+                                        Save
+                                    </button>
+                                </>
+                            )}
                         </div>
-                        <div></div>
+                        <table className="table">
+                            <tbody>
+                                {state.guides?.map((guide, i) => (
+                                    <tr key={i}>
+                                        <td>{guide.type}</td>
+                                        <td>
+                                            <button
+                                                className="btn"
+                                                onClick={() => {
+                                                    setState({
+                                                        ...state,
+                                                        guides: state.guides?.filter(
+                                                            (_, j) => j !== i,
+                                                        ),
+                                                    });
+                                                }}
+                                            >
+                                                &times;
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
                     </div>
                     <div className="bg-base-100 p-4 rounded-xl shadow-md shadow-base-300">
                         <div className="mb-4">
@@ -260,7 +396,7 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                             <button
                                 className="btn mx-4"
                                 onClick={() =>
-                                    pending
+                                    pending?.type === 'line'
                                         ? setPending(null)
                                         : setPending({
                                               type: 'line',
@@ -268,7 +404,7 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                                           })
                                 }
                             >
-                                {pending ? <span>&times;</span> : <RoundPlus />}
+                                {pending?.type === 'line' ? <span>&times;</span> : <RoundPlus />}
                             </button>
                             {pending?.type === 'line' && pending.points.length ? (
                                 <SaveLinesButton
@@ -280,7 +416,6 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                                 />
                             ) : null}
                         </div>
-                        <div></div>
                         <LinesTable
                             state={state}
                             setHover={setHover}
