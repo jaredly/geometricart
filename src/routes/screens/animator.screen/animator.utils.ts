@@ -1,7 +1,7 @@
 import {useEffect, useMemo, useRef} from 'react';
 import {useFetcher} from 'react-router';
 import {plerp} from '../../../plerp';
-import {Coord} from '../../../types';
+import {Coord, PendingGuide} from '../../../types';
 
 export const findExtraPoints = (line: Coord[], count: number) => {
     const first = line.slice(0, -1);
@@ -115,3 +115,6 @@ export const useAnimate = (
         return () => clearInterval(it);
     }, [animate, setAnimate, setPreview]);
 };
+export type Pending =
+    | {type: 'line'; idx?: number; points: Coord[]}
+    | {type: 'guide'; geom: PendingGuide};

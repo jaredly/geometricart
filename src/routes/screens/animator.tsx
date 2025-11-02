@@ -1,23 +1,19 @@
-import type {Route} from './+types/animator';
-import React, {useRef} from 'react';
-import {getAllPatterns, getAnimated, getCachedPatternData, saveAnimated} from '../db.server';
+import {useMemo, useState} from 'react';
+import {applyTilingTransformsG, tilingPoints} from '../../editor/tilingPoints';
+import {tilingTransforms} from '../../editor/tilingTransforms';
+import {IconEye, IconEyeInvisible} from '../../icons/Icon';
+import {coordKey} from '../../rendering/coordKey';
+import {applyMatrices} from '../../rendering/getMirrorTransforms';
 import {Coord} from '../../types';
-import {useLocalStorage} from '../../vest/useLocalStorage';
-import {useEffect, useMemo, useState} from 'react';
+import {getAllPatterns, getAnimated, saveAnimated} from '../db.server';
 import {shapeD} from '../shapeD';
 import {useOnOpen} from '../useOnOpen';
-import {coordKey} from '../../rendering/coordKey';
-import {plerp} from '../../plerp';
-import {tilingTransforms} from '../../editor/tilingTransforms';
-import {applyTilingTransformsG, tilingPoints} from '../../editor/tilingPoints';
-import {applyMatrices} from '../../rendering/getMirrorTransforms';
-import {IconEye, IconEyeInvisible} from '../../icons/Icon';
-import {useFetcher} from 'react-router';
-import {SaveLinesButton} from './animator.screen/SaveLinesButton';
-import {LinesTable} from './animator.screen/LinesTable';
+import type {Route} from './+types/animator';
 import {LayerDialog} from './animator.screen/LayerDialog';
+import {LinesTable} from './animator.screen/LinesTable';
+import {SaveLinesButton} from './animator.screen/SaveLinesButton';
 import {SimplePreview} from './animator.screen/SimplePreview';
-import {useAnimate, useFetchBounceState, State, lineAt} from './animator.screen/animator.utils';
+import {lineAt, Pending, useAnimate, useFetchBounceState} from './animator.screen/animator.utils';
 
 export async function loader({params}: Route.LoaderArgs) {
     const got = getAnimated(params.id);
@@ -47,7 +43,7 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
     const [animate, setAnimate] = useState(false);
     useAnimate(animate, setAnimate, setPreview);
 
-    const [pending, setPending] = useState<null | {selected?: number; points: Coord[]}>(null);
+    const [pending, setPending] = useState<null | Pending>(null);
     const patternMap = useMemo(
         () => Object.fromEntries(patterns.map((p) => [p.hash, p.tiling])),
         [patterns],
@@ -70,7 +66,9 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
         });
     });
     const pendingPoints: Record<string, true> = {};
-    pending?.points.forEach((coord) => (pendingPoints[coordKey(coord)] = true));
+    if (pending?.type === 'line') {
+        pending.points.forEach((coord) => (pendingPoints[coordKey(coord)] = true));
+    }
 
     const ats = useMemo(
         () => state.lines.map((line) => lineAt(line.keyframes, preview)),
@@ -105,9 +103,9 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
             <div className="gap-4 flex items-start p-4">
                 <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    viewBox="-5 -5 10 10"
+                    // viewBox="-5 -5 10 10"
                     // viewBox="-3 -3 6 6"
-                    // viewBox="-1.5 -1.5 3 3"
+                    viewBox="-1.5 -1.5 3 3"
                     style={size ? {background: 'black', width: size, height: size} : undefined}
                 >
                     <path
@@ -145,9 +143,9 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                                   />
                               )),
                     )}
-                    {pending ? (
+                    {pending?.type === 'line' ? (
                         <path
-                            d={shapeD(pending?.points, false)}
+                            d={shapeD(pending.points, false)}
                             fill="none"
                             stroke={'white'}
                             strokeWidth={0.03}
@@ -155,7 +153,7 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                             strokeLinejoin="round"
                         />
                     ) : null}
-                    {pending
+                    {pending?.type === 'line'
                         ? Object.entries(visiblePoints).map(([key, coord]) => (
                               <circle
                                   key={key}
@@ -195,7 +193,7 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                             value={preview}
                             onChange={(evt) => setPreview(+evt.target.value)}
                         />
-                        <div className="w-10">{preview}</div>
+                        <div style={{width: '3em', minWidth: '3em'}}>{preview}</div>
                         <button className="btn" onClick={() => setAnimate(true)}>
                             Animate
                         </button>
@@ -251,13 +249,14 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                                 pending
                                     ? setPending(null)
                                     : setPending({
+                                          type: 'line',
                                           points: [],
                                       })
                             }
                         >
                             {pending ? 'Cancel' : 'Add new line'}
                         </button>
-                        {pending?.points.length ? (
+                        {pending?.type === 'line' && pending.points.length ? (
                             <SaveLinesButton
                                 setPending={setPending}
                                 pending={pending}

@@ -1,6 +1,6 @@
 import React from 'react';
 import {Coord} from '../../../types';
-import {State} from './animator.utils';
+import {Pending, State} from './animator.utils';
 
 export function LinesTable({
     state,
@@ -12,7 +12,7 @@ export function LinesTable({
     state: State;
     setHover: React.Dispatch<React.SetStateAction<number | null>>;
     preview: number;
-    setPending: React.Dispatch<React.SetStateAction<{selected?: number; points: Coord[]} | null>>;
+    setPending: React.Dispatch<React.SetStateAction<Pending | null>>;
     setState: React.Dispatch<React.SetStateAction<State>>;
 }) {
     return (
@@ -49,7 +49,7 @@ export function LinesTable({
                         <td>
                             <button
                                 className="btn"
-                                onClick={() => setPending({selected: i, points: []})}
+                                onClick={() => setPending({type: 'line', idx: i, points: []})}
                             >
                                 +
                             </button>

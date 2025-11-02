@@ -9,7 +9,7 @@ export function SaveLinesButton({
     state,
     preview,
 }: {
-    setPending: React.Dispatch<React.SetStateAction<{selected?: number; points: Coord[]} | null>>;
+    setPending: (v: null) => void;
     pending: {selected?: number; points: Coord[]};
     setState: React.Dispatch<React.SetStateAction<State>>;
     state: State;
