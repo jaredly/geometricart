@@ -15,6 +15,7 @@ export function LinesTable({
     setPending: React.Dispatch<React.SetStateAction<Pending | null>>;
     setState: React.Dispatch<React.SetStateAction<State>>;
 }) {
+    const total = state.layers.length;
     return (
         <table className="table">
             <tbody>
@@ -28,8 +29,16 @@ export function LinesTable({
                         <td>
                             <svg style={{width: 110, height: 20}}>
                                 <line
-                                    x1={Math.min(...line.keyframes.map((k) => k.at)) * 100 + 5}
-                                    x2={Math.max(...line.keyframes.map((k) => k.at)) * 100 + 5}
+                                    x1={
+                                        (Math.min(...line.keyframes.map((k) => k.at)) * 100) /
+                                            total +
+                                        5
+                                    }
+                                    x2={
+                                        (Math.max(...line.keyframes.map((k) => k.at)) * 100) /
+                                            total +
+                                        5
+                                    }
                                     y1={10}
                                     y2={10}
                                     stroke={'#555'}
@@ -37,7 +46,7 @@ export function LinesTable({
                                 />
                                 {line.keyframes.map((kf) => (
                                     <circle
-                                        cx={kf.at * 100 + 5}
+                                        cx={(kf.at * 100) / total + 5}
                                         cy={10}
                                         r={5}
                                         fill={kf.at === preview ? 'white' : 'red'}

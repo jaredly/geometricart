@@ -3,7 +3,7 @@ import {applyTilingTransformsG, tilingPoints} from '../../editor/tilingPoints';
 import {tilingTransforms} from '../../editor/tilingTransforms';
 import {AddIcon, IconEye, IconEyeInvisible, RoundPlus} from '../../icons/Icon';
 import {coordKey} from '../../rendering/coordKey';
-import {applyMatrices} from '../../rendering/getMirrorTransforms';
+import {applyMatrices, dist} from '../../rendering/getMirrorTransforms';
 import {Coord, GuideGeomTypes} from '../../types';
 import {getAllPatterns, getAnimated, saveAnimated} from '../db.server';
 import {shapeD} from '../shapeD';
@@ -28,6 +28,14 @@ import {intersections, lineToSlope} from '../../rendering/intersect';
 export async function loader({params}: Route.LoaderArgs) {
     const got = getAnimated(params.id);
     if (!got) throw new Error(`Unknown id ${params.id}`);
+    got.lines.forEach((line) => {
+        const needs = line.keyframes.some((l) => !Number.isInteger(l.at));
+        if (needs) {
+            line.keyframes.forEach((kf, i) => {
+                kf.at = i;
+            });
+        }
+    });
     return {
         patterns: getAllPatterns(),
         initialState: got,
@@ -47,13 +55,15 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
     // const [state, setState] = useLocalStorage<State>('animator-state', {layers: [], lines: []});
     const [hover, setHover] = useState(null as null | number);
     const [state, setState] = useState(initialState);
+    const [peg, setPeg] = useState(false);
     useFetchBounceState(state);
 
+    const [lineWidth, setLineWidth] = useState(2);
     const [showGuides, setShowGuides] = useState(true);
 
     const [pos, setPos] = useState({x: 0, y: 0});
 
-    const [margin, setMargin] = useState(0.5);
+    const [zoom, setZoom] = useState(2);
     const [preview, setPreview] = useState(0);
     const [animate, setAnimate] = useState(false);
     useAnimate(animate, setAnimate, setPreview);
@@ -79,8 +89,8 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
             intersections(prim, primitives[j]).forEach((c) => add(c));
         }
     });
-    state.layers.forEach((layer) => {
-        if (!layer.visible && !layer.frames?.includes(preview)) return;
+    state.layers.forEach((layer, i) => {
+        if (!layer.visible && i !== preview) return;
         patternMap[layer.pattern].cache.segments.forEach(({prev, segment}) => {
             add(prev);
             add(segment.to);
@@ -120,6 +130,9 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
         };
     }, [ats, patternMap, state.layers]);
 
+    const peggedZoom = (peg ? calcMargin(preview, state.lines[0]) : 1) * zoom;
+    // const peggedMargin =
+
     return (
         <div className="mx-auto w-6xl p-4 pt-0 bg-base-200 shadow-base-300 shadow-md">
             <div className="sticky top-0 py-2 mb-2 bg-base-200 shadow-md shadow-base-200 z-10">
@@ -137,7 +150,8 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                     xmlns="http://www.w3.org/2000/svg"
                     // viewBox="-5 -5 10 10"
                     // viewBox="-3 -3 6 6"
-                    viewBox={`${-1 - margin} ${-1 - margin} ${2 + margin * 2} ${2 + margin * 2}`}
+                    viewBox={`${-peggedZoom / 2} ${-peggedZoom / 2} ${peggedZoom} ${peggedZoom}`}
+                    // viewBox={`${-1 - peggedMargin} ${-1 - peggedMargin} ${2 + peggedMargin * 2} ${2 + peggedMargin * 2}`}
                     // viewBox="-1.5 -1.5 3 3"
                     style={size ? {background: 'black', width: size, height: size} : undefined}
                     onMouseMove={(evt) => {
@@ -153,7 +167,7 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                             d={shapeD(pts, true)}
                             fill="none"
                             stroke={'white'}
-                            strokeWidth={0.01}
+                            strokeWidth={0.01 * zoom}
                             strokeLinecap="round"
                             strokeLinejoin="round"
                         />
@@ -164,27 +178,30 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                             d={shapeD(line, false)}
                             fill="none"
                             stroke={'rgb(205,127,1)'}
-                            strokeWidth={0.08}
+                            strokeWidth={(lineWidth / 200) * peggedZoom}
                             strokeLinecap="round"
                             strokeLinejoin="round"
                         />
                     ))}
-                    {state.layers.map((layer, i) =>
-                        !layer.visible && !layer.frames?.includes(preview)
-                            ? null
-                            : patternMap[layer.pattern].cache.segments.map(({prev, segment}, j) => (
-                                  <path
-                                      key={`${i}-${j}`}
-                                      d={shapeD([prev, segment.to], false)}
-                                      fill="none"
-                                      stroke={col(i)}
-                                      //   opacity={0.5}
-                                      strokeWidth={0.03}
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                  />
-                              )),
-                    )}
+                    {showGuides &&
+                        state.layers.map((layer, i) =>
+                            !layer.visible && i !== preview
+                                ? null
+                                : patternMap[layer.pattern].cache.segments.map(
+                                      ({prev, segment}, j) => (
+                                          <path
+                                              key={`${i}-${j}`}
+                                              d={shapeD([prev, segment.to], false)}
+                                              fill="none"
+                                              stroke={col(i)}
+                                              //   opacity={0.5}
+                                              strokeWidth={0.03}
+                                              strokeLinecap="round"
+                                              strokeLinejoin="round"
+                                          />
+                                      ),
+                                  ),
+                        )}
                     {showGuides &&
                         state.guides?.map((guide, i) => (
                             <GuideElement
@@ -252,7 +269,7 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                             className="range"
                             type="range"
                             min="0"
-                            max="1"
+                            max={state.layers.length - 1}
                             step={0.01}
                             value={preview}
                             onChange={(evt) => setPreview(+evt.target.value)}
@@ -268,44 +285,34 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                                 type="number"
                                 defaultValue={'.5'}
                             />
-                            <button
-                                className="btn"
-                                onClick={(evt) => {
-                                    const data = new FormData(evt.currentTarget.form!);
-                                    const amount = +(data.get('remax') as string);
-
-                                    const nstate = {...state};
-                                    nstate.layers = nstate.layers.map((l) =>
-                                        l.frames
-                                            ? {...l, frames: l.frames.map((a) => a * amount)}
-                                            : l,
-                                    );
-                                    nstate.lines = nstate.lines.map((line) => ({
-                                        ...line,
-                                        keyframes: line.keyframes.map((k) => ({
-                                            ...k,
-                                            at: k.at * amount,
-                                        })),
-                                    }));
-                                    setState(nstate);
-                                }}
-                            >
-                                remax
-                            </button>
                         </form>
                     </label>
-                    <label>
-                        {'Margin: '}
-                        <input
-                            className="input"
-                            type="number"
-                            min="0"
-                            max="3"
-                            step={0.01}
-                            value={margin}
-                            onChange={(evt) => setMargin(+evt.target.value)}
-                        />
-                    </label>
+                    <div>
+                        <label>
+                            {'Zoom: 1:'}
+                            <input
+                                className="input w-20"
+                                type="number"
+                                min="0"
+                                max="3"
+                                step={0.01}
+                                value={zoom}
+                                onChange={(evt) => setZoom(+evt.target.value)}
+                            />
+                        </label>
+                        <label className="ml-4">
+                            {'LineWidth'}
+                            <input
+                                className="range w-40 ml-4"
+                                type="range"
+                                min="0"
+                                max="10"
+                                step={0.5}
+                                value={lineWidth}
+                                onChange={(evt) => setLineWidth(+evt.target.value)}
+                            />
+                        </label>
+                    </div>
                     <div className="bg-base-100 p-4 rounded-xl shadow-md shadow-base-300">
                         <div className="mb-4">
                             Layers
@@ -348,62 +355,6 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                                                 color={layer.visible ? col(i) : '#555'}
                                             />
                                             {/* {layer.pattern.slice(0, 10)} */}
-                                        </td>
-                                        <td>
-                                            {layer.frames ? (
-                                                <svg style={{width: 110, height: 20}}>
-                                                    <line
-                                                        x1={Math.min(...layer.frames) * 100 + 5}
-                                                        x2={Math.max(...layer.frames) * 100 + 5}
-                                                        y1={10}
-                                                        y2={10}
-                                                        stroke={'#555'}
-                                                        strokeWidth={1}
-                                                    />
-                                                    {layer.frames.map((kf) => (
-                                                        <circle
-                                                            cx={kf * 100 + 5}
-                                                            cy={10}
-                                                            r={5}
-                                                            fill={kf === preview ? 'white' : 'red'}
-                                                            key={kf}
-                                                        />
-                                                    ))}
-                                                </svg>
-                                            ) : null}
-                                        </td>
-                                        <td>
-                                            <button
-                                                className="btn"
-                                                onClick={() => {
-                                                    if (layer.frames?.includes(preview)) {
-                                                        const layers = state.layers.slice();
-                                                        layers[i] = {
-                                                            ...layer,
-                                                            frames: layer.frames.filter(
-                                                                (f) => f !== preview,
-                                                            ),
-                                                        };
-                                                        setState({...state, layers});
-                                                    } else {
-                                                        const layers = state.layers.slice();
-                                                        layers[i] = {
-                                                            ...layer,
-                                                            frames: [
-                                                                ...(layer.frames ?? []),
-                                                                preview,
-                                                            ].sort((a, b) => a - b),
-                                                        };
-                                                        setState({...state, layers});
-                                                    }
-                                                }}
-                                            >
-                                                {layer.frames?.includes(preview) ? (
-                                                    <span>&times;</span>
-                                                ) : (
-                                                    <AddIcon />
-                                                )}
-                                            </button>
                                         </td>
                                     </tr>
                                 ))}
@@ -536,6 +487,9 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                                     preview={preview}
                                 />
                             ) : null}
+                            <button className="btn mx-4" onClick={() => setPeg(!peg)}>
+                                {peg ? 'Unpeg' : 'Peg'}
+                            </button>
                         </div>
                         <LinesTable
                             state={state}
@@ -566,3 +520,12 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
         </div>
     );
 }
+
+const calcMargin = (preview: number, line: State['lines'][0]) => {
+    const lat = lineAt(line.keyframes, preview);
+    const log = lineAt(line.keyframes, 0);
+    if (!lat || !log) return 1;
+    const d1 = dist(lat[0], lat[1]);
+    const d2 = dist(log[0], log[1]);
+    return d1 / d2;
+};

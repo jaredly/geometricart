@@ -6,7 +6,8 @@ import {Coord, Guide, GuideGeom, PendingGuide} from '../../../types';
 export const findExtraPoints = (line: Coord[], count: number) => {
     const first = line.slice(0, -1);
     const last = line[line.length - 1];
-    if (true) {
+    const dupLast = true;
+    if (dupLast) {
         for (let i = 0; i <= count; i++) {
             first.push(last);
         }
@@ -59,7 +60,7 @@ const debounce = (act: () => void, wait: number, max: number) => {
 };
 
 export type State = {
-    layers: {pattern: string; visible: boolean; frames?: number[]}[];
+    layers: {pattern: string; visible: boolean}[];
     guides?: GuideGeom[];
     lines: {
         keyframes: {
