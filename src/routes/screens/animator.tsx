@@ -1,7 +1,7 @@
 import {useMemo, useState} from 'react';
 import {applyTilingTransformsG, tilingPoints} from '../../editor/tilingPoints';
 import {tilingTransforms} from '../../editor/tilingTransforms';
-import {IconEye, IconEyeInvisible, RoundPlus} from '../../icons/Icon';
+import {AddIcon, IconEye, IconEyeInvisible, RoundPlus} from '../../icons/Icon';
 import {coordKey} from '../../rendering/coordKey';
 import {applyMatrices} from '../../rendering/getMirrorTransforms';
 import {Coord, GuideGeomTypes} from '../../types';
@@ -22,6 +22,8 @@ import {
 } from './animator.screen/animator.utils';
 import {pendingGuide, RenderPendingGuide} from '../../editor/RenderPendingGuide';
 import {GuideElement} from '../../editor/GuideElement';
+import {geomToPrimitives} from '../../rendering/points';
+import {intersections, lineToSlope} from '../../rendering/intersect';
 
 export async function loader({params}: Route.LoaderArgs) {
     const got = getAnimated(params.id);
@@ -51,6 +53,7 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
 
     const [pos, setPos] = useState({x: 0, y: 0});
 
+    const [margin, setMargin] = useState(0.5);
     const [preview, setPreview] = useState(0);
     const [animate, setAnimate] = useState(false);
     useAnimate(animate, setAnimate, setPreview);
@@ -70,13 +73,30 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
         const k = coordKey(c);
         if (!visiblePoints[k]) visiblePoints[k] = c;
     };
+    const primitives = state.guides?.flatMap((g) => geomToPrimitives(g)) ?? [];
+    primitives.forEach((prim, i) => {
+        for (let j = i + 1; j < primitives.length; j++) {
+            intersections(prim, primitives[j]).forEach((c) => add(c));
+        }
+    });
     state.layers.forEach((layer) => {
         if (!layer.visible) return;
         patternMap[layer.pattern].cache.segments.forEach(({prev, segment}) => {
             add(prev);
             add(segment.to);
         });
+        const pattern = patternMap[layer.pattern];
+        const pts = tilingPoints(pattern.shape);
+        pts.forEach((p) => add(p));
+        const boundLines = pts.map((p, i) => lineToSlope(p, pts[i === 0 ? pts.length - 1 : i - 1]));
+
+        boundLines.forEach((seg) => {
+            primitives.forEach((prim) => {
+                intersections(seg, prim).forEach((c) => add(c));
+            });
+        });
     });
+
     const pendingPoints: Record<string, true> = {};
     if (pending) {
         pending.points.forEach((coord) => (pendingPoints[coordKey(coord)] = true));
@@ -117,7 +137,8 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                     xmlns="http://www.w3.org/2000/svg"
                     // viewBox="-5 -5 10 10"
                     // viewBox="-3 -3 6 6"
-                    viewBox="-1.5 -1.5 3 3"
+                    viewBox={`${-1 - margin} ${-1 - margin} ${2 + margin * 2} ${2 + margin * 2}`}
+                    // viewBox="-1.5 -1.5 3 3"
                     style={size ? {background: 'black', width: size, height: size} : undefined}
                     onMouseMove={(evt) => {
                         const box = evt.currentTarget.getBoundingClientRect();
@@ -142,8 +163,8 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                             key={i}
                             d={shapeD(line, false)}
                             fill="none"
-                            stroke={'#555'}
-                            strokeWidth={0.03}
+                            stroke={'rgb(205,127,1)'}
+                            strokeWidth={0.08}
                             strokeLinecap="round"
                             strokeLinejoin="round"
                         />
@@ -236,10 +257,19 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                             value={preview}
                             onChange={(evt) => setPreview(+evt.target.value)}
                         />
-                        <div style={{width: '3em', minWidth: '3em'}}>{preview}</div>
+                        <div style={{width: '3em', minWidth: '3em'}}>{preview.toFixed(2)}</div>
                         <button className="btn" onClick={() => setAnimate(true)}>
                             Animate
                         </button>
+                        <input
+                            className="input"
+                            type="number"
+                            min="0"
+                            max="3"
+                            step={0.01}
+                            value={margin}
+                            onChange={(evt) => setMargin(+evt.target.value)}
+                        />
                     </label>
                     <div className="bg-base-100 p-4 rounded-xl shadow-md shadow-base-300">
                         <div className="mb-4">
@@ -283,6 +313,39 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                                                 color={layer.visible ? col(i) : '#555'}
                                             />
                                             {/* {layer.pattern.slice(0, 10)} */}
+                                        </td>
+                                        <td>
+                                            <button
+                                                className="btn"
+                                                onClick={() => {
+                                                    if (layer.frames?.includes(preview)) {
+                                                        const layers = state.layers.slice();
+                                                        layers[i] = {
+                                                            ...layer,
+                                                            frames: layer.frames.filter(
+                                                                (f) => f != preview,
+                                                            ),
+                                                        };
+                                                        setState({...state, layers});
+                                                    } else {
+                                                        const layers = state.layers.slice();
+                                                        layers[i] = {
+                                                            ...layer,
+                                                            frames: [
+                                                                ...(layer.frames ?? []),
+                                                                preview,
+                                                            ].sort((a, b) => a - b),
+                                                        };
+                                                        setState({...state, layers});
+                                                    }
+                                                }}
+                                            >
+                                                {layer.frames?.includes(preview) ? (
+                                                    <span>&times;</span>
+                                                ) : (
+                                                    <AddIcon />
+                                                )}
+                                            </button>
                                         </td>
                                     </tr>
                                 ))}

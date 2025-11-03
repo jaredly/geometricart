@@ -51,6 +51,7 @@ export async function loader({params, request}: Route.LoaderArgs) {
         woven: search.get('woven') ? +search.get('woven')! : undefined,
         lines: search.get('lines') ? +search.get('lines')! : undefined,
         shapes: search.get('shapes') ? +search.get('shapes')! : undefined,
+        margin: search.get('margin') ? +search.get('margin')! : undefined,
     })!;
     // return dataUri;
     // const [mime, data] = dataUri.split(',');

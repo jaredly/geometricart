@@ -59,7 +59,7 @@ const debounce = (act: () => void, wait: number, max: number) => {
 };
 
 export type State = {
-    layers: {pattern: string; visible: boolean}[];
+    layers: {pattern: string; visible: boolean; frames?: number[]}[];
     guides?: GuideGeom[];
     lines: {
         keyframes: {
@@ -96,6 +96,19 @@ export const useFetchBounceState = (state: State) => {
     }, [state, bouncer]);
 };
 
+function easeInOutCubic(x: number): number {
+    return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+}
+
+const ease = (at: number) => {
+    at *= 2;
+    if (at < 1) {
+        return at < 0.1 ? 0 : at > 0.9 ? 1 : easeInOutCubic((at - 0.1) / 0.9);
+    }
+    at -= 1;
+    return 1 - (at < 0.1 ? 0 : at > 0.9 ? 1 : easeInOutCubic((at - 0.1) / 0.9));
+};
+
 export const useAnimate = (
     animate: boolean,
     setAnimate: (b: boolean) => void,
@@ -110,8 +123,16 @@ export const useAnimate = (
                 clearInterval(it);
                 setAnimate(false);
             }
-            setPreview(1 - (Math.cos(at * Math.PI * 2) + 1) / 2);
-        }, 40);
+
+            setPreview(
+                ease(at),
+
+                // Math.max(
+                //     0,
+                //     Math.min(1, 1.1 - (Math.cos(at * Math.PI * 2) + 1) * 0.6),
+                // ),
+            );
+        }, 80);
 
         return () => clearInterval(it);
     }, [animate, setAnimate, setPreview]);

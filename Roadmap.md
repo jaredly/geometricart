@@ -9,12 +9,15 @@ Animator, lookin fresh.
 - [ ] let's persist to a json file on disk
 - [ ] with an id n stuff
 - [x] show the lines we got with tweening
-- [ ] allow a single-point keyframe (to disappear)
-- [ ] allow adding guidelines, for adding points at intersections
+- [x] allow a single-point keyframe (to disappear)
+- [x] allow adding guidelines, for adding points at intersections
   - single lines
   - graduated lines
   - allow ATs (tweened) things to be used as coords.
   - have the bounds lines be automatic guidelines
+- [ ] calculate intersections of guides, to be points you can do stuff with
+- [ ] intersect guides with realized points too maybe
+- [ ] setting for line width
 
 # Similar patterns
 and gallery view

@@ -1,6 +1,6 @@
 import React from 'react';
 import {Coord} from '../../../types';
-import {State} from './animator.utils';
+import {Pending, State} from './animator.utils';
 
 export function SaveLinesButton({
     setPending,
@@ -10,7 +10,7 @@ export function SaveLinesButton({
     preview,
 }: {
     setPending: (v: null) => void;
-    pending: {selected?: number; points: Coord[]};
+    pending: Pending & {type: 'line'};
     setState: React.Dispatch<React.SetStateAction<State>>;
     state: State;
     preview: number;
@@ -20,11 +20,11 @@ export function SaveLinesButton({
             className="btn"
             onClick={() => {
                 setPending(null);
-                if (pending.selected != null) {
+                if (pending.idx != null) {
                     setState({
                         ...state,
                         lines: state.lines.map((line, i) =>
-                            i === pending.selected
+                            i === pending.idx
                                 ? line.keyframes.some((k) => k.at === preview)
                                     ? {
                                           ...line,

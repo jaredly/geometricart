@@ -86,7 +86,7 @@ export const canvasTiling = async (
     data: ReturnType<typeof getPatternData>,
     size: number,
     flipped: boolean,
-    config: {woven?: number; lines?: number; shapes?: number},
+    config: {woven?: number; lines?: number; shapes?: number; margin?: number},
 ) => {
     let surface = pk.MakeSurface(size, size);
 
@@ -102,7 +102,7 @@ export const canvasTiling = async (
     const ctx = surface.getCanvas();
     ctx.clear(pk.BLACK);
 
-    const margin = 0.5;
+    const margin = config.margin ?? 0.5;
     ctx.scale(size / (2 + margin * 2), size / (2 + margin * 2));
     ctx.translate(1 + margin, 1 + margin);
 
