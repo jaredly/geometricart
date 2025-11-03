@@ -80,7 +80,7 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
         }
     });
     state.layers.forEach((layer) => {
-        if (!layer.visible) return;
+        if (!layer.visible && !layer.frames?.includes(preview)) return;
         patternMap[layer.pattern].cache.segments.forEach(({prev, segment}) => {
             add(prev);
             add(segment.to);
@@ -170,7 +170,7 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                         />
                     ))}
                     {state.layers.map((layer, i) =>
-                        !layer.visible
+                        !layer.visible && !layer.frames?.includes(preview)
                             ? null
                             : patternMap[layer.pattern].cache.segments.map(({prev, segment}, j) => (
                                   <path
@@ -261,6 +261,9 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                         <button className="btn" onClick={() => setAnimate(true)}>
                             Animate
                         </button>
+                    </label>
+                    <label>
+                        {'Margin: '}
                         <input
                             className="input"
                             type="number"
@@ -315,6 +318,29 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                                             {/* {layer.pattern.slice(0, 10)} */}
                                         </td>
                                         <td>
+                                            {layer.frames ? (
+                                                <svg style={{width: 110, height: 20}}>
+                                                    <line
+                                                        x1={Math.min(...layer.frames) * 100 + 5}
+                                                        x2={Math.max(...layer.frames) * 100 + 5}
+                                                        y1={10}
+                                                        y2={10}
+                                                        stroke={'#555'}
+                                                        strokeWidth={1}
+                                                    />
+                                                    {layer.frames.map((kf) => (
+                                                        <circle
+                                                            cx={kf * 100 + 5}
+                                                            cy={10}
+                                                            r={5}
+                                                            fill={kf === preview ? 'white' : 'red'}
+                                                            key={kf}
+                                                        />
+                                                    ))}
+                                                </svg>
+                                            ) : null}
+                                        </td>
+                                        <td>
                                             <button
                                                 className="btn"
                                                 onClick={() => {
@@ -323,7 +349,7 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                                                         layers[i] = {
                                                             ...layer,
                                                             frames: layer.frames.filter(
-                                                                (f) => f != preview,
+                                                                (f) => f !== preview,
                                                             ),
                                                         };
                                                         setState({...state, layers});

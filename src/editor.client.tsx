@@ -137,7 +137,7 @@ export const stringToCheckpoint = (s: string) => {
     };
 };
 
-const Welcome = () => {
+export const Welcome = () => {
     const [activeIds, setActiveIds] = React.useState({
         new: false,
         open: true,
@@ -263,7 +263,7 @@ const GistLoader = () => {
     );
 };
 
-const File = ({gist, dest}: {gist?: boolean; dest: SaveDest}) => {
+export const File = ({dest}: {dest: SaveDest}) => {
     const data = useLoaderData();
     const params = useParams();
 
@@ -301,7 +301,7 @@ const File = ({gist, dest}: {gist?: boolean; dest: SaveDest}) => {
     );
 };
 
-function usePreventNavAway(lastSaved: {
+export function usePreventNavAway(lastSaved: {
     when: number;
     dirty: true | (() => void) | null;
     id: string;
@@ -396,7 +396,6 @@ export const router = createHashRouter(
             path="gist/:id"
             element={
                 <File
-                    gist
                     dest={{
                         type: 'gist',
                         token: localStorage.github_access_token,
