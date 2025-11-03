@@ -31,7 +31,7 @@ import {
     UndoIcon,
 } from '../icons/Icon';
 import {getMirrorTransforms} from '../rendering/getMirrorTransforms';
-import {groupSort} from '../threed/ThreedScreen';
+import {groupSort} from '../threed/groupSort';
 import {Screen, UIDispatch, UIState} from '../useUIState';
 import {useLocalStorage} from '../vest/useLocalStorage';
 import {MirrorItems} from './MirrorItems';
