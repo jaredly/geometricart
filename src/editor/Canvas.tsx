@@ -1,4 +1,3 @@
-
 import React, {useEffect, useState} from 'react';
 import {Action, PathCreateMany} from '../state/Action';
 import {PendingMirror, UIState} from '../useUIState';
@@ -47,11 +46,7 @@ import {angleBetween} from '../rendering/isAngleBetween';
 import {negPiToPi} from '../rendering/epsilonToZero';
 import {closeEnough} from '../rendering/epsilonToZero';
 import {simpleExport} from './handleTiling';
-import {
-    angleDifferences,
-    isClockwisePoints,
-    pointsAngles,
-} from '../rendering/pathToPoints';
+import {angleDifferences, isClockwisePoints, pointsAngles} from '../rendering/pathToPoints';
 
 type Props = {
     state: State;
@@ -328,9 +323,8 @@ export const Canvas = ({
                 if (!shape) {
                     return;
                 }
-                simpleExport(currentState.current, shape).then((cache) =>
-                    cache ? dispatch({type: 'tiling:add', shape, cache}) : null,
-                );
+                const cache = simpleExport(currentState.current, shape);
+                if (cache) dispatch({type: 'tiling:add', shape, cache});
                 setEditorState((es) => ({...es, pending: null}));
             }
         };
@@ -889,7 +883,7 @@ function determineTilingShape(points: Coord[]): Tiling['shape'] | void {
     if (points.length === 4) {
         let [a, b, c, d] = points;
         if (!isClockwisePoints(points)) {
-            [b, c, d] = [d, c, b];
+            [b, d] = [d, b];
         }
         const angles = angleDifferences(pointsAngles([a, b, c, d]));
         if (!closeEnough(angles[0], angles[2]) || !closeEnough(angles[1], angles[3])) {

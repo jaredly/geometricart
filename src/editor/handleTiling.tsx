@@ -9,15 +9,15 @@ import {transformBarePath} from '../rendering/points';
 import {tilingPoints, eigenShapesToLines} from './tilingPoints';
 import {SegmentWithPrev} from '../rendering/clipPathNew';
 
-export const rehashTiling = async (cache: Tiling['cache']) => {
-    const keys = cache.segments
+export const rehashTiling = (tiling: Tiling) => {
+    const keys = tiling.cache.segments
         .map((ps) => lineToSlope(ps.prev, ps.segment.to))
         .map((si) => slopeInterceptKey(si))
         .sort();
-    return {...cache, hash: await hashData(keys.join(','))};
+    return {...tiling, cache: {...tiling.cache, hash: hashData(keys.join(','))}};
 };
 
-export const simpleExport = async (state: State, shape: Tiling['shape']) => {
+export const simpleExport = (state: State, shape: Tiling['shape']) => {
     const pts = tilingPoints(shape);
     const res = getShapesIntersectingPolygon(state, pts);
     if (!res) {
@@ -26,7 +26,7 @@ export const simpleExport = async (state: State, shape: Tiling['shape']) => {
     const {klines, shapes, tr, pts: tpts} = res;
     const unique = Object.values(klines).map(slopeToLine);
 
-    const hash = await hashData(Object.keys(klines).sort().join(','));
+    const hash = hashData(Object.keys(klines).sort().join(','));
     return {
         hash,
         segments: unique.map(
@@ -117,14 +117,18 @@ function slopeInterceptKey(sl: SlopeIntercept, withLimit = true) {
     return `${numKey(sl.limit[0])}:${sli}:${numKey(sl.limit[0])}`;
 }
 
-async function hashData(kk: string) {
+import {blake3} from '@noble/hashes/blake3.js';
+import {bytesToHex} from '@noble/hashes/utils.js';
+
+export function hashData(kk: string) {
     const encoder = new TextEncoder();
     const data = encoder.encode(kk);
-    const hashBuffer = await window.crypto.subtle.digest('SHA-1', data);
-
-    const hashArray = Array.from(new Uint8Array(hashBuffer)); // convert buffer to byte array
-    const hashHex = hashArray.map((b) => b.toString(16).padStart(2, '0')).join(''); // convert bytes to hex string
-    return hashHex;
+    const hash = blake3(data);
+    return bytesToHex(hash);
+    // const hashBuffer = await window.crypto.subtle.digest('SHA-1', data);
+    // const hashArray = Array.from(new Uint8Array(hashBuffer)); // convert buffer to byte array
+    // const hashHex = hashArray.map((b) => b.toString(16).padStart(2, '0')).join(''); // convert bytes to hex string
+    // return hashHex;
 }
 
 export function handleTiling(data: Tiling) {

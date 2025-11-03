@@ -30,6 +30,7 @@
         "@emotion/css": "^11.7.1",
         "@emotion/react": "^11.1.5",
         "@isomorphic-git/lightning-fs": "4.6.0",
+        "@noble/hashes": "^2.0.1",
         "@react-router/dev": "^7.9.3",
         "@react-router/fs-routes": "^7.9.3",
         "@react-router/node": "^7.9.3",

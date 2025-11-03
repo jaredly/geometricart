@@ -140,7 +140,7 @@ export const Tilings = ({
                                 <button
                                     className="btn"
                                     onClick={async () => {
-                                        const cache = await simpleExport(state, tiling.shape);
+                                        const cache = simpleExport(state, tiling.shape);
                                         if (!cache) return;
 
                                         dispatch({

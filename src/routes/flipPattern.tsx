@@ -31,7 +31,7 @@ export const cutTilingSegments = (tiling: Tiling): Tiling => {
     const lens = segs.map(([a, b]) => dist(a, b));
     const max = Math.max(...lens);
     const perc = lens.map((l) => Math.round((l / max) * 100));
-    console.log(perc.sort((a, b) => a - b).join(', '));
+    // console.log(perc.sort((a, b) => a - b).join(', '));
     segs = cutSegments(segs);
     segs = splitOverlappingSegs(segs);
     return {
@@ -83,14 +83,14 @@ export const flipPattern = (tiling: Tiling): Tiling => {
         const tx = getRectangleTransform(tiling, data);
         if (!tx?.length) return tiling;
 
-        console.log('transform para', tx);
+        // console.log('transform para', tx);
 
         shape = {...shape};
         cache = {...cache};
 
         const points = shape.points.map((p) => applyMatrices(p, tx));
 
-        console.log('transformed points', points, 'ordered', rectPointsInOrder(points));
+        // console.log('transformed points', points, 'ordered', rectPointsInOrder(points));
 
         cache.segments = cache.segments.map((seg) => ({
             prev: applyMatrices(seg.prev, tx),

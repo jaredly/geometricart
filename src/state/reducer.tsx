@@ -1,4 +1,5 @@
 import {pathToPrimitives} from '../editor/findSelection';
+import {rehashTiling} from '../editor/handleTiling';
 import {addAction, redoAction, undoAction} from '../editor/history';
 import {styleMatches} from '../editor/MultiStyleForm';
 import {pendingGuide} from '../editor/RenderPendingGuide';
@@ -316,11 +317,13 @@ const reduceWithoutUndo = (state: State, action: UndoableAction): [State, UndoAc
                     nextId,
                     tilings: {
                         ...state.tilings,
-                        [id]: normalizeTiling({
-                            shape: action.shape,
-                            cache: action.cache,
-                            id,
-                        }),
+                        [id]: rehashTiling(
+                            normalizeTiling({
+                                shape: action.shape,
+                                cache: action.cache,
+                                id,
+                            }),
+                        ),
                     },
                 },
                 {type: action.type, action, added: [id, state.nextId]},
