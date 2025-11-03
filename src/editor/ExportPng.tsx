@@ -30,8 +30,14 @@ export function ExportPng({
     return (
         <div css={{marginTop: 16, border: '1px solid #aaa', padding: 8}}>
             Width (px):{' '}
-            <input type="number" value={size} onChange={(evt) => setSize(+evt.target.value)} />
+            <input
+                type="number"
+                className="input"
+                value={size}
+                onChange={(evt) => setSize(+evt.target.value)}
+            />
             <button
+                className="btn"
                 css={{marginTop: 16, display: 'block'}}
                 onClick={async () => {
                     const blob = await exportPNG(
@@ -56,7 +62,9 @@ export function ExportPng({
                         justifyContent: 'center',
                     }}
                 >
-                    <button onClick={() => setPng(null)}>Close</button>
+                    <button className="btn" onClick={() => setPng(null)}>
+                        Close
+                    </button>
                     <a
                         href={png}
                         download={name.replace('.svg', '.png')}

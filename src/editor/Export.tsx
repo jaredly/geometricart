@@ -98,6 +98,7 @@ export const Export = ({
             <div>
                 Animation Position
                 <input
+                    className="range"
                     type="range"
                     min="0"
                     max="1"

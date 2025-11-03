@@ -9,6 +9,7 @@ export default [
     index('./screens/home.tsx'),
     ...prefix('gallery', [
         index('./screens/gallery.tsx'),
+        route('pattern/add', './screens/pattern-add.tsx'),
         route('pattern/:id', './screens/pattern.tsx'),
         route('pattern/:id/:img', './screens/pattern-svg.tsx'),
     ]),

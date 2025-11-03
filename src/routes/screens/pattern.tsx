@@ -10,7 +10,7 @@ import {shapeKey, State, Tiling} from '../../types';
 import {pk} from '../pk';
 import {drawBounds, drawLines, drawShapes, drawWoven} from '../canvasDraw';
 import {canvasRender} from '../../rendering/CanvasRender';
-import {IconSpeedtest} from '../../icons/Icon';
+import {BaselineDownload, IconSpeedtest} from '../../icons/Icon';
 import {exportPNG} from '../../editor/ExportPng';
 
 export async function loader({params}: Route.LoaderArgs) {
@@ -30,10 +30,24 @@ type Display = {
     margin: number;
 };
 
-export const Pattern = () => {
+export default function PatternScreen() {
     const {id} = useParams();
     let loaderData = useLoaderData<typeof loader>();
 
+    if (!id || !loaderData) {
+        return <div>No data... {id}</div>;
+    }
+
+    return <Pattern loaderData={loaderData} id={id} />;
+}
+
+export const Pattern = ({
+    loaderData: {pattern, data, similar},
+    id,
+}: {
+    id?: string;
+    loaderData: {} & Route.ComponentProps['loaderData'];
+}) => {
     const [display, setDisplay] = useState<Display>({
         bounds: false,
         draw: 'shapes',
@@ -41,11 +55,6 @@ export const Pattern = () => {
         margin: 0.5,
     });
 
-    if (!id || !loaderData) {
-        return <div>No data... {id}</div>;
-    }
-
-    const {pattern, data, similar} = loaderData;
     const tiling = pattern.tiling; // flipPattern(pattern.tiling);
 
     const canonKeys: Record<string, ReturnType<typeof canonicalShape> & {percentage: number}> = {};
@@ -70,7 +79,13 @@ export const Pattern = () => {
                         <li>
                             <a href="/gallery/">Gallery</a>
                         </li>
-                        <li>Pattern {id}</li>
+                        {id ? (
+                            <li>Pattern {id}</li>
+                        ) : (
+                            <li>
+                                <button className="btn">Save New Pattern</button>
+                            </li>
+                        )}
                     </ul>
                 </div>
                 {/* <h1 className="text-4xl">Pattern View</h1> */}
@@ -280,26 +295,28 @@ const SimpleRender = ({state, size}: {size: number; state: State}) => {
     }, [state, size]);
     return (
         <div className="relative">
-            <canvas
-                ref={ref}
-                width={size}
-                height={size}
-                style={{width: size / 2, height: size / 2}}
-            />
-            <button
-                className="btn btn-square"
-                onClick={() => {
-                    exportPNG(size, state, 1000, true, false, 0).then((blob) => {
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = 'pattern.png';
-                        a.click();
-                    });
-                }}
-            >
-                <IconSpeedtest />
-            </button>
+            <div style={{width: size / 2, height: size / 2, position: 'relative'}}>
+                <canvas
+                    ref={ref}
+                    width={size}
+                    height={size}
+                    style={{width: size / 2, height: size / 2}}
+                />
+                <button
+                    className="btn btn-square absolute bottom-2 right-2"
+                    onClick={() => {
+                        exportPNG(size, state, 1000, true, false, 0).then((blob) => {
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = 'pattern.png';
+                            a.click();
+                        });
+                    }}
+                >
+                    <BaselineDownload />
+                </button>
+            </div>
         </div>
     );
 };
@@ -355,5 +372,3 @@ const CanvasPattern = ({
         <canvas ref={ref} width={size * 2} height={size * 2} style={{width: size, height: size}} />
     );
 };
-
-export default Pattern;

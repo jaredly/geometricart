@@ -9,6 +9,14 @@ import {transformBarePath} from '../rendering/points';
 import {tilingPoints, eigenShapesToLines} from './tilingPoints';
 import {SegmentWithPrev} from '../rendering/clipPathNew';
 
+export const rehashTiling = async (cache: Tiling['cache']) => {
+    const keys = cache.segments
+        .map((ps) => lineToSlope(ps.prev, ps.segment.to))
+        .map((si) => slopeInterceptKey(si))
+        .sort();
+    return {...cache, hash: await hashData(keys.join(','))};
+};
+
 export const simpleExport = async (state: State, shape: Tiling['shape']) => {
     const pts = tilingPoints(shape);
     const res = getShapesIntersectingPolygon(state, pts);
@@ -16,14 +24,9 @@ export const simpleExport = async (state: State, shape: Tiling['shape']) => {
         return;
     }
     const {klines, shapes, tr, pts: tpts} = res;
-    console.log('pts', pts);
-    console.log('klins', klines);
-    const segs = Object.keys(klines).sort();
-
-    const hash = await hashData(segs.join(','));
-
     const unique = Object.values(klines).map(slopeToLine);
 
+    const hash = await hashData(Object.keys(klines).sort().join(','));
     return {
         hash,
         segments: unique.map(

@@ -148,6 +148,7 @@ export function ExportSVG({
                 multiForm(state, state.view.multi, dispatch)
             ) : (
                 <button
+                    className="btn"
                     css={{marginTop: 16, display: 'block'}}
                     onClick={() =>
                         dispatch({
@@ -169,6 +170,7 @@ export function ExportSVG({
             )}
             <br />
             <button
+                className="btn"
                 css={{marginTop: 16, display: 'block'}}
                 onClick={() =>
                     runSVGExport({
@@ -185,7 +187,11 @@ export function ExportSVG({
             >
                 Export SVG
             </button>
-            {url ? <button onClick={() => setUrl(null)}>Close</button> : null}
+            {url ? (
+                <button className="btn" onClick={() => setUrl(null)}>
+                    Close
+                </button>
+            ) : null}
             {url ? (
                 <div
                     css={{
@@ -312,6 +318,7 @@ function multiForm(
                             />
                         </div>
                         <button
+                            className="btn"
                             onClick={() => {
                                 if (i === 0) return;
                                 const shapes = multi.shapes.slice();
@@ -325,7 +332,9 @@ function multiForm(
                         >
                             up
                         </button>
+
                         <button
+                            className="btn"
                             onClick={() => {
                                 if (i === multi.shapes.length - 1) return;
                                 const shapes = multi.shapes.slice();
@@ -342,6 +351,7 @@ function multiForm(
                     </div>
                 ))}
                 <button
+                    className="btn"
                     onClick={() => {
                         dispatch({
                             type: 'view:update',
@@ -358,6 +368,7 @@ function multiForm(
                     Add a shape color
                 </button>
                 <button
+                    className="btn"
                     onClick={() => {
                         dispatch({
                             type: 'view:update',
@@ -374,6 +385,7 @@ function multiForm(
                     Add all colors
                 </button>
                 <button
+                    className="btn"
                     onClick={() => {
                         const shapes = multi.shapes.slice().reverse();
                         dispatch({
@@ -498,6 +510,7 @@ function multiForm(
                 Trace &amp; Merge Lines
             </label>
             <button
+                className="btn"
                 css={{marginTop: 16, display: 'block'}}
                 onClick={() =>
                     dispatch({
@@ -889,7 +902,9 @@ const Select = ({
                     count={current != null ? colors[current] : null}
                     onClick={() => setOpen(!open)}
                 />
-                <button onClick={() => onChange(null)}>&times;</button>
+                <button className="btn" onClick={() => onChange(null)}>
+                    &times;
+                </button>
             </div>
 
             {open ? (

@@ -19,6 +19,7 @@ import {
 import {ensureClockwise} from '../rendering/pathToPoints';
 import {transformPath, transformSegment} from '../rendering/points';
 import {simplifyPath} from '../rendering/simplifyPath';
+import {normalizeTiling} from '../routes/flipPattern';
 import {
     Coord,
     Guide,
@@ -175,10 +176,7 @@ const guideAgain = (kind: GuideGeom['type'], state: State, shiftKey?: boolean): 
     };
 };
 
-const reduceWithoutUndo = (
-    state: State,
-    action: UndoableAction,
-): [State, UndoAction | null] => {
+const reduceWithoutUndo = (state: State, action: UndoableAction): [State, UndoAction | null] => {
     // console.log('🤔 an action', action);
     switch (action.type) {
         case 'mirror:change':
@@ -318,11 +316,11 @@ const reduceWithoutUndo = (
                     nextId,
                     tilings: {
                         ...state.tilings,
-                        [id]: {
+                        [id]: normalizeTiling({
                             shape: action.shape,
                             cache: action.cache,
                             id,
-                        },
+                        }),
                     },
                 },
                 {type: action.type, action, added: [id, state.nextId]},

@@ -64,7 +64,7 @@ export const MultiStyleForm = ({
                                         onChange(removeFill(styles, i));
                                     }}
                                     icon="pi pi-trash"
-                                    className=" p-button-sm p-button-text p-button-danger"
+                                    className="p-button-sm p-button-text p-button-danger"
                                     style={{marginTop: -5, marginBottom: -6}}
                                 />
                             </summary>
@@ -157,6 +157,7 @@ export const MultiStyleForm = ({
                 </div>
             ))}
             <button
+                className="btn"
                 onClick={() => {
                     const maxNum = styles.reduce(
                         (num, style) => Math.max(num, style.fills.length),
@@ -408,6 +409,7 @@ export const MultiStyleForm = ({
                 );
             })}
             <button
+                className="btn"
                 onClick={() => {
                     const maxNum = styles.reduce(
                         (num, style) => Math.max(num, style.lines.length),
@@ -653,6 +655,7 @@ const MultiNumber = ({
     }, [text, value]);
     return (
         <input
+            className="input"
             value={text ?? (value.length === 1 ? (value[0] ?? '') : value.join(','))}
             onChange={(evt) => setText(evt.target.value)}
             css={{width: 50}}

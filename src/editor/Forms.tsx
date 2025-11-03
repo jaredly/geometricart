@@ -1,4 +1,3 @@
-
 import * as React from 'react';
 import {transparent} from './Icons';
 import {Circle, Guide, Line, Path, PathGroup, View} from '../types';
@@ -34,7 +33,11 @@ export const Text = ({
             }
         },
     };
-    return multiline ? <textarea {...shared} /> : <input type="text" {...shared} />;
+    return multiline ? (
+        <textarea className="textarea" {...shared} />
+    ) : (
+        <input className="input" type="text" {...shared} />
+    );
 };
 
 export const BlurInput = ({
@@ -95,6 +98,7 @@ export const BlurInt = ({
     return (
         <>
             <input
+                className="input"
                 value={text != null ? text : (value ?? '')}
                 onChange={(evt) => {
                     setText(evt.target.value);
