@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {Canvas} from './editor/Canvas';
 import {reducer} from './state/reducer';
@@ -13,7 +12,7 @@ import {NewSidebar} from './sidebar/NewSidebar';
 import {Action} from './state/Action';
 import {useUIState} from './useUIState';
 import {OverlayEditor} from './OverelayEditor';
-import {ThreedScreen} from './threed/ThreedScreen';
+// import {ThreedScreen} from './threed/ThreedScreen';
 import {useCurrent} from './useCurrent';
 
 export const App = ({
@@ -142,7 +141,8 @@ export const App = ({
                         }}
                     />
                 ) : screen === '3d' ? (
-                    <ThreedScreen state={state} dispatch={dispatch} hover={hover} />
+                    <div>No 3d right now</div>
+                    // <ThreedScreen state={state} dispatch={dispatch} hover={hover} />
                 ) : screen === 'history' ? (
                     <HistoryPlayback state={state} dispatch={dispatch} />
                 ) : screen === 'overlay' ? (

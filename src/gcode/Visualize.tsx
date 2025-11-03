@@ -1,7 +1,7 @@
 // ok
 import * as React from 'react';
 import {State} from '../types';
-import {GCode3D} from './GCode3D';
+// import {GCode3D} from './GCode3D';
 import {renderCutDepths} from './renderCutDepths';
 
 const parseCoords = (line: string) => {
@@ -166,20 +166,21 @@ export const Visualize = ({gcode, state, time}: {gcode: string; state: State; ti
                     {visualize ? `Hide 3d render` : `Show 3d render`}
                 </button>
                 {visualize ? (
-                    <GCode3D
-                        data={data}
-                        gcode={gcode}
-                        state={state}
-                        meta={`Time: ${time.toFixed(0)} min. GCode lines: ${
-                            gcode.split('\n').length
-                        }. ${data.dims.width.toFixed(1)} x ${data.dims.height.toFixed(
-                            1,
-                        )} x ${data.dims.depth.toFixed(1)}mm ; ${(data.dims.width / 25.4).toFixed(
-                            1,
-                        )}" x ${(data.dims.height / 25.4).toFixed(
-                            1,
-                        )}" x ${(data.dims.depth / 25.4).toFixed(1)}"`}
-                    />
+                    // <GCode3D
+                    //     data={data}
+                    //     gcode={gcode}
+                    //     state={state}
+                    //     meta={`Time: ${time.toFixed(0)} min. GCode lines: ${
+                    //         gcode.split('\n').length
+                    //     }. ${data.dims.width.toFixed(1)} x ${data.dims.height.toFixed(
+                    //         1,
+                    //     )} x ${data.dims.depth.toFixed(1)}mm ; ${(data.dims.width / 25.4).toFixed(
+                    //         1,
+                    //     )}" x ${(data.dims.height / 25.4).toFixed(
+                    //         1,
+                    //     )}" x ${(data.dims.depth / 25.4).toFixed(1)}"`}
+                    // />
+                    <div>3d disabled</div>
                 ) : null}
             </div>
 
