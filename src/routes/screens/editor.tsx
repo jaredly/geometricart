@@ -1,4 +1,4 @@
-import {RouterProvider} from 'react-router-dom';
+import {useNavigate} from 'react-router';
 // import {WithPathKit} from '../editor/pk';
 import {debounce, key, router, saveState, usePreventNavAway, Welcome} from '../../editor.client';
 import type {Route} from './+types/editor';
@@ -8,12 +8,14 @@ import localforage from 'localforage';
 import {State} from '../../types';
 import {SaveDest} from '../../MirrorPicker';
 import {App} from '../../App';
+import React from 'react';
 
 export async function clientLoader(p: Route.ClientLoaderArgs) {
     const params = new URL(p.request.url).searchParams;
-    const id = params.get('id');
-    const src = params.get('src');
-    if (!id) return null;
+    const path = params.get('path');
+    if (!path) return null;
+    const parts = path.split('/').filter(Boolean);
+    const [src, id] = parts.length === 2 ? parts : ['', parts[0]];
     if (src === 'gist') {
         const state = await loadGist(id, localStorage.github_access_token);
         return {
@@ -27,6 +29,7 @@ export async function clientLoader(p: Route.ClientLoaderArgs) {
 }
 
 export const File = ({dest, state, id}: {dest: SaveDest; state: State; id: string}) => {
+    const navigate = useNavigate();
     const [lastSaved, setLastSaved] = React.useState({
         when: Date.now(),
         dirty: null as null | true | (() => void),
@@ -36,7 +39,7 @@ export const File = ({dest, state, id}: {dest: SaveDest; state: State; id: strin
 
     return (
         <App
-            closeFile={() => (location.hash = '/')}
+            closeFile={() => navigate('?')}
             initialState={state}
             lastSaved={dest.type === 'gist' ? lastSaved : null}
             saveState={(state) => {
@@ -57,8 +60,16 @@ export const File = ({dest, state, id}: {dest: SaveDest; state: State; id: strin
 };
 
 export default function Editor({loaderData}: Route.ComponentProps) {
+    const navigate = useNavigate();
+
     if (!loaderData) {
-        return <Welcome />;
+        return (
+            <Welcome
+                navigate={(path) => {
+                    navigate(`?path=${path}`);
+                }}
+            />
+        );
     }
     const {dest, state, id} = loaderData;
 

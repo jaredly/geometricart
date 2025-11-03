@@ -106,16 +106,6 @@ export function tilingPoints(shape: Tiling['shape']) {
     }
 }
 
-function replicateStandard(full: [Coord, Coord][], ty: number) {
-    full = full.concat(transformLines(full, [scaleMatrix(-1, 1), translationMatrix({x: 2, y: 0})]));
-    full = full.concat(
-        transformLines(full, [scaleMatrix(1, -1), translationMatrix({x: 0, y: ty * 2})]),
-    );
-    full.push(...transformLines(full, [scaleMatrix(1, -1)]));
-    full.push(...transformLines(full, [scaleMatrix(-1, 1)]));
-    return full;
-}
-
 export function normalizeTilingShape(pts: Coord[]) {
     const [center, corner, top] = pts;
 

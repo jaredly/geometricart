@@ -1,4 +1,3 @@
-
 import {encodeChunks, extractChunks, insertMetadata} from 'png-metadata';
 import React from 'react';
 import {canvasRender, paletteImages} from '../rendering/CanvasRender';
@@ -102,7 +101,7 @@ export async function exportPNG(
     const ctx = canvas.getContext('2d')!;
 
     ctx.save();
-    await canvasRender(
+    canvasRender(
         ctx,
         state,
         size,

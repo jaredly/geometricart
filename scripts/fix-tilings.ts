@@ -10,6 +10,11 @@ import {Coord, Tiling} from '../src/types';
 const patterns = getAllPatterns();
 const toSave: {tiling: Tiling; hash: string}[] = [];
 
+// Normalize Tiling Steps:
+// - preTransform
+// - flip if necessary
+// - cut segments
+
 const doFlipPatterns = () => {
     patterns.forEach((pattern) => {
         const tiling = flipPattern(pattern.tiling);

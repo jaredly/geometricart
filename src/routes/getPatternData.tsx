@@ -32,6 +32,7 @@ import {
 import {pathsFromSegments} from './pathsFromSegments';
 import {outerBoundary} from './outerBoundary';
 import {weaveIntersections} from './weaveIntersections';
+import {transformBarePath, transformSegment} from '../rendering/points';
 
 const pkPathFromCoords = (coords: Coord[]) =>
     pk.Path.MakeFromCmds([
@@ -123,7 +124,18 @@ export const preTransformTiling = (tiling: Tiling): Tiling => {
     const pts = tilingPoints(tiling.shape);
     const tx = normalizeTilingShape(pts);
     const bounds = pts.map((pt) => applyMatrices(pt, tx));
-    return {...tiling, shape: setTilingPoints({...tiling.shape}, bounds)};
+    return {
+        ...tiling,
+        shape: setTilingPoints({...tiling.shape}, bounds),
+        cache: {
+            ...tiling.cache,
+            segments: tiling.cache.segments.map((seg) => ({
+                prev: applyMatrices(seg.prev, tx),
+                segment: transformSegment(seg.segment, tx),
+            })),
+            shapes: tiling.cache.shapes.map((shape) => transformBarePath(shape, tx)),
+        },
+    };
 };
 
 export type PatternData = ReturnType<typeof getPatternData>;

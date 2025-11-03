@@ -16,7 +16,7 @@ function replicateStandard(tx: number, ty: number): Matrix[][][] {
         [tx * 2, 0],
     ];
     // console.log(`Replicate`, tx, ty);
-    for (let i = 1; i < Math.abs(tx / ty) + 1; i++) {
+    for (let i = 1; i < Math.min(10, Math.abs(tx / ty) + 1); i++) {
         const y = ty * (i * 2);
         duplicates.push(
             [0, -y],

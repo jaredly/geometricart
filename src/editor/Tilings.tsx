@@ -1,5 +1,4 @@
-
-import React, {useState} from 'react';
+import React, {useMemo, useState} from 'react';
 import {Action} from '../state/Action';
 import {Path, State, Tiling} from '../types';
 import {applyMatrices} from '../rendering/getMirrorTransforms';
@@ -10,6 +9,7 @@ import {tilingTransforms} from './tilingTransforms';
 import {handleTiling, simpleExport} from './handleTiling';
 import {SimpleTiling} from './SimpleTiling';
 import {ShowTiling} from './ShowTiling';
+import {normalizeTiling} from '../routes/flipPattern';
 
 export const Tilings = ({
     state,
@@ -21,9 +21,12 @@ export const Tilings = ({
     dispatch: React.Dispatch<Action>;
 }) => {
     const [large, setLarge] = useState(false);
+    const normTlings = useMemo(() => {
+        return Object.values(state.tilings).map((tiling) => normalizeTiling(tiling));
+    }, [state.tilings]);
     return (
         <div>
-            {Object.values(state.tilings).map((tiling) => {
+            {normTlings.map((tiling) => {
                 return (
                     <div
                         key={tiling.id}
@@ -101,6 +104,7 @@ export const Tilings = ({
                                 }}
                             >
                                 <button
+                                    className="btn"
                                     onClick={() => {
                                         const {bounds, lines, tr} = handleTiling(tiling);
                                         const mx = tilingTransforms(tiling.shape, tr, bounds);
@@ -134,6 +138,7 @@ export const Tilings = ({
                                     Create shapes
                                 </button>
                                 <button
+                                    className="btn"
                                     onClick={async () => {
                                         const cache = await simpleExport(state, tiling.shape);
                                         if (!cache) return;
@@ -162,6 +167,7 @@ export const Tilings = ({
                         </div>
                         {tiling.cache ? <SimpleTiling tiling={tiling} /> : null}
                         <button
+                            className="btn"
                             onClick={() => {
                                 dispatch({
                                     type: 'tiling:delete',

@@ -137,7 +137,7 @@ export const stringToCheckpoint = (s: string) => {
     };
 };
 
-export const Welcome = () => {
+export const Welcome = ({navigate}: {navigate: (path: string) => void}) => {
     const [activeIds, setActiveIds] = React.useState({
         new: false,
         open: true,
@@ -181,12 +181,12 @@ export const Welcome = () => {
                         {
                             key: 'open',
                             header: 'Open Design',
-                            content: () => <DesignLoader />,
+                            content: () => <DesignLoader navigate={navigate} />,
                         },
                         {
                             key: 'gists',
                             header: 'Github Gists',
-                            content: () => <GistLoader />,
+                            content: () => <GistLoader navigate={navigate} />,
                         },
                     ]}
                 />
@@ -195,7 +195,7 @@ export const Welcome = () => {
     );
 };
 
-const GistLoader = () => {
+const GistLoader = ({navigate}: {navigate: (path: string) => void}) => {
     const {gists, token} = useGists();
     if (token == null) {
         return (
@@ -235,7 +235,7 @@ const GistLoader = () => {
                         key={gist.id}
                         className="mt-3 flex flex-column hover:surface-hover surface-base p-4 cursor-pointer"
                         onClick={() => {
-                            window.location.hash = '/gist/' + gist.id;
+                            navigate('/gist/' + gist.id);
                         }}
                     >
                         <img
@@ -391,7 +391,16 @@ const PkDebug = () => {
 /* then we can do useOutletContext() for state & dispatch ... is that it? */
 export const router = createHashRouter(
     createRoutesFromElements([
-        <Route index element={<Welcome />} />,
+        <Route
+            index
+            element={
+                <Welcome
+                    navigate={(hash) => {
+                        window.location.hash = hash;
+                    }}
+                />
+            }
+        />,
         <Route
             path="gist/:id"
             element={

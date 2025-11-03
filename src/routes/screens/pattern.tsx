@@ -10,6 +10,8 @@ import {shapeKey, State, Tiling} from '../../types';
 import {pk} from '../pk';
 import {drawBounds, drawLines, drawShapes, drawWoven} from '../canvasDraw';
 import {canvasRender} from '../../rendering/CanvasRender';
+import {IconSpeedtest} from '../../icons/Icon';
+import {exportPNG} from '../../editor/ExportPng';
 
 export async function loader({params}: Route.LoaderArgs) {
     if (!params.id) {
@@ -25,6 +27,7 @@ type Display = {
     bounds: boolean;
     draw: 'color-lines' | 'shapes' | 'woven';
     lineWidth: number;
+    margin: number;
 };
 
 export const Pattern = () => {
@@ -35,6 +38,7 @@ export const Pattern = () => {
         bounds: false,
         draw: 'shapes',
         lineWidth: 0.1,
+        margin: 0.5,
     });
 
     if (!id || !loaderData) {
@@ -84,6 +88,7 @@ export const Pattern = () => {
                         showShapes={display.draw === 'shapes'}
                         showWoven={display.draw === 'woven'}
                         lineWidth={display.lineWidth}
+                        margin={display.margin}
                     />
                     {/* <label>
                         <input
@@ -117,8 +122,20 @@ export const Pattern = () => {
                                 setDisplay({...display, lineWidth: +evt.target.value})
                             }
                         />
+                        Line width {display.lineWidth}
                     </label>
-                    Line width {display.lineWidth}
+                    <label>
+                        <input
+                            className="input"
+                            type="number"
+                            value={display.margin}
+                            min={0}
+                            step={0.01}
+                            max={10}
+                            onChange={(evt) => setDisplay({...display, margin: +evt.target.value})}
+                        />
+                        Margin {display.margin}
+                    </label>
                 </div>
                 {/* {JSON.stringify(tiling.shape)} */}
                 <div className="flex-1 px-2 gap-2 flex flex-col">
@@ -262,7 +279,28 @@ const SimpleRender = ({state, size}: {size: number; state: State}) => {
         ctx.restore();
     }, [state, size]);
     return (
-        <canvas ref={ref} width={size} height={size} style={{width: size / 2, height: size / 2}} />
+        <div className="relative">
+            <canvas
+                ref={ref}
+                width={size}
+                height={size}
+                style={{width: size / 2, height: size / 2}}
+            />
+            <button
+                className="btn btn-square"
+                onClick={() => {
+                    exportPNG(size, state, 1000, true, false, 0).then((blob) => {
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'pattern.png';
+                        a.click();
+                    });
+                }}
+            >
+                <IconSpeedtest />
+            </button>
+        </div>
     );
 };
 
@@ -275,6 +313,7 @@ const CanvasPattern = ({
     showLines,
     showShapes,
     lineWidth,
+    margin,
 }: {
     data: ReturnType<typeof getPatternData>;
     tiling: Tiling;
@@ -284,6 +323,7 @@ const CanvasPattern = ({
     showLines?: boolean;
     showShapes?: boolean;
     lineWidth: number;
+    margin: number;
 }) => {
     const ref = useRef<HTMLCanvasElement>(null);
     useEffect(() => {
@@ -293,7 +333,6 @@ const CanvasPattern = ({
         const ctx = surface.getCanvas();
         ctx.clear(pk.BLACK);
 
-        const margin = 0.5;
         ctx.scale((size * 2) / (2 + margin * 2), (size * 2) / (2 + margin * 2));
         ctx.translate(1 + margin, 1 + margin);
 
@@ -311,7 +350,7 @@ const CanvasPattern = ({
         }
         surface.flush();
         // ok do the render
-    }, [tiling, data, showShapes, showLines, showWoven, showBounds, lineWidth]);
+    }, [tiling, data, showShapes, showLines, showWoven, showBounds, lineWidth, margin]);
     return (
         <canvas ref={ref} width={size * 2} height={size * 2} style={{width: size, height: size}} />
     );

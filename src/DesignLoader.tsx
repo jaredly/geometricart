@@ -22,7 +22,7 @@ function tilingCacheSvg(cache: Tiling['cache'], shape: Tiling['shape']) {
     );
 }
 
-export const DesignLoader = () => {
+export const DesignLoader = ({navigate}: {navigate: (path: string) => void}) => {
     const [designs, setDesigns] = React.useState<MetaData[]>([]);
     React.useEffect(() => {
         localforage
@@ -53,7 +53,7 @@ export const DesignLoader = () => {
                     // style={{ width: 300, height: 300 }}
                     onClick={() => {
                         updateMeta(design.id, {openedAt: Date.now()}).then(() => {
-                            window.location.hash = '/' + design.id;
+                            navigate('/' + design.id);
                         });
                     }}
                     className="hover:surface-hover surface-base p-4 cursor-pointer"
