@@ -1,7 +1,13 @@
 import {useEffect, useMemo, useRef, useState} from 'react';
-import {useLoaderData, useParams} from 'react-router';
+import {useFetcher, useLoaderData, useParams} from 'react-router';
 import type {Route} from './+types/pattern';
-import {getCachedPatternData, getPattern, getSimilarPatterns} from '../db.server';
+import {
+    getCachedPatternData,
+    getPattern,
+    getSimilarPatterns,
+    saveAnimated,
+    savePattern,
+} from '../db.server';
 import {flipPattern} from '../flipPattern';
 import {canonicalShape, getPatternData, humanReadableFraction} from '../getPatternData';
 import {normShape} from '../normShape';
@@ -12,6 +18,7 @@ import {drawBounds, drawLines, drawShapes, drawWoven} from '../canvasDraw';
 import {canvasRender} from '../../rendering/CanvasRender';
 import {BaselineDownload, IconSpeedtest} from '../../icons/Icon';
 import {exportPNG} from '../../editor/ExportPng';
+import {randomUUIDv7} from 'bun';
 
 export async function loader({params}: Route.LoaderArgs) {
     if (!params.id) {
@@ -54,6 +61,7 @@ export const Pattern = ({
         lineWidth: 0.1,
         margin: 0.5,
     });
+    const fetcher = useFetcher();
 
     const tiling = pattern.tiling; // flipPattern(pattern.tiling);
 
@@ -83,7 +91,21 @@ export const Pattern = ({
                             <li>Pattern {id}</li>
                         ) : (
                             <li>
-                                <button className="btn">Save New Pattern</button>
+                                <button
+                                    className="btn"
+                                    onClick={() => {
+                                        fetcher
+                                            .submit(
+                                                {state: JSON.stringify({tiling})},
+                                                {method: 'POST'},
+                                            )
+                                            .then((value) => {
+                                                console.log('got', value);
+                                            });
+                                    }}
+                                >
+                                    Save New Pattern
+                                </button>
                             </li>
                         )}
                     </ul>

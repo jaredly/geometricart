@@ -1,3 +1,4 @@
+import {rehashTiling} from '../editor/handleTiling';
 import {tilingPoints} from '../editor/tilingPoints';
 import {
     angleTo,
@@ -23,7 +24,7 @@ export const normalizeTiling = (tiling: Tiling): Tiling => {
     tiling = preTransformTiling(tiling);
     tiling = flipPattern(tiling);
     tiling = cutTilingSegments(tiling);
-    return tiling;
+    return rehashTiling(tiling);
 };
 
 export const cutTilingSegments = (tiling: Tiling): Tiling => {

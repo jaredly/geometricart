@@ -30,7 +30,13 @@ export const App = ({
         id: string;
     } | null;
 }) => {
-    const [trueState, dispatch] = React.useReducer(reducer, initialState);
+    let [trueState, _dispatch] = React.useReducer(reducer, initialState);
+    const dispatch = (value: Action) => {
+        if (value.type === 'selection:set') {
+            console.log(new Error().stack);
+        }
+        _dispatch(value);
+    };
 
     const {uiState, uiSetters, uiDispatch, state} = useUIState(trueState);
 

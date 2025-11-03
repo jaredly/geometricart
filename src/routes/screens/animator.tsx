@@ -261,6 +261,38 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                         <button className="btn" onClick={() => setAnimate(true)}>
                             Animate
                         </button>
+                        <form>
+                            <input
+                                className="input"
+                                name="remax"
+                                type="number"
+                                defaultValue={'.5'}
+                            />
+                            <button
+                                className="btn"
+                                onClick={(evt) => {
+                                    const data = new FormData(evt.currentTarget.form!);
+                                    const amount = +(data.get('remax') as string);
+
+                                    const nstate = {...state};
+                                    nstate.layers = nstate.layers.map((l) =>
+                                        l.frames
+                                            ? {...l, frames: l.frames.map((a) => a * amount)}
+                                            : l,
+                                    );
+                                    nstate.lines = nstate.lines.map((line) => ({
+                                        ...line,
+                                        keyframes: line.keyframes.map((k) => ({
+                                            ...k,
+                                            at: k.at * amount,
+                                        })),
+                                    }));
+                                    setState(nstate);
+                                }}
+                            >
+                                remax
+                            </button>
+                        </form>
                     </label>
                     <label>
                         {'Margin: '}

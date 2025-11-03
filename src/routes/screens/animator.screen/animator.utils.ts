@@ -6,7 +6,7 @@ import {Coord, Guide, GuideGeom, PendingGuide} from '../../../types';
 export const findExtraPoints = (line: Coord[], count: number) => {
     const first = line.slice(0, -1);
     const last = line[line.length - 1];
-    if (line.length === 1) {
+    if (true) {
         for (let i = 0; i <= count; i++) {
             first.push(last);
         }
@@ -118,7 +118,7 @@ export const useAnimate = (
         if (!animate) return;
         let at = 0;
         let it = setInterval(() => {
-            at += 0.01;
+            at += 0.002;
             if (at >= 1) {
                 clearInterval(it);
                 setAnimate(false);
@@ -132,7 +132,7 @@ export const useAnimate = (
                 //     Math.min(1, 1.1 - (Math.cos(at * Math.PI * 2) + 1) * 0.6),
                 // ),
             );
-        }, 80);
+        }, 20);
 
         return () => clearInterval(it);
     }, [animate, setAnimate, setPreview]);

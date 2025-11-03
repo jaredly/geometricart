@@ -545,14 +545,14 @@ export const Canvas = ({
                     evt.preventDefault();
                 }
             }}
-            onClick={(evt) => {
-                if (state.selection && !evt.shiftKey && evt.target instanceof SVGElement) {
-                    dispatch({
-                        type: 'selection:set',
-                        selection: null,
-                    });
-                }
-            }}
+            // onClick={(evt) => {
+            //     if (state.selection && !evt.shiftKey && evt.target instanceof SVGElement) {
+            //         dispatch({
+            //             type: 'selection:set',
+            //             selection: null,
+            //         });
+            //     }
+            // }}
         >
             {svgContents}
             {view.texture ? (

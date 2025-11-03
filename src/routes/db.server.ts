@@ -49,6 +49,11 @@ export const listAnimateds = () => {
     });
 };
 
+export const savePattern = (id: string, tiling: Tiling) => {
+    const query = db.query(`INSERT INTO Tiling (id, hash, json) VALUES ($id, $hash, $json)`);
+    query.run({$id: id, $hash: tiling.cache.hash, $json: JSON.stringify(tiling)});
+};
+
 export const saveAllPatterns = (patterns: {hash: string; tiling: Tiling}[]) => {
     const query = db.query('update Tiling set json = $json where hash = $hash');
     const queryAll = db.transaction((patterns) => {

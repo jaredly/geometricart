@@ -317,13 +317,11 @@ const reduceWithoutUndo = (state: State, action: UndoableAction): [State, UndoAc
                     nextId,
                     tilings: {
                         ...state.tilings,
-                        [id]: rehashTiling(
-                            normalizeTiling({
-                                shape: action.shape,
-                                cache: action.cache,
-                                id,
-                            }),
-                        ),
+                        [id]: normalizeTiling({
+                            shape: action.shape,
+                            cache: action.cache,
+                            id,
+                        }),
                     },
                 },
                 {type: action.type, action, added: [id, state.nextId]},

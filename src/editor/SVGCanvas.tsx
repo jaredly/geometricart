@@ -1,4 +1,3 @@
-
 import Prando from 'prando';
 import React, {useRef} from 'react';
 // import {RoughGenerator} from 'roughjs/bin/generator';
@@ -226,6 +225,7 @@ export function SVGCanvas({
                     guideNeedsAngle(state.pending.kind) &&
                     guidePoints[state.pending.kind] === state.pending.points.length
                 ) {
+                    console.log('pending angle');
                     dispatch({
                         type: 'pending:angle',
                         angle: angleTo(

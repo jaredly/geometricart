@@ -9,7 +9,6 @@ import {tilingTransforms} from './tilingTransforms';
 import {handleTiling, simpleExport} from './handleTiling';
 import {SimpleTiling} from './SimpleTiling';
 import {ShowTiling} from './ShowTiling';
-import {normalizeTiling} from '../routes/flipPattern';
 
 export const Tilings = ({
     state,
@@ -21,12 +20,12 @@ export const Tilings = ({
     dispatch: React.Dispatch<Action>;
 }) => {
     const [large, setLarge] = useState(false);
-    const normTlings = useMemo(() => {
-        return Object.values(state.tilings).map((tiling) => normalizeTiling(tiling));
+    const tilings = useMemo(() => {
+        return Object.values(state.tilings);
     }, [state.tilings]);
     return (
         <div>
-            {normTlings.map((tiling) => {
+            {tilings.map((tiling) => {
                 return (
                     <div
                         key={tiling.id}
