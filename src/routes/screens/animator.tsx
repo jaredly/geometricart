@@ -278,14 +278,6 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                         <button className="btn" onClick={() => setAnimate(true)}>
                             Animate
                         </button>
-                        <form>
-                            <input
-                                className="input"
-                                name="remax"
-                                type="number"
-                                defaultValue={'.5'}
-                            />
-                        </form>
                     </label>
                     <div>
                         <label>

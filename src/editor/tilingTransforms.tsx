@@ -12,21 +12,25 @@ import {angleBetween} from '../rendering/isAngleBetween';
 
 function replicateStandard(tx: number, ty: number): Matrix[][][] {
     const duplicates = [
-        [-tx * 2, 0],
-        [tx * 2, 0],
+        // [-tx * 2, 0],
+        // [tx * 2, 0],
     ];
+    const w = 4;
     // console.log(`Replicate`, tx, ty);
-    for (let i = 1; i < Math.min(10, Math.abs(tx / ty) + 1); i++) {
+    for (let i = 0; i < Math.min(10, Math.abs(tx / ty) + 3); i++) {
         const y = ty * (i * 2);
-        duplicates.push(
-            [0, -y],
-            [-tx * 2, -y],
-            [tx * 2, y],
+        if (i > 0) {
+            duplicates.push([0, -y], [0, y]);
+        }
+        for (let x = 1; x <= w; x++) {
+            duplicates.push(
+                [-tx * 2 * x, -y],
+                [tx * 2 * x, -y],
 
-            [0, y],
-            [-tx * 2, y],
-            [tx * 2, -y],
-        );
+                [-tx * 2 * x, y],
+                [tx * 2 * x, y],
+            );
+        }
     }
     return [
         [[scaleMatrix(-1, 1)]],
@@ -39,12 +43,13 @@ export function tilingTransforms(shape: TilingShape, tr: Coord, tpts: Coord[]): 
     if (tpts.length === 4) {
         return replicateStandard(tr.x, tr.y);
     } else if (shape.type === 'right-triangle' && shape.rotateHypotenuse) {
+        // Triangle -> Rectangle
         return [
             [[rotationMatrix(Math.PI), translationMatrix(tr)]],
             ...replicateStandard(tr.x, tr.y),
         ];
     } else if (closeEnough(tr.y, -1 / Math.sqrt(3))) {
-        // here
+        // HEX
         return [
             [[scaleMatrix(1, -1)]],
             [
