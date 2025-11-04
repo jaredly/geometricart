@@ -8,7 +8,7 @@ import {
     tilingPoints,
     transformShape,
 } from '../editor/tilingPoints';
-import {tilingTransforms} from '../editor/tilingTransforms';
+import {getShapeSize, tilingTransforms} from '../editor/tilingTransforms';
 import {coordKey, numKey} from '../rendering/coordKey';
 import {closeEnough} from '../rendering/epsilonToZero';
 import {
@@ -139,7 +139,7 @@ export const preTransformTiling = (tiling: Tiling): Tiling => {
 };
 
 export type PatternData = ReturnType<typeof getPatternData>;
-export const getPatternData = (tiling: Tiling, debug = false) => {
+export const getPatternData = (tiling: Tiling, debug = false, size = 3) => {
     tiling = preTransformTiling(tiling);
 
     const pts = tilingPoints(tiling.shape);
@@ -148,7 +148,7 @@ export const getPatternData = (tiling: Tiling, debug = false) => {
     );
     const eigenPoints = unique(eigenSegments.flat(), coordKey);
 
-    const ttt = tilingTransforms(tiling.shape, pts[2], pts);
+    const ttt = tilingTransforms(tiling.shape, pts[2], pts, getShapeSize(pts[2], size));
 
     const allSegments = unique(
         applyTilingTransforms(eigenSegments, ttt).map((seg) =>

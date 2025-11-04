@@ -5,7 +5,7 @@ import {applyMatrices} from '../rendering/getMirrorTransforms';
 import {transformSegment} from '../rendering/points';
 import {UIDispatch} from '../useUIState';
 import {emptyPath} from './RenderPath';
-import {tilingTransforms} from './tilingTransforms';
+import {getShapeSize, tilingTransforms} from './tilingTransforms';
 import {handleTiling, simpleExport} from './handleTiling';
 import {SimpleTiling} from './SimpleTiling';
 import {ShowTiling} from './ShowTiling';
@@ -106,7 +106,12 @@ export const Tilings = ({
                                     className="btn"
                                     onClick={() => {
                                         const {bounds, lines, tr} = handleTiling(tiling);
-                                        const mx = tilingTransforms(tiling.shape, tr, bounds);
+                                        const mx = tilingTransforms(
+                                            tiling.shape,
+                                            tr,
+                                            bounds,
+                                            getShapeSize(tr, 3),
+                                        );
 
                                         let shapes = tiling.cache.shapes;
                                         mx.forEach((set) => {

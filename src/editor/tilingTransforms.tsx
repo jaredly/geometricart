@@ -9,19 +9,28 @@ import {
     translationMatrix,
 } from '../rendering/getMirrorTransforms';
 import {angleBetween} from '../rendering/isAngleBetween';
+import {tilingPoints} from './tilingPoints';
 
-function replicateStandard(tx: number, ty: number): Matrix[][][] {
+export const getShapeSize = (tr: Coord, width: number) => {
+    if (closeEnough(Math.abs(tr.x), Math.abs(tr.y))) {
+        return {x: width, y: width};
+    }
+    const y = Math.floor(Math.min(10, Math.abs(tr.x / tr.y)) * width);
+    return {x: width, y};
+};
+
+function replicateStandard(tx: number, ty: number, mx: number, my: number): Matrix[][][] {
     const duplicates = [];
-    const count = closeEnough(Math.abs(tx), Math.abs(ty)) ? 5 : Math.abs(tx / ty) + 3;
-    const w = 4;
-    for (let i = 0; i < Math.min(10, count); i++) {
+    // const count = closeEnough(Math.abs(tx), Math.abs(ty)) ? scale : Math.abs(tx / ty) + 3;
+    // const w = 4;
+    for (let i = 0; i <= my; i++) {
         const y = ty * (i * 2);
         if (i > 0) {
             duplicates.push([0, -y], [0, y]);
         }
-        for (let x = 1; x <= w; x++) {
+        for (let x = 1; x <= mx; x++) {
             duplicates.push([-tx * 2 * x, y], [tx * 2 * x, y]);
-            if (y != 0) {
+            if (y !== 0) {
                 duplicates.push([-tx * 2 * x, -y], [tx * 2 * x, -y]);
             }
         }
@@ -33,14 +42,23 @@ function replicateStandard(tx: number, ty: number): Matrix[][][] {
     ];
 }
 
-export function tilingTransforms(shape: TilingShape, tr: Coord, tpts: Coord[]): Matrix[][][] {
+export const getTilingTransforms = (shape: TilingShape, pts = tilingPoints(shape), size = 3) => {
+    return tilingTransforms(shape, pts[2], pts, getShapeSize(pts[2], size));
+};
+
+export function tilingTransforms(
+    shape: TilingShape,
+    tr: Coord,
+    tpts: Coord[],
+    size: {x: number; y: number},
+): Matrix[][][] {
     if (tpts.length === 4) {
-        return replicateStandard(tr.x, tr.y);
+        return replicateStandard(tr.x, tr.y, size.x, size.y);
     } else if (shape.type === 'right-triangle' && shape.rotateHypotenuse) {
         // Triangle -> Rectangle
         return [
             [[rotationMatrix(Math.PI), translationMatrix(tr)]],
-            ...replicateStandard(tr.x, tr.y),
+            ...replicateStandard(tr.x, tr.y, size.x, size.y),
         ];
     } else if (closeEnough(tr.y, -1 / Math.sqrt(3))) {
         // HEX
@@ -88,7 +106,7 @@ export function tilingTransforms(shape: TilingShape, tr: Coord, tpts: Coord[]): 
         }
 
         const mx: Matrix[][][] = [[[scaleMatrix(1, -1), rotationMatrix(-Math.PI / 2)]]];
-        return [...mx, ...replicateStandard(tr.x, tr.y)];
+        return [...mx, ...replicateStandard(tr.x, tr.y, size.x, size.y)];
     } else {
         const [a, b, c] = tpts;
         const d1 = dist(a, b);
@@ -169,7 +187,7 @@ export function tilingTransforms(shape: TilingShape, tr: Coord, tpts: Coord[]): 
         } else {
             return [
                 [[scaleMatrix(1, -1), rotationMatrix(-Math.PI / 2)]],
-                ...replicateStandard(tr.x, tr.y),
+                ...replicateStandard(tr.x, tr.y, size.x, size.y),
             ];
         }
     }

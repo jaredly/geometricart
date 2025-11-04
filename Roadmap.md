@@ -1,6 +1,15 @@
 
 # Designer....
 
+# Builddddddit
+
+I want to
+- [ ] make like a 3d model probably so I can see what it will look like
+- [ ] make it so I can export SVGs of each layer, so I can lasercut it all out
+  - maybe trying with cardboard first
+- [ ] ummmm add a clip border dealio
+  -> pathkit to combine all the paths and then stroke it
+
 # Animator....
 
 - [x] sooo have the ability to "fade out" a line that's going to be deleted. I think that'll be ~nicer than having it withdraw from one side.

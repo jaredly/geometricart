@@ -9,7 +9,7 @@ import {
     translationMatrix,
 } from '../rendering/getMirrorTransforms';
 import {scalePos} from './scalePos';
-import {tilingTransforms} from './tilingTransforms';
+import {getShapeSize, tilingTransforms} from './tilingTransforms';
 
 const transformLines = (lines: [Coord, Coord][], mx: Matrix[]) =>
     lines.map(([p1, p2]): [Coord, Coord] => [applyMatrices(p1, mx), applyMatrices(p2, mx)]);
@@ -42,7 +42,7 @@ export function eigenShapesToLines(
     tr: Coord,
     tpts: Coord[],
 ) {
-    return applyTilingTransforms(unique, tilingTransforms(shape, tr, tpts));
+    return applyTilingTransforms(unique, tilingTransforms(shape, tr, tpts, getShapeSize(tr, 3)));
 }
 
 export function eigenShapesToSvg(

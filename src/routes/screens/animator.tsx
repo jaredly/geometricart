@@ -1,6 +1,6 @@
 import {useEffect, useMemo, useRef, useState} from 'react';
 import {applyTilingTransformsG, tilingPoints} from '../../editor/tilingPoints';
-import {tilingTransforms} from '../../editor/tilingTransforms';
+import {getShapeSize, getTilingTransforms, tilingTransforms} from '../../editor/tilingTransforms';
 import {AddIcon, IconEye, IconEyeInvisible, RoundPlus} from '../../icons/Icon';
 import {coordKey} from '../../rendering/coordKey';
 import {applyMatrices, dist} from '../../rendering/getMirrorTransforms';
@@ -62,6 +62,7 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
     const [peg, setPeg] = useState(false);
     useFetchBounceState(state);
 
+    const [repl, setRepl] = useState(1);
     const [lineWidth, setLineWidth] = useState(2);
     const [showGuides, setShowGuides] = useState(true);
 
@@ -127,7 +128,7 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
         if (!state.layers.length) return {full: [], pts: []};
         const pt = patternMap[state.layers[0].pattern];
         const pts = tilingPoints(pt.shape);
-        const ttt = tilingTransforms(pt.shape, pts[2], pts);
+        const ttt = getTilingTransforms(pt.shape, pts);
         return {
             full: applyTilingTransformsG(
                 ats.filter(Boolean) as {points: Coord[]; alpha: number}[],
@@ -160,6 +161,7 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                 <div>
                     {canv ? (
                         <AnimatedCanvas
+                            repl={repl}
                             showNice={showNice}
                             patternMap={patternMap}
                             preview={preview}
@@ -346,6 +348,30 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                             />
                         </label>
                     </div>
+                    <div>
+                        <label className="ml-4">
+                            {'Repl'}
+                            <input
+                                className="range w-40 ml-4"
+                                type="range"
+                                min="0"
+                                max="10"
+                                step={1}
+                                value={repl}
+                                onChange={(evt) => setRepl(+evt.target.value)}
+                            />
+                        </label>
+                        <label className="mx-4">
+                            Woven
+                            <input
+                                type="checkbox"
+                                className="checkbox mx-2"
+                                disabled={!canv}
+                                checked={showNice && canv}
+                                onChange={() => setShowNice(!showNice)}
+                            />
+                        </label>
+                    </div>
                     <details className="bg-base-100 p-4 rounded-xl shadow-md shadow-base-300">
                         <summary className="mb-4">
                             <div className="inline-flex">
@@ -355,14 +381,6 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                                     onClick={() => layerDialog.current?.showModal()}
                                 >
                                     <RoundPlus />
-                                </button>
-                                <button
-                                    className="btn"
-                                    onClick={() => {
-                                        setShowNice(!showNice);
-                                    }}
-                                >
-                                    {showNice ? <IconEye /> : <IconEyeInvisible color={'#555'} />}
                                 </button>
                                 <button
                                     className="btn"
@@ -618,7 +636,9 @@ const AnimatedCanvas = ({
     state,
     lineWidth,
     showNice,
+    repl,
 }: {
+    repl: number;
     showNice: boolean;
     lineWidth: number;
     state: State;
@@ -636,7 +656,7 @@ const AnimatedCanvas = ({
         if (!state.layers.length) return {full: [], pts: []};
         const pt = patternMap[state.layers[0].pattern];
         const pts = tilingPoints(pt.shape);
-        const ttt = tilingTransforms(pt.shape, pts[2], pts);
+        const ttt = getTilingTransforms(pt.shape, pts, repl);
         return {
             full: applyTilingTransformsG(
                 ats.filter(Boolean) as {points: Coord[]; alpha: number}[],
@@ -648,13 +668,13 @@ const AnimatedCanvas = ({
             ),
             pts,
         };
-    }, [ats, patternMap, state.layers]);
+    }, [ats, patternMap, state.layers, repl]);
 
     const ref = useRef<HTMLCanvasElement>(null);
 
     const patternDatas = useMemo(() => {
-        return state.layers.map((l) => getPatternData(patternMap[l.pattern]));
-    }, [state.layers, patternMap]);
+        return state.layers.map((l) => getPatternData(patternMap[l.pattern], false, repl));
+    }, [state.layers, patternMap, repl]);
 
     useEffect(() => {
         if (!ref.current) return;
