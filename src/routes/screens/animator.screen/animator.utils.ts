@@ -23,19 +23,25 @@ export const findExtraPoints = (line: Coord[], count: number) => {
     return first;
 };
 
-export const lineAt = (frames: {at: number; points: Coord[]}[], at: number) => {
+export const lineAt = (
+    frames: {at: number; points: Coord[]}[],
+    at: number,
+    fade: boolean | undefined,
+) => {
     const exact = frames.find((f) => f.at === at);
-    if (exact) return exact.points;
+    if (exact)
+        return {points: exact.points, alpha: fade && exact === frames[frames.length - 1] ? 0 : 1};
     const after = frames.findIndex((f) => f.at > at);
     if (after === 0 || after === -1) return;
     let prev = frames[after - 1];
     let post = frames[after];
     const btw = (at - prev.at) / (post.at - prev.at);
+    const alpha = fade && after === frames.length - 1 ? Math.max(0, 1 - btw * 1.5) : 1;
     let left = prev.points;
     let right = post.points;
     if (left.length < right.length) left = findExtraPoints(left, right.length - left.length);
     if (right.length < left.length) right = findExtraPoints(right, left.length - right.length);
-    return left.map((p, i) => plerp(p, right[i], btw));
+    return {points: left.map((p, i) => plerp(p, right[i], btw)), alpha};
 };
 
 const debounce = (act: () => void, wait: number, max: number) => {
@@ -67,6 +73,7 @@ export type State = {
             at: number;
             points: Coord[];
         }[];
+        fade?: boolean;
     }[];
 };
 
@@ -114,25 +121,30 @@ export const useAnimate = (
     animate: boolean,
     setAnimate: (b: boolean) => void,
     setPreview: (p: number) => void,
+    max: number,
 ) => {
     useEffect(() => {
         if (!animate) return;
         let at = 0;
         let it = setInterval(() => {
-            at += 0.002;
-            if (at >= 1) {
+            at += 0.01;
+            if (at >= max - 1) {
                 clearInterval(it);
                 setAnimate(false);
             }
 
-            setPreview(
-                ease(at),
+            const base = Math.floor(Math.min(at, max - 1));
+            const rest = Math.min(1, Math.max(0, (at - base) * 2 - 0.5));
 
-                // Math.max(
-                //     0,
-                //     Math.min(1, 1.1 - (Math.cos(at * Math.PI * 2) + 1) * 0.6),
-                // ),
-            );
+            setPreview(base + rest);
+            // setPreview(
+            //     ease(at) * (max - 1),
+
+            //     // Math.max(
+            //     //     0,
+            //     //     Math.min(1, 1.1 - (Math.cos(at * Math.PI * 2) + 1) * 0.6),
+            //     // ),
+            // );
         }, 20);
 
         return () => clearInterval(it);

@@ -19,6 +19,8 @@ export const drawBounds = (ctx: Canvas, data: ReturnType<typeof getPatternData>)
     paint.setStrokeWidth(data.minSegLength / 3);
     paint.setColor([1, 1, 1]);
     ctx.drawPath(path, paint);
+    path.delete();
+    paint.delete();
 };
 
 export function hslToHex(h: number, s: number, l: number) {
@@ -58,6 +60,8 @@ export const drawShapes = (
             ...shape.slice(1).flatMap(({x, y}) => [pk.LINE_VERB, x, y]),
         ])!;
         ctx.drawPath(path, paint);
+        path.delete();
+        paint.delete();
     });
 
     if (stroke) {
@@ -74,6 +78,8 @@ export const drawShapes = (
             paint.setStyle(pk.PaintStyle.Stroke);
             paint.setStrokeWidth(stroke);
             ctx.drawPath(path, paint);
+            path.delete();
+            paint.delete();
         });
     }
 };
@@ -104,10 +110,10 @@ export const drawLines = (
         paint.setColor(path == null ? [0, 0, 0] : hslToHex((path % 12) * 30, 100, 50));
 
         // paint.setAlphaf(0.1);
-        ctx.drawPath(
-            pk.Path.MakeFromCmds([pk.MOVE_VERB, a.x, a.y, pk.LINE_VERB, b.x, b.y])!,
-            paint,
-        );
+        const p2 = pk.Path.MakeFromCmds([pk.MOVE_VERB, a.x, a.y, pk.LINE_VERB, b.x, b.y])!;
+        ctx.drawPath(p2, paint);
+        p2.delete();
+        paint.delete();
     });
 };
 
@@ -157,6 +163,7 @@ export const drawWoven = (
             )!;
             // ctx.drawPath(pathb, front);
             ctx.drawPath(pathb, isBack ? back : front);
+            pathb.delete();
         });
 
         // const pathb = pk.Path.MakeFromCmds(
@@ -185,4 +192,7 @@ export const drawWoven = (
 
         // ctx.drawPath(path, front);
     });
+
+    back.delete();
+    front.delete();
 };

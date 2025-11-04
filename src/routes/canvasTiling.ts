@@ -49,7 +49,9 @@ const drawBoundsTransform = (ctx: Canvas, data: ReturnType<typeof getPatternData
         )!;
         front.setStrokeWidth(data.minSegLength / 10);
         ctx.drawPath(path, front);
+        path.delete();
     });
+    front.delete();
 };
 
 const drawFlips = (ctx: Canvas, data: ReturnType<typeof getPatternData>) => {
@@ -63,15 +65,14 @@ const drawFlips = (ctx: Canvas, data: ReturnType<typeof getPatternData>) => {
     paint.setStyle(pk.PaintStyle.Fill);
     paint.setColor([1, 1, 1]);
     paint.setAlphaf(0.1);
-    ctx.drawPath(
-        pk.Path.MakeFromCmds([
-            pk.MOVE_VERB,
-            data.bounds[0].x,
-            data.bounds[0].y,
-            ...data.bounds.slice(1).flatMap(({x, y}) => [pk.LINE_VERB, x, y]),
-        ])!,
-        paint,
-    );
+    const path = pk.Path.MakeFromCmds([
+        pk.MOVE_VERB,
+        data.bounds[0].x,
+        data.bounds[0].y,
+        ...data.bounds.slice(1).flatMap(({x, y}) => [pk.LINE_VERB, x, y]),
+    ]);
+    ctx.drawPath(path!, paint);
+    path?.delete();
 
     paint.setStyle(pk.PaintStyle.Fill);
     paint.setColor([0, 0, 0]);
@@ -80,6 +81,7 @@ const drawFlips = (ctx: Canvas, data: ReturnType<typeof getPatternData>) => {
     data.bounds.forEach((coord, i) => {
         ctx.drawText(i + '', coord.x, coord.y, paint, fonto);
     });
+    paint.delete();
 };
 
 export const canvasTiling = async (

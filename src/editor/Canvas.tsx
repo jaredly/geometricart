@@ -503,7 +503,7 @@ export const Canvas = ({
             guidePrimitives.points,
         );
         return fromGuides;
-    }, [guidePrimitives, state.paths, state.pathGroups]);
+    }, [guidePrimitives]);
 
     const svgContents = SVGCanvas({
         uiState,

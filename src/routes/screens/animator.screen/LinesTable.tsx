@@ -1,6 +1,7 @@
 import React from 'react';
 import {Coord} from '../../../types';
 import {Pending, State} from './animator.utils';
+import {TransitionFade} from '../../../icons/Icon';
 
 export function LinesTable({
     state,
@@ -8,10 +9,12 @@ export function LinesTable({
     preview,
     setPending,
     setState,
+    setPreview,
 }: {
     state: State;
     setHover: React.Dispatch<React.SetStateAction<number | null>>;
     preview: number;
+    setPreview: (p: number) => void;
     setPending: React.Dispatch<React.SetStateAction<Pending | null>>;
     setState: React.Dispatch<React.SetStateAction<State>>;
 }) {
@@ -51,6 +54,7 @@ export function LinesTable({
                                         r={5}
                                         fill={kf.at === preview ? 'white' : 'red'}
                                         key={kf.at}
+                                        onClick={() => setPreview(kf.at)}
                                     />
                                 ))}
                             </svg>
@@ -85,6 +89,21 @@ export function LinesTable({
                                 }}
                             >
                                 &times;
+                            </button>
+                        </td>
+                        <td>
+                            <button
+                                className="btn"
+                                onClick={() =>
+                                    setState({
+                                        ...state,
+                                        lines: state.lines.map((l, j) =>
+                                            j === i ? {...l, fade: !l.fade} : l,
+                                        ),
+                                    })
+                                }
+                            >
+                                <TransitionFade color={line.fade ? 'white' : '#555'} />
                             </button>
                         </td>
                     </tr>

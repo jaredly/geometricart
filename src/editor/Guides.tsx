@@ -1,4 +1,3 @@
-
 import React, {useRef} from 'react';
 import {useCurrent} from '../useCurrent';
 import {PendingMirror, UIState} from '../useUIState';
@@ -348,14 +347,15 @@ export const Guides = ({
     }, []);
 
     // When intersections change, cancel pending stuffs
-    const first = useRef(true);
-    React.useEffect(() => {
-        if (first.current) {
-            first.current = false;
-            return;
-        }
-        pendingPath[1](null);
-    }, [allIntersections]);
+    // const first = useRef(true);
+    // React.useEffect(() => {
+    //     if (first.current) {
+    //         first.current = false;
+    //         return;
+    //     }
+    //     console.log('cancelling pending');
+    //     pendingPath[1](null);
+    // }, [allIntersections]);
 
     const clip = getClips(state);
 

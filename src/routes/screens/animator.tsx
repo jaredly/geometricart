@@ -1,10 +1,10 @@
-import {useMemo, useState} from 'react';
+import {useEffect, useMemo, useRef, useState} from 'react';
 import {applyTilingTransformsG, tilingPoints} from '../../editor/tilingPoints';
 import {tilingTransforms} from '../../editor/tilingTransforms';
 import {AddIcon, IconEye, IconEyeInvisible, RoundPlus} from '../../icons/Icon';
 import {coordKey} from '../../rendering/coordKey';
 import {applyMatrices, dist} from '../../rendering/getMirrorTransforms';
-import {Coord, GuideGeomTypes} from '../../types';
+import {Coord, GuideGeomTypes, Tiling} from '../../types';
 import {getAllPatterns, getAnimated, saveAnimated} from '../db.server';
 import {shapeD} from '../shapeD';
 import {useOnOpen} from '../useOnOpen';
@@ -24,6 +24,10 @@ import {pendingGuide, RenderPendingGuide} from '../../editor/RenderPendingGuide'
 import {GuideElement} from '../../editor/GuideElement';
 import {geomToPrimitives} from '../../rendering/points';
 import {intersections, lineToSlope} from '../../rendering/intersect';
+import {pk} from '../pk';
+import {getPatternData} from '../getPatternData';
+import {drawWoven} from '../canvasDraw';
+import {closeEnough} from '../../rendering/epsilonToZero';
 
 export async function loader({params}: Route.LoaderArgs) {
     const got = getAnimated(params.id);
@@ -63,10 +67,10 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
 
     const [pos, setPos] = useState({x: 0, y: 0});
 
-    const [zoom, setZoom] = useState(2);
+    const [zoom, setZoom] = useState(4);
     const [preview, setPreview] = useState(0);
     const [animate, setAnimate] = useState(false);
-    useAnimate(animate, setAnimate, setPreview);
+    useAnimate(animate, setAnimate, setPreview, state.layers.length);
 
     const [pending, setPending] = useState<null | Pending>(null);
     const patternMap = useMemo(
@@ -75,6 +79,8 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
     );
     const size = 600;
 
+    const [showNice, setShowNice] = useState(true);
+    const [canv, setCanv] = useState(true);
     const [showDialog, setShowDialog] = useState(false);
     const layerDialog = useOnOpen(setShowDialog);
 
@@ -113,7 +119,7 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
     }
 
     const ats = useMemo(
-        () => state.lines.map((line) => lineAt(line.keyframes, preview)),
+        () => state.lines.map((line) => lineAt(line.keyframes, preview, line.fade)),
         [state.lines, preview],
     );
 
@@ -123,8 +129,13 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
         const pts = tilingPoints(pt.shape);
         const ttt = tilingTransforms(pt.shape, pts[2], pts);
         return {
-            full: applyTilingTransformsG(ats.filter(Boolean) as Coord[][], ttt, (line, tx) =>
-                line.map((coord) => applyMatrices(coord, tx)),
+            full: applyTilingTransformsG(
+                ats.filter(Boolean) as {points: Coord[]; alpha: number}[],
+                ttt,
+                (line, tx) => ({
+                    points: line.points.map((coord) => applyMatrices(coord, tx)),
+                    alpha: line.alpha,
+                }),
             ),
             pts,
         };
@@ -146,123 +157,145 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                 </div>
             </div>
             <div className="gap-4 flex items-start p-4">
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    // viewBox="-5 -5 10 10"
-                    // viewBox="-3 -3 6 6"
-                    viewBox={`${-peggedZoom / 2} ${-peggedZoom / 2} ${peggedZoom} ${peggedZoom}`}
-                    // viewBox={`${-1 - peggedMargin} ${-1 - peggedMargin} ${2 + peggedMargin * 2} ${2 + peggedMargin * 2}`}
-                    // viewBox="-1.5 -1.5 3 3"
-                    style={size ? {background: 'black', width: size, height: size} : undefined}
-                    onMouseMove={(evt) => {
-                        const box = evt.currentTarget.getBoundingClientRect();
-                        setPos({
-                            x: ((evt.clientX - box.left) / box.width - 0.5) * 3,
-                            y: ((evt.clientY - box.top) / box.height - 0.5) * 3,
-                        });
-                    }}
-                >
-                    {showGuides && (
-                        <path
-                            d={shapeD(pts, true)}
-                            fill="none"
-                            stroke={'white'}
-                            strokeWidth={0.01 * zoom}
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
+                <div>
+                    {canv ? (
+                        <AnimatedCanvas
+                            showNice={showNice}
+                            patternMap={patternMap}
+                            preview={preview}
+                            zoom={peggedZoom}
+                            size={size}
+                            state={state}
+                            lineWidth={lineWidth}
                         />
+                    ) : (
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            // viewBox="-5 -5 10 10"
+                            // viewBox="-3 -3 6 6"
+                            viewBox={`${-peggedZoom / 2} ${-peggedZoom / 2} ${peggedZoom} ${peggedZoom}`}
+                            // viewBox={`${-1 - peggedMargin} ${-1 - peggedMargin} ${2 + peggedMargin * 2} ${2 + peggedMargin * 2}`}
+                            // viewBox="-1.5 -1.5 3 3"
+                            style={
+                                size ? {background: 'black', width: size, height: size} : undefined
+                            }
+                            onMouseMove={(evt) => {
+                                const box = evt.currentTarget.getBoundingClientRect();
+                                setPos({
+                                    x: ((evt.clientX - box.left) / box.width - 0.5) * 3,
+                                    y: ((evt.clientY - box.top) / box.height - 0.5) * 3,
+                                });
+                            }}
+                        >
+                            {showGuides && (
+                                <path
+                                    d={shapeD(pts, true)}
+                                    fill="none"
+                                    stroke={'white'}
+                                    strokeWidth={0.01 * zoom}
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                />
+                            )}
+                            {full.map((line, i) => (
+                                <path
+                                    key={i}
+                                    d={shapeD(line.points, false)}
+                                    fill="none"
+                                    // opacity={line.alpha}
+                                    stroke={'rgb(205,127,1)'}
+                                    strokeWidth={(lineWidth / 200) * peggedZoom * line.alpha}
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                />
+                            ))}
+                            {showGuides &&
+                                state.layers.map((layer, i) =>
+                                    !layer.visible && i !== preview
+                                        ? null
+                                        : patternMap[layer.pattern].cache.segments.map(
+                                              ({prev, segment}, j) => (
+                                                  <path
+                                                      key={`${i}-${j}`}
+                                                      d={shapeD([prev, segment.to], false)}
+                                                      fill="none"
+                                                      stroke={col(i)}
+                                                      //   opacity={0.5}
+                                                      strokeWidth={0.03}
+                                                      strokeLinecap="round"
+                                                      strokeLinejoin="round"
+                                                  />
+                                              ),
+                                          ),
+                                )}
+                            {showGuides &&
+                                state.guides?.map((guide, i) => (
+                                    <GuideElement
+                                        key={i}
+                                        geom={guide}
+                                        zoom={1}
+                                        stroke={0.01}
+                                        bounds={{x0: -1, y0: -1, x1: 1, y1: 1}}
+                                        original
+                                    />
+                                ))}
+                            {pending?.type === 'line' ? (
+                                <path
+                                    d={shapeD(pending.points, false)}
+                                    fill="none"
+                                    stroke={'white'}
+                                    strokeWidth={0.03}
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                />
+                            ) : null}
+                            {pending?.type === 'Guide' ? (
+                                <RenderPendingGuide
+                                    guide={pending}
+                                    zoom={1}
+                                    bounds={{x0: -1, y0: -1, x1: 1, y1: 1}}
+                                    mirror={null}
+                                    shiftKey={false}
+                                    stroke={0.01}
+                                    pos={pos}
+                                />
+                            ) : null}
+                            {pending
+                                ? Object.entries(visiblePoints).map(([key, coord]) => (
+                                      <circle
+                                          key={key}
+                                          cx={coord.x.toFixed(3)}
+                                          cy={coord.y.toFixed(3)}
+                                          r={0.04}
+                                          className="cursor-pointer"
+                                          fill={pendingPoints[key] ? 'orange' : 'white'}
+                                          opacity={0.7}
+                                          onClick={() =>
+                                              setPending({
+                                                  ...pending,
+                                                  points: [...pending.points, coord],
+                                              })
+                                          }
+                                      />
+                                  ))
+                                : null}
+                            {hover != null
+                                ? ats[hover]?.points.map((coord, i) => (
+                                      <circle
+                                          key={i}
+                                          cx={coord.x.toFixed(3)}
+                                          cy={coord.y.toFixed(3)}
+                                          r={0.07}
+                                          stroke="white"
+                                          strokeWidth={0.01}
+                                          className="cursor-pointer"
+                                          fill={i === 0 ? 'black' : 'red'}
+                                      />
+                                  ))
+                                : null}
+                        </svg>
                     )}
-                    {full.map((line, i) => (
-                        <path
-                            key={i}
-                            d={shapeD(line, false)}
-                            fill="none"
-                            stroke={'rgb(205,127,1)'}
-                            strokeWidth={(lineWidth / 200) * peggedZoom}
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                        />
-                    ))}
-                    {showGuides &&
-                        state.layers.map((layer, i) =>
-                            !layer.visible && i !== preview
-                                ? null
-                                : patternMap[layer.pattern].cache.segments.map(
-                                      ({prev, segment}, j) => (
-                                          <path
-                                              key={`${i}-${j}`}
-                                              d={shapeD([prev, segment.to], false)}
-                                              fill="none"
-                                              stroke={col(i)}
-                                              //   opacity={0.5}
-                                              strokeWidth={0.03}
-                                              strokeLinecap="round"
-                                              strokeLinejoin="round"
-                                          />
-                                      ),
-                                  ),
-                        )}
-                    {showGuides &&
-                        state.guides?.map((guide, i) => (
-                            <GuideElement
-                                key={i}
-                                geom={guide}
-                                zoom={1}
-                                stroke={0.01}
-                                bounds={{x0: -1, y0: -1, x1: 1, y1: 1}}
-                                original
-                            />
-                        ))}
-                    {pending?.type === 'line' ? (
-                        <path
-                            d={shapeD(pending.points, false)}
-                            fill="none"
-                            stroke={'white'}
-                            strokeWidth={0.03}
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                        />
-                    ) : null}
-                    {pending?.type === 'Guide' ? (
-                        <RenderPendingGuide
-                            guide={pending}
-                            zoom={1}
-                            bounds={{x0: -1, y0: -1, x1: 1, y1: 1}}
-                            mirror={null}
-                            shiftKey={false}
-                            stroke={0.01}
-                            pos={pos}
-                        />
-                    ) : null}
-                    {pending
-                        ? Object.entries(visiblePoints).map(([key, coord]) => (
-                              <circle
-                                  key={key}
-                                  cx={coord.x.toFixed(3)}
-                                  cy={coord.y.toFixed(3)}
-                                  r={0.04}
-                                  className="cursor-pointer"
-                                  fill={pendingPoints[key] ? 'orange' : 'white'}
-                                  opacity={0.7}
-                                  onClick={() =>
-                                      setPending({...pending, points: [...pending.points, coord]})
-                                  }
-                              />
-                          ))
-                        : null}
-                    {hover
-                        ? ats[hover]?.map((coord, i) => (
-                              <circle
-                                  key={i}
-                                  cx={coord.x.toFixed(3)}
-                                  cy={coord.y.toFixed(3)}
-                                  r={0.03}
-                                  className="cursor-pointer"
-                                  fill={i === 0 ? 'red' : 'orange'}
-                              />
-                          ))
-                        : null}
-                </svg>
+                </div>
                 <div className="flex flex-col gap-4">
                     <label className="flex gap-4 block">
                         <input
@@ -305,16 +338,34 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                             />
                         </label>
                     </div>
-                    <div className="bg-base-100 p-4 rounded-xl shadow-md shadow-base-300">
-                        <div className="mb-4">
-                            Layers
-                            <button
-                                className="btn btn-square ml-4"
-                                onClick={() => layerDialog.current?.showModal()}
-                            >
-                                <RoundPlus />
-                            </button>
-                        </div>
+                    <details className="bg-base-100 p-4 rounded-xl shadow-md shadow-base-300">
+                        <summary className="mb-4">
+                            <div className="inline-flex">
+                                <div>Layers</div>
+                                <button
+                                    className="btn btn-square ml-4"
+                                    onClick={() => layerDialog.current?.showModal()}
+                                >
+                                    <RoundPlus />
+                                </button>
+                                <button
+                                    className="btn"
+                                    onClick={() => {
+                                        setShowNice(!showNice);
+                                    }}
+                                >
+                                    {showNice ? <IconEye /> : <IconEyeInvisible color={'#555'} />}
+                                </button>
+                                <button
+                                    className="btn"
+                                    onClick={() => {
+                                        setCanv(!canv);
+                                    }}
+                                >
+                                    {canv ? 'Canvas' : 'SVG'}
+                                </button>
+                            </div>
+                        </summary>
                         <table className="table" style={{display: 'inline'}}>
                             <tbody>
                                 {state.layers.map((layer, i) => (
@@ -340,19 +391,44 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                                                 )}
                                             </button>
                                         </th>
-                                        <td>
+                                        <td
+                                            onClick={() => setPreview(i)}
+                                            className="cursor-pointer"
+                                        >
                                             <SimplePreview
                                                 tiling={patternMap[layer.pattern]}
                                                 size={80}
                                                 color={layer.visible ? col(i) : '#555'}
                                             />
-                                            {/* {layer.pattern.slice(0, 10)} */}
+                                        </td>
+                                        <td>
+                                            <button
+                                                className="btn"
+                                                onClick={() => {
+                                                    const layers = state.layers.slice();
+                                                    layers.splice(i, 1);
+                                                    layers.splice(i - 1, 0, layer);
+                                                    setState({...state, layers});
+                                                }}
+                                            >
+                                                up
+                                            </button>
+                                            <button
+                                                className="btn"
+                                                onClick={() => {
+                                                    const layers = state.layers.slice();
+                                                    layers.splice(i, 1);
+                                                    setState({...state, layers});
+                                                }}
+                                            >
+                                                &times;
+                                            </button>
                                         </td>
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
-                    </div>
+                    </details>
                     <div className="bg-base-100 p-4 rounded-xl shadow-md shadow-base-300">
                         <div className="mb-4">
                             Guides
@@ -487,6 +563,7 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                             state={state}
                             setHover={setHover}
                             preview={preview}
+                            setPreview={setPreview}
                             setPending={setPending}
                             setState={setState}
                         />
@@ -514,10 +591,99 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
 }
 
 const calcMargin = (preview: number, line: State['lines'][0]) => {
-    const lat = lineAt(line.keyframes, preview);
-    const log = lineAt(line.keyframes, 0);
+    const lat = lineAt(line.keyframes, preview, line.fade);
+    const log = lineAt(line.keyframes, 0, line.fade);
     if (!lat || !log) return 1;
-    const d1 = dist(lat[0], lat[1]);
-    const d2 = dist(log[0], log[1]);
+    const d1 = dist(lat.points[0], lat.points[1]);
+    const d2 = dist(log.points[0], log.points[1]);
     return d1 / d2;
+};
+
+const AnimatedCanvas = ({
+    patternMap,
+    preview,
+    size,
+    zoom,
+    state,
+    lineWidth,
+    showNice,
+}: {
+    showNice: boolean;
+    lineWidth: number;
+    state: State;
+    size: number;
+    zoom: number;
+    patternMap: Record<string, Tiling>;
+    preview: number;
+}) => {
+    const ats = useMemo(
+        () => state.lines.map((line) => lineAt(line.keyframes, preview, line.fade)),
+        [state.lines, preview],
+    );
+
+    const {full, pts} = useMemo(() => {
+        if (!state.layers.length) return {full: [], pts: []};
+        const pt = patternMap[state.layers[0].pattern];
+        const pts = tilingPoints(pt.shape);
+        const ttt = tilingTransforms(pt.shape, pts[2], pts);
+        return {
+            full: applyTilingTransformsG(
+                ats.filter(Boolean) as {points: Coord[]; alpha: number}[],
+                ttt,
+                (line, tx) => ({
+                    points: line.points.map((coord) => applyMatrices(coord, tx)),
+                    alpha: line.alpha,
+                }),
+            ),
+            pts,
+        };
+    }, [ats, patternMap, state.layers]);
+
+    const ref = useRef<HTMLCanvasElement>(null);
+
+    const patternDatas = useMemo(() => {
+        return state.layers.map((l) => getPatternData(patternMap[l.pattern]));
+    }, [state.layers, patternMap]);
+
+    useEffect(() => {
+        if (!ref.current) return;
+        const surface = pk.MakeWebGLCanvasSurface(ref.current)!;
+        const ctx = surface.getCanvas();
+        ctx.clear(pk.BLACK);
+
+        ctx.scale((size * 2) / zoom, (size * 2) / zoom);
+        ctx.translate(zoom / 2, zoom / 2);
+
+        if (Number.isInteger(preview) && showNice) {
+            drawWoven(ctx, patternDatas[preview], (lineWidth / 200) * zoom);
+        } else {
+            full.forEach((line) => {
+                if (closeEnough(line.alpha, 0)) return;
+                const path = pk.Path.MakeFromCmds([
+                    pk.MOVE_VERB,
+                    line.points[0].x,
+                    line.points[0].y,
+                    ...line.points.slice(1).flatMap(({x, y}) => [pk.LINE_VERB, x, y]),
+                ])!;
+                const paint = new pk.Paint();
+                paint.setStyle(pk.PaintStyle.Stroke);
+                // paint.setAlphaf(line.alpha);
+                // paint.setAntiAlias(true);
+                // paint.setStrokeWidth((lineWidth / 200) * zoom * 1.5);
+                // paint.setColor([0, 0, 0]);
+                // ctx.drawPath(path, paint);
+                paint.setStrokeJoin(pk.StrokeJoin.Round);
+                paint.setStrokeCap(pk.StrokeCap.Round);
+                paint.setStrokeWidth((lineWidth / 200) * zoom * line.alpha);
+                // paint.setColor([1, 1, 1]);
+                paint.setColor([205 / 255, 127 / 255, 1 / 255]);
+                ctx.drawPath(path, paint);
+            });
+        }
+
+        surface.flush();
+    }, [patternMap, preview, size, zoom, lineWidth, patternDatas, full, showNice]);
+    return (
+        <canvas ref={ref} width={size * 2} height={size * 2} style={{width: size, height: size}} />
+    );
 };

@@ -3,6 +3,8 @@
 
 # Animator....
 
+- [ ] sooo have the ability to "fade out" a line that's going to be deleted. I think that'll be ~nicer than having it withdraw from one side.
+
 Line -> Line animation.
 
 Animator, lookin fresh.
