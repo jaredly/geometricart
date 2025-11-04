@@ -688,6 +688,8 @@ const AnimatedCanvas = ({
                 paint.setStrokeWidth((lineWidth / 200) * zoom * line.alpha);
                 // paint.setColor([1, 1, 1]);
                 paint.setColor([205 / 255, 127 / 255, 1 / 255]);
+                paint.setAntiAlias(true);
+                paint.setAlphaf(line.alpha);
                 ctx.drawPath(path, paint);
             });
         }

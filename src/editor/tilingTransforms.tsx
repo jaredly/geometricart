@@ -20,7 +20,10 @@ function replicateStandard(tx: number, ty: number): Matrix[][][] {
             duplicates.push([0, -y], [0, y]);
         }
         for (let x = 1; x <= w; x++) {
-            duplicates.push([-tx * 2 * x, -y], [tx * 2 * x, -y], [-tx * 2 * x, y], [tx * 2 * x, y]);
+            duplicates.push([-tx * 2 * x, y], [tx * 2 * x, y]);
+            if (y != 0) {
+                duplicates.push([-tx * 2 * x, -y], [tx * 2 * x, -y]);
+            }
         }
     }
     return [
