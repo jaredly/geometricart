@@ -279,20 +279,28 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                                       />
                                   ))
                                 : null}
-                            {hover != null
-                                ? ats[hover]?.points.map((coord, i) => (
-                                      <circle
-                                          key={i}
-                                          cx={coord.x.toFixed(3)}
-                                          cy={coord.y.toFixed(3)}
-                                          r={0.07}
-                                          stroke="white"
-                                          strokeWidth={0.01}
-                                          className="cursor-pointer"
-                                          fill={i === 0 ? 'black' : 'red'}
-                                      />
-                                  ))
-                                : null}
+                            {hover != null && ats[hover] ? (
+                                <>
+                                    <path
+                                        d={shapeD(ats[hover].points, false)}
+                                        stroke="white"
+                                        strokeWidth={0.04}
+                                        fill="none"
+                                    />
+                                    {ats[hover]?.points.map((coord, i) => (
+                                        <circle
+                                            key={i}
+                                            cx={coord.x.toFixed(3)}
+                                            cy={coord.y.toFixed(3)}
+                                            r={0.04}
+                                            stroke="white"
+                                            strokeWidth={0.01}
+                                            className="cursor-pointer"
+                                            fill={i === 0 ? 'black' : 'red'}
+                                        />
+                                    ))}
+                                </>
+                            ) : null}
                         </svg>
                     )}
                 </div>
@@ -424,6 +432,7 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                                                 &times;
                                             </button>
                                         </td>
+                                        <td>{JSON.stringify(patternMap[layer.pattern].shape)}</td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -559,14 +568,16 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                                 {peg ? 'Unpeg' : 'Peg'}
                             </button>
                         </div>
-                        <LinesTable
-                            state={state}
-                            setHover={setHover}
-                            preview={preview}
-                            setPreview={setPreview}
-                            setPending={setPending}
-                            setState={setState}
-                        />
+                        <div className="max-h-80 overflow-auto">
+                            <LinesTable
+                                state={state}
+                                setHover={setHover}
+                                preview={preview}
+                                setPreview={setPreview}
+                                setPending={setPending}
+                                setState={setState}
+                            />
+                        </div>
                     </div>
                 </div>
             </div>

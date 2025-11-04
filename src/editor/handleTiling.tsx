@@ -125,10 +125,6 @@ export function hashData(kk: string) {
     const data = encoder.encode(kk);
     const hash = blake3(data);
     return bytesToHex(hash);
-    // const hashBuffer = await window.crypto.subtle.digest('SHA-1', data);
-    // const hashArray = Array.from(new Uint8Array(hashBuffer)); // convert buffer to byte array
-    // const hashHex = hashArray.map((b) => b.toString(16).padStart(2, '0')).join(''); // convert bytes to hex string
-    // return hashHex;
 }
 
 export function handleTiling(data: Tiling) {

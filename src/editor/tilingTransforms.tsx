@@ -11,25 +11,16 @@ import {
 import {angleBetween} from '../rendering/isAngleBetween';
 
 function replicateStandard(tx: number, ty: number): Matrix[][][] {
-    const duplicates = [
-        // [-tx * 2, 0],
-        // [tx * 2, 0],
-    ];
+    const duplicates = [];
+    const count = closeEnough(Math.abs(tx), Math.abs(ty)) ? 5 : Math.abs(tx / ty) + 3;
     const w = 4;
-    // console.log(`Replicate`, tx, ty);
-    for (let i = 0; i < Math.min(10, Math.abs(tx / ty) + 3); i++) {
+    for (let i = 0; i < Math.min(10, count); i++) {
         const y = ty * (i * 2);
         if (i > 0) {
             duplicates.push([0, -y], [0, y]);
         }
         for (let x = 1; x <= w; x++) {
-            duplicates.push(
-                [-tx * 2 * x, -y],
-                [tx * 2 * x, -y],
-
-                [-tx * 2 * x, y],
-                [tx * 2 * x, y],
-            );
+            duplicates.push([-tx * 2 * x, -y], [tx * 2 * x, -y], [-tx * 2 * x, y], [tx * 2 * x, y]);
         }
     }
     return [
