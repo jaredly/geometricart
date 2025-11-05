@@ -1,10 +1,10 @@
-import {useEffect, useMemo, useRef, useState} from 'react';
+import {SetStateAction, useEffect, useMemo, useRef, useState} from 'react';
 import {applyTilingTransformsG, tilingPoints} from '../../editor/tilingPoints';
 import {getShapeSize, getTilingTransforms, tilingTransforms} from '../../editor/tilingTransforms';
 import {AddIcon, IconEye, IconEyeInvisible, RoundPlus} from '../../icons/Icon';
 import {coordKey} from '../../rendering/coordKey';
 import {applyMatrices, dist} from '../../rendering/getMirrorTransforms';
-import {Coord, GuideGeomTypes, Tiling} from '../../types';
+import {Coord, GuideGeom, GuideGeomTypes, Tiling} from '../../types';
 import {getAllPatterns, getAnimated, saveAnimated} from '../db.server';
 import {shapeD} from '../shapeD';
 import {useOnOpen} from '../useOnOpen';
@@ -28,6 +28,7 @@ import {pk} from '../pk';
 import {getPatternData} from '../getPatternData';
 import {drawWoven} from '../canvasDraw';
 import {closeEnough} from '../../rendering/epsilonToZero';
+import {Canvas, Image} from 'canvaskit-wasm';
 
 export async function loader({params}: Route.LoaderArgs) {
     const got = getAnimated(params.id);
@@ -85,64 +86,8 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
     const [showDialog, setShowDialog] = useState(false);
     const layerDialog = useOnOpen(setShowDialog);
 
-    const visiblePoints: Record<string, Coord> = {};
-    const add = (c: Coord) => {
-        const k = coordKey(c);
-        if (!visiblePoints[k]) visiblePoints[k] = c;
-    };
-    const primitives = state.guides?.flatMap((g) => geomToPrimitives(g)) ?? [];
-    primitives.forEach((prim, i) => {
-        for (let j = i + 1; j < primitives.length; j++) {
-            intersections(prim, primitives[j]).forEach((c) => add(c));
-        }
-    });
-    state.layers.forEach((layer, i) => {
-        if (!layer.visible && i !== preview) return;
-        patternMap[layer.pattern].cache.segments.forEach(({prev, segment}) => {
-            add(prev);
-            add(segment.to);
-        });
-        const pattern = patternMap[layer.pattern];
-        const pts = tilingPoints(pattern.shape);
-        pts.forEach((p) => add(p));
-        const boundLines = pts.map((p, i) => lineToSlope(p, pts[i === 0 ? pts.length - 1 : i - 1]));
-
-        boundLines.forEach((seg) => {
-            primitives.forEach((prim) => {
-                intersections(seg, prim).forEach((c) => add(c));
-            });
-        });
-    });
-
-    const pendingPoints: Record<string, true> = {};
-    if (pending) {
-        pending.points.forEach((coord) => (pendingPoints[coordKey(coord)] = true));
-    }
-
-    const ats = useMemo(
-        () => state.lines.map((line) => lineAt(line.keyframes, preview, line.fade)),
-        [state.lines, preview],
-    );
-
-    const {full, pts} = useMemo(() => {
-        if (!state.layers.length) return {full: [], pts: []};
-        const pt = patternMap[state.layers[0].pattern];
-        const pts = tilingPoints(pt.shape);
-        const ttt = getTilingTransforms(pt.shape, pts);
-        return {
-            full: applyTilingTransformsG(
-                ats.filter(Boolean) as {points: Coord[]; alpha: number}[],
-                ttt,
-                (line, tx) => ({
-                    points: line.points.map((coord) => applyMatrices(coord, tx)),
-                    alpha: line.alpha,
-                }),
-            ),
-            pts,
-        };
-    }, [ats, patternMap, state.layers]);
-
     const peggedZoom = (peg ? calcMargin(preview, state.lines[0]) : 1) * zoom;
+    const cache = useMemo(() => ({}), [showNice]);
     // const peggedMargin =
 
     return (
@@ -161,6 +106,7 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                 <div>
                     {canv ? (
                         <AnimatedCanvas
+                            cache={cache}
                             repl={repl}
                             showNice={showNice}
                             patternMap={patternMap}
@@ -171,139 +117,21 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                             lineWidth={lineWidth}
                         />
                     ) : (
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            // viewBox="-5 -5 10 10"
-                            // viewBox="-3 -3 6 6"
-                            viewBox={`${-peggedZoom / 2} ${-peggedZoom / 2} ${peggedZoom} ${peggedZoom}`}
-                            // viewBox={`${-1 - peggedMargin} ${-1 - peggedMargin} ${2 + peggedMargin * 2} ${2 + peggedMargin * 2}`}
-                            // viewBox="-1.5 -1.5 3 3"
-                            style={
-                                size ? {background: 'black', width: size, height: size} : undefined
-                            }
-                            onMouseMove={(evt) => {
-                                const box = evt.currentTarget.getBoundingClientRect();
-                                setPos({
-                                    x: ((evt.clientX - box.left) / box.width - 0.5) * 3,
-                                    y: ((evt.clientY - box.top) / box.height - 0.5) * 3,
-                                });
-                            }}
-                        >
-                            {showGuides && (
-                                <path
-                                    d={shapeD(pts, true)}
-                                    fill="none"
-                                    stroke={'white'}
-                                    strokeWidth={0.01 * zoom}
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                />
-                            )}
-                            {full.map((line, i) => (
-                                <path
-                                    key={i}
-                                    d={shapeD(line.points, false)}
-                                    fill="none"
-                                    // opacity={line.alpha}
-                                    stroke={'rgb(205,127,1)'}
-                                    strokeWidth={(lineWidth / 200) * peggedZoom * line.alpha}
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                />
-                            ))}
-                            {showGuides &&
-                                state.layers.map((layer, i) =>
-                                    !layer.visible && i !== preview
-                                        ? null
-                                        : patternMap[layer.pattern].cache.segments.map(
-                                              ({prev, segment}, j) => (
-                                                  <path
-                                                      key={`${i}-${j}`}
-                                                      d={shapeD([prev, segment.to], false)}
-                                                      fill="none"
-                                                      stroke={col(i)}
-                                                      //   opacity={0.5}
-                                                      strokeWidth={0.03}
-                                                      strokeLinecap="round"
-                                                      strokeLinejoin="round"
-                                                  />
-                                              ),
-                                          ),
-                                )}
-                            {showGuides &&
-                                state.guides?.map((guide, i) => (
-                                    <GuideElement
-                                        key={i}
-                                        geom={guide}
-                                        zoom={1}
-                                        stroke={0.01}
-                                        bounds={{x0: -1, y0: -1, x1: 1, y1: 1}}
-                                        original
-                                    />
-                                ))}
-                            {pending?.type === 'line' ? (
-                                <path
-                                    d={shapeD(pending.points, false)}
-                                    fill="none"
-                                    stroke={'white'}
-                                    strokeWidth={0.03}
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                />
-                            ) : null}
-                            {pending?.type === 'Guide' ? (
-                                <RenderPendingGuide
-                                    guide={pending}
-                                    zoom={1}
-                                    bounds={{x0: -1, y0: -1, x1: 1, y1: 1}}
-                                    mirror={null}
-                                    shiftKey={false}
-                                    stroke={0.01}
-                                    pos={pos}
-                                />
-                            ) : null}
-                            {pending
-                                ? Object.entries(visiblePoints).map(([key, coord]) => (
-                                      <circle
-                                          key={key}
-                                          cx={coord.x.toFixed(3)}
-                                          cy={coord.y.toFixed(3)}
-                                          r={0.04}
-                                          className="cursor-pointer"
-                                          fill={pendingPoints[key] ? 'orange' : 'white'}
-                                          opacity={0.7}
-                                          onClick={() =>
-                                              setPending({
-                                                  ...pending,
-                                                  points: [...pending.points, coord],
-                                              })
-                                          }
-                                      />
-                                  ))
-                                : null}
-                            {hover != null && ats[hover] ? (
-                                <>
-                                    <path
-                                        d={shapeD(ats[hover].points, false)}
-                                        stroke="white"
-                                        strokeWidth={0.04}
-                                        fill="none"
-                                    />
-                                    {ats[hover]?.points.map((coord, i) => (
-                                        <circle
-                                            key={i}
-                                            cx={coord.x.toFixed(3)}
-                                            cy={coord.y.toFixed(3)}
-                                            r={0.04}
-                                            stroke="white"
-                                            strokeWidth={0.01}
-                                            className="cursor-pointer"
-                                            fill={i === 0 ? 'black' : 'red'}
-                                        />
-                                    ))}
-                                </>
-                            ) : null}
-                        </svg>
+                        <SvgCanvas
+                            peggedZoom={peggedZoom}
+                            size={size}
+                            setPos={setPos}
+                            showGuides={showGuides}
+                            zoom={zoom}
+                            lineWidth={lineWidth}
+                            state={state}
+                            preview={preview}
+                            patternMap={patternMap}
+                            pending={pending}
+                            pos={pos}
+                            setPending={setPending}
+                            hover={hover}
+                        />
                     )}
                 </div>
                 <div className="flex flex-col gap-4">
@@ -637,6 +465,7 @@ const AnimatedCanvas = ({
     lineWidth,
     showNice,
     repl,
+    cache,
 }: {
     repl: number;
     showNice: boolean;
@@ -646,29 +475,12 @@ const AnimatedCanvas = ({
     zoom: number;
     patternMap: Record<string, Tiling>;
     preview: number;
+    cache: Record<string, Uint8Array>;
 }) => {
-    const ats = useMemo(
-        () => state.lines.map((line) => lineAt(line.keyframes, preview, line.fade)),
-        [state.lines, preview],
-    );
-
-    const {full, pts} = useMemo(() => {
-        if (!state.layers.length) return {full: [], pts: []};
-        const pt = patternMap[state.layers[0].pattern];
-        const pts = tilingPoints(pt.shape);
-        const ttt = getTilingTransforms(pt.shape, pts, repl);
-        return {
-            full: applyTilingTransformsG(
-                ats.filter(Boolean) as {points: Coord[]; alpha: number}[],
-                ttt,
-                (line, tx) => ({
-                    points: line.points.map((coord) => applyMatrices(coord, tx)),
-                    alpha: line.alpha,
-                }),
-            ),
-            pts,
-        };
-    }, [ats, patternMap, state.layers, repl]);
+    // const full = useMemo(
+    //     () => calcFull(state, preview, repl, patternMap),
+    //     [state, preview, patternMap, repl],
+    // );
 
     const ref = useRef<HTMLCanvasElement>(null);
 
@@ -680,6 +492,19 @@ const AnimatedCanvas = ({
         if (!ref.current) return;
         const surface = pk.MakeWebGLCanvasSurface(ref.current)!;
         const ctx = surface.getCanvas();
+
+        if (cache[preview]) {
+            // const image = new Image();
+            // image.src = cache[preview];
+            // ctx2?.drawImage(image, 0, 0);
+
+            ctx.writePixels(cache[preview], surface.width(), surface.height(), 0, 0);
+
+            // ctx.drawImage(cache[preview], 0, 0);
+            surface.flush();
+            return;
+        }
+
         ctx.clear(pk.BLACK);
 
         ctx.scale((size * 2) / zoom, (size * 2) / zoom);
@@ -688,35 +513,315 @@ const AnimatedCanvas = ({
         if (Number.isInteger(preview) && showNice) {
             drawWoven(ctx, patternDatas[preview], (lineWidth / 200) * zoom);
         } else {
-            full.forEach((line) => {
-                if (closeEnough(line.alpha, 0)) return;
-                const path = pk.Path.MakeFromCmds([
-                    pk.MOVE_VERB,
-                    line.points[0].x,
-                    line.points[0].y,
-                    ...line.points.slice(1).flatMap(({x, y}) => [pk.LINE_VERB, x, y]),
-                ])!;
-                const paint = new pk.Paint();
-                paint.setStyle(pk.PaintStyle.Stroke);
-                // paint.setAlphaf(line.alpha);
-                // paint.setAntiAlias(true);
-                // paint.setStrokeWidth((lineWidth / 200) * zoom * 1.5);
-                // paint.setColor([0, 0, 0]);
-                // ctx.drawPath(path, paint);
-                paint.setStrokeJoin(pk.StrokeJoin.Round);
-                paint.setStrokeCap(pk.StrokeCap.Round);
-                paint.setStrokeWidth((lineWidth / 200) * zoom * line.alpha);
-                // paint.setColor([1, 1, 1]);
-                paint.setColor([205 / 255, 127 / 255, 1 / 255]);
-                paint.setAntiAlias(true);
-                paint.setAlphaf(line.alpha);
-                ctx.drawPath(path, paint);
-            });
+            for (let i = 0; i < 5; i++) {
+                let p = preview < 0.8 ? (preview / 5) * i : preview - 0.8 + i * 0.2;
+                if (p < 0) continue;
+                const full = calcFull(state, p, repl, patternMap);
+                const alph = i / 4;
+                drawFull(full, lineWidth, zoom, ctx, [205 / 255, 127 / 255, 1 / 255, alph]);
+            }
+            // drawFull(full, lineWidth, zoom, ctx, [205 / 255, 127 / 255, 1 / 255, 0.5]);
         }
 
         surface.flush();
-    }, [patternMap, preview, size, zoom, lineWidth, patternDatas, full, showNice]);
+        cache[preview] = ctx.readPixels(0, 0, {
+            width: surface.width(),
+            height: surface.height(),
+            alphaType: pk.AlphaType.Unpremul,
+            colorSpace: pk.ColorSpace.SRGB,
+            colorType: pk.ColorType.RGBA_8888,
+        }) as Uint8Array;
+    }, [preview, size, zoom, lineWidth, patternDatas, showNice, cache, patternMap, repl, state]);
     return (
         <canvas ref={ref} width={size * 2} height={size * 2} style={{width: size, height: size}} />
+    );
+};
+
+function SvgCanvas({
+    peggedZoom,
+    size,
+    setPos,
+    showGuides,
+    zoom,
+    lineWidth,
+    state,
+    preview,
+    patternMap,
+    pending,
+    pos,
+    // visiblePoints,
+    // pendingPoints,
+    setPending,
+    hover,
+    // ats,
+}: {
+    peggedZoom: number;
+    size: number;
+    setPos: {
+        (value: SetStateAction<{x: number; y: number}>): void;
+        (arg0: {x: number; y: number}): void;
+    };
+    showGuides: boolean;
+    zoom: number;
+    lineWidth: number;
+    state: State;
+    preview: number;
+    patternMap: {[k: string]: Tiling};
+    pending: Pending | null;
+    pos: {x: number; y: number};
+    // visiblePoints: Record<string, Coord>;
+    // pendingPoints: Record<string, true>;
+    setPending: {
+        (value: SetStateAction<Pending | null>): void;
+        (
+            arg0:
+                | {points: Coord[]; type: 'line'; idx?: number}
+                | {
+                      points: Coord[];
+                      type: 'Guide';
+                      kind: GuideGeom['type'];
+                      extent?: number;
+                      toggle: boolean;
+                      angle?: number;
+                  },
+        ): void;
+    };
+    hover: number | null;
+    // ats: ({points: Coord[]; alpha: number} | undefined)[];
+}) {
+    const visiblePoints: Record<string, Coord> = {};
+    const add = (c: Coord) => {
+        const k = coordKey(c);
+        if (!visiblePoints[k]) visiblePoints[k] = c;
+    };
+    const primitives = state.guides?.flatMap((g) => geomToPrimitives(g)) ?? [];
+    primitives.forEach((prim, i) => {
+        for (let j = i + 1; j < primitives.length; j++) {
+            intersections(prim, primitives[j]).forEach((c) => add(c));
+        }
+    });
+    state.layers.forEach((layer, i) => {
+        if (!layer.visible && i !== preview) return;
+        patternMap[layer.pattern].cache.segments.forEach(({prev, segment}) => {
+            add(prev);
+            add(segment.to);
+        });
+        const pattern = patternMap[layer.pattern];
+        const pts = tilingPoints(pattern.shape);
+        pts.forEach((p) => add(p));
+        const boundLines = pts.map((p, i) => lineToSlope(p, pts[i === 0 ? pts.length - 1 : i - 1]));
+
+        boundLines.forEach((seg) => {
+            primitives.forEach((prim) => {
+                intersections(seg, prim).forEach((c) => add(c));
+            });
+        });
+    });
+
+    const pendingPoints: Record<string, true> = {};
+    if (pending) {
+        pending.points.forEach((coord) => (pendingPoints[coordKey(coord)] = true));
+    }
+
+    const ats = useMemo(
+        () => state.lines.map((line) => lineAt(line.keyframes, preview, line.fade)),
+        [state.lines, preview],
+    );
+
+    const {full, pts} = useMemo(() => {
+        if (!state.layers.length) return {full: [], pts: []};
+        const pt = patternMap[state.layers[0].pattern];
+        const pts = tilingPoints(pt.shape);
+        const ttt = getTilingTransforms(pt.shape, pts);
+        return {
+            full: applyTilingTransformsG(
+                ats.filter(Boolean) as {points: Coord[]; alpha: number}[],
+                ttt,
+                (line, tx) => ({
+                    points: line.points.map((coord) => applyMatrices(coord, tx)),
+                    alpha: line.alpha,
+                }),
+            ),
+            pts,
+        };
+    }, [ats, patternMap, state.layers]);
+
+    return (
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            // viewBox="-5 -5 10 10"
+            // viewBox="-3 -3 6 6"
+            viewBox={`${-peggedZoom / 2} ${-peggedZoom / 2} ${peggedZoom} ${peggedZoom}`}
+            // viewBox={`${-1 - peggedMargin} ${-1 - peggedMargin} ${2 + peggedMargin * 2} ${2 + peggedMargin * 2}`}
+            // viewBox="-1.5 -1.5 3 3"
+            style={size ? {background: 'black', width: size, height: size} : undefined}
+            onMouseMove={(evt) => {
+                const box = evt.currentTarget.getBoundingClientRect();
+                setPos({
+                    x: ((evt.clientX - box.left) / box.width - 0.5) * 3,
+                    y: ((evt.clientY - box.top) / box.height - 0.5) * 3,
+                });
+            }}
+        >
+            {showGuides && (
+                <path
+                    d={shapeD(pts, true)}
+                    fill="none"
+                    stroke={'white'}
+                    strokeWidth={0.01 * zoom}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                />
+            )}
+            {full.map((line, i) => (
+                <path
+                    key={i}
+                    d={shapeD(line.points, false)}
+                    fill="none"
+                    // opacity={line.alpha}
+                    stroke={'rgb(205,127,1)'}
+                    strokeWidth={(lineWidth / 200) * peggedZoom * line.alpha}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                />
+            ))}
+            {showGuides &&
+                state.layers.map((layer, i) =>
+                    !layer.visible && i !== preview
+                        ? null
+                        : patternMap[layer.pattern].cache.segments.map(({prev, segment}, j) => (
+                              <path
+                                  key={`${i}-${j}`}
+                                  d={shapeD([prev, segment.to], false)}
+                                  fill="none"
+                                  stroke={col(i)}
+                                  //   opacity={0.5}
+                                  strokeWidth={0.03}
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                              />
+                          )),
+                )}
+            {showGuides &&
+                state.guides?.map((guide, i) => (
+                    <GuideElement
+                        key={i}
+                        geom={guide}
+                        zoom={1}
+                        stroke={0.01}
+                        bounds={{x0: -1, y0: -1, x1: 1, y1: 1}}
+                        original
+                    />
+                ))}
+            {pending?.type === 'line' ? (
+                <path
+                    d={shapeD(pending.points, false)}
+                    fill="none"
+                    stroke={'white'}
+                    strokeWidth={0.03}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                />
+            ) : null}
+            {pending?.type === 'Guide' ? (
+                <RenderPendingGuide
+                    guide={pending}
+                    zoom={1}
+                    bounds={{x0: -1, y0: -1, x1: 1, y1: 1}}
+                    mirror={null}
+                    shiftKey={false}
+                    stroke={0.01}
+                    pos={pos}
+                />
+            ) : null}
+            {pending
+                ? Object.entries(visiblePoints).map(([key, coord]) => (
+                      <circle
+                          key={key}
+                          cx={coord.x.toFixed(3)}
+                          cy={coord.y.toFixed(3)}
+                          r={0.04}
+                          className="cursor-pointer"
+                          fill={pendingPoints[key] ? 'orange' : 'white'}
+                          opacity={0.7}
+                          onClick={() =>
+                              setPending({
+                                  ...pending,
+                                  points: [...pending.points, coord],
+                              })
+                          }
+                      />
+                  ))
+                : null}
+            {hover != null && ats[hover] ? (
+                <>
+                    <path
+                        d={shapeD(ats[hover].points, false)}
+                        stroke="white"
+                        strokeWidth={0.04}
+                        fill="none"
+                    />
+                    {ats[hover]?.points.map((coord, i) => (
+                        <circle
+                            key={i}
+                            cx={coord.x.toFixed(3)}
+                            cy={coord.y.toFixed(3)}
+                            r={0.04}
+                            stroke="white"
+                            strokeWidth={0.01}
+                            className="cursor-pointer"
+                            fill={i === 0 ? 'black' : 'red'}
+                        />
+                    ))}
+                </>
+            ) : null}
+        </svg>
+    );
+}
+
+function drawFull(
+    full: {points: Coord[]; alpha: number}[],
+    lineWidth: number,
+    zoom: number,
+    ctx: Canvas,
+    color: number[],
+) {
+    full.forEach((line) => {
+        if (closeEnough(line.alpha, 0)) return;
+        const path = pk.Path.MakeFromCmds([
+            pk.MOVE_VERB,
+            line.points[0].x,
+            line.points[0].y,
+            ...line.points.slice(1).flatMap(({x, y}) => [pk.LINE_VERB, x, y]),
+        ])!;
+        const paint = new pk.Paint();
+        paint.setStyle(pk.PaintStyle.Stroke);
+        paint.setStrokeJoin(pk.StrokeJoin.Round);
+        paint.setStrokeCap(pk.StrokeCap.Round);
+        paint.setStrokeWidth((lineWidth / 200) * zoom * line.alpha);
+        paint.setColor(color);
+        paint.setAntiAlias(true);
+        paint.setAlphaf(line.alpha * (color.length === 4 ? color[3] : 1));
+        ctx.drawPath(path, paint);
+    });
+}
+
+const calcFull = (
+    state: State,
+    preview: number,
+    repl: number,
+    patternMap: Record<string, Tiling>,
+) => {
+    if (!state.layers.length) return [];
+    const ats = state.lines.map((line) => lineAt(line.keyframes, preview, line.fade));
+    const pt = patternMap[state.layers[0].pattern];
+    const ttt = getTilingTransforms(pt.shape, undefined, repl);
+    return applyTilingTransformsG(
+        ats.filter(Boolean) as {points: Coord[]; alpha: number}[],
+        ttt,
+        (line, tx) => ({
+            points: line.points.map((coord) => applyMatrices(coord, tx)),
+            alpha: line.alpha,
+        }),
     );
 };
