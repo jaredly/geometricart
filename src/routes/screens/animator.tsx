@@ -29,6 +29,7 @@ import {getPatternData} from '../getPatternData';
 import {drawWoven} from '../canvasDraw';
 import {closeEnough} from '../../rendering/epsilonToZero';
 import {Canvas, Image} from 'canvaskit-wasm';
+import {generateVideo} from './animator.screen/muxer';
 
 export async function loader({params}: Route.LoaderArgs) {
     const got = getAnimated(params.id);
@@ -488,23 +489,57 @@ const AnimatedCanvas = ({
         return state.layers.map((l) => getPatternData(patternMap[l.pattern], false, repl));
     }, [state.layers, patternMap, repl]);
 
+    const recordVideo = () => {
+        const step = 0.02;
+        const totalFrames = (state.layers.length - 1) / step + 1;
+        generateVideo(ref.current!, 24, totalFrames, (_, percent) => {
+            const surface = pk.MakeWebGLCanvasSurface(ref.current!)!;
+            const ctx = surface.getCanvas();
+            ctx.clear(pk.BLACK);
+
+            const max = state.layers.length - 1;
+            const preview = percent * max * 2;
+
+            ctx.scale((size * 2) / zoom, (size * 2) / zoom);
+            ctx.translate(zoom / 2, zoom / 2);
+
+            for (let i = -0.5; i <= 0; i += 0.1) {
+                let p = preview + i;
+                if (p > max) p = max + (max - p);
+                if (p < 0) continue;
+                const full = calcFull(state, p, repl, patternMap);
+                const alph = ((i + 0.5) / 0.5) * 0.8 + 0.2;
+                drawFull(full, lineWidth, zoom, ctx, [205 / 255, 127 / 255, 1 / 255, alph]);
+            }
+
+            // for (let i = 0; i < 5; i++) {
+            //     let p = preview < 0.8 ? (preview / 5) * i : preview - 0.8 + i * 0.2;
+            //     if (p < 0) continue;
+            //     const full = calcFull(state, p, repl, patternMap);
+            //     const alph = i / 4;
+            //     drawFull(full, lineWidth, zoom, ctx, [205 / 255, 127 / 255, 1 / 255, alph]);
+            // }
+            // const full = calcFull(state, preview, repl, patternMap);
+            // drawFull(full, lineWidth, zoom, ctx, [205 / 255, 127 / 255, 1 / 255]);
+
+            surface.flush();
+        }).then((blob) => {
+            if (!blob) {
+                console.warn('failed I guess');
+                return;
+            }
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.download = 'video.mp4';
+            a.href = url;
+            a.click();
+        });
+    };
+
     useEffect(() => {
         if (!ref.current) return;
         const surface = pk.MakeWebGLCanvasSurface(ref.current)!;
         const ctx = surface.getCanvas();
-
-        if (cache[preview]) {
-            // const image = new Image();
-            // image.src = cache[preview];
-            // ctx2?.drawImage(image, 0, 0);
-
-            ctx.writePixels(cache[preview], surface.width(), surface.height(), 0, 0);
-
-            // ctx.drawImage(cache[preview], 0, 0);
-            surface.flush();
-            return;
-        }
-
         ctx.clear(pk.BLACK);
 
         ctx.scale((size * 2) / zoom, (size * 2) / zoom);
@@ -524,16 +559,20 @@ const AnimatedCanvas = ({
         }
 
         surface.flush();
-        cache[preview] = ctx.readPixels(0, 0, {
-            width: surface.width(),
-            height: surface.height(),
-            alphaType: pk.AlphaType.Unpremul,
-            colorSpace: pk.ColorSpace.SRGB,
-            colorType: pk.ColorType.RGBA_8888,
-        }) as Uint8Array;
     }, [preview, size, zoom, lineWidth, patternDatas, showNice, cache, patternMap, repl, state]);
+
     return (
-        <canvas ref={ref} width={size * 2} height={size * 2} style={{width: size, height: size}} />
+        <div>
+            <canvas
+                ref={ref}
+                width={size * 2}
+                height={size * 2}
+                style={{width: size, height: size}}
+            />
+            <button className="btn" onClick={() => recordVideo()}>
+                Record Video
+            </button>
+        </div>
     );
 };
 

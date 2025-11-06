@@ -12,9 +12,9 @@ export const generateVideo = async (
     renderCanvas: HTMLCanvasElement,
     frameRate: number,
     totalFrames: number,
-    updateScene: (t: number) => void,
+    updateScene: (t: number, frame: number) => void,
 ) => {
-    let progressInterval = -1;
+    // let progressInterval = -1;
     let output: Output<Mp4OutputFormat, BufferTarget> | null = null;
 
     try {
@@ -100,7 +100,7 @@ export const generateVideo = async (
             const currentTime = currentFrame / frameRate;
 
             // Update the scene
-            updateScene(currentTime);
+            updateScene(currentTime, currentFrame / (totalFrames - 1));
 
             // Add the current state of the canvas as a frame to the video. Using `await` here is crucial to
             // automatically slow down the rendering loop when the encoder can't keep up.
@@ -118,7 +118,7 @@ export const generateVideo = async (
         // 	audioBufferSource.close();
         // }
 
-        clearInterval(progressInterval);
+        // clearInterval(progressInterval);
 
         // // Finalize the file
         // progressText.textContent = 'Finalizing file...';
@@ -146,7 +146,7 @@ export const generateVideo = async (
 
         await output?.cancel();
 
-        clearInterval(progressInterval);
+        // clearInterval(progressInterval);
         // errorElement.textContent = String(error);
         // progressBarContainer.style.display = 'none';
         // progressText.style.display = 'none';
