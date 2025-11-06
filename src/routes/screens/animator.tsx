@@ -1,35 +1,17 @@
-import {SetStateAction, useEffect, useMemo, useRef, useState} from 'react';
-import {applyTilingTransformsG, tilingPoints} from '../../editor/tilingPoints';
-import {getShapeSize, getTilingTransforms, tilingTransforms} from '../../editor/tilingTransforms';
-import {AddIcon, IconEye, IconEyeInvisible, RoundPlus} from '../../icons/Icon';
-import {coordKey} from '../../rendering/coordKey';
-import {applyMatrices, dist} from '../../rendering/getMirrorTransforms';
-import {Coord, GuideGeom, GuideGeomTypes, Tiling} from '../../types';
+import {useMemo, useState} from 'react';
+import {pendingGuide} from '../../editor/RenderPendingGuide';
+import {IconEye, IconEyeInvisible, RoundPlus} from '../../icons/Icon';
+import {GuideGeomTypes} from '../../types';
 import {getAllPatterns, getAnimated, saveAnimated} from '../db.server';
-import {shapeD} from '../shapeD';
 import {useOnOpen} from '../useOnOpen';
 import type {Route} from './+types/animator';
+import {AnimatedCanvas, calcMargin} from './AnimatedCanvas';
+import {SvgCanvas} from './SvgCanvas';
 import {LayerDialog} from './animator.screen/LayerDialog';
 import {LinesTable} from './animator.screen/LinesTable';
 import {SaveLinesButton} from './animator.screen/SaveLinesButton';
 import {SimplePreview} from './animator.screen/SimplePreview';
-import {
-    lineAt,
-    Pending,
-    useAnimate,
-    useFetchBounceState,
-    State,
-} from './animator.screen/animator.utils';
-import {pendingGuide, RenderPendingGuide} from '../../editor/RenderPendingGuide';
-import {GuideElement} from '../../editor/GuideElement';
-import {geomToPrimitives} from '../../rendering/points';
-import {intersections, lineToSlope} from '../../rendering/intersect';
-import {pk} from '../pk';
-import {getPatternData} from '../getPatternData';
-import {drawWoven} from '../canvasDraw';
-import {closeEnough} from '../../rendering/epsilonToZero';
-import {Canvas, Image} from 'canvaskit-wasm';
-import {generateVideo} from './animator.screen/muxer';
+import {Pending, useAnimate, useFetchBounceState} from './animator.screen/animator.utils';
 
 export async function loader({params}: Route.LoaderArgs) {
     const got = getAnimated(params.id);
@@ -55,13 +37,14 @@ export async function action({request, params}: Route.ActionArgs) {
     saveAnimated(params.id, state);
 }
 
-const col = (i: number) => ['red', 'yellow', 'blue'][i % 3];
+export const col = (i: number) => ['red', 'yellow', 'blue'][i % 3];
 
 export default function Animator({loaderData: {patterns, initialState}}: Route.ComponentProps) {
     // const [state, setState] = useLocalStorage<State>('animator-state', {layers: [], lines: []});
     const [hover, setHover] = useState(null as null | number);
     const [state, setState] = useState(initialState);
     const [peg, setPeg] = useState(false);
+    const [multi, setMulti] = useState(false);
     useFetchBounceState(state);
 
     const [repl, setRepl] = useState(1);
@@ -82,7 +65,7 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
     );
     const size = 600;
 
-    const [showNice, setShowNice] = useState(true);
+    const [showNice, setShowNice] = useState(false);
     const [canv, setCanv] = useState(true);
     const [showDialog, setShowDialog] = useState(false);
     const layerDialog = useOnOpen(setShowDialog);
@@ -107,12 +90,14 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                 <div>
                     {canv ? (
                         <AnimatedCanvas
+                            peg={peg}
+                            multi={multi}
                             cache={cache}
                             repl={repl}
                             showNice={showNice}
                             patternMap={patternMap}
                             preview={preview}
-                            zoom={peggedZoom}
+                            zoom={zoom}
                             size={size}
                             state={state}
                             lineWidth={lineWidth}
@@ -175,6 +160,7 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                                 value={lineWidth}
                                 onChange={(evt) => setLineWidth(+evt.target.value)}
                             />
+                            {lineWidth.toFixed(2)}
                         </label>
                     </div>
                     <div>
@@ -198,6 +184,16 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                                 disabled={!canv}
                                 checked={showNice && canv}
                                 onChange={() => setShowNice(!showNice)}
+                            />
+                        </label>
+                        <label className="mx-4">
+                            Multi
+                            <input
+                                type="checkbox"
+                                className="checkbox mx-2"
+                                disabled={!canv}
+                                checked={multi}
+                                onChange={() => setMulti(!multi)}
                             />
                         </label>
                     </div>
@@ -447,420 +443,3 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
         </div>
     );
 }
-
-const calcMargin = (preview: number, line: State['lines'][0]) => {
-    const lat = lineAt(line.keyframes, preview, line.fade);
-    const log = lineAt(line.keyframes, 0, line.fade);
-    if (!lat || !log) return 1;
-    const d1 = dist(lat.points[0], lat.points[1]);
-    const d2 = dist(log.points[0], log.points[1]);
-    return d1 / d2;
-};
-
-const AnimatedCanvas = ({
-    patternMap,
-    preview,
-    size,
-    zoom,
-    state,
-    lineWidth,
-    showNice,
-    repl,
-    cache,
-}: {
-    repl: number;
-    showNice: boolean;
-    lineWidth: number;
-    state: State;
-    size: number;
-    zoom: number;
-    patternMap: Record<string, Tiling>;
-    preview: number;
-    cache: Record<string, Uint8Array>;
-}) => {
-    // const full = useMemo(
-    //     () => calcFull(state, preview, repl, patternMap),
-    //     [state, preview, patternMap, repl],
-    // );
-
-    const ref = useRef<HTMLCanvasElement>(null);
-
-    const patternDatas = useMemo(() => {
-        return state.layers.map((l) => getPatternData(patternMap[l.pattern], false, repl));
-    }, [state.layers, patternMap, repl]);
-
-    const recordVideo = () => {
-        const step = 0.02;
-        const totalFrames = (state.layers.length - 1) / step + 1;
-        generateVideo(ref.current!, 24, totalFrames, (_, percent) => {
-            const surface = pk.MakeWebGLCanvasSurface(ref.current!)!;
-            const ctx = surface.getCanvas();
-            ctx.clear(pk.BLACK);
-
-            const max = state.layers.length - 1;
-            const preview = percent * max * 2;
-
-            ctx.scale((size * 2) / zoom, (size * 2) / zoom);
-            ctx.translate(zoom / 2, zoom / 2);
-
-            for (let i = -0.5; i <= 0; i += 0.1) {
-                let p = preview + i;
-                if (p > max) p = max + (max - p);
-                if (p < 0) continue;
-                const full = calcFull(state, p, repl, patternMap);
-                const alph = ((i + 0.5) / 0.5) * 0.8 + 0.2;
-                drawFull(full, lineWidth, zoom, ctx, [205 / 255, 127 / 255, 1 / 255, alph]);
-            }
-
-            // for (let i = 0; i < 5; i++) {
-            //     let p = preview < 0.8 ? (preview / 5) * i : preview - 0.8 + i * 0.2;
-            //     if (p < 0) continue;
-            //     const full = calcFull(state, p, repl, patternMap);
-            //     const alph = i / 4;
-            //     drawFull(full, lineWidth, zoom, ctx, [205 / 255, 127 / 255, 1 / 255, alph]);
-            // }
-            // const full = calcFull(state, preview, repl, patternMap);
-            // drawFull(full, lineWidth, zoom, ctx, [205 / 255, 127 / 255, 1 / 255]);
-
-            surface.flush();
-        }).then((blob) => {
-            if (!blob) {
-                console.warn('failed I guess');
-                return;
-            }
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.download = 'video.mp4';
-            a.href = url;
-            a.click();
-        });
-    };
-
-    useEffect(() => {
-        if (!ref.current) return;
-        const surface = pk.MakeWebGLCanvasSurface(ref.current)!;
-        const ctx = surface.getCanvas();
-        ctx.clear(pk.BLACK);
-
-        ctx.scale((size * 2) / zoom, (size * 2) / zoom);
-        ctx.translate(zoom / 2, zoom / 2);
-
-        if (Number.isInteger(preview) && showNice) {
-            drawWoven(ctx, patternDatas[preview], (lineWidth / 200) * zoom);
-        } else {
-            for (let i = 0; i < 5; i++) {
-                let p = preview < 0.8 ? (preview / 5) * i : preview - 0.8 + i * 0.2;
-                if (p < 0) continue;
-                const full = calcFull(state, p, repl, patternMap);
-                const alph = i / 4;
-                drawFull(full, lineWidth, zoom, ctx, [205 / 255, 127 / 255, 1 / 255, alph]);
-            }
-            // drawFull(full, lineWidth, zoom, ctx, [205 / 255, 127 / 255, 1 / 255, 0.5]);
-        }
-
-        surface.flush();
-    }, [preview, size, zoom, lineWidth, patternDatas, showNice, cache, patternMap, repl, state]);
-
-    return (
-        <div>
-            <canvas
-                ref={ref}
-                width={size * 2}
-                height={size * 2}
-                style={{width: size, height: size}}
-            />
-            <button className="btn" onClick={() => recordVideo()}>
-                Record Video
-            </button>
-        </div>
-    );
-};
-
-function SvgCanvas({
-    peggedZoom,
-    size,
-    setPos,
-    showGuides,
-    zoom,
-    lineWidth,
-    state,
-    preview,
-    patternMap,
-    pending,
-    pos,
-    // visiblePoints,
-    // pendingPoints,
-    setPending,
-    hover,
-    // ats,
-}: {
-    peggedZoom: number;
-    size: number;
-    setPos: {
-        (value: SetStateAction<{x: number; y: number}>): void;
-        (arg0: {x: number; y: number}): void;
-    };
-    showGuides: boolean;
-    zoom: number;
-    lineWidth: number;
-    state: State;
-    preview: number;
-    patternMap: {[k: string]: Tiling};
-    pending: Pending | null;
-    pos: {x: number; y: number};
-    // visiblePoints: Record<string, Coord>;
-    // pendingPoints: Record<string, true>;
-    setPending: {
-        (value: SetStateAction<Pending | null>): void;
-        (
-            arg0:
-                | {points: Coord[]; type: 'line'; idx?: number}
-                | {
-                      points: Coord[];
-                      type: 'Guide';
-                      kind: GuideGeom['type'];
-                      extent?: number;
-                      toggle: boolean;
-                      angle?: number;
-                  },
-        ): void;
-    };
-    hover: number | null;
-    // ats: ({points: Coord[]; alpha: number} | undefined)[];
-}) {
-    const visiblePoints: Record<string, Coord> = {};
-    const add = (c: Coord) => {
-        const k = coordKey(c);
-        if (!visiblePoints[k]) visiblePoints[k] = c;
-    };
-    const primitives = state.guides?.flatMap((g) => geomToPrimitives(g)) ?? [];
-    primitives.forEach((prim, i) => {
-        for (let j = i + 1; j < primitives.length; j++) {
-            intersections(prim, primitives[j]).forEach((c) => add(c));
-        }
-    });
-    state.layers.forEach((layer, i) => {
-        if (!layer.visible && i !== preview) return;
-        patternMap[layer.pattern].cache.segments.forEach(({prev, segment}) => {
-            add(prev);
-            add(segment.to);
-        });
-        const pattern = patternMap[layer.pattern];
-        const pts = tilingPoints(pattern.shape);
-        pts.forEach((p) => add(p));
-        const boundLines = pts.map((p, i) => lineToSlope(p, pts[i === 0 ? pts.length - 1 : i - 1]));
-
-        boundLines.forEach((seg) => {
-            primitives.forEach((prim) => {
-                intersections(seg, prim).forEach((c) => add(c));
-            });
-        });
-    });
-
-    const pendingPoints: Record<string, true> = {};
-    if (pending) {
-        pending.points.forEach((coord) => (pendingPoints[coordKey(coord)] = true));
-    }
-
-    const ats = useMemo(
-        () => state.lines.map((line) => lineAt(line.keyframes, preview, line.fade)),
-        [state.lines, preview],
-    );
-
-    const {full, pts} = useMemo(() => {
-        if (!state.layers.length) return {full: [], pts: []};
-        const pt = patternMap[state.layers[0].pattern];
-        const pts = tilingPoints(pt.shape);
-        const ttt = getTilingTransforms(pt.shape, pts);
-        return {
-            full: applyTilingTransformsG(
-                ats.filter(Boolean) as {points: Coord[]; alpha: number}[],
-                ttt,
-                (line, tx) => ({
-                    points: line.points.map((coord) => applyMatrices(coord, tx)),
-                    alpha: line.alpha,
-                }),
-            ),
-            pts,
-        };
-    }, [ats, patternMap, state.layers]);
-
-    return (
-        <svg
-            xmlns="http://www.w3.org/2000/svg"
-            // viewBox="-5 -5 10 10"
-            // viewBox="-3 -3 6 6"
-            viewBox={`${-peggedZoom / 2} ${-peggedZoom / 2} ${peggedZoom} ${peggedZoom}`}
-            // viewBox={`${-1 - peggedMargin} ${-1 - peggedMargin} ${2 + peggedMargin * 2} ${2 + peggedMargin * 2}`}
-            // viewBox="-1.5 -1.5 3 3"
-            style={size ? {background: 'black', width: size, height: size} : undefined}
-            onMouseMove={(evt) => {
-                const box = evt.currentTarget.getBoundingClientRect();
-                setPos({
-                    x: ((evt.clientX - box.left) / box.width - 0.5) * 3,
-                    y: ((evt.clientY - box.top) / box.height - 0.5) * 3,
-                });
-            }}
-        >
-            {showGuides && (
-                <path
-                    d={shapeD(pts, true)}
-                    fill="none"
-                    stroke={'white'}
-                    strokeWidth={0.01 * zoom}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                />
-            )}
-            {full.map((line, i) => (
-                <path
-                    key={i}
-                    d={shapeD(line.points, false)}
-                    fill="none"
-                    // opacity={line.alpha}
-                    stroke={'rgb(205,127,1)'}
-                    strokeWidth={(lineWidth / 200) * peggedZoom * line.alpha}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                />
-            ))}
-            {showGuides &&
-                state.layers.map((layer, i) =>
-                    !layer.visible && i !== preview
-                        ? null
-                        : patternMap[layer.pattern].cache.segments.map(({prev, segment}, j) => (
-                              <path
-                                  key={`${i}-${j}`}
-                                  d={shapeD([prev, segment.to], false)}
-                                  fill="none"
-                                  stroke={col(i)}
-                                  //   opacity={0.5}
-                                  strokeWidth={0.03}
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                              />
-                          )),
-                )}
-            {showGuides &&
-                state.guides?.map((guide, i) => (
-                    <GuideElement
-                        key={i}
-                        geom={guide}
-                        zoom={1}
-                        stroke={0.01}
-                        bounds={{x0: -1, y0: -1, x1: 1, y1: 1}}
-                        original
-                    />
-                ))}
-            {pending?.type === 'line' ? (
-                <path
-                    d={shapeD(pending.points, false)}
-                    fill="none"
-                    stroke={'white'}
-                    strokeWidth={0.03}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                />
-            ) : null}
-            {pending?.type === 'Guide' ? (
-                <RenderPendingGuide
-                    guide={pending}
-                    zoom={1}
-                    bounds={{x0: -1, y0: -1, x1: 1, y1: 1}}
-                    mirror={null}
-                    shiftKey={false}
-                    stroke={0.01}
-                    pos={pos}
-                />
-            ) : null}
-            {pending
-                ? Object.entries(visiblePoints).map(([key, coord]) => (
-                      <circle
-                          key={key}
-                          cx={coord.x.toFixed(3)}
-                          cy={coord.y.toFixed(3)}
-                          r={0.04}
-                          className="cursor-pointer"
-                          fill={pendingPoints[key] ? 'orange' : 'white'}
-                          opacity={0.7}
-                          onClick={() =>
-                              setPending({
-                                  ...pending,
-                                  points: [...pending.points, coord],
-                              })
-                          }
-                      />
-                  ))
-                : null}
-            {hover != null && ats[hover] ? (
-                <>
-                    <path
-                        d={shapeD(ats[hover].points, false)}
-                        stroke="white"
-                        strokeWidth={0.04}
-                        fill="none"
-                    />
-                    {ats[hover]?.points.map((coord, i) => (
-                        <circle
-                            key={i}
-                            cx={coord.x.toFixed(3)}
-                            cy={coord.y.toFixed(3)}
-                            r={0.04}
-                            stroke="white"
-                            strokeWidth={0.01}
-                            className="cursor-pointer"
-                            fill={i === 0 ? 'black' : 'red'}
-                        />
-                    ))}
-                </>
-            ) : null}
-        </svg>
-    );
-}
-
-function drawFull(
-    full: {points: Coord[]; alpha: number}[],
-    lineWidth: number,
-    zoom: number,
-    ctx: Canvas,
-    color: number[],
-) {
-    full.forEach((line) => {
-        if (closeEnough(line.alpha, 0)) return;
-        const path = pk.Path.MakeFromCmds([
-            pk.MOVE_VERB,
-            line.points[0].x,
-            line.points[0].y,
-            ...line.points.slice(1).flatMap(({x, y}) => [pk.LINE_VERB, x, y]),
-        ])!;
-        const paint = new pk.Paint();
-        paint.setStyle(pk.PaintStyle.Stroke);
-        paint.setStrokeJoin(pk.StrokeJoin.Round);
-        paint.setStrokeCap(pk.StrokeCap.Round);
-        paint.setStrokeWidth((lineWidth / 200) * zoom * line.alpha);
-        paint.setColor(color);
-        paint.setAntiAlias(true);
-        paint.setAlphaf(line.alpha * (color.length === 4 ? color[3] : 1));
-        ctx.drawPath(path, paint);
-    });
-}
-
-const calcFull = (
-    state: State,
-    preview: number,
-    repl: number,
-    patternMap: Record<string, Tiling>,
-) => {
-    if (!state.layers.length) return [];
-    const ats = state.lines.map((line) => lineAt(line.keyframes, preview, line.fade));
-    const pt = patternMap[state.layers[0].pattern];
-    const ttt = getTilingTransforms(pt.shape, undefined, repl);
-    return applyTilingTransformsG(
-        ats.filter(Boolean) as {points: Coord[]; alpha: number}[],
-        ttt,
-        (line, tx) => ({
-            points: line.points.map((coord) => applyMatrices(coord, tx)),
-            alpha: line.alpha,
-        }),
-    );
-};

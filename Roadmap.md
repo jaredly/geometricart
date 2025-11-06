@@ -1,6 +1,11 @@
 
 # Designer....
 
+# Make the SVGs
+
+- have a .. button .. that will make the layers, and show them all in a line I guess
+  probably give them to you as a .zip file or something
+
 # Builddddddit
 
 I want to

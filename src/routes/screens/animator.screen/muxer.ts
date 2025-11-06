@@ -100,7 +100,7 @@ export const generateVideo = async (
             const currentTime = currentFrame / frameRate;
 
             // Update the scene
-            updateScene(currentTime, currentFrame / (totalFrames - 1));
+            updateScene(currentTime, currentFrame);
 
             // Add the current state of the canvas as a frame to the video. Using `await` here is crucial to
             // automatically slow down the rendering loop when the encoder can't keep up.
