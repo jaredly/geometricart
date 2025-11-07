@@ -1,16 +1,16 @@
 import {SetStateAction, useMemo} from 'react';
-import {GuideElement} from '../../editor/GuideElement';
-import {RenderPendingGuide} from '../../editor/RenderPendingGuide';
-import {tilingPoints, applyTilingTransformsG} from '../../editor/tilingPoints';
-import {getTilingTransforms} from '../../editor/tilingTransforms';
-import {coordKey} from '../../rendering/coordKey';
-import {applyMatrices} from '../../rendering/getMirrorTransforms';
-import {intersections, lineToSlope} from '../../rendering/intersect';
-import {geomToPrimitives} from '../../rendering/points';
-import {Tiling, Coord, GuideGeom} from '../../types';
-import {shapeD} from '../shapeD';
-import {col} from './animator';
-import {State, Pending, lineAt} from './animator.screen/animator.utils';
+import {GuideElement} from '../../../editor/GuideElement';
+import {RenderPendingGuide} from '../../../editor/RenderPendingGuide';
+import {tilingPoints, applyTilingTransformsG} from '../../../editor/tilingPoints';
+import {getTilingTransforms} from '../../../editor/tilingTransforms';
+import {coordKey} from '../../../rendering/coordKey';
+import {applyMatrices} from '../../../rendering/getMirrorTransforms';
+import {intersections, lineToSlope} from '../../../rendering/intersect';
+import {geomToPrimitives} from '../../../rendering/points';
+import {Tiling, Coord, GuideGeom} from '../../../types';
+import {shapeD} from '../../shapeD';
+import {col} from '.././animator';
+import {State, Pending, lineAt} from './animator.utils';
 
 export function SvgCanvas({
     peggedZoom,

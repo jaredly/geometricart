@@ -1,17 +1,18 @@
-import {useMemo, useState} from 'react';
+import {SetStateAction, useMemo, useState} from 'react';
 import {pendingGuide} from '../../editor/RenderPendingGuide';
 import {IconEye, IconEyeInvisible, RoundPlus} from '../../icons/Icon';
 import {GuideGeomTypes} from '../../types';
 import {getAllPatterns, getAnimated, saveAnimated} from '../db.server';
 import {useOnOpen} from '../useOnOpen';
 import type {Route} from './+types/animator';
-import {AnimatedCanvas, calcMargin} from './AnimatedCanvas';
-import {SvgCanvas} from './SvgCanvas';
+import {AnimatedCanvas, calcMargin} from './animator.screen/AnimatedCanvas';
+import {SvgCanvas} from './animator.screen/SvgCanvas';
 import {LayerDialog} from './animator.screen/LayerDialog';
 import {LinesTable} from './animator.screen/LinesTable';
 import {SaveLinesButton} from './animator.screen/SaveLinesButton';
 import {SimplePreview} from './animator.screen/SimplePreview';
 import {Pending, useAnimate, useFetchBounceState} from './animator.screen/animator.utils';
+import {SettingsForm} from './animator.screen/SettingsForm';
 
 export async function loader({params}: Route.LoaderArgs) {
     const got = getAnimated(params.id);
@@ -39,34 +40,64 @@ export async function action({request, params}: Route.ActionArgs) {
 
 export const col = (i: number) => ['red', 'yellow', 'blue'][i % 3];
 
+const initial: Config = {
+    peg: false,
+    multi: false,
+    repl: 1,
+    lineWidth: 2,
+    showGuides: true,
+    zoom: 4,
+    preview: 0,
+    // animate: (false),
+    showNice: false,
+    size: 600,
+    canv: true,
+};
+
 export default function Animator({loaderData: {patterns, initialState}}: Route.ComponentProps) {
-    // const [state, setState] = useLocalStorage<State>('animator-state', {layers: [], lines: []});
+    const [config, setConfig] = useState(initial);
+
+    const {
+        peg,
+        multi,
+        repl,
+        lineWidth,
+        showGuides,
+        zoom,
+        preview,
+        // animate,
+        showNice,
+        size,
+        canv,
+    } = config;
+
+    // // const [state, setState] = useLocalStorage<State>('animator-state', {layers: [], lines: []});
+    // const [peg, setPeg] = useState(false);
+    // const [multi, setMulti] = useState(false);
+    // const [repl, setRepl] = useState(1);
+    // const [lineWidth, setLineWidth] = useState(2);
+    // const [showGuides, setShowGuides] = useState(true);
+    // const [zoom, setZoom] = useState(4);
+    // const [preview, setPreview] = useState(0);
+    // const [animate, setAnimate] = useState(false);
+    // const [showNice, setShowNice] = useState(false);
+    // const [canv, setCanv] = useState(true);
+
     const [hover, setHover] = useState(null as null | number);
     const [state, setState] = useState(initialState);
-    const [peg, setPeg] = useState(false);
-    const [multi, setMulti] = useState(false);
     useFetchBounceState(state);
-
-    const [repl, setRepl] = useState(1);
-    const [lineWidth, setLineWidth] = useState(2);
-    const [showGuides, setShowGuides] = useState(true);
 
     const [pos, setPos] = useState({x: 0, y: 0});
 
-    const [zoom, setZoom] = useState(4);
-    const [preview, setPreview] = useState(0);
-    const [animate, setAnimate] = useState(false);
-    useAnimate(animate, setAnimate, setPreview, state.layers.length);
+    // useAnimate(animate, setAnimate, setPreview, state.layers.length);
 
     const [pending, setPending] = useState<null | Pending>(null);
     const patternMap = useMemo(
         () => Object.fromEntries(patterns.map((p) => [p.hash, p.tiling])),
         [patterns],
     );
-    const size = 600;
+    // const size = 600;
 
-    const [showNice, setShowNice] = useState(false);
-    const [canv, setCanv] = useState(true);
     const [showDialog, setShowDialog] = useState(false);
     const layerDialog = useOnOpen(setShowDialog);
 
@@ -90,17 +121,18 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                 <div>
                     {canv ? (
                         <AnimatedCanvas
-                            peg={peg}
-                            multi={multi}
-                            cache={cache}
-                            repl={repl}
-                            showNice={showNice}
+                            config={config}
+                            // peg={peg}
+                            // multi={multi}
+                            // cache={cache}
+                            // repl={repl}
+                            // showNice={showNice}
                             patternMap={patternMap}
-                            preview={preview}
-                            zoom={zoom}
-                            size={size}
+                            // preview={preview}
+                            // zoom={zoom}
+                            // size={size}
                             state={state}
-                            lineWidth={lineWidth}
+                            // lineWidth={lineWidth}
                         />
                     ) : (
                         <SvgCanvas
@@ -121,82 +153,25 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                     )}
                 </div>
                 <div className="flex flex-col gap-4">
-                    <label className="flex gap-4 block">
-                        <input
-                            className="range"
-                            type="range"
-                            min="0"
-                            max={state.layers.length - 1}
-                            step={0.01}
-                            value={preview}
-                            onChange={(evt) => setPreview(+evt.target.value)}
-                        />
-                        <div style={{width: '3em', minWidth: '3em'}}>{preview.toFixed(2)}</div>
-                        <button className="btn" onClick={() => setAnimate(true)}>
-                            Animate
-                        </button>
-                    </label>
-                    <div>
-                        <label>
-                            {'Zoom: 1:'}
-                            <input
-                                className="input w-20"
-                                type="number"
-                                min="0"
-                                max="3"
-                                step={0.01}
-                                value={zoom}
-                                onChange={(evt) => setZoom(+evt.target.value)}
-                            />
-                        </label>
-                        <label className="ml-4">
-                            {'LineWidth'}
-                            <input
-                                className="range w-40 ml-4"
-                                type="range"
-                                min="0"
-                                max="10"
-                                step={0.5}
-                                value={lineWidth}
-                                onChange={(evt) => setLineWidth(+evt.target.value)}
-                            />
-                            {lineWidth.toFixed(2)}
-                        </label>
-                    </div>
-                    <div>
-                        <label className="ml-4">
-                            {'Repl'}
-                            <input
-                                className="range w-40 ml-4"
-                                type="range"
-                                min="0"
-                                max="10"
-                                step={1}
-                                value={repl}
-                                onChange={(evt) => setRepl(+evt.target.value)}
-                            />
-                        </label>
-                        <label className="mx-4">
-                            Woven
-                            <input
-                                type="checkbox"
-                                className="checkbox mx-2"
-                                disabled={!canv}
-                                checked={showNice && canv}
-                                onChange={() => setShowNice(!showNice)}
-                            />
-                        </label>
-                        <label className="mx-4">
-                            Multi
-                            <input
-                                type="checkbox"
-                                className="checkbox mx-2"
-                                disabled={!canv}
-                                checked={multi}
-                                onChange={() => setMulti(!multi)}
-                            />
-                        </label>
-                    </div>
+                    <SettingsForm
+                        state={state}
+                        // preview={preview}
+                        // setPreview={setPreview}
+                        // setAnimate={setAnimate}
+                        // zoom={zoom}
+                        // setZoom={setZoom}
+                        // lineWidth={lineWidth}
+                        // setLineWidth={setLineWidth}
+                        // repl={repl}
+                        // setRepl={setRepl}
+                        // canv={canv}
+                        // showNice={showNice}
+                        // setShowNice={setShowNice}
+                        // multi={multi}
+                        // setMulti={setMulti}
+                        config={config}
+                        setConfig={setConfig}
+                    />
                     <details className="bg-base-100 p-4 rounded-xl shadow-md shadow-base-300">
                         <summary className="mb-4">
                             <div className="inline-flex">
@@ -210,7 +185,7 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                                 <button
                                     className="btn"
                                     onClick={() => {
-                                        setCanv(!canv);
+                                        setConfig({...config, canv: !config.canv});
                                     }}
                                 >
                                     {canv ? 'Canvas' : 'SVG'}
@@ -243,7 +218,7 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                                             </button>
                                         </th>
                                         <td
-                                            onClick={() => setPreview(i)}
+                                            onClick={() => setConfig({...config, preview: i})}
                                             className="cursor-pointer"
                                         >
                                             <SimplePreview
@@ -287,7 +262,7 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                             <button
                                 className="btn"
                                 onClick={() => {
-                                    setShowGuides(!showGuides);
+                                    setConfig({...config, showGuides: !config.showGuides});
                                 }}
                             >
                                 {showGuides ? <IconEye /> : <IconEyeInvisible color={'#555'} />}
@@ -407,7 +382,10 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                                     preview={preview}
                                 />
                             ) : null}
-                            <button className="btn mx-4" onClick={() => setPeg(!peg)}>
+                            <button
+                                className="btn mx-4"
+                                onClick={() => setConfig({...config, peg: !config.peg})}
+                            >
                                 {peg ? 'Unpeg' : 'Peg'}
                             </button>
                         </div>
@@ -416,7 +394,7 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                                 state={state}
                                 setHover={setHover}
                                 preview={preview}
-                                setPreview={setPreview}
+                                setPreview={(p) => setConfig({...config, preview: p})}
                                 setPending={setPending}
                                 setState={setState}
                             />
@@ -443,3 +421,17 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
         </div>
     );
 }
+
+export type Config = {
+    peg: boolean;
+    multi: boolean;
+    repl: number;
+    lineWidth: number;
+    showGuides: boolean;
+    zoom: number;
+    preview: number;
+    // animate: boolean,
+    showNice: boolean;
+    size: number;
+    canv: boolean;
+};
