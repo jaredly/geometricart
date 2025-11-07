@@ -220,24 +220,29 @@ const joinAdjacentLines = (lines: Coord[][]) => {
         joined[el.i] = sl.i;
         // 4 options
         if (sl.start === el.start) {
-            sl.points.unshift(...el.points.reverse());
+            sl.points = el.points.reverse().concat(sl.points);
             sl.start = el.end;
         } else if (sl.end === el.end) {
-            sl.points.push(...el.points.reverse());
+            sl.points = sl.points.concat(el.points.reverse());
             sl.end = el.start;
         } else if (sl.start === el.end) {
-            sl.points.unshift(...el.points);
+            sl.points = el.points.concat(sl.points);
             sl.start = el.start;
         } else if (sl.end === el.start) {
-            sl.points.push(...el.points);
+            sl.points = sl.points.concat(el.points);
             sl.end = el.end;
+        } else {
+            // throw new Error('what is this');
         }
+        el.points = [];
+        el.start = '';
+        el.end = '';
     };
 
     const joins: {start: {i: number; end: boolean}; end: {i: number; end: boolean}; key: string}[] =
         [];
     pointMap.forEach((value, key) => {
-        for (let i = 0; i < value.length; i += 2) {
+        for (let i = 0; i < value.length - 1; i += 2) {
             joins.push({start: value[i], end: value[i + 1], key});
         }
     });
@@ -257,9 +262,11 @@ const joinAdjacentAlphaLines = (transformed: {points: Coord[]; alpha: number}[])
         byAlpha[line.alpha].push(line.points);
     });
 
-    return Object.entries(byAlpha).flatMap(([alpha, lines]) => {
-        return joinAdjacentLines(lines).map((points) => ({alpha: +alpha, points}));
-    });
+    // return Object.entries(byAlpha).flatMap(([alpha, lines]) => {
+    //     // return joinAdjacentLines(lines).map((points) => ({alpha: +alpha, points}));
+    //     return lines.map((points) => ({alpha: +alpha, points}));
+    // });
+    return transformed;
 };
 
 const calcFull = (
