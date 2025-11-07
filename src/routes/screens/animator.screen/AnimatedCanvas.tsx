@@ -12,6 +12,7 @@ import {State, lineAt} from './animator.utils';
 import {generateVideo} from './muxer';
 import {Config} from '../animator';
 import {coordsEqual} from '../../../rendering/pathsAreIdentical';
+import {coordKey} from '../../../rendering/coordKey';
 
 export const calcMargin = (preview: number, line: State['lines'][0]) => {
     const lat = lineAt(line.keyframes, preview, line.fade);
@@ -135,6 +136,7 @@ function drawFull(
             paint.setStrokeCap(pk.StrokeCap.Round);
         }
         paint.setStrokeWidth((lineWidth / 200) * zoom * line.alpha);
+        // paint.setColor([Math.random(), Math.random(), Math.random(), 0.5]);
         paint.setColor(color);
         paint.setAntiAlias(true);
         paint.setAlphaf(line.alpha * (color.length === 4 ? color[3] : 1));
@@ -142,7 +144,111 @@ function drawFull(
     });
 }
 
-const joinAdjacentLines = (transformed: {points: Coord[]; alpha: number}[]) => {
+const joinAdjacentLinesOld = (lines: Coord[][]) => {
+    for (let i = 0; i < lines.length; i++) {
+        if (!lines[i].length) continue;
+        for (let j = i + 1; j < lines.length; j++) {
+            if (!lines[j].length) continue;
+            if (coordsEqual(lines[i][0], lines[j][0])) {
+                lines[i] = lines[i].toReversed().concat(lines[j].slice(1));
+                lines[j] = [];
+            } else if (coordsEqual(lines[i][lines[i].length - 1], lines[j][0])) {
+                lines[i] = lines[i].concat(lines[j].slice(1));
+                lines[j] = [];
+            } else if (coordsEqual(lines[i][lines[i].length - 1], lines[j][lines[j].length - 1])) {
+                lines[i] = lines[i].concat(lines[j].toReversed().slice(1));
+                lines[j] = [];
+            } else if (coordsEqual(lines[i][0], lines[j][lines[j].length - 1])) {
+                lines[i] = lines[j].concat(lines[i].slice(1));
+                lines[j] = [];
+            }
+        }
+    }
+    return lines.filter((l) => l.length);
+};
+
+const joinAdjacentLines = (lines: Coord[][]) => {
+    const prec = 3;
+
+    // Build a map from endpoint coordinates to line indices
+    const pointMap = new Map<string, {i: number; end: boolean}[]>();
+
+    for (let i = 0; i < lines.length; i++) {
+        if (!lines[i].length) continue;
+        const startKey = coordKey(lines[i][0], prec);
+        const endKey = coordKey(lines[i][lines[i].length - 1], prec);
+
+        if (!pointMap.has(startKey)) pointMap.set(startKey, []);
+        pointMap.get(startKey)!.push({i, end: false});
+
+        if (!pointMap.has(endKey)) pointMap.set(endKey, []);
+        pointMap.get(endKey)!.push({i, end: true});
+    }
+
+    const joined: ({points: Coord[]; start: string; end: string; i: number} | number)[] = lines.map(
+        (line, i) => {
+            const startKey = coordKey(line[0], prec);
+            const endKey = coordKey(line[line.length - 1], prec);
+
+            if (!pointMap.has(startKey)) pointMap.set(startKey, []);
+            pointMap.get(startKey)!.push({i, end: false});
+
+            if (!pointMap.has(endKey)) pointMap.set(endKey, []);
+            pointMap.get(endKey)!.push({i, end: true});
+
+            return {points: line.slice(), start: startKey, end: endKey, i};
+        },
+    );
+
+    const processJoin = (join: {
+        start: {i: number; end: boolean};
+        end: {i: number; end: boolean};
+        key: string;
+    }) => {
+        const {start, end} = join;
+        if (start.i === end.i) return; // we're fine
+        let sl = joined[start.i];
+        let el = joined[end.i];
+        // follow loops
+        while (typeof sl === 'number') {
+            sl = joined[sl];
+        }
+        while (typeof el === 'number') {
+            el = joined[el];
+        }
+        if (sl === el) return; // done
+        joined[el.i] = sl.i;
+        // 4 options
+        if (sl.start === el.start) {
+            sl.points.unshift(...el.points.reverse());
+            sl.start = el.end;
+        } else if (sl.end === el.end) {
+            sl.points.push(...el.points.reverse());
+            sl.end = el.start;
+        } else if (sl.start === el.end) {
+            sl.points.unshift(...el.points);
+            sl.start = el.start;
+        } else if (sl.end === el.start) {
+            sl.points.push(...el.points);
+            sl.end = el.end;
+        }
+    };
+
+    const joins: {start: {i: number; end: boolean}; end: {i: number; end: boolean}; key: string}[] =
+        [];
+    pointMap.forEach((value, key) => {
+        for (let i = 0; i < value.length; i += 2) {
+            joins.push({start: value[i], end: value[i + 1], key});
+        }
+    });
+
+    joins.forEach(processJoin);
+
+    return joined.filter((i) => typeof i !== 'number').map((item) => item.points);
+    // Now process the joins...
+};
+
+const joinAdjacentAlphaLines = (transformed: {points: Coord[]; alpha: number}[]) => {
     const byAlpha: Record<string, Coord[][]> = {};
     transformed.forEach((line) => {
         if (!byAlpha[line.alpha]) {
@@ -150,29 +256,9 @@ const joinAdjacentLines = (transformed: {points: Coord[]; alpha: number}[]) => {
         }
         byAlpha[line.alpha].push(line.points);
     });
+
     return Object.entries(byAlpha).flatMap(([alpha, lines]) => {
-        for (let i = 0; i < lines.length; i++) {
-            if (!lines[i].length) continue;
-            for (let j = i + 1; j < lines.length; j++) {
-                if (!lines[j].length) continue;
-                if (coordsEqual(lines[i][0], lines[j][0])) {
-                    lines[i] = lines[i].toReversed().concat(lines[j].slice(1));
-                    lines[j] = [];
-                } else if (coordsEqual(lines[i][lines[i].length - 1], lines[j][0])) {
-                    lines[i] = lines[i].concat(lines[j].slice(1));
-                    lines[j] = [];
-                } else if (
-                    coordsEqual(lines[i][lines[i].length - 1], lines[j][lines[j].length - 1])
-                ) {
-                    lines[i] = lines[i].concat(lines[j].toReversed().slice(1));
-                    lines[j] = [];
-                } else if (coordsEqual(lines[i][0], lines[j][lines[j].length - 1])) {
-                    lines[i] = lines[j].concat(lines[i].slice(1));
-                    lines[j] = [];
-                }
-            }
-        }
-        return lines.filter((l) => l.length).map((points) => ({alpha: +alpha, points}));
+        return joinAdjacentLines(lines).map((points) => ({alpha: +alpha, points}));
     });
 };
 
@@ -194,7 +280,7 @@ const calcFull = (
             alpha: line.alpha,
         }),
     );
-    return joinAdjacentLines(transformed);
+    return joinAdjacentAlphaLines(transformed);
 };
 
 const renderFrame = (
