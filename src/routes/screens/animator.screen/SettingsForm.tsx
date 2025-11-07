@@ -1,3 +1,4 @@
+import {BlurInt} from '../../../editor/Forms';
 import {Config} from '../animator';
 import {State} from './animator.utils';
 
@@ -10,6 +11,7 @@ export function SettingsForm({
     config: Config;
     setConfig: (c: Config) => void;
 }) {
+    const multi = config.multi === true ? {count: 10, dist: 0.05} : config.multi;
     return (
         <div>
             <div className="flex-wrap flex items-center gap-2">
@@ -30,14 +32,11 @@ export function SettingsForm({
                 </label>
                 <label>
                     {'Zoom: 1:'}
-                    <input
+                    <BlurInt
                         className="input w-10"
-                        type="number"
-                        min="0"
-                        max="3"
                         step={0.01}
                         value={config.zoom}
-                        onChange={(evt) => setConfig({...config, zoom: +evt.target.value})}
+                        onChange={(value) => (value ? setConfig({...config, zoom: value}) : null)}
                     />
                 </label>
                 <label className="ml-4">
@@ -54,15 +53,15 @@ export function SettingsForm({
                     {config.lineWidth.toFixed(2)}
                 </label>
                 <label className="ml-4">
-                    {'Repl'}
-                    <input
-                        className="range w-40 ml-4"
-                        type="range"
-                        min="0"
-                        max="10"
+                    Repl
+                    <BlurInt
+                        className="input w-40 ml-4"
+                        // type="range"
+                        // min="0"
+                        // max="10"
                         step={1}
                         value={config.repl}
-                        onChange={(evt) => setConfig({...config, repl: +evt.target.value})}
+                        onChange={(value) => (value ? setConfig({...config, repl: value}) : null)}
                     />
                 </label>
                 <div>
@@ -91,7 +90,7 @@ export function SettingsForm({
                             type="checkbox"
                             className="checkbox mx-2"
                             disabled={!config.canv}
-                            checked={config.multi}
+                            checked={!!config.multi}
                             onChange={() => setConfig({...config, multi: !config.multi})}
                         />
                     </label>
@@ -107,6 +106,36 @@ export function SettingsForm({
                     </label>
                 </div>
             </div>
+            {multi ? (
+                <>
+                    <label className="ml-4">
+                        Multi Count
+                        <BlurInt
+                            className="input w-40 ml-4"
+                            step={1}
+                            value={multi.count}
+                            onChange={(value) =>
+                                value
+                                    ? setConfig({...config, multi: {...multi, count: value}})
+                                    : null
+                            }
+                        />
+                    </label>
+                    <label className="ml-4">
+                        Multi Dist
+                        <BlurInt
+                            className="input w-40 ml-4"
+                            step={1}
+                            value={multi.dist}
+                            onChange={(value) =>
+                                value
+                                    ? setConfig({...config, multi: {...multi, dist: value}})
+                                    : null
+                            }
+                        />
+                    </label>
+                </>
+            ) : null}
         </div>
     );
 }

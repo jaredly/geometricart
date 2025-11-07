@@ -369,9 +369,8 @@ const initial: Config = {
     repl: 1,
     lineWidth: 2,
     showGuides: true,
-    zoom: 4,
+    zoom: 6,
     preview: 0,
-    // animate: (false),
     showNice: false,
     size: 600,
     canv: true,
@@ -382,13 +381,12 @@ export type Config = {
     bounds: boolean;
     sharp: boolean;
     peg: boolean;
-    multi: boolean;
+    multi: boolean | {count: number; dist: number};
     repl: number;
     lineWidth: number;
     showGuides: boolean;
     zoom: number;
     preview: number;
-    // animate: boolean,
     showNice: boolean;
     size: number;
     canv: boolean;

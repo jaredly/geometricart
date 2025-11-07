@@ -321,7 +321,9 @@ const renderFrame = (
 ) => {
     const max = state.layers.length - 1;
     if (config.multi) {
-        for (let i = -0.5; i <= 0; i += 0.05) {
+        const {count, dist} = config.multi === true ? {count: 10, dist: 0.05} : config.multi;
+        const amt = dist * count;
+        for (let i = -amt; i <= 0; i += dist) {
             let p = preview + i;
             if (p > max) p = max + (max - p);
             if (p < 0) p = -p;
@@ -333,7 +335,7 @@ const renderFrame = (
             ctx.scale((config.size * 2) / peggedZoom, (config.size * 2) / peggedZoom);
             ctx.translate(peggedZoom / 2, peggedZoom / 2);
             const {full, bounds} = calcFull(state, p, config.repl, patternMap, config.sharp);
-            const alph = ((i + 0.5) / 0.5) * 0.8 + 0.2;
+            const alph = (i + amt) / amt; // * 0.8 + 0.2;
             drawFull(
                 full,
                 config.lineWidth,

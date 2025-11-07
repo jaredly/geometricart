@@ -81,7 +81,11 @@ export const BlurInt = ({
     onChange,
     label,
     width,
+    className = 'input',
+    step = 1,
 }: {
+    step?: number;
+    className?: string;
     value: number | undefined | null;
     width?: number;
     onChange: (v: number | undefined) => unknown;
@@ -98,7 +102,7 @@ export const BlurInt = ({
     return (
         <>
             <input
-                className="input"
+                className={className}
                 value={text != null ? text : (value ?? '')}
                 onChange={(evt) => {
                     setText(evt.target.value);
@@ -137,7 +141,7 @@ export const BlurInt = ({
                 css={{
                     width: width ?? 50,
                 }}
-                step="1"
+                step={step}
                 type="number"
             />
             {label && v != null ? label(v) : null}
@@ -211,9 +215,9 @@ const Color = ({
     palette: Array<string>;
     extra?: Array<string>;
 }) => {
-    if (!palette) {
-        debugger;
-    }
+    // if (!palette) {
+    //     debugger;
+    // }
     return (
         <div>
             {palette.map((item, i) => (
