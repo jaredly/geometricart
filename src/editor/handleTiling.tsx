@@ -1,33 +1,32 @@
-import {jsx} from '@emotion/react';
 import {BarePath, Coord, SegPrev, Segment, State, Tiling} from '../types';
-import {closeEnough} from '../rendering/epsilonToZero';
 import {consumePath, getVisiblePaths, pkClips} from '../rendering/pkInsetPaths';
-import {PK} from './pk';
 import {pkPath} from '../sidebar/pkClipPaths';
 import {addPrevsToSegments} from '../rendering/segmentsToNonIntersectingSegments';
-import {SlopeIntercept, lineLine, lineToSlope, slopeToLine} from '../rendering/intersect';
+import {SlopeIntercept, lineToSlope, slopeToLine} from '../rendering/intersect';
 import {numKey} from '../rendering/coordKey';
-import {applyMatrices, applyMatrix, scaleMatrix} from '../rendering/getMirrorTransforms';
-import {transformBarePath, transformPath, transformSegment} from '../rendering/points';
-import {tilingPoints, getTransform, eigenShapesToLines} from './tilingPoints';
-import {coordsEqual} from '../rendering/pathsAreIdentical';
+import {applyMatrix, scaleMatrix} from '../rendering/getMirrorTransforms';
+import {transformBarePath} from '../rendering/points';
+import {tilingPoints, eigenShapesToLines} from './tilingPoints';
 import {SegmentWithPrev} from '../rendering/clipPathNew';
 
-export const simpleExport = async (state: State, shape: Tiling['shape']) => {
+export const rehashTiling = (tiling: Tiling) => {
+    const keys = tiling.cache.segments
+        .map((ps) => lineToSlope(ps.prev, ps.segment.to))
+        .map((si) => slopeInterceptKey(si))
+        .sort();
+    return {...tiling, cache: {...tiling.cache, hash: hashData(keys.join(','))}};
+};
+
+export const simpleExport = (state: State, shape: Tiling['shape']) => {
     const pts = tilingPoints(shape);
     const res = getShapesIntersectingPolygon(state, pts);
     if (!res) {
         return;
     }
     const {klines, shapes, tr, pts: tpts} = res;
-    console.log('pts', pts);
-    console.log('klins', klines);
-    const segs = Object.keys(klines).sort();
-
-    const hash = await hashData(segs.join(','));
-
     const unique = Object.values(klines).map(slopeToLine);
 
+    const hash = hashData(Object.keys(klines).sort().join(','));
     return {
         hash,
         segments: unique.map(
@@ -40,7 +39,7 @@ export const simpleExport = async (state: State, shape: Tiling['shape']) => {
     };
 };
 
-export const slopeToPseg = (line: SlopeIntercept): SegmentWithPrev => {
+const slopeToPseg = (line: SlopeIntercept): SegmentWithPrev => {
     const [p1, p2] = slopeToLine(line);
     return {prev: p1, segment: {type: 'Line', to: p2}, shape: -1};
 };
@@ -48,9 +47,7 @@ export const slopeToPseg = (line: SlopeIntercept): SegmentWithPrev => {
 // Shapes *has* been transformed, by `getTransform(pts)`
 // the `pts` that are returned have also been transformed
 // klines is our map of deduped lines.
-export const getShapesIntersectingPolygon = (state: State, pts: Coord[]) => {
-    const tx = getTransform(pts);
-
+const getShapesIntersectingPolygon = (state: State, pts: Coord[]) => {
     // PathKit doesn't have great precision at the small end. So inflate everything by 100x before calculating.
     const scale = 10000;
 
@@ -66,7 +63,7 @@ export const getShapesIntersectingPolygon = (state: State, pts: Coord[]) => {
 
     const paths = getVisiblePaths(state.paths, state.pathGroups);
     const pkc = {
-        path: pkPath(PK, segments, origin),
+        path: pkPath(segments, origin),
         outside: false,
     };
     const shapes: BarePath[] = [];
@@ -75,14 +72,13 @@ export const getShapesIntersectingPolygon = (state: State, pts: Coord[]) => {
         const big = transformBarePath(path, [scaleMatrix(scale, scale)]);
 
         const got = consumePath(
-            PK,
-            pkClips(PK, pkPath(PK, big.segments, big.origin), [pkc], path)[0],
+            pkClips(pkPath(big.segments, big.origin), [pkc], path)[0],
             path,
-        ).map((path) => transformBarePath(path, [scaleMatrix(1 / scale, 1 / scale), ...tx]));
+        ).map((path) => transformBarePath(path, [scaleMatrix(1 / scale, 1 / scale)]));
         if (!got.length) {
             return;
         }
-        const {origin, segments, open} = transformPath(state.paths[id], tx);
+        const {origin, segments, open} = state.paths[id];
         shapes.push({origin, segments, open});
 
         const orig = addPrevsToSegments(segments, origin).map((seg) =>
@@ -107,8 +103,8 @@ export const getShapesIntersectingPolygon = (state: State, pts: Coord[]) => {
     return {
         shapes,
         klines,
-        tr: applyMatrices(pts[2], tx),
-        pts: pts.map((pt) => applyMatrices(pt, tx)),
+        tr: pts[2],
+        pts: pts,
     };
 };
 
@@ -121,22 +117,21 @@ function slopeInterceptKey(sl: SlopeIntercept, withLimit = true) {
     return `${numKey(sl.limit[0])}:${sli}:${numKey(sl.limit[0])}`;
 }
 
-async function hashData(kk: string) {
+import {blake3} from '@noble/hashes/blake3.js';
+import {bytesToHex} from '@noble/hashes/utils.js';
+
+export function hashData(kk: string) {
     const encoder = new TextEncoder();
     const data = encoder.encode(kk);
-    const hashBuffer = await window.crypto.subtle.digest('SHA-1', data);
-
-    const hashArray = Array.from(new Uint8Array(hashBuffer)); // convert buffer to byte array
-    const hashHex = hashArray.map((b) => b.toString(16).padStart(2, '0')).join(''); // convert bytes to hex string
-    return hashHex;
+    const hash = blake3(data);
+    return bytesToHex(hash);
 }
 
 export function handleTiling(data: Tiling) {
     const pts = tilingPoints(data.shape);
-    const tx = getTransform(pts);
-    const bounds = pts.map((pt) => applyMatrices(pt, tx));
+    const bounds = pts;
     const lines = data.cache.segments.map((s): [Coord, Coord] => [s.prev, s.segment.to]);
-    const tr = applyMatrices(pts[2], tx);
+    const tr = pts[2];
     return {bounds, lines, tr};
 }
 

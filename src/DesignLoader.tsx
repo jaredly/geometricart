@@ -5,26 +5,24 @@ import {Button} from 'primereact/button';
 import {confirmPopup, ConfirmPopup} from 'primereact/confirmpopup';
 import {MetaData, keyPrefix, metaPrefix, updateMeta, key, meta, thumbPrefix} from './editor.client';
 import {Tiling} from './types';
-import {eigenShapesToSvg, getTransform, tilingPoints} from './editor/tilingPoints';
-import {applyMatrices} from './rendering/getMirrorTransforms';
+import {eigenShapesToSvg, tilingPoints} from './editor/tilingPoints';
 
-export function tilingCacheSvg(cache: Tiling['cache'], shape: Tiling['shape']) {
+function tilingCacheSvg(cache: Tiling['cache'], shape: Tiling['shape']) {
     const pts = tilingPoints(shape);
-    const tx = getTransform(pts);
     return (
         <img
             style={{width: 200}}
             src={`data:image/svg+xml,${eigenShapesToSvg(
                 cache.segments.map((s) => [s.prev, s.segment.to]),
                 shape,
-                applyMatrices(pts[2], tx),
-                pts.map((pt) => applyMatrices(pt, tx)),
+                pts[2],
+                pts,
             )}`}
         />
     );
 }
 
-export const DesignLoader = () => {
+export const DesignLoader = ({navigate}: {navigate: (path: string) => void}) => {
     const [designs, setDesigns] = React.useState<MetaData[]>([]);
     React.useEffect(() => {
         localforage
@@ -55,7 +53,7 @@ export const DesignLoader = () => {
                     // style={{ width: 300, height: 300 }}
                     onClick={() => {
                         updateMeta(design.id, {openedAt: Date.now()}).then(() => {
-                            window.location.hash = '/' + design.id;
+                            navigate('/' + design.id);
                         });
                     }}
                     className="hover:surface-hover surface-base p-4 cursor-pointer"

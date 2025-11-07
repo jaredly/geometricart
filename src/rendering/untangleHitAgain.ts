@@ -1,9 +1,7 @@
-import {Exit, IntersectionError, SegmentIntersection, HitSegment} from './untangleHit';
-import {backAngle, isAngleBetweenAngles, isInside, sortAngles} from './clipPath';
+import {Exit, SegmentIntersection, HitSegment} from './untangleHit';
+import {backAngle, sortAngles} from './clipPath';
 import {Angle} from './epsilonToZero';
-import {negPiToPi} from './epsilonToZero';
 import {anglesEqual} from './epsilonToZero';
-import {angleIsBetween, closeEnoughAngle} from './epsilonToZero';
 
 // @trace
 /**

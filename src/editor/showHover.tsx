@@ -1,23 +1,19 @@
-/* @jsx jsx */
-/* @jsxFrag React.Fragment */
-import {jsx} from '@emotion/react';
+
 import * as React from 'react';
 import {geomsForGiude} from '../rendering/calculateGuideElements';
 import {
-    applyMatrices,
     getTransformsForNewMirror,
     Matrix,
-    reverseTransform,
 } from '../rendering/getMirrorTransforms';
-import {geomToPrimitives, transformBarePath} from '../rendering/points';
+import {geomToPrimitives, } from '../rendering/points';
 import {Mirror, State} from '../types';
-import {Bounds} from './GuideElement';
+import {Bounds} from './Bounds';
 import {RenderMirror} from './RenderMirror';
 import {emptyPath, UnderlinePath} from './RenderPath';
 import {RenderPrimitive} from './RenderPrimitive';
 import {Hover} from './Sidebar';
-import {eigenShapesToLines, getTransform, tilingPoints} from './tilingPoints';
-import {calcPathD, calcSegmentsD} from './calcPathD';
+import {eigenShapesToLines, tilingPoints} from './tilingPoints';
+import {calcPathD, } from './calcPathD';
 
 export const showHover = (
     key: string,
@@ -151,14 +147,12 @@ export const showHover = (
             const tiling = state.tilings[hover.id];
             if (!tiling) return;
             const pts = tilingPoints(tiling.shape);
-            const tx = getTransform(pts);
-            const btx = reverseTransform(tx);
             const full = eigenShapesToLines(
                 tiling.cache.segments.map((s) => [s.prev, s.segment.to]),
                 tiling.shape,
-                applyMatrices(pts[2], tx),
-                pts.map((pt) => applyMatrices(pt, tx)),
-            ).map(([p1, p2]) => [applyMatrices(p1, btx), applyMatrices(p2, btx)]);
+                pts[2],
+                pts,
+            );
             return (
                 <>
                     {full.map(([p1, p2], i) => (
@@ -175,12 +169,7 @@ export const showHover = (
                         />
                     ))}
                     {tiling.cache.shapes.map((shape, i) => (
-                        <path
-                            key={i}
-                            d={calcPathD(transformBarePath(shape, btx), zoom)}
-                            fill="red"
-                            opacity={0.2}
-                        />
+                        <path key={i} d={calcPathD(shape, zoom)} fill="red" opacity={0.2} />
                     ))}
                     <polygon
                         points={pts.map(({x, y}) => `${x * zoom}, ${y * zoom}`).join(' ')}

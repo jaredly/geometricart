@@ -1,9 +1,6 @@
-/* @jsx jsx */
-/* @jsxFrag React.Fragment */
-import {jsx} from '@emotion/react';
 import * as React from 'react';
 import {transparent} from './Icons';
-import {Circle, Guide, Line, Path, PathGroup, Style, View} from '../types';
+import {Circle, Guide, Line, Path, PathGroup, View} from '../types';
 
 export const Text = ({
     value,
@@ -36,7 +33,11 @@ export const Text = ({
             }
         },
     };
-    return multiline ? <textarea {...shared} /> : <input type="text" {...shared} />;
+    return multiline ? (
+        <textarea className="textarea" {...shared} />
+    ) : (
+        <input className="input" type="text" {...shared} />
+    );
 };
 
 export const BlurInput = ({
@@ -97,6 +98,7 @@ export const BlurInt = ({
     return (
         <>
             <input
+                className="input"
                 value={text != null ? text : (value ?? '')}
                 onChange={(evt) => {
                     setText(evt.target.value);
@@ -198,7 +200,7 @@ export const Label = ({text}: {text: string}) => (
     </div>
 );
 
-export const Color = ({
+const Color = ({
     color,
     onChange,
     palette,
@@ -379,7 +381,7 @@ export const PathGroupForm = ({
     );
 };
 
-export const hasNonBodyScrollParent = (node: HTMLElement) => {
+const hasNonBodyScrollParent = (node: HTMLElement) => {
     let parent = node.parentElement;
     while (parent && parent !== document.body) {
         const style = getComputedStyle(parent);
@@ -479,7 +481,7 @@ export const PathForm = ({
     );
 };
 
-export const GuideForm = ({
+const GuideForm = ({
     guide,
     selected,
     onChange,

@@ -1,15 +1,13 @@
 /* @jsx jsx */
 /* @jsxFrag React.Fragment */
-import {Interpolation, Theme, jsx} from '@emotion/react';
-import {Path as PKPath, PathKit} from 'pathkit-wasm';
+import {Interpolation, Theme} from '@emotion/react';
+import {Path as PKPath, pk as PK} from '../routes/pk';
 import React, {useMemo, useState} from 'react';
-import * as ReactDOM from 'react-dom';
 import {pkPath} from '../sidebar/pkClipPaths';
 import {Action} from '../state/Action';
 import {initialHistory} from '../state/initialState';
 import {Fill, Path, State, StyleLine} from '../types';
-import {Canvas} from './Canvas';
-import {Bounds, DL, Multi, blankCanvasProps, findBoundingRect} from './Export';
+import {Bounds, DL, Multi, findBoundingRect} from './Export';
 import {BlurInt, Toggle} from './Forms';
 import {maybeUrlColor} from './MultiStyleForm';
 import {lightenedColor, paletteColor} from './RenderPath';
@@ -29,7 +27,7 @@ const thinnestLine = (paths: State['paths']) => {
     return width;
 };
 
-export const PPI = ({
+const PPI = ({
     ppi,
     onChange,
     bounds,
@@ -78,7 +76,6 @@ export function ExportSVG({
     embed,
     history,
     name,
-    PK,
 }: {
     state: State;
     dispatch: (action: Action) => void;
@@ -86,7 +83,6 @@ export function ExportSVG({
     embed: boolean;
     history: boolean;
     name: string;
-    PK: PathKit;
 }) {
     const [url, setUrl] = React.useState(null as null | {url: string; info: string}[]);
     const boundingRect = React.useMemo(
@@ -152,6 +148,7 @@ export function ExportSVG({
                 multiForm(state, state.view.multi, dispatch)
             ) : (
                 <button
+                    className="btn"
                     css={{marginTop: 16, display: 'block'}}
                     onClick={() =>
                         dispatch({
@@ -173,6 +170,7 @@ export function ExportSVG({
             )}
             <br />
             <button
+                className="btn"
                 css={{marginTop: 16, display: 'block'}}
                 onClick={() =>
                     runSVGExport({
@@ -184,13 +182,16 @@ export function ExportSVG({
                         history,
                         setUrl,
                         multi: state.view.multi,
-                        PK,
                     })
                 }
             >
                 Export SVG
             </button>
-            {url ? <button onClick={() => setUrl(null)}>Close</button> : null}
+            {url ? (
+                <button className="btn" onClick={() => setUrl(null)}>
+                    Close
+                </button>
+            ) : null}
             {url ? (
                 <div
                     css={{
@@ -317,6 +318,7 @@ function multiForm(
                             />
                         </div>
                         <button
+                            className="btn"
                             onClick={() => {
                                 if (i === 0) return;
                                 const shapes = multi.shapes.slice();
@@ -330,7 +332,9 @@ function multiForm(
                         >
                             up
                         </button>
+
                         <button
+                            className="btn"
                             onClick={() => {
                                 if (i === multi.shapes.length - 1) return;
                                 const shapes = multi.shapes.slice();
@@ -347,6 +351,7 @@ function multiForm(
                     </div>
                 ))}
                 <button
+                    className="btn"
                     onClick={() => {
                         dispatch({
                             type: 'view:update',
@@ -363,6 +368,7 @@ function multiForm(
                     Add a shape color
                 </button>
                 <button
+                    className="btn"
                     onClick={() => {
                         dispatch({
                             type: 'view:update',
@@ -379,6 +385,7 @@ function multiForm(
                     Add all colors
                 </button>
                 <button
+                    className="btn"
                     onClick={() => {
                         const shapes = multi.shapes.slice().reverse();
                         dispatch({
@@ -503,6 +510,7 @@ function multiForm(
                 Trace &amp; Merge Lines
             </label>
             <button
+                className="btn"
                 css={{marginTop: 16, display: 'block'}}
                 onClick={() =>
                     dispatch({
@@ -529,7 +537,6 @@ async function runSVGExport({
     history,
     setUrl,
     multi,
-    PK,
 }: {
     crop: number | null;
     boundingRect: Bounds | null;
@@ -539,7 +546,6 @@ async function runSVGExport({
     history: boolean;
     setUrl: React.Dispatch<React.SetStateAction<null | {url: string; info: string}[]>>;
     multi?: null | Multi;
-    PK: PathKit;
 }) {
     const size = calcSVGSize(crop, boundingRect, state, originalSize);
 
@@ -573,7 +579,7 @@ async function runSVGExport({
 
             return `<g transform="translate(${size.width * c}, ${size.height * r})">${
                 multi.traceAndMerge
-                    ? traceAndMergePaths(PK, {...state, paths: map}, size)
+                    ? traceAndMergePaths({...state, paths: map}, size)
                     : getSVGText({...state, paths: map}, size, true)
             }</g>`;
         });
@@ -606,7 +612,7 @@ async function runSVGExport({
     return;
 }
 
-const traceAndMergePaths = (PK: PathKit, state: State, size: {width: number; height: number}) => {
+const traceAndMergePaths = (state: State, size: {width: number; height: number}) => {
     const zoom = state.view.zoom;
     const {x, y} = viewPos(state.view, size.width, size.height);
 
@@ -623,15 +629,15 @@ const traceAndMergePaths = (PK: PathKit, state: State, size: {width: number; hei
         w = w ? (w / 100) * zoom : 2;
         c = paletteColor(state.palette, st?.color ?? 0, st?.lighten ?? 0);
         // const d = calcPathD(path, state.view.zoom)
-        const p = pkPath(PK, path.segments, path.origin, path.open);
+        const p = pkPath(path.segments, path.origin, path.open);
         const stroke = {
             width: w / zoom,
-            join: PK.StrokeJoin.MITER,
-            cap: PK.StrokeCap.ROUND,
+            join: PK.StrokeJoin.Miter,
+            cap: PK.StrokeCap.Round,
         };
         if (backer) {
-            const s = p.copy().stroke(stroke);
-            p.op(s, PK.PathOp.UNION);
+            const s = p.copy().stroke(stroke)!;
+            p.op(s, PK.PathOp.Union);
             s.delete();
         } else {
             p.stroke(stroke);
@@ -639,7 +645,7 @@ const traceAndMergePaths = (PK: PathKit, state: State, size: {width: number; hei
         if (pk == null) {
             pk = p;
         } else {
-            pk.op(p, PK.PathOp.UNION);
+            pk.op(p, PK.PathOp.Union);
             p.delete();
         }
     });
@@ -856,7 +862,7 @@ function calcSVGSize(
     return size;
 }
 
-export const Select = ({
+const Select = ({
     current,
     state,
     colors,
@@ -896,7 +902,9 @@ export const Select = ({
                     count={current != null ? colors[current] : null}
                     onClick={() => setOpen(!open)}
                 />
-                <button onClick={() => onChange(null)}>&times;</button>
+                <button className="btn" onClick={() => onChange(null)}>
+                    &times;
+                </button>
             </div>
 
             {open ? (

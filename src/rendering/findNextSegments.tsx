@@ -3,9 +3,9 @@ import {segmentKey} from './segmentKey';
 import {angleTo} from './getMirrorTransforms';
 import {Primitive} from './intersect';
 import {closeEnoughAngle} from './epsilonToZero';
-import {Coord, Intersect, PendingPath, PendingSegment, Segment} from '../types';
+import {Intersect, PendingPath, PendingSegment, } from '../types';
 
-export const dedup = (numbers: Array<number>) => {
+const dedup = (numbers: Array<number>) => {
     const seen: {[k: number]: true} = {};
     return numbers.filter((n) => (seen[n] ? false : (seen[n] = true)));
 };
@@ -68,7 +68,7 @@ export const findNextSegments = (
     return res;
 };
 
-export const calcPendingSegments = (
+const calcPendingSegments = (
     primitive: Primitive,
     // the "starting" coord that we're starting segments from
     coord: Intersect,

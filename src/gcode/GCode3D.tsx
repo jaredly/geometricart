@@ -1,10 +1,9 @@
 import * as React from 'react';
-import {Canvas, useFrame, useLoader, useThree} from '@react-three/fiber';
+import {Canvas, useLoader, useThree} from '@react-three/fiber';
 import {
     Camera,
     CanvasTexture,
     DoubleSide,
-    LinearFilter,
     Mesh,
     RepeatWrapping,
     ShaderMaterial,
@@ -15,8 +14,6 @@ import {
 import {GCodeData} from './Visualize';
 import {renderCutDepths} from './renderCutDepths';
 import {OrbitControls, PerspectiveCamera} from '@react-three/drei';
-import {addMetadata} from '../editor/ExportPng';
-import {initialHistory} from '../state/initialState';
 import {State} from '../types';
 import {gcodeStateSuffix} from './Toolbar';
 
@@ -232,7 +229,7 @@ const GetState = ({ok}: {ok: React.MutableRefObject<any>}) => {
     return null;
 };
 
-export function takePerspectivePictures(
+function takePerspectivePictures(
     threes: any,
     ctx: CanvasRenderingContext2D,
     canv: React.RefObject<HTMLCanvasElement | null>,

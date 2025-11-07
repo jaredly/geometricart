@@ -1,6 +1,4 @@
-/* @jsx jsx */
-/* @jsxFrag React.Fragment */
-import {jsx} from '@emotion/react';
+
 import React from 'react';
 import {Action} from '../state/Action';
 import {BlurInt, Toggle} from '../editor/Forms';
@@ -10,7 +8,7 @@ import eq from 'fast-deep-equal';
 import {SlotEditor} from './SlotEditor';
 import {EyeIcon, EyeInvisibleIcon} from '../icons/Eyes';
 
-export const Item = ({
+const Item = ({
     item,
     onChange,
     onDelete,

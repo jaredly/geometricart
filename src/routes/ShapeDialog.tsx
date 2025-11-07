@@ -1,12 +1,8 @@
-import {useMemo, useState} from 'react';
-import {Coord} from '../types';
-import {Route} from './+types/gallery';
-import {canonicalShape} from './getPatternData';
-import {addToMap} from './shapesFromSegments';
+import {useState} from 'react';
+import {Route} from './screens/+types/gallery';
 import {ShowShape} from './ShowShape';
 import {FrameInspectSharp} from '../icons/Icon';
 import {useOnOpen} from './useOnOpen';
-import {push} from '../rendering/getMirrorTransforms';
 import {InspectShape} from './InspectShape';
 
 export const ShapeDialog = ({
@@ -106,8 +102,11 @@ export const ShapeDialog = ({
                                                             className="info absolute text-2xl text-gray-400 hover:text-gray-200 hidden bottom-0 right-0 btn-square cursor-pointer"
                                                             onClick={(evt) => {
                                                                 evt.stopPropagation();
+                                                                evt.preventDefault();
                                                                 setInspect(key);
-                                                                dialogRef.current?.showModal();
+                                                                setTimeout(() => {
+                                                                    dialogRef.current?.showModal();
+                                                                }, 10);
                                                             }}
                                                         >
                                                             <FrameInspectSharp />

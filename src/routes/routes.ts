@@ -6,11 +6,15 @@ import {type RouteConfig, index, prefix, route} from '@react-router/dev/routes';
 // const alls = query.all();
 
 export default [
-    index('./home.tsx'),
+    index('./screens/home.tsx'),
     ...prefix('gallery', [
-        index('./gallery.tsx'),
-        route('pattern/:id', './pattern.tsx'),
-        route('pattern/:id/:size/:format', './pattern-svg.tsx'),
+        index('./screens/gallery.tsx'),
+        route('pattern/add', './screens/pattern-add.tsx'),
+        route('pattern/:id', './screens/pattern.tsx'),
+        route('pattern/:id/:img', './screens/pattern-svg.tsx'),
     ]),
-    route('editor', './editor.tsx'),
+    route('animator', './screens/animators.tsx'),
+    route('animator/:id', './screens/animator.tsx'),
+    route('uploads/:fname', './screens/uploads-image.ts'),
+    route('editor', './screens/editor.tsx'),
 ] as RouteConfig;

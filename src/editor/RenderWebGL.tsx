@@ -1,5 +1,4 @@
 import * as React from 'react';
-import {shaderForState} from '../rendering/shaderForState';
 import {texture1, texture2} from '../rendering/textures';
 import {State} from '../types';
 
@@ -196,7 +195,7 @@ void main() {
     gl_Position = position;
 }`;
 
-export type BufferInfo = {
+type BufferInfo = {
     fb: WebGLFramebuffer;
     texture: WebGLTexture;
     i: number;

@@ -8,9 +8,7 @@ import {Action, GlobalTransform} from '../state/Action';
 import {Mirror, Path, PathGroup, State} from '../types';
 import {Accordion as MyAccordion} from './Accordion';
 
-import type * as CSS from 'csstype';
 import dayjs from 'dayjs';
-import PathKitInit from 'pathkit-wasm';
 import reactColor from 'react-color';
 import {Export} from '../editor/Export';
 import {PathForm, PathGroupForm, ViewForm} from '../editor/Forms';
@@ -33,7 +31,7 @@ import {
     UndoIcon,
 } from '../icons/Icon';
 import {getMirrorTransforms} from '../rendering/getMirrorTransforms';
-import {groupSort} from '../threed/ThreedScreen';
+import {groupSort} from '../threed/groupSort';
 import {Screen, UIDispatch, UIState} from '../useUIState';
 import {useLocalStorage} from '../vest/useLocalStorage';
 import {MirrorItems} from './MirrorItems';
@@ -975,7 +973,7 @@ export function itemStyle(selected: boolean, subSelected = false): React.CSSProp
     };
 }
 
-export const NewPalettesForm = ({
+const NewPalettesForm = ({
     state,
     dispatch,
     uiDispatch,

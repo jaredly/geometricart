@@ -1,5 +1,4 @@
-import React, {useMemo} from 'react';
-import {closeEnough} from '../rendering/epsilonToZero';
+import {useMemo} from 'react';
 import {dist} from '../rendering/getMirrorTransforms';
 import {Guide, State} from '../types';
 import {Hover} from '../editor/Sidebar';

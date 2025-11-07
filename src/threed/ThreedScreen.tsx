@@ -6,15 +6,16 @@ import {CameraHelper, DirectionalLight, PerspectiveCamera as TPC} from 'three';
 import {BlurInt} from '../editor/Forms';
 import {usePathsToShow} from '../editor/SVGCanvas';
 import {Action} from '../state/Action';
-import {PathGroup, State} from '../types';
+import {State} from '../types';
 // @ts-ignore
 import {Hover} from '../editor/Sidebar';
 import {mmToPX} from '../gcode/pxToMM';
 import {calcShapes} from './calcShapes';
 import {ExportSection} from './ExportSection';
 import {paletteColor} from '../editor/RenderPath';
+import {groupSort} from './groupSort';
 
-export const useLatest = <T,>(value: T) => {
+const useLatest = <T,>(value: T) => {
     const ref = useRef(value);
     ref.current = value;
     return ref;
@@ -322,22 +323,6 @@ export const ThreedScreen = ({
         </div>
     );
 };
-
-export function groupSort(a: PathGroup, b: PathGroup): number {
-    return a.ordering == b.ordering
-        ? 0
-        : a.ordering == null
-          ? b.ordering == null
-              ? 0
-              : b.ordering >= 0
-                ? 1
-                : -1
-          : b.ordering == null
-            ? a.ordering >= 0
-                ? -1
-                : 1
-            : b.ordering - a.ordering;
-}
 
 const CH = ({camera}: {camera: any}) => {
     useHelper(camera, CameraHelper);

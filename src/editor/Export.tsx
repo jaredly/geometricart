@@ -1,22 +1,14 @@
-/* @jsx jsx */
-/* @jsxFrag React.Fragment */
-import {jsx} from '@emotion/react';
 import React from 'react';
 import {BlurInt, Text, Toggle} from './Forms';
 import {transparent} from './Icons';
-import {angleBetween} from '../rendering/isAngleBetween';
 import {sortedVisibleInsetPaths} from '../rendering/sortedVisibleInsetPaths';
 import {Action} from '../state/Action';
 import {State} from '../types';
 import {PendingBounds, newPendingBounds, addCoordToBounds} from './Bounds';
-import {MultiColor, constantColors, maybeUrlColor} from './MultiStyleForm';
 import {UIState} from '../useUIState';
 import {getClips} from '../rendering/pkInsetPaths';
 import {ExportSVG} from './ExportSVG';
 import {ExportPng} from './ExportPng';
-import {applyMatrix} from '../rendering/getMirrorTransforms';
-import {EditorState} from './Canvas';
-import {PK} from './pk';
 import {stateToConstructive} from './constructiveExport';
 
 export type Bounds = {
@@ -106,6 +98,7 @@ export const Export = ({
             <div>
                 Animation Position
                 <input
+                    className="range"
                     type="range"
                     min="0"
                     max="1"
@@ -127,7 +120,6 @@ export const Export = ({
                 name={name}
             />
             <ExportSVG
-                PK={PK}
                 state={state}
                 dispatch={dispatch}
                 originalSize={originalSize}

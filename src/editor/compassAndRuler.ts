@@ -1,8 +1,8 @@
 import {angleBetween} from '../rendering/isAngleBetween';
 import {angleTo, dist} from '../rendering/getMirrorTransforms';
-import {Coord, Guide, GuideGeom} from '../types';
+import {Coord, GuideGeom} from '../types';
 
-export type States = 'PO' | 'PA1' | 'PA2' | 'DC' | 'R1' | 'R2' | 'DR';
+type States = 'PO' | 'PA1' | 'PA2' | 'DC' | 'R1' | 'R2' | 'DR';
 
 export type PendingMark =
     | {type: 'circle'; t1: number; t2: number; clockwise: boolean}

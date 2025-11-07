@@ -16,7 +16,6 @@ const {SliderPicker, SketchPicker} = rc;
 // @ts-ignore
 import kMeans from 'kmeans-js';
 
-import {ColorPicker} from 'primereact/colorpicker';
 import {Rgb, AttachmentsChooser} from './Rgb';
 
 export const averageAt = (data: ImageData, pos: Coord): Rgb => {
@@ -34,7 +33,7 @@ export const averageAt = (data: ImageData, pos: Coord): Rgb => {
     };
 };
 
-export const colorAt = (imageData: ImageData, {x, y}: Coord): Rgb => {
+const colorAt = (imageData: ImageData, {x, y}: Coord): Rgb => {
     x = Math.floor(x);
     y = Math.floor(y);
     return {
@@ -46,8 +45,8 @@ export const colorAt = (imageData: ImageData, {x, y}: Coord): Rgb => {
 };
 
 export const rgbToString = ({r, g, b}: Rgb) => `rgb(${r},${g},${b})`;
-export const toHex = (n: number) => n.toString(16).padStart(2, '0');
-export const rgbToHex = ({r, g, b}: Rgb) => `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+const toHex = (n: number) => n.toString(16).padStart(2, '0');
+const rgbToHex = ({r, g, b}: Rgb) => `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 
 export function PalettesForm({
     state,
@@ -264,7 +263,7 @@ function PaletteForm({
     );
 }
 
-export const ColorEditor = ({
+const ColorEditor = ({
     color,
     onChange,
     onChoose,
@@ -384,7 +383,7 @@ export const findMajorColorsExpensive = (data: ImageData, bins: number = 50, top
     // return sorted.map((item) => (item.i / bins) * 360);
 };
 
-export const findMajorColors = (data: ImageData, bins: number = 50, top: number = 10) => {
+const findMajorColors = (data: ImageData, bins: number = 50, top: number = 10) => {
     // // h, s, l
     // // l = 3 bins; 0.3, 0.6
     // // s = 2 bins 0.5, 1.0

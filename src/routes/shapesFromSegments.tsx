@@ -1,26 +1,21 @@
-import {mulPos} from '../animation/mulPos';
-import {boundsForCoords} from '../editor/Bounds';
-import {scalePos} from '../editor/scalePos';
-import {getTransform, tilingPoints} from '../editor/tilingPoints';
+
+import {Bounds} from '../editor/Bounds';
 import {coordKey} from '../rendering/coordKey';
 import {closeEnough, closeEnoughAngle, epsilon} from '../rendering/epsilonToZero';
 import {
     angleTo,
-    applyMatrices,
     dist,
     Matrix,
-    rotationMatrix,
     scaleMatrix,
     translationMatrix,
 } from '../rendering/getMirrorTransforms';
 import {lineLine, lineToSlope} from '../rendering/intersect';
-import {angleBetween} from '../rendering/isAngleBetween';
 import {coordsEqual} from '../rendering/pathsAreIdentical';
-import {transformSegment} from '../rendering/points';
+import {isClockwisePoints} from '../rendering/pathToPoints';
 import {Coord, Tiling} from '../types';
+import {discoverShape} from './discoverShape';
 import {centroid} from './findReflectionAxes';
 import {getPatternData} from './getPatternData';
-import {Shape} from './getUniqueShapes';
 
 const gte = (a: number, b: number) => a >= b - epsilon;
 const lte = (a: number, b: number) => a <= b + epsilon;
@@ -66,7 +61,7 @@ const isLargerThan = (l1: [Coord, Coord], l2: [Coord, Coord]) => {
     return lte(l1MinX, l2MinX) && lte(l1MinY, l2MinY) && gte(l1MaxX, l2MaxX) && gte(l1MaxY, l2MaxY);
 };
 
-export const removeOverlappingSegs = (segs: [Coord, Coord][]) => {
+const removeOverlappingSegs = (segs: [Coord, Coord][]) => {
     const slopes = segs.map(([a, b]) => lineToSlope(a, b, true));
     const toRemove: number[] = [];
     for (let i = 0; i < slopes.length; i++) {
@@ -186,27 +181,6 @@ export const cutSegments = (segs: [Coord, Coord][]) => {
     return result;
 };
 
-// export const joinBrokenSegs = (segs: [Coord,Coord][]) => {
-//     const byEndPoint: Record<string, {idx: number; theta: number; to: Coord}[]> = {};
-//     segs.forEach((seg, i) => {
-//         if (coordsEqual(seg[0], seg[1])) {
-//             console.warn('zero-length seg, ignoring');
-//             return;
-//         }
-//         const to = angleTo(seg[0], seg[1]);
-//         const from = angleTo(seg[1], seg[0]);
-//         addToMap(byEndPoint, coordKey(seg[0]), {idx: i, theta: to, to: seg[1]});
-//         addToMap(byEndPoint, coordKey(seg[1]), {idx: i, theta: from, to: seg[0]});
-//     });
-//     const toJoin = []
-//     Object.values(byEndPoint).forEach(exits => {
-//         if (exits.length !== 2) return;
-//         if (closeEnough(angleBetween(exits[0].theta, exits[1].theta, true), Math.PI)) {
-//             console.log('would join', exits)
-//         }
-//     })
-// }
-
 export const joinAdjacentShapeSegments = (segs: Coord[]) => {
     const thetas = segs.map((seg, i) => angleTo(segs[i === 0 ? segs.length - 1 : i - 1], segs[i]));
     return segs.filter((_, i) => {
@@ -216,23 +190,66 @@ export const joinAdjacentShapeSegments = (segs: Coord[]) => {
     });
 };
 
-export const shapesFromSegments = (segs: [Coord, Coord][], eigenPoints: Coord[]) => {
-    const byEndPoint: Record<string, {idx: number; theta: number; to: Coord}[]> = {};
+export type EndPointMap = Record<
+    string,
+    {exits: {idx: number; theta: number; to: Coord}[]; pos: Coord}
+>;
+
+export const edgesByEndpoint = (segs: [Coord, Coord][]) => {
+    const byEndPoint: EndPointMap = {};
+
+    // const coordsByKey: Record<string, Coord> = {}
     segs.forEach((seg, i) => {
         if (coordsEqual(seg[0], seg[1])) {
-            // console.warn('zero-length seg, ignoring');
             return;
         }
         const to = angleTo(seg[0], seg[1]);
         const from = angleTo(seg[1], seg[0]);
-        addToMap(byEndPoint, coordKey(seg[0]), {idx: i, theta: to, to: seg[1]});
-        addToMap(byEndPoint, coordKey(seg[1]), {idx: i, theta: from, to: seg[0]});
-    });
+        const k0 = coordKey(seg[0]);
+        if (!byEndPoint[k0]) byEndPoint[k0] = {exits: [], pos: seg[0]};
+        byEndPoint[k0].exits.push({idx: i, theta: to, to: seg[1]});
 
+        const k1 = coordKey(seg[1]);
+        if (!byEndPoint[k1]) byEndPoint[k1] = {exits: [], pos: seg[1]};
+        byEndPoint[k1].exits.push({idx: i, theta: from, to: seg[0]});
+
+        // addToMap(byEndPoint, coordKey(seg[1]), {idx: i, theta: from, to: seg[0]});
+        // coordsByKey[coordKey(seg[0])] = seg[0] coordsByKey[coordKey(seg[1])] = seg[1]
+    });
+    return byEndPoint;
+};
+
+const onEdge = (pos: Coord, bounds: Bounds) =>
+    closeEnough(pos.x, bounds.x0) ||
+    closeEnough(pos.x, bounds.x1) ||
+    closeEnough(pos.y, bounds.y0) ||
+    closeEnough(pos.y, bounds.y1);
+
+export const midPoint = (a: Coord, b: Coord, perc = 0.5) => ({
+    x: a.x + (b.x - a.x) * perc,
+    y: a.y + (b.y - a.y) * perc,
+});
+
+export const allPairs = <T,>(items: T[]): [T, T][] => {
+    const res: [T, T][] = [];
+    for (let i = 0; i < items.length; i++) {
+        for (let j = i + 1; j < items.length; j++) {
+            res.push([items[i], items[j]]);
+        }
+    }
+    return res;
+};
+
+export type SegLink = {left: number[]; right: number[]; pathId?: number};
+
+export const cmpCoords = (a: Coord, b: Coord) => (closeEnough(a.x, b.x) ? a.y - b.y : a.x - b.x);
+
+export const shapesFromSegments = (byEndPoint: EndPointMap, eigenPoints: Coord[]) => {
     const used: Record<string, true> = {};
     const shapes: Coord[][] = [];
+    const backwards: Coord[][] = [];
     eigenPoints.forEach((point) => {
-        const segs = byEndPoint[coordKey(point)];
+        const segs = byEndPoint[coordKey(point)].exits;
         if (!segs) {
             console.warn(`no segs from point`, point);
             return;
@@ -240,50 +257,16 @@ export const shapesFromSegments = (segs: [Coord, Coord][], eigenPoints: Coord[])
         for (const seg of segs) {
             const sk = `${coordKey(point)}:${coordKey(seg.to)}`;
             if (used[sk]) continue;
-            let at = seg;
-            const points = [point, seg.to];
-            const pks: string[] = [];
-            let ranout = false;
-            while (points.length < 100) {
-                const nexts = byEndPoint[coordKey(at.to)]
-                    .filter((seg) => !pks.includes(coordKey(seg.to)))
-                    .filter((seg) => !coordsEqual(seg.to, points[points.length - 2]))
-                    .map((seg) => ({
-                        seg,
-                        cctheta: angleBetween(at.theta + Math.PI, seg.theta, true),
-                    }))
-                    .sort((a, b) => a.cctheta - b.cctheta);
-
-                if (!nexts.length) {
-                    // console.log('ran out');
-                    ranout = true;
-                    break;
-                }
-                const next = nexts[0];
-                // if (nexts.length > 1 && closeEnough(nexts[1].cctheta, next.cctheta)) {
-                //     // throw new Error(`overlalappap`);
-                //     console.log('overlllap', nexts);
-                // }
-
-                const sk = `${coordKey(at.to)}:${coordKey(next.seg.to)}`;
-                // if (used[sk]) {
-                //     console.warn(`somehow double-using a segment`, sk);
-                // }
-                used[sk] = true;
-
-                if (coordsEqual(points[0], next.seg.to)) {
-                    break;
-                }
-
-                at = next.seg;
-                points.push(at.to);
-                pks.push(coordKey(at.to));
-            }
+            const {points, ranout} = discoverShape(point, seg, used, byEndPoint);
             if (points.length === 100 || ranout) {
                 // console.warn('bad news, shape is bad');
                 continue;
             }
-            shapes.push(points);
+            if (!isClockwisePoints(points)) {
+                shapes.push(points);
+            } else {
+                backwards.push(points);
+            }
         }
     });
     return shapes;
@@ -339,13 +322,13 @@ export const chooseCorner = (options: Coord[], shapes: Coord[][]) => {
             shape: shape && shape.length,
             area: shape ? calcPolygonArea(shape) : 0,
         }))
-        .sort((a, b) => b.area - a.area);
+        .sort((a, b) => (closeEnough(b.area, a.area) ? a.i - b.i : b.area - a.area));
 
-    console.log('corners by size', bySize);
+    // console.log('corners by size', bySize);
     return bySize;
 };
 
-const shouldFlipTriangle = (
+export const shouldFlipTriangle = (
     rotHyp: boolean,
     internalAngle: number,
     tiling: Tiling,
@@ -411,24 +394,25 @@ const rectDims = (a: Coord, b: Coord, c: Coord, d: Coord) => {
     return {w, h};
 };
 
-const getRectangleTransform = (tiling: Tiling, data: ReturnType<typeof getPatternData>) => {
+export const getRectangleTransform = (tiling: Tiling, data: ReturnType<typeof getPatternData>) => {
     let {shape, cache} = tiling;
     if (shape.type !== 'parallellogram') {
         return;
     }
 
-    const shapePoints = data.bounds as [Coord, Coord, Coord, Coord];
-    const tilingPoints = shapePoints;
+    const shapePoints = shape.points;
+    const tilingPoints_ = shapePoints;
     const {w, h} = rectDims(...shapePoints);
 
     const tx: Matrix[] = [];
 
     const bestCorner = chooseCorner(shapePoints, data.shapes)[0].i;
+    if (bestCorner === 0) return;
 
     console.log('got best corner', bestCorner);
 
     if (bestCorner === 1) {
-        const mx = (tilingPoints[0].x + tilingPoints[1].x) / 2;
+        const mx = (tilingPoints_[0].x + tilingPoints_[1].x) / 2;
         if (closeEnough(mx, 0)) {
             tx.push(scaleMatrix(-1, 1));
         } else {
@@ -439,21 +423,20 @@ const getRectangleTransform = (tiling: Tiling, data: ReturnType<typeof getPatter
             );
         }
     }
-    if (bestCorner === 3) {
-        const my = (tilingPoints[0].y + tilingPoints[3].y) / 2;
-        if (closeEnough(my, 0)) {
-            tx.push(scaleMatrix(1, -1));
-        } else {
-            tx.push(
-                translationMatrix({x: 0, y: -my}),
-                scaleMatrix(1, -1),
-                translationMatrix({x: 0, y: my}),
-            );
-        }
+    if (bestCorner === 2) {
+        tx.push(scaleMatrix(-1, -1), translationMatrix(tilingPoints_[2]));
     }
-
-    if (bestCorner != null && bestCorner !== 0) {
-        // re-orient
+    if (bestCorner === 3) {
+        const my = (tilingPoints_[0].y + tilingPoints_[3].y) / 2;
+        // if (closeEnough(my, 0)) {
+        //     tx.push(scaleMatrix(1, -1));
+        // } else {
+        tx.push(
+            // translationMatrix({x: 0, y: -my}),
+            scaleMatrix(1, -1),
+            translationMatrix({x: 0, y: tilingPoints_[3].y}),
+        );
+        // }
     }
 
     // find the largest shape centered on a corner
@@ -468,71 +451,11 @@ const getRectangleTransform = (tiling: Tiling, data: ReturnType<typeof getPatter
         return tx;
     }
 
-    return [...tx, rotationMatrix(Math.PI / 2), scaleMatrix(1, -1), scaleMatrix(w / h, w / h)];
+    return tx;
+    // return [...tx, rotationMatrix(Math.PI / 2), scaleMatrix(1, -1), scaleMatrix(w / h, w / h)];
 };
 
-export const flipPattern = (tiling: Tiling): Tiling => {
-    let {shape, cache} = tiling;
-    if (shape.type === 'right-triangle') {
-        const pts = tilingPoints(tiling.shape);
-        const txt = getTransform(pts);
-        const bounds = pts.map((pt) => applyMatrices(pt, txt));
-        let [start, corner, end] = bounds;
-
-        let internalAngle = angleBetween(angleTo(start, corner), angleTo(start, end), true);
-        if (!shouldFlipTriangle(shape.rotateHypotenuse, internalAngle, tiling, start, end)) {
-            return tiling;
-        }
-
-        const tx = [
-            translationMatrix({x: -end.x, y: -end.y}),
-            scaleMatrix(1, -1),
-            rotationMatrix(Math.PI / 2),
-            scaleMatrix(-1 / end.y, -1 / end.y),
-        ];
-
-        shape = {...shape};
-        cache = {...cache};
-
-        start = applyMatrices(start, tx);
-        end = applyMatrices(end, tx);
-        corner = applyMatrices(corner, tx);
-
-        cache.segments = cache.segments.map((seg) => ({
-            prev: applyMatrices(seg.prev, tx),
-            segment: transformSegment(seg.segment, tx),
-        }));
-        return {...tiling, cache, shape: {...shape, start: end, corner, end: start}};
-    }
-    if (shape.type === 'parallellogram') {
-        const data = getPatternData(tiling);
-        const tx = getRectangleTransform(tiling, data);
-        if (!tx?.length || 2 > 1) return tiling;
-
-        console.log('transform para', tx);
-
-        shape = {...shape};
-        cache = {...cache};
-
-        const points = shape.points.map((p) => applyMatrices(p, tx));
-
-        cache.segments = cache.segments.map((seg) => ({
-            prev: applyMatrices(seg.prev, tx),
-            segment: transformSegment(seg.segment, tx),
-        }));
-        return {
-            ...tiling,
-            cache,
-            shape: {
-                ...shape,
-                points: rectPointsInOrder(points),
-            },
-        };
-    }
-    return tiling;
-};
-
-const rectPointsInOrder = (points: Coord[]): [Coord, Coord, Coord, Coord] => {
-    const [a, b, d, c] = points.toSorted((a, b) => (closeEnough(a.x, b.x) ? a.y - b.y : a.x - b.x));
+export const rectPointsInOrder = (points: Coord[]): [Coord, Coord, Coord, Coord] => {
+    const [a, b, d, c] = points.toSorted((a, b) => (closeEnough(a.y, b.y) ? a.x - b.x : b.y - a.y));
     return [a, b, c, d];
 };

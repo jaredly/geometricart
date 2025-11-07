@@ -5,7 +5,6 @@ import {reverseSegment} from './pathsAreIdentical';
 import {Coord, Segment} from '../types';
 import {negPiToPi} from './epsilonToZero';
 import {closeEnough} from './epsilonToZero';
-import {segmentKey} from './segmentKey';
 import {pxToMM} from '../gcode/pxToMM';
 
 export type RasterSeg = {
@@ -197,7 +196,7 @@ export const totalAngle = (segments: Array<Segment>) => {
     return totalAnglePoints(rasterSegPoints(points));
 };
 
-export const totalAnglePoints = (points: Coord[]) => {
+const totalAnglePoints = (points: Coord[]) => {
     const angles = pointsAngles(points);
     const betweens = angleDifferences(angles);
     const relatives = betweens.map((between) =>
@@ -207,7 +206,7 @@ export const totalAnglePoints = (points: Coord[]) => {
     return total;
 };
 
-export const isMaybeClockwise = (segments: Array<Segment>) => {
+const isMaybeClockwise = (segments: Array<Segment>) => {
     const points = rasterSegPoints(pathToPoints(segments, null));
     const angles = points.map((point, i) => {
         const prev = i === 0 ? points[points.length - 1] : points[i - 1];

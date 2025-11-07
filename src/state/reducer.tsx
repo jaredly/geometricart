@@ -1,4 +1,5 @@
 import {pathToPrimitives} from '../editor/findSelection';
+import {rehashTiling} from '../editor/handleTiling';
 import {addAction, redoAction, undoAction} from '../editor/history';
 import {styleMatches} from '../editor/MultiStyleForm';
 import {pendingGuide} from '../editor/RenderPendingGuide';
@@ -19,6 +20,7 @@ import {
 import {ensureClockwise} from '../rendering/pathToPoints';
 import {transformPath, transformSegment} from '../rendering/points';
 import {simplifyPath} from '../rendering/simplifyPath';
+import {normalizeTiling} from '../routes/flipPattern';
 import {
     Coord,
     Guide,
@@ -175,10 +177,7 @@ const guideAgain = (kind: GuideGeom['type'], state: State, shiftKey?: boolean): 
     };
 };
 
-export const reduceWithoutUndo = (
-    state: State,
-    action: UndoableAction,
-): [State, UndoAction | null] => {
+const reduceWithoutUndo = (state: State, action: UndoableAction): [State, UndoAction | null] => {
     // console.log('🤔 an action', action);
     switch (action.type) {
         case 'mirror:change':
@@ -318,11 +317,11 @@ export const reduceWithoutUndo = (
                     nextId,
                     tilings: {
                         ...state.tilings,
-                        [id]: {
+                        [id]: normalizeTiling({
                             shape: action.shape,
                             cache: action.cache,
                             id,
-                        },
+                        }),
                     },
                 },
                 {type: action.type, action, added: [id, state.nextId]},
@@ -1524,7 +1523,7 @@ export function handlePathMultiply(state: State, action: PathMultiply): [State, 
     ];
 }
 
-export function handlePathCreate(
+function handlePathCreate(
     state: State,
     origAction: PathCreateMany | PathCreate,
 ): [State, UndoAction | null] {
@@ -1647,7 +1646,7 @@ export const reifyMirror = (mirrors: {[key: Id]: Mirror}, id: Id): Mirror => {
     return mirror;
 };
 
-export const handleARE = <T, Key, Result>(
+const handleARE = <T, Key, Result>(
     are: AddRemoveEdit<T, Key>,
     handlers: {
         add: (key: Key, value?: T) => Result;
@@ -1666,7 +1665,7 @@ export const handleARE = <T, Key, Result>(
     }
 };
 
-export const undoListARE = <T,>(are: UndoAddRemoveEdit<T, number>, list: Array<T>) => {
+const undoListARE = <T,>(are: UndoAddRemoveEdit<T, number>, list: Array<T>) => {
     if (are.type === 'add') {
         list.splice(are.key, 1);
         return list;
@@ -1679,7 +1678,7 @@ export const undoListARE = <T,>(are: UndoAddRemoveEdit<T, number>, list: Array<T
     }
 };
 
-export const handleListARE = <T,>(are: AddRemoveEdit<T, number>, list: Array<T>, blank: T) => {
+const handleListARE = <T,>(are: AddRemoveEdit<T, number>, list: Array<T>, blank: T) => {
     return handleARE(are, {
         add: (index, value) => {
             list.splice(index, 0, value ?? blank);
@@ -1698,7 +1697,7 @@ export const handleListARE = <T,>(are: AddRemoveEdit<T, number>, list: Array<T>,
     });
 };
 
-export const transformMatrix = (action: GlobalTransform, reverse?: boolean) => {
+const transformMatrix = (action: GlobalTransform, reverse?: boolean) => {
     if (action.flip) {
         return [action.flip === 'H' ? scaleMatrix(-1, 1) : scaleMatrix(1, -1)];
     }
@@ -1708,7 +1707,7 @@ export const transformMatrix = (action: GlobalTransform, reverse?: boolean) => {
     return [];
 };
 
-export const transformState = (state: State, mx: Matrix[]) => {
+const transformState = (state: State, mx: Matrix[]) => {
     const paths = {...state.paths};
     const guides = {...state.guides};
     const clips = {...state.clips};
@@ -1732,7 +1731,7 @@ export const transformState = (state: State, mx: Matrix[]) => {
     return {...state, paths, guides, clips, mirrors};
 };
 
-export const completePendingGuide = (
+const completePendingGuide = (
     state: State,
     action: PendingPoint | PendingAngle,
     geom: GuideGeom,

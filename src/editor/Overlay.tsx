@@ -1,6 +1,4 @@
-/* @jsx jsx */
-/* @jsxFrag React.Fragment */
-import {jsx} from '@emotion/react';
+
 import React, {useEffect, useMemo, useState} from 'react';
 import {Coord, Overlay as OverlayT, State, View} from '../types';
 import {screenToWorld} from './Canvas';
@@ -230,7 +228,7 @@ export function Overlay({
     );
 }
 
-export const findSvg = (value: HTMLElement | SVGElement) => {
+const findSvg = (value: HTMLElement | SVGElement) => {
     while (!(value instanceof SVGSVGElement)) {
         if (!value.parentElement || value === value.parentElement) {
             return null;
@@ -240,7 +238,7 @@ export const findSvg = (value: HTMLElement | SVGElement) => {
     return value;
 };
 
-export function useMouseDragBad(
+function useMouseDragBad(
     active: boolean,
     ref: React.MutableRefObject<SVGImageElement | null>,
     width: number,

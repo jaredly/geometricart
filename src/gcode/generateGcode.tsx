@@ -5,13 +5,13 @@ import {dist} from '../rendering/getMirrorTransforms';
 import {pathToPoints, RasterSeg, rasterSegPoints} from '../rendering/pathToPoints';
 import {sortedVisibleInsetPaths} from '../rendering/sortedVisibleInsetPaths';
 import {Coord, Path, State, StyleLine} from '../types';
-import PathKitInit, {PathKit} from 'pathkit-wasm';
+import {PathKit} from 'pathkit-wasm';
 import {calcPathD} from '../editor/calcPathD';
 import {segmentKey, segmentKeyReverse} from '../rendering/segmentKey';
 import {getClips} from '../rendering/pkInsetPaths';
 import {coordsEqual} from '../rendering/pathsAreIdentical';
-import {PK} from '../editor/pk';
 import {pxToMM} from './pxToMM';
+import {pk} from '../routes/pk';
 
 // NOTE: if the shape isn't closed, we pretty much bail.
 const findClosest = (shape: RasterSeg[], point: Coord) => {
@@ -30,7 +30,7 @@ const findClosest = (shape: RasterSeg[], point: Coord) => {
     return {dist: best![0], idx: best![1]};
 };
 
-export const greedyPaths = (paths: Array<{path: Path; style: StyleLine}>, ppi: number) => {
+const greedyPaths = (paths: Array<{path: Path; style: StyleLine}>, ppi: number) => {
     console.log('greedy it up', paths);
     const pathPoints: Array<Array<RasterSeg>> = [];
     paths.forEach(({path, style}) => {
@@ -127,7 +127,7 @@ export const generateLaserInset = (state: State) => {
         state.view.hideDuplicatePaths,
     );
 
-    const full = PK.NewPath();
+    const full = new pk.Path();
 
     insetPaths.forEach((path) => {
         const style = path.style;
@@ -139,13 +139,13 @@ export const generateLaserInset = (state: State) => {
                 return;
             }
 
-            const pkpath = PK.FromSVGString(d);
+            const pkpath = pk.Path.MakeFromSVGString(d)!;
             pkpath.stroke({
                 width: line.width,
-                join: PK.StrokeJoin.ROUND,
-                cap: PK.StrokeCap.ROUND,
+                join: pk.StrokeJoin.Round,
+                cap: pk.StrokeCap.Round,
             });
-            full.op(pkpath, PK.PathOp.UNION);
+            full.op(pkpath, pk.PathOp.Union);
             pkpath.delete();
         });
     });
@@ -169,7 +169,7 @@ type GCode =
     | {type: 'M0'; message: string}
     | {type: 'clear'};
 
-export const generateGcode = (state: State, PathKit: PathKit) => {
+export const generateGcode = (state: State) => {
     const clip = getClips(state);
 
     const now = Date.now();
@@ -241,11 +241,7 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
             const greedy = greedyPaths(colors[color], state.meta.ppi);
             if (color.endsWith(':pocket')) {
                 greedy.forEach((shape) => {
-                    const pocket = makePocket(
-                        PathKit,
-                        rasterSegPoints(shape).map(scalePos),
-                        diameter,
-                    );
+                    const pocket = makePocket(rasterSegPoints(shape).map(scalePos), diameter);
                     if (!pocket.length || !pocket[0].length) {
                         console.warn('empty pocket', pocket, shape);
                         return;
@@ -484,7 +480,7 @@ export const generateGcode = (state: State, PathKit: PathKit) => {
     return {time, text: lines.join('\n')};
 };
 
-export const cmdBounds = (cmds: GCode[]) => {
+const cmdBounds = (cmds: GCode[]) => {
     return cmds.reduce(
         (bounds, cmd) => {
             switch (cmd.type) {
@@ -522,8 +518,8 @@ const calculateDepthForVBit = (start: number, angle: number, diameter: number) =
     // return 3;
 };
 
-function makePocket(PathKit: PathKit, shape: Coord[], bitSize: number) {
-    const path = PathKit.NewPath();
+function makePocket(shape: Coord[], bitSize: number) {
+    const path = new pk.Path();
     shape.forEach(({x, y}, i) => {
         if (i === 0) {
             path.moveTo(x, y);
@@ -545,10 +541,10 @@ function makePocket(PathKit: PathKit, shape: Coord[], bitSize: number) {
     while (true) {
         const stroke = path.copy().stroke({
             width: bitSize, // * 1.3,
-            cap: PathKit.StrokeCap.ROUND,
-            join: PathKit.StrokeJoin.ROUND,
-        });
-        path.op(stroke, PathKit.PathOp.DIFFERENCE);
+            cap: pk.StrokeCap.Round,
+            join: pk.StrokeJoin.Round,
+        })!;
+        path.op(stroke, pk.PathOp.Difference);
         stroke.delete();
         path.simplify();
 
@@ -580,7 +576,7 @@ function makePocket(PathKit: PathKit, shape: Coord[], bitSize: number) {
 
             rounds.push(round);
         } else {
-            const round = cmdsToPoints(path.toCmds(), PathKit, outer);
+            const round = cmdsToPoints([...path.toCmds()], outer);
             const string = JSON.stringify(round);
             // No change 🤔
             if (string === last) {
@@ -621,38 +617,67 @@ const svgPathPoints = (outer: SVGSVGElement, d: string, ppd: number = 0.2): Coor
 // https://github.com/google/skia/blob/main/src/effects/SkCornerPathEffect.cpp
 // https://github.com/google/skia/blob/main/modules/pathkit/pathkit_wasm_bindings.cpp#L358
 
-export const cmdsToPoints = (cmds: number[][], pk: PathKit, outer: SVGSVGElement): Coord[][] => {
+const cmdsToPoints = (cmds: number[], outer: SVGSVGElement): Coord[][] => {
     const points: Coord[][] = [];
 
-    for (let cmd of cmds) {
-        if (cmd[0] === pk.MOVE_VERB) {
-            points.push([{x: cmd[1], y: cmd[2]}]);
-        } else if (cmd[0] === pk.LINE_VERB) {
-            points[points.length - 1].push({x: cmd[1], y: cmd[2]});
-        } else if (cmd[0] === pk.CUBIC_VERB) {
-            const current = points[points.length - 1];
-            const last = current[current.length - 1];
-            points[points.length - 1].push(
-                ...svgPathPoints(outer, `M${last.x} ${last.y} C${cmd.slice(1).join(' ')}`),
-            );
-        } else if (cmd[0] === pk.QUAD_VERB) {
-            const current = points[points.length - 1];
-            const last = current[current.length - 1];
-            points[points.length - 1].push(
-                ...svgPathPoints(outer, `M${last.x} ${last.y} Q${cmd.slice(1).join(' ')}`),
-            );
-        } else if (cmd[0] === pk.CONIC_VERB) {
-            const current = points[points.length - 1];
-            const last = current[current.length - 1];
+    for (let i = 0; i < cmds.length; ) {
+        switch (cmds[i++]) {
+            case pk.MOVE_VERB:
+                points.push([{x: cmds[i++], y: cmds[i++]}]);
+                break;
+            case pk.LINE_VERB:
+                points[points.length - 1].push({x: cmds[i++], y: cmds[i++]});
+                break;
+            case pk.CUBIC_VERB: {
+                const current = points[points.length - 1];
+                const last = current[current.length - 1];
+                const values: number[] = [];
+                for (let j = 0; j < 6; j++) {
+                    values.push(cmds[i++]);
+                }
+                points[points.length - 1].push(
+                    ...svgPathPoints(
+                        outer,
+                        `M${last.x} ${last.y} C${values.map((v) => v.toFixed(3)).join(' ')}`,
+                    ),
+                );
+                break;
+            }
+            case pk.QUAD_VERB: {
+                const current = points[points.length - 1];
+                const last = current[current.length - 1];
+                const values: number[] = [];
+                for (let j = 0; j < 4; j++) {
+                    values.push(cmds[i++]);
+                }
+                points[points.length - 1].push(
+                    ...svgPathPoints(
+                        outer,
+                        `M${last.x} ${last.y} Q${values.map((v) => v.toFixed(3)).join(' ')}`,
+                    ),
+                );
+                break;
+            }
+            case pk.CONIC_VERB: {
+                const current = points[points.length - 1];
+                const last = current[current.length - 1];
 
-            const path = pk.FromCmds([[pk.MOVE_VERB, last.x, last.y], cmd]);
-            points[points.length - 1].push(...svgPathPoints(outer, path.toSVGString()));
-            path.delete();
-        } else if (cmd[0] === pk.CLOSE_VERB) {
-            points[points.length - 1].push({...points[points.length - 1][0]});
-            continue;
-        } else {
-            throw new Error('unknown cmd ' + cmd[0]);
+                const values: number[] = [];
+                for (let j = 0; j < 5; j++) {
+                    values.push(cmds[i++]);
+                }
+
+                const path = pk.Path.MakeFromCmds([pk.MOVE_VERB, last.x, last.y, ...values])!;
+                points[points.length - 1].push(...svgPathPoints(outer, path.toSVGString()));
+                path.delete();
+                break;
+            }
+            case pk.CLOSE_VERB: {
+                points[points.length - 1].push({...points[points.length - 1][0]});
+                continue;
+            }
+            default:
+                throw new Error(`unknown cmd ${cmds[i - 1]}`);
         }
     }
 

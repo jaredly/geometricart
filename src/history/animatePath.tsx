@@ -1,6 +1,6 @@
 import {Coord, State} from '../types';
 import {tracePath} from '../rendering/CanvasRender';
-import {Action, PathCreate, PathCreateMany} from '../state/Action';
+import {PathCreate, PathCreateMany} from '../state/Action';
 import {emptyPath} from '../editor/RenderPath';
 import {
     applyMatrices,

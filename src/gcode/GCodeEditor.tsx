@@ -1,16 +1,14 @@
-import React, {useEffect, useMemo} from 'react';
-import {Bounds, findBoundingRect} from '../editor/Export';
+import React, {useMemo} from 'react';
+import {findBoundingRect} from '../editor/Export';
 import {Text} from '../editor/Forms';
-import {canvasRender} from '../rendering/CanvasRender';
 import {Action} from '../state/Action';
 import {State} from '../types';
 import {Toolbar} from './Toolbar';
 import {Settings} from './Settings';
 import {ItemEdit} from './ItemEdit';
-import PathKitInit, {PathKit} from 'pathkit-wasm';
 import {Canvas} from '../editor/Canvas';
 import {IconDelete} from '../icons/Icon';
-import {usePK} from '../editor/pk';
+// import {usePK} from '../editor/pk';
 
 const many = (value: string, m: number) => {
     const values: string[] = [];
@@ -38,7 +36,7 @@ export const GCodeEditor = ({
         [state.view, state.paths, state.pathGroups],
     );
 
-    const pathKit = usePK();
+    // const pathKit = usePK();
 
     const originalSize = 700;
 
@@ -150,15 +148,13 @@ export const GCodeEditor = ({
                 </div>
             </div>
             <div style={{marginTop: 100}}>
-                {pathKit ? (
-                    <Toolbar state={state} bounds={bounds} w={w} h={h} PathKit={pathKit} />
-                ) : null}
+                <Toolbar state={state} bounds={bounds} w={w} h={h} />
             </div>
         </div>
     );
 };
 
-export const UpDown = ({
+const UpDown = ({
     i,
     dispatch,
     state,

@@ -12,13 +12,12 @@ import 'primeflex/primeflex.css';
 import {
     Route,
     createRoutesFromElements,
-    RouterProvider,
     useLoaderData,
     createHashRouter,
     useParams,
 } from 'react-router-dom';
 import localforage from 'localforage';
-import {Checkpoint, Meta, Mirror, State, Tiling} from './types';
+import {Checkpoint, Mirror, State, Tiling} from './types';
 import {Accordion} from './sidebar/Accordion';
 import {MirrorPicker, SaveDest} from './MirrorPicker';
 import {setupState} from './setupState';
@@ -28,12 +27,11 @@ import {exportPNG} from './editor/ExportPng';
 import {DesignLoader} from './DesignLoader';
 import {Button} from 'primereact/button';
 import {useGists, gistCache} from './useGists';
-import {loadGist, newGist, saveGist, stateFileName} from './gists';
+import {loadGist, newGist, saveGist} from './gists';
 import {maybeMigrate} from './state/migrateState';
-import {initialState} from './state/initialState';
-import {Morph} from './Morph';
 import {useDropStateTarget} from './editor/useDropTarget';
-import {usePK, WithPathKit} from './editor/pk';
+import {pk} from './routes/pk';
+// import {usePK, WithPathKit} from './editor/pk';
 dayjs.extend(relativeTime);
 
 export const metaPrefix = 'meta:';
@@ -139,7 +137,7 @@ export const stringToCheckpoint = (s: string) => {
     };
 };
 
-const Welcome = () => {
+export const Welcome = ({navigate}: {navigate: (path: string) => void}) => {
     const [activeIds, setActiveIds] = React.useState({
         new: false,
         open: true,
@@ -183,12 +181,12 @@ const Welcome = () => {
                         {
                             key: 'open',
                             header: 'Open Design',
-                            content: () => <DesignLoader />,
+                            content: () => <DesignLoader navigate={navigate} />,
                         },
                         {
                             key: 'gists',
                             header: 'Github Gists',
-                            content: () => <GistLoader />,
+                            content: () => <GistLoader navigate={navigate} />,
                         },
                     ]}
                 />
@@ -197,7 +195,7 @@ const Welcome = () => {
     );
 };
 
-const GistLoader = () => {
+const GistLoader = ({navigate}: {navigate: (path: string) => void}) => {
     const {gists, token} = useGists();
     if (token == null) {
         return (
@@ -237,7 +235,7 @@ const GistLoader = () => {
                         key={gist.id}
                         className="mt-3 flex flex-column hover:surface-hover surface-base p-4 cursor-pointer"
                         onClick={() => {
-                            window.location.hash = '/gist/' + gist.id;
+                            navigate('/gist/' + gist.id);
                         }}
                     >
                         <img
@@ -265,7 +263,7 @@ const GistLoader = () => {
     );
 };
 
-const File = ({gist, dest}: {gist?: boolean; dest: SaveDest}) => {
+export const File = ({dest}: {dest: SaveDest}) => {
     const data = useLoaderData();
     const params = useParams();
 
@@ -303,7 +301,7 @@ const File = ({gist, dest}: {gist?: boolean; dest: SaveDest}) => {
     );
 };
 
-function usePreventNavAway(lastSaved: {
+export function usePreventNavAway(lastSaved: {
     when: number;
     dirty: true | (() => void) | null;
     id: string;
@@ -346,14 +344,14 @@ export const debounce = (fn: () => Promise<void>, time: number): (() => void) =>
 };
 
 const PkDebug = () => {
-    const PK = usePK();
+    // const PK = usePK();
     const [text, setText] = React.useState(
         `L10 10L5 0Z`,
         // `p.lineTo(10, 10)\np.conicTo(0, 0, 0, 10, 0.2)\np.close()`,
     );
     const d = React.useMemo(() => {
         try {
-            const p = PK.FromSVGString(text);
+            const p = pk.Path.MakeFromSVGString(text)!;
             // const fn = new Function('p', text);
             // fn(p);
             const d = p.toSVGString();
@@ -380,7 +378,7 @@ const PkDebug = () => {
                     >
                         <path d={d.d} />
                     </svg>
-                    <pre>{d.cmds.map((m) => JSON.stringify(m)).join('\n')}</pre>
+                    <pre>{[...d.cmds].map((m) => JSON.stringify(m)).join('\n')}</pre>
                     <pre>{d.d.split(/(?=[MLQ])/g).join('\n')}</pre>
                 </div>
             ) : (
@@ -393,12 +391,20 @@ const PkDebug = () => {
 /* then we can do useOutletContext() for state & dispatch ... is that it? */
 export const router = createHashRouter(
     createRoutesFromElements([
-        <Route index element={<Welcome />} />,
+        <Route
+            index
+            element={
+                <Welcome
+                    navigate={(hash) => {
+                        window.location.hash = hash;
+                    }}
+                />
+            }
+        />,
         <Route
             path="gist/:id"
             element={
                 <File
-                    gist
                     dest={{
                         type: 'gist',
                         token: localStorage.github_access_token,
@@ -507,28 +513,26 @@ export const getForeignState = async (image: string | null, load: string | null)
 const morph = false;
 
 export const AppWithSave = ({state, save}: {state: State; save: string}) => (
-    <WithPathKit>
-        <App
-            closeFile={() => {
-                if (back) {
-                    location.href = back;
-                } else {
-                    history.back();
-                }
-            }}
-            initialState={state}
-            lastSaved={null}
-            saveState={async (state) => {
-                fetch(save, {
-                    method: 'POST',
-                    body: JSON.stringify(state),
-                    headers: {
-                        'Content-type': 'application/json',
-                    },
-                });
-            }}
-        />
-    </WithPathKit>
+    <App
+        closeFile={() => {
+            if (back) {
+                location.href = back;
+            } else {
+                history.back();
+            }
+        }}
+        initialState={state}
+        lastSaved={null}
+        saveState={async (state) => {
+            fetch(save, {
+                method: 'POST',
+                body: JSON.stringify(state),
+                headers: {
+                    'Content-type': 'application/json',
+                },
+            });
+        }}
+    />
 );
 
 function newMetaData(id: string, state: State): MetaData {

@@ -1,4 +1,82 @@
 
+# Designer....
+
+# Make the SVGs
+
+- have a .. button .. that will make the layers, and show them all in a line I guess
+  probably give them to you as a .zip file or something
+
+# Builddddddit
+
+I want to
+- [ ] make like a 3d model probably so I can see what it will look like
+- [ ] make it so I can export SVGs of each layer, so I can lasercut it all out
+  - maybe trying with cardboard first
+- [ ] ummmm add a clip border dealio
+  -> pathkit to combine all the paths and then stroke it
+
+# Animator....
+
+- [x] sooo have the ability to "fade out" a line that's going to be deleted. I think that'll be ~nicer than having it withdraw from one side.
+  - ended up doing a stroke-width transform
+
+Line -> Line animation.
+
+Animator, lookin fresh.
+- [ ] let's persist to a json file on disk
+- [ ] with an id n stuff
+- [x] show the lines we got with tweening
+- [x] allow a single-point keyframe (to disappear)
+- [x] allow adding guidelines, for adding points at intersections
+  - single lines
+  - graduated lines
+  - allow ATs (tweened) things to be used as coords.
+  - have the bounds lines be automatic guidelines
+- [ ] calculate intersections of guides, to be points you can do stuff with
+- [ ] intersect guides with realized points too maybe
+- [ ] setting for line width
+
+# Similar patterns
+and gallery view
+
+- [ ] hover to see the list of their unique shapes
+
+
+ok so, what about doing the 'summarize and organize this proejct for me'
+
+# Some refactors n stuff
+
+- [x] remove unused imports all over
+  - [x] yay biomejs can handle it
+- [x] remove unused exports all over
+- [x] fix-non-component-exports should bring along other non-exported locals
+  - [ ] don't remove `loader` from routes
+  - [ ] don't remove re-exports
+
+
+# Weeeeaving
+
+super fun
+
+- [x] more expansion of the equilateral triangle case
+- [ ] investigate why some paths aren't mrging 3-way intersections
+- [ ] add configs for [woven | colored | etc]
+
+
+
+# Ok folks, pattern inspection next?
+
+- Tabs
+  - construction walkthrough(s)
+  - examples from around the internet
+  - similar patterns
+  - shapes
+
+# And pattern builder
+
+- yay
+
+#
 
 I think I need to peel back the layers.
 like we do all these transforms and stuff.
@@ -12,7 +90,9 @@ yeah.
 
 and then, things will make more sense?
 
-- [ ] ^ do that!
+- [x] ^ do that!
+
+Ok......nowww I should be able to get back to the
 
 
 
@@ -21,7 +101,7 @@ and also probably 'extract all utility functions into their own files'
 
 - [x] some solid perf stuff
 
-- [ ] re-orient rectangles
+- [x] re-orient rectangles
 
 - [x] show shape info
   - still need to show colinearity. could be nice

@@ -5,7 +5,7 @@ import {angleBetween} from '../isAngleBetween';
 import {angleTo, dist, push} from '../getMirrorTransforms';
 import {lineCircle, lineToSlope} from '../intersect';
 
-export const insetLineArc = (
+const insetLineArc = (
     prev: Coord,
     seg: LineSegment,
     next: ArcSegment,

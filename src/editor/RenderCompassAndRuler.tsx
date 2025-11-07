@@ -1,11 +1,11 @@
-import React from 'react';
-import {angleTo, dist, posOffset, push} from '../rendering/getMirrorTransforms';
-import {Circle, lineToSlope, Primitive} from '../rendering/intersect';
-import {Coord, GuideGeom, View} from '../types';
+
+import {angleTo, dist, push} from '../rendering/getMirrorTransforms';
+import {lineToSlope, Primitive} from '../rendering/intersect';
+import {Coord, View} from '../types';
 import {EditorState} from './Canvas';
 import {CompassState, PendingMark, previewPos} from './compassAndRuler';
 import {RenderPrimitive} from './RenderPrimitive';
-import {Bounds} from './GuideElement';
+import {Bounds} from './Bounds';
 
 type Dot = {type: 'dot'; pos: Coord; active: boolean};
 

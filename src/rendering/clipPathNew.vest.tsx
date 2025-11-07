@@ -1,11 +1,8 @@
 import * as React from 'react';
-import {segmentsBounds} from '../editor/Bounds';
-import {pathSegs} from '../editor/RenderPath';
-import {calcPathD, calcSegmentsD} from '../editor/calcPathD';
+import {calcSegmentsD} from '../editor/calcPathD';
 import {Segment} from '../types';
 import {register} from '../vest';
 import {
-    addPrevsToSegments,
     collectRegions,
     getSomeHits,
     prevSegmentsToShape,
@@ -13,7 +10,7 @@ import {
 } from './clipPathNew';
 import {angleTo, dist, push} from './getMirrorTransforms';
 import {coordsEqual} from './pathsAreIdentical';
-import {ensureClockwise, isClockwise} from './pathToPoints';
+import {isClockwise} from './pathToPoints';
 import {useInitialState} from './SegmentEditor';
 import {ShapeEditor} from './ShapeEditor';
 
@@ -26,7 +23,7 @@ type Output = Array<{
 
 const empty: Input = [[], []];
 
-export const Editor = ({
+const Editor = ({
     initial,
     onChange,
 }: {
@@ -116,7 +113,7 @@ export const Editor = ({
         </div>
     );
 };
-export const Fixture = ({input, output}: {input: Input; output: Output}) => {
+const Fixture = ({input, output}: {input: Input; output: Output}) => {
     const first = prevSegmentsToShape(input[0]);
     const second = prevSegmentsToShape(input[1]);
     return (

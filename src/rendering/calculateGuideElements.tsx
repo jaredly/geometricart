@@ -3,7 +3,6 @@ import {
     applyMatrices,
     getTransformsForNewMirror,
     Matrix,
-    push,
 } from './getMirrorTransforms';
 import {Coord, Guide, GuideGeom, Id, Mirror} from '../types';
 import {getCircumCircle} from './points';
@@ -82,7 +81,7 @@ export const calculateGuideElements = (
     return elements;
 };
 
-export type GuideElement = {
+type GuideElement = {
     id: Id;
     geom: GuideGeom;
     active: boolean;

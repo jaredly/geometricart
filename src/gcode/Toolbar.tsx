@@ -5,7 +5,6 @@ import {pxToMM} from './pxToMM';
 import {initialState} from '../state/initialState';
 import {State} from '../types';
 import {Visualize} from './Visualize';
-import {PathKit} from 'pathkit-wasm';
 
 export const gcodeStateSuffix = (state: State) =>
     '\n;; ** STATE **\n;; ' +
@@ -19,13 +18,11 @@ export function Toolbar({
     bounds,
     w,
     h,
-    PathKit,
 }: {
     state: State;
     bounds: Bounds | null;
     w: number;
     h: number;
-    PathKit: PathKit;
 }) {
     const [laserUrl, setLaserUrl] = useState(null as null | {svg: string; url: string});
     const [showGcode, setShowGcode] = useState(true);
@@ -37,7 +34,7 @@ export function Toolbar({
 
         try {
             const now = Date.now();
-            const {time, text} = generateGcode(state, PathKit);
+            const {time, text} = generateGcode(state);
             console.log(`Gcode generation, ${((Date.now() - now) / 1000).toFixed(2)}sec`);
             const blob = new Blob([text + gcodeStateSuffix(state)], {
                 type: 'text/plain',
@@ -99,7 +96,7 @@ export function Toolbar({
     );
 }
 
-export function showLaserSvg(
+function showLaserSvg(
     bounds: Bounds,
     state: State,
     w: number,
@@ -123,7 +120,7 @@ export function showLaserSvg(
     );
 }
 
-export function wrapSvg(bounds: Bounds, state: State, svg: string): BlobPart {
+function wrapSvg(bounds: Bounds, state: State, svg: string): BlobPart {
     return `<svg
         xmlns="http://www.w3.org/2000/svg"
         width="${pxToMM(bounds.x2 - bounds.x1, state.meta.ppi).toFixed(1) + 'mm'}"

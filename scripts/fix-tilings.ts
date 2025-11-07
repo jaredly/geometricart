@@ -1,29 +1,36 @@
-import {epsilon} from '../src/rendering/epsilonToZero';
-import {
-    angleTo,
-    dist,
-    rotationMatrix,
-    scaleMatrix,
-    translationMatrix,
-} from '../src/rendering/getMirrorTransforms';
-import {angleBetween} from '../src/rendering/isAngleBetween';
+import {tilingPoints} from '../src/editor/tilingPoints';
+import {dist} from '../src/rendering/getMirrorTransforms';
+import {coordsEqual} from '../src/rendering/pathsAreIdentical';
 import {db, getAllPatterns, saveAllPatterns} from '../src/routes/db.server';
-import {
-    cutSegments,
-    flipPattern,
-    removeOverlappingSegs,
-    splitOverlappingSegs,
-} from '../src/routes/shapesFromSegments';
+import {preTransformTiling} from '../src/routes/getPatternData';
+import {cutSegments, splitOverlappingSegs} from '../src/routes/shapesFromSegments';
+import {flipPattern} from '../src/routes/flipPattern';
 import {Coord, Tiling} from '../src/types';
 
 const patterns = getAllPatterns();
 const toSave: {tiling: Tiling; hash: string}[] = [];
+
+// Normalize Tiling Steps:
+// - preTransform
+// - flip if necessary
+// - cut segments
 
 const doFlipPatterns = () => {
     patterns.forEach((pattern) => {
         const tiling = flipPattern(pattern.tiling);
         if (tiling !== pattern.tiling) {
             toSave.push({...pattern, tiling});
+        }
+    });
+};
+
+const doPreTransformTilings = () => {
+    patterns.forEach((pattern) => {
+        const pre = tilingPoints(pattern.tiling.shape);
+        const fixed = preTransformTiling(pattern.tiling);
+        const post = tilingPoints(fixed.shape);
+        if (!pre.every((pt, i) => coordsEqual(pt, post[i]))) {
+            toSave.push({...pattern, tiling: fixed});
         }
     });
 };
@@ -53,9 +60,10 @@ const doCutSegments = () => {
 };
 
 doFlipPatterns();
+// doPreTransformTilings();
 console.log(
     `need to save ${toSave.length}`,
     toSave.map((s) => s.hash),
 );
-// saveAllPatterns(toSave);
+saveAllPatterns(toSave);
 db.close();

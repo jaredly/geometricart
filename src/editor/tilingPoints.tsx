@@ -9,15 +9,15 @@ import {
     translationMatrix,
 } from '../rendering/getMirrorTransforms';
 import {scalePos} from './scalePos';
-import {tilingTransforms} from './tilingTransforms';
+import {getShapeSize, tilingTransforms} from './tilingTransforms';
 
-export const transformLines = (lines: [Coord, Coord][], mx: Matrix[]) =>
+const transformLines = (lines: [Coord, Coord][], mx: Matrix[]) =>
     lines.map(([p1, p2]): [Coord, Coord] => [applyMatrices(p1, mx), applyMatrices(p2, mx)]);
 
 export const transformShape = (pts: Coord[], tx: Matrix[]) =>
     pts.map((pt) => applyMatrices(pt, tx));
 
-export const transformLine = ([p1, p2]: [Coord, Coord], tx: Matrix[]) =>
+const transformLine = ([p1, p2]: [Coord, Coord], tx: Matrix[]) =>
     [applyMatrices(p1, tx), applyMatrices(p2, tx)] as [Coord, Coord];
 
 export const applyTilingTransforms = (unique: [Coord, Coord][], mx: Matrix[][][]) => {
@@ -42,7 +42,7 @@ export function eigenShapesToLines(
     tr: Coord,
     tpts: Coord[],
 ) {
-    return applyTilingTransforms(unique, tilingTransforms(shape, tr, tpts));
+    return applyTilingTransforms(unique, tilingTransforms(shape, tr, tpts, getShapeSize(tr, 3)));
 }
 
 export function eigenShapesToSvg(
@@ -106,17 +106,7 @@ export function tilingPoints(shape: Tiling['shape']) {
     }
 }
 
-export function replicateStandard(full: [Coord, Coord][], ty: number) {
-    full = full.concat(transformLines(full, [scaleMatrix(-1, 1), translationMatrix({x: 2, y: 0})]));
-    full = full.concat(
-        transformLines(full, [scaleMatrix(1, -1), translationMatrix({x: 0, y: ty * 2})]),
-    );
-    full.push(...transformLines(full, [scaleMatrix(1, -1)]));
-    full.push(...transformLines(full, [scaleMatrix(-1, 1)]));
-    return full;
-}
-
-export function getTransform(pts: Coord[]) {
+export function normalizeTilingShape(pts: Coord[]) {
     const [center, corner, top] = pts;
 
     const scale = 1 / dist(center, corner);

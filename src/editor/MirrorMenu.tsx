@@ -1,13 +1,11 @@
-/* @jsx jsx */
-/* @jsxFrag React.Fragment */
-import {jsx} from '@emotion/react';
+
 import React from 'react';
 import {Id, State} from '../types';
 import {Action} from '../state/Action';
 import {ShowMirror} from './MirrorForm';
 import {DeleteForeverIcon, IconButton, MirrorIcon} from '../icons/Icon';
 
-export const MirrorMenu = React.memo(
+const MirrorMenu = React.memo(
     ({
         state,
         dispatch,

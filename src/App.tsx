@@ -1,5 +1,3 @@
-/* @jsx jsx */
-import {jsx} from '@emotion/react';
 import React from 'react';
 import {Canvas} from './editor/Canvas';
 import {reducer} from './state/reducer';
@@ -14,7 +12,7 @@ import {NewSidebar} from './sidebar/NewSidebar';
 import {Action} from './state/Action';
 import {useUIState} from './useUIState';
 import {OverlayEditor} from './OverelayEditor';
-import {ThreedScreen} from './threed/ThreedScreen';
+// import {ThreedScreen} from './threed/ThreedScreen';
 import {useCurrent} from './useCurrent';
 
 export const App = ({
@@ -32,7 +30,13 @@ export const App = ({
         id: string;
     } | null;
 }) => {
-    const [trueState, dispatch] = React.useReducer(reducer, initialState);
+    let [trueState, _dispatch] = React.useReducer(reducer, initialState);
+    const dispatch = (value: Action) => {
+        if (value.type === 'selection:set') {
+            console.log(new Error().stack);
+        }
+        _dispatch(value);
+    };
 
     const {uiState, uiSetters, uiDispatch, state} = useUIState(trueState);
 
@@ -143,7 +147,8 @@ export const App = ({
                         }}
                     />
                 ) : screen === '3d' ? (
-                    <ThreedScreen state={state} dispatch={dispatch} hover={hover} />
+                    <div>No 3d right now</div>
+                    // <ThreedScreen state={state} dispatch={dispatch} hover={hover} />
                 ) : screen === 'history' ? (
                     <HistoryPlayback state={state} dispatch={dispatch} />
                 ) : screen === 'overlay' ? (

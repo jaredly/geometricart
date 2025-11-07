@@ -1,14 +1,11 @@
-/* @jsx jsx */
-/* @jsxFrag React.Fragment */
-import {jsx} from '@emotion/react';
-import React, {useState} from 'react';
+import React, {useMemo, useState} from 'react';
 import {Action} from '../state/Action';
 import {Path, State, Tiling} from '../types';
 import {applyMatrices} from '../rendering/getMirrorTransforms';
 import {transformSegment} from '../rendering/points';
 import {UIDispatch} from '../useUIState';
 import {emptyPath} from './RenderPath';
-import {tilingTransforms} from './tilingTransforms';
+import {getShapeSize, tilingTransforms} from './tilingTransforms';
 import {handleTiling, simpleExport} from './handleTiling';
 import {SimpleTiling} from './SimpleTiling';
 import {ShowTiling} from './ShowTiling';
@@ -23,9 +20,12 @@ export const Tilings = ({
     dispatch: React.Dispatch<Action>;
 }) => {
     const [large, setLarge] = useState(false);
+    const tilings = useMemo(() => {
+        return Object.values(state.tilings);
+    }, [state.tilings]);
     return (
         <div>
-            {Object.values(state.tilings).map((tiling) => {
+            {tilings.map((tiling) => {
                 return (
                     <div
                         key={tiling.id}
@@ -103,9 +103,15 @@ export const Tilings = ({
                                 }}
                             >
                                 <button
+                                    className="btn"
                                     onClick={() => {
                                         const {bounds, lines, tr} = handleTiling(tiling);
-                                        const mx = tilingTransforms(tiling.shape, tr, bounds);
+                                        const mx = tilingTransforms(
+                                            tiling.shape,
+                                            tr,
+                                            bounds,
+                                            getShapeSize(tr, 3),
+                                        );
 
                                         let shapes = tiling.cache.shapes;
                                         mx.forEach((set) => {
@@ -136,8 +142,9 @@ export const Tilings = ({
                                     Create shapes
                                 </button>
                                 <button
+                                    className="btn"
                                     onClick={async () => {
-                                        const cache = await simpleExport(state, tiling.shape);
+                                        const cache = simpleExport(state, tiling.shape);
                                         if (!cache) return;
 
                                         dispatch({
@@ -164,6 +171,7 @@ export const Tilings = ({
                         </div>
                         {tiling.cache ? <SimpleTiling tiling={tiling} /> : null}
                         <button
+                            className="btn"
                             onClick={() => {
                                 dispatch({
                                     type: 'tiling:delete',

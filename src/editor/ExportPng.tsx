@@ -1,6 +1,3 @@
-/* @jsx jsx */
-/* @jsxFrag React.Fragment */
-import {jsx} from '@emotion/react';
 import {encodeChunks, extractChunks, insertMetadata} from 'png-metadata';
 import React from 'react';
 import {canvasRender, paletteImages} from '../rendering/CanvasRender';
@@ -33,8 +30,14 @@ export function ExportPng({
     return (
         <div css={{marginTop: 16, border: '1px solid #aaa', padding: 8}}>
             Width (px):{' '}
-            <input type="number" value={size} onChange={(evt) => setSize(+evt.target.value)} />
+            <input
+                type="number"
+                className="input"
+                value={size}
+                onChange={(evt) => setSize(+evt.target.value)}
+            />
             <button
+                className="btn"
                 css={{marginTop: 16, display: 'block'}}
                 onClick={async () => {
                     const blob = await exportPNG(
@@ -59,7 +62,9 @@ export function ExportPng({
                         justifyContent: 'center',
                     }}
                 >
-                    <button onClick={() => setPng(null)}>Close</button>
+                    <button className="btn" onClick={() => setPng(null)}>
+                        Close
+                    </button>
                     <a
                         href={png}
                         download={name.replace('.svg', '.png')}
@@ -104,7 +109,7 @@ export async function exportPNG(
     const ctx = canvas.getContext('2d')!;
 
     ctx.save();
-    await canvasRender(
+    canvasRender(
         ctx,
         state,
         size,

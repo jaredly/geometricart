@@ -3,12 +3,12 @@ import {boundsForCoords} from '../editor/Bounds';
 import {
     applyTilingTransforms,
     applyTilingTransformsG,
-    getTransform,
+    normalizeTilingShape,
     setTilingPoints,
     tilingPoints,
     transformShape,
 } from '../editor/tilingPoints';
-import {tilingTransforms} from '../editor/tilingTransforms';
+import {getShapeSize, tilingTransforms} from '../editor/tilingTransforms';
 import {coordKey, numKey} from '../rendering/coordKey';
 import {closeEnough} from '../rendering/epsilonToZero';
 import {
@@ -22,7 +22,17 @@ import {isClockwisePoints, pointsAngles} from '../rendering/pathToPoints';
 import {Coord, Tiling} from '../types';
 import {colorShapes} from './patternColoring';
 import {pk} from './pk';
-import {joinAdjacentShapeSegments, shapesFromSegments, unique} from './shapesFromSegments';
+import {
+    cmpCoords,
+    edgesByEndpoint,
+    joinAdjacentShapeSegments,
+    shapesFromSegments,
+    unique,
+} from './shapesFromSegments';
+import {pathsFromSegments} from './pathsFromSegments';
+import {outerBoundary} from './outerBoundary';
+import {weaveIntersections} from './weaveIntersections';
+import {transformBarePath, transformSegment} from '../rendering/points';
 
 const pkPathFromCoords = (coords: Coord[]) =>
     pk.Path.MakeFromCmds([
@@ -82,7 +92,7 @@ export const shapeKey = (coords: Coord[], msl: number) => {
     return `${bounds.x0.toFixed(2)},${bounds.y0.toFixed(2)},${bounds.x1.toFixed(2)},${bounds.y1.toFixed(2)}`;
 };
 
-export const uniqueWithCount = <T,>(l: T[], k: (t: T) => string) => {
+const uniqueWithCount = <T,>(l: T[], k: (t: T) => string) => {
     const seen: Record<string, number> = {};
     const count: [] = [];
     const res: T[] = [];
@@ -112,107 +122,101 @@ type Shape = {
 
 export const preTransformTiling = (tiling: Tiling): Tiling => {
     const pts = tilingPoints(tiling.shape);
-    const tx = getTransform(pts);
+    const tx = normalizeTilingShape(pts);
     const bounds = pts.map((pt) => applyMatrices(pt, tx));
-    return {...tiling, shape: setTilingPoints({...tiling.shape}, bounds)};
+    return {
+        ...tiling,
+        shape: setTilingPoints({...tiling.shape}, bounds),
+        cache: {
+            ...tiling.cache,
+            segments: tiling.cache.segments.map((seg) => ({
+                prev: applyMatrices(seg.prev, tx),
+                segment: transformSegment(seg.segment, tx),
+            })),
+            shapes: tiling.cache.shapes.map((shape) => transformBarePath(shape, tx)),
+        },
+    };
 };
 
-export const getPatternData = (tiling: Tiling, debug = false) => {
+export type PatternData = ReturnType<typeof getPatternData>;
+export const getPatternData = (tiling: Tiling, debug = false, size = 3) => {
     tiling = preTransformTiling(tiling);
 
     const pts = tilingPoints(tiling.shape);
-    // const tx = getTransform(pts);
-    const bounds = pts; // pts.map((pt) => applyMatrices(pt, tx));
-
-    let eigenSegments = tiling.cache.segments.map((s) => [s.prev, s.segment.to] as [Coord, Coord]);
+    const eigenSegments = tiling.cache.segments.map(
+        (s) => [s.prev, s.segment.to] as [Coord, Coord],
+    );
     const eigenPoints = unique(eigenSegments.flat(), coordKey);
 
-    const pointIds: Record<string, number> = {};
+    const ttt = tilingTransforms(tiling.shape, pts[2], pts, getShapeSize(pts[2], size));
 
-    const ttt = tilingTransforms(tiling.shape, bounds[2], bounds);
+    const allSegments = unique(
+        applyTilingTransforms(eigenSegments, ttt).map((seg) =>
+            cmpCoords(seg[0], seg[1]) === 1 ? ([seg[1], seg[0]] as [Coord, Coord]) : seg,
+        ),
+        ([a, b]) => `${coordKey(a)}:${coordKey(b)}`,
+    );
 
-    applyTilingTransformsG(
-        eigenPoints.map((p, i) => ({p, i})),
-        ttt,
-        ({p, i}, tx) => ({p: applyMatrices(p, tx), i}),
-    ).map(({p, i}) => (pointIds[coordKey(p)] = i));
-
-    const allSegments = applyTilingTransforms(eigenSegments, ttt);
-
-    const shapes = shapesFromSegments(allSegments, eigenPoints);
+    const byEndPoint = edgesByEndpoint(allSegments);
+    const shapes = shapesFromSegments(byEndPoint, eigenPoints);
 
     const canons = shapes
         .map(joinAdjacentShapeSegments)
         .map(canonicalShape)
-        .map((canon) => {
-            const overlap = pklip(canon.points, bounds) as null | Coord[][];
-            const full = calcPolygonArea(canon.points);
-            const showing = overlap ? overlap.map(calcPolygonArea).reduce((a, b) => a + b, 0) : 0;
-            const percentage = showing / full;
-            return {
-                ...canon,
-                percentage,
-                overlap: overlap?.map((shape) =>
-                    shape.map((coord) => applyMatrices(coord, canon.tx)),
-                ),
-            };
-        });
+        .map((canon) => calcOverlap(canon, pts));
 
-    // const shapePoints: number[][] = shapes.map(() => []);
+    const transformedShapes = applyTilingTransformsG(shapes, ttt, transformShape);
 
-    const transformedShapes = applyTilingTransformsG(
-        shapes.map((shape, i) => ({shape, i})),
-        ttt,
-        ({shape, i}, tx) => ({
-            shape: transformShape(shape, tx),
-            i,
-        }),
-    );
-
-    const shapePoints = shapes.map((shape) => shape.map((p) => pointIds[coordKey(p)]));
+    // const pointIds: Record<string, number> = {};
+    // applyTilingTransformsG(
+    //     eigenPoints.map((p, i) => ({p, i})),
+    //     ttt,
+    //     ({p, i}, tx) => ({p: applyMatrices(p, tx), i}),
+    // ).map(({p, i}) => (pointIds[coordKey(p)] = i));
+    // const shapePoints = shapes.map((shape) => shape.map((p) => pointIds[coordKey(p)]));
 
     const minSegLength = Math.min(
         ...eigenSegments.map(([a, b]) => dist(a, b)).filter((l) => l > 0.001),
     );
 
-    const allShapes = unique(transformedShapes, (s) => shapeKey(s.shape, minSegLength));
-    // const colors = dedupColorShapePoints(
-    //     shapePoints,
-    //     // allShapes.map((s) => s.shape),
-    //     // minSegLength,
-    // );
+    const allShapes = unique(transformedShapes, (s) => shapeKey(s, minSegLength));
 
-    const uniquePoints = unique(
-        // shapes.flat(),
-        allShapes.flatMap((s) => s.shape),
-        coordKey,
-    );
+    const uniquePoints = unique(allShapes.flat(), coordKey);
     const pointNames = Object.fromEntries(uniquePoints.map((p, i) => [coordKey(p), i]));
+    const outer = outerBoundary(allSegments, byEndPoint, pointNames);
+    const paths = pathsFromSegments(allSegments, byEndPoint, outer);
+    const woven = weaveIntersections(allSegments, paths);
 
-    const colors = colorShapes(
-        pointNames,
-        allShapes.map((s) => s.shape),
-        // shapes,
-        minSegLength,
-        debug,
-    );
+    const colors = colorShapes(pointNames, allShapes, minSegLength, debug);
 
     return {
-        bounds,
+        bounds: pts,
         uniquePoints,
-        shapes: allShapes.map((s) => s.shape),
+        shapes: allShapes,
         eigenPoints,
-        shapeIds: allShapes.map((s, i) => i),
-        shapePoints,
+        // shapePoints,
         colorInfo: {colors, maxColor: Math.max(...colors)},
-        pts,
         allSegments,
         minSegLength,
+        paths,
+        outer,
+        woven,
         canons,
         ttt,
-        // tx,
     };
 };
+
+function calcOverlap(canon: ReturnType<typeof canonicalShape>, pts: Coord[]) {
+    const overlap = pklip(canon.points, pts) as null | Coord[][];
+    const full = calcPolygonArea(canon.points);
+    const showing = overlap ? overlap.map(calcPolygonArea).reduce((a, b) => a + b, 0) : 0;
+    const percentage = showing / full;
+    return {
+        ...canon,
+        percentage,
+        overlap: overlap?.map((shape) => shape.map((coord) => applyMatrices(coord, canon.tx))),
+    };
+}
 
 function calcPolygonArea(vertices: Coord[]) {
     let total = 0;

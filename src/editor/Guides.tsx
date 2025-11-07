@@ -1,14 +1,11 @@
-/* @jsx jsx */
-/* @jsxFrag React.Fragment */
-import {jsx} from '@emotion/react';
 import React, {useRef} from 'react';
 import {useCurrent} from '../useCurrent';
 import {PendingMirror, UIState} from '../useUIState';
 import {Action, PathMultiply} from '../state/Action';
 import {EditorState, screenToWorld} from './Canvas';
-import {DrawPath, DrawPathState, initialState} from './DrawPath';
+import {DrawPath, initialState} from './DrawPath';
 import {pathToPrimitives} from './findSelection';
-import {Bounds} from './GuideElement';
+import {Bounds} from './Bounds';
 import {simplifyPath} from '../rendering/simplifyPath';
 import {lineToSlope, Primitive} from '../rendering/intersect';
 import {ensureClockwise} from '../rendering/pathToPoints';
@@ -350,14 +347,15 @@ export const Guides = ({
     }, []);
 
     // When intersections change, cancel pending stuffs
-    const first = useRef(true);
-    React.useEffect(() => {
-        if (first.current) {
-            first.current = false;
-            return;
-        }
-        pendingPath[1](null);
-    }, [allIntersections]);
+    // const first = useRef(true);
+    // React.useEffect(() => {
+    //     if (first.current) {
+    //         first.current = false;
+    //         return;
+    //     }
+    //     console.log('cancelling pending');
+    //     pendingPath[1](null);
+    // }, [allIntersections]);
 
     const clip = getClips(state);
 
@@ -531,7 +529,7 @@ export const Guides = ({
     );
 };
 
-export const RenderPrimitives = React.memo(
+const RenderPrimitives = React.memo(
     ({
         primitives,
         zoom,

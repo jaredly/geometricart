@@ -1,12 +1,9 @@
-import {Coord, Path, Segment} from '../types';
-import {isClockwise, reversePath, totalAngle} from './pathToPoints';
+import {Coord, Segment} from '../types';
+import {isClockwise, reversePath, } from './pathToPoints';
 import {angleTo} from './getMirrorTransforms';
-import {epsilon} from './epsilonToZero';
-import {closeEnoughAngle} from './epsilonToZero';
-import {clipTwo, HitLocation} from './clipPath';
+import {HitLocation} from './clipPath';
 import {closeEnough} from './epsilonToZero';
 import {isLargeArc} from '../editor/RenderPendingPath';
-import {Hit} from './pruneInsetPath';
 import {insetSegment} from './insetSegment';
 import {simplifyPath} from './simplifyPath';
 
@@ -189,6 +186,6 @@ export const insetSegments = (
     return [insets.flat(), simplified.map((s) => s.to)];
 };
 
-export const insetSegmentsBeta = (segments: Array<Segment>, inset: number) => {
+const insetSegmentsBeta = (segments: Array<Segment>, inset: number) => {
     return insetSegments(segments, inset)[0];
 };

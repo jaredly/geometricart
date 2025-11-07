@@ -5,10 +5,9 @@ import {
     findViewPoints,
     getHistoriesList,
     mergeViewPoints,
-    simplifyHistory,
     StateAndAction,
 } from './HistoryPlayback';
-import {canvasRender, makeImage, paletteImages} from '../rendering/CanvasRender';
+import {canvasRender, paletteImages} from '../rendering/CanvasRender';
 import {findBoundingRect} from '../editor/Export';
 import {renderTexture} from '../editor/ExportPng';
 import {screenToWorld, worldToScreen} from '../editor/Canvas';
@@ -39,7 +38,7 @@ export type AnimateState = {
     lastSelection?: {type: 'Path' | 'PathGroup'; ids: string[]};
 };
 
-export type PreviewT = 'corner' | number | null;
+type PreviewT = 'corner' | number | null;
 
 export const animateHistory = async (
     originalState: State,
@@ -368,7 +367,7 @@ export const animateHistory = async (
     console.log('ok', Date.now() - now);
 };
 
-export const overlay = (
+const overlay = (
     ctx: CanvasRenderingContext2D,
     state: AnimateState,
     historyView: State['historyView'],
@@ -396,7 +395,7 @@ export const overlay = (
     }
 };
 
-export const underlay = (
+const underlay = (
     ctx: CanvasRenderingContext2D,
     state: AnimateState,
     lastScene: ImageBitmap,

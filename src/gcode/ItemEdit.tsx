@@ -4,7 +4,6 @@ import {makeDepths} from './generateGcode';
 import {pxToMM} from './pxToMM';
 import {GCodePath, State} from '../types';
 import {FillColors, LineColors} from './GCodeEditor';
-import {Int} from '../editor/Forms';
 import {
     CheckmarkIcon,
     IconAngleAcute,
@@ -343,7 +342,7 @@ const Tabs = ({tabs, onChange}: {tabs?: Tabs; onChange: (tabs?: Tabs) => void}) 
     );
 };
 
-export const Float = ({
+const Float = ({
     value,
     onChange,
     placeholder,

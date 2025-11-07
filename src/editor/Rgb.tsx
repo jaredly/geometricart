@@ -1,12 +1,11 @@
 /* @jsx jsx */
 import * as React from 'react';
-import {jsx} from '@emotion/react';
 import {Attachment, Coord} from '../types';
 import {createPortal} from 'react-dom';
 import {hslToRgb} from '../rendering/colorConvert';
 import {averageAt, findMajorColorsExpensive, rgbToString} from './PalettesForm';
 
-export const ImageChooser = ({
+const ImageChooser = ({
     contents,
     onChoose,
 }: {

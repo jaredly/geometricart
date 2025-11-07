@@ -1,12 +1,58 @@
-/* @jsx jsx */
-/* @jsxFrag React.Fragment */
-import {jsx} from '@emotion/react';
 import * as React from 'react';
+import {SVGProps} from 'react';
 import {useTouchClick} from '../editor/RenderIntersections';
 
 /** Gotten from https://reactsvgicons.com/search?q=scissors */
 
-export function RoundInfo(props: React.SVGProps<SVGSVGElement>) {
+export function BaselineDownload(props: SVGProps<SVGSVGElement>) {
+    return (
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            width="1em"
+            height="1em"
+            {...props}
+        >
+            <path fill="currentColor" d="M5 20h14v-2H5zM19 9h-4V3H9v6H5l7 7z"></path>
+        </svg>
+    );
+}
+
+export function TransitionFade(props: SVGProps<SVGSVGElement>) {
+    return (
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            width="1em"
+            height="1em"
+            {...props}
+        >
+            <path
+                fill="currentColor"
+                d="M5.622 20q-.697 0-1.16-.462T4 18.384V5.616q0-.691.463-1.153T5.622 4h4.224v16zM12 20q-.31 0-.54-.23t-.23-.54t.23-.539t.54-.23t.54.23t.23.54t-.23.54T12 20m0-3.616q-.31 0-.54-.23q-.23-.229-.23-.538t.23-.54t.54-.23t.54.23t.23.54t-.23.539t-.54.23m0-3.616q-.31 0-.54-.23T11.23 12t.23-.54t.54-.23t.54.23t.23.54t-.23.54t-.54.23m0-3.616q-.31 0-.54-.23t-.23-.54t.23-.539t.54-.23t.54.23t.23.54t-.23.539t-.54.23m0-3.616q-.31 0-.54-.23t-.23-.539t.23-.54T12 4t.54.23t.23.54t-.23.539t-.54.23m1.866 12.653q-.31 0-.54-.23t-.23-.539t.23-.54t.54-.23t.539.23t.23.54t-.23.54t-.54.23m0-3.616q-.31 0-.539-.23t-.23-.54t.23-.539t.54-.23t.539.23t.23.54t-.23.539t-.54.23m0-3.615q-.31 0-.539-.23t-.23-.54t.23-.539t.54-.23t.539.23t.23.54t-.23.539t-.54.23m0-3.616q-.31 0-.539-.23t-.23-.539t.23-.54t.54-.23t.539.23t.23.54t-.23.54q-.23.23-.54.23M15.75 20q-.31 0-.54-.23t-.23-.54t.23-.539t.54-.23t.54.23t.23.54t-.23.54t-.54.229m0-3.616q-.31 0-.54-.23q-.23-.229-.23-.538t.23-.54t.54-.23t.54.23t.23.54t-.23.539t-.54.23m0-3.616q-.31 0-.54-.23T14.98 12t.23-.54t.54-.23t.54.23t.23.54t-.23.54t-.54.23m0-3.616q-.31 0-.54-.23t-.23-.54t.23-.539t.54-.23t.54.23t.23.54t-.23.539t-.54.23m0-3.616q-.31 0-.54-.23t-.23-.539t.23-.54t.54-.229t.54.23t.23.54t-.23.539t-.54.23m1.866 12.653q-.31 0-.54-.23t-.23-.539t.23-.54t.54-.23t.539.23t.23.54t-.23.54t-.54.23m0-3.616q-.31 0-.53-.23t-.22-.54t.216-.539t.535-.23q.309 0 .539.23t.23.54t-.23.539t-.54.23m.02-3.615q-.31 0-.54-.23t-.23-.54t.23-.539t.54-.23t.539.23t.23.54t-.23.539t-.54.23m0-3.616q-.309 0-.539-.23t-.23-.539t.23-.54t.54-.23t.539.23t.23.54t-.23.54q-.23.23-.54.23M19.232 20q-.31 0-.54-.23t-.23-.54t.23-.539t.54-.23t.54.23t.229.54t-.23.54t-.54.229m0-3.616q-.309 0-.539-.23q-.23-.229-.23-.538t.23-.54t.54-.23t.54.23t.229.54t-.23.539t-.54.23m.02-3.616q-.31 0-.54-.23T18.48 12t.23-.54t.54-.23t.54.23t.23.54t-.23.54t-.54.23m0-3.616q-.31 0-.54-.23t-.23-.54t.23-.539t.54-.23t.54.23t.23.54t-.23.539t-.54.23m0-3.616q-.31 0-.54-.23t-.23-.539t.23-.54t.54-.229t.54.23t.23.54t-.23.539t-.54.23"
+            ></path>
+        </svg>
+    );
+}
+
+export function RoundPlus(props: SVGProps<SVGSVGElement>) {
+    return (
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            width="1em"
+            height="1em"
+            {...props}
+        >
+            <path
+                fill="currentColor"
+                d="M18 12.998h-5v5a1 1 0 0 1-2 0v-5H6a1 1 0 0 1 0-2h5v-5a1 1 0 0 1 2 0v5h5a1 1 0 0 1 0 2"
+            ></path>
+        </svg>
+    );
+}
+
+function RoundInfo(props: React.SVGProps<SVGSVGElement>) {
     return (
         <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -155,7 +201,7 @@ export function RedoIcon(props: React.SVGProps<SVGSVGElement>) {
     );
 }
 
-export function CogIcon(props: React.SVGProps<SVGSVGElement>) {
+function CogIcon(props: React.SVGProps<SVGSVGElement>) {
     return (
         <svg viewBox="0 0 16 16" fill="currentColor" height="1em" width="1em" {...props}>
             <path
@@ -283,7 +329,7 @@ export function SubtractLineIcon(props: React.SVGProps<SVGSVGElement>) {
     );
 }
 
-export function CopyIcon(props: React.SVGProps<SVGSVGElement>) {
+function CopyIcon(props: React.SVGProps<SVGSVGElement>) {
     return (
         <svg
             fill="none"
@@ -398,7 +444,7 @@ export function IconHistoryToggle(props: React.SVGProps<SVGSVGElement>) {
     );
 }
 
-export function IconViewHide(props: React.SVGProps<SVGSVGElement>) {
+function IconViewHide(props: React.SVGProps<SVGSVGElement>) {
     return (
         <svg viewBox="0 0 20 20" fill="currentColor" height="1em" width="1em" {...props}>
             <path d="M12.81 4.36l-1.77 1.78a4 4 0 00-4.9 4.9l-2.76 2.75C2.06 12.79.96 11.49.2 10a11 11 0 0112.6-5.64zm3.8 1.85c1.33 1 2.43 2.3 3.2 3.79a11 11 0 01-12.62 5.64l1.77-1.78a4 4 0 004.9-4.9l2.76-2.75zm-.25-3.99l1.42 1.42L3.64 17.78l-1.42-1.42L16.36 2.22z" />

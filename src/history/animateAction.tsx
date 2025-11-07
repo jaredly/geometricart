@@ -1,4 +1,4 @@
-import {Coord, GuideGeom, Line, State, View} from '../types';
+import {Coord, State, } from '../types';
 import {tracePath} from '../rendering/CanvasRender';
 import {Action} from '../state/Action';
 import {emptyPath} from '../editor/RenderPath';
@@ -8,10 +8,7 @@ import {animateMirror} from './animateMirror';
 import {animatePath} from './animatePath';
 import {animateMultiply} from './animateMultiply';
 import {wait, actionPoints, AnimateState} from './animateHistory';
-import equal from 'fast-deep-equal';
-import {isCompass} from '../editor/RenderCompassAndRuler';
 import {angleTo, dist, push} from '../rendering/getMirrorTransforms';
-import {closeEnough} from '../rendering/epsilonToZero';
 import {angleBetween} from '../rendering/isAngleBetween';
 import {
     animateRuler,

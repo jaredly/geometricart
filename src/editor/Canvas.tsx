@@ -1,6 +1,3 @@
-/* @jsx jsx */
-/* @jsxFrag React.Fragment */
-import {jsx} from '@emotion/react';
 import React, {useEffect, useState} from 'react';
 import {Action, PathCreateMany} from '../state/Action';
 import {PendingMirror, UIState} from '../useUIState';
@@ -49,14 +46,9 @@ import {angleBetween} from '../rendering/isAngleBetween';
 import {negPiToPi} from '../rendering/epsilonToZero';
 import {closeEnough} from '../rendering/epsilonToZero';
 import {simpleExport} from './handleTiling';
-import {
-    angleDifferences,
-    isClockwise,
-    isClockwisePoints,
-    pointsAngles,
-} from '../rendering/pathToPoints';
+import {angleDifferences, isClockwisePoints, pointsAngles} from '../rendering/pathToPoints';
 
-export type Props = {
+type Props = {
     state: State;
     // dragSelect: boolean;
     // cancelDragSelect: () => void;
@@ -115,7 +107,7 @@ export type TLSegmentCurve = {
 
 export type TLSegment = {type: 'straight'; y0: number; span: number; x0: number} | TLSegmentCurve;
 
-export const evaluateSegment = (seg: TLSegment, percent: number) => {
+const evaluateSegment = (seg: TLSegment, percent: number) => {
     if (seg.type === 'straight') {
         return seg.y0 + seg.span * percent;
     }
@@ -123,7 +115,7 @@ export const evaluateSegment = (seg: TLSegment, percent: number) => {
     return evaluateBezier(seg.bezier, t).y;
 };
 
-export const segmentForPoints = (left: LerpPoint, right: LerpPoint): TLSegment => {
+const segmentForPoints = (left: LerpPoint, right: LerpPoint): TLSegment => {
     if (!left.rightCtrl && !right.leftCtrl) {
         return {
             type: 'straight',
@@ -148,7 +140,7 @@ export const segmentForPoints = (left: LerpPoint, right: LerpPoint): TLSegment =
     };
 };
 
-export const evaluateBetween = (left: LerpPoint, right: LerpPoint, position: number) => {
+const evaluateBetween = (left: LerpPoint, right: LerpPoint, position: number) => {
     const percent = (position - left.pos.x) / (right.pos.x - left.pos.x);
     return percent * (right.pos.y - left.pos.y) + left.pos.y;
 };
@@ -174,7 +166,7 @@ export const timelineFunction = (timeline: FloatLerp) => {
     };
 };
 
-export const evaluateTimeline = (timeline: FloatLerp, position: number) => {
+const evaluateTimeline = (timeline: FloatLerp, position: number) => {
     if (!timeline.points.length) {
         return (timeline.range[1] - timeline.range[0]) * position + timeline.range[0];
     }
@@ -245,7 +237,7 @@ export type SelectMode = boolean | 'radius' | 'path';
 /**
  * This is the newfangled version of DrawPathState... probably
  */
-export type DrawShapeState = {
+type DrawShapeState = {
     type: 'shape';
     points: Coord[];
     // that's it, right?
@@ -331,9 +323,8 @@ export const Canvas = ({
                 if (!shape) {
                     return;
                 }
-                simpleExport(currentState.current, shape).then((cache) =>
-                    cache ? dispatch({type: 'tiling:add', shape, cache}) : null,
-                );
+                const cache = simpleExport(currentState.current, shape);
+                if (cache) dispatch({type: 'tiling:add', shape, cache});
                 setEditorState((es) => ({...es, pending: null}));
             }
         };
@@ -512,7 +503,7 @@ export const Canvas = ({
             guidePrimitives.points,
         );
         return fromGuides;
-    }, [guidePrimitives, state.paths, state.pathGroups]);
+    }, [guidePrimitives]);
 
     const svgContents = SVGCanvas({
         uiState,
@@ -554,14 +545,14 @@ export const Canvas = ({
                     evt.preventDefault();
                 }
             }}
-            onClick={(evt) => {
-                if (state.selection && !evt.shiftKey && evt.target instanceof SVGElement) {
-                    dispatch({
-                        type: 'selection:set',
-                        selection: null,
-                    });
-                }
-            }}
+            // onClick={(evt) => {
+            //     if (state.selection && !evt.shiftKey && evt.target instanceof SVGElement) {
+            //         dispatch({
+            //             type: 'selection:set',
+            //             selection: null,
+            //         });
+            //     }
+            // }}
         >
             {svgContents}
             {view.texture ? (
@@ -830,7 +821,7 @@ export function timelineSegments(timeline: FloatLerp) {
     return segments;
 }
 
-export const ClipMenu = ({
+const ClipMenu = ({
     state,
     dispatch,
     pendingPath: [pendingPath, setPendingPath],
@@ -892,7 +883,7 @@ function determineTilingShape(points: Coord[]): Tiling['shape'] | void {
     if (points.length === 4) {
         let [a, b, c, d] = points;
         if (!isClockwisePoints(points)) {
-            [b, c, d] = [d, c, b];
+            [b, d] = [d, b];
         }
         const angles = angleDifferences(pointsAngles([a, b, c, d]));
         if (!closeEnough(angles[0], angles[2]) || !closeEnough(angles[1], angles[3])) {
