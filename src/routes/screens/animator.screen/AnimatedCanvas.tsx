@@ -145,22 +145,32 @@ function drawFull(
 }
 
 const joinAdjacentLinesOld = (lines: Coord[][]) => {
-    for (let i = 0; i < lines.length; i++) {
-        if (!lines[i].length) continue;
-        for (let j = i + 1; j < lines.length; j++) {
-            if (!lines[j].length) continue;
-            if (coordsEqual(lines[i][0], lines[j][0])) {
-                lines[i] = lines[i].toReversed().concat(lines[j].slice(1));
-                lines[j] = [];
-            } else if (coordsEqual(lines[i][lines[i].length - 1], lines[j][0])) {
-                lines[i] = lines[i].concat(lines[j].slice(1));
-                lines[j] = [];
-            } else if (coordsEqual(lines[i][lines[i].length - 1], lines[j][lines[j].length - 1])) {
-                lines[i] = lines[i].concat(lines[j].toReversed().slice(1));
-                lines[j] = [];
-            } else if (coordsEqual(lines[i][0], lines[j][lines[j].length - 1])) {
-                lines[i] = lines[j].concat(lines[i].slice(1));
-                lines[j] = [];
+    let joined = true;
+    while (joined) {
+        joined = false;
+        for (let i = 0; i < lines.length; i++) {
+            if (!lines[i].length) continue;
+            for (let j = i + 1; j < lines.length; j++) {
+                if (!lines[j].length) continue;
+                if (coordsEqual(lines[i][0], lines[j][0])) {
+                    lines[i] = lines[i].toReversed().concat(lines[j].slice(1));
+                    lines[j] = [];
+                    joined = true;
+                } else if (coordsEqual(lines[i][lines[i].length - 1], lines[j][0])) {
+                    lines[i] = lines[i].concat(lines[j].slice(1));
+                    lines[j] = [];
+                    joined = true;
+                } else if (
+                    coordsEqual(lines[i][lines[i].length - 1], lines[j][lines[j].length - 1])
+                ) {
+                    lines[i] = lines[i].concat(lines[j].toReversed().slice(1));
+                    lines[j] = [];
+                    joined = true;
+                } else if (coordsEqual(lines[i][0], lines[j][lines[j].length - 1])) {
+                    lines[i] = lines[j].concat(lines[i].slice(1));
+                    lines[j] = [];
+                    joined = true;
+                }
             }
         }
     }
@@ -233,6 +243,8 @@ const joinAdjacentLines = (lines: Coord[][]) => {
             sl.end = el.end;
         } else {
             // throw new Error('what is this');
+            console.warn('WHAT IS THIS', sl, el);
+            return;
         }
         el.points = [];
         el.start = '';
@@ -262,11 +274,16 @@ const joinAdjacentAlphaLines = (transformed: {points: Coord[]; alpha: number}[])
         byAlpha[line.alpha].push(line.points);
     });
 
-    // return Object.entries(byAlpha).flatMap(([alpha, lines]) => {
-    //     // return joinAdjacentLines(lines).map((points) => ({alpha: +alpha, points}));
-    //     return lines.map((points) => ({alpha: +alpha, points}));
-    // });
-    return transformed;
+    return Object.entries(byAlpha).flatMap(([alpha, lines]) => {
+        return joinAdjacentLinesOld(lines).map((points) => ({
+            alpha: +alpha,
+            points,
+        }));
+        // return joinAdjacentLinesOld(joinAdjacentLinesOld(lines)).map((points) => ({
+        //     alpha: +alpha,
+        //     points,
+        // }));
+    });
 };
 
 const calcFull = (
@@ -274,6 +291,7 @@ const calcFull = (
     preview: number,
     repl: number,
     patternMap: Record<string, Tiling>,
+    joinLines: boolean,
 ) => {
     if (!state.layers.length) return [];
     const ats = state.lines.map((line) => lineAt(line.keyframes, preview, line.fade));
@@ -287,7 +305,7 @@ const calcFull = (
             alpha: line.alpha,
         }),
     );
-    return joinAdjacentAlphaLines(transformed);
+    return joinLines ? joinAdjacentAlphaLines(transformed) : transformed;
 };
 
 const renderFrame = (
@@ -310,7 +328,7 @@ const renderFrame = (
             ctx.save();
             ctx.scale((config.size * 2) / peggedZoom, (config.size * 2) / peggedZoom);
             ctx.translate(peggedZoom / 2, peggedZoom / 2);
-            const full = calcFull(state, p, config.repl, patternMap);
+            const full = calcFull(state, p, config.repl, patternMap, config.sharp);
             const alph = ((i + 0.5) / 0.5) * 0.8 + 0.2;
             drawFull(
                 full,
@@ -334,7 +352,7 @@ const renderFrame = (
         ctx.scale((config.size * 2) / peggedZoom, (config.size * 2) / peggedZoom);
         ctx.translate(peggedZoom / 2, peggedZoom / 2);
 
-        const full = calcFull(state, preview, config.repl, patternMap);
+        const full = calcFull(state, preview, config.repl, patternMap, config.sharp);
         drawFull(
             full,
             config.lineWidth,
