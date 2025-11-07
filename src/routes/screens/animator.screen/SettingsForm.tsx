@@ -77,6 +77,15 @@ export function SettingsForm({
                         />
                     </label>
                     <label className="mx-4">
+                        Bounds
+                        <input
+                            type="checkbox"
+                            className="checkbox mx-2"
+                            checked={config.bounds}
+                            onChange={() => setConfig({...config, bounds: !config.bounds})}
+                        />
+                    </label>
+                    <label className="mx-4">
                         Multi
                         <input
                             type="checkbox"

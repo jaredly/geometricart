@@ -421,9 +421,11 @@ const initial: Config = {
     showNice: false,
     size: 600,
     canv: true,
+    bounds: false,
 };
 
 export type Config = {
+    bounds: boolean;
     sharp: boolean;
     peg: boolean;
     multi: boolean;

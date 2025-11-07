@@ -1,6 +1,6 @@
 import {Canvas} from 'canvaskit-wasm';
 import {useRef, useMemo, useEffect, useState} from 'react';
-import {applyTilingTransformsG} from '../../../editor/tilingPoints';
+import {applyTilingTransformsG, tilingPoints} from '../../../editor/tilingPoints';
 import {getTilingTransforms} from '../../../editor/tilingTransforms';
 import {epsilonToZero, closeEnough} from '../../../rendering/epsilonToZero';
 import {dist, applyMatrices} from '../../../rendering/getMirrorTransforms';
@@ -13,6 +13,7 @@ import {generateVideo} from './muxer';
 import {Config} from '../animator';
 import {coordsEqual} from '../../../rendering/pathsAreIdentical';
 import {coordKey} from '../../../rendering/coordKey';
+import {boundsForCoords} from '../../../editor/Bounds';
 
 export const calcMargin = (preview: number, line: State['lines'][0]) => {
     const lat = lineAt(line.keyframes, preview, line.fade);
@@ -293,10 +294,12 @@ const calcFull = (
     patternMap: Record<string, Tiling>,
     joinLines: boolean,
 ) => {
-    if (!state.layers.length) return [];
+    if (!state.layers.length) return {full: [], bounds: null};
     const ats = state.lines.map((line) => lineAt(line.keyframes, preview, line.fade));
     const pt = patternMap[state.layers[0].pattern];
-    const ttt = getTilingTransforms(pt.shape, undefined, repl);
+
+    const tpts = tilingPoints(pt.shape);
+    const ttt = getTilingTransforms(pt.shape, tpts, repl);
     const transformed = applyTilingTransformsG(
         ats.filter(Boolean) as {points: Coord[]; alpha: number}[],
         ttt,
@@ -305,7 +308,8 @@ const calcFull = (
             alpha: line.alpha,
         }),
     );
-    return joinLines ? joinAdjacentAlphaLines(transformed) : transformed;
+    const bounds = boundsForCoords(...applyTilingTransformsG(tpts, ttt, applyMatrices));
+    return {full: joinLines ? joinAdjacentAlphaLines(transformed) : transformed, bounds};
 };
 
 const renderFrame = (
@@ -328,7 +332,7 @@ const renderFrame = (
             ctx.save();
             ctx.scale((config.size * 2) / peggedZoom, (config.size * 2) / peggedZoom);
             ctx.translate(peggedZoom / 2, peggedZoom / 2);
-            const full = calcFull(state, p, config.repl, patternMap, config.sharp);
+            const {full, bounds} = calcFull(state, p, config.repl, patternMap, config.sharp);
             const alph = ((i + 0.5) / 0.5) * 0.8 + 0.2;
             drawFull(
                 full,
@@ -352,7 +356,7 @@ const renderFrame = (
         ctx.scale((config.size * 2) / peggedZoom, (config.size * 2) / peggedZoom);
         ctx.translate(peggedZoom / 2, peggedZoom / 2);
 
-        const full = calcFull(state, preview, config.repl, patternMap, config.sharp);
+        const {full, bounds} = calcFull(state, preview, config.repl, patternMap, config.sharp);
         drawFull(
             full,
             config.lineWidth,
@@ -361,6 +365,30 @@ const renderFrame = (
             [205 / 255, 127 / 255, 1 / 255],
             config.sharp,
         );
+        if (config.bounds && bounds) {
+            const paint = new pk.Paint();
+            paint.setColor([205 / 255, 127 / 255, 1 / 255]);
+            paint.setStyle(pk.PaintStyle.Stroke);
+            paint.setStrokeWidth((config.lineWidth / 200) * peggedZoom);
+            ctx.drawPath(
+                pk.Path.MakeFromCmds([
+                    pk.MOVE_VERB,
+                    bounds.x0,
+                    bounds.y0,
+                    pk.LINE_VERB,
+                    bounds.x0,
+                    bounds.y1,
+                    pk.LINE_VERB,
+                    bounds.x1,
+                    bounds.y1,
+                    pk.LINE_VERB,
+                    bounds.x1,
+                    bounds.y0,
+                    pk.CLOSE_VERB,
+                ])!,
+                paint,
+            );
+        }
 
         ctx.restore();
     }
