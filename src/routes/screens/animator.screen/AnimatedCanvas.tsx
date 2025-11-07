@@ -11,6 +11,7 @@ import {pk} from '../../pk';
 import {State, lineAt} from './animator.utils';
 import {generateVideo} from './muxer';
 import {Config} from '../animator';
+import {coordsEqual} from '../../../rendering/pathsAreIdentical';
 
 export const calcMargin = (preview: number, line: State['lines'][0]) => {
     const lat = lineAt(line.keyframes, preview, line.fade);
@@ -116,11 +117,13 @@ function drawFull(
 ) {
     full.forEach((line) => {
         if (closeEnough(line.alpha, 0)) return;
+        const close = coordsEqual(line.points[0], line.points[line.points.length - 1], 3);
         const path = pk.Path.MakeFromCmds([
             pk.MOVE_VERB,
             line.points[0].x,
             line.points[0].y,
             ...line.points.slice(1).flatMap(({x, y}) => [pk.LINE_VERB, x, y]),
+            ...(close ? [pk.CLOSE_VERB] : []),
         ])!;
         const paint = new pk.Paint();
         paint.setStyle(pk.PaintStyle.Stroke);
@@ -139,6 +142,40 @@ function drawFull(
     });
 }
 
+const joinAdjacentLines = (transformed: {points: Coord[]; alpha: number}[]) => {
+    const byAlpha: Record<string, Coord[][]> = {};
+    transformed.forEach((line) => {
+        if (!byAlpha[line.alpha]) {
+            byAlpha[line.alpha] = [];
+        }
+        byAlpha[line.alpha].push(line.points);
+    });
+    return Object.entries(byAlpha).flatMap(([alpha, lines]) => {
+        for (let i = 0; i < lines.length; i++) {
+            if (!lines[i].length) continue;
+            for (let j = i + 1; j < lines.length; j++) {
+                if (!lines[j].length) continue;
+                if (coordsEqual(lines[i][0], lines[j][0])) {
+                    lines[i] = lines[i].toReversed().concat(lines[j].slice(1));
+                    lines[j] = [];
+                } else if (coordsEqual(lines[i][lines[i].length - 1], lines[j][0])) {
+                    lines[i] = lines[i].concat(lines[j].slice(1));
+                    lines[j] = [];
+                } else if (
+                    coordsEqual(lines[i][lines[i].length - 1], lines[j][lines[j].length - 1])
+                ) {
+                    lines[i] = lines[i].concat(lines[j].toReversed().slice(1));
+                    lines[j] = [];
+                } else if (coordsEqual(lines[i][0], lines[j][lines[j].length - 1])) {
+                    lines[i] = lines[j].concat(lines[i].slice(1));
+                    lines[j] = [];
+                }
+            }
+        }
+        return lines.filter((l) => l.length).map((points) => ({alpha: +alpha, points}));
+    });
+};
+
 const calcFull = (
     state: State,
     preview: number,
@@ -149,7 +186,7 @@ const calcFull = (
     const ats = state.lines.map((line) => lineAt(line.keyframes, preview, line.fade));
     const pt = patternMap[state.layers[0].pattern];
     const ttt = getTilingTransforms(pt.shape, undefined, repl);
-    return applyTilingTransformsG(
+    const transformed = applyTilingTransformsG(
         ats.filter(Boolean) as {points: Coord[]; alpha: number}[],
         ttt,
         (line, tx) => ({
@@ -157,6 +194,7 @@ const calcFull = (
             alpha: line.alpha,
         }),
     );
+    return joinAdjacentLines(transformed);
 };
 
 const renderFrame = (
