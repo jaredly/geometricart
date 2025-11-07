@@ -105,12 +105,14 @@ export const AnimatedCanvas = ({
         </div>
     );
 };
+
 function drawFull(
     full: {points: Coord[]; alpha: number}[],
     lineWidth: number,
     zoom: number,
     ctx: Canvas,
     color: number[],
+    sharp: boolean,
 ) {
     full.forEach((line) => {
         if (closeEnough(line.alpha, 0)) return;
@@ -122,8 +124,13 @@ function drawFull(
         ])!;
         const paint = new pk.Paint();
         paint.setStyle(pk.PaintStyle.Stroke);
-        paint.setStrokeJoin(pk.StrokeJoin.Round);
-        paint.setStrokeCap(pk.StrokeCap.Round);
+        if (sharp) {
+            paint.setStrokeJoin(pk.StrokeJoin.Miter);
+            paint.setStrokeCap(pk.StrokeCap.Butt);
+        } else {
+            paint.setStrokeJoin(pk.StrokeJoin.Round);
+            paint.setStrokeCap(pk.StrokeCap.Round);
+        }
         paint.setStrokeWidth((lineWidth / 200) * zoom * line.alpha);
         paint.setColor(color);
         paint.setAntiAlias(true);
@@ -131,6 +138,7 @@ function drawFull(
         ctx.drawPath(path, paint);
     });
 }
+
 const calcFull = (
     state: State,
     preview: number,
@@ -173,12 +181,14 @@ const renderFrame = (
             ctx.translate(peggedZoom / 2, peggedZoom / 2);
             const full = calcFull(state, p, config.repl, patternMap);
             const alph = ((i + 0.5) / 0.5) * 0.8 + 0.2;
-            drawFull(full, config.lineWidth, peggedZoom, ctx, [
-                205 / 255,
-                127 / 255,
-                1 / 255,
-                alph,
-            ]);
+            drawFull(
+                full,
+                config.lineWidth,
+                peggedZoom,
+                ctx,
+                [205 / 255, 127 / 255, 1 / 255, alph],
+                config.sharp,
+            );
             ctx.restore();
         }
     } else {
@@ -194,7 +204,14 @@ const renderFrame = (
         ctx.translate(peggedZoom / 2, peggedZoom / 2);
 
         const full = calcFull(state, preview, config.repl, patternMap);
-        drawFull(full, config.lineWidth, peggedZoom, ctx, [205 / 255, 127 / 255, 1 / 255]);
+        drawFull(
+            full,
+            config.lineWidth,
+            peggedZoom,
+            ctx,
+            [205 / 255, 127 / 255, 1 / 255],
+            config.sharp,
+        );
 
         ctx.restore();
     }
@@ -221,16 +238,5 @@ const recordVideo = async (
 
         surface.flush();
     });
-    // .then((blob) => {
-    //     if (!blob) {
-    //         console.warn('failed I guess');
-    //         return;
-    //     }
-    //     const url = URL.createObjectURL(blob);
-    //     const a = document.createElement('a');
-    //     a.download = 'video.mp4';
-    //     a.href = url;
-    //     a.click();
-    // });
     return blob ? URL.createObjectURL(blob) : null;
 };

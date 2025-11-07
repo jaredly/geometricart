@@ -40,20 +40,6 @@ export async function action({request, params}: Route.ActionArgs) {
 
 export const col = (i: number) => ['red', 'yellow', 'blue'][i % 3];
 
-const initial: Config = {
-    peg: false,
-    multi: false,
-    repl: 1,
-    lineWidth: 2,
-    showGuides: true,
-    zoom: 4,
-    preview: 0,
-    // animate: (false),
-    showNice: false,
-    size: 600,
-    canv: true,
-};
-
 export default function Animator({loaderData: {patterns, initialState}}: Route.ComponentProps) {
     const [config, setConfig] = useState(initial);
 
@@ -422,7 +408,23 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
     );
 }
 
+const initial: Config = {
+    sharp: false,
+    peg: false,
+    multi: false,
+    repl: 1,
+    lineWidth: 2,
+    showGuides: true,
+    zoom: 4,
+    preview: 0,
+    // animate: (false),
+    showNice: false,
+    size: 600,
+    canv: true,
+};
+
 export type Config = {
+    sharp: boolean;
     peg: boolean;
     multi: boolean;
     repl: number;
