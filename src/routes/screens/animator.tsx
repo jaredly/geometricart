@@ -1,4 +1,4 @@
-import {SetStateAction, useMemo, useState} from 'react';
+import {useMemo, useState} from 'react';
 import {pendingGuide} from '../../editor/RenderPendingGuide';
 import {IconEye, IconEyeInvisible, RoundPlus} from '../../icons/Icon';
 import {GuideGeomTypes} from '../../types';
@@ -6,13 +6,13 @@ import {getAllPatterns, getAnimated, saveAnimated} from '../db.server';
 import {useOnOpen} from '../useOnOpen';
 import type {Route} from './+types/animator';
 import {AnimatedCanvas, calcMargin} from './animator.screen/AnimatedCanvas';
-import {SvgCanvas} from './animator.screen/SvgCanvas';
+import {Pending, useFetchBounceState} from './animator.screen/animator.utils';
 import {LayerDialog} from './animator.screen/LayerDialog';
 import {LinesTable} from './animator.screen/LinesTable';
 import {SaveLinesButton} from './animator.screen/SaveLinesButton';
-import {SimplePreview} from './animator.screen/SimplePreview';
-import {Pending, useAnimate, useFetchBounceState} from './animator.screen/animator.utils';
 import {SettingsForm} from './animator.screen/SettingsForm';
+import {SimplePreview} from './animator.screen/SimplePreview';
+import {SvgCanvas} from './animator.screen/SvgCanvas';
 
 export async function loader({params}: Route.LoaderArgs) {
     const got = getAnimated(params.id);
@@ -43,39 +43,13 @@ export const col = (i: number) => ['red', 'yellow', 'blue'][i % 3];
 export default function Animator({loaderData: {patterns, initialState}}: Route.ComponentProps) {
     const [config, setConfig] = useState(initial);
 
-    const {
-        peg,
-        multi,
-        repl,
-        lineWidth,
-        showGuides,
-        zoom,
-        preview,
-        // animate,
-        showNice,
-        size,
-        canv,
-    } = config;
-
-    // // const [state, setState] = useLocalStorage<State>('animator-state', {layers: [], lines: []});
-    // const [peg, setPeg] = useState(false);
-    // const [multi, setMulti] = useState(false);
-    // const [repl, setRepl] = useState(1);
-    // const [lineWidth, setLineWidth] = useState(2);
-    // const [showGuides, setShowGuides] = useState(true);
-    // const [zoom, setZoom] = useState(4);
-    // const [preview, setPreview] = useState(0);
-    // const [animate, setAnimate] = useState(false);
-    // const [showNice, setShowNice] = useState(false);
-    // const [canv, setCanv] = useState(true);
+    const {peg, multi, repl, lineWidth, showGuides, zoom, preview, showNice, size, canv} = config;
 
     const [hover, setHover] = useState(null as null | number);
     const [state, setState] = useState(initialState);
     useFetchBounceState(state);
 
     const [pos, setPos] = useState({x: 0, y: 0});
-
-    // useAnimate(animate, setAnimate, setPreview, state.layers.length);
 
     const [pending, setPending] = useState<null | Pending>(null);
     const patternMap = useMemo(
@@ -88,8 +62,6 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
     const layerDialog = useOnOpen(setShowDialog);
 
     const peggedZoom = (peg ? calcMargin(preview, state.lines[0]) : 1) * zoom;
-    const cache = useMemo(() => ({}), [showNice]);
-    // const peggedMargin =
 
     return (
         <div className="mx-auto w-6xl p-4 pt-0 bg-base-200 shadow-base-300 shadow-md">
@@ -106,20 +78,7 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
             <div className="gap-4 flex items-start p-4">
                 <div>
                     {canv ? (
-                        <AnimatedCanvas
-                            config={config}
-                            // peg={peg}
-                            // multi={multi}
-                            // cache={cache}
-                            // repl={repl}
-                            // showNice={showNice}
-                            patternMap={patternMap}
-                            // preview={preview}
-                            // zoom={zoom}
-                            // size={size}
-                            state={state}
-                            // lineWidth={lineWidth}
-                        />
+                        <AnimatedCanvas config={config} patternMap={patternMap} state={state} />
                     ) : (
                         <SvgCanvas
                             peggedZoom={peggedZoom}
@@ -139,25 +98,7 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                     )}
                 </div>
                 <div className="flex flex-col gap-4">
-                    <SettingsForm
-                        state={state}
-                        // preview={preview}
-                        // setPreview={setPreview}
-                        // setAnimate={setAnimate}
-                        // zoom={zoom}
-                        // setZoom={setZoom}
-                        // lineWidth={lineWidth}
-                        // setLineWidth={setLineWidth}
-                        // repl={repl}
-                        // setRepl={setRepl}
-                        // canv={canv}
-                        // showNice={showNice}
-                        // setShowNice={setShowNice}
-                        // multi={multi}
-                        // setMulti={setMulti}
-                        config={config}
-                        setConfig={setConfig}
-                    />
+                    <SettingsForm state={state} config={config} setConfig={setConfig} />
                     <details className="bg-base-100 p-4 rounded-xl shadow-md shadow-base-300">
                         <summary className="mb-4">
                             <div className="inline-flex">
@@ -386,6 +327,19 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                             />
                         </div>
                     </div>
+                    <button
+                        className="btn"
+                        onClick={() => {
+                            const a = document.createElement('a');
+                            a.href = URL.createObjectURL(
+                                new Blob([JSON.stringify(state)], {type: 'application/json'}),
+                            );
+                            a.download = `state-${Date.now()}.json`;
+                            a.click();
+                        }}
+                    >
+                        Download JSON
+                    </button>
                 </div>
             </div>
             <dialog id="layer-modal" className="modal" ref={layerDialog}>

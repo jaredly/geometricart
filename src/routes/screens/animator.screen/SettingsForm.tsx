@@ -47,7 +47,7 @@ export function SettingsForm({
                         type="range"
                         min="0"
                         max="10"
-                        step={0.5}
+                        step={0.2}
                         value={config.lineWidth}
                         onChange={(evt) => setConfig({...config, lineWidth: +evt.target.value})}
                     />
