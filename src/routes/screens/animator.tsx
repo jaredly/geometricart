@@ -5,7 +5,7 @@ import {GuideGeomTypes} from '../../types';
 import {getAllPatterns, getAnimated, saveAnimated} from '../db.server';
 import {useOnOpen} from '../useOnOpen';
 import type {Route} from './+types/animator';
-import {AnimatedCanvas, calcMargin} from './animator.screen/AnimatedCanvas';
+import {AnimatedCanvas, calcMargin, SVGExports} from './animator.screen/AnimatedCanvas';
 import {Pending, useFetchBounceState} from './animator.screen/animator.utils';
 import {LayerDialog} from './animator.screen/LayerDialog';
 import {LinesTable} from './animator.screen/LinesTable';
@@ -96,6 +96,7 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                             hover={hover}
                         />
                     )}
+                    <SVGExports state={state} config={config} patternMap={patternMap} />
                 </div>
                 <div className="flex flex-col gap-4">
                     <SettingsForm state={state} config={config} setConfig={setConfig} />

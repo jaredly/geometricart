@@ -20,6 +20,100 @@ export const calcMargin = (preview: number, line: State['lines'][0]) => {
     return d1 / d2;
 };
 
+export const SVGExports = ({
+    state,
+    config,
+    patternMap,
+}: {
+    state: State;
+    config: Config;
+    patternMap: Record<string, Tiling>;
+}) => {
+    const [svStep, setSvStep] = useState(0.5);
+    const [svgs, setSvgs] = useState([] as {svg: string; zoom: number}[]);
+
+    return (
+        <div className="bg-base-100 p-4 rounded-md">
+            <button
+                className="btn"
+                onClick={() => {
+                    let i = 0;
+                    const step = () => {
+                        if (i > state.layers.length - 1 + epsilon) return;
+
+                        const peggedZoom =
+                            (config.peg ? calcMargin(i, state.lines[0]) : 1) * config.zoom;
+
+                        const path = combinedPath(i, config, state, patternMap);
+                        path.setFillType(pk.FillType.EvenOdd);
+                        const svg = path.toSVGString();
+                        path.delete();
+                        setSvgs((svgs) => [...svgs, {svg, zoom: peggedZoom}]);
+                        i += svStep;
+                        // requestAnimationFrame(step);
+                        setTimeout(step, 100);
+                    };
+                    step();
+                }}
+            >
+                Get SVGs
+            </button>
+            <label className="m-4">
+                {'Step: '}
+                <BlurInt
+                    className="input w-10"
+                    step={1}
+                    value={svStep}
+                    onChange={(value) => (value ? setSvStep(value) : null)}
+                />
+            </label>
+            <div className="flex flex-wrap gap-4">
+                {svgs.map((item, i) => (
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox={`${-item.zoom / 2} ${-item.zoom / 2} ${item.zoom} ${item.zoom}`}
+                        style={{background: 'black', width: 200, height: 200}}
+                        key={i}
+                    >
+                        <path fill="red" fillRule="evenodd" d={item.svg} />
+                    </svg>
+                ))}
+            </div>
+            {svgs.length ? (
+                <>
+                    <button className="btn" onClick={() => setSvgs([])}>
+                        Clear SVGs
+                    </button>
+                    <button
+                        className="btn btn-primary"
+                        onClick={async () => {
+                            // get the ZIP stream in a Blob
+                            const blob = await downloadZip(
+                                svgs.map(({svg, zoom}, i) => ({
+                                    name: `level-${i}.svg`,
+                                    input: `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="${-zoom / 2} ${-zoom / 2} ${zoom} ${zoom}">
+            <path fill="red" fill-rule="evenodd" d="${svg}" />
+        </svg>`,
+                                })),
+                            ).blob();
+
+                            // make and click a temporary link to download the Blob
+                            const link = document.createElement('a');
+                            link.href = URL.createObjectURL(blob);
+                            link.download = 'svgs.zip';
+                            link.click();
+                            link.remove();
+                        }}
+                    >
+                        Download SVGs as .zip
+                    </button>
+                </>
+            ) : null}
+        </div>
+    );
+};
+
 export const AnimatedCanvas = ({
     patternMap,
     state,
@@ -35,11 +129,10 @@ export const AnimatedCanvas = ({
     const [recording, setRecording] = useState(false);
 
     const patternDatas = useMemo(() => {
-        return state.layers.map((l) => getPatternData(patternMap[l.pattern], false, config.repl));
-    }, [state.layers, patternMap, config.repl]);
-
-    const [svStep, setSvStep] = useState(0.5);
-    const [svgs, setSvgs] = useState([] as {svg: string; zoom: number}[]);
+        return config.showNice
+            ? state.layers.map((l) => getPatternData(patternMap[l.pattern], false, config.repl))
+            : [];
+    }, [state.layers, patternMap, config.repl, config.showNice]);
 
     useEffect(() => {
         if (!ref.current) return;
@@ -68,60 +161,30 @@ export const AnimatedCanvas = ({
                 height={config.size * 2}
                 style={{width: config.size, height: config.size}}
             />
-            <div className="mt-4">
-                <button
-                    className="btn"
-                    disabled={recording}
-                    onClick={() => {
-                        // setRecording(true);
-                        recordVideo(state, ref.current!, patternMap, config).then(
-                            (url) => {
-                                if (url) {
-                                    setVideos([...videos, {url, date: Date.now()}]);
-                                }
-                                // setRecording(false);
-                            },
-                            () => {
-                                // setRecording(false);
-                            },
-                        );
-                    }}
-                >
-                    Record Video
-                </button>
-                <button
-                    className="btn ml-4"
-                    onClick={() => {
-                        let i = 0;
-                        const step = () => {
-                            if (i > state.layers.length - 1 + epsilon) return;
+            <div className="bg-base-100 p-4 rounded-md my-4">
+                <div>
+                    <button
+                        className="btn"
+                        disabled={recording}
+                        onClick={() => {
+                            // setRecording(true);
+                            recordVideo(state, ref.current!, patternMap, config).then(
+                                (url) => {
+                                    if (url) {
+                                        setVideos([...videos, {url, date: Date.now()}]);
+                                    }
+                                    // setRecording(false);
+                                },
+                                () => {
+                                    // setRecording(false);
+                                },
+                            );
+                        }}
+                    >
+                        Record Video
+                    </button>
+                </div>
 
-                            const peggedZoom =
-                                (config.peg ? calcMargin(i, state.lines[0]) : 1) * config.zoom;
-
-                            const path = combinedPath(i, config, state, patternMap);
-                            path.setFillType(pk.FillType.EvenOdd);
-                            const svg = path.toSVGString();
-                            path.delete();
-                            setSvgs((svgs) => [...svgs, {svg, zoom: peggedZoom}]);
-                            i += svStep;
-                            // requestAnimationFrame(step);
-                            setTimeout(step, 100);
-                        };
-                        step();
-                    }}
-                >
-                    Get SVGs
-                </button>
-                <label className="m-4">
-                    {'Step: '}
-                    <BlurInt
-                        className="input w-10"
-                        step={1}
-                        value={svStep}
-                        onChange={(value) => (value ? setSvStep(value) : null)}
-                    />
-                </label>
                 {videos.map(({url, date}, i) => (
                     <div key={url} className="relative">
                         <video src={url} loop controls />
@@ -138,49 +201,6 @@ export const AnimatedCanvas = ({
                         </button>
                     </div>
                 ))}
-                <div className="flex flex-wrap gap-4">
-                    {svgs.map((item, i) => (
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            viewBox={`${-item.zoom / 2} ${-item.zoom / 2} ${item.zoom} ${item.zoom}`}
-                            style={{background: 'black', width: 200, height: 200}}
-                            key={i}
-                        >
-                            <path fill="red" fillRule="evenodd" d={item.svg} />
-                        </svg>
-                    ))}
-                </div>
-                {svgs.length ? (
-                    <>
-                        <button className="btn" onClick={() => setSvgs([])}>
-                            Clear SVGs
-                        </button>
-                        <button
-                            className="btn btn-primary"
-                            onClick={async () => {
-                                // get the ZIP stream in a Blob
-                                const blob = await downloadZip(
-                                    svgs.map(({svg, zoom}, i) => ({
-                                        name: `level-${i}.svg`,
-                                        input: `
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="${-zoom / 2} ${-zoom / 2} ${zoom} ${zoom}">
-            <path fill="red" fill-rule="evenodd" d="${svg}" />
-        </svg>`,
-                                    })),
-                                ).blob();
-
-                                // make and click a temporary link to download the Blob
-                                const link = document.createElement('a');
-                                link.href = URL.createObjectURL(blob);
-                                link.download = 'svgs.zip';
-                                link.click();
-                                link.remove();
-                            }}
-                        >
-                            Download SVGs as .zip
-                        </button>
-                    </>
-                ) : null}
             </div>
         </div>
     );
