@@ -1,15 +1,17 @@
-import {useRef, useMemo, useEffect, useState} from 'react';
+import {downloadZip} from 'client-zip';
+import {useEffect, useMemo, useRef, useState} from 'react';
+import {BlurInt} from '../../../editor/Forms';
+import {epsilon} from '../../../rendering/epsilonToZero';
 import {dist} from '../../../rendering/getMirrorTransforms';
+import {ThreedScreenInner} from '../../../threed/ThreedScreen';
+import {pathToGeometry} from '../../../threed/calcShapes';
 import {Tiling} from '../../../types';
 import {drawWoven} from '../../canvasDraw';
 import {getPatternData} from '../../getPatternData';
-import {pk} from '../../pk';
-import {State, lineAt} from './animator.utils';
+import {pk, Path as PKPath} from '../../pk';
 import {Config} from '../animator';
-import {renderFrame, recordVideo, combinedPath} from './renderFrame';
-import {BlurInt} from '../../../editor/Forms';
-import {downloadZip} from 'client-zip';
-import {epsilon} from '../../../rendering/epsilonToZero';
+import {lineAt, State} from './animator.utils';
+import {combinedPath, recordVideo, renderFrame} from './renderFrame';
 
 export const calcMargin = (preview: number, line: State['lines'][0]) => {
     const lat = lineAt(line.keyframes, preview, line.fade);
@@ -30,7 +32,43 @@ export const SVGExports = ({
     patternMap: Record<string, Tiling>;
 }) => {
     const [svStep, setSvStep] = useState(0.5);
-    const [svgs, setSvgs] = useState([] as {svg: string; zoom: number}[]);
+    const [svgs, setSvgs] = useState([] as {svg: string; pkpath: PKPath; zoom: number}[]);
+
+    const thick = 0.01;
+
+    const threedItems = useMemo(() => {
+        return svgs.map(({pkpath}, i) => {
+            const res = pathToGeometry({
+                pkpath,
+                fullThickness: false,
+                xoff: i * thick,
+                thick,
+            });
+            if (!res) {
+                return null;
+            }
+            const {geometry, stl} = res;
+            return (
+                <React.Fragment key={`${i}`}>
+                    <mesh geometry={geometry} position={[0, 0, 0]} castShadow receiveShadow>
+                        <meshPhongMaterial flatShading color={'red'} />
+                    </mesh>
+                    {/* {isSelected ? (
+                        <points
+                            geometry={geometry}
+                            position={[center.x, center.y, xoff]}
+                            material={
+                                new PointsMaterial({
+                                    color: 'white',
+                                    size: 0.3,
+                                })
+                            }
+                        />
+                    ) : null} */}
+                </React.Fragment>
+            );
+        });
+    }, [svgs]);
 
     return (
         <div className="bg-base-100 p-4 rounded-md">
@@ -48,7 +86,7 @@ export const SVGExports = ({
                         path.setFillType(pk.FillType.EvenOdd);
                         const svg = path.toSVGString();
                         path.delete();
-                        setSvgs((svgs) => [...svgs, {svg, zoom: peggedZoom}]);
+                        setSvgs((svgs) => [...svgs, {svg, pkpath: path, zoom: peggedZoom}]);
                         i += svStep;
                         // requestAnimationFrame(step);
                         setTimeout(step, 100);
@@ -110,6 +148,7 @@ export const SVGExports = ({
                     </button>
                 </>
             ) : null}
+            {svgs.length ? <ThreedScreenInner>{threedItems}</ThreedScreenInner> : null}
         </div>
     );
 };

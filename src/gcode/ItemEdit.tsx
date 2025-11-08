@@ -388,7 +388,7 @@ const ButtonToggle = ({
     body,
     startOpen,
 }: {
-    button: (show: boolean, toggle: () => void) => JSX.Element;
+    button: (show: boolean, toggle: () => void) => React.ReactNode;
     body: React.ReactNode;
     startOpen?: boolean;
 }) => {

@@ -37,7 +37,7 @@ function ScriptLerp({
     id: string;
     vbl: SLT | PosScript;
     dispatch: (action: Action) => unknown;
-}): JSX.Element {
+}): React.ReactNode {
     const [code, setCode] = React.useState(vbl.code);
 
     const fn = useMemo(() => {
@@ -101,7 +101,7 @@ function FloatLerp({
     id: string;
     vbl: FLT;
     dispatch: (action: Action) => unknown;
-}): JSX.Element {
+}): React.ReactNode {
     const [current, setCurrentInner] = React.useState(null as null | FLT);
     const last = React.useRef(vbl.points);
     React.useEffect(() => {
@@ -246,13 +246,7 @@ const FnViewer = ({fn, kind}: {fn: (n: number) => number; kind: 'float-fn' | 'po
     );
 };
 
-const PointsViewer = ({
-    points,
-    onClick,
-}: {
-    points: Array<LerpPoint>;
-    onClick: () => void;
-}) => {
+const PointsViewer = ({points, onClick}: {points: Array<LerpPoint>; onClick: () => void}) => {
     const width = 50;
     const height = 50;
 

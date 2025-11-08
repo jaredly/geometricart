@@ -14,7 +14,7 @@ export function MirrorItems({
     state: State;
     setHover: (hover: Hover | null) => void;
     dispatch: React.Dispatch<Action>;
-}): JSX.Element {
+}): React.ReactNode {
     return (
         <>
             {Object.entries(state.mirrors).map(([k, mirror]) => (

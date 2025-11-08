@@ -64,7 +64,7 @@ export const NewSidebar = ({
 
     uiDispatch: UIDispatch;
     uiState: UIState;
-}): JSX.Element => {
+}): React.ReactNode => {
     const styleIds = selectedPathIds(state);
     const [openSidebars, setOpenSidebars] = useLocalStorage(
         'openSidebarIds',
@@ -440,7 +440,7 @@ export const NewSidebar = ({
     );
 };
 
-const showMirror = (id: string | Mirror, mirrors: {[key: string]: Mirror}): JSX.Element => {
+const showMirror = (id: string | Mirror, mirrors: {[key: string]: Mirror}): React.ReactNode => {
     const mirror = typeof id === 'string' ? mirrors[id] : id;
     return (
         <span style={{fontSize: '80%', marginLeft: 16, opacity: 0.7}}>
@@ -616,7 +616,7 @@ function ShapeItems({
     setHover: (hover: Hover | null) => void;
     dispatch: React.Dispatch<Action>;
     onlyShowSelected: boolean;
-}): JSX.Element {
+}): React.ReactNode {
     const groups: {[key: string]: string[]} = {};
     Object.entries(state.paths).forEach(([id, path]) => {
         groups[path.group ?? ''] = (groups[path.group ?? ''] ?? []).concat(id);
@@ -806,7 +806,7 @@ function PathItem({
     state: State;
     setHover: (hover: Hover | null) => void;
     dispatch: React.Dispatch<Action>;
-}): JSX.Element {
+}): React.ReactNode {
     const op = React.useRef<OverlayPanel>(null);
     return (
         <div
@@ -886,7 +886,7 @@ function GuideItems({
     state: State;
     setHover: (hover: Hover | null) => void;
     dispatch: React.Dispatch<Action>;
-}): JSX.Element {
+}): React.ReactNode {
     return (
         <>
             {Object.entries(state.guides).map(([k, guide]) => (

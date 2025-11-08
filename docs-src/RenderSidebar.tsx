@@ -23,13 +23,17 @@ export function RenderSidebar<Fn extends (...args: any) => any>({
         input: Parameters<Fn>;
         onChange?: ((input: Parameters<Fn>) => void) | undefined;
         scale: number;
-    }) => JSX.Element;
+    }) => React.ReactNode;
     setSelected: React.Dispatch<React.SetStateAction<Fixture<Fn>>>;
     pins: {[key: number]: boolean};
     setPins: React.Dispatch<React.SetStateAction<{[key: number]: boolean}>>;
     setHover: React.Dispatch<React.SetStateAction<number | null>>;
     selected: Fixture<Fn>;
-    Output: (props: {output: ReturnType<Fn>; input: Parameters<Fn>; scale: number}) => JSX.Element;
+    Output: (props: {
+        output: ReturnType<Fn>;
+        input: Parameters<Fn>;
+        scale: number;
+    }) => React.ReactNode;
     output: ReturnType<Fn>;
     run: Fn;
     hover: number | null;

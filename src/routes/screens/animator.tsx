@@ -14,6 +14,7 @@ import {SettingsForm} from './animator.screen/SettingsForm';
 import {SimplePreview} from './animator.screen/SimplePreview';
 import {SvgCanvas} from './animator.screen/SvgCanvas';
 import {Canvas} from '@react-three/fiber';
+import {ThreedScreenInner} from '../../threed/ThreedScreen';
 
 export async function loader({params}: Route.LoaderArgs) {
     const got = getAnimated(params.id);
@@ -98,14 +99,6 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                         />
                     )}
                     <SVGExports state={state} config={config} patternMap={patternMap} />
-                    {/* <Canvas
-                        // ref={canv}
-                        shadows
-                        style={{backgroundColor: 'white'}}
-                        gl={{antialias: true, preserveDrawingBuffer: true}}
-                    >
-                        <ambientLight intensity={0.3} />
-                    </Canvas> */}
                 </div>
                 <div className="flex flex-col gap-4">
                     <SettingsForm state={state} config={config} setConfig={setConfig} />

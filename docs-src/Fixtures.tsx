@@ -127,8 +127,12 @@ export const Fixtures = <Fn extends (...args: any) => any>({
         input: Parameters<Fn>;
         onChange?: (input: Parameters<Fn>) => void;
         scale: number;
-    }) => JSX.Element;
-    Output: (props: {output: ReturnType<Fn>; input: Parameters<Fn>; scale: number}) => JSX.Element;
+    }) => React.ReactNode;
+    Output: (props: {
+        output: ReturnType<Fn>;
+        input: Parameters<Fn>;
+        scale: number;
+    }) => React.ReactNode;
     editDelay?: number;
     run: Fn;
 }) => {
@@ -211,7 +215,7 @@ export const Fixtures = <Fn extends (...args: any) => any>({
             }
         });
 
-        const rendered: {[key: number]: JSX.Element} = {};
+        const rendered: {[key: number]: React.ReactNode} = {};
 
         Object.keys(examplesMatching).forEach((k) => {
             rendered[+k] = (

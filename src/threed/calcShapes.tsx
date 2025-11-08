@@ -22,6 +22,7 @@ import {Action} from '../state/Action';
 import {Fill, Path, State, StyleLine} from '../types';
 import {pk as PK} from '../routes/pk';
 import {generatePathsAndOutlines} from '../editor/ExportSVG';
+import {ThreeEvent} from '@react-three/fiber';
 
 const unique = (v: string[]) => {
     const seen: Record<string, true> = {};
@@ -187,82 +188,19 @@ export const calcShapes = (
         positions: [number, number, number][];
     }[] = [];
 
-    const items = pkPaths
-        .flatMap(({path, pkpath, gat, style}, n) => {
-            let xoff = gat * baseThick + gap * gat;
-
-            const isSelected = path ? selectedIds[path.id] : false;
-
-            let thick = baseThick;
-            if (style.style.originalIdx != null && style.style.originalIdx > 0) {
-                thick = mmToPX(0.2, state.meta.ppi);
-                xoff += thick;
-            }
-
-            const pg = pathToGeometry({
-                pkpath,
-                fullThickness: toBack === true || (toBack === false && gat === fullThicknessGat),
-                xoff,
-                thick,
-            });
-            if (!pg) {
-                console.log('Notice! PathToGeometry said no', gat, style);
-                return [];
-            }
-            const {geometry, stl} = pg;
-            stls.push(stl);
-
-            const center = state.view.center;
-
-            const col = paletteColor(state.palette, style.style.color, style.style.lighten);
-
-            const isHovered = path ? matchesHover(path, hover) : false;
-
-            return (
-                <React.Fragment key={`${n}`}>
-                    {/** @ts-ignore */}
-                    <mesh
-                        geometry={geometry}
-                        position={[center.x, center.y, xoff]}
-                        castShadow
-                        receiveShadow
-                        onClick={(evt: any) => {
-                            evt.stopPropagation();
-                            if (!path) return;
-                            clickItem(evt.nativeEvent.shiftKey, selectedIds, path, state, dispatch);
-                        }}
-                    >
-                        {/** @ts-ignore */}
-                        <meshPhongMaterial flatShading color={isHovered ? 'red' : col} />
-                        {/** @ts-ignore */}
-                    </mesh>
-                    {isSelected ? (
-                        /** @ts-ignore */
-                        <points
-                            geometry={geometry}
-                            position={[center.x, center.y, xoff]}
-                            material={
-                                new PointsMaterial({
-                                    color: 'white',
-                                    size: 0.3,
-                                })
-                            }
-                        />
-                    ) : null}
-                    {/* <lineSegments
-                        position={[0, 0, xoff]}
-                        key={`${n}-sel`}
-                        geometry={new EdgesGeometry(geometry)}
-                        material={
-                            new LineBasicMaterial({
-                                color: isSelected ? 'red' : '#555',
-                            })
-                        }
-                    /> */}
-                </React.Fragment>
-            );
-        })
-        .filter((n) => n != null);
+    const items = pkPathToThreed(
+        pkPaths,
+        baseThick,
+        gap,
+        selectedIds,
+        state,
+        toBack === false ? fullThicknessGat : toBack,
+        stls,
+        hover,
+        (evt: ThreeEvent<MouseEvent>, path: Path) => {
+            clickItem(evt.nativeEvent.shiftKey, selectedIds, path, state, dispatch);
+        },
+    );
 
     const backs: PKPath[] = [];
     const covers: PKPath[] = [];
@@ -299,7 +237,88 @@ export const calcShapes = (
     };
 };
 
-function pathToGeometry({
+function pkPathToThreed(
+    pkPaths: {
+        path?: Path;
+        pkpath: PKPath;
+        gat: number;
+        style: {type: 'line'; style: StyleLine} | {type: 'fill'; style: Fill};
+    }[],
+    baseThick: number,
+    gap: number,
+    selectedIds: Record<string, boolean>,
+    state: State,
+    toBack: boolean | number | null,
+    stls: {cells: [number, number, number][]; positions: [number, number, number][]}[],
+    hover: Hover | null,
+    onClick: (evt: ThreeEvent<MouseEvent>, path: Path) => void,
+) {
+    return pkPaths
+        .flatMap(({path, pkpath, gat, style}, n) => {
+            let xoff = gat * baseThick + gap * gat;
+
+            const isSelected = path ? selectedIds[path.id] : false;
+
+            let thick = baseThick;
+            if (style.style.originalIdx != null && style.style.originalIdx > 0) {
+                thick = mmToPX(0.2, state.meta.ppi);
+                xoff += thick;
+            }
+
+            const pg = pathToGeometry({
+                pkpath,
+                fullThickness: typeof toBack === 'number' ? toBack === gat : !!toBack,
+                xoff,
+                thick,
+            });
+            if (!pg) {
+                console.log('Notice! PathToGeometry said no', gat, style);
+                return [];
+            }
+
+            const {geometry, stl} = pg;
+            stls.push(stl);
+
+            const center = state.view.center;
+
+            const col = paletteColor(state.palette, style.style.color, style.style.lighten);
+
+            const isHovered = path ? matchesHover(path, hover) : false;
+
+            return (
+                <React.Fragment key={`${n}`}>
+                    <mesh
+                        geometry={geometry}
+                        position={[center.x, center.y, xoff]}
+                        castShadow
+                        receiveShadow
+                        onClick={(evt: ThreeEvent<MouseEvent>) => {
+                            evt.stopPropagation();
+                            if (!path) return;
+                            onClick(evt, path);
+                        }}
+                    >
+                        <meshPhongMaterial flatShading color={isHovered ? 'red' : col} />
+                    </mesh>
+                    {isSelected ? (
+                        <points
+                            geometry={geometry}
+                            position={[center.x, center.y, xoff]}
+                            material={
+                                new PointsMaterial({
+                                    color: 'white',
+                                    size: 0.3,
+                                })
+                            }
+                        />
+                    ) : null}
+                </React.Fragment>
+            );
+        })
+        .filter((n) => n != null);
+}
+
+export function pathToGeometry({
     pkpath,
     fullThickness,
     xoff,

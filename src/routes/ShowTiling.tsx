@@ -117,7 +117,7 @@ export const TilingPattern = ({
     const pointNames = Object.fromEntries(data.uniquePoints.map((p, i) => [coordKey(p), i]));
 
     // const corners = chooseCorner(tiling.shape.type === 'parallellogram' ? tiling.shape.points : [], data.shapes)
-    let hoverNodes: JSX.Element | null = null;
+    let hoverNodes: React.ReactNode | null = null;
     if (hover != null) {
         const shape = shapes[hover];
         const i = hover;
@@ -186,8 +186,8 @@ export const TilingPattern = ({
         );
     }
 
-    const lines: JSX.Element[] = [];
-    const texts: JSX.Element[] = [];
+    const lines: React.ReactNode[] = [];
+    const texts: React.ReactNode[] = [];
     if (showLines) {
         const byColor = data.allSegments
             .map((seg, i) => ({seg, path: data.paths[i].pathId, i}))

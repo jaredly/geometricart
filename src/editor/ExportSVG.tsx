@@ -1,5 +1,3 @@
-/* @jsx jsx */
-/* @jsxFrag React.Fragment */
 import {Interpolation, Theme} from '@emotion/react';
 import {Path as PKPath, pk as PK} from '../routes/pk';
 import React, {useMemo, useState} from 'react';

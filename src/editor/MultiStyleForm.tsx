@@ -1,5 +1,3 @@
-/* @jsx jsx */
-/* @jsxFrag React.Fragment */
 import * as React from 'react';
 import {transparent} from './Icons';
 import {Style, Fill, StyleLine} from '../types';

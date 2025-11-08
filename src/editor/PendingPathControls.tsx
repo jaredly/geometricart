@@ -1,5 +1,3 @@
-/* @jsx jsx */
-/* @jsxFrag React.Fragment */
 import * as React from 'react';
 import {Coord, Id, Intersect, Segment} from '../types';
 import {backUp, goForward, goLeft, goRight, isComplete} from './DrawPath';

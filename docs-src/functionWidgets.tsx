@@ -57,7 +57,7 @@ const showAmount = (amount: number, max: number) => {
 
 // Little things inline
 export const widgets: {
-    [key: string]: (args: any, output: any, size: string) => JSX.Element;
+    [key: string]: (args: any, output: any, size: string) => React.ReactNode;
 } = {
     dist: ([p1, p2]: [Coord, Coord], output: number, size: string) => {
         return (
@@ -316,7 +316,7 @@ const renderCircle = (
 
 // Big things in the SVG
 export const visuals: {
-    [key: string]: (args: any, output: any) => JSX.Element;
+    [key: string]: (args: any, output: any) => React.ReactNode;
 } = {
     circleCircle: ([c1, c2]: [Circle, Circle], points: Array<Coord>) => {
         const shared = {

@@ -1,18 +1,17 @@
-import {OrbitControls, PerspectiveCamera, useHelper} from '@react-three/drei';
+import {OrbitControls, PerspectiveCamera} from '@react-three/drei';
 import '@react-three/fiber';
 import {Canvas} from '@react-three/fiber';
 import React, {useEffect, useMemo, useRef, useState} from 'react';
-import {CameraHelper, DirectionalLight, PerspectiveCamera as TPC} from 'three';
+import {DirectionalLight, PerspectiveCamera as TPC} from 'three';
 import {BlurInt} from '../editor/Forms';
+import {paletteColor} from '../editor/RenderPath';
+import {Hover} from '../editor/Sidebar';
 import {usePathsToShow} from '../editor/SVGCanvas';
+import {mmToPX} from '../gcode/pxToMM';
 import {Action} from '../state/Action';
 import {State} from '../types';
-// @ts-ignore
-import {Hover} from '../editor/Sidebar';
-import {mmToPX} from '../gcode/pxToMM';
 import {calcShapes} from './calcShapes';
 import {ExportSection} from './ExportSection';
-import {paletteColor} from '../editor/RenderPath';
 import {groupSort} from './groupSort';
 
 const useLatest = <T,>(value: T) => {
@@ -30,10 +29,7 @@ export const ThreedScreen = ({
     dispatch: React.Dispatch<Action>;
     hover: Hover | null;
 }) => {
-    let {pathsToShow, selectedIds, clip, rand} = usePathsToShow(state);
-    // const [thick, setThick] = useLocalStorage('thick', 3);
-    // const [gap, setGap] = useLocalStorage('gap', 2);
-    // const [toBack, setToBack] = useState(false as null | boolean);
+    let {pathsToShow, selectedIds} = usePathsToShow(state);
     const {
         thickness = 3,
         gap = 0,
@@ -43,56 +39,6 @@ export const ThreedScreen = ({
     } = state.meta.threedSettings ?? {};
 
     const toBack = false; // TODO make this customizeable? idkyyy
-
-    const setCameraDistance = (cameraDistance: number) => {
-        dispatch({
-            type: 'meta:update',
-            meta: {
-                ...state.meta,
-                threedSettings: {...state.meta.threedSettings, cameraDistance},
-            },
-        });
-    };
-
-    const setUseMultiSVG = (useMultiSVG: boolean) => {
-        dispatch({
-            type: 'meta:update',
-            meta: {
-                ...state.meta,
-                threedSettings: {...state.meta.threedSettings, useMultiSVG},
-            },
-        });
-    };
-
-    const setShadowZoom = (shadowZoom: number) => {
-        dispatch({
-            type: 'meta:update',
-            meta: {
-                ...state.meta,
-                threedSettings: {...state.meta.threedSettings, shadowZoom},
-            },
-        });
-    };
-
-    const setThick = (thickness: number) => {
-        dispatch({
-            type: 'meta:update',
-            meta: {
-                ...state.meta,
-                threedSettings: {...state.meta.threedSettings, thickness},
-            },
-        });
-    };
-
-    const setGap = (gap: number) => {
-        dispatch({
-            type: 'meta:update',
-            meta: {
-                ...state.meta,
-                threedSettings: {...state.meta.threedSettings, gap},
-            },
-        });
-    };
 
     const latestState = useLatest(state);
 
@@ -131,8 +77,6 @@ export const ThreedScreen = ({
         useMultiSVG ? state.view.multi : undefined,
     ]);
 
-    // const backdrop =
-
     const canv = React.useRef<HTMLCanvasElement>(null);
     const virtualCamera = React.useRef<TPC>(null);
     const sc = React.useRef<TPC>(null);
@@ -142,26 +86,13 @@ export const ThreedScreen = ({
 
     const [[x, y], setCpos] = useState<[number, number]>([0, 0]);
 
-    // useEffect(() => {
-    // 	if (!move) return;
-    // 	let r = 0;
-    // 	const iv = setInterval(() => {
-    // 		const rad = 3;
-    // 		setCpos([Math.cos(r) * rad, Math.sin(r) * rad]);
-    // 		r += Math.PI / 30;
-    // 	}, 50);
-    // 	return () => clearInterval(iv);
-    // }, [move]);
-
     const [lpos, setLpos] = useState<[number, number, number]>([3, 0, 100]);
-    // const lpos = [0, 0, 10] as const;
 
     useEffect(() => {
         if (!move) return;
         let r = 0;
         const iv = setInterval(() => {
             r += Math.PI / 80;
-            // setLpos([Math.cos(r) * 2, 0, 10]);
             setLpos([Math.cos(r) * 5, Math.sin(r) * 5, 10]);
         }, 100);
         return () => clearInterval(iv);
@@ -170,20 +101,6 @@ export const ThreedScreen = ({
     if (!calced) return <div>No shapes</div>;
 
     const {items, stls, backs, covers} = calced;
-
-    // useEffect(() => {
-    //     const iv = setInterval(() => {
-    //         if (!dl.current) return
-    //         // dl.current.update
-    //     }, 100)
-    //     return () => clearInterval(iv)
-    // }, [])
-
-    const tmax = 100;
-    const tmin = 0;
-
-    // const cdist = 5;
-    // const cdist = 70;
     const fov = 40;
 
     return (
@@ -201,7 +118,6 @@ export const ThreedScreen = ({
                     style={{backgroundColor: 'white'}}
                     gl={{antialias: true, preserveDrawingBuffer: true}}
                 >
-                    {/** @ts-ignore */}
                     <directionalLight
                         position={lpos}
                         ref={dl}
@@ -209,13 +125,11 @@ export const ThreedScreen = ({
                         // shadow-mapSize={[2048, 2048]}
                         castShadow
                     >
-                        {/** @ts-ignore */}
-                        <orthographicCamera zoom={shadowZoom} attach="shadow-camera">
-                            {/** @ts-ignore */}
-                        </orthographicCamera>
-                        {/** @ts-ignore */}
+                        <orthographicCamera
+                            zoom={shadowZoom}
+                            attach="shadow-camera"
+                        ></orthographicCamera>
                     </directionalLight>
-                    {/** @ts-ignore */}
                     <ambientLight intensity={0.3} />
 
                     <PerspectiveCamera
@@ -226,108 +140,83 @@ export const ThreedScreen = ({
                     />
                     <OrbitControls camera={virtualCamera.current!} />
 
-                    {/** @ts-ignore */}
                     <mesh position={[0, 0, -1]}>
-                        {/** @ts-ignore */}
                         <planeGeometry attach="geometry" args={[100, 100]} />
-                        {/** @ts-ignore */}
                         <meshPhongMaterial
                             attach="material"
                             color={paletteColor(state.palette, state.view.background)}
                         />
-                        {/** @ts-ignore */}
                     </mesh>
                     {items}
                 </Canvas>
             </div>
-            <div>
-                <label>
-                    Camera Distance
-                    <BlurInt
-                        value={cameraDistance}
-                        onChange={(t) => (t != null ? setCameraDistance(t) : null)}
-                    />
-                </label>
-                <label>
-                    ShadowZoom
-                    <BlurInt
-                        value={shadowZoom}
-                        onChange={(t) => (t != null ? setShadowZoom(t) : null)}
-                    />
-                </label>
-                <label>
-                    Thickness (mm)
-                    <BlurInt value={thickness} onChange={(t) => (t != null ? setThick(t) : null)} />
-                </label>
-                <label>
-                    Gap (mm)
-                    <BlurInt value={gap} onChange={(t) => (t != null ? setGap(t) : null)} />
-                </label>
-                {/* <label>
-                    To Back
-                    <button
-                        disabled={toBack === true}
-                        onClick={() => setToBack(true)}
-                    >
-                        All
-                    </button>
-                    <button
-                        disabled={toBack === false}
-                        onClick={() => setToBack(false)}
-                    >
-                        Top
-                    </button>
-                    <button
-                        disabled={toBack === null}
-                        onClick={() => setToBack(null)}
-                    >
-                        None
-                    </button>
-                </label> */}
-                <button
-                    onClick={() => {
-                        setMove(!move);
-                        setCpos([0, 0]);
-                    }}
-                >
-                    {move ? 'Stop moving' : 'Move'}
-                </button>
-                <label>
-                    Use multi svg
-                    <input
-                        type="checkbox"
-                        checked={useMultiSVG}
-                        onChange={(t) => setUseMultiSVG(t.target.checked)}
-                    />
-                </label>
-            </div>
-            <div>
-                <div>Light pos</div>
-                x
-                <BlurInt
-                    value={lpos[0]}
-                    onChange={(t) => (t != null ? setLpos([t, lpos[1], lpos[2]]) : null)}
-                />
-                y
-                <BlurInt
-                    value={lpos[1]}
-                    onChange={(t) => (t != null ? setLpos([lpos[0], t, lpos[2]]) : null)}
-                />
-                z
-                <BlurInt
-                    value={lpos[2]}
-                    onChange={(t) => (t != null ? setLpos([lpos[0], lpos[1], t]) : null)}
-                />
-            </div>
+            <CameraForm
+                cameraDistance={cameraDistance}
+                dispatch={dispatch}
+                state={state}
+                shadowZoom={shadowZoom}
+                thickness={thickness}
+                gap={gap}
+                setMove={setMove}
+                move={move}
+                setCpos={setCpos}
+                useMultiSVG={useMultiSVG}
+            />
+            <LightPosForm lpos={lpos} setLpos={setLpos} />
             <ExportSection canv={canv} state={state} stls={stls} backs={backs} covers={covers} />
         </div>
     );
 };
 
-const CH = ({camera}: {camera: any}) => {
-    useHelper(camera, CameraHelper);
+export const ThreedScreenInner = ({children}: {children: React.ReactNode}) => {
+    const fov = 40;
+    const canv = React.useRef<HTMLCanvasElement>(null);
+    const [lpos, setLpos] = useState<[number, number, number]>([3, 0, 100]);
+    const dl = useRef<DirectionalLight>(null);
 
-    return null;
+    const {shadowZoom = 0.09, cameraDistance = 70} = {};
+    const virtualCamera = React.useRef<TPC>(null);
+    const [[x, y], setCpos] = useState<[number, number]>([0, 0]);
+
+    return (
+        <div>
+            <Canvas
+                ref={canv}
+                shadows
+                style={{backgroundColor: 'white'}}
+                gl={{antialias: true, preserveDrawingBuffer: true}}
+            >
+                <directionalLight
+                    position={lpos}
+                    ref={dl}
+                    shadow-mapSize={[2048 * 4, 2048 * 4]}
+                    // shadow-mapSize={[2048, 2048]}
+                    castShadow
+                >
+                    <orthographicCamera
+                        zoom={shadowZoom}
+                        attach="shadow-camera"
+                    ></orthographicCamera>
+                </directionalLight>
+                <ambientLight intensity={0.3} />
+
+                <PerspectiveCamera
+                    makeDefault
+                    ref={virtualCamera}
+                    position={[x, y, cameraDistance]}
+                    args={[fov, 1, 1, 2000]}
+                />
+                <OrbitControls camera={virtualCamera.current!} />
+
+                <mesh position={[0, 0, -1]}>
+                    <planeGeometry attach="geometry" args={[100, 100]} />
+                    <meshPhongMaterial attach="material" color={'red'} />
+                </mesh>
+                {children}
+            </Canvas>
+            <LightPosForm lpos={lpos} setLpos={setLpos} />
+        </div>
+    );
 };
 
 const handleKey = (evt: KeyboardEvent, state: State, dispatch: React.Dispatch<Action>) => {
@@ -382,3 +271,165 @@ const handleKey = (evt: KeyboardEvent, state: State, dispatch: React.Dispatch<Ac
         }
     }
 };
+
+function LightPosForm({
+    lpos,
+    setLpos,
+}: {
+    lpos: [number, number, number];
+    setLpos: React.Dispatch<React.SetStateAction<[number, number, number]>>;
+}) {
+    return (
+        <div>
+            <div>Light pos</div>
+            x
+            <BlurInt
+                value={lpos[0]}
+                onChange={(t) => (t != null ? setLpos([t, lpos[1], lpos[2]]) : null)}
+            />
+            y
+            <BlurInt
+                value={lpos[1]}
+                onChange={(t) => (t != null ? setLpos([lpos[0], t, lpos[2]]) : null)}
+            />
+            z
+            <BlurInt
+                value={lpos[2]}
+                onChange={(t) => (t != null ? setLpos([lpos[0], lpos[1], t]) : null)}
+            />
+        </div>
+    );
+}
+
+function CameraForm({
+    cameraDistance,
+    dispatch,
+    state,
+    shadowZoom,
+    thickness,
+    gap,
+    setMove,
+    move,
+    setCpos,
+    useMultiSVG,
+}: {
+    cameraDistance: number;
+    dispatch: React.Dispatch<Action>;
+    state: State;
+    shadowZoom: number;
+    thickness: number;
+    gap: number;
+    setMove: React.Dispatch<React.SetStateAction<boolean>>;
+    move: boolean;
+    setCpos: React.Dispatch<React.SetStateAction<[number, number]>>;
+    useMultiSVG: boolean | undefined;
+}) {
+    return (
+        <div>
+            <label>
+                Camera Distance
+                <BlurInt
+                    value={cameraDistance}
+                    onChange={(t) =>
+                        t != null
+                            ? dispatch({
+                                  type: 'meta:update',
+                                  meta: {
+                                      ...state.meta,
+                                      threedSettings: {
+                                          ...state.meta.threedSettings,
+                                          cameraDistance: t,
+                                      },
+                                  },
+                              })
+                            : null
+                    }
+                />
+            </label>
+            <label>
+                ShadowZoom
+                <BlurInt
+                    value={shadowZoom}
+                    onChange={(t) =>
+                        t != null
+                            ? dispatch({
+                                  type: 'meta:update',
+                                  meta: {
+                                      ...state.meta,
+                                      threedSettings: {
+                                          ...state.meta.threedSettings,
+                                          shadowZoom: t,
+                                      },
+                                  },
+                              })
+                            : null
+                    }
+                />
+            </label>
+            <label>
+                Thickness (mm)
+                <BlurInt
+                    value={thickness}
+                    onChange={(t) =>
+                        t != null
+                            ? dispatch({
+                                  type: 'meta:update',
+                                  meta: {
+                                      ...state.meta,
+                                      threedSettings: {
+                                          ...state.meta.threedSettings,
+                                          thickness: t,
+                                      },
+                                  },
+                              })
+                            : null
+                    }
+                />
+            </label>
+            <label>
+                Gap (mm)
+                <BlurInt
+                    value={gap}
+                    onChange={(t) =>
+                        t != null
+                            ? dispatch({
+                                  type: 'meta:update',
+                                  meta: {
+                                      ...state.meta,
+                                      threedSettings: {...state.meta.threedSettings, gap: t},
+                                  },
+                              })
+                            : null
+                    }
+                />
+            </label>
+            <button
+                onClick={() => {
+                    setMove(!move);
+                    setCpos([0, 0]);
+                }}
+            >
+                {move ? 'Stop moving' : 'Move'}
+            </button>
+            <label>
+                Use multi svg
+                <input
+                    type="checkbox"
+                    checked={useMultiSVG}
+                    onChange={(t) =>
+                        dispatch({
+                            type: 'meta:update',
+                            meta: {
+                                ...state.meta,
+                                threedSettings: {
+                                    ...state.meta.threedSettings,
+                                    useMultiSVG: t.target.checked,
+                                },
+                            },
+                        })
+                    }
+                />
+            </label>
+        </div>
+    );
+}

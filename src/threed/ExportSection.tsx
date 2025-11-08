@@ -4,7 +4,7 @@ import {State} from '../types';
 import {addMetadata} from '../editor/ExportPng';
 import {initialHistory} from '../state/initialState';
 import {serializeObj} from './serialize-obj';
-import {inToPX, mmToPX, } from '../gcode/pxToMM';
+import {inToPX, mmToPX} from '../gcode/pxToMM';
 import {BlurInt} from '../editor/Forms';
 
 type SVGPath = {
@@ -94,7 +94,7 @@ const groupPaths = (
     strokeWidth: number,
 ) => {
     const grouped: {
-        items: JSX.Element[];
+        items: React.ReactNode[];
         x: number;
         y: number;
         y1: number;

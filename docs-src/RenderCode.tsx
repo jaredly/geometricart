@@ -25,7 +25,7 @@ export const RenderCode = React.memo(
         traceOutput: TraceOutput;
         hover: number | null;
         setHover: (id: number | null) => void;
-        examplesMatching: {[key: number]: JSX.Element};
+        examplesMatching: {[key: number]: React.ReactNode};
     }) => {
         return (
             <Highlight {...defaultProps} code={source} language="tsx">
@@ -73,7 +73,7 @@ const renderFull = (
     onHover: (i: number | null) => void,
     pins: {[key: number]: boolean},
     setPins: React.Dispatch<React.SetStateAction<{[key: number]: boolean}>>,
-    examplesMatching: {[key: number]: JSX.Element},
+    examplesMatching: {[key: number]: React.ReactNode},
     info: Info,
 ) => {
     return (

@@ -87,7 +87,7 @@
         "sane": "^5.0.1",
         "svg-path-commander": "^2.0.10",
         "tailwindcss": "^4.1.15",
-        "three": "^0.145.0",
+        "three": "0.181.0",
         "tinytar": "jaredly/tinytar#tinytar-v0.2.0-gitpkg",
         "typescript": "^5.9.2",
         "vite": "^7.1.7",

@@ -145,7 +145,7 @@ function PaletteForm({
     name: string;
     state: State;
     dispatch: (action: Action) => unknown;
-}): jsx.JSX.Element {
+}): jsx.React.ReactNode {
     const [editing, setEditing] = React.useState(false);
     const [choosing, setChoosing] = React.useState(null as null | [string, number]);
     return (
