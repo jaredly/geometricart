@@ -9,6 +9,7 @@ import {Config} from '../animator';
 import {renderFrame, recordVideo, combinedPath} from './renderFrame';
 import {BlurInt} from '../../../editor/Forms';
 import {downloadZip} from 'client-zip';
+import {epsilon} from '../../../rendering/epsilonToZero';
 
 export const calcMargin = (preview: number, line: State['lines'][0]) => {
     const lat = lineAt(line.keyframes, preview, line.fade);
@@ -93,7 +94,7 @@ export const AnimatedCanvas = ({
                     onClick={() => {
                         let i = 0;
                         const step = () => {
-                            if (i > state.layers.length - 1) return;
+                            if (i > state.layers.length - 1 + epsilon) return;
 
                             const peggedZoom =
                                 (config.peg ? calcMargin(i, state.lines[0]) : 1) * config.zoom;
