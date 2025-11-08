@@ -34,7 +34,7 @@ export function SettingsForm({
                     {'Zoom: 1:'}
                     <BlurInt
                         className="input w-10"
-                        step={0.01}
+                        step={1}
                         value={config.zoom}
                         onChange={(value) => (value ? setConfig({...config, zoom: value}) : null)}
                     />
@@ -61,7 +61,9 @@ export function SettingsForm({
                         // max="10"
                         step={1}
                         value={config.repl}
-                        onChange={(value) => (value ? setConfig({...config, repl: value}) : null)}
+                        onChange={(value) =>
+                            value != null ? setConfig({...config, repl: value}) : null
+                        }
                     />
                 </label>
                 <div>

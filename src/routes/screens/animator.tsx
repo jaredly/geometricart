@@ -374,7 +374,7 @@ const initial: Config = {
     showNice: false,
     size: 600,
     canv: true,
-    bounds: false,
+    bounds: true,
 };
 
 export type Config = {
