@@ -183,7 +183,7 @@ export const ThreedScreenInner = ({children}: {children: React.ReactNode}) => {
             <Canvas
                 ref={canv}
                 shadows
-                style={{backgroundColor: 'white'}}
+                style={{backgroundColor: 'white', height: 500, width: 500}}
                 gl={{antialias: true, preserveDrawingBuffer: true}}
             >
                 <directionalLight
@@ -210,7 +210,7 @@ export const ThreedScreenInner = ({children}: {children: React.ReactNode}) => {
 
                 <mesh position={[0, 0, -1]}>
                     <planeGeometry attach="geometry" args={[100, 100]} />
-                    <meshPhongMaterial attach="material" color={'red'} />
+                    <meshPhongMaterial attach="material" color={'white'} />
                 </mesh>
                 {children}
             </Canvas>

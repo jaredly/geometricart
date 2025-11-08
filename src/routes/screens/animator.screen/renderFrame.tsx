@@ -9,7 +9,7 @@ import {coordsEqual} from '../../../rendering/pathsAreIdentical';
 import {Coord, Tiling} from '../../../types';
 import {pk, Path as PKPath} from '../../pk';
 import {Config} from '../animator';
-import {calcMargin} from './AnimatedCanvas';
+import {calcMargin} from './calcMargin';
 import {State, lineAt} from './animator.utils';
 import {generateVideo} from './muxer';
 
