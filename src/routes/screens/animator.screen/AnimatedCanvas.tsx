@@ -105,7 +105,8 @@ export const AnimatedCanvas = ({
                             path.delete();
                             setSvgs((svgs) => [...svgs, {svg, zoom: peggedZoom}]);
                             i += svStep;
-                            requestAnimationFrame(step);
+                            // requestAnimationFrame(step);
+                            setTimeout(step, 100);
                         };
                         step();
                     }}
@@ -137,45 +138,49 @@ export const AnimatedCanvas = ({
                         </button>
                     </div>
                 ))}
-                {svgs.map((item, i) => (
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox={`${-item.zoom / 2} ${-item.zoom / 2} ${item.zoom} ${item.zoom}`}
-                        style={{background: 'black', width: 200, height: 200}}
-                        key={i}
-                    >
-                        <path fill="red" fillRule="evenodd" d={item.svg} />
-                    </svg>
-                ))}
+                <div className="flex flex-wrap gap-4">
+                    {svgs.map((item, i) => (
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox={`${-item.zoom / 2} ${-item.zoom / 2} ${item.zoom} ${item.zoom}`}
+                            style={{background: 'black', width: 200, height: 200}}
+                            key={i}
+                        >
+                            <path fill="red" fillRule="evenodd" d={item.svg} />
+                        </svg>
+                    ))}
+                </div>
                 {svgs.length ? (
-                    <button className="btn" onClick={() => setSvgs([])}>
-                        Clear SVGs
-                    </button>
-                ) : null}
-                <button
-                    className="btn btn-primary"
-                    onClick={async () => {
-                        // get the ZIP stream in a Blob
-                        const blob = await downloadZip(
-                            svgs.map(({svg, zoom}, i) => ({
-                                name: `level-${i}.svg`,
-                                input: `
+                    <>
+                        <button className="btn" onClick={() => setSvgs([])}>
+                            Clear SVGs
+                        </button>
+                        <button
+                            className="btn btn-primary"
+                            onClick={async () => {
+                                // get the ZIP stream in a Blob
+                                const blob = await downloadZip(
+                                    svgs.map(({svg, zoom}, i) => ({
+                                        name: `level-${i}.svg`,
+                                        input: `
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="${-zoom / 2} ${-zoom / 2} ${zoom} ${zoom}">
             <path fill="red" fill-rule="evenodd" d="${svg}" />
         </svg>`,
-                            })),
-                        ).blob();
+                                    })),
+                                ).blob();
 
-                        // make and click a temporary link to download the Blob
-                        const link = document.createElement('a');
-                        link.href = URL.createObjectURL(blob);
-                        link.download = 'svgs.zip';
-                        link.click();
-                        link.remove();
-                    }}
-                >
-                    Download SVGs as .zip
-                </button>
+                                // make and click a temporary link to download the Blob
+                                const link = document.createElement('a');
+                                link.href = URL.createObjectURL(blob);
+                                link.download = 'svgs.zip';
+                                link.click();
+                                link.remove();
+                            }}
+                        >
+                            Download SVGs as .zip
+                        </button>
+                    </>
+                ) : null}
             </div>
         </div>
     );
