@@ -41,7 +41,8 @@ export const AnimatedCanvas = ({
             drawWoven(ctx, patternDatas[config.preview], (config.lineWidth / 200) * config.zoom);
             ctx.restore();
         } else {
-            renderFrame(state, patternMap, config.preview, ctx, config);
+            const shape = patternMap[state.layers[0].pattern].shape;
+            renderFrame(state, shape, config.preview, ctx, config);
         }
 
         surface.flush();
@@ -62,7 +63,8 @@ export const AnimatedCanvas = ({
                         disabled={recording}
                         onClick={() => {
                             // setRecording(true);
-                            recordVideo(state, ref.current!, patternMap, config).then(
+                            const shape = patternMap[state.layers[0].pattern].shape;
+                            recordVideo(state, ref.current!, shape, config).then(
                                 (url) => {
                                     if (url) {
                                         setVideos([...videos, {url, date: Date.now()}]);

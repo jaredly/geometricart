@@ -1,14 +1,14 @@
 import {Path as PKPath} from 'canvaskit-wasm';
 import {downloadZip} from 'client-zip';
-import React, {useState, useMemo} from 'react';
+import React, {useState, useMemo, useEffect, useRef} from 'react';
 import {BlurInt} from '../../../editor/Forms';
 import {epsilon} from '../../../rendering/epsilonToZero';
 import {
     GeometryInner,
     pathToGeometry,
     pathToGeometryInner,
-    pathToGeometryMid,
-} from '../../../threed/calcShapes';
+} from '../../../threed/pathToGeometryMid';
+import {pathToGeometryMid} from '../../../threed/pathToGeometryMid';
 import {ThreedScreenInner} from '../../../threed/ThreedScreen';
 import {Tiling} from '../../../types';
 import {pk} from '../../pk';
@@ -16,6 +16,7 @@ import {Config} from '../animator';
 import {calcMargin} from './calcMargin';
 import {State} from './animator.utils';
 import {combinedPath} from './renderFrame';
+import {MessageFromWorker, MessageToWorker} from './svg-worker';
 
 export const SVGExports = ({
     state,
@@ -34,8 +35,11 @@ export const SVGExports = ({
 
     const [size, setSize] = useState(500);
 
+    const [min, setMin] = useState(0);
+    const [max, setMax] = useState(0);
+
     const threedItems = useMemo(() => {
-        return svgs.map(({geom}, i) => {
+        return svgs.slice(min, max === 0 ? svgs.length - 1 : max).map(({geom}, i) => {
             const geometry = pathToGeometryMid({
                 fullThickness: false,
                 xoff: i * (gap + thick),
@@ -73,7 +77,37 @@ export const SVGExports = ({
                 </React.Fragment>
             );
         });
-    }, [svgs, thick, gap]);
+    }, [svgs, thick, gap, min, max]);
+
+    const worker = useRef(null as null | Worker);
+
+    // const worker = useMemo(() => {
+    //     const worker = new Worker(new URL('./svg-worker.ts', import.meta.url), {type: 'module'});
+    //     return worker;
+    // }, []);
+
+    const [progress, setProgress] = useState(null as null | number);
+
+    useEffect(() => {
+        if (!worker.current) {
+            worker.current = new Worker(new URL('./svg-worker.ts', import.meta.url), {
+                type: 'module',
+            });
+        }
+        const fn = (evt: MessageEvent<MessageFromWorker>) => {
+            if (Array.isArray(evt.data)) {
+                setProgress(null);
+                setSvgs(evt.data);
+            } else {
+                setProgress(evt.data.amount);
+            }
+        };
+        worker.current.onerror = (err) => {
+            console.log('ERRR', err);
+        };
+        worker.current.addEventListener('message', fn);
+        return () => worker.current!.removeEventListener('message', fn);
+    }, []);
 
     return (
         <div className="bg-base-100 p-4 rounded-md">
@@ -87,7 +121,8 @@ export const SVGExports = ({
                         const peggedZoom =
                             (config.peg ? calcMargin(i, state.lines[0]) : 1) * config.zoom;
 
-                        const path = combinedPath(i, config, state, patternMap);
+                        const shape = patternMap[state.layers[0].pattern].shape;
+                        const path = combinedPath(i, config, state, shape);
                         path.setFillType(pk.FillType.EvenOdd);
                         const svg = path.toSVGString();
                         const geom = pathToGeometryInner(path);
@@ -106,6 +141,22 @@ export const SVGExports = ({
                 }}
             >
                 Get SVGs
+            </button>
+            <button
+                disabled={progress != null}
+                className="btn"
+                onClick={() => {
+                    // setProgress(0);
+                    const msg: MessageToWorker = {
+                        state,
+                        shape: patternMap[state.layers[0].pattern].shape,
+                        config,
+                        step: svStep,
+                    };
+                    worker.current!.postMessage(msg);
+                }}
+            >
+                Worker SVGS {progress != null ? `${(progress * 100).toFixed(2)}%` : ''}
             </button>
             <label className="m-4">
                 {'Step: '}
@@ -167,7 +218,7 @@ export const SVGExports = ({
                     <label className="m-4">
                         {'Thick: '}
                         <BlurInt
-                            className="input w-40"
+                            className="input w-20"
                             step={0.01}
                             value={thick}
                             onChange={(value) => (value != null ? setThick(value) : null)}
@@ -176,7 +227,7 @@ export const SVGExports = ({
                     <label className="m-4">
                         {'Gap: '}
                         <BlurInt
-                            className="input w-40"
+                            className="input w-20"
                             step={0.01}
                             value={gap}
                             onChange={(value) => (value != null ? setGap(value) : null)}
@@ -185,12 +236,32 @@ export const SVGExports = ({
                     <label className="m-4">
                         {'Size: '}
                         <BlurInt
-                            className="input w-40"
+                            className="input w-20"
                             step={50}
                             value={size}
                             onChange={(value) => (value != null ? setSize(value) : null)}
                         />
                     </label>
+                    <div>
+                        <label className="m-2">
+                            {'Min: '}
+                            <BlurInt
+                                className="input w-10"
+                                step={1}
+                                value={min}
+                                onChange={(value) => (value != null ? setMin(value) : null)}
+                            />
+                        </label>
+                        <label className="m-2">
+                            {'Max: '}
+                            <BlurInt
+                                className="input w-10"
+                                step={1}
+                                value={max}
+                                onChange={(value) => (value != null ? setMax(value) : null)}
+                            />
+                        </label>
+                    </div>
                 </>
             ) : null}
         </div>

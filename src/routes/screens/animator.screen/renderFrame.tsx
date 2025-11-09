@@ -6,7 +6,7 @@ import {coordKey} from '../../../rendering/coordKey';
 import {closeEnough, epsilonToZero} from '../../../rendering/epsilonToZero';
 import {applyMatrices} from '../../../rendering/getMirrorTransforms';
 import {coordsEqual} from '../../../rendering/pathsAreIdentical';
-import {Coord, Tiling} from '../../../types';
+import {Coord, Tiling, TilingShape} from '../../../types';
 import {pk, Path as PKPath} from '../../pk';
 import {Config} from '../animator';
 import {calcMargin} from './calcMargin';
@@ -130,15 +130,15 @@ const calcFull = (
     state: State,
     preview: number,
     repl: number,
-    patternMap: Record<string, Tiling>,
+    shape: TilingShape,
+    // patternMap: Record<string, Tiling>,
     joinLines: boolean,
 ) => {
     if (!state.layers.length) return {full: [], bounds: null};
     const ats = state.lines.map((line) => lineAt(line.keyframes, preview, line.fade));
-    const pt = patternMap[state.layers[0].pattern];
 
-    const tpts = tilingPoints(pt.shape);
-    const ttt = getTilingTransforms(pt.shape, tpts, repl);
+    const tpts = tilingPoints(shape);
+    const ttt = getTilingTransforms(shape, tpts, repl);
     const transformed = applyTilingTransformsG(
         ats.filter(Boolean) as {points: Coord[]; alpha: number}[],
         ttt,
@@ -153,22 +153,22 @@ const calcFull = (
 
 export const renderFrame = (
     state: State,
-    patternMap: Record<string, Tiling>,
+    shape: TilingShape,
     preview: number,
     ctx: Canvas,
     config: Config,
 ) => {
     if (config.multi) {
-        renderMulti(config, preview, state, ctx, patternMap);
+        renderMulti(config, preview, state, ctx, shape);
     } else {
-        renderSingle(preview, config, state, ctx, patternMap);
+        renderSingle(preview, config, state, ctx, shape);
     }
 };
 
 export const recordVideo = async (
     state: State,
     canvas: HTMLCanvasElement,
-    patternMap: Record<string, Tiling>,
+    shape: TilingShape,
     config: Config,
 ) => {
     const step = 0.05;
@@ -182,19 +182,14 @@ export const recordVideo = async (
         const max = state.layers.length - 1;
         const preview = percent * max * 2;
 
-        renderFrame(state, patternMap, preview, ctx, config);
+        renderFrame(state, shape, preview, ctx, config);
 
         surface.flush();
     });
     return blob ? URL.createObjectURL(blob) : null;
 };
 
-export const combinedPath = (
-    preview: number,
-    config: Config,
-    state: State,
-    patternMap: Record<string, Tiling>,
-) => {
+export const combinedPath = (preview: number, config: Config, state: State, shape: TilingShape) => {
     const max = state.layers.length - 1;
     if (preview > max) {
         preview = max + (max - preview);
@@ -204,7 +199,7 @@ export const combinedPath = (
     }
     const peggedZoom = (config.peg ? calcMargin(preview, state.lines[0]) : 1) * config.zoom;
 
-    const {full, bounds} = calcFull(state, preview, config.repl, patternMap, config.sharp);
+    const {full, bounds} = calcFull(state, preview, config.repl, shape, config.sharp);
 
     const paths = fullPaths(full, config.lineWidth, peggedZoom, [205 / 255, 127 / 255, 1 / 255]);
 
@@ -252,7 +247,7 @@ function renderSingle(
     config: Config,
     state: State,
     ctx: Canvas,
-    patternMap: Record<string, Tiling>,
+    shape: TilingShape,
 ) {
     const max = state.layers.length - 1;
     if (preview > max) {
@@ -266,7 +261,7 @@ function renderSingle(
     ctx.scale((config.size * 2) / peggedZoom, (config.size * 2) / peggedZoom);
     ctx.translate(peggedZoom / 2, peggedZoom / 2);
 
-    const {full, bounds} = calcFull(state, preview, config.repl, patternMap, config.sharp);
+    const {full, bounds} = calcFull(state, preview, config.repl, shape, config.sharp);
     drawFull(
         full,
         config.lineWidth,
@@ -309,7 +304,8 @@ function renderMulti(
     preview: number,
     state: State,
     ctx: Canvas,
-    patternMap: Record<string, Tiling>,
+    // patternMap: Record<string, Tiling>,
+    shape: TilingShape,
 ) {
     const max = state.layers.length - 1;
     const {count, dist} =
@@ -326,7 +322,7 @@ function renderMulti(
         ctx.save();
         ctx.scale((config.size * 2) / peggedZoom, (config.size * 2) / peggedZoom);
         ctx.translate(peggedZoom / 2, peggedZoom / 2);
-        const {full, bounds} = calcFull(state, p, config.repl, patternMap, config.sharp);
+        const {full, bounds} = calcFull(state, p, config.repl, shape, config.sharp);
         const alph = (i + amt) / amt; // * 0.8 + 0.2;
         drawFull(
             full,

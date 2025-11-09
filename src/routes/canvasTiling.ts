@@ -2,7 +2,7 @@ import {Canvas} from 'canvaskit-wasm';
 import {applyTilingTransformsG} from '../editor/tilingPoints';
 import {applyMatrices} from '../rendering/getMirrorTransforms';
 import {getPatternData} from './getPatternData';
-import {pk, resetCanvasKit} from './pk';
+import {pk} from './pk';
 import {readFileSync} from 'fs';
 import {join} from 'path';
 import {drawLines, drawShapes, drawWoven} from './canvasDraw';
@@ -93,12 +93,12 @@ export const canvasTiling = async (
     let surface = pk.MakeSurface(size, size);
 
     if (!surface) {
-        console.error(`Canvaskit is dead!!!`);
-        await resetCanvasKit();
-        surface = pk.MakeSurface(size, size);
-        if (!surface) {
-            throw new Error('canvaskit is dead and refuses to reset');
-        }
+        // console.error(`Canvaskit is dead!!!`);
+        // // await resetCanvasKit();
+        // surface = pk.MakeSurface(size, size);
+        // if (!surface) {
+        throw new Error('canvaskit is dead and refuses to reset');
+        // }
     }
 
     const ctx = surface.getCanvas();
