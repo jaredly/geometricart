@@ -139,7 +139,7 @@ export const BlurInt = ({
                     }
                 }}
                 css={{
-                    width: width ?? 50,
+                    width: className.includes('w-') ? undefined : (width ?? 50),
                 }}
                 step={step}
                 type="number"

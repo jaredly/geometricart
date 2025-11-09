@@ -3,7 +3,12 @@ import {downloadZip} from 'client-zip';
 import React, {useState, useMemo} from 'react';
 import {BlurInt} from '../../../editor/Forms';
 import {epsilon} from '../../../rendering/epsilonToZero';
-import {pathToGeometry} from '../../../threed/calcShapes';
+import {
+    GeometryInner,
+    pathToGeometry,
+    pathToGeometryInner,
+    pathToGeometryMid,
+} from '../../../threed/calcShapes';
 import {ThreedScreenInner} from '../../../threed/ThreedScreen';
 import {Tiling} from '../../../types';
 import {pk} from '../../pk';
@@ -22,33 +27,35 @@ export const SVGExports = ({
     patternMap: Record<string, Tiling>;
 }) => {
     const [svStep, setSvStep] = useState(0.5);
-    const [svgs, setSvgs] = useState([] as {svg: string; pkpath: PKPath; zoom: number}[]);
+    const [svgs, setSvgs] = useState([] as {svg: string; geom: GeometryInner; zoom: number}[]);
 
-    const thick = 0.01;
+    const [thick, setThick] = useState(0.21);
+    const [gap, setGap] = useState(0);
+
+    const [size, setSize] = useState(500);
 
     const threedItems = useMemo(() => {
-        return svgs.map(({pkpath}, i) => {
-            const res = pathToGeometry({
-                pkpath,
+        return svgs.map(({geom}, i) => {
+            const geometry = pathToGeometryMid({
                 fullThickness: false,
-                xoff: i * thick,
+                xoff: i * (gap + thick),
                 thick,
+                res: geom,
             });
-            if (!res) {
+            if (!geometry) {
                 return null;
             }
-            const {geometry, stl} = res;
             return (
                 <React.Fragment key={`${i}`}>
                     <mesh
                         geometry={geometry}
-                        position={[0, 0, i * thick * 10]}
+                        position={[0, 0, i * (gap + thick)]}
                         castShadow
                         receiveShadow
                     >
                         <meshPhongMaterial
                             flatShading
-                            color={`hsl(30, ${(i / svgs.length) * 100}%, 50%)`}
+                            color={`hsl(30, 100%, ${((i / svgs.length) * 0.5 + 0.5) * 100}%)`}
                         />
                     </mesh>
                     {/* {isSelected ? (
@@ -66,7 +73,7 @@ export const SVGExports = ({
                 </React.Fragment>
             );
         });
-    }, [svgs]);
+    }, [svgs, thick, gap]);
 
     return (
         <div className="bg-base-100 p-4 rounded-md">
@@ -83,10 +90,16 @@ export const SVGExports = ({
                         const path = combinedPath(i, config, state, patternMap);
                         path.setFillType(pk.FillType.EvenOdd);
                         const svg = path.toSVGString();
-                        // path.delete();
-                        setSvgs((svgs) => [...svgs, {svg, pkpath: path, zoom: peggedZoom}]);
+                        const geom = pathToGeometryInner(path);
+                        if (!geom) {
+                            console.warn(`failed to calculate geometry`);
+                            i += svStep;
+                            setTimeout(step, 100);
+                            return;
+                        }
+                        setSvgs((svgs) => [...svgs, {svg, geom: geom, zoom: peggedZoom}]);
+                        path.delete();
                         i += svStep;
-                        // requestAnimationFrame(step);
                         setTimeout(step, 100);
                     };
                     step();
@@ -97,7 +110,7 @@ export const SVGExports = ({
             <label className="m-4">
                 {'Step: '}
                 <BlurInt
-                    className="input w-10"
+                    className="input w-20"
                     step={1}
                     value={svStep}
                     onChange={(value) => (value ? setSvStep(value) : null)}
@@ -146,7 +159,40 @@ export const SVGExports = ({
                     </button>
                 </>
             ) : null}
-            {svgs.length ? <ThreedScreenInner>{threedItems}</ThreedScreenInner> : null}
+            {svgs.length ? (
+                <>
+                    <ThreedScreenInner size={size} color="#000">
+                        {threedItems}
+                    </ThreedScreenInner>
+                    <label className="m-4">
+                        {'Thick: '}
+                        <BlurInt
+                            className="input w-40"
+                            step={0.01}
+                            value={thick}
+                            onChange={(value) => (value != null ? setThick(value) : null)}
+                        />
+                    </label>
+                    <label className="m-4">
+                        {'Gap: '}
+                        <BlurInt
+                            className="input w-40"
+                            step={0.01}
+                            value={gap}
+                            onChange={(value) => (value != null ? setGap(value) : null)}
+                        />
+                    </label>
+                    <label className="m-4">
+                        {'Size: '}
+                        <BlurInt
+                            className="input w-40"
+                            step={50}
+                            value={size}
+                            onChange={(value) => (value != null ? setSize(value) : null)}
+                        />
+                    </label>
+                </>
+            ) : null}
         </div>
     );
 };

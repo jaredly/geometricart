@@ -19,7 +19,7 @@ import {
 } from '../rendering/pathToPoints';
 import {transformBarePath} from '../rendering/points';
 import {Action} from '../state/Action';
-import {Fill, Path, State, StyleLine} from '../types';
+import {Coord, Fill, Path, State, StyleLine} from '../types';
 import {pk as PK} from '../routes/pk';
 import {generatePathsAndOutlines} from '../editor/ExportSVG';
 import {ThreeEvent} from '@react-three/fiber';
@@ -318,17 +318,9 @@ function pkPathToThreed(
         .filter((n) => n != null);
 }
 
-export function pathToGeometry({
-    pkpath,
-    fullThickness,
-    xoff,
-    thick,
-}: {
-    pkpath: PKPath;
-    fullThickness: boolean;
-    xoff: number;
-    thick: number;
-}) {
+export type GeometryInner = {flat3d: number[]; inners: Coord[][]; outer: Coord[]; tris: number[]};
+
+export function pathToGeometryInner(pkpath: PKPath): GeometryInner | undefined {
     const clipped = cmdsToSegments([...pkpath.toCmds()])
         .map((r) => transformBarePath(r, [scaleMatrix(1, -1)]))
         .map((r) => ({
@@ -374,14 +366,6 @@ export function pathToGeometry({
         flat3d.push(...pts.flatMap((pt) => [pt.x, pt.y, 0]));
         count += pts.length;
     });
-
-    const thickness = fullThickness ? xoff + thick : thick;
-
-    flat3d.push(...outer.flatMap((pt) => [pt.x, pt.y, -thickness]));
-    inners.forEach((pts) => {
-        flat3d.push(...pts.flatMap((pt) => [pt.x, pt.y, -thickness]));
-    });
-    const vertices = new Float32Array(flat3d);
     const tris = earcut(flat, holeStarts);
 
     // Bottom:
@@ -404,6 +388,61 @@ export function pathToGeometry({
         tris.push(count + start, start + pts.length - 1, start);
         tris.push(start + pts.length - 1, start + count, start + count + pts.length - 1);
     });
+
+    return {flat3d, inners, outer, tris};
+}
+
+export function pathToGeometryMid({
+    fullThickness,
+    xoff,
+    thick,
+    res: {flat3d, inners, outer, tris},
+}: {
+    fullThickness: boolean;
+    xoff: number;
+    thick: number;
+    res: GeometryInner;
+}) {
+    const thickness = fullThickness ? xoff + thick : thick;
+    flat3d = flat3d.slice();
+
+    flat3d.push(...outer.flatMap((pt) => [pt.x, pt.y, -thickness]));
+    inners.forEach((pts) => {
+        flat3d.push(...pts.flatMap((pt) => [pt.x, pt.y, -thickness]));
+    });
+    const vertices = new Float32Array(flat3d);
+
+    const geometry = new BufferGeometry();
+    geometry.setIndex(tris);
+    geometry.setAttribute('position', new BufferAttribute(vertices, 3));
+    geometry.computeVertexNormals();
+
+    return geometry;
+}
+
+export function pathToGeometry({
+    pkpath,
+    fullThickness,
+    xoff,
+    thick,
+}: {
+    pkpath: PKPath;
+    fullThickness: boolean;
+    xoff: number;
+    thick: number;
+}) {
+    const innerResult = pathToGeometryInner(pkpath);
+    if (!innerResult) return;
+
+    const {flat3d, inners, outer, tris} = innerResult;
+
+    const thickness = fullThickness ? xoff + thick : thick;
+
+    flat3d.push(...outer.flatMap((pt) => [pt.x, pt.y, -thickness]));
+    inners.forEach((pts) => {
+        flat3d.push(...pts.flatMap((pt) => [pt.x, pt.y, -thickness]));
+    });
+    const vertices = new Float32Array(flat3d);
 
     const geometry = new BufferGeometry();
     geometry.setIndex(tris);

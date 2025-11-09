@@ -168,7 +168,15 @@ export const ThreedScreen = ({
     );
 };
 
-export const ThreedScreenInner = ({children}: {children: React.ReactNode}) => {
+export const ThreedScreenInner = ({
+    children,
+    color,
+    size,
+}: {
+    children: React.ReactNode;
+    color: string;
+    size: number;
+}) => {
     const fov = 40;
     const canv = React.useRef<HTMLCanvasElement>(null);
     const [lpos, setLpos] = useState<[number, number, number]>([3, 0, 100]);
@@ -183,7 +191,7 @@ export const ThreedScreenInner = ({children}: {children: React.ReactNode}) => {
             <Canvas
                 ref={canv}
                 shadows
-                style={{backgroundColor: 'white', height: 500, width: 500}}
+                style={{backgroundColor: 'white', height: size, width: size}}
                 gl={{antialias: true, preserveDrawingBuffer: true}}
             >
                 <directionalLight
@@ -210,7 +218,7 @@ export const ThreedScreenInner = ({children}: {children: React.ReactNode}) => {
 
                 <mesh position={[0, 0, -1]}>
                     <planeGeometry attach="geometry" args={[100, 100]} />
-                    <meshPhongMaterial attach="material" color={'white'} />
+                    <meshPhongMaterial attach="material" color={color} />
                 </mesh>
                 {children}
             </Canvas>
