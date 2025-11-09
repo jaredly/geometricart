@@ -1,5 +1,9 @@
 import {epsilon} from '../../../rendering/epsilonToZero';
-import {GeometryInner, pathToGeometryInner} from '../../../threed/pathToGeometryMid';
+import {
+    GeometryInner,
+    pathToGeometryInner,
+    splitEvenOddIntoDisconnectedShapes,
+} from '../../../threed/pathToGeometryMid';
 import {TilingShape} from '../../../types';
 import {pk} from '../../pk';
 import {Config} from '../animator';
@@ -16,7 +20,7 @@ export type MessageToWorker = {
 
 type MessageResponse = {
     svg: string;
-    geom: GeometryInner;
+    geom: GeometryInner[];
     zoom: number;
 }[];
 
@@ -38,12 +42,14 @@ self.onmessage = (evt: MessageEvent<MessageToWorker>) => {
         const path = combinedPath(i, config, state, shape);
         path.setFillType(pk.FillType.EvenOdd);
         const svg = path.toSVGString();
-        const geom = pathToGeometryInner(path);
-        if (!geom) {
+        const geom = splitEvenOddIntoDisconnectedShapes(path).map((sub) =>
+            pathToGeometryInner(sub),
+        );
+        if (geom.some((g) => !g)) {
             console.warn(`failed to calculate geometry`);
             continue;
         }
-        res.push({svg, geom: geom, zoom: peggedZoom});
+        res.push({svg, geom: geom as GeometryInner[], zoom: peggedZoom});
         path.delete();
         postMessage({type: 'update', amount: i / max});
     }

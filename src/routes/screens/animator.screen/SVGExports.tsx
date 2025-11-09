@@ -28,7 +28,7 @@ export const SVGExports = ({
     patternMap: Record<string, Tiling>;
 }) => {
     const [svStep, setSvStep] = useState(0.5);
-    const [svgs, setSvgs] = useState([] as {svg: string; geom: GeometryInner; zoom: number}[]);
+    const [svgs, setSvgs] = useState([] as {svg: string; geom: GeometryInner[]; zoom: number}[]);
 
     const [thick, setThick] = useState(0.21);
     const [gap, setGap] = useState(0);
@@ -39,29 +39,34 @@ export const SVGExports = ({
     const [max, setMax] = useState(0);
 
     const threedItems = useMemo(() => {
-        return svgs.slice(min, max === 0 ? svgs.length - 1 : max).map(({geom}, i) => {
-            const geometry = pathToGeometryMid({
-                fullThickness: false,
-                xoff: i * (gap + thick),
-                thick,
-                res: geom,
-            });
+        return svgs.slice(min, max === 0 ? svgs.length : max).map(({geom}, i) => {
+            const geometry = geom.map((sub) =>
+                pathToGeometryMid({
+                    fullThickness: false,
+                    xoff: i * (gap + thick),
+                    thick,
+                    res: sub,
+                }),
+            );
             if (!geometry) {
                 return null;
             }
             return (
                 <React.Fragment key={`${i}`}>
-                    <mesh
-                        geometry={geometry}
-                        position={[0, 0, i * (gap + thick)]}
-                        castShadow
-                        receiveShadow
-                    >
-                        <meshPhongMaterial
-                            flatShading
-                            color={`hsl(30, 100%, ${((i / svgs.length) * 0.5 + 0.5) * 100}%)`}
-                        />
-                    </mesh>
+                    {geometry.map((geom, j) => (
+                        <mesh
+                            key={j}
+                            geometry={geom}
+                            position={[0, 0, i * (gap + thick)]}
+                            castShadow
+                            receiveShadow
+                        >
+                            <meshPhongMaterial
+                                flatShading
+                                color={`hsl(30, 100%, ${((i / svgs.length) * 0.5 + 0.2) * 100}%)`}
+                            />
+                        </mesh>
+                    ))}
                     {/* {isSelected ? (
                         <points
                             geometry={geometry}
@@ -112,37 +117,6 @@ export const SVGExports = ({
     return (
         <div className="bg-base-100 p-4 rounded-md">
             <button
-                className="btn"
-                onClick={() => {
-                    let i = 0;
-                    const step = () => {
-                        if (i > state.layers.length - 1 + epsilon) return;
-
-                        const peggedZoom =
-                            (config.peg ? calcMargin(i, state.lines[0]) : 1) * config.zoom;
-
-                        const shape = patternMap[state.layers[0].pattern].shape;
-                        const path = combinedPath(i, config, state, shape);
-                        path.setFillType(pk.FillType.EvenOdd);
-                        const svg = path.toSVGString();
-                        const geom = pathToGeometryInner(path);
-                        if (!geom) {
-                            console.warn(`failed to calculate geometry`);
-                            i += svStep;
-                            setTimeout(step, 100);
-                            return;
-                        }
-                        setSvgs((svgs) => [...svgs, {svg, geom: geom, zoom: peggedZoom}]);
-                        path.delete();
-                        i += svStep;
-                        setTimeout(step, 100);
-                    };
-                    step();
-                }}
-            >
-                Get SVGs
-            </button>
-            <button
                 disabled={progress != null}
                 className="btn"
                 onClick={() => {
@@ -156,7 +130,7 @@ export const SVGExports = ({
                     worker.current!.postMessage(msg);
                 }}
             >
-                Worker SVGS {progress != null ? `${(progress * 100).toFixed(2)}%` : ''}
+                Worker SVGS {progress != null ? `${Math.round(progress * 100)}%` : ''}
             </button>
             <label className="m-4">
                 {'Step: '}
@@ -242,6 +216,24 @@ export const SVGExports = ({
                             onChange={(value) => (value != null ? setSize(value) : null)}
                         />
                     </label>
+                    <button
+                        className="btn"
+                        onClick={() => {
+                            let m = 0;
+                            const step = () => {
+                                setMax(m++);
+                                if (m < svgs.length + 1) {
+                                    setTimeout(
+                                        step,
+                                        (m - 2) % Math.round(1 / svStep) === 0 ? 1600 : 400,
+                                    );
+                                }
+                            };
+                            step();
+                        }}
+                    >
+                        Animate Max
+                    </button>
                     <div>
                         <label className="m-2">
                             {'Min: '}
