@@ -361,59 +361,58 @@ export const TilingPattern = ({
     }
 
     return (
-        <div>
-            <svg
-                xmlns="http://www.w3.org/2000/svg"
-                // viewBox="-5 -5 10 10"
-                // viewBox="-3 -3 6 6"
-                viewBox="-1.5 -1.5 3 3"
-                style={size ? {background: 'black', width: size, height: size} : undefined}
-            >
-                {showShapes &&
-                    (!debug
-                        ? shapes.map((shape, i) => (
-                              <path
-                                  key={i}
-                                  d={shapeD(shape)}
-                                  fill={
-                                      data.colorInfo.colors[i] === -1
-                                          ? '#444'
-                                          : //   : `hsl(${
-                                            //         (data.colorInfo.colors[i] /
-                                            //             (data.colorInfo.maxColor + 1)) *
-                                            //         360
-                                            //     } 100% 50%)`
-                                            `hsl(100 0% ${
-                                                (
-                                                    data.colorInfo.colors[i] /
-                                                        (data.colorInfo.maxColor + 1)
-                                                ) *
-                                                    40 +
-                                                30
-                                            }%)`
-                                      // `hsl(37 ${
-                                      //     (data.colorInfo.colors[i] /
-                                      //         data.colorInfo.maxColor) *
-                                      //     100
-                                      // }% 40%)`
-                                  }
-                                  stroke="black"
-                                  strokeWidth={data.minSegLength / 5}
-                              />
-                          ))
-                        : shapes.map((shape, i) => (
-                              <TilingShape
-                                  hover={hover === i}
-                                  setHover={setHover}
-                                  key={i}
-                                  pointNames={pointNames}
-                                  i={i}
-                                  shape={shape}
-                                  data={data}
-                                  minSegLength={minSegLength}
-                              />
-                          )))}
-                {/* {tiling.cache.segments.map(({prev, segment}) => (
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            // viewBox="-5 -5 10 10"
+            // viewBox="-3 -3 6 6"
+            viewBox="-1.5 -1.5 3 3"
+            style={size ? {background: 'black', width: size, height: size} : undefined}
+        >
+            {showShapes &&
+                (!debug
+                    ? shapes.map((shape, i) => (
+                          <path
+                              key={i}
+                              d={shapeD(shape)}
+                              fill={
+                                  data.colorInfo.colors[i] === -1
+                                      ? '#444'
+                                      : //   : `hsl(${
+                                        //         (data.colorInfo.colors[i] /
+                                        //             (data.colorInfo.maxColor + 1)) *
+                                        //         360
+                                        //     } 100% 50%)`
+                                        `hsl(100 0% ${
+                                            (
+                                                data.colorInfo.colors[i] /
+                                                    (data.colorInfo.maxColor + 1)
+                                            ) *
+                                                40 +
+                                            30
+                                        }%)`
+                                  // `hsl(37 ${
+                                  //     (data.colorInfo.colors[i] /
+                                  //         data.colorInfo.maxColor) *
+                                  //     100
+                                  // }% 40%)`
+                              }
+                              stroke="black"
+                              strokeWidth={data.minSegLength / 5}
+                          />
+                      ))
+                    : shapes.map((shape, i) => (
+                          <TilingShape
+                              hover={hover === i}
+                              setHover={setHover}
+                              key={i}
+                              pointNames={pointNames}
+                              i={i}
+                              shape={shape}
+                              data={data}
+                              minSegLength={minSegLength}
+                          />
+                      )))}
+            {/* {tiling.cache.segments.map(({prev, segment}) => (
                     <path
                         d={shapeD([prev, segment.to])}
                         fill="none"
@@ -429,58 +428,43 @@ export const TilingPattern = ({
                         strokeWidth={0.03}
                     />
                 ))} */}
-                {/* {data.allSegments.map((seg) => (
+            {/* {data.allSegments.map((seg) => (
                     <path d={shapeD(seg)} fill="none" stroke="green" strokeWidth={0.1} />
                 ))} */}
-                {data.outer ? (
+            {data.outer ? (
+                <path
+                    d={shapeD(data.outer)}
+                    fill="none"
+                    stroke="rgba(0,0,0)"
+                    strokeWidth={data.minSegLength / 2}
+                />
+            ) : null}
+            {/* {corners} */}
+            {lines}
+            {texts}
+            {hoverNodes}
+            {showBounds ? (
+                <>
+                    {' '}
                     <path
-                        d={shapeD(data.outer)}
                         fill="none"
-                        stroke="rgba(0,0,0)"
-                        strokeWidth={data.minSegLength / 2}
+                        strokeWidth={0.02}
+                        strokeLinejoin="round"
+                        stroke="black"
+                        pointerEvents="none"
+                        d={shapeD(data.bounds)}
                     />
-                ) : null}
-                {/* {corners} */}
-                {lines}
-                {texts}
-                {hoverNodes}
-                {showBounds ? (
-                    <>
-                        {' '}
-                        <path
-                            fill="none"
-                            strokeWidth={0.02}
-                            strokeLinejoin="round"
-                            stroke="black"
-                            pointerEvents="none"
-                            d={shapeD(data.bounds)}
-                        />
-                        <path
-                            fill="none"
-                            strokeWidth={0.01}
-                            strokeLinejoin="round"
-                            stroke="yellow"
-                            pointerEvents="none"
-                            d={shapeD(data.bounds)}
-                        />{' '}
-                    </>
-                ) : null}
-            </svg>
-            {hover != null ? (
-                <div>
-                    Hover {hover}
-                    {/* <div>
-                        {toEdges(data.shapePoints[hover])
-                            .sort((a, b) => (a[0] !== b[0] ? a[0] - b[0] : a[1] - b[1]))
-                            .map(([a, b]) => (a < b ? `${a}:${b}` : `${b}:${a}`))
-                            // .map(([a, b]) => `${a}:${b}`)
-                            .join(' ')}
-                    </div> */}
-                </div>
-            ) : (
-                <div>no hover</div>
-            )}
-        </div>
+                    <path
+                        fill="none"
+                        strokeWidth={0.01}
+                        strokeLinejoin="round"
+                        stroke="yellow"
+                        pointerEvents="none"
+                        d={shapeD(data.bounds)}
+                    />{' '}
+                </>
+            ) : null}
+        </svg>
     );
 };
 

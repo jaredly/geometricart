@@ -47,12 +47,18 @@ export async function loader({params, request}: Route.LoaderArgs) {
     // );
 
     const flip = search.get('flip') === 'no' ? pattern.tiling : flipPattern(pattern.tiling);
-    const dataUri = await canvasTiling(getPatternData(flip), +size * 2, flip !== pattern.tiling, {
-        woven: search.get('woven') ? +search.get('woven')! : undefined,
-        lines: search.get('lines') ? +search.get('lines')! : undefined,
-        shapes: search.get('shapes') ? +search.get('shapes')! : undefined,
-        margin: search.get('margin') ? +search.get('margin')! : undefined,
-    })!;
+    const psize = search.get('psize') ? +search.get('psize')! : 2;
+    const dataUri = await canvasTiling(
+        getPatternData(flip, false, psize),
+        +size * 2,
+        flip !== pattern.tiling,
+        {
+            woven: search.get('woven') ? +search.get('woven')! : undefined,
+            lines: search.get('lines') ? +search.get('lines')! : undefined,
+            shapes: search.get('shapes') ? +search.get('shapes')! : undefined,
+            margin: search.get('margin') ? +search.get('margin')! : undefined,
+        },
+    )!;
     // return dataUri;
     // const [mime, data] = dataUri.split(',');
     const buffer = Buffer.from(dataUri);

@@ -130,7 +130,7 @@ export const SVGExports = ({
                     worker.current!.postMessage(msg);
                 }}
             >
-                Worker SVGS {progress != null ? `${Math.round(progress * 100)}%` : ''}
+                Generate SVGs {progress != null ? `${Math.round(progress * 100)}%` : ''}
             </button>
             <label className="m-4">
                 {'Step: '}

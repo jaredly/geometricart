@@ -1,3 +1,8 @@
+# TODO
+
+- [ ] Make pattern-svg more efficient. Don't calculate woven if we don't need to show it.
+- [ ] I really should make my use of canvaskit more memory safe.
+  -> how do to it? Make a test that runs my generation stuff a bunch of times and ensures I'm not leaking stuff.
 
 # Designer....
 

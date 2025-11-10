@@ -18,6 +18,10 @@ export const pathsFromSegments = (
     segs.forEach((seg) => seg.sort((a, b) => (closeEnough(a.x, b.x) ? a.y - b.y : a.x - b.x)));
     const outerKeys = outer?.map((x) => coordKey(x)) ?? [];
 
+    if (segs.length > 20000) {
+        return [];
+    }
+
     // ok folks I need a better calculation of ... the boundary.
     // probably what I should do is find a coord on the edge
     // and do a "clockwise shape walk".
@@ -64,15 +68,25 @@ export const pathsFromSegments = (
     });
 
     let nextPathId = 0;
-    const follow = (at: number, pathId?: number) => {
+    const follow = (at: number, pathId?: number, hist: number[] = []) => {
         const link = segLinks[at];
         const seg = segs[at];
         if (outerKeys.includes(coordKey(seg[0])) && outerKeys.includes(coordKey(seg[1]))) return;
         if (link.pathId != null) return;
+        if (hist.includes(at)) {
+            console.log(JSON.stringify(segLinks));
+            console.log(at, pathId, hist, segLinks[at], segs[at]);
+            throw new Error('Loop somehow??');
+        }
+        // if (hist.length > 10000) {
+        //     console.log('SO LONG');
+        //     throw new Error('hwy long' + segs.length);
+        // }
         if (pathId == null) pathId = nextPathId++;
         link.pathId = pathId;
-        link.left.forEach((id) => follow(id, pathId));
-        link.right.forEach((id) => follow(id, pathId));
+        const nhist = hist.concat([at]);
+        link.left.forEach((id) => follow(id, pathId, nhist));
+        link.right.forEach((id) => follow(id, pathId, nhist));
     };
 
     segLinks.forEach((sl, i) => {

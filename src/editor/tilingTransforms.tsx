@@ -12,11 +12,13 @@ import {angleBetween} from '../rendering/isAngleBetween';
 import {tilingPoints} from './tilingPoints';
 
 export const getShapeSize = (tr: Coord, width: number) => {
-    if (closeEnough(Math.abs(tr.x), Math.abs(tr.y))) {
-        return {x: width, y: width};
-    }
-    const y = Math.floor(Math.min(10, Math.abs(tr.x / tr.y)) * width);
-    return {x: width, y};
+    // ok really what we want is ... which duplication gets us as close as possible to an even aspect ratio.
+    const y = Math.min(10, Math.round((tr.x / tr.y) * width));
+    // if (closeEnough(Math.abs(tr.x), Math.abs(tr.y))) {
+    //     return {x: width, y: width};
+    // }
+    // const y = Math.floor(Math.min(10, Math.abs(tr.x / tr.y)) * width);
+    return {x: width, y: Math.abs(y)};
 };
 
 function replicateStandard(tx: number, ty: number, mx: number, my: number): Matrix[][][] {
