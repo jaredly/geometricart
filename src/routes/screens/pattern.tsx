@@ -76,6 +76,11 @@ export const Pattern = ({
         }
     });
 
+    useEffect(() => {
+        // @ts-ignore
+        window.pattern = pattern.tiling;
+    }, []);
+
     return (
         <div className="mx-auto w-6xl p-4 pt-0 bg-base-200 shadow-base-300 shadow-md">
             <div className="sticky top-0 py-2 mb-2 bg-base-200 shadow-md shadow-base-200">

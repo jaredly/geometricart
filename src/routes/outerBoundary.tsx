@@ -43,7 +43,7 @@ export const outerBoundary = (
             if (used[sk]) return;
             const {points, ranout} = discoverShape(mostest!, seg, used, byEndPoint, false, 1000);
             if (points.length === 100 || ranout) {
-                console.warn('bad news, shape is bad');
+                // console.warn('bad news, shape is bad');
                 return;
             }
             // return points;

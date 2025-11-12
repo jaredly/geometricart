@@ -117,11 +117,6 @@ export const canvasTiling = async (
         );
     }
 
-    // if (flipped) {
-    //     drawFlips(ctx, data);
-    // }
-
-    // const showLines = true;
     if (config.lines) {
         drawLines(ctx, data, data.minSegLength * config.lines);
     }
@@ -142,5 +137,7 @@ export const canvasTiling = async (
 
     const img = surface.makeImageSnapshot();
     const bytes = img.encodeToBytes()!;
+    surface.dispose();
+    img.delete();
     return bytes;
 };
