@@ -71,6 +71,7 @@ export type State = {
     crops?: {
         hole?: boolean;
         segments: Segment[];
+        disabled?: boolean;
     }[];
     lines: {
         keyframes: {

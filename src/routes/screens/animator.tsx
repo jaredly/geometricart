@@ -47,7 +47,7 @@ export const col = (i: number) => ['red', 'yellow', 'blue'][i % 3];
 export default function Animator({loaderData: {patterns, initialState}}: Route.ComponentProps) {
     const [config, setConfig] = useState(initial);
 
-    const {peg, multi, repl, lineWidth, showGuides, zoom, preview, showNice, size, canv} = config;
+    // const {peg, multi, repl, lineWidth, showGuides, zoom, preview, showNice, size, canv} = config;
 
     const [hover, setHover] = useState(null as null | number);
     const [state, setState] = useState(initialState);
@@ -64,7 +64,7 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
     const [showDialog, setShowDialog] = useState(false);
     const layerDialog = useOnOpen(setShowDialog);
 
-    const peggedZoom = (peg ? calcMargin(preview, state.lines[0]) : 1) * zoom;
+    const peggedZoom = (config.peg ? calcMargin(config.preview, state.lines[0]) : 1) * config.zoom;
 
     return (
         <div className="mx-auto w-6xl p-4 pt-0 bg-base-200 shadow-base-300 shadow-md">
@@ -80,18 +80,19 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
             </div>
             <div className="gap-4 flex items-start p-4">
                 <div>
-                    {canv ? (
+                    {config.canv ? (
                         <AnimatedCanvas config={config} patternMap={patternMap} state={state} />
                     ) : (
                         <SvgCanvas
+                            config={config}
                             peggedZoom={peggedZoom}
-                            size={size}
+                            // size={size}
                             setPos={setPos}
-                            showGuides={showGuides}
-                            zoom={zoom}
-                            lineWidth={lineWidth}
+                            // showGuides={showGuides}
+                            // zoom={zoom}
+                            // lineWidth={lineWidth}
                             state={state}
-                            preview={preview}
+                            // preview={preview}
                             patternMap={patternMap}
                             pending={pending}
                             pos={pos}
@@ -105,8 +106,8 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                     <SettingsForm state={state} config={config} setConfig={setConfig} />
                     <div>
                         <button
-                            disabled={!canv}
-                            className={'btn' + (!canv ? ' btn-active' : '')}
+                            disabled={!config.canv}
+                            className={'btn' + (!config.canv ? ' btn-active' : '')}
                             onClick={() => {
                                 setConfig({...config, canv: false});
                             }}
@@ -114,8 +115,8 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                             SVG
                         </button>
                         <button
-                            disabled={canv}
-                            className={'btn' + (canv ? ' btn-active' : '')}
+                            disabled={config.canv}
+                            className={'btn' + (config.canv ? ' btn-active' : '')}
                             onClick={() => {
                                 setConfig({...config, canv: true});
                             }}
@@ -279,7 +280,11 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                                     setConfig({...config, showGuides: !config.showGuides});
                                 }}
                             >
-                                {showGuides ? <IconEye /> : <IconEyeInvisible color={'#555'} />}
+                                {config.showGuides ? (
+                                    <IconEye />
+                                ) : (
+                                    <IconEyeInvisible color={'#555'} />
+                                )}
                             </button>
                             <ul className="menu ml-4 lg:menu-horizontal bg-base-200 rounded-box">
                                 <li>
@@ -393,21 +398,21 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                                     pending={pending}
                                     setState={setState}
                                     state={state}
-                                    preview={preview}
+                                    preview={config.preview}
                                 />
                             ) : null}
                             <button
                                 className="btn mx-4"
                                 onClick={() => setConfig({...config, peg: !config.peg})}
                             >
-                                {peg ? 'Unpeg' : 'Peg'}
+                                {config.peg ? 'Unpeg' : 'Peg'}
                             </button>
                         </div>
                         <div className="max-h-80 overflow-auto">
                             <LinesTable
                                 state={state}
                                 setHover={setHover}
-                                preview={preview}
+                                preview={config.preview}
                                 setPreview={(p) => setConfig({...config, preview: p})}
                                 setPending={setPending}
                                 setState={setState}

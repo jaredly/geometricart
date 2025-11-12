@@ -1,4 +1,5 @@
-import spi, {PathCommand, PathData} from 'svg-path-intersections';
+import {findPathDataIntersections, PathCommand, type PathData} from './svgPathIntersections';
+// import {findPathDataIntersections, PathCommand, type PathData} from './svg-path-intersections.js';
 import {BarePath, Coord, Segment, SegPrev} from '../../../types';
 import {dist} from '../../../rendering/getMirrorTransforms';
 import {isLargeArc} from '../../../editor/RenderPendingPath';
@@ -61,10 +62,7 @@ export const clipToPathData = (clip: Segment[]) => {
 };
 
 export const splitSegByClip = (clip: PathData, path: SegPrev) => {
-    const intersectons = spi.findPathDataIntersections(
-        clip,
-        segsToPathData(path.prev, [path.segment]),
-    );
+    const intersectons = findPathDataIntersections(clip, segsToPathData(path.prev, [path.segment]));
     return splitSegment(path.prev, path.segment, intersectons);
     // return parts.map((segment, i) => {
     //     const prev = i === 0 ? path.prev : parts[i - 1].to;
@@ -79,7 +77,7 @@ export const splitPathByClip = (clipData: PathData, clipk: PKPath, path: BarePat
     if (!path.open) throw new Error('not handled');
     const result: {path: BarePath; inside: boolean}[] = [];
     path.segments.forEach((segment, i) => {
-        const prev = i === 0 ? path.origin : path.segments[path.segments.length - 1].to;
+        const prev = i === 0 ? path.origin : path.segments[i - 1].to;
         const parts = splitSegByClip(clipData, {prev, segment});
         parts.forEach((part, i) => {
             const pprev = i === 0 ? prev : parts[i - 1].to;

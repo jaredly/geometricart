@@ -11,25 +11,22 @@ import {geomToPrimitives} from '../../../rendering/points';
 import {pkPath} from '../../../sidebar/pkClipPaths';
 import {BarePath, Coord, GuideGeom, Segment, Tiling} from '../../../types';
 import {shapeD} from '../../shapeD';
-import {col} from '.././animator';
+import {col, Config} from '.././animator';
 import {Pending, State, lineAt} from './animator.utils';
 import {clipToPathData, pkPathWithCmds, splitPathByClip} from './cropPath';
 
 export function SvgCanvas({
+    config,
     peggedZoom,
-    size,
     setPos,
-    showGuides,
-    zoom,
-    lineWidth,
     state,
-    preview,
     patternMap,
     pending,
     pos,
     setPending,
     hover,
 }: {
+    config: Config;
     peggedZoom: number;
     size: number;
     setPos: {
@@ -61,6 +58,7 @@ export function SvgCanvas({
     };
     hover: number | null;
 }) {
+    const {size, showGuides, zoom, lineWidth, preview} = config;
     // const cropPaths = useMemo(() => {
     //     return (
     //         state.crops?.map((crop) => {
@@ -116,7 +114,7 @@ export function SvgCanvas({
         if (!state.layers.length) return {full: [], pts: [], ttt: []};
         const pt = patternMap[state.layers[0].pattern];
         const pts = tilingPoints(pt.shape);
-        const ttt = getTilingTransforms(pt.shape, pts);
+        const ttt = getTilingTransforms(pt.shape, pts, config.repl);
         const fullLines = applyTilingTransformsG(
             ats.filter(Boolean) as {points: Coord[]; alpha: number}[],
             ttt,
@@ -130,7 +128,7 @@ export function SvgCanvas({
             pts,
             ttt,
         };
-    }, [ats, patternMap, state.layers]);
+    }, [ats, patternMap, state.layers, config.repl]);
 
     applyTilingTransformsG(Object.values(visiblePoints), ttt, applyMatrices).forEach(add);
 
@@ -147,6 +145,23 @@ export function SvgCanvas({
                 });
             }}
         >
+            {showGuides &&
+                state.crops?.map((crop, i) => (
+                    <path
+                        key={i}
+                        d={calcSegmentsD(
+                            crop.segments,
+                            crop.segments[crop.segments.length - 1].to,
+                            false,
+                            1,
+                        )}
+                        fill="none"
+                        stroke={crop.hole ? '#f0a' : 'white'}
+                        strokeWidth={0.01 * zoom}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                    />
+                ))}
             {showGuides && (
                 <path
                     d={shapeD(pts, true)}
@@ -281,11 +296,8 @@ export function SvgCanvas({
     );
 }
 
-const cropLines = (
-    lines: {points: Coord[]; alpha: number}[],
-    crop: {segments: Segment[]; hole?: boolean}[],
-) => {
-    if (!crop.length) return lines;
+const cropLines = (lines: {points: Coord[]; alpha: number}[], crops: State['crops']) => {
+    if (!crops?.length) return lines;
     let asSegs: {path: BarePath; alpha: number}[] = lines.map((line) => {
         const segments: Segment[] = [];
         for (let i = 1; i < line.points.length; i++) {
@@ -293,7 +305,8 @@ const cropLines = (
         }
         return {path: {origin: line.points[0], segments, open: true}, alpha: line.alpha};
     });
-    for (let one of crop) {
+    for (let one of crops) {
+        if (one.disabled) continue;
         const pd = clipToPathData(one.segments);
         const pk = pkPathWithCmds(one.segments[one.segments.length - 1].to, one.segments);
         asSegs = asSegs.flatMap((line) => {
