@@ -182,7 +182,7 @@ export const ThreedScreenInner = ({
     const [lpos, setLpos] = useState<[number, number, number]>([3, 0, 100]);
     const dl = useRef<DirectionalLight>(null);
 
-    const {shadowZoom = 0.09, cameraDistance = 70} = {};
+    const {shadowZoom = 0.09, cameraDistance = 5} = {};
     const virtualCamera = React.useRef<TPC>(null);
     const [[x, y], setCpos] = useState<[number, number]>([0, 0]);
 

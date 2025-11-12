@@ -18,7 +18,7 @@ import {Coord} from '../types';
 export function pathToGeometryMid({
     fullThickness,
     thick,
-    res: {sections, inners, outer, tris, groups, flat},
+    res: {sections, inners, outer, indexSections},
 }: {
     fullThickness: number;
     thick: number;
@@ -34,12 +34,12 @@ export function pathToGeometryMid({
     const vertices = new Float32Array(flat3d);
 
     const geometry = new BufferGeometry();
-    geometry.setIndex(tris);
+    geometry.setIndex(indexSections.flatMap((s) => s.index));
     geometry.setAttribute('position', new BufferAttribute(vertices, 3));
     geometry.computeVertexNormals();
 
-    groups.forEach((group, i) => {
-        geometry.addGroup(i === 0 ? 0 : groups[i - 1], group, i);
+    makeSpans(indexSections).forEach(({start, end}, i) => {
+        geometry.addGroup(start, end, i);
     });
 
     {
@@ -49,9 +49,9 @@ export function pathToGeometryMid({
         let minY = Infinity,
             maxY = -Infinity;
 
-        for (let i = 0; i < flat.length; i += 3) {
-            const x = flat[i];
-            const y = flat[i + 1];
+        for (let i = 0; i < flat3d.length; i += 3) {
+            const x = flat3d[i];
+            const y = flat3d[i + 1];
 
             if (x < minX) minX = x;
             if (x > maxX) maxX = x;
@@ -81,15 +81,28 @@ export function pathToGeometryMid({
 }
 
 export type GeometryInner = {
-    // flat3d: number[];
-    inners: Coord[][];
     outer: Coord[];
-    tris: number[];
-    groups: number[];
-    flat: number[];
-    // positions: number[]
+    inners: Coord[][];
     sections: {name: string; positions: number[]}[];
+    indexSections: {index: number[]; name: string}[];
 };
+
+function makeSpans(indexSections: {index: number[]; name: string}[]) {
+    const spans: {name: string; start: number; end: number}[] = [];
+    indexSections.forEach((section, i) => {
+        if (!spans.length || spans[spans.length - 1].name !== section.name) {
+            const start = !spans.length ? 0 : spans[spans.length - 1].end;
+            spans.push({
+                name: section.name,
+                start,
+                end: start + section.index.length,
+            });
+        } else {
+            spans[spans.length - 1].end += section.index.length;
+        }
+    });
+    return spans;
+}
 
 export function pathToGeometryInner(pkpath: PKPath): GeometryInner | undefined {
     const clipped = cmdsToSegments([...pkpath.toCmds()])
@@ -112,8 +125,6 @@ export function pathToGeometryInner(pkpath: PKPath): GeometryInner | undefined {
         houter.origin = houter.segments[houter.segments.length - 1].to;
     }
 
-    // OK SO we
-
     const holes = clipped.slice(1).map((r) => {
         if (r.open) {
             console.log(r);
@@ -129,56 +140,54 @@ export function pathToGeometryInner(pkpath: PKPath): GeometryInner | undefined {
         rasterSegPoints(pathToPoints(region.segments, region.origin)),
     );
 
-    const flat = outer.flatMap((pt) => [pt.x, pt.y]);
-
     const sections: {name: string; positions: number[]}[] = [
         {name: 'top', positions: outer.flatMap((pt) => [pt.x, pt.y, 0])},
     ];
 
+    // const flat = outer.flatMap((pt) => [pt.x, pt.y]);
     const holeStarts: number[] = [];
     let count = outer.length;
 
-    inners.forEach((pts, i) => {
+    inners.forEach((pts) => {
         holeStarts.push(count);
-        flat.push(...pts.flatMap((pt) => [pt.x, pt.y]));
+        // flat.push(...pts.flatMap((pt) => [pt.x, pt.y]));
 
-        sections.push({name: 'hole-' + i, positions: pts.flatMap((pt) => [pt.x, pt.y, 0])});
+        sections.push({name: 'hole', positions: pts.flatMap((pt) => [pt.x, pt.y, 0])});
         count += pts.length;
     });
 
-    const tris = earcut(flat, holeStarts);
-    const groups: number[] = [];
+    const topIndex = earcut(
+        outer.concat(...inners).flatMap((p) => [p.x, p.y]),
+        holeStarts,
+    );
 
-    groups.push(tris.length);
+    const indexSections: {name: string; index: number[]}[] = [
+        {name: 'top', index: topIndex},
+        {name: 'bottom', index: topIndex.map((n) => n + count).reverse()},
+    ];
 
-    // Bottom:
-    tris.push(...tris.map((n) => n + count).reverse());
-
-    groups.push(tris.length);
-
-    // Border (outside):
+    const border: number[] = [];
     for (let i = 0; i < outer.length - 1; i++) {
-        tris.push(i, i + 1, i + count);
-        tris.push(i + count, i + 1, i + count + 1);
+        border.push(i, i + 1, i + count);
+        border.push(i + count, i + 1, i + count + 1);
     }
-    tris.push(count, outer.length - 1, 0);
-    tris.push(outer.length - 1, count, count + outer.length - 1);
-
-    groups.push(tris.length);
+    border.push(count, outer.length - 1, 0);
+    border.push(outer.length - 1, count, count + outer.length - 1);
+    indexSections.push({name: 'outside', index: border});
 
     inners.forEach((pts, n) => {
+        const index = [];
         let start = holeStarts[n];
         for (let i = start; i < start + pts.length - 1; i++) {
-            tris.push(i, i + 1, i + count);
-            tris.push(i + count, i + 1, i + count + 1);
+            index.push(i, i + 1, i + count);
+            index.push(i + count, i + 1, i + count + 1);
         }
-        tris.push(count + start, start + pts.length - 1, start);
-        tris.push(start + pts.length - 1, start + count, start + count + pts.length - 1);
+        index.push(count + start, start + pts.length - 1, start);
+        index.push(start + pts.length - 1, start + count, start + count + pts.length - 1);
+        indexSections.push({name: 'hole', index});
     });
 
-    groups.push(tris.length);
-
-    return {sections, inners, outer, tris, groups, flat};
+    return {sections, inners, outer, indexSections};
 }
 
 export function pathToGeometry({
@@ -195,7 +204,7 @@ export function pathToGeometry({
     const innerResult = pathToGeometryInner(pkpath);
     if (!innerResult) return;
 
-    const {sections, inners, outer, tris} = innerResult;
+    const {sections, inners, outer, indexSections} = innerResult;
     const flat3d = sections.flatMap((s) => s.positions);
 
     const thickness = fullThickness ? xoff + thick : thick;
@@ -206,12 +215,14 @@ export function pathToGeometry({
     });
     const vertices = new Float32Array(flat3d);
 
+    const index = indexSections.flatMap((s) => s.index);
+
     const geometry = new BufferGeometry();
-    geometry.setIndex(tris);
+    geometry.setIndex(index);
     geometry.setAttribute('position', new BufferAttribute(vertices, 3));
     geometry.computeVertexNormals();
 
-    return {geometry, stl: toStl(tris, flat3d)};
+    return {geometry, stl: toStl(index, flat3d)};
 }
 
 const toStl = (tris: number[], flat3d: number[]) => {
