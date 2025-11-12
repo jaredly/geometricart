@@ -1,6 +1,6 @@
 import {useMemo, useState} from 'react';
 import {pendingGuide} from '../../editor/RenderPendingGuide';
-import {IconEye, IconEyeInvisible, RoundPlus} from '../../icons/Icon';
+import {CheckmarkIcon, IconEye, IconEyeInvisible, RoundPlus} from '../../icons/Icon';
 import {GuideGeomTypes} from '../../types';
 import {getAllPatterns, getAnimated, saveAnimated} from '../db.server';
 import {useOnOpen} from '../useOnOpen';
@@ -13,7 +13,7 @@ import {LayerDialog} from './animator.screen/LayerDialog';
 import {LinesTable} from './animator.screen/LinesTable';
 import {SaveLinesButton} from './animator.screen/SaveLinesButton';
 import {SettingsForm} from './animator.screen/SettingsForm';
-import {SimplePreview} from './animator.screen/SimplePreview';
+import {CropPreview, SimplePreview} from './animator.screen/SimplePreview';
 import {SvgCanvas} from './animator.screen/SvgCanvas';
 import {Canvas} from '@react-three/fiber';
 import {ThreedScreenInner} from '../../threed/ThreedScreen';
@@ -60,7 +60,6 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
         () => Object.fromEntries(patterns.map((p) => [p.hash, p.tiling])),
         [patterns],
     );
-    // const size = 600;
 
     const [showDialog, setShowDialog] = useState(false);
     const layerDialog = useOnOpen(setShowDialog);
@@ -104,6 +103,26 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                 </div>
                 <div className="flex flex-col gap-4">
                     <SettingsForm state={state} config={config} setConfig={setConfig} />
+                    <div>
+                        <button
+                            disabled={!canv}
+                            className={'btn' + (!canv ? ' btn-active' : '')}
+                            onClick={() => {
+                                setConfig({...config, canv: false});
+                            }}
+                        >
+                            SVG
+                        </button>
+                        <button
+                            disabled={canv}
+                            className={'btn' + (canv ? ' btn-active' : '')}
+                            onClick={() => {
+                                setConfig({...config, canv: true});
+                            }}
+                        >
+                            Canvas
+                        </button>
+                    </div>
                     <details className="bg-base-100 p-4 rounded-xl shadow-md shadow-base-300">
                         <summary className="mb-4">
                             <div className="inline-flex">
@@ -113,14 +132,6 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                                     onClick={() => layerDialog.current?.showModal()}
                                 >
                                     <RoundPlus />
-                                </button>
-                                <button
-                                    className="btn"
-                                    onClick={() => {
-                                        setConfig({...config, canv: !config.canv});
-                                    }}
-                                >
-                                    {canv ? 'Canvas' : 'SVG'}
                                 </button>
                             </div>
                         </summary>
@@ -182,7 +193,78 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                                                 &times;
                                             </button>
                                         </td>
-                                        <td>{JSON.stringify(patternMap[layer.pattern].shape)}</td>
+                                        {/* <td>{JSON.stringify(patternMap[layer.pattern].shape)}</td> */}
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </details>
+                    <details className="bg-base-100 p-4 rounded-xl shadow-md shadow-base-300">
+                        <summary className="mb-4">
+                            <div className="inline-flex">
+                                <div>Crops</div>
+                                <button
+                                    className="btn btn-square ml-4"
+                                    onClick={() => setPending({type: 'crop', segments: []})}
+                                >
+                                    <RoundPlus />
+                                </button>
+                                {pending?.type === 'crop' && (
+                                    <>
+                                        <button
+                                            className="btn btn-square ml-4"
+                                            onClick={() => setPending(null)}
+                                        >
+                                            &times;
+                                        </button>
+                                        <button
+                                            className="btn btn-square ml-4"
+                                            onClick={() => {
+                                                setState({
+                                                    ...state,
+                                                    crops: [
+                                                        ...(state.crops ?? []),
+                                                        {segments: pending.segments},
+                                                    ],
+                                                });
+                                                setPending(null);
+                                            }}
+                                        >
+                                            <CheckmarkIcon />
+                                        </button>
+                                    </>
+                                )}
+                            </div>
+                        </summary>
+                        <table className="table" style={{display: 'inline'}}>
+                            <tbody>
+                                {state.crops?.map((crop, i) => (
+                                    <tr key={i}>
+                                        <td
+                                            onClick={() => setConfig({...config, preview: i})}
+                                            className="cursor-pointer"
+                                        >
+                                            <CropPreview
+                                                segments={crop.segments}
+                                                size={80}
+                                                color={'#fff'}
+                                            />
+                                        </td>
+                                        <td>
+                                            <label>
+                                                Hole?
+                                                <input
+                                                    className="checkbox ml-4"
+                                                    type="checkbox"
+                                                    checked={!!crop.hole}
+                                                    onChange={() => {
+                                                        const crops = state.crops!.slice();
+                                                        crops[i] = {...crop, hole: !crop.hole};
+                                                        setState({...state, crops});
+                                                    }}
+                                                />
+                                            </label>
+                                        </td>
                                     </tr>
                                 ))}
                             </tbody>

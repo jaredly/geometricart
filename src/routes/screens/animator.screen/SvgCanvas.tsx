@@ -11,6 +11,7 @@ import {Tiling, Coord, GuideGeom} from '../../../types';
 import {shapeD} from '../../shapeD';
 import {col} from '.././animator';
 import {State, Pending, lineAt} from './animator.utils';
+import {calcPathD, calcSegmentsD} from '../../../editor/calcPathD';
 
 export function SvgCanvas({
     peggedZoom,
@@ -89,7 +90,11 @@ export function SvgCanvas({
 
     const pendingPoints: Record<string, true> = {};
     if (pending) {
-        pending.points.forEach((coord) => (pendingPoints[coordKey(coord)] = true));
+        if (pending.type === 'crop') {
+            pending.segments.forEach((seg) => (pendingPoints[coordKey(seg.to)] = true));
+        } else {
+            pending.points.forEach((coord) => (pendingPoints[coordKey(coord)] = true));
+        }
     }
 
     const ats = useMemo(
@@ -97,8 +102,8 @@ export function SvgCanvas({
         [state.lines, preview],
     );
 
-    const {full, pts} = useMemo(() => {
-        if (!state.layers.length) return {full: [], pts: []};
+    const {full, pts, ttt} = useMemo(() => {
+        if (!state.layers.length) return {full: [], pts: [], ttt: []};
         const pt = patternMap[state.layers[0].pattern];
         const pts = tilingPoints(pt.shape);
         const ttt = getTilingTransforms(pt.shape, pts);
@@ -112,8 +117,11 @@ export function SvgCanvas({
                 }),
             ),
             pts,
+            ttt,
         };
     }, [ats, patternMap, state.layers]);
+
+    applyTilingTransformsG(Object.values(visiblePoints), ttt, applyMatrices).forEach(add);
 
     return (
         <svg
@@ -209,15 +217,35 @@ export function SvgCanvas({
                           className="cursor-pointer"
                           fill={pendingPoints[key] ? 'orange' : 'white'}
                           opacity={0.7}
-                          onClick={() =>
-                              setPending({
-                                  ...pending,
-                                  points: [...pending.points, coord],
-                              })
-                          }
+                          onClick={() => {
+                              if (pending.type === 'crop') {
+                                  setPending({
+                                      ...pending,
+                                      segments: [...pending.segments, {type: 'Line', to: coord}],
+                                  });
+                              } else {
+                                  setPending({
+                                      ...pending,
+                                      points: [...pending.points, coord],
+                                  });
+                              }
+                          }}
                       />
                   ))
                 : null}
+            {pending?.type === 'crop' && pending.segments.length > 1 ? (
+                <path
+                    d={calcSegmentsD(
+                        pending.segments,
+                        pending.segments[pending.segments.length - 1].to,
+                        false,
+                        1,
+                    )}
+                    stroke="white"
+                    strokeWidth={0.04}
+                    fill="none"
+                />
+            ) : null}
             {hover != null && ats[hover] ? (
                 <>
                     <path
