@@ -1,9 +1,6 @@
 import {epsilon} from '../../../rendering/epsilonToZero';
-import {
-    GeometryInner,
-    pathToGeometryInner,
-    splitEvenOddIntoDisconnectedShapes,
-} from '../../../threed/pathToGeometryMid';
+import {GeometryInner, pathToGeometryInner} from '../../../threed/pathToGeometryMid';
+import {splitEvenOddIntoDisconnectedShapes} from '../../../threed/splitEvenOddIntoDisconnectedShapes';
 import {TilingShape} from '../../../types';
 import {pk} from '../../pk';
 import {Config} from '../animator';
