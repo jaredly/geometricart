@@ -16,6 +16,8 @@ import {
     RepeatWrapping,
     Texture,
     TextureLoader,
+    Vector2,
+    // normalmap
 } from 'three';
 
 export const SVGExports = ({
@@ -40,6 +42,10 @@ export const SVGExports = ({
             tex.wrapS = RepeatWrapping;
             tex.wrapT = RepeatWrapping;
             tex.repeat.set(1, 1); // adjust tiling as needed
+
+            // const normalMap = computeNormalMap(paperTex.image);
+            // material.normalMap = normalMap;
+            // material.normalScale.set(1, 1);
 
             // If you're using a recent Three.js version:
             // tex.colorSpace = SRGBColorSpace;
@@ -86,24 +92,34 @@ export const SVGExports = ({
                             receiveShadow
                             material={[
                                 // Front
-                                new MeshBasicMaterial({
+                                new MeshStandardMaterial({
                                     // color: 'red',
-                                    // color: `hsl(30, 100%, ${((i / svgs.length) * 0.1 + 0.5) * 100}%)`,
+                                    color: `hsl(30, 100%, ${((i / svgs.length) * 0.1 + 0.5) * 100}%)`,
                                     map: paper,
+                                    // normalMap: paper,
+                                    // normalScale: new Vector2(0.1, 0.1),
                                     // color: 'white',
                                     // flatShading: true,
-                                    // metalness: 0,
-                                    // roughness: 1,
+                                    metalness: 0,
+                                    roughness: 1,
                                 }),
                                 // Back
                                 new MeshStandardMaterial({
                                     color: `hsl(30, 100%, ${((i / svgs.length) * 0.1 + 0.5) * 100}%)`,
                                     flatShading: true,
+                                    map: paper,
                                 }),
                                 // Sides
                                 new MeshStandardMaterial({
                                     color: `hsl(30, 50%, ${((i / svgs.length) * 0.1 + 0.4) * 100}%)`,
                                     flatShading: true,
+                                    // map: paper,
+                                }),
+                                // Inside
+                                new MeshStandardMaterial({
+                                    color: 'red',
+                                    flatShading: true,
+                                    map: paper,
                                 }),
                             ]}
                         ></mesh>

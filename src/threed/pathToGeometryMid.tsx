@@ -1,7 +1,7 @@
 import {Path as PKPath} from 'canvaskit-wasm';
 import earcut from 'earcut';
 import {BufferAttribute} from 'three';
-import {BufferGeometry} from 'three/src/Three';
+import {BufferGeometry, Float32BufferAttribute} from 'three/src/Three';
 import {segmentsBounds} from '../editor/Bounds';
 import {cmdsToSegments} from '../gcode/cmdsToSegments';
 import {scaleMatrix} from '../rendering/getMirrorTransforms';
@@ -20,14 +20,13 @@ import {closeEnough} from '../rendering/epsilonToZero';
 export function pathToGeometryMid({
     fullThickness,
     thick,
-    res: {flat3d, inners, outer, tris, groups},
+    res: {flat3d, inners, outer, tris, groups, flat},
 }: {
     fullThickness: number;
     thick: number;
     res: GeometryInner;
 }) {
     const thickness = fullThickness ? fullThickness + thick : thick;
-    const one = flat3d.length;
     flat3d = flat3d.slice();
 
     flat3d.push(...outer.flatMap((pt) => [pt.x, pt.y, -thickness]));
@@ -44,7 +43,41 @@ export function pathToGeometryMid({
     groups.forEach((group, i) => {
         geometry.addGroup(i === 0 ? 0 : groups[i - 1], group, i);
     });
-    // geometry.addGroup(one * 3, flat3d.length, 1);
+
+    {
+        // 1. find bounds in 2D
+        let minX = Infinity,
+            maxX = -Infinity;
+        let minY = Infinity,
+            maxY = -Infinity;
+
+        for (let i = 0; i < flat.length; i += 3) {
+            const x = flat[i];
+            const y = flat[i + 1];
+
+            if (x < minX) minX = x;
+            if (x > maxX) maxX = x;
+            if (y < minY) minY = y;
+            if (y > maxY) maxY = y;
+        }
+
+        const sizeX = maxX - minX || 1; // avoid divide by zero
+        const sizeY = maxY - minY || 1;
+
+        // 2. build UVs in same vertex order as positions
+        const uvs = [];
+
+        for (let i = 0; i < vertices.length; i += 3) {
+            const x = vertices[i];
+            const y = vertices[i + 1];
+            const u = (x - minX) / sizeX; // 0 → 1 across X
+            const v = (y - minY) / sizeY; // 0 → 1 across Y
+            uvs.push(u, v);
+        }
+
+        // 3. attach to geometry
+        geometry.setAttribute('uv', new Float32BufferAttribute(uvs, 2));
+    }
 
     return geometry;
 }
@@ -99,6 +132,7 @@ export type GeometryInner = {
     outer: Coord[];
     tris: number[];
     groups: number[];
+    flat: number[];
     // positions: number[]
 };
 
@@ -180,6 +214,7 @@ export function pathToGeometryInner(pkpath: PKPath): GeometryInner | undefined {
     tris.push(outer.length - 1, count, count + outer.length - 1);
 
     groups.push(tris.length);
+
     inners.forEach((pts, n) => {
         let start = holeStarts[n];
         for (let i = start; i < start + pts.length - 1; i++) {
@@ -190,7 +225,9 @@ export function pathToGeometryInner(pkpath: PKPath): GeometryInner | undefined {
         tris.push(start + pts.length - 1, start + count, start + count + pts.length - 1);
     });
 
-    return {flat3d, inners, outer, tris, groups};
+    groups.push(tris.length);
+
+    return {flat3d, inners, outer, tris, groups, flat};
 }
 
 // Split an even-odd compound path into independent "filled shapes" (as even-odd paths).
