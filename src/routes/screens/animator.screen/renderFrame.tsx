@@ -1,17 +1,19 @@
 import {Canvas} from 'canvaskit-wasm';
-import {boundsForCoords} from '../../../editor/Bounds';
+import {Bounds, boundsForCoords} from '../../../editor/Bounds';
 import {tilingPoints, applyTilingTransformsG} from '../../../editor/tilingPoints';
 import {getTilingTransforms} from '../../../editor/tilingTransforms';
 import {coordKey} from '../../../rendering/coordKey';
 import {closeEnough, epsilonToZero} from '../../../rendering/epsilonToZero';
 import {applyMatrices} from '../../../rendering/getMirrorTransforms';
 import {coordsEqual} from '../../../rendering/pathsAreIdentical';
-import {Coord, Tiling, TilingShape} from '../../../types';
+import {BarePath, Coord, Tiling, TilingShape} from '../../../types';
 import {pk, Path as PKPath} from '../../pk';
 import {Config} from '../animator';
 import {calcMargin} from './calcMargin';
 import {State, lineAt} from './animator.utils';
 import {generateVideo} from './muxer';
+import {cropLines} from './cropLines';
+import {pkPathWithCmds} from './cropPath';
 
 export function fullPaths(
     full: {points: Coord[]; alpha: number}[],
@@ -139,17 +141,37 @@ const calcFull = (
 
     const tpts = tilingPoints(shape);
     const ttt = getTilingTransforms(shape, tpts, repl);
-    const transformed = applyTilingTransformsG(
-        ats.filter(Boolean) as {points: Coord[]; alpha: number}[],
-        ttt,
-        (line, tx) => ({
-            points: line.points.map((coord) => applyMatrices(coord, tx)),
-            alpha: line.alpha,
-        }),
+    const transformed = cropLines(
+        applyTilingTransformsG(
+            ats.filter(Boolean) as {points: Coord[]; alpha: number}[],
+            ttt,
+            (line, tx) => ({
+                points: line.points.map((coord) => applyMatrices(coord, tx)),
+                alpha: line.alpha,
+            }),
+        ),
+        state.crops,
     );
-    const bounds = boundsForCoords(...applyTilingTransformsG(tpts, ttt, applyMatrices));
+    const bounds: BarePath[] = state.crops
+        ? state.crops
+              .filter((c) => !c.disabled)
+              .map((crop) => ({
+                  origin: crop.segments[crop.segments.length - 1].to,
+                  segments: crop.segments,
+              }))
+        : [boundsPath(boundsForCoords(...applyTilingTransformsG(tpts, ttt, applyMatrices)))];
     return {full: joinLines ? joinAdjacentAlphaLines(transformed) : transformed, bounds};
 };
+
+const boundsPath = ({x0, y0, x1, y1}: Bounds): BarePath => ({
+    origin: {x: x0, y: y0},
+    segments: [
+        {type: 'Line', to: {x: x0, y: y1}},
+        {type: 'Line', to: {x: x1, y: y1}},
+        {type: 'Line', to: {x: x1, y: y0}},
+    ],
+    open: false,
+});
 
 export const renderFrame = (
     state: State,
@@ -204,25 +226,13 @@ export const combinedPath = (preview: number, config: Config, state: State, shap
     const paths = fullPaths(full, config.lineWidth, peggedZoom, [205 / 255, 127 / 255, 1 / 255]);
 
     if (config.bounds && bounds) {
-        paths.push({
-            path: pk.Path.MakeFromCmds([
-                pk.MOVE_VERB,
-                bounds.x0,
-                bounds.y0,
-                pk.LINE_VERB,
-                bounds.x0,
-                bounds.y1,
-                pk.LINE_VERB,
-                bounds.x1,
-                bounds.y1,
-                pk.LINE_VERB,
-                bounds.x1,
-                bounds.y0,
-                pk.CLOSE_VERB,
-            ])!,
-            alpha: 1,
-            color: [205 / 255, 127 / 255, 1 / 255],
-            strokeWidth: (config.lineWidth / 200) * peggedZoom,
+        bounds.forEach((path) => {
+            paths.push({
+                path: pkPathWithCmds(path.origin, path.segments),
+                alpha: 1,
+                color: [205 / 255, 127 / 255, 1 / 255],
+                strokeWidth: (config.lineWidth / 200) * peggedZoom,
+            });
         });
     }
 
@@ -276,24 +286,9 @@ function renderSingle(
         paint.setColor([205 / 255, 127 / 255, 1 / 255]);
         paint.setStyle(pk.PaintStyle.Stroke);
         paint.setStrokeWidth((config.lineWidth / 200) * peggedZoom);
-        ctx.drawPath(
-            pk.Path.MakeFromCmds([
-                pk.MOVE_VERB,
-                bounds.x0,
-                bounds.y0,
-                pk.LINE_VERB,
-                bounds.x0,
-                bounds.y1,
-                pk.LINE_VERB,
-                bounds.x1,
-                bounds.y1,
-                pk.LINE_VERB,
-                bounds.x1,
-                bounds.y0,
-                pk.CLOSE_VERB,
-            ])!,
-            paint,
-        );
+        bounds.forEach((path) => {
+            ctx.drawPath(pkPathWithCmds(path.origin, path.segments), paint);
+        });
     }
 
     ctx.restore();

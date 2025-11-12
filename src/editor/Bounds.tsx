@@ -19,7 +19,7 @@ export function newPendingBounds(): PendingBounds {
     return {x0: null, y0: null, x1: null, y1: null};
 }
 
-export const boundsForCoords = (...coords: Array<Coord>) => {
+export function boundsForCoords(...coords: Array<Coord>): Bounds {
     const xs = coords.map((c) => c.x);
     const ys = coords.map((c) => c.y);
     return {
@@ -28,7 +28,7 @@ export const boundsForCoords = (...coords: Array<Coord>) => {
         y0: Math.min(...ys),
         y1: Math.max(...ys),
     };
-};
+}
 
 export const mergeBounds = (b1: Bounds, b2: Bounds): Bounds => ({
     x0: Math.min(b1.x0, b2.x0),

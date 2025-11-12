@@ -1,4 +1,4 @@
-import {OrbitControls, PerspectiveCamera} from '@react-three/drei';
+import {OrbitControls, PerspectiveCamera, ArcballControls} from '@react-three/drei';
 import '@react-three/fiber';
 import {Canvas} from '@react-three/fiber';
 import React, {useEffect, useMemo, useRef, useState} from 'react';
@@ -186,6 +186,8 @@ export const ThreedScreenInner = ({
     const virtualCamera = React.useRef<TPC>(null);
     const [[x, y], setCpos] = useState<[number, number]>([0, 0]);
 
+    const boxsize = 1000;
+
     return (
         <div>
             <Canvas
@@ -194,8 +196,37 @@ export const ThreedScreenInner = ({
                 style={{backgroundColor: 'white', height: size, width: size}}
                 gl={{antialias: true, preserveDrawingBuffer: true}}
             >
-                <directionalLight
+                {/* <directionalLight
                     position={lpos}
+                    ref={dl}
+                    name="dirlight"
+                    shadow-mapSize={[2048 * 4, 2048 * 4]}
+                    // shadow-mapSize={[2048, 2048]}
+                    castShadow
+                    intensity={2}
+                >
+                    <orthographicCamera
+                        zoom={shadowZoom}
+                        attach="shadow-camera"
+                    ></orthographicCamera>
+                </directionalLight>
+
+                <directionalLight
+                    position={[0, 2, 10]}
+                    ref={dl}
+                    shadow-mapSize={[2048 * 4, 2048 * 4]}
+                    // shadow-mapSize={[2048, 2048]}
+                    castShadow
+                    intensity={3}
+                >
+                    <orthographicCamera
+                        zoom={shadowZoom}
+                        attach="shadow-camera"
+                    ></orthographicCamera>
+                </directionalLight> */}
+
+                {/* <directionalLight
+                    position={[0, 0, -100]}
                     ref={dl}
                     shadow-mapSize={[2048 * 4, 2048 * 4]}
                     // shadow-mapSize={[2048, 2048]}
@@ -205,8 +236,9 @@ export const ThreedScreenInner = ({
                         zoom={shadowZoom}
                         attach="shadow-camera"
                     ></orthographicCamera>
-                </directionalLight>
-                <ambientLight intensity={0.3} />
+                </directionalLight> */}
+
+                <ambientLight intensity={1} />
 
                 <PerspectiveCamera
                     makeDefault
@@ -215,17 +247,50 @@ export const ThreedScreenInner = ({
                     args={[fov, 1, 1, 2000]}
                 />
                 <OrbitControls camera={virtualCamera.current!} />
+                {/* <ArcballControls camera={virtualCamera.current!} /> */}
 
-                <mesh position={[0, 0, -1]}>
-                    <planeGeometry attach="geometry" args={[100, 100]} />
-                    <meshPhongMaterial attach="material" color={color} />
-                </mesh>
+                <SkyBox boxsize={boxsize} color={color} />
+
                 {children}
             </Canvas>
             <LightPosForm lpos={lpos} setLpos={setLpos} />
         </div>
     );
 };
+
+const SkyBox = ({boxsize, color}: {boxsize: number; color: string}) => (
+    <>
+        <mesh position={[0, 0, -boxsize / 2]}>
+            <planeGeometry attach="geometry" args={[boxsize, boxsize]} />
+            <meshBasicMaterial attach="material" color={color} />
+        </mesh>
+
+        <mesh position={[0, boxsize / 2, 0]} rotation={[Math.PI / 2, 0, 0]}>
+            <planeGeometry attach="geometry" args={[boxsize, boxsize]} />
+            <meshBasicMaterial attach="material" color={color} />
+        </mesh>
+
+        <mesh position={[0, -boxsize / 2, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+            <planeGeometry attach="geometry" args={[boxsize, boxsize]} />
+            <meshBasicMaterial attach="material" color={color} />
+        </mesh>
+
+        <mesh position={[0, 0, boxsize / 2]} rotation={[0, Math.PI, 0]}>
+            <planeGeometry attach="geometry" args={[boxsize, boxsize]} />
+            <meshBasicMaterial attach="material" color={color} />
+        </mesh>
+
+        <mesh position={[-boxsize / 2, 0, 0]} rotation={[0, Math.PI / 2, 0]}>
+            <planeGeometry attach="geometry" args={[boxsize, boxsize]} />
+            <meshBasicMaterial attach="material" color={color} />
+        </mesh>
+
+        <mesh position={[boxsize / 2, 0, 0]} rotation={[0, -Math.PI / 2, 0]}>
+            <planeGeometry attach="geometry" args={[boxsize, boxsize]} />
+            <meshBasicMaterial attach="material" color={color} />
+        </mesh>
+    </>
+);
 
 const handleKey = (evt: KeyboardEvent, state: State, dispatch: React.Dispatch<Action>) => {
     switch (evt.key) {

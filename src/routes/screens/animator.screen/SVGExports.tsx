@@ -1,22 +1,22 @@
-import {Path as PKPath} from 'canvaskit-wasm';
 import {downloadZip} from 'client-zip';
-import React, {useState, useMemo, useEffect, useRef} from 'react';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {BlurInt} from '../../../editor/Forms';
-import {epsilon} from '../../../rendering/epsilonToZero';
-import {
-    GeometryInner,
-    pathToGeometry,
-    pathToGeometryInner,
-} from '../../../threed/pathToGeometryMid';
-import {pathToGeometryMid} from '../../../threed/pathToGeometryMid';
+import {GeometryInner, pathToGeometryMid} from '../../../threed/pathToGeometryMid';
 import {ThreedScreenInner} from '../../../threed/ThreedScreen';
 import {Tiling} from '../../../types';
-import {pk} from '../../pk';
 import {Config} from '../animator';
-import {calcMargin} from './calcMargin';
 import {State} from './animator.utils';
-import {combinedPath} from './renderFrame';
 import {MessageFromWorker, MessageToWorker} from './svg-worker';
+import {useFrame, useThree} from '@react-three/fiber';
+import {
+    DirectionalLight,
+    MeshBasicMaterial,
+    MeshPhongMaterial,
+    MeshStandardMaterial,
+    RepeatWrapping,
+    Texture,
+    TextureLoader,
+} from 'three';
 
 export const SVGExports = ({
     state,
@@ -30,6 +30,28 @@ export const SVGExports = ({
     const [svStep, setSvStep] = useState(0.5);
     const [svgs, setSvgs] = useState([] as {svg: string; geom: GeometryInner[]; zoom: number}[]);
 
+    const [paper, setPaper] = useState(null as null | Texture);
+    const [tscale, setTscale] = useState(1);
+
+    useEffect(() => {
+        const loader = new TextureLoader();
+        // const paperTexture =
+        loader.load('/assets/paper4.jpg', (tex) => {
+            tex.wrapS = RepeatWrapping;
+            tex.wrapT = RepeatWrapping;
+            tex.repeat.set(1, 1); // adjust tiling as needed
+
+            // If you're using a recent Three.js version:
+            // tex.colorSpace = SRGBColorSpace;
+            setPaper(tex);
+        });
+        // return paperTexture;
+    }, []);
+
+    useEffect(() => {
+        paper?.repeat.set(tscale, tscale);
+    }, [tscale, paper]);
+
     const [thick, setThick] = useState(0.21);
     const [gap, setGap] = useState(0);
 
@@ -37,13 +59,15 @@ export const SVGExports = ({
 
     const [min, setMin] = useState(0);
     const [max, setMax] = useState(0);
+    const [rev, setRev] = useState(false);
 
     const threedItems = useMemo(() => {
-        return svgs.slice(min, max === 0 ? svgs.length : max).map(({geom}, i) => {
+        const items = rev ? svgs.toReversed() : svgs;
+        const mid = (thick * items.length + gap * (items.length - 1)) / 2;
+        return items.slice(min, max === 0 ? svgs.length : max).map(({geom}, i) => {
             const geometry = geom.map((sub) =>
                 pathToGeometryMid({
-                    fullThickness: false,
-                    xoff: i * (gap + thick),
+                    fullThickness: 0,
                     thick,
                     res: sub,
                 }),
@@ -57,15 +81,32 @@ export const SVGExports = ({
                         <mesh
                             key={j}
                             geometry={geom}
-                            position={[0, 0, i * (gap + thick)]}
+                            position={[0, 0, i * (gap + thick) - mid]}
                             castShadow
                             receiveShadow
-                        >
-                            <meshPhongMaterial
-                                flatShading
-                                color={`hsl(30, 100%, ${((i / svgs.length) * 0.5 + 0.2) * 100}%)`}
-                            />
-                        </mesh>
+                            material={[
+                                // Front
+                                new MeshBasicMaterial({
+                                    // color: 'red',
+                                    // color: `hsl(30, 100%, ${((i / svgs.length) * 0.1 + 0.5) * 100}%)`,
+                                    map: paper,
+                                    // color: 'white',
+                                    // flatShading: true,
+                                    // metalness: 0,
+                                    // roughness: 1,
+                                }),
+                                // Back
+                                new MeshStandardMaterial({
+                                    color: `hsl(30, 100%, ${((i / svgs.length) * 0.1 + 0.5) * 100}%)`,
+                                    flatShading: true,
+                                }),
+                                // Sides
+                                new MeshStandardMaterial({
+                                    color: `hsl(30, 50%, ${((i / svgs.length) * 0.1 + 0.4) * 100}%)`,
+                                    flatShading: true,
+                                }),
+                            ]}
+                        ></mesh>
                     ))}
                     {/* {isSelected ? (
                         <points
@@ -82,9 +123,10 @@ export const SVGExports = ({
                 </React.Fragment>
             );
         });
-    }, [svgs, thick, gap, min, max]);
+    }, [svgs, thick, gap, min, max, rev]);
 
     const worker = useRef(null as null | Worker);
+    const [rotate, setRotate] = useState(false);
 
     // const worker = useMemo(() => {
     //     const worker = new Worker(new URL('./svg-worker.ts', import.meta.url), {type: 'module'});
@@ -187,6 +229,7 @@ export const SVGExports = ({
             {svgs.length ? (
                 <>
                     <ThreedScreenInner size={size} color="#000">
+                        {rotate ? <OrbitingCamera radius={10} target={[0, 0, 0]} /> : null}
                         {threedItems}
                     </ThreedScreenInner>
                     <label className="m-4">
@@ -253,9 +296,65 @@ export const SVGExports = ({
                                 onChange={(value) => (value != null ? setMax(value) : null)}
                             />
                         </label>
+                        <label className="m-2">
+                            {'Reverse: '}
+                            <input
+                                type="checkbox"
+                                className="checkbox"
+                                checked={rev}
+                                onChange={() => setRev(!rev)}
+                            />
+                        </label>
+                        <button
+                            className={`btn ` + (rotate ? 'btn-accent' : '')}
+                            onClick={() => setRotate(!rotate)}
+                        >
+                            Rotate
+                        </button>
+                        <label className="m-2">
+                            {'Tscale: '}
+                            <BlurInt
+                                className="input w-20"
+                                step={1}
+                                value={tscale}
+                                onChange={(value) => (value != null ? setTscale(value) : null)}
+                            />
+                        </label>
                     </div>
                 </>
             ) : null}
         </div>
     );
 };
+
+function OrbitingCamera({
+    radius,
+    target = [0, 0, 0],
+}: {
+    radius: number;
+    target: [number, number, number];
+}) {
+    const {camera, scene} = useThree();
+    const angleRef = useRef(Math.PI / 2);
+
+    useFrame((state, delta) => {
+        angleRef.current += delta * 0.5; // speed
+
+        camera.position.x = radius * Math.cos(angleRef.current) + target[0];
+        camera.position.z = radius * Math.sin(angleRef.current) + target[2];
+        camera.position.y = target[1];
+        camera.lookAt(...target);
+
+        const light: DirectionalLight = scene.getObjectByName('dirlight') as DirectionalLight;
+        light.position.copy(camera.position);
+        light.position.set(
+            radius * Math.cos(angleRef.current + Math.PI / 4) + target[0],
+            target[1],
+            radius * Math.sin(angleRef.current + Math.PI / 4) + target[2],
+        );
+        light.target.position.set(...target);
+        light.target.updateMatrixWorld();
+    });
+
+    return null; // this is a "controller" component
+}

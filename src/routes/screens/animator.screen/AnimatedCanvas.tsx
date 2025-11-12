@@ -24,9 +24,11 @@ export const AnimatedCanvas = ({
 
     const patternDatas = useMemo(() => {
         return config.showNice
-            ? state.layers.map((l) => getPatternData(patternMap[l.pattern], false, config.repl))
+            ? state.layers.map((l) =>
+                  getPatternData(patternMap[l.pattern], false, config.repl, state.crops),
+              )
             : [];
-    }, [state.layers, patternMap, config.repl, config.showNice]);
+    }, [state.layers, patternMap, config.repl, config.showNice, state.crops]);
 
     useEffect(() => {
         if (!ref.current) return;

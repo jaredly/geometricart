@@ -9,11 +9,11 @@ import {applyMatrices} from '../../../rendering/getMirrorTransforms';
 import {intersections, lineToSlope} from '../../../rendering/intersect';
 import {geomToPrimitives} from '../../../rendering/points';
 import {pkPath} from '../../../sidebar/pkClipPaths';
-import {BarePath, Coord, GuideGeom, Segment, Tiling} from '../../../types';
+import {Coord, GuideGeom, Tiling} from '../../../types';
 import {shapeD} from '../../shapeD';
 import {col, Config} from '.././animator';
 import {Pending, State, lineAt} from './animator.utils';
-import {clipToPathData, pkPathWithCmds, splitPathByClip} from './cropPath';
+import {cropLines} from './cropLines';
 
 export function SvgCanvas({
     config,
@@ -28,16 +28,16 @@ export function SvgCanvas({
 }: {
     config: Config;
     peggedZoom: number;
-    size: number;
+    // size: number;
     setPos: {
         (value: SetStateAction<{x: number; y: number}>): void;
         (arg0: {x: number; y: number}): void;
     };
-    showGuides: boolean;
-    zoom: number;
-    lineWidth: number;
+    // showGuides: boolean;
+    // zoom: number;
+    // lineWidth: number;
     state: State;
-    preview: number;
+    // preview: number;
     patternMap: {[k: string]: Tiling};
     pending: Pending | null;
     pos: {x: number; y: number};
@@ -295,29 +295,3 @@ export function SvgCanvas({
         </svg>
     );
 }
-
-const cropLines = (lines: {points: Coord[]; alpha: number}[], crops: State['crops']) => {
-    if (!crops?.length) return lines;
-    let asSegs: {path: BarePath; alpha: number}[] = lines.map((line) => {
-        const segments: Segment[] = [];
-        for (let i = 1; i < line.points.length; i++) {
-            segments.push({type: 'Line', to: line.points[i]});
-        }
-        return {path: {origin: line.points[0], segments, open: true}, alpha: line.alpha};
-    });
-    for (let one of crops) {
-        if (one.disabled) continue;
-        const pd = clipToPathData(one.segments);
-        const pk = pkPathWithCmds(one.segments[one.segments.length - 1].to, one.segments);
-        asSegs = asSegs.flatMap((line) => {
-            const parts = splitPathByClip(pd, pk, line.path);
-            return parts
-                .filter((part) => part.inside === !one.hole)
-                .map((part) => ({path: part.path, alpha: line.alpha}));
-        });
-    }
-    return asSegs.map(({path, alpha}) => {
-        const points = [path.origin, ...path.segments.map((s) => s.to)];
-        return {points, alpha};
-    });
-};

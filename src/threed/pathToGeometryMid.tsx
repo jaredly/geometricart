@@ -19,16 +19,15 @@ import {closeEnough} from '../rendering/epsilonToZero';
 
 export function pathToGeometryMid({
     fullThickness,
-    xoff,
     thick,
-    res: {flat3d, inners, outer, tris},
+    res: {flat3d, inners, outer, tris, groups},
 }: {
-    fullThickness: boolean;
-    xoff: number;
+    fullThickness: number;
     thick: number;
     res: GeometryInner;
 }) {
-    const thickness = fullThickness ? xoff + thick : thick;
+    const thickness = fullThickness ? fullThickness + thick : thick;
+    const one = flat3d.length;
     flat3d = flat3d.slice();
 
     flat3d.push(...outer.flatMap((pt) => [pt.x, pt.y, -thickness]));
@@ -42,8 +41,14 @@ export function pathToGeometryMid({
     geometry.setAttribute('position', new BufferAttribute(vertices, 3));
     geometry.computeVertexNormals();
 
+    groups.forEach((group, i) => {
+        geometry.addGroup(i === 0 ? 0 : groups[i - 1], group, i);
+    });
+    // geometry.addGroup(one * 3, flat3d.length, 1);
+
     return geometry;
 }
+
 export function pathToGeometry({
     pkpath,
     fullThickness,
@@ -88,7 +93,14 @@ const toStl = (tris: number[], flat3d: number[]) => {
     return {cells, positions};
 };
 
-export type GeometryInner = {flat3d: number[]; inners: Coord[][]; outer: Coord[]; tris: number[]};
+export type GeometryInner = {
+    flat3d: number[];
+    inners: Coord[][];
+    outer: Coord[];
+    tris: number[];
+    groups: number[];
+    // positions: number[]
+};
 
 export function pathToGeometryInner(pkpath: PKPath): GeometryInner | undefined {
     const clipped = cmdsToSegments([...pkpath.toCmds()])
@@ -140,9 +152,24 @@ export function pathToGeometryInner(pkpath: PKPath): GeometryInner | undefined {
         count += pts.length;
     });
     const tris = earcut(flat, holeStarts);
+    const groups: number[] = [];
+
+    // const positions: number[] = [];
+    // for (let i = 0; i < flat.length; i += 2) {
+    // const x = flat[i];
+    // const y = flat[i + 1];
+
+    //     // Put polygon on XZ-plane (y as Z) or XY-plane, your choice.
+    //     // Here: XZ plane at Y=0:
+    //     positions.push(x, 0, y);
+    // }
+
+    groups.push(tris.length);
 
     // Bottom:
     tris.push(...tris.map((n) => n + count).reverse());
+
+    groups.push(tris.length);
 
     // Border (outside):
     for (let i = 0; i < outer.length - 1; i++) {
@@ -152,6 +179,7 @@ export function pathToGeometryInner(pkpath: PKPath): GeometryInner | undefined {
     tris.push(count, outer.length - 1, 0);
     tris.push(outer.length - 1, count, count + outer.length - 1);
 
+    groups.push(tris.length);
     inners.forEach((pts, n) => {
         let start = holeStarts[n];
         for (let i = start; i < start + pts.length - 1; i++) {
@@ -162,7 +190,7 @@ export function pathToGeometryInner(pkpath: PKPath): GeometryInner | undefined {
         tris.push(start + pts.length - 1, start + count, start + count + pts.length - 1);
     });
 
-    return {flat3d, inners, outer, tris};
+    return {flat3d, inners, outer, tris, groups};
 }
 
 // Split an even-odd compound path into independent "filled shapes" (as even-odd paths).

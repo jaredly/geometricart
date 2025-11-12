@@ -62,7 +62,12 @@ export const clipToPathData = (clip: Segment[]) => {
 };
 
 export const splitSegByClip = (clip: PathData, path: SegPrev) => {
-    const intersectons = findPathDataIntersections(clip, segsToPathData(path.prev, [path.segment]));
+    const intersectons = findPathDataIntersections(
+        clip,
+        segsToPathData(path.prev, [path.segment]),
+        false,
+        'high',
+    );
     return splitSegment(path.prev, path.segment, intersectons);
     // return parts.map((segment, i) => {
     //     const prev = i === 0 ? path.prev : parts[i - 1].to;

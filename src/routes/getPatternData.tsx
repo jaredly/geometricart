@@ -19,7 +19,7 @@ import {
 } from '../rendering/getMirrorTransforms';
 import {angleBetween} from '../rendering/isAngleBetween';
 import {isClockwisePoints, pointsAngles} from '../rendering/pathToPoints';
-import {Coord, Tiling} from '../types';
+import {Coord, Segment, Tiling} from '../types';
 import {colorShapes} from './patternColoring';
 import {pk} from './pk';
 import {
@@ -33,6 +33,7 @@ import {pathsFromSegments} from './pathsFromSegments';
 import {outerBoundary} from './outerBoundary';
 import {weaveIntersections} from './weaveIntersections';
 import {transformBarePath, transformSegment} from '../rendering/points';
+import {cropLines} from './screens/animator.screen/cropLines';
 
 const pkPathFromCoords = (coords: Coord[]) =>
     pk.Path.MakeFromCmds([
@@ -139,7 +140,12 @@ export const preTransformTiling = (tiling: Tiling): Tiling => {
 };
 
 export type PatternData = ReturnType<typeof getPatternData>;
-export const getPatternData = (tiling: Tiling, debug = false, size = 2) => {
+export const getPatternData = (
+    tiling: Tiling,
+    debug = false,
+    size = 2,
+    crops?: {segments: Segment[]; hole?: boolean}[],
+) => {
     tiling = preTransformTiling(tiling);
 
     const pts = tilingPoints(tiling.shape);
@@ -151,9 +157,14 @@ export const getPatternData = (tiling: Tiling, debug = false, size = 2) => {
     const ttt = tilingTransforms(tiling.shape, pts[2], pts, getShapeSize(pts[2], size));
 
     const allSegments = unique(
-        applyTilingTransforms(eigenSegments, ttt).map((seg) =>
-            cmpCoords(seg[0], seg[1]) === 1 ? ([seg[1], seg[0]] as [Coord, Coord]) : seg,
-        ),
+        cropLines(
+            applyTilingTransforms(eigenSegments, ttt)
+                .map((seg) =>
+                    cmpCoords(seg[0], seg[1]) === 1 ? ([seg[1], seg[0]] as [Coord, Coord]) : seg,
+                )
+                .map(([a, b]) => ({alpha: 1, points: [a, b]})),
+            crops,
+        ).map((one) => one.points as [Coord, Coord]),
         ([a, b]) => `${coordKey(a)}:${coordKey(b)}`,
     );
 

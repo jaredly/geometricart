@@ -266,6 +266,34 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                                                 />
                                             </label>
                                         </td>
+                                        <td>
+                                            <button
+                                                className="btn"
+                                                onClick={() => {
+                                                    const crops = state.crops!.slice();
+                                                    crops[i] = {...crop, disabled: !crop.disabled};
+                                                    setState({...state, crops});
+                                                }}
+                                            >
+                                                {!crop.disabled ? (
+                                                    <IconEye />
+                                                ) : (
+                                                    <IconEyeInvisible color={'#555'} />
+                                                )}
+                                            </button>
+                                        </td>
+                                        <td>
+                                            <button
+                                                className="btn"
+                                                onClick={() => {
+                                                    const crops = state.crops!.slice();
+                                                    crops.splice(i, 1);
+                                                    setState({...state, crops});
+                                                }}
+                                            >
+                                                &times;
+                                            </button>
+                                        </td>
                                     </tr>
                                 ))}
                             </tbody>
