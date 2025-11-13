@@ -256,20 +256,20 @@ function pkPathToThreed(
 ) {
     return pkPaths
         .flatMap(({path, pkpath, gat, style}, n) => {
-            let xoff = gat * baseThick + gap * gat;
+            let zoff = gat * baseThick + gap * gat;
 
             const isSelected = path ? selectedIds[path.id] : false;
 
             let thick = baseThick;
             if (style.style.originalIdx != null && style.style.originalIdx > 0) {
                 thick = mmToPX(0.2, state.meta.ppi);
-                xoff += thick;
+                zoff += thick;
             }
 
             const pg = pathToGeometry({
                 pkpath,
                 fullThickness: typeof toBack === 'number' ? toBack === gat : !!toBack,
-                xoff,
+                zoff,
                 thick,
             });
             if (!pg) {
@@ -290,7 +290,7 @@ function pkPathToThreed(
                 <React.Fragment key={`${n}`}>
                     <mesh
                         geometry={geometry}
-                        position={[center.x, center.y, xoff]}
+                        position={[center.x, center.y, zoff]}
                         castShadow
                         receiveShadow
                         onClick={(evt: ThreeEvent<MouseEvent>) => {
@@ -304,7 +304,7 @@ function pkPathToThreed(
                     {isSelected ? (
                         <points
                             geometry={geometry}
-                            position={[center.x, center.y, xoff]}
+                            position={[center.x, center.y, zoff]}
                             material={
                                 new PointsMaterial({
                                     color: 'white',

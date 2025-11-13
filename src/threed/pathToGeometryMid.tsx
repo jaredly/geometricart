@@ -19,13 +19,15 @@ export function pathToGeometryMid({
     fullThickness,
     thick,
     res,
+    zoff,
 }: {
     fullThickness: number;
     thick: number;
     res: GeometryInner;
+    zoff: number;
 }) {
     const thickness = fullThickness ? fullThickness + thick : thick;
-    const {positions, index, spans} = calcPositionsAndTriangles(res, thickness);
+    const {positions, index, spans, uvs} = calcPositionsAndTriangles(res, thickness, zoff);
 
     const vertices = new Float32Array(positions);
 
@@ -36,40 +38,8 @@ export function pathToGeometryMid({
 
     spans.forEach(({start, end}, i) => geometry.addGroup(start, end, i));
 
-    {
-        // 1. find bounds in 2D
-        let minX = Infinity,
-            maxX = -Infinity;
-        let minY = Infinity,
-            maxY = -Infinity;
-
-        for (let i = 0; i < positions.length; i += 3) {
-            const x = positions[i];
-            const y = positions[i + 1];
-
-            if (x < minX) minX = x;
-            if (x > maxX) maxX = x;
-            if (y < minY) minY = y;
-            if (y > maxY) maxY = y;
-        }
-
-        const sizeX = maxX - minX || 1; // avoid divide by zero
-        const sizeY = maxY - minY || 1;
-
-        // 2. build UVs in same vertex order as positions
-        const uvs = [];
-
-        for (let i = 0; i < vertices.length; i += 3) {
-            const x = vertices[i];
-            const y = vertices[i + 1];
-            const u = (x - minX) / sizeX; // 0 → 1 across X
-            const v = (y - minY) / sizeY; // 0 → 1 across Y
-            uvs.push(u, v);
-        }
-
-        // 3. attach to geometry
-        geometry.setAttribute('uv', new Float32BufferAttribute(uvs, 2));
-    }
+    // 3. attach to geometry
+    geometry.setAttribute('uv', new Float32BufferAttribute(uvs, 2));
 
     return geometry;
 }
@@ -83,6 +53,33 @@ export type GeometryInner = {
         count: number;
     };
 };
+
+function getPositionBounds(positions: number[]) {
+    let minX = Infinity,
+        maxX = -Infinity;
+    let minY = Infinity,
+        maxY = -Infinity;
+    let minZ = Infinity,
+        maxZ = -Infinity;
+
+    for (let i = 0; i < positions.length; i += 3) {
+        const x = positions[i];
+        const y = positions[i + 1];
+        const z = positions[i + 2];
+
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+        if (z < minZ) minZ = z;
+        if (z > maxZ) maxZ = z;
+    }
+
+    const sizeX = maxX - minX || 1;
+    const sizeY = maxY - minY || 1;
+    const sizeZ = maxZ - minZ || 1;
+    return {minX, sizeX, minY, sizeY, minZ, sizeZ};
+}
 
 function makeSpans(indexSections: {index: number[]; name: string}[]) {
     const spans: {name: string; start: number; end: number}[] = [];
@@ -156,74 +153,95 @@ const doEarcut = (outer: Coord[], inners: Coord[][]) => {
     return {holeStarts, topIndex, count};
 };
 
-const calcPositionsAndTriangles = (pre: GeometryInner, thickness: number) => {
+const calcPositionsAndTriangles = (pre: GeometryInner, thickness: number, zoff: number) => {
     const {
         outer,
         inners,
-        cut: {topIndex, holeStarts, count},
+        cut: {topIndex, holeStarts, count: topCount},
     } = pre;
+
+    const positions: number[] = [
+        // top-outer
+        ...outer.flatMap((pt) => [pt.x, pt.y, 0]),
+        // top-holes
+        ...inners.flatMap((pts) => pts.flatMap((p) => [p.x, p.y, 0])),
+        // bottom-outer
+        ...outer.flatMap((p) => [p.x, p.y, -thickness]),
+        // bottom-holes
+        ...inners.flatMap((pts) => pts.flatMap((p) => [p.x, p.y, -thickness])),
+    ];
+    // Now for the positions for the sides
+    positions.push(...positions);
 
     const indexSections: {name: string; index: number[]}[] = [
         {name: 'top', index: topIndex},
-        {name: 'bottom', index: topIndex.map((n) => n + count).reverse()},
+        {name: 'bottom', index: topIndex.map((n) => n + topCount).reverse()},
     ];
 
     const border: number[] = [];
     for (let i = 0; i < outer.length - 1; i++) {
-        border.push(i, i + 1, i + count);
-        border.push(i + count, i + 1, i + count + 1);
+        border.push(i, i + 1, i + topCount);
+        border.push(i + topCount, i + 1, i + topCount + 1);
     }
-    border.push(count, outer.length - 1, 0);
-    border.push(outer.length - 1, count, count + outer.length - 1);
-    indexSections.push({name: 'outside', index: border});
+    border.push(topCount, outer.length - 1, 0);
+    border.push(outer.length - 1, topCount, topCount + outer.length - 1);
+    indexSections.push({name: 'outside', index: border.map((n) => n + topCount * 2)});
 
     inners.forEach((pts, n) => {
         const index = [];
         let start = holeStarts[n];
         for (let i = start; i < start + pts.length - 1; i++) {
-            index.push(i, i + 1, i + count);
-            index.push(i + count, i + 1, i + count + 1);
+            index.push(i, i + 1, i + topCount);
+            index.push(i + topCount, i + 1, i + topCount + 1);
         }
-        index.push(count + start, start + pts.length - 1, start);
-        index.push(start + pts.length - 1, start + count, start + count + pts.length - 1);
-        indexSections.push({name: 'hole', index});
+        index.push(topCount + start, start + pts.length - 1, start);
+        index.push(start + pts.length - 1, start + topCount, start + topCount + pts.length - 1);
+        indexSections.push({name: 'hole', index: index.map((n) => n + topCount * 2)});
     });
 
-    // Sections
-    const sections: {name: string; positions: number[]}[] = [
-        {name: 'top-outer', positions: outer.flatMap((pt) => [pt.x, pt.y, 0])},
-        ...inners.map((pts) => ({
-            name: 'top-hole',
-            positions: pts.flatMap((p) => [p.x, p.y, 0]),
-        })),
-        {name: 'bottom-outer', positions: outer.flatMap((p) => [p.x, p.y, -thickness])},
-        ...inners.map((pts) => ({
-            name: 'bottom-hole',
-            positions: pts.flatMap((p) => [p.x, p.y, -thickness]),
-        })),
-    ];
+    // 1. find bounds in 2D
+    const {minX, sizeX, minY, sizeY, minZ, sizeZ} = getPositionBounds(positions);
 
-    const positions = sections.flatMap((s) => s.positions);
+    // 2. build UVs in same vertex order as positions
+    const uvs = [];
+
+    for (let i = 0; i < positions.length; i += 3) {
+        const x = positions[i];
+        const y = positions[i + 1];
+        const z = positions[i + 2];
+
+        if (i < positions.length / 2) {
+            const u = (x - minX) / sizeX; // 0 → 1 across X
+            const v = (y - minY) / sizeY; // 0 → 1 across Y
+            uvs.push(u, v);
+        } else {
+            const u = (z - minZ + zoff) / sizeY; // 0 → 1 across Z
+            const v = (y - minY) / sizeY; // 0 → 1 across Y
+            uvs.push(u, v);
+        }
+    }
+
+    // const positions = positionSections.flatMap((s) => s.positions);
     const index = indexSections.flatMap((s) => s.index);
-    return {positions, index, spans: makeSpans(indexSections)};
+    return {positions, index, spans: makeSpans(indexSections), uvs};
 };
 
 export function pathToGeometry({
     pkpath,
     fullThickness,
-    xoff,
+    zoff,
     thick,
 }: {
     pkpath: PKPath;
     fullThickness: boolean;
-    xoff: number;
+    zoff: number;
     thick: number;
 }) {
     const innerResult = pathToGeometryInner(pkpath);
     if (!innerResult) return;
 
-    const thickness = fullThickness ? xoff + thick : thick;
-    const {positions, index} = calcPositionsAndTriangles(innerResult, thickness);
+    const thickness = fullThickness ? zoff + thick : thick;
+    const {positions, index} = calcPositionsAndTriangles(innerResult, thickness, zoff);
 
     const geometry = new BufferGeometry();
     geometry.setIndex(index);

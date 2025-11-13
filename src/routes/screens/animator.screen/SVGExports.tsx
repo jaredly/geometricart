@@ -77,6 +77,7 @@ export const SVGExports = ({
                     fullThickness: 0,
                     thick,
                     res: sub,
+                    zoff: i * thick + gap * i,
                 }),
             );
             if (!geometry) {
@@ -115,7 +116,7 @@ export const SVGExports = ({
                                     // color: `hsl(30, 50%, ${((i / svgs.length) * 0.1 + 0.4) * 100}%)`,
                                     color: '#666',
                                     flatShading: true,
-                                    // map: paper,
+                                    map: paper,
                                 }),
                                 // Inside
                                 new MeshStandardMaterial({
