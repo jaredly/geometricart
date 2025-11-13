@@ -20,6 +20,8 @@ import {
     // normalmap
 } from 'three';
 
+const initialTscale = 5;
+
 export const SVGExports = ({
     state,
     config,
@@ -33,15 +35,15 @@ export const SVGExports = ({
     const [svgs, setSvgs] = useState([] as {svg: string; geom: GeometryInner[]; zoom: number}[]);
 
     const [paper, setPaper] = useState(null as null | Texture);
-    const [tscale, setTscale] = useState(1);
+    const [tscale, setTscale] = useState(initialTscale);
 
     useEffect(() => {
         const loader = new TextureLoader();
-        // const paperTexture =
+
         loader.load('/assets/paper4.jpg', (tex) => {
             tex.wrapS = RepeatWrapping;
             tex.wrapT = RepeatWrapping;
-            tex.repeat.set(1, 1); // adjust tiling as needed
+            tex.repeat.set(initialTscale, initialTscale);
 
             // const normalMap = computeNormalMap(paperTex.image);
             // material.normalMap = normalMap;
@@ -51,14 +53,13 @@ export const SVGExports = ({
             // tex.colorSpace = SRGBColorSpace;
             setPaper(tex);
         });
-        // return paperTexture;
     }, []);
 
     useEffect(() => {
         paper?.repeat.set(tscale, tscale);
     }, [tscale, paper]);
 
-    const [thick, setThick] = useState(0.21);
+    const [thick, setThick] = useState(0.1);
     const [gap, setGap] = useState(0);
 
     const [size, setSize] = useState(500);
@@ -99,7 +100,7 @@ export const SVGExports = ({
                                     // normalMap: paper,
                                     // normalScale: new Vector2(0.1, 0.1),
                                     // color: 'white',
-                                    // flatShading: true,
+                                    flatShading: true,
                                     metalness: 0,
                                     roughness: 1,
                                 }),
@@ -111,15 +112,19 @@ export const SVGExports = ({
                                 }),
                                 // Sides
                                 new MeshStandardMaterial({
-                                    color: `hsl(30, 50%, ${((i / svgs.length) * 0.1 + 0.4) * 100}%)`,
+                                    // color: `hsl(30, 50%, ${((i / svgs.length) * 0.1 + 0.4) * 100}%)`,
+                                    color: '#666',
                                     flatShading: true,
                                     // map: paper,
                                 }),
                                 // Inside
                                 new MeshStandardMaterial({
-                                    color: 'red',
+                                    // color: '#333',
+                                    color: `hsl(30, 20%, ${((i / svgs.length) * 0.1 + 0.4) * 100}%)`,
                                     flatShading: true,
                                     map: paper,
+                                    metalness: 0,
+                                    roughness: 1,
                                 }),
                             ]}
                         ></mesh>
@@ -172,8 +177,8 @@ export const SVGExports = ({
         return () => worker.current!.removeEventListener('message', fn);
     }, []);
 
-    return (
-        <div className="bg-base-100 p-4 rounded-md">
+    const form = (
+        <div>
             <button
                 disabled={progress != null}
                 className="btn"
@@ -199,146 +204,150 @@ export const SVGExports = ({
                     onChange={(value) => (value ? setSvStep(value) : null)}
                 />
             </label>
-            <div className="flex flex-wrap gap-4">
-                {svgs.map((item, i) => (
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox={`${-item.zoom / 2} ${-item.zoom / 2} ${item.zoom} ${item.zoom}`}
-                        style={{background: 'black', width: 200, height: 200}}
-                        key={i}
-                    >
-                        <path fill="red" fillRule="evenodd" d={item.svg} />
-                    </svg>
-                ))}
-            </div>
-            {svgs.length ? (
-                <>
-                    <button className="btn" onClick={() => setSvgs([])}>
-                        Clear SVGs
-                    </button>
-                    <button
-                        className="btn btn-primary"
-                        onClick={async () => {
-                            // get the ZIP stream in a Blob
-                            const blob = await downloadZip(
-                                svgs.map(({svg, zoom}, i) => ({
-                                    name: `level-${i}.svg`,
-                                    input: `
+        </div>
+    );
+
+    if (!svgs.length) {
+        return <div className="bg-base-100 p-4 rounded-md">{form}</div>;
+    }
+
+    return (
+        <div className="bg-base-100 p-4 rounded-md">
+            {form}
+            <details>
+                <summary>{svgs.length} svgs</summary>
+                <div className="flex flex-wrap gap-4">
+                    {svgs.map((item, i) => (
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox={`${-item.zoom / 2} ${-item.zoom / 2} ${item.zoom} ${item.zoom}`}
+                            style={{background: 'black', width: 200, height: 200}}
+                            key={i}
+                        >
+                            <path fill="red" fillRule="evenodd" d={item.svg} />
+                        </svg>
+                    ))}
+                </div>
+            </details>
+            <div className="mb-4">
+                <button className="btn" onClick={() => setSvgs([])}>
+                    Clear SVGs
+                </button>
+                <button
+                    className="btn btn-primary ml-4"
+                    onClick={async () => {
+                        // get the ZIP stream in a Blob
+                        const blob = await downloadZip(
+                            svgs.map(({svg, zoom}, i) => ({
+                                name: `level-${i}.svg`,
+                                input: `
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="${-zoom / 2} ${-zoom / 2} ${zoom} ${zoom}">
             <path fill="red" fill-rule="evenodd" d="${svg}" />
         </svg>`,
-                                })),
-                            ).blob();
+                            })),
+                        ).blob();
 
-                            // make and click a temporary link to download the Blob
-                            const link = document.createElement('a');
-                            link.href = URL.createObjectURL(blob);
-                            link.download = 'svgs.zip';
-                            link.click();
-                            link.remove();
-                        }}
-                    >
-                        Download SVGs as .zip
-                    </button>
-                </>
-            ) : null}
-            {svgs.length ? (
-                <>
-                    <ThreedScreenInner size={size} color="#000">
-                        {rotate ? <OrbitingCamera radius={10} target={[0, 0, 0]} /> : null}
-                        {threedItems}
-                    </ThreedScreenInner>
-                    <label className="m-4">
-                        {'Thick: '}
-                        <BlurInt
-                            className="input w-20"
-                            step={0.01}
-                            value={thick}
-                            onChange={(value) => (value != null ? setThick(value) : null)}
-                        />
-                    </label>
-                    <label className="m-4">
-                        {'Gap: '}
-                        <BlurInt
-                            className="input w-20"
-                            step={0.01}
-                            value={gap}
-                            onChange={(value) => (value != null ? setGap(value) : null)}
-                        />
-                    </label>
-                    <label className="m-4">
-                        {'Size: '}
-                        <BlurInt
-                            className="input w-20"
-                            step={50}
-                            value={size}
-                            onChange={(value) => (value != null ? setSize(value) : null)}
-                        />
-                    </label>
-                    <button
-                        className="btn"
-                        onClick={() => {
-                            let m = 0;
-                            const step = () => {
-                                setMax(m++);
-                                if (m < svgs.length + 1) {
-                                    setTimeout(
-                                        step,
-                                        (m - 2) % Math.round(1 / svStep) === 0 ? 1600 : 400,
-                                    );
-                                }
-                            };
-                            step();
-                        }}
-                    >
-                        Animate Max
-                    </button>
-                    <div>
-                        <label className="m-2">
-                            {'Min: '}
-                            <BlurInt
-                                className="input w-10"
-                                step={1}
-                                value={min}
-                                onChange={(value) => (value != null ? setMin(value) : null)}
-                            />
-                        </label>
-                        <label className="m-2">
-                            {'Max: '}
-                            <BlurInt
-                                className="input w-10"
-                                step={1}
-                                value={max}
-                                onChange={(value) => (value != null ? setMax(value) : null)}
-                            />
-                        </label>
-                        <label className="m-2">
-                            {'Reverse: '}
-                            <input
-                                type="checkbox"
-                                className="checkbox"
-                                checked={rev}
-                                onChange={() => setRev(!rev)}
-                            />
-                        </label>
-                        <button
-                            className={`btn ` + (rotate ? 'btn-accent' : '')}
-                            onClick={() => setRotate(!rotate)}
-                        >
-                            Rotate
-                        </button>
-                        <label className="m-2">
-                            {'Tscale: '}
-                            <BlurInt
-                                className="input w-20"
-                                step={1}
-                                value={tscale}
-                                onChange={(value) => (value != null ? setTscale(value) : null)}
-                            />
-                        </label>
-                    </div>
-                </>
-            ) : null}
+                        // make and click a temporary link to download the Blob
+                        const link = document.createElement('a');
+                        link.href = URL.createObjectURL(blob);
+                        link.download = 'svgs.zip';
+                        link.click();
+                        link.remove();
+                    }}
+                >
+                    Download SVGs as .zip
+                </button>
+            </div>
+            <ThreedScreenInner size={size} color="#000">
+                {rotate ? <OrbitingCamera radius={10} target={[0, 0, 0]} /> : null}
+                {threedItems}
+            </ThreedScreenInner>
+            <label className="m-4">
+                {'Thick: '}
+                <BlurInt
+                    className="input w-20"
+                    step={0.01}
+                    value={thick}
+                    onChange={(value) => (value != null ? setThick(value) : null)}
+                />
+            </label>
+            <label className="m-4">
+                {'Gap: '}
+                <BlurInt
+                    className="input w-20"
+                    step={0.01}
+                    value={gap}
+                    onChange={(value) => (value != null ? setGap(value) : null)}
+                />
+            </label>
+            <label className="m-4">
+                {'Size: '}
+                <BlurInt
+                    className="input w-20"
+                    step={50}
+                    value={size}
+                    onChange={(value) => (value != null ? setSize(value) : null)}
+                />
+            </label>
+            <button
+                className="btn"
+                onClick={() => {
+                    let m = 0;
+                    const step = () => {
+                        setMax(m++);
+                        if (m < svgs.length + 1) {
+                            setTimeout(step, (m - 2) % Math.round(1 / svStep) === 0 ? 1600 : 400);
+                        }
+                    };
+                    step();
+                }}
+            >
+                Animate Max
+            </button>
+            <div>
+                <label className="m-2">
+                    {'Min: '}
+                    <BlurInt
+                        className="input w-10"
+                        step={1}
+                        value={min}
+                        onChange={(value) => (value != null ? setMin(value) : null)}
+                    />
+                </label>
+                <label className="m-2">
+                    {'Max: '}
+                    <BlurInt
+                        className="input w-10"
+                        step={1}
+                        value={max}
+                        onChange={(value) => (value != null ? setMax(value) : null)}
+                    />
+                </label>
+                <label className="m-2">
+                    {'Reverse: '}
+                    <input
+                        type="checkbox"
+                        className="checkbox"
+                        checked={rev}
+                        onChange={() => setRev(!rev)}
+                    />
+                </label>
+                <button
+                    className={`btn ` + (rotate ? 'btn-accent' : '')}
+                    onClick={() => setRotate(!rotate)}
+                >
+                    Rotate
+                </button>
+                <label className="m-2">
+                    {'Tscale: '}
+                    <BlurInt
+                        className="input w-20"
+                        step={1}
+                        value={tscale}
+                        onChange={(value) => (value != null ? setTscale(value) : null)}
+                    />
+                </label>
+            </div>
         </div>
     );
 };
@@ -362,14 +371,17 @@ function OrbitingCamera({
         camera.lookAt(...target);
 
         const light: DirectionalLight = scene.getObjectByName('dirlight') as DirectionalLight;
-        light.position.copy(camera.position);
-        light.position.set(
-            radius * Math.cos(angleRef.current + Math.PI / 4) + target[0],
-            target[1],
-            radius * Math.sin(angleRef.current + Math.PI / 4) + target[2],
-        );
-        light.target.position.set(...target);
-        light.target.updateMatrixWorld();
+        if (light) {
+            const off = Math.PI / 8;
+            light.position.copy(camera.position);
+            light.position.set(
+                radius * Math.cos(angleRef.current + off) + target[0],
+                target[1],
+                radius * Math.sin(angleRef.current + off) + target[2],
+            );
+            light.target.position.set(...target);
+            light.target.updateMatrixWorld();
+        }
     });
 
     return null; // this is a "controller" component

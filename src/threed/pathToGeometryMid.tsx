@@ -18,19 +18,16 @@ import {Coord} from '../types';
 export function pathToGeometryMid({
     fullThickness,
     thick,
-    res: {sections, inners, outer, indexSections},
+    res: {inners, outer},
 }: {
     fullThickness: number;
     thick: number;
     res: GeometryInner;
 }) {
     const thickness = fullThickness ? fullThickness + thick : thick;
-    const flat3d = sections.flatMap((s) => s.positions);
+    const {sections, indexSections} = calcPositionsAndTriangles(outer, inners, thickness);
 
-    flat3d.push(...outer.flatMap((pt) => [pt.x, pt.y, -thickness]));
-    inners.forEach((pts) => {
-        flat3d.push(...pts.flatMap((pt) => [pt.x, pt.y, -thickness]));
-    });
+    const flat3d = sections.flatMap((s) => s.positions);
     const vertices = new Float32Array(flat3d);
 
     const geometry = new BufferGeometry();
@@ -83,8 +80,7 @@ export function pathToGeometryMid({
 export type GeometryInner = {
     outer: Coord[];
     inners: Coord[][];
-    sections: {name: string; positions: number[]}[];
-    indexSections: {index: number[]; name: string}[];
+    // indexSections: {index: number[]; name: string}[];
 };
 
 function makeSpans(indexSections: {index: number[]; name: string}[]) {
@@ -140,19 +136,14 @@ export function pathToGeometryInner(pkpath: PKPath): GeometryInner | undefined {
         rasterSegPoints(pathToPoints(region.segments, region.origin)),
     );
 
-    const sections: {name: string; positions: number[]}[] = [
-        {name: 'top', positions: outer.flatMap((pt) => [pt.x, pt.y, 0])},
-    ];
+    return {outer, inners};
+}
 
-    // const flat = outer.flatMap((pt) => [pt.x, pt.y]);
+const calcPositionsAndTriangles = (outer: Coord[], inners: Coord[][], thickness: number) => {
     const holeStarts: number[] = [];
     let count = outer.length;
-
     inners.forEach((pts) => {
         holeStarts.push(count);
-        // flat.push(...pts.flatMap((pt) => [pt.x, pt.y]));
-
-        sections.push({name: 'hole', positions: pts.flatMap((pt) => [pt.x, pt.y, 0])});
         count += pts.length;
     });
 
@@ -187,8 +178,30 @@ export function pathToGeometryInner(pkpath: PKPath): GeometryInner | undefined {
         indexSections.push({name: 'hole', index});
     });
 
-    return {sections, inners, outer, indexSections};
-}
+    // Sections
+    const sections: {name: string; positions: number[]}[] = [
+        {name: 'top-outer', positions: outer.flatMap((pt) => [pt.x, pt.y, 0])},
+        ...inners.map((pts) => ({
+            name: 'top-hole',
+            positions: pts.flatMap((p) => [p.x, p.y, 0]),
+        })),
+        {name: 'bottom-outer', positions: outer.flatMap((p) => [p.x, p.y, -thickness])},
+        ...inners.map((pts) => ({
+            name: 'bottom-hole',
+            positions: pts.flatMap((p) => [p.x, p.y, -thickness]),
+        })),
+    ];
+
+    // const flat3d = sections.flatMap((s) => s.positions);
+    // sections.push()
+
+    // // flat3d.push(...outer.flatMap((pt) => [pt.x, pt.y, -thickness]));
+    // inners.forEach((pts) => {
+    //     flat3d.push(...pts.flatMap((pt) => [pt.x, pt.y, -thickness]));
+    // });
+
+    return {sections, indexSections};
+};
 
 export function pathToGeometry({
     pkpath,
@@ -204,15 +217,26 @@ export function pathToGeometry({
     const innerResult = pathToGeometryInner(pkpath);
     if (!innerResult) return;
 
-    const {sections, inners, outer, indexSections} = innerResult;
+    const {inners, outer} = innerResult;
+    // const indexSections = calcPositionsAndTriangles(outer, inners);
+    const thickness = fullThickness ? xoff + thick : thick;
+    const {sections, indexSections} = calcPositionsAndTriangles(outer, inners, thickness);
+
     const flat3d = sections.flatMap((s) => s.positions);
 
-    const thickness = fullThickness ? xoff + thick : thick;
+    // const sections: {name: string; positions: number[]}[] = [
+    //     {name: 'top', positions: outer.flatMap((pt) => [pt.x, pt.y, 0])},
+    //     ...inners.map((pts) => ({
+    //         name: 'hol',
+    //         positions: pts.flatMap((p) => [p.x, p.y, 0]),
+    //     })),
+    // ];
+    // const flat3d = sections.flatMap((s) => s.positions);
 
-    flat3d.push(...outer.flatMap((pt) => [pt.x, pt.y, -thickness]));
-    inners.forEach((pts) => {
-        flat3d.push(...pts.flatMap((pt) => [pt.x, pt.y, -thickness]));
-    });
+    // flat3d.push(...outer.flatMap((pt) => [pt.x, pt.y, -thickness]));
+    // inners.forEach((pts) => {
+    //     flat3d.push(...pts.flatMap((pt) => [pt.x, pt.y, -thickness]));
+    // });
     const vertices = new Float32Array(flat3d);
 
     const index = indexSections.flatMap((s) => s.index);

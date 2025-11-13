@@ -196,7 +196,7 @@ export const ThreedScreenInner = ({
                 style={{backgroundColor: 'white', height: size, width: size}}
                 gl={{antialias: true, preserveDrawingBuffer: true}}
             >
-                {/* <directionalLight
+                <directionalLight
                     position={lpos}
                     ref={dl}
                     name="dirlight"
@@ -210,7 +210,7 @@ export const ThreedScreenInner = ({
                         attach="shadow-camera"
                     ></orthographicCamera>
                 </directionalLight>
-
+                {/*
                 <directionalLight
                     position={[0, 2, 10]}
                     ref={dl}
@@ -244,7 +244,7 @@ export const ThreedScreenInner = ({
                     makeDefault
                     ref={virtualCamera}
                     position={[x, y, cameraDistance]}
-                    args={[fov, 1, 1, 2000]}
+                    args={[fov, 1, 0.01, 2000]}
                 />
                 <OrbitControls camera={virtualCamera.current!} />
                 {/* <ArcballControls camera={virtualCamera.current!} /> */}
