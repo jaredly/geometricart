@@ -34,7 +34,7 @@ const initialTConfig: TConfig = {
     mm: [0, 0],
     rev: false,
     gap: 0,
-    thick: 10,
+    thick: 0.1,
     size: 500,
     tscale: 1,
 };
@@ -48,7 +48,7 @@ export const SVGExports = ({
     config: Config;
     patternMap: Record<string, Tiling>;
 }) => {
-    const [svStep, setSvStep] = useState(2);
+    const [svStep, setSvStep] = useState(0.5);
     const [svgs, setSvgs] = useState([] as {svg: string; geom: GeometryInner[]; zoom: number}[]);
     const [paper, setPaper] = useState(null as null | Texture);
     const [tconfig, setTConfig] = useState(initialTConfig);
@@ -226,7 +226,7 @@ function makeThreedItems(
                     <mesh
                         key={j}
                         geometry={geom}
-                        position={[0, 0, i * (tconfig.gap + tconfig.thick) + mid]}
+                        position={[0, 0, i * (tconfig.gap + tconfig.thick) - mid]}
                         castShadow
                         receiveShadow
                         material={[
@@ -235,7 +235,7 @@ function makeThreedItems(
                                 // color: 'red',
                                 color: `hsl(30, 100%, ${((i / svgs.length) * 0.1 + 0.5) * 100}%)`,
                                 map: paper,
-                                // normalMap: paper,
+                                normalMap: paper,
                                 // normalScale: new Vector2(0.1, 0.1),
                                 // color: 'white',
                                 flatShading: true,

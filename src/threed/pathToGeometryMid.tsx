@@ -4,7 +4,7 @@ import {BufferAttribute} from 'three';
 import {BufferGeometry, Float32BufferAttribute} from 'three/src/Three';
 import {boundsForCoords, segmentsBounds} from '../editor/Bounds';
 import {cmdsToSegments} from '../gcode/cmdsToSegments';
-import {scaleMatrix} from '../rendering/getMirrorTransforms';
+import {dist, scaleMatrix} from '../rendering/getMirrorTransforms';
 import {
     ensureClockwise,
     isClockwise,
@@ -153,6 +153,17 @@ const doEarcut = (outer: Coord[], inners: Coord[][]) => {
     return {holeStarts, topIndex, count};
 };
 
+const pdists = (pts: Coord[]) => {
+    let x = 0;
+    const res: number[] = [0];
+    for (let i = 1; i < pts.length; i++) {
+        x += dist(pts[i], pts[i - 1]);
+        res.push(x);
+    }
+    x += dist(pts[0], pts[pts.length - 1]);
+    return {dists: res, max: x};
+};
+
 const calcPositionsAndTriangles = (pre: GeometryInner, thickness: number, zoff: number) => {
     const {
         outer,
@@ -165,29 +176,43 @@ const calcPositionsAndTriangles = (pre: GeometryInner, thickness: number, zoff: 
     const bh = bounds.y1 - bounds.y0;
 
     const positions: number[] = [
+        // bottom-outer
+        ...outer.flatMap((p) => [p.x, p.y, thickness]),
+        // bottom-holes
+        ...inners.flatMap((pts) => pts.flatMap((p) => [p.x, p.y, thickness])),
         // top-outer
         ...outer.flatMap((pt) => [pt.x, pt.y, 0]),
         // top-holes
         ...inners.flatMap((pts) => pts.flatMap((p) => [p.x, p.y, 0])),
-        // bottom-outer
-        ...outer.flatMap((p) => [p.x, p.y, -thickness]),
-        // bottom-holes
-        ...inners.flatMap((pts) => pts.flatMap((p) => [p.x, p.y, -thickness])),
     ];
     // Now for the positions for the sides
     positions.push(...positions);
 
+    const odists = pdists(outer);
+    const omax = odists.max;
+    const idists = inners.map(pdists);
+    const imaxs = idists.map((d) => d.max);
+
     const uvs: number[] = [
+        // top
         ...outer.flatMap((pt) => [(pt.x - bounds.x0) / bw, (pt.y - bounds.y0) / bh]),
         ...inners.flatMap((pts) =>
             pts.flatMap((p) => [(p.x - bounds.x0) / bw, (p.y - bounds.y0) / bh]),
         ),
+        // bottom
         ...outer.flatMap((pt) => [(pt.x - bounds.x0) / bw, (pt.y - bounds.y0) / bh]),
         ...inners.flatMap((pts) =>
             pts.flatMap((p) => [(p.x - bounds.x0) / bw, (p.y - bounds.y0) / bh]),
+        ),
+        // top borders
+        ...odists.dists.flatMap((d) => [d / omax + zoff, 0]),
+        ...idists.flatMap((pts, i) => pts.dists.flatMap((p) => [p / imaxs[i] + zoff * 2, 0])),
+        // bottom borders
+        ...odists.dists.flatMap((d) => [d / omax + zoff, thickness / omax]),
+        ...idists.flatMap((pts, i) =>
+            pts.dists.flatMap((p) => [p / imaxs[i] + zoff * 2, thickness / imaxs[i]]),
         ),
     ];
-    uvs.push(...uvs);
 
     const indexSections: {name: string; index: number[]}[] = [
         {name: 'top', index: topIndex},
