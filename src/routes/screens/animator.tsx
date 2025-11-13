@@ -44,7 +44,10 @@ export async function action({request, params}: Route.ActionArgs) {
 
 export const col = (i: number) => ['red', 'yellow', 'blue'][i % 3];
 
-export default function Animator({loaderData: {patterns, initialState}}: Route.ComponentProps) {
+export default function Animator({
+    loaderData: {patterns, initialState},
+    params,
+}: Route.ComponentProps) {
     const [config, setConfig] = useState(initial);
 
     // const {peg, multi, repl, lineWidth, showGuides, zoom, preview, showNice, size, canv} = config;
@@ -74,7 +77,10 @@ export default function Animator({loaderData: {patterns, initialState}}: Route.C
                         <li>
                             <a href="/">Geometric Art</a>
                         </li>
-                        <li>Animator</li>
+                        <li>
+                            <a href="/animator">Animator</a>
+                        </li>
+                        <li>{params.id}</li>
                     </ul>
                 </div>
             </div>

@@ -26,18 +26,33 @@ export async function action({request, params}: Route.ActionArgs) {
 
 export default function Animators({loaderData}: Route.ComponentProps) {
     return (
-        <div>
-            <h1>Animators</h1>
-            {loaderData.map(({id, animated, updated}) => (
-                <div key={id}>
-                    <a className="link px-4 py-4 block" href={`/animator/${id}`}>
-                        {updated}
-                    </a>
+        <div className="mx-auto w-6xl p-4 pt-0 bg-base-200 shadow-base-300 shadow-md">
+            <div className="sticky top-0 py-2 mb-2 bg-base-200 shadow-md shadow-base-200 z-10">
+                <div className="breadcrumbs text-sm">
+                    <ul>
+                        <li>
+                            <a href="/">Geometric Art</a>
+                        </li>
+                        <li>Animator</li>
+                    </ul>
                 </div>
-            ))}
-            <form method="POST">
-                <button>New Animator</button>
-            </form>
+            </div>
+            <div className="gap-4 p-4">
+                <h1>Animators</h1>
+                {loaderData.map(({id, animated, updated}) => (
+                    <div key={id}>
+                        <a
+                            className="link px-4 py-4 block hover:bg-base-100"
+                            href={`/animator/${id}`}
+                        >
+                            {updated}
+                        </a>
+                    </div>
+                ))}
+                <form method="POST">
+                    <button className="btn hover:bg-base-100">New Animator</button>
+                </form>
+            </div>
         </div>
     );
 }
