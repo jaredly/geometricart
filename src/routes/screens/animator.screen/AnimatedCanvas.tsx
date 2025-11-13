@@ -42,7 +42,7 @@ export const AnimatedCanvas = ({
             ctx.translate(config.zoom / 2, config.zoom / 2);
             drawWoven(ctx, patternDatas[config.preview], (config.lineWidth / 200) * config.zoom);
             ctx.restore();
-        } else {
+        } else if (state.layers.length) {
             const shape = patternMap[state.layers[0].pattern].shape;
             renderFrame(state, shape, config.preview, ctx, config);
         }

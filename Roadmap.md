@@ -1,3 +1,7 @@
+
+# I want to do real UV wrapping of stuff
+
+
 # TODO
 
 - [ ] Make pattern-svg more efficient. Don't calculate woven if we don't need to show it.
