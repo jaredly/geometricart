@@ -152,10 +152,11 @@ const calcFull = (
         ),
         state.crops,
     );
-    const bounds: BarePath[] = state.crops
+    const bounds: (BarePath & {hole?: boolean})[] = state.crops
         ? state.crops
               .filter((c) => !c.disabled)
               .map((crop) => ({
+                  hole: crop.hole,
                   origin: crop.segments[crop.segments.length - 1].to,
                   segments: crop.segments,
               }))
@@ -225,19 +226,8 @@ export const combinedPath = (preview: number, config: Config, state: State, shap
 
     const paths = fullPaths(full, config.lineWidth, peggedZoom, [205 / 255, 127 / 255, 1 / 255]);
 
-    if (config.bounds && bounds) {
-        bounds.forEach((path) => {
-            paths.push({
-                path: pkPathWithCmds(path.origin, path.segments),
-                alpha: 1,
-                color: [205 / 255, 127 / 255, 1 / 255],
-                strokeWidth: (config.lineWidth / 200) * peggedZoom,
-            });
-        });
-    }
-
     const onePath = new pk.Path();
-    paths.forEach(({path, alpha, color, strokeWidth}) => {
+    paths.forEach(({path, alpha, strokeWidth}) => {
         if (alpha !== 1) return; // ignore
         path.stroke({
             width: strokeWidth,
@@ -247,6 +237,30 @@ export const combinedPath = (preview: number, config: Config, state: State, shap
         onePath.op(path, pk.PathOp.Union);
         path.delete();
     });
+
+    if (config.bounds && bounds) {
+        const pkps = bounds.map((path) => {
+            const pkp = pkPathWithCmds(path.origin, path.segments);
+            if (config.sharp) {
+                if (path.hole) {
+                    onePath.op(pkp, pk.PathOp.Difference);
+                } else {
+                    onePath.op(pkp, pk.PathOp.Intersect);
+                }
+            }
+            return pkp;
+        });
+        pkps.forEach((pkp) => {
+            pkp.stroke({
+                width: (config.lineWidth / 200) * peggedZoom,
+                cap: config.sharp ? pk.StrokeCap.Butt : pk.StrokeCap.Round,
+                join: config.sharp ? pk.StrokeJoin.Miter : pk.StrokeJoin.Round,
+            });
+            onePath.op(pkp, pk.PathOp.Union);
+            pkp.delete();
+        });
+    }
+
     onePath.simplify();
 
     return onePath;
