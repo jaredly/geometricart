@@ -31,7 +31,8 @@ export const SVGExports = ({
     config: Config;
     patternMap: Record<string, Tiling>;
 }) => {
-    const [svStep, setSvStep] = useState(0.5);
+    const [svStep, setSvStep] = useState(2);
+    // const [svStep, setSvStep] = useState(0.5);
     const [svgs, setSvgs] = useState([] as {svg: string; geom: GeometryInner[]; zoom: number}[]);
 
     const [paper, setPaper] = useState(null as null | Texture);

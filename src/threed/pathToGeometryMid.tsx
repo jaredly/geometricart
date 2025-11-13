@@ -216,7 +216,7 @@ const calcPositionsAndTriangles = (pre: GeometryInner, thickness: number, zoff: 
             uvs.push(u, v);
         } else {
             const u = (z - minZ + zoff) / sizeY; // 0 → 1 across Z
-            const v = (y - minY) / sizeY; // 0 → 1 across Y
+            const v = (y - minY + (x - minX)) / sizeY; // 0 → 1 across Y
             uvs.push(u, v);
         }
     }
