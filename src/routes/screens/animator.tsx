@@ -489,7 +489,7 @@ export default function Animator({
 }
 
 const initial: Config = {
-    sharp: false,
+    sharp: true,
     peg: false,
     multi: false,
     repl: 1,

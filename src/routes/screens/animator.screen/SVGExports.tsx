@@ -7,9 +7,7 @@ import {Tiling} from '../../../types';
 import {Config} from '../animator';
 import {State} from './animator.utils';
 import {MessageFromWorker, MessageToWorker} from './svg-worker';
-import {useFrame, useThree} from '@react-three/fiber';
 import {
-    DirectionalLight,
     MeshBasicMaterial,
     MeshPhongMaterial,
     MeshStandardMaterial,
@@ -19,8 +17,27 @@ import {
     Vector2,
     // normalmap
 } from 'three';
+import {OrbitingCamera} from './OrbitingCamera';
+import {ConfigForm} from './ConfigForm';
 
 const initialTscale = 5;
+
+export type TConfig = {
+    mm: [number, number];
+    rev: boolean;
+    gap: number;
+    thick: number;
+    size: number;
+    tscale: number;
+};
+const initialTConfig: TConfig = {
+    mm: [0, 0],
+    rev: false,
+    gap: 0,
+    thick: 10,
+    size: 500,
+    tscale: 1,
+};
 
 export const SVGExports = ({
     state,
@@ -32,11 +49,9 @@ export const SVGExports = ({
     patternMap: Record<string, Tiling>;
 }) => {
     const [svStep, setSvStep] = useState(2);
-    // const [svStep, setSvStep] = useState(0.5);
     const [svgs, setSvgs] = useState([] as {svg: string; geom: GeometryInner[]; zoom: number}[]);
-
     const [paper, setPaper] = useState(null as null | Texture);
-    const [tscale, setTscale] = useState(initialTscale);
+    const [tconfig, setTConfig] = useState(initialTConfig);
 
     useEffect(() => {
         const loader = new TextureLoader();
@@ -45,108 +60,17 @@ export const SVGExports = ({
             tex.wrapS = RepeatWrapping;
             tex.wrapT = RepeatWrapping;
             tex.repeat.set(initialTscale, initialTscale);
-
-            // const normalMap = computeNormalMap(paperTex.image);
-            // material.normalMap = normalMap;
-            // material.normalScale.set(1, 1);
-
-            // If you're using a recent Three.js version:
-            // tex.colorSpace = SRGBColorSpace;
             setPaper(tex);
         });
     }, []);
 
     useEffect(() => {
-        paper?.repeat.set(tscale, tscale);
-    }, [tscale, paper]);
-
-    const [thick, setThick] = useState(0.1);
-    const [gap, setGap] = useState(0);
-
-    const [size, setSize] = useState(500);
-
-    const [min, setMin] = useState(0);
-    const [max, setMax] = useState(0);
-    const [rev, setRev] = useState(false);
+        paper?.repeat.set(tconfig.tscale, tconfig.tscale);
+    }, [tconfig.tscale, paper]);
 
     const threedItems = useMemo(() => {
-        const items = rev ? svgs.toReversed() : svgs;
-        const mid = (thick * items.length + gap * (items.length - 1)) / 2;
-        return items.slice(min, max === 0 ? svgs.length : max).map(({geom}, i) => {
-            const geometry = geom.map((sub) =>
-                pathToGeometryMid({
-                    fullThickness: 0,
-                    thick,
-                    res: sub,
-                    zoff: i * thick + gap * i,
-                }),
-            );
-            if (!geometry) {
-                return null;
-            }
-            return (
-                <React.Fragment key={`${i}`}>
-                    {geometry.map((geom, j) => (
-                        <mesh
-                            key={j}
-                            geometry={geom}
-                            position={[0, 0, i * (gap + thick) - mid]}
-                            castShadow
-                            receiveShadow
-                            material={[
-                                // Front
-                                new MeshStandardMaterial({
-                                    // color: 'red',
-                                    color: `hsl(30, 100%, ${((i / svgs.length) * 0.1 + 0.5) * 100}%)`,
-                                    map: paper,
-                                    // normalMap: paper,
-                                    // normalScale: new Vector2(0.1, 0.1),
-                                    // color: 'white',
-                                    flatShading: true,
-                                    metalness: 0,
-                                    roughness: 1,
-                                }),
-                                // Back
-                                new MeshStandardMaterial({
-                                    color: `hsl(30, 100%, ${((i / svgs.length) * 0.1 + 0.5) * 100}%)`,
-                                    flatShading: true,
-                                    map: paper,
-                                }),
-                                // Sides
-                                new MeshStandardMaterial({
-                                    // color: `hsl(30, 50%, ${((i / svgs.length) * 0.1 + 0.4) * 100}%)`,
-                                    color: '#666',
-                                    flatShading: true,
-                                    map: paper,
-                                }),
-                                // Inside
-                                new MeshStandardMaterial({
-                                    // color: '#333',
-                                    color: `hsl(30, 20%, ${((i / svgs.length) * 0.1 + 0.4) * 100}%)`,
-                                    flatShading: true,
-                                    map: paper,
-                                    metalness: 0,
-                                    roughness: 1,
-                                }),
-                            ]}
-                        ></mesh>
-                    ))}
-                    {/* {isSelected ? (
-                        <points
-                            geometry={geometry}
-                            position={[center.x, center.y, xoff]}
-                            material={
-                                new PointsMaterial({
-                                    color: 'white',
-                                    size: 0.3,
-                                })
-                            }
-                        />
-                    ) : null} */}
-                </React.Fragment>
-            );
-        });
-    }, [svgs, thick, gap, min, max, rev]);
+        return makeThreedItems(tconfig, svgs, paper);
+    }, [svgs, tconfig]);
 
     const worker = useRef(null as null | Worker);
     const [rotate, setRotate] = useState(false);
@@ -260,131 +184,90 @@ export const SVGExports = ({
                     Download SVGs as .zip
                 </button>
             </div>
-            <ThreedScreenInner size={size} color="#000">
+            <ThreedScreenInner size={tconfig.size} color="#000">
                 {rotate ? <OrbitingCamera radius={10} target={[0, 0, 0]} /> : null}
                 {threedItems}
             </ThreedScreenInner>
-            <label className="m-4">
-                {'Thick: '}
-                <BlurInt
-                    className="input w-20"
-                    step={0.01}
-                    value={thick}
-                    onChange={(value) => (value != null ? setThick(value) : null)}
-                />
-            </label>
-            <label className="m-4">
-                {'Gap: '}
-                <BlurInt
-                    className="input w-20"
-                    step={0.01}
-                    value={gap}
-                    onChange={(value) => (value != null ? setGap(value) : null)}
-                />
-            </label>
-            <label className="m-4">
-                {'Size: '}
-                <BlurInt
-                    className="input w-20"
-                    step={50}
-                    value={size}
-                    onChange={(value) => (value != null ? setSize(value) : null)}
-                />
-            </label>
-            <button
-                className="btn"
-                onClick={() => {
-                    let m = 0;
-                    const step = () => {
-                        setMax(m++);
-                        if (m < svgs.length + 1) {
-                            setTimeout(step, (m - 2) % Math.round(1 / svStep) === 0 ? 1600 : 400);
-                        }
-                    };
-                    step();
-                }}
-            >
-                Animate Max
-            </button>
-            <div>
-                <label className="m-2">
-                    {'Min: '}
-                    <BlurInt
-                        className="input w-10"
-                        step={1}
-                        value={min}
-                        onChange={(value) => (value != null ? setMin(value) : null)}
-                    />
-                </label>
-                <label className="m-2">
-                    {'Max: '}
-                    <BlurInt
-                        className="input w-10"
-                        step={1}
-                        value={max}
-                        onChange={(value) => (value != null ? setMax(value) : null)}
-                    />
-                </label>
-                <label className="m-2">
-                    {'Reverse: '}
-                    <input
-                        type="checkbox"
-                        className="checkbox"
-                        checked={rev}
-                        onChange={() => setRev(!rev)}
-                    />
-                </label>
-                <button
-                    className={`btn ` + (rotate ? 'btn-accent' : '')}
-                    onClick={() => setRotate(!rotate)}
-                >
-                    Rotate
-                </button>
-                <label className="m-2">
-                    {'Tscale: '}
-                    <BlurInt
-                        className="input w-20"
-                        step={1}
-                        value={tscale}
-                        onChange={(value) => (value != null ? setTscale(value) : null)}
-                    />
-                </label>
-            </div>
+            <ConfigForm
+                tconfig={tconfig}
+                setTConfig={setTConfig}
+                svgs={svgs}
+                svStep={svStep}
+                rotate={rotate}
+                setRotate={setRotate}
+            />
         </div>
     );
 };
 
-function OrbitingCamera({
-    radius,
-    target = [0, 0, 0],
-}: {
-    radius: number;
-    target: [number, number, number];
-}) {
-    const {camera, scene} = useThree();
-    const angleRef = useRef(Math.PI / 2);
-
-    useFrame((state, delta) => {
-        angleRef.current += delta * 0.5; // speed
-
-        camera.position.x = radius * Math.cos(angleRef.current) + target[0];
-        camera.position.z = radius * Math.sin(angleRef.current) + target[2];
-        camera.position.y = target[1];
-        camera.lookAt(...target);
-
-        const light: DirectionalLight = scene.getObjectByName('dirlight') as DirectionalLight;
-        if (light) {
-            const off = Math.PI / 8;
-            light.position.copy(camera.position);
-            light.position.set(
-                radius * Math.cos(angleRef.current + off) + target[0],
-                target[1],
-                radius * Math.sin(angleRef.current + off) + target[2],
-            );
-            light.target.position.set(...target);
-            light.target.updateMatrixWorld();
+function makeThreedItems(
+    tconfig: TConfig,
+    svgs: {svg: string; geom: GeometryInner[]; zoom: number}[],
+    paper: Texture | null,
+) {
+    const items = tconfig.rev ? svgs.toReversed() : svgs;
+    const mid = (tconfig.thick * items.length + tconfig.gap * (items.length - 1)) / 2;
+    const [min, max] = tconfig.mm;
+    return items.slice(min, max === 0 ? svgs.length : max).map(({geom}, i) => {
+        const geometry = geom.map((sub) =>
+            pathToGeometryMid({
+                fullThickness: 0,
+                thick: tconfig.thick,
+                res: sub,
+                zoff: i * tconfig.thick + tconfig.gap * i,
+            }),
+        );
+        if (!geometry) {
+            return null;
         }
+        return (
+            <React.Fragment key={`${i}`}>
+                {geometry.map((geom, j) => (
+                    <mesh
+                        key={j}
+                        geometry={geom}
+                        position={[0, 0, i * (tconfig.gap + tconfig.thick) + mid]}
+                        castShadow
+                        receiveShadow
+                        material={[
+                            // Front
+                            new MeshStandardMaterial({
+                                // color: 'red',
+                                color: `hsl(30, 100%, ${((i / svgs.length) * 0.1 + 0.5) * 100}%)`,
+                                map: paper,
+                                // normalMap: paper,
+                                // normalScale: new Vector2(0.1, 0.1),
+                                // color: 'white',
+                                flatShading: true,
+                                metalness: 0,
+                                roughness: 1,
+                            }),
+                            // Back
+                            new MeshStandardMaterial({
+                                color: `hsl(30, 100%, ${((i / svgs.length) * 0.1 + 0.5) * 100}%)`,
+                                flatShading: true,
+                                map: paper,
+                            }),
+                            // Sides
+                            new MeshStandardMaterial({
+                                // color: `hsl(30, 50%, ${((i / svgs.length) * 0.1 + 0.4) * 100}%)`,
+                                color: '#666',
+                                flatShading: true,
+                                map: paper,
+                            }),
+                            // Inside
+                            new MeshStandardMaterial({
+                                // color: '#333',
+                                color: `hsl(30, 20%, ${((i / svgs.length) * 0.1 + 0.4) * 100}%)`,
+                                flatShading: true,
+                                map: paper,
+                                metalness: 0,
+                                roughness: 1,
+                            }),
+                        ]}
+                    ></mesh>
+                ))}
+            </React.Fragment>
+        );
     });
-
-    return null; // this is a "controller" component
 }
