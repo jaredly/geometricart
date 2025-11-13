@@ -2,7 +2,7 @@ import {Path as PKPath} from 'canvaskit-wasm';
 import earcut from 'earcut';
 import {BufferAttribute} from 'three';
 import {BufferGeometry, Float32BufferAttribute} from 'three/src/Three';
-import {segmentsBounds} from '../editor/Bounds';
+import {boundsForCoords, segmentsBounds} from '../editor/Bounds';
 import {cmdsToSegments} from '../gcode/cmdsToSegments';
 import {scaleMatrix} from '../rendering/getMirrorTransforms';
 import {
@@ -160,6 +160,10 @@ const calcPositionsAndTriangles = (pre: GeometryInner, thickness: number, zoff: 
         cut: {topIndex, holeStarts, count: topCount},
     } = pre;
 
+    const bounds = boundsForCoords(...outer);
+    const bw = bounds.x1 - bounds.x0;
+    const bh = bounds.y1 - bounds.y0;
+
     const positions: number[] = [
         // top-outer
         ...outer.flatMap((pt) => [pt.x, pt.y, 0]),
@@ -172,6 +176,18 @@ const calcPositionsAndTriangles = (pre: GeometryInner, thickness: number, zoff: 
     ];
     // Now for the positions for the sides
     positions.push(...positions);
+
+    const uvs: number[] = [
+        ...outer.flatMap((pt) => [(pt.x - bounds.x0) / bw, (pt.y - bounds.y0) / bh]),
+        ...inners.flatMap((pts) =>
+            pts.flatMap((p) => [(p.x - bounds.x0) / bw, (p.y - bounds.y0) / bh]),
+        ),
+        ...outer.flatMap((pt) => [(pt.x - bounds.x0) / bw, (pt.y - bounds.y0) / bh]),
+        ...inners.flatMap((pts) =>
+            pts.flatMap((p) => [(p.x - bounds.x0) / bw, (p.y - bounds.y0) / bh]),
+        ),
+    ];
+    uvs.push(...uvs);
 
     const indexSections: {name: string; index: number[]}[] = [
         {name: 'top', index: topIndex},
@@ -203,23 +219,22 @@ const calcPositionsAndTriangles = (pre: GeometryInner, thickness: number, zoff: 
     const {minX, sizeX, minY, sizeY, minZ, sizeZ} = getPositionBounds(positions);
 
     // 2. build UVs in same vertex order as positions
-    const uvs = [];
+    // const uvs = [];
 
-    for (let i = 0; i < positions.length; i += 3) {
-        const x = positions[i];
-        const y = positions[i + 1];
-        const z = positions[i + 2];
-
-        if (i < positions.length / 2) {
-            const u = (x - minX) / sizeX; // 0 → 1 across X
-            const v = (y - minY) / sizeY; // 0 → 1 across Y
-            uvs.push(u, v);
-        } else {
-            const u = (z - minZ + zoff) / sizeY; // 0 → 1 across Z
-            const v = (y - minY + (x - minX)) / sizeY; // 0 → 1 across Y
-            uvs.push(u, v);
-        }
-    }
+    // for (let i = 0; i < positions.length; i += 3) {
+    //     const x = positions[i];
+    //     const y = positions[i + 1];
+    //     const z = positions[i + 2];
+    //     if (i < positions.length / 2) {
+    //         const u = (x - minX) / sizeX; // 0 → 1 across X
+    //         const v = (y - minY) / sizeY; // 0 → 1 across Y
+    //         uvs.push(u, v);
+    //     } else {
+    //         const u = (z - minZ + zoff) / sizeY; // 0 → 1 across Z
+    //         const v = (y - minY + (x - minX)) / sizeY; // 0 → 1 across Y
+    //         uvs.push(u, v);
+    //     }
+    // }
 
     // const positions = positionSections.flatMap((s) => s.positions);
     const index = indexSections.flatMap((s) => s.index);
