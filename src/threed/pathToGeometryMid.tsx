@@ -18,26 +18,23 @@ import {Coord} from '../types';
 export function pathToGeometryMid({
     fullThickness,
     thick,
-    res: {inners, outer},
+    res,
 }: {
     fullThickness: number;
     thick: number;
     res: GeometryInner;
 }) {
     const thickness = fullThickness ? fullThickness + thick : thick;
-    const {sections, indexSections} = calcPositionsAndTriangles(outer, inners, thickness);
+    const {positions, index, spans} = calcPositionsAndTriangles(res, thickness);
 
-    const flat3d = sections.flatMap((s) => s.positions);
-    const vertices = new Float32Array(flat3d);
+    const vertices = new Float32Array(positions);
 
     const geometry = new BufferGeometry();
-    geometry.setIndex(indexSections.flatMap((s) => s.index));
+    geometry.setIndex(index);
     geometry.setAttribute('position', new BufferAttribute(vertices, 3));
     geometry.computeVertexNormals();
 
-    makeSpans(indexSections).forEach(({start, end}, i) => {
-        geometry.addGroup(start, end, i);
-    });
+    spans.forEach(({start, end}, i) => geometry.addGroup(start, end, i));
 
     {
         // 1. find bounds in 2D
@@ -46,9 +43,9 @@ export function pathToGeometryMid({
         let minY = Infinity,
             maxY = -Infinity;
 
-        for (let i = 0; i < flat3d.length; i += 3) {
-            const x = flat3d[i];
-            const y = flat3d[i + 1];
+        for (let i = 0; i < positions.length; i += 3) {
+            const x = positions[i];
+            const y = positions[i + 1];
 
             if (x < minX) minX = x;
             if (x > maxX) maxX = x;
@@ -80,12 +77,16 @@ export function pathToGeometryMid({
 export type GeometryInner = {
     outer: Coord[];
     inners: Coord[][];
-    // indexSections: {index: number[]; name: string}[];
+    cut: {
+        holeStarts: number[];
+        topIndex: number[];
+        count: number;
+    };
 };
 
 function makeSpans(indexSections: {index: number[]; name: string}[]) {
     const spans: {name: string; start: number; end: number}[] = [];
-    indexSections.forEach((section, i) => {
+    indexSections.forEach((section) => {
         if (!spans.length || spans[spans.length - 1].name !== section.name) {
             const start = !spans.length ? 0 : spans[spans.length - 1].end;
             spans.push({
@@ -136,10 +137,10 @@ export function pathToGeometryInner(pkpath: PKPath): GeometryInner | undefined {
         rasterSegPoints(pathToPoints(region.segments, region.origin)),
     );
 
-    return {outer, inners};
+    return {outer, inners, cut: doEarcut(outer, inners)};
 }
 
-const calcPositionsAndTriangles = (outer: Coord[], inners: Coord[][], thickness: number) => {
+const doEarcut = (outer: Coord[], inners: Coord[][]) => {
     const holeStarts: number[] = [];
     let count = outer.length;
     inners.forEach((pts) => {
@@ -151,6 +152,16 @@ const calcPositionsAndTriangles = (outer: Coord[], inners: Coord[][], thickness:
         outer.concat(...inners).flatMap((p) => [p.x, p.y]),
         holeStarts,
     );
+
+    return {holeStarts, topIndex, count};
+};
+
+const calcPositionsAndTriangles = (pre: GeometryInner, thickness: number) => {
+    const {
+        outer,
+        inners,
+        cut: {topIndex, holeStarts, count},
+    } = pre;
 
     const indexSections: {name: string; index: number[]}[] = [
         {name: 'top', index: topIndex},
@@ -192,15 +203,9 @@ const calcPositionsAndTriangles = (outer: Coord[], inners: Coord[][], thickness:
         })),
     ];
 
-    // const flat3d = sections.flatMap((s) => s.positions);
-    // sections.push()
-
-    // // flat3d.push(...outer.flatMap((pt) => [pt.x, pt.y, -thickness]));
-    // inners.forEach((pts) => {
-    //     flat3d.push(...pts.flatMap((pt) => [pt.x, pt.y, -thickness]));
-    // });
-
-    return {sections, indexSections};
+    const positions = sections.flatMap((s) => s.positions);
+    const index = indexSections.flatMap((s) => s.index);
+    return {positions, index, spans: makeSpans(indexSections)};
 };
 
 export function pathToGeometry({
@@ -217,36 +222,15 @@ export function pathToGeometry({
     const innerResult = pathToGeometryInner(pkpath);
     if (!innerResult) return;
 
-    const {inners, outer} = innerResult;
-    // const indexSections = calcPositionsAndTriangles(outer, inners);
     const thickness = fullThickness ? xoff + thick : thick;
-    const {sections, indexSections} = calcPositionsAndTriangles(outer, inners, thickness);
-
-    const flat3d = sections.flatMap((s) => s.positions);
-
-    // const sections: {name: string; positions: number[]}[] = [
-    //     {name: 'top', positions: outer.flatMap((pt) => [pt.x, pt.y, 0])},
-    //     ...inners.map((pts) => ({
-    //         name: 'hol',
-    //         positions: pts.flatMap((p) => [p.x, p.y, 0]),
-    //     })),
-    // ];
-    // const flat3d = sections.flatMap((s) => s.positions);
-
-    // flat3d.push(...outer.flatMap((pt) => [pt.x, pt.y, -thickness]));
-    // inners.forEach((pts) => {
-    //     flat3d.push(...pts.flatMap((pt) => [pt.x, pt.y, -thickness]));
-    // });
-    const vertices = new Float32Array(flat3d);
-
-    const index = indexSections.flatMap((s) => s.index);
+    const {positions, index} = calcPositionsAndTriangles(innerResult, thickness);
 
     const geometry = new BufferGeometry();
     geometry.setIndex(index);
-    geometry.setAttribute('position', new BufferAttribute(vertices, 3));
+    geometry.setAttribute('position', new BufferAttribute(new Float32Array(positions), 3));
     geometry.computeVertexNormals();
 
-    return {geometry, stl: toStl(index, flat3d)};
+    return {geometry, stl: toStl(index, positions)};
 }
 
 const toStl = (tris: number[], flat3d: number[]) => {
