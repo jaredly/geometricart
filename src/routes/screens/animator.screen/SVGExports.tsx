@@ -251,16 +251,17 @@ function makeThreedItems(
                             // Sides
                             new MeshStandardMaterial({
                                 // color: `hsl(30, 50%, ${((i / svgs.length) * 0.1 + 0.4) * 100}%)`,
-                                color: '#666',
+                                color: '#333',
                                 flatShading: true,
-                                map: paper,
+                                // map: paper,
                             }),
                             // Inside
                             new MeshStandardMaterial({
                                 // color: '#333',
-                                color: `hsl(30, 20%, ${((i / svgs.length) * 0.1 + 0.4) * 100}%)`,
+                                color: '#333',
+                                // color: `hsl(30, 20%, ${((i / svgs.length) * 0.1 + 0.4) * 100}%)`,
                                 flatShading: true,
-                                map: paper,
+                                // map: paper,
                                 metalness: 0,
                                 roughness: 1,
                             }),

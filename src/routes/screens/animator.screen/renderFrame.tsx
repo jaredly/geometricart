@@ -1,10 +1,10 @@
 import {Canvas} from 'canvaskit-wasm';
 import {Bounds, boundsForCoords} from '../../../editor/Bounds';
-import {tilingPoints, applyTilingTransformsG} from '../../../editor/tilingPoints';
+import {tilingPoints, applyTilingTransformsG, transformShape} from '../../../editor/tilingPoints';
 import {getTilingTransforms} from '../../../editor/tilingTransforms';
 import {coordKey} from '../../../rendering/coordKey';
 import {closeEnough, epsilonToZero} from '../../../rendering/epsilonToZero';
-import {applyMatrices} from '../../../rendering/getMirrorTransforms';
+import {applyMatrices, scaleMatrix} from '../../../rendering/getMirrorTransforms';
 import {coordsEqual} from '../../../rendering/pathsAreIdentical';
 import {BarePath, Coord, Tiling, TilingShape} from '../../../types';
 import {pk, Path as PKPath} from '../../pk';
@@ -14,6 +14,7 @@ import {State, lineAt} from './animator.utils';
 import {generateVideo} from './muxer';
 import {cropLines} from './cropLines';
 import {pkPathWithCmds} from './cropPath';
+import {transformBarePath} from '../../../rendering/points';
 
 export function fullPaths(
     full: {points: Coord[]; alpha: number}[],
@@ -224,7 +225,16 @@ export const combinedPath = (preview: number, config: Config, state: State, shap
 
     const {full, bounds} = calcFull(state, preview, config.repl, shape, config.sharp);
 
-    const paths = fullPaths(full, config.lineWidth, peggedZoom, [205 / 255, 127 / 255, 1 / 255]);
+    const zoomFactor = 10;
+
+    const zoomIn = [scaleMatrix(zoomFactor, zoomFactor)];
+
+    const paths = fullPaths(
+        full.map((one) => ({...one, points: transformShape(one.points, zoomIn)})),
+        config.lineWidth * zoomFactor,
+        peggedZoom,
+        [205 / 255, 127 / 255, 1 / 255],
+    );
 
     const onePath = new pk.Path();
     paths.forEach(({path, alpha, strokeWidth}) => {
@@ -240,19 +250,18 @@ export const combinedPath = (preview: number, config: Config, state: State, shap
 
     if (config.bounds && bounds) {
         const pkps = bounds.map((path) => {
-            const pkp = pkPathWithCmds(path.origin, path.segments);
-            if (config.sharp) {
-                if (path.hole) {
-                    onePath.op(pkp, pk.PathOp.Difference);
-                } else {
-                    onePath.op(pkp, pk.PathOp.Intersect);
-                }
+            const big = transformBarePath(path, zoomIn);
+            const pkp = pkPathWithCmds(big.origin, big.segments);
+            if (path.hole) {
+                onePath.op(pkp, pk.PathOp.Difference);
+            } else {
+                onePath.op(pkp, pk.PathOp.Intersect);
             }
             return pkp;
         });
         pkps.forEach((pkp) => {
             pkp.stroke({
-                width: (config.lineWidth / 200) * peggedZoom,
+                width: (config.lineWidth / 200) * peggedZoom * zoomFactor,
                 cap: config.sharp ? pk.StrokeCap.Butt : pk.StrokeCap.Round,
                 join: config.sharp ? pk.StrokeJoin.Miter : pk.StrokeJoin.Round,
             });
@@ -262,6 +271,8 @@ export const combinedPath = (preview: number, config: Config, state: State, shap
     }
 
     onePath.simplify();
+    onePath.transform(1 / zoomFactor, 0, 0, 0, 1 / zoomFactor, 0, 0, 0, 1);
+    // onePath.transform
 
     return onePath;
 };
