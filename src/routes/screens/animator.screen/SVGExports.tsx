@@ -1,13 +1,21 @@
 import {downloadZip} from 'client-zip';
 import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {BlurInt} from '../../../editor/Forms';
-import {GeometryInner, pathToGeometryMid} from '../../../threed/pathToGeometryMid';
+import {
+    GeometryInner,
+    pathToGeometryInner,
+    pathToGeometryMid,
+} from '../../../threed/pathToGeometryMid';
 import {ThreedScreenInner} from '../../../threed/ThreedScreen';
 import {Tiling} from '../../../types';
 import {Config} from '../animator';
 import {State} from './animator.utils';
-import {MessageFromWorker, MessageToWorker} from './svg-worker';
+import {MessageFromWorker, MessageResponse, MessageToWorker} from './svg-worker';
 import {
+    BufferAttribute,
+    BufferGeometry,
+    Float32BufferAttribute,
+    Material,
     MeshBasicMaterial,
     MeshPhongMaterial,
     MeshStandardMaterial,
@@ -19,6 +27,8 @@ import {
 } from 'three';
 import {OrbitingCamera} from './OrbitingCamera';
 import {ConfigForm} from './ConfigForm';
+import {pkPathWithCmds} from './cropPath';
+import {pk} from '../../pk';
 
 const initialTscale = 5;
 
@@ -49,7 +59,7 @@ export const SVGExports = ({
     patternMap: Record<string, Tiling>;
 }) => {
     const [svStep, setSvStep] = useState(0.5);
-    const [svgs, setSvgs] = useState([] as {svg: string; geom: GeometryInner[]; zoom: number}[]);
+    const [svgs, setSvgs] = useState([] as MessageResponse);
     const [paper, setPaper] = useState(null as null | Texture);
     const [tconfig, setTConfig] = useState(initialTConfig);
 
@@ -69,8 +79,8 @@ export const SVGExports = ({
     }, [tconfig.tscale, paper]);
 
     const threedItems = useMemo(() => {
-        return makeThreedItems(tconfig, svgs, paper);
-    }, [svgs, tconfig]);
+        return makeThreedItems(tconfig, svgs, paper, config);
+    }, [svgs, tconfig, paper, config]);
 
     const worker = useRef(null as null | Worker);
     const [rotate, setRotate] = useState(false);
@@ -202,13 +212,17 @@ export const SVGExports = ({
 
 function makeThreedItems(
     tconfig: TConfig,
-    svgs: {svg: string; geom: GeometryInner[]; zoom: number}[],
+    svgs: MessageResponse,
     paper: Texture | null,
+    config: Config,
 ) {
+    if (!svgs.length) return [];
     const items = tconfig.rev ? svgs.toReversed() : svgs;
     const mid = (tconfig.thick * items.length + tconfig.gap * (items.length - 1)) / 2;
     const [min, max] = tconfig.mm;
-    return items.slice(min, max === 0 ? svgs.length : max).map(({geom}, i) => {
+    const selected = items.slice(min, max === 0 ? svgs.length : max);
+    if (!selected.length) return [];
+    const result = selected.map(({geom}, i) => {
         const geometry = geom.map((sub) =>
             pathToGeometryMid({
                 fullThickness: 0,
@@ -271,4 +285,72 @@ function makeThreedItems(
             </React.Fragment>
         );
     });
+
+    selected[0].bounds.forEach((path, i) => {
+        // const index: number[] = [];
+        // const vertices: number[] = [];
+        // const uvs: number[] = [];
+
+        const pkp = pkPathWithCmds(path.origin, path.segments);
+        pkp.stroke({
+            width: (config.lineWidth / 200) * svgs[0].zoom,
+            cap: config.sharp ? pk.StrokeCap.Butt : pk.StrokeCap.Round,
+            join: config.sharp ? pk.StrokeJoin.Miter : pk.StrokeJoin.Round,
+        });
+        const gi = pathToGeometryInner(pkp);
+        if (!gi) return;
+
+        const bufgeom = pathToGeometryMid({
+            fullThickness: mid * 2,
+            thick: tconfig.thick,
+            res: gi,
+            zoff: 0,
+        });
+
+        // const geometry = new BufferGeometry();
+        // geometry.setIndex(index);
+        // geometry.setAttribute('position', new BufferAttribute(vertices, 3));
+        // geometry.computeVertexNormals();
+
+        // spans.forEach(({start, end}, i) => geometry.addGroup(start, end, i));
+        const materials: Material[] = [];
+
+        materials.push(
+            new MeshStandardMaterial({
+                color: 'hsl(30, 50%, 50%)',
+                flatShading: true,
+            }),
+            new MeshStandardMaterial({
+                color: 'hsl(30, 50%, 50%)',
+                flatShading: true,
+            }),
+            new MeshStandardMaterial({
+                color: 'hsl(30, 20%, 30%)',
+                flatShading: true,
+            }),
+            // new MeshStandardMaterial({
+            //     color: '#333',
+            //     flatShading: true,
+            // }),
+            new MeshStandardMaterial({
+                color: '#333',
+                flatShading: true,
+            }),
+        );
+
+        // 3. attach to geometry
+        // geometry.setAttribute('uv', new Float32BufferAttribute(uvs, 2));
+
+        result.push(
+            <mesh
+                key={i}
+                geometry={bufgeom}
+                position={[0, 0, -mid - tconfig.thick / 2]}
+                castShadow
+                receiveShadow
+                material={materials}
+            />,
+        );
+    });
+    return result;
 }

@@ -1,6 +1,10 @@
 
 # I want to do real UV wrapping of stuff
 
+- [ ] if gap is zero, I kinda want to wrap the whole outside.
+  Otherwise we get weird artifacting.
+  and.... then I can do fun showing off of the different patterns on the sides.
+
 
 # TODO
 

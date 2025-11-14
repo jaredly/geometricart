@@ -257,24 +257,24 @@ export const combinedPath = (preview: number, config: Config, state: State, shap
             } else {
                 onePath.op(pkp, pk.PathOp.Intersect);
             }
-            return pkp;
-        });
-        pkps.forEach((pkp) => {
-            pkp.stroke({
-                width: (config.lineWidth / 200) * peggedZoom * zoomFactor,
-                cap: config.sharp ? pk.StrokeCap.Butt : pk.StrokeCap.Round,
-                join: config.sharp ? pk.StrokeJoin.Miter : pk.StrokeJoin.Round,
-            });
-            onePath.op(pkp, pk.PathOp.Union);
             pkp.delete();
+            // return pkp;
         });
+        // pkps.forEach((pkp) => {
+        //     pkp.stroke({
+        //         width: (config.lineWidth / 200) * peggedZoom * zoomFactor,
+        //         cap: config.sharp ? pk.StrokeCap.Butt : pk.StrokeCap.Round,
+        //         join: config.sharp ? pk.StrokeJoin.Miter : pk.StrokeJoin.Round,
+        //     });
+        //     onePath.op(pkp, pk.PathOp.Union);
+        //     pkp.delete();
+        // });
     }
 
     onePath.simplify();
     onePath.transform(1 / zoomFactor, 0, 0, 0, 1 / zoomFactor, 0, 0, 0, 1);
-    // onePath.transform
 
-    return onePath;
+    return {onePath, bounds: bounds ?? []};
 };
 
 function renderSingle(

@@ -1,7 +1,7 @@
 import {epsilon} from '../../../rendering/epsilonToZero';
 import {GeometryInner, pathToGeometryInner} from '../../../threed/pathToGeometryMid';
 import {splitEvenOddIntoDisconnectedShapes} from '../../../threed/splitEvenOddIntoDisconnectedShapes';
-import {TilingShape} from '../../../types';
+import {BarePath, TilingShape} from '../../../types';
 import {pk} from '../../pk';
 import {Config} from '../animator';
 import {State} from './animator.utils';
@@ -15,20 +15,18 @@ export type MessageToWorker = {
     step: number;
 };
 
-type MessageResponse = {
+export type MessageResponse = {
     svg: string;
     geom: GeometryInner[];
     zoom: number;
+    bounds: (BarePath & {hole?: boolean})[];
 }[];
 
 type MessageUpdate = {type: 'update'; amount: number};
 
 export type MessageFromWorker = MessageResponse | MessageUpdate;
 
-console.log('SVG WORK');
-
 self.onmessage = (evt: MessageEvent<MessageToWorker>) => {
-    console.log('WORKER HELLO');
     const {state, config, shape, step} = evt.data;
     const res: MessageResponse = [];
     const max = state.layers.length - 1 + epsilon;
@@ -36,7 +34,7 @@ self.onmessage = (evt: MessageEvent<MessageToWorker>) => {
     for (let i = 0; i < max; i += step) {
         const peggedZoom = (config.peg ? calcMargin(i, state.lines[0]) : 1) * config.zoom;
 
-        const path = combinedPath(i, config, state, shape);
+        const {onePath: path, bounds} = combinedPath(i, config, state, shape);
         path.setFillType(pk.FillType.EvenOdd);
         const svg = path.toSVGString();
         const geom = splitEvenOddIntoDisconnectedShapes(path).map((sub) =>
@@ -46,7 +44,7 @@ self.onmessage = (evt: MessageEvent<MessageToWorker>) => {
             console.warn(`failed to calculate geometry`);
             continue;
         }
-        res.push({svg, geom: geom as GeometryInner[], zoom: peggedZoom});
+        res.push({svg, geom: geom as GeometryInner[], zoom: peggedZoom, bounds});
         path.delete();
         postMessage({type: 'update', amount: i / max});
     }

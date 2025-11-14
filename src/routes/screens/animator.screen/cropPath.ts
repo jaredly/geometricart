@@ -105,13 +105,13 @@ export const splitPathByClip = (clipData: PathData, clipk: PKPath, path: BarePat
     return result;
 };
 
-export const pkPathWithCmds = (origin: Coord, segments: Segment[]) => {
+export const pkPathWithCmds = (origin: Coord, segments: Segment[], open = false) => {
     const got = pk.Path.MakeFromCmds([
         pk.MOVE_VERB,
         origin.x,
         origin.y,
         ...segments.flatMap((seg, i) => segToCmds(seg, i === 0 ? origin : segments[i - 1].to)),
-        pk.CLOSE_VERB,
+        ...(open ? [] : [pk.CLOSE_VERB]),
     ]);
     if (!got) throw new Error(`unable to construct path`);
     return got;
