@@ -1,5 +1,5 @@
 import type {Config} from '@react-router/dev/config';
-import {getAllPatterns, getPattern} from './src/routes/db.server';
+import {getAllPatterns} from './src/routes/db.server';
 // import {Database} from 'bun:sqlite';
 
 // const db = new Database(join(import.meta.dirname, 'data.db'));
@@ -24,7 +24,7 @@ export default {
             '/gallery/',
             ...alls.map((tiling) => `/gallery/pattern/${tiling.hash}`),
             ...alls.map((tiling) => `/gallery/pattern/${tiling.hash}/600.png`),
-            // ...alls.map((tiling) => `/gallery/pattern/${tiling.hash}/400.png`),
+            ...alls.map((tiling) => `/gallery/pattern/${tiling.hash}/400.png`),
             // ...(images.map((im) => im?.url).filter(Boolean) as string[]),
         ];
     },

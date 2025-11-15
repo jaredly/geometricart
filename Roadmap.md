@@ -1,4 +1,9 @@
 
+# SSGGGGG
+
+- 2.8 Gig
+
+
 # I want to do real UV wrapping of stuff
 
 - [ ] if gap is zero, I kinda want to wrap the whole outside.
