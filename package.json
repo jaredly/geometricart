@@ -75,7 +75,7 @@
         "primeflex": "^3.3.0",
         "primeicons": "^6.0.1",
         "primereact": "10.0.0",
-        "react": "^19.2.0",
+        "react": "19.3.0-canary-fb2177c1-20251114",
         "react-color": "^2.19.3",
         "react-colorful": "^5.2.2",
         "react-dom": "^19.2.0",
@@ -95,8 +95,8 @@
         "vite-tsconfig-paths": "^5.1.4"
     },
     "resolutions": {
-        "react": "^19.2.0",
-        "react-dom": "^19.2.0"
+        "react": "19.3.0-canary-fb2177c1-20251114",
+        "react-dom": "19.3.0-canary-fb2177c1-20251114"
     },
     "jest": {
         "verbose": true,

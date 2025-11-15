@@ -1,7 +1,6 @@
-/* @jsx jsx */
 import * as React from 'react';
 import {Coord, Id, Mirror} from '../types';
-import {Toggle, } from './Forms';
+import {Toggle} from './Forms';
 import {
     angleTo,
     applyMatrices,

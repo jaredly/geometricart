@@ -210,7 +210,7 @@ export const ThreedScreenInner = ({
                         attach="shadow-camera"
                     ></orthographicCamera>
                 </directionalLight>
-                {/*
+
                 <directionalLight
                     position={[0, 2, 10]}
                     ref={dl}
@@ -223,7 +223,7 @@ export const ThreedScreenInner = ({
                         zoom={shadowZoom}
                         attach="shadow-camera"
                     ></orthographicCamera>
-                </directionalLight> */}
+                </directionalLight>
 
                 {/* <directionalLight
                     position={[0, 0, -100]}

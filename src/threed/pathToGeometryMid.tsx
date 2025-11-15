@@ -1,7 +1,7 @@
 import {Path as PKPath} from 'canvaskit-wasm';
 import earcut from 'earcut';
 import {BufferAttribute} from 'three';
-import {BufferGeometry, Float32BufferAttribute} from 'three/src/Three';
+import {BufferGeometry, Float32BufferAttribute} from 'three';
 import {boundsForCoords, segmentsBounds} from '../editor/Bounds';
 import {cmdsToSegments} from '../gcode/cmdsToSegments';
 import {dist, scaleMatrix} from '../rendering/getMirrorTransforms';

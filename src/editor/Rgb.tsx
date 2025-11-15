@@ -1,4 +1,3 @@
-/* @jsx jsx */
 import * as React from 'react';
 import {Attachment, Coord} from '../types';
 import {createPortal} from 'react-dom';

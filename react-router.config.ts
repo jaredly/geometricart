@@ -1,4 +1,3 @@
-
 import type {Config} from '@react-router/dev/config';
 // import {Database} from 'bun:sqlite';
 
@@ -14,5 +13,8 @@ export default {
     // prerender: ({getStaticPaths}) => {
     //     return [...getStaticPaths(), ...alls.map((tiling) => `gallery/pattern/${tiling.hash}`)];
     // },
+    async prerender() {
+        return ['/animator/', '/gallery/'];
+    },
     appDirectory: 'src/routes',
 } satisfies Config;
