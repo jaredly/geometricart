@@ -3,7 +3,7 @@ import {useDropStateTarget} from '../../editor/useDropTarget';
 import {State, Tiling} from '../../types';
 import {getPatternData} from '../getPatternData';
 import type {Route} from './+types/pattern-add';
-import {Pattern} from './pattern';
+import {Pattern} from './pattern.screen/pattern-view';
 import {randomUUIDv7} from 'bun';
 import {savePattern} from '../db.server';
 
@@ -49,7 +49,6 @@ export default function PatternAddScreen() {
     return (
         <Pattern
             loaderData={{
-                data: data,
                 similar: [],
                 pattern: {tiling, hash: tiling.cache.hash, imageDrawings: {new: state}, images: []},
             }}

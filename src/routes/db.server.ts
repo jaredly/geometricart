@@ -153,7 +153,7 @@ export const getPattern = (hash: string) => {
             })
             .filter(Boolean) as [string, State][],
     );
-    return {hash, tiling, images, imageDrawings};
+    return {hash, tiling, images, imageDrawings: {}};
 };
 
 // const query = db.query('select id, hash, json from Tiling');

@@ -2,6 +2,25 @@
 # SSGGGGG
 
 - 2.8 Gig
+(let's not have PatternData be part of the loaderData)
+- 788 Mb
+  - wow almost 2 gig lighter.
+(removing 600.png.data and 400.png.data)
+- 773 Mb
+(can we async import the ... canvaskit stuff?)
+(so that it's like a shared bundle thing)
+- 770 Mb (oh weird that didn't help at all)
+(deleting all of the .data files)
+- 437 Mb (ok interesting)
+(what if we ditch all of the `imageDrawing`s?)
+- ???
+(now let's bring some things back a bit, so static render still shows useful stuff, but doesn't bring in canvaskit)
+- ???
+
+
+....
+
+Ok, we've got these /uploads, and I've turned them into jpegs to 0.1x the size (100mb instead of 1gig)
 
 
 # I want to do real UV wrapping of stuff
