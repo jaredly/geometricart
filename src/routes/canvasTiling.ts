@@ -125,31 +125,31 @@ export const canvasTiling = async (
     //     drawBoundsTransform(ctx, data);
     // }
 
-    // const showSegmentsEndpoints = true;
-    // if (showSegmentsEndpoints) {
-    //     // drawPoints(ctx, data.allSegments.flat(), pk.BLACK, data.minSegLength / 4);
-    //     // drawPoints(ctx, data.eigenPoints, [1, 1, 1], data.minSegLength / 8);
-    //     // drawPoints(ctx, data.initialShapes[0], [1, 0, 1], data.minSegLength / 4);
-    //     const paint = new pk.Paint();
-    //     // paint.setStyle(pk.PaintStyle.Stroke);
-    //     // paint.setColor([1, 1, 1]);
-    //     paint.setStrokeWidth(data.minSegLength / 4);
-    //     // shapeSegs(data.initialShapes[0]).forEach((pts) => {
-    //     //     const path = pkPathFromCoords(pts, false)!;
-    //     //     ctx.drawPath(path, paint);
-    //     //     path.delete();
-    //     // });
-    //     paint.setStyle(pk.PaintStyle.Fill);
-    //     paint.setColor([0, 1, 1]);
-    //     data.initialShapes.forEach((shape) => {
-    //         ctx.drawPath(pkPathFromCoords(shape, false)!, paint);
-    //     });
-    //     paint.setColor([1, 0, 0]);
-    //     data.shapes.forEach((shape) => {
-    //         ctx.drawPath(pkPathFromCoords(shape, false)!, paint);
-    //     });
-    //     paint.delete();
-    // }
+    const showSegmentsEndpoints = true;
+    if (showSegmentsEndpoints) {
+        drawPoints(ctx, data.allSegments.flat(), [0, 0.2, 0.2], data.minSegLength / 4);
+        drawPoints(ctx, data.eigenPoints, [1, 1, 1], data.minSegLength / 8);
+        drawPoints(ctx, data.initialShapes.flat(), [1, 0, 1], data.minSegLength / 4);
+        // const paint = new pk.Paint();
+        // // paint.setStyle(pk.PaintStyle.Stroke);
+        // // paint.setColor([1, 1, 1]);
+        // paint.setStrokeWidth(data.minSegLength / 4);
+        // // shapeSegs(data.initialShapes[0]).forEach((pts) => {
+        // //     const path = pkPathFromCoords(pts, false)!;
+        // //     ctx.drawPath(path, paint);
+        // //     path.delete();
+        // // });
+        // paint.setStyle(pk.PaintStyle.Fill);
+        // paint.setColor([0, 1, 1]);
+        // data.initialShapes.forEach((shape) => {
+        //     ctx.drawPath(pkPathFromCoords(shape, false)!, paint);
+        // });
+        // paint.setColor([1, 0, 0]);
+        // data.shapes.forEach((shape) => {
+        //     ctx.drawPath(pkPathFromCoords(shape, false)!, paint);
+        // });
+        // paint.delete();
+    }
 
     const img = surface.makeImageSnapshot();
     const bytes = img.encodeToBytes()!;

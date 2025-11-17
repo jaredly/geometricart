@@ -18,4 +18,5 @@ export default [
     route('uploads/:fname', './screens/uploads-image.ts'),
     route('assets/:fname', './screens/assets.ts'),
     route('editor', './screens/editor.tsx'),
+    route('debug/transforms', './screens/debug.transforms.tsx'),
 ] as RouteConfig;

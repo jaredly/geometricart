@@ -5,6 +5,11 @@
 - [x] gallery listing should list the number of patterns available
 - [ ] re-id everything
 
+...
+...
+
+// I think we want an initial tiling to shape it up
+
 
 
 
