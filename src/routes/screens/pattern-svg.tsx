@@ -9,7 +9,7 @@ import {flipPattern} from '../flipPattern';
 const pngCache: Record<string, Buffer<ArrayBuffer>> = {};
 
 export async function loader({params, request}: Route.LoaderArgs) {
-    if (!params.id) {
+    if (!params.id || !params.img) {
         return null;
     }
     const url = new URL(request.url);

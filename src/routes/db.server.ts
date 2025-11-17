@@ -138,22 +138,21 @@ export const getPattern = (hash: string) => {
         date: string;
         url: string;
     }[];
-    const uploadRoot = join(import.meta.dirname, '../../../../apps/pattern-db/public');
+    const uploadRoot = join(import.meta.dirname, '../../');
     const imageDrawings = Object.fromEntries(
         images
             .map((image) => {
-                const path = join(uploadRoot, image.url.replace(/^\//, ''));
-                if (existsSync(path + '.json')) {
-                    return [
-                        image.url,
-                        migrateState(JSON.parse(readFileSync(path + '.json', 'utf-8'))),
-                    ];
+                const suffix = image.url.replace(/^\//, '') + '.json';
+                const path = join(uploadRoot, suffix);
+                if (existsSync(path)) {
+                    return [image.url, suffix];
+                    // migrateState(JSON.parse(readFileSync(path + '.json', 'utf-8'))),
                 }
                 return null;
             })
-            .filter(Boolean) as [string, State][],
+            .filter(Boolean) as [string, string][],
     );
-    return {hash, tiling, images, imageDrawings: {}};
+    return {hash, tiling, images, imageDrawings};
 };
 
 // const query = db.query('select id, hash, json from Tiling');

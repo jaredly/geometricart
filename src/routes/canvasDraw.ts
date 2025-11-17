@@ -1,7 +1,8 @@
 import {Canvas} from 'canvaskit-wasm';
-import {getPatternData} from './getPatternData';
+import {getPatternData, pkPathFromCoords} from './getPatternData';
 import {pk} from './pk';
 import {cmpCoords} from './shapesFromSegments';
+import {pkPathWithCmds} from './screens/animator.screen/cropPath';
 
 export const drawBounds = (ctx: Canvas, data: ReturnType<typeof getPatternData>) => {
     const path = pk.Path.MakeFromCmds([
@@ -39,13 +40,12 @@ export const drawShapes = (
     data: ReturnType<typeof getPatternData>,
     flipped: boolean,
     stroke?: number,
+    sharp = true,
 ) => {
     const col = (i: number) => {
         const ci = data.colorInfo.colors[i];
-        if (ci === -1) return [0, 0, 0];
+        if (ci === -1 || ci == null) return [0.1, 0.1, 0.1];
         const percent = ci / (data.colorInfo.maxColor + 1);
-        //   (data.colorInfo.colors[i] / (data.colorInfo.maxColor + 1)) *
-        //       360,
         return hslToHex(100, flipped ? 50 : 0, percent * 40 + 30);
     };
 
@@ -53,12 +53,12 @@ export const drawShapes = (
         const paint = new pk.Paint();
         paint.setStyle(pk.PaintStyle.Fill);
         paint.setColor(col(i));
-        const path = pk.Path.MakeFromCmds([
-            pk.MOVE_VERB,
-            shape[0].x,
-            shape[0].y,
-            ...shape.slice(1).flatMap(({x, y}) => [pk.LINE_VERB, x, y]),
-        ])!;
+        paint.setAntiAlias(true);
+        const path = pkPathFromCoords(shape, false)!;
+        if (!sharp) {
+            paint.setStrokeCap(pk.StrokeCap.Round);
+            paint.setStrokeJoin(pk.StrokeJoin.Round);
+        }
         ctx.drawPath(path, paint);
         path.delete();
         paint.delete();
@@ -67,16 +67,15 @@ export const drawShapes = (
     if (stroke) {
         data.shapes.forEach((shape, i) => {
             const paint = new pk.Paint();
-            const path = pk.Path.MakeFromCmds([
-                pk.MOVE_VERB,
-                shape[0].x,
-                shape[0].y,
-                ...shape.slice(1).flatMap(({x, y}) => [pk.LINE_VERB, x, y]),
-                pk.CLOSE_VERB,
-            ])!;
-            paint.setColor(pk.BLACK);
+            const path = pkPathFromCoords(shape, false)!;
+            paint.setAntiAlias(true);
+            paint.setColor([0.2, 0.2, 0.2]);
             paint.setStyle(pk.PaintStyle.Stroke);
             paint.setStrokeWidth(stroke);
+            if (!sharp) {
+                paint.setStrokeCap(pk.StrokeCap.Round);
+                paint.setStrokeJoin(pk.StrokeJoin.Round);
+            }
             ctx.drawPath(path, paint);
             path.delete();
             paint.delete();

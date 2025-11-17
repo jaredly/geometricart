@@ -117,8 +117,10 @@ export function tilingTransforms(
         // Equilateral triangle
         if (closeEnough(d1, d2) && closeEnough(d2, d3)) {
             if (shape.type === 'isocelese' && shape.flip) {
-                return [
-                    [
+                const res: Matrix[][][] = [];
+
+                if (size.x > 1) {
+                    res.push([
                         [
                             scaleMatrix(-1, 1),
                             rotationMatrix(-Math.PI / 3),
@@ -132,8 +134,10 @@ export function tilingTransforms(
                             rotationMatrix((-Math.PI * 2) / 3),
                             translationMatrix({x: tr.x * 3, y: tr.y}),
                         ],
-                    ],
-                    [
+                    ]);
+                }
+                if (size.x > 2) {
+                    res.push([
                         [
                             scaleMatrix(-1, 1),
                             rotationMatrix(-Math.PI / 3),
@@ -141,16 +145,37 @@ export function tilingTransforms(
                         ],
                         [translationMatrix({x: tr.x * 4, y: 0})],
                         [translationMatrix({x: tr.x * 2, y: tr.y * 2})],
-                    ],
+                    ]);
+                }
 
-                    [
-                        [scaleMatrix(-1, 1), rotationMatrix(Math.PI / 3)],
-                        [scaleMatrix(-1, 1), rotationMatrix(Math.PI)],
-                        [scaleMatrix(-1, 1), rotationMatrix(-Math.PI / 3)],
-                        [rotationMatrix((-Math.PI * 2) / 3)],
-                        [rotationMatrix((Math.PI * 2) / 3)],
-                    ],
+                return [
+                    ...res,
+                    // [
+                    //     [scaleMatrix(-1, 1), rotationMatrix(Math.PI / 3)],
+                    //     [scaleMatrix(-1, 1), rotationMatrix(Math.PI)],
+                    //     [scaleMatrix(-1, 1), rotationMatrix(-Math.PI / 3)],
+                    //     [rotationMatrix((-Math.PI * 2) / 3)],
+                    //     [rotationMatrix((Math.PI * 2) / 3)],
+                    // ],
                 ];
+
+                // return [
+                //     [
+                //         [
+                //             scaleMatrix(-1, 1),
+                //             rotationMatrix(-Math.PI / 3),
+                //             translationMatrix({x: tr.x * 3, y: tr.y}),
+                //         ],
+                //         [
+                //             rotationMatrix((Math.PI * 2) / 3),
+                //             translationMatrix({x: tr.x * 3, y: tr.y}),
+                //         ],
+                //         [
+                //             rotationMatrix((-Math.PI * 2) / 3),
+                //             translationMatrix({x: tr.x * 3, y: tr.y}),
+                //         ],
+                //     ],
+                // ];
             } else {
                 return [
                     [

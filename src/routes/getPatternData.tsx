@@ -35,12 +35,13 @@ import {weaveIntersections} from './weaveIntersections';
 import {transformBarePath, transformSegment} from '../rendering/points';
 import {cropLines} from './screens/animator.screen/cropLines';
 
-const pkPathFromCoords = (coords: Coord[]) =>
+export const pkPathFromCoords = (coords: Coord[], open = true) =>
     pk.Path.MakeFromCmds([
         pk.MOVE_VERB,
         coords[0].x,
         coords[0].y,
         ...coords.slice(1).flatMap(({x, y}) => [pk.LINE_VERB, x, y]),
+        ...(open ? [] : [pk.CLOSE_VERB]),
     ]);
 
 const coordsFromPkPath = (cmds: Float32Array) => {
@@ -203,6 +204,7 @@ export const getPatternData = (
     return {
         bounds: pts,
         uniquePoints,
+        initialShapes: shapes,
         shapes: allShapes,
         eigenPoints,
         // shapePoints,

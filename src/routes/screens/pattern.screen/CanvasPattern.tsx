@@ -14,6 +14,7 @@ export const CanvasPattern = ({
     showShapes,
     lineWidth,
     margin,
+    sharp,
 }: {
     data: ReturnType<typeof getPatternData>;
     tiling: Tiling;
@@ -22,12 +23,14 @@ export const CanvasPattern = ({
     showWoven?: boolean;
     showLines?: boolean;
     showShapes?: boolean;
+    sharp?: boolean;
     lineWidth: number;
     margin: number;
 }) => {
     const ref = useRef<HTMLCanvasElement>(null);
     useEffect(() => {
         if (!ref.current) return;
+
         const surface = pk.MakeWebGLCanvasSurface(ref.current);
         if (!surface) return;
         const ctx = surface.getCanvas();
@@ -37,7 +40,7 @@ export const CanvasPattern = ({
         ctx.translate(1 + margin, 1 + margin);
 
         if (showShapes) {
-            drawShapes(ctx, data, false, data.minSegLength * lineWidth * 2);
+            drawShapes(ctx, data, false, data.minSegLength * lineWidth * 2, !!sharp);
         }
         if (showLines) {
             drawLines(ctx, data, data.minSegLength * lineWidth * 2);
@@ -50,7 +53,7 @@ export const CanvasPattern = ({
         }
         surface.flush();
         // ok do the render
-    }, [tiling, data, showShapes, showLines, showWoven, showBounds, lineWidth, margin]);
+    }, [tiling, data, showShapes, showLines, showWoven, showBounds, lineWidth, margin, sharp]);
     return (
         <canvas ref={ref} width={size * 2} height={size * 2} style={{width: size, height: size}} />
     );

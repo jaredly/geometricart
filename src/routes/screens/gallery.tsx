@@ -104,7 +104,7 @@ export const Gallery = ({loaderData}: Route.ComponentProps) => {
                         <li>
                             <a href="/">Geometric Art</a>
                         </li>
-                        <li> Gallery </li>
+                        <li>Gallery ({loaderData.patterns.length} patterns)</li>
                     </ul>
                 </div>
                 {/* <h1 className="text-4xl">Pattern View</h1> */}
@@ -182,7 +182,10 @@ export const Gallery = ({loaderData}: Route.ComponentProps) => {
                             }}
                             className="bg-base-300"
                         >
-                            <div>{key}</div>
+                            <div>
+                                {key} ({groups[key].length} pattern
+                                {groups[key].length === 1 ? '' : 's'})
+                            </div>
 
                             <div
                                 style={{
@@ -202,16 +205,6 @@ export const Gallery = ({loaderData}: Route.ComponentProps) => {
                             </div>
                         </div>
                     ))}
-                {/* {loaderData.map((item) =>
-                    data[item.hash] ? (
-                        <div key={item.hash}>
-                            <div style={{fontSize: 8}}>{item.hash}</div>
-                            <a href={`./pattern/${item.hash}`}>
-                                <ShowTiling tiling={item.tiling} data={data[item.hash]} />
-                            </a>
-                        </div>
-                    ) : null,
-                )} */}
             </div>
         </div>
     );

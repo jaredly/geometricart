@@ -1,4 +1,13 @@
 
+- [x] loading of `imageDrawings` should be done client-side, by fetching the .json files
+  - make imageDrawings only in dev mode maybe
+- pattern should have [view|inspect|export|construct]
+- [x] gallery listing should list the number of patterns available
+- [ ] re-id everything
+
+
+
+
 # SSGGGGG
 
 - 2.8 Gig

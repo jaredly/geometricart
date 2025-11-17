@@ -1,10 +1,16 @@
-import {useEffect, useMemo, useState} from 'react';
+import {useEffect, useMemo, useRef, useState} from 'react';
 import {useFetcher} from 'react-router';
 import type {Route} from '../+types/pattern';
-import {shapeKey} from '../../../types';
+import {shapeKey, State} from '../../../types';
 import {canonicalShape, getPatternData, humanReadableFraction} from '../../getPatternData';
 import {normShape} from '../../normShape';
 import {CanvasPattern} from './CanvasPattern';
+import {canvasRender} from '../../../rendering/CanvasRender';
+import {exportPNG} from '../../../editor/ExportPng';
+import {BaselineDownload} from '../../../icons/Icon';
+import {useOnOpen} from '../../useOnOpen';
+import {InspectShape} from '../../InspectShape';
+import {normalizeCanonShape, Shape} from '../../getUniqueShapes';
 
 type Display = {
     bounds: boolean;
@@ -13,11 +19,17 @@ type Display = {
     margin: number;
 };
 
-export const Pattern = ({
+const useIsLocal = () => {
+    const [isLocal, setIsLocal] = useState(false);
+    useEffect(() => {
+        setIsLocal(window.location.host === 'localhost:5173');
+    }, []);
+    return isLocal;
+};
+
+export const PatternView = ({
     loaderData: {pattern, similar},
-    id,
 }: {
-    id?: string;
     loaderData: {} & Route.ComponentProps['loaderData'];
 }) => {
     const data = useMemo(() => getPatternData(pattern.tiling), [pattern.tiling]);
@@ -27,20 +39,27 @@ export const Pattern = ({
         lineWidth: 0.1,
         margin: 0.5,
     });
-    const fetcher = useFetcher();
-
     const tiling = pattern.tiling; // flipPattern(pattern.tiling);
 
-    const canonKeys: Record<string, ReturnType<typeof canonicalShape> & {percentage: number}> = {};
+    const canonKeys: Record<string, Shape & {percentage: number}> = {};
     data.canons.forEach((c) => {
         if (c.percentage) {
             if (!canonKeys[c.key]) {
-                canonKeys[c.key] = {...c};
+                canonKeys[c.key] = {
+                    ...normalizeCanonShape(c),
+                    percentage: c.percentage,
+                };
             } else {
                 canonKeys[c.key].percentage += c.percentage;
             }
         }
     });
+
+    const [inspect, setInspect] = useState(null as null | string);
+    const [showDialog, setShowDialog] = useState(false);
+    const dialogRef = useOnOpen(setShowDialog);
+
+    const isLocal = useIsLocal();
 
     useEffect(() => {
         // @ts-ignore
@@ -48,42 +67,7 @@ export const Pattern = ({
     }, []);
 
     return (
-        <div className="mx-auto w-6xl p-4 pt-0 bg-base-200 shadow-base-300 shadow-md">
-            <div className="sticky top-0 py-2 mb-2 bg-base-200 shadow-md shadow-base-200">
-                <div className="breadcrumbs text-sm">
-                    <ul>
-                        <li>
-                            <a href="/">Geometric Art</a>
-                        </li>
-                        <li>
-                            <a href="/gallery/">Gallery</a>
-                        </li>
-                        {id ? (
-                            <li>Pattern {id}</li>
-                        ) : (
-                            <li>
-                                <button
-                                    className="btn"
-                                    onClick={() => {
-                                        fetcher
-                                            .submit(
-                                                {state: JSON.stringify({tiling})},
-                                                {method: 'POST'},
-                                            )
-                                            .then((value) => {
-                                                console.log('got', value);
-                                            });
-                                    }}
-                                >
-                                    Save New Pattern
-                                </button>
-                            </li>
-                        )}
-                    </ul>
-                </div>
-                {/* <h1 className="text-4xl">Pattern View</h1> */}
-            </div>
-            {/* <div className="text-sm mb-3">ID {id}</div> */}
+        <div>
             <div className="flex items-start gap-2">
                 <div className="flex flex-col gap-4">
                     {/* <TilingPattern tiling={tiling} size={400} data={data} showLines /> */}
@@ -162,14 +146,25 @@ export const Pattern = ({
                             {Object.keys(canonKeys).length} unique{' '}
                             {Object.keys(canonKeys).length === 1 ? 'shape' : 'shapes'}
                         </div>
-                        <div className="flex flex-wrap items-start gap-2">
+                        <div className="flex flex-wrap items-start gap-2 mt-4">
                             {
                                 //data.canons
                                 Object.values(canonKeys).map((shape, i) => {
-                                    const points = normShape(shape.scaled);
+                                    const points = normShape(shape.rotated);
 
                                     return (
-                                        <div key={i} className="relative">
+                                        <div
+                                            key={i}
+                                            className="relative hover:bg-base-300 cursor-pointer rounded"
+                                            onClick={(evt) => {
+                                                evt.stopPropagation();
+                                                evt.preventDefault();
+                                                setInspect(shape.key);
+                                                setTimeout(() => {
+                                                    dialogRef.current?.showModal();
+                                                }, 10);
+                                            }}
+                                        >
                                             <svg
                                                 data-key={shape.key}
                                                 xmlns="http://www.w3.org/2000/svg"
@@ -203,6 +198,12 @@ export const Pattern = ({
                                 })
                             }
                         </div>
+                        <dialog id="shape-modal" className="modal" ref={dialogRef}>
+                            {inspect != null ? <InspectShape shape={canonKeys[inspect]} /> : null}
+                            <form method="dialog" className="modal-backdrop">
+                                <button>close</button>
+                            </form>
+                        </dialog>
                     </div>
                     {pattern.images.length ? (
                         <div className="bg-base-100 p-4 rounded-xl shadow-md shadow-base-300 flex flex-col gap-4">
@@ -248,9 +249,15 @@ export const Pattern = ({
                             ))}
                         </div>
                     ) : null}
-                    {/* {Object.entries(pattern.imageDrawings).map(([key, state]) => (
-                        <SimpleRender state={state} size={600} />
-                    ))} */}
+                    {isLocal ? (
+                        <div className="bg-amber-950 p-4 rounded-xl">
+                            {Object.entries(pattern.imageDrawings).map(([key, path]) => (
+                                <StateLoader key={key} path={'/' + path}>
+                                    {(state) => <SimpleRender state={state} size={600} />}
+                                </StateLoader>
+                            ))}
+                        </div>
+                    ) : null}
                 </div>
             </div>
             {similar.length ? (
@@ -276,40 +283,57 @@ export const Pattern = ({
     );
 };
 
-// const SimpleRender = ({state, size}: {size: number; state: State}) => {
-//     const ref = useRef<HTMLCanvasElement>(null);
-//     useEffect(() => {
-//         const canvas = ref.current!;
-//         const ctx = canvas.getContext('2d')!;
+const StateLoader = ({
+    path,
+    children,
+}: {
+    path: string;
+    children: (data: State) => React.ReactNode;
+}) => {
+    const [data, setData] = useState(null as null | State);
+    useEffect(() => {
+        fetch(path)
+            .then((res) => res.json())
+            .then(setData);
+    }, [path]);
+    return data ? children(data) : null;
+};
 
-//         ctx.save();
-//         canvasRender(ctx, state, size, size, size / 1000, {}, 0, {}, []);
-//         ctx.restore();
-//     }, [state, size]);
-//     return (
-//         <div className="relative">
-//             <div style={{width: size / 2, height: size / 2, position: 'relative'}}>
-//                 <canvas
-//                     ref={ref}
-//                     width={size}
-//                     height={size}
-//                     style={{width: size / 2, height: size / 2}}
-//                 />
-//                 <button
-//                     className="btn btn-square absolute bottom-2 right-2"
-//                     onClick={() => {
-//                         exportPNG(size, state, 1000, true, false, 0).then((blob) => {
-//                             const url = URL.createObjectURL(blob);
-//                             const a = document.createElement('a');
-//                             a.href = url;
-//                             a.download = 'pattern.png';
-//                             a.click();
-//                         });
-//                     }}
-//                 >
-//                     <BaselineDownload />
-//                 </button>
-//             </div>
-//         </div>
-//     );
-// };
+const SimpleRender = ({state, size}: {size: number; state: State}) => {
+    const ref = useRef<HTMLCanvasElement>(null);
+    useEffect(() => {
+        const canvas = ref.current!;
+        const ctx = canvas.getContext('2d')!;
+
+        ctx.save();
+        canvasRender(ctx, state, size, size, size / 1000, {}, 0, {}, []);
+        ctx.restore();
+    }, [state, size]);
+    return (
+        <div className="relative">
+            <div style={{width: size / 2, height: size / 2, position: 'relative'}}>
+                <canvas
+                    ref={ref}
+                    width={size}
+                    height={size}
+                    style={{width: size / 2, height: size / 2}}
+                    className="rounded-md"
+                />
+                <button
+                    className="btn btn-square absolute bottom-2 right-2"
+                    onClick={() => {
+                        exportPNG(size, state, 1000, true, false, 0).then((blob) => {
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = 'pattern.png';
+                            a.click();
+                        });
+                    }}
+                >
+                    <BaselineDownload />
+                </button>
+            </div>
+        </div>
+    );
+};

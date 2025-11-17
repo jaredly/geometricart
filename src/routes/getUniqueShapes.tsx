@@ -77,6 +77,19 @@ const scaleToUnitSquare = (coords: Coord[]) => {
 
 const cmpOr = (a: number, b: number) => (a === 0 ? b : a);
 
+export const normalizeCanonShape = (
+    shape: ReturnType<typeof canonicalShape> & {percentage: number},
+): Shape => {
+    const axes = findReflectionAxes(shape.scaled, 0.001).sort((a, b) => b.length - a.length);
+    const united = joinAdjacentShapeSegments(shape.scaled);
+    return {
+        ...shape,
+        axes,
+        rotated: axes.length ? rotateForAxis(united, axes[0]) : united,
+        area: calcPolygonArea(scaleToUnitSquare(shape.scaled)),
+    };
+};
+
 export const getUniqueShapes = (
     patterns: {
         data: {canons: (ReturnType<typeof canonicalShape> & {percentage: number})[]};
@@ -96,16 +109,7 @@ export const getUniqueShapes = (
                 patternsWithShapes[shape.key].push(hash);
 
             if (!uniqueShapes[shape.key]) {
-                const axes = findReflectionAxes(shape.scaled, 0.001).sort(
-                    (a, b) => b.length - a.length,
-                );
-                const united = joinAdjacentShapeSegments(shape.scaled);
-                uniqueShapes[shape.key] = {
-                    ...shape,
-                    axes,
-                    rotated: axes.length ? rotateForAxis(united, axes[0]) : united,
-                    area: calcPolygonArea(scaleToUnitSquare(shape.scaled)),
-                };
+                uniqueShapes[shape.key] = normalizeCanonShape(shape);
                 const cs = classifyShape(shape.scaled, shape.lengths);
                 addToMap(byClass, cs, shape.key);
             }

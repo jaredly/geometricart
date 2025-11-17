@@ -3,9 +3,10 @@ import {useDropStateTarget} from '../../editor/useDropTarget';
 import {State, Tiling} from '../../types';
 import {getPatternData} from '../getPatternData';
 import type {Route} from './+types/pattern-add';
-import {Pattern} from './pattern.screen/pattern-view';
+import {PatternView} from './pattern.screen/pattern-view';
 import {randomUUIDv7} from 'bun';
 import {savePattern} from '../db.server';
+import {useFetcher} from 'react-router';
 
 export async function action({request, params}: Route.ActionArgs) {
     const data = await request.formData();
@@ -23,6 +24,7 @@ export default function PatternAddScreen() {
     const tiling = state ? Object.values(state.tilings)[0] : null;
 
     const data = useMemo(() => (tiling ? getPatternData(tiling) : null), [tiling]);
+    const fetcher = useFetcher();
 
     if (!state) {
         return (
@@ -47,11 +49,39 @@ export default function PatternAddScreen() {
     }
 
     return (
-        <Pattern
-            loaderData={{
-                similar: [],
-                pattern: {tiling, hash: tiling.cache.hash, imageDrawings: {new: state}, images: []},
-            }}
-        />
+        <div className="mx-auto w-6xl p-4 pt-0 bg-base-200 shadow-base-300 shadow-md">
+            <div className="sticky top-0 py-2 mb-2 bg-base-200 shadow-md shadow-base-200 flex justify-between">
+                <div className="breadcrumbs text-sm">
+                    <ul>
+                        <li>
+                            <a href="/">Geometric Art</a>
+                        </li>
+                        <li>
+                            <a href="/gallery/">Gallery</a>
+                        </li>
+                        <li>
+                            <button
+                                className="btn"
+                                onClick={() => {
+                                    fetcher
+                                        .submit({state: JSON.stringify({tiling})}, {method: 'POST'})
+                                        .then((value) => {
+                                            console.log('got', value);
+                                        });
+                                }}
+                            >
+                                Save New Pattern
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <PatternView
+                loaderData={{
+                    similar: [],
+                    pattern: {tiling, hash: tiling.cache.hash, imageDrawings: {}, images: []},
+                }}
+            />
+        </div>
     );
 }

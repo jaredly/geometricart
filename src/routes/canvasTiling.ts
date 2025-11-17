@@ -1,31 +1,26 @@
-import {Canvas} from 'canvaskit-wasm';
+import {Canvas, InputColor} from 'canvaskit-wasm';
 import {applyTilingTransformsG} from '../editor/tilingPoints';
 import {applyMatrices} from '../rendering/getMirrorTransforms';
-import {getPatternData} from './getPatternData';
+import {getPatternData, pkPathFromCoords} from './getPatternData';
 import {pk, resetCanvasKit} from './pk';
 import {readFileSync} from 'fs';
 import {join} from 'path';
 import {drawLines, drawShapes, drawWoven} from './canvasDraw';
+import {Coord} from '../types';
+import {allPairs} from './shapesFromSegments';
 
 type ColorScheme = (i: number) => string;
 
 let fontCache = null as null | NonSharedBuffer;
 
-const drawSegmentsEndpoints = (ctx: Canvas, data: ReturnType<typeof getPatternData>) => {
+const drawPoints = (ctx: Canvas, pts: Coord[], color: InputColor, size: number) => {
     const paint = new pk.Paint();
-    paint.setColor(pk.BLACK);
+    paint.setColor(color);
     paint.setStyle(pk.PaintStyle.Fill);
     paint.setAntiAlias(true);
 
-    data.allSegments.flat().forEach((pt) => {
-        ctx.drawCircle(pt.x, pt.y, data.minSegLength / 4, paint);
-    });
-
-    const front = new pk.Paint();
-    front.setStyle(pk.PaintStyle.Fill);
-    front.setColor([1, 1, 1]);
-    data.eigenPoints.forEach((pt) => {
-        ctx.drawCircle(pt.x, pt.y, data.minSegLength / 5, front);
+    pts.forEach((pt) => {
+        ctx.drawCircle(pt.x, pt.y, size, paint);
     });
 };
 
@@ -130,9 +125,30 @@ export const canvasTiling = async (
     //     drawBoundsTransform(ctx, data);
     // }
 
-    // const showSegmentsEndpoints = false;
+    // const showSegmentsEndpoints = true;
     // if (showSegmentsEndpoints) {
-    //     drawSegmentsEndpoints(ctx, data);
+    //     // drawPoints(ctx, data.allSegments.flat(), pk.BLACK, data.minSegLength / 4);
+    //     // drawPoints(ctx, data.eigenPoints, [1, 1, 1], data.minSegLength / 8);
+    //     // drawPoints(ctx, data.initialShapes[0], [1, 0, 1], data.minSegLength / 4);
+    //     const paint = new pk.Paint();
+    //     // paint.setStyle(pk.PaintStyle.Stroke);
+    //     // paint.setColor([1, 1, 1]);
+    //     paint.setStrokeWidth(data.minSegLength / 4);
+    //     // shapeSegs(data.initialShapes[0]).forEach((pts) => {
+    //     //     const path = pkPathFromCoords(pts, false)!;
+    //     //     ctx.drawPath(path, paint);
+    //     //     path.delete();
+    //     // });
+    //     paint.setStyle(pk.PaintStyle.Fill);
+    //     paint.setColor([0, 1, 1]);
+    //     data.initialShapes.forEach((shape) => {
+    //         ctx.drawPath(pkPathFromCoords(shape, false)!, paint);
+    //     });
+    //     paint.setColor([1, 0, 0]);
+    //     data.shapes.forEach((shape) => {
+    //         ctx.drawPath(pkPathFromCoords(shape, false)!, paint);
+    //     });
+    //     paint.delete();
     // }
 
     const img = surface.makeImageSnapshot();
@@ -140,4 +156,8 @@ export const canvasTiling = async (
     surface.dispose();
     img.delete();
     return bytes;
+};
+
+const shapeSegs = (coords: Coord[]): [Coord, Coord][] => {
+    return coords.map((pt, i) => [coords[i === 0 ? coords.length - 1 : i - 1], pt]);
 };
