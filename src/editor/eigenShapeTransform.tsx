@@ -20,6 +20,43 @@ export const findHc = ({x, y}: Coord, tr: Coord) => {
     };
 };
 
+export function xyratio(shape: TilingShape, tr: Coord) {
+    if (shape.type === 'parallellogram') {
+        return tr.x / tr.y;
+    }
+    if (closeEnough(tr.y, -1 / Math.sqrt(3))) {
+        return tr.x / tr.y;
+    }
+
+    if (shape.type === 'right-triangle') {
+        let internalAngle =
+            angleBetween(
+                angleTo(shape.start, shape.corner),
+                angleTo(shape.start, shape.end),
+                true,
+            ) /
+            Math.PI /
+            2;
+
+        if (internalAngle > 0.5) {
+            internalAngle = 1 - internalAngle;
+        }
+
+        if (closeEnough(internalAngle, 1 / 16)) {
+            return 1;
+        }
+
+        if (!shape.rotateHypotenuse) {
+            for (let j = 5; j < 10; j++) {
+                if (closeEnough(internalAngle, 1 / (j * 2))) {
+                    return 1;
+                }
+            }
+        }
+    }
+    return tr.x / tr.y;
+}
+
 export function eigenShapeTransform(
     shape: TilingShape,
     tr: Coord,

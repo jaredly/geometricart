@@ -6,15 +6,15 @@ import {
     transformShape,
 } from '../../editor/tilingPoints';
 import {initialTransform} from '../../editor/tilingTransforms';
-import {eigenShapeTransform} from '../../editor/eigenShapeTransform';
+import {eigenShapeTransform, xyratio} from '../../editor/eigenShapeTransform';
 import {coordKey} from '../../rendering/coordKey';
-import {applyMatrices} from '../../rendering/getMirrorTransforms';
+import {applyMatrices, dist} from '../../rendering/getMirrorTransforms';
 import {Coord, Tiling} from '../../types';
 import {getAllPatterns, getPattern} from '../db.server';
 import {shapeD} from '../shapeD';
 import {cmpCoords, edgesByEndpoint, shapesFromSegments, unique} from '../shapesFromSegments';
 import type {Route} from './+types/debug.transforms';
-import {pklip, pkPathFromCoords} from '../getPatternData';
+import {pklip, pkPathFromCoords, shapeKey} from '../getPatternData';
 import {pk} from '../pk';
 import {cmdsToSegments} from '../../gcode/cmdsToSegments';
 
@@ -65,6 +65,10 @@ const Transform = ({tiling, id}: {tiling: Tiling; id: string}) => {
             ([a, b]) => `${coordKey(a)}:${coordKey(b)}`,
         );
 
+        const minSegLength = Math.min(
+            ...eigenSegments.map(([a, b]) => dist(a, b)).filter((l) => l > 0.001),
+        );
+
         const byEndPoint = edgesByEndpoint(allSegments);
         const bounds = pkPathFromCoords(pts)!;
         const shapes = shapesFromSegments(byEndPoint, eigenPoints).filter((shape) => {
@@ -77,15 +81,17 @@ const Transform = ({tiling, id}: {tiling: Tiling; id: string}) => {
         bounds.delete();
 
         const x = 4;
-        const y = Math.round(Math.abs(pts[2].x / pts[2].y) * x);
+        const y = Math.round(Math.abs(xyratio(tiling.shape, pts[2])) * x);
 
         const st = eigenShapeTransform(tiling.shape, pts[2], pts, {x, y});
         // const st = eigenShapeTransform(tiling.shape, pts[2], pts, {x: 6, y: 6});
         const transformedShapes = applyTilingTransformsG(shapes, st, transformShape);
+        const allShapes = unique(transformedShapes, (s) => shapeKey(s, minSegLength));
         return {
             allSegments,
             oshapes: shapes,
-            shapes: transformedShapes,
+            shapes: allShapes,
+            // shapes: transformedShapes,
             bounds: pts,
             sbounds: applyTilingTransformsG([pts], st, (pts, tx) =>
                 pts.map((p) => applyMatrices(p, tx)),
