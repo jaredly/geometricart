@@ -20,6 +20,12 @@ import {cmdsToSegments} from '../../gcode/cmdsToSegments';
 
 export function loader() {
     // const ids = [
+    //     'f00b08b44823547ff20ffdd9e17a2d9748f22083',
+    //     'be45d8519f7ae771ea18910aafea90cfc530c190',
+    //     'cb866e124c59e50c62b62ad82517039e7535f994',
+    //     'bde1d4fb0392c9bd68ab9ee99f1221758b797411',
+    // ];
+    // const ids = [
     //     'cb96afc94b6bbca038701082f24dd0ec9148681a',
     //     '4cd2511046cda82564aab820aa9eb4aa6b408927',
     //     'f9f9097acf65b41ae7a6a55054dacba46e716844',

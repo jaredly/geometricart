@@ -94,8 +94,10 @@ export function eigenShapeTransform(
         // Equilateral triangle
         if (closeEnough(d1, d2) && closeEnough(d2, d3)) {
             const res: Matrix[][] = [];
-            for (let x = -size.x; x <= size.x; x++) {
-                for (let y = -size.y; y <= size.y; y++) {
+            const x0 = size.x * 2;
+            const y0 = size.y * 2;
+            for (let x = -x0; x <= x0; x++) {
+                for (let y = -y0; y <= y0 + 1; y++) {
                     const at = findHexPos(x, y);
                     const flip = at.t % 2 === 1;
                     const hc = findHc(at.c, tr);
