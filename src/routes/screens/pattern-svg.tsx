@@ -2,7 +2,7 @@ import {renderToStaticMarkup} from 'react-dom/server';
 import type {Route} from './+types/pattern-svg';
 import {getPattern} from '../db.server';
 import {canvasTiling} from '../canvasTiling';
-import {getPatternData} from '../getPatternData';
+import {getNewPatternData, getPatternData} from '../getPatternData';
 import {TilingPattern} from '../ShowTiling';
 import {flipPattern} from '../flipPattern';
 
@@ -49,7 +49,7 @@ export async function loader({params, request}: Route.LoaderArgs) {
     const flip = search.get('flip') === 'no' ? pattern.tiling : flipPattern(pattern.tiling);
     const psize = search.get('psize') ? +search.get('psize')! : 2;
     const dataUri = await canvasTiling(
-        getPatternData(flip, false, psize),
+        getNewPatternData(flip, psize),
         +size * 2,
         flip !== pattern.tiling,
         {

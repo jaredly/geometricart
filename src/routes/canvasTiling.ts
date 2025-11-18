@@ -125,7 +125,7 @@ export const canvasTiling = async (
     //     drawBoundsTransform(ctx, data);
     // }
 
-    const showSegmentsEndpoints = true;
+    const showSegmentsEndpoints = false;
     if (showSegmentsEndpoints) {
         drawPoints(ctx, data.allSegments.flat(), [0, 0.2, 0.2], data.minSegLength / 4);
         drawPoints(ctx, data.eigenPoints, [1, 1, 1], data.minSegLength / 8);

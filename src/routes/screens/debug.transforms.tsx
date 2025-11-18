@@ -14,92 +14,35 @@ import {getAllPatterns, getPattern} from '../db.server';
 import {shapeD} from '../shapeD';
 import {cmpCoords, edgesByEndpoint, shapesFromSegments, unique} from '../shapesFromSegments';
 import type {Route} from './+types/debug.transforms';
-import {pklip, pkPathFromCoords, shapeKey} from '../getPatternData';
+import {getNewPatternData, pkPathFromCoords, preTransformTiling, shapeKey} from '../getPatternData';
 import {pk} from '../pk';
 import {cmdsToSegments} from '../../gcode/cmdsToSegments';
 
 export function loader() {
-    // const ids = [
-    //     'f00b08b44823547ff20ffdd9e17a2d9748f22083',
-    //     'be45d8519f7ae771ea18910aafea90cfc530c190',
-    //     'cb866e124c59e50c62b62ad82517039e7535f994',
-    //     'bde1d4fb0392c9bd68ab9ee99f1221758b797411',
-    // ];
-    // const ids = [
-    //     'cb96afc94b6bbca038701082f24dd0ec9148681a',
-    //     '4cd2511046cda82564aab820aa9eb4aa6b408927',
-    //     'f9f9097acf65b41ae7a6a55054dacba46e716844',
-    //     '592231b4105bb3c65be5774f6aaa6deecc16df72',
-    //     'f4b2a6afda1ed2968d9f72d139c92bd71866409d',
-    //     '669d259757d7d633c347f8e77797b93f6f3b21b9',
-    // ];
-    // const ids = [
-    //     'cb866e124c59e50c62b62ad82517039e7535f994',
-    //     'c4c1e062af2dacbad7762e117680021cabe6256f',
-    //     'be45d8519f7ae771ea18910aafea90cfc530c190',
-    //     'b75d9786fa303b1bd96a6440fe5a8eae08f30738',
-    //     'e6680186a01f0907a2c4e6718a333d4046a7cb44',
-    //     'bde1d4fb0392c9bd68ab9ee99f1221758b797411',
-    //     '6c673756253fe527c3b2438b1e882957e10f030c',
-    //     '146261645336e48af0731c38718ad95284ea7bf7',
-    // ];
-    // return ids.map((id) => getPattern(id)!);
-    return getAllPatterns();
+    const ids = [
+        'f00b08b44823547ff20ffdd9e17a2d9748f22083',
+        'be45d8519f7ae771ea18910aafea90cfc530c190',
+        'cb866e124c59e50c62b62ad82517039e7535f994',
+        'bde1d4fb0392c9bd68ab9ee99f1221758b797411',
+    ];
+    return ids.map((id) => getPattern(id)!);
+    // return getAllPatterns();
 }
 
 const Transform = ({tiling, id}: {tiling: Tiling; id: string}) => {
     const size = 400;
     const data = useMemo(() => {
-        const pts = tilingPoints(tiling.shape);
-        const eigenSegments = tiling.cache.segments.map(
-            (s) => [s.prev, s.segment.to] as [Coord, Coord],
-        );
-        const eigenPoints = unique(eigenSegments.flat(), coordKey);
-
-        const ttt = initialTransform(tiling.shape, pts[2], pts);
-
-        const allSegments = unique(
-            applyTilingTransforms(eigenSegments, ttt).map((seg) =>
-                cmpCoords(seg[0], seg[1]) === 1 ? ([seg[1], seg[0]] as [Coord, Coord]) : seg,
-            ),
-            ([a, b]) => `${coordKey(a)}:${coordKey(b)}`,
-        );
-
-        const minSegLength = Math.min(
-            ...eigenSegments.map(([a, b]) => dist(a, b)).filter((l) => l > 0.001),
-        );
-
-        const byEndPoint = edgesByEndpoint(allSegments);
-        const bounds = pkPathFromCoords(pts)!;
-        const shapes = shapesFromSegments(byEndPoint, eigenPoints).filter((shape) => {
-            const p = pkPathFromCoords(shape)!;
-            p.op(bounds, pk.PathOp.Intersect);
-            const shapes = cmdsToSegments([...p.toCmds()]);
-            p.delete();
-            return shapes.filter((s) => s.segments.length).length;
-        });
-        bounds.delete();
-
-        const x = 4;
-        const y = Math.round(Math.abs(xyratio(tiling.shape, pts[2])) * x);
-
-        const st = eigenShapeTransform(tiling.shape, pts[2], pts, {x, y});
-        // const st = eigenShapeTransform(tiling.shape, pts[2], pts, {x: 6, y: 6});
-        const transformedShapes = applyTilingTransformsG(shapes, st, transformShape);
-        const allShapes = unique(transformedShapes, (s) => shapeKey(s, minSegLength));
-        return {
-            allSegments,
-            oshapes: shapes,
-            shapes: allShapes,
-            // shapes: transformedShapes,
-            bounds: pts,
-            sbounds: applyTilingTransformsG([pts], st, (pts, tx) =>
-                pts.map((p) => applyMatrices(p, tx)),
-            ),
-            tbounds: applyTilingTransformsG([pts], ttt, (pts, tx) =>
-                pts.map((p) => applyMatrices(p, tx)),
-            ),
-        };
+        const cs = 2;
+        return getNewPatternData(tiling, 3, [
+            {
+                segments: [
+                    {type: 'Line', to: {x: cs, y: -cs}},
+                    {type: 'Line', to: {x: -cs, y: -cs}},
+                    {type: 'Line', to: {x: -cs, y: cs}},
+                    {type: 'Line', to: {x: cs, y: cs}},
+                ],
+            },
+        ]);
     }, [tiling]);
     return (
         <div>
@@ -142,8 +85,8 @@ const Transform = ({tiling, id}: {tiling: Tiling; id: string}) => {
                         stroke="blue"
                         fill="none"
                     />
-                ))}
-                {data.allSegments.flat().map((pt, i) => (
+                ))} */}
+                {/* {data.allSegments.flat().map((pt, i) => (
                     <circle
                         key={i}
                         cx={pt.x.toFixed(3)}
@@ -153,16 +96,7 @@ const Transform = ({tiling, id}: {tiling: Tiling; id: string}) => {
                         stroke="none"
                     />
                 ))} */}
-                {/* <path d={shapeD(data.bounds)} stroke="white" strokeWidth={0.04} fill="none" />
-                {data.tbounds.map((b, i) => (
-                    <path
-                        key={i}
-                        d={shapeD(b)}
-                        stroke="rgba(200,0,0,0.3)"
-                        strokeWidth={0.04}
-                        fill="none"
-                    />
-                ))} */}
+                {/* <path d={shapeD(data.bounds)} stroke="white" strokeWidth={0.04} fill="none" /> */}
                 {/* {data.sbounds.map((b, i) => (
                     <path
                         key={i}

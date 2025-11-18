@@ -14,8 +14,6 @@ import {boxShapeTransform, calcHexTransform} from './tilingTransforms';
 export const findHc = ({x, y}: Coord, tr: Coord) => {
     return {
         x: x * tr.x * 3,
-        // x: x * tr.x * (y % 2 === 0 ? 6 : 3),
-        // y: y * tr.y * (x % 2 === 0 ? 2 : 1),
         y: -tr.y * (y - (x % 2 === 0 ? 0 : 0.5)) * 2,
     };
 };
