@@ -44,7 +44,7 @@ export const pkPathFromCoords = (coords: Coord[], open = true) =>
         ...(open ? [] : [pk.CLOSE_VERB]),
     ]);
 
-const coordsFromPkPath = (cmds: Float32Array) => {
+export const coordsFromPkPath = (cmds: Float32Array) => {
     const shapes: Coord[][] = [];
 
     let i = 0;
@@ -66,7 +66,7 @@ const coordsFromPkPath = (cmds: Float32Array) => {
     return shapes;
 };
 
-const pklip = (one: Coord[], two: Coord[]): Coord[][] | null => {
+export const pklip = (one: Coord[], two: Coord[]): Coord[][] | null => {
     if (!pk) {
         console.log('no pk');
         return null;
@@ -219,7 +219,7 @@ export const getPatternData = (
     };
 };
 
-function calcOverlap(canon: ReturnType<typeof canonicalShape>, pts: Coord[]) {
+export function calcOverlap(canon: ReturnType<typeof canonicalShape>, pts: Coord[]) {
     const overlap = pklip(canon.points, pts) as null | Coord[][];
     const full = calcPolygonArea(canon.points);
     const showing = overlap ? overlap.map(calcPolygonArea).reduce((a, b) => a + b, 0) : 0;

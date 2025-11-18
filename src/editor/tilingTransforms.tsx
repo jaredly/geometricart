@@ -53,8 +53,127 @@ const initialBox = (tr: Coord) => [
     [[scaleMatrix(1, -1)], [scaleMatrix(1, -1), translationMatrix({x: 0, y: tr.y * 2})]],
 ];
 
+export const boxShapeTransform = (tr: Coord, size: Coord) => {
+    const res: Matrix[][][] = [];
+    if (size.x > 1) {
+        const xs: Matrix[][] = [];
+        for (let x = 1; x < size.x; x++) {
+            xs.push(
+                x % 2 === 1
+                    ? [scaleMatrix(-1, 1), translationMatrix({x: tr.x * (x + 1), y: 0})]
+                    : [translationMatrix({x: tr.x * x, y: 0})],
+            );
+        }
+        res.push(xs);
+    }
+    if (size.y > 1) {
+        const ys: Matrix[][] = [];
+        for (let y = 1; y < size.y; y++) {
+            ys.push(
+                y % 2 === 1
+                    ? [scaleMatrix(1, -1), translationMatrix({x: 0, y: tr.y * (y + 1)})]
+                    : [translationMatrix({x: 0, y: tr.y * y})],
+            );
+        }
+        res.push(ys);
+    }
+    res.push([[scaleMatrix(-1, 1)]], [[scaleMatrix(1, -1)]]);
+    return res;
+};
+
+// function calcOffHexTransform(size: Coord, tr: Coord) {
+//     const next: Matrix[][] = [];
+//     for (let x = 0; x < size.x; x++) {
+//         for (let y = 0; y < size.y; y++) {
+//             if (x === 0 && y === 0) {
+//                 // next.push([rotationMatrix(-Math.PI / 3)]);
+//                 continue;
+//             }
+//             const m: Matrix[] = [];
+//             if (x % 3 === 0) {
+//                 const off = x % 6 === 3;
+//                 if (y % 2 === (off ? 0 : 1)) {
+//                     m.push(scaleMatrix(1, -1), translationMatrix({x: 0, y: tr.y}));
+//                 }
+//                 m.push(translationMatrix({x: tr.x * x, y: tr.y * y}));
+//             } else if (x % 3 === 1) {
+//                 const off = x % 6 === 4;
+//                 if (y % 2 === (off ? 1 : 0)) {
+//                     m.push(
+//                         translationMatrix({x: -tr.x, y: -tr.y}),
+//                         rotationMatrix(Math.PI / 3),
+//                         translationMatrix({x: tr.x * x, y: tr.y * (y + 1)}),
+//                     );
+//                 } else {
+//                     m.push(
+//                         translationMatrix({x: -tr.x, y: -tr.y}),
+//                         rotationMatrix((Math.PI * 2) / 3),
+//                         translationMatrix({x: tr.x * x, y: tr.y * y}),
+//                     );
+//                     //
+//                 }
+//             } else {
+//                 const off = x % 6 === 5;
+//                 if (y % 2 === (off ? 1 : 0)) {
+//                     m.push(
+//                         translationMatrix({x: -tr.x, y: -tr.y}),
+//                         rotationMatrix(-Math.PI / 3),
+//                         translationMatrix({x: tr.x * (x - 1), y: tr.y * (y + 1)}),
+//                     );
+//                 } else {
+//                     m.push(
+//                         translationMatrix({x: -tr.x, y: -tr.y}),
+//                         rotationMatrix(-(Math.PI * 2) / 3),
+//                         translationMatrix({x: tr.x * (x - 1), y: tr.y * y}),
+//                     );
+//                     //
+//                 }
+//             }
+//             next.push(m);
+//         }
+//     }
+//     return next;
+// }
+
+export function calcHexTransform(size: Coord, tr: Coord) {
+    const next: Matrix[][] = [];
+    for (let x = 0; x < size.x; x++) {
+        for (let y = 0; y < size.y; y++) {
+            if (x === 0 && y === 0) continue;
+            const m: Matrix[] = [];
+            if (y % 3 === 0) {
+                const off = y % 6 === 3;
+                if (x % 2 === (off ? 0 : 1)) {
+                    m.push(scaleMatrix(-1, 1), translationMatrix({x: tr.x, y: 0}));
+                }
+                m.push(translationMatrix({x: tr.x * x, y: tr.y * y}));
+            } else if (y % 3 === 1) {
+                const off = y % 6 === 1;
+                m.push(rotationMatrix(x % 2 === (off ? 0 : 1) ? -Math.PI / 3 : (Math.PI * 4) / 3));
+                m.push(
+                    translationMatrix({
+                        x: tr.x * (x % 2 === (off ? 0 : 1) ? x : x + 1),
+                        y: tr.y * (y - 1),
+                    }),
+                );
+            } else {
+                const off = y % 6 === 2;
+                m.push(rotationMatrix(x % 2 === (off ? 0 : 1) ? (Math.PI * 2) / 3 : Math.PI / 3));
+                m.push(
+                    translationMatrix({
+                        x: tr.x * (x % 2 === (off ? 1 : 0) ? x : x + 1),
+                        y: tr.y * (y + 1),
+                    }),
+                );
+            }
+            next.push(m);
+        }
+    }
+    return next;
+}
+
 export function initialTransform(shape: TilingShape, tr: Coord, tpts: Coord[]): Matrix[][][] {
-    if (tpts.length === 4) {
+    if (shape.type === 'parallellogram') {
         return initialBox(tr);
     } else if (shape.type === 'right-triangle' && shape.rotateHypotenuse) {
         // Triangle -> Rectangle
@@ -114,104 +233,38 @@ export function initialTransform(shape: TilingShape, tr: Coord, tpts: Coord[]): 
         const d3 = dist(a, c);
         // Equilateral triangle
         if (closeEnough(d1, d2) && closeEnough(d2, d3)) {
-            if (shape.type === 'isocelese') {
-                const res: Matrix[][][] = [];
+            // if (shape.flip) {
+            //     return [
+            //         [
+            //             [
+            //                 rotationMatrix(Math.PI / 3),
+            //                 scaleMatrix(1, -1),
+            //                 rotationMatrix(-Math.PI / 3),
+            //             ],
+            //         ],
+            //     ];
+            // }
 
-                return [
-                    [
-                        [
-                            scaleMatrix(-1, 1),
-                            rotationMatrix(-Math.PI / 3),
-                            translationMatrix({x: tr.x * 3, y: tr.y}),
-                        ],
-                        [
-                            rotationMatrix((Math.PI * 2) / 3),
-                            translationMatrix({x: tr.x * 3, y: tr.y}),
-                        ],
-                        [
-                            rotationMatrix((-Math.PI * 2) / 3),
-                            translationMatrix({x: tr.x * 3, y: tr.y}),
-                        ],
-                        [scaleMatrix(-1, 1), rotationMatrix(-Math.PI / 3)],
-                    ],
-                    // [
-                    //     [
-                    //         scaleMatrix(-1, 1),
-                    //         rotationMatrix(-Math.PI / 3),
-                    //         translationMatrix({x: tr.x * 6, y: tr.y * 2}),
-                    //     ],
-                    //     [translationMatrix({x: tr.x * 4, y: 0})],
-                    //     [translationMatrix({x: tr.x * 2, y: tr.y * 2})],
-                    // ],
-                    [
-                        [scaleMatrix(-1, 1), rotationMatrix(Math.PI / 3)],
-                        [scaleMatrix(-1, 1), rotationMatrix(Math.PI)],
-                        // [rotationMatrix((-Math.PI * 2) / 3)],
-                        // [rotationMatrix((Math.PI * 2) / 3)],
-                    ],
-                ];
-
-                // return [
-                //     [
-                //         [
-                //             scaleMatrix(-1, 1),
-                //             rotationMatrix(-Math.PI / 3),
-                //             translationMatrix({x: tr.x * 3, y: tr.y}),
-                //         ],
-                //         [
-                //             rotationMatrix((Math.PI * 2) / 3),
-                //             translationMatrix({x: tr.x * 3, y: tr.y}),
-                //         ],
-                //         [
-                //             rotationMatrix((-Math.PI * 2) / 3),
-                //             translationMatrix({x: tr.x * 3, y: tr.y}),
-                //         ],
-                //     ],
-                // ];
-            } else {
-                return [
-                    // [
-                    //     [rotationMatrix(Math.PI), translationMatrix({x: tr.x * 3, y: tr.y})],
-                    //     [
-                    //         rotationMatrix(-(Math.PI * 2) / 3),
-                    //         translationMatrix({x: tr.x * 3, y: tr.y}),
-                    //     ],
-                    //     [
-                    //         rotationMatrix((Math.PI * 2) / 3),
-                    //         translationMatrix({x: tr.x * 3, y: tr.y}),
-                    //     ],
-                    // ],
-                    // [
-                    //     [rotationMatrix(Math.PI), translationMatrix({x: tr.x * 6, y: tr.y * 2})],
-                    //     [
-                    //         rotationMatrix(-(Math.PI * 2) / 3),
-                    //         translationMatrix({x: tr.x * 6, y: tr.y * 2}),
-                    //     ],
-                    //     [
-                    //         rotationMatrix((Math.PI * 2) / 3),
-                    //         translationMatrix({x: tr.x * 6, y: tr.y * 2}),
-                    //     ],
-                    // ],
-                    // // [[rotationMatrix(Math.PI), translationMatrix({x: tr.x * 3, y: tr.y})]],
-                    // // [[scaleMatrix(1, -1), translationMatrix({x: 0, y: tr.y * 2})]],
-                    // [
-                    //     [rotationMatrix((Math.PI / 3) * 2)],
-                    //     [rotationMatrix(Math.PI / 3)],
-                    //     [rotationMatrix(Math.PI)],
-                    //     [rotationMatrix(-(Math.PI / 3))],
-                    //     [rotationMatrix(-(Math.PI / 3) * 2)],
-                    // ],
-                ];
-            }
-        } else {
             return [
-                [[scaleMatrix(1, -1), rotationMatrix(-Math.PI / 2)]],
-                ...replicateStandard(tr.x, tr.y, size.x, size.y),
+                [
+                    [
+                        scaleMatrix(-1, 1),
+                        rotationMatrix(-Math.PI / 3),
+                        translationMatrix({x: tr.x * 3, y: tr.y}),
+                    ],
+                    [rotationMatrix((Math.PI * 2) / 3), translationMatrix({x: tr.x * 3, y: tr.y})],
+                    [rotationMatrix((-Math.PI * 2) / 3), translationMatrix({x: tr.x * 3, y: tr.y})],
+                    [scaleMatrix(-1, 1), rotationMatrix(-Math.PI / 3)],
+                ],
+                [
+                    [scaleMatrix(-1, 1), rotationMatrix(Math.PI / 3)],
+                    [scaleMatrix(-1, 1), rotationMatrix(Math.PI)],
+                ],
             ];
+        } else {
+            return [];
         }
     }
-
-    return [];
 }
 
 export function tilingTransforms(
