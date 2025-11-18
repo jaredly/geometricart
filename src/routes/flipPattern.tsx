@@ -11,7 +11,7 @@ import {
 import {angleBetween} from '../rendering/isAngleBetween';
 import {transformSegment} from '../rendering/points';
 import {Coord, Tiling} from '../types';
-import {getPatternData, preTransformTiling} from './getPatternData';
+import {getNewPatternData, getPatternData, preTransformTiling} from './getPatternData';
 import {
     shouldFlipTriangle,
     getRectangleTransform,
@@ -80,7 +80,7 @@ export const flipPattern = (tiling: Tiling): Tiling => {
         return {...tiling, cache, shape: {...shape, start: end, corner, end: start}};
     }
     if (shape.type === 'parallellogram') {
-        const data = getPatternData(tiling);
+        const data = getNewPatternData(tiling);
         const tx = getRectangleTransform(tiling, data);
         if (!tx?.length) return tiling;
 

@@ -19,7 +19,7 @@ import {Canvas} from '@react-three/fiber';
 import {ThreedScreenInner} from '../../threed/ThreedScreen';
 
 export async function loader({params}: Route.LoaderArgs) {
-    const got = getAnimated(params.id);
+    const got = getAnimated(params.id!);
     if (!got) throw new Error(`Unknown id ${params.id}`);
     got.lines.forEach((line) => {
         const needs = line.keyframes.some((l) => !Number.isInteger(l.at));

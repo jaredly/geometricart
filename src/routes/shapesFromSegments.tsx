@@ -14,7 +14,7 @@ import {isClockwisePoints} from '../rendering/pathToPoints';
 import {Coord, Tiling} from '../types';
 import {discoverShape} from './discoverShape';
 import {centroid} from './findReflectionAxes';
-import {getPatternData} from './getPatternData';
+import {getNewPatternData, getPatternData} from './getPatternData';
 
 const gte = (a: number, b: number) => a >= b - epsilon;
 const lte = (a: number, b: number) => a <= b + epsilon;
@@ -342,7 +342,7 @@ export const shouldFlipTriangle = (
         // console.log(`Is lowerLeft and upperRight flipped`, start.x > end.x);
 
         // console.log('isClose', internalAngle);
-        const data = getPatternData(tiling);
+        const data = getNewPatternData(tiling);
         const centerShapes: Coord[][] = [];
         const outerShapes: Coord[][] = [];
         data.shapes.forEach((shape) => {

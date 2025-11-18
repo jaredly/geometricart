@@ -28,7 +28,7 @@ export default function PatternScreen() {
         {name: 'Tutorial', enabled: hasConstruct},
     ];
 
-    const [currentTab, setCurrentTab] = useState('View');
+    const [currentTab, setCurrentTab] = useState('Inspect');
 
     if (!id || !loaderData) {
         return <div>No data... {id}</div>;

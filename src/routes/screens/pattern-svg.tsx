@@ -26,7 +26,7 @@ export async function loader({params, request}: Route.LoaderArgs) {
             <TilingPattern
                 tiling={pattern.tiling}
                 size={+size}
-                data={getPatternData(pattern.tiling)}
+                data={getNewPatternData(pattern.tiling)}
             />,
         );
         return new Response(tiling, {headers: {'Content-Type': 'image/svg+xml'}});
@@ -41,7 +41,7 @@ export async function loader({params, request}: Route.LoaderArgs) {
     // pattern.tiling = preTransformTiling(pattern.tiling);
 
     // const flip = search.get('flip') === 'no' ? pattern.tiling : flipPattern(pattern.tiling);
-    // const dataUri = await canvasTiling(getPatternData(flip), size * 2, flip !== pattern.tiling)!;
+    // const dataUri = await canvasTiling(getNewPatternData(flip), size * 2, flip !== pattern.tiling)!;
     // const font = await fetch('https://cdn.skia.org/misc/Roboto-Regular.ttf').then((s) =>
     //     s.arrayBuffer(),
     // );

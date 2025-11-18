@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * SVG Path Intersection Library
  *

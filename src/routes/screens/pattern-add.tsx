@@ -1,7 +1,7 @@
 import {useMemo, useState} from 'react';
 import {useDropStateTarget} from '../../editor/useDropTarget';
 import {State, Tiling} from '../../types';
-import {getPatternData} from '../getPatternData';
+import {getNewPatternData, getPatternData} from '../getPatternData';
 import type {Route} from './+types/pattern-add';
 import {PatternView} from './pattern.screen/pattern-view';
 import {randomUUIDv7} from 'bun';
@@ -23,7 +23,7 @@ export default function PatternAddScreen() {
 
     const tiling = state ? Object.values(state.tilings)[0] : null;
 
-    const data = useMemo(() => (tiling ? getPatternData(tiling) : null), [tiling]);
+    const data = useMemo(() => (tiling ? getNewPatternData(tiling) : null), [tiling]);
     const fetcher = useFetcher();
 
     if (!state) {

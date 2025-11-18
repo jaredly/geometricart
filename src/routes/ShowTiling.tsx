@@ -1,7 +1,7 @@
 import {useState} from 'react';
 import {angleTo, push} from '../rendering/getMirrorTransforms';
 import {Coord, Tiling} from '../types';
-import {getPatternData, shapeKey} from './getPatternData';
+import {getPatternData, shapeBoundsKey} from './getPatternData';
 import {boundsForCoords} from '../editor/Bounds';
 import {coordKey} from '../rendering/coordKey';
 import {shapeD} from './shapeD';
@@ -68,7 +68,7 @@ const TilingShape = ({
             <path
                 onMouseOver={() => setHover(i)}
                 onMouseLeave={() => setHover(null)}
-                data-skey={shapeKey(shape, minSegLength)}
+                data-skey={shapeBoundsKey(shape, minSegLength)}
                 fill={
                     hover
                         ? 'white'

@@ -2,7 +2,12 @@ import {useEffect, useMemo, useRef, useState} from 'react';
 import {useFetcher} from 'react-router';
 import type {Route} from '../+types/pattern';
 import {shapeKey, State} from '../../../types';
-import {canonicalShape, getPatternData, humanReadableFraction} from '../../getPatternData';
+import {
+    canonicalShape,
+    getNewPatternData,
+    getPatternData,
+    humanReadableFraction,
+} from '../../getPatternData';
 import {normShape} from '../../normShape';
 import {CanvasPattern} from './CanvasPattern';
 import {canvasRender} from '../../../rendering/CanvasRender';
@@ -32,7 +37,7 @@ export const PatternView = ({
 }: {
     loaderData: {} & Route.ComponentProps['loaderData'];
 }) => {
-    const data = useMemo(() => getPatternData(pattern.tiling), [pattern.tiling]);
+    const data = useMemo(() => getNewPatternData(pattern.tiling), [pattern.tiling]);
     const [display, setDisplay] = useState<Display>({
         bounds: false,
         draw: 'shapes',

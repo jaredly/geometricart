@@ -14,7 +14,12 @@ import {getAllPatterns, getPattern} from '../db.server';
 import {shapeD} from '../shapeD';
 import {cmpCoords, edgesByEndpoint, shapesFromSegments, unique} from '../shapesFromSegments';
 import type {Route} from './+types/debug.transforms';
-import {getNewPatternData, pkPathFromCoords, preTransformTiling, shapeKey} from '../getPatternData';
+import {
+    getNewPatternData,
+    pkPathFromCoords,
+    preTransformTiling,
+    shapeBoundsKey,
+} from '../getPatternData';
 import {pk} from '../pk';
 import {cmdsToSegments} from '../../gcode/cmdsToSegments';
 

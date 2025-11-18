@@ -2,7 +2,7 @@ import React from 'react';
 import {useEffect, useMemo, useRef, useState} from 'react';
 import {Tiling} from '../../../types';
 import {drawWoven} from '../../canvasDraw';
-import {getPatternData} from '../../getPatternData';
+import {getNewPatternData, getPatternData} from '../../getPatternData';
 import {pk} from '../../pk';
 import {Config} from '../animator';
 import {State} from './animator.utils';
@@ -25,7 +25,7 @@ export const AnimatedCanvas = ({
     const patternDatas = useMemo(() => {
         return config.showNice
             ? state.layers.map((l) =>
-                  getPatternData(patternMap[l.pattern], false, config.repl, state.crops),
+                  getNewPatternData(patternMap[l.pattern], config.repl, state.crops),
               )
             : [];
     }, [state.layers, patternMap, config.repl, config.showNice, state.crops]);

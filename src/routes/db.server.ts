@@ -3,7 +3,7 @@ import {State, Tiling} from '../types';
 import {Database} from 'bun:sqlite';
 import {existsSync, readFileSync} from 'fs';
 import {migrateState} from '../state/migrateState';
-import {getPatternData, PatternData} from './getPatternData';
+import {getNewPatternData, getPatternData, PatternData} from './getPatternData';
 import {unique} from './shapesFromSegments';
 import {State as Animated} from './screens/animator.screen/animator.utils';
 
@@ -88,7 +88,7 @@ export const getAllPatterns = () => {
 
 const patternCache: Record<string, PatternData> = {};
 export const getCachedPatternData = (hash: string, tiling: Tiling) => {
-    if (!patternCache[hash]) patternCache[hash] = getPatternData(tiling);
+    if (!patternCache[hash]) patternCache[hash] = getNewPatternData(tiling);
     return patternCache[hash];
 };
 

@@ -19,7 +19,7 @@ import {
 } from '../rendering/getMirrorTransforms';
 import {angleBetween} from '../rendering/isAngleBetween';
 import {isClockwisePoints, pointsAngles} from '../rendering/pathToPoints';
-import {Coord, Segment, Tiling} from '../types';
+import {BarePath, Coord, Segment, Tiling} from '../types';
 import {colorShapes} from './patternColoring';
 import {pk} from './pk';
 import {
@@ -38,6 +38,7 @@ import {cmdsToSegments} from '../gcode/cmdsToSegments';
 import {eigenShapeTransform, xyratio} from '../editor/eigenShapeTransform';
 import {clipToPathData, pkPathWithCmds} from './screens/animator.screen/cropPath';
 import {pkPathToSegments} from '../sidebar/pkClipPaths';
+import {coordsEqual} from '../rendering/pathsAreIdentical';
 
 export const pkPathFromCoords = (coords: Coord[], open = true) =>
     pk.Path.MakeFromCmds([
@@ -87,7 +88,7 @@ export const pklip = (one: Coord[], two: Coord[]): Coord[][] | null => {
 // 0.13,-0.87,0.62,-0.22
 // 0.12,-0.87,0.62,-0.22
 
-export const shapeKey = (coords: Coord[], msl: number) => {
+export const shapeBoundsKey = (coords: Coord[], msl: number) => {
     const by = 100 / msl;
     const bounds = boundsForCoords(
         ...coords.map(({x, y}) => ({
@@ -144,22 +145,50 @@ export const preTransformTiling = (tiling: Tiling): Tiling => {
     };
 };
 
-const cropShapes = (shapes: Coord[][], crops?: {segments: Segment[]; hole?: boolean}[]) => {
+const cropShapes = (
+    shapes: Coord[][],
+    crops?: {segments: Segment[]; hole?: boolean; rough?: boolean}[],
+) => {
     if (!crops) return shapes;
     let pks = shapes.map((shape) => pkPathFromCoords(shape)!);
+    let remove = pks.map(() => false);
     for (let crop of crops) {
         const clipPk = pkPathWithCmds(crop.segments[crop.segments.length - 1].to, crop.segments);
-        pks.forEach((path) => {
-            path.op(clipPk, crop.hole ? pk.PathOp.Difference : pk.PathOp.Intersect);
-            path.simplify();
+        pks.forEach((path, i) => {
+            if (crop.rough) {
+                const other = path.copy();
+                other.op(clipPk, crop.hole ? pk.PathOp.Difference : pk.PathOp.Intersect);
+                other.simplify();
+                if (other.toCmds().length === 0) {
+                    remove[i] = true;
+                }
+                other.delete();
+            } else {
+                path.op(clipPk, crop.hole ? pk.PathOp.Difference : pk.PathOp.Intersect);
+                path.simplify();
+            }
         });
         clipPk.delete();
     }
-    return pks.flatMap((pk) => {
+    return pks.flatMap((pk, i) => {
+        if (remove[i]) {
+            pk.delete();
+            return [];
+        }
+        pk.simplify();
         const items = pkPathToSegments(pk);
         pk.delete();
-        return items.map((bp) => bp.segments.map((s) => s.to));
+        return items.map(coordsFromBarePath);
+        // return items.map((bp) => bp.segments.map((s) => s.to).concat([bp.origin]));
     });
+};
+
+const coordsFromBarePath = (bp: BarePath) => {
+    const coords = bp.segments.map((s) => s.to);
+    if (!coordsEqual(coords[coords.length - 1], bp.origin)) {
+        coords.push(bp.origin);
+    }
+    return coords;
 };
 
 const shapeSegments = (shape: Coord[]) => {
@@ -168,8 +197,8 @@ const shapeSegments = (shape: Coord[]) => {
 
 export const getNewPatternData = (
     tiling: Tiling,
-    size: number,
-    crops?: {segments: Segment[]; hole?: boolean}[],
+    size = 2,
+    crops?: {segments: Segment[]; hole?: boolean; rough?: boolean}[],
 ) => {
     const bounds = tilingPoints(tiling.shape);
     const eigenSegments = tiling.cache.segments.map(
@@ -192,7 +221,7 @@ export const getNewPatternData = (
     const ttt = eigenShapeTransform(tiling.shape, bounds[2], bounds, {x, y});
     const transformedShapes = applyTilingTransformsG(initialShapes, ttt, transformShape);
     const allShapes = cropShapes(
-        unique(transformedShapes, (s) => shapeKey(s, minSegLength)),
+        unique(transformedShapes, (s) => shapeBoundsKey(s, minSegLength)),
         crops,
     );
     const allSegments = unique(
@@ -289,7 +318,7 @@ export const getPatternData = (
         ...eigenSegments.map(([a, b]) => dist(a, b)).filter((l) => l > 0.001),
     );
 
-    const allShapes = unique(transformedShapes, (s) => shapeKey(s, minSegLength));
+    const allShapes = unique(transformedShapes, (s) => shapeBoundsKey(s, minSegLength));
 
     const uniquePoints = unique(allShapes.flat(), coordKey);
     const pointNames = Object.fromEntries(uniquePoints.map((p, i) => [coordKey(p), i]));
@@ -437,6 +466,7 @@ export const canonicalShape = (shape: Coord[]) => {
             scaleMatrix(1 / maxLength, 1 / maxLength),
         ];
         const scaled = rotpoints.map((p) => applyMatrices(p, tx));
+        // const moved = rotpoints.map((p) => applyMatrices(p, move));
         return {key, points: rotpoints, lengths: rotlengths, angles: rotangles, scaled, tx};
     });
     rots.sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));

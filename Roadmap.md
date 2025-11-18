@@ -1,4 +1,7 @@
 
+# Inspectt
+
+#
 
 So, the new tiling, where we don't do hexes naturally. is a bit annoying? But I can just have a crop
 mode where it "rejects anything that doesn't intersect".
@@ -6,6 +9,8 @@ mode where it "rejects anything that doesn't intersect".
 Anyway, this new method is maybe accumulating some more floating point errors? because of all of the
 rotating? idk.
 
+
+- [ ] BTW the weird uv mapping issue was because the (first) and the (last) points have ot actually be distinct. Other wise (n-1) going to (first) has to replay the whole texture.
 
 #
 

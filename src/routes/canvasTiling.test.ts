@@ -3,7 +3,7 @@ import {memoryUsage, fullGC, heapStats} from 'bun:jsc';
 import {generateHeapSnapshot} from 'bun';
 import {Tiling} from '../types';
 import {canvasTiling} from './canvasTiling';
-import {getPatternData} from './getPatternData';
+import {getNewPatternData, getPatternData} from './getPatternData';
 import {normalizeTilingShape, tilingPoints} from '../editor/tilingPoints';
 
 const veryBasicTiling: Tiling = {
@@ -47,7 +47,7 @@ test('Memory usage', async () => {
 
     // looks like 3mb per pattern?
     for (let i = 0; i < 1000; i++) {
-        const data = getPatternData(veryBasicTiling);
+        const data = getNewPatternData(veryBasicTiling);
         await canvasTiling(data, 100, true, {});
     }
 
