@@ -48,8 +48,24 @@ export async function loader({params, request}: Route.LoaderArgs) {
 
     const flip = search.get('flip') === 'no' ? pattern.tiling : flipPattern(pattern.tiling);
     const psize = search.get('psize') ? +search.get('psize')! : 2;
+    const crop = search.get('crop') ? +search.get('crop')! : undefined;
     const dataUri = await canvasTiling(
-        getNewPatternData(flip, psize),
+        getNewPatternData(
+            flip,
+            psize,
+            crop
+                ? [
+                      {
+                          segments: [
+                              {type: 'Line', to: {x: crop, y: -crop}},
+                              {type: 'Line', to: {x: -crop, y: -crop}},
+                              {type: 'Line', to: {x: -crop, y: crop}},
+                              {type: 'Line', to: {x: crop, y: crop}},
+                          ],
+                      },
+                  ]
+                : undefined,
+        ),
         +size * 2,
         flip !== pattern.tiling,
         {

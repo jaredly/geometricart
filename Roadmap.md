@@ -1,4 +1,14 @@
 
+
+So, the new tiling, where we don't do hexes naturally. is a bit annoying? But I can just have a crop
+mode where it "rejects anything that doesn't intersect".
+
+Anyway, this new method is maybe accumulating some more floating point errors? because of all of the
+rotating? idk.
+
+
+#
+
 - [x] loading of `imageDrawings` should be done client-side, by fetching the .json files
   - make imageDrawings only in dev mode maybe
 - pattern should have [view|inspect|export|construct]

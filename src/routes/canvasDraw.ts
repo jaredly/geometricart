@@ -108,7 +108,6 @@ export const drawLines = (
         paint.setAntiAlias(true);
         paint.setColor(path == null ? [0, 0, 0] : hslToHex((path % 12) * 30, 100, 50));
 
-        // paint.setAlphaf(0.1);
         const p2 = pk.Path.MakeFromCmds([pk.MOVE_VERB, a.x, a.y, pk.LINE_VERB, b.x, b.y])!;
         ctx.drawPath(p2, paint);
         p2.delete();

@@ -130,7 +130,8 @@ export function eigenShapeTransform(
         if (closeEnough(d1, d2) && closeEnough(d2, d3)) {
             const res: Matrix[][] = [];
             const x0 = size.x * 2;
-            const y0 = size.y * 2;
+            let y0 = size.y * 2;
+            if (size.y === 1 && size.x === 1) y0--;
             for (let x = -x0; x <= x0; x++) {
                 for (let y = -y0; y <= y0 + 1; y++) {
                     const at = findHexPos(x, y);

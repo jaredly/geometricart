@@ -196,7 +196,11 @@ export const getNewPatternData = (
         crops,
     );
     const allSegments = unique(
-        allShapes.flatMap(shapeSegments),
+        allShapes
+            .flatMap(shapeSegments)
+            .map(([a, b]): [Coord, Coord] =>
+                (closeEnough(a.x, b.x) ? a.y > b.y : a.x > b.x) ? [b, a] : [a, b],
+            ),
         ([a, b]) => `${coordKey(a)}:${coordKey(b)}`,
     );
     const byEndPoint = edgesByEndpoint(allSegments);
