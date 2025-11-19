@@ -1,6 +1,10 @@
 
 # Inspectt
 
+- add (line | circle)
+- last 3 are 'selected' by default, which shows (angle-between) and (relative-lengths)
+- ... maybe that's it?
+
 #
 
 So, the new tiling, where we don't do hexes naturally. is a bit annoying? But I can just have a crop

@@ -10,7 +10,7 @@ import {
 } from '../editor/tilingPoints';
 import {getShapeSize, initialTransform, tilingTransforms} from '../editor/tilingTransforms';
 import {coordKey, numKey} from '../rendering/coordKey';
-import {closeEnough} from '../rendering/epsilonToZero';
+import {closeEnough, epsilon} from '../rendering/epsilonToZero';
 import {
     applyMatrices,
     dist,
@@ -152,6 +152,7 @@ const cropShapes = (
     if (!crops) return shapes;
     let pks = shapes.map((shape) => pkPathFromCoords(shape)!);
     let remove = pks.map(() => false);
+    const areas = crops.some((c) => c.rough) ? shapes.map(calcPolygonArea) : [];
     for (let crop of crops) {
         const clipPk = pkPathWithCmds(crop.segments[crop.segments.length - 1].to, crop.segments);
         pks.forEach((path, i) => {
@@ -159,9 +160,16 @@ const cropShapes = (
                 const other = path.copy();
                 other.op(clipPk, crop.hole ? pk.PathOp.Difference : pk.PathOp.Intersect);
                 other.simplify();
-                if (other.toCmds().length === 0) {
+                const size = pkPathToSegments(other)
+                    .map(coordsFromBarePath)
+                    .map(calcPolygonArea)
+                    .reduce((a, b) => a + b, 0);
+                if (size < areas[i] / 2 + epsilon) {
                     remove[i] = true;
                 }
+                // if (other.toCmds().length === 0) {
+                //     remove[i] = true;
+                // }
                 other.delete();
             } else {
                 path.op(clipPk, crop.hole ? pk.PathOp.Difference : pk.PathOp.Intersect);
@@ -204,9 +212,6 @@ export const getNewPatternData = (
     const eigenSegments = tiling.cache.segments.map(
         (s) => [s.prev, s.segment.to] as [Coord, Coord],
     );
-    const minSegLength = Math.min(
-        ...eigenSegments.map(([a, b]) => dist(a, b)).filter((l) => l > 0.001),
-    );
 
     const initialShapes = getInitialShapes(eigenSegments, tiling, bounds);
 
@@ -214,6 +219,14 @@ export const getNewPatternData = (
         .map(joinAdjacentShapeSegments)
         .map(canonicalShape)
         .map((canon) => calcOverlap(canon, bounds));
+
+    const minSegLength = Math.min(
+        ...canons
+            .map((c) => c.points)
+            .flatMap(shapeSegments)
+            .map(([a, b]) => dist(a, b))
+            .filter((l) => l > 0.001),
+    );
 
     const x = size;
     const y = Math.round(Math.abs(xyratio(tiling.shape, bounds[2])) * x);
@@ -226,6 +239,7 @@ export const getNewPatternData = (
     );
     const allSegments = unique(
         allShapes
+            .map(joinAdjacentShapeSegments)
             .flatMap(shapeSegments)
             .map(([a, b]): [Coord, Coord] =>
                 (closeEnough(a.x, b.x) ? a.y > b.y : a.x > b.x) ? [b, a] : [a, b],
@@ -380,7 +394,7 @@ export function calcOverlap(canon: ReturnType<typeof canonicalShape>, pts: Coord
     };
 }
 
-function calcPolygonArea(vertices: Coord[]) {
+export function calcPolygonArea(vertices: Coord[]) {
     let total = 0;
 
     for (let i = 0, l = vertices.length; i < l; i++) {
@@ -395,49 +409,6 @@ function calcPolygonArea(vertices: Coord[]) {
 
     return Math.abs(total);
 }
-
-export function findCommonFractions(value: number) {
-    const whole = Math.floor(value);
-    if (value === whole) {
-        return;
-    }
-    const decimal = value - whole;
-    for (let num = 1; num < 100; num++) {
-        for (let denom = 2; denom < 100; denom++) {
-            //
-            if (closeEnough(num / denom, decimal, 0.001)) {
-                return {num: num + whole * denom, denom};
-            }
-        }
-    }
-}
-
-const nums = '⁰¹²³⁴⁵⁶⁷⁸⁹';
-const denoms = '₀₁₂₃₄₅₆₇₈₉';
-const slash = '⁄';
-
-const getNumber = (n: number, digits: string) => {
-    let res = '';
-    while (n > 0) {
-        const out = Math.floor(n / 10);
-        res = digits[n - out * 10] + res;
-        n = out;
-    }
-    return res;
-};
-
-export const humanReadableFraction = (value: number) => {
-    if (closeEnough(Math.round(value), value, 0.001)) return Math.round(value) + '';
-    const fract = findCommonFractions(value);
-    if (fract) {
-        const whole = Math.floor(fract.num / fract.denom);
-        if (whole) {
-            return `${whole} ${getNumber(fract.num - whole * fract.denom, nums)}${slash}${getNumber(fract.denom, denoms)}`;
-        }
-        return `${getNumber(fract.num, nums)}${slash}${getNumber(fract.denom, denoms)}`;
-    }
-    return value.toFixed(4);
-};
 
 export const canonicalShape = (shape: Coord[]) => {
     if (!isClockwisePoints(shape)) {

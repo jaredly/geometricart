@@ -2,12 +2,8 @@ import {useEffect, useMemo, useRef, useState} from 'react';
 import {useFetcher} from 'react-router';
 import type {Route} from '../+types/pattern';
 import {shapeKey, State} from '../../../types';
-import {
-    canonicalShape,
-    getNewPatternData,
-    getPatternData,
-    humanReadableFraction,
-} from '../../getPatternData';
+import {canonicalShape, getNewPatternData, getPatternData} from '../../getPatternData';
+import {humanReadableFraction} from '../../findCommonFractions';
 import {normShape} from '../../normShape';
 import {CanvasPattern} from './CanvasPattern';
 import {canvasRender} from '../../../rendering/CanvasRender';
