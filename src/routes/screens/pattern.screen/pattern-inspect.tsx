@@ -6,7 +6,8 @@
  * - congruent angles
  */
 
-import {SetStateAction, useCallback, useMemo, useState} from 'react';
+import React from 'react';
+import {SetStateAction, useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {Coord, Tiling} from '../../../types';
 import {
     canonicalShape,
@@ -36,6 +37,7 @@ import {filterNull} from './filterNull';
 import {angleBetween} from '../../../rendering/isAngleBetween';
 import {IGuide, AddMark} from './IGuide';
 import {ShowLabel} from './ShowLabel';
+import {intersections, lineLine, lineToSlope, Primitive} from '../../../rendering/intersect';
 
 type Selection = {type: 'shape'; i: number} | {type: 'seg'; i: number};
 
@@ -63,31 +65,84 @@ const boxCrop = (cs: number) => ({
     ],
 });
 
+const useSVGZoom = (initialSize: number) => {
+    const [box, setBox] = useState({
+        x: -initialSize / 2,
+        y: -initialSize / 2,
+        width: initialSize,
+        height: initialSize,
+    });
+
+    const latest = useRef(box);
+    // latest.current = box;
+    // const onWheelCapture = useCallback((evt: React.WheelEvent<SVGSVGElement>) => {
+    //     const percent = worldToPercent(
+    //         {x: evt.clientX, y: evt.clientY},
+    //         evt.currentTarget.getBoundingClientRect(),
+    //     );
+
+    //     const nbox = {...latest.current};
+    //     nbox.width *= 1 + evt.deltaY * 0.01;
+    //     nbox.height *= 1 + evt.deltaY * 0.01;
+
+    //     const pre = percentToWorld(percent, latest.current);
+    //     const post = percentToWorld(percent, nbox);
+
+    //     nbox.x -= post.x - pre.x;
+    //     nbox.y -= post.y - pre.y;
+
+    //     setBox(nbox);
+    // }, []);
+
+    const ref = useRef<SVGSVGElement>(null);
+    useEffect(() => {
+        if (!ref.current) return;
+        const fn = function (this: SVGSVGElement, evt: WheelEvent) {
+            evt.preventDefault();
+
+            const nbox = {...latest.current};
+
+            if (evt.shiftKey) {
+                nbox.x += nbox.width * 0.003 * evt.deltaX;
+                nbox.y += nbox.height * 0.003 * evt.deltaY;
+                latest.current = nbox;
+                return setBox(nbox);
+            }
+
+            nbox.width *= 1 + evt.deltaY * 0.01;
+            nbox.height *= 1 + evt.deltaY * 0.01;
+
+            const percent = worldToPercent(
+                {x: evt.clientX, y: evt.clientY},
+                this.getBoundingClientRect(),
+            );
+            const pre = percentToWorld(percent, latest.current);
+            const post = percentToWorld(percent, nbox);
+
+            nbox.x -= post.x - pre.x;
+            nbox.y -= post.y - pre.y;
+
+            latest.current = nbox;
+            setBox(nbox);
+        };
+        ref.current.addEventListener('wheel', fn, {passive: false});
+        return () => ref.current?.removeEventListener('wheel', fn);
+    }, []);
+
+    return {
+        zoomProps: {
+            ref,
+            viewBox: `${box.x.toFixed(4)} ${box.y.toFixed(4)} ${box.width.toFixed(4)} ${box.height.toFixed(4)}`,
+            // onWheelCapture,
+        },
+        box,
+    };
+};
+
 export const PatternInspect = ({tiling}: {tiling: Tiling}) => {
     const size = 800;
     const [psize, setPsize] = useState(2);
     const data = useMemo(() => getNewPatternData(tiling, psize), [tiling, psize]);
-
-    // const canons = useMemo(() => {
-    //     const byKey: Record<string, Shape> = {};
-    //     const sid = data.shapes.map((shape) => {
-    //         const cs = canonicalShape(shape);
-    //         if (!byKey[cs.key]) {
-    //             byKey[cs.key] = normalizeCanonShape({...cs, percentage: 1});
-    //         }
-    //         return {canon: cs.key, cs, key: findRotated(shape)};
-    //     });
-    //     return {sid, byKey};
-    // }, [data.shapes]);
-    // const segData = useMemo(
-    //     () =>
-    //         data.allSegments.map(([a, b]) => ({
-    //             len: dist(a, b),
-    //             rot: angleTo(a, b),
-    //         })),
-    //     [data.allSegments],
-    // );
-    // const [selection, setSelection] = useState(null as null | Selection);
 
     const [guides, setGuides] = useState([] as IGuide[]);
 
@@ -95,8 +150,12 @@ export const PatternInspect = ({tiling}: {tiling: Tiling}) => {
     const [mouse, setMouse] = useState(null as null | Coord);
 
     const allPoints = useMemo(
-        () => unique(data.allSegments.flat().concat(data.bounds), coordKey),
-        [data.allSegments, data.bounds],
+        () =>
+            unique(
+                data.allSegments.flat().concat(data.bounds).concat(allGuideIntersections(guides)),
+                coordKey,
+            ),
+        [data.allSegments, data.bounds, guides],
     );
 
     const onPoint = useCallback(
@@ -132,7 +191,17 @@ export const PatternInspect = ({tiling}: {tiling: Tiling}) => {
 
     const labels = useMemo(() => getLabels(guides), [guides]);
 
-    const boxSize = 6;
+    const toggle = useCallback((i: number) => {
+        setGuides((guides) => {
+            if (guides[i].selected == null) {
+                return addSelected(guides, i);
+            }
+            return guides.map((g, j) => (j === i ? {...g, selected: undefined} : g));
+        });
+    }, []);
+
+    // const boxSize = 6;
+    const {zoomProps, box} = useSVGZoom(6);
     // const boxSize = 10;
     // const boxSize = 3;
 
@@ -141,14 +210,15 @@ export const PatternInspect = ({tiling}: {tiling: Tiling}) => {
             <div className="relative">
                 <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    viewBox={`${-boxSize / 2} ${-boxSize / 2} ${boxSize} ${boxSize}`}
+                    {...zoomProps}
                     style={size ? {background: 'black', width: size, height: size} : undefined}
                     onMouseLeave={() => setMouse(null)}
                     onMouseMove={(evt) => setMouse(svgCoord(evt))}
                 >
-                    {data.shapes.map((shape, i) => (
+                    <AllShapes data={data} />
+                    {/* {data.shapes.map((shape, i) => (
                         <path d={shapeD(shape)} key={i} fill={shapeColor(data, i)} stroke="none" />
-                    ))}
+                    ))} */}
                     <path
                         d={shapeD(data.bounds)}
                         stroke="white"
@@ -171,20 +241,21 @@ export const PatternInspect = ({tiling}: {tiling: Tiling}) => {
                                 fill="white"
                             />
                         ))}
-                    {guides.map((guide, i) => (
-                        <RenderGuide
-                            guide={guide}
-                            color={guide.selected != null ? 'magenta' : 'white'}
-                            hover={hover === i}
-                            key={i}
-                        />
-                    ))}
+                    <AllGuides guides={guides} hover={hover} toggle={toggle} setHover={setHover} />
                     {pendingGuide ? (
                         <RenderGuide hover={true} guide={pendingGuide} color="gold" />
                     ) : null}
                 </svg>
                 {labels.map((label) => {
-                    return <ShowLabel label={label} boxSize={boxSize} size={size} hover={hover} />;
+                    return (
+                        <ShowLabel
+                            setHover={setHover}
+                            label={label}
+                            box={box}
+                            size={size}
+                            hover={hover}
+                        />
+                    );
                 })}
             </div>
             <div className="bg-base-300 p-4 flex-1 flex flex-col">
@@ -207,12 +278,13 @@ export const PatternInspect = ({tiling}: {tiling: Tiling}) => {
                         <div className="p-3">Marks</div>
                         <AddMark pending={pending} setPending={setPending} />
                     </h2>
-                    <div>
+                    <div className="max-h-160 overflow-auto">
                         <table className="table">
                             <tbody>
                                 {guides.map((guide, i) => (
                                     <tr
                                         key={i}
+                                        className={i === hover ? 'bg-base-300' : ''}
                                         onMouseEnter={() => setHover(i)}
                                         onMouseLeave={() => setHover(null)}
                                     >
@@ -272,12 +344,34 @@ const guideMidpoint = (guide: IGuide) => {
 
 const halfway = (one: Coord, two: Coord) => ({x: (one.x + two.x) / 2, y: (one.y + two.y) / 2});
 
+const guideToPrimitive = (one: IGuide): Primitive =>
+    one.type === 'line'
+        ? lineToSlope(one.p1, one.p2, true)
+        : {
+              type: 'circle',
+              center: one.p1,
+              radius: dist(one.p1, one.p2),
+          };
+
+const allGuideIntersections = (guides: IGuide[]) => {
+    const coords: Coord[] = [];
+    const prims = guides.map(guideToPrimitive);
+    for (let i = 0; i < prims.length; i++) {
+        const gi = prims[i];
+        for (let j = i + 1; j < prims.length; j++) {
+            const gj = prims[j];
+            coords.push(...intersections(gi, gj));
+        }
+    }
+    return coords;
+};
+
 const getLabels = (guides: IGuide[]) => {
     // guides = guides.filter((g) => g.selected != null).sort((a, b) => a.selected! - b.selected!);
     // console.log('labesl', guides);
     const res: {
-        i: number;
-        j: number;
+        left: number;
+        right: number;
         label: {angle?: string; lengths: {left: string; right: string}};
         pos: Coord;
     }[] = [];
@@ -292,8 +386,8 @@ const getLabels = (guides: IGuide[]) => {
                 res.push({
                     label,
                     pos: halfway(guideMidpoint(gi), guideMidpoint(gj)),
-                    i,
-                    j,
+                    left: j,
+                    right: i,
                 });
             }
         }
@@ -316,11 +410,10 @@ const showAngle = (angle: number) => {
 };
 
 const getLabel = (one: IGuide, two: IGuide) => {
+    const d1 = dist(one.p1, one.p2);
+    const d2 = dist(two.p1, two.p2);
+    const rat = humanReadableRatio(d1, d2);
     if (one.type === 'line' && two.type === 'line') {
-        const d1 = dist(one.p1, one.p2);
-        const d2 = dist(two.p1, two.p2);
-        const rat = humanReadableRatio(d1, d2);
-        console.log('lengths', d1, d2, d1 / d2, rat);
         let angle = angleBetween(angleTo(one.p1, one.p2), angleTo(two.p1, two.p2), true);
         if (angle > Math.PI) {
             angle = Math.PI * 2 - angle;
@@ -330,11 +423,7 @@ const getLabel = (one: IGuide, two: IGuide) => {
         }
         return {angle: showAngle(angle), lengths: rat};
     }
-    if (one.type === 'circle' && two.type === 'circle') {
-        const d1 = dist(one.p1, one.p2);
-        const d2 = dist(two.p1, two.p2);
-        return {lengths: humanReadableRatio(d1, d2)};
-    }
+    return {lengths: rat};
 };
 
 const addSelected = (guides: IGuide[], i: number, max = 3) => {
@@ -352,38 +441,70 @@ const addSelected = (guides: IGuide[], i: number, max = 3) => {
     );
 };
 
-const RenderGuide = ({guide, color, hover}: {hover: boolean; guide: IGuide; color?: string}) =>
-    guide.type === 'line' ? (
-        <line
-            fill="none"
-            stroke={color ?? 'white'}
-            strokeWidth={hover ? 0.02 : 0.005}
-            pointerEvents={'none'}
-            x1={guide.p1.x}
-            y1={guide.p1.y}
-            x2={guide.p2.x}
-            y2={guide.p2.y}
-        />
-    ) : (
-        <circle
-            cx={guide.p1.x}
-            cy={guide.p1.y}
-            r={dist(guide.p1, guide.p2)}
-            fill="none"
-            stroke={color ?? 'white'}
-            strokeWidth={hover ? 0.02 : 0.005}
-            pointerEvents={'none'}
-        />
-    );
+const RenderGuide = React.memo(
+    ({
+        guide,
+        color,
+        hover,
+        setHover,
+        toggle,
+        i,
+    }: {
+        i?: number;
+        hover: boolean;
+        setHover?: (i: number | null) => void;
+        guide: IGuide;
+        color?: string;
+        toggle?: (i: number) => void;
+    }) =>
+        guide.type === 'line' ? (
+            <line
+                fill="none"
+                stroke={color ?? 'white'}
+                strokeWidth={hover ? 0.02 : 0.005}
+                pointerEvents={i != null ? undefined : 'none'}
+                onMouseEnter={() => setHover?.(i ?? null)}
+                onMouseLeave={() => setHover?.(null)}
+                onClick={() => toggle && i != null && toggle(i)}
+                x1={guide.p1.x}
+                y1={guide.p1.y}
+                x2={guide.p2.x}
+                y2={guide.p2.y}
+                cursor={'pointer'}
+            />
+        ) : (
+            <circle
+                cx={guide.p1.x}
+                cy={guide.p1.y}
+                r={dist(guide.p1, guide.p2)}
+                fill="none"
+                pointerEvents={i != null ? undefined : 'none'}
+                onMouseEnter={() => setHover?.(i ?? null)}
+                onMouseLeave={() => setHover?.(null)}
+                onClick={() => toggle && i != null && toggle(i)}
+                stroke={color ?? 'white'}
+                strokeWidth={hover ? 0.02 : 0.005}
+                // pointerEvents={'none'}
+                cursor={'pointer'}
+            />
+        ),
+);
+
+type Box = {x: number; y: number; width: number; height: number};
+
+const percentToWorld = (percent: Coord, viewBox: Box) => {
+    const x = viewBox.width * percent.x + viewBox.x;
+    const y = viewBox.height * percent.y + viewBox.y;
+    return {x, y};
+};
+const worldToPercent = (world: Coord, viewBox: Box) => {
+    return {x: (world.x - viewBox.x) / viewBox.width, y: (world.y - viewBox.y) / viewBox.height};
+};
 
 function svgCoord(evt: React.MouseEvent<SVGSVGElement>) {
     const box = evt.currentTarget.getBoundingClientRect();
-    const x0 = (evt.clientX - box.left) / box.width;
-    const y0 = (evt.clientY - box.top) / box.height;
     const vb = evt.currentTarget.viewBox.animVal;
-    const x = vb.width * x0 + vb.x;
-    const y = vb.height * y0 + vb.y;
-    return {x, y};
+    return percentToWorld(worldToPercent({x: evt.clientX, y: evt.clientY}, box), vb);
 }
 
 function shapeColor(data: ReturnType<typeof getNewPatternData>, i: number): string | undefined {
@@ -391,3 +512,35 @@ function shapeColor(data: ReturnType<typeof getNewPatternData>, i: number): stri
         ? '#444'
         : `hsl(100 0% ${(data.colorInfo.colors[i] / (data.colorInfo.maxColor + 1)) * 40 + 30}%)`;
 }
+
+const AllShapes = React.memo(({data}: {data: ReturnType<typeof getNewPatternData>}) => {
+    return data.shapes.map((shape, i) => (
+        <path d={shapeD(shape)} key={i} fill={shapeColor(data, i)} stroke="none" />
+    ));
+});
+
+const AllGuides = React.memo(
+    ({
+        guides,
+        hover,
+        toggle,
+        setHover,
+    }: {
+        guides: IGuide[];
+        hover: number | null;
+        setHover?: (i: number | null) => void;
+        toggle?: (i: number) => void;
+    }) => {
+        return guides.map((guide, i) => (
+            <RenderGuide
+                guide={guide}
+                color={guide.selected != null ? 'magenta' : 'white'}
+                toggle={toggle}
+                hover={hover === i}
+                i={i}
+                setHover={setHover}
+                key={i}
+            />
+        ));
+    },
+);
