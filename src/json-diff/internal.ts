@@ -1,68 +1,9 @@
-// biome-ignore-all lint/suspicious/noExplicitAny : not doing it
-import equal from 'fast-deep-equal';
-import {
-    AddOp,
-    AddPath,
-    AddPathValue,
-    JsonPatch,
-    JsonPatchOp,
-    Path,
-    PathValue,
-    RemovablePath,
-    RemoveOp,
-    ReplaceOp,
-} from './json-diff.typed';
-
-export function add<T>(base: T, op: AddOp<T>) {
-    return _add(base, parsePath(op.path), op.value);
-}
-export function remove<T>(base: T, op: RemoveOp<T>) {
-    return _remove(base, parsePath(op.path), op.value, equal);
-}
-export function replace<T>(base: T, op: ReplaceOp<T>) {
-    return _replace(base, parsePath(op.path), op.previous, op.value, equal);
-}
-
-export function get<T, P extends Path<T>>(value: T, at: P): PathValue<T, P> {
-    return _get(value, parsePath(at));
-}
-
-export function makeRemove<T, P extends RemovablePath<T>>(base: T, at: P, value: PathValue<T, P>) {
-    return {
-        op: 'remove',
-        path: at,
-        value,
-    } satisfies RemoveOp<T>;
-}
-
-export function makeAdd<T, P extends AddPath<T>>(base: T, at: P, value: AddPathValue<T, P>) {
-    return {
-        op: 'add',
-        path: at,
-        value,
-    } satisfies AddOp<T>;
-}
-
-export function makeReplace<T, P extends Path<T>>(
-    base: T,
-    at: P,
-    value: PathValue<T, P>,
-): JsonPatchOp<T> {
-    return {
-        op: 'replace',
-        path: at,
-        value,
-        previous: get(base, at),
-    };
-}
-
-const parsePath = (at: string) =>
+export const parsePath = (at: string) =>
     at
         .split('/')
         .filter(Boolean)
         .map((p) => (Number.isInteger(+p) ? +p : p));
-
-function _get(base: any, at: (number | string)[]) {
+export function _get(base: any, at: (number | string)[]) {
     for (let i = 0; i < at.length; i++) {
         const key = at[i];
         if (!base) {
@@ -79,7 +20,6 @@ function _get(base: any, at: (number | string)[]) {
     }
     return base;
 }
-
 function _getCloned(root: any, at: (number | string)[]) {
     root = Array.isArray(root) ? root.slice() : {...root};
     let base = root;
@@ -100,8 +40,7 @@ function _getCloned(root: any, at: (number | string)[]) {
     }
     return {root, base};
 }
-
-function _replace(
+export function _replace(
     base: any,
     at: (number | string)[],
     previous: any,
@@ -124,8 +63,7 @@ function _replace(
     base[key] = value;
     return root;
 }
-
-function _add(base: any, at: (number | string)[], value: any) {
+export function _add(base: any, at: (number | string)[], value: any) {
     let root: any;
     ({root, base} = _getCloned(base, at.slice(0, -1)));
     const key = at[at.length - 1];
@@ -143,8 +81,7 @@ function _add(base: any, at: (number | string)[], value: any) {
     }
     return root;
 }
-
-function _remove(
+export function _remove(
     base: any,
     at: (number | string)[],
     value: any,

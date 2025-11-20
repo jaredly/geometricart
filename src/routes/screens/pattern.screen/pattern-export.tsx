@@ -1,138 +1,44 @@
-import React from 'react';
-import {SetStateAction, useCallback, useEffect, useMemo, useRef, useState} from 'react';
-import {Coord, GuideGeom, Segment, Tiling} from '../../../types';
-import {
-    canonicalShape,
-    Crop,
-    getNewPatternData,
-    getPatternData,
-    shapeBoundsKey,
-} from '../../getPatternData';
-import {findCommonFractions, humanReadableFraction, showFract} from '../../findCommonFractions';
+import React, {useCallback, useMemo, useState} from 'react';
+import {coordKey} from '../../../rendering/coordKey';
+import {closeEnoughAngle} from '../../../rendering/epsilonToZero';
+import {angleTo, dist} from '../../../rendering/getMirrorTransforms';
+import {intersections, lineToSlope, Primitive} from '../../../rendering/intersect';
+import {angleBetween} from '../../../rendering/isAngleBetween';
+import {Coord, Segment, Tiling} from '../../../types';
+import {findCommonFractions, showFract} from '../../findCommonFractions';
+import {Crop, getNewPatternData} from '../../getPatternData';
 import {humanReadableRatio} from '../../humanReadableRatio';
 import {shapeD} from '../../shapeD';
-import {normalizeCanonShape, Shape} from '../../getUniqueShapes';
-import {coordKey} from '../../../rendering/coordKey';
-import {
-    angleTo,
-    applyMatrices,
-    dist,
-    Matrix,
-    rotationMatrix,
-    translationMatrix,
-} from '../../../rendering/getMirrorTransforms';
-import {mulPos} from '../../../animation/mulPos';
-import {closeEnough, closeEnoughAngle} from '../../../rendering/epsilonToZero';
-import {SegLink, unique} from '../../shapesFromSegments';
-import {BlurInt} from '../../../editor/Forms';
-import {RoundPlus} from '../../../icons/Icon';
+import {unique} from '../../shapesFromSegments';
 import {filterNull} from './filterNull';
-import {angleBetween} from '../../../rendering/isAngleBetween';
-import {IGuide, AddMark} from './IGuide';
+import {IGuide} from './IGuide';
 import {ShowLabel} from './ShowLabel';
-import {intersections, lineLine, lineToSlope, Primitive} from '../../../rendering/intersect';
 import {useSVGZoom} from './useSVGZoom';
+import {Layer, Mods} from './export-types';
+
+export type AnimatableNumber = number | string;
+export type AnimatableBoolean = boolean | string;
+export type AnimatableString = string;
+export type AnimatableCoord = Coord | string;
 
 type State = {
-    layers: Layer[];
+    layers: Record<string, Layer>;
+    crops: Record<string, {shape: Segment[]; mods?: Mods}>;
     view: {
         ppi: number;
-        background?: string;
+        background?: AnimatableString;
         box: Box;
     };
+    styleConfig: {
+        seed: AnimatableNumber;
+        clocks: {
+            name?: string;
+            ease?: string;
+            t0: number;
+            t1: number;
+        }[];
+    };
 };
-
-type Layer = {
-    visible: boolean;
-    groups: Group[];
-
-    guides: GuideGeom[];
-};
-
-type Group = {
-    type: 'Group';
-    name?: string;
-    entities: Entity[];
-    crops: Crop[];
-};
-
-type ObjectStyle = {
-    fills: {inset: number; color: string; rounded?: number}[];
-    lines: {inset: number; color: string; width: string; sharp?: boolean}[];
-};
-
-type PatternObjects =
-    | {
-          type: 'weave';
-          // coordKey, order of outgoing angles, bottom to top
-          orderings: Record<string, number[]>;
-      }
-    | {
-          type: 'lines';
-          // as a palette
-          colors: string[];
-          widths: number[];
-      }
-    | {
-          type: 'shapes';
-          style:
-              | {
-                    type: 'alternating';
-                    styles: ObjectStyle[];
-                }
-              | {
-                    type: 'by-shape';
-                    // by canon key
-                    styles: Record<string, ObjectStyle[]>;
-                };
-      };
-
-type Entity =
-    | Group
-    | {
-          type: 'Object';
-          segments: Segment[];
-          open?: boolean;
-          style: ObjectStyle;
-      }
-    | {
-          type: 'Pattern';
-          id: string;
-          scale: number;
-          psize: Coord;
-          rotation: number;
-          offset: Coord;
-          objects: PatternObjects;
-      };
-
-/*
-source: pattern (scale, psize, rotation, offset)
-
-ok so really
-there's like "object"
-and there's "autobject" where autobject is (pattern w/ groupings and group-level )
-
-and of course objects need to be groupable.
-
-
-*/
-
-// objects:
-// shapes
-// lines
-// weaves
-// custom shapes
-
-// group by:
-// - alternating
-// - shape
-
-// weaves options
-// - auto
-// - manual?
-
-// Rendering options:
-// -
 
 export const PatternExport = ({tiling}: {tiling: Tiling}) => {
     const size = 800;

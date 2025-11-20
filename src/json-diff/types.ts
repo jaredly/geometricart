@@ -344,15 +344,19 @@ export type TestOp<T> = {
     };
 }[Path<T>];
 
+export type RemoveOp<T, C extends JsonPatchConfig = DefaultJsonPatchConfig> = RemoveOpForPath<
+    T,
+    C,
+    RemovablePath<T, C>
+>;
+
 /** "remove" operation – only allowed at RemovablePath<T, C>. */
-export type RemoveOp<T, C extends JsonPatchConfig = DefaultJsonPatchConfig> = {
-    [P in RemovablePath<T, C>]: {
-        op: 'remove';
-        path: P;
-        value: PathValue<T, P>;
-        context?: any;
-    };
-}[RemovablePath<T, C>];
+export type RemoveOpForPath<T, C extends JsonPatchConfig, P extends RemovablePath<T, C>> = {
+    op: 'remove';
+    path: P;
+    value: PathValue<T, P>;
+    context?: any;
+};
 
 /** "move" operation. (No extra type coupling beyond valid paths.) */
 export type MoveOp<T> = {
@@ -411,16 +415,4 @@ const patch1: JsonPatch<User> = [
     {op: 'remove', path: '/address/zip', value: 12}, // ok (optional)
     // { op: "remove", path: "/id" },              // ❌ error: "/id" is not RemovablePath<User>
     // { op: "remove", path: "/address/city" },    // ❌ error: required, not removable
-];
-
-// Custom config example: disallow removing array elements, but allow nullable props to be removed.
-type UserPatchConfig = {
-    arrays: 'no-remove';
-    nullRemoval: 'allow';
-    addDash: 'allow';
-};
-
-const patch2: JsonPatch<User, UserPatchConfig> = [
-    {op: 'remove', path: '/email', value: 'hi'}, // ok: email includes null, nullRemoval="allow"
-    // { op: "remove", path: "/tags/0" },          // ❌ error: arrays="no-remove"
 ];
