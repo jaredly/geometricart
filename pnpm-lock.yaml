@@ -111,6 +111,9 @@ importers:
       isomorphic-git:
         specifier: ^1.21.0
         version: 1.33.0
+      jiff:
+        specifier: ^0.7.3
+        version: 0.7.3
       json-diff-ts:
         specifier: ^1.2.4
         version: 1.2.8
@@ -3374,6 +3377,9 @@ packages:
     peerDependenciesMeta:
       node-notifier:
         optional: true
+
+  jiff@0.7.3:
+    resolution: {integrity: sha512-MAo1DhUJTPPFcC+oY80dLHCcHdliFRJyNKn9o3AjImnNWyeA7bALsFbvmN+1Dv5eGTcEMBz3in3ENgvQsNTp5g==}
 
   jiti@2.6.1:
     resolution: {integrity: sha512-ekilCSN1jwRvIbgeg/57YFh8qQDNbwDb9xT/qu2DAHbFFZUicIl4ygVaAvzveMhMVr3LnpSKTNnwt8PoOfmKhQ==}
@@ -8861,6 +8867,8 @@ snapshots:
       - supports-color
       - ts-node
       - utf-8-validate
+
+  jiff@0.7.3: {}
 
   jiti@2.6.1: {}
 

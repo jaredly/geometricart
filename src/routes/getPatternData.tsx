@@ -203,11 +203,9 @@ const shapeSegments = (shape: Coord[]) => {
     return shape.map((c, i): [Coord, Coord] => [shape[i === 0 ? shape.length - 1 : i - 1], c]);
 };
 
-export const getNewPatternData = (
-    tiling: Tiling,
-    size = 2,
-    crops?: {segments: Segment[]; hole?: boolean; rough?: boolean}[],
-) => {
+export type Crop = {segments: Segment[]; hole?: boolean; rough?: boolean};
+
+export const getNewPatternData = (tiling: Tiling, size = 2, crops?: Crop[]) => {
     const bounds = tilingPoints(tiling.shape);
     const eigenSegments = tiling.cache.segments.map(
         (s) => [s.prev, s.segment.to] as [Coord, Coord],

@@ -27,6 +27,7 @@ export function ShowLabel({
             style={{
                 left: x,
                 top: y,
+                whiteSpace: 'nowrap',
                 position: 'absolute',
                 pointerEvents: 'none',
             }}

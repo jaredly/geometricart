@@ -33,7 +33,7 @@ export const PatternView = ({
 }: {
     loaderData: {} & Route.ComponentProps['loaderData'];
 }) => {
-    const data = useMemo(() => getNewPatternData(pattern.tiling), [pattern.tiling]);
+    const data = useMemo(() => getNewPatternData(pattern.tiling, 3), [pattern.tiling]);
     const [display, setDisplay] = useState<Display>({
         bounds: false,
         draw: 'shapes',

@@ -61,6 +61,7 @@
         "homography": "^1.8.0",
         "isbot": "^5",
         "isomorphic-git": "^1.21.0",
+        "jiff": "^0.7.3",
         "json-diff-ts": "^1.2.4",
         "kmeans-js": "^0.1.2",
         "localforage": "^1.9.0",

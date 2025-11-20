@@ -1,61 +1,140 @@
-/**
- * - congruent/parallel line segments
- * - measure/compare distances
- * - measure/compare angles
- * - congruent distances (excluding line segments)
- * - congruent angles
- */
-
-import React, {useCallback, useMemo, useState} from 'react';
-import {mulPos} from '../../../animation/mulPos';
+import React from 'react';
+import {SetStateAction, useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {Coord, GuideGeom, Segment, Tiling} from '../../../types';
+import {
+    canonicalShape,
+    Crop,
+    getNewPatternData,
+    getPatternData,
+    shapeBoundsKey,
+} from '../../getPatternData';
+import {findCommonFractions, humanReadableFraction, showFract} from '../../findCommonFractions';
+import {humanReadableRatio} from '../../humanReadableRatio';
+import {shapeD} from '../../shapeD';
+import {normalizeCanonShape, Shape} from '../../getUniqueShapes';
 import {coordKey} from '../../../rendering/coordKey';
-import {closeEnoughAngle} from '../../../rendering/epsilonToZero';
 import {
     angleTo,
     applyMatrices,
     dist,
+    Matrix,
+    rotationMatrix,
     translationMatrix,
 } from '../../../rendering/getMirrorTransforms';
-import {intersections, lineToSlope, Primitive} from '../../../rendering/intersect';
-import {angleBetween} from '../../../rendering/isAngleBetween';
-import {Coord, Tiling} from '../../../types';
-import {findCommonFractions, showFract} from '../../findCommonFractions';
-import {getNewPatternData} from '../../getPatternData';
-import {humanReadableRatio} from '../../humanReadableRatio';
-import {shapeD} from '../../shapeD';
-import {unique} from '../../shapesFromSegments';
+import {mulPos} from '../../../animation/mulPos';
+import {closeEnough, closeEnoughAngle} from '../../../rendering/epsilonToZero';
+import {SegLink, unique} from '../../shapesFromSegments';
+import {BlurInt} from '../../../editor/Forms';
+import {RoundPlus} from '../../../icons/Icon';
 import {filterNull} from './filterNull';
-import {IGuide} from './IGuide';
+import {angleBetween} from '../../../rendering/isAngleBetween';
+import {IGuide, AddMark} from './IGuide';
 import {ShowLabel} from './ShowLabel';
+import {intersections, lineLine, lineToSlope, Primitive} from '../../../rendering/intersect';
 import {useSVGZoom} from './useSVGZoom';
 
-type Selection = {type: 'shape'; i: number} | {type: 'seg'; i: number};
-
-const findRotated = (points: Coord[]) => {
-    const keys = points
-        .map((_, i) => {
-            const rotpoints = points.slice(i).concat(points.slice(0, i));
-            const mx = [translationMatrix(mulPos(rotpoints[0], {x: -1, y: -1}))];
-            return rotpoints
-                .map((p) => applyMatrices(p, mx))
-                .map((c) => coordKey(c))
-                .join(';');
-        })
-        .sort();
-    return keys[0];
+type State = {
+    layers: Layer[];
+    view: {
+        ppi: number;
+        background?: string;
+        box: Box;
+    };
 };
 
-const boxCrop = (cs: number) => ({
-    rough: true,
-    segments: [
-        {type: 'Line', to: {x: cs, y: -cs}},
-        {type: 'Line', to: {x: -cs, y: -cs}},
-        {type: 'Line', to: {x: -cs, y: cs}},
-        {type: 'Line', to: {x: cs, y: cs}},
-    ],
-});
+type Layer = {
+    visible: boolean;
+    groups: Group[];
 
-export const PatternInspect = ({tiling}: {tiling: Tiling}) => {
+    guides: GuideGeom[];
+};
+
+type Group = {
+    type: 'Group';
+    name?: string;
+    entities: Entity[];
+    crops: Crop[];
+};
+
+type ObjectStyle = {
+    fills: {inset: number; color: string; rounded?: number}[];
+    lines: {inset: number; color: string; width: string; sharp?: boolean}[];
+};
+
+type PatternObjects =
+    | {
+          type: 'weave';
+          // coordKey, order of outgoing angles, bottom to top
+          orderings: Record<string, number[]>;
+      }
+    | {
+          type: 'lines';
+          // as a palette
+          colors: string[];
+          widths: number[];
+      }
+    | {
+          type: 'shapes';
+          style:
+              | {
+                    type: 'alternating';
+                    styles: ObjectStyle[];
+                }
+              | {
+                    type: 'by-shape';
+                    // by canon key
+                    styles: Record<string, ObjectStyle[]>;
+                };
+      };
+
+type Entity =
+    | Group
+    | {
+          type: 'Object';
+          segments: Segment[];
+          open?: boolean;
+          style: ObjectStyle;
+      }
+    | {
+          type: 'Pattern';
+          id: string;
+          scale: number;
+          psize: Coord;
+          rotation: number;
+          offset: Coord;
+          objects: PatternObjects;
+      };
+
+/*
+source: pattern (scale, psize, rotation, offset)
+
+ok so really
+there's like "object"
+and there's "autobject" where autobject is (pattern w/ groupings and group-level )
+
+and of course objects need to be groupable.
+
+
+*/
+
+// objects:
+// shapes
+// lines
+// weaves
+// custom shapes
+
+// group by:
+// - alternating
+// - shape
+
+// weaves options
+// - auto
+// - manual?
+
+// Rendering options:
+// -
+
+export const PatternExport = ({tiling}: {tiling: Tiling}) => {
     const size = 800;
     const [psize, setPsize] = useState(3);
     const data = useMemo(() => getNewPatternData(tiling, psize), [tiling, psize]);
@@ -181,11 +260,11 @@ export const PatternInspect = ({tiling}: {tiling: Tiling}) => {
                         value={psize}
                         type="number"
                         min="1"
-                        max="7"
+                        max="4"
                         className="input w-12 mx-4"
                         onChange={(evt) => {
                             const num = +evt.target.value;
-                            setPsize(Number.isFinite(num) ? Math.min(Math.max(1, num), 7) : 1);
+                            setPsize(Number.isFinite(num) ? Math.min(Math.max(1, num), 4) : 1);
                         }}
                     />
                 </label>
@@ -429,12 +508,12 @@ const RenderGuide = React.memo(
 
 type Box = {x: number; y: number; width: number; height: number};
 
-export const percentToWorld = (percent: Coord, viewBox: Box) => {
+const percentToWorld = (percent: Coord, viewBox: Box) => {
     const x = viewBox.width * percent.x + viewBox.x;
     const y = viewBox.height * percent.y + viewBox.y;
     return {x, y};
 };
-export const worldToPercent = (world: Coord, viewBox: Box) => {
+const worldToPercent = (world: Coord, viewBox: Box) => {
     return {x: (world.x - viewBox.x) / viewBox.width, y: (world.y - viewBox.y) / viewBox.height};
 };
 
