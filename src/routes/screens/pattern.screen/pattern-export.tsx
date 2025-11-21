@@ -13,222 +13,27 @@ import {unique} from '../../shapesFromSegments';
 import {filterNull} from './filterNull';
 import {IGuide} from './IGuide';
 import {ShowLabel} from './ShowLabel';
-import {useSVGZoom} from './useSVGZoom';
-import {Box, Layer, Mods} from './export-types';
+import {svgCoord, useSVGZoom} from './useSVGZoom';
+import {StateEditor} from './StateEditor';
+import {State} from './export-types';
 
 export const PatternExport = ({tiling}: {tiling: Tiling}) => {
     const size = 800;
-    const [psize, setPsize] = useState(3);
-    const data = useMemo(() => getNewPatternData(tiling, psize), [tiling, psize]);
-
-    const [guides, setGuides] = useState([] as IGuide[]);
-
-    const [pending, setPending] = useState(null as null | {type: IGuide['type']; points: Coord[]});
-    const [mouse, setMouse] = useState(null as null | Coord);
-
-    const allPoints = useMemo(
-        () =>
-            unique(
-                data.allSegments.flat().concat(data.bounds).concat(allGuideIntersections(guides)),
-                coordKey,
-            ),
-        [data.allSegments, data.bounds, guides],
-    );
-
-    const onPoint = useCallback(
-        (coord: Coord) => {
-            if (!pending) return;
-            const points = pending.points.concat([coord]);
-            if (points.length >= 2) {
-                setGuides((g) =>
-                    addSelected(
-                        [...g, {type: pending.type, p1: points[0], p2: points[1]}],
-                        g.length,
-                    ),
-                );
-                setPending({type: pending.type, points: []});
-            } else {
-                setPending({...pending, points});
-            }
+    const [state, setState] = useState<State>({
+        layers: {},
+        crops: {},
+        view: {ppi: 1, box: {x: -0.5, y: -0.5, width: 1, height: 2}},
+        styleConfig: {
+            seed: 0,
+            clocks: [],
+            palette: [],
         },
-        [pending],
-    );
-    const [hover, setHover] = useState(null as null | number);
-
-    const pendingPair =
-        pending?.points.length === 2
-            ? pending.points
-            : pending?.points.length === 1 && mouse != null
-              ? [pending.points[0], mouse]
-              : null;
-    const pendingGuide: IGuide | null =
-        pending && pendingPair
-            ? {type: pending.type, p1: pendingPair[0], p2: pendingPair[1]}
-            : null;
-
-    const labels = useMemo(() => getLabels(guides), [guides]);
-
-    const toggle = useCallback((i: number) => {
-        setGuides((guides) => {
-            if (guides[i].selected == null) {
-                return addSelected(guides, i);
-            }
-            return guides.map((g, j) => (j === i ? {...g, selected: undefined} : g));
-        });
-    }, []);
-
-    // const boxSize = 6;
-    const {zoomProps, box} = useSVGZoom(6);
-    // const boxSize = 10;
-    // const boxSize = 3;
+    });
 
     return (
         <div className="flex">
-            <div className="relative overflow-hidden">
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    {...zoomProps}
-                    style={size ? {background: 'black', width: size, height: size} : undefined}
-                    onMouseLeave={() => setMouse(null)}
-                    onMouseMove={(evt) => setMouse(svgCoord(evt))}
-                >
-                    <AllShapes data={data} />
-                    {/* {data.shapes.map((shape, i) => (
-                        <path d={shapeD(shape)} key={i} fill={shapeColor(data, i)} stroke="none" />
-                    ))} */}
-                    <path
-                        d={shapeD(data.bounds)}
-                        stroke="white"
-                        strokeWidth={0.02}
-                        fill="none"
-                        opacity={0.4}
-                        strokeDasharray={'0.02 0.05'}
-                        pointerEvents={'none'}
-                    />
-                    {pending &&
-                        allPoints.map((coord, i) => (
-                            <circle
-                                key={i}
-                                cx={coord.x}
-                                cy={coord.y}
-                                r={data.minSegLength / 5}
-                                opacity={0.1}
-                                className="hover:opacity-100 cursor-pointer"
-                                onClick={() => onPoint(coord)}
-                                fill="white"
-                            />
-                        ))}
-                    <AllGuides guides={guides} hover={hover} toggle={toggle} setHover={setHover} />
-                    {pendingGuide ? (
-                        <RenderGuide hover={true} guide={pendingGuide} color="gold" />
-                    ) : null}
-                </svg>
-                {labels.map((label) => {
-                    return (
-                        <ShowLabel
-                            setHover={setHover}
-                            label={label}
-                            box={box}
-                            size={size}
-                            hover={hover}
-                        />
-                    );
-                })}
-            </div>
-            <div className="bg-base-300 p-4 flex-1 flex flex-col">
-                <label>
-                    Pattern Size
-                    <input
-                        value={psize}
-                        type="number"
-                        min="1"
-                        max="4"
-                        className="input w-12 mx-4"
-                        onChange={(evt) => {
-                            const num = +evt.target.value;
-                            setPsize(Number.isFinite(num) ? Math.min(Math.max(1, num), 4) : 1);
-                        }}
-                    />
-                </label>
-                <div className="bg-base-200 rounded-md mt-4">
-                    <h2 className="text-xl flex justify-between p-0 items-center">
-                        <div className="p-3">Marks</div>
-                        <div>
-                            <button
-                                onClick={() =>
-                                    pending?.type === 'line'
-                                        ? setPending(null)
-                                        : setPending({type: 'line', points: []})
-                                }
-                                className={`btn ${pending?.type === 'line' ? 'btn-accent' : ''}`}
-                            >
-                                Line
-                            </button>
-                            <button
-                                onClick={() =>
-                                    pending?.type === 'circle'
-                                        ? setPending(null)
-                                        : setPending({type: 'circle', points: []})
-                                }
-                                className={`btn ${pending?.type === 'circle' ? 'btn-accent' : ''}`}
-                            >
-                                Circle
-                            </button>
-                        </div>
-                    </h2>
-                    <div className="max-h-160 overflow-auto">
-                        <table className="table">
-                            <tbody>
-                                {guides.map((guide, i) => (
-                                    <tr
-                                        key={i}
-                                        className={i === hover ? 'bg-base-300' : ''}
-                                        onMouseEnter={() => setHover(i)}
-                                        onMouseLeave={() => setHover(null)}
-                                    >
-                                        <td>
-                                            <input
-                                                className="checkbox"
-                                                type="checkbox"
-                                                checked={guide.selected != null}
-                                                onChange={(evt) => {
-                                                    if (!evt.target.checked) {
-                                                        setGuides((g) =>
-                                                            g.map((g) =>
-                                                                g === guide
-                                                                    ? {
-                                                                          ...guide,
-                                                                          selected: undefined,
-                                                                      }
-                                                                    : g,
-                                                            ),
-                                                        );
-                                                    } else {
-                                                        setGuides((g) => addSelected(g, i));
-                                                    }
-                                                }}
-                                            />
-                                        </td>
-                                        <td>#{i + 1}</td>
-                                        <td>{guide.type}</td>
-
-                                        <td>
-                                            <button
-                                                className="btn"
-                                                onClick={() =>
-                                                    setGuides((g) => g.filter((g) => g !== guide))
-                                                }
-                                            >
-                                                &times;
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
+            <div>Hello this is big</div>
+            <StateEditor value={state} onChange={setState} />
         </div>
     );
 };
@@ -387,21 +192,6 @@ const RenderGuide = React.memo(
             />
         ),
 );
-
-const percentToWorld = (percent: Coord, viewBox: Box) => {
-    const x = viewBox.width * percent.x + viewBox.x;
-    const y = viewBox.height * percent.y + viewBox.y;
-    return {x, y};
-};
-const worldToPercent = (world: Coord, viewBox: Box) => {
-    return {x: (world.x - viewBox.x) / viewBox.width, y: (world.y - viewBox.y) / viewBox.height};
-};
-
-function svgCoord(evt: React.MouseEvent<SVGSVGElement>) {
-    const box = evt.currentTarget.getBoundingClientRect();
-    const vb = evt.currentTarget.viewBox.animVal;
-    return percentToWorld(worldToPercent({x: evt.clientX, y: evt.clientY}, box), vb);
-}
 
 function shapeColor(data: ReturnType<typeof getNewPatternData>, i: number): string | undefined {
     return data.colorInfo.colors[i] === -1

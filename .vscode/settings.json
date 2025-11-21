@@ -15,5 +15,6 @@
     },
     "[json]": {
         "editor.defaultFormatter": "biomejs.biome"
-    }
+    },
+    "chatgpt.commentCodeLensEnabled": false
 }

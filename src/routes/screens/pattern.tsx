@@ -5,6 +5,7 @@ import type {Route} from './+types/pattern';
 import {useState} from 'react';
 import {PatternView} from './pattern.screen/pattern-view';
 import {PatternInspect} from './pattern.screen/pattern-inspect';
+import {PatternExport} from './pattern.screen/pattern-export';
 
 export async function loader({params}: Route.LoaderArgs) {
     if (!params.id) {
@@ -67,6 +68,8 @@ export default function PatternScreen() {
             </div>
             {currentTab === 'Inspect' ? (
                 <PatternInspect tiling={loaderData.pattern.tiling} />
+            ) : currentTab === 'Export' ? (
+                <PatternExport tiling={loaderData.pattern.tiling} />
             ) : (
                 <PatternView loaderData={loaderData} />
             )}

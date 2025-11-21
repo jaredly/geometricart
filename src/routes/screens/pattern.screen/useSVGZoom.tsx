@@ -1,5 +1,22 @@
 import {useState, useRef, useEffect} from 'react';
-import {worldToPercent, percentToWorld} from './pattern-inspect';
+import {Coord} from '../../../types';
+import {Box} from './export-types';
+
+export const percentToWorld = (percent: Coord, viewBox: Box) => {
+    const x = viewBox.width * percent.x + viewBox.x;
+    const y = viewBox.height * percent.y + viewBox.y;
+    return {x, y};
+};
+
+export const worldToPercent = (world: Coord, viewBox: Box) => {
+    return {x: (world.x - viewBox.x) / viewBox.width, y: (world.y - viewBox.y) / viewBox.height};
+};
+
+export function svgCoord(evt: React.MouseEvent<SVGSVGElement>) {
+    const box = evt.currentTarget.getBoundingClientRect();
+    const vb = evt.currentTarget.viewBox.animVal;
+    return percentToWorld(worldToPercent({x: evt.clientX, y: evt.clientY}, box), vb);
+}
 
 export const useSVGZoom = (initialSize: number) => {
     const [box, setBox] = useState({

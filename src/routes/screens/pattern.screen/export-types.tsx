@@ -5,98 +5,6 @@ export type AnimatableBoolean = boolean | string;
 export type AnimatableColor = number | string;
 export type AnimatableCoord = Coord | string;
 
-/*
-
-# Ok a big idea:
-
-ANY number input can instead be a (script) function.
-color (hsl/palette index/etc)
-tint (hsl added to color)
-opacity
-line width
-inset
-rotation (theta + origin)
-scale (% + origin)
-
-so you can just put a number, but you could also do like `rand(0.5, 1.0)`
-and you can expand it out into a modal textarea.
-
-I think I can clamp my undo/redo stack to like 100 items.
-
-Ok, so you could also do like : opacity = `dist(self.center(), group.center())`
-also for animation, like `rotation = t * 2 * π`
-also for segmented animation, I could have `t` which is the whole thing, but segments
-defined `t1`, `t2`, `t3` etc. and
-t1 = `min(1, t * 3)`
-t2 = `max(0, min(1, t * 3 - 1))`
-t3 = `max(0, t * 3 - 2)`
-
-BUT ALSO you could define different easing functions for t1, t2, t3.
-hmmm and like t1a vs t1 idk.
- -> maybe t1ease? naw you can just ease(t1)
-    -> ok but the better thing is to define a custom `t1` centrally, so you can muck with the easing function and everything comes along for the ride.
-
-
-
-TOPLEVEL ADVANCED CONFIG:
-- define a `seed`. All of the randoms will be seeded, for reproducibility.
-- define custom animation things
-- "palettes" that can be indexed into from scripts
-
-
-
-# Crops idea
-
-#
-
-Pattern:
-
-> Shapes
-
-list of styling rules.
-[everything]
-
-[alternating #1]
-[alternating #2]
-...
-
-(shape:rotation invariant, rotation dependent)
-[shape #1]
-[shape #2]
-[shape #3]
-...
-
-[list of explicit shape IDs]
-[list of explicit shape IDs]
-^ shape IDs presented to the user as integers, but under the hood are probably (center-coord)
-
-^ if a shape appears in multiple explicit lists ... it gets removed from other ones
-^ NOPE: actually overriding is fine and good.
-
-> Layers
-
-
-> Lines
-
-
-> Woven
-
-
-
-Subsequent styling rules can override any part of the previous rules.
-
-Fills are /ordered/, but identified by a genId. So you don't have to represent
-the whole state of things to modify one thing.
-(fractional indices for ordering)
-
-
-Crops ... to embed or not to embed.
-The question is: how often will we (a) have the same crop in several groups, and (b) want to modify that crop,
-such that it applies to everything?
-idk I feel like the answer is not often.
-
-*/
-
 export type Shape =
     // v center + corner
     | {type: 'rect'; pts: [Coord, Coord]}
@@ -125,6 +33,7 @@ export type Shape =
     | BarePath;
 
 export type Box = {x: number; y: number; width: number; height: number};
+
 export type State = {
     layers: Record<string, Layer>;
     crops: Record<string, {shape: Segment[]; mods?: Mods}>;
@@ -216,6 +125,9 @@ export type BaseKind =
 export type ShapeStyle = {
     id: string;
     order: number;
+    // TODO: maybe have a kind that's like "anything intersecting with this shape"?
+    // Could also be interesting to have an `animatedKind` where we select
+    // the items effected by some script
     kind: BaseKind | {type: 'shape'; key: string; rotInvariant: boolean};
     fills: Record<string, Fill>;
     lines: Record<string, Line>;
@@ -256,13 +168,12 @@ export type LayerStyle = {
     mods?: Mods;
 };
 
-export type Entity =
-    | Group
-    | Pattern
-    | {
-          type: 'Object';
-          id: string;
-          segments: Segment[];
-          open?: boolean;
-          style: ShapeStyle;
-      };
+export type EObject = {
+    type: 'Object';
+    id: string;
+    segments: Segment[];
+    open?: boolean;
+    style: ShapeStyle;
+};
+
+export type Entity = Group | Pattern | EObject;

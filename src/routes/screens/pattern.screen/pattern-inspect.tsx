@@ -27,7 +27,7 @@ import {unique} from '../../shapesFromSegments';
 import {filterNull} from './filterNull';
 import {IGuide} from './IGuide';
 import {ShowLabel} from './ShowLabel';
-import {useSVGZoom} from './useSVGZoom';
+import {svgCoord, useSVGZoom} from './useSVGZoom';
 
 type Selection = {type: 'shape'; i: number} | {type: 'seg'; i: number};
 
@@ -426,23 +426,6 @@ const RenderGuide = React.memo(
             />
         ),
 );
-
-type Box = {x: number; y: number; width: number; height: number};
-
-export const percentToWorld = (percent: Coord, viewBox: Box) => {
-    const x = viewBox.width * percent.x + viewBox.x;
-    const y = viewBox.height * percent.y + viewBox.y;
-    return {x, y};
-};
-export const worldToPercent = (world: Coord, viewBox: Box) => {
-    return {x: (world.x - viewBox.x) / viewBox.width, y: (world.y - viewBox.y) / viewBox.height};
-};
-
-function svgCoord(evt: React.MouseEvent<SVGSVGElement>) {
-    const box = evt.currentTarget.getBoundingClientRect();
-    const vb = evt.currentTarget.viewBox.animVal;
-    return percentToWorld(worldToPercent({x: evt.clientX, y: evt.clientY}, box), vb);
-}
 
 function shapeColor(data: ReturnType<typeof getNewPatternData>, i: number): string | undefined {
     return data.colorInfo.colors[i] === -1
