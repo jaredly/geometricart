@@ -29,7 +29,7 @@ export default function PatternScreen() {
         {name: 'Tutorial', enabled: hasConstruct},
     ];
 
-    const [currentTab, setCurrentTab] = useState('Inspect');
+    const [currentTab, setCurrentTab] = useState('Export');
 
     if (!id || !loaderData) {
         return <div>No data... {id}</div>;
@@ -69,7 +69,7 @@ export default function PatternScreen() {
             {currentTab === 'Inspect' ? (
                 <PatternInspect tiling={loaderData.pattern.tiling} />
             ) : currentTab === 'Export' ? (
-                <PatternExport tiling={loaderData.pattern.tiling} />
+                <PatternExport id={loaderData.pattern.hash} tiling={loaderData.pattern.tiling} />
             ) : (
                 <PatternView loaderData={loaderData} />
             )}

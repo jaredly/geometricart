@@ -1,4 +1,13 @@
+import {mulPos} from '../../../animation/mulPos';
+import {scalePos} from '../../../editor/scalePos';
+import {
+    Matrix,
+    rotationMatrix,
+    scaleMatrix,
+    translationMatrix,
+} from '../../../rendering/getMirrorTransforms';
 import {GuideGeom, Coord, Segment, BarePath} from '../../../types';
+import {pk, PKPath} from '../../pk';
 
 export type AnimatableNumber = number | string;
 export type AnimatableBoolean = boolean | string;
@@ -34,9 +43,10 @@ export type Shape =
 
 export type Box = {x: number; y: number; width: number; height: number};
 
+export type Crop = {id: string; shape: Segment[]; mods?: Mods};
 export type State = {
     layers: Record<string, Layer>;
-    crops: Record<string, {shape: Segment[]; mods?: Mods}>;
+    crops: Record<string, Crop>;
     view: {
         ppi: number;
         background?: AnimatableColor;
@@ -73,6 +83,21 @@ export type Group = {
     crops: {hole?: boolean; rough?: boolean; id: string}[];
 };
 
+export type ConcreteMods = {
+    inset?: number;
+    scale?: Coord | number;
+    scaleOrigin?: Coord;
+    offset?: Coord;
+    rotation?: number;
+    rotationOrigin?: Coord;
+
+    // Non-positional
+    opacity?: number;
+    tint?: string;
+    // for 3d rendering
+    thickness?: number;
+};
+
 export type Mods = {
     inset?: AnimatableNumber;
     scale?: AnimatableCoord | AnimatableNumber;
@@ -80,17 +105,53 @@ export type Mods = {
     offset?: AnimatableCoord;
     rotation?: AnimatableNumber;
     rotationOrigin?: AnimatableCoord;
+    // Non-positional
     opacity?: AnimatableNumber;
     tint?: AnimatableColor;
     // for 3d rendering
     thickness?: AnimatableNumber;
 };
 
+export const insetPkPath = (path: PKPath, inset: number) => {
+    const stroke = path.copy().stroke({
+        width: inset,
+    })!;
+    path.op(stroke, pk.PathOp.Difference);
+    stroke.delete();
+};
+
+export const modsTransforms = (mods: ConcreteMods) => {
+    const tx: Matrix[] = [];
+    if (mods.scale) {
+        const scale = typeof mods.scale === 'number' ? {x: mods.scale, y: mods.scale} : mods.scale;
+        if (mods.scaleOrigin) {
+            tx.push(translationMatrix(scalePos(mods.scaleOrigin, -1)));
+        }
+        tx.push(scaleMatrix(scale.x, scale.y));
+        if (mods.scaleOrigin) {
+            tx.push(translationMatrix(mods.scaleOrigin));
+        }
+    }
+    if (mods.rotation) {
+        if (mods.rotationOrigin) {
+            tx.push(translationMatrix(scalePos(mods.rotationOrigin, -1)));
+        }
+        tx.push(rotationMatrix(mods.rotation));
+        if (mods.rotationOrigin) {
+            tx.push(translationMatrix(mods.rotationOrigin));
+        }
+    }
+    if (mods.offset) {
+        tx.push(translationMatrix(mods.offset));
+    }
+    return tx;
+};
+
 export type Pattern = {
     type: 'Pattern';
     id: string;
 
-    psize: Coord;
+    psize: Coord | number;
     contents: PatternContents;
     mods: Mods;
 };

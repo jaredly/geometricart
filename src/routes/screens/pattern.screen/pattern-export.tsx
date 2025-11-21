@@ -16,11 +16,46 @@ import {ShowLabel} from './ShowLabel';
 import {svgCoord, useSVGZoom} from './useSVGZoom';
 import {StateEditor} from './StateEditor';
 import {State} from './export-types';
+import {RenderExport} from './RenderExport';
 
-export const PatternExport = ({tiling}: {tiling: Tiling}) => {
+export const PatternExport = ({tiling, id}: {tiling: Tiling; id: string}) => {
     const size = 800;
     const [state, setState] = useState<State>({
-        layers: {},
+        layers: {
+            a: {
+                id: 'a',
+                entities: {
+                    r: {
+                        type: 'Group',
+                        crops: [],
+                        entities: {p: 1},
+                        id: 'r',
+                    },
+                    p: {
+                        type: 'Pattern',
+                        id,
+                        contents: {
+                            type: 'shapes',
+                            styles: {
+                                a: {
+                                    id: 'a',
+                                    fills: {},
+                                    lines: {},
+                                    kind: {type: 'everything'},
+                                    order: 1,
+                                },
+                            },
+                        },
+                        mods: {},
+                        psize: 3,
+                    },
+                },
+                guides: [],
+                opacity: 1,
+                order: 1,
+                rootGroup: 'r',
+            },
+        },
         crops: {},
         view: {ppi: 1, box: {x: -0.5, y: -0.5, width: 1, height: 2}},
         styleConfig: {
@@ -30,9 +65,11 @@ export const PatternExport = ({tiling}: {tiling: Tiling}) => {
         },
     });
 
+    const patterns = useMemo(() => ({[id]: tiling}), [id, tiling]);
+
     return (
         <div className="flex">
-            <div>Hello this is big</div>
+            <RenderExport state={state} patterns={patterns} />
             <StateEditor value={state} onChange={setState} />
         </div>
     );

@@ -205,7 +205,7 @@ const shapeSegments = (shape: Coord[]) => {
 
 export type Crop = {segments: Segment[]; hole?: boolean; rough?: boolean};
 
-export const getNewPatternData = (tiling: Tiling, size = 2, crops?: Crop[]) => {
+export const getSimplePatternData = (tiling: Tiling, size: Coord | number) => {
     const bounds = tilingPoints(tiling.shape);
     const eigenSegments = tiling.cache.segments.map(
         (s) => [s.prev, s.segment.to] as [Coord, Coord],
@@ -226,15 +226,32 @@ export const getNewPatternData = (tiling: Tiling, size = 2, crops?: Crop[]) => {
             .filter((l) => l > 0.001),
     );
 
-    const x = size;
-    const y = Math.round(Math.abs(xyratio(tiling.shape, bounds[2])) * x);
-
-    const ttt = eigenShapeTransform(tiling.shape, bounds[2], bounds, {x, y});
-    const transformedShapes = applyTilingTransformsG(initialShapes, ttt, transformShape);
-    const allShapes = cropShapes(
-        unique(transformedShapes, (s) => shapeBoundsKey(s, minSegLength)),
-        crops,
+    const ttt = eigenShapeTransform(
+        tiling.shape,
+        bounds[2],
+        bounds,
+        typeof size === 'number' ? simpleSize(tiling, size) : size,
     );
+    const transformedShapes = applyTilingTransformsG(initialShapes, ttt, transformShape);
+    const uniqueShapes = unique(transformedShapes, (s) => shapeBoundsKey(s, minSegLength));
+
+    return {initialShapes, minSegLength, canons, ttt, uniqueShapes};
+};
+
+const simpleSize = (tiling: Tiling, x: number) => {
+    const bounds = tilingPoints(tiling.shape);
+    const y = Math.round(Math.abs(xyratio(tiling.shape, bounds[2])) * x);
+    return {x, y};
+};
+
+export const getNewPatternData = (tiling: Tiling, size = 2, crops?: Crop[]) => {
+    const bounds = tilingPoints(tiling.shape);
+    const {uniqueShapes, initialShapes, minSegLength, canons, ttt} = getSimplePatternData(
+        tiling,
+        simpleSize(tiling, size),
+    );
+
+    const allShapes = cropShapes(uniqueShapes, crops);
     const allSegments = unique(
         allShapes
             .map(joinAdjacentShapeSegments)
@@ -256,26 +273,19 @@ export const getNewPatternData = (tiling: Tiling, size = 2, crops?: Crop[]) => {
 
     return {
         bounds,
-        // shapes: allShapes,
         uniquePoints,
-        initialShapes,
         shapes: allShapes,
         eigenPoints: [],
-        // shapePoints,
         colorInfo: {colors, maxColor: Math.max(...colors)},
         allSegments,
-        minSegLength,
         paths,
         outer,
         woven,
+
+        initialShapes,
+        minSegLength,
         canons,
         ttt,
-
-        // oshapes: initialShapes,
-        // shapes: allShapes,
-        // sbounds: applyTilingTransformsG([bounds], ttt, (pts, tx) =>
-        //     pts.map((p) => applyMatrices(p, tx)),
-        // ),
     };
 };
 
