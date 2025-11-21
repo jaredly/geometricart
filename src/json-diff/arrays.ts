@@ -14,7 +14,6 @@ export type ArrayMove<T> = {
     type: 'move';
     from: number;
     to: number;
-    value: T;
 };
 
 export type ArrayEdit<T> = ArrayDelete<T> | ArrayInsert<T> | ArrayMove<T>;
@@ -60,7 +59,7 @@ export function diffByIdentity<T>(first: T[], second: T[]): ArrayEdit<T>[] {
         if (found !== -1) {
             const [item] = working.splice(found, 1);
             working.splice(target, 0, item);
-            ops.push({type: 'move', from: found, to: target, value: item});
+            ops.push({type: 'move', from: found, to: target});
         } else {
             working.splice(target, 0, desired);
             ops.push({type: 'insert', at: target, value: desired});
@@ -70,7 +69,7 @@ export function diffByIdentity<T>(first: T[], second: T[]): ArrayEdit<T>[] {
     return ops;
 }
 
-export const apply = <T extends object>(source: T[], edits: ArrayEdit<T>[]) => {
+export const apply = <T>(source: T[], edits: ArrayEdit<T>[]) => {
     const arr = [...source];
     edits.forEach((op) => {
         switch (op.type) {

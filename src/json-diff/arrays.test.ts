@@ -30,4 +30,11 @@ describe('diffByIdentity', () => {
         expect(apply(first, edits)).toEqual(second);
         expect(edits.some((e) => e.type === 'insert')).toBeTrue();
     });
+
+    it('works with primitives', () => {
+        const first = [1, 2, 2];
+        const second = [2, 1, 2, 2];
+        const edits = diffByIdentity(first, second);
+        expect(apply(first, edits)).toEqual(second);
+    });
 });
