@@ -35,7 +35,7 @@ function _getCloned(root: any, at: (number | string)[]) {
         } else if (typeof base !== 'object') {
             throw new Error(`base is not object`);
         }
-        base[key] = Array.isArray(base[key]) ? base[key].slice() : {...base};
+        base[key] = Array.isArray(base[key]) ? base[key].slice() : {...base[key]};
         base = base[key];
     }
     return {root, base};
@@ -75,7 +75,7 @@ export function _add(base: any, at: (number | string)[], value: any) {
     } else if (typeof base !== 'object') {
         throw new Error(`base is not object`);
     } else if (key in base) {
-        throw new Error(`key already exists, cannot add, must replace`);
+        throw new Error(`key "${key}" already exists, cannot add, must replace`);
     } else {
         base[key] = value;
     }
@@ -100,8 +100,8 @@ export function _remove(
         base.splice(key, 1);
     } else if (typeof base !== 'object') {
         throw new Error(`base is not object`);
-    } else if (key in base) {
-        throw new Error(`key already exists, cannot add, must replace`);
+    } else if (!(key in base)) {
+        throw new Error(`key "${key}" doesn't exist in base`);
     } else {
         delete base[key];
     }

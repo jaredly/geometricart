@@ -1,22 +1,21 @@
 import {useCallback, useState} from 'react';
+import {redo, State, undo, update} from './state';
 import {JsonPatchOp} from './types';
-import {ops} from './ops';
 
 type MaybeNested<T> = T | MaybeNested<T>[];
-type History<T> = {ops: JsonPatchOp<T>[]; ts: number}[];
 
-export function useDiffState<T>(initial: T, history: History<T>[]) {
-    const [state, setState] = useState({value: initial, history});
-    const update = useCallback((...nested: MaybeNested<JsonPatchOp<T>>[]) => {
-        const update = nested.flat() as JsonPatchOp<T>[];
-        setState((state) => {
-            const history = state.history.concat([{ops: update, ts: Date.now()}]);
-            let value = state.value;
-            update.forEach((op) => {
-                value = ops.apply(value, op);
-            });
-            return {value, history};
-        });
+export function useDiffState<T>(initial: State<T>) {
+    const [state, setState] = useState(initial);
+    const dispatch = useCallback((nested: {op: 'undo' | 'redo'} | MaybeNested<JsonPatchOp<T>>) => {
+        if (!Array.isArray(nested)) {
+            if (nested.op === 'undo') {
+                return setState(undo);
+            } else if (nested.op === 'redo') {
+                return setState(redo);
+            }
+        }
+        const ops = (Array.isArray(nested) ? nested.flat() : [nested]) as JsonPatchOp<T>[];
+        setState((state) => update(state, ops));
     }, []);
-    return [state, update];
+    return [state, dispatch];
 }
