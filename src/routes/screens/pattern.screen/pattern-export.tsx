@@ -14,31 +14,7 @@ import {filterNull} from './filterNull';
 import {IGuide} from './IGuide';
 import {ShowLabel} from './ShowLabel';
 import {useSVGZoom} from './useSVGZoom';
-import {Layer, Mods} from './export-types';
-
-export type AnimatableNumber = number | string;
-export type AnimatableBoolean = boolean | string;
-export type AnimatableString = string;
-export type AnimatableCoord = Coord | string;
-
-type State = {
-    layers: Record<string, Layer>;
-    crops: Record<string, {shape: Segment[]; mods?: Mods}>;
-    view: {
-        ppi: number;
-        background?: AnimatableString;
-        box: Box;
-    };
-    styleConfig: {
-        seed: AnimatableNumber;
-        clocks: {
-            name?: string;
-            ease?: string;
-            t0: number;
-            t1: number;
-        }[];
-    };
-};
+import {Box, Layer, Mods} from './export-types';
 
 export const PatternExport = ({tiling}: {tiling: Tiling}) => {
     const size = 800;
@@ -411,8 +387,6 @@ const RenderGuide = React.memo(
             />
         ),
 );
-
-type Box = {x: number; y: number; width: number; height: number};
 
 const percentToWorld = (percent: Coord, viewBox: Box) => {
     const x = viewBox.width * percent.x + viewBox.x;
