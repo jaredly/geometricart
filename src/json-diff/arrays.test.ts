@@ -1,17 +1,16 @@
 import {describe, it, expect} from 'bun:test';
-import {diffById} from './arrays';
-import {apply} from './arrays';
+import {diffByIdentity, apply} from './arrays';
 
-type Item = {id: string; name: string};
-const a: Item = {id: 'a', name: 'A'};
-const b: Item = {id: 'b', name: 'B'};
-const c: Item = {id: 'c', name: 'C'};
+type Item = {name: string};
+const a: Item = {name: 'A'};
+const b: Item = {name: 'B'};
+const c: Item = {name: 'C'};
 
-describe('diffById', () => {
+describe('diffByIdentity', () => {
     it('reorders and keeps duplicates', () => {
         const first = [a, a, b];
         const second = [a, b, a];
-        const edits = diffById(first, second);
+        const edits = diffByIdentity(first, second);
         expect(apply(first, edits)).toEqual(second);
         expect(edits.some((e) => e.type === 'move')).toBeTrue();
     });
@@ -19,7 +18,7 @@ describe('diffById', () => {
     it('removes extra occurrences', () => {
         const first = [a, a, a];
         const second = [a, a];
-        const edits = diffById(first, second);
+        const edits = diffByIdentity(first, second);
         expect(apply(first, edits)).toEqual(second);
         expect(edits.filter((e) => e.type === 'delete').length).toBe(1);
     });
@@ -27,7 +26,7 @@ describe('diffById', () => {
     it('inserts missing occurrences', () => {
         const first = [a, b];
         const second = [a, b, a];
-        const edits = diffById(first, second);
+        const edits = diffByIdentity(first, second);
         expect(apply(first, edits)).toEqual(second);
         expect(edits.some((e) => e.type === 'insert')).toBeTrue();
     });
