@@ -1,3 +1,4 @@
+// biome-ignore-all lint/suspicious/noExplicitAny : this is internal and fine
 /**
  * Strongly-typed JSON Patch support for a given TypeScript type.
  *
@@ -78,6 +79,7 @@ type Elem<T> = T extends (infer U)[] ? U : never;
 
 /** Optional keys of an object type */
 type OptionalKeys<T extends object> = {
+    // biome-ignore lint/complexity/noBannedTypes : we need it
     [K in keyof T]-?: {} extends Pick<T, K> ? K : never;
 }[keyof T];
 
