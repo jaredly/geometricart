@@ -17,7 +17,6 @@ export type ArrayMove<T extends {id: string}> = {
     id: string;
     from: number;
     to: number;
-    value: T;
 };
 
 export type ArrayEdit<T extends {id: string}> = ArrayDelete<T> | ArrayInsert<T> | ArrayMove<T>;
@@ -63,7 +62,7 @@ export function diffById<T extends {id: string}>(first: T[], second: T[]): Array
         if (found !== -1) {
             const [item] = working.splice(found, 1);
             working.splice(target, 0, item);
-            ops.push({type: 'move', id: item.id, from: found, to: target, value: item});
+            ops.push({type: 'move', id: item.id, from: found, to: target});
         } else {
             working.splice(target, 0, desired);
             ops.push({type: 'insert', id: desired.id, at: target, value: desired});
@@ -72,3 +71,26 @@ export function diffById<T extends {id: string}>(first: T[], second: T[]): Array
 
     return ops;
 }
+
+export const apply = <T extends {id: string}>(
+    source: T[],
+    edits: ReturnType<typeof diffById<T>>,
+) => {
+    const arr = [...source];
+    edits.forEach((op) => {
+        switch (op.type) {
+            case 'delete':
+                arr.splice(op.from, 1);
+                break;
+            case 'move': {
+                const [item] = arr.splice(op.from, 1);
+                arr.splice(op.to, 0, item);
+                break;
+            }
+            case 'insert':
+                arr.splice(op.at, 0, op.value);
+                break;
+        }
+    });
+    return arr;
+};

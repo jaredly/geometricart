@@ -1,31 +1,11 @@
 import {describe, it, expect} from 'bun:test';
 import {diffById} from './arrays';
+import {apply} from './arrays';
 
 type Item = {id: string; name: string};
-
 const a: Item = {id: 'a', name: 'A'};
 const b: Item = {id: 'b', name: 'B'};
 const c: Item = {id: 'c', name: 'C'};
-
-const apply = (source: Item[], edits: ReturnType<typeof diffById<Item>>) => {
-    const arr = [...source];
-    edits.forEach((op) => {
-        switch (op.type) {
-            case 'delete':
-                arr.splice(op.from, 1);
-                break;
-            case 'move': {
-                const [item] = arr.splice(op.from, 1);
-                arr.splice(op.to, 0, item);
-                break;
-            }
-            case 'insert':
-                arr.splice(op.at, 0, op.value);
-                break;
-        }
-    });
-    return arr;
-};
 
 describe('diffById', () => {
     it('reorders and keeps duplicates', () => {
