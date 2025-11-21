@@ -1,4 +1,3 @@
-// biome-ignore-all lint/suspicious/noExplicitAny : not doing it
 import equal from 'fast-deep-equal';
 import {_add, _get, _remove, _replace, parsePath} from './internal';
 import {AddOp, JsonPatchOp, Path, PathValue, RemoveOp, ReplaceOp} from './types';

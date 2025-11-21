@@ -49,11 +49,4 @@ function update<T, P extends Path<T>>(base: T, path: P, update: Partial<PathValu
     ) as JsonPatchOp<T>[];
 }
 
-// function deep<T>(base: T, updated: T): JsonPatchOp<T>[] {
-//     if (Array.isArray(base) && Array.isArray(updated)) {
-//         // find inserts and deletes. but reorders are out of luck.
-//         // well actually reorders would be nice to support.
-//     }
-// }
-
 export const make = {remove, add, replace, update};

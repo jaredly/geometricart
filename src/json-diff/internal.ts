@@ -1,3 +1,5 @@
+// biome-ignore-all lint/suspicious/noExplicitAny : this is internal and fine
+
 export const parsePath = (at: string) =>
     at
         .split('/')
@@ -47,6 +49,12 @@ export function _replace(
     value: any,
     equal: (a: any, b: any) => boolean,
 ) {
+    if (!at.length) {
+        if (!equal(previous, base)) {
+            throw new Error(`cannot apply, previous is different`);
+        }
+        return value;
+    }
     let root: any;
     ({root, base} = _getCloned(base, at.slice(0, -1)));
     const key = at[at.length - 1];
@@ -58,6 +66,7 @@ export function _replace(
         throw new Error(`base is not object`);
     }
     if (!equal(previous, base[key])) {
+        console.log(previous, base[key], key);
         throw new Error(`cannot apply, previous is different`);
     }
     base[key] = value;
