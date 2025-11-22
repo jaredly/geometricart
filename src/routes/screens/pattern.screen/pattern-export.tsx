@@ -42,15 +42,15 @@ export const PatternExport = ({tiling, id}: {tiling: Tiling; id: string}) => {
                                     fills: {
                                         a: {
                                             id: 'a',
-                                            color: 'red',
+                                            color: 'gold',
                                             // color: 'rgba(0,255,0,0.1)',
                                             // mods: {
                                             //     opacity: 0.5,
                                             // },
                                             mods: {
-                                                inset: 't * 2',
+                                                inset: 'Math.sin(t * Math.PI) * 10',
                                                 // opacity: 0.1,
-                                                rotation: 't * Math.PI / 6',
+                                                rotation: 't * Math.PI / 3',
                                             },
                                         },
                                     },
@@ -63,11 +63,12 @@ export const PatternExport = ({tiling, id}: {tiling: Tiling; id: string}) => {
                                     fills: {
                                         a: {
                                             id: 'a',
-                                            color: '#00f',
+                                            color: '#0af',
                                             mods: {
                                                 // inset: 6,
-                                                inset: 't * 2',
-                                                rotation: '-t * Math.PI / 6',
+                                                inset: 'Math.sin(t * Math.PI) * -10',
+                                                // inset: 't * 2',
+                                                rotation: '-t * Math.PI / 3',
                                             },
                                         },
                                     },

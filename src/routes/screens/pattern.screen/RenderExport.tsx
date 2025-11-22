@@ -1,4 +1,4 @@
-import {useMemo, useRef, useState} from 'react';
+import {useEffect, useMemo, useRef, useState} from 'react';
 import {Ctx, a, AnimCtx, Patterns} from './evaluate';
 import {
     ConcreteMods,
@@ -238,6 +238,20 @@ export const RenderExport = ({state, patterns}: {state: State; patterns: Pattern
     const cropCache = useMemo(() => new Map<string, {path: PKPath; crop: Crop; t?: number}>(), []);
     const animCache = useMemo<AnimCtx['cache']>(() => new Map(), []);
 
+    const [animate, setAnimate] = useState(false);
+    useEffect(() => {
+        if (!animate) return;
+        let t = 0;
+        const iv = setInterval(() => {
+            setT(Math.min(1, (t += 0.01)));
+            if (t >= 1) {
+                setAnimate(false);
+                clearInterval(iv);
+            }
+        }, 20);
+        return () => clearInterval(iv);
+    }, [animate]);
+
     // well this is exciting
     useMemo(() => {
         for (let crop of Object.values(state.crops)) {
@@ -294,15 +308,20 @@ export const RenderExport = ({state, patterns}: {state: State; patterns: Pattern
                 >
                     {items}
                 </svg>
-                <input
-                    type="range"
-                    value={t}
-                    onChange={(evt) => setT(+evt.target.value)}
-                    className="range"
-                    min={0}
-                    max={1}
-                    step={0.01}
-                />
+                <div className="mt-4">
+                    <input
+                        type="range"
+                        value={t}
+                        onChange={(evt) => setT(+evt.target.value)}
+                        className="range"
+                        min={0}
+                        max={1}
+                        step={0.01}
+                    />
+                    <button className="btn" onClick={() => setAnimate(true)}>
+                        Animate
+                    </button>
+                </div>
             </div>
             <div className="flex flex-col gap-2 p-2">
                 {warnings.map((w, i) => (
