@@ -4,11 +4,14 @@ import {
     ConcreteMods,
     Crop,
     EObject,
+    Fill,
     Group,
     insetPkPath,
+    Line,
     Mods,
     modsTransforms,
     Pattern,
+    ShapeStyle,
     State,
 } from './export-types';
 import {svgCoord, useSVGZoom} from './useSVGZoom';
@@ -16,8 +19,14 @@ import {Coord} from '../../../types';
 import {pkPathWithCmds} from '../animator.screen/cropPath';
 import {PKPath} from '../../pk';
 import {transformBarePath} from '../../../rendering/points';
-import {getSimplePatternData} from '../../getPatternData';
+import {
+    coordsFromPkPath,
+    getShapeColors,
+    getSimplePatternData,
+    pkPathFromCoords,
+} from '../../getPatternData';
 import {shapeD} from '../../shapeD';
+import {transformShape} from '../../../editor/tilingPoints';
 
 const resolveMods = (ctx: AnimCtx, mods: Mods): ConcreteMods => ({
     inset: mods.inset != null ? a.number(ctx, mods.inset) : undefined,
@@ -31,17 +40,135 @@ const resolveMods = (ctx: AnimCtx, mods: Mods): ConcreteMods => ({
     tint: mods.tint != null ? a.color(ctx, mods.tint) : undefined,
 });
 
+const matchKind = (k: ShapeStyle['kind'], i: number, color: number) => {
+    switch (k.type) {
+        case 'everything':
+            return true;
+        case 'alternating':
+            return color === k.index;
+        case 'explicit':
+            return k.ids[i];
+        case 'shape':
+            console.log('not right');
+            return false;
+    }
+};
+
 const renderPattern = (ctx: Ctx, crops: Group['crops'], pattern: Pattern) => {
+    // not doing yet
+    if (pattern.contents.type !== 'shapes') return;
     const tiling = ctx.patterns[pattern.id];
     const mods = resolveMods(ctx.anim, pattern.mods);
+    const ptx = modsTransforms(mods);
 
     const simple = getSimplePatternData(tiling, pattern.psize);
+    const orderedStyles = Object.values(pattern.contents.styles).sort((a, b) => a.order - b.order);
 
-    ctx.items.push(
-        ...simple.uniqueShapes.map((shape, i) => (
-            <path key={i} fill="red" stroke="black" strokeWidth={0.01} d={shapeD(shape)} />
-        )),
-    );
+    const needColors = orderedStyles.some((s) => s.kind.type === 'alternating');
+    if (needColors) {
+        const {colors} = getShapeColors(simple.uniqueShapes, simple.minSegLength);
+
+        ctx.items.push(
+            ...simple.uniqueShapes.flatMap((shape, i) => {
+                const fills: Record<string, Fill> = {};
+                const lines: Record<string, Line> = {};
+                orderedStyles.forEach((s) => {
+                    if (!matchKind(s.kind, i, colors[i])) {
+                        return;
+                    }
+                    Object.values(s.fills).forEach((fill) => {
+                        fills[fill.id] = {...fills[fill.id], ...fill};
+                    });
+                    Object.values(s.lines).forEach((line) => {
+                        lines[line.id] = {...lines[line.id], ...line};
+                    });
+                });
+                // const pk = pkPathFromCoords(shape, false)!;
+                // const byinset: Record<number, string> = {}
+                // const getInset = (inset: number) => {
+                //     if (!byinset[inset]) byinset[inset] =
+                // }
+                const res = [
+                    ...Object.values(fills).map((f, fi) => {
+                        if (!f.color) return;
+                        const color = a.color(ctx.anim, f.color);
+                        if (f.mods) {
+                            const fmods = resolveMods(ctx.anim, f.mods);
+                            const tx = modsTransforms(fmods);
+                            let mshape = transformShape(shape, [...ptx, ...tx]);
+                            if (fmods.inset) {
+                                const pk = pkPathFromCoords(mshape, false)!;
+                                insetPkPath(pk, fmods.inset / 100);
+                                return coordsFromPkPath(pk.toCmds()).map((shape, j) => (
+                                    <path
+                                        key={`fill-${i}-${fi}-${j}`}
+                                        opacity={fmods.opacity}
+                                        fill={color}
+                                        d={shapeD(shape)}
+                                    />
+                                ));
+                            }
+                            return <path key={`fill-${i}-${fi}`} fill={color} d={shapeD(mshape)} />;
+                        }
+                        return <path key={`fill-${i}-${fi}`} fill={color} d={shapeD(shape)} />;
+                    }),
+                    ...Object.values(lines).map((f, fi) => {
+                        if (!f.color) return;
+                        if (!f.width) return;
+                        const color = a.color(ctx.anim, f.color);
+                        const width = a.number(ctx.anim, f.width) / 100;
+                        if (f.mods) {
+                            const fmods = resolveMods(ctx.anim, f.mods);
+                            const tx = modsTransforms(fmods);
+                            let mshape = transformShape(shape, [...ptx, ...tx]);
+                            if (fmods.inset) {
+                                const pk = pkPathFromCoords(mshape, false)!;
+                                insetPkPath(pk, fmods.inset / 100);
+                                return coordsFromPkPath(pk.toCmds()).map((shape, j) => (
+                                    <path
+                                        key={`stroke-${i}-${fi}-${j}`}
+                                        fill="none"
+                                        stroke={color}
+                                        strokeWidth={width}
+                                        d={shapeD(shape)}
+                                        opacity={fmods.opacity}
+                                    />
+                                ));
+                            }
+                            return (
+                                <path
+                                    key={`stroke-${i}-${fi}`}
+                                    fill="none"
+                                    stroke={color}
+                                    strokeWidth={width}
+                                    d={shapeD(mshape)}
+                                    opacity={fmods.opacity}
+                                />
+                            );
+                        }
+                        return (
+                            <path
+                                key={`stroke-${i}-${fi}`}
+                                fill="none"
+                                stroke={color}
+                                strokeWidth={width}
+                                d={shapeD(shape)}
+                            />
+                        );
+                    }),
+                ];
+                // pk?.delete();
+                return res;
+                // return <path key={i} fill="red" stroke="black" strokeWidth={0.01} d={shapeD(shape)} />
+            }),
+        );
+    } else {
+        ctx.items.push(
+            ...simple.uniqueShapes.map((shape, i) => (
+                <path key={i} fill="red" stroke="black" strokeWidth={0.01} d={shapeD(shape)} />
+            )),
+        );
+    }
 };
 
 const renderObject = (ctx: Ctx, crops: Group['crops'], object: EObject) => {
@@ -72,6 +199,7 @@ const svgItems = (
     animCache: AnimCtx['cache'],
     cropCache: Ctx['cropCache'],
     patterns: Patterns,
+    t: number,
 ) => {
     const warnings: string[] = [];
     const warn = (v: string) => warnings.push(v);
@@ -86,7 +214,10 @@ const svgItems = (
                 state,
                 anim: {
                     cache: animCache,
-                    values: {},
+                    values: {
+                        Math,
+                        t,
+                    },
                     palette: state.styleConfig.palette,
                     warn,
                 },
@@ -143,8 +274,8 @@ export const RenderExport = ({state, patterns}: {state: State; patterns: Pattern
     }, [state.crops, cropCache, t, animCache]);
 
     const {items, warnings} = useMemo(
-        () => svgItems(state, animCache, cropCache, patterns),
-        [state, patterns, cropCache, animCache],
+        () => svgItems(state, animCache, cropCache, patterns, t),
+        [state, patterns, cropCache, animCache, t],
     );
 
     const {zoomProps, box} = useSVGZoom(6);
@@ -163,6 +294,15 @@ export const RenderExport = ({state, patterns}: {state: State; patterns: Pattern
                 >
                     {items}
                 </svg>
+                <input
+                    type="range"
+                    value={t}
+                    onChange={(evt) => setT(+evt.target.value)}
+                    className="range"
+                    min={0}
+                    max={1}
+                    step={0.01}
+                />
             </div>
             <div className="flex flex-col gap-2 p-2">
                 {warnings.map((w, i) => (

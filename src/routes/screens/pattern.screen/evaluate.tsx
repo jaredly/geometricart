@@ -50,6 +50,7 @@ const evaluate = <T,>(ctx: AnimCtx, s: string, check: (v: any) => v is T, otherw
         }
         ctx.accessedValues?.add(k);
     });
+    // console.log('with', ctx.values, sc.needs);
     try {
         const v = sc.fn(ctx.values);
         if (!check(v)) {
@@ -68,6 +69,9 @@ function isValidColor(color: string): boolean {
         color = color.substring(1);
         return [3, 4, 6, 8].indexOf(color.length) > -1 && !Number.isNaN(parseInt(color, 16));
     } else {
+        if (color.match(/^[a-z]+$/)) {
+            return true;
+        }
         return /^(rgb|hsl)a?\((\d+%?(deg|rad|grad|turn)?[,\s]+){2,3}[\s\/]*[\d\.]+%?\)$/i.test(
             color,
         );
@@ -114,7 +118,7 @@ export const a = {
                 ctx,
                 v,
                 (v) => typeof v === 'string' || typeof v === 'number',
-                '',
+                '#fff',
             );
         }
         if (typeof v === 'number') {

@@ -244,6 +244,14 @@ const simpleSize = (tiling: Tiling, x: number) => {
     return {x, y};
 };
 
+export const getShapeColors = (allShapes: Coord[][], minSegLength: number) => {
+    const uniquePoints = unique(allShapes.flat(), coordKey);
+    const pointNames = Object.fromEntries(uniquePoints.map((p, i) => [coordKey(p), i]));
+    const colors = colorShapes(pointNames, allShapes, minSegLength, false);
+
+    return {colors, pointNames, uniquePoints};
+};
+
 export const getNewPatternData = (tiling: Tiling, size = 2, crops?: Crop[]) => {
     const bounds = tilingPoints(tiling.shape);
     const {uniqueShapes, initialShapes, minSegLength, canons, ttt} = getSimplePatternData(
@@ -263,13 +271,11 @@ export const getNewPatternData = (tiling: Tiling, size = 2, crops?: Crop[]) => {
     );
     const byEndPoint = edgesByEndpoint(allSegments);
 
-    const uniquePoints = unique(allShapes.flat(), coordKey);
-    const pointNames = Object.fromEntries(uniquePoints.map((p, i) => [coordKey(p), i]));
+    const {pointNames, colors, uniquePoints} = getShapeColors(allShapes, minSegLength);
+
     const outer = outerBoundary(allSegments, byEndPoint, pointNames);
     const paths = pathsFromSegments(allSegments, byEndPoint, outer);
     const woven = weaveIntersections(allSegments, paths);
-
-    const colors = colorShapes(pointNames, allShapes, minSegLength, false);
 
     return {
         bounds,

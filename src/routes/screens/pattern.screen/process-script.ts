@@ -1,8 +1,8 @@
 import * as acorn from 'acorn';
 // @ts-ignore
-import scan from 'scope-analyzer';
-// @ts-ignore
 import assignParent from 'estree-assign-parent';
+// @ts-ignore
+import {crawl, getScope} from './scope-analyzer.js';
 
 export function processScript(source: string) {
     // 1. Parse to ESTree-ish AST
@@ -16,10 +16,10 @@ export function processScript(source: string) {
     ast = assignParent(ast);
 
     // 4. Walk & build scope info
-    scan.crawl(ast);
+    crawl(ast);
 
     // 5. Root (program) scope
-    const rootScope = scan.scope(ast);
+    const rootScope = getScope(ast);
 
     // 6. Names that are *used* but never declared anywhere in the AST
     const undeclared: string[] = rootScope.getUndeclaredNames();

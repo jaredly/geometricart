@@ -114,9 +114,9 @@ export type Mods = {
 
 export const insetPkPath = (path: PKPath, inset: number) => {
     const stroke = path.copy().stroke({
-        width: inset,
+        width: Math.abs(inset),
     })!;
-    path.op(stroke, pk.PathOp.Difference);
+    path.op(stroke, inset < 0 ? pk.PathOp.Union : pk.PathOp.Difference);
     stroke.delete();
 };
 

@@ -39,10 +39,42 @@ export const PatternExport = ({tiling, id}: {tiling: Tiling; id: string}) => {
                             styles: {
                                 a: {
                                     id: 'a',
-                                    fills: {},
+                                    fills: {
+                                        a: {
+                                            id: 'a',
+                                            color: 'red',
+                                            // color: 'rgba(0,255,0,0.1)',
+                                            // mods: {
+                                            //     opacity: 0.5,
+                                            // },
+                                            mods: {
+                                                inset: 't * 2',
+                                                // opacity: 0.1,
+                                                rotation: 't * Math.PI / 6',
+                                            },
+                                        },
+                                    },
                                     lines: {},
                                     kind: {type: 'everything'},
                                     order: 1,
+                                },
+                                b: {
+                                    id: 'b',
+                                    fills: {
+                                        a: {
+                                            id: 'a',
+                                            color: '#00f',
+                                            mods: {
+                                                // inset: 6,
+                                                inset: 't * 2',
+                                                rotation: '-t * Math.PI / 6',
+                                            },
+                                        },
+                                    },
+                                    // lines: {c: {id: 'c', color: '#0f0', width: 2}},
+                                    lines: {},
+                                    kind: {type: 'alternating', index: 0},
+                                    order: 2,
                                 },
                             },
                         },
