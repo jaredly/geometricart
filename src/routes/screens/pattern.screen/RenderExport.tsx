@@ -149,7 +149,7 @@ export const RenderExport = ({state, patterns}: {state: State; patterns: Pattern
 
     const {zoomProps, box} = useSVGZoom(6);
     const [mouse, setMouse] = useState(null as null | Coord);
-    const size = 800;
+    const size = 500;
 
     return (
         <div className="flex">

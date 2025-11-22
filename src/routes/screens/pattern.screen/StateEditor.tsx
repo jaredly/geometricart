@@ -33,6 +33,48 @@ export const StateEditor = ({value, onChange}: StateEditorProps) => {
 
     return (
         <div className="space-y-6">
+            <Section
+                title="Layers"
+                actions={
+                    <button
+                        className="btn btn-outline btn-sm"
+                        onClick={() => {
+                            const nextId = `layer-${layers.length + 1}`;
+                            const nextLayers = {
+                                ...value.layers,
+                                [nextId]: createLayerTemplate(nextId),
+                            };
+                            onChange({...value, layers: nextLayers});
+                        }}
+                    >
+                        Add Layer
+                    </button>
+                }
+            >
+                <div className="space-y-4">
+                    {layers.length === 0 ? (
+                        <div className="text-sm opacity-70">No layers defined.</div>
+                    ) : null}
+                    {layers.map(([key, layer]) => (
+                        <LayerEditor
+                            key={key}
+                            layer={layer}
+                            onChange={(nextLayer) => {
+                                const nextLayers = {...value.layers};
+                                delete nextLayers[key];
+                                nextLayers[key] = nextLayer;
+                                onChange({...value, layers: nextLayers});
+                            }}
+                            onRemove={() => {
+                                const nextLayers = {...value.layers};
+                                delete nextLayers[key];
+                                onChange({...value, layers: nextLayers});
+                            }}
+                        />
+                    ))}
+                </div>
+            </Section>
+
             <Section title="View">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <NumberField
@@ -165,52 +207,6 @@ export const StateEditor = ({value, onChange}: StateEditorProps) => {
                     ))}
                 </div>
             </Section>
-
-            <Section
-                title="Layers"
-                actions={
-                    <button
-                        className="btn btn-outline btn-sm"
-                        onClick={() => {
-                            const nextId = `layer-${layers.length + 1}`;
-                            const nextLayers = {
-                                ...value.layers,
-                                [nextId]: createLayerTemplate(nextId),
-                            };
-                            onChange({...value, layers: nextLayers});
-                        }}
-                    >
-                        Add Layer
-                    </button>
-                }
-            >
-                <div className="space-y-4">
-                    {layers.length === 0 ? (
-                        <div className="text-sm opacity-70">No layers defined.</div>
-                    ) : null}
-                    {layers.map(([key, layer]) => (
-                        <LayerEditor
-                            key={key}
-                            layer={layer}
-                            objectKey={key}
-                            onChange={(nextLayer, nextKey) => {
-                                const nextLayers = {...value.layers};
-                                delete nextLayers[key];
-                                nextLayers[nextKey ?? key] = {
-                                    ...nextLayer,
-                                    id: nextLayer.id ?? nextKey ?? key,
-                                };
-                                onChange({...value, layers: nextLayers});
-                            }}
-                            onRemove={() => {
-                                const nextLayers = {...value.layers};
-                                delete nextLayers[key];
-                                onChange({...value, layers: nextLayers});
-                            }}
-                        />
-                    ))}
-                </div>
-            </Section>
         </div>
     );
 };
@@ -227,17 +223,19 @@ const Section = ({
     alignStart?: boolean;
 }) => {
     return (
-        <div className="card bg-base-100 shadow-md border border-base-300">
-            <div className="card-body space-y-4">
-                <div
-                    className={`flex gap-3 ${alignStart ? 'items-start' : 'items-center'} justify-between`}
-                >
-                    <h2 className="card-title text-xl">{title}</h2>
-                    {actions ? <div className="flex items-center gap-2">{actions}</div> : null}
+        <details>
+            <summary className="card-title text-xl">{title}</summary>
+            <div className="card bg-base-100 shadow-md border border-base-300">
+                <div className="card-body space-y-4">
+                    <div
+                        className={`flex gap-3 ${alignStart ? 'items-start' : 'items-center'} justify-between`}
+                    >
+                        {actions ? <div className="flex items-center gap-2">{actions}</div> : null}
+                    </div>
+                    {children}
                 </div>
-                {children}
             </div>
-        </div>
+        </details>
     );
 };
 
@@ -464,12 +462,10 @@ const ClocksEditor = ({
 };
 
 const LayerEditor = ({
-    objectKey,
     layer,
     onChange,
     onRemove,
 }: {
-    objectKey: string;
     layer: Layer;
     onChange: (next: Layer, nextKey?: string) => void;
     onRemove: () => void;
@@ -480,16 +476,6 @@ const LayerEditor = ({
         <div className="card bg-base-200 border border-base-300 shadow-sm">
             <div className="card-body space-y-3">
                 <div className="flex flex-col md:flex-row gap-2 md:items-center">
-                    <TextField
-                        label="Layer key"
-                        value={objectKey}
-                        onChange={(nextKey) => onChange(layer, nextKey)}
-                    />
-                    <TextField
-                        label="Layer id"
-                        value={layer.id}
-                        onChange={(id) => onChange({...layer, id})}
-                    />
                     <NumberField
                         label="Order"
                         value={layer.order}
@@ -514,11 +500,11 @@ const LayerEditor = ({
                 </div>
 
                 <div className="flex flex-col gap-4">
-                    <JsonEditor
+                    {/* <JsonEditor
                         label="Guides"
                         value={layer.guides}
                         onChange={(guides) => onChange({...layer, guides})}
-                    />
+                    /> */}
                     <div className="space-y-2">
                         <div className="flex items-center justify-between">
                             <div className="font-semibold text-sm">Entities</div>
@@ -629,27 +615,9 @@ const EntityEditor = ({
     };
 
     return (
-        <div className="rounded border border-base-300 bg-base-100 p-3 space-y-3">
+        <details className="rounded border border-base-300 bg-base-100 p-3 space-y-3">
+            <summary>{value.type}</summary>
             <div className="flex flex-col md:flex-row gap-2 md:items-center">
-                <TextField
-                    label="Entity key"
-                    value={entityKey}
-                    onChange={(nextKey) => onChange({...value, id: nextKey}, nextKey)}
-                />
-                <label className="form-control w-full md:w-auto">
-                    <div className="label">
-                        <span className="label-text font-semibold">Type</span>
-                    </div>
-                    <select
-                        className="select select-bordered"
-                        value={type}
-                        onChange={(evt) => replaceType(evt.target.value as Entity['type'])}
-                    >
-                        <option value="Group">Group</option>
-                        <option value="Pattern">Pattern</option>
-                        <option value="Object">Object</option>
-                    </select>
-                </label>
                 <div className="flex-1" />
                 <button className="btn btn-ghost btn-xs text-error" onClick={onRemove}>
                     Remove
@@ -664,11 +632,6 @@ const EntityEditor = ({
             ) : null}
             {value.type === 'Object' ? (
                 <div className="space-y-2">
-                    <TextField
-                        label="Id"
-                        value={value.id}
-                        onChange={(id) => onChange({...value, id})}
-                    />
                     <label className="form-control">
                         <div className="label">
                             <span className="label-text font-semibold">Open</span>
@@ -694,7 +657,7 @@ const EntityEditor = ({
                     />
                 </div>
             ) : null}
-        </div>
+        </details>
     );
 };
 
@@ -847,13 +810,23 @@ const GroupEditor = ({value, onChange}: {value: Group; onChange: (next: Group) =
 const PatternEditor = ({value, onChange}: {value: Pattern; onChange: (next: Pattern) => void}) => {
     return (
         <div className="space-y-3">
-            <TextField label="Id" value={value.id} onChange={(id) => onChange({...value, id})} />
-            <CoordField
-                label="Pattern size"
-                value={value.psize}
-                onChange={(psize) => onChange({...value, psize})}
+            {typeof value.psize === 'number' ? (
+                <NumberField
+                    label="Size"
+                    value={value.psize}
+                    onChange={(v) => onChange({...value, psize: v})}
+                />
+            ) : (
+                <CoordField
+                    label="Pattern size"
+                    value={value.psize}
+                    onChange={(psize) => onChange({...value, psize})}
+                />
+            )}
+            <ModsEditor
+                value={value.mods}
+                onChange={(mods) => (mods ? onChange({...value, mods}) : undefined)}
             />
-            <ModsEditor value={value.mods} onChange={(mods) => onChange({...value, mods})} />
             <PatternContentsEditor
                 value={value.contents}
                 onChange={(contents) => onChange({...value, contents})}
@@ -925,7 +898,7 @@ const PatternContentsEditor = ({
                             onChange={(evt) => onChange({...value, reverse: evt.target.checked})}
                         />
                     </label>
-                    <JsonEditor
+                    {/* <JsonEditor
                         label="Styles"
                         value={value.styles}
                         onChange={(styles) =>
@@ -934,7 +907,7 @@ const PatternContentsEditor = ({
                                 styles: styles as typeof value.styles,
                             })
                         }
-                    />
+                    /> */}
                 </div>
             ) : null}
             {value.type === 'weave' ? (
@@ -1321,12 +1294,10 @@ const ShapeStylesEditor = ({
 };
 
 const ShapeStyleCard = ({
-    objectKey,
     value,
     onChange,
     onRemove,
 }: {
-    objectKey: string;
     value: ShapeStyle;
     onChange: (next: ShapeStyle, nextKey?: string) => void;
     onRemove: () => void;
@@ -1335,16 +1306,6 @@ const ShapeStyleCard = ({
         <div className="card bg-base-100 border border-base-300">
             <div className="card-body space-y-3">
                 <div className="flex flex-col md:flex-row gap-2 md:items-center">
-                    <TextField
-                        label="Key"
-                        value={objectKey}
-                        onChange={(nextKey) => onChange({...value, id: nextKey}, nextKey)}
-                    />
-                    <TextField
-                        label="Id"
-                        value={value.id}
-                        onChange={(id) => onChange({...value, id})}
-                    />
                     <NumberField
                         label="Order"
                         value={value.order}
@@ -1579,16 +1540,6 @@ const FillEditor = ({
     return (
         <div className="space-y-2">
             <div className="flex flex-col md:flex-row gap-2 md:items-center">
-                <TextField
-                    label="Key"
-                    value={objectKey}
-                    onChange={(nextKey) => onChange({...value, id: nextKey}, nextKey)}
-                />
-                <TextField
-                    label="Id"
-                    value={value.id}
-                    onChange={(id) => onChange({...value, id})}
-                />
                 <div className="flex-1" />
                 <button className="btn btn-ghost btn-xs text-error" onClick={onRemove}>
                     Remove
