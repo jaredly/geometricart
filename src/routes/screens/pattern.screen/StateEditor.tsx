@@ -224,16 +224,16 @@ const Section = ({
 }) => {
     return (
         <details>
-            <summary className="card-title text-xl">{title}</summary>
-            <div className="card bg-base-100 shadow-md border border-base-300">
-                <div className="card-body space-y-4">
-                    <div
-                        className={`flex gap-3 ${alignStart ? 'items-start' : 'items-center'} justify-between`}
-                    >
-                        {actions ? <div className="flex items-center gap-2">{actions}</div> : null}
-                    </div>
-                    {children}
+            <summary className="card-title text-xl cursor-pointer">
+                {title}
+                <div
+                    className={`flex gap-3 ${alignStart ? 'items-start' : 'items-center'} justify-between`}
+                >
+                    {actions ? <div className="flex items-center gap-2">{actions}</div> : null}
                 </div>
+            </summary>
+            <div className="card bg-base-100 shadow-md border border-base-300">
+                <div className="card-body space-y-4">{children}</div>
             </div>
         </details>
     );
@@ -488,11 +488,6 @@ const LayerEditor = ({
                             onChange({...layer, opacity: parseAnimatable(opacity)})
                         }
                     />
-                    <TextField
-                        label="Root group"
-                        value={layer.rootGroup}
-                        onChange={(rootGroup) => onChange({...layer, rootGroup})}
-                    />
                     <div className="flex-1" />
                     <button className="btn btn-ghost btn-sm text-error" onClick={onRemove}>
                         Remove
@@ -588,41 +583,18 @@ const EntityEditor = ({
         setType(value.type);
     }, [value.type]);
 
-    const replaceType = (nextType: Entity['type']) => {
-        setType(nextType);
-        if (nextType === value.type) return;
-        if (nextType === 'Group') {
-            onChange(createGroup(entityKey), entityKey);
-        } else if (nextType === 'Pattern') {
-            onChange(createPattern(entityKey), entityKey);
-        } else {
-            onChange(
-                {
-                    type: 'Object',
-                    id: entityKey,
-                    segments: [],
-                    style: {
-                        id: `${entityKey}-style`,
-                        order: 0,
-                        kind: {type: 'everything'},
-                        fills: {},
-                        lines: {},
-                    },
-                },
-                entityKey,
-            );
-        }
-    };
-
     return (
         <details className="rounded border border-base-300 bg-base-100 p-3 space-y-3">
-            <summary>{value.type}</summary>
-            <div className="flex flex-col md:flex-row gap-2 md:items-center">
-                <div className="flex-1" />
-                <button className="btn btn-ghost btn-xs text-error" onClick={onRemove}>
-                    Remove
-                </button>
-            </div>
+            <summary>
+                <div className="inline-flex">
+                    {value.type}
+                    <div className="flex-1" />
+
+                    <button className="btn btn-ghost btn-xs text-error" onClick={onRemove}>
+                        Remove
+                    </button>
+                </div>
+            </summary>
 
             {value.type === 'Group' ? (
                 <GroupEditor value={value} onChange={(next) => onChange(next)} />
@@ -1045,13 +1017,12 @@ const AnimInput = ({
         <div className="label">
             <span className="label-text text-sm font-semibold">{label}</span>
         </div>
-        <input
-            className="input input-bordered input-sm"
+        <BlurInput
             value={value != null ? String(value) : ''}
             placeholder="number | expression"
-            onChange={(evt) => {
-                const parsed = parseAnimatable(evt.target.value);
-                onChange(evt.target.value.trim() ? parsed : undefined);
+            onChange={(value) => {
+                const parsed = parseAnimatable(value);
+                onChange(value.trim() ? parsed : undefined);
             }}
         />
     </label>
@@ -1101,7 +1072,7 @@ const AnimCoordInput = ({
                             evt.preventDefault();
                             setMode('raw');
                             if (isCoord) {
-                                onChange(`${(value as Coord).x},${(value as Coord).y}`);
+                                onChange(`({x: ${(value as Coord).x}, y: ${(value as Coord).y}})`);
                             }
                         }}
                     >
@@ -1116,16 +1087,49 @@ const AnimCoordInput = ({
                     onChange={(coord) => onChange(coord)}
                 />
             ) : (
-                <input
-                    className="input input-bordered input-sm"
+                <BlurInput
                     value={value != null && !isCoord ? String(value) : ''}
                     placeholder="number | expression"
-                    onChange={(evt) =>
-                        onChange(evt.target.value ? parseAnimatable(evt.target.value) : undefined)
-                    }
+                    onChange={(value) => onChange(parseAnimatable(value))}
                 />
             )}
         </div>
+    );
+};
+
+const BlurInput = ({
+    value,
+    onChange,
+    placeholder,
+}: {
+    placeholder?: string;
+    value: string;
+    onChange: (v: string) => void;
+}) => {
+    const [text, setText] = useState<string | null>(null);
+    return (
+        <input
+            className={
+                'input input-sm ' + (text != null && text !== value ? 'outline-blue-400' : '')
+            }
+            value={text ?? value}
+            onBlur={() => {
+                if (text != null) {
+                    if (text !== value) onChange(text);
+                    setText(null);
+                }
+            }}
+            onKeyDown={(evt) => {
+                if (evt.key === 'Enter') {
+                    if (text != null) {
+                        if (text !== value) onChange(text);
+                        setText(null);
+                    }
+                }
+            }}
+            placeholder={placeholder}
+            onChange={(evt) => setText(evt.target.value)}
+        />
     );
 };
 
@@ -1371,15 +1375,13 @@ const BaseKindEditor = ({
     const type = value.type;
     return (
         <div className="bg-base-200 rounded-lg p-3 border border-base-300 space-y-2">
-            <div className="font-semibold text-sm">{label}</div>
-            <div className="flex flex-wrap gap-2">
-                {(['everything', 'alternating', 'explicit', 'shape'] as const).map((t) => (
-                    <button
-                        key={t}
-                        className={`btn btn-xs ${type === t ? 'btn-active' : 'btn-outline'}`}
-                        onClick={(evt) => {
-                            evt.preventDefault();
-                            switch (t) {
+            <div className="flex items-center justify-between">
+                <div className="font-semibold text-sm">{label}</div>
+                <div className="flex flex-wrap gap-2">
+                    <select
+                        value={type}
+                        onChange={(evt) => {
+                            switch (evt.target.value) {
                                 case 'everything':
                                     onChange({type: 'everything'});
                                     return;
@@ -1407,9 +1409,17 @@ const BaseKindEditor = ({
                             }
                         }}
                     >
-                        {t}
-                    </button>
-                ))}
+                        {(['everything', 'alternating', 'explicit', 'shape'] as const).map((t) => (
+                            <option
+                                key={t}
+                                value={t}
+                                // className={`btn btn-xs ${type === t ? 'btn-active' : 'btn-outline'}`}
+                            >
+                                {t}
+                            </option>
+                        ))}
+                    </select>
+                </div>
             </div>
             {type === 'alternating' ? (
                 <NumberField
@@ -1538,11 +1548,14 @@ const FillEditor = ({
     onRemove: () => void;
 }) => {
     return (
-        <div className="space-y-2">
+        <div className="space-y-2 relative">
             <div className="flex flex-col md:flex-row gap-2 md:items-center">
                 <div className="flex-1" />
-                <button className="btn btn-ghost btn-xs text-error" onClick={onRemove}>
-                    Remove
+                <button
+                    className="btn btn-ghost btn-xs text-error absolute top-0 right-0"
+                    onClick={onRemove}
+                >
+                    &times;
                 </button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-2">

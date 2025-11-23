@@ -1,4 +1,21 @@
 
+# Undo/Redo, but so cool!
+
+ok lol I haven't actualky used it yet.
+- [ ] use undo/redo. try out the 'deep inferpatch' and see if it's sufficient. seems like it might be.
+
+- [ ] let's figure out crops.
+  - need to decide if crops should apply before mods or after mods.
+    or rather, need there to be a way to indicate whether it applies before or after.
+
+- [ ] z-index doesn't actually do the thing just yet
+
+- [ ] I want to be able to animate around a center point
+  so i need like a 'dist to nearest center'
+  which is maybe like ... a shapekey thing?
+  hmmm what if I could just like ... apply labels to individual shapes?
+  yeah honestly that might be the nicest way to do it.
+
 # Inspectt
 
 - add (line | circle)

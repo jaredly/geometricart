@@ -120,25 +120,27 @@ export const insetPkPath = (path: PKPath, inset: number) => {
     stroke.delete();
 };
 
-export const modsTransforms = (mods: ConcreteMods) => {
+export const modsTransforms = (mods: ConcreteMods, origin?: Coord) => {
     const tx: Matrix[] = [];
     if (mods.scale) {
         const scale = typeof mods.scale === 'number' ? {x: mods.scale, y: mods.scale} : mods.scale;
-        if (mods.scaleOrigin) {
-            tx.push(translationMatrix(scalePos(mods.scaleOrigin, -1)));
+        const sorigin = mods.scaleOrigin ?? origin;
+        if (sorigin) {
+            tx.push(translationMatrix(scalePos(sorigin, -1)));
         }
         tx.push(scaleMatrix(scale.x, scale.y));
-        if (mods.scaleOrigin) {
-            tx.push(translationMatrix(mods.scaleOrigin));
+        if (sorigin) {
+            tx.push(translationMatrix(sorigin));
         }
     }
     if (mods.rotation) {
-        if (mods.rotationOrigin) {
-            tx.push(translationMatrix(scalePos(mods.rotationOrigin, -1)));
+        const rorigin = mods.rotationOrigin ?? origin;
+        if (rorigin) {
+            tx.push(translationMatrix(scalePos(rorigin, -1)));
         }
         tx.push(rotationMatrix(mods.rotation));
-        if (mods.rotationOrigin) {
-            tx.push(translationMatrix(mods.rotationOrigin));
+        if (rorigin) {
+            tx.push(translationMatrix(rorigin));
         }
     }
     if (mods.offset) {

@@ -34,16 +34,22 @@ type AnimFn = (ctx: AnimCtx['values']) => any;
 
 const getScript = (ctx: AnimCtx, v: string) => {
     if (!ctx.cache.has(v)) {
-        const {undeclared, arg, needsReturn} = processScript(v);
-        // oneliners can leave off the return
-        if (needsReturn) v = 'return ' + v;
-        ctx.cache.set(v, {fn: new Function(arg, v) as AnimFn, needs: undeclared});
+        try {
+            const {undeclared, arg, needsReturn} = processScript(v);
+            // oneliners can leave off the return
+            if (needsReturn) v = 'return ' + v;
+            ctx.cache.set(v, {fn: new Function(arg, v) as AnimFn, needs: undeclared});
+        } catch (err) {
+            console.log('failure', err);
+            return null;
+        }
     }
     return ctx.cache.get(v)!;
 };
 
 const evaluate = <T,>(ctx: AnimCtx, s: string, check: (v: any) => v is T, otherwise: T): T => {
     const sc = getScript(ctx, s);
+    if (!sc) return otherwise;
     sc.needs.forEach((k) => {
         if (!(k in ctx.values)) {
             ctx.warn(`missing expected value`);

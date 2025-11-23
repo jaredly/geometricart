@@ -27,6 +27,8 @@ import {
 } from '../../getPatternData';
 import {shapeD} from '../../shapeD';
 import {transformShape} from '../../../editor/tilingPoints';
+import {centroid} from '../../findReflectionAxes';
+import {dist} from '../../../rendering/getMirrorTransforms';
 
 const resolveMods = (ctx: AnimCtx, mods: Mods): ConcreteMods => ({
     inset: mods.inset != null ? a.number(ctx, mods.inset) : undefined,
@@ -65,86 +67,86 @@ const renderPattern = (ctx: Ctx, crops: Group['crops'], pattern: Pattern) => {
     const orderedStyles = Object.values(pattern.contents.styles).sort((a, b) => a.order - b.order);
 
     const needColors = orderedStyles.some((s) => s.kind.type === 'alternating');
-    if (needColors) {
-        const {colors} = getShapeColors(simple.uniqueShapes, simple.minSegLength);
+    const {colors} = needColors
+        ? getShapeColors(simple.uniqueShapes, simple.minSegLength)
+        : {colors: []};
 
-        ctx.items.push(
-            ...simple.uniqueShapes.flatMap((shape, i) => {
-                const fills: Record<string, Fill> = {};
-                const lines: Record<string, Line> = {};
-                orderedStyles.forEach((s) => {
-                    if (!matchKind(s.kind, i, colors[i])) {
-                        return;
-                    }
-                    Object.values(s.fills).forEach((fill) => {
-                        fills[fill.id] = {...fills[fill.id], ...fill};
-                    });
-                    Object.values(s.lines).forEach((line) => {
-                        lines[line.id] = {...lines[line.id], ...line};
-                    });
+    ctx.items.push(
+        ...simple.uniqueShapes.flatMap((shape, i) => {
+            const center = centroid(shape);
+            const radius = Math.min(...shape.map((s) => dist(s, center)));
+            const fills: Record<string, Fill> = {};
+            const lines: Record<string, Line> = {};
+
+            const anim: (typeof ctx)['anim'] = {
+                ...ctx.anim,
+                values: {
+                    ...ctx.anim.values,
+                    center,
+                    radius,
+                    shape,
+                    i,
+                },
+            };
+
+            orderedStyles.forEach((s) => {
+                if (!matchKind(s.kind, i, colors[i])) {
+                    return;
+                }
+                Object.values(s.fills).forEach((fill) => {
+                    fills[fill.id] = {...fills[fill.id], ...fill};
                 });
-                // const pk = pkPathFromCoords(shape, false)!;
-                // const byinset: Record<number, string> = {}
-                // const getInset = (inset: number) => {
-                //     if (!byinset[inset]) byinset[inset] =
-                // }
-                const res = [
-                    ...Object.values(fills).map((f, fi) => {
-                        if (!f.color) return;
-                        const color = a.color(ctx.anim, f.color);
-                        if (f.mods) {
-                            const fmods = resolveMods(ctx.anim, f.mods);
-                            const tx = modsTransforms(fmods);
-                            let mshape = transformShape(shape, [...ptx, ...tx]);
-                            if (fmods.inset) {
-                                const pk = pkPathFromCoords(mshape, false)!;
-                                insetPkPath(pk, fmods.inset / 100);
-                                return coordsFromPkPath(pk.toCmds()).map((shape, j) => (
-                                    <path
-                                        key={`fill-${i}-${fi}-${j}`}
-                                        opacity={fmods.opacity}
-                                        fill={color}
-                                        d={shapeD(shape)}
-                                    />
-                                ));
-                            }
-                            return <path key={`fill-${i}-${fi}`} fill={color} d={shapeD(mshape)} />;
-                        }
-                        return <path key={`fill-${i}-${fi}`} fill={color} d={shapeD(shape)} />;
-                    }),
-                    ...Object.values(lines).map((f, fi) => {
-                        if (!f.color) return;
-                        if (!f.width) return;
-                        const color = a.color(ctx.anim, f.color);
-                        const width = a.number(ctx.anim, f.width) / 100;
-                        if (f.mods) {
-                            const fmods = resolveMods(ctx.anim, f.mods);
-                            const tx = modsTransforms(fmods);
-                            let mshape = transformShape(shape, [...ptx, ...tx]);
-                            if (fmods.inset) {
-                                const pk = pkPathFromCoords(mshape, false)!;
-                                insetPkPath(pk, fmods.inset / 100);
-                                return coordsFromPkPath(pk.toCmds()).map((shape, j) => (
-                                    <path
-                                        key={`stroke-${i}-${fi}-${j}`}
-                                        fill="none"
-                                        stroke={color}
-                                        strokeWidth={width}
-                                        d={shapeD(shape)}
-                                        opacity={fmods.opacity}
-                                    />
-                                ));
-                            }
-                            return (
+                Object.values(s.lines).forEach((line) => {
+                    lines[line.id] = {...lines[line.id], ...line};
+                });
+            });
+
+            const res = [
+                ...Object.values(fills).map((f, fi) => {
+                    if (!f.color) return;
+                    const color = a.color(anim, f.color);
+                    if (f.mods) {
+                        const fmods = resolveMods(anim, f.mods);
+                        const tx = modsTransforms(fmods, center);
+                        let mshape = transformShape(shape, [...ptx, ...tx]);
+                        if (fmods.inset) {
+                            const pk = pkPathFromCoords(mshape, false)!;
+                            insetPkPath(pk, fmods.inset / 100);
+                            return coordsFromPkPath(pk.toCmds()).map((shape, j) => (
                                 <path
-                                    key={`stroke-${i}-${fi}`}
+                                    key={`fill-${i}-${fi}-${j}`}
+                                    opacity={fmods.opacity}
+                                    fill={color}
+                                    d={shapeD(shape)}
+                                />
+                            ));
+                        }
+                        return <path key={`fill-${i}-${fi}`} fill={color} d={shapeD(mshape)} />;
+                    }
+                    return <path key={`fill-${i}-${fi}`} fill={color} d={shapeD(shape)} />;
+                }),
+                ...Object.values(lines).map((f, fi) => {
+                    if (!f.color) return;
+                    if (!f.width) return;
+                    const color = a.color(anim, f.color);
+                    const width = a.number(anim, f.width) / 100;
+                    if (f.mods) {
+                        const fmods = resolveMods(anim, f.mods);
+                        const tx = modsTransforms(fmods, center);
+                        let mshape = transformShape(shape, [...ptx, ...tx]);
+                        if (fmods.inset) {
+                            const pk = pkPathFromCoords(mshape, false)!;
+                            insetPkPath(pk, fmods.inset / 100);
+                            return coordsFromPkPath(pk.toCmds()).map((shape, j) => (
+                                <path
+                                    key={`stroke-${i}-${fi}-${j}`}
                                     fill="none"
                                     stroke={color}
                                     strokeWidth={width}
-                                    d={shapeD(mshape)}
+                                    d={shapeD(shape)}
                                     opacity={fmods.opacity}
                                 />
-                            );
+                            ));
                         }
                         return (
                             <path
@@ -152,23 +154,27 @@ const renderPattern = (ctx: Ctx, crops: Group['crops'], pattern: Pattern) => {
                                 fill="none"
                                 stroke={color}
                                 strokeWidth={width}
-                                d={shapeD(shape)}
+                                d={shapeD(mshape)}
+                                opacity={fmods.opacity}
                             />
                         );
-                    }),
-                ];
-                // pk?.delete();
-                return res;
-                // return <path key={i} fill="red" stroke="black" strokeWidth={0.01} d={shapeD(shape)} />
-            }),
-        );
-    } else {
-        ctx.items.push(
-            ...simple.uniqueShapes.map((shape, i) => (
-                <path key={i} fill="red" stroke="black" strokeWidth={0.01} d={shapeD(shape)} />
-            )),
-        );
-    }
+                    }
+                    return (
+                        <path
+                            key={`stroke-${i}-${fi}`}
+                            fill="none"
+                            stroke={color}
+                            strokeWidth={width}
+                            d={shapeD(shape)}
+                        />
+                    );
+                }),
+            ];
+            // pk?.delete();
+            return res;
+            // return <path key={i} fill="red" stroke="black" strokeWidth={0.01} d={shapeD(shape)} />
+        }),
+    );
 };
 
 const renderObject = (ctx: Ctx, crops: Group['crops'], object: EObject) => {
@@ -216,6 +222,7 @@ const svgItems = (
                     cache: animCache,
                     values: {
                         Math,
+                        dist,
                         t,
                     },
                     palette: state.styleConfig.palette,
