@@ -27,7 +27,11 @@ export const PatternExport = ({tiling, id}: {tiling: Tiling; id: string}) => {
                 entities: {
                     r: {
                         type: 'Group',
-                        crops: [],
+                        crops: [
+                            {
+                                id: 'crop1',
+                            },
+                        ],
                         entities: {p: 1},
                         id: 'r',
                     },
@@ -51,6 +55,7 @@ export const PatternExport = ({tiling, id}: {tiling: Tiling; id: string}) => {
                                                 inset: 'Math.sin(t * Math.PI) * 10',
                                                 // opacity: 0.1,
                                                 rotation: 't * Math.PI / 3',
+                                                rotationOrigin: {x: 0, y: 0},
                                             },
                                         },
                                     },
@@ -69,6 +74,7 @@ export const PatternExport = ({tiling, id}: {tiling: Tiling; id: string}) => {
                                                 inset: 'Math.sin(t * Math.PI) * -10',
                                                 // inset: 't * 2',
                                                 rotation: '-t * Math.PI / 3',
+                                                rotationOrigin: {x: 0, y: 0},
                                             },
                                         },
                                     },
@@ -89,7 +95,21 @@ export const PatternExport = ({tiling, id}: {tiling: Tiling; id: string}) => {
                 rootGroup: 'r',
             },
         },
-        crops: {},
+        crops: {
+            crop1: {
+                id: 'crop1',
+                shape: [
+                    {type: 'Arc', center: {x: 0, y: 0}, to: {x: 2, y: 0}, clockwise: true},
+                    {type: 'Arc', center: {x: 0, y: 0}, to: {x: 0, y: 2}, clockwise: true},
+                    // {type: 'Arc', center: {x: 0, y: 0}, to: {x: -1, y: 1}, clockwise: true},
+                    // {type: 'Arc', center: {x: 0, y: 0}, to: {x: -1, y: 1}, clockwise: true},
+                    // {type: 'Line', to: {x: 1, y: 1}},
+                    // {type: 'Line', to: {x: -1, y: 1}},
+                    // {type: 'Line', to: {x: -1, y: -1}},
+                    // {type: 'Line', to: {x: 1, y: -1}},
+                ],
+            },
+        },
         view: {ppi: 1, box: {x: -0.5, y: -0.5, width: 1, height: 2}},
         styleConfig: {
             seed: 0,

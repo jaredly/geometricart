@@ -1,4 +1,17 @@
 
+
+shared
+sharedOnce
+
+pointsMod
+
+draw(overrides)
+
+... hmmm.
+
+
+
+
 # Undo/Redo, but so cool!
 
 ok lol I haven't actualky used it yet.

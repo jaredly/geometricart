@@ -141,7 +141,7 @@ export const StateEditor = ({value, onChange}: StateEditorProps) => {
                         onClick={() => {
                             const nextKey = `crop-${crops.length + 1}`;
                             const next = {...value.crops};
-                            next[nextKey] = {shape: defaultCropShape()};
+                            next[nextKey] = {id: nextKey, shape: defaultCropShape()};
                             onChange({...value, crops: next});
                         }}
                     >

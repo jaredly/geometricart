@@ -145,11 +145,11 @@ export const preTransformTiling = (tiling: Tiling): Tiling => {
     };
 };
 
-const cropShapes = (
+export const cropShapes = (
     shapes: Coord[][],
     crops?: {segments: Segment[]; hole?: boolean; rough?: boolean}[],
 ) => {
-    if (!crops) return shapes;
+    if (!crops) return shapes.map((s) => [s]);
     let pks = shapes.map((shape) => pkPathFromCoords(shape)!);
     let remove = pks.map(() => false);
     const areas = crops.some((c) => c.rough) ? shapes.map(calcPolygonArea) : [];
@@ -178,7 +178,7 @@ const cropShapes = (
         });
         clipPk.delete();
     }
-    return pks.flatMap((pk, i) => {
+    return pks.map((pk, i) => {
         if (remove[i]) {
             pk.delete();
             return [];
@@ -259,7 +259,7 @@ export const getNewPatternData = (tiling: Tiling, size = 2, crops?: Crop[]) => {
         simpleSize(tiling, size),
     );
 
-    const allShapes = cropShapes(uniqueShapes, crops);
+    const allShapes = cropShapes(uniqueShapes, crops).flat();
     const allSegments = unique(
         allShapes
             .map(joinAdjacentShapeSegments)

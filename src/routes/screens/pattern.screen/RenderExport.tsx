@@ -16,11 +16,12 @@ import {
 } from './export-types';
 import {svgCoord, useSVGZoom} from './useSVGZoom';
 import {Coord} from '../../../types';
-import {pkPathWithCmds} from '../animator.screen/cropPath';
+import {clipToPathData, pkPathWithCmds} from '../animator.screen/cropPath';
 import {PKPath} from '../../pk';
 import {transformBarePath} from '../../../rendering/points';
 import {
     coordsFromPkPath,
+    cropShapes,
     getShapeColors,
     getSimplePatternData,
     pkPathFromCoords,
@@ -71,8 +72,16 @@ const renderPattern = (ctx: Ctx, crops: Group['crops'], pattern: Pattern) => {
         ? getShapeColors(simple.uniqueShapes, simple.minSegLength)
         : {colors: []};
 
+    const croppedShapes = cropShapes(
+        simple.uniqueShapes,
+        crops.map((crop) => ({
+            ...crop,
+            segments: ctx.state.crops[crop.id].shape,
+        })),
+    ).flatMap((shapes, i) => shapes.map((shape) => ({shape, i})));
+
     ctx.items.push(
-        ...simple.uniqueShapes.flatMap((shape, i) => {
+        ...croppedShapes.flatMap(({shape, i}) => {
             const center = centroid(shape);
             const radius = Math.min(...shape.map((s) => dist(s, center)));
             const fills: Record<string, Fill> = {};
