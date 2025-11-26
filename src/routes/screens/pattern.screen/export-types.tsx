@@ -193,6 +193,8 @@ export const modMatrix = (mod: ConcretePMod, origin?: Coord) => {
             tx.push(translationMatrix(mod.v));
             break;
         }
+        default:
+            throw new Error(`no please ${mod.type}`);
     }
     return tx;
 };

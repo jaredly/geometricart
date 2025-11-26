@@ -44,26 +44,30 @@ import {percentToWorld, svgCoord, useElementZoom, worldToPercent} from './useSVG
 import {pkPathToSegments} from '../../../sidebar/pkClipPaths';
 import {epsilon} from '../../../rendering/epsilonToZero';
 
-const resolvePMod = (ctx: AnimCtx, mod: PMods): ConcretePMod => {
+type CCrop = {type: 'crop'; id: string; hole?: boolean; rough?: boolean};
+type CInset = {type: 'inset'; v: number};
+type CropsAndMatrices = (CCrop | Matrix[] | CInset)[];
+
+const resolvePMod = (ctx: AnimCtx, mod: PMods): CropsAndMatrices[0] => {
     switch (mod.type) {
         case 'inset':
             return {...mod, v: a.number(ctx, mod.v)};
         case 'crop':
             return mod;
         case 'scale':
-            return {
+            return modMatrix({
                 ...mod,
                 v: a.coordOrNumber(ctx, mod.v),
                 origin: mod.origin ? a.coord(ctx, mod.origin) : undefined,
-            };
+            });
         case 'rotate':
-            return {
+            return modMatrix({
                 ...mod,
                 v: a.number(ctx, mod.v),
                 origin: mod.origin ? a.coord(ctx, mod.origin) : undefined,
-            };
+            });
         case 'translate':
-            return {...mod, v: a.coord(ctx, mod.v)};
+            return modMatrix({...mod, v: a.coord(ctx, mod.v)});
     }
 };
 
@@ -105,10 +109,6 @@ const matchKind = (k: ShapeStyle['kind'], i: number, color: number) => {
     }
 };
 
-type CCrop = {type: 'crop'; id: string; hole?: boolean; rough?: boolean};
-type CInset = {type: 'inset'; v: number};
-type CropsAndMatrices = (CCrop | Matrix[] | CInset)[];
-
 const modsToShapes = (ctx: Ctx, mods: CropsAndMatrices, shapes: {shape: Coord[]; i: number}[]) => {
     return mods.reduce((shapes, mod) => {
         if (Array.isArray(mod)) {
@@ -121,8 +121,8 @@ const modsToShapes = (ctx: Ctx, mods: CropsAndMatrices, shapes: {shape: Coord[];
         if (mod.type === 'inset') {
             if (Math.abs(mod.v) <= 0.01) return shapes;
             return shapes.flatMap((shape) => {
-                const path = pkPathFromCoords(shape.shape)!;
-                insetPkPath(path, mod.v);
+                const path = pkPathFromCoords(shape.shape, false)!;
+                insetPkPath(path, mod.v / 100);
                 path.simplify();
                 const items = pkPathToSegments(path);
                 path.delete();
@@ -163,7 +163,7 @@ const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Pattern) => {
     // not doing yet
     if (pattern.contents.type !== 'shapes') return;
     const tiling = ctx.patterns[pattern.id];
-    const mods = pattern.mods.map((m) => resolvePMod(ctx.anim, m));
+    const patternmods = pattern.mods.map((m) => resolvePMod(ctx.anim, m));
 
     // const ptx = mods.flatMap((mod) => modMatrix(mod));
 
@@ -175,9 +175,6 @@ const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Pattern) => {
         ? getShapeColors(simple.uniqueShapes, simple.minSegLength)
         : {colors: []};
 
-    const patternmods: CropsAndMatrices = mods.map((mod) =>
-        mod.type === 'crop' ? mod : modMatrix(mod),
-    );
     const midShapes = modsToShapes(
         ctx,
         patternmods,
@@ -223,9 +220,7 @@ const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Pattern) => {
                     const opacity = f.opacity ? a.number(anim, f.opacity) : undefined;
 
                     if (f.mods.length) {
-                        const fmods: CropsAndMatrices = f.mods.map((mod) =>
-                            mod.type === 'crop' ? mod : modMatrix(resolvePMod(ctx.anim, mod)),
-                        );
+                        const fmods = f.mods.map((m) => resolvePMod(ctx.anim, m));
                         const midShapes = modsToShapes(ctx, fmods, [{shape, i: 0}]);
 
                         return {
@@ -259,9 +254,7 @@ const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Pattern) => {
                     const zIndex = f.zIndex ? a.number(anim, f.zIndex) : null;
 
                     if (f.mods.length) {
-                        const fmods: CropsAndMatrices = f.mods.map((mod) =>
-                            mod.type === 'crop' ? mod : modMatrix(resolvePMod(ctx.anim, mod)),
-                        );
+                        const fmods = f.mods.map((m) => resolvePMod(ctx.anim, m));
                         const midShapes = modsToShapes(ctx, fmods, [{shape, i: 0}]);
 
                         return {
