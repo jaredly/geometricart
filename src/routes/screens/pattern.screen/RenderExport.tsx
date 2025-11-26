@@ -276,7 +276,7 @@ export const RenderExport = ({state, patterns}: {state: State; patterns: Pattern
     const [animate, setAnimate] = useState(false);
     useEffect(() => {
         if (!animate) return;
-        let st = Date.now();
+        let st = Date.now() - t * duration * 1000;
         let af: number = 0;
         const step = () => {
             const now = Date.now();
@@ -284,6 +284,8 @@ export const RenderExport = ({state, patterns}: {state: State; patterns: Pattern
             setT(Math.min(1, diff / duration));
             if (diff < duration) {
                 af = requestAnimationFrame(step);
+            } else {
+                setAnimate(false);
             }
         };
         step();
@@ -335,7 +337,7 @@ export const RenderExport = ({state, patterns}: {state: State; patterns: Pattern
     const [video, setVideo] = useState(null as null | number | string);
     const size = 500;
 
-    const statusRef = useRef<HTMLSpanElement>(null);
+    const statusRef = useRef<HTMLDivElement>(null);
 
     return (
         <div className="flex">
@@ -362,12 +364,12 @@ export const RenderExport = ({state, patterns}: {state: State; patterns: Pattern
                         value={duration}
                         onChange={(evt) => setDuration(+evt.currentTarget.value)}
                         type="number"
-                        className="input w-10"
+                        className="input w-13"
                     />
                 </div>
-                <div>
+                <div className="flex gap-2 items-center">
                     <button
-                        className={'btn ' + (animate ? 'btn-accent' : '')}
+                        className={'btn'}
                         onClick={() =>
                             recordVideo(state, size, box, patterns, duration, statusRef).then(
                                 (url) => setVideo(url),
@@ -376,7 +378,12 @@ export const RenderExport = ({state, patterns}: {state: State; patterns: Pattern
                     >
                         Record Video
                     </button>
-                    <span ref={statusRef} />
+                    <div ref={statusRef} className="w-20 text-right" />
+                    {video ? (
+                        <button className={'btn'} onClick={() => setVideo(null)}>
+                            &times;
+                        </button>
+                    ) : null}
                     {/* {typeof video === 'number' ? (
                         <input type="range" value={video} onChange={() => {}} min={0} max={1} />
                     ) : null} */}
@@ -418,7 +425,7 @@ const recordVideo = async (
 
     const blob = await generateVideo(canvas, frameRate, totalFrames, (_, currentFrame) => {
         if (currentFrame % 10 === 0)
-            onStatus.current!.textContent = currentFrame / totalFrames + '';
+            onStatus.current!.textContent = ((currentFrame / totalFrames) * 100).toFixed(0) + '%';
         const surface = pk.MakeWebGLCanvasSurface(canvas)!;
 
         const {items} = svgItems(state, animCache, cropCache, patterns, currentFrame / totalFrames);
