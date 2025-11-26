@@ -1,22 +1,18 @@
-import React, {useCallback, useMemo, useState} from 'react';
-import {coordKey} from '../../../rendering/coordKey';
+import React, {useMemo, useState} from 'react';
 import {closeEnoughAngle} from '../../../rendering/epsilonToZero';
 import {angleTo, dist} from '../../../rendering/getMirrorTransforms';
 import {intersections, lineToSlope, Primitive} from '../../../rendering/intersect';
 import {angleBetween} from '../../../rendering/isAngleBetween';
-import {Coord, Segment, Tiling} from '../../../types';
+import {Coord, Tiling} from '../../../types';
 import {findCommonFractions, showFract} from '../../findCommonFractions';
-import {Crop, getNewPatternData} from '../../getPatternData';
+import {getNewPatternData} from '../../getPatternData';
 import {humanReadableRatio} from '../../humanReadableRatio';
 import {shapeD} from '../../shapeD';
-import {unique} from '../../shapesFromSegments';
+import {State} from './export-types';
 import {filterNull} from './filterNull';
 import {IGuide} from './IGuide';
-import {ShowLabel} from './ShowLabel';
-import {svgCoord, useSVGZoom} from './useSVGZoom';
-import {StateEditor} from './StateEditor';
-import {State} from './export-types';
 import {RenderExport} from './RenderExport';
+import {StateEditor} from './StateEditor';
 
 export const PatternExport = ({tiling, id}: {tiling: Tiling; id: string}) => {
     const size = 800;
@@ -50,7 +46,8 @@ export const PatternExport = ({tiling, id}: {tiling: Tiling; id: string}) => {
                                     fills: {
                                         a: {
                                             id: 'a',
-                                            color: 'hsl(180,100%,50%)',
+                                            // color: 'hsl(180,100%,50%)',
+                                            color: {h: 180, s: 100, l: 50},
                                             // color: 'rgba(0,255,0,0.1)',
                                             // mods: {
                                             //     opacity: 0.5,
@@ -75,7 +72,8 @@ export const PatternExport = ({tiling, id}: {tiling: Tiling; id: string}) => {
                                         a: {
                                             id: 'a',
                                             // color: '#0af',
-                                            color: 'hsl(190,100%,30%)',
+                                            // color: 'hsl(190,100%,30%)',
+                                            color: {h: 190, s: 100, l: 30},
                                             mods: {
                                                 // inset: 6,
                                                 inset: 'Math.sin(t1 * Math.PI * 2) * -10',

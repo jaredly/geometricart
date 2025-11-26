@@ -1,5 +1,6 @@
 import {mulPos} from '../../../animation/mulPos';
 import {scalePos} from '../../../editor/scalePos';
+import {hslToRgb} from '../../../rendering/colorConvert';
 import {
     Matrix,
     rotationMatrix,
@@ -12,7 +13,7 @@ import {pk, PKPath} from '../../pk';
 export type AnimatableNumber = number | string;
 export type AnimatableBoolean = boolean | string;
 export type AnimatableValue = string;
-export type AnimatableColor = number | string;
+export type AnimatableColor = number | string | Color;
 export type AnimatableCoord = Coord | string;
 
 export type Shape =
@@ -44,6 +45,20 @@ export type Shape =
 
 export type Box = {x: number; y: number; width: number; height: number};
 
+export type Color =
+    | {r: number; g: number; b: number}
+    | {h: number; s: number; l: number}
+    | [number, number, number];
+
+export const colorToRgb = (c: Color): {r: number; g: number; b: number} =>
+    Array.isArray(c)
+        ? rgbFromArr(c)
+        : 'h' in c
+          ? rgbFromArr(hslToRgb(c.h / 360, c.s / 100, c.l / 100))
+          : c;
+
+const rgbFromArr = (c: [number, number, number]) => ({r: c[0], g: c[1], b: c[2]});
+
 export type Crop = {id: string; shape: Segment[]; mods?: Mods};
 export type State = {
     layers: Record<string, Layer>;
@@ -61,7 +76,7 @@ export type State = {
             t0: number;
             t1: number;
         }[];
-        palette: string[];
+        palette: Color[];
     };
 };
 
@@ -95,7 +110,7 @@ export type ConcreteMods = {
 
     // Non-positional
     opacity?: number;
-    tint?: string;
+    tint?: Color;
     // for 3d rendering
     thickness?: number;
 };

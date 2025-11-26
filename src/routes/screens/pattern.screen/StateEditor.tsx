@@ -1212,6 +1212,7 @@ const createLayerTemplate = (id: string): Layer => ({
     rootGroup: 'root',
     entities: {},
     guides: [],
+    shared: {},
 });
 
 const createGroup = (id: string): Group => ({

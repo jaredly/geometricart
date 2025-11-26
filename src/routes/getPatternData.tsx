@@ -40,14 +40,18 @@ import {clipToPathData, pkPathWithCmds} from './screens/animator.screen/cropPath
 import {pkPathToSegments} from '../sidebar/pkClipPaths';
 import {coordsEqual} from '../rendering/pathsAreIdentical';
 
-export const pkPathFromCoords = (coords: Coord[], open = true) =>
-    pk.Path.MakeFromCmds([
+export const cmdsForCoords = (coords: Coord[], open = true) => {
+    return [
         pk.MOVE_VERB,
         coords[0].x,
         coords[0].y,
         ...coords.slice(1).flatMap(({x, y}) => [pk.LINE_VERB, x, y]),
         ...(open ? [] : [pk.CLOSE_VERB]),
-    ]);
+    ];
+};
+
+export const pkPathFromCoords = (coords: Coord[], open = true) =>
+    pk.Path.MakeFromCmds(cmdsForCoords(coords, open));
 
 export const coordsFromPkPath = (cmds: Float32Array) => {
     const shapes: Coord[][] = [];

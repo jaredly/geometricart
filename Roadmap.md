@@ -92,8 +92,9 @@ idk I feel like the answer is not often.
 - Mods are a list
   - so you can decide if crop comes first or second
 - Export can make a movie
-  - svg or canvas pls
+  - [x] svg or canvas pls
 - [x] zindex actually does something
+- [ ] make colors be better
 
 
 getting weird artifacts ... maybe do the "everything is 100x bigger" thing?

@@ -10,6 +10,7 @@ import {
     AnimatableColor,
     Crop,
     AnimatableValue,
+    Color,
 } from './export-types';
 import {processScript} from './process-script';
 
@@ -18,15 +19,15 @@ export type AnimCtx = {
     values: Record<string, any>;
     cache: Map<string, {fn: AnimFn; needs: string[]}>;
     warn(m: string): void;
-    palette: string[];
+    palette: Color[];
 };
 
 export type RenderItem = {
     type: 'path';
     pk?: PKPath;
-    fill?: string;
+    fill?: {r: number; g: number; b: number};
+    stroke?: {r: number; g: number; b: number};
     opacity?: number;
-    stroke?: string;
     strokeWidth?: number;
     zIndex?: number | null;
     shapes: Coord[][];
@@ -130,23 +131,53 @@ export const a = {
                     (v: any): v is number | Coord => typeof v === 'number' || isCoord(v),
                     {x: 0, y: 0},
                 ),
-    color: (ctx: AnimCtx, v: AnimatableColor): string => {
+    color: (ctx: AnimCtx, v: AnimatableColor): Color => {
         if (typeof v === 'string') {
-            if (isValidColor(v.trim())) {
-                return v.trim();
-            }
-            v = evaluate<string | number>(
+            v = evaluate<Color | number>(
                 ctx,
                 v,
-                (v) => typeof v === 'string' || typeof v === 'number',
-                '#fff',
+                (v): v is number | Color => {
+                    if (typeof v === 'number') {
+                        return true;
+                    }
+                    if (
+                        Array.isArray(v) &&
+                        typeof v[0] === 'number' &&
+                        typeof v[1] === 'number' &&
+                        typeof v[2] === 'number'
+                    ) {
+                        return true;
+                    }
+                    if (typeof v === 'string') {
+                        throw new Error(`not a valid color representation: ${v}`);
+                    }
+                    if (
+                        'r' in v &&
+                        'g' in v &&
+                        'b' in v &&
+                        typeof v.r === 'number' &&
+                        typeof v.g === 'number' &&
+                        typeof v.b === 'number'
+                    ) {
+                        return true;
+                    }
+                    if (
+                        'h' in v &&
+                        's' in v &&
+                        'l' in v &&
+                        typeof v.h === 'number' &&
+                        typeof v.s === 'number' &&
+                        typeof v.l === 'number'
+                    ) {
+                        return true;
+                    }
+                    return false;
+                },
+                {r: 255, g: 255, b: 255},
             );
         }
         if (typeof v === 'number') {
             return ctx.palette[v % ctx.palette.length];
-        }
-        if (!isValidColor(v)) {
-            throw new Error(`not a color: ${v}`);
         }
         return v;
     },

@@ -1,10 +1,16 @@
 import {useEffect, useMemo, useState} from 'react';
 import {transformShape} from '../../../editor/tilingPoints';
-import {dist} from '../../../rendering/getMirrorTransforms';
+import {
+    applyMatrices,
+    dist,
+    scaleMatrix,
+    translationMatrix,
+} from '../../../rendering/getMirrorTransforms';
 import {transformBarePath} from '../../../rendering/points';
 import {Coord} from '../../../types';
 import {centroid} from '../../findReflectionAxes';
 import {
+    cmdsForCoords,
     coordsFromPkPath,
     cropShapes,
     getShapeColors,
@@ -18,6 +24,7 @@ import {globals} from './eval-globals';
 import {a, AnimCtx, Ctx, Patterns, RenderItem} from './evaluate';
 import {
     Box,
+    colorToRgb,
     ConcreteMods,
     Crop,
     EObject,
@@ -32,8 +39,6 @@ import {
     State,
 } from './export-types';
 import {percentToWorld, svgCoord, useElementZoom, worldToPercent} from './useSVGZoom';
-import {scalePos} from '../../../editor/scalePos';
-import {closeEnough} from '../../../rendering/epsilonToZero';
 
 const resolveMods = (ctx: AnimCtx, mods: Mods): ConcreteMods => ({
     inset: mods.inset != null ? a.number(ctx, mods.inset) : undefined,
@@ -118,6 +123,7 @@ const renderPattern = (ctx: Ctx, crops: Group['crops'], pattern: Pattern) => {
                 ...Object.values(fills).flatMap((f, fi): RenderItem[] | RenderItem | undefined => {
                     if (!f.color) return;
                     const color = a.color(anim, f.color);
+                    const rgb = colorToRgb(color);
                     const zIndex = f.zIndex ? a.number(anim, f.zIndex) : null;
                     if (f.mods) {
                         const fmods = resolveMods(anim, f.mods);
@@ -131,7 +137,7 @@ const renderPattern = (ctx: Ctx, crops: Group['crops'], pattern: Pattern) => {
                                 pk,
                                 key: `fill-${i}-${fi}`,
                                 opacity: fmods.opacity,
-                                fill: color,
+                                fill: rgb,
                                 shapes: coordsFromPkPath(pk.toCmds()),
                                 zIndex,
                             };
@@ -139,7 +145,7 @@ const renderPattern = (ctx: Ctx, crops: Group['crops'], pattern: Pattern) => {
                         return {
                             type: 'path',
                             key: `fill-${i}-${fi}`,
-                            fill: color,
+                            fill: rgb,
                             shapes: [mshape],
                             zIndex,
                         };
@@ -147,7 +153,7 @@ const renderPattern = (ctx: Ctx, crops: Group['crops'], pattern: Pattern) => {
                     return {
                         type: 'path',
                         key: `fill-${i}-${fi}`,
-                        fill: color,
+                        fill: rgb,
                         shapes: [shape],
                         zIndex,
                     };
@@ -156,6 +162,7 @@ const renderPattern = (ctx: Ctx, crops: Group['crops'], pattern: Pattern) => {
                     if (!f.color) return;
                     if (!f.width) return;
                     const color = a.color(anim, f.color);
+                    const rgb = colorToRgb(color);
                     const width = a.number(anim, f.width) / 100;
                     if (f.mods) {
                         const fmods = resolveMods(anim, f.mods);
@@ -167,8 +174,7 @@ const renderPattern = (ctx: Ctx, crops: Group['crops'], pattern: Pattern) => {
                             return {
                                 type: 'path',
                                 key: `stroke-${i}-${fi}`,
-                                fill: 'none',
-                                stroke: color,
+                                stroke: rgb,
                                 strokeWidth: width,
                                 pk,
                                 shapes: coordsFromPkPath(pk.toCmds()),
@@ -178,8 +184,7 @@ const renderPattern = (ctx: Ctx, crops: Group['crops'], pattern: Pattern) => {
                         return {
                             type: 'path',
                             key: `stroke-${i}-${fi}`,
-                            fill: 'none',
-                            stroke: color,
+                            stroke: rgb,
                             strokeWidth: width,
                             shapes: [mshape],
                             opacity: fmods.opacity,
@@ -188,8 +193,7 @@ const renderPattern = (ctx: Ctx, crops: Group['crops'], pattern: Pattern) => {
                     return {
                         type: 'path',
                         key: `stroke-${i}-${fi}`,
-                        fill: 'none',
-                        stroke: color,
+                        stroke: rgb,
                         strokeWidth: width,
                         shapes: [shape],
                     };
@@ -328,6 +332,7 @@ export const RenderExport = ({state, patterns}: {state: State; patterns: Pattern
         <div className="flex">
             <div className="relative overflow-hidden">
                 <SVGCanvas {...zoomProps} setMouse={setMouse} items={items} size={size} />
+                <Canvas {...zoomProps} setMouse={setMouse} items={items} size={size} />
                 <div className="mt-4">
                     <input
                         type="range"
@@ -377,14 +382,50 @@ const Canvas = ({
         const ctx = surface.getCanvas();
         ctx.clear(pk.BLACK);
 
+        ctx.save();
+        // ctx.scale(surface.width() / box.width, surface.height() / box.height);
+        const scale = {x: surface.width() / box.width, y: surface.height() / box.height};
+        const tx = [
+            scaleMatrix(scale.x, scale.y),
+            translationMatrix({x: -box.x * scale.x, y: -box.y * scale.y}),
+        ];
         items.forEach((item) => {
+            const pkp =
+                item.pk ??
+                pk.Path.MakeFromCmds(
+                    item.shapes.flatMap((shape) =>
+                        cmdsForCoords(
+                            shape.map((c) => applyMatrices(c, tx)),
+                            false,
+                        ),
+                    ),
+                )!;
+            const paint = new pk.Paint();
+            paint.setAntiAlias(true);
+            if (item.fill) {
+                paint.setStyle(pk.PaintStyle.Fill);
+                paint.setColor([item.fill.r / 255, item.fill.g / 255, item.fill.b / 255]);
+            } else if (item.stroke && item.strokeWidth) {
+                paint.setStyle(pk.PaintStyle.Stroke);
+                paint.setStrokeWidth(item.strokeWidth!);
+                paint.setColor([item.stroke.r / 255, item.stroke.g / 255, item.stroke.b / 255]);
+            } else {
+                return;
+            }
+            ctx.drawPath(pkp, paint);
+            paint.delete();
+            pkp.delete();
             // item.
         });
+        ctx.restore();
+        surface.flush();
     }, [box, items]);
     return (
         <canvas
             ref={innerRef as React.RefObject<HTMLCanvasElement>}
             style={{background: 'black', width: size, height: size}}
+            width={size * 2}
+            height={size * 2}
             onMouseLeave={() => setMouse(null)}
             onMouseMove={(evt) => {
                 const cbox = evt.currentTarget.getBoundingClientRect();
@@ -418,9 +459,19 @@ const SVGCanvas = ({
             onMouseLeave={() => setMouse(null)}
             onMouseMove={(evt) => setMouse(svgCoord(evt))}
         >
-            {items.map(({key, shapes, pk, ...item}) =>
-                shapes.map((shape, m) => <path {...item} d={shapeD(shape)} key={`${key}-${m}`} />),
+            {items.map(({key, shapes, pk, fill, stroke, ...item}) =>
+                shapes.map((shape, m) => (
+                    <path
+                        {...item}
+                        fill={stroke ? 'none' : rgbString(fill!)}
+                        stroke={stroke ? rgbString(stroke) : undefined}
+                        d={shapeD(shape)}
+                        key={`${key}-${m}`}
+                    />
+                )),
             )}
         </svg>
     );
 };
+
+const rgbString = (c: {r: number; g: number; b: number}) => `rgb(${c.r},${c.g},${c.b})`;

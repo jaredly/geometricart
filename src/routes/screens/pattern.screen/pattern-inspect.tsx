@@ -27,7 +27,7 @@ import {unique} from '../../shapesFromSegments';
 import {filterNull} from './filterNull';
 import {IGuide} from './IGuide';
 import {ShowLabel} from './ShowLabel';
-import {svgCoord, useSVGZoom} from './useSVGZoom';
+import {svgCoord, useElementZoom} from './useSVGZoom';
 
 type Selection = {type: 'shape'; i: number} | {type: 'seg'; i: number};
 
@@ -117,7 +117,7 @@ export const PatternInspect = ({tiling}: {tiling: Tiling}) => {
     }, []);
 
     // const boxSize = 6;
-    const {zoomProps, box} = useSVGZoom(6);
+    const {zoomProps, box} = useElementZoom(6);
     // const boxSize = 10;
     // const boxSize = 3;
 

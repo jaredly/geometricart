@@ -53,10 +53,10 @@ export function rgbToHsl(r: number, g: number, b: number): [number, number, numb
  * @param   Number  l       The lightness
  * @return  Array           The RGB representation
  */
-export function hslToRgb(h: number, s: number, l: number) {
-    var r, g, b;
+export function hslToRgb(h: number, s: number, l: number): [number, number, number] {
+    var r: number, g: number, b: number;
 
-    if (s == 0) {
+    if (s === 0) {
         r = g = b = l; // achromatic
     } else {
         const hue2rgb = (p: number, q: number, t: number) => {
@@ -68,8 +68,8 @@ export function hslToRgb(h: number, s: number, l: number) {
             return p;
         };
 
-        var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-        var p = 2 * l - q;
+        const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+        const p = 2 * l - q;
 
         r = hue2rgb(p, q, h + 1 / 3);
         g = hue2rgb(p, q, h);
