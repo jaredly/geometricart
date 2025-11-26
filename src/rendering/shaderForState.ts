@@ -13,6 +13,7 @@ const namedColors: {[key: string]: Rgb} = {
     white: {r: 1, g: 1, b: 1},
     black: {r: 0, g: 0, b: 0},
 };
+
 const parseColor = (color?: string): null | Rgb => {
     if (color == null) {
         return null;

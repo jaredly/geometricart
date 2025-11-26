@@ -44,6 +44,7 @@ const colorAt = (imageData: ImageData, {x, y}: Coord): Rgb => {
 };
 
 export const rgbToString = ({r, g, b}: Rgb) => `rgb(${r},${g},${b})`;
+
 const toHex = (n: number) => n.toString(16).padStart(2, '0');
 const rgbToHex = ({r, g, b}: Rgb) => `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 
@@ -97,7 +98,7 @@ export function PalettesForm({
                 css={{display: 'block'}}
                 onPaste={(evt) => {
                     const data = evt.clipboardData.getData('text/plain');
-                    let parts;
+                    let parts: string[];
                     if (data.startsWith(`https://coolors.co/`)) {
                         parts = data
                             .split('/')

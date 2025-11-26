@@ -1,6 +1,7 @@
 // biome-ignore-all lint/suspicious/noExplicitAny : this is internal and fine
 import {Coord, Tiling} from '../../../types';
 import {PKPath} from '../../pk';
+import {parseColor} from './colors';
 import {
     State,
     Layer,
@@ -133,12 +134,19 @@ export const a = {
                 ),
     color: (ctx: AnimCtx, v: AnimatableColor): Color => {
         if (typeof v === 'string') {
-            v = evaluate<Color | number>(
+            const parsed = parseColor(v);
+            if (parsed) return parsed;
+
+            v = evaluate<Color | string | number>(
                 ctx,
                 v,
-                (v): v is number | Color => {
+                (v): v is number | string | Color => {
                     if (typeof v === 'number') {
                         return true;
+                    }
+                    if (typeof v === 'string') {
+                        const parsed = parseColor(v);
+                        if (parsed) return true;
                     }
                     if (
                         Array.isArray(v) &&
@@ -178,6 +186,13 @@ export const a = {
         }
         if (typeof v === 'number') {
             return ctx.palette[v % ctx.palette.length];
+        }
+        if (typeof v === 'string') {
+            const parsed = parseColor(v);
+            if (parsed) {
+                return parsed;
+            }
+            throw new Error(`invalid color string: ${v}`);
         }
         return v;
     },

@@ -16,8 +16,12 @@ import {
     PatternContents,
     ShapeStyle,
     State,
+    Color,
+    colorToRgb,
 } from './export-types';
 import {Coord, Segment} from '../../../types';
+import {rgbToString} from '../../../editor/PalettesForm';
+import {colorToString, parseColor} from './colors';
 
 type StateEditorProps = {
     value: State;
@@ -82,7 +86,7 @@ export const StateEditor = ({value, onChange}: StateEditorProps) => {
                         value={value.view.ppi}
                         onChange={(ppi) => onChange({...value, view: {...value.view, ppi}})}
                     />
-                    <TextField
+                    {/* <TextField
                         label="Background"
                         value={value.view.background ?? ''}
                         placeholder="color or expression"
@@ -92,7 +96,7 @@ export const StateEditor = ({value, onChange}: StateEditorProps) => {
                                 view: {...value.view, background: background || undefined},
                             })
                         }
-                    />
+                    /> */}
                     <BoxField
                         label="View Box"
                         value={value.view.box}
@@ -321,8 +325,8 @@ const PaletteEditor = ({
     palette,
     onChange,
 }: {
-    palette: string[];
-    onChange: (next: string[]) => void;
+    palette: Color[];
+    onChange: (next: Color[]) => void;
 }) => {
     return (
         <div className="bg-base-200 rounded-lg border border-base-300 p-3 space-y-3">
@@ -330,7 +334,7 @@ const PaletteEditor = ({
                 <div className="font-semibold text-sm">Palette</div>
                 <button
                     className="btn btn-sm btn-outline"
-                    onClick={() => onChange([...palette, '#ffffff'])}
+                    onClick={() => onChange([...palette, {r: 255, g: 255, b: 255}])}
                 >
                     Add color
                 </button>
@@ -340,14 +344,15 @@ const PaletteEditor = ({
                     <div key={i} className="flex items-center gap-3">
                         <div
                             className="w-10 h-10 rounded border border-base-300"
-                            style={{background: color || 'transparent'}}
+                            style={{background: rgbToString(colorToRgb(color)) || 'transparent'}}
                         />
-                        <input
-                            className="input input-bordered input-sm flex-1"
-                            value={color}
-                            onChange={(evt) => {
+                        <BlurInput
+                            value={colorToString(color)}
+                            onChange={(v) => {
+                                const c = parseColor(v);
+                                if (!c) return;
                                 const next = [...palette];
-                                next[i] = evt.target.value;
+                                next[i] = c;
                                 onChange(next);
                             }}
                         />
@@ -795,10 +800,10 @@ const PatternEditor = ({value, onChange}: {value: Pattern; onChange: (next: Patt
                     onChange={(psize) => onChange({...value, psize})}
                 />
             )}
-            <ModsEditor
+            {/* <ModsEditor
                 value={value.mods}
                 onChange={(mods) => (mods ? onChange({...value, mods}) : undefined)}
-            />
+            /> */}
             <PatternContentsEditor
                 value={value.contents}
                 onChange={(contents) => onChange({...value, contents})}
@@ -856,10 +861,12 @@ const PatternContentsEditor = ({
             </div>
             {value.type === 'layers' ? (
                 <div className="space-y-2">
-                    <CoordField
+                    <AnimCoordInput
                         label="Origin"
                         value={value.origin}
-                        onChange={(origin) => onChange({...value, origin})}
+                        onChange={(origin: AnimatableCoord | undefined | null) =>
+                            origin != null ? onChange({...value, origin}) : undefined
+                        }
                     />
                     <label className="label cursor-pointer gap-2">
                         <span className="label-text text-sm">Reverse</span>
@@ -942,17 +949,17 @@ const ModsEditor = ({
     const mods = value ?? {};
     const setField = (key: keyof Mods, val: Mods[typeof key]) => {
         const next = {...mods, [key]: val};
-        const cleaned = Object.entries(next).reduce((acc, [k, v]) => {
-            if (v !== undefined && v !== '') acc[k as keyof Mods] = v as Mods[keyof Mods];
-            return acc;
-        }, {} as Mods);
-        onChange(Object.keys(cleaned).length ? cleaned : undefined);
+        // const cleaned = Object.entries(next).reduce((acc, [k, v]) => {
+        //     if (v !== undefined && v !== '') acc[k as keyof Mods] = v as Mods[keyof Mods];
+        //     return acc;
+        // }, {} as Mods);
+        // onChange(Object.keys(cleaned).length ? cleaned : undefined);
     };
 
     return (
         <details className="bg-base-200 rounded-lg border border-base-300 p-3 space-y-2">
             <summary className="font-semibold text-sm">Mods</summary>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 <AnimInput
                     label="Inset"
                     value={mods.inset}
@@ -994,7 +1001,7 @@ const ModsEditor = ({
                     value={mods.thickness}
                     onChange={(v) => setField('thickness', v)}
                 />
-            </div>
+            </div> */}
             {value && Object.keys(value).length ? (
                 <button className="btn btn-ghost btn-xs" onClick={() => onChange(undefined)}>
                     Clear mods
@@ -1003,6 +1010,36 @@ const ModsEditor = ({
         </details>
     );
 };
+
+const AnimColor = ({
+    label,
+    value,
+    onChange,
+}: {
+    label: string;
+    value?: AnimatableColor;
+    onChange: (next?: AnimatableColor) => void;
+}) => (
+    <label className="form-control">
+        <div className="label">
+            <span className="label-text text-sm font-semibold">{label}</span>
+        </div>
+        <BlurInput
+            value={
+                value != null
+                    ? typeof value === 'string' || typeof value === 'number'
+                        ? '' + value
+                        : colorToString(value)
+                    : ''
+            }
+            placeholder="number | expression"
+            onChange={(value) => {
+                const parsed = parseAnimatable(value);
+                onChange(value.trim() ? parsed : undefined);
+            }}
+        />
+    </label>
+);
 
 const AnimInput = ({
     label,
@@ -1028,7 +1065,7 @@ const AnimInput = ({
     </label>
 );
 
-const AnimCoordInput = ({
+const AnimCoordOrNumberInput = ({
     label,
     value,
     onChange,
@@ -1091,6 +1128,75 @@ const AnimCoordInput = ({
                     value={value != null && !isCoord ? String(value) : ''}
                     placeholder="number | expression"
                     onChange={(value) => onChange(parseAnimatable(value))}
+                />
+            )}
+        </div>
+    );
+};
+
+const AnimCoordInput = ({
+    label,
+    value,
+    onChange,
+}: {
+    label: string;
+    value?: AnimatableCoord;
+    onChange: (next?: AnimatableCoord) => void;
+}) => {
+    const isCoord = value && typeof value === 'object' && 'x' in value && 'y' in value;
+    const [mode, setMode] = useState<'coord' | 'raw'>(isCoord ? 'coord' : 'raw');
+
+    useEffect(() => {
+        if (isCoord && mode !== 'coord') {
+            setMode('coord');
+        }
+        if (!isCoord && mode !== 'raw') {
+            setMode('raw');
+        }
+    }, [isCoord, mode]);
+
+    return (
+        <div className="form-control">
+            <div className="label flex gap-2 items-center">
+                <span className="label-text text-sm font-semibold">{label}</span>
+                <div className="join join-vertical md:join-horizontal">
+                    <button
+                        className={`btn btn-xs join-item ${mode === 'coord' ? 'btn-active' : ''}`}
+                        onClick={(evt) => {
+                            evt.preventDefault();
+                            setMode('coord');
+                            if (!isCoord) {
+                                onChange({x: 0, y: 0});
+                            }
+                        }}
+                    >
+                        x/y
+                    </button>
+                    <button
+                        className={`btn btn-xs join-item ${mode === 'raw' ? 'btn-active' : ''}`}
+                        onClick={(evt) => {
+                            evt.preventDefault();
+                            setMode('raw');
+                            if (isCoord) {
+                                onChange(`({x: ${(value as Coord).x}, y: ${(value as Coord).y}})`);
+                            }
+                        }}
+                    >
+                        Raw
+                    </button>
+                </div>
+            </div>
+            {mode === 'coord' ? (
+                <CoordField
+                    label=""
+                    value={isCoord ? (value as Coord) : {x: 0, y: 0}}
+                    onChange={(coord) => onChange(coord)}
+                />
+            ) : (
+                <BlurInput
+                    value={value != null && !isCoord ? String(value) : ''}
+                    placeholder="expression"
+                    onChange={(value) => onChange(value)}
                 />
             )}
         </div>
@@ -1228,7 +1334,7 @@ const createPattern = (id: string): Pattern => ({
     id,
     psize: {x: 1, y: 1},
     contents: {type: 'shapes', styles: {}},
-    mods: {},
+    mods: [],
 });
 
 const defaultCropShape = (): Segment[] => [
@@ -1283,7 +1389,6 @@ const ShapeStylesEditor = ({
                 {entries.map(([key, style]) => (
                     <ShapeStyleCard
                         key={key}
-                        objectKey={key}
                         value={style}
                         onChange={(next, nextKey) => upsert(key, next, nextKey)}
                         onRemove={() => {
@@ -1358,7 +1463,7 @@ const ShapeStyleCard = ({
                         onChange={(lines) => onChange({...value, lines})}
                     />
                 </div>
-                <ModsEditor value={value.mods} onChange={(mods) => onChange({...value, mods})} />
+                {/* <ModsEditor value={value.mods} onChange={(mods) => onChange({...value, mods})} /> */}
             </div>
         </div>
     );
@@ -1563,20 +1668,22 @@ const FillEditor = ({
                 <AnimInput
                     label="zIndex"
                     value={value.zIndex}
-                    onChange={(zIndex) => onChange({...value, zIndex})}
+                    onChange={(zIndex) => onChange({...value, zIndex: zIndex as AnimatableNumber})}
                 />
-                <AnimInput
+                <AnimColor
                     label="Color"
                     value={value.color}
-                    onChange={(color) => onChange({...value, color})}
+                    onChange={(color) => onChange({...value, color: color as AnimatableColor})}
                 />
                 <AnimInput
                     label="Rounded"
                     value={value.rounded}
-                    onChange={(rounded) => onChange({...value, rounded})}
+                    onChange={(rounded) =>
+                        onChange({...value, rounded: rounded as AnimatableNumber})
+                    }
                 />
             </div>
-            <ModsEditor value={value.mods} onChange={(mods) => onChange({...value, mods})} />
+            {/* <ModsEditor value={value.mods} onChange={(mods) => onChange({...value, mods})} /> */}
         </div>
     );
 };
@@ -1614,25 +1721,25 @@ const LineEditor = ({
                 <AnimInput
                     label="zIndex"
                     value={value.zIndex}
-                    onChange={(zIndex) => onChange({...value, zIndex})}
+                    onChange={(zIndex) => onChange({...value, zIndex: zIndex as AnimatableNumber})}
                 />
-                <AnimInput
+                <AnimColor
                     label="Color"
                     value={value.color}
-                    onChange={(color) => onChange({...value, color})}
+                    onChange={(color) => onChange({...value, color: color as AnimatableColor})}
                 />
                 <AnimInput
                     label="Width"
                     value={value.width}
-                    onChange={(width) => onChange({...value, width})}
+                    onChange={(width) => onChange({...value, width: width as AnimatableNumber})}
                 />
                 <AnimInput
                     label="Sharp"
                     value={value.sharp}
-                    onChange={(sharp) => onChange({...value, sharp})}
+                    onChange={(sharp) => onChange({...value, sharp: sharp as AnimatableBoolean})}
                 />
             </div>
-            <ModsEditor value={value.mods} onChange={(mods) => onChange({...value, mods})} />
+            {/* <ModsEditor value={value.mods} onChange={(mods) => onChange({...value, mods})} /> */}
         </div>
     );
 };
@@ -1643,12 +1750,15 @@ const createShapeStyle = (id: string): ShapeStyle => ({
     kind: {type: 'everything'},
     fills: {},
     lines: {},
+    mods: [],
 });
 
 const createFill = (id: string): Fill => ({
     id,
+    mods: [],
 });
 
 const createLine = (id: string): Line => ({
     id,
+    mods: [],
 });
