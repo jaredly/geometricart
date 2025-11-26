@@ -46,23 +46,20 @@ export const PatternExport = ({tiling, id}: {tiling: Tiling; id: string}) => {
                                     fills: {
                                         a: {
                                             id: 'a',
-                                            // color: 'hsl(180,100%,50%)',
                                             color: {h: 180, s: 100, l: 50},
-                                            // color: 'rgba(0,255,0,0.1)',
-                                            // mods: {
-                                            //     opacity: 0.5,
-                                            // },
-                                            mods: {
-                                                inset: 'Math.sin(t1 * Math.PI * 2) * 10',
-                                                // opacity: 0.1,
-                                                rotation: 't1 * Math.PI / 3 * 2',
-                                                rotationOrigin: {x: 0, y: 0},
-                                            },
+                                            inset: 'Math.sin(t1 * Math.PI * 2) * 10',
+                                            mods: [
+                                                {
+                                                    type: 'rotate',
+                                                    v: 't1 * Math.PI / 3 * 2',
+                                                    origin: {x: 0, y: 0},
+                                                },
+                                            ],
                                             zIndex: 't < 0.5 ? 1 : -1',
-                                            // zIndex: 'Math.sin(t * Math.PI)',
                                         },
                                     },
                                     lines: {},
+                                    mods: [],
                                     kind: {type: 'everything'},
                                     order: 1,
                                 },
@@ -71,20 +68,19 @@ export const PatternExport = ({tiling, id}: {tiling: Tiling; id: string}) => {
                                     fills: {
                                         a: {
                                             id: 'a',
-                                            // color: '#0af',
-                                            // color: 'hsl(190,100%,30%)',
                                             color: {h: 190, s: 100, l: 30},
-                                            mods: {
-                                                // inset: 6,
-                                                inset: 'Math.sin(t1 * Math.PI * 2) * -10',
-                                                // inset: 't * 2',
-                                                rotation: '-t1 * Math.PI / 3 * 2',
-                                                rotationOrigin: {x: 0, y: 0},
-                                            },
-                                            // zIndex: '-Math.sin(t * Math.PI)',
+                                            mods: [
+                                                {
+                                                    type: 'rotate',
+                                                    v: '-t1 * Math.PI / 3 * 2',
+                                                    origin: {x: 0, y: 0},
+                                                },
+                                            ],
+                                            inset: 'Math.sin(t1 * Math.PI * 2) * -10',
                                             zIndex: 't > 0.5 ? 1 : -1',
                                         },
                                     },
+                                    mods: [],
                                     // lines: {c: {id: 'c', color: '#0f0', width: 2}},
                                     lines: {},
                                     kind: {type: 'alternating', index: 0},
@@ -92,7 +88,7 @@ export const PatternExport = ({tiling, id}: {tiling: Tiling; id: string}) => {
                                 },
                             },
                         },
-                        mods: {},
+                        mods: [],
                         psize: 3,
                     },
                 },

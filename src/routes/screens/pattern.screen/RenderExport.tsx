@@ -1,11 +1,7 @@
+import {Surface} from 'canvaskit-wasm';
 import {useEffect, useMemo, useRef, useState} from 'react';
 import {transformShape} from '../../../editor/tilingPoints';
-import {
-    applyMatrices,
-    dist,
-    scaleMatrix,
-    translationMatrix,
-} from '../../../rendering/getMirrorTransforms';
+import {dist} from '../../../rendering/getMirrorTransforms';
 import {transformBarePath} from '../../../rendering/points';
 import {Coord} from '../../../types';
 import {centroid} from '../../findReflectionAxes';
@@ -17,30 +13,63 @@ import {
     getSimplePatternData,
     pkPathFromCoords,
 } from '../../getPatternData';
-import {pk, PKCanvas, PKPath} from '../../pk';
+import {pk, PKPath} from '../../pk';
 import {shapeD} from '../../shapeD';
 import {pkPathWithCmds} from '../animator.screen/cropPath';
+import {generateVideo} from '../animator.screen/muxer';
 import {globals} from './eval-globals';
 import {a, AnimCtx, Ctx, Patterns, RenderItem} from './evaluate';
 import {
     Box,
     colorToRgb,
     ConcreteMods,
+    ConcretePMod,
     Crop,
     EObject,
     Fill,
     Group,
     insetPkPath,
     Line,
+    modMatrix,
     Mods,
     modsTransforms,
     Pattern,
+    PMods,
     ShapeStyle,
     State,
 } from './export-types';
 import {percentToWorld, svgCoord, useElementZoom, worldToPercent} from './useSVGZoom';
-import {Surface} from 'canvaskit-wasm';
-import {generateVideo} from '../animator.screen/muxer';
+
+const resolvePMod = (ctx: AnimCtx, mod: PMods): ConcretePMod => {
+    switch (mod.type) {
+        case 'scale':
+            return {
+                ...mod,
+                v: a.coordOrNumber(ctx, mod.v),
+                origin: mod.origin ? a.coord(ctx, mod.origin) : undefined,
+            };
+        case 'rotate':
+            return {
+                ...mod,
+                v: a.number(ctx, mod.v),
+                origin: mod.origin ? a.coord(ctx, mod.origin) : undefined,
+            };
+        case 'translate':
+            return {...mod, v: a.coord(ctx, mod.v)};
+    }
+};
+
+// ({
+//     inset: mods.inset != null ? a.number(ctx, mods.inset) : undefined,
+//     scale: mods.scale != null ? a.coordOrNumber(ctx, mods.scale) : undefined,
+//     scaleOrigin: mods.scaleOrigin != null ? a.coord(ctx, mods.scaleOrigin) : undefined,
+//     offset: mods.offset != null ? a.coord(ctx, mods.offset) : undefined,
+//     rotation: mods.rotation != null ? a.number(ctx, mods.rotation) : undefined,
+//     rotationOrigin: mods.rotationOrigin != null ? a.coord(ctx, mods.rotationOrigin) : undefined,
+//     opacity: mods.opacity != null ? a.number(ctx, mods.opacity) : undefined,
+//     thickness: mods.thickness != null ? a.number(ctx, mods.thickness) : undefined,
+//     tint: mods.tint != null ? a.color(ctx, mods.tint) : undefined,
+// });
 
 const resolveMods = (ctx: AnimCtx, mods: Mods): ConcreteMods => ({
     inset: mods.inset != null ? a.number(ctx, mods.inset) : undefined,
@@ -72,8 +101,8 @@ const renderPattern = (ctx: Ctx, crops: Group['crops'], pattern: Pattern) => {
     // not doing yet
     if (pattern.contents.type !== 'shapes') return;
     const tiling = ctx.patterns[pattern.id];
-    const mods = resolveMods(ctx.anim, pattern.mods);
-    const ptx = modsTransforms(mods);
+    const mods = pattern.mods.map((m) => resolvePMod(ctx.anim, m));
+    const ptx = mods.flatMap((mod) => modMatrix(mod));
 
     const simple = getSimplePatternData(tiling, pattern.psize);
     const orderedStyles = Object.values(pattern.contents.styles).sort((a, b) => a.order - b.order);
@@ -127,18 +156,22 @@ const renderPattern = (ctx: Ctx, crops: Group['crops'], pattern: Pattern) => {
                     const color = a.color(anim, f.color);
                     const rgb = colorToRgb(color);
                     const zIndex = f.zIndex ? a.number(anim, f.zIndex) : null;
-                    if (f.mods) {
-                        const fmods = resolveMods(anim, f.mods);
-                        const tx = modsTransforms(fmods, center);
+                    const opacity = f.opacity ? a.number(anim, f.opacity) : undefined;
+                    const inset = f.inset ? a.number(ctx.anim, f.inset) : null;
+
+                    if (ptx.length || f.mods.length || inset) {
+                        const fmods = f.mods.map((m) => resolvePMod(ctx.anim, m));
+                        const tx = fmods.flatMap((mod) => modMatrix(mod));
+
                         let mshape = transformShape(shape, [...ptx, ...tx]);
-                        if (fmods.inset && Math.abs(fmods.inset) > 0.001) {
+                        if (inset && Math.abs(inset) > 0.001) {
                             const pk = pkPathFromCoords(mshape, false)!;
-                            insetPkPath(pk, fmods.inset / 100);
+                            insetPkPath(pk, inset / 100);
                             return {
                                 type: 'path',
                                 pk,
                                 key: `fill-${i}-${fi}`,
-                                opacity: fmods.opacity,
+                                opacity,
                                 fill: rgb,
                                 shapes: coordsFromPkPath(pk.toCmds()),
                                 zIndex,
@@ -148,6 +181,7 @@ const renderPattern = (ctx: Ctx, crops: Group['crops'], pattern: Pattern) => {
                             type: 'path',
                             key: `fill-${i}-${fi}`,
                             fill: rgb,
+                            opacity,
                             shapes: [mshape],
                             zIndex,
                         };
@@ -156,23 +190,29 @@ const renderPattern = (ctx: Ctx, crops: Group['crops'], pattern: Pattern) => {
                         type: 'path',
                         key: `fill-${i}-${fi}`,
                         fill: rgb,
+                        opacity,
                         shapes: [shape],
                         zIndex,
                     };
                 }),
+
                 ...Object.values(lines).flatMap((f, fi): RenderItem[] | RenderItem | undefined => {
                     if (!f.color) return;
                     if (!f.width) return;
                     const color = a.color(anim, f.color);
                     const rgb = colorToRgb(color);
                     const width = a.number(anim, f.width) / 100;
-                    if (f.mods) {
-                        const fmods = resolveMods(anim, f.mods);
-                        const tx = modsTransforms(fmods, center);
+                    const opacity = f.opacity ? a.number(anim, f.opacity) : undefined;
+                    const inset = f.inset ? a.number(ctx.anim, f.inset) : null;
+
+                    if (ptx.length || f.mods.length || inset) {
+                        const fmods = f.mods.map((m) => resolvePMod(ctx.anim, m));
+                        const tx = fmods.flatMap((mod) => modMatrix(mod));
+
                         let mshape = transformShape(shape, [...ptx, ...tx]);
-                        if (fmods.inset) {
+                        if (inset) {
                             const pk = pkPathFromCoords(mshape, false)!;
-                            insetPkPath(pk, fmods.inset / 100);
+                            insetPkPath(pk, inset / 100);
                             return {
                                 type: 'path',
                                 key: `stroke-${i}-${fi}`,
@@ -180,7 +220,7 @@ const renderPattern = (ctx: Ctx, crops: Group['crops'], pattern: Pattern) => {
                                 strokeWidth: width,
                                 pk,
                                 shapes: coordsFromPkPath(pk.toCmds()),
-                                opacity: fmods.opacity,
+                                opacity,
                             };
                         }
                         return {
@@ -189,7 +229,7 @@ const renderPattern = (ctx: Ctx, crops: Group['crops'], pattern: Pattern) => {
                             stroke: rgb,
                             strokeWidth: width,
                             shapes: [mshape],
-                            opacity: fmods.opacity,
+                            opacity,
                         };
                     }
                     return {
@@ -198,6 +238,7 @@ const renderPattern = (ctx: Ctx, crops: Group['crops'], pattern: Pattern) => {
                         stroke: rgb,
                         strokeWidth: width,
                         shapes: [shape],
+                        opacity,
                     };
                 }),
             ];

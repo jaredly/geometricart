@@ -115,6 +115,26 @@ export type ConcreteMods = {
     thickness?: number;
 };
 
+export type PMods =
+    | {type: 'scale'; v: AnimatableCoord | AnimatableNumber; origin?: AnimatableCoord}
+    | {type: 'rotate'; v: AnimatableNumber; origin?: AnimatableCoord}
+    | {type: 'translate'; v: AnimatableCoord};
+
+export type ConcretePMod =
+    | {type: 'scale'; v: Coord | number; origin?: Coord}
+    | {type: 'rotate'; v: number; origin?: Coord}
+    | {type: 'translate'; v: Coord};
+
+export type SMods = PMods;
+
+export type NPMods = {
+    type: 'mods';
+    inset: AnimatableNumber;
+    opacity: AnimatableNumber;
+    tint: AnimatableColor;
+    thickness: AnimatableNumber;
+};
+
 export type Mods = {
     inset?: AnimatableNumber;
     scale?: AnimatableCoord | AnimatableNumber;
@@ -136,6 +156,40 @@ export const insetPkPath = (path: PKPath, inset: number) => {
     })!;
     path.op(stroke, inset < 0 ? pk.PathOp.Union : pk.PathOp.Difference);
     stroke.delete();
+};
+
+export const modMatrix = (mod: ConcretePMod, origin?: Coord) => {
+    const tx: Matrix[] = [];
+    switch (mod.type) {
+        case 'scale': {
+            const scale = typeof mod.v === 'number' ? {x: mod.v, y: mod.v} : mod.v;
+            const sorigin = mod.origin ?? origin;
+            if (sorigin) {
+                tx.push(translationMatrix(scalePos(sorigin, -1)));
+            }
+            tx.push(scaleMatrix(scale.x, scale.y));
+            if (sorigin) {
+                tx.push(translationMatrix(sorigin));
+            }
+            break;
+        }
+        case 'rotate': {
+            const rorigin = mod.origin ?? origin;
+            if (rorigin) {
+                tx.push(translationMatrix(scalePos(rorigin, -1)));
+            }
+            tx.push(rotationMatrix(mod.v));
+            if (rorigin) {
+                tx.push(translationMatrix(rorigin));
+            }
+            break;
+        }
+        case 'translate': {
+            tx.push(translationMatrix(mod.v));
+            break;
+        }
+    }
+    return tx;
 };
 
 export const modsTransforms = (mods: ConcreteMods, origin?: Coord) => {
@@ -173,7 +227,7 @@ export type Pattern = {
 
     psize: Coord | number;
     contents: PatternContents;
-    mods: Mods;
+    mods: PMods[];
 };
 
 export type PatternContents =
@@ -212,7 +266,7 @@ export type ShapeStyle = {
     kind: BaseKind | {type: 'shape'; key: string; rotInvariant: boolean};
     fills: Record<string, Fill>;
     lines: Record<string, Line>;
-    mods?: Mods;
+    mods: PMods[];
 };
 
 export type Fill = {
@@ -220,7 +274,12 @@ export type Fill = {
     zIndex?: AnimatableNumber;
     color?: AnimatableColor;
     rounded?: AnimatableNumber;
-    mods?: Mods;
+    inset?: AnimatableNumber;
+    opacity?: AnimatableNumber;
+    tint?: AnimatableColor;
+    thickness?: AnimatableNumber;
+
+    mods: PMods[];
 };
 
 export type Line = {
@@ -229,7 +288,12 @@ export type Line = {
     color?: AnimatableColor;
     width?: AnimatableNumber;
     sharp?: AnimatableBoolean;
-    mods?: Mods;
+    inset?: AnimatableNumber;
+    opacity?: AnimatableNumber;
+    tint?: AnimatableColor;
+    thickness?: AnimatableNumber;
+
+    mods: PMods[];
 };
 
 export type LineStyle = {
@@ -237,7 +301,7 @@ export type LineStyle = {
     order: number;
     kind: BaseKind;
     style: Line;
-    mods?: Mods;
+    mods: PMods[];
 };
 
 export type LayerStyle = {
@@ -246,7 +310,7 @@ export type LayerStyle = {
     kind: BaseKind;
     fills: Record<string, Fill>;
     lines: Record<string, Line>;
-    mods?: Mods;
+    mods: PMods[];
 };
 
 export type EObject = {
