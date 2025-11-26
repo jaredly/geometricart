@@ -1,5 +1,21 @@
-import {useEffect, useMemo, useRef, useState} from 'react';
-import {Ctx, a, AnimCtx, Patterns, RenderItem} from './evaluate';
+import {useEffect, useMemo, useState} from 'react';
+import {transformShape} from '../../../editor/tilingPoints';
+import {dist} from '../../../rendering/getMirrorTransforms';
+import {transformBarePath} from '../../../rendering/points';
+import {Coord} from '../../../types';
+import {centroid} from '../../findReflectionAxes';
+import {
+    coordsFromPkPath,
+    cropShapes,
+    getShapeColors,
+    getSimplePatternData,
+    pkPathFromCoords,
+} from '../../getPatternData';
+import {PKPath} from '../../pk';
+import {shapeD} from '../../shapeD';
+import {pkPathWithCmds} from '../animator.screen/cropPath';
+import {globals} from './eval-globals';
+import {a, AnimCtx, Ctx, Patterns, RenderItem} from './evaluate';
 import {
     ConcreteMods,
     Crop,
@@ -15,22 +31,8 @@ import {
     State,
 } from './export-types';
 import {svgCoord, useSVGZoom} from './useSVGZoom';
-import {Coord} from '../../../types';
-import {clipToPathData, pkPathWithCmds} from '../animator.screen/cropPath';
-import {PKPath} from '../../pk';
-import {transformBarePath} from '../../../rendering/points';
-import {
-    coordsFromPkPath,
-    cropShapes,
-    getShapeColors,
-    getSimplePatternData,
-    pkPathFromCoords,
-} from '../../getPatternData';
-import {shapeD} from '../../shapeD';
-import {transformShape} from '../../../editor/tilingPoints';
-import {centroid} from '../../findReflectionAxes';
-import {dist} from '../../../rendering/getMirrorTransforms';
-import {ease, easeInOutCubic} from '../animator.screen/easeInOutCubic';
+import {scalePos} from '../../../editor/scalePos';
+import {closeEnough} from '../../../rendering/epsilonToZero';
 
 const resolveMods = (ctx: AnimCtx, mods: Mods): ConcreteMods => ({
     inset: mods.inset != null ? a.number(ctx, mods.inset) : undefined,
@@ -120,7 +122,7 @@ const renderPattern = (ctx: Ctx, crops: Group['crops'], pattern: Pattern) => {
                         const fmods = resolveMods(anim, f.mods);
                         const tx = modsTransforms(fmods, center);
                         let mshape = transformShape(shape, [...ptx, ...tx]);
-                        if (fmods.inset) {
+                        if (fmods.inset && Math.abs(fmods.inset) > 0.001) {
                             const pk = pkPathFromCoords(mshape, false)!;
                             insetPkPath(pk, fmods.inset / 100);
                             return coordsFromPkPath(pk.toCmds()).map((shape, j) => ({
@@ -236,13 +238,7 @@ const svgItems = (
         if (group.type !== 'Group') {
             throw new Error(`root not a group`);
         }
-        const values: Record<string, any> = {
-            Math,
-            dist,
-            ease,
-            easeInOutCubic,
-            t,
-        };
+        const values: Record<string, any> = {...globals, t};
         const anim = {
             cache: animCache,
             values,
@@ -349,7 +345,10 @@ export const RenderExport = ({state, patterns}: {state: State; patterns: Pattern
                         max={1}
                         step={0.01}
                     />
-                    <button className="btn" onClick={() => setAnimate(true)}>
+                    <button
+                        className={'btn ' + (animate ? 'btn-accent' : '')}
+                        onClick={() => setAnimate(!animate)}
+                    >
                         Animate
                     </button>
                 </div>

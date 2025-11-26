@@ -25,43 +25,8 @@ export const PatternExport = ({tiling, id}: {tiling: Tiling; id: string}) => {
             a: {
                 id: 'a',
                 shared: {
-                    // 0-0.2 = 0
-                    // .2-.8 =
-                    // [[.2, 0], [.8, sin()], [.2, 1]]
-                    // 0, 0.25, 0.5, 0.75, 1
-                    // 0, -1, 0, 1, 0
-                    t1: `
-                    const clamp = (a, b, c) => a < b ? b : a > c ? c : a;
-                    const stretch = (m, by) => clamp((m * (1 + by * 2)) - by, 0, 1)
-                    const by = 0.1
-                    const mod = (v) => stretch(easeInOutCubic(v / .25), by)
-                    if (t < 0.25) {
-                        return mod(t) / 4
-                    } else if (t < 0.5) {
-                        return mod((t - .25)) / 4 + .25
-                    } else if (t < 0.75) {
-                        return mod((t - .5)) / 4 + .5
-                    } else {
-                        return mod((t - .75)) / 4 + .75
-                    }
-                    `,
-                    t2: `
-                    /*
-                    const clamp = (a, b, c) => a < b ? b : a > c ? c : a;
-                    const stretch = (m, by) => clamp((m * (1 + by * 2)) - by, 0, 1)
-                    const by = 0.1
-                    if (t < 0.25) {
-                        return stretch(t / .25, by)
-                    } else if (t < 0.5) {
-                        return 1 - stretch((t - .25) / .25, by)
-                    } else if (t < 0.75) {
-                        return -stretch((t - .5) / .25, by)
-                    } else {
-                        return -1 + stretch((t - .75) / .25, by)
-                    }
-                        */
-                    return Math.sin(t1)
-                    `,
+                    t1: `tsplit(t, 4, .1)`,
+                    t2: `Math.sin(t1)`,
                 },
                 entities: {
                     r: {

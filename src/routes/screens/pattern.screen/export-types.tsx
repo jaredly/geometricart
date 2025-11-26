@@ -115,6 +115,7 @@ export type Mods = {
 };
 
 export const insetPkPath = (path: PKPath, inset: number) => {
+    if (Math.abs(inset) < 0.00001) return;
     const stroke = path.copy().stroke({
         width: Math.abs(inset),
     })!;
