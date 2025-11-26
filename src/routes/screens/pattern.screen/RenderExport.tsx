@@ -1,5 +1,5 @@
 import {useEffect, useMemo, useRef, useState} from 'react';
-import {Ctx, a, AnimCtx, Patterns} from './evaluate';
+import {Ctx, a, AnimCtx, Patterns, RenderItem} from './evaluate';
 import {
     ConcreteMods,
     Crop,
@@ -30,6 +30,7 @@ import {shapeD} from '../../shapeD';
 import {transformShape} from '../../../editor/tilingPoints';
 import {centroid} from '../../findReflectionAxes';
 import {dist} from '../../../rendering/getMirrorTransforms';
+import {ease, easeInOutCubic} from '../animator.screen/easeInOutCubic';
 
 const resolveMods = (ctx: AnimCtx, mods: Mods): ConcreteMods => ({
     inset: mods.inset != null ? a.number(ctx, mods.inset) : undefined,
@@ -110,10 +111,11 @@ const renderPattern = (ctx: Ctx, crops: Group['crops'], pattern: Pattern) => {
                 });
             });
 
-            const res = [
-                ...Object.values(fills).map((f, fi) => {
+            const res: (RenderItem | undefined)[] = [
+                ...Object.values(fills).flatMap((f, fi): RenderItem[] | RenderItem | undefined => {
                     if (!f.color) return;
                     const color = a.color(anim, f.color);
+                    const zIndex = f.zIndex ? a.number(anim, f.zIndex) : null;
                     if (f.mods) {
                         const fmods = resolveMods(anim, f.mods);
                         const tx = modsTransforms(fmods, center);
@@ -121,20 +123,32 @@ const renderPattern = (ctx: Ctx, crops: Group['crops'], pattern: Pattern) => {
                         if (fmods.inset) {
                             const pk = pkPathFromCoords(mshape, false)!;
                             insetPkPath(pk, fmods.inset / 100);
-                            return coordsFromPkPath(pk.toCmds()).map((shape, j) => (
-                                <path
-                                    key={`fill-${i}-${fi}-${j}`}
-                                    opacity={fmods.opacity}
-                                    fill={color}
-                                    d={shapeD(shape)}
-                                />
-                            ));
+                            return coordsFromPkPath(pk.toCmds()).map((shape, j) => ({
+                                type: 'path',
+                                key: `fill-${i}-${fi}-${j}`,
+                                opacity: fmods.opacity,
+                                fill: color,
+                                d: shapeD(shape),
+                                zIndex,
+                            }));
                         }
-                        return <path key={`fill-${i}-${fi}`} fill={color} d={shapeD(mshape)} />;
+                        return {
+                            type: 'path',
+                            key: `fill-${i}-${fi}`,
+                            fill: color,
+                            d: shapeD(mshape),
+                            zIndex,
+                        };
                     }
-                    return <path key={`fill-${i}-${fi}`} fill={color} d={shapeD(shape)} />;
+                    return {
+                        type: 'path',
+                        key: `fill-${i}-${fi}`,
+                        fill: color,
+                        d: shapeD(shape),
+                        zIndex,
+                    };
                 }),
-                ...Object.values(lines).map((f, fi) => {
+                ...Object.values(lines).flatMap((f, fi): RenderItem[] | RenderItem | undefined => {
                     if (!f.color) return;
                     if (!f.width) return;
                     const color = a.color(anim, f.color);
@@ -146,45 +160,43 @@ const renderPattern = (ctx: Ctx, crops: Group['crops'], pattern: Pattern) => {
                         if (fmods.inset) {
                             const pk = pkPathFromCoords(mshape, false)!;
                             insetPkPath(pk, fmods.inset / 100);
-                            return coordsFromPkPath(pk.toCmds()).map((shape, j) => (
-                                <path
-                                    key={`stroke-${i}-${fi}-${j}`}
-                                    fill="none"
-                                    stroke={color}
-                                    strokeWidth={width}
-                                    d={shapeD(shape)}
-                                    opacity={fmods.opacity}
-                                />
-                            ));
+                            return coordsFromPkPath(pk.toCmds()).map((shape, j) => ({
+                                type: 'path',
+                                key: `stroke-${i}-${fi}-${j}`,
+                                fill: 'none',
+                                stroke: color,
+                                strokeWidth: width,
+                                d: shapeD(shape),
+                                opacity: fmods.opacity,
+                            }));
                         }
-                        return (
-                            <path
-                                key={`stroke-${i}-${fi}`}
-                                fill="none"
-                                stroke={color}
-                                strokeWidth={width}
-                                d={shapeD(mshape)}
-                                opacity={fmods.opacity}
-                            />
-                        );
+                        return {
+                            type: 'path',
+                            key: `stroke-${i}-${fi}`,
+                            fill: 'none',
+                            stroke: color,
+                            strokeWidth: width,
+                            d: shapeD(mshape),
+                            opacity: fmods.opacity,
+                        };
                     }
-                    return (
-                        <path
-                            key={`stroke-${i}-${fi}`}
-                            fill="none"
-                            stroke={color}
-                            strokeWidth={width}
-                            d={shapeD(shape)}
-                        />
-                    );
+                    return {
+                        type: 'path',
+                        key: `stroke-${i}-${fi}`,
+                        fill: 'none',
+                        stroke: color,
+                        strokeWidth: width,
+                        d: shapeD(shape),
+                    };
                 }),
             ];
-            // pk?.delete();
-            return res;
-            // return <path key={i} fill="red" stroke="black" strokeWidth={0.01} d={shapeD(shape)} />
+
+            return res.filter(notNull);
         }),
     );
 };
+
+const notNull = <T,>(v: T): v is NonNullable<T> => v != null;
 
 const renderObject = (ctx: Ctx, crops: Group['crops'], object: EObject) => {
     //
@@ -218,33 +230,34 @@ const svgItems = (
 ) => {
     const warnings: string[] = [];
     const warn = (v: string) => warnings.push(v);
-    const items: React.ReactNode[] = [];
+    const items: RenderItem[] = [];
     for (let layer of Object.values(state.layers)) {
         const group = layer.entities[layer.rootGroup];
         if (group.type !== 'Group') {
             throw new Error(`root not a group`);
         }
-        renderGroup(
-            {
-                state,
-                anim: {
-                    cache: animCache,
-                    values: {
-                        Math,
-                        dist,
-                        t,
-                    },
-                    palette: state.styleConfig.palette,
-                    warn,
-                },
-                layer,
-                patterns,
-                items,
-                cropCache,
-            },
-            [],
-            group,
-        );
+        const values: Record<string, any> = {
+            Math,
+            dist,
+            ease,
+            easeInOutCubic,
+            t,
+        };
+        const anim = {
+            cache: animCache,
+            values,
+            palette: state.styleConfig.palette,
+            warn,
+        };
+        Object.entries(layer.shared).forEach(([name, value]) => {
+            values[name] = a.value(anim, value);
+        });
+
+        renderGroup({state, anim, layer, patterns, items, cropCache}, [], group);
+    }
+    const hasZ = items.some((s) => s.zIndex != null);
+    if (hasZ) {
+        items.sort((a, b) => (a.zIndex ?? 0) - (b.zIndex ?? 0));
     }
     return {items, warnings};
 };
@@ -259,7 +272,7 @@ export const RenderExport = ({state, patterns}: {state: State; patterns: Pattern
         if (!animate) return;
         let t = 0;
         const iv = setInterval(() => {
-            setT(Math.min(1, (t += 0.01)));
+            setT(Math.min(1, (t += 0.005)));
             if (t >= 1) {
                 setAnimate(false);
                 clearInterval(iv);
@@ -322,7 +335,9 @@ export const RenderExport = ({state, patterns}: {state: State; patterns: Pattern
                     onMouseLeave={() => setMouse(null)}
                     onMouseMove={(evt) => setMouse(svgCoord(evt))}
                 >
-                    {items}
+                    {items.map((item) => (
+                        <path {...item} />
+                    ))}
                 </svg>
                 <div className="mt-4">
                     <input

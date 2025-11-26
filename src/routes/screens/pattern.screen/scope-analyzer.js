@@ -9,6 +9,8 @@
 
 const assert = () => {};
 assert.ok = () => {};
+assert.equal = () => {};
+assert.strictEqual = () => {};
 
 var kScope = Symbol('scope');
 

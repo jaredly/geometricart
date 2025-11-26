@@ -24,6 +24,45 @@ export const PatternExport = ({tiling, id}: {tiling: Tiling; id: string}) => {
         layers: {
             a: {
                 id: 'a',
+                shared: {
+                    // 0-0.2 = 0
+                    // .2-.8 =
+                    // [[.2, 0], [.8, sin()], [.2, 1]]
+                    // 0, 0.25, 0.5, 0.75, 1
+                    // 0, -1, 0, 1, 0
+                    t1: `
+                    const clamp = (a, b, c) => a < b ? b : a > c ? c : a;
+                    const stretch = (m, by) => clamp((m * (1 + by * 2)) - by, 0, 1)
+                    const by = 0.1
+                    const mod = (v) => stretch(easeInOutCubic(v / .25), by)
+                    if (t < 0.25) {
+                        return mod(t) / 4
+                    } else if (t < 0.5) {
+                        return mod((t - .25)) / 4 + .25
+                    } else if (t < 0.75) {
+                        return mod((t - .5)) / 4 + .5
+                    } else {
+                        return mod((t - .75)) / 4 + .75
+                    }
+                    `,
+                    t2: `
+                    /*
+                    const clamp = (a, b, c) => a < b ? b : a > c ? c : a;
+                    const stretch = (m, by) => clamp((m * (1 + by * 2)) - by, 0, 1)
+                    const by = 0.1
+                    if (t < 0.25) {
+                        return stretch(t / .25, by)
+                    } else if (t < 0.5) {
+                        return 1 - stretch((t - .25) / .25, by)
+                    } else if (t < 0.75) {
+                        return -stretch((t - .5) / .25, by)
+                    } else {
+                        return -1 + stretch((t - .75) / .25, by)
+                    }
+                        */
+                    return Math.sin(t1)
+                    `,
+                },
                 entities: {
                     r: {
                         type: 'Group',
@@ -46,17 +85,19 @@ export const PatternExport = ({tiling, id}: {tiling: Tiling; id: string}) => {
                                     fills: {
                                         a: {
                                             id: 'a',
-                                            color: 'gold',
+                                            color: 'hsl(180,100%,50%)',
                                             // color: 'rgba(0,255,0,0.1)',
                                             // mods: {
                                             //     opacity: 0.5,
                                             // },
                                             mods: {
-                                                inset: 'Math.sin(t * Math.PI) * 10',
+                                                inset: 'Math.sin(t1 * Math.PI * 2) * 10',
                                                 // opacity: 0.1,
-                                                rotation: 't * Math.PI / 3',
+                                                rotation: 't1 * Math.PI / 3 * 2',
                                                 rotationOrigin: {x: 0, y: 0},
                                             },
+                                            zIndex: 't < 0.5 ? 1 : -1',
+                                            // zIndex: 'Math.sin(t * Math.PI)',
                                         },
                                     },
                                     lines: {},
@@ -68,14 +109,17 @@ export const PatternExport = ({tiling, id}: {tiling: Tiling; id: string}) => {
                                     fills: {
                                         a: {
                                             id: 'a',
-                                            color: '#0af',
+                                            // color: '#0af',
+                                            color: 'hsl(190,100%,30%)',
                                             mods: {
                                                 // inset: 6,
-                                                inset: 'Math.sin(t * Math.PI) * -10',
+                                                inset: 'Math.sin(t1 * Math.PI * 2) * -10',
                                                 // inset: 't * 2',
-                                                rotation: '-t * Math.PI / 3',
+                                                rotation: '-t1 * Math.PI / 3 * 2',
                                                 rotationOrigin: {x: 0, y: 0},
                                             },
+                                            // zIndex: '-Math.sin(t * Math.PI)',
+                                            zIndex: 't > 0.5 ? 1 : -1',
                                         },
                                     },
                                     // lines: {c: {id: 'c', color: '#0f0', width: 2}},

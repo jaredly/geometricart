@@ -9,6 +9,7 @@ import {
     AnimatableCoord,
     AnimatableColor,
     Crop,
+    AnimatableValue,
 } from './export-types';
 import {processScript} from './process-script';
 
@@ -20,6 +21,17 @@ export type AnimCtx = {
     palette: string[];
 };
 
+export type RenderItem = {
+    type: 'path';
+    fill?: string;
+    opacity?: number;
+    stroke?: string;
+    strokeWidth?: number;
+    zIndex?: number | null;
+    d: string;
+    key: string;
+};
+
 export type Ctx = {
     // warn(m: string): void;
     state: State;
@@ -27,7 +39,7 @@ export type Ctx = {
     cropCache: Map<string, {path: PKPath; crop: Crop}>;
     layer: Layer;
     patterns: Patterns;
-    items: React.ReactNode[];
+    items: RenderItem[];
 };
 
 type AnimFn = (ctx: AnimCtx['values']) => any;
@@ -96,6 +108,8 @@ const isCoord = (v: any): v is Coord => {
 };
 
 export const a = {
+    value: (ctx: AnimCtx, v: AnimatableValue): any =>
+        evaluate<any>(ctx, v, (v): v is any => true, 0),
     number: (ctx: AnimCtx, v: AnimatableNumber): number =>
         typeof v === 'number' ? v : evaluate<number>(ctx, v, (v) => typeof v === 'number', 0),
     boolean: (ctx: AnimCtx, v: AnimatableBoolean): boolean =>

@@ -11,6 +11,7 @@ import {pk, PKPath} from '../../pk';
 
 export type AnimatableNumber = number | string;
 export type AnimatableBoolean = boolean | string;
+export type AnimatableValue = string;
 export type AnimatableColor = number | string;
 export type AnimatableCoord = Coord | string;
 
@@ -71,6 +72,7 @@ export type Layer = {
     opacity: AnimatableNumber;
     rootGroup: string;
     entities: Record<string, Entity>;
+    shared: Record<string, AnimatableValue>;
 
     guides: GuideGeom[];
 };

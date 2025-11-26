@@ -1,4 +1,13 @@
 
+- Mods are a list
+  - so you can decide if crop comes first or second
+- Export can make a movie
+  - svg or canvas pls
+- zindex actually does something
+
+
+#
+
 
 shared
 sharedOnce
