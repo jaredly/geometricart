@@ -195,7 +195,7 @@ export const cropShapes = (
     });
 };
 
-const coordsFromBarePath = (bp: BarePath) => {
+export const coordsFromBarePath = (bp: BarePath) => {
     const coords = bp.segments.map((s) => s.to);
     if (!coordsEqual(coords[coords.length - 1], bp.origin)) {
         coords.push(bp.origin);

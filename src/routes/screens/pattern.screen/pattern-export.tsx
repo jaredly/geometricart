@@ -27,11 +27,11 @@ export const PatternExport = ({tiling, id}: {tiling: Tiling; id: string}) => {
                 entities: {
                     r: {
                         type: 'Group',
-                        crops: [
-                            {
-                                id: 'crop1',
-                            },
-                        ],
+                        // crops: [
+                        //     {
+                        //         id: 'crop1',
+                        //     },
+                        // ],
                         entities: {p: 1},
                         id: 'r',
                     },
@@ -47,13 +47,17 @@ export const PatternExport = ({tiling, id}: {tiling: Tiling; id: string}) => {
                                         a: {
                                             id: 'a',
                                             color: {h: 180, s: 100, l: 50},
-                                            inset: 'Math.sin(t1 * Math.PI * 2) * 10',
                                             mods: [
+                                                {
+                                                    type: 'inset',
+                                                    v: 'Math.sin(t1 * Math.PI * 2) * 10',
+                                                },
                                                 {
                                                     type: 'rotate',
                                                     v: 't1 * Math.PI / 3 * 2',
                                                     origin: {x: 0, y: 0},
                                                 },
+                                                {type: 'crop', id: 'crop1'},
                                             ],
                                             zIndex: 't < 0.5 ? 1 : -1',
                                         },
@@ -75,8 +79,12 @@ export const PatternExport = ({tiling, id}: {tiling: Tiling; id: string}) => {
                                                     v: '-t1 * Math.PI / 3 * 2',
                                                     origin: {x: 0, y: 0},
                                                 },
+                                                {
+                                                    type: 'inset',
+                                                    v: 'Math.sin(t1 * Math.PI * 2) * -10',
+                                                },
+                                                {type: 'crop', id: 'crop1'},
                                             ],
-                                            inset: 'Math.sin(t1 * Math.PI * 2) * -10',
                                             zIndex: 't > 0.5 ? 1 : -1',
                                         },
                                     },

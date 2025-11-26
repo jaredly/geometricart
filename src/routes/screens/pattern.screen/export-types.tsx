@@ -97,7 +97,8 @@ export type Group = {
     id: string;
     name?: string;
     entities: Record<string, number>; // id -> order
-    crops: {hole?: boolean; rough?: boolean; id: string}[];
+    // mods: PMod[];
+    // crops: {hole?: boolean; rough?: boolean; id: string}[];
 };
 
 export type ConcreteMods = {
@@ -116,12 +117,14 @@ export type ConcreteMods = {
 };
 
 export type PMods =
+    | {type: 'inset'; v: AnimatableNumber}
     | {type: 'crop'; id: string; hole?: boolean; rough?: boolean}
     | {type: 'scale'; v: AnimatableCoord | AnimatableNumber; origin?: AnimatableCoord}
     | {type: 'rotate'; v: AnimatableNumber; origin?: AnimatableCoord}
     | {type: 'translate'; v: AnimatableCoord};
 
 export type ConcretePMod =
+    | {type: 'inset'; v: number}
     | {type: 'crop'; id: string; hole?: boolean; rough?: boolean}
     | {type: 'scale'; v: Coord | number; origin?: Coord}
     | {type: 'rotate'; v: number; origin?: Coord}
@@ -276,7 +279,6 @@ export type Fill = {
     zIndex?: AnimatableNumber;
     color?: AnimatableColor;
     rounded?: AnimatableNumber;
-    inset?: AnimatableNumber;
     opacity?: AnimatableNumber;
     tint?: AnimatableColor;
     thickness?: AnimatableNumber;
@@ -290,7 +292,6 @@ export type Line = {
     color?: AnimatableColor;
     width?: AnimatableNumber;
     sharp?: AnimatableBoolean;
-    inset?: AnimatableNumber;
     opacity?: AnimatableNumber;
     tint?: AnimatableColor;
     thickness?: AnimatableNumber;

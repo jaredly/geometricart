@@ -705,7 +705,7 @@ const GroupEditor = ({value, onChange}: {value: Group; onChange: (next: Group) =
                 </div>
             </div>
 
-            <div className="space-y-2">
+            {/* <div className="space-y-2">
                 <div className="flex items-center justify-between">
                     <div className="font-semibold text-sm">Crops</div>
                     <button
@@ -779,7 +779,7 @@ const GroupEditor = ({value, onChange}: {value: Group; onChange: (next: Group) =
                         </div>
                     ))}
                 </div>
-            </div>
+            </div> */}
         </div>
     );
 };
@@ -1326,7 +1326,6 @@ const createGroup = (id: string): Group => ({
     id,
     name: id,
     entities: {},
-    crops: [],
 });
 
 const createPattern = (id: string): Pattern => ({

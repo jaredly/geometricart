@@ -1,12 +1,14 @@
 import {Surface} from 'canvaskit-wasm';
 import {useEffect, useMemo, useRef, useState} from 'react';
 import {transformShape} from '../../../editor/tilingPoints';
-import {dist} from '../../../rendering/getMirrorTransforms';
+import {dist, Matrix} from '../../../rendering/getMirrorTransforms';
 import {transformBarePath} from '../../../rendering/points';
 import {Coord} from '../../../types';
 import {centroid} from '../../findReflectionAxes';
 import {
+    calcPolygonArea,
     cmdsForCoords,
+    coordsFromBarePath,
     coordsFromPkPath,
     cropShapes,
     getShapeColors,
@@ -39,9 +41,13 @@ import {
     State,
 } from './export-types';
 import {percentToWorld, svgCoord, useElementZoom, worldToPercent} from './useSVGZoom';
+import {pkPathToSegments} from '../../../sidebar/pkClipPaths';
+import {epsilon} from '../../../rendering/epsilonToZero';
 
 const resolvePMod = (ctx: AnimCtx, mod: PMods): ConcretePMod => {
     switch (mod.type) {
+        case 'inset':
+            return {...mod, v: a.number(ctx, mod.v)};
         case 'crop':
             return mod;
         case 'scale':
@@ -99,12 +105,67 @@ const matchKind = (k: ShapeStyle['kind'], i: number, color: number) => {
     }
 };
 
-const renderPattern = (ctx: Ctx, crops: Group['crops'], pattern: Pattern) => {
+type CCrop = {type: 'crop'; id: string; hole?: boolean; rough?: boolean};
+type CInset = {type: 'inset'; v: number};
+type CropsAndMatrices = (CCrop | Matrix[] | CInset)[];
+
+const modsToShapes = (ctx: Ctx, mods: CropsAndMatrices, shapes: {shape: Coord[]; i: number}[]) => {
+    return mods.reduce((shapes, mod) => {
+        if (Array.isArray(mod)) {
+            return shapes.map((shape) => ({
+                shape: transformShape(shape.shape, mod),
+                i: shape.i,
+            }));
+        }
+
+        if (mod.type === 'inset') {
+            if (Math.abs(mod.v) <= 0.01) return shapes;
+            return shapes.flatMap((shape) => {
+                const path = pkPathFromCoords(shape.shape)!;
+                insetPkPath(path, mod.v);
+                path.simplify();
+                const items = pkPathToSegments(path);
+                path.delete();
+                return items.map(coordsFromBarePath).map((coords) => ({shape: coords, i: shape.i}));
+            });
+        }
+
+        const crop = ctx.cropCache.get(mod.id)!;
+        return shapes.flatMap((shape) => {
+            const path = pkPathFromCoords(shape.shape)!;
+            if (mod.rough) {
+                const other = path.copy();
+                other.op(crop.path, mod.hole ? pk.PathOp.Difference : pk.PathOp.Intersect);
+                other.simplify();
+                const size = pkPathToSegments(other)
+                    .map(coordsFromBarePath)
+                    .map(calcPolygonArea)
+                    .reduce((a, b) => a + b, 0);
+                other.delete();
+                path.delete();
+                const area = calcPolygonArea(shape.shape);
+                if (size < area / 2 + epsilon) {
+                    return [];
+                }
+                return [shape];
+            } else {
+                path.op(crop.path, mod.hole ? pk.PathOp.Difference : pk.PathOp.Intersect);
+                path.simplify();
+                const items = pkPathToSegments(path);
+                path.delete();
+                return items.map(coordsFromBarePath).map((coords) => ({shape: coords, i: shape.i}));
+            }
+        });
+    }, shapes);
+};
+
+const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Pattern) => {
     // not doing yet
     if (pattern.contents.type !== 'shapes') return;
     const tiling = ctx.patterns[pattern.id];
     const mods = pattern.mods.map((m) => resolvePMod(ctx.anim, m));
-    const ptx = mods.flatMap((mod) => modMatrix(mod));
+
+    // const ptx = mods.flatMap((mod) => modMatrix(mod));
 
     const simple = getSimplePatternData(tiling, pattern.psize);
     const orderedStyles = Object.values(pattern.contents.styles).sort((a, b) => a.order - b.order);
@@ -114,16 +175,17 @@ const renderPattern = (ctx: Ctx, crops: Group['crops'], pattern: Pattern) => {
         ? getShapeColors(simple.uniqueShapes, simple.minSegLength)
         : {colors: []};
 
-    const croppedShapes = cropShapes(
-        simple.uniqueShapes,
-        crops.map((crop) => ({
-            ...crop,
-            segments: ctx.state.crops[crop.id].shape,
-        })),
-    ).flatMap((shapes, i) => shapes.map((shape) => ({shape, i})));
+    const patternmods: CropsAndMatrices = mods.map((mod) =>
+        mod.type === 'crop' ? mod : modMatrix(mod),
+    );
+    const midShapes = modsToShapes(
+        ctx,
+        patternmods,
+        simple.uniqueShapes.map((shape, i) => ({shape, i})),
+    );
 
     ctx.items.push(
-        ...croppedShapes.flatMap(({shape, i}) => {
+        ...midShapes.flatMap(({shape, i}) => {
             const center = centroid(shape);
             const radius = Math.min(...shape.map((s) => dist(s, center)));
             const fills: Record<string, Fill> = {};
@@ -159,35 +221,24 @@ const renderPattern = (ctx: Ctx, crops: Group['crops'], pattern: Pattern) => {
                     const rgb = colorToRgb(color);
                     const zIndex = f.zIndex ? a.number(anim, f.zIndex) : null;
                     const opacity = f.opacity ? a.number(anim, f.opacity) : undefined;
-                    const inset = f.inset ? a.number(ctx.anim, f.inset) : null;
 
-                    if (ptx.length || f.mods.length || inset) {
-                        const fmods = f.mods.map((m) => resolvePMod(ctx.anim, m));
-                        const tx = fmods.flatMap((mod) => modMatrix(mod));
+                    if (f.mods.length) {
+                        const fmods: CropsAndMatrices = f.mods.map((mod) =>
+                            mod.type === 'crop' ? mod : modMatrix(resolvePMod(ctx.anim, mod)),
+                        );
+                        const midShapes = modsToShapes(ctx, fmods, [{shape, i: 0}]);
 
-                        let mshape = transformShape(shape, [...ptx, ...tx]);
-                        if (inset && Math.abs(inset) > 0.001) {
-                            const pk = pkPathFromCoords(mshape, false)!;
-                            insetPkPath(pk, inset / 100);
-                            return {
-                                type: 'path',
-                                pk,
-                                key: `fill-${i}-${fi}`,
-                                opacity,
-                                fill: rgb,
-                                shapes: coordsFromPkPath(pk.toCmds()),
-                                zIndex,
-                            };
-                        }
                         return {
+                            // pk???
                             type: 'path',
                             key: `fill-${i}-${fi}`,
                             fill: rgb,
                             opacity,
-                            shapes: [mshape],
+                            shapes: midShapes.map((s) => s.shape),
                             zIndex,
                         };
                     }
+
                     return {
                         type: 'path',
                         key: `fill-${i}-${fi}`,
@@ -205,35 +256,53 @@ const renderPattern = (ctx: Ctx, crops: Group['crops'], pattern: Pattern) => {
                     const rgb = colorToRgb(color);
                     const width = a.number(anim, f.width) / 100;
                     const opacity = f.opacity ? a.number(anim, f.opacity) : undefined;
-                    const inset = f.inset ? a.number(ctx.anim, f.inset) : null;
+                    const zIndex = f.zIndex ? a.number(anim, f.zIndex) : null;
 
-                    if (ptx.length || f.mods.length || inset) {
-                        const fmods = f.mods.map((m) => resolvePMod(ctx.anim, m));
-                        const tx = fmods.flatMap((mod) => modMatrix(mod));
+                    if (f.mods.length) {
+                        const fmods: CropsAndMatrices = f.mods.map((mod) =>
+                            mod.type === 'crop' ? mod : modMatrix(resolvePMod(ctx.anim, mod)),
+                        );
+                        const midShapes = modsToShapes(ctx, fmods, [{shape, i: 0}]);
 
-                        let mshape = transformShape(shape, [...ptx, ...tx]);
-                        if (inset) {
-                            const pk = pkPathFromCoords(mshape, false)!;
-                            insetPkPath(pk, inset / 100);
-                            return {
-                                type: 'path',
-                                key: `stroke-${i}-${fi}`,
-                                stroke: rgb,
-                                strokeWidth: width,
-                                pk,
-                                shapes: coordsFromPkPath(pk.toCmds()),
-                                opacity,
-                            };
-                        }
                         return {
+                            // pk???
                             type: 'path',
-                            key: `stroke-${i}-${fi}`,
+                            key: `fill-${i}-${fi}`,
                             stroke: rgb,
                             strokeWidth: width,
-                            shapes: [mshape],
                             opacity,
+                            shapes: midShapes.map((s) => s.shape),
+                            zIndex,
                         };
                     }
+
+                    // if (ptx.length || f.mods.length || inset) {
+                    //     const fmods = f.mods.map((m) => resolvePMod(ctx.anim, m));
+                    //     const tx = fmods.flatMap((mod) => modMatrix(mod));
+                    //     let mshape = transformShape(shape, [...ptx, ...tx]);
+                    //     if (inset) {
+                    //         const pk = pkPathFromCoords(mshape, false)!;
+                    //         insetPkPath(pk, inset / 100);
+                    //         return {
+                    //             type: 'path',
+                    //             key: `stroke-${i}-${fi}`,
+                    //             stroke: rgb,
+                    //             strokeWidth: width,
+                    //             pk,
+                    //             shapes: coordsFromPkPath(pk.toCmds()),
+                    //             opacity,
+                    //         };
+                    //     }
+                    //     return {
+                    //         type: 'path',
+                    //         key: `stroke-${i}-${fi}`,
+                    //         stroke: rgb,
+                    //         strokeWidth: width,
+                    //         shapes: [mshape],
+                    //         opacity,
+                    //     };
+                    // }
+
                     return {
                         type: 'path',
                         key: `stroke-${i}-${fi}`,
@@ -252,24 +321,24 @@ const renderPattern = (ctx: Ctx, crops: Group['crops'], pattern: Pattern) => {
 
 const notNull = <T,>(v: T): v is NonNullable<T> => v != null;
 
-const renderObject = (ctx: Ctx, crops: Group['crops'], object: EObject) => {
+const renderObject = (ctx: Ctx, crops: CropsAndMatrices, object: EObject) => {
     //
 };
 
-const renderGroup = (ctx: Ctx, crops: Group['crops'], group: Group) => {
+const renderGroup = (ctx: Ctx, crops: CropsAndMatrices, group: Group) => {
     if (group.type !== 'Group') throw new Error('not a group');
-    const inner = [...crops, ...group.crops];
+    // const inner = [...crops, ...group.crops];
     for (let [id] of Object.entries(group.entities).sort((a, b) => a[1] - b[1])) {
         const entity = ctx.layer.entities[id];
         switch (entity.type) {
             case 'Group':
-                renderGroup(ctx, inner, entity);
+                renderGroup(ctx, crops, entity);
                 break;
             case 'Pattern':
-                renderPattern(ctx, inner, entity);
+                renderPattern(ctx, crops, entity);
                 break;
             case 'Object':
-                renderObject(ctx, inner, entity);
+                renderObject(ctx, crops, entity);
                 break;
         }
     }
