@@ -14,14 +14,14 @@ export function rgbToHsl(r: number, g: number, b: number): [number, number, numb
 
     var max = Math.max(r, g, b),
         min = Math.min(r, g, b);
-    var h = 0,
-        s,
-        l = (max + min) / 2;
+    let h = 0;
+    let s: number;
+    let l = (max + min) / 2;
 
-    if (max == min) {
+    if (max === min) {
         h = s = 0; // achromatic
     } else {
-        var d = max - min;
+        let d = max - min;
         s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
 
         switch (max) {
@@ -95,14 +95,14 @@ function rgbToHsv(r: number, g: number, b: number) {
 
     var max = Math.max(r, g, b),
         min = Math.min(r, g, b);
-    var h = 0,
-        s,
-        v = max;
+    let h = 0;
+    let s: number;
+    let v = max;
 
     var d = max - min;
-    s = max == 0 ? 0 : d / max;
+    s = max === 0 ? 0 : d / max;
 
-    if (max == min) {
+    if (max === min) {
         h = 0; // achromatic
     } else {
         switch (max) {
@@ -147,22 +147,34 @@ function hsvToRgb(h: number, s: number, v: number) {
 
     switch (i % 6) {
         case 0:
-            (r = v), (g = t), (b = p);
+            r = v;
+            g = t;
+            b = p;
             break;
         case 1:
-            (r = q), (g = v), (b = p);
+            r = q;
+            g = v;
+            b = p;
             break;
         case 2:
-            (r = p), (g = v), (b = t);
+            r = p;
+            g = v;
+            b = t;
             break;
         case 3:
-            (r = p), (g = q), (b = v);
+            r = p;
+            g = q;
+            b = v;
             break;
         case 4:
-            (r = t), (g = p), (b = v);
+            r = t;
+            g = p;
+            b = v;
             break;
         case 5:
-            (r = v), (g = p), (b = q);
+            r = v;
+            g = p;
+            b = q;
             break;
     }
 

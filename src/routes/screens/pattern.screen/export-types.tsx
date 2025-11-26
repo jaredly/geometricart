@@ -116,11 +116,13 @@ export type ConcreteMods = {
 };
 
 export type PMods =
+    | {type: 'crop'; id: string; hole?: boolean; rough?: boolean}
     | {type: 'scale'; v: AnimatableCoord | AnimatableNumber; origin?: AnimatableCoord}
     | {type: 'rotate'; v: AnimatableNumber; origin?: AnimatableCoord}
     | {type: 'translate'; v: AnimatableCoord};
 
 export type ConcretePMod =
+    | {type: 'crop'; id: string; hole?: boolean; rough?: boolean}
     | {type: 'scale'; v: Coord | number; origin?: Coord}
     | {type: 'rotate'; v: number; origin?: Coord}
     | {type: 'translate'; v: Coord};

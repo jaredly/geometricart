@@ -42,6 +42,8 @@ import {percentToWorld, svgCoord, useElementZoom, worldToPercent} from './useSVG
 
 const resolvePMod = (ctx: AnimCtx, mod: PMods): ConcretePMod => {
     switch (mod.type) {
+        case 'crop':
+            return mod;
         case 'scale':
             return {
                 ...mod,
@@ -315,8 +317,11 @@ export const RenderExport = ({state, patterns}: {state: State; patterns: Pattern
 
     const [duration, setDuration] = useState(5);
     const [animate, setAnimate] = useState(false);
+    const nt = useRef(t);
+    nt.current = t;
     useEffect(() => {
         if (!animate) return;
+        const t = nt.current;
         let st = Date.now() - (t > 0.99 ? 0 : t) * duration * 1000;
         let af: number = 0;
         const step = () => {
