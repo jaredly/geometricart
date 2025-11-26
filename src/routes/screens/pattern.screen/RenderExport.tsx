@@ -1,4 +1,4 @@
-import {useEffect, useMemo, useState} from 'react';
+import {useEffect, useMemo, useRef, useState} from 'react';
 import {transformShape} from '../../../editor/tilingPoints';
 import {
     applyMatrices,
@@ -17,7 +17,7 @@ import {
     getSimplePatternData,
     pkPathFromCoords,
 } from '../../getPatternData';
-import {pk, PKPath} from '../../pk';
+import {pk, PKCanvas, PKPath} from '../../pk';
 import {shapeD} from '../../shapeD';
 import {pkPathWithCmds} from '../animator.screen/cropPath';
 import {globals} from './eval-globals';
@@ -39,6 +39,8 @@ import {
     State,
 } from './export-types';
 import {percentToWorld, svgCoord, useElementZoom, worldToPercent} from './useSVGZoom';
+import {Surface} from 'canvaskit-wasm';
+import {generateVideo} from '../animator.screen/muxer';
 
 const resolveMods = (ctx: AnimCtx, mods: Mods): ConcreteMods => ({
     inset: mods.inset != null ? a.number(ctx, mods.inset) : undefined,
@@ -266,23 +268,27 @@ const svgItems = (
 };
 
 export const RenderExport = ({state, patterns}: {state: State; patterns: Patterns}) => {
-    const [t, setT] = useState(0); // animateeeee
+    const [t, setT] = useState(0.3); // animateeeee
     const cropCache = useMemo(() => new Map<string, {path: PKPath; crop: Crop; t?: number}>(), []);
     const animCache = useMemo<AnimCtx['cache']>(() => new Map(), []);
 
+    const [duration, setDuration] = useState(5);
     const [animate, setAnimate] = useState(false);
     useEffect(() => {
         if (!animate) return;
-        let t = 0;
-        const iv = setInterval(() => {
-            setT(Math.min(1, (t += 0.005)));
-            if (t >= 1) {
-                setAnimate(false);
-                clearInterval(iv);
+        let st = Date.now();
+        let af: number = 0;
+        const step = () => {
+            const now = Date.now();
+            const diff = (now - st) / 1000;
+            setT(Math.min(1, diff / duration));
+            if (diff < duration) {
+                af = requestAnimationFrame(step);
             }
-        }, 20);
-        return () => clearInterval(iv);
-    }, [animate]);
+        };
+        step();
+        return () => cancelAnimationFrame(af);
+    }, [animate, duration]);
 
     // well this is exciting
     useMemo(() => {
@@ -326,13 +332,16 @@ export const RenderExport = ({state, patterns}: {state: State; patterns: Pattern
 
     const {zoomProps, box} = useElementZoom(6);
     const [mouse, setMouse] = useState(null as null | Coord);
+    const [video, setVideo] = useState(null as null | number | string);
     const size = 500;
+
+    const statusRef = useRef<HTMLSpanElement>(null);
 
     return (
         <div className="flex">
             <div className="relative overflow-hidden">
                 <SVGCanvas {...zoomProps} setMouse={setMouse} items={items} size={size} />
-                <Canvas {...zoomProps} setMouse={setMouse} items={items} size={size} />
+                {/* <Canvas {...zoomProps} setMouse={setMouse} items={items} size={size} /> */}
                 <div className="mt-4">
                     <input
                         type="range"
@@ -344,12 +353,39 @@ export const RenderExport = ({state, patterns}: {state: State; patterns: Pattern
                         step={0.01}
                     />
                     <button
-                        className={'btn ' + (animate ? 'btn-accent' : '')}
+                        className={'btn mx-2 ' + (animate ? 'btn-accent' : '')}
                         onClick={() => setAnimate(!animate)}
                     >
                         Animate
                     </button>
+                    <input
+                        value={duration}
+                        onChange={(evt) => setDuration(+evt.currentTarget.value)}
+                        type="number"
+                        className="input w-10"
+                    />
                 </div>
+                <div>
+                    <button
+                        className={'btn ' + (animate ? 'btn-accent' : '')}
+                        onClick={() =>
+                            recordVideo(state, size, box, patterns, duration, statusRef).then(
+                                (url) => setVideo(url),
+                            )
+                        }
+                    >
+                        Record Video
+                    </button>
+                    <span ref={statusRef} />
+                    {/* {typeof video === 'number' ? (
+                        <input type="range" value={video} onChange={() => {}} min={0} max={1} />
+                    ) : null} */}
+                </div>
+                {typeof video === 'string' ? (
+                    <div>
+                        <video src={video} controls loop style={{width: size, height: size}} />
+                    </div>
+                ) : null}
             </div>
             <div className="flex flex-col gap-2 p-2">
                 {warnings.map((w, i) => (
@@ -362,6 +398,65 @@ export const RenderExport = ({state, patterns}: {state: State; patterns: Pattern
     );
 
     // ok
+};
+
+const recordVideo = async (
+    state: State,
+    size: number,
+    box: Box,
+    patterns: Patterns,
+    duration: number,
+    onStatus: {current: HTMLElement | null},
+) => {
+    const canvas = new OffscreenCanvas(size * 2, size * 2);
+    const frameRate = 24;
+    // const step = 0.01;
+    const totalFrames = frameRate * duration;
+
+    const animCache = new Map();
+    const cropCache = new Map();
+
+    const blob = await generateVideo(canvas, frameRate, totalFrames, (_, currentFrame) => {
+        if (currentFrame % 10 === 0)
+            onStatus.current!.textContent = currentFrame / totalFrames + '';
+        const surface = pk.MakeWebGLCanvasSurface(canvas)!;
+
+        const {items} = svgItems(state, animCache, cropCache, patterns, currentFrame / totalFrames);
+        renderItems(surface, box, items);
+    });
+    onStatus.current!.textContent = '';
+    return blob ? URL.createObjectURL(blob) : null;
+};
+
+const renderItems = (surface: Surface, box: Box, items: RenderItem[]) => {
+    const ctx = surface.getCanvas();
+    ctx.clear(pk.BLACK);
+
+    ctx.save();
+    ctx.scale(surface.width() / box.width, surface.height() / box.height);
+    ctx.translate(-box.x, -box.y);
+    items.forEach((item) => {
+        const pkp =
+            item.pk ??
+            pk.Path.MakeFromCmds(item.shapes.flatMap((shape) => cmdsForCoords(shape, false)))!;
+        const paint = new pk.Paint();
+        paint.setAntiAlias(true);
+        if (item.fill) {
+            paint.setStyle(pk.PaintStyle.Fill);
+            paint.setColor([item.fill.r / 255, item.fill.g / 255, item.fill.b / 255]);
+        } else if (item.stroke && item.strokeWidth) {
+            paint.setStyle(pk.PaintStyle.Stroke);
+            paint.setStrokeWidth(item.strokeWidth!);
+            paint.setColor([item.stroke.r / 255, item.stroke.g / 255, item.stroke.b / 255]);
+        } else {
+            return;
+        }
+        ctx.drawPath(pkp, paint);
+        paint.delete();
+        pkp.delete();
+    });
+    ctx.restore();
+    surface.flush();
 };
 
 const Canvas = ({
@@ -379,47 +474,9 @@ const Canvas = ({
 }) => {
     useEffect(() => {
         const surface = pk.MakeWebGLCanvasSurface(innerRef.current! as HTMLCanvasElement)!;
-        const ctx = surface.getCanvas();
-        ctx.clear(pk.BLACK);
+        renderItems(surface, box, items);
+    }, [box, items, innerRef]);
 
-        ctx.save();
-        // ctx.scale(surface.width() / box.width, surface.height() / box.height);
-        const scale = {x: surface.width() / box.width, y: surface.height() / box.height};
-        const tx = [
-            scaleMatrix(scale.x, scale.y),
-            translationMatrix({x: -box.x * scale.x, y: -box.y * scale.y}),
-        ];
-        items.forEach((item) => {
-            const pkp =
-                item.pk ??
-                pk.Path.MakeFromCmds(
-                    item.shapes.flatMap((shape) =>
-                        cmdsForCoords(
-                            shape.map((c) => applyMatrices(c, tx)),
-                            false,
-                        ),
-                    ),
-                )!;
-            const paint = new pk.Paint();
-            paint.setAntiAlias(true);
-            if (item.fill) {
-                paint.setStyle(pk.PaintStyle.Fill);
-                paint.setColor([item.fill.r / 255, item.fill.g / 255, item.fill.b / 255]);
-            } else if (item.stroke && item.strokeWidth) {
-                paint.setStyle(pk.PaintStyle.Stroke);
-                paint.setStrokeWidth(item.strokeWidth!);
-                paint.setColor([item.stroke.r / 255, item.stroke.g / 255, item.stroke.b / 255]);
-            } else {
-                return;
-            }
-            ctx.drawPath(pkp, paint);
-            paint.delete();
-            pkp.delete();
-            // item.
-        });
-        ctx.restore();
-        surface.flush();
-    }, [box, items]);
     return (
         <canvas
             ref={innerRef as React.RefObject<HTMLCanvasElement>}
@@ -459,7 +516,7 @@ const SVGCanvas = ({
             onMouseLeave={() => setMouse(null)}
             onMouseMove={(evt) => setMouse(svgCoord(evt))}
         >
-            {items.map(({key, shapes, pk, fill, stroke, ...item}) =>
+            {items.map(({key, shapes, pk, fill, stroke, zIndex, ...item}) =>
                 shapes.map((shape, m) => (
                     <path
                         {...item}

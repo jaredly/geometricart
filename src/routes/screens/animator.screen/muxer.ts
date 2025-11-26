@@ -9,7 +9,7 @@ import {
 } from 'mediabunny';
 
 export const generateVideo = async (
-    renderCanvas: HTMLCanvasElement,
+    renderCanvas: HTMLCanvasElement | OffscreenCanvas,
     frameRate: number,
     totalFrames: number,
     updateScene: (t: number, frame: number) => void,

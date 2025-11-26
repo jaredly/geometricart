@@ -1,4 +1,4 @@
-export {type Path, type Path as PKPath} from 'canvaskit-wasm';
+export {type Path, type Path as PKPath, type Canvas as PKCanvas} from 'canvaskit-wasm';
 import CKI from 'canvaskit-wasm';
 
 const getPk = () =>
