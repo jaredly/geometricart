@@ -23,12 +23,13 @@ export type AnimCtx = {
 
 export type RenderItem = {
     type: 'path';
+    pk?: PKPath;
     fill?: string;
     opacity?: number;
     stroke?: string;
     strokeWidth?: number;
     zIndex?: number | null;
-    d: string;
+    shapes: Coord[][];
     key: string;
 };
 

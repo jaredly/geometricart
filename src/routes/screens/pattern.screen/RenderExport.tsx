@@ -11,12 +11,13 @@ import {
     getSimplePatternData,
     pkPathFromCoords,
 } from '../../getPatternData';
-import {PKPath} from '../../pk';
+import {pk, PKPath} from '../../pk';
 import {shapeD} from '../../shapeD';
 import {pkPathWithCmds} from '../animator.screen/cropPath';
 import {globals} from './eval-globals';
 import {a, AnimCtx, Ctx, Patterns, RenderItem} from './evaluate';
 import {
+    Box,
     ConcreteMods,
     Crop,
     EObject,
@@ -30,7 +31,7 @@ import {
     ShapeStyle,
     State,
 } from './export-types';
-import {svgCoord, useSVGZoom} from './useSVGZoom';
+import {percentToWorld, svgCoord, useElementZoom, worldToPercent} from './useSVGZoom';
 import {scalePos} from '../../../editor/scalePos';
 import {closeEnough} from '../../../rendering/epsilonToZero';
 
@@ -125,20 +126,21 @@ const renderPattern = (ctx: Ctx, crops: Group['crops'], pattern: Pattern) => {
                         if (fmods.inset && Math.abs(fmods.inset) > 0.001) {
                             const pk = pkPathFromCoords(mshape, false)!;
                             insetPkPath(pk, fmods.inset / 100);
-                            return coordsFromPkPath(pk.toCmds()).map((shape, j) => ({
+                            return {
                                 type: 'path',
-                                key: `fill-${i}-${fi}-${j}`,
+                                pk,
+                                key: `fill-${i}-${fi}`,
                                 opacity: fmods.opacity,
                                 fill: color,
-                                d: shapeD(shape),
+                                shapes: coordsFromPkPath(pk.toCmds()),
                                 zIndex,
-                            }));
+                            };
                         }
                         return {
                             type: 'path',
                             key: `fill-${i}-${fi}`,
                             fill: color,
-                            d: shapeD(mshape),
+                            shapes: [mshape],
                             zIndex,
                         };
                     }
@@ -146,7 +148,7 @@ const renderPattern = (ctx: Ctx, crops: Group['crops'], pattern: Pattern) => {
                         type: 'path',
                         key: `fill-${i}-${fi}`,
                         fill: color,
-                        d: shapeD(shape),
+                        shapes: [shape],
                         zIndex,
                     };
                 }),
@@ -162,15 +164,16 @@ const renderPattern = (ctx: Ctx, crops: Group['crops'], pattern: Pattern) => {
                         if (fmods.inset) {
                             const pk = pkPathFromCoords(mshape, false)!;
                             insetPkPath(pk, fmods.inset / 100);
-                            return coordsFromPkPath(pk.toCmds()).map((shape, j) => ({
+                            return {
                                 type: 'path',
-                                key: `stroke-${i}-${fi}-${j}`,
+                                key: `stroke-${i}-${fi}`,
                                 fill: 'none',
                                 stroke: color,
                                 strokeWidth: width,
-                                d: shapeD(shape),
+                                pk,
+                                shapes: coordsFromPkPath(pk.toCmds()),
                                 opacity: fmods.opacity,
-                            }));
+                            };
                         }
                         return {
                             type: 'path',
@@ -178,7 +181,7 @@ const renderPattern = (ctx: Ctx, crops: Group['crops'], pattern: Pattern) => {
                             fill: 'none',
                             stroke: color,
                             strokeWidth: width,
-                            d: shapeD(mshape),
+                            shapes: [mshape],
                             opacity: fmods.opacity,
                         };
                     }
@@ -188,7 +191,7 @@ const renderPattern = (ctx: Ctx, crops: Group['crops'], pattern: Pattern) => {
                         fill: 'none',
                         stroke: color,
                         strokeWidth: width,
-                        d: shapeD(shape),
+                        shapes: [shape],
                     };
                 }),
             ];
@@ -317,24 +320,14 @@ export const RenderExport = ({state, patterns}: {state: State; patterns: Pattern
         [state, patterns, cropCache, animCache, t],
     );
 
-    const {zoomProps, box} = useSVGZoom(6);
+    const {zoomProps, box} = useElementZoom(6);
     const [mouse, setMouse] = useState(null as null | Coord);
     const size = 500;
 
     return (
         <div className="flex">
             <div className="relative overflow-hidden">
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    {...zoomProps}
-                    style={size ? {background: 'black', width: size, height: size} : undefined}
-                    onMouseLeave={() => setMouse(null)}
-                    onMouseMove={(evt) => setMouse(svgCoord(evt))}
-                >
-                    {items.map((item) => (
-                        <path {...item} />
-                    ))}
-                </svg>
+                <SVGCanvas {...zoomProps} setMouse={setMouse} items={items} size={size} />
                 <div className="mt-4">
                     <input
                         type="range"
@@ -364,4 +357,70 @@ export const RenderExport = ({state, patterns}: {state: State; patterns: Pattern
     );
 
     // ok
+};
+
+const Canvas = ({
+    items,
+    size,
+    setMouse,
+    box,
+    innerRef,
+}: {
+    items: RenderItem[];
+    size: number;
+    box: Box;
+    innerRef: React.RefObject<SVGElement | HTMLElement | null>;
+    setMouse: (m: Coord | null) => void;
+}) => {
+    useEffect(() => {
+        const surface = pk.MakeWebGLCanvasSurface(innerRef.current! as HTMLCanvasElement)!;
+        const ctx = surface.getCanvas();
+        ctx.clear(pk.BLACK);
+
+        items.forEach((item) => {
+            // item.
+        });
+    }, [box, items]);
+    return (
+        <canvas
+            ref={innerRef as React.RefObject<HTMLCanvasElement>}
+            style={{background: 'black', width: size, height: size}}
+            onMouseLeave={() => setMouse(null)}
+            onMouseMove={(evt) => {
+                const cbox = evt.currentTarget.getBoundingClientRect();
+                setMouse(
+                    percentToWorld(worldToPercent({x: evt.clientX, y: evt.clientY}, cbox), box),
+                );
+            }}
+        />
+    );
+};
+
+const SVGCanvas = ({
+    items,
+    size,
+    box,
+    innerRef,
+    setMouse,
+}: {
+    items: RenderItem[];
+    size: number;
+    box: Box;
+    innerRef: React.RefObject<SVGElement | HTMLElement | null>;
+    setMouse: (m: Coord | null) => void;
+}) => {
+    return (
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox={`${box.x.toFixed(4)} ${box.y.toFixed(4)} ${box.width.toFixed(4)} ${box.height.toFixed(4)}`}
+            ref={innerRef as React.RefObject<SVGSVGElement>}
+            style={{background: 'black', width: size, height: size}}
+            onMouseLeave={() => setMouse(null)}
+            onMouseMove={(evt) => setMouse(svgCoord(evt))}
+        >
+            {items.map(({key, shapes, pk, ...item}) =>
+                shapes.map((shape, m) => <path {...item} d={shapeD(shape)} key={`${key}-${m}`} />),
+            )}
+        </svg>
+    );
 };

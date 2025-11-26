@@ -18,7 +18,7 @@ export function svgCoord(evt: React.MouseEvent<SVGSVGElement>) {
     return percentToWorld(worldToPercent({x: evt.clientX, y: evt.clientY}, box), vb);
 }
 
-export const useSVGZoom = (initialSize: number) => {
+export const useElementZoom = (initialSize: number) => {
     const [box, setBox] = useState({
         x: -initialSize / 2,
         y: -initialSize / 2,
@@ -27,10 +27,10 @@ export const useSVGZoom = (initialSize: number) => {
     });
 
     const latest = useRef(box);
-    const ref = useRef<SVGSVGElement>(null);
+    const ref = useRef<HTMLElement | SVGElement>(null);
     useEffect(() => {
         if (!ref.current) return;
-        const fn = function (this: SVGSVGElement, evt: WheelEvent) {
+        const fn = function (this: HTMLElement | SVGElement, evt: WheelEvent) {
             evt.preventDefault();
 
             const nbox = {...latest.current};
@@ -57,15 +57,16 @@ export const useSVGZoom = (initialSize: number) => {
 
             latest.current = nbox;
             setBox(nbox);
-        };
+        } as EventListenerOrEventListenerObject;
         ref.current.addEventListener('wheel', fn, {passive: false});
         return () => ref.current?.removeEventListener('wheel', fn);
     }, []);
 
     return {
         zoomProps: {
-            ref,
-            viewBox: `${box.x.toFixed(4)} ${box.y.toFixed(4)} ${box.width.toFixed(4)} ${box.height.toFixed(4)}`,
+            innerRef: ref,
+            box,
+            // viewBox: `${box.x.toFixed(4)} ${box.y.toFixed(4)} ${box.width.toFixed(4)} ${box.height.toFixed(4)}`,
             // onWheelCapture,
         },
         box,
