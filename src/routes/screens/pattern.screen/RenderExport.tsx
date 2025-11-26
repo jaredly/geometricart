@@ -317,7 +317,7 @@ export const RenderExport = ({state, patterns}: {state: State; patterns: Pattern
     const [animate, setAnimate] = useState(false);
     useEffect(() => {
         if (!animate) return;
-        let st = Date.now() - t * duration * 1000;
+        let st = Date.now() - (t > 0.99 ? 0 : t) * duration * 1000;
         let af: number = 0;
         const step = () => {
             const now = Date.now();
