@@ -46,7 +46,7 @@ export const segToCmds = (segment: Segment, prev: Coord): number[] => {
         const segs = arcToSegs(prev, segment, Math.PI / 3);
         return segs.flatMap((seg, i) => {
             const p = i === 0 ? prev : segs[i - 1].to;
-            const {c, w} = arcToQuad(segment.center, p, seg.to);
+            const {c, w} = arcToConic(segment.center, p, seg.to);
             return [pk.CONIC_VERB, c.x, c.y, seg.to.x, seg.to.y, Math.abs(w)];
         });
     }
@@ -166,7 +166,7 @@ export const pkPathWithCmds = (origin: Coord, segments: Segment[], open = false)
 //     });
 // };
 
-const arcToQuad = (center: Coord, p0: Coord, p2: Coord) => {
+const arcToConic = (center: Coord, p0: Coord, p2: Coord) => {
     const {x: cx, y: cy} = center;
 
     const angleStart = angleTo(center, p0);

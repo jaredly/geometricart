@@ -351,7 +351,7 @@ const pathMod = (ctx: Ctx, mod: CropsAndMatrices[0], path: PKPath) => {
         const crop = ctx.cropCache.get(mod.id)!.path;
         if (mod.mode === 'rough') {
             const center = centroid(cmdsToCoords(path.toCmds()).flatMap((c) => c.points));
-            if (!crop.contains(center)) {
+            if (!crop.contains(center.x, center.y)) {
                 return true;
             }
         } else if (mod.mode === 'half') {
