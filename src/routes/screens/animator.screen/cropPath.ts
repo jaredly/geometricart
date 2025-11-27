@@ -12,7 +12,7 @@ import {angleBetween} from '../../../rendering/isAngleBetween';
 // console.log(spi.parsePathDataNormalized('M0 0L10 3'));
 // spi.findPathDataIntersections(pd1, pd2)
 
-export const arcToSegs = (prev: Coord, next: ArcSegment, diff = Math.PI / 50) => {
+export const arcToSegs = (prev: Coord, next: ArcSegment, diff = Math.PI / 5) => {
     const t0 = angleTo(next.center, prev);
     const t1 = angleTo(next.center, next.to);
     const rad = dist(next.center, next.to);
@@ -21,8 +21,14 @@ export const arcToSegs = (prev: Coord, next: ArcSegment, diff = Math.PI / 50) =>
     const count = btw / diff;
     const res: Segment[] = [];
     for (let i = 0; i < count; i++) {
-        res.push({type: 'Line', to: push(next.center, t0 + i * diff, rad)});
+        res.push({
+            type: 'Arc',
+            center: next.center,
+            clockwise: next.clockwise,
+            to: push(next.center, t0 + i * (next.clockwise ? diff : -diff), rad),
+        });
     }
+    res.push({type: 'Arc', center: next.center, clockwise: next.clockwise, to: next.to});
     return res;
 };
 
@@ -42,11 +48,9 @@ export const arcToCoords = (prev: Coord, next: ArcSegment, diff = Math.PI / 50) 
 
 export const segToCmds = (segment: Segment, prev: Coord): number[] => {
     if (segment.type === 'Arc') {
-        const r = dist(segment.to, segment.center);
-
-        const largeArc = isLargeArc(segment, prev) ? 1 : 0;
-        const sweep = segment.clockwise ? 1 : 0;
-
+        // const r = dist(segment.to, segment.center);
+        // const largeArc = isLargeArc(segment, prev) ? 1 : 0;
+        // const sweep = segment.clockwise ? 1 : 0;
         // const conics = svgArcToSkiaConics(
         //     prev.x,
         //     prev.y,
@@ -59,7 +63,14 @@ export const segToCmds = (segment: Segment, prev: Coord): number[] => {
         //     segment.to.y,
         // );
         // return conics.flatMap(({cx, cy, w, x, y}) => [pk.CONIC_VERB, cx, cy, w, x, y]);
-        return arcToSegs(prev, segment).flatMap((seg) => [pk.LINE_VERB, seg.to.x, seg.to.y]);
+        const segs = arcToSegs(prev, segment);
+        return segs.flatMap((seg, i) => {
+            const p = i === 0 ? prev : segs[i - 1].to;
+            const {c, w} = arcToQuad(segment.center, p, seg.to);
+            // return [pk.CONIC_VERB, c.x, c.y, w, seg.to.x, seg.to.y];
+            // return [pk.LINE_VERB, seg.to.x, seg.to.y];
+            return [pk.LINE_VERB, c.x, c.y, pk.LINE_VERB, seg.to.x, seg.to.y];
+        });
     }
     return segment.type === 'Line'
         ? [pk.LINE_VERB, segment.to.x, segment.to.y]
@@ -176,3 +187,35 @@ export const pkPathWithCmds = (origin: Coord, segments: Segment[], open = false)
 //         return {prev, segment, inside: clipPath.contains(mid.x, mid.y)};
 //     });
 // };
+
+const arcToQuad = (center: Coord, p0: Coord, p2: Coord) => {
+    const {x: cx, y: cy} = center;
+
+    const angleStart = angleTo(center, p0);
+    const angleEnd = angleTo(center, p2);
+    const radius = dist(center, p0);
+    const theta = angleEnd - angleStart; // signed sweep
+    // For |theta| >= π you usually split the arc first (see helper below).
+
+    const cos = Math.cos;
+    const sin = Math.sin;
+
+    // Mid-angle
+    const alphaMid = 0.5 * (angleStart + angleEnd);
+    const cosHalfTheta = cos(0.5 * theta);
+
+    // Guard: avoid division by zero if theta ~ ±π
+    if (Math.abs(cosHalfTheta) < 1e-8) {
+        throw new Error(
+            'arcToRationalBezier: |angleEnd - angleStart| is too close to π; split the arc into smaller pieces.',
+        );
+    }
+
+    // Middle control point lies on the angle bisector at radius / cos(θ/2)
+    const p1 = {
+        x: cx + (radius / cosHalfTheta) * cos(alphaMid),
+        y: cy + (radius / cosHalfTheta) * sin(alphaMid),
+    };
+
+    return {c: p1, w: cosHalfTheta};
+};

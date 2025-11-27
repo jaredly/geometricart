@@ -45,6 +45,7 @@ import {percentToWorld, svgCoord, useElementZoom, worldToPercent} from './useSVG
 import {pkPathToSegments} from '../../../sidebar/pkClipPaths';
 import {epsilon} from '../../../rendering/epsilonToZero';
 import {cmdsToCoords, transformCmds} from '../../../gcode/cmdsToSegments';
+import {WhatIsArc} from './what-is-arc';
 
 type CCrop = {type: 'crop'; id: string; hole?: boolean; rough?: boolean};
 type CInset = {type: 'inset'; v: number};
@@ -650,6 +651,7 @@ export const RenderExport = ({state, patterns}: {state: State; patterns: Pattern
                     </div>
                 ))}
             </div>
+            <WhatIsArc />
         </div>
     );
 

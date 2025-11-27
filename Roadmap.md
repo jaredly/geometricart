@@ -6,6 +6,21 @@ So you have variables
 - and then along the x axis, you define points.
 - and then you can select a transition from v1 to v2 between x1 and x2a, and decide what the easing function is.
 
+Once I have timelines,
+I'll do
+1. shrink on alternate lines
+2. rotate (delayed by distance from center)
+3. grow back
+4. shrink the other alternate
+5. rotate (delayed by distance from center)
+
+alsooooo I want a real curve, not just a arc as coords pls
+
+-> the 'rough' crop should actually be 'centroid is inside the clip'
+
+So for t() functions, I guess it'll be manual
+
+
 #
 
 Draing an object... segments to cmds ... and then, I need an `applyMatricesToCmds`

@@ -77,6 +77,21 @@ export type State = {
             t1: number;
         }[];
         palette: Color[];
+        // START HERE:
+        timeline: {
+            // 0 to 1, sorted
+            ts: number[];
+            lanes: {
+                name: string;
+                // sorted orders
+                ys: number[];
+                // index into ys
+                // one number per `t` in `ts`
+                values: number[];
+                // easings
+                easings: (string | {start?: string; end?: string})[];
+            }[];
+        };
     };
 };
 
@@ -116,16 +131,18 @@ export type ConcreteMods = {
     thickness?: number;
 };
 
+export type CropMode = 'rough' | 'half';
+
 export type PMods =
     | {type: 'inset'; v: AnimatableNumber}
-    | {type: 'crop'; id: string; hole?: boolean; rough?: boolean}
+    | {type: 'crop'; id: string; hole?: boolean; mode?: CropMode}
     | {type: 'scale'; v: AnimatableCoord | AnimatableNumber; origin?: AnimatableCoord}
     | {type: 'rotate'; v: AnimatableNumber; origin?: AnimatableCoord}
     | {type: 'translate'; v: AnimatableCoord};
 
 export type ConcretePMod =
     | {type: 'inset'; v: number}
-    | {type: 'crop'; id: string; hole?: boolean; rough?: boolean}
+    | {type: 'crop'; id: string; hole?: boolean; mode?: CropMode}
     | {type: 'scale'; v: Coord | number; origin?: Coord}
     | {type: 'rotate'; v: number; origin?: Coord}
     | {type: 'translate'; v: Coord};

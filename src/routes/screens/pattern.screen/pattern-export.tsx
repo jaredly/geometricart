@@ -123,8 +123,8 @@ export const PatternExport = ({tiling, id}: {tiling: Tiling; id: string}) => {
             crop1: {
                 id: 'crop1',
                 shape: [
-                    {type: 'Arc', center: {x: 0, y: 0}, to: {x: 3, y: 0}, clockwise: true},
-                    {type: 'Arc', center: {x: 0, y: 0}, to: {x: 0, y: 3}, clockwise: true},
+                    {type: 'Arc', center: {x: 0, y: 0}, to: {x: -3, y: 0}, clockwise: false},
+                    {type: 'Arc', center: {x: 0, y: 0}, to: {x: 0, y: -3}, clockwise: false},
                 ],
             },
             crop2: {
@@ -140,6 +140,10 @@ export const PatternExport = ({tiling, id}: {tiling: Tiling; id: string}) => {
             seed: 0,
             clocks: [],
             palette: [],
+            timeline: {
+                lanes: [],
+                ts: [],
+            },
         },
     });
 
