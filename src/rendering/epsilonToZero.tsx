@@ -42,7 +42,8 @@ export const angleIsBetween = (angle: number, [lower, upper]: [number, number]) 
     const one = angleBetween(lower, angle, true);
     const two = angleBetween(lower, upper, true);
     return one <= two + epsilon;
-}; // export const convertCircle = (p1: Coord, p2: Coord): Circle => ({
+};
+// export const convertCircle = (p1: Coord, p2: Coord): Circle => ({
 //     type: 'circle',
 //     center: p1,
 //     radius: dist(p1, p2),

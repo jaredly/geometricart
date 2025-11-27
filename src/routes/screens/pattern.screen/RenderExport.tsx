@@ -105,9 +105,15 @@ const insetShape = (shape: Coord[], inset: number) => {
     return items.map(coordsFromBarePath);
 };
 
-const clipShape = (shape: Coord[], mod: {rough?: boolean; hole?: boolean}, crop: PKPath) => {
-    const path = pkPathFromCoords(shape)!;
-    if (mod.rough) {
+const clipShape = (shape: Coord[], mod: CCrop, crop: PKPath) => {
+    if (mod.mode === 'rough') {
+        const center = centroid(shape);
+        if (!crop.contains(center.x, center.y)) {
+            return [];
+        }
+        return [shape];
+    } else if (mod.mode === 'half') {
+        const path = pkPathFromCoords(shape)!;
         const other = path.copy();
         other.op(crop, mod.hole ? pk.PathOp.Difference : pk.PathOp.Intersect);
         other.simplify();
@@ -123,6 +129,7 @@ const clipShape = (shape: Coord[], mod: {rough?: boolean; hole?: boolean}, crop:
         }
         return [shape];
     } else {
+        const path = pkPathFromCoords(shape)!;
         path.op(crop, mod.hole ? pk.PathOp.Difference : pk.PathOp.Intersect);
         path.simplify();
         const items = pkPathToSegments(path);
@@ -466,7 +473,7 @@ const svgItems = (
 };
 
 export const RenderExport = ({state, patterns}: {state: State; patterns: Patterns}) => {
-    const [t, setT] = useState(0.3); // animateeeee
+    const [t, setT] = useState(0); // animateeeee
     const cropCache = useMemo(() => new Map<string, {path: PKPath; crop: Crop; t?: number}>(), []);
     const animCache = useMemo<AnimCtx['cache']>(() => new Map(), []);
 
@@ -474,13 +481,27 @@ export const RenderExport = ({state, patterns}: {state: State; patterns: Pattern
     const [animate, setAnimate] = useState(false);
     const nt = useRef(t);
     nt.current = t;
+    const fpsref = useRef<HTMLDivElement>(null);
     useEffect(() => {
-        if (!animate) return;
+        if (!animate) {
+            fpsref.current!.style.display = 'none';
+            return;
+        }
+        fpsref.current!.style.display = 'block';
         const t = nt.current;
         let st = Date.now() - (t > 0.99 ? 0 : t) * duration * 1000;
         let af: number = 0;
+        const times: number[] = [];
+        let lt = Date.now();
         const step = () => {
             const now = Date.now();
+            times.push(now - lt);
+            lt = now;
+            if (times.length > 2) {
+                const some = times.slice(-5);
+                const sum = some.reduce((a, b) => a + b, 0);
+                fpsref.current!.textContent = (1000 / (sum / some.length)).toFixed(2) + 'fps';
+            }
             const diff = (now - st) / 1000;
             setT(Math.min(1, diff / duration));
             if (diff < duration) {
@@ -544,6 +565,7 @@ export const RenderExport = ({state, patterns}: {state: State; patterns: Pattern
         <div className="flex">
             <div className="relative overflow-hidden">
                 <SVGCanvas {...zoomProps} setMouse={setMouse} items={items} size={size} />
+                <div ref={fpsref} className="absolute top-0 right-0 hidden px-2 py-1 bg-base-100" />
                 {/* <Canvas {...zoomProps} setMouse={setMouse} items={items} size={size} /> */}
                 <div className="mt-4">
                     <input
