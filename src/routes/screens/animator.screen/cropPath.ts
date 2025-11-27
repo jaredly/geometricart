@@ -12,17 +12,31 @@ import {angleBetween} from '../../../rendering/isAngleBetween';
 // console.log(spi.parsePathDataNormalized('M0 0L10 3'));
 // spi.findPathDataIntersections(pd1, pd2)
 
-const arcToCoords = (prev: Coord, next: ArcSegment) => {
+export const arcToSegs = (prev: Coord, next: ArcSegment, diff = Math.PI / 50) => {
     const t0 = angleTo(next.center, prev);
     const t1 = angleTo(next.center, next.to);
     const rad = dist(next.center, next.to);
     const btw = angleBetween(t0, t1, next.clockwise);
-    const diff = Math.PI / 20;
+    // const diff = Math.PI / 5; // 5? 20? idk
     const count = btw / diff;
     const res: Segment[] = [];
     for (let i = 0; i < count; i++) {
         res.push({type: 'Line', to: push(next.center, t0 + i * diff, rad)});
     }
+    return res;
+};
+
+export const arcToCoords = (prev: Coord, next: ArcSegment, diff = Math.PI / 50) => {
+    const t0 = angleTo(next.center, prev);
+    const t1 = angleTo(next.center, next.to);
+    const rad = dist(next.center, next.to);
+    const btw = angleBetween(t0, t1, next.clockwise);
+    const count = btw / diff;
+    const res: Coord[] = [];
+    for (let i = 0; i < count; i++) {
+        res.push(push(next.center, t0 + i * diff, rad));
+    }
+    res.push(next.to);
     return res;
 };
 
@@ -45,7 +59,7 @@ export const segToCmds = (segment: Segment, prev: Coord): number[] => {
         //     segment.to.y,
         // );
         // return conics.flatMap(({cx, cy, w, x, y}) => [pk.CONIC_VERB, cx, cy, w, x, y]);
-        return arcToCoords(prev, segment).flatMap((seg) => [pk.LINE_VERB, seg.to.x, seg.to.y]);
+        return arcToSegs(prev, segment).flatMap((seg) => [pk.LINE_VERB, seg.to.x, seg.to.y]);
     }
     return segment.type === 'Line'
         ? [pk.LINE_VERB, segment.to.x, segment.to.y]
@@ -121,14 +135,18 @@ export const splitPathByClip = (clipData: PathData, clipk: PKPath, path: BarePat
     return result;
 };
 
-export const pkPathWithCmds = (origin: Coord, segments: Segment[], open = false) => {
-    const got = pk.Path.MakeFromCmds([
+export const segmentsCmds = (origin: Coord, segments: Segment[], open = false) => {
+    return [
         pk.MOVE_VERB,
         origin.x,
         origin.y,
         ...segments.flatMap((seg, i) => segToCmds(seg, i === 0 ? origin : segments[i - 1].to)),
         ...(open ? [] : [pk.CLOSE_VERB]),
-    ]);
+    ];
+};
+
+export const pkPathWithCmds = (origin: Coord, segments: Segment[], open = false) => {
+    const got = pk.Path.MakeFromCmds(segmentsCmds(origin, segments, open));
     if (!got) throw new Error(`unable to construct path`);
     return got;
 };

@@ -36,9 +36,15 @@ import {transformBarePath, transformSegment} from '../rendering/points';
 import {cropLines} from './screens/animator.screen/cropLines';
 import {cmdsToSegments} from '../gcode/cmdsToSegments';
 import {eigenShapeTransform, xyratio} from '../editor/eigenShapeTransform';
-import {clipToPathData, pkPathWithCmds} from './screens/animator.screen/cropPath';
+import {
+    arcToCoords,
+    arcToSegs,
+    clipToPathData,
+    pkPathWithCmds,
+} from './screens/animator.screen/cropPath';
 import {pkPathToSegments} from '../sidebar/pkClipPaths';
 import {coordsEqual} from '../rendering/pathsAreIdentical';
+import {evalQuad} from './screens/animator.screen/splitSegment';
 
 export const cmdsForCoords = (coords: Coord[], open = true) => {
     return [
@@ -196,9 +202,25 @@ export const cropShapes = (
 };
 
 export const coordsFromBarePath = (bp: BarePath) => {
-    const coords = bp.segments.map((s) => s.to);
-    if (!coordsEqual(coords[coords.length - 1], bp.origin)) {
-        coords.push(bp.origin);
+    const coords: Coord[] = [bp.origin];
+    bp.segments.forEach((seg, i) => {
+        const prev = i === 0 ? bp.origin : bp.segments[i - 1].to;
+        switch (seg.type) {
+            case 'Line':
+                coords.push(seg.to);
+                break;
+            case 'Arc':
+                coords.push(...arcToCoords(prev, seg));
+                break;
+            case 'Quad':
+                for (let i = 0; i < 10; i++) {
+                    coords.push(evalQuad(prev, seg.control, seg.to, i / 10));
+                }
+                break;
+        }
+    });
+    if (coordsEqual(coords[0], coords[coords.length - 1])) {
+        coords.pop();
     }
     return coords;
 };

@@ -3,10 +3,11 @@ import {useEffect, useMemo, useRef, useState} from 'react';
 import {transformShape} from '../../../editor/tilingPoints';
 import {dist, Matrix} from '../../../rendering/getMirrorTransforms';
 import {transformBarePath} from '../../../rendering/points';
-import {Coord} from '../../../types';
+import {BarePath, Coord} from '../../../types';
 import {centroid} from '../../findReflectionAxes';
 import {
     calcPolygonArea,
+    canonicalShape,
     cmdsForCoords,
     coordsFromBarePath,
     coordsFromPkPath,
@@ -17,7 +18,7 @@ import {
 } from '../../getPatternData';
 import {pk, PKPath} from '../../pk';
 import {shapeD} from '../../shapeD';
-import {pkPathWithCmds} from '../animator.screen/cropPath';
+import {pkPathWithCmds, segmentsCmds} from '../animator.screen/cropPath';
 import {generateVideo} from '../animator.screen/muxer';
 import {globals} from './eval-globals';
 import {a, AnimCtx, Ctx, Patterns, RenderItem} from './evaluate';
@@ -43,6 +44,7 @@ import {
 import {percentToWorld, svgCoord, useElementZoom, worldToPercent} from './useSVGZoom';
 import {pkPathToSegments} from '../../../sidebar/pkClipPaths';
 import {epsilon} from '../../../rendering/epsilonToZero';
+import {cmdsToCoords, transformCmds} from '../../../gcode/cmdsToSegments';
 
 type CCrop = {type: 'crop'; id: string; hole?: boolean; rough?: boolean};
 type CInset = {type: 'inset'; v: number};
@@ -109,6 +111,73 @@ const matchKind = (k: ShapeStyle['kind'], i: number, color: number) => {
     }
 };
 
+const insetShape = (shape: Coord[], inset: number) => {
+    const path = pkPathFromCoords(shape, false)!;
+    insetPkPath(path, inset / 100);
+    path.simplify();
+    const items = pkPathToSegments(path);
+    path.delete();
+    return items.map(coordsFromBarePath);
+};
+
+const clipShape = (shape: Coord[], mod: {rough?: boolean; hole?: boolean}, crop: PKPath) => {
+    const path = pkPathFromCoords(shape)!;
+    if (mod.rough) {
+        const other = path.copy();
+        other.op(crop, mod.hole ? pk.PathOp.Difference : pk.PathOp.Intersect);
+        other.simplify();
+        const size = pkPathToSegments(other)
+            .map(coordsFromBarePath)
+            .map(calcPolygonArea)
+            .reduce((a, b) => a + b, 0);
+        other.delete();
+        path.delete();
+        const area = calcPolygonArea(shape);
+        if (size < area / 2 + epsilon) {
+            return [];
+        }
+        return [shape];
+    } else {
+        path.op(crop, mod.hole ? pk.PathOp.Difference : pk.PathOp.Intersect);
+        path.simplify();
+        const items = pkPathToSegments(path);
+        path.delete();
+        return items.map(coordsFromBarePath);
+    }
+};
+
+// const pkMods = (ctx: Ctx, mods: CropsAndMatrices, shape: BarePath) => {
+//     return mods.reduce((shapes, mod) => {
+//         if (Array.isArray(mod)) {
+//             return transformBarePath(shape, mod);
+//         }
+
+//         if (mod.type === 'inset') {
+//             if (Math.abs(mod.v) <= 0.01) return shapes;
+//             // insetPkPath(path, inset / 100);
+//             // path.simplify();
+//             // const items = pkPathToSegments(path);
+//             // path.delete();
+//             // return items.map(coordsFromBarePath);
+
+//             return shapes.flatMap((shape) => {
+//                 return insetShape(shape.shape, mod.v).map((coords) => ({
+//                     shape: coords,
+//                     i: shape.i,
+//                 }));
+//             });
+//         }
+
+//         const crop = ctx.cropCache.get(mod.id)!;
+//         return shapes.flatMap((shape) => {
+//             return clipShape(shape.shape, mod, crop.path).map((coords) => ({
+//                 shape: coords,
+//                 i: shape.i,
+//             }));
+//         });
+//     }, shapes);
+// };
+
 const modsToShapes = (ctx: Ctx, mods: CropsAndMatrices, shapes: {shape: Coord[]; i: number}[]) => {
     return mods.reduce((shapes, mod) => {
         if (Array.isArray(mod)) {
@@ -121,40 +190,22 @@ const modsToShapes = (ctx: Ctx, mods: CropsAndMatrices, shapes: {shape: Coord[];
         if (mod.type === 'inset') {
             if (Math.abs(mod.v) <= 0.01) return shapes;
             return shapes.flatMap((shape) => {
-                const path = pkPathFromCoords(shape.shape, false)!;
-                insetPkPath(path, mod.v / 100);
-                path.simplify();
-                const items = pkPathToSegments(path);
-                path.delete();
-                return items.map(coordsFromBarePath).map((coords) => ({shape: coords, i: shape.i}));
+                return insetShape(shape.shape, mod.v).map((coords) => ({
+                    shape: coords,
+                    i: shape.i,
+                }));
             });
         }
 
         const crop = ctx.cropCache.get(mod.id)!;
+        if (!crop) {
+            throw new Error(`No crop? ${mod.id} : ${[...ctx.cropCache.keys()]}`);
+        }
         return shapes.flatMap((shape) => {
-            const path = pkPathFromCoords(shape.shape)!;
-            if (mod.rough) {
-                const other = path.copy();
-                other.op(crop.path, mod.hole ? pk.PathOp.Difference : pk.PathOp.Intersect);
-                other.simplify();
-                const size = pkPathToSegments(other)
-                    .map(coordsFromBarePath)
-                    .map(calcPolygonArea)
-                    .reduce((a, b) => a + b, 0);
-                other.delete();
-                path.delete();
-                const area = calcPolygonArea(shape.shape);
-                if (size < area / 2 + epsilon) {
-                    return [];
-                }
-                return [shape];
-            } else {
-                path.op(crop.path, mod.hole ? pk.PathOp.Difference : pk.PathOp.Intersect);
-                path.simplify();
-                const items = pkPathToSegments(path);
-                path.delete();
-                return items.map(coordsFromBarePath).map((coords) => ({shape: coords, i: shape.i}));
-            }
+            return clipShape(shape.shape, mod, crop.path).map((coords) => ({
+                shape: coords,
+                i: shape.i,
+            }));
         });
     }, shapes);
 };
@@ -269,33 +320,6 @@ const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Pattern) => {
                         };
                     }
 
-                    // if (ptx.length || f.mods.length || inset) {
-                    //     const fmods = f.mods.map((m) => resolvePMod(ctx.anim, m));
-                    //     const tx = fmods.flatMap((mod) => modMatrix(mod));
-                    //     let mshape = transformShape(shape, [...ptx, ...tx]);
-                    //     if (inset) {
-                    //         const pk = pkPathFromCoords(mshape, false)!;
-                    //         insetPkPath(pk, inset / 100);
-                    //         return {
-                    //             type: 'path',
-                    //             key: `stroke-${i}-${fi}`,
-                    //             stroke: rgb,
-                    //             strokeWidth: width,
-                    //             pk,
-                    //             shapes: coordsFromPkPath(pk.toCmds()),
-                    //             opacity,
-                    //         };
-                    //     }
-                    //     return {
-                    //         type: 'path',
-                    //         key: `stroke-${i}-${fi}`,
-                    //         stroke: rgb,
-                    //         strokeWidth: width,
-                    //         shapes: [mshape],
-                    //         opacity,
-                    //     };
-                    // }
-
                     return {
                         type: 'path',
                         key: `stroke-${i}-${fi}`,
@@ -315,12 +339,123 @@ const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Pattern) => {
 const notNull = <T,>(v: T): v is NonNullable<T> => v != null;
 
 const renderObject = (ctx: Ctx, crops: CropsAndMatrices, object: EObject) => {
-    //
+    const anim: (typeof ctx)['anim'] = {
+        ...ctx.anim,
+        values: {
+            ...ctx.anim.values,
+            // center,
+            // radius,
+            // shape,
+            // i,
+        },
+    };
+
+    const path = pk.Path.MakeFromCmds(
+        segmentsCmds(object.segments[object.segments.length - 1].to, object.segments, false),
+    )!;
+    let remove = false;
+    // const fmods = object.mods.map((m) => resolvePMod(ctx.anim, m));
+
+    crops.forEach((mod) => {
+        remove = remove || pathMod(ctx, mod, path);
+    });
+    if (remove) return;
+
+    Object.values(object.style.fills).map((f) => {
+        if (!f.color) return;
+        const fmods = f.mods.map((m) => resolvePMod(ctx.anim, m));
+        const thisPath = path.copy();
+        let remove = false;
+        fmods.forEach((mod) => {
+            remove = remove || pathMod(ctx, mod, thisPath);
+        });
+
+        const color = a.color(anim, f.color);
+        const rgb = colorToRgb(color);
+        const zIndex = f.zIndex ? a.number(anim, f.zIndex) : null;
+        const opacity = f.opacity ? a.number(anim, f.opacity) : undefined;
+
+        ctx.items.push({
+            type: 'path',
+            pk: thisPath,
+            key: '',
+            fill: rgb,
+            opacity,
+            shapes: cmdsToCoords(thisPath.toCmds()).map((s) => s.points),
+            zIndex,
+        });
+    });
+    path.delete();
+    // object.style.mods
 };
+
+const pathMod = (ctx: Ctx, mod: CropsAndMatrices[0], path: PKPath) => {
+    if (Array.isArray(mod)) {
+        mod.forEach(([a, b, c, d, e, f]) => {
+            path.transform(a, b, c, d, e, f, 0, 0, 1);
+        });
+    } else if (mod.type === 'crop') {
+        const crop = ctx.cropCache.get(mod.id)!.path;
+        if (mod.rough) {
+            const other = path.copy();
+            other.op(crop, mod.hole ? pk.PathOp.Difference : pk.PathOp.Intersect);
+            other.simplify();
+            const size = cmdsToCoords(other.toCmds())
+                .map((s) => calcPolygonArea(s.points))
+                .reduce((a, b) => a + b, 0);
+            other.delete();
+            path.delete();
+            const originalSize = cmdsToCoords(path.toCmds())
+                .map((s) => calcPolygonArea(s.points))
+                .reduce((a, b) => a + b, 0);
+            if (size < originalSize / 2 + epsilon) {
+                return true;
+            }
+        } else {
+            path.op(crop, mod.hole ? pk.PathOp.Difference : pk.PathOp.Intersect);
+            path.simplify();
+        }
+    } else {
+        insetPkPath(path, mod.v / 100);
+    }
+    return false;
+};
+
+// const renderFill = (ctx: Ctx, anim: Ctx['anim'], f: Fill, path: PKPath, key: string) => {
+//     if (!f.color) return;
+
+//     const color = a.color(anim, f.color);
+//     const rgb = colorToRgb(color);
+//     const zIndex = f.zIndex ? a.number(anim, f.zIndex) : null;
+//     const opacity = f.opacity ? a.number(anim, f.opacity) : undefined;
+
+//     if (f.mods.length) {
+//         const fmods = f.mods.map((m) => resolvePMod(ctx.anim, m));
+//         const midShapes = modsToShapes(ctx, fmods, [{shape, i: 0}]);
+
+//         return {
+//             // pk???
+//             type: 'path',
+//             key,
+//             fill: rgb,
+//             opacity,
+//             shapes: midShapes.map((s) => s.shape),
+//             zIndex,
+//         };
+//     }
+
+//     return {
+//         type: 'path',
+//         key,
+//         fill: rgb,
+//         opacity,
+//         shapes: [shape],
+//         zIndex,
+//     };
+// };
 
 const renderGroup = (ctx: Ctx, crops: CropsAndMatrices, group: Group) => {
     if (group.type !== 'Group') throw new Error('not a group');
-    // const inner = [...crops, ...group.crops];
     for (let [id] of Object.entries(group.entities).sort((a, b) => a[1] - b[1])) {
         const entity = ctx.layer.entities[id];
         switch (entity.type) {
@@ -479,9 +614,15 @@ export const RenderExport = ({state, patterns}: {state: State; patterns: Pattern
                     <button
                         className={'btn'}
                         onClick={() =>
-                            recordVideo(state, size, box, patterns, duration, statusRef).then(
-                                (url) => setVideo(url),
-                            )
+                            recordVideo(
+                                state,
+                                size,
+                                box,
+                                patterns,
+                                duration,
+                                statusRef,
+                                cropCache,
+                            ).then((url) => setVideo(url))
                         }
                     >
                         Record Video
@@ -522,6 +663,7 @@ const recordVideo = async (
     patterns: Patterns,
     duration: number,
     onStatus: {current: HTMLElement | null},
+    cropCache: Ctx['cropCache'],
 ) => {
     const canvas = new OffscreenCanvas(size * 2, size * 2);
     const frameRate = 24;
@@ -529,7 +671,6 @@ const recordVideo = async (
     const totalFrames = frameRate * duration;
 
     const animCache = new Map();
-    const cropCache = new Map();
 
     const blob = await generateVideo(canvas, frameRate, totalFrames, (_, currentFrame) => {
         if (currentFrame % 10 === 0)

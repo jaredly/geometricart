@@ -1,4 +1,16 @@
 
+# TIME LINESSSS
+
+So you have variables
+- and for each variable, you can define 'set point' numbers, that you can move between
+- and then along the x axis, you define points.
+- and then you can select a transition from v1 to v2 between x1 and x2a, and decide what the easing function is.
+
+#
+
+Draing an object... segments to cmds ... and then, I need an `applyMatricesToCmds`
+
+
 # Ok a big idea:
 
 ANY number input can instead be a (script) function.
@@ -89,12 +101,14 @@ idk I feel like the answer is not often.
 
 #####
 
-- Mods are a list
-  - so you can decide if crop comes first or second
-- Export can make a movie
+- [x] Mods are a list
+  - [x] so you can decide if crop comes first or second
+- [x] Export can make a movie
   - [x] svg or canvas pls
 - [x] zindex actually does something
-- [ ] make colors be better
+- [x] make colors be better
+
+background...crop?
 
 
 getting weird artifacts ... maybe do the "everything is 100x bigger" thing?

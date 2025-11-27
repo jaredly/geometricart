@@ -129,7 +129,36 @@ function lerpPt(A: Coord, B: Coord, t: number): Coord {
 
 /* ----------------------------- Quadratic Bézier ------------------------- */
 
-function evalQuad(P0: Coord, C: Coord, P2: Coord, t: number): Coord {
+export function conic2D(t: number, p0: Coord, p1: Coord, p2: Coord, w: number): Coord {
+    const u = 1 - t;
+
+    const numX = u * u * p0.x + 2 * w * u * t * p1.x + t * t * p2.x;
+
+    const numY = u * u * p0.y + 2 * w * u * t * p1.y + t * t * p2.y;
+
+    const denom = u * u + 2 * w * u * t + t * t;
+
+    return {
+        x: numX / denom,
+        y: numY / denom,
+    };
+}
+
+export function cubicBezier2D(t: number, p0: Coord, p1: Coord, p2: Coord, p3: Coord): Coord {
+    const u = 1 - t;
+    const tt = t * t;
+    const uu = u * u;
+    const uuu = uu * u;
+    const ttt = tt * t;
+
+    const x = uuu * p0.x + 3 * uu * t * p1.x + 3 * u * tt * p2.x + ttt * p3.x;
+
+    const y = uuu * p0.y + 3 * uu * t * p1.y + 3 * u * tt * p2.y + ttt * p3.y;
+
+    return {x, y};
+}
+
+export function evalQuad(P0: Coord, C: Coord, P2: Coord, t: number): Coord {
     const u = 1 - t;
     const x = u * u * P0.x + 2 * u * t * C.x + t * t * P2.x;
     const y = u * u * P0.y + 2 * u * t * C.y + t * t * P2.y;
