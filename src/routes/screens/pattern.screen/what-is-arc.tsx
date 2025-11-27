@@ -29,7 +29,8 @@ export const WhatIsArc = () => {
         qw.c.y,
         p2.x,
         p2.y,
-        qw.w,
+        Math.abs(qw.w),
+        // 0.5,
     ])!;
 
     return (
@@ -41,6 +42,7 @@ export const WhatIsArc = () => {
             >
                 <circle cx={p1.x} cy={p1.y} r={0.1} fill="white" />
                 <circle cx={p2.x} cy={p2.y} r={0.1} fill="blue" />
+                <circle cx={qw.c.x} cy={qw.c.y} r={0.1} fill="magenta" />
                 <path d={pk1.toSVGString()} stroke="red" strokeWidth={0.01} fill="none" />
             </svg>
             <div className="flex-col flex gap-4">
@@ -62,23 +64,8 @@ export const WhatIsArc = () => {
                     value={t2}
                     onChange={(evt) => setT2(+evt.target.value)}
                 />
+                <span>{qw.w.toFixed(2)}</span>
             </div>
-            {/* <input
-                type="range"
-                min={-1}
-                max={1}
-                step={0.01}
-                value={p1.x}
-                onChange={(evt) => setP1({...p1, x: +evt.target.value})}
-            />
-            <input
-                type="range"
-                min={-1}
-                max={1}
-                step={0.01}
-                value={p1.y}
-                onChange={(evt) => setP1({...p1, y: +evt.target.value})}
-            /> */}
         </div>
     );
 };
@@ -155,16 +142,14 @@ const arcToSegs = (prev: Coord, next: ArcSegment, diff = Math.PI / 5) => {
     const t1 = angleTo(next.center, next.to);
     const rad = dist(next.center, next.to);
     const btw = angleBetween(t0, t1, next.clockwise);
-    // const diff = Math.PI / 5; // 5? 20? idk
     const count = btw / diff;
     const angles = [];
     for (let i = 1; i < count; i++) {
         const t = negPiToPi(t0 + i * (next.clockwise ? diff : -diff));
-        const p = i === 1 ? t0 : angles[i - 2];
-        if (next.clockwise ? angleIsBetween(Math.PI, [p, t]) : angleIsBetween(Math.PI, [t, p])) {
-            angles.push(Math.PI);
-        }
-        // angles.push(Math.PI / 2);
+        // const p = i === 1 ? t0 : angles[i - 2];
+        // if (next.clockwise ? angleIsBetween(Math.PI, [p, t]) : angleIsBetween(Math.PI, [t, p])) {
+        //     angles.push(Math.PI);
+        // }
         angles.push(t);
     }
     angles.push(t1);
@@ -174,17 +159,6 @@ const arcToSegs = (prev: Coord, next: ArcSegment, diff = Math.PI / 5) => {
         clockwise: next.clockwise,
         to: push(next.center, angle, rad),
     }));
-
-    // for (let i = 1; i < count - 1; i++) {
-    //     res.push({
-    //         type: 'Arc',
-    //         center: next.center,
-    //         clockwise: next.clockwise,
-    //         to: push(next.center, t0 + i * (next.clockwise ? diff : -diff), rad),
-    //     });
-    // }
-    // res.push({type: 'Arc', center: next.center, clockwise: next.clockwise, to: next.to});
-    // return res;
 };
 
 const arcToQuad = (center: Coord, p0: Coord, p2: Coord) => {

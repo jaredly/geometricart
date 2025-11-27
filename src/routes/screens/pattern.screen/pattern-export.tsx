@@ -59,7 +59,7 @@ export const PatternExport = ({tiling, id}: {tiling: Tiling; id: string}) => {
                                             id: 'a',
                                             color: {h: 180, s: 100, l: 50},
                                             mods: [
-                                                {type: 'crop', id: 'crop2'},
+                                                {type: 'crop', id: 'crop2', mode: 'rough'},
                                                 {
                                                     type: 'inset',
                                                     v: 'Math.sin(t1 * Math.PI * 2) * 10',

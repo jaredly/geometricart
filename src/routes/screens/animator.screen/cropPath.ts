@@ -1,35 +1,30 @@
 import {findPathDataIntersections, PathCommand, type PathData} from './svgPathIntersections';
 // import {findPathDataIntersections, PathCommand, type PathData} from './svg-path-intersections.js';
-import {ArcSegment, BarePath, Coord, Segment, SegPrev} from '../../../types';
-import {angleTo, dist, push} from '../../../rendering/getMirrorTransforms';
 import {isLargeArc} from '../../../editor/RenderPendingPath';
-import {pk, PKPath} from '../../pk';
-import {svgArcToSkiaConics} from './svgArcToSkiaConic';
-import {pointOnPath, splitSegment} from './splitSegment';
-import {coordsEqual} from '../../../rendering/pathsAreIdentical';
+import {angleTo, dist, push} from '../../../rendering/getMirrorTransforms';
 import {angleBetween} from '../../../rendering/isAngleBetween';
-
-// console.log(spi.parsePathDataNormalized('M0 0L10 3'));
-// spi.findPathDataIntersections(pd1, pd2)
+import {coordsEqual} from '../../../rendering/pathsAreIdentical';
+import {ArcSegment, BarePath, Coord, Segment, SegPrev} from '../../../types';
+import {pk, PKPath} from '../../pk';
+import {pointOnPath, splitSegment} from './splitSegment';
 
 export const arcToSegs = (prev: Coord, next: ArcSegment, diff = Math.PI / 5) => {
     const t0 = angleTo(next.center, prev);
     const t1 = angleTo(next.center, next.to);
     const rad = dist(next.center, next.to);
     const btw = angleBetween(t0, t1, next.clockwise);
-    // const diff = Math.PI / 5; // 5? 20? idk
     const count = btw / diff;
-    const res: Segment[] = [];
-    for (let i = 0; i < count; i++) {
-        res.push({
-            type: 'Arc',
-            center: next.center,
-            clockwise: next.clockwise,
-            to: push(next.center, t0 + i * (next.clockwise ? diff : -diff), rad),
-        });
+    const angles = [];
+    for (let i = 1; i < count; i++) {
+        angles.push(t0 + i * (next.clockwise ? diff : -diff));
     }
-    res.push({type: 'Arc', center: next.center, clockwise: next.clockwise, to: next.to});
-    return res;
+    angles.push(t1);
+    return angles.map((angle) => ({
+        type: 'Arc',
+        center: next.center,
+        clockwise: next.clockwise,
+        to: push(next.center, angle, rad),
+    }));
 };
 
 export const arcToCoords = (prev: Coord, next: ArcSegment, diff = Math.PI / 50) => {
@@ -48,28 +43,11 @@ export const arcToCoords = (prev: Coord, next: ArcSegment, diff = Math.PI / 50) 
 
 export const segToCmds = (segment: Segment, prev: Coord): number[] => {
     if (segment.type === 'Arc') {
-        // const r = dist(segment.to, segment.center);
-        // const largeArc = isLargeArc(segment, prev) ? 1 : 0;
-        // const sweep = segment.clockwise ? 1 : 0;
-        // const conics = svgArcToSkiaConics(
-        //     prev.x,
-        //     prev.y,
-        //     r,
-        //     r,
-        //     0,
-        //     largeArc,
-        //     sweep,
-        //     segment.to.x,
-        //     segment.to.y,
-        // );
-        // return conics.flatMap(({cx, cy, w, x, y}) => [pk.CONIC_VERB, cx, cy, w, x, y]);
-        const segs = arcToSegs(prev, segment);
+        const segs = arcToSegs(prev, segment, Math.PI / 3);
         return segs.flatMap((seg, i) => {
             const p = i === 0 ? prev : segs[i - 1].to;
             const {c, w} = arcToQuad(segment.center, p, seg.to);
-            // return [pk.CONIC_VERB, c.x, c.y, w, seg.to.x, seg.to.y];
-            // return [pk.LINE_VERB, seg.to.x, seg.to.y];
-            return [pk.LINE_VERB, c.x, c.y, pk.LINE_VERB, seg.to.x, seg.to.y];
+            return [pk.CONIC_VERB, c.x, c.y, seg.to.x, seg.to.y, Math.abs(w)];
         });
     }
     return segment.type === 'Line'

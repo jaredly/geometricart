@@ -1,17 +1,17 @@
 import {Surface} from 'canvaskit-wasm';
 import {useEffect, useMemo, useRef, useState} from 'react';
 import {transformShape} from '../../../editor/tilingPoints';
+import {cmdsToCoords} from '../../../gcode/cmdsToSegments';
+import {epsilon} from '../../../rendering/epsilonToZero';
 import {dist, Matrix} from '../../../rendering/getMirrorTransforms';
 import {transformBarePath} from '../../../rendering/points';
-import {BarePath, Coord} from '../../../types';
+import {pkPathToSegments} from '../../../sidebar/pkClipPaths';
+import {Coord} from '../../../types';
 import {centroid} from '../../findReflectionAxes';
 import {
     calcPolygonArea,
-    canonicalShape,
     cmdsForCoords,
     coordsFromBarePath,
-    coordsFromPkPath,
-    cropShapes,
     getShapeColors,
     getSimplePatternData,
     pkPathFromCoords,
@@ -26,8 +26,8 @@ import {
     Box,
     colorToRgb,
     ConcreteMods,
-    ConcretePMod,
     Crop,
+    CropMode,
     EObject,
     Fill,
     Group,
@@ -42,12 +42,8 @@ import {
     State,
 } from './export-types';
 import {percentToWorld, svgCoord, useElementZoom, worldToPercent} from './useSVGZoom';
-import {pkPathToSegments} from '../../../sidebar/pkClipPaths';
-import {epsilon} from '../../../rendering/epsilonToZero';
-import {cmdsToCoords, transformCmds} from '../../../gcode/cmdsToSegments';
-import {WhatIsArc} from './what-is-arc';
 
-type CCrop = {type: 'crop'; id: string; hole?: boolean; rough?: boolean};
+type CCrop = {type: 'crop'; id: string; mode?: CropMode; hole?: boolean};
 type CInset = {type: 'inset'; v: number};
 type CropsAndMatrices = (CCrop | Matrix[] | CInset)[];
 
@@ -73,18 +69,6 @@ const resolvePMod = (ctx: AnimCtx, mod: PMods): CropsAndMatrices[0] => {
             return modMatrix({...mod, v: a.coord(ctx, mod.v)});
     }
 };
-
-// ({
-//     inset: mods.inset != null ? a.number(ctx, mods.inset) : undefined,
-//     scale: mods.scale != null ? a.coordOrNumber(ctx, mods.scale) : undefined,
-//     scaleOrigin: mods.scaleOrigin != null ? a.coord(ctx, mods.scaleOrigin) : undefined,
-//     offset: mods.offset != null ? a.coord(ctx, mods.offset) : undefined,
-//     rotation: mods.rotation != null ? a.number(ctx, mods.rotation) : undefined,
-//     rotationOrigin: mods.rotationOrigin != null ? a.coord(ctx, mods.rotationOrigin) : undefined,
-//     opacity: mods.opacity != null ? a.number(ctx, mods.opacity) : undefined,
-//     thickness: mods.thickness != null ? a.number(ctx, mods.thickness) : undefined,
-//     tint: mods.tint != null ? a.color(ctx, mods.tint) : undefined,
-// });
 
 const resolveMods = (ctx: AnimCtx, mods: Mods): ConcreteMods => ({
     inset: mods.inset != null ? a.number(ctx, mods.inset) : undefined,
@@ -146,38 +130,6 @@ const clipShape = (shape: Coord[], mod: {rough?: boolean; hole?: boolean}, crop:
         return items.map(coordsFromBarePath);
     }
 };
-
-// const pkMods = (ctx: Ctx, mods: CropsAndMatrices, shape: BarePath) => {
-//     return mods.reduce((shapes, mod) => {
-//         if (Array.isArray(mod)) {
-//             return transformBarePath(shape, mod);
-//         }
-
-//         if (mod.type === 'inset') {
-//             if (Math.abs(mod.v) <= 0.01) return shapes;
-//             // insetPkPath(path, inset / 100);
-//             // path.simplify();
-//             // const items = pkPathToSegments(path);
-//             // path.delete();
-//             // return items.map(coordsFromBarePath);
-
-//             return shapes.flatMap((shape) => {
-//                 return insetShape(shape.shape, mod.v).map((coords) => ({
-//                     shape: coords,
-//                     i: shape.i,
-//                 }));
-//             });
-//         }
-
-//         const crop = ctx.cropCache.get(mod.id)!;
-//         return shapes.flatMap((shape) => {
-//             return clipShape(shape.shape, mod, crop.path).map((coords) => ({
-//                 shape: coords,
-//                 i: shape.i,
-//             }));
-//         });
-//     }, shapes);
-// };
 
 const modsToShapes = (ctx: Ctx, mods: CropsAndMatrices, shapes: {shape: Coord[]; i: number}[]) => {
     return mods.reduce((shapes, mod) => {
@@ -397,7 +349,12 @@ const pathMod = (ctx: Ctx, mod: CropsAndMatrices[0], path: PKPath) => {
         });
     } else if (mod.type === 'crop') {
         const crop = ctx.cropCache.get(mod.id)!.path;
-        if (mod.rough) {
+        if (mod.mode === 'rough') {
+            const center = centroid(cmdsToCoords(path.toCmds()).flatMap((c) => c.points));
+            if (!crop.contains(center)) {
+                return true;
+            }
+        } else if (mod.mode === 'half') {
             const other = path.copy();
             other.op(crop, mod.hole ? pk.PathOp.Difference : pk.PathOp.Intersect);
             other.simplify();
@@ -651,7 +608,6 @@ export const RenderExport = ({state, patterns}: {state: State; patterns: Pattern
                     </div>
                 ))}
             </div>
-            <WhatIsArc />
         </div>
     );
 
