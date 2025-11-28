@@ -234,6 +234,38 @@ const LaneEditor = ({
         const items: React.ReactNode[] = [];
 
         {
+            const ln = ts.reduce((a, b) => a + b, 0);
+            let at = 0;
+            const scale = w / ln;
+
+            ts.forEach((t) => {
+                lane.ys.forEach((v, y) => {
+                    items.push(
+                        <circle
+                            cx={m + at * scale}
+                            cy={y * m + m}
+                            r={4}
+                            stroke="red"
+                            fill="none"
+                            strokeWidth={1}
+                        />,
+                    );
+                });
+                at += t;
+            });
+            lane.ys.forEach((v, y) => {
+                items.push(
+                    <circle
+                        cx={m + at * scale}
+                        cy={y * m + m}
+                        r={4}
+                        stroke="red"
+                        fill="none"
+                        strokeWidth={1}
+                    />,
+                );
+            });
+
             const pts: Coord[] = [];
             const min = Math.min(...lane.ys);
             const max = Math.max(...lane.ys);
@@ -241,40 +273,9 @@ const LaneEditor = ({
                 const x = w * t + m;
                 const pos = tlpos(ts, t);
                 const y = evalLane(lane, pos);
-                pts.push({x, y: ((y - min) / (max - min)) * (h - m) + m});
+                pts.push({x, y: (1 - (y - min) / (max - min)) * (h - m) + m});
             }
             items.push(<path d={shapeD(pts, false)} stroke="white" strokeWidth={1} fill="none" />);
-
-            const ln = ts.reduce((a, b) => a + b, 0);
-            let at = 0;
-            const scale = w / ln;
-
-            ts.forEach((t) => {
-                for (let i = 0; i < t; i++) {
-                    items.push(
-                        <path
-                            d={shapeD([
-                                {x: m + at * scale, y: m},
-                                {x: m + at * scale, y: h},
-                            ])}
-                            stroke={i === 0 ? 'red' : 'white'}
-                            strokeWidth={1}
-                        />,
-                    );
-                    at++;
-                }
-            });
-
-            items.push(
-                <path
-                    d={shapeD([
-                        {x: m + w, y: m},
-                        {x: m + w, y: h},
-                    ])}
-                    stroke="red"
-                    strokeWidth={1}
-                />,
-            );
         }
 
         // // const line: Coord[] = [];

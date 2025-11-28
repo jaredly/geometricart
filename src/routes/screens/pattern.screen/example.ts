@@ -148,7 +148,7 @@ export const example: (id: string) => State = (id: string) => ({
                 {
                     name: 'oneInset',
                     ys: [0, 1],
-                    easings: ['', null, '', null, null, null, null],
+                    easings: ['inout', null, 'inout', null, null, null, null],
                     values: [0, 1, 1, 0, 0, 0, 0, 0],
                 },
                 {
@@ -160,7 +160,7 @@ export const example: (id: string) => State = (id: string) => ({
                 {
                     name: 'oneOpacity',
                     ys: [0.2, 1],
-                    easings: [null, null, 'inout', null, null, 'inout'],
+                    easings: [null, null, 'inout', null, 'inout'],
                     values: [1, 1, 1, 0, 0, 1, 1],
                 },
                 {
@@ -178,7 +178,7 @@ export const example: (id: string) => State = (id: string) => ({
                 {
                     name: 'twoOpacity',
                     ys: [0.2, 1],
-                    easings: [null, null, 'inout', null, null, 'inout'],
+                    easings: [null, null, 'inout', null, 'inout'],
                     values: [0, 0, 0, 1, 1, 0, 0],
                 },
             ],
