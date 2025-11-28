@@ -4,7 +4,12 @@ export const example: (id: string) => State = (id: string) => ({
     layers: {
         a: {
             id: 'a',
-            shared: {t1: `tsplit(t, 4, .05)`, t2: `Math.sin(t1)`},
+            shared: {
+                t1: `tsplit(t, 4, .05)`,
+                t2: `Math.sin(t1)`,
+                off: 'return (center) => (1 - dist(center,{x:0,y:0}))/30',
+                off2: 'return (center) => (1 - dist(center,{x:0,y:0}))/30 + .05',
+            },
             entities: {
                 r: {type: 'Group', entities: {p: 1, b: 0}, id: 'r'},
                 b: {
@@ -16,7 +21,7 @@ export const example: (id: string) => State = (id: string) => ({
                             a: {
                                 color: {h: 180, s: 100, l: 50},
                                 id: 'a',
-                                width: 1,
+                                width: 3,
                                 // color: `t < 0.5 ? {h: 190, s: 100, l: 30} : {h: 180, s: 100, l: 50}`,
                                 // color: `t < 0.5 ? {h: 190, s: 100, l: 20} : {h: 180, s: 100, l: 40}`,
                                 mods: [],
@@ -45,19 +50,19 @@ export const example: (id: string) => State = (id: string) => ({
                                     a: {
                                         id: 'a',
                                         color: {h: 180, s: 100, l: 50},
-                                        width: 1,
-                                        opacity: 'oneOpacity',
+                                        width: 2,
+                                        opacity: 'oneOpacity_fn(t + off(center))',
                                         mods: [
                                             {type: 'crop', id: 'crop2', mode: 'rough'},
                                             {
                                                 type: 'inset',
-                                                v: 'oneInset_fn(t - dist(center,{x:0,y:0})/30) * 10',
+                                                v: 'oneInset_fn(t + off(center)) * 10',
                                                 // v: 'Math.sin(t1 * Math.PI * 2) * 10',
                                             },
                                             {
                                                 type: 'rotate',
                                                 // v: 't1 * Math.PI / 3 * 2',
-                                                v: 'oneRotate',
+                                                v: 'oneRotate_fn(t + off(center))',
                                                 origin: {x: 0, y: 0},
                                             },
                                             {type: 'crop', id: 'crop1'},
@@ -77,20 +82,20 @@ export const example: (id: string) => State = (id: string) => ({
                                         id: 'a',
                                         // color: {h: 190, s: 100, l: 30},
                                         color: {h: 180, s: 100, l: 50},
-                                        width: 1,
-                                        opacity: 'twoOpacity',
+                                        width: 2,
+                                        opacity: 'twoOpacity_fn(t + off2(center))',
                                         mods: [
                                             {type: 'crop', id: 'crop2', mode: 'rough'},
                                             {
                                                 type: 'rotate',
                                                 // v: '-t1 * Math.PI / 3 * 2',
-                                                v: 'twoRotate',
+                                                v: 'twoRotate_fn(t + off2(center))',
                                                 origin: {x: 0, y: 0},
                                             },
                                             {
                                                 type: 'inset',
                                                 // v: 'Math.sin(t1 * Math.PI * 2) * -10',
-                                                v: 'twoInset * 10',
+                                                v: 'twoInset_fn(t + off2(center)) * 10',
                                             },
                                             {type: 'crop', id: 'crop1'},
                                         ],

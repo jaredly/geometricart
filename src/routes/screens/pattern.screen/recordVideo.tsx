@@ -57,9 +57,14 @@ export const renderItems = (surface: Surface, box: Box, items: RenderItem[]) => 
         } else {
             return;
         }
+        if (item.opacity != null) {
+            paint.setAlphaf(item.opacity);
+        }
         ctx.drawPath(pkp, paint);
         paint.delete();
-        pkp.delete();
+        if (!item.pk) {
+            pkp.delete();
+        }
     });
     ctx.restore();
     surface.flush();

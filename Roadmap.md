@@ -22,6 +22,8 @@ So for t() functions, I guess it'll be manual.
 
 tintsssss
 
+make timeline functions ... be able to take extra arguments? because the easing functions might want them.
+ARE THERE other possible arguments than just 'offset'? idk. but we can specify them, it's fine.
 
 #
 

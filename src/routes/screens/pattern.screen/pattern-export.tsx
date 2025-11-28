@@ -6,7 +6,9 @@ import {RenderExport} from './RenderExport';
 import {StateEditor} from './StateEditor';
 
 export const PatternExport = ({tiling, id}: {tiling: Tiling; id: string}) => {
-    const [state, setState] = useState<State>(example(id));
+    // const [state, setState] = useState<State>(example(id));
+    const state: State = example(id);
+    const setState = (m: State) => {};
 
     const patterns = useMemo(() => ({[id]: tiling}), [id, tiling]);
 

@@ -32,11 +32,14 @@ export function useAnimate(
             }
             const diff = (now - st) / 1000;
             setT(Math.min(1, diff / duration));
-            if (diff < duration) {
-                af = requestAnimationFrame(step);
-            } else {
-                setAnimate(false);
+            if (diff >= duration) {
+                st += duration * 1000;
             }
+            // if (diff < duration) {
+            af = requestAnimationFrame(step);
+            // } else {
+            //     setAnimate(false);
+            // }
         };
         step();
         return () => cancelAnimationFrame(af);

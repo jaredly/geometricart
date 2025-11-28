@@ -1,4 +1,4 @@
-import {useState, useRef, useEffect} from 'react';
+import {useState, useRef, useEffect, useCallback} from 'react';
 import {Coord} from '../../../types';
 import {Box} from './export-types';
 
@@ -27,6 +27,7 @@ export const useElementZoom = (initialSize: number) => {
     });
 
     const latest = useRef(box);
+    latest.current = box;
     const ref = useRef<HTMLElement | SVGElement>(null);
     useEffect(() => {
         if (!ref.current) return;
@@ -62,6 +63,23 @@ export const useElementZoom = (initialSize: number) => {
         return () => ref.current?.removeEventListener('wheel', fn);
     }, []);
 
+    const reset = useCallback(
+        () =>
+            setBox({
+                x: -initialSize / 2,
+                y: -initialSize / 2,
+                width: initialSize,
+                height: initialSize,
+            }),
+        [initialSize],
+    );
+
+    const canReset =
+        box.x !== -initialSize / 2 ||
+        box.y !== -initialSize / 2 ||
+        box.width !== initialSize ||
+        box.height !== initialSize;
+
     return {
         zoomProps: {
             innerRef: ref,
@@ -70,5 +88,6 @@ export const useElementZoom = (initialSize: number) => {
             // onWheelCapture,
         },
         box,
+        reset: canReset ? reset : null,
     };
 };

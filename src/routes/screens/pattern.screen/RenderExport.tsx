@@ -3,11 +3,12 @@ import {Coord} from '../../../types';
 import {AnimCtx, Patterns} from './evaluate';
 import {State} from './export-types';
 import {svgItems} from './resolveMods';
-import {SVGCanvas} from './SVGCanvas';
+import {Canvas, SVGCanvas} from './SVGCanvas';
 import {useElementZoom} from './useSVGZoom';
 import {VideoExport} from './VideoExport';
 import {useAnimate} from './useAnimate';
 import {useCropCache} from './useCropCache';
+import {BaselineZoomInMap} from '../../../icons/Icon';
 
 export const RenderExport = ({state, patterns}: {state: State; patterns: Patterns}) => {
     const [t, setT] = useState(0); // animateeeee
@@ -26,7 +27,7 @@ export const RenderExport = ({state, patterns}: {state: State; patterns: Pattern
         [state, patterns, cropCache, animCache, t],
     );
 
-    const {zoomProps, box} = useElementZoom(6);
+    const {zoomProps, box, reset: resetZoom} = useElementZoom(6);
     const [mouse, setMouse] = useState(null as null | Coord);
     const size = 500;
 
@@ -35,8 +36,16 @@ export const RenderExport = ({state, patterns}: {state: State; patterns: Pattern
     return (
         <div className="flex">
             <div className="relative overflow-hidden">
-                <SVGCanvas {...zoomProps} setMouse={setMouse} items={items} size={size} />
+                <Canvas {...zoomProps} setMouse={setMouse} items={items} size={size} />
                 <div ref={fpsref} className="absolute top-0 right-0 hidden px-2 py-1 bg-base-100" />
+                {resetZoom ? (
+                    <button
+                        className="absolute btn btn-square top-0 left-0 px-2 py-1 bg-base-100"
+                        onClick={() => resetZoom()}
+                    >
+                        <BaselineZoomInMap />
+                    </button>
+                ) : null}
                 <div className="mt-4">
                     <input
                         type="range"
