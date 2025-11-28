@@ -143,12 +143,12 @@ export const example: (id: string) => State = (id: string) => ({
         clocks: [],
         palette: [],
         timeline: {
-            ts: [1, 1, 1, 1, 1, 1, 1],
+            ts: [1, 4, 1, 4, 1, 1, 1],
             lanes: [
                 {
                     name: 'oneInset',
                     ys: [0, 1],
-                    easings: ['inout', null, 'inout', null, null, null, null],
+                    easings: ['', null, '', null, null, null, null],
                     values: [0, 1, 1, 0, 0, 0, 0, 0],
                 },
                 {

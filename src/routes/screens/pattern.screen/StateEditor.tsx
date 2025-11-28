@@ -22,7 +22,7 @@ import {Coord, Segment} from '../../../types';
 import {rgbToString} from '../../../editor/PalettesForm';
 import {colorToRgbString, colorToString, parseColor} from './colors';
 import {shapeD} from '../../shapeD';
-import {evalEase} from './evalEase';
+import {evalEase, evalLane, evalTimeline, tlpos} from './evalEase';
 
 type StateEditorProps = {
     value: State;
@@ -232,46 +232,79 @@ const LaneEditor = ({
     const h = lane.ys.length * m;
     const items = useMemo(() => {
         const items: React.ReactNode[] = [];
-        // const line: Coord[] = [];
-        ts.forEach((t, i) => {
-            const x = i * (w / (ts.length - 1)) + m;
-            const y0 = (lane.ys.length - 1 - lane.values[i]) * (h / lane.ys.length) + m;
-            if (i < ts.length - 1) {
-                const x1 = (i + 1) * (w / (ts.length - 1)) + m;
-                const y1 = (lane.ys.length - 1 - lane.values[i + 1]) * (h / lane.ys.length) + m;
-                const ease = lane.easings[i] ?? 'straight';
-                const pts = evalEase(ease, {x, y: y0}, {x: x1, y: y1});
-                items.push(
-                    <path
-                        d={shapeD(pts, false)}
-                        // d={`M${x} ${y0.toFixed(2)}L${x1} ${y1.toFixed(2)}`}
-                        strokeWidth={3}
-                        stroke="red"
-                        fill="none"
-                    />,
-                );
-            }
-            // line.push({x, y: y0});
 
-            lane.ys.forEach((value, j) => {
-                const y = j * (h / lane.ys.length) + m;
-                items.push(
-                    <circle cx={x} cy={y} r={5} fill="#fff" opacity={0.2} key={`${i}-${j}`} />,
-                );
+        {
+            const pts: Coord[] = [];
+            const min = Math.min(...lane.ys);
+            const max = Math.max(...lane.ys);
+            for (let t = 0; t <= 1; t += 0.001) {
+                const x = w * t + m;
+                const pos = tlpos(ts, t);
+                const y = evalLane(lane, pos);
+                pts.push({x, y: ((y - min) / (max - min)) * (h - m) + m});
+            }
+            items.push(<path d={shapeD(pts, false)} stroke="white" strokeWidth={1} fill="none" />);
+
+            const ln = ts.reduce((a, b) => a + b, 0);
+            let at = 0;
+            const scale = w / ln;
+
+            ts.forEach((t) => {
+                for (let i = 0; i < t; i++) {
+                    items.push(
+                        <path
+                            d={shapeD([
+                                {x: m + at * scale, y: m},
+                                {x: m + at * scale, y: h},
+                            ])}
+                            stroke={i === 0 ? 'red' : 'white'}
+                            strokeWidth={1}
+                        />,
+                    );
+                    at++;
+                }
             });
-        });
-        // items.push(
-        //     <path
-        //         d={line
-        //             .map(({x, y}, i) => `${i === 0 ? 'M' : 'L'}${x.toFixed(2)} ${y.toFixed(2)}`)
-        //             .join('')}
-        //         strokeWidth={3}
-        //         stroke="red"
-        //         fill="none"
-        //     />,
-        // );
+
+            items.push(
+                <path
+                    d={shapeD([
+                        {x: m + w, y: m},
+                        {x: m + w, y: h},
+                    ])}
+                    stroke="red"
+                    strokeWidth={1}
+                />,
+            );
+        }
+
+        // // const line: Coord[] = [];
+        // ts.forEach((t, i) => {
+        //     const x = i * (w / (ts.length - 1)) + m;
+        //     const y0 = (lane.ys.length - 1 - lane.values[i]) * (h / lane.ys.length) + m;
+        //     if (i < ts.length - 1) {
+        //         const x1 = (i + 1) * (w / (ts.length - 1)) + m;
+        //         const y1 = (lane.ys.length - 1 - lane.values[i + 1]) * (h / lane.ys.length) + m;
+        //         const ease = lane.easings[i] ?? 'straight';
+        //         const pts = evalEase(ease, {x, y: y0}, {x: x1, y: y1});
+        //         items.push(
+        //             <path
+        //                 d={shapeD(pts, false)}
+        //                 strokeWidth={3}
+        //                 stroke="red"
+        //                 fill="none"
+        //             />,
+        //         );
+        //     }
+        //     lane.ys.forEach((value, j) => {
+        //         const y = j * (h / lane.ys.length) + m;
+        //         items.push(
+        //             <circle cx={x} cy={y} r={5} fill="#fff" opacity={0.2} key={`${i}-${j}`} />,
+        //         );
+        //     });
+        // });
+
         return items;
-    }, [lane, ts]);
+    }, [lane, ts, w, h]);
     return (
         <div>
             <div className="font-mono">{lane.name}</div>
