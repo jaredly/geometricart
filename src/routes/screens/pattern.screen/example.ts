@@ -8,28 +8,29 @@ export const example: (id: string) => State = (id: string) => ({
                 t1: `tsplit(t, 4, .05)`,
                 t2: `Math.sin(t1)`,
                 off: 'return (center) => (1 - dist(center,{x:0,y:0}))/30',
-                off2: 'return (center) => (1 - dist(center,{x:0,y:0}))/30 + .05',
+                off2: 'return (center) => (1 - dist(center,{x:0,y:0}))/30 + .02',
+                insett: '5',
             },
             entities: {
-                r: {type: 'Group', entities: {p: 1, b: 0}, id: 'r'},
+                r: {type: 'Group', entities: {p: 1}, id: 'r'},
                 b: {
                     type: 'Object',
                     id: 'b',
                     style: {
                         id: 'sid',
-                        lines: {
+                        fills: {
                             a: {
-                                color: {h: 180, s: 100, l: 50},
+                                // color: {h: 80, s: 100, l: 50},
                                 id: 'a',
                                 width: 3,
                                 // color: `t < 0.5 ? {h: 190, s: 100, l: 30} : {h: 180, s: 100, l: 50}`,
-                                // color: `t < 0.5 ? {h: 190, s: 100, l: 20} : {h: 180, s: 100, l: 40}`,
+                                color: `t < 0.5 ? {h: 190, s: 100, l: 20} : {h: 180, s: 100, l: 40}`,
                                 mods: [],
-                                zIndex: -4,
+                                zIndex: -10,
                             },
                         },
                         kind: {type: 'everything'},
-                        fills: {},
+                        lines: {},
                         mods: [],
                         order: 0,
                     },
@@ -46,23 +47,23 @@ export const example: (id: string) => State = (id: string) => ({
                         styles: {
                             a: {
                                 id: 'a',
-                                lines: {
+                                fills: {
                                     a: {
                                         id: 'a',
                                         color: {h: 180, s: 100, l: 50},
-                                        width: 2,
+                                        // width: 2,
                                         opacity: 'oneOpacity_fn(t + off(center))',
                                         mods: [
                                             {type: 'crop', id: 'crop2', mode: 'rough'},
                                             {
                                                 type: 'inset',
-                                                v: 'oneInset_fn(t + off(center)) * 10',
+                                                v: 'oneInset_fn(t + off(center)) * insett',
                                                 // v: 'Math.sin(t1 * Math.PI * 2) * 10',
                                             },
                                             {
                                                 type: 'rotate',
                                                 // v: 't1 * Math.PI / 3 * 2',
-                                                v: 'oneRotate_fn(t + off(center))',
+                                                v: 'oneRotate',
                                                 origin: {x: 0, y: 0},
                                             },
                                             {type: 'crop', id: 'crop1'},
@@ -70,32 +71,32 @@ export const example: (id: string) => State = (id: string) => ({
                                         zIndex: 't < 0.5 ? 1 : -1',
                                     },
                                 },
-                                fills: {},
+                                lines: {},
                                 mods: [],
                                 kind: {type: 'everything'},
                                 order: 1,
                             },
                             b: {
                                 id: 'b',
-                                lines: {
+                                fills: {
                                     a: {
                                         id: 'a',
-                                        // color: {h: 190, s: 100, l: 30},
+                                        // color: {h: 190, s: 100, l: 50},
                                         color: {h: 180, s: 100, l: 50},
-                                        width: 2,
+                                        // width: 2,
                                         opacity: 'twoOpacity_fn(t + off2(center))',
                                         mods: [
                                             {type: 'crop', id: 'crop2', mode: 'rough'},
                                             {
                                                 type: 'rotate',
                                                 // v: '-t1 * Math.PI / 3 * 2',
-                                                v: 'twoRotate_fn(t + off2(center))',
+                                                v: 'twoRotate',
                                                 origin: {x: 0, y: 0},
                                             },
                                             {
                                                 type: 'inset',
                                                 // v: 'Math.sin(t1 * Math.PI * 2) * -10',
-                                                v: 'twoInset_fn(t + off2(center)) * 10',
+                                                v: 'twoInset_fn(t + off2(center)) * insett',
                                             },
                                             {type: 'crop', id: 'crop1'},
                                         ],
@@ -104,7 +105,7 @@ export const example: (id: string) => State = (id: string) => ({
                                 },
                                 mods: [],
                                 // lines: {c: {id: 'c', color: '#0f0', width: 2}},
-                                fills: {},
+                                lines: {},
                                 kind: {type: 'alternating', index: 0},
                                 order: 2,
                             },
@@ -158,9 +159,9 @@ export const example: (id: string) => State = (id: string) => ({
                 },
                 {
                     name: 'oneOpacity',
-                    ys: [0, 1],
-                    easings: [null, null, null, 'start'],
-                    values: [1, 1, 1, 1, 0, 0, 0],
+                    ys: [0.2, 1],
+                    easings: [null, null, null, 'inout', null, null, 'inout'],
+                    values: [1, 1, 1, 1, 0, 0, 1],
                 },
                 {
                     name: 'twoInset',
@@ -170,15 +171,15 @@ export const example: (id: string) => State = (id: string) => ({
                 },
                 {
                     name: 'twoRotate',
-                    ys: [0, -Math.PI / 3],
+                    ys: [0, Math.PI / 3],
                     easings: [null, null, null, null, 'inout'],
                     values: [0, 0, 0, 0, 0, 1, 1],
                 },
                 {
                     name: 'twoOpacity',
-                    ys: [0, 1],
-                    easings: [null, null, null, 'start'],
-                    values: [0, 0, 0, 0, 1, 1, 1],
+                    ys: [0.2, 1],
+                    easings: [null, null, null, 'inout', null, null, 'inout'],
+                    values: [0, 0, 0, 0, 1, 1, 0],
                 },
             ],
         },
