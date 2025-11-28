@@ -21,6 +21,8 @@ import {
 import {Coord, Segment} from '../../../types';
 import {rgbToString} from '../../../editor/PalettesForm';
 import {colorToRgbString, colorToString, parseColor} from './colors';
+import {shapeD} from '../../shapeD';
+import {evalEase} from './evalEase';
 
 type StateEditorProps = {
     value: State;
@@ -106,7 +108,7 @@ export const StateEditor = ({value, onChange}: StateEditorProps) => {
             </Section>
 
             <Section title="Style Config" alignStart>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div className="flex flex-col">
                     <div className="space-y-3">
                         <TextField
                             label="Seed"
@@ -128,12 +130,12 @@ export const StateEditor = ({value, onChange}: StateEditorProps) => {
                             }
                         />
                     </div>
-                    <ClocksEditor
+                    {/* <ClocksEditor
                         clocks={value.styleConfig.clocks}
                         onChange={(clocks) =>
                             onChange({...value, styleConfig: {...value.styleConfig, clocks}})
                         }
-                    />
+                    /> */}
                 </div>
             </Section>
 
@@ -211,6 +213,84 @@ export const StateEditor = ({value, onChange}: StateEditorProps) => {
                     ))}
                 </div>
             </Section>
+            <Section title="Timelines">
+                <TimelineEditor timeline={value.styleConfig.timeline} />
+            </Section>
+        </div>
+    );
+};
+
+const LaneEditor = ({
+    lane,
+    ts,
+}: {
+    ts: number[];
+    lane: State['styleConfig']['timeline']['lanes'][0];
+}) => {
+    const m = 40;
+    const w = ts.length * m;
+    const h = lane.ys.length * m;
+    const items = useMemo(() => {
+        const items: React.ReactNode[] = [];
+        // const line: Coord[] = [];
+        ts.forEach((t, i) => {
+            const x = i * (w / (ts.length - 1)) + m;
+            const y0 = (lane.ys.length - 1 - lane.values[i]) * (h / lane.ys.length) + m;
+            if (i < ts.length - 1) {
+                const x1 = (i + 1) * (w / (ts.length - 1)) + m;
+                const y1 = (lane.ys.length - 1 - lane.values[i + 1]) * (h / lane.ys.length) + m;
+                const ease = lane.easings[i] ?? 'straight';
+                const pts = evalEase(ease, {x, y: y0}, {x: x1, y: y1});
+                items.push(
+                    <path
+                        d={shapeD(pts, false)}
+                        // d={`M${x} ${y0.toFixed(2)}L${x1} ${y1.toFixed(2)}`}
+                        strokeWidth={3}
+                        stroke="red"
+                        fill="none"
+                    />,
+                );
+            }
+            // line.push({x, y: y0});
+
+            lane.ys.forEach((value, j) => {
+                const y = j * (h / lane.ys.length) + m;
+                items.push(
+                    <circle cx={x} cy={y} r={5} fill="#fff" opacity={0.2} key={`${i}-${j}`} />,
+                );
+            });
+        });
+        // items.push(
+        //     <path
+        //         d={line
+        //             .map(({x, y}, i) => `${i === 0 ? 'M' : 'L'}${x.toFixed(2)} ${y.toFixed(2)}`)
+        //             .join('')}
+        //         strokeWidth={3}
+        //         stroke="red"
+        //         fill="none"
+        //     />,
+        // );
+        return items;
+    }, [lane, ts]);
+    return (
+        <div>
+            <div className="font-mono">{lane.name}</div>
+            <svg
+                xmlns="http://www.w3.org/2000/svg"
+                style={{background: 'black', width: w + m * 2, height: h + m}}
+            >
+                {items}
+            </svg>
+        </div>
+    );
+};
+
+const TimelineEditor = ({timeline}: {timeline: State['styleConfig']['timeline']}) => {
+    return (
+        <div>
+            {timeline.lanes.map((lane, i) => (
+                <LaneEditor key={i} lane={lane} ts={timeline.ts} />
+            ))}
         </div>
     );
 };
@@ -228,7 +308,7 @@ const Section = ({
 }) => {
     return (
         <details>
-            <summary className="text-xl cursor-pointer hover:underline">
+            <summary className="text-xl cursor-pointer hover:underline hover:text-accent">
                 {title}
                 <div
                     className={`inline-flex ml-4 gap-3 ${alignStart ? 'items-start' : 'items-center'} justify-between`}
@@ -394,99 +474,99 @@ const ColorInput = ({value, onChange}: {value: Color; onChange: (v: Color) => vo
     );
 };
 
-const ClocksEditor = ({
-    clocks,
-    onChange,
-}: {
-    clocks: State['styleConfig']['clocks'];
-    onChange: (next: State['styleConfig']['clocks']) => void;
-}) => {
-    return (
-        <div className="bg-base-200 rounded-lg border border-base-300 p-3 space-y-3">
-            <div className="flex items-center justify-between gap-2">
-                <div className="font-semibold text-sm">Clocks</div>
-                <button
-                    className="btn btn-sm btn-outline"
-                    onClick={() =>
-                        onChange(
-                            clocks.concat([
-                                {
-                                    name: `clock-${clocks.length + 1}`,
-                                    t0: 0,
-                                    t1: 1,
-                                },
-                            ]),
-                        )
-                    }
-                >
-                    Add clock
-                </button>
-            </div>
-            <div className="space-y-2">
-                {clocks.map((clock, idx) => (
-                    <div
-                        key={idx}
-                        className="p-3 rounded bg-base-100 border border-base-300 space-y-2"
-                    >
-                        <div className="flex items-center gap-2">
-                            <input
-                                className="input input-bordered input-sm flex-1"
-                                value={clock.name ?? ''}
-                                placeholder="Name (optional)"
-                                onChange={(evt) => {
-                                    const next = [...clocks];
-                                    next[idx] = {...clock, name: evt.target.value || undefined};
-                                    onChange(next);
-                                }}
-                            />
-                            <input
-                                className="input input-bordered input-sm flex-1"
-                                value={clock.ease ?? ''}
-                                placeholder="Ease (optional)"
-                                onChange={(evt) => {
-                                    const next = [...clocks];
-                                    next[idx] = {...clock, ease: evt.target.value || undefined};
-                                    onChange(next);
-                                }}
-                            />
-                            <button
-                                className="btn btn-ghost btn-xs text-error"
-                                onClick={() => onChange(clocks.filter((_, i) => i !== idx))}
-                            >
-                                Remove
-                            </button>
-                        </div>
-                        <div className="grid grid-cols-2 gap-3">
-                            <NumberField
-                                label="t0"
-                                value={clock.t0}
-                                step={0.01}
-                                onChange={(t0) => {
-                                    const next = [...clocks];
-                                    next[idx] = {...clock, t0};
-                                    onChange(next);
-                                }}
-                            />
-                            <NumberField
-                                label="t1"
-                                value={clock.t1}
-                                step={0.01}
-                                onChange={(t1) => {
-                                    const next = [...clocks];
-                                    next[idx] = {...clock, t1};
-                                    onChange(next);
-                                }}
-                            />
-                        </div>
-                    </div>
-                ))}
-                {clocks.length === 0 ? (
-                    <div className="text-sm opacity-60">No clocks defined yet.</div>
-                ) : null}
-            </div>
-        </div>
-    );
-};
+// const ClocksEditor = ({
+//     clocks,
+//     onChange,
+// }: {
+//     clocks: State['styleConfig']['clocks'];
+//     onChange: (next: State['styleConfig']['clocks']) => void;
+// }) => {
+//     return (
+//         <div className="bg-base-200 rounded-lg border border-base-300 p-3 space-y-3">
+//             <div className="flex items-center justify-between gap-2">
+//                 <div className="font-semibold text-sm">Clocks</div>
+//                 <button
+//                     className="btn btn-sm btn-outline"
+//                     onClick={() =>
+//                         onChange(
+//                             clocks.concat([
+//                                 {
+//                                     name: `clock-${clocks.length + 1}`,
+//                                     t0: 0,
+//                                     t1: 1,
+//                                 },
+//                             ]),
+//                         )
+//                     }
+//                 >
+//                     Add clock
+//                 </button>
+//             </div>
+//             <div className="space-y-2">
+//                 {clocks.map((clock, idx) => (
+//                     <div
+//                         key={idx}
+//                         className="p-3 rounded bg-base-100 border border-base-300 space-y-2"
+//                     >
+//                         <div className="flex items-center gap-2">
+//                             <input
+//                                 className="input input-bordered input-sm flex-1"
+//                                 value={clock.name ?? ''}
+//                                 placeholder="Name (optional)"
+//                                 onChange={(evt) => {
+//                                     const next = [...clocks];
+//                                     next[idx] = {...clock, name: evt.target.value || undefined};
+//                                     onChange(next);
+//                                 }}
+//                             />
+//                             <input
+//                                 className="input input-bordered input-sm flex-1"
+//                                 value={clock.ease ?? ''}
+//                                 placeholder="Ease (optional)"
+//                                 onChange={(evt) => {
+//                                     const next = [...clocks];
+//                                     next[idx] = {...clock, ease: evt.target.value || undefined};
+//                                     onChange(next);
+//                                 }}
+//                             />
+//                             <button
+//                                 className="btn btn-ghost btn-xs text-error"
+//                                 onClick={() => onChange(clocks.filter((_, i) => i !== idx))}
+//                             >
+//                                 Remove
+//                             </button>
+//                         </div>
+//                         <div className="grid grid-cols-2 gap-3">
+//                             <NumberField
+//                                 label="t0"
+//                                 value={clock.t0}
+//                                 step={0.01}
+//                                 onChange={(t0) => {
+//                                     const next = [...clocks];
+//                                     next[idx] = {...clock, t0};
+//                                     onChange(next);
+//                                 }}
+//                             />
+//                             <NumberField
+//                                 label="t1"
+//                                 value={clock.t1}
+//                                 step={0.01}
+//                                 onChange={(t1) => {
+//                                     const next = [...clocks];
+//                                     next[idx] = {...clock, t1};
+//                                     onChange(next);
+//                                 }}
+//                             />
+//                         </div>
+//                     </div>
+//                 ))}
+//                 {clocks.length === 0 ? (
+//                     <div className="text-sm opacity-60">No clocks defined yet.</div>
+//                 ) : null}
+//             </div>
+//         </div>
+//     );
+// };
 
 const LayerEditor = ({
     layer,

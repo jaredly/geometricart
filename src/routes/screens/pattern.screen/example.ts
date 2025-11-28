@@ -12,16 +12,19 @@ export const example: (id: string) => State = (id: string) => ({
                     id: 'b',
                     style: {
                         id: 'sid',
-                        fills: {
+                        lines: {
                             a: {
+                                color: {h: 180, s: 100, l: 50},
                                 id: 'a',
-                                color: `t < 0.5 ? {h: 190, s: 100, l: 20} : {h: 180, s: 100, l: 40}`,
+                                width: 1,
+                                // color: `t < 0.5 ? {h: 190, s: 100, l: 30} : {h: 180, s: 100, l: 50}`,
+                                // color: `t < 0.5 ? {h: 190, s: 100, l: 20} : {h: 180, s: 100, l: 40}`,
                                 mods: [],
                                 zIndex: -4,
                             },
                         },
                         kind: {type: 'everything'},
-                        lines: {},
+                        fills: {},
                         mods: [],
                         order: 0,
                     },
@@ -38,19 +41,23 @@ export const example: (id: string) => State = (id: string) => ({
                         styles: {
                             a: {
                                 id: 'a',
-                                fills: {
+                                lines: {
                                     a: {
                                         id: 'a',
                                         color: {h: 180, s: 100, l: 50},
+                                        width: 1,
+                                        opacity: 'oneOpacity',
                                         mods: [
                                             {type: 'crop', id: 'crop2', mode: 'rough'},
                                             {
                                                 type: 'inset',
-                                                v: 'Math.sin(t1 * Math.PI * 2) * 10',
+                                                v: 'oneInset_fn(t - dist(center,{x:0,y:0})/30) * 10',
+                                                // v: 'Math.sin(t1 * Math.PI * 2) * 10',
                                             },
                                             {
                                                 type: 'rotate',
-                                                v: 't1 * Math.PI / 3 * 2',
+                                                // v: 't1 * Math.PI / 3 * 2',
+                                                v: 'oneRotate',
                                                 origin: {x: 0, y: 0},
                                             },
                                             {type: 'crop', id: 'crop1'},
@@ -58,27 +65,32 @@ export const example: (id: string) => State = (id: string) => ({
                                         zIndex: 't < 0.5 ? 1 : -1',
                                     },
                                 },
-                                lines: {},
+                                fills: {},
                                 mods: [],
                                 kind: {type: 'everything'},
                                 order: 1,
                             },
                             b: {
                                 id: 'b',
-                                fills: {
+                                lines: {
                                     a: {
                                         id: 'a',
-                                        color: {h: 190, s: 100, l: 30},
+                                        // color: {h: 190, s: 100, l: 30},
+                                        color: {h: 180, s: 100, l: 50},
+                                        width: 1,
+                                        opacity: 'twoOpacity',
                                         mods: [
                                             {type: 'crop', id: 'crop2', mode: 'rough'},
                                             {
                                                 type: 'rotate',
-                                                v: '-t1 * Math.PI / 3 * 2',
+                                                // v: '-t1 * Math.PI / 3 * 2',
+                                                v: 'twoRotate',
                                                 origin: {x: 0, y: 0},
                                             },
                                             {
                                                 type: 'inset',
-                                                v: 'Math.sin(t1 * Math.PI * 2) * -10',
+                                                // v: 'Math.sin(t1 * Math.PI * 2) * -10',
+                                                v: 'twoInset * 10',
                                             },
                                             {type: 'crop', id: 'crop1'},
                                         ],
@@ -87,7 +99,7 @@ export const example: (id: string) => State = (id: string) => ({
                                 },
                                 mods: [],
                                 // lines: {c: {id: 'c', color: '#0f0', width: 2}},
-                                lines: {},
+                                fills: {},
                                 kind: {type: 'alternating', index: 0},
                                 order: 2,
                             },
@@ -125,8 +137,45 @@ export const example: (id: string) => State = (id: string) => ({
         clocks: [],
         palette: [],
         timeline: {
-            lanes: [],
-            ts: [],
+            ts: [1, 1, 1, 1, 1, 1, 1],
+            lanes: [
+                {
+                    name: 'oneInset',
+                    ys: [0, 1],
+                    easings: ['inout', null, 'inout', null, null, null, null],
+                    values: [0, 1, 1, 0, 0, 0, 0],
+                },
+                {
+                    name: 'oneRotate',
+                    ys: [0, Math.PI / 3],
+                    easings: [null, 'inout'],
+                    values: [0, 0, 1, 1, 1, 1, 1],
+                },
+                {
+                    name: 'oneOpacity',
+                    ys: [0, 1],
+                    easings: [null, null, null, 'start'],
+                    values: [1, 1, 1, 1, 0, 0, 0],
+                },
+                {
+                    name: 'twoInset',
+                    ys: [0, 1],
+                    easings: [null, null, null, 'inout', null, 'inout'],
+                    values: [0, 0, 0, 0, 1, 1, 0],
+                },
+                {
+                    name: 'twoRotate',
+                    ys: [0, -Math.PI / 3],
+                    easings: [null, null, null, null, 'inout'],
+                    values: [0, 0, 0, 0, 0, 1, 1],
+                },
+                {
+                    name: 'twoOpacity',
+                    ys: [0, 1],
+                    easings: [null, null, null, 'start'],
+                    values: [0, 0, 0, 0, 1, 1, 1],
+                },
+            ],
         },
     },
 });

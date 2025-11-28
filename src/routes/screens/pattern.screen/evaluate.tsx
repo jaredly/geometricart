@@ -65,12 +65,15 @@ const getScript = (ctx: AnimCtx, v: string) => {
 const evaluate = <T,>(ctx: AnimCtx, s: string, check: (v: any) => v is T, otherwise: T): T => {
     const sc = getScript(ctx, s);
     if (!sc) return otherwise;
+    let missing = false;
     sc.needs.forEach((k) => {
         if (!(k in ctx.values)) {
-            ctx.warn(`missing expected value`);
+            ctx.warn(`missing expected value: ${k}`);
+            missing = true;
         }
         ctx.accessedValues?.add(k);
     });
+    if (missing) return otherwise;
     // console.log('with', ctx.values, sc.needs);
     try {
         const v = sc.fn(ctx.values);
@@ -80,7 +83,8 @@ const evaluate = <T,>(ctx: AnimCtx, s: string, check: (v: any) => v is T, otherw
         }
         return v;
     } catch (err) {
-        ctx.warn(`Error while running script ${err}`);
+        console.log(ctx.values);
+        ctx.warn(`Error while running script ${err}. Needs ${sc.needs.join(',')}`);
         return otherwise;
     }
 };

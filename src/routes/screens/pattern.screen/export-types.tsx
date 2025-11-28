@@ -70,12 +70,12 @@ export type State = {
     };
     styleConfig: {
         seed: AnimatableNumber;
-        clocks: {
-            name?: string;
-            ease?: string;
-            t0: number;
-            t1: number;
-        }[];
+        // clocks: {
+        //     name?: string;
+        //     ease?: string;
+        //     t0: number;
+        //     t1: number;
+        // }[];
         palette: Color[];
         // START HERE:
         timeline: {
@@ -89,7 +89,7 @@ export type State = {
                 // one number per `t` in `ts`
                 values: number[];
                 // easings
-                easings: (string | {start?: string; end?: string})[];
+                easings: (string | null)[];
             }[];
         };
     };
@@ -175,6 +175,7 @@ export const insetPkPath = (path: PKPath, inset: number) => {
     const stroke = path.copy().stroke({
         width: Math.abs(inset),
     })!;
+    if (!stroke) return;
     path.op(stroke, inset < 0 ? pk.PathOp.Union : pk.PathOp.Difference);
     stroke.delete();
 };

@@ -31,6 +31,7 @@ import {
     Group,
     State,
 } from './export-types';
+import {evalTimeline} from './evalEase';
 
 type CCrop = {type: 'crop'; id: string; mode?: CropMode; hole?: boolean};
 type CInset = {type: 'inset'; v: number};
@@ -74,7 +75,10 @@ const matchKind = (k: ShapeStyle['kind'], i: number, color: number) => {
 };
 
 const insetShape = (shape: Coord[], inset: number) => {
+    if (!shape.length) return [];
     const path = pkPathFromCoords(shape, false)!;
+    if (!path) return [];
+    if (inset < 0.01) return [shape];
     insetPkPath(path, inset / 100);
     path.simplify();
     const items = pkPathToSegments(path);
@@ -211,7 +215,7 @@ const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Pattern) => {
                     const opacity = f.opacity ? a.number(anim, f.opacity) : undefined;
 
                     if (f.mods.length) {
-                        const fmods = f.mods.map((m) => resolvePMod(ctx.anim, m));
+                        const fmods = f.mods.map((m) => resolvePMod(anim, m));
                         const midShapes = modsToShapes(ctx.cropCache, fmods, [{shape, i: 0}]);
 
                         return {
@@ -245,7 +249,7 @@ const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Pattern) => {
                     const zIndex = f.zIndex ? a.number(anim, f.zIndex) : null;
 
                     if (f.mods.length) {
-                        const fmods = f.mods.map((m) => resolvePMod(ctx.anim, m));
+                        const fmods = f.mods.map((m) => resolvePMod(anim, m));
                         const midShapes = modsToShapes(ctx.cropCache, fmods, [{shape, i: 0}]);
 
                         return {
@@ -300,7 +304,7 @@ const renderObject = (ctx: Ctx, crops: CropsAndMatrices, object: EObject) => {
 
     Object.values(object.style.fills).map((f) => {
         if (f.color == null) return;
-        const fmods = f.mods.map((m) => resolvePMod(ctx.anim, m));
+        const fmods = f.mods.map((m) => resolvePMod(anim, m));
         const thisPath = path.copy();
         let remove = false;
         fmods.forEach((mod) => {
@@ -322,6 +326,33 @@ const renderObject = (ctx: Ctx, crops: CropsAndMatrices, object: EObject) => {
             zIndex,
         });
     });
+
+    Object.values(object.style.lines).map((f) => {
+        if (f.color == null) return;
+        const fmods = f.mods.map((m) => resolvePMod(anim, m));
+        const thisPath = path.copy();
+        let remove = false;
+        fmods.forEach((mod) => {
+            remove = remove || pathMod(ctx.cropCache, mod, thisPath);
+        });
+
+        const color = a.color(anim, f.color);
+        const rgb = colorToRgb(color);
+        const zIndex = f.zIndex ? a.number(anim, f.zIndex) : null;
+        const opacity = f.opacity ? a.number(anim, f.opacity) : undefined;
+
+        ctx.items.push({
+            type: 'path',
+            pk: thisPath,
+            key: '',
+            stroke: rgb,
+            strokeWidth: a.number(anim, f.width ?? 0) / 100,
+            opacity,
+            shapes: cmdsToCoords(thisPath.toCmds()).map((s) => s.points),
+            zIndex,
+        });
+    });
+
     path.delete();
     // object.style.mods
 };
@@ -407,6 +438,7 @@ const renderGroup = (ctx: Ctx, crops: CropsAndMatrices, group: Group) => {
         }
     }
 };
+
 export const svgItems = (
     state: State,
     animCache: AnimCtx['cache'],
@@ -417,12 +449,14 @@ export const svgItems = (
     const warnings: string[] = [];
     const warn = (v: string) => warnings.push(v);
     const items: RenderItem[] = [];
+
     for (let layer of Object.values(state.layers)) {
         const group = layer.entities[layer.rootGroup];
         if (group.type !== 'Group') {
             throw new Error(`root not a group`);
         }
-        const values: Record<string, any> = {...globals, t};
+        const fromtl = evalTimeline(state.styleConfig.timeline, t);
+        const values: Record<string, any> = {...globals, t, ...fromtl};
         const anim = {
             cache: animCache,
             values,
