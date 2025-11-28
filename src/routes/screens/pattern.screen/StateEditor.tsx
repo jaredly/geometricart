@@ -36,7 +36,7 @@ export const StateEditor = ({value, onChange}: StateEditorProps) => {
     const crops = useMemo(() => Object.entries(value.crops), [value.crops]);
 
     return (
-        <div className="space-y-6">
+        <div className="flex flex-col gap-6 items-stretch">
             <Section
                 title="Layers"
                 actions={
@@ -228,10 +228,10 @@ const Section = ({
 }) => {
     return (
         <details>
-            <summary className="card-title text-xl cursor-pointer">
+            <summary className="text-xl cursor-pointer hover:underline">
                 {title}
                 <div
-                    className={`flex gap-3 ${alignStart ? 'items-start' : 'items-center'} justify-between`}
+                    className={`inline-flex ml-4 gap-3 ${alignStart ? 'items-start' : 'items-center'} justify-between`}
                 >
                     {actions ? <div className="flex items-center gap-2">{actions}</div> : null}
                 </div>
@@ -590,7 +590,7 @@ const EntityEditor = ({
 
     return (
         <details className="rounded border border-base-300 bg-base-100 p-3 space-y-3">
-            <summary>
+            <summary className="cursor-pointer hover:text-accent">
                 <div className="inline-flex">
                     {value.type}
                     <div className="flex-1" />

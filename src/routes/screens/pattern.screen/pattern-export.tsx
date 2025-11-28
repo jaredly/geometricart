@@ -13,7 +13,7 @@ export const PatternExport = ({tiling, id}: {tiling: Tiling; id: string}) => {
     return (
         <div className="flex">
             <RenderExport state={state} patterns={patterns} />
-            <div className="max-h-250 overflow-auto">
+            <div className="max-h-250 overflow-auto flex-1">
                 <StateEditor value={state} onChange={setState} />
             </div>
         </div>

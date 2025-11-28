@@ -37,7 +37,6 @@ export const RenderExport = ({state, patterns}: {state: State; patterns: Pattern
             <div className="relative overflow-hidden">
                 <SVGCanvas {...zoomProps} setMouse={setMouse} items={items} size={size} />
                 <div ref={fpsref} className="absolute top-0 right-0 hidden px-2 py-1 bg-base-100" />
-                {/* <Canvas {...zoomProps} setMouse={setMouse} items={items} size={size} /> */}
                 <div className="mt-4">
                     <input
                         type="range"
