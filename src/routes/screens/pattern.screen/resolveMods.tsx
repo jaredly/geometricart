@@ -21,8 +21,6 @@ import {
     CropMode,
     PMods,
     modMatrix,
-    Mods,
-    ConcreteMods,
     ShapeStyle,
     insetPkPath,
     Pattern,
@@ -60,18 +58,6 @@ export const resolvePMod = (ctx: AnimCtx, mod: PMods): CropsAndMatrices[0] => {
             return modMatrix({...mod, v: a.coord(ctx, mod.v)});
     }
 };
-
-export const resolveMods = (ctx: AnimCtx, mods: Mods): ConcreteMods => ({
-    inset: mods.inset != null ? a.number(ctx, mods.inset) : undefined,
-    scale: mods.scale != null ? a.coordOrNumber(ctx, mods.scale) : undefined,
-    scaleOrigin: mods.scaleOrigin != null ? a.coord(ctx, mods.scaleOrigin) : undefined,
-    offset: mods.offset != null ? a.coord(ctx, mods.offset) : undefined,
-    rotation: mods.rotation != null ? a.number(ctx, mods.rotation) : undefined,
-    rotationOrigin: mods.rotationOrigin != null ? a.coord(ctx, mods.rotationOrigin) : undefined,
-    opacity: mods.opacity != null ? a.number(ctx, mods.opacity) : undefined,
-    thickness: mods.thickness != null ? a.number(ctx, mods.thickness) : undefined,
-    tint: mods.tint != null ? a.color(ctx, mods.tint) : undefined,
-});
 
 const matchKind = (k: ShapeStyle['kind'], i: number, color: number) => {
     switch (k.type) {

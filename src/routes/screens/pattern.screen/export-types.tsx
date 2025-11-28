@@ -116,20 +116,19 @@ export type Group = {
     // crops: {hole?: boolean; rough?: boolean; id: string}[];
 };
 
-export type ConcreteMods = {
-    inset?: number;
-    scale?: Coord | number;
-    scaleOrigin?: Coord;
-    offset?: Coord;
-    rotation?: number;
-    rotationOrigin?: Coord;
-
-    // Non-positional
-    opacity?: number;
-    tint?: Color;
-    // for 3d rendering
-    thickness?: number;
-};
+// export type ConcreteMods = {
+//     inset?: number;
+//     scale?: Coord | number;
+//     scaleOrigin?: Coord;
+//     offset?: Coord;
+//     rotation?: number;
+//     rotationOrigin?: Coord;
+//     // Non-positional
+//     opacity?: number;
+//     tint?: Color;
+//     // for 3d rendering
+//     thickness?: number;
+// };
 
 export type CropMode = 'rough' | 'half';
 
@@ -157,19 +156,19 @@ export type NPMods = {
     thickness: AnimatableNumber;
 };
 
-export type Mods = {
-    inset?: AnimatableNumber;
-    scale?: AnimatableCoord | AnimatableNumber;
-    scaleOrigin?: AnimatableCoord;
-    offset?: AnimatableCoord;
-    rotation?: AnimatableNumber;
-    rotationOrigin?: AnimatableCoord;
-    // Non-positional
-    opacity?: AnimatableNumber;
-    tint?: AnimatableColor;
-    // for 3d rendering
-    thickness?: AnimatableNumber;
-};
+// export type Mods = {
+//     inset?: AnimatableNumber;
+//     scale?: AnimatableCoord | AnimatableNumber;
+//     scaleOrigin?: AnimatableCoord;
+//     offset?: AnimatableCoord;
+//     rotation?: AnimatableNumber;
+//     rotationOrigin?: AnimatableCoord;
+//     // Non-positional
+//     opacity?: AnimatableNumber;
+//     tint?: AnimatableColor;
+//     // for 3d rendering
+//     thickness?: AnimatableNumber;
+// };
 
 export const insetPkPath = (path: PKPath, inset: number) => {
     if (Math.abs(inset) < 0.00001) return;
@@ -216,34 +215,34 @@ export const modMatrix = (mod: ConcretePMod, origin?: Coord) => {
     return tx;
 };
 
-export const modsTransforms = (mods: ConcreteMods, origin?: Coord) => {
-    const tx: Matrix[] = [];
-    if (mods.scale) {
-        const scale = typeof mods.scale === 'number' ? {x: mods.scale, y: mods.scale} : mods.scale;
-        const sorigin = mods.scaleOrigin ?? origin;
-        if (sorigin) {
-            tx.push(translationMatrix(scalePos(sorigin, -1)));
-        }
-        tx.push(scaleMatrix(scale.x, scale.y));
-        if (sorigin) {
-            tx.push(translationMatrix(sorigin));
-        }
-    }
-    if (mods.rotation) {
-        const rorigin = mods.rotationOrigin ?? origin;
-        if (rorigin) {
-            tx.push(translationMatrix(scalePos(rorigin, -1)));
-        }
-        tx.push(rotationMatrix(mods.rotation));
-        if (rorigin) {
-            tx.push(translationMatrix(rorigin));
-        }
-    }
-    if (mods.offset) {
-        tx.push(translationMatrix(mods.offset));
-    }
-    return tx;
-};
+// export const modsTransforms = (mods: ConcreteMods, origin?: Coord) => {
+//     const tx: Matrix[] = [];
+//     if (mods.scale) {
+//         const scale = typeof mods.scale === 'number' ? {x: mods.scale, y: mods.scale} : mods.scale;
+//         const sorigin = mods.scaleOrigin ?? origin;
+//         if (sorigin) {
+//             tx.push(translationMatrix(scalePos(sorigin, -1)));
+//         }
+//         tx.push(scaleMatrix(scale.x, scale.y));
+//         if (sorigin) {
+//             tx.push(translationMatrix(sorigin));
+//         }
+//     }
+//     if (mods.rotation) {
+//         const rorigin = mods.rotationOrigin ?? origin;
+//         if (rorigin) {
+//             tx.push(translationMatrix(scalePos(rorigin, -1)));
+//         }
+//         tx.push(rotationMatrix(mods.rotation));
+//         if (rorigin) {
+//             tx.push(translationMatrix(rorigin));
+//         }
+//     }
+//     if (mods.offset) {
+//         tx.push(translationMatrix(mods.offset));
+//     }
+//     return tx;
+// };
 
 export type Pattern = {
     type: 'Pattern';

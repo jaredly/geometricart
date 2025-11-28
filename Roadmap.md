@@ -20,6 +20,8 @@ I'll do
 
 So for t() functions, I guess it'll be manual.
 
+tintsssss
+
 
 #
 
