@@ -197,7 +197,7 @@ export const StateEditor = ({value, onChange}: StateEditorProps) => {
                                         })
                                     }
                                 />
-                                <ModsEditor
+                                {/* <ModsEditor
                                     value={crop.mods}
                                     onChange={(mods) =>
                                         onChange({
@@ -205,7 +205,7 @@ export const StateEditor = ({value, onChange}: StateEditorProps) => {
                                             crops: {...value.crops, [key]: {...crop, mods}},
                                         })
                                     }
-                                />
+                                /> */}
                             </div>
                         </div>
                     ))}

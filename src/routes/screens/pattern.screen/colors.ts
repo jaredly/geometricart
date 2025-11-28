@@ -176,7 +176,7 @@ const rgbax = /^rgba\s*\((\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\)$/i;
 const hslx = /^hsl\s*\((\d+)\s*,\s*(\d+)\s*,\s*(\d+)\)$/i;
 const hslax = /^hsla\s*\((\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\)$/i;
 
-export const oneHex = (n: number) => n.toString(16).padStart(2, '0');
+export const oneHex = (n: number) => Math.round(n).toString(16).padStart(2, '0');
 export const hexToString = (r: number, g: number, b: number) =>
     `#${oneHex(r)}${oneHex(g)}${oneHex(b)}`;
 

@@ -59,7 +59,7 @@ export const colorToRgb = (c: Color): {r: number; g: number; b: number} =>
 
 const rgbFromArr = (c: [number, number, number]) => ({r: c[0], g: c[1], b: c[2]});
 
-export type Crop = {id: string; shape: Segment[]; mods?: Mods};
+export type Crop = {id: string; shape: Segment[]; mods?: PMods[]};
 export type State = {
     layers: Record<string, Layer>;
     crops: Record<string, Crop>;

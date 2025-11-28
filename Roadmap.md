@@ -14,11 +14,11 @@ I'll do
 4. shrink the other alternate
 5. rotate (delayed by distance from center)
 
-alsooooo I want a real curve, not just a arc as coords pls
+- [x] alsooooo I want a real curve, not just a arc as coords pls
 
--> the 'rough' crop should actually be 'centroid is inside the clip'
+- [x] the 'rough' crop should actually be 'centroid is inside the clip'
 
-So for t() functions, I guess it'll be manual
+So for t() functions, I guess it'll be manual.
 
 
 #
