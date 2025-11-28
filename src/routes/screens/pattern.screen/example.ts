@@ -54,7 +54,7 @@ export const example: (id: string) => State = (id: string) => ({
                                         // width: 2,
                                         opacity: 'oneOpacity_fn(t + off(center))',
                                         mods: [
-                                            {type: 'crop', id: 'crop2', mode: 'rough'},
+                                            // {type: 'crop', id: 'crop2', mode: 'rough'},
                                             {
                                                 type: 'inset',
                                                 v: 'oneInset_fn(t + off(center)) * insett',
@@ -63,10 +63,10 @@ export const example: (id: string) => State = (id: string) => ({
                                             {
                                                 type: 'rotate',
                                                 // v: 't1 * Math.PI / 3 * 2',
-                                                v: 'oneRotate',
+                                                v: 'oneRotate_fn(t + off(center)/2)',
                                                 origin: {x: 0, y: 0},
                                             },
-                                            {type: 'crop', id: 'crop1'},
+                                            // {type: 'crop', id: 'crop1'},
                                         ],
                                         zIndex: 't < 0.5 ? 1 : -1',
                                     },
@@ -86,11 +86,11 @@ export const example: (id: string) => State = (id: string) => ({
                                         // width: 2,
                                         opacity: 'twoOpacity_fn(t + off2(center))',
                                         mods: [
-                                            {type: 'crop', id: 'crop2', mode: 'rough'},
+                                            // {type: 'crop', id: 'crop2', mode: 'rough'},
                                             {
                                                 type: 'rotate',
                                                 // v: '-t1 * Math.PI / 3 * 2',
-                                                v: 'twoRotate',
+                                                v: 'twoRotate_fn(t + off(center)/2)',
                                                 origin: {x: 0, y: 0},
                                             },
                                             {
@@ -98,7 +98,7 @@ export const example: (id: string) => State = (id: string) => ({
                                                 // v: 'Math.sin(t1 * Math.PI * 2) * -10',
                                                 v: 'twoInset_fn(t + off2(center)) * insett',
                                             },
-                                            {type: 'crop', id: 'crop1'},
+                                            // {type: 'crop', id: 'crop1'},
                                         ],
                                         zIndex: 't > 0.5 ? 1 : -1',
                                     },
@@ -149,7 +149,7 @@ export const example: (id: string) => State = (id: string) => ({
                     name: 'oneInset',
                     ys: [0, 1],
                     easings: ['inout', null, 'inout', null, null, null, null],
-                    values: [0, 1, 1, 0, 0, 0, 0],
+                    values: [0, 1, 1, 0, 0, 0, 0, 0],
                 },
                 {
                     name: 'oneRotate',
@@ -160,26 +160,26 @@ export const example: (id: string) => State = (id: string) => ({
                 {
                     name: 'oneOpacity',
                     ys: [0.2, 1],
-                    easings: [null, null, null, 'inout', null, null, 'inout'],
-                    values: [1, 1, 1, 1, 0, 0, 1],
+                    easings: [null, null, 'inout', null, null, 'inout'],
+                    values: [1, 1, 1, 0, 0, 1, 1],
                 },
                 {
                     name: 'twoInset',
                     ys: [0, 1],
-                    easings: [null, null, null, 'inout', null, 'inout'],
-                    values: [0, 0, 0, 0, 1, 1, 0],
+                    easings: [null, null, 'inout', null, 'inout'],
+                    values: [0, 0, 0, 1, 1, 0, 0],
                 },
                 {
                     name: 'twoRotate',
                     ys: [0, Math.PI / 3],
-                    easings: [null, null, null, null, 'inout'],
-                    values: [0, 0, 0, 0, 0, 1, 1],
+                    easings: [null, null, null, 'inout'],
+                    values: [0, 0, 0, 0, 1, 1, 1],
                 },
                 {
                     name: 'twoOpacity',
                     ys: [0.2, 1],
-                    easings: [null, null, null, 'inout', null, null, 'inout'],
-                    values: [0, 0, 0, 0, 1, 1, 0],
+                    easings: [null, null, 'inout', null, null, 'inout'],
+                    values: [0, 0, 0, 1, 1, 0, 0],
                 },
             ],
         },
