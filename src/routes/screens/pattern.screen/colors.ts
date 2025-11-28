@@ -1,3 +1,4 @@
+import {hslToRgb} from '../../../rendering/colorConvert';
 import {Color} from './export-types';
 
 // Some colors now
@@ -179,6 +180,17 @@ const hslax = /^hsla\s*\((\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\)$/i;
 export const oneHex = (n: number) => Math.round(n).toString(16).padStart(2, '0');
 export const hexToString = (r: number, g: number, b: number) =>
     `#${oneHex(r)}${oneHex(g)}${oneHex(b)}`;
+
+export const colorToRgbString = (color: Color): string => {
+    if (Array.isArray(color)) {
+        return hexToString(...color);
+    }
+    if ('r' in color) {
+        return hexToString(color.r, color.g, color.b);
+    }
+    const [r, g, b] = hslToRgb(color.h / 360, color.s / 100, color.l / 100);
+    return hexToString(r, g, b);
+};
 
 export const colorToString = (color: Color): string => {
     if (Array.isArray(color)) {

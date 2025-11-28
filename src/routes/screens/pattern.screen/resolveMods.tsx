@@ -218,7 +218,7 @@ const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Pattern) => {
 
             const res: (RenderItem | undefined)[] = [
                 ...Object.values(fills).flatMap((f, fi): RenderItem[] | RenderItem | undefined => {
-                    if (!f.color) return;
+                    if (f.color == null) return;
                     const color = a.color(anim, f.color);
                     const rgb = colorToRgb(color);
                     const zIndex = f.zIndex ? a.number(anim, f.zIndex) : null;
@@ -250,7 +250,7 @@ const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Pattern) => {
                 }),
 
                 ...Object.values(lines).flatMap((f, fi): RenderItem[] | RenderItem | undefined => {
-                    if (!f.color) return;
+                    if (f.color == null) return;
                     if (!f.width) return;
                     const color = a.color(anim, f.color);
                     const rgb = colorToRgb(color);
@@ -313,7 +313,7 @@ const renderObject = (ctx: Ctx, crops: CropsAndMatrices, object: EObject) => {
     if (remove) return;
 
     Object.values(object.style.fills).map((f) => {
-        if (!f.color) return;
+        if (f.color == null) return;
         const fmods = f.mods.map((m) => resolvePMod(ctx.anim, m));
         const thisPath = path.copy();
         let remove = false;

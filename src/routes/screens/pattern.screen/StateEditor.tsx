@@ -21,7 +21,7 @@ import {
 } from './export-types';
 import {Coord, Segment} from '../../../types';
 import {rgbToString} from '../../../editor/PalettesForm';
-import {colorToString, parseColor} from './colors';
+import {colorToRgbString, colorToString, parseColor} from './colors';
 
 type StateEditorProps = {
     value: State;
@@ -61,6 +61,7 @@ export const StateEditor = ({value, onChange}: StateEditorProps) => {
                     ) : null}
                     {layers.map(([key, layer]) => (
                         <LayerEditor
+                            palette={value.styleConfig.palette}
                             key={key}
                             layer={layer}
                             onChange={(nextLayer) => {
@@ -342,9 +343,13 @@ const PaletteEditor = ({
             <div className="space-y-2">
                 {palette.map((color, i) => (
                     <div key={i} className="flex items-center gap-3">
-                        <div
-                            className="w-10 h-10 rounded border border-base-300"
-                            style={{background: rgbToString(colorToRgb(color)) || 'transparent'}}
+                        <ColorInput
+                            value={color}
+                            onChange={(color) => {
+                                const next = [...palette];
+                                next[i] = color;
+                                onChange(next);
+                            }}
                         />
                         <BlurInput
                             value={colorToString(color)}
@@ -369,6 +374,24 @@ const PaletteEditor = ({
                 ) : null}
             </div>
         </div>
+    );
+};
+
+const ColorInput = ({value, onChange}: {value: Color; onChange: (v: Color) => void}) => {
+    const [tmp, setTmp] = useState(null as null | Color);
+
+    return (
+        <input
+            type="color"
+            value={colorToRgbString(tmp ?? value)}
+            onBlur={() => (tmp ? (onChange(tmp), setTmp(null)) : null)}
+            onChange={(evt) => {
+                const color = parseColor(evt.target.value);
+                if (color) {
+                    setTmp(color);
+                }
+            }}
+        />
     );
 };
 
@@ -470,7 +493,9 @@ const LayerEditor = ({
     layer,
     onChange,
     onRemove,
+    palette,
 }: {
+    palette: Color[];
     layer: Layer;
     onChange: (next: Layer, nextKey?: string) => void;
     onRemove: () => void;
@@ -547,8 +572,8 @@ const LayerEditor = ({
                             ) : null}
                             {entries.map(([entityKey, entity]) => (
                                 <EntityEditor
+                                    palette={palette}
                                     key={entityKey}
-                                    entityKey={entityKey}
                                     value={entity}
                                     onChange={(next, nextKey) => {
                                         const entities = {...layer.entities};
@@ -572,12 +597,12 @@ const LayerEditor = ({
 };
 
 const EntityEditor = ({
-    entityKey,
+    palette,
     value,
     onChange,
     onRemove,
 }: {
-    entityKey: string;
+    palette: Color[];
     value: Entity;
     onChange: (next: Entity, nextKey?: string) => void;
     onRemove: () => void;
@@ -605,7 +630,11 @@ const EntityEditor = ({
                 <GroupEditor value={value} onChange={(next) => onChange(next)} />
             ) : null}
             {value.type === 'Pattern' ? (
-                <PatternEditor value={value} onChange={(next) => onChange(next)} />
+                <PatternEditor
+                    palette={palette}
+                    value={value}
+                    onChange={(next) => onChange(next)}
+                />
             ) : null}
             {value.type === 'Object' ? (
                 <div className="space-y-2">
@@ -784,7 +813,15 @@ const GroupEditor = ({value, onChange}: {value: Group; onChange: (next: Group) =
     );
 };
 
-const PatternEditor = ({value, onChange}: {value: Pattern; onChange: (next: Pattern) => void}) => {
+const PatternEditor = ({
+    value,
+    onChange,
+    palette,
+}: {
+    palette: Color[];
+    value: Pattern;
+    onChange: (next: Pattern) => void;
+}) => {
     return (
         <div className="space-y-3">
             {typeof value.psize === 'number' ? (
@@ -805,6 +842,7 @@ const PatternEditor = ({value, onChange}: {value: Pattern; onChange: (next: Patt
                 onChange={(mods) => (mods ? onChange({...value, mods}) : undefined)}
             /> */}
             <PatternContentsEditor
+                palette={palette}
                 value={value.contents}
                 onChange={(contents) => onChange({...value, contents})}
             />
@@ -814,8 +852,10 @@ const PatternEditor = ({value, onChange}: {value: Pattern; onChange: (next: Patt
 
 const PatternContentsEditor = ({
     value,
+    palette,
     onChange,
 }: {
+    palette: Color[];
     value: PatternContents;
     onChange: (next: PatternContents) => void;
 }) => {
@@ -914,6 +954,7 @@ const PatternContentsEditor = ({
             ) : null}
             {value.type === 'shapes' ? (
                 <ShapeStylesEditor
+                    palette={palette}
                     styles={value.styles}
                     onChange={(styles) =>
                         onChange({
@@ -1015,31 +1056,46 @@ const AnimColor = ({
     label,
     value,
     onChange,
+    palette,
 }: {
     label: string;
     value?: AnimatableColor;
     onChange: (next?: AnimatableColor) => void;
-}) => (
-    <label className="form-control">
-        <div className="label">
-            <span className="label-text text-sm font-semibold">{label}</span>
-        </div>
-        <BlurInput
-            value={
-                value != null
-                    ? typeof value === 'string' || typeof value === 'number'
-                        ? '' + value
-                        : colorToString(value)
-                    : ''
-            }
-            placeholder="number | expression"
-            onChange={(value) => {
-                const parsed = parseAnimatable(value);
-                onChange(value.trim() ? parsed : undefined);
-            }}
-        />
-    </label>
-);
+    palette: Color[];
+}) => {
+    const colorV =
+        typeof value === 'string'
+            ? parseColor(value)
+            : typeof value === 'object'
+              ? value
+              : typeof value === 'number'
+                ? palette[value]
+                : null;
+    return (
+        <label className="form-control">
+            <div className="label">
+                <span className="label-text text-sm font-semibold">{label}</span>
+                {colorV ? (
+                    <ColorInput value={colorV} onChange={(color) => onChange(color)} />
+                ) : null}
+            </div>
+            <BlurInput
+                value={
+                    value != null
+                        ? typeof value === 'string' || typeof value === 'number'
+                            ? '' + value
+                            : colorToString(value)
+                        : ''
+                }
+                placeholder="number | expression"
+                onChange={(value) => {
+                    const parsed = parseAnimatable(value);
+                    onChange(value.trim() ? parsed : undefined);
+                }}
+            />
+        </label>
+    );
+};
 
 const AnimInput = ({
     label,
@@ -1304,9 +1360,6 @@ const JsonEditor = <T,>({
                     }
                 }}
             />
-            <div className="label">
-                <span className="label-text-alt">Paste JSON for quick edits</span>
-            </div>
         </div>
     );
 };
@@ -1353,7 +1406,9 @@ const parseAnimatable = (value: string): AnimatableNumber => {
 const ShapeStylesEditor = ({
     styles,
     onChange,
+    palette,
 }: {
+    palette: Color[];
     styles: Record<string, ShapeStyle>;
     onChange: (next: Record<string, ShapeStyle>) => void;
 }) => {
@@ -1388,6 +1443,7 @@ const ShapeStylesEditor = ({
                 {entries.map(([key, style]) => (
                     <ShapeStyleCard
                         key={key}
+                        palette={palette}
                         value={style}
                         onChange={(next, nextKey) => upsert(key, next, nextKey)}
                         onRemove={() => {
@@ -1406,7 +1462,9 @@ const ShapeStyleCard = ({
     value,
     onChange,
     onRemove,
+    palette,
 }: {
+    palette: Color[];
     value: ShapeStyle;
     onChange: (next: ShapeStyle, nextKey?: string) => void;
     onRemove: () => void;
@@ -1438,10 +1496,10 @@ const ShapeStyleCard = ({
                         createItem={createFill}
                         render={(key, fill, update, remove) => (
                             <FillEditor
-                                objectKey={key}
                                 value={fill}
                                 onChange={update}
                                 onRemove={remove}
+                                palette={palette}
                             />
                         )}
                         onChange={(fills) => onChange({...value, fills})}
@@ -1453,7 +1511,7 @@ const ShapeStyleCard = ({
                         createItem={createLine}
                         render={(key, line, update, remove) => (
                             <LineEditor
-                                objectKey={key}
+                                palette={palette}
                                 value={line}
                                 onChange={update}
                                 onRemove={remove}
@@ -1642,12 +1700,12 @@ const SubStyleList = <T,>({
 };
 
 const FillEditor = ({
-    objectKey,
     value,
     onChange,
     onRemove,
+    palette,
 }: {
-    objectKey: string;
+    palette: Color[];
     value: Fill;
     onChange: (next: Fill, nextKey?: string) => void;
     onRemove: () => void;
@@ -1673,6 +1731,7 @@ const FillEditor = ({
                     label="Color"
                     value={value.color}
                     onChange={(color) => onChange({...value, color: color as AnimatableColor})}
+                    palette={palette}
                 />
                 <AnimInput
                     label="Rounded"
@@ -1688,12 +1747,12 @@ const FillEditor = ({
 };
 
 const LineEditor = ({
-    objectKey,
+    palette,
     value,
     onChange,
     onRemove,
 }: {
-    objectKey: string;
+    palette: Color[];
     value: Line;
     onChange: (next: Line, nextKey?: string) => void;
     onRemove: () => void;
@@ -1701,16 +1760,7 @@ const LineEditor = ({
     return (
         <div className="space-y-2">
             <div className="flex flex-col md:flex-row gap-2 md:items-center">
-                <TextField
-                    label="Key"
-                    value={objectKey}
-                    onChange={(nextKey) => onChange({...value, id: nextKey}, nextKey)}
-                />
-                <TextField
-                    label="Id"
-                    value={value.id}
-                    onChange={(id) => onChange({...value, id})}
-                />
+                <span>{value.id}</span>
                 <div className="flex-1" />
                 <button className="btn btn-ghost btn-xs text-error" onClick={onRemove}>
                     Remove
@@ -1723,6 +1773,7 @@ const LineEditor = ({
                     onChange={(zIndex) => onChange({...value, zIndex: zIndex as AnimatableNumber})}
                 />
                 <AnimColor
+                    palette={palette}
                     label="Color"
                     value={value.color}
                     onChange={(color) => onChange({...value, color: color as AnimatableColor})}
