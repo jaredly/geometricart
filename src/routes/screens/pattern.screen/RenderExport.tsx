@@ -36,7 +36,7 @@ export const RenderExport = ({state, patterns}: {state: State; patterns: Pattern
     return (
         <div className="flex">
             <div className="relative overflow-hidden">
-                <SVGCanvas {...zoomProps} setMouse={setMouse} items={items} size={size} />
+                <Canvas {...zoomProps} setMouse={setMouse} items={items} size={size} />
                 <div ref={fpsref} className="absolute top-0 right-0 hidden px-2 py-1 bg-base-100" />
                 {resetZoom ? (
                     <button

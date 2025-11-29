@@ -1,4 +1,4 @@
-import {Surface} from 'canvaskit-wasm';
+import {ImageFilter, Surface} from 'canvaskit-wasm';
 import {cmdsForCoords} from '../../getPatternData';
 import {pk} from '../../pk';
 import {generateVideo} from '../animator.screen/muxer';
@@ -57,6 +57,20 @@ export const renderItems = (surface: Surface, box: Box, items: RenderItem[]) => 
         } else {
             return;
         }
+
+        let imf: null | ImageFilter = null;
+        if (item.shadow) {
+            imf = pk.ImageFilter.MakeDropShadow(
+                item.shadow.offset.x,
+                item.shadow.offset.y,
+                item.shadow.blur.x,
+                item.shadow.blur.y,
+                pk.Color(item.shadow.color.r, item.shadow.color.g, item.shadow.color.b),
+                null,
+            );
+            paint.setImageFilter(imf);
+        }
+
         if (item.opacity != null) {
             paint.setAlphaf(item.opacity);
         }
@@ -65,6 +79,7 @@ export const renderItems = (surface: Surface, box: Box, items: RenderItem[]) => 
         if (!item.pk) {
             pkp.delete();
         }
+        if (imf != null) imf.delete();
     });
     ctx.restore();
     surface.flush();

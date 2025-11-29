@@ -295,8 +295,17 @@ export type ShapeStyle = {
     mods: PMods[];
 };
 
+export type Shadow =
+    | {
+          color?: AnimatableColor;
+          offset?: AnimatableCoord;
+          blur?: AnimatableCoord;
+      }
+    | string;
+
 export type Fill = {
     id: string;
+    shadow?: Shadow;
     zIndex?: AnimatableNumber;
     color?: AnimatableColor;
     rounded?: AnimatableNumber;
@@ -309,6 +318,7 @@ export type Fill = {
 
 export type Line = {
     id: string;
+    shadow?: Shadow;
     zIndex?: AnimatableNumber;
     color?: AnimatableColor;
     width?: AnimatableNumber;

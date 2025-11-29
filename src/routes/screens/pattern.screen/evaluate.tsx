@@ -1,7 +1,7 @@
 // biome-ignore-all lint/suspicious/noExplicitAny : this is internal and fine
 import {Coord, Tiling} from '../../../types';
 import {PKPath} from '../../pk';
-import {parseColor} from './colors';
+import {parseColor, Rgb} from './colors';
 import {
     State,
     Layer,
@@ -26,6 +26,7 @@ export type AnimCtx = {
 export type RenderItem = {
     type: 'path';
     pk?: PKPath;
+    shadow?: {blur: Coord; offset: Coord; color: Rgb};
     fill?: {r: number; g: number; b: number};
     stroke?: {r: number; g: number; b: number};
     opacity?: number;
@@ -103,7 +104,7 @@ function isValidColor(color: string): boolean {
     }
 }
 
-const isCoord = (v: any): v is Coord => {
+export const isCoord = (v: any): v is Coord => {
     return (
         typeof v === 'object' &&
         v &&
@@ -112,6 +113,48 @@ const isCoord = (v: any): v is Coord => {
         typeof v.x === 'number' &&
         typeof v.y === 'number'
     );
+};
+
+export const isColor = (v: any): v is number | string | Color => {
+    if (typeof v === 'number') {
+        return true;
+    }
+    if (typeof v === 'string') {
+        const parsed = parseColor(v);
+        if (parsed) return true;
+    }
+    if (
+        Array.isArray(v) &&
+        typeof v[0] === 'number' &&
+        typeof v[1] === 'number' &&
+        typeof v[2] === 'number'
+    ) {
+        return true;
+    }
+    if (typeof v === 'string') {
+        throw new Error(`not a valid color representation: ${v}`);
+    }
+    if (
+        'r' in v &&
+        'g' in v &&
+        'b' in v &&
+        typeof v.r === 'number' &&
+        typeof v.g === 'number' &&
+        typeof v.b === 'number'
+    ) {
+        return true;
+    }
+    if (
+        'h' in v &&
+        's' in v &&
+        'l' in v &&
+        typeof v.h === 'number' &&
+        typeof v.s === 'number' &&
+        typeof v.l === 'number'
+    ) {
+        return true;
+    }
+    return false;
 };
 
 export const a = {
@@ -141,52 +184,7 @@ export const a = {
             const parsed = parseColor(v);
             if (parsed) return parsed;
 
-            v = evaluate<Color | string | number>(
-                ctx,
-                v,
-                (v): v is number | string | Color => {
-                    if (typeof v === 'number') {
-                        return true;
-                    }
-                    if (typeof v === 'string') {
-                        const parsed = parseColor(v);
-                        if (parsed) return true;
-                    }
-                    if (
-                        Array.isArray(v) &&
-                        typeof v[0] === 'number' &&
-                        typeof v[1] === 'number' &&
-                        typeof v[2] === 'number'
-                    ) {
-                        return true;
-                    }
-                    if (typeof v === 'string') {
-                        throw new Error(`not a valid color representation: ${v}`);
-                    }
-                    if (
-                        'r' in v &&
-                        'g' in v &&
-                        'b' in v &&
-                        typeof v.r === 'number' &&
-                        typeof v.g === 'number' &&
-                        typeof v.b === 'number'
-                    ) {
-                        return true;
-                    }
-                    if (
-                        'h' in v &&
-                        's' in v &&
-                        'l' in v &&
-                        typeof v.h === 'number' &&
-                        typeof v.s === 'number' &&
-                        typeof v.l === 'number'
-                    ) {
-                        return true;
-                    }
-                    return false;
-                },
-                {r: 255, g: 255, b: 255},
-            );
+            v = evaluate<Color | string | number>(ctx, v, isColor, {r: 255, g: 255, b: 255});
         }
         if (typeof v === 'number') {
             if (!Number.isInteger(v) || v < 0) {

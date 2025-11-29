@@ -16,7 +16,7 @@ import {
 import {pk} from '../../pk';
 import {segmentsCmds} from '../animator.screen/cropPath';
 import {globals} from './eval-globals';
-import {AnimCtx, a, Ctx, RenderItem, Patterns} from './evaluate';
+import {AnimCtx, a, Ctx, RenderItem, Patterns, isCoord, isColor} from './evaluate';
 import {
     CropMode,
     PMods,
@@ -30,8 +30,10 @@ import {
     EObject,
     Group,
     State,
+    Shadow,
 } from './export-types';
 import {evalTimeline} from './evalEase';
+import {scalePos} from '../../../editor/scalePos';
 
 type CCrop = {type: 'crop'; id: string; mode?: CropMode; hole?: boolean};
 type CInset = {type: 'inset'; v: number};
@@ -271,6 +273,7 @@ const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Pattern) => {
                     const rgb = colorToRgb(color);
                     const zIndex = f.zIndex;
                     const opacity = f.opacity ? a.number(anim, f.opacity) : undefined;
+                    const shadow = resolveShadow(anim, f.shadow);
 
                     if (f.mods.length) {
                         const midShapes = modsToShapes(ctx.cropCache, f.mods, [{shape, i: 0}]);
@@ -282,6 +285,7 @@ const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Pattern) => {
                             fill: rgb,
                             opacity,
                             shapes: midShapes.map((s) => s.shape),
+                            shadow,
                             zIndex,
                         };
                     }
@@ -292,6 +296,7 @@ const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Pattern) => {
                         fill: rgb,
                         opacity,
                         shapes: [shape],
+                        shadow,
                         zIndex,
                     };
                 }),
@@ -304,6 +309,7 @@ const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Pattern) => {
                     const rgb = colorToRgb(color);
                     const width = a.number(anim, f.width) / 100;
                     const opacity = f.opacity ? a.number(anim, f.opacity) : undefined;
+                    const shadow = resolveShadow(anim, f.shadow);
                     const zIndex = f.zIndex;
 
                     if (f.mods.length) {
@@ -316,6 +322,7 @@ const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Pattern) => {
                             stroke: rgb,
                             strokeWidth: width,
                             opacity,
+                            shadow,
                             shapes: midShapes.map((s) => s.shape),
                             zIndex,
                         };
@@ -327,6 +334,7 @@ const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Pattern) => {
                         stroke: rgb,
                         strokeWidth: width,
                         shapes: [shape],
+                        shadow,
                         opacity,
                         zIndex,
                     };
@@ -337,7 +345,36 @@ const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Pattern) => {
         }),
     );
 };
+
 const notNull = <T,>(v: T): v is NonNullable<T> => v != null;
+
+const resolveShadow = (anim: Ctx['anim'], shadow?: Shadow): RenderItem['shadow'] => {
+    if (typeof shadow === 'string') {
+        const v = a.value(anim, shadow);
+        if (
+            typeof v === 'object' &&
+            v &&
+            isCoord(v.offset) &&
+            isCoord(v.blur) &&
+            isColor(v.color)
+        ) {
+            return {
+                offset: scalePos(v.offset, 0.01),
+                blur: scalePos(v.blur, 0.01),
+                color: colorToRgb(v.color),
+            };
+        }
+        return;
+    }
+    return shadow?.color
+        ? {
+              blur: shadow.blur ? scalePos(a.coord(anim, shadow.blur), 0.01) : {x: 0, y: 0},
+              offset: shadow.blur ? scalePos(a.coord(anim, shadow.blur), 0.01) : {x: 0, y: 0},
+              color: colorToRgb(a.color(anim, shadow.color)),
+          }
+        : undefined;
+};
+
 const renderObject = (ctx: Ctx, crops: CropsAndMatrices, object: EObject) => {
     const anim: (typeof ctx)['anim'] = {
         ...ctx.anim,
@@ -382,6 +419,7 @@ const renderObject = (ctx: Ctx, crops: CropsAndMatrices, object: EObject) => {
             key: '',
             fill: rgb,
             opacity,
+            shadow: resolveShadow(anim, f.shadow),
             shapes: cmdsToCoords(thisPath.toCmds()).map((s) => s.points),
             zIndex,
         });
@@ -408,6 +446,7 @@ const renderObject = (ctx: Ctx, crops: CropsAndMatrices, object: EObject) => {
             stroke: rgb,
             strokeWidth: a.number(anim, f.width ?? 0) / 100,
             opacity,
+            shadow: resolveShadow(anim, f.shadow),
             shapes: cmdsToCoords(thisPath.toCmds()).map((s) => s.points),
             zIndex,
         });

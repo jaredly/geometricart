@@ -50,7 +50,15 @@ export const example: (id: string) => State = (id: string) => {
                                 a: {
                                     id: 'a',
                                     fills: {a: {id: 'a', color: 0, mods: []}},
-                                    lines: {},
+                                    lines: {
+                                        // a: {
+                                        //     id: 'a',
+                                        //     color: 'black',
+                                        //     mods: [],
+                                        //     width: 0,
+                                        //     zIndex: 10,
+                                        // },
+                                    },
                                     mods: [],
                                     kind: {type: 'alternating', index: 1},
                                     order: 1,
@@ -58,8 +66,16 @@ export const example: (id: string) => State = (id: string) => {
                                 b: {
                                     id: 'b',
                                     fills: {b: {id: 'b', color: 1, mods: []}},
+                                    lines: {
+                                        // b: {
+                                        //     id: 'b',
+                                        //     color: 'black',
+                                        //     mods: [],
+                                        //     width: 3,
+                                        //     zIndex: 10,
+                                        // },
+                                    },
                                     mods: [],
-                                    lines: {},
                                     kind: {type: 'alternating', index: 0},
                                     order: 2,
                                 },
@@ -72,22 +88,31 @@ export const example: (id: string) => State = (id: string) => {
                                         distances: [0, 0.6],
                                     },
                                     mods: [],
-                                    lines: {},
                                     order: 3,
+                                    lines: {
+                                        // b: {
+                                        //     id: 'b',
+                                        //     zIndex: 'threeZ',
+                                        //     mods: [
+                                        //         {
+                                        //             type: 'rotate',
+                                        //             v: 'twoRotate',
+                                        //             origin: 'styleCenter',
+                                        //         },
+                                        //     ],
+                                        // },
+                                    },
                                     fills: {
                                         b: {
                                             id: 'b',
-                                            // color: {r: 255, g: 255, b: 0},
-                                            // opacity: 1,
                                             zIndex: 'threeZ',
+                                            shadow: `threeZ ? {offset: {x:0,y:0},blur:{x:4,y:4},color:[0,0,0]} : null`,
                                             mods: [
                                                 {
                                                     type: 'rotate',
-                                                    // v: '-t1 * Math.PI / 3 * 2',
                                                     v: 'twoRotate',
                                                     origin: 'styleCenter',
                                                 },
-                                                // {type: 'inset', v: 5},
                                             ],
                                         },
                                     },
@@ -101,7 +126,19 @@ export const example: (id: string) => State = (id: string) => {
                                         distances: [0, 0.1],
                                     },
                                     mods: [],
-                                    lines: {},
+                                    lines: {
+                                        // b: {
+                                        //     id: 'b',
+                                        //     zIndex: 'threeZ',
+                                        //     mods: [
+                                        //         {
+                                        //             type: 'rotate',
+                                        //             v: '-twoRotate',
+                                        //             origin: 'styleCenter',
+                                        //         },
+                                        //     ],
+                                        // },
+                                    },
                                     order: 7,
                                     fills: {
                                         b: {
@@ -109,6 +146,7 @@ export const example: (id: string) => State = (id: string) => {
                                             // color: {r: 255, g: 255, b: 0},
                                             // opacity: 1,
                                             zIndex: 'threeZ',
+                                            shadow: `threeZ ? {offset: {x:0,y:0},blur:{x:4,y:4},color:[0,0,0]} : null`,
                                             mods: [
                                                 {
                                                     type: 'rotate',
@@ -131,23 +169,33 @@ export const example: (id: string) => State = (id: string) => {
                                         // distances: [0, 1.0],
                                     },
                                     mods: [],
-                                    lines: {},
+                                    lines: {
+                                        // a: {
+                                        //     id: 'a',
+                                        //     zIndex: 'oneZ',
+                                        //     width: 'oneZ',
+                                        //     mods: [
+                                        //         {
+                                        //             type: 'rotate',
+                                        //             v: 'oneRotate',
+                                        //             origin: 'styleCenter',
+                                        //         },
+                                        //     ],
+                                        // },
+                                    },
                                     order: 4,
                                     fills: {
                                         a: {
                                             id: 'a',
-                                            // color: {r: 0, g: 255, b: 0},
-                                            // opacity: 1,
                                             zIndex: 'oneZ',
                                             mods: [
                                                 {
                                                     type: 'rotate',
-                                                    // v: '-t1 * Math.PI / 3 * 2',
                                                     v: 'oneRotate',
                                                     origin: 'styleCenter',
                                                 },
-                                                // {type: 'inset', v: 5},
                                             ],
+                                            shadow: `oneZ ? {offset: {x:0,y:0},blur:{x:4,y:4},color:[0,0,0]} : null`,
                                         },
                                     },
                                 },
@@ -161,13 +209,27 @@ export const example: (id: string) => State = (id: string) => {
                                         // distances: [0, 1.0],
                                     },
                                     mods: [],
-                                    lines: {},
+                                    lines: {
+                                        // a: {
+                                        //     id: 'a',
+                                        //     zIndex: 'twoZ',
+                                        //     width: 'twoZ',
+                                        //     mods: [
+                                        //         {
+                                        //             type: 'rotate',
+                                        //             v: '-threeRotate',
+                                        //             origin: 'styleCenter',
+                                        //         },
+                                        //     ],
+                                        // },
+                                    },
                                     order: 5,
                                     fills: {
                                         a: {
                                             id: 'a',
                                             // color: {r: 0, g: 255, b: 0},
                                             zIndex: 'twoZ',
+                                            shadow: `twoZ ? {offset: {x:0,y:0},blur:{x:4,y:4},color:[0,0,0]} : null`,
                                             mods: [
                                                 {
                                                     type: 'rotate',
@@ -188,13 +250,28 @@ export const example: (id: string) => State = (id: string) => {
                                         // distances: [0, 1.0],
                                     },
                                     mods: [],
-                                    lines: {},
+                                    lines: {
+                                        // a: {
+                                        //     id: 'a',
+                                        //     // color: {r: 255, g: 0, b: 0},
+                                        //     zIndex: 'twoZ',
+                                        //     width: 'twoZ',
+                                        //     mods: [
+                                        //         {
+                                        //             type: 'rotate',
+                                        //             v: 'fourRotate',
+                                        //             origin: 'styleCenter',
+                                        //         },
+                                        //     ],
+                                        // },
+                                    },
                                     order: 5,
                                     fills: {
                                         a: {
                                             id: 'a',
                                             // color: {r: 255, g: 0, b: 0},
                                             zIndex: 'twoZ',
+                                            shadow: `twoZ ? {offset: {x:0,y:0},blur:{x:4,y:4},color:[0,0,0]} : null`,
                                             mods: [
                                                 {
                                                     type: 'rotate',
