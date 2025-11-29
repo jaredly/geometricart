@@ -73,6 +73,7 @@ export const SVGCanvas = ({
                         stroke={stroke ? colorToString(stroke) : undefined}
                         d={shapeD(shape)}
                         key={`${key}-${m}`}
+                        data-z={zIndex}
                     />
                 )),
             )}

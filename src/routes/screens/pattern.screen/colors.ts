@@ -196,7 +196,7 @@ export const colorToString = (color: Color): string => {
     if (Array.isArray(color)) {
         return hexToString(...color);
     }
-    if ('r' in color) {
+    if (typeof color === 'object' && 'r' in color) {
         return hexToString(color.r, color.g, color.b);
     }
     return `hsl(${color.h},${color.s},${color.l})`;

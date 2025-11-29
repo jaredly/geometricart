@@ -189,6 +189,9 @@ export const a = {
             );
         }
         if (typeof v === 'number') {
+            if (!Number.isInteger(v) || v < 0) {
+                throw new Error(`invalid color number: ${v}`);
+            }
             return ctx.palette[v % ctx.palette.length];
         }
         if (typeof v === 'string') {

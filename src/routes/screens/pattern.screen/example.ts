@@ -18,6 +18,7 @@ export const example: (id: string) => State = (id: string) => {
                         type: 'Object',
                         id: 'b',
                         style: {
+                            // disabled: true,
                             id: 'sid',
                             fills: {
                                 a: {
@@ -48,68 +49,16 @@ export const example: (id: string) => State = (id: string) => {
                             styles: {
                                 a: {
                                     id: 'a',
-                                    // disabled: true,
-                                    fills: {
-                                        a: {
-                                            id: 'a',
-                                            color: 0,
-                                            // width: 2,
-                                            // opacity: 'oneOpacity_fn(t + off(center))',
-                                            mods: [
-                                                // {type: 'crop', id: 'crop2', mode: 'rough'},
-                                                {
-                                                    type: 'inset',
-                                                    v: 'oneInset * insett',
-                                                    // v: 'Math.sin(t1 * Math.PI * 2) * 10',
-                                                },
-                                                // {
-                                                //     type: 'rotate',
-                                                //     // v: 't1 * Math.PI / 3 * 2',
-                                                //     v: 'oneRotate_fn(t + off(center)/2)',
-                                                //     origin: {x: 0, y: 0},
-                                                // },
-                                                // {type: 'crop', id: 'crop1'},
-                                            ],
-                                            // mods: [],
-                                            zIndex: 't < 0.5 ? 1 : -1',
-                                        },
-                                    },
+                                    fills: {a: {id: 'a', color: 0, mods: []}},
                                     lines: {},
                                     mods: [],
-                                    kind: {type: 'everything'},
+                                    kind: {type: 'alternating', index: 1},
                                     order: 1,
                                 },
                                 b: {
                                     id: 'b',
-                                    // disabled: true,
-                                    fills: {
-                                        a: {
-                                            id: 'a',
-                                            // color: {h: 190, s: 100, l: 50},
-                                            color: 1,
-                                            // width: 2,
-                                            // opacity: 'twoOpacity_fn(t + off2(center))',
-                                            mods: [
-                                                // {type: 'crop', id: 'crop2', mode: 'rough'},
-                                                // {
-                                                //     type: 'rotate',
-                                                //     // v: '-t1 * Math.PI / 3 * 2',
-                                                //     v: 'twoRotate_fn(t + off(center)/2)',
-                                                //     origin: {x: 0, y: 0},
-                                                // },
-                                                {
-                                                    type: 'inset',
-                                                    // v: 'Math.sin(t1 * Math.PI * 2) * -10',
-                                                    v: 'twoInset * insett',
-                                                },
-                                                // {type: 'crop', id: 'crop1'},
-                                            ],
-                                            // mods: [],
-                                            zIndex: 't > 0.5 ? 1 : -1',
-                                        },
-                                    },
+                                    fills: {b: {id: 'b', color: 1, mods: []}},
                                     mods: [],
-                                    // lines: {c: {id: 'c', color: '#0f0', width: 2}},
                                     lines: {},
                                     kind: {type: 'alternating', index: 0},
                                     order: 2,
@@ -126,15 +75,45 @@ export const example: (id: string) => State = (id: string) => {
                                     lines: {},
                                     order: 3,
                                     fills: {
-                                        a: {
-                                            id: 'a',
+                                        b: {
+                                            id: 'b',
                                             // color: {r: 255, g: 255, b: 0},
                                             // opacity: 1,
+                                            zIndex: 'threeZ',
                                             mods: [
                                                 {
                                                     type: 'rotate',
                                                     // v: '-t1 * Math.PI / 3 * 2',
                                                     v: 'twoRotate',
+                                                    origin: 'styleCenter',
+                                                },
+                                                // {type: 'inset', v: 5},
+                                            ],
+                                        },
+                                    },
+                                },
+                                c1: {
+                                    id: 'c1',
+                                    kind: {
+                                        type: 'distance',
+                                        corner: 2,
+                                        repeat: true,
+                                        distances: [0, 0.1],
+                                    },
+                                    mods: [],
+                                    lines: {},
+                                    order: 7,
+                                    fills: {
+                                        b: {
+                                            id: 'b',
+                                            // color: {r: 255, g: 255, b: 0},
+                                            // opacity: 1,
+                                            zIndex: 'threeZ',
+                                            mods: [
+                                                {
+                                                    type: 'rotate',
+                                                    // v: '-t1 * Math.PI / 3 * 2',
+                                                    v: '-twoRotate',
                                                     origin: 'styleCenter',
                                                 },
                                                 // {type: 'inset', v: 5},
@@ -159,6 +138,7 @@ export const example: (id: string) => State = (id: string) => {
                                             id: 'a',
                                             // color: {r: 0, g: 255, b: 0},
                                             // opacity: 1,
+                                            zIndex: 'oneZ',
                                             mods: [
                                                 {
                                                     type: 'rotate',
@@ -187,10 +167,11 @@ export const example: (id: string) => State = (id: string) => {
                                         a: {
                                             id: 'a',
                                             // color: {r: 0, g: 255, b: 0},
+                                            zIndex: 'twoZ',
                                             mods: [
                                                 {
                                                     type: 'rotate',
-                                                    v: 'threeRotate',
+                                                    v: '-threeRotate',
                                                     origin: 'styleCenter',
                                                 },
                                             ],
@@ -213,6 +194,7 @@ export const example: (id: string) => State = (id: string) => {
                                         a: {
                                             id: 'a',
                                             // color: {r: 255, g: 0, b: 0},
+                                            zIndex: 'twoZ',
                                             mods: [
                                                 {
                                                     type: 'rotate',
@@ -226,7 +208,7 @@ export const example: (id: string) => State = (id: string) => {
                             },
                         },
                         mods: [],
-                        psize: 4,
+                        psize: {x: 4, y: 8},
                     },
                 },
                 guides: [],
@@ -260,49 +242,55 @@ export const example: (id: string) => State = (id: string) => {
                 {h: 180, s: 100, l: 40},
             ],
             timeline: {
-                ts: [1, 4, 4, 1, 1, 4, 1, 1, 1],
+                ts: [4, 4, 4],
                 lanes: [
-                    {
-                        name: 'oneInset',
-                        ys: [0, 1],
-                        easings: ['inout', null, null, 'inout', null, null, null, null],
-                        values: [0, 1, 1, 1, 0, 0, 0, 0, 0, 0],
-                    },
                     {
                         name: 'oneRotate',
                         ys: [0, (Math.PI / 3) * 2],
-                        easings: [null, 'inout', 'start'],
-                        values: [0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
-                    },
-                    {
-                        name: 'twoInset',
-                        ys: [0, 1],
-                        easings: [null, null, null, null, 'inout', null, 'inout'],
-                        values: [0, 0, 0, 0, 0, 1, 1, 0, 0, 0],
+                        easings: ['inout', 'start'],
+                        values: [0, 1, 0, 0],
                     },
                     {
                         name: 'bgColor',
                         ys: [1, 0],
-                        easings: [null, null, null, null, 'start', null],
-                        values: [0, 0, 0, 0, 0, 1, 1, 1, 1, 1],
+                        easings: [null, null, 'start', null],
+                        values: [0, 0, 0, 1],
                     },
                     {
                         name: 'twoRotate',
                         ys: [0, (Math.PI / 3) * 2],
-                        easings: [null, null, null, null, null, 'inout', 'start'],
-                        values: [0, 0, 0, 0, 0, 0, 1, 0, 0, 0],
+                        easings: [null, null, 'inout', 'start'],
+                        values: [0, 0, 0, 1],
+                    },
+                    {
+                        name: 'oneZ',
+                        ys: [0, 5],
+                        easings: [null, 'start'],
+                        values: [1, 1, 0, 0],
+                    },
+                    {
+                        name: 'twoZ',
+                        ys: [0, 5],
+                        easings: [null, 'start', 'start'],
+                        values: [0, 0, 1, 0],
+                    },
+                    {
+                        name: 'threeZ',
+                        ys: [0, 5],
+                        easings: [null, null, 'start', 'start'],
+                        values: [0, 0, 0, 1],
                     },
                     {
                         name: 'threeRotate',
-                        ys: [0, -Math.PI],
-                        easings: [null, null, 'inout', 'start'],
-                        values: [0, 0, 0, 1, 0, 0, 0, 0, 0],
+                        ys: [0, Math.PI],
+                        easings: [null, 'inout', 'start'],
+                        values: [0, 0, 1, 0],
                     },
                     {
                         name: 'fourRotate',
                         ys: [0, (Math.PI / 3) * 2],
-                        easings: [null, null, 'inout', 'start'],
-                        values: [0, 0, 0, 1, 0, 0, 0, 0, 0],
+                        easings: [null, 'inout', 'start'],
+                        values: [0, 0, 1, 0],
                     },
                 ],
             },

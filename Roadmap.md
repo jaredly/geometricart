@@ -1,3 +1,15 @@
+# Current anim:
+
+- lines on everything
+- then let's try drop shadows
+
+#
+
+I ... really want to be able to
+handle alternating dealios differently
+
+ZINDEX SHOULD BE A MOD. IT SHOULD PUSH FORWARD OR BACK.
+So I can have it be "when this thing is rotating, push it forward".
 
 # Named ... groups? Or something?
 

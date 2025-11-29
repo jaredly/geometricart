@@ -210,8 +210,14 @@ const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Pattern) => {
         ...midShapes.flatMap(({shape, i}) => {
             const center = centroid(shape);
             const radius = Math.min(...shape.map((s) => dist(s, center)));
-            const fills: Record<string, Omit<Fill, 'mods'> & {mods: CropsAndMatrices}> = {};
-            const lines: Record<string, Omit<Line, 'mods'> & {mods: CropsAndMatrices}> = {};
+            const fills: Record<
+                string,
+                Omit<Fill, 'mods' | 'zIndex'> & {mods: CropsAndMatrices; zIndex: number}
+            > = {};
+            const lines: Record<
+                string,
+                Omit<Line, 'mods' | 'zIndex'> & {mods: CropsAndMatrices; zIndex: number}
+            > = {};
 
             const anim: (typeof ctx)['anim'] = {
                 ...ctx.anim,
@@ -240,14 +246,20 @@ const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Pattern) => {
                         ...(fills[fill.id]?.mods ?? []),
                         ...(fill.mods ?? []).map((mod) => resolvePMod(anim, mod)),
                     ];
-                    fills[fill.id] = {...fills[fill.id], ...fill, mods};
+                    const zIndex =
+                        (fills[fill.id]?.zIndex ?? 0) +
+                        (fill.zIndex ? a.number(anim, fill.zIndex) : 0);
+                    fills[fill.id] = {...fills[fill.id], ...fill, mods, zIndex};
                 });
                 Object.values(s.lines).forEach((line) => {
                     const mods = [
                         ...(lines[line.id]?.mods ?? []),
                         ...(line.mods ?? []).map((mod) => resolvePMod(anim, mod)),
                     ];
-                    lines[line.id] = {...lines[line.id], ...line, mods};
+                    const zIndex =
+                        (lines[line.id]?.zIndex ?? 0) +
+                        (line.zIndex ? a.number(anim, line.zIndex) : 0);
+                    lines[line.id] = {...lines[line.id], ...line, mods, zIndex};
                 });
             });
 
@@ -255,8 +267,9 @@ const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Pattern) => {
                 ...Object.values(fills).flatMap((f, fi): RenderItem[] | RenderItem | undefined => {
                     if (f.color == null) return;
                     const color = a.color(anim, f.color);
+                    if (!color) console.log('waht', color, f.color);
                     const rgb = colorToRgb(color);
-                    const zIndex = f.zIndex ? a.number(anim, f.zIndex) : null;
+                    const zIndex = f.zIndex;
                     const opacity = f.opacity ? a.number(anim, f.opacity) : undefined;
 
                     if (f.mods.length) {
@@ -287,10 +300,11 @@ const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Pattern) => {
                     if (f.color == null) return;
                     if (!f.width) return;
                     const color = a.color(anim, f.color);
+                    if (!color) console.log('waht', color, f.color);
                     const rgb = colorToRgb(color);
                     const width = a.number(anim, f.width) / 100;
                     const opacity = f.opacity ? a.number(anim, f.opacity) : undefined;
-                    const zIndex = f.zIndex ? a.number(anim, f.zIndex) : null;
+                    const zIndex = f.zIndex;
 
                     if (f.mods.length) {
                         const midShapes = modsToShapes(ctx.cropCache, f.mods, [{shape, i: 0}]);
@@ -314,6 +328,7 @@ const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Pattern) => {
                         strokeWidth: width,
                         shapes: [shape],
                         opacity,
+                        zIndex,
                     };
                 }),
             ];
@@ -344,6 +359,8 @@ const renderObject = (ctx: Ctx, crops: CropsAndMatrices, object: EObject) => {
         remove = remove || pathMod(ctx.cropCache, mod, path);
     });
     if (remove) return;
+
+    if (object.style.disabled) return;
 
     Object.values(object.style.fills).map((f) => {
         if (f.color == null) return;
