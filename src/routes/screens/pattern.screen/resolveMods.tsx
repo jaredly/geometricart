@@ -60,7 +60,22 @@ export const resolvePMod = (ctx: AnimCtx, mod: PMods): CropsAndMatrices[0] => {
     }
 };
 
-const matchKind = (k: ShapeStyle['kind'], i: number, color: number) => {
+const matchesDistances = (dist: number, distances: number[]) => {
+    for (let i = 0; i < distances.length; i++) {
+        if (dist < distances[i]) {
+            return i % 2 === 1;
+        }
+    }
+    return false;
+};
+
+const matchKind = (
+    k: ShapeStyle['kind'],
+    i: number,
+    color: number,
+    center: Coord,
+    eigenCorners: Coord[][],
+): boolean | Coord => {
     switch (k.type) {
         case 'everything':
             return true;
@@ -71,7 +86,22 @@ const matchKind = (k: ShapeStyle['kind'], i: number, color: number) => {
         case 'shape':
             console.log('not right');
             return false;
+        case 'distance': {
+            const corners = eigenCorners[k.corner];
+            if (!k.repeat) {
+                const d = dist(corners[0], center);
+                const res = matchesDistances(d, k.distances);
+                return res ? corners[0] : false;
+            }
+            let best: [number, Coord] = [Infinity, {x: 0, y: 0}];
+            corners.forEach((corner) => {
+                const d = dist(corner, center);
+                if (d < best[0]) best = [d, corner];
+            });
+            return matchesDistances(best[0], k.distances) ? best[1] : false;
+        }
     }
+    return false;
 };
 
 const insetShape = (shape: Coord[], inset: number) => {
@@ -180,8 +210,8 @@ const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Pattern) => {
         ...midShapes.flatMap(({shape, i}) => {
             const center = centroid(shape);
             const radius = Math.min(...shape.map((s) => dist(s, center)));
-            const fills: Record<string, Fill> = {};
-            const lines: Record<string, Line> = {};
+            const fills: Record<string, Omit<Fill, 'mods'> & {mods: CropsAndMatrices}> = {};
+            const lines: Record<string, Omit<Line, 'mods'> & {mods: CropsAndMatrices}> = {};
 
             const anim: (typeof ctx)['anim'] = {
                 ...ctx.anim,
@@ -195,14 +225,29 @@ const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Pattern) => {
             };
 
             orderedStyles.forEach((s) => {
-                if (!matchKind(s.kind, i, colors[i])) {
+                if (s.disabled) return;
+                const match = matchKind(s.kind, i, colors[i], center, simple.eigenCorners);
+                if (!match) {
                     return;
                 }
+                if (typeof match === 'object') {
+                    anim.values.styleCenter = match;
+                }
+                // hmmm need to align the ... style that it came from ... with animvalues
+                // like `styleCenter`
                 Object.values(s.fills).forEach((fill) => {
-                    fills[fill.id] = {...fills[fill.id], ...fill};
+                    const mods = [
+                        ...(fills[fill.id]?.mods ?? []),
+                        ...(fill.mods ?? []).map((mod) => resolvePMod(anim, mod)),
+                    ];
+                    fills[fill.id] = {...fills[fill.id], ...fill, mods};
                 });
                 Object.values(s.lines).forEach((line) => {
-                    lines[line.id] = {...lines[line.id], ...line};
+                    const mods = [
+                        ...(lines[line.id]?.mods ?? []),
+                        ...(line.mods ?? []).map((mod) => resolvePMod(anim, mod)),
+                    ];
+                    lines[line.id] = {...lines[line.id], ...line, mods};
                 });
             });
 
@@ -215,8 +260,7 @@ const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Pattern) => {
                     const opacity = f.opacity ? a.number(anim, f.opacity) : undefined;
 
                     if (f.mods.length) {
-                        const fmods = f.mods.map((m) => resolvePMod(anim, m));
-                        const midShapes = modsToShapes(ctx.cropCache, fmods, [{shape, i: 0}]);
+                        const midShapes = modsToShapes(ctx.cropCache, f.mods, [{shape, i: 0}]);
 
                         return {
                             // pk???
@@ -249,8 +293,7 @@ const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Pattern) => {
                     const zIndex = f.zIndex ? a.number(anim, f.zIndex) : null;
 
                     if (f.mods.length) {
-                        const fmods = f.mods.map((m) => resolvePMod(anim, m));
-                        const midShapes = modsToShapes(ctx.cropCache, fmods, [{shape, i: 0}]);
+                        const midShapes = modsToShapes(ctx.cropCache, f.mods, [{shape, i: 0}]);
 
                         return {
                             // pk???

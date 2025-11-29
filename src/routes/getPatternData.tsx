@@ -260,8 +260,15 @@ export const getSimplePatternData = (tiling: Tiling, size: Coord | number) => {
     );
     const transformedShapes = applyTilingTransformsG(initialShapes, ttt, transformShape);
     const uniqueShapes = unique(transformedShapes, (s) => shapeBoundsKey(s, minSegLength));
+    const transformedBounds = applyTilingTransformsG([bounds], ttt, (pts, tx) =>
+        pts.map((p) => applyMatrices(p, tx)),
+    );
+    const eigenCorners: Coord[][] = bounds.map(() => []);
+    transformedBounds.forEach((bounds) => {
+        bounds.forEach((pos, i) => eigenCorners[i].push(pos));
+    });
 
-    return {initialShapes, minSegLength, canons, ttt, uniqueShapes};
+    return {initialShapes, minSegLength, canons, ttt, uniqueShapes, eigenCorners};
 };
 
 const simpleSize = (tiling: Tiling, x: number) => {

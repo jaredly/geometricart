@@ -279,10 +279,12 @@ export type PatternContents =
 export type BaseKind =
     | {type: 'everything'}
     | {type: 'alternating'; index: number}
-    | {type: 'explicit'; ids: Record<string, true>};
+    | {type: 'explicit'; ids: Record<string, true>}
+    | {type: 'distance'; corner: number; repeat: boolean; distances: number[]};
 
 export type ShapeStyle = {
     id: string;
+    disabled?: boolean;
     order: number;
     // TODO: maybe have a kind that's like "anything intersecting with this shape"?
     // Could also be interesting to have an `animatedKind` where we select
