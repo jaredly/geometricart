@@ -10,6 +10,7 @@ export const example: (id: string) => State = (id: string) => {
                     t2: `Math.sin(t1)`,
                     off: 'return (center) => (1 - dist(center,{x:0,y:0}))/30',
                     off2: 'return (center) => (1 - dist(center,{x:0,y:0}))/30 + .02',
+                    shadow: 'return {offset: {x:0,y:0},blur:{x:10,y:10},color:[0,0,0]}',
                     insett: '1',
                 },
                 entities: {
@@ -79,7 +80,7 @@ export const example: (id: string) => State = (id: string) => {
                                             id: 'b',
                                             zIndex: 'threeZ',
                                             enabled: '!!threeZ',
-                                            shadow: `threeZ ? {offset: {x:0,y:0},blur:{x:4,y:4},color:[0,0,0]} : null`,
+                                            shadow: `threeZ ? shadow : null`,
                                             // shadow: `threeZ ? {offset: {x:4,y:4},blur:{x:4,y:4},color:[0,0,0]} : null`,
                                             mods: [
                                                 {
@@ -121,7 +122,7 @@ export const example: (id: string) => State = (id: string) => {
                                             // opacity: 1,
                                             zIndex: 'threeZ',
                                             enabled: '!!threeZ',
-                                            shadow: `threeZ ? {offset: {x:0,y:0},blur:{x:4,y:4},color:[0,0,0]} : null`,
+                                            shadow: `threeZ ? shadow : null`,
                                             mods: [
                                                 {
                                                     type: 'rotate',
@@ -171,7 +172,7 @@ export const example: (id: string) => State = (id: string) => {
                                                     origin: 'styleCenter',
                                                 },
                                             ],
-                                            shadow: `oneZ ? {offset: {x:0,y:0},blur:{x:4,y:4},color:[0,0,0]} : null`,
+                                            shadow: `oneZ ? shadow : null`,
                                         },
                                     },
                                 },
@@ -206,7 +207,7 @@ export const example: (id: string) => State = (id: string) => {
                                             // color: {r: 0, g: 255, b: 0},
                                             zIndex: 'twoZ',
                                             enabled: '!!twoZ',
-                                            shadow: `twoZ ? {offset: {x:0,y:0},blur:{x:4,y:4},color:[0,0,0]} : null`,
+                                            shadow: `twoZ ? shadow : null`,
                                             mods: [
                                                 {
                                                     type: 'rotate',
@@ -248,7 +249,7 @@ export const example: (id: string) => State = (id: string) => {
                                             id: 'a',
                                             // color: {r: 255, g: 0, b: 0},
                                             zIndex: 'twoZ',
-                                            shadow: `twoZ ? {offset: {x:0,y:0},blur:{x:4,y:4},color:[0,0,0]} : null`,
+                                            shadow: `twoZ ? shadow : null`,
                                             mods: [
                                                 {
                                                     type: 'rotate',

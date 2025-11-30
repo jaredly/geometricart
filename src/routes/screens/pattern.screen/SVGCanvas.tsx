@@ -1,12 +1,13 @@
 import {useEffect} from 'react';
-import {Coord} from '../../../types';
+import {Coord, shapeKey} from '../../../types';
 import {pk} from '../../pk';
 import {shapeD} from '../../shapeD';
 import {colorToString} from './colors';
 import {RenderItem} from './evaluate';
-import {Box} from './export-types';
+import {Box, ConcreteShadow, shadowKey} from './export-types';
 import {renderItems} from './recordVideo';
 import {percentToWorld, worldToPercent, svgCoord} from './useSVGZoom';
+import {coordKey} from '../../../rendering/coordKey';
 
 export const Canvas = ({
     items,
@@ -56,6 +57,15 @@ export const SVGCanvas = ({
     innerRef: React.RefObject<SVGElement | HTMLElement | null>;
     setMouse: (m: Coord | null) => void;
 }) => {
+    const shadows: Record<string, ConcreteShadow> = {};
+    let hasShadows = false;
+    items.map((item) => {
+        if (item.shadow) {
+            hasShadows = true;
+            const key = shadowKey(item.shadow);
+            shadows[key] = item.shadow;
+        }
+    });
     return (
         <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -65,12 +75,28 @@ export const SVGCanvas = ({
             onMouseLeave={() => setMouse(null)}
             onMouseMove={(evt) => setMouse(svgCoord(evt))}
         >
-            {items.map(({key, shapes, pk, fill, stroke, zIndex, ...item}) =>
+            {hasShadows ? (
+                <defs>
+                    {Object.entries(shadows).map(([key, shadow]) => (
+                        <filter key={key} id={key}>
+                            <feDropShadow
+                                dx={shadow.offset?.x ?? 0}
+                                dy={shadow.offset?.y ?? 0}
+                                stdDeviation={((shadow.blur?.x ?? 0) + (shadow.blur?.y ?? 0)) / 2}
+                                flood-color={colorToString(shadow.color ?? [0, 0, 0])}
+                            />
+                        </filter>
+                    ))}
+                </defs>
+            ) : null}
+            {items.map(({key, shapes, pk, color, strokeWidth, zIndex, shadow, ...item}) =>
                 shapes.map((shape, m) => (
                     <path
                         {...item}
-                        fill={stroke ? 'none' : colorToString(fill!)}
-                        stroke={stroke ? colorToString(stroke) : undefined}
+                        fill={strokeWidth ? 'none' : colorToString(shadow?.color ?? color)}
+                        stroke={strokeWidth ? colorToString(shadow?.color ?? color) : undefined}
+                        strokeWidth={strokeWidth}
+                        filter={shadow ? `url(#${shadowKey(shadow)})` : undefined}
                         d={shapeD(shape)}
                         key={`${key}-${m}`}
                         data-z={zIndex}

@@ -47,13 +47,13 @@ export const renderItems = (surface: Surface, box: Box, items: RenderItem[]) => 
             pk.Path.MakeFromCmds(item.shapes.flatMap((shape) => cmdsForCoords(shape, false)))!;
         const paint = new pk.Paint();
         paint.setAntiAlias(true);
-        if (item.fill) {
+        if (item.strokeWidth == null) {
             paint.setStyle(pk.PaintStyle.Fill);
-            paint.setColor([item.fill.r / 255, item.fill.g / 255, item.fill.b / 255]);
-        } else if (item.stroke && item.strokeWidth) {
+            paint.setColor([item.color.r / 255, item.color.g / 255, item.color.b / 255]);
+        } else if (item.strokeWidth) {
             paint.setStyle(pk.PaintStyle.Stroke);
             paint.setStrokeWidth(item.strokeWidth!);
-            paint.setColor([item.stroke.r / 255, item.stroke.g / 255, item.stroke.b / 255]);
+            paint.setColor([item.color.r / 255, item.color.g / 255, item.color.b / 255]);
         } else {
             return;
         }

@@ -1,6 +1,7 @@
 import {mulPos} from '../../../animation/mulPos';
 import {scalePos} from '../../../editor/scalePos';
 import {hslToRgb} from '../../../rendering/colorConvert';
+import {coordKey} from '../../../rendering/coordKey';
 import {
     Matrix,
     rotationMatrix,
@@ -9,6 +10,7 @@ import {
 } from '../../../rendering/getMirrorTransforms';
 import {GuideGeom, Coord, Segment, BarePath} from '../../../types';
 import {pk, PKPath} from '../../pk';
+import {colorToString} from './colors';
 import {CropsAndMatrices} from './resolveMods';
 
 export type AnimatableNumber = number | string;
@@ -309,6 +311,9 @@ export type Shadow =
           blur?: AnimatableCoord;
       }
     | string;
+
+export const shadowKey = (sh: ConcreteShadow) =>
+    `${coordKey(sh.blur ?? {x: 0, y: 0})}-${coordKey(sh.offset ?? {x: 0, y: 0})}-${colorToString(sh.color ?? [0, 0, 0]).replace('#', '')}`;
 
 export type ConcreteFill = {
     id: string;

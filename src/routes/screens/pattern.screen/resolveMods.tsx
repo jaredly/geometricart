@@ -280,7 +280,7 @@ const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Pattern) => {
                         return {
                             type: 'path',
                             key: `fill-${i}-${fi}`,
-                            fill: rgb,
+                            color: rgb,
                             opacity,
                             shapes: midShapes.map((s) => s.shape),
                             shadow,
@@ -291,7 +291,7 @@ const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Pattern) => {
                     return {
                         type: 'path',
                         key: `fill-${i}-${fi}`,
-                        fill: rgb,
+                        color: rgb,
                         opacity,
                         shapes: [shape],
                         shadow,
@@ -317,7 +317,7 @@ const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Pattern) => {
                             // pk???
                             type: 'path',
                             key: `fill-${i}-${fi}`,
-                            stroke: rgb,
+                            color: rgb,
                             strokeWidth: width,
                             opacity,
                             shadow,
@@ -329,7 +329,7 @@ const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Pattern) => {
                     return {
                         type: 'path',
                         key: `stroke-${i}-${fi}`,
-                        stroke: rgb,
+                        color: rgb,
                         strokeWidth: width,
                         shapes: [shape],
                         shadow,
@@ -455,7 +455,7 @@ const renderObject = (ctx: Ctx, crops: CropsAndMatrices, object: EObject) => {
             type: 'path',
             pk: thisPath,
             key: '',
-            fill: rgb,
+            color: rgb,
             opacity,
             shadow: resolveShadow(anim, f.shadow),
             shapes: cmdsToCoords(thisPath.toCmds()).map((s) => s.points),
@@ -481,7 +481,7 @@ const renderObject = (ctx: Ctx, crops: CropsAndMatrices, object: EObject) => {
             type: 'path',
             pk: thisPath,
             key: '',
-            stroke: rgb,
+            color: rgb,
             strokeWidth: a.number(anim, f.width ?? 0) / 100,
             opacity,
             shadow: resolveShadow(anim, f.shadow),
@@ -606,9 +606,19 @@ export const svgItems = (
 
         renderGroup({state, anim, layer, patterns, items, cropCache}, [], group);
     }
-    const hasZ = items.some((s) => s.zIndex != null);
+    const len = items.length;
+    for (let i = 0; i < len; i++) {
+        if (items[i].shadow) {
+            items.push({...items[i], shadow: undefined});
+        }
+    }
+    const hasZ = items.some((s) => s.zIndex != null || s.shadow != null);
     if (hasZ) {
-        items.sort((a, b) => (a.zIndex ?? 0) - (b.zIndex ?? 0));
+        items.sort((a, b) =>
+            a.zIndex === b.zIndex
+                ? (a.shadow ? 0 : 1) - (b.shadow ? 0 : 1)
+                : (a.zIndex ?? 0) - (b.zIndex ?? 0),
+        );
     }
     return {items, warnings};
 };

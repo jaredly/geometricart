@@ -27,12 +27,11 @@ export type RenderItem = {
     type: 'path';
     pk?: PKPath;
     shadow?: {blur: Coord; offset: Coord; color: Rgb};
-    fill?: {r: number; g: number; b: number};
-    stroke?: {r: number; g: number; b: number};
-    opacity?: number;
+    color: {r: number; g: number; b: number};
     strokeWidth?: number;
     zIndex?: number | null;
     shapes: Coord[][];
+    opacity?: number;
     key: string;
 };
 
