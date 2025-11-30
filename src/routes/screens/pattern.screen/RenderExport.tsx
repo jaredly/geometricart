@@ -22,7 +22,7 @@ export const RenderExport = ({state, patterns}: {state: State; patterns: Pattern
     // well this is exciting
     const cropCache = useCropCache(state, t, animCache);
 
-    const {items, warnings} = useMemo(
+    const {items, warnings, byKey} = useMemo(
         () => svgItems(state, animCache, cropCache, patterns, t),
         [state, patterns, cropCache, animCache, t],
     );
@@ -36,7 +36,13 @@ export const RenderExport = ({state, patterns}: {state: State; patterns: Pattern
     return (
         <div className="flex">
             <div className="relative overflow-hidden">
-                <SVGCanvas {...zoomProps} setMouse={setMouse} items={items} size={size} />
+                <SVGCanvas
+                    {...zoomProps}
+                    setMouse={setMouse}
+                    items={items}
+                    size={size}
+                    byKey={byKey}
+                />
                 <div ref={fpsref} className="absolute top-0 right-0 hidden px-2 py-1 bg-base-100" />
                 {resetZoom ? (
                     <button

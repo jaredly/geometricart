@@ -217,6 +217,8 @@ const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Pattern) => {
             const fills: Record<string, ConcreteFill> = {};
             const lines: Record<string, ConcreteLine> = {};
 
+            const stuff: string[] = [];
+
             const anim: (typeof ctx)['anim'] = {
                 ...ctx.anim,
                 values: {
@@ -229,11 +231,11 @@ const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Pattern) => {
             };
 
             orderedStyles.forEach((s) => {
-                if (s.disabled) return;
                 const match = matchKind(s.kind, i, colors[i], center, simple.eigenCorners);
                 if (!match) {
                     return;
                 }
+                stuff.push(`style id: ${s.id}`);
                 if (typeof match === 'object') {
                     anim.values.styleCenter = match;
                 }
@@ -241,7 +243,11 @@ const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Pattern) => {
                 // like `styleCenter`
                 Object.values(s.fills).forEach((fill) => {
                     const cfill = dropNully(resolveFill(anim, fill));
-                    if (cfill.enabled === false) return;
+                    if (cfill.enabled === false) {
+                        stuff.push(`disabled fill: ${fill.id}`);
+                        return;
+                    }
+                    stuff.push(`fill: ${fill.id}`);
                     if (!fills[fill.id]) {
                         fills[fill.id] = cfill;
                         return;
@@ -273,27 +279,19 @@ const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Pattern) => {
                     const zIndex = f.zIndex;
                     const opacity = f.opacity ? a.number(anim, f.opacity) : undefined;
                     const shadow = resolveShadow(anim, f.shadow);
-
-                    if (f.mods.length) {
-                        const midShapes = modsToShapes(ctx.cropCache, f.mods, [{shape, i: 0}]);
-
-                        return {
-                            type: 'path',
-                            key: `fill-${i}-${fi}`,
-                            color: rgb,
-                            opacity,
-                            shapes: midShapes.map((s) => s.shape),
-                            shadow,
-                            zIndex,
-                        };
-                    }
+                    const key = `fill-${i}-${fi}`;
+                    ctx.byKey[key] = stuff;
 
                     return {
                         type: 'path',
-                        key: `fill-${i}-${fi}`,
+                        key,
                         color: rgb,
                         opacity,
-                        shapes: [shape],
+                        shapes: f.mods.length
+                            ? modsToShapes(ctx.cropCache, f.mods, [{shape, i: 0}]).map(
+                                  (s) => s.shape,
+                              )
+                            : [shape],
                         shadow,
                         zIndex,
                     };
@@ -309,29 +307,19 @@ const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Pattern) => {
                     const opacity = f.opacity ? a.number(anim, f.opacity) : undefined;
                     const shadow = resolveShadow(anim, f.shadow);
                     const zIndex = f.zIndex;
-
-                    if (f.mods.length) {
-                        const midShapes = modsToShapes(ctx.cropCache, f.mods, [{shape, i: 0}]);
-
-                        return {
-                            // pk???
-                            type: 'path',
-                            key: `fill-${i}-${fi}`,
-                            color: rgb,
-                            strokeWidth: width,
-                            opacity,
-                            shadow,
-                            shapes: midShapes.map((s) => s.shape),
-                            zIndex,
-                        };
-                    }
+                    const key = `stroke-${i}-${fi}`;
+                    ctx.byKey[key] = stuff;
 
                     return {
                         type: 'path',
-                        key: `stroke-${i}-${fi}`,
+                        key,
                         color: rgb,
                         strokeWidth: width,
-                        shapes: [shape],
+                        shapes: f.mods.length
+                            ? modsToShapes(ctx.cropCache, f.mods, [{shape, i: 0}]).map(
+                                  (s) => s.shape,
+                              )
+                            : [shape],
                         shadow,
                         opacity,
                         zIndex,
@@ -586,6 +574,7 @@ export const svgItems = (
     const warnings: string[] = [];
     const warn = (v: string) => warnings.push(v);
     const items: RenderItem[] = [];
+    const byKey: Record<string, string[]> = {};
 
     for (let layer of Object.values(state.layers)) {
         const group = layer.entities[layer.rootGroup];
@@ -604,7 +593,7 @@ export const svgItems = (
             values[name] = a.value(anim, value);
         });
 
-        renderGroup({state, anim, layer, patterns, items, cropCache}, [], group);
+        renderGroup({state, anim, layer, patterns, items, cropCache, byKey}, [], group);
     }
     const len = items.length;
     for (let i = 0; i < len; i++) {
@@ -620,5 +609,5 @@ export const svgItems = (
                 : (a.zIndex ?? 0) - (b.zIndex ?? 0),
         );
     }
-    return {items, warnings};
+    return {items, warnings, byKey};
 };

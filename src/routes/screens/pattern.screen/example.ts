@@ -10,7 +10,13 @@ export const example: (id: string) => State = (id: string) => {
                     t2: `Math.sin(t1)`,
                     off: 'return (center) => (1 - dist(center,{x:0,y:0}))/30',
                     off2: 'return (center) => (1 - dist(center,{x:0,y:0}))/30 + .02',
-                    shadow: 'return {offset: {x:0,y:0},blur:{x:10,y:10},color:[0,0,0]}',
+                    shadow: 'return (n) => ({offset: {x:0,y:0},blur:{x:n * 25,y:n * 25},color:[0,0,0]})',
+                    sCurve: `
+                        const t1 = t * 3 % 1;
+                        if (t1 < .1) return t1 * 10
+                        if (t1 > .9) return 1 - (t1 - .9) * 10
+                        return 1
+                    `,
                     insett: '1',
                 },
                 entities: {
@@ -22,15 +28,7 @@ export const example: (id: string) => State = (id: string) => {
                             // disabled: true,
                             id: 'sid',
                             fills: {
-                                a: {
-                                    // color: {h: 80, s: 100, l: 50},
-                                    id: 'a',
-                                    // width: 3,
-                                    // color: `t < 0.5 ? {h: 190, s: 100, l: 30} : {h: 180, s: 100, l: 50}`,
-                                    color: `bgColor`,
-                                    mods: [],
-                                    zIndex: -10,
-                                },
+                                a: {id: 'a', color: `bgColor`, mods: [], zIndex: -10},
                             },
                             kind: {type: 'everything'},
                             lines: {},
@@ -80,8 +78,7 @@ export const example: (id: string) => State = (id: string) => {
                                             id: 'b',
                                             zIndex: 'threeZ',
                                             enabled: '!!threeZ',
-                                            shadow: `threeZ ? shadow : null`,
-                                            // shadow: `threeZ ? {offset: {x:4,y:4},blur:{x:4,y:4},color:[0,0,0]} : null`,
+                                            shadow: `shadow(sCurve)`,
                                             mods: [
                                                 {
                                                     type: 'rotate',
@@ -122,7 +119,7 @@ export const example: (id: string) => State = (id: string) => {
                                             // opacity: 1,
                                             zIndex: 'threeZ',
                                             enabled: '!!threeZ',
-                                            shadow: `threeZ ? shadow : null`,
+                                            shadow: `shadow(sCurve)`,
                                             mods: [
                                                 {
                                                     type: 'rotate',
@@ -172,7 +169,7 @@ export const example: (id: string) => State = (id: string) => {
                                                     origin: 'styleCenter',
                                                 },
                                             ],
-                                            shadow: `oneZ ? shadow : null`,
+                                            shadow: `shadow(sCurve)`,
                                         },
                                     },
                                 },
@@ -207,7 +204,7 @@ export const example: (id: string) => State = (id: string) => {
                                             // color: {r: 0, g: 255, b: 0},
                                             zIndex: 'twoZ',
                                             enabled: '!!twoZ',
-                                            shadow: `twoZ ? shadow : null`,
+                                            shadow: `shadow(sCurve)`,
                                             mods: [
                                                 {
                                                     type: 'rotate',
@@ -224,7 +221,7 @@ export const example: (id: string) => State = (id: string) => {
                                         type: 'distance',
                                         corner: 0,
                                         repeat: true,
-                                        distances: [0, 0.7],
+                                        distances: [0, 0.1],
                                         // distances: [0, 1.0],
                                     },
                                     mods: [],
@@ -248,8 +245,9 @@ export const example: (id: string) => State = (id: string) => {
                                         a: {
                                             id: 'a',
                                             // color: {r: 255, g: 0, b: 0},
+                                            enabled: '!!twoZ',
                                             zIndex: 'twoZ',
-                                            shadow: `twoZ ? shadow : null`,
+                                            shadow: `shadow(sCurve)`,
                                             mods: [
                                                 {
                                                     type: 'rotate',

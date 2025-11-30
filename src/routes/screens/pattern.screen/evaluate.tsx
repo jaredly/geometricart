@@ -43,6 +43,7 @@ export type Ctx = {
     layer: Layer;
     patterns: Patterns;
     items: RenderItem[];
+    byKey: Record<string, string[]>;
 };
 
 type AnimFn = (ctx: AnimCtx['values']) => any;

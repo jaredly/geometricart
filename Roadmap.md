@@ -1,3 +1,11 @@
+
+
+# Debugging
+
+I want to be able to click on a shape
+and see like ... what the current values are, and what the fills are that are active for it...
+
+
 # Current anim:
 
 - lines on everything

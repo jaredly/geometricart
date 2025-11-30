@@ -17,12 +17,14 @@ import {
     State,
     Color,
     colorToRgb,
+    PMods,
 } from './export-types';
 import {Coord, Segment} from '../../../types';
 import {rgbToString} from '../../../editor/PalettesForm';
 import {colorToRgbString, colorToString, parseColor} from './colors';
 import {shapeD} from '../../shapeD';
 import {evalEase, evalLane, evalTimeline, tlpos} from './evalEase';
+import {BlurInt} from '../../../editor/Forms';
 
 type StateEditorProps = {
     value: State;
@@ -214,18 +216,33 @@ export const StateEditor = ({value, onChange}: StateEditorProps) => {
                 </div>
             </Section>
             <Section title="Timelines">
-                <TimelineEditor timeline={value.styleConfig.timeline} />
+                <TimelineEditor
+                    timeline={value.styleConfig.timeline}
+                    onChange={(timeline) => {
+                        onChange({
+                            ...value,
+                            styleConfig: {
+                                ...value.styleConfig,
+                                timeline,
+                            },
+                        });
+                    }}
+                />
             </Section>
         </div>
     );
 };
 
+type Lane = State['styleConfig']['timeline']['lanes'][0];
+
 const LaneEditor = ({
     lane,
+    onChange,
     ts,
 }: {
     ts: number[];
-    lane: State['styleConfig']['timeline']['lanes'][0];
+    lane: Lane;
+    onChange: (l: Lane) => void;
 }) => {
     const m = 40;
     const w = ts.length * m;
@@ -315,15 +332,32 @@ const LaneEditor = ({
             >
                 {items}
             </svg>
+            <JsonEditor value={lane} onChange={onChange} label="Lane" />
         </div>
     );
 };
 
-const TimelineEditor = ({timeline}: {timeline: State['styleConfig']['timeline']}) => {
+type Timeline = State['styleConfig']['timeline'];
+const TimelineEditor = ({
+    timeline,
+    onChange,
+}: {
+    timeline: Timeline;
+    onChange: (v: Timeline) => void;
+}) => {
     return (
         <div>
             {timeline.lanes.map((lane, i) => (
-                <LaneEditor key={i} lane={lane} ts={timeline.ts} />
+                <LaneEditor
+                    key={i}
+                    lane={lane}
+                    ts={timeline.ts}
+                    onChange={(lane) => {
+                        const lanes = timeline.lanes.slice();
+                        lanes[i] = lane;
+                        onChange({...timeline, lanes});
+                    }}
+                />
             ))}
         </div>
     );
@@ -1553,9 +1587,9 @@ const ShapeStylesEditor = ({
             </div>
             {entries.length === 0 ? <div className="text-sm opacity-60">No styles yet.</div> : null}
             <div className="space-y-3">
-                {entries.map(([key, style]) => (
+                {entries.map(([key, style], i) => (
                     <ShapeStyleCard
-                        key={key}
+                        key={key + ':' + i}
                         palette={palette}
                         value={style}
                         onChange={(next, nextKey) => upsert(key, next, nextKey)}
@@ -1639,6 +1673,38 @@ const ShapeStyleCard = ({
     );
 };
 
+const DistanceEditor = ({
+    value,
+    onChange,
+}: {
+    value: BaseKind & {type: 'distance'};
+    onChange: (v: BaseKind) => void;
+}) => {
+    return (
+        <div>
+            <label>
+                Corner
+                <BlurInt
+                    value={value.corner}
+                    onChange={(corner) =>
+                        corner != null ? onChange({...value, corner}) : undefined
+                    }
+                />
+                Dist
+                <BlurInput
+                    value={value.distances.map((m) => m.toString()).join(',')}
+                    onChange={(dist) => {
+                        if (!dist) return;
+                        const t = dist.split(',').map((n) => Number(n));
+                        if (!t.length || !t.every((n) => Number.isFinite(n))) return;
+                        onChange({...value, distances: t});
+                    }}
+                />
+            </label>
+        </div>
+    );
+};
+
 const BaseKindEditor = ({
     label,
     value,
@@ -1653,6 +1719,9 @@ const BaseKindEditor = ({
         <div className="bg-base-200 rounded-lg p-3 border border-base-300 space-y-2">
             <div className="flex items-center justify-between">
                 <div className="font-semibold text-sm">{label}</div>
+                {value.type === 'distance' ? (
+                    <DistanceEditor value={value} onChange={(value) => onChange(value)} />
+                ) : null}
                 <div className="flex flex-wrap gap-2">
                     <select
                         value={type}
@@ -1682,10 +1751,24 @@ const BaseKindEditor = ({
                                             : {type: 'shape', key: '', rotInvariant: false},
                                     );
                                     return;
+                                case 'distance':
+                                    onChange(
+                                        value.type === 'distance'
+                                            ? value
+                                            : {
+                                                  type: 'distance',
+                                                  corner: 0,
+                                                  distances: [0, 1],
+                                                  repeat: true,
+                                              },
+                                    );
+                                    return;
                             }
                         }}
                     >
-                        {(['everything', 'alternating', 'explicit', 'shape'] as const).map((t) => (
+                        {(
+                            ['everything', 'alternating', 'explicit', 'shape', 'distance'] as const
+                        ).map((t) => (
                             <option
                                 key={t}
                                 value={t}
@@ -1853,10 +1936,41 @@ const FillEditor = ({
                         onChange({...value, rounded: rounded as AnimatableNumber})
                     }
                 />
+                {value.mods.map((mod, i) => (
+                    <PModEditor
+                        key={i}
+                        value={mod}
+                        palette={palette}
+                        onRemove={() => {
+                            const mods = value.mods.slice();
+                            mods.splice(i, 1);
+                            onChange({...value, mods});
+                        }}
+                        onChange={(mod) => {
+                            const mods = value.mods.slice();
+                            mods[i] = mod;
+                            onChange({...value, mods});
+                        }}
+                    />
+                ))}
             </div>
             {/* <ModsEditor value={value.mods} onChange={(mods) => onChange({...value, mods})} /> */}
         </div>
     );
+};
+
+const PModEditor = ({
+    palette,
+    value,
+    onChange,
+    onRemove,
+}: {
+    palette: Color[];
+    value: PMods;
+    onChange: (next: PMods, nextKey?: string) => void;
+    onRemove: () => void;
+}) => {
+    return <div>{value.type}</div>;
 };
 
 const LineEditor = ({

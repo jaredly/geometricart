@@ -1,4 +1,4 @@
-import {useEffect} from 'react';
+import {useEffect, useState} from 'react';
 import {Coord, shapeKey} from '../../../types';
 import {pk} from '../../pk';
 import {shapeD} from '../../shapeD';
@@ -50,12 +50,14 @@ export const SVGCanvas = ({
     box,
     innerRef,
     setMouse,
+    byKey,
 }: {
     items: RenderItem[];
     size: number;
     box: Box;
     innerRef: React.RefObject<SVGElement | HTMLElement | null>;
     setMouse: (m: Coord | null) => void;
+    byKey: Record<string, string[]>;
 }) => {
     const shadows: Record<string, ConcreteShadow> = {};
     let hasShadows = false;
@@ -66,7 +68,9 @@ export const SVGCanvas = ({
             shadows[key] = item.shadow;
         }
     });
+    const [focus, setFocus] = useState(null as null | string);
     return (
+        // <div>
         <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox={`${box.x.toFixed(4)} ${box.y.toFixed(4)} ${box.width.toFixed(4)} ${box.height.toFixed(4)}`}
@@ -93,16 +97,25 @@ export const SVGCanvas = ({
                 shapes.map((shape, m) => (
                     <path
                         {...item}
-                        fill={strokeWidth ? 'none' : colorToString(shadow?.color ?? color)}
+                        fill={
+                            focus === key
+                                ? 'red'
+                                : strokeWidth
+                                  ? 'none'
+                                  : colorToString(shadow?.color ?? color)
+                        }
                         stroke={strokeWidth ? colorToString(shadow?.color ?? color) : undefined}
                         strokeWidth={strokeWidth}
                         filter={shadow ? `url(#${shadowKey(shadow)})` : undefined}
                         d={shapeD(shape)}
                         key={`${key}-${m}`}
+                        onClick={() => setFocus(focus === key ? null : key)}
                         data-z={zIndex}
                     />
                 )),
             )}
         </svg>
+        // {focus ? <div>{JSON.stringify(byKey[focus])}</div> : null}
+        // </div>
     );
 };
