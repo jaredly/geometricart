@@ -50,15 +50,7 @@ export const example: (id: string) => State = (id: string) => {
                                 a: {
                                     id: 'a',
                                     fills: {a: {id: 'a', color: 0, mods: []}},
-                                    lines: {
-                                        // a: {
-                                        //     id: 'a',
-                                        //     color: 'black',
-                                        //     mods: [],
-                                        //     width: 0,
-                                        //     zIndex: 10,
-                                        // },
-                                    },
+                                    lines: {},
                                     mods: [],
                                     kind: {type: 'alternating', index: 1},
                                     order: 1,
@@ -66,15 +58,7 @@ export const example: (id: string) => State = (id: string) => {
                                 b: {
                                     id: 'b',
                                     fills: {b: {id: 'b', color: 1, mods: []}},
-                                    lines: {
-                                        // b: {
-                                        //     id: 'b',
-                                        //     color: 'black',
-                                        //     mods: [],
-                                        //     width: 3,
-                                        //     zIndex: 10,
-                                        // },
-                                    },
+                                    lines: {},
                                     mods: [],
                                     kind: {type: 'alternating', index: 0},
                                     order: 2,
@@ -89,24 +73,14 @@ export const example: (id: string) => State = (id: string) => {
                                     },
                                     mods: [],
                                     order: 3,
-                                    lines: {
-                                        // b: {
-                                        //     id: 'b',
-                                        //     zIndex: 'threeZ',
-                                        //     mods: [
-                                        //         {
-                                        //             type: 'rotate',
-                                        //             v: 'twoRotate',
-                                        //             origin: 'styleCenter',
-                                        //         },
-                                        //     ],
-                                        // },
-                                    },
+                                    lines: {},
                                     fills: {
                                         b: {
                                             id: 'b',
                                             zIndex: 'threeZ',
+                                            enabled: '!!threeZ',
                                             shadow: `threeZ ? {offset: {x:0,y:0},blur:{x:4,y:4},color:[0,0,0]} : null`,
+                                            // shadow: `threeZ ? {offset: {x:4,y:4},blur:{x:4,y:4},color:[0,0,0]} : null`,
                                             mods: [
                                                 {
                                                     type: 'rotate',
@@ -146,6 +120,7 @@ export const example: (id: string) => State = (id: string) => {
                                             // color: {r: 255, g: 255, b: 0},
                                             // opacity: 1,
                                             zIndex: 'threeZ',
+                                            enabled: '!!threeZ',
                                             shadow: `threeZ ? {offset: {x:0,y:0},blur:{x:4,y:4},color:[0,0,0]} : null`,
                                             mods: [
                                                 {
@@ -188,6 +163,7 @@ export const example: (id: string) => State = (id: string) => {
                                         a: {
                                             id: 'a',
                                             zIndex: 'oneZ',
+                                            enabled: '!!oneZ',
                                             mods: [
                                                 {
                                                     type: 'rotate',
@@ -229,6 +205,7 @@ export const example: (id: string) => State = (id: string) => {
                                             id: 'a',
                                             // color: {r: 0, g: 255, b: 0},
                                             zIndex: 'twoZ',
+                                            enabled: '!!twoZ',
                                             shadow: `twoZ ? {offset: {x:0,y:0},blur:{x:4,y:4},color:[0,0,0]} : null`,
                                             mods: [
                                                 {

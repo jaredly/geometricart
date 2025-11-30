@@ -3,6 +3,15 @@
 - lines on everything
 - then let's try drop shadows
 
+yayyyy drop sahdwos, so nice.
+
+ok but 'shadow layer' needs to happen.
+
+AH ok so actually what I want is like an 'enabled' boolean for fills and styles.
+
+-> amke enabled
+-> shadow layer
+
 #
 
 I ... really want to be able to

@@ -9,6 +9,7 @@ import {
 } from '../../../rendering/getMirrorTransforms';
 import {GuideGeom, Coord, Segment, BarePath} from '../../../types';
 import {pk, PKPath} from '../../pk';
+import {CropsAndMatrices} from './resolveMods';
 
 export type AnimatableNumber = number | string;
 export type AnimatableBoolean = boolean | string;
@@ -295,6 +296,12 @@ export type ShapeStyle = {
     mods: PMods[];
 };
 
+export type ConcreteShadow = {
+    color?: Color;
+    offset?: Coord;
+    blur?: Coord;
+};
+
 export type Shadow =
     | {
           color?: AnimatableColor;
@@ -303,8 +310,23 @@ export type Shadow =
       }
     | string;
 
+export type ConcreteFill = {
+    id: string;
+    enabled?: boolean;
+    shadow?: Shadow;
+    zIndex?: number;
+    color?: Color;
+    rounded?: number;
+    opacity?: number;
+    tint?: Color;
+    thickness?: number;
+
+    mods: CropsAndMatrices;
+};
+
 export type Fill = {
     id: string;
+    enabled?: AnimatableBoolean;
     shadow?: Shadow;
     zIndex?: AnimatableNumber;
     color?: AnimatableColor;
@@ -316,8 +338,24 @@ export type Fill = {
     mods: PMods[];
 };
 
+export type ConcreteLine = {
+    id: string;
+    enabled?: boolean;
+    shadow?: ConcreteShadow;
+    zIndex?: number;
+    color?: Color;
+    width?: number;
+    sharp?: boolean;
+    opacity?: number;
+    tint?: Color;
+    thickness?: number;
+
+    mods: CropsAndMatrices;
+};
+
 export type Line = {
     id: string;
+    enabled?: AnimatableBoolean;
     shadow?: Shadow;
     zIndex?: AnimatableNumber;
     color?: AnimatableColor;

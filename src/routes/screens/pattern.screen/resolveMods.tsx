@@ -31,13 +31,15 @@ import {
     Group,
     State,
     Shadow,
+    ConcreteFill,
+    ConcreteLine,
 } from './export-types';
 import {evalTimeline} from './evalEase';
 import {scalePos} from '../../../editor/scalePos';
 
 type CCrop = {type: 'crop'; id: string; mode?: CropMode; hole?: boolean};
 type CInset = {type: 'inset'; v: number};
-type CropsAndMatrices = (CCrop | Matrix[] | CInset)[];
+export type CropsAndMatrices = (CCrop | Matrix[] | CInset)[];
 
 export const resolvePMod = (ctx: AnimCtx, mod: PMods): CropsAndMatrices[0] => {
     switch (mod.type) {
@@ -212,14 +214,8 @@ const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Pattern) => {
         ...midShapes.flatMap(({shape, i}) => {
             const center = centroid(shape);
             const radius = Math.min(...shape.map((s) => dist(s, center)));
-            const fills: Record<
-                string,
-                Omit<Fill, 'mods' | 'zIndex'> & {mods: CropsAndMatrices; zIndex: number}
-            > = {};
-            const lines: Record<
-                string,
-                Omit<Line, 'mods' | 'zIndex'> & {mods: CropsAndMatrices; zIndex: number}
-            > = {};
+            const fills: Record<string, ConcreteFill> = {};
+            const lines: Record<string, ConcreteLine> = {};
 
             const anim: (typeof ctx)['anim'] = {
                 ...ctx.anim,
@@ -244,24 +240,27 @@ const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Pattern) => {
                 // hmmm need to align the ... style that it came from ... with animvalues
                 // like `styleCenter`
                 Object.values(s.fills).forEach((fill) => {
-                    const mods = [
-                        ...(fills[fill.id]?.mods ?? []),
-                        ...(fill.mods ?? []).map((mod) => resolvePMod(anim, mod)),
-                    ];
-                    const zIndex =
-                        (fills[fill.id]?.zIndex ?? 0) +
-                        (fill.zIndex ? a.number(anim, fill.zIndex) : 0);
-                    fills[fill.id] = {...fills[fill.id], ...fill, mods, zIndex};
+                    const cfill = dropNully(resolveFill(anim, fill));
+                    if (cfill.enabled === false) return;
+                    if (!fills[fill.id]) {
+                        fills[fill.id] = cfill;
+                        return;
+                    }
+                    // merge: mods.
+                    const now = fills[fill.id];
+                    cfill.mods.unshift(...now.mods);
+                    Object.assign(now, cfill);
                 });
                 Object.values(s.lines).forEach((line) => {
-                    const mods = [
-                        ...(lines[line.id]?.mods ?? []),
-                        ...(line.mods ?? []).map((mod) => resolvePMod(anim, mod)),
-                    ];
-                    const zIndex =
-                        (lines[line.id]?.zIndex ?? 0) +
-                        (line.zIndex ? a.number(anim, line.zIndex) : 0);
-                    lines[line.id] = {...lines[line.id], ...line, mods, zIndex};
+                    const cline = dropNully(resolveLine(anim, line));
+                    if (cline.enabled === false) return;
+                    if (!lines[line.id]) {
+                        lines[line.id] = cline;
+                        return;
+                    }
+                    const now = lines[line.id];
+                    cline.mods.unshift(...now.mods);
+                    Object.assign(now, cline);
                 });
             });
 
@@ -279,7 +278,6 @@ const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Pattern) => {
                         const midShapes = modsToShapes(ctx.cropCache, f.mods, [{shape, i: 0}]);
 
                         return {
-                            // pk???
                             type: 'path',
                             key: `fill-${i}-${fi}`,
                             fill: rgb,
@@ -368,11 +366,51 @@ const resolveShadow = (anim: Ctx['anim'], shadow?: Shadow): RenderItem['shadow']
     }
     return shadow?.color
         ? {
-              blur: shadow.blur ? scalePos(a.coord(anim, shadow.blur), 0.01) : {x: 0, y: 0},
-              offset: shadow.blur ? scalePos(a.coord(anim, shadow.blur), 0.01) : {x: 0, y: 0},
+              blur: shadow.blur ? scalePos(a.coord(anim, shadow.blur), 0.1) : {x: 0, y: 0},
+              offset: shadow.blur ? scalePos(a.coord(anim, shadow.blur), 0.1) : {x: 0, y: 0},
               color: colorToRgb(a.color(anim, shadow.color)),
           }
         : undefined;
+};
+
+const resolveFill = (anim: Ctx['anim'], f: Fill): ConcreteFill => {
+    return {
+        id: f.id,
+        mods: f.mods.map((m) => resolvePMod(anim, m)),
+        color: f.color != null ? a.color(anim, f.color) : undefined,
+        opacity: f.opacity != null ? a.number(anim, f.opacity) : undefined,
+        rounded: f.rounded != null ? a.number(anim, f.rounded) : undefined,
+        shadow: resolveShadow(anim, f.shadow),
+        thickness: f.thickness != null ? a.number(anim, f.thickness) : undefined,
+        tint: f.tint != null ? a.color(anim, f.tint) : undefined,
+        zIndex: f.zIndex != null ? a.number(anim, f.zIndex) : undefined,
+        enabled: f.enabled != null ? a.boolean(anim, f.enabled) : undefined,
+    };
+};
+
+const resolveLine = (anim: Ctx['anim'], f: Line): ConcreteLine => {
+    return {
+        id: f.id,
+        mods: f.mods.map((m) => resolvePMod(anim, m)),
+        color: f.color != null ? a.color(anim, f.color) : undefined,
+        opacity: f.opacity != null ? a.number(anim, f.opacity) : undefined,
+        shadow: resolveShadow(anim, f.shadow),
+        thickness: f.thickness != null ? a.number(anim, f.thickness) : undefined,
+        tint: f.tint != null ? a.color(anim, f.tint) : undefined,
+        zIndex: f.zIndex != null ? a.number(anim, f.zIndex) : undefined,
+        width: f.width != null ? a.number(anim, f.width) : undefined,
+        sharp: f.sharp != null ? a.boolean(anim, f.sharp) : undefined,
+        enabled: f.enabled != null ? a.boolean(anim, f.enabled) : undefined,
+    };
+};
+
+const dropNully = <T extends {}>(v: T): T => {
+    (Object.keys(v) as (keyof T)[]).forEach((k) => {
+        if (v[k] == null) {
+            delete v[k];
+        }
+    });
+    return v;
 };
 
 const renderObject = (ctx: Ctx, crops: CropsAndMatrices, object: EObject) => {

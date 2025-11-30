@@ -79,7 +79,7 @@ export const renderItems = (surface: Surface, box: Box, items: RenderItem[]) => 
         if (!item.pk) {
             pkp.delete();
         }
-        if (imf != null) imf.delete();
+        // if (imf != null) imf.delete();
     });
     ctx.restore();
     surface.flush();
