@@ -15,12 +15,14 @@ export const Canvas = ({
     setMouse,
     box,
     innerRef,
+    byKey,
 }: {
     items: RenderItem[];
     size: number;
     box: Box;
     innerRef: React.RefObject<SVGElement | HTMLElement | null>;
     setMouse: (m: Coord | null) => void;
+    byKey: Record<string, string[]>;
 }) => {
     useEffect(() => {
         const surface = pk.MakeWebGLCanvasSurface(innerRef.current! as HTMLCanvasElement)!;

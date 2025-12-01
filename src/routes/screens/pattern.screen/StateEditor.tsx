@@ -84,23 +84,25 @@ export const StateEditor = ({value, onChange}: StateEditorProps) => {
             </Section>
 
             <Section title="View">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <NumberField
-                        label="PPI"
-                        value={value.view.ppi}
-                        onChange={(ppi) => onChange({...value, view: {...value.view, ppi}})}
-                    />
-                    {/* <TextField
-                        label="Background"
-                        value={value.view.background ?? ''}
-                        placeholder="color or expression"
-                        onChange={(background) =>
-                            onChange({
-                                ...value,
-                                view: {...value.view, background: background || undefined},
-                            })
-                        }
-                    /> */}
+                <div className="flex flex-col gap-4">
+                    <div className="flex gap-4">
+                        <NumberField
+                            label="PPI"
+                            value={value.view.ppi}
+                            onChange={(ppi) => onChange({...value, view: {...value.view, ppi}})}
+                        />
+                        <AnimColor
+                            label="Background"
+                            value={value.view.background}
+                            palette={value.styleConfig.palette}
+                            onChange={(background) =>
+                                onChange({
+                                    ...value,
+                                    view: {...value.view, background: background || undefined},
+                                })
+                            }
+                        />
+                    </div>
                     <BoxField
                         label="View Box"
                         value={value.view.box}
@@ -402,12 +404,12 @@ const NumberField = ({
     step?: number;
     onChange: (next: number) => void;
 }) => (
-    <label className="form-control w-full">
+    <label className="flex gap-2 items-center" onClick={(evt) => evt.stopPropagation()}>
         <div className="label">
             <span className="label-text font-semibold">{label}</span>
         </div>
         <input
-            className="input input-bordered w-full"
+            className="input input-sm input-bordered w-15"
             type="number"
             value={value}
             step={step}
@@ -454,7 +456,7 @@ const BoxField = ({
     return (
         <div className="bg-base-200 rounded-lg p-3 border border-base-300 space-y-2">
             <div className="font-semibold text-sm">{label}</div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-row gap-3">
                 {(['x', 'y', 'width', 'height'] as const).map((key) => (
                     <NumberField
                         key={key}
@@ -812,6 +814,23 @@ const EntityEditor = ({
             ) : null}
         </details>
     );
+};
+
+const addMod = (type: string): PMods => {
+    switch (type) {
+        case 'inset':
+            return {type, v: 1};
+        case 'translate':
+            return {type, v: {x: 0, y: 0}};
+        case 'crop':
+            return {type, id: ''};
+        case 'scale':
+            return {type, v: 2};
+        case 'rotate':
+            return {type, v: 1};
+        default:
+            throw new Error(`bad mod type: ${type}`);
+    }
 };
 
 const GroupEditor = ({value, onChange}: {value: Group; onChange: (next: Group) => void}) => {
@@ -1234,7 +1253,7 @@ const AnimColor = ({
                             : colorToString(value)
                         : ''
                 }
-                placeholder="number | expression"
+                placeholder="Color"
                 onChange={(value) => {
                     const parsed = parseAnimatable(value);
                     onChange(value.trim() ? parsed : undefined);
@@ -1410,7 +1429,9 @@ const BlurInput = ({
     value,
     onChange,
     placeholder,
+    className,
 }: {
+    className?: string;
     placeholder?: string;
     value: string;
     onChange: (v: string) => void;
@@ -1419,7 +1440,8 @@ const BlurInput = ({
     return (
         <input
             className={
-                'input input-sm ' + (text != null && text !== value ? 'outline-blue-400' : '')
+                `input input-sm ${className ?? ''} ` +
+                (text != null && text !== value ? 'outline-blue-400' : '')
             }
             value={text ?? value}
             onBlur={() => {
@@ -1452,8 +1474,8 @@ const CoordField = ({
     onChange: (next: Coord) => void;
 }) => {
     return (
-        <div className="bg-base-200 rounded-lg p-3 border border-base-300 space-y-2">
-            {label ? <div className="font-semibold text-sm">{label}</div> : null}
+        <div className="bg-base-200 rounded-lg p-3 border border-base-300 space-y-2 flex gap-2 items-center">
+            {label ? <div className="font-semibold text-sm p-0 m-0">{label}</div> : null}
             <div className="grid grid-cols-2 gap-2">
                 <NumberField
                     label="X"
@@ -1483,14 +1505,27 @@ const JsonEditor = <T,>({
 }) => {
     const [draft, setDraft] = useState(() => JSON.stringify(value, null, 2));
     const [error, setError] = useState<string | null>(null);
+    const [expanded, setExpanded] = useState(false);
 
     useEffect(() => {
         setDraft(JSON.stringify(value, null, 2));
     }, [value]);
 
+    if (!expanded) {
+        return (
+            <div
+                className="form-control h-10 overflow-hidden opacity-40 flex gap-2 p-2"
+                onClick={() => setExpanded(!expanded)}
+            >
+                <span className="label-text font-semibold">{label}</span>
+                <pre>{JSON.stringify(value)}</pre>
+            </div>
+        );
+    }
+
     return (
-        <div className="form-control">
-            <div className="label">
+        <div className="form-control flex flex-col p-2">
+            <div className="label" onClick={() => setExpanded(!expanded)}>
                 <span className="label-text font-semibold">{label}</span>
                 {error ? <span className="label-text-alt text-error">{error}</span> : null}
             </div>
@@ -1572,8 +1607,8 @@ const ShapeStylesEditor = ({
     };
 
     return (
-        <div className="bg-base-200 rounded-lg border border-base-300 p-3 space-y-3">
-            <div className="flex items-center justify-between">
+        <div className="bg-base-200 rounded-lg border border-base-300 space-y-3">
+            <div className="flex items-center justify-between p-3">
                 <div className="font-semibold">Shape Styles</div>
                 <button
                     className="btn btn-xs btn-outline"
@@ -1616,57 +1651,72 @@ const ShapeStyleCard = ({
     onChange: (next: ShapeStyle, nextKey?: string) => void;
     onRemove: () => void;
 }) => {
+    const [show, setShow] = useState(false);
     return (
-        <div className="card bg-base-100 border border-base-300">
-            <div className="card-body space-y-3">
-                <div className="flex flex-col md:flex-row gap-2 md:items-center">
+        <div className="bg-base-100 rounded rounded-xl border border-base-300">
+            <div className="p-3 space-y-3">
+                <div
+                    className="flex flex-col md:flex-row gap-2 md:items-center"
+                    onClick={() => setShow(!show)}
+                >
+                    <button>{show ? '🔽' : '▶️'}</button>
                     <NumberField
                         label="Order"
                         value={value.order}
                         onChange={(order) => onChange({...value, order})}
                     />
                     <div className="flex-1" />
-                    <button className="btn btn-ghost btn-xs text-error" onClick={onRemove}>
+                    <button
+                        className="btn btn-ghost btn-xs text-error"
+                        onClick={(evt) => {
+                            evt.stopPropagation();
+                            onRemove();
+                        }}
+                    >
                         Remove
                     </button>
                 </div>
-                <BaseKindEditor
-                    label="Kind"
-                    value={value.kind}
-                    onChange={(kind) => onChange({...value, kind})}
-                />
-                <div className="flex flex-col gap-3">
-                    <SubStyleList
-                        label="Fills"
-                        emptyLabel="No fills"
-                        items={value.fills}
-                        createItem={createFill}
-                        render={(key, fill, update, remove) => (
-                            <FillEditor
-                                value={fill}
-                                onChange={update}
-                                onRemove={remove}
-                                palette={palette}
+                {show && (
+                    <>
+                        <BaseKindEditor
+                            label="Kind"
+                            value={value.kind}
+                            onChange={(kind) => onChange({...value, kind})}
+                        />
+                        <div className="flex flex-col gap-3">
+                            <SubStyleList
+                                label="Fills"
+                                emptyLabel="No fills"
+                                items={value.fills}
+                                createItem={createFill}
+                                render={(key, fill, update, remove) => (
+                                    <FillEditor
+                                        value={fill}
+                                        onChange={update}
+                                        onRemove={remove}
+                                        palette={palette}
+                                    />
+                                )}
+                                onChange={(fills) => onChange({...value, fills})}
                             />
-                        )}
-                        onChange={(fills) => onChange({...value, fills})}
-                    />
-                    <SubStyleList
-                        label="Lines"
-                        emptyLabel="No lines"
-                        items={value.lines}
-                        createItem={createLine}
-                        render={(key, line, update, remove) => (
-                            <LineEditor
-                                palette={palette}
-                                value={line}
-                                onChange={update}
-                                onRemove={remove}
+                            <SubStyleList
+                                label="Lines"
+                                emptyLabel="No lines"
+                                items={value.lines}
+                                createItem={createLine}
+                                render={(key, line, update, remove) => (
+                                    <LineEditor
+                                        palette={palette}
+                                        value={line}
+                                        onChange={update}
+                                        onRemove={remove}
+                                    />
+                                )}
+                                onChange={(lines) => onChange({...value, lines})}
                             />
-                        )}
-                        onChange={(lines) => onChange({...value, lines})}
-                    />
-                </div>
+                        </div>
+                    </>
+                )}
                 {/* <ModsEditor value={value.mods} onChange={(mods) => onChange({...value, mods})} /> */}
             </div>
         </div>
@@ -1685,6 +1735,7 @@ const DistanceEditor = ({
             <label>
                 Corner
                 <BlurInt
+                    className="input input-sm w-10 mx-2"
                     value={value.corner}
                     onChange={(corner) =>
                         corner != null ? onChange({...value, corner}) : undefined
@@ -1692,6 +1743,7 @@ const DistanceEditor = ({
                 />
                 Dist
                 <BlurInput
+                    className="w-15 mx-2"
                     value={value.distances.map((m) => m.toString()).join(',')}
                     onChange={(dist) => {
                         if (!dist) return;
@@ -1778,55 +1830,55 @@ const BaseKindEditor = ({
                             </option>
                         ))}
                     </select>
+                    {type === 'alternating' ? (
+                        <NumberField
+                            label="Index"
+                            value={value.index}
+                            onChange={(index) => onChange({...value, index})}
+                        />
+                    ) : null}
+                    {type === 'explicit' ? (
+                        <TextField
+                            label="Ids (comma separated)"
+                            value={Object.keys(value.ids).join(',')}
+                            onChange={(text) => {
+                                const ids = text
+                                    .split(',')
+                                    .map((t) => t.trim())
+                                    .filter(Boolean)
+                                    .reduce(
+                                        (acc, key) => {
+                                            acc[key] = true;
+                                            return acc;
+                                        },
+                                        {} as Record<string, true>,
+                                    );
+                                onChange({...value, ids});
+                            }}
+                        />
+                    ) : null}
+                    {type === 'shape' ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            <TextField
+                                label="Shape key"
+                                value={value.key}
+                                onChange={(key) => onChange({...value, key})}
+                            />
+                            <label className="label cursor-pointer gap-2">
+                                <span className="label-text text-sm">Rotation invariant</span>
+                                <input
+                                    className="checkbox"
+                                    type="checkbox"
+                                    checked={value.rotInvariant}
+                                    onChange={(evt) =>
+                                        onChange({...value, rotInvariant: evt.target.checked})
+                                    }
+                                />
+                            </label>
+                        </div>
+                    ) : null}
                 </div>
             </div>
-            {type === 'alternating' ? (
-                <NumberField
-                    label="Index"
-                    value={value.index}
-                    onChange={(index) => onChange({...value, index})}
-                />
-            ) : null}
-            {type === 'explicit' ? (
-                <TextField
-                    label="Ids (comma separated)"
-                    value={Object.keys(value.ids).join(',')}
-                    onChange={(text) => {
-                        const ids = text
-                            .split(',')
-                            .map((t) => t.trim())
-                            .filter(Boolean)
-                            .reduce(
-                                (acc, key) => {
-                                    acc[key] = true;
-                                    return acc;
-                                },
-                                {} as Record<string, true>,
-                            );
-                        onChange({...value, ids});
-                    }}
-                />
-            ) : null}
-            {type === 'shape' ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    <TextField
-                        label="Shape key"
-                        value={value.key}
-                        onChange={(key) => onChange({...value, key})}
-                    />
-                    <label className="label cursor-pointer gap-2">
-                        <span className="label-text text-sm">Rotation invariant</span>
-                        <input
-                            className="checkbox"
-                            type="checkbox"
-                            checked={value.rotInvariant}
-                            onChange={(evt) =>
-                                onChange({...value, rotInvariant: evt.target.checked})
-                            }
-                        />
-                    </label>
-                </div>
-            ) : null}
         </div>
     );
 };
@@ -1861,8 +1913,8 @@ const SubStyleList = <T,>({
     };
 
     return (
-        <div className="bg-base-100 rounded-lg border border-base-300 p-3 space-y-2">
-            <div className="flex items-center justify-between">
+        <div className="bg-base-100 rounded-lg space-y-2">
+            <div className="flex items-center justify-between px-3">
                 <div className="font-semibold text-sm">{label}</div>
                 <button
                     className="btn btn-xs btn-outline"
@@ -1908,12 +1960,9 @@ const FillEditor = ({
 }) => {
     return (
         <div className="space-y-2 relative">
-            <div className="flex flex-col md:flex-row gap-2 md:items-center">
-                <div className="flex-1" />
-                <button
-                    className="btn btn-ghost btn-xs text-error absolute top-0 right-0"
-                    onClick={onRemove}
-                >
+            <div className="flex flex-row md:flex-row gap-2 md:items-center">
+                Fill <span className="font-mono bg-gray-600 px-2 rounded">{value.id}</span>
+                <button className="btn btn-ghost btn-xs text-error " onClick={onRemove}>
                     &times;
                 </button>
             </div>
@@ -1936,23 +1985,47 @@ const FillEditor = ({
                         onChange({...value, rounded: rounded as AnimatableNumber})
                     }
                 />
-                {value.mods.map((mod, i) => (
-                    <PModEditor
-                        key={i}
-                        value={mod}
-                        palette={palette}
-                        onRemove={() => {
-                            const mods = value.mods.slice();
-                            mods.splice(i, 1);
-                            onChange({...value, mods});
-                        }}
-                        onChange={(mod) => {
-                            const mods = value.mods.slice();
-                            mods[i] = mod;
-                            onChange({...value, mods});
-                        }}
-                    />
-                ))}
+                <div>
+                    <div className="font-semibold text-sm flex flex-row gap-4 items-center">
+                        Mods
+                        <select
+                            className="select select-sm w-50"
+                            value=""
+                            onChange={(evt) => {
+                                const mods = value.mods.slice();
+                                mods.push(addMod(evt.target.value));
+                                onChange({...value, mods});
+                            }}
+                        >
+                            <option disabled value="">
+                                Add
+                            </option>
+                            {['inset', 'translate', 'crop', 'scale', 'rotate'].map((type) => (
+                                <option value={type} key={type}>
+                                    {type}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {value.mods.map((mod, i) => (
+                        <PModEditor
+                            key={i}
+                            value={mod}
+                            palette={palette}
+                            onRemove={() => {
+                                const mods = value.mods.slice();
+                                mods.splice(i, 1);
+                                onChange({...value, mods});
+                            }}
+                            onChange={(mod) => {
+                                const mods = value.mods.slice();
+                                mods[i] = mod;
+                                onChange({...value, mods});
+                            }}
+                        />
+                    ))}
+                </div>
             </div>
             {/* <ModsEditor value={value.mods} onChange={(mods) => onChange({...value, mods})} /> */}
         </div>
@@ -1970,7 +2043,68 @@ const PModEditor = ({
     onChange: (next: PMods, nextKey?: string) => void;
     onRemove: () => void;
 }) => {
-    return <div>{value.type}</div>;
+    switch (value.type) {
+        case 'inset':
+            return (
+                <div>
+                    {value.type}
+                    <AnimInput
+                        label="v"
+                        value={value.v}
+                        onChange={(v) => onChange({...value, v: v as AnimatableNumber})}
+                    />
+                </div>
+            );
+        case 'translate':
+            return (
+                <div>
+                    {value.type}
+                    <AnimCoordInput
+                        label="v"
+                        value={value.v}
+                        onChange={(v) => onChange({...value, v: v as AnimatableCoord})}
+                    />
+                </div>
+            );
+        case 'crop':
+            return (
+                <div>
+                    {value.type}:{value.id}
+                    <input
+                        type="checkbox"
+                        className="checkbox"
+                        checked={value.hole}
+                        onChange={(evt) => onChange({...value, hole: evt.target.checked})}
+                    />
+                </div>
+            );
+        case 'scale':
+            return null;
+        case 'rotate':
+            return (
+                <div className="flex flex-row gap-2 items-center">
+                    <button
+                        onClick={onRemove}
+                        className="cursor-pointer p-3 text-gray-600 hover:text-red-500"
+                    >
+                        &times;
+                    </button>
+                    {value.type}
+                    <AnimInput
+                        label="v"
+                        value={value.v}
+                        onChange={(v) => onChange({...value, v: v as AnimatableNumber})}
+                    />
+                    <AnimCoordInput
+                        label="origin"
+                        value={value.origin}
+                        onChange={(origin) =>
+                            onChange({...value, origin: origin as AnimatableCoord})
+                        }
+                    />
+                </div>
+            );
+    }
 };
 
 const LineEditor = ({
