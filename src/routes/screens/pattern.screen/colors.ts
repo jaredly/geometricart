@@ -166,6 +166,12 @@ cssColors.forEach((color) => (colorNames[color.name] = color.code));
 export type Rgb = {r: number; g: number; b: number};
 
 export const parseHex = (hex: string) => {
+    if (hex.length === 4) {
+        const r = parseInt(hex.slice(1, 2), 16);
+        const g = parseInt(hex.slice(3, 5), 16);
+        const b = parseInt(hex.slice(5), 16);
+        return {r: r, g: g, b: b};
+    }
     const r = parseInt(hex.slice(1, 3), 16);
     const g = parseInt(hex.slice(3, 5), 16);
     const b = parseInt(hex.slice(5), 16);

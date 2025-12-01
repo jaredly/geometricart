@@ -33,6 +33,7 @@ import {
     Shadow,
     ConcreteFill,
     ConcreteLine,
+    Color,
 } from './export-types';
 import {evalTimeline} from './evalEase';
 import {scalePos} from '../../../editor/scalePos';
@@ -609,5 +610,16 @@ export const svgItems = (
                 : (a.zIndex ?? 0) - (b.zIndex ?? 0),
         );
     }
-    return {items, warnings, byKey};
+    const bg = state.view.background
+        ? a.color(
+              {
+                  cache: animCache,
+                  values: {},
+                  palette: state.styleConfig.palette,
+                  warn() {},
+              },
+              state.view.background,
+          )
+        : ([0, 0, 0] as Color);
+    return {items, warnings, byKey, bg};
 };

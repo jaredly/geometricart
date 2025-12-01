@@ -386,8 +386,8 @@ const Section = ({
                     {actions ? <div className="flex items-center gap-2">{actions}</div> : null}
                 </div>
             </summary>
-            <div className="card bg-base-100 shadow-md border border-base-300">
-                <div className="card-body space-y-4">{children}</div>
+            <div className="bg-base-100 shadow-md">
+                <div className="space-y-4">{children}</div>
             </div>
         </details>
     );
@@ -652,8 +652,8 @@ const LayerEditor = ({
     const entries = useMemo(() => Object.entries(layer.entities), [layer.entities]);
 
     return (
-        <div className="card bg-base-200 border border-base-300 shadow-sm">
-            <div className="card-body space-y-3">
+        <div className="bg-base-200 border border-base-300 shadow-sm">
+            <div className="space-y-3 p-4">
                 <div className="flex flex-col md:flex-row gap-2 md:items-center">
                     <NumberField
                         label="Order"
@@ -1966,7 +1966,14 @@ const FillEditor = ({
                     &times;
                 </button>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+            <div className="flex flex-wrap gap-2">
+                <AnimInput
+                    label="enabled"
+                    value={value.enabled}
+                    onChange={(enabled) =>
+                        onChange({...value, enabled: enabled as AnimatableBoolean})
+                    }
+                />
                 <AnimInput
                     label="zIndex"
                     value={value.zIndex}

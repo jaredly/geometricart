@@ -1,7 +1,7 @@
 import {useMemo, useRef, useState} from 'react';
 import {Coord} from '../../../types';
-import {AnimCtx, Patterns} from './evaluate';
-import {State} from './export-types';
+import {a, AnimCtx, Patterns} from './evaluate';
+import {Color, State} from './export-types';
 import {svgItems} from './resolveMods';
 import {Canvas, SVGCanvas} from './SVGCanvas';
 import {useElementZoom} from './useSVGZoom';
@@ -22,7 +22,7 @@ export const RenderExport = ({state, patterns}: {state: State; patterns: Pattern
     // well this is exciting
     const cropCache = useCropCache(state, t, animCache);
 
-    const {items, warnings, byKey} = useMemo(
+    const {items, warnings, byKey, bg} = useMemo(
         () => svgItems(state, animCache, cropCache, patterns, t),
         [state, patterns, cropCache, animCache, t],
     );
@@ -36,12 +36,13 @@ export const RenderExport = ({state, patterns}: {state: State; patterns: Pattern
     return (
         <div className="flex">
             <div className="relative overflow-hidden">
-                <SVGCanvas
+                <Canvas
                     {...zoomProps}
                     setMouse={setMouse}
                     items={items}
                     size={size}
                     byKey={byKey}
+                    bg={bg}
                 />
                 <div ref={fpsref} className="absolute top-0 right-0 hidden px-2 py-1 bg-base-100" />
                 {resetZoom ? (
@@ -60,7 +61,7 @@ export const RenderExport = ({state, patterns}: {state: State; patterns: Pattern
                         className="range"
                         min={0}
                         max={1}
-                        step={0.01}
+                        step={0.001}
                     />
                     <button
                         className={'btn mx-2 ' + (animate ? 'btn-accent' : '')}

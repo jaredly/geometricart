@@ -3,7 +3,7 @@ import {cmdsForCoords} from '../../getPatternData';
 import {pk} from '../../pk';
 import {generateVideo} from '../animator.screen/muxer';
 import {Patterns, Ctx, RenderItem} from './evaluate';
-import {State, Box} from './export-types';
+import {State, Box, Color, colorToRgb} from './export-types';
 import {svgItems} from './resolveMods';
 
 export const recordVideo = async (
@@ -27,16 +27,23 @@ export const recordVideo = async (
             onStatus.current!.textContent = ((currentFrame / totalFrames) * 100).toFixed(0) + '%';
         const surface = pk.MakeWebGLCanvasSurface(canvas)!;
 
-        const {items} = svgItems(state, animCache, cropCache, patterns, currentFrame / totalFrames);
-        renderItems(surface, box, items);
+        const {items, bg} = svgItems(
+            state,
+            animCache,
+            cropCache,
+            patterns,
+            currentFrame / totalFrames,
+        );
+        renderItems(surface, box, items, bg);
     });
     onStatus.current!.textContent = '';
     return blob ? URL.createObjectURL(blob) : null;
 };
 
-export const renderItems = (surface: Surface, box: Box, items: RenderItem[]) => {
+export const renderItems = (surface: Surface, box: Box, items: RenderItem[], bg: Color) => {
     const ctx = surface.getCanvas();
-    ctx.clear(pk.BLACK);
+    const bgc = colorToRgb(bg);
+    ctx.clear(pk.Color(bgc.r, bgc.g, bgc.b));
 
     ctx.save();
     ctx.scale(surface.width() / box.width, surface.height() / box.height);
