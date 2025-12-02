@@ -61,7 +61,7 @@ export const useElementZoom = (initialSize: number) => {
         } as EventListenerOrEventListenerObject;
         ref.current.addEventListener('wheel', fn, {passive: false});
         return () => ref.current?.removeEventListener('wheel', fn);
-    }, [ref.current]);
+    }, []);
 
     const reset = useCallback(
         () =>

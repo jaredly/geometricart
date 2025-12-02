@@ -1,6 +1,15 @@
 import {State} from './export-types';
 
-export const example: (id: string) => State = (id: string) => ({
+export const example: (id: string) => State = (id: string): State => ({
+    shapes: {
+        shapea: {
+            origin: {x: 0, y: 3},
+            segments: [
+                {type: 'Arc', center: {x: 0, y: 0}, to: {x: 3, y: 0}, clockwise: true},
+                {type: 'Arc', center: {x: 0, y: 0}, to: {x: 0, y: 3}, clockwise: true},
+            ],
+        },
+    },
     layers: {
         a: {
             id: 'a',
@@ -22,7 +31,7 @@ export const example: (id: string) => State = (id: string) => ({
                             a: {
                                 // color: {h: 80, s: 100, l: 50},
                                 id: 'a',
-                                width: 3,
+                                // width: 3,
                                 // color: `t < 0.5 ? {h: 190, s: 100, l: 30} : {h: 180, s: 100, l: 50}`,
                                 color: `t < 0.5 ? {h: 190, s: 100, l: 20} : {h: 180, s: 100, l: 40}`,
                                 mods: [],
@@ -34,10 +43,7 @@ export const example: (id: string) => State = (id: string) => ({
                         mods: [],
                         order: 0,
                     },
-                    segments: [
-                        {type: 'Arc', center: {x: 0, y: 0}, to: {x: 3, y: 0}, clockwise: true},
-                        {type: 'Arc', center: {x: 0, y: 0}, to: {x: 0, y: 3}, clockwise: true},
-                    ],
+                    shape: 'shapea',
                 },
                 p: {
                     type: 'Pattern',
@@ -122,25 +128,25 @@ export const example: (id: string) => State = (id: string) => ({
         },
     },
     crops: {
-        crop1: {
-            id: 'crop1',
-            shape: [
-                {type: 'Arc', center: {x: 0, y: 0}, to: {x: -3, y: 0}, clockwise: false},
-                {type: 'Arc', center: {x: 0, y: 0}, to: {x: 0, y: -3}, clockwise: false},
-            ],
-        },
-        crop2: {
-            id: 'crop2',
-            shape: [
-                {type: 'Arc', center: {x: 0, y: 0}, to: {x: 3.2, y: 0}, clockwise: true},
-                {type: 'Arc', center: {x: 0, y: 0}, to: {x: 0, y: 3.2}, clockwise: true},
-            ],
-        },
+        //     crop1: {
+        //         id: 'crop1',
+        //         shape: [
+        //             {type: 'Arc', center: {x: 0, y: 0}, to: {x: -3, y: 0}, clockwise: false},
+        //             {type: 'Arc', center: {x: 0, y: 0}, to: {x: 0, y: -3}, clockwise: false},
+        //         ],
+        //     },
+        //     crop2: {
+        //         id: 'crop2',
+        //         shape: [
+        //             {type: 'Arc', center: {x: 0, y: 0}, to: {x: 3.2, y: 0}, clockwise: true},
+        //             {type: 'Arc', center: {x: 0, y: 0}, to: {x: 0, y: 3.2}, clockwise: true},
+        //         ],
+        //     },
     },
     view: {ppi: 1, box: {x: -0.5, y: -0.5, width: 1, height: 2}},
     styleConfig: {
         seed: 0,
-        clocks: [],
+        // clocks: [],
         palette: [],
         timeline: {
             ts: [1, 4, 1, 4, 1, 1, 1],

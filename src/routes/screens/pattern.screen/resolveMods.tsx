@@ -414,9 +414,8 @@ const renderObject = (ctx: Ctx, crops: CropsAndMatrices, object: EObject) => {
         },
     };
 
-    const path = pk.Path.MakeFromCmds(
-        segmentsCmds(object.segments[object.segments.length - 1].to, object.segments, false),
-    )!;
+    const shape = ctx.state.shapes[object.shape];
+    const path = pk.Path.MakeFromCmds(segmentsCmds(shape.origin, shape.segments, shape.open))!;
     let remove = false;
     // const fmods = object.mods.map((m) => resolvePMod(ctx.anim, m));
     crops.forEach((mod) => {

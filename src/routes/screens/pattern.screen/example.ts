@@ -2,6 +2,29 @@ import {State} from './export-types';
 
 export const example: (id: string) => State = (id: string) => {
     const m: State = {
+        shapes: {
+            shapea: {
+                origin: {x: 0, y: 5},
+                segments: [
+                    {type: 'Arc', center: {x: 0, y: 0}, to: {x: 5, y: 0}, clockwise: true},
+                    {type: 'Arc', center: {x: 0, y: 0}, to: {x: 0, y: 5}, clockwise: true},
+                ],
+            },
+            shapeb: {
+                origin: {x: 0, y: -3},
+                segments: [
+                    {type: 'Arc', center: {x: 0, y: 0}, to: {x: -3, y: 0}, clockwise: false},
+                    {type: 'Arc', center: {x: 0, y: 0}, to: {x: 0, y: -3}, clockwise: false},
+                ],
+            },
+            shapec: {
+                origin: {x: 0, y: -3.2},
+                segments: [
+                    {type: 'Arc', center: {x: 0, y: 0}, to: {x: -3.2, y: 0}, clockwise: false},
+                    {type: 'Arc', center: {x: 0, y: 0}, to: {x: 0, y: -3.2}, clockwise: false},
+                ],
+            },
+        },
         layers: {
             a: {
                 id: 'a',
@@ -35,10 +58,7 @@ export const example: (id: string) => State = (id: string) => {
                             mods: [],
                             order: 0,
                         },
-                        segments: [
-                            {type: 'Arc', center: {x: 0, y: 0}, to: {x: 5, y: 0}, clockwise: true},
-                            {type: 'Arc', center: {x: 0, y: 0}, to: {x: 0, y: 5}, clockwise: true},
-                        ],
+                        shape: 'shapea',
                     },
                     p: {
                         type: 'Pattern',
@@ -273,17 +293,11 @@ export const example: (id: string) => State = (id: string) => {
         crops: {
             crop1: {
                 id: 'crop1',
-                shape: [
-                    {type: 'Arc', center: {x: 0, y: 0}, to: {x: -3, y: 0}, clockwise: false},
-                    {type: 'Arc', center: {x: 0, y: 0}, to: {x: 0, y: -3}, clockwise: false},
-                ],
+                shape: 'shapeb',
             },
             crop2: {
                 id: 'crop2',
-                shape: [
-                    {type: 'Arc', center: {x: 0, y: 0}, to: {x: 3.2, y: 0}, clockwise: true},
-                    {type: 'Arc', center: {x: 0, y: 0}, to: {x: 0, y: 3.2}, clockwise: true},
-                ],
+                shape: 'shapec',
             },
         },
         view: {ppi: 1, box: {x: -0.5, y: -0.5, width: 1, height: 2}},

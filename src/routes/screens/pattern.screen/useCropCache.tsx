@@ -17,8 +17,10 @@ export function useCropCache(
             const current = cropCache.get(crop.id);
             if (current?.crop === crop && (current.t == null || current.t === t)) continue;
 
+            const shape = state.shapes[crop.shape];
+
             if (!crop.mods?.length) {
-                const path = pkPathWithCmds(crop.shape[crop.shape.length - 1].to, crop.shape);
+                const path = pkPathWithCmds(shape.origin, shape.segments);
                 cropCache.set(crop.id, {path, crop});
             } else {
                 const actx: AnimCtx = {
@@ -30,7 +32,7 @@ export function useCropCache(
                 };
                 const cropmods = crop.mods.map((m) => resolvePMod(actx, m));
 
-                const path = pkPathWithCmds(crop.shape[crop.shape.length - 1].to, crop.shape);
+                const path = pkPathWithCmds(shape.origin, shape.segments);
 
                 let remove = false;
                 cropmods.forEach((mod) => {
@@ -40,7 +42,7 @@ export function useCropCache(
                 cropCache.set(crop.id, {path, crop, t: actx.accessedValues?.size ? t : undefined});
             }
         }
-    }, [state.crops, cropCache, t, animCache]);
+    }, [state.crops, state.shapes, cropCache, t, animCache]);
 
     return cropCache;
 }

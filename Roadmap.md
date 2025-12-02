@@ -1,4 +1,20 @@
 
+# Ok, let's talk supershapes.
+
+I think I want to be able to "draw supershapes" on top of the lines that exist.
+and then make mods for them.
+and then have those mods be applied to the corresponding ~eigenSegments, and then
+have shapes etc be recalculated from those modified segments.
+
+
+So:
+for objects n stuff
+let's have 'shapes' be defined as a layer-level thing
+crop -> shape
+object -> shape
+pattern line mod -> shape
+
+
 
 # Debugging
 

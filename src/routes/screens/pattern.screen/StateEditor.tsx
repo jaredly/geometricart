@@ -151,8 +151,8 @@ export const StateEditor = ({value, onChange}: StateEditorProps) => {
                         onClick={() => {
                             const nextKey = `crop-${crops.length + 1}`;
                             const next = {...value.crops};
-                            next[nextKey] = {id: nextKey, shape: defaultCropShape()};
-                            onChange({...value, crops: next});
+                            // next[nextKey] = {id: nextKey, shape: defaultCropShape()};
+                            // onChange({...value, crops: next});
                         }}
                     >
                         Add Crop
@@ -791,20 +791,20 @@ const EntityEditor = ({
                         <div className="label">
                             <span className="label-text font-semibold">Open</span>
                         </div>
-                        <input
+                        {/* <input
                             className="toggle toggle-primary"
                             type="checkbox"
                             checked={value.open ?? false}
                             onChange={(evt) => onChange({...value, open: evt.target.checked})}
-                        />
+                        /> */}
                     </label>
-                    <JsonEditor
+                    {/* <JsonEditor
                         label="Segments"
                         value={value.segments}
                         onChange={(segments) =>
                             onChange({...value, segments: segments as Segment[]})
                         }
-                    />
+                    /> */}
                     <JsonEditor
                         label="Style"
                         value={value.style}

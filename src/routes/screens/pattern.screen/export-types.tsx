@@ -62,8 +62,9 @@ export const colorToRgb = (c: Color): {r: number; g: number; b: number} =>
 
 const rgbFromArr = (c: [number, number, number]) => ({r: c[0], g: c[1], b: c[2]});
 
-export type Crop = {id: string; shape: Segment[]; mods?: PMods[]};
+export type Crop = {id: string; shape: string; mods?: PMods[]};
 export type State = {
+    shapes: Record<string, BarePath>;
     layers: Record<string, Layer>;
     crops: Record<string, Crop>;
     view: {
@@ -393,8 +394,7 @@ export type LayerStyle = {
 export type EObject = {
     type: 'Object';
     id: string;
-    segments: Segment[];
-    open?: boolean;
+    shape: string;
     style: ShapeStyle;
 };
 
