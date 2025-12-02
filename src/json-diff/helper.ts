@@ -3,11 +3,13 @@ import {
     AddOpForPath,
     AddPath,
     AddPathValue,
+    ArrayContainerPath,
     DefaultJsonPatchConfig,
     JsonPatchConfig,
     JsonPatchOp,
     Path,
     PathValue,
+    PendingJsonPatchOp,
     RemovablePath,
     RemoveOpForPath,
     ReplaceOpForPath,
@@ -177,6 +179,10 @@ export type DiffNodeA<
                   `${P}/${K}` extends Path<Root> ? `${P}/${K}` : never,
                   C
               >;
+          } & {
+              push(value: Elem): void;
+              move(from: number, to: number): void;
+              reorder(indices: number[]): void;
           }
         : // Objects → property navigation
           Current extends object
@@ -208,44 +214,55 @@ export type DiffBuilderA<T, C extends JsonPatchConfig = DefaultJsonPatchConfig> 
 >;
 
 export function diffBuilderApply<T, C extends JsonPatchConfig = DefaultJsonPatchConfig>(
-    current: () => T,
-    apply: (v: JsonPatchOp<T>) => void,
+    apply: (v: PendingJsonPatchOp<T>) => void,
 ): DiffBuilderA<T, C> {
+    const cache: Record<string, Function> = {};
+
     function makeProxy(pathSegments: Array<string | number>): any {
+        const path =
+            pathSegments.length === 0
+                ? '' // root replace
+                : '/' + pathSegments.map(String).join('/');
+
         const handler: ProxyHandler<any> = {
             get(_target, prop, _receiver) {
                 // Operation handlers
                 if (prop === 'replace') {
-                    return (value: any) => {
-                        const path =
-                            pathSegments.length === 0
-                                ? '' // root replace
-                                : '/' + pathSegments.map(String).join('/');
+                    const k = path + '/replace';
+                    if (!cache[k])
+                        cache[k] = (value: any) =>
+                            apply({op: 'replace', path: path as Path<T>, value});
+                    return cache[k];
+                }
 
-                        apply(make.replace(current(), path as Path<T>, value));
-                    };
+                if (prop === 'push') {
+                    const k = path + '/push';
+                    if (!cache[k])
+                        cache[k] = (value: any) =>
+                            apply({op: 'push', path: path as ArrayContainerPath<T>, value});
+                    return cache[k];
                 }
 
                 if (prop === 'add') {
-                    return (value: any) => {
-                        const path =
-                            pathSegments.length === 0
-                                ? ''
-                                : '/' + pathSegments.map(String).join('/');
-
-                        apply(make.add(current(), path as AddPath<T>, value));
-                    };
+                    const k = path + '/add';
+                    if (!cache[k])
+                        cache[k] = (value: any) =>
+                            apply({op: 'add', path: path as AddPath<T>, value});
+                    return cache[k];
                 }
 
                 if (prop === 'remove') {
-                    return () => {
-                        const path =
-                            pathSegments.length === 0
-                                ? ''
-                                : '/' + pathSegments.map(String).join('/');
+                    const k = path + '/remove';
+                    if (!cache[k])
+                        cache[k] = () => apply({op: 'remove', path: path as RemovablePath<T>});
+                    return cache[k];
+                }
 
-                        apply(make.remove(current(), path as RemovablePath<T>));
-                    };
+                if (prop === 'move') {
+                    throw new Error('not impl move yet');
+                }
+                if (prop === 'reorder') {
+                    throw new Error('not impl reorder yet');
                 }
 
                 // Ignore symbols (e.g. util.inspect.custom)

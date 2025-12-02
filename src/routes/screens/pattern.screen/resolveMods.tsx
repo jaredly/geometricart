@@ -570,7 +570,6 @@ export const svgItems = (
     cropCache: Ctx['cropCache'],
     patterns: Patterns,
     t: number,
-    hover: Hover | null,
 ) => {
     const warnings: string[] = [];
     const warn = (v: string) => warnings.push(v);
@@ -622,17 +621,17 @@ export const svgItems = (
           )
         : ([0, 0, 0] as Color);
 
-    if (hover?.type === 'shape') {
-        const shape = state.shapes[hover.id];
-        items.push({
-            type: 'path',
-            color: {r: 255, g: 255, b: 255},
-            key: 'hover-shape',
-            shapes: [coordsFromBarePath(shape)],
-            strokeWidth: 0.03,
-            zIndex: 100,
-        });
-    }
+    // if (hover?.type === 'shape') {
+    //     const shape = state.shapes[hover.id];
+    //     items.push({
+    //         type: 'path',
+    //         color: {r: 255, g: 255, b: 255},
+    //         key: 'hover-shape',
+    //         shapes: [coordsFromBarePath(shape)],
+    //         strokeWidth: 0.03,
+    //         zIndex: 100,
+    //     });
+    // }
 
     return {items, warnings, byKey, bg};
 };

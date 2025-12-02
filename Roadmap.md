@@ -1,4 +1,28 @@
 
+ok what's my angle.
+i'm apparently making a state management library as well.
+that operates on jsondiff++
+
+I want to be able to:
+
+-> run `useUpdate().pending.points[0].add(newPoint)`
+-> also batch operations probably...
+  -> does that just mean waiting a tick?
+  -> it might mean allowing `opThunks` or whatever that fill in the current value
+  -> so that successive `.push`es do the thing what you want. so `useDiffState` would
+    accept `(base: T) => JsonDiffOp<T>` as well as `JsonDiffOp<T>`.
+    we'd have a `delayed.replace()` to parallel the `make.replace()`
+  -> what about having explicit control over "groups of changes" so we know what should
+    be undoable?
+    -> I think that would mean having a function to "flush()" manually, so everything
+      that's queued would be considered an operation, and any new things are in their
+      own batch.
+-> also have a `.push` for arrays that will fill in the current length
+->
+
+...
+
+
 # Ok, let's talk supershapes.
 
 I think I want to be able to "draw supershapes" on top of the lines that exist.

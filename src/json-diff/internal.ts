@@ -9,7 +9,7 @@ export function _get(base: any, at: (number | string)[]) {
     for (let i = 0; i < at.length; i++) {
         const key = at[i];
         if (!base) {
-            throw new Error(`missing base`);
+            throw new Error(`missing base ${at.join(',')}`);
         }
         if (Array.isArray(base)) {
             if (typeof key !== 'number') {
@@ -28,7 +28,7 @@ function _getCloned(root: any, at: (number | string)[]) {
     for (let i = 0; i < at.length; i++) {
         const key = at[i];
         if (!base) {
-            throw new Error(`missing base`);
+            throw new Error(`missing base ${at.join(',')}`);
         }
         if (Array.isArray(base)) {
             if (typeof key !== 'number') {

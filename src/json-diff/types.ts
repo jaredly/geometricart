@@ -180,7 +180,7 @@ type ArrayContainerPathImpl<T, Prefix extends string> = T extends (infer U)[]
         }[keyof T & (string | number)]
       : never;
 
-type ArrayContainerPath<T> = ArrayContainerPathImpl<T, ''>;
+export type ArrayContainerPath<T> = ArrayContainerPathImpl<T, ''>;
 
 /** Paths that end with "/-" to append to arrays. */
 type AddArrayEndPath<T, C extends JsonPatchConfig> = AddDashAllowed<C> extends true
@@ -324,35 +324,15 @@ export type ReplaceOpForPath<T, P extends Path<T>> = {
     context?: any;
 };
 
-/** "replace" operation. */
-// export type ReplaceOp<T> = {
-//     [P in Path<T>]: {
-//         op: 'replace';
-//         path: P;
-//         value: PathValue<T, P>;
-//         previous: PathValue<T, P>;
-//         context?: any;
-//     };
-// }[Path<T>];
 export type ReplaceOp<T> = ReplaceOpForPath<T, Path<T>>;
 
-/** "test" operation. */
-export type TestOp<T> = {
-    [P in Path<T>]: {
-        op: 'test';
-        path: P;
-        value: PathValue<T, P>;
-        context?: any;
-    };
-}[Path<T>];
-
+/** "remove" operation – only allowed at RemovablePath<T, C>. */
 export type RemoveOp<T, C extends JsonPatchConfig = DefaultJsonPatchConfig> = RemoveOpForPath<
     T,
     C,
     RemovablePath<T, C>
 >;
 
-/** "remove" operation – only allowed at RemovablePath<T, C>. */
 export type RemoveOpForPath<T, C extends JsonPatchConfig, P extends RemovablePath<T, C>> = {
     op: 'remove';
     path: P;
@@ -363,8 +343,8 @@ export type RemoveOpForPath<T, C extends JsonPatchConfig, P extends RemovablePat
 /** "move" operation. (No extra type coupling beyond valid paths.) */
 export type MoveOp<T> = {
     op: 'move';
-    from: Path<T>;
-    path: Path<T>;
+    from: RemovablePath<T>;
+    path: AddPath<T>;
     context?: any;
 };
 
@@ -372,7 +352,7 @@ export type MoveOp<T> = {
 export type CopyOp<T> = {
     op: 'copy';
     from: Path<T>;
-    path: Path<T>;
+    path: AddPath<T>;
     context?: any;
 };
 
@@ -380,41 +360,79 @@ export type CopyOp<T> = {
 export type JsonPatchOp<T, C extends JsonPatchConfig = DefaultJsonPatchConfig> =
     | AddOp<T>
     | ReplaceOp<T>
-    | TestOp<T>
     | RemoveOp<T, C>
     | MoveOp<T>
     | CopyOp<T>;
 
-/** A full JSON Patch document. */
-export type JsonPatch<T, C extends JsonPatchConfig = DefaultJsonPatchConfig> = JsonPatchOp<T, C>[];
+/* -------------------------------------------------------------------------- */
+/*  Pending ops                                                               */
+/* -------------------------------------------------------------------------- */
+
+export type PendingReplaceOpForPath<T, P extends Path<T>> = {
+    op: 'replace';
+    path: P;
+    value: PathValue<T, P>;
+    context?: any;
+};
+
+export type PendingReplaceOp<T> = PendingReplaceOpForPath<T, Path<T>>;
+
+export type PendingRemoveOp<
+    T,
+    C extends JsonPatchConfig = DefaultJsonPatchConfig,
+> = PendingRemoveOpForPath<T, C, RemovablePath<T, C>>;
+
+export type PendingRemoveOpForPath<T, C extends JsonPatchConfig, P extends RemovablePath<T, C>> = {
+    op: 'remove';
+    path: P;
+    context?: any;
+};
+
+export type PendingPushOpForPath<T, P extends ArrayContainerPath<T>> = {
+    op: 'push';
+    path: ArrayContainerPath<T>;
+    value: PathValue<T, P> extends (infer Elem)[] ? Elem : never;
+};
+
+export type PendingPushOp<T> = PendingPushOpForPath<T, ArrayContainerPath<T>>;
+
+export type PendingJsonPatchOp<T, C extends JsonPatchConfig = DefaultJsonPatchConfig> =
+    | AddOp<T>
+    | PendingReplaceOp<T>
+    | PendingPushOp<T>
+    | PendingRemoveOp<T, C>
+    | MoveOp<T>
+    | CopyOp<T>;
 
 /* -------------------------------------------------------------------------- */
 /*  Example usage                                                             */
 /* -------------------------------------------------------------------------- */
 
-// Example model type
-interface User {
-    id: string; // required: NOT removable
-    name?: string; // optional: removable
-    email: string | null; // required + nullable: removable only if nullRemoval = "allow"
-    tags: string[]; // array: elements removable if arrays = "elements-removable"
-    address?: {
-        city: string; // required (inside optional object): NOT removable
-        zip?: number; // optional: removable
-    };
-}
+{
+    // Example model type
+    interface User {
+        id: string; // required: NOT removable
+        name?: string; // optional: removable
+        email: string | null; // required + nullable: removable only if nullRemoval = "allow"
+        tags: string[]; // array: elements removable if arrays = "elements-removable"
+        address?: {
+            city: string; // required (inside optional object): NOT removable
+            zip?: number; // optional: removable
+        };
+    }
 
-// Default config:
-//   - array elements removable
-//   - null alone does NOT make a property removable
-//   - "/-" allowed for add
-const patch1: JsonPatch<User> = [
-    {op: 'replace', path: '/id', value: 'abc', previous: 'lol'}, // ok
-    {op: 'remove', path: '/name', value: 'lol'}, // ok (optional)
-    {op: 'add', path: '/tags/10', value: 'vip'}, // ok (string[])
-    {op: 'add', path: '/tags/-', value: 'new'}, // ok (append to array)
-    {op: 'remove', path: '/tags/0', value: 'a'}, // ok (array elements removable by default)
-    {op: 'remove', path: '/address/zip', value: 12}, // ok (optional)
-    // { op: "remove", path: "/id" },              // ❌ error: "/id" is not RemovablePath<User>
-    // { op: "remove", path: "/address/city" },    // ❌ error: required, not removable
-];
+    // Default config:
+    //   - array elements removable
+    //   - null alone does NOT make a property removable
+    //   - "/-" allowed for add
+    const patch1: JsonPatchOp<User>[] = [
+        {op: 'replace', path: '/id', value: 'abc', previous: 'lol'}, // ok
+        {op: 'remove', path: '/name', value: 'lol'}, // ok (optional)
+        {op: 'add', path: '/tags/10', value: 'vip'}, // ok (string[])
+        {op: 'add', path: '/tags/-', value: 'new'}, // ok (append to array)
+        {op: 'remove', path: '/tags/0', value: 'a'}, // ok (array elements removable by default)
+        {op: 'remove', path: '/address/zip', value: 12}, // ok (optional)
+        // { op: "remove", path: "/id" },              // ❌ error: "/id" is not RemovablePath<User>
+        // { op: "remove", path: "/address/city" },    // ❌ error: required, not removable
+    ];
+}

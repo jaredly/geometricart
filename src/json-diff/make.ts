@@ -6,6 +6,7 @@ import {
     JsonPatchOp,
     Path,
     PathValue,
+    PendingJsonPatchOp,
     RemovablePath,
     RemoveOp,
 } from './types';
@@ -49,4 +50,25 @@ function update<T, P extends Path<T>>(base: T, path: P, update: Partial<PathValu
     ) as JsonPatchOp<T>[];
 }
 
-export const make = {remove, add, replace, update};
+function fromPending<T>(base: T, pending: PendingJsonPatchOp<T>): JsonPatchOp<T> {
+    switch (pending.op) {
+        case 'add':
+        case 'move':
+        case 'copy':
+            return pending;
+        case 'replace':
+            return {...pending, previous: _get(base, parsePath(pending.path))};
+        case 'remove':
+            return {...pending, value: _get(base, parsePath(pending.path))};
+        case 'push': {
+            const arr = _get(base, parsePath(pending.path));
+            return {
+                op: 'add',
+                path: `${pending.path}/${arr.length}`,
+                value: pending.value,
+            } as JsonPatchOp<T>;
+        }
+    }
+}
+
+export const make = {remove, add, replace, update, fromPending};

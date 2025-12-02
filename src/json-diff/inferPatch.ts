@@ -1,5 +1,5 @@
 import {diffByIdentity} from './arrays';
-import {JsonPatch, JsonPatchOp, Path} from './types';
+import {JsonPatchOp, Path} from './types';
 
 /**
  * Deeply compares two objects, finding the minimal patch to go from

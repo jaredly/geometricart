@@ -1,6 +1,6 @@
 import {useMemo, useRef, useState} from 'react';
 import {Coord} from '../../../types';
-import {a, AnimCtx, Patterns} from './evaluate';
+import {a, AnimCtx, Patterns, RenderItem} from './evaluate';
 import {Color, State} from './export-types';
 import {svgItems} from './resolveMods';
 import {Canvas, SVGCanvas} from './SVGCanvas';
@@ -12,16 +12,9 @@ import {BaselineZoomInMap} from '../../../icons/Icon';
 import {Hover} from './resolveMods';
 import {editContext} from './editState';
 import {make} from '../../../json-diff/make';
+import {coordsFromBarePath} from '../../getPatternData';
 
-export const RenderExport = ({
-    state,
-    patterns,
-    // hover,
-}: {
-    state: State;
-    patterns: Patterns;
-    // hover: Hover | null;
-}) => {
+export const RenderExport = ({state, patterns}: {state: State; patterns: Patterns}) => {
     const [t, setT] = useState(0); // animateeeee
     const animCache = useMemo<AnimCtx['cache']>(() => new Map(), []);
 
@@ -34,19 +27,31 @@ export const RenderExport = ({
     const cropCache = useCropCache(state, t, animCache);
 
     const hover = editContext.use((v) => v.hover);
-    // const es = editContext.use((v) => v);
-    // const edit = editContext.useUpdate();
+    const edit = editContext.useUpdate();
 
-    // edit.pending.points[3].add
-    // make.replace(es, '/hover/id', 'uyes')
-
-    // edit.hover.id.replace('hi')
-    // edit.pending.points
+    // edit.pending.points.push({x: 0, y: 0});
 
     const {items, warnings, byKey, bg} = useMemo(
-        () => svgItems(state, animCache, cropCache, patterns, t, hover),
-        [state, patterns, cropCache, animCache, t, hover],
+        () => svgItems(state, animCache, cropCache, patterns, t),
+        [state, patterns, cropCache, animCache, t],
     );
+
+    const transientItems = useMemo((): RenderItem[] => {
+        if (!hover) return [];
+        const shape = state.shapes[hover.id];
+        return [
+            {
+                type: 'path',
+                color: {r: 255, g: 255, b: 255},
+                key: 'hover-shape',
+                shapes: [coordsFromBarePath(shape)],
+                strokeWidth: 0.03,
+                zIndex: 100,
+            },
+        ];
+    }, [hover, state.shapes]);
+
+    const both = useMemo(() => [...items, ...transientItems], [items, transientItems]);
 
     const {zoomProps, box, reset: resetZoom} = useElementZoom(6);
     const [mouse, setMouse] = useState(null as null | Coord);
@@ -57,10 +62,11 @@ export const RenderExport = ({
     return (
         <div className="flex">
             <div className="relative overflow-hidden">
-                <Canvas
+                <SVGCanvas
                     {...zoomProps}
+                    mouse={mouse}
                     setMouse={setMouse}
-                    items={items}
+                    items={both}
                     size={size}
                     byKey={byKey}
                     bg={bg}

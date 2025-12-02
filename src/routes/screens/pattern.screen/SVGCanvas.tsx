@@ -1,4 +1,4 @@
-import {useEffect, useState} from 'react';
+import {useEffect, useMemo, useState} from 'react';
 import {Coord, shapeKey} from '../../../types';
 import {pk} from '../../pk';
 import {shapeD} from '../../shapeD';
@@ -8,6 +8,8 @@ import {Box, Color, ConcreteShadow, shadowKey} from './export-types';
 import {renderItems} from './recordVideo';
 import {percentToWorld, worldToPercent, svgCoord} from './useSVGZoom';
 import {coordKey} from '../../../rendering/coordKey';
+import {editContext} from './editState';
+import {coordsEqual} from '../../../rendering/pathsAreIdentical';
 
 export const Canvas = ({
     items,
@@ -55,8 +57,10 @@ export const SVGCanvas = ({
     innerRef,
     setMouse,
     byKey,
+    mouse,
     bg,
 }: {
+    mouse: Coord | null;
     bg: Color;
     items: RenderItem[];
     size: number;
@@ -75,6 +79,30 @@ export const SVGCanvas = ({
         }
     });
     const [focus, setFocus] = useState(null as null | string);
+
+    // editContext = useEditContext()
+    // pending = editContext.use()
+    // editContext.latest().pending
+    // editContext.update()
+
+    const pending = editContext.use((s) => s.pending);
+    const points = useMemo(() => {
+        if (!pending) return [];
+        const pts: Record<string, Coord> = {};
+        items.forEach((item) => {
+            item.shapes.forEach((shape) => {
+                shape.forEach((pt) => {
+                    const k = coordKey(pt);
+                    pts[k] = pt;
+                });
+            });
+        });
+        return Object.values(pts);
+    }, [items, pending]);
+
+    const update = editContext.useUpdate();
+    const get = editContext.useGet();
+
     return (
         // <div>
         <svg
@@ -119,6 +147,43 @@ export const SVGCanvas = ({
                         data-z={zIndex}
                     />
                 )),
+            )}
+            {points.map((pt, i) => (
+                <circle
+                    key={i}
+                    cx={pt.x}
+                    cy={pt.y}
+                    r={0.03}
+                    fill="white"
+                    onClick={() => {
+                        const pending = get().pending;
+                        if (!pending) return;
+                        if (pending.points.length && coordsEqual(pending.points[0], pt)) {
+                            update.pending.replace(null);
+                        } else {
+                            update.pending.points.push(pt);
+                        }
+                    }}
+                    cursor={'pointer'}
+                />
+            ))}
+            {pending && pending.points.length > (mouse ? 0 : 1) && (
+                <>
+                    <path
+                        d={shapeD(pending.points.concat(mouse ? [mouse] : []), false)}
+                        stroke="#000"
+                        strokeWidth={0.05}
+                        pointerEvents={'none'}
+                        fill="none"
+                    />
+                    <path
+                        d={shapeD(pending.points.concat(mouse ? [mouse] : []), false)}
+                        stroke="#0f7"
+                        strokeWidth={0.03}
+                        pointerEvents={'none'}
+                        fill="none"
+                    />
+                </>
             )}
         </svg>
         // {focus ? <div>{JSON.stringify(byKey[focus])}</div> : null}

@@ -24,6 +24,7 @@ import {
     ShapeStyle,
     State,
 } from './export-types';
+import {genid} from './genid';
 
 type StateEditorProps = {
     value: State;
@@ -36,11 +37,8 @@ export const StateEditor = ({value, onChange}: StateEditorProps) => {
         [value.layers],
     );
     const crops = useMemo(() => Object.entries(value.crops), [value.crops]);
-    // const onHover = useCallback(
-    //     (hover: Hover | null) => setEditState((es) => ({...es, hover})),
-    //     [setEditState],
-    // );
-    const onHover = editContext.useUpdate().hover.replace;
+    const update = editContext.useUpdate();
+    const onHover = update.hover.replace;
 
     return (
         <div className="flex flex-col gap-6 items-stretch">
@@ -93,12 +91,26 @@ export const StateEditor = ({value, onChange}: StateEditorProps) => {
                     <button
                         className="btn btn-outline btn-sm"
                         onClick={() => {
-                            // const nextId = `layer-${layers.length + 1}`;
-                            // const nextLayers = {
-                            //     ...value.layers,
-                            //     [nextId]: createLayerTemplate(nextId),
-                            // };
-                            // onChange({...value, layers: nextLayers});
+                            update.pending.replace({
+                                type: 'shape',
+                                onDone(points, open) {
+                                    const nextId = genid();
+                                    onChange({
+                                        ...value,
+                                        shapes: {
+                                            ...value.shapes,
+                                            [nextId]: {
+                                                origin: points[0],
+                                                segments: points
+                                                    .slice(1)
+                                                    .map((to) => ({type: 'Line', to})),
+                                                open,
+                                            },
+                                        },
+                                    });
+                                },
+                                points: [],
+                            });
                         }}
                     >
                         Add Shape

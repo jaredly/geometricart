@@ -11,9 +11,6 @@ import {editContext} from './editState';
 export const PatternExport = ({tiling, id}: {tiling: Tiling; id: string}) => {
     const [state, setState] = useState<State>(example(id));
 
-    // const [hover, onHover] = useState(null as null | Hover);
-    // const [editState, setEditState] = useState<EditState>({hover: null, pending: null});
-
     // biome-ignore lint/correctness/useExhaustiveDependencies : this is for hot refresh
     useEffect(() => {
         setState(example(id));

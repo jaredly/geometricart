@@ -26,8 +26,8 @@ function invert<T>(op: JsonPatchOp<T>): JsonPatchOp<T> {
         case 'move':
         case 'copy':
             throw new Error('not supporting these');
-        case 'test':
-            return op as JsonPatchOp<T>;
+        // case 'test':
+        //     return op as JsonPatchOp<T>;
     }
 }
 
@@ -42,8 +42,8 @@ function apply<T>(base: T, op: JsonPatchOp<T>) {
         case 'move':
         case 'copy':
             throw new Error('not supporting these either');
-        case 'test':
-            return base;
+        // case 'test':
+        //     return base;
     }
 }
 
