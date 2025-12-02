@@ -62,6 +62,7 @@ export const RenderExport = ({state, patterns}: {state: State; patterns: Pattern
             <div className="relative overflow-hidden">
                 <SVGCanvas
                     {...zoomProps}
+                    state={state}
                     mouse={mouse}
                     setMouse={setMouse}
                     items={both}

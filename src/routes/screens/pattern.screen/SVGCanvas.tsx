@@ -4,13 +4,15 @@ import {pk} from '../../pk';
 import {shapeD} from '../../shapeD';
 import {colorToString} from './colors';
 import {RenderItem} from './evaluate';
-import {Box, Color, ConcreteShadow, shadowKey} from './export-types';
+import {Box, Color, ConcreteShadow, shadowKey, State} from './export-types';
 import {renderItems} from './recordVideo';
 import {percentToWorld, worldToPercent, svgCoord} from './useSVGZoom';
 import {coordKey} from '../../../rendering/coordKey';
 import {useEditState} from './editState';
 import {coordsEqual} from '../../../rendering/pathsAreIdentical';
 import {calcPathD} from '../../../editor/calcPathD';
+import {transformBarePath} from '../../../rendering/points';
+import {translationMatrix} from '../../../rendering/getMirrorTransforms';
 
 export const Canvas = ({
     items,
@@ -55,12 +57,14 @@ export const SVGCanvas = ({
     items,
     size,
     box,
+    state,
     innerRef,
     setMouse,
     byKey,
     mouse,
     bg,
 }: {
+    state: State;
     mouse: Coord | null;
     bg: Color;
     items: RenderItem[];
@@ -108,7 +112,7 @@ export const SVGCanvas = ({
     // const get = editContext.useGet();
 
     useEffect(() => {
-        if (!pending) return;
+        if (pending?.type !== 'shape') return;
         const fn = (evt: KeyboardEvent) => {
             if (evt.key === 'Enter') {
                 pending.onDone(pending.points, true);
@@ -117,7 +121,7 @@ export const SVGCanvas = ({
         };
         document.addEventListener('keydown', fn);
         return () => document.removeEventListener('keydown', fn);
-    }, [pending]);
+    }, [pending, editContext]);
 
     return (
         // <div>
@@ -174,17 +178,23 @@ export const SVGCanvas = ({
                     onClick={() => {
                         const pending = editContext.latest().pending;
                         if (!pending) return;
+                        if (pending.type === 'dup-shape') {
+                            pending.onDone(pt);
+                            editContext.update.pending.replace(null);
+                            return;
+                        }
                         if (pending.points.length && coordsEqual(pending.points[0], pt)) {
                             pending.onDone(pending.points, false);
                             editContext.update.pending.replace(null);
                         } else {
-                            editContext.update.pending.points.push(pt);
+                            editContext.update.pending.variant('shape').points.push(pt);
+                            // editContext.update.pending.points.push(pt);
                         }
                     }}
                     cursor={'pointer'}
                 />
             ))}
-            {pending && pending.points.length > (mouse ? 0 : 1) && (
+            {pending?.type === 'shape' && pending.points.length > (mouse ? 0 : 1) && (
                 <>
                     <path
                         d={shapeD(pending.points.concat(mouse ? [mouse] : []), false)}
@@ -205,6 +215,27 @@ export const SVGCanvas = ({
                         strokeLinejoin="round"
                     />
                 </>
+            )}
+            {pending?.type === 'dup-shape' && mouse && (
+                <path
+                    d={calcPathD(
+                        transformBarePath(
+                            state.shapes[pending.id],
+                            [
+                                translationMatrix({
+                                    x: mouse.x - state.shapes[pending.id].origin.x,
+                                    y: mouse.y - state.shapes[pending.id].origin.y,
+                                }),
+                            ],
+                        ),
+                    )}
+                    stroke="#000"
+                    strokeWidth={0.05}
+                    pointerEvents={'none'}
+                    fill="none"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                />
             )}
         </svg>
         // {focus ? <div>{JSON.stringify(byKey[focus])}</div> : null}

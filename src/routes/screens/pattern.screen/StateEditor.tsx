@@ -25,6 +25,8 @@ import {
 } from './export-types';
 import {genid} from './genid';
 import {useEditState} from './editState';
+import {transformBarePath} from '../../../rendering/points';
+import {translationMatrix} from '../../../rendering/getMirrorTransforms';
 
 type StateEditorProps = {
     value: State;
@@ -129,6 +131,17 @@ export const StateEditor = ({value, onChange}: StateEditorProps) => {
                                 } else {
                                     shapes[id] = shape;
                                 }
+                                onChange({...value, shapes});
+                            }}
+                            onDup={(pt) => {
+                                const shapes = {...value.shapes};
+                                const id = genid();
+                                shapes[id] = transformBarePath(shape, [
+                                    translationMatrix({
+                                        x: pt.x - shape.origin.x,
+                                        y: pt.y - shape.origin.y,
+                                    }),
+                                ]);
                                 onChange({...value, shapes});
                             }}
                             onHover={onHover}
@@ -2245,12 +2258,15 @@ const ShapeEditor = ({
     id,
     onChange,
     onHover,
+    onDup,
 }: {
     shape: BarePath;
     id: string;
     onHover: (v: {type: 'shape'; id: string} | null) => void;
     onChange: (v: BarePath | null) => void;
+    onDup: (p: Coord) => void;
 }) => {
+    const es = useEditState();
     return (
         <div
             className="p-4 cursor-pointer hover:bg-base-300"
@@ -2258,6 +2274,20 @@ const ShapeEditor = ({
             onMouseLeave={() => onHover(null)}
         >
             Shape {id} {shape.segments.length} segs
+            <button
+                className="btn btn-sm"
+                onClick={() =>
+                    es.update.pending.replace({
+                        type: 'dup-shape',
+                        id,
+                        onDone(point) {
+                            onDup(point);
+                        },
+                    })
+                }
+            >
+                Dup
+            </button>
         </div>
     );
 };

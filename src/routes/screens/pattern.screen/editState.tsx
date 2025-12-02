@@ -16,7 +16,11 @@ export const [ProvideEditState, useEditState] = makeContext<EditState>({
     hover: null,
     pending: null,
 });
+
 export type EditState = {
     hover: null | Hover;
-    pending: {type: 'shape'; points: Coord[]; onDone(points: Coord[], open: boolean): void} | null;
+    pending:
+        | {type: 'shape'; points: Coord[]; onDone(points: Coord[], open: boolean): void}
+        | {type: 'dup-shape'; id: string; onDone(point: Coord): void}
+        | null;
 };
