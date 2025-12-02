@@ -3,7 +3,6 @@ import {BlurInt} from '../../../editor/Forms';
 import {BarePath, Coord, Segment} from '../../../types';
 import {shapeD} from '../../shapeD';
 import {colorToRgbString, colorToString, parseColor} from './colors';
-import {editContext} from './editState';
 import {evalLane, tlpos} from './evalEase';
 import {
     AnimatableBoolean,
@@ -25,6 +24,7 @@ import {
     State,
 } from './export-types';
 import {genid} from './genid';
+import {useEditState} from './editState';
 
 type StateEditorProps = {
     value: State;
@@ -37,8 +37,8 @@ export const StateEditor = ({value, onChange}: StateEditorProps) => {
         [value.layers],
     );
     const crops = useMemo(() => Object.entries(value.crops), [value.crops]);
-    const update = editContext.useUpdate();
-    const onHover = update.hover.replace;
+    const editState = useEditState();
+    const onHover = editState.update.hover.replace;
 
     return (
         <div className="flex flex-col gap-6 items-stretch">
@@ -91,7 +91,7 @@ export const StateEditor = ({value, onChange}: StateEditorProps) => {
                     <button
                         className="btn btn-outline btn-sm"
                         onClick={() => {
-                            update.pending.replace({
+                            editState.update.pending.replace({
                                 type: 'shape',
                                 onDone(points, open) {
                                     const nextId = genid();

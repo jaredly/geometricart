@@ -10,7 +10,7 @@ import {useAnimate} from './useAnimate';
 import {useCropCache} from './useCropCache';
 import {BaselineZoomInMap} from '../../../icons/Icon';
 import {Hover} from './resolveMods';
-import {editContext} from './editState';
+import {useEditState} from './editState';
 import {make} from '../../../json-diff/make';
 import {coordsFromBarePath} from '../../getPatternData';
 
@@ -26,10 +26,8 @@ export const RenderExport = ({state, patterns}: {state: State; patterns: Pattern
     // well this is exciting
     const cropCache = useCropCache(state, t, animCache);
 
+    const editContext = useEditState();
     const hover = editContext.use((v) => v.hover);
-    const edit = editContext.useUpdate();
-
-    // edit.pending.points.push({x: 0, y: 0});
 
     const {items, warnings, byKey, bg} = useMemo(
         () => svgItems(state, animCache, cropCache, patterns, t),

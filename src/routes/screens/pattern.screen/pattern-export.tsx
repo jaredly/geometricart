@@ -1,12 +1,10 @@
-import {useCallback, useEffect, useMemo, useState} from 'react';
+import {useEffect, useMemo, useState} from 'react';
 import {Tiling} from '../../../types';
+import {ProvideEditState} from './editState';
 import {example} from './example';
 import {State} from './export-types';
 import {RenderExport} from './RenderExport';
 import {StateEditor} from './StateEditor';
-import {EditState} from './editState';
-import {Hover} from './resolveMods';
-import {editContext} from './editState';
 
 export const PatternExport = ({tiling, id}: {tiling: Tiling; id: string}) => {
     const [state, setState] = useState<State>(example(id));
@@ -19,13 +17,13 @@ export const PatternExport = ({tiling, id}: {tiling: Tiling; id: string}) => {
     const patterns = useMemo(() => ({[id]: tiling}), [id, tiling]);
 
     return (
-        <editContext.Provide>
+        <ProvideEditState>
             <div className="flex">
                 <RenderExport state={state} patterns={patterns} />
                 <div className="max-h-250 overflow-auto flex-1">
                     <StateEditor value={state} onChange={setState} />
                 </div>
             </div>
-        </editContext.Provide>
+        </ProvideEditState>
     );
 };

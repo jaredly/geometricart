@@ -12,7 +12,10 @@ import {makeContext} from './diffStateManager';
 
 const ctx = createContext<EditState>({hover: null, pending: null});
 
-export const editContext = makeContext<EditState>({hover: null, pending: null});
+export const [ProvideEditState, useEditState] = makeContext<EditState>({
+    hover: null,
+    pending: null,
+});
 export type EditState = {
     hover: null | Hover;
     pending: {type: 'shape'; points: Coord[]; onDone(points: Coord[], open: boolean): void} | null;

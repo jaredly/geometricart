@@ -8,7 +8,7 @@ import {Box, Color, ConcreteShadow, shadowKey} from './export-types';
 import {renderItems} from './recordVideo';
 import {percentToWorld, worldToPercent, svgCoord} from './useSVGZoom';
 import {coordKey} from '../../../rendering/coordKey';
-import {editContext} from './editState';
+import {useEditState} from './editState';
 import {coordsEqual} from '../../../rendering/pathsAreIdentical';
 
 export const Canvas = ({
@@ -84,6 +84,7 @@ export const SVGCanvas = ({
     // pending = editContext.use()
     // editContext.latest().pending
     // editContext.update()
+    const editContext = useEditState();
 
     const pending = editContext.use((s) => s.pending);
     const points = useMemo(() => {
@@ -100,8 +101,20 @@ export const SVGCanvas = ({
         return Object.values(pts);
     }, [items, pending]);
 
-    const update = editContext.useUpdate();
-    const get = editContext.useGet();
+    // const update = editContext.useUpdate();
+    // const get = editContext.useGet();
+
+    useEffect(() => {
+        if (!pending) return;
+        const fn = (evt: KeyboardEvent) => {
+            if (evt.key === 'Enter') {
+                pending.onDone(pending.points, true);
+                editContext.update.pending.replace(null);
+            }
+        };
+        document.addEventListener('keydown', fn);
+        return () => document.removeEventListener('keydown', fn);
+    }, [pending]);
 
     return (
         // <div>
@@ -156,12 +169,13 @@ export const SVGCanvas = ({
                     r={0.03}
                     fill="white"
                     onClick={() => {
-                        const pending = get().pending;
+                        const pending = editContext.latest().pending;
                         if (!pending) return;
                         if (pending.points.length && coordsEqual(pending.points[0], pt)) {
-                            update.pending.replace(null);
+                            pending.onDone(pending.points, false);
+                            editContext.update.pending.replace(null);
                         } else {
-                            update.pending.points.push(pt);
+                            editContext.update.pending.points.push(pt);
                         }
                     }}
                     cursor={'pointer'}
@@ -175,6 +189,8 @@ export const SVGCanvas = ({
                         strokeWidth={0.05}
                         pointerEvents={'none'}
                         fill="none"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
                     />
                     <path
                         d={shapeD(pending.points.concat(mouse ? [mouse] : []), false)}
@@ -182,6 +198,8 @@ export const SVGCanvas = ({
                         strokeWidth={0.03}
                         pointerEvents={'none'}
                         fill="none"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
                     />
                 </>
             )}
