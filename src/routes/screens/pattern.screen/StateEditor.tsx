@@ -1,32 +1,29 @@
-import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
+import {BlurInt} from '../../../editor/Forms';
+import {BarePath, Coord, Segment} from '../../../types';
+import {shapeD} from '../../shapeD';
+import {colorToRgbString, colorToString, parseColor} from './colors';
+import {editContext} from './editState';
+import {evalLane, tlpos} from './evalEase';
 import {
     AnimatableBoolean,
     AnimatableColor,
     AnimatableCoord,
     AnimatableNumber,
-    Box,
     BaseKind,
+    Box,
+    Color,
     Entity,
-    Group,
     Fill,
-    Line,
+    Group,
     Layer,
+    Line,
     Pattern,
     PatternContents,
+    PMods,
     ShapeStyle,
     State,
-    Color,
-    colorToRgb,
-    PMods,
 } from './export-types';
-import {BarePath, Coord, Segment} from '../../../types';
-import {rgbToString} from '../../../editor/PalettesForm';
-import {colorToRgbString, colorToString, parseColor} from './colors';
-import {shapeD} from '../../shapeD';
-import {evalEase, evalLane, evalTimeline, tlpos} from './evalEase';
-import {BlurInt} from '../../../editor/Forms';
-import {Hover} from './resolveMods';
-import {editContext, EditState} from './editState';
 
 type StateEditorProps = {
     value: State;

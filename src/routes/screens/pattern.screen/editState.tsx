@@ -26,6 +26,7 @@ export const makeContext = <T,>(initial: T) => {
 
             const [value, setValue] = useState(() => sel(c.value));
             const lvalue = useRef(value);
+            lvalue.current = value;
 
             useEffect(() => {
                 const fn = () => {
