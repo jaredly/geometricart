@@ -1,5 +1,5 @@
 // biome-ignore-all lint/suspicious/noExplicitAny : this is internal and fine
-import {Coord, Tiling} from '../../../types';
+import {BarePath, Coord, Tiling} from '../../../types';
 import {PKPath} from '../../pk';
 import {parseColor, Rgb} from './colors';
 import {
@@ -30,7 +30,7 @@ export type RenderItem = {
     color: {r: number; g: number; b: number};
     strokeWidth?: number;
     zIndex?: number | null;
-    shapes: Coord[][];
+    shapes: BarePath[];
     opacity?: number;
     key: string;
 };

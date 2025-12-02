@@ -1,10 +1,10 @@
 import {Path as PKPath} from 'canvaskit-wasm';
 import {transformShape} from '../../../editor/tilingPoints';
-import {cmdsToCoords} from '../../../gcode/cmdsToSegments';
+import {cmdsToCoords, cmdsToSegments} from '../../../gcode/cmdsToSegments';
 import {epsilon} from '../../../rendering/epsilonToZero';
 import {Matrix, dist} from '../../../rendering/getMirrorTransforms';
 import {pkPathToSegments} from '../../../sidebar/pkClipPaths';
-import {Coord} from '../../../types';
+import {BarePath, Coord} from '../../../types';
 import {centroid} from '../../findReflectionAxes';
 import {
     pkPathFromCoords,
@@ -289,10 +289,10 @@ const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Pattern) => {
                         color: rgb,
                         opacity,
                         shapes: f.mods.length
-                            ? modsToShapes(ctx.cropCache, f.mods, [{shape, i: 0}]).map(
-                                  (s) => s.shape,
+                            ? modsToShapes(ctx.cropCache, f.mods, [{shape, i: 0}]).map((s) =>
+                                  barePathFromCoords(s.shape),
                               )
-                            : [shape],
+                            : [barePathFromCoords(shape)],
                         shadow,
                         zIndex,
                     };
@@ -317,10 +317,10 @@ const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Pattern) => {
                         color: rgb,
                         strokeWidth: width,
                         shapes: f.mods.length
-                            ? modsToShapes(ctx.cropCache, f.mods, [{shape, i: 0}]).map(
-                                  (s) => s.shape,
+                            ? modsToShapes(ctx.cropCache, f.mods, [{shape, i: 0}]).map((s) =>
+                                  barePathFromCoords(s.shape),
                               )
-                            : [shape],
+                            : [barePathFromCoords(shape)],
                         shadow,
                         opacity,
                         zIndex,
@@ -446,7 +446,7 @@ const renderObject = (ctx: Ctx, crops: CropsAndMatrices, object: EObject) => {
             color: rgb,
             opacity,
             shadow: resolveShadow(anim, f.shadow),
-            shapes: cmdsToCoords(thisPath.toCmds()).map((s) => s.points),
+            shapes: cmdsToSegments([...thisPath.toCmds()]),
             zIndex,
         });
     });
@@ -473,7 +473,7 @@ const renderObject = (ctx: Ctx, crops: CropsAndMatrices, object: EObject) => {
             strokeWidth: a.number(anim, f.width ?? 0) / 100,
             opacity,
             shadow: resolveShadow(anim, f.shadow),
-            shapes: cmdsToCoords(thisPath.toCmds()).map((s) => s.points),
+            shapes: cmdsToSegments([...thisPath.toCmds()]),
             zIndex,
         });
     });
@@ -637,3 +637,8 @@ export const svgItems = (
 };
 
 export type Hover = {type: 'shape'; id: string};
+
+export const barePathFromCoords = (coords: Coord[]): BarePath => ({
+    segments: coords.map((c) => ({type: 'Line', to: c})),
+    origin: coords[coords.length - 1],
+});

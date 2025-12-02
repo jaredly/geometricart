@@ -10,6 +10,7 @@ import {percentToWorld, worldToPercent, svgCoord} from './useSVGZoom';
 import {coordKey} from '../../../rendering/coordKey';
 import {useEditState} from './editState';
 import {coordsEqual} from '../../../rendering/pathsAreIdentical';
+import {calcPathD} from '../../../editor/calcPathD';
 
 export const Canvas = ({
     items,
@@ -92,10 +93,12 @@ export const SVGCanvas = ({
         const pts: Record<string, Coord> = {};
         items.forEach((item) => {
             item.shapes.forEach((shape) => {
-                shape.forEach((pt) => {
-                    const k = coordKey(pt);
-                    pts[k] = pt;
+                shape.segments.forEach((seg) => {
+                    const k = coordKey(seg.to);
+                    pts[k] = seg.to;
                 });
+                const k = coordKey(shape.origin);
+                pts[k] = shape.origin;
             });
         });
         return Object.values(pts);
@@ -154,7 +157,7 @@ export const SVGCanvas = ({
                         stroke={strokeWidth ? colorToString(shadow?.color ?? color) : undefined}
                         strokeWidth={strokeWidth}
                         filter={shadow ? `url(#${shadowKey(shadow)})` : undefined}
-                        d={shapeD(shape)}
+                        d={calcPathD(shape)}
                         key={`${key}-${m}`}
                         onClick={() => setFocus(focus === key ? null : key)}
                         data-z={zIndex}

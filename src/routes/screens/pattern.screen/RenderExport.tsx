@@ -42,7 +42,7 @@ export const RenderExport = ({state, patterns}: {state: State; patterns: Pattern
                 type: 'path',
                 color: {r: 255, g: 255, b: 255},
                 key: 'hover-shape',
-                shapes: [coordsFromBarePath(shape)],
+                shapes: [shape],
                 strokeWidth: 0.03,
                 zIndex: 100,
             },

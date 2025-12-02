@@ -5,6 +5,7 @@ import {generateVideo} from '../animator.screen/muxer';
 import {Patterns, Ctx, RenderItem} from './evaluate';
 import {State, Box, Color, colorToRgb} from './export-types';
 import {svgItems} from './resolveMods';
+import {pkPathWithCmds, segmentsCmds} from '../animator.screen/cropPath';
 
 export const recordVideo = async (
     state: State,
@@ -51,7 +52,9 @@ export const renderItems = (surface: Surface, box: Box, items: RenderItem[], bg:
     items.forEach((item) => {
         const pkp =
             item.pk ??
-            pk.Path.MakeFromCmds(item.shapes.flatMap((shape) => cmdsForCoords(shape, false)))!;
+            pk.Path.MakeFromCmds(
+                item.shapes.flatMap((shape) => segmentsCmds(shape.origin, shape.segments, false)),
+            )!;
         const paint = new pk.Paint();
         paint.setAntiAlias(true);
         if (item.strokeWidth == null) {
