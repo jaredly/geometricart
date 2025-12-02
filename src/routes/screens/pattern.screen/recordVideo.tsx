@@ -33,6 +33,7 @@ export const recordVideo = async (
             cropCache,
             patterns,
             currentFrame / totalFrames,
+            null,
         );
         renderItems(surface, box, items, bg);
     });

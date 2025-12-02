@@ -13,15 +13,15 @@ export const example: (id: string) => State = (id: string) => {
             shapeb: {
                 origin: {x: 0, y: -3},
                 segments: [
-                    {type: 'Arc', center: {x: 0, y: 0}, to: {x: -3, y: 0}, clockwise: false},
-                    {type: 'Arc', center: {x: 0, y: 0}, to: {x: 0, y: -3}, clockwise: false},
+                    {type: 'Arc', center: {x: 0, y: 0}, to: {x: -3, y: 0}, clockwise: true},
+                    {type: 'Arc', center: {x: 0, y: 0}, to: {x: 0, y: -3}, clockwise: true},
                 ],
             },
             shapec: {
                 origin: {x: 0, y: -3.2},
                 segments: [
-                    {type: 'Arc', center: {x: 0, y: 0}, to: {x: -3.2, y: 0}, clockwise: false},
-                    {type: 'Arc', center: {x: 0, y: 0}, to: {x: 0, y: -3.2}, clockwise: false},
+                    {type: 'Arc', center: {x: 0, y: 0}, to: {x: -3.2, y: 0}, clockwise: true},
+                    {type: 'Arc', center: {x: 0, y: 0}, to: {x: 0, y: -3.2}, clockwise: true},
                 ],
             },
         },

@@ -9,8 +9,19 @@ import {VideoExport} from './VideoExport';
 import {useAnimate} from './useAnimate';
 import {useCropCache} from './useCropCache';
 import {BaselineZoomInMap} from '../../../icons/Icon';
+import {Hover} from './resolveMods';
+import {editContext} from './editState';
+import {make} from '../../../json-diff/make';
 
-export const RenderExport = ({state, patterns}: {state: State; patterns: Patterns}) => {
+export const RenderExport = ({
+    state,
+    patterns,
+    // hover,
+}: {
+    state: State;
+    patterns: Patterns;
+    // hover: Hover | null;
+}) => {
     const [t, setT] = useState(0); // animateeeee
     const animCache = useMemo<AnimCtx['cache']>(() => new Map(), []);
 
@@ -22,9 +33,19 @@ export const RenderExport = ({state, patterns}: {state: State; patterns: Pattern
     // well this is exciting
     const cropCache = useCropCache(state, t, animCache);
 
+    const hover = editContext.use((v) => v.hover);
+    // const es = editContext.use((v) => v);
+    // const edit = editContext.useUpdate();
+
+    // edit.pending.points[3].add
+    // make.replace(es, '/hover/id', 'uyes')
+
+    // edit.hover.id.replace('hi')
+    // edit.pending.points
+
     const {items, warnings, byKey, bg} = useMemo(
-        () => svgItems(state, animCache, cropCache, patterns, t),
-        [state, patterns, cropCache, animCache, t],
+        () => svgItems(state, animCache, cropCache, patterns, t, hover),
+        [state, patterns, cropCache, animCache, t, hover],
     );
 
     const {zoomProps, box, reset: resetZoom} = useElementZoom(6);

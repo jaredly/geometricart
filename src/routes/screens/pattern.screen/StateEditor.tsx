@@ -1,4 +1,4 @@
-import React, {useEffect, useMemo, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {
     AnimatableBoolean,
     AnimatableColor,
@@ -19,12 +19,14 @@ import {
     colorToRgb,
     PMods,
 } from './export-types';
-import {Coord, Segment} from '../../../types';
+import {BarePath, Coord, Segment} from '../../../types';
 import {rgbToString} from '../../../editor/PalettesForm';
 import {colorToRgbString, colorToString, parseColor} from './colors';
 import {shapeD} from '../../shapeD';
 import {evalEase, evalLane, evalTimeline, tlpos} from './evalEase';
 import {BlurInt} from '../../../editor/Forms';
+import {Hover} from './resolveMods';
+import {editContext, EditState} from './editState';
 
 type StateEditorProps = {
     value: State;
@@ -37,6 +39,11 @@ export const StateEditor = ({value, onChange}: StateEditorProps) => {
         [value.layers],
     );
     const crops = useMemo(() => Object.entries(value.crops), [value.crops]);
+    // const onHover = useCallback(
+    //     (hover: Hover | null) => setEditState((es) => ({...es, hover})),
+    //     [setEditState],
+    // );
+    const onHover = editContext.useUpdate().hover.replace;
 
     return (
         <div className="flex flex-col gap-6 items-stretch">
@@ -80,6 +87,49 @@ export const StateEditor = ({value, onChange}: StateEditorProps) => {
                             }}
                         />
                     ))}
+                </div>
+            </Section>
+
+            <Section
+                title="Shapes"
+                actions={
+                    <button
+                        className="btn btn-outline btn-sm"
+                        onClick={() => {
+                            // const nextId = `layer-${layers.length + 1}`;
+                            // const nextLayers = {
+                            //     ...value.layers,
+                            //     [nextId]: createLayerTemplate(nextId),
+                            // };
+                            // onChange({...value, layers: nextLayers});
+                        }}
+                    >
+                        Add Shape
+                    </button>
+                }
+            >
+                <div className="">
+                    {Object.entries(value.shapes).map(([id, shape]) => (
+                        <ShapeEditor
+                            id={id}
+                            shape={shape}
+                            onChange={(shape) => {
+                                const shapes = {...value.shapes};
+                                if (shape == null) {
+                                    delete shapes[id];
+                                } else {
+                                    shapes[id] = shape;
+                                }
+                                onChange({...value, shapes});
+                            }}
+                            onHover={onHover}
+                        />
+                    ))}
+                    {/* <JsonEditor
+                        value={value.shapes}
+                        onChange={(shapes) => onChange({...value, shapes})}
+                        label="Shapes"
+                    /> */}
                 </div>
             </Section>
 
@@ -674,11 +724,11 @@ const LayerEditor = ({
                 </div>
 
                 <div className="flex flex-col gap-4">
-                    {/* <JsonEditor
+                    <JsonEditor
                         label="Guides"
                         value={layer.guides}
                         onChange={(guides) => onChange({...layer, guides})}
-                    /> */}
+                    />
                     <div className="space-y-2">
                         <div className="flex items-center justify-between">
                             <div className="font-semibold text-sm">Entities</div>
@@ -2180,3 +2230,25 @@ const createLine = (id: string): Line => ({
     id,
     mods: [],
 });
+
+const ShapeEditor = ({
+    shape,
+    id,
+    onChange,
+    onHover,
+}: {
+    shape: BarePath;
+    id: string;
+    onHover: (v: {type: 'shape'; id: string} | null) => void;
+    onChange: (v: BarePath | null) => void;
+}) => {
+    return (
+        <div
+            className="p-4 cursor-pointer hover:bg-base-300"
+            onMouseEnter={() => onHover({type: 'shape', id})}
+            onMouseLeave={() => onHover(null)}
+        >
+            Shape {id} {shape.segments.length} segs
+        </div>
+    );
+};

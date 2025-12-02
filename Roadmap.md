@@ -15,6 +15,15 @@ object -> shape
 pattern line mod -> shape
 
 
+- [x] crops and objects use shapes
+- [x] shape editor hover to see it
+- [ ] delete shape
+- [ ] add shape by clicking points
+- [ ] patterns can have 'shape mods'
+  - then yay it work
+- [ ] oh lets do saving state locally too
+
+
 
 # Debugging
 

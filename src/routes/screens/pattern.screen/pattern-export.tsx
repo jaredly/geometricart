@@ -1,27 +1,34 @@
-import {useEffect, useMemo, useState} from 'react';
+import {useCallback, useEffect, useMemo, useState} from 'react';
 import {Tiling} from '../../../types';
 import {example} from './example';
 import {State} from './export-types';
 import {RenderExport} from './RenderExport';
 import {StateEditor} from './StateEditor';
+import {EditState} from './editState';
+import {Hover} from './resolveMods';
+import {editContext} from './editState';
 
 export const PatternExport = ({tiling, id}: {tiling: Tiling; id: string}) => {
     const [state, setState] = useState<State>(example(id));
 
+    // const [hover, onHover] = useState(null as null | Hover);
+    // const [editState, setEditState] = useState<EditState>({hover: null, pending: null});
+
+    // biome-ignore lint/correctness/useExhaustiveDependencies : this is for hot refresh
     useEffect(() => {
         setState(example(id));
     }, [example, id]);
-    // const state: State = example(id);
-    // const setState = (m: State) => {};
 
     const patterns = useMemo(() => ({[id]: tiling}), [id, tiling]);
 
     return (
-        <div className="flex">
-            <RenderExport state={state} patterns={patterns} />
-            <div className="max-h-250 overflow-auto flex-1">
-                <StateEditor value={state} onChange={setState} />
+        <editContext.Provide>
+            <div className="flex">
+                <RenderExport state={state} patterns={patterns} />
+                <div className="max-h-250 overflow-auto flex-1">
+                    <StateEditor value={state} onChange={setState} />
+                </div>
             </div>
-        </div>
+        </editContext.Provide>
     );
 };
