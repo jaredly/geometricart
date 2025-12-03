@@ -12,6 +12,7 @@ import {
     calcPolygonArea,
     getSimplePatternData,
     getShapeColors,
+    sortShapesByPolar,
 } from '../../getPatternData';
 import {pk} from '../../pk';
 import {segmentsCmds} from '../animator.screen/cropPath';
@@ -44,7 +45,7 @@ import {
     splitOverlappingSegs,
     unique,
 } from '../../shapesFromSegments';
-import {lineLine, lineToSlope, SlopeIntercept} from '../../../rendering/intersect';
+import {lineLine, lineToSlope, SlopeIntercept, slopeKey} from '../../../rendering/intersect';
 import {coordKey} from '../../../rendering/coordKey';
 import {Bounds, boundsForCoords} from '../../../editor/Bounds';
 
@@ -263,15 +264,21 @@ const coordPairOnShape = (pair: [Coord, Coord], shape: SlopeIntercept[]) => {
     return shape.some((sline) => overlapping(line, sline));
 };
 
+const allSameLines = (one: SlopeIntercept[], two: SlopeIntercept[]) => {
+    if (one.length !== two.length) return false;
+    const kone = one.map(slopeKey);
+    return two.every((line) => kone.includes(slopeKey(line)));
+};
+
 const adjustShapes = (
     anim: Ctx['anim'],
     cropCache: Ctx['cropCache'],
     uniqueShapes: Coord[][],
-    adjustments: {shape: BarePath; mods: PMods[]}[],
+    adjustments: {shapes: BarePath[]; mods: PMods[]}[],
 ): Coord[][] => {
-    const ready = true;
-    if (ready) {
-        for (let {shape, mods} of adjustments) {
+    let modified = false;
+    for (let {shapes, mods} of adjustments) {
+        for (let shape of shapes) {
             const shapeCoords = coordsFromBarePath(shape);
             const center = centroid(shapeCoords);
             const resolved = mods.map((mod) =>
@@ -280,6 +287,9 @@ const adjustShapes = (
             const shapeLines = coordLines(shapeCoords);
             const moved = modsToShapes(cropCache, resolved, [{shape: shapeCoords, i: 0}]);
             const movedLines = moved.map((m) => coordLines(m.shape));
+            if (allSameLines(shapeLines, movedLines.flat())) {
+                continue;
+            }
             // console.log('here we are', shapeLines, movedLines);
             const [left, right] = unzip(uniqueShapes, (coords) => {
                 const got =
@@ -306,6 +316,7 @@ const adjustShapes = (
                 (c) => !matchesBounds(boundsForCoords(...c), cmoved),
             );
             // uniqueShapes = reconstructed;
+            modified = true;
             uniqueShapes = [...left, ...reconstructed];
             // console.log('eft', left);
             // uniqueShapes = [...left, ...right];
@@ -313,7 +324,7 @@ const adjustShapes = (
         }
     }
 
-    return uniqueShapes;
+    return modified ? sortShapesByPolar(uniqueShapes) : uniqueShapes;
 };
 
 const matchesBounds = (bounds: Bounds, coord: Coord) =>
@@ -333,8 +344,8 @@ const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Pattern) => {
             ctx.anim,
             ctx.cropCache,
             baseShapes,
-            Object.entries(pattern.adjustments).map(([key, mods]) => ({
-                shape: ctx.state.shapes[key],
+            Object.values(pattern.adjustments).map(({shapes, mods}) => ({
+                shapes: shapes.map((key) => ctx.state.shapes[key]),
                 mods,
             })),
         );

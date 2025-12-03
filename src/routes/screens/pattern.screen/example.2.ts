@@ -74,9 +74,7 @@ export const example: (id: string) => State = (id: string) => {
                     p: {
                         type: 'Pattern',
                         id,
-                        adjustments: {
-                            hex: [{type: 'rotate', v: Math.PI / 6}],
-                        },
+                        adjustments: {},
                         contents: {
                             type: 'shapes',
                             styles: {

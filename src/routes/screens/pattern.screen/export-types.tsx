@@ -249,7 +249,7 @@ export type Pattern = {
     psize: Coord | number;
     contents: PatternContents;
     // shape and the mods
-    adjustments: Record<string, PMods[]>;
+    adjustments: Record<string, {id: string; shapes: string[]; mods: PMods[]}>;
     mods: PMods[];
 };
 

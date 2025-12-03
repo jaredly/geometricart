@@ -115,12 +115,14 @@ export const example: (id: string) => State = (id: string) => {
                         type: 'Pattern',
                         id,
                         adjustments: {
+                            a: {
+                                id: 'a',
+                                shapes: ['vtjgy8lpyg', 'xksjgxn36m', 'qwf9s90l0g'],
+                                mods: [{type: 'rotate', v: 'Math.PI * t', origin: 'center'}],
+                            },
                             // hex: [{type: 'rotate', v: 'Math.PI * t'}],
-                            vtjgy8lpyg: [{type: 'rotate', v: 'Math.PI * t', origin: 'center'}],
                             // qcjm4l0c54n: [{type: 'rotate', v: 'Math.PI * t'}],
-                            xksjgxn36m: [{type: 'rotate', v: 'Math.PI * t', origin: 'center'}],
                             // dec99c0166t: [{type: 'rotate', v: 'Math.PI * t'}],
-                            qwf9s90l0g: [{type: 'rotate', v: 'Math.PI * t', origin: 'center'}],
                             // '5a5jphhuob': [{type: 'rotate', v: 'Math.PI * t'}],
                         },
                         contents: {
@@ -133,8 +135,8 @@ export const example: (id: string) => State = (id: string) => {
                                             id: 'a',
                                             // color: `return {h: dist(center, {x:0,y:0}) * 100, s: 100, l: Math.abs(angleTo(center,{x:0,y:0})) * 20}`,
                                             color: {r: 100, g: 100, b: 100},
-                                            mods: [{type: 'inset', v: 5}],
-                                            // mods: [],
+                                            // mods: [{type: 'inset', v: 5}],
+                                            mods: [],
                                         },
                                     },
                                     lines: {

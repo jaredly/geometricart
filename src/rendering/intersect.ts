@@ -122,6 +122,12 @@ export type SlopeIntercept = {
     // if m === Infinity, limit is on the y axis, otherwise it's on the x axis
     limit?: null | [number, number];
 };
+
+export const slopeKey = ({m, b, limit}: SlopeIntercept) =>
+    `${m.toFixed(3)}:${b.toFixed(3)}:${
+        limit ? `${limit[0].toFixed(3)}..${limit[1].toFixed(3)}` : ''
+    }`;
+
 // the limit is two thetas, in clockwise direction.
 export type Circle = {
     type: 'circle';

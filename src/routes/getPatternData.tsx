@@ -12,6 +12,7 @@ import {getShapeSize, initialTransform, tilingTransforms} from '../editor/tiling
 import {coordKey, numKey} from '../rendering/coordKey';
 import {closeEnough, epsilon} from '../rendering/epsilonToZero';
 import {
+    angleTo,
     applyMatrices,
     dist,
     scaleMatrix,
@@ -45,6 +46,7 @@ import {
 import {pkPathToSegments} from '../sidebar/pkClipPaths';
 import {coordsEqual} from '../rendering/pathsAreIdentical';
 import {evalQuad} from './screens/animator.screen/splitSegment';
+import {centroid} from './findReflectionAxes';
 
 export const cmdsForCoords = (coords: Coord[], open = true) => {
     return [
@@ -259,7 +261,9 @@ export const getSimplePatternData = (tiling: Tiling, size: Coord | number) => {
         typeof size === 'number' ? simpleSize(tiling, size) : size,
     );
     const transformedShapes = applyTilingTransformsG(initialShapes, ttt, transformShape);
-    const uniqueShapes = unique(transformedShapes, (s) => shapeBoundsKey(s, minSegLength));
+    const uniqueShapes = sortShapesByPolar(
+        unique(transformedShapes, (s) => shapeBoundsKey(s, minSegLength)),
+    );
     const transformedBounds = applyTilingTransformsG([bounds], ttt, (pts, tx) =>
         pts.map((p) => applyMatrices(p, tx)),
     );
@@ -269,6 +273,17 @@ export const getSimplePatternData = (tiling: Tiling, size: Coord | number) => {
     });
 
     return {initialShapes, minSegLength, canons, ttt, uniqueShapes, eigenCorners};
+};
+
+export const coordToPolar = (c: Coord) => ({t: angleTo({x: 0, y: 0}, c), m: dist({x: 0, y: 0}, c)});
+
+export const sortShapesByPolar = (shapes: Coord[][]) => {
+    return shapes
+        .map((shape) => ({polar: coordToPolar(centroid(shape)), shape}))
+        .sort((a, b) =>
+            closeEnough(a.polar.m, b.polar.m) ? a.polar.t - b.polar.t : a.polar.m - b.polar.m,
+        )
+        .map((m) => m.shape);
 };
 
 const simpleSize = (tiling: Tiling, x: number) => {

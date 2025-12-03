@@ -46,6 +46,7 @@ export const StateEditor = ({value, onChange}: StateEditorProps) => {
     const latest = useRef(value);
     latest.current = value;
     useEffect(() => {
+        // @ts-ignore
         window.state = value;
     }, [value]);
 
