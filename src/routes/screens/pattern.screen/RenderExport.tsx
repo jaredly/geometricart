@@ -1,7 +1,7 @@
 import {useMemo, useRef, useState} from 'react';
 import {Coord} from '../../../types';
 import {a, AnimCtx, Patterns, RenderItem} from './evaluate';
-import {Color, State} from './export-types';
+import {Color, colorToRgb, State} from './export-types';
 import {svgItems} from './resolveMods';
 import {Canvas, SVGCanvas} from './SVGCanvas';
 import {useElementZoom} from './useSVGZoom';
@@ -13,6 +13,7 @@ import {Hover} from './resolveMods';
 import {useEditState} from './editState';
 import {make} from '../../../json-diff/make';
 import {coordsFromBarePath} from '../../getPatternData';
+import {parseColor} from './colors';
 
 const renderShapes = (shapes: State['shapes'], hover: Hover | null): RenderItem[] => {
     return Object.entries(shapes).flatMap(([key, shape]) => [
@@ -31,7 +32,7 @@ const renderShapes = (shapes: State['shapes'], hover: Hover | null): RenderItem[
         },
         {
             type: 'path',
-            color: hover?.id === key ? {r: 200, g: 200, b: 255} : {r: 255, g: 255, b: 255},
+            color: hover?.id === key ? colorToRgb(parseColor('gold')!) : {r: 255, g: 255, b: 255},
             key,
             shapes: [shape],
             strokeWidth: 0.03,

@@ -129,7 +129,7 @@ export const StateEditor = ({value, onChange}: StateEditorProps) => {
                     </button>
                 }
             >
-                <div className="">
+                <div className="flex flex-row flex-wrap">
                     {Object.entries(value.shapes).map(([id, shape]) => (
                         <ShapeEditor
                             id={id}
@@ -2298,7 +2298,7 @@ const ShapeEditor = ({
             onMouseEnter={() => onHover({type: 'shape', id})}
             onMouseLeave={() => onHover(null)}
         >
-            Shape {id} {shape.segments.length} segs
+            Shape
             <button
                 className="btn btn-sm"
                 onClick={() =>
@@ -2316,7 +2316,11 @@ const ShapeEditor = ({
             <button className="btn btn-sm" onClick={() => onChange(null)}>
                 &times;
             </button>
-            <JsonEditor label="json" onChange={() => {}} value={shape} />
+            <details>
+                <summary>JSON</summary>
+
+                <JsonEditor label="json" onChange={() => {}} value={shape} />
+            </details>
         </div>
     );
 };
