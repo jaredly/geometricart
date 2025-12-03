@@ -205,14 +205,18 @@ export const example: (id: string) => State = (id: string) => {
                     t2: `Math.sin(t1)`,
                     off: 'return (center) => (1 - dist(center,{x:0,y:0}))/30',
                     off2: 'return (center) => (1 - dist(center,{x:0,y:0}))/30 + .02',
-                    shadow: 'return (n) => ({offset: {x:0,y:0},blur:{x:n * 25,y:n * 25},color:[0,0,0]})',
+                    shadow: 'return (n) => ({offset: {x:n*4,y:n*4},blur:{x:n * 2.5,y:n * 2.5},color:[0,0,0]})',
+                    shadow2:
+                        'return (n) => ({offset: {x:n * 4,y:n * 4},blur:{x:n * 2.5,y:n * 2.5},color:[0,0,0]})',
                     sCurve: `
-                        const t1 = t * 3 % 1;
+                        const t1 = t * 6 % 1;
                         if (t1 < .1) return t1 * 10
                         if (t1 > .9) return 1 - (t1 - .9) * 10
                         return 1
                     `,
                     insett: '1',
+                    bgColor: 't < 5/6 ? 0 : 1',
+                    // bgColor: 't >= .5 ? "gold" : 1',
                 },
                 entities: {
                     r: {type: 'Group', entities: {p: 1}, id: 'r'},
@@ -247,7 +251,13 @@ export const example: (id: string) => State = (id: string) => {
                                     'upzdkbrt9ho',
                                     'mkatztngfc',
                                 ],
-                                mods: [{type: 'rotate', v: 'oneRotate', origin: 'center'}],
+                                mods: [
+                                    {
+                                        type: 'rotate',
+                                        v: 'ease1 * Math.PI * 2 / 3',
+                                        origin: 'center',
+                                    },
+                                ],
                             },
                             b: {
                                 id: 'b',
@@ -260,7 +270,13 @@ export const example: (id: string) => State = (id: string) => {
                                     'o128dtvjgfd',
                                     'bmkjgocgwvi',
                                 ],
-                                mods: [{type: 'rotate', v: '-threeRotate', origin: 'center'}],
+                                mods: [
+                                    {
+                                        type: 'rotate',
+                                        v: 'ease3 * Math.PI / 3 * 2',
+                                        origin: 'center',
+                                    },
+                                ],
                             },
                             c: {
                                 id: 'c',
@@ -273,7 +289,9 @@ export const example: (id: string) => State = (id: string) => {
                                     'vyg7d7zs5n8',
                                     'ny0963kvheb',
                                 ],
-                                mods: [{type: 'rotate', v: 'twoRotate', origin: 'center'}],
+                                mods: [
+                                    {type: 'rotate', v: '-ease2 * Math.PI * 2/3', origin: 'center'},
+                                ],
                             },
                             // hex: [{type: 'rotate', v: 'Math.PI * t'}],
                         },
@@ -302,27 +320,12 @@ export const example: (id: string) => State = (id: string) => {
                                         a: {
                                             id: 'a',
                                             color: 0,
-                                            mods: [{type: 'inset', v: 8}],
-                                            // mods: [],
-                                            shadow: {
-                                                blur: 0.5,
-                                                offset: 1,
-                                            },
-                                        },
-                                    },
-                                    lines: {
-                                        a: {
-                                            id: 'a',
-                                            color: 'gold',
-                                            width: 3,
                                             mods: [],
-                                            shadow: {
-                                                blur: 0.5,
-                                                offset: 1,
-                                            },
-                                            // zIndex: 4,
+                                            // mods: [],
+                                            // shadow: { blur: 0.5, offset: 1, },
                                         },
                                     },
+                                    lines: {},
                                     mods: [],
                                     kind: {type: 'alternating', index: 1},
                                     order: 1,
@@ -334,11 +337,8 @@ export const example: (id: string) => State = (id: string) => {
                                             id: 'b',
                                             color: 1,
                                             // mods: [],
-                                            mods: [{type: 'inset', v: 8}],
-                                            shadow: {
-                                                blur: 0.5,
-                                                offset: 1,
-                                            },
+                                            mods: [],
+                                            // shadow: { blur: 0.5, offset: 1, },
                                         },
                                     },
                                     lines: {},
@@ -346,69 +346,57 @@ export const example: (id: string) => State = (id: string) => {
                                     kind: {type: 'alternating', index: 0},
                                     order: 2,
                                 },
-                                // c: {
-                                //     id: 'c',
-                                //     kind: {
-                                //         type: 'distance',
-                                //         corner: 0,
-                                //         repeat: true,
-                                //         distances: [0, 0.6],
-                                //     },
-                                //     mods: [],
-                                //     order: 3,
-                                //     lines: {},
-                                //     fills: {
-                                //         b: {
-                                //             id: 'b',
-                                //             zIndex: 'threeZ',
-                                //             enabled: '!!threeZ',
-                                //             shadow: `shadow(sCurve)`,
-                                //             mods: [
-                                //                 {
-                                //                     type: 'rotate',
-                                //                     v: 'twoRotate',
-                                //                     origin: 'styleCenter',
-                                //                 },
-                                //             ],
-                                //         },
-                                //     },
-                                // },
+                                c: {
+                                    id: 'c',
+                                    kind: {
+                                        type: 'distance',
+                                        corner: 0,
+                                        repeat: true,
+                                        distances: [0, 0.6],
+                                    },
+                                    mods: [],
+                                    order: 3,
+                                    lines: {},
+                                    fills: {
+                                        b: {
+                                            id: 'b',
+                                            zIndex: 'enable4',
+                                            enabled: '!!enable4',
+                                            shadow: `shadow2(sCurve)`,
+                                            mods: [
+                                                {
+                                                    type: 'rotate',
+                                                    v: 'ease4 * Math.PI * 2 / 3',
+                                                    origin: 'styleCenter',
+                                                },
+                                            ],
+                                        },
+                                    },
+                                },
                                 // c1: {
                                 //     id: 'c1',
                                 //     kind: {
                                 //         type: 'distance',
                                 //         corner: 2,
                                 //         repeat: true,
-                                //         distances: [0, 0.1],
+                                //         distances: [0, 0.4],
                                 //     },
                                 //     mods: [],
-                                //     lines: {
-                                //         // b: {
-                                //         //     id: 'b',
-                                //         //     zIndex: 'threeZ',
-                                //         //     mods: [
-                                //         //         {
-                                //         //             type: 'rotate',
-                                //         //             v: '-twoRotate',
-                                //         //             origin: 'styleCenter',
-                                //         //         },
-                                //         //     ],
-                                //         // },
-                                //     },
+                                //     lines: {},
                                 //     order: 7,
                                 //     fills: {
                                 //         b: {
                                 //             id: 'b',
                                 //             // color: {r: 255, g: 255, b: 0},
                                 //             // opacity: 1,
-                                //             zIndex: 'threeZ',
-                                //             enabled: '!!threeZ',
+                                //             zIndex: 'enable5',
+                                //             enabled: '!!enable5',
                                 //             shadow: `shadow(sCurve)`,
                                 //             mods: [
                                 //                 {
                                 //                     type: 'rotate',
                                 //                     // v: '-t1 * Math.PI / 3 * 2',
-                                //                     v: '-twoRotate',
+                                //                     v: '-ease5 * Math.PI * 2 / 3',
                                 //                     origin: 'styleCenter',
                                 //                 },
                                 //                 // {type: 'inset', v: 5},
@@ -416,89 +404,155 @@ export const example: (id: string) => State = (id: string) => {
                                 //         },
                                 //     },
                                 // },
-                                // d: {
-                                //     id: 'd',
-                                //     kind: {
-                                //         type: 'distance',
-                                //         corner: 2,
-                                //         repeat: true,
-                                //         distances: [0, 0.5],
-                                //         // distances: [0, 1.0],
-                                //     },
-                                //     mods: [],
-                                //     lines: {
-                                //         // a: {
-                                //         //     id: 'a',
-                                //         //     zIndex: 'oneZ',
-                                //         //     width: 'oneZ',
-                                //         //     mods: [
-                                //         //         {
-                                //         //             type: 'rotate',
-                                //         //             v: 'oneRotate',
-                                //         //             origin: 'styleCenter',
-                                //         //         },
-                                //         //     ],
-                                //         // },
-                                //     },
-                                //     order: 4,
-                                //     fills: {
-                                //         a: {
-                                //             id: 'a',
-                                //             zIndex: 'oneZ',
-                                //             enabled: '!!oneZ',
-                                //             mods: [
-                                //                 {
-                                //                     type: 'rotate',
-                                //                     v: 'oneRotate',
-                                //                     origin: 'styleCenter',
-                                //                 },
-                                //             ],
-                                //             shadow: `shadow(sCurve)`,
-                                //         },
-                                //     },
-                                // },
-                                // e: {
-                                //     id: 'e',
-                                //     kind: {
-                                //         type: 'distance',
-                                //         corner: 1,
-                                //         repeat: true,
-                                //         distances: [0, 0.2],
-                                //         // distances: [0, 1.0],
-                                //     },
-                                //     mods: [],
-                                //     lines: {
-                                //         // a: {
-                                //         //     id: 'a',
-                                //         //     zIndex: 'twoZ',
-                                //         //     width: 'twoZ',
-                                //         //     mods: [
-                                //         //         {
-                                //         //             type: 'rotate',
-                                //         //             v: '-threeRotate',
-                                //         //             origin: 'styleCenter',
-                                //         //         },
-                                //         //     ],
-                                //         // },
-                                //     },
-                                //     order: 5,
-                                //     fills: {
-                                //         a: {
-                                //             id: 'a',
-                                //             // color: {r: 0, g: 255, b: 0},
-                                //             zIndex: 'twoZ',
-                                //             enabled: '!!twoZ',
-                                //             shadow: `shadow(sCurve)`,
-                                //             mods: [
-                                //                 {
-                                //                     type: 'rotate',
-                                //                     v: '-threeRotate',
-                                //                     origin: 'styleCenter',
-                                //                 },
-                                //             ],
-                                //         },
-                                //     },
-                                // },
+                                d: {
+                                    id: 'd',
+                                    kind: {
+                                        type: 'distance',
+                                        corner: 2,
+                                        repeat: true,
+                                        distances: [0, 0.5],
+                                        // distances: [0, 1.0],
+                                    },
+                                    mods: [],
+                                    lines: {},
+                                    order: 4,
+                                    fills: {
+                                        b: {
+                                            id: 'b',
+                                            zIndex: 'enable4',
+                                            enabled: '!!enable4',
+                                            mods: [
+                                                {
+                                                    type: 'rotate',
+                                                    v: '-ease4 * Math.PI * 2 / 3',
+                                                    origin: 'styleCenter',
+                                                },
+                                            ],
+                                            shadow: `shadow2(sCurve)`,
+                                        },
+                                    },
+                                },
+                                e: {
+                                    id: 'e',
+                                    kind: {
+                                        type: 'distance',
+                                        corner: 1,
+                                        repeat: true,
+                                        distances: [0, 0.3],
+                                    },
+                                    mods: [],
+                                    lines: {},
+                                    order: 5,
+                                    fills: {
+                                        a: {
+                                            id: 'a',
+                                            zIndex: 'enable6',
+                                            enabled: '!!enable6',
+                                            shadow: `shadow(sCurve)`,
+                                            mods: [
+                                                {
+                                                    type: 'rotate',
+                                                    v: '-ease6 * Math.PI',
+                                                    origin: 'styleCenter',
+                                                },
+                                            ],
+                                        },
+                                    },
+                                },
+                                v1: {
+                                    id: 'e1',
+                                    kind: {
+                                        type: 'distance',
+                                        corner: 0,
+                                        repeat: true,
+                                        distances: [0, 0, 0.6, 0.8],
+                                    },
+                                    mods: [],
+                                    lines: {},
+                                    order: 5,
+                                    fills: {
+                                        a: {
+                                            id: 'a',
+                                            zIndex: 'enable5',
+                                            enabled: '!!enable5',
+                                            shadow: `shadow(sCurve)`,
+                                            mods: [
+                                                {
+                                                    type: 'rotate',
+                                                    v: 'ease5 * Math.PI/3',
+                                                    origin: 'styleCenter',
+                                                },
+                                            ],
+                                        },
+                                        b: {
+                                            id: 'b',
+                                            zIndex: 'enable5',
+                                            enabled: '!!enable5',
+                                            shadow: `shadow(sCurve)`,
+                                            mods: [
+                                                {
+                                                    type: 'rotate',
+                                                    v: 'ease5 * Math.PI/3',
+                                                    origin: 'styleCenter',
+                                                },
+                                            ],
+                                        },
+                                    },
+                                },
+                                e1: {
+                                    id: 'e1',
+                                    kind: {
+                                        type: 'distance',
+                                        corner: 0,
+                                        repeat: true,
+                                        distances: [0, 0.6],
+                                    },
+                                    mods: [],
+                                    lines: {},
+                                    order: 5,
+                                    fills: {
+                                        a: {
+                                            id: 'a',
+                                            zIndex: 'enable6',
+                                            enabled: '!!enable6',
+                                            shadow: `shadow(sCurve)`,
+                                            mods: [
+                                                {
+                                                    type: 'rotate',
+                                                    v: 'ease6 * Math.PI',
+                                                    origin: 'styleCenter',
+                                                },
+                                            ],
+                                        },
+                                    },
+                                },
+                                e2: {
+                                    id: 'e2',
+                                    kind: {
+                                        type: 'distance',
+                                        corner: 2,
+                                        repeat: true,
+                                        distances: [0, 0.1],
+                                    },
+                                    mods: [],
+                                    lines: {},
+                                    order: 5,
+                                    fills: {
+                                        a: {
+                                            id: 'a',
+                                            zIndex: 'enable6',
+                                            enabled: '!!enable6',
+                                            shadow: `shadow(sCurve)`,
+                                            mods: [
+                                                {
+                                                    type: 'rotate',
+                                                    v: 'ease6 * Math.PI',
+                                                    origin: 'styleCenter',
+                                                },
+                                            ],
+                                        },
+                                    },
+                                },
                                 // f: {
                                 //     id: 'f',
                                 //     kind: {
@@ -555,7 +609,11 @@ export const example: (id: string) => State = (id: string) => {
             },
         },
         crops: {},
-        view: {ppi: 1, box: {x: -0.5, y: -0.5, width: 1, height: 1}, background: 2},
+        view: {
+            ppi: 1,
+            box: {x: -0.5, y: -0.5, width: 1, height: 1},
+            background: 'bgColor',
+        },
         styleConfig: {
             seed: 0,
             palette: [
@@ -566,60 +624,108 @@ export const example: (id: string) => State = (id: string) => {
                 // {h: 190, s: 100, l: 20},
                 // {h: 180, s: 100, l: 40},
             ],
-            timeline: {
-                ts: [4, 4, 4],
-                lanes: [
-                    {
-                        name: 'oneRotate',
-                        ys: [0, (Math.PI / 3) * 2],
-                        easings: ['inoutflat', 'start'],
-                        values: [0, 1, 0, 0],
-                    },
-                    {
-                        name: 'bgColor',
-                        ys: [1, 0],
-                        easings: [null, null, 'start', null],
-                        values: [0, 0, 0, 1],
-                    },
-                    {
-                        name: 'twoRotate',
-                        ys: [0, (Math.PI / 3) * 2],
-                        easings: [null, null, 'inoutflat', 'start'],
-                        values: [0, 0, 0, 1],
-                    },
-                    {
-                        name: 'oneZ',
-                        ys: [0, 5],
-                        easings: [null, 'start'],
-                        values: [1, 1, 0, 0],
-                    },
-                    {
-                        name: 'twoZ',
-                        ys: [0, 5],
-                        easings: [null, 'start', 'start'],
-                        values: [0, 0, 1, 0],
-                    },
-                    {
-                        name: 'threeZ',
-                        ys: [0, 5],
-                        easings: [null, null, 'start', 'start'],
-                        values: [0, 0, 0, 1],
-                    },
-                    {
-                        name: 'threeRotate',
-                        ys: [0, Math.PI],
-                        easings: [null, 'inoutflat', 'start'],
-                        values: [0, 0, 1, 0],
-                    },
-                    {
-                        name: 'fourRotate',
-                        ys: [0, (Math.PI / 3) * 2],
-                        easings: [null, 'inout', 'start'],
-                        values: [0, 0, 1, 0],
-                    },
-                ],
-            },
+            timeline: makeLanes(6),
         },
     };
     return m;
+};
+
+const oldNames = {
+    ts: [4, 4, 4],
+    lanes: [
+        {
+            name: 'oneRotate',
+            ys: [0, (Math.PI / 3) * 2],
+            easings: ['inoutflat', 'start'],
+            values: [0, 1, 0, 0],
+        },
+        {
+            name: 'bgColor',
+            ys: [1, 0],
+            easings: [null, null, 'start', null],
+            values: [0, 0, 0, 1],
+        },
+        {
+            name: 'twoRotate',
+            ys: [0, (Math.PI / 3) * 2],
+            easings: [null, null, 'inoutflat', 'start'],
+            values: [0, 0, 0, 1],
+        },
+        {
+            name: 'oneZ',
+            ys: [0, 5],
+            easings: [null, 'start'],
+            values: [1, 1, 0, 0],
+        },
+        {
+            name: 'twoZ',
+            ys: [0, 5],
+            easings: [null, 'start', 'start'],
+            values: [0, 0, 1, 0],
+        },
+        {
+            name: 'threeZ',
+            ys: [0, 5],
+            easings: [null, null, 'start', 'start'],
+            values: [0, 0, 0, 1],
+        },
+        {
+            name: 'threeRotate',
+            ys: [0, Math.PI],
+            easings: [null, 'inoutflat', 'start'],
+            values: [0, 0, 1, 0],
+        },
+        {
+            name: 'fourRotate',
+            ys: [0, (Math.PI / 3) * 2],
+            easings: [null, 'inout', 'start'],
+            values: [0, 0, 1, 0],
+        },
+    ],
+};
+
+const makeLanes = (count: number): State['styleConfig']['timeline'] => {
+    const ts: number[] = Array(count).fill(1);
+    const lanes: State['styleConfig']['timeline']['lanes'] = [];
+    for (let i = 0; i < count; i++) {
+        const values = [0];
+        const easings: (string | null)[] = [];
+        const envalues = [i === 0 ? 1 : 0];
+        const enease: (string | null)[] = [];
+
+        for (let j = 0; j < count; j++) {
+            if (j === i) {
+                values.push(1);
+                easings.push('inoutflat');
+                envalues.push(1);
+                enease.push('start');
+            } else if (j === i + 1) {
+                values.push(0);
+                easings.push('start');
+                envalues.push(0);
+                enease.push('start');
+            } else {
+                values.push(0);
+                easings.push(null);
+                envalues.push(0);
+                enease.push(null);
+            }
+        }
+
+        lanes.push(
+            {
+                name: 'ease' + (i + 1),
+                ys: [0, 1],
+                easings,
+                values,
+            },
+            {
+                name: 'enable' + (i + 1),
+                ys: [0, 1],
+                easings: enease,
+                values: envalues,
+            },
+        );
+    }
+    return {ts, lanes};
 };

@@ -497,8 +497,8 @@ const resolveShadow = (anim: Ctx['anim'], shadow?: Shadow): RenderItem['shadow']
             isColor(v.color)
         ) {
             return {
-                offset: scalePos(v.offset, 0.01),
-                blur: scalePos(v.blur, 0.01),
+                offset: scalePos(v.offset, 0.1),
+                blur: scalePos(v.blur, 0.1),
                 color: colorToRgb(v.color),
             };
         }
@@ -732,14 +732,14 @@ export const svgItems = (
     const warn = (v: string) => warnings.push(v);
     const items: RenderItem[] = [];
     const byKey: Record<string, string[]> = {};
+    const fromtl = evalTimeline(state.styleConfig.timeline, t);
+    const values: Record<string, any> = {...globals, t, ...fromtl};
 
     for (let layer of Object.values(state.layers)) {
         const group = layer.entities[layer.rootGroup];
         if (group.type !== 'Group') {
             throw new Error(`root not a group`);
         }
-        const fromtl = evalTimeline(state.styleConfig.timeline, t);
-        const values: Record<string, any> = {...globals, t, ...fromtl};
         const anim = {
             cache: animCache,
             values,
@@ -770,7 +770,7 @@ export const svgItems = (
         ? a.color(
               {
                   cache: animCache,
-                  values: {},
+                  values,
                   palette: state.styleConfig.palette,
                   warn() {},
               },
