@@ -14,6 +14,7 @@ import {useEditState} from './editState';
 import {make} from '../../../json-diff/make';
 import {coordsFromBarePath} from '../../getPatternData';
 import {parseColor} from './colors';
+import {closeEnough} from '../../../rendering/epsilonToZero';
 
 const renderShapes = (shapes: State['shapes'], hover: Hover | null): RenderItem[] => {
     return Object.entries(shapes).flatMap(([key, shape]) => [
@@ -78,7 +79,7 @@ export const RenderExport = ({state, patterns}: {state: State; patterns: Pattern
     return (
         <div className="flex">
             <div className="relative overflow-hidden">
-                <SVGCanvas
+                <Canvas
                     {...zoomProps}
                     state={state}
                     mouse={mouse}
@@ -97,12 +98,17 @@ export const RenderExport = ({state, patterns}: {state: State; patterns: Pattern
                         >
                             <BaselineZoomInMap />
                         </button>
-                        <button
-                            className="btn btn-square px-2 py-1 bg-base-100"
-                            onClick={() => resetZoom(true)}
-                        >
-                            <BaselineFilterCenterFocus />
-                        </button>
+                        {!(
+                            closeEnough(box.y, -box.height / 2) &&
+                            closeEnough(box.x, -box.width / 2)
+                        ) && (
+                            <button
+                                className="btn btn-square px-2 py-1 bg-base-100"
+                                onClick={() => resetZoom(true)}
+                            >
+                                <BaselineFilterCenterFocus />
+                            </button>
+                        )}
                     </div>
                 ) : null}
                 <div className="mt-4">

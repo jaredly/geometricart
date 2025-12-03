@@ -41,18 +41,16 @@ export function VideoExport({
                     Record Video
                 </button>
                 <div ref={statusRef} className="w-20 text-right" />
-                {video ? (
-                    <button className={'btn'} onClick={() => setVideo(null)}>
-                        &times;
-                    </button>
-                ) : null}
                 {/* {typeof video === 'number' ? (
             <input type="range" value={video} onChange={() => {}} min={0} max={1} />
         ) : null} */}
             </div>
             {typeof video === 'string' ? (
-                <div>
+                <div className="relative">
                     <video src={video} controls loop style={{width: size, height: size}} />
+                    <button className={'btn absolute top-0 right-0'} onClick={() => setVideo(null)}>
+                        &times;
+                    </button>
                 </div>
             ) : null}
         </>

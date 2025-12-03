@@ -1,4 +1,8 @@
 
+Animated ting, I want to export a png that has the state encoded in it.
+
+----
+
 ok what's my angle.
 i'm apparently making a state management library as well.
 that operates on jsondiff++

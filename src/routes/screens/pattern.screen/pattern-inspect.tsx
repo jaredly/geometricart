@@ -117,7 +117,9 @@ export const PatternInspect = ({tiling}: {tiling: Tiling}) => {
     }, []);
 
     // const boxSize = 6;
-    const {zoomProps, box} = useElementZoom(6);
+    const {
+        zoomProps: {innerRef, box},
+    } = useElementZoom(6);
     // const boxSize = 10;
     // const boxSize = 3;
 
@@ -126,7 +128,9 @@ export const PatternInspect = ({tiling}: {tiling: Tiling}) => {
             <div className="relative overflow-hidden">
                 <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    {...zoomProps}
+                    // {...zoomProps.ref}
+                    ref={innerRef as React.RefObject<SVGSVGElement>}
+                    viewBox={`${box.x.toFixed(4)} ${box.y.toFixed(4)} ${box.width.toFixed(4)} ${box.height.toFixed(4)}`}
                     style={size ? {background: 'black', width: size, height: size} : undefined}
                     onMouseLeave={() => setMouse(null)}
                     onMouseMove={(evt) => setMouse(svgCoord(evt))}

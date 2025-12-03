@@ -303,8 +303,8 @@ export type ConcreteShadow = {
 export type Shadow =
     | {
           color?: AnimatableColor;
-          offset?: AnimatableCoord;
-          blur?: AnimatableCoord;
+          offset?: AnimatableCoord | AnimatableNumber;
+          blur?: AnimatableCoord | AnimatableNumber;
       }
     | string;
 

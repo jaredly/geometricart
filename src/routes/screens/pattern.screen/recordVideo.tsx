@@ -71,10 +71,14 @@ export const renderItems = (surface: Surface, box: Box, items: RenderItem[], bg:
         let imf: null | ImageFilter = null;
         if (item.shadow) {
             imf = pk.ImageFilter.MakeDropShadow(
+                // 0,
+                // 0,
                 item.shadow.offset.x,
                 item.shadow.offset.y,
                 item.shadow.blur.x,
                 item.shadow.blur.y,
+                // 0.01,
+                // 0.01,
                 pk.Color(item.shadow.color.r, item.shadow.color.g, item.shadow.color.b),
                 null,
             );

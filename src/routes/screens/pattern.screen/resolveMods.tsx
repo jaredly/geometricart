@@ -504,14 +504,19 @@ const resolveShadow = (anim: Ctx['anim'], shadow?: Shadow): RenderItem['shadow']
         }
         return;
     }
-    return shadow?.color
-        ? {
-              blur: shadow.blur ? scalePos(a.coord(anim, shadow.blur), 0.1) : {x: 0, y: 0},
-              offset: shadow.blur ? scalePos(a.coord(anim, shadow.blur), 0.1) : {x: 0, y: 0},
-              color: colorToRgb(a.color(anim, shadow.color)),
-          }
-        : undefined;
+    if (!shadow) return undefined;
+    return {
+        blur: shadow.blur
+            ? scalePos(numToCoord(a.coordOrNumber(anim, shadow.blur)), 0.1)
+            : {x: 0, y: 0},
+        offset: shadow.offset
+            ? scalePos(numToCoord(a.coordOrNumber(anim, shadow.offset)), 0.1)
+            : {x: 0, y: 0},
+        color: shadow.color ? colorToRgb(a.color(anim, shadow.color)) : {r: 0, g: 0, b: 0},
+    };
 };
+
+const numToCoord = (num: number | Coord) => (typeof num === 'number' ? {x: num, y: num} : num);
 
 const resolveFill = (anim: Ctx['anim'], f: Fill): ConcreteFill => {
     return {

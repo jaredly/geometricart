@@ -25,6 +25,8 @@ export const Canvas = ({
 }: {
     items: RenderItem[];
     bg: Color;
+    state: State;
+    mouse: Coord | null;
     size: number;
     box: Box;
     innerRef: React.RefObject<SVGElement | HTMLElement | null>;

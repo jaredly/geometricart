@@ -1,3 +1,4 @@
+import {parseColor} from './colors';
 import {State} from './export-types';
 
 export const example: (id: string) => State = (id: string) => {
@@ -281,38 +282,65 @@ export const example: (id: string) => State = (id: string) => {
                             styles: {
                                 ev: {
                                     id: 'ev',
+                                    disabled: true,
                                     fills: {
                                         a: {
+                                            enabled: false,
                                             id: 'a',
-                                            // color: `return {h: dist(center, {x:0,y:0}) * 100, s: 100, l: Math.abs(angleTo(center,{x:0,y:0})) * 20}`,
                                             color: {r: 100, g: 100, b: 100},
-                                            // mods: [{type: 'inset', v: 5}],
                                             mods: [],
                                         },
                                     },
-                                    lines: {
-                                        // a: {
-                                        //     id: 'a',
-                                        //     color: {r: 10, g: 10, b: 10},
-                                        //     width: 2,
-                                        //     mods: [],
-                                        // },
-                                    },
+                                    lines: {},
                                     mods: [],
                                     kind: {type: 'everything'},
                                     order: 1,
                                 },
                                 a: {
                                     id: 'a',
-                                    fills: {a: {id: 'a', color: 0, mods: []}},
-                                    lines: {},
+                                    fills: {
+                                        a: {
+                                            id: 'a',
+                                            color: 0,
+                                            mods: [{type: 'inset', v: 8}],
+                                            // mods: [],
+                                            shadow: {
+                                                blur: 0.5,
+                                                offset: 1,
+                                            },
+                                        },
+                                    },
+                                    lines: {
+                                        a: {
+                                            id: 'a',
+                                            color: 'gold',
+                                            width: 3,
+                                            mods: [],
+                                            shadow: {
+                                                blur: 0.5,
+                                                offset: 1,
+                                            },
+                                            // zIndex: 4,
+                                        },
+                                    },
                                     mods: [],
                                     kind: {type: 'alternating', index: 1},
                                     order: 1,
                                 },
                                 b: {
                                     id: 'b',
-                                    fills: {b: {id: 'b', color: 1, mods: []}},
+                                    fills: {
+                                        b: {
+                                            id: 'b',
+                                            color: 1,
+                                            // mods: [],
+                                            mods: [{type: 'inset', v: 8}],
+                                            shadow: {
+                                                blur: 0.5,
+                                                offset: 1,
+                                            },
+                                        },
+                                    },
                                     lines: {},
                                     mods: [],
                                     kind: {type: 'alternating', index: 0},
@@ -527,13 +555,16 @@ export const example: (id: string) => State = (id: string) => {
             },
         },
         crops: {},
-        view: {ppi: 1, box: {x: -0.5, y: -0.5, width: 1, height: 1}},
+        view: {ppi: 1, box: {x: -0.5, y: -0.5, width: 1, height: 1}, background: 2},
         styleConfig: {
             seed: 0,
             palette: [
-                {h: 180, s: 100, l: 50},
-                {h: 190, s: 100, l: 20},
-                {h: 180, s: 100, l: 40},
+                parseColor('#d400ff')!,
+                parseColor('#7f0099')!,
+                parseColor('#f99eff')!,
+                // {h: 180, s: 100, l: 50},
+                // {h: 190, s: 100, l: 20},
+                // {h: 180, s: 100, l: 40},
             ],
             timeline: {
                 ts: [4, 4, 4],
