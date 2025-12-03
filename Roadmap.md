@@ -20,6 +20,11 @@ I want to be able to:
 -> also have a `.push` for arrays that will fill in the current length
 ->
 
+andddddd ok. So now we have shapes n stuff.
+
+-> contentssss shapenwhat
+-> lineMods? adjustments?
+
 ...
 
 

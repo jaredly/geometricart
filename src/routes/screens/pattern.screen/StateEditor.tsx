@@ -1,4 +1,4 @@
-import React, {useEffect, useMemo, useState} from 'react';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {BlurInt} from '../../../editor/Forms';
 import {BarePath, Coord, Segment} from '../../../types';
 import {shapeD} from '../../shapeD';
@@ -41,6 +41,10 @@ export const StateEditor = ({value, onChange}: StateEditorProps) => {
     const crops = useMemo(() => Object.entries(value.crops), [value.crops]);
     const editState = useEditState();
     const onHover = editState.update.hover.replace;
+    const showShapes = editState.use((s) => s.showShapes);
+
+    const latest = useRef(value);
+    latest.current = value;
 
     return (
         <div className="flex flex-col gap-6 items-stretch">
@@ -89,10 +93,13 @@ export const StateEditor = ({value, onChange}: StateEditorProps) => {
 
             <Section
                 title="Shapes"
+                open={showShapes}
+                onOpen={(open) => editState.update.showShapes.replace(open)}
                 actions={
                     <button
                         className="btn btn-outline btn-sm"
-                        onClick={() => {
+                        onClick={(evt) => {
+                            evt.stopPropagation();
                             editState.update.pending.replace({
                                 type: 'shape',
                                 onDone(points, open) {
@@ -134,7 +141,7 @@ export const StateEditor = ({value, onChange}: StateEditorProps) => {
                                 onChange({...value, shapes});
                             }}
                             onDup={(pt) => {
-                                const shapes = {...value.shapes};
+                                const shapes = {...latest.current.shapes};
                                 const id = genid();
                                 shapes[id] = transformBarePath(shape, [
                                     translationMatrix({
@@ -142,7 +149,7 @@ export const StateEditor = ({value, onChange}: StateEditorProps) => {
                                         y: pt.y - shape.origin.y,
                                     }),
                                 ]);
-                                onChange({...value, shapes});
+                                onChange({...latest.current, shapes});
                             }}
                             onHover={onHover}
                         />
@@ -442,15 +449,29 @@ const Section = ({
     children,
     actions,
     alignStart,
+    open: openV,
+    onOpen,
 }: {
     title: string;
     children: React.ReactNode;
     actions?: React.ReactNode;
     alignStart?: boolean;
+    open?: boolean;
+    onOpen?: (open: boolean) => void;
 }) => {
     return (
-        <details>
-            <summary className="text-xl cursor-pointer hover:underline hover:text-accent">
+        <details open={openV}>
+            <summary
+                className="text-xl cursor-pointer hover:underline hover:text-accent"
+                onClick={
+                    onOpen
+                        ? (evt) => {
+                              evt.preventDefault();
+                              onOpen(!openV);
+                          }
+                        : undefined
+                }
+            >
                 {title}
                 <div
                     className={`inline-flex ml-4 gap-3 ${alignStart ? 'items-start' : 'items-center'} justify-between`}
@@ -1638,6 +1659,7 @@ const createGroup = (id: string): Group => ({
 const createPattern = (id: string): Pattern => ({
     type: 'Pattern',
     id,
+    adjustments: {},
     psize: {x: 1, y: 1},
     contents: {type: 'shapes', styles: {}},
     mods: [],
@@ -2288,6 +2310,10 @@ const ShapeEditor = ({
             >
                 Dup
             </button>
+            <button className="btn btn-sm" onClick={() => onChange(null)}>
+                &times;
+            </button>
+            <JsonEditor label="json" onChange={() => {}} value={shape} />
         </div>
     );
 };

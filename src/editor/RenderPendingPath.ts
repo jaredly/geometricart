@@ -20,10 +20,10 @@ export const arcPath = (segment: ArcSegment, prev: Coord, zoom: number, moveTo =
     const sweep = segment.clockwise;
 
     return (
-        (moveTo ? `M ${prev.x},${prev.y}` : '') +
-        `A ${r * zoom} ${r * zoom} 0 ${largeArc ? 1 : 0} ${sweep ? 1 : 0} ${
+        (moveTo ? `M ${prev.x.toFixed(3)},${prev.y.toFixed(3)}` : '') +
+        `A ${(r * zoom).toFixed(3)} ${(r * zoom).toFixed(3)} 0 ${largeArc ? 1 : 0} ${sweep ? 1 : 0} ${(
             segment.to.x * zoom
-        } ${segment.to.y * zoom}`
+        ).toFixed(3)} ${(segment.to.y * zoom).toFixed(3)}`
     );
 };
 

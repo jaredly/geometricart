@@ -74,14 +74,7 @@ export type State = {
     };
     styleConfig: {
         seed: AnimatableNumber;
-        // clocks: {
-        //     name?: string;
-        //     ease?: string;
-        //     t0: number;
-        //     t1: number;
-        // }[];
         palette: Color[];
-        // START HERE:
         timeline: {
             // 0 to 1, sorted
             ts: number[];
@@ -255,6 +248,8 @@ export type Pattern = {
 
     psize: Coord | number;
     contents: PatternContents;
+    // shape and the mods
+    adjustments: Record<string, PMods[]>;
     mods: PMods[];
 };
 

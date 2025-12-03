@@ -112,10 +112,13 @@ export const SVGCanvas = ({
     // const get = editContext.useGet();
 
     useEffect(() => {
-        if (pending?.type !== 'shape') return;
         const fn = (evt: KeyboardEvent) => {
             if (evt.key === 'Enter') {
+                if (pending?.type !== 'shape') return;
                 pending.onDone(pending.points, true);
+                editContext.update.pending.replace(null);
+            }
+            if (evt.key === 'Escape') {
                 editContext.update.pending.replace(null);
             }
         };
@@ -141,7 +144,7 @@ export const SVGCanvas = ({
                                 dx={shadow.offset?.x ?? 0}
                                 dy={shadow.offset?.y ?? 0}
                                 stdDeviation={((shadow.blur?.x ?? 0) + (shadow.blur?.y ?? 0)) / 2}
-                                flood-color={colorToString(shadow.color ?? [0, 0, 0])}
+                                floodColor={colorToString(shadow.color ?? [0, 0, 0])}
                             />
                         </filter>
                     ))}
@@ -180,7 +183,7 @@ export const SVGCanvas = ({
                         if (!pending) return;
                         if (pending.type === 'dup-shape') {
                             pending.onDone(pt);
-                            editContext.update.pending.replace(null);
+                            // editContext.update.pending.replace(null);
                             return;
                         }
                         if (pending.points.length && coordsEqual(pending.points[0], pt)) {
@@ -219,15 +222,12 @@ export const SVGCanvas = ({
             {pending?.type === 'dup-shape' && mouse && (
                 <path
                     d={calcPathD(
-                        transformBarePath(
-                            state.shapes[pending.id],
-                            [
-                                translationMatrix({
-                                    x: mouse.x - state.shapes[pending.id].origin.x,
-                                    y: mouse.y - state.shapes[pending.id].origin.y,
-                                }),
-                            ],
-                        ),
+                        transformBarePath(state.shapes[pending.id], [
+                            translationMatrix({
+                                x: mouse.x - state.shapes[pending.id].origin.x,
+                                y: mouse.y - state.shapes[pending.id].origin.y,
+                            }),
+                        ]),
                     )}
                     stroke="#000"
                     strokeWidth={0.05}

@@ -1,8 +1,8 @@
 import {createContext, useCallback, useContext, useEffect, useMemo, useRef, useState} from 'react';
 import equal from 'fast-deep-equal';
-import {diffBuilderApply} from '../../../json-diff/helper';
-import {ops} from '../../../json-diff/ops';
-import {make} from '../../../json-diff/make';
+import {diffBuilderApply} from '../../../json-diff/helper2';
+import {ops} from '../../../json-diff/ops2';
+import {fromPending} from '../../../json-diff/make2';
 
 type C<T> = {
     value: T;
@@ -50,9 +50,9 @@ export const makeContext = <T,>(initial: T) => {
                         return c.value;
                     },
                     update: diffBuilderApply<T>((op) => {
-                        c.value = ops.apply(c.value, make.fromPending(c.value, op));
+                        c.value = ops.apply(c.value, fromPending(c.value, op));
                         listeners.forEach((f) => f());
-                    }),
+                    }, 'type'),
                 }),
                 [c],
             );

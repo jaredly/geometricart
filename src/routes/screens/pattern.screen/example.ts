@@ -24,6 +24,17 @@ export const example: (id: string) => State = (id: string) => {
                     {type: 'Arc', center: {x: 0, y: 0}, to: {x: 0, y: -3.2}, clockwise: true},
                 ],
             },
+            hex: {
+                origin: {x: -0.333333324359218, y: -0.5773502640084173},
+                segments: [
+                    {type: 'Line', to: {x: 0.333333324359218, y: -0.5773502640084173}},
+                    {type: 'Line', to: {x: 0.6666666576925508, y: -5.181207685112099e-9}},
+                    {type: 'Line', to: {x: 0.333333324359218, y: 0.5773502640084173}},
+                    {type: 'Line', to: {x: -0.333333324359218, y: 0.5773502640084173}},
+                    {type: 'Line', to: {x: -0.6666666576925508, y: -5.181207685112099e-9}},
+                ],
+                open: false,
+            },
         },
         layers: {
             a: {
@@ -63,6 +74,9 @@ export const example: (id: string) => State = (id: string) => {
                     p: {
                         type: 'Pattern',
                         id,
+                        adjustments: {
+                            hex: [{type: 'rotate', v: Math.PI / 6}],
+                        },
                         contents: {
                             type: 'shapes',
                             styles: {

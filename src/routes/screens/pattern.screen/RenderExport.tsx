@@ -14,6 +14,32 @@ import {useEditState} from './editState';
 import {make} from '../../../json-diff/make';
 import {coordsFromBarePath} from '../../getPatternData';
 
+const renderShapes = (shapes: State['shapes'], hover: Hover | null): RenderItem[] => {
+    return Object.entries(shapes).flatMap(([key, shape]) => [
+        {
+            type: 'path',
+            color: {r: 255, g: 255, b: 255},
+            shadow: {
+                offset: {x: 0, y: 0},
+                blur: {x: 0.03, y: 0.03},
+                color: {r: 0, g: 0, b: 0},
+            },
+            key,
+            shapes: [shape],
+            strokeWidth: 0.03,
+            zIndex: 100,
+        },
+        {
+            type: 'path',
+            color: hover?.id === key ? {r: 200, g: 200, b: 255} : {r: 255, g: 255, b: 255},
+            key,
+            shapes: [shape],
+            strokeWidth: 0.03,
+            zIndex: 100,
+        },
+    ]);
+};
+
 export const RenderExport = ({state, patterns}: {state: State; patterns: Patterns}) => {
     const [t, setT] = useState(0); // animateeeee
     const animCache = useMemo<AnimCtx['cache']>(() => new Map(), []);
@@ -28,28 +54,19 @@ export const RenderExport = ({state, patterns}: {state: State; patterns: Pattern
 
     const editContext = useEditState();
     const hover = editContext.use((v) => v.hover);
+    const showShapes = editContext.use((v) => v.showShapes);
 
     const {items, warnings, byKey, bg} = useMemo(
         () => svgItems(state, animCache, cropCache, patterns, t),
         [state, patterns, cropCache, animCache, t],
     );
 
-    const transientItems = useMemo((): RenderItem[] => {
-        if (!hover) return [];
-        const shape = state.shapes[hover.id];
-        return [
-            {
-                type: 'path',
-                color: {r: 255, g: 255, b: 255},
-                key: 'hover-shape',
-                shapes: [shape],
-                strokeWidth: 0.03,
-                zIndex: 100,
-            },
-        ];
-    }, [hover, state.shapes]);
+    const shapesItems = useMemo(
+        (): RenderItem[] => (showShapes ? renderShapes(state.shapes, hover) : []),
+        [showShapes, state.shapes, hover],
+    );
 
-    const both = useMemo(() => [...items, ...transientItems], [items, transientItems]);
+    const both = useMemo(() => [...items, ...shapesItems], [items, shapesItems]);
 
     const {zoomProps, box, reset: resetZoom} = useElementZoom(6);
     const [mouse, setMouse] = useState(null as null | Coord);
