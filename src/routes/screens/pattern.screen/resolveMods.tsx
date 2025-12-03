@@ -37,6 +37,12 @@ import {
 } from './export-types';
 import {evalTimeline} from './evalEase';
 import {scalePos} from '../../../editor/scalePos';
+import {
+    edgesByEndpoint,
+    shapesFromSegments,
+    splitOverlappingSegs,
+    unique,
+} from '../../shapesFromSegments';
 
 type CCrop = {type: 'crop'; id: string; mode?: CropMode; hole?: boolean};
 type CInset = {type: 'inset'; v: number};
@@ -190,25 +196,82 @@ export const modsToShapes = (
     }, shapes);
 };
 
+const unzip = <T,>(v: T[], test: (t: T) => boolean) => {
+    const left: T[] = [];
+    const right: T[] = [];
+    v.forEach((item) => {
+        if (test(item)) {
+            right.push(item);
+        } else {
+            left.push(item);
+        }
+    });
+    return [left, right] as const;
+};
+
+const adjustShapes = (
+    anim: Ctx['anim'],
+    cropCache: Ctx['cropCache'],
+    uniqueShapes: Coord[][],
+    adjustments: {shape: BarePath; mods: PMods[]}[],
+): Coord[][] => {
+    const ready = false;
+    if (ready) {
+        for (let {shape, mods} of adjustments) {
+            const resolved = mods.map((mod) => resolvePMod(anim, mod));
+            const moved = modsToShapes(cropCache, resolved, [
+                {shape: coordsFromBarePath(shape), i: 0},
+            ]);
+            const [left, right] = unzip(
+                uniqueShapes,
+                (coords) =>
+                    coordsIntersectsShape(coords, shape) ||
+                    moved.some((moved) => coordsIntersectCoords(coords, moved.shape)),
+            );
+            let segs = unique(right.flatMap(coordPairs), coordPairKey).filter(
+                (pair) => !moved.some((shape) => coordPairOnShape(pair, shape)),
+            );
+            segs.push(...moved.flatMap(coordPairs));
+            segs = splitOverlappingSegs(segs);
+            const byEndPoint = edgesByEndpoint(segs);
+            const reconstructed = shapesFromSegments(byEndPoint, segs.flat());
+            uniqueShapes = [...left, ...reconstructed];
+        }
+    }
+
+    return uniqueShapes;
+};
+
 const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Pattern) => {
     // not doing yet
     if (pattern.contents.type !== 'shapes') return;
     const tiling = ctx.patterns[pattern.id];
     const patternmods = pattern.mods.map((m) => resolvePMod(ctx.anim, m));
 
-    // const ptx = mods.flatMap((mod) => modMatrix(mod));
     const simple = getSimplePatternData(tiling, pattern.psize);
+    let baseShapes = simple.uniqueShapes;
+    if (Object.keys(pattern.adjustments).length) {
+        // TODO: further check that any adjustments actually modify things
+        baseShapes = adjustShapes(
+            ctx.anim,
+            ctx.cropCache,
+            baseShapes,
+            Object.entries(pattern.adjustments).map(([key, mods]) => ({
+                shape: ctx.state.shapes[key],
+                mods,
+            })),
+        );
+    }
+
     const orderedStyles = Object.values(pattern.contents.styles).sort((a, b) => a.order - b.order);
 
     const needColors = orderedStyles.some((s) => s.kind.type === 'alternating');
-    const {colors} = needColors
-        ? getShapeColors(simple.uniqueShapes, simple.minSegLength)
-        : {colors: []};
+    const {colors} = needColors ? getShapeColors(baseShapes, simple.minSegLength) : {colors: []};
 
     const midShapes = modsToShapes(
         ctx.cropCache,
         patternmods,
-        simple.uniqueShapes.map((shape, i) => ({shape, i})),
+        baseShapes.map((shape, i) => ({shape, i})),
     );
 
     ctx.items.push(
@@ -621,18 +684,6 @@ export const svgItems = (
               state.view.background,
           )
         : ([0, 0, 0] as Color);
-
-    // if (hover?.type === 'shape') {
-    //     const shape = state.shapes[hover.id];
-    //     items.push({
-    //         type: 'path',
-    //         color: {r: 255, g: 255, b: 255},
-    //         key: 'hover-shape',
-    //         shapes: [coordsFromBarePath(shape)],
-    //         strokeWidth: 0.03,
-    //         zIndex: 100,
-    //     });
-    // }
 
     return {items, warnings, byKey, bg};
 };
