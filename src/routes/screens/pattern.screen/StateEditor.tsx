@@ -45,6 +45,9 @@ export const StateEditor = ({value, onChange}: StateEditorProps) => {
 
     const latest = useRef(value);
     latest.current = value;
+    useEffect(() => {
+        window.state = value;
+    }, [value]);
 
     return (
         <div className="flex flex-col gap-6 items-stretch">

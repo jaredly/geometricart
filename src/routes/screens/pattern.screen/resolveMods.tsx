@@ -1,7 +1,7 @@
 import {Path as PKPath} from 'canvaskit-wasm';
 import {transformShape} from '../../../editor/tilingPoints';
 import {cmdsToCoords, cmdsToSegments} from '../../../gcode/cmdsToSegments';
-import {epsilon} from '../../../rendering/epsilonToZero';
+import {closeEnough, epsilon, withinLimit} from '../../../rendering/epsilonToZero';
 import {Matrix, dist} from '../../../rendering/getMirrorTransforms';
 import {pkPathToSegments} from '../../../sidebar/pkClipPaths';
 import {BarePath, Coord} from '../../../types';
@@ -38,11 +38,15 @@ import {
 import {evalTimeline} from './evalEase';
 import {scalePos} from '../../../editor/scalePos';
 import {
+    cutSegments,
     edgesByEndpoint,
     shapesFromSegments,
     splitOverlappingSegs,
     unique,
 } from '../../shapesFromSegments';
+import {lineLine, lineToSlope, SlopeIntercept} from '../../../rendering/intersect';
+import {coordKey} from '../../../rendering/coordKey';
+import {Bounds, boundsForCoords} from '../../../editor/Bounds';
 
 type CCrop = {type: 'crop'; id: string; mode?: CropMode; hole?: boolean};
 type CInset = {type: 'inset'; v: number};
@@ -209,38 +213,111 @@ const unzip = <T,>(v: T[], test: (t: T) => boolean) => {
     return [left, right] as const;
 };
 
+const coordPairs = (coords: Coord[]) => {
+    const res: [Coord, Coord][] = [];
+    coords.forEach((coord, i) => {
+        res.push([coords[i === 0 ? coords.length - 1 : i - 1], coord]);
+    });
+    return res;
+};
+
+const overlapping = (one: SlopeIntercept, two: SlopeIntercept) =>
+    closeEnough(one.m, two.m) &&
+    closeEnough(one.b, two.b) &&
+    (withinLimit(one.limit!, two.limit![0]) ||
+        withinLimit(one.limit!, two.limit![1]) ||
+        withinLimit(two.limit!, one.limit![0]) ||
+        withinLimit(two.limit!, one.limit![1]));
+
+const coordsIntersectCoords = (one: Coord[], twos: SlopeIntercept[]) => {
+    return coordLines(one).some((one) => twos.some((two) => lineHit(one, two)));
+};
+
+const lineHit = (one: SlopeIntercept, two: SlopeIntercept) => {
+    // if (overlapping(one, two)) {
+    //     // console.log('yes overlap', one, two);
+    //     return true;
+    // }
+    // const pt = lineLine(one, two);
+    // if (pt) {
+    //     // console.log('yes intersect', one, two, pt);
+    //     return true;
+    // }
+    // console.log('no');
+    return overlapping(one, two) || !!lineLine(one, two);
+    // return false;
+};
+
+const coordPairKey = ([left, right]: [Coord, Coord]) => {
+    if (closeEnough(left.x, right.x) ? right.y < left.y : right.x < left.x) {
+        [left, right] = [right, left];
+    }
+    return `${coordKey(left)}:${coordKey(right)}`;
+};
+
+const coordLines = (coords: Coord[]) =>
+    coordPairs(coords).map((pair) => lineToSlope(pair[0], pair[1], true));
+
+const coordPairOnShape = (pair: [Coord, Coord], shape: SlopeIntercept[]) => {
+    const line = lineToSlope(pair[0], pair[1], true);
+    return shape.some((sline) => overlapping(line, sline));
+};
+
 const adjustShapes = (
     anim: Ctx['anim'],
     cropCache: Ctx['cropCache'],
     uniqueShapes: Coord[][],
     adjustments: {shape: BarePath; mods: PMods[]}[],
 ): Coord[][] => {
-    const ready = false;
+    const ready = true;
     if (ready) {
         for (let {shape, mods} of adjustments) {
-            const resolved = mods.map((mod) => resolvePMod(anim, mod));
-            const moved = modsToShapes(cropCache, resolved, [
-                {shape: coordsFromBarePath(shape), i: 0},
-            ]);
-            const [left, right] = unzip(
-                uniqueShapes,
-                (coords) =>
-                    coordsIntersectsShape(coords, shape) ||
-                    moved.some((moved) => coordsIntersectCoords(coords, moved.shape)),
+            const shapeCoords = coordsFromBarePath(shape);
+            const center = centroid(shapeCoords);
+            const resolved = mods.map((mod) =>
+                resolvePMod({...anim, values: {...anim.values, center}}, mod),
             );
+            const shapeLines = coordLines(shapeCoords);
+            const moved = modsToShapes(cropCache, resolved, [{shape: shapeCoords, i: 0}]);
+            const movedLines = moved.map((m) => coordLines(m.shape));
+            // console.log('here we are', shapeLines, movedLines);
+            const [left, right] = unzip(uniqueShapes, (coords) => {
+                const got =
+                    coordsIntersectCoords(coords, shapeLines) ||
+                    movedLines.some((moved) => coordsIntersectCoords(coords, moved));
+                // console.log('did intersect', got);
+                return got;
+            });
             let segs = unique(right.flatMap(coordPairs), coordPairKey).filter(
-                (pair) => !moved.some((shape) => coordPairOnShape(pair, shape)),
+                (pair) => !coordPairOnShape(pair, shapeLines),
             );
-            segs.push(...moved.flatMap(coordPairs));
-            segs = splitOverlappingSegs(segs);
+            segs.push(...moved.flatMap((m) => coordPairs(m.shape)));
+            segs = cutSegments(segs);
             const byEndPoint = edgesByEndpoint(segs);
-            const reconstructed = shapesFromSegments(byEndPoint, segs.flat());
+            // TODO: so I want to find eigenpoints, only ones that are ... along the moved path maybe?
+            // or like the original or moved path idk.
+            const one = unique(segs.flat(), coordKey);
+            const two = unique(
+                moved.flatMap((m) => m.shape),
+                coordKey,
+            );
+            const cmoved = centroid(moved.flatMap((m) => m.shape));
+            const reconstructed = shapesFromSegments(byEndPoint, one).filter(
+                (c) => !matchesBounds(boundsForCoords(...c), cmoved),
+            );
+            // uniqueShapes = reconstructed;
             uniqueShapes = [...left, ...reconstructed];
+            // console.log('eft', left);
+            // uniqueShapes = [...left, ...right];
+            // uniqueShapes = left;
         }
     }
 
     return uniqueShapes;
 };
+
+const matchesBounds = (bounds: Bounds, coord: Coord) =>
+    coord.x <= bounds.x1 && coord.x >= bounds.x0 && coord.y <= bounds.y1 && coord.y >= bounds.y0;
 
 const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Pattern) => {
     // not doing yet

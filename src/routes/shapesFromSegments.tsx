@@ -248,6 +248,7 @@ export const shapesFromSegments = (byEndPoint: EndPointMap, eigenPoints: Coord[]
     const shapes: Coord[][] = [];
     const backwards: Coord[][] = [];
     eigenPoints.forEach((point) => {
+        if (!byEndPoint[coordKey(point)]) return;
         const segs = byEndPoint[coordKey(point)].exits;
         if (!segs) {
             console.warn(`no segs from point`, point);

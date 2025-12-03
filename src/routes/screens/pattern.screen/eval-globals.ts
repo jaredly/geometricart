@@ -1,4 +1,4 @@
-import {dist} from '../../../rendering/getMirrorTransforms';
+import {angleTo, dist} from '../../../rendering/getMirrorTransforms';
 import {ease, easeInOutCubic} from '../animator.screen/easeInOutCubic';
 
 const clamp = (a: number, b: number, c: number) => (a < b ? b : a > c ? c : a);
@@ -20,6 +20,7 @@ export const globals: Record<string, any> = {
     Math,
     dist,
     ease,
+    angleTo,
     easeInOutCubic,
     tsplit,
 };
