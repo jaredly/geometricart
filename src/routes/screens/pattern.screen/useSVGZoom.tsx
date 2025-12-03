@@ -64,13 +64,21 @@ export const useElementZoom = (initialSize: number) => {
     }, []);
 
     const reset = useCallback(
-        () =>
-            setBox({
-                x: -initialSize / 2,
-                y: -initialSize / 2,
-                width: initialSize,
-                height: initialSize,
-            }),
+        (keepZoom = false) =>
+            setBox(
+                keepZoom
+                    ? (box) => ({
+                          ...box,
+                          x: -box.width / 2,
+                          y: -box.height / 2,
+                      })
+                    : {
+                          x: -initialSize / 2,
+                          y: -initialSize / 2,
+                          width: initialSize,
+                          height: initialSize,
+                      },
+            ),
         [initialSize],
     );
 

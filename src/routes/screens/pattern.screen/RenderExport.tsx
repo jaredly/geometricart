@@ -8,7 +8,7 @@ import {useElementZoom} from './useSVGZoom';
 import {VideoExport} from './VideoExport';
 import {useAnimate} from './useAnimate';
 import {useCropCache} from './useCropCache';
-import {BaselineZoomInMap} from '../../../icons/Icon';
+import {BaselineFilterCenterFocus, BaselineZoomInMap} from '../../../icons/Icon';
 import {Hover} from './resolveMods';
 import {useEditState} from './editState';
 import {make} from '../../../json-diff/make';
@@ -90,12 +90,20 @@ export const RenderExport = ({state, patterns}: {state: State; patterns: Pattern
                 />
                 <div ref={fpsref} className="absolute top-0 right-0 hidden px-2 py-1 bg-base-100" />
                 {resetZoom ? (
-                    <button
-                        className="absolute btn btn-square top-0 left-0 px-2 py-1 bg-base-100"
-                        onClick={() => resetZoom()}
-                    >
-                        <BaselineZoomInMap />
-                    </button>
+                    <div className="absolute top-0 left-0 flex">
+                        <button
+                            className="btn btn-square px-2 py-1 bg-base-100"
+                            onClick={() => resetZoom()}
+                        >
+                            <BaselineZoomInMap />
+                        </button>
+                        <button
+                            className="btn btn-square px-2 py-1 bg-base-100"
+                            onClick={() => resetZoom(true)}
+                        >
+                            <BaselineFilterCenterFocus />
+                        </button>
+                    </div>
                 ) : null}
                 <div className="mt-4">
                     <input

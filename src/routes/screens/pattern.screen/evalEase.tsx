@@ -56,6 +56,10 @@ export const evalTimeline = (timeline: State['styleConfig']['timeline'], t: numb
     return values;
 };
 
+function easeInOutQuad(x: number): number {
+    return x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2;
+}
+
 const easeFn = (ease: string): ((n: number) => number) => {
     switch (ease) {
         case 'start':
@@ -64,6 +68,12 @@ const easeFn = (ease: string): ((n: number) => number) => {
             return (x) => (x === 1 ? 1 : 0);
         case 'inout':
             return easeInOutCubic;
+        case 'inoutflat':
+            return easeInOutQuad;
+        // return (x) => {
+        //     const cub = (easeInOutCubic(x) - x) / 4;
+        //     return x + cub;
+        // };
     }
     return (x) => x;
 };

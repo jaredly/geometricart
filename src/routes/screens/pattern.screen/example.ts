@@ -75,6 +75,126 @@ export const example: (id: string) => State = (id: string) => {
                     {type: 'Line', to: {x: -0.8333333251010688, y: -1.6358257501723092}},
                 ],
             },
+            iyzc87nc62c: {
+                origin: {x: 0.6666666666666665, y: -2.3094010663961106},
+                segments: [
+                    {type: 'Line', to: {x: 1.3333333153851026, y: -2.3094010663961106}},
+                    {type: 'Line', to: {x: 1.6666666487184354, y: -1.732050807568901}},
+                    {type: 'Line', to: {x: 1.3333333153851026, y: -1.1547005383792759}},
+                    {type: 'Line', to: {x: 0.6666666666666665, y: -1.1547005383792759}},
+                    {type: 'Line', to: {x: 0.3333333333333337, y: -1.732050807568901}},
+                ],
+            },
+            '8ffkisn4nq2': {
+                origin: {x: 1.666666675640781, y: -0.5773502640084172},
+                segments: [
+                    {type: 'Line', to: {x: 2.333333324359217, y: -0.5773502640084172}},
+                    {type: 'Line', to: {x: 2.66666665769255, y: -5.181207574089797e-9}},
+                    {type: 'Line', to: {x: 2.333333324359217, y: 0.5773502640084174}},
+                    {type: 'Line', to: {x: 1.666666675640781, y: 0.5773502640084174}},
+                    {type: 'Line', to: {x: 1.3333333423074483, y: -5.181207574089797e-9}},
+                ],
+            },
+            k3yw32pgz8l: {
+                origin: {x: 0.666666666666667, y: 1.1547005487416913},
+                segments: [
+                    {type: 'Line', to: {x: 1.333333315385103, y: 1.1547005487416913}},
+                    {type: 'Line', to: {x: 1.6666666487184358, y: 1.732050807568901}},
+                    {type: 'Line', to: {x: 1.333333315385103, y: 2.309401076758526}},
+                    {type: 'Line', to: {x: 0.666666666666667, y: 2.309401076758526}},
+                    {type: 'Line', to: {x: 0.33333333333333415, y: 1.732050807568901}},
+                ],
+            },
+            yt4661cw8h8: {
+                origin: {x: -1.3333333243592176, y: 1.1547005435604838},
+                segments: [
+                    {type: 'Line', to: {x: -0.6666666756407815, y: 1.1547005435604838}},
+                    {type: 'Line', to: {x: -0.3333333423074487, y: 1.7320508023876935}},
+                    {type: 'Line', to: {x: -0.6666666756407815, y: 2.3094010715773186}},
+                    {type: 'Line', to: {x: -1.3333333243592176, y: 2.3094010715773186}},
+                    {type: 'Line', to: {x: -1.6666666576925504, y: 1.7320508023876935}},
+                ],
+            },
+            vyg7d7zs5n8: {
+                origin: {x: -2.3333333243592174, y: -0.5773502640084173},
+                segments: [
+                    {type: 'Line', to: {x: -1.6666666756407813, y: -0.5773502640084173}},
+                    {type: 'Line', to: {x: -1.3333333423074485, y: -5.181207685112099e-9}},
+                    {type: 'Line', to: {x: -1.6666666756407813, y: 0.5773502640084173}},
+                    {type: 'Line', to: {x: -2.3333333243592174, y: 0.5773502640084173}},
+                    {type: 'Line', to: {x: -2.6666666576925504, y: -5.181207685112099e-9}},
+                ],
+            },
+            ny0963kvheb: {
+                origin: {x: -1.3333333243592176, y: -2.3094010715773186},
+                segments: [
+                    {type: 'Line', to: {x: -0.6666666756407815, y: -2.3094010715773186}},
+                    {type: 'Line', to: {x: -0.3333333423074487, y: -1.7320508127501089}},
+                    {type: 'Line', to: {x: -0.6666666756407815, y: -1.1547005435604838}},
+                    {type: 'Line', to: {x: -1.3333333243592176, y: -1.1547005435604838}},
+                    {type: 'Line', to: {x: -1.6666666576925504, y: -1.7320508127501089}},
+                ],
+            },
+            '76gsi4ej3zk': {
+                origin: {x: 1.166666673403244, y: -0.673575310165198},
+                segments: [
+                    {type: 'Line', to: {x: 2.0000000014956854, y: -0.19245008886634096}},
+                    {type: 'Line', to: {x: 2.8333333430612817, y: -0.673575310165198}},
+                    {type: 'Line', to: {x: 2.833333341565595, y: -1.6358257501723092}},
+                    {type: 'Line', to: {x: 2.000000009727949, y: -2.1169509831392865}},
+                    {type: 'Line', to: {x: 1.1666666748989303, y: -1.6358257501723092}},
+                ],
+            },
+            wm5izqaxqqg: {
+                origin: {x: 1.1666666666666663, y: 1.6358257644310328},
+                segments: [
+                    {type: 'Line', to: {x: 1.9999999947591074, y: 2.11695098572989}},
+                    {type: 'Line', to: {x: 2.8333333363247037, y: 1.6358257644310328}},
+                    {type: 'Line', to: {x: 2.8333333348290175, y: 0.6735753244239215}},
+                    {type: 'Line', to: {x: 2.000000002991371, y: 0.19245009145694425}},
+                    {type: 'Line', to: {x: 1.1666666681623525, y: 0.6735753244239215}},
+                ],
+            },
+            o128dtvjgfd: {
+                origin: {x: -0.8333333265967544, y: 2.7905263049725795},
+                segments: [
+                    {type: 'Line', to: {x: 1.4956866856152828e-9, y: 3.2716515262714365}},
+                    {type: 'Line', to: {x: 0.8333333430612833, y: 2.7905263049725795}},
+                    {type: 'Line', to: {x: 0.8333333415655968, y: 1.8282758649654682}},
+                    {type: 'Line', to: {x: 9.727950445181932e-9, y: 1.347150631998491}},
+                    {type: 'Line', to: {x: -0.8333333251010682, y: 1.8282758649654682}},
+                ],
+            },
+            upzdkbrt9ho: {
+                origin: {x: -2.8333333348290184, y: 1.6358257618404288},
+                segments: [
+                    {type: 'Line', to: {x: -2.0000000067365775, y: 2.1169509831392856}},
+                    {type: 'Line', to: {x: -1.1666666651709807, y: 1.6358257618404288}},
+                    {type: 'Line', to: {x: -1.1666666666666672, y: 0.6735753218333176}},
+                    {type: 'Line', to: {x: -1.9999999985043135, y: 0.1924500888663403}},
+                    {type: 'Line', to: {x: -2.833333333333332, y: 0.6735753218333176}},
+                ],
+            },
+            bmkjgocgwvi: {
+                origin: {x: -2.8333333265967546, y: -0.673575310165198},
+                segments: [
+                    {type: 'Line', to: {x: -1.9999999985043135, y: -0.19245008886634096}},
+                    {type: 'Line', to: {x: -1.166666656938717, y: -0.673575310165198}},
+                    {type: 'Line', to: {x: -1.1666666584344034, y: -1.6358257501723092}},
+                    {type: 'Line', to: {x: -1.9999999902720498, y: -2.1169509831392865}},
+                    {type: 'Line', to: {x: -2.8333333251010684, y: -1.6358257501723092}},
+                ],
+            },
+            mkatztngfc: {
+                origin: {x: -0.8333333348290188, y: -1.8282758532973733},
+                segments: [
+                    {type: 'Line', to: {x: -6.736577740085181e-9, y: -1.3471506319985163}},
+                    {type: 'Line', to: {x: 0.8333333348290188, y: -1.8282758532973733}},
+                    {type: 'Line', to: {x: 0.8333333333333324, y: -2.7905262933044845}},
+                    {type: 'Line', to: {x: 1.495686019481468e-9, y: -3.271651526271462}},
+                    {type: 'Line', to: {x: -0.8333333333333326, y: -2.7905262933044845}},
+                ],
+            },
         },
         layers: {
             a: {
@@ -117,13 +237,44 @@ export const example: (id: string) => State = (id: string) => {
                         adjustments: {
                             a: {
                                 id: 'a',
-                                shapes: ['vtjgy8lpyg', 'xksjgxn36m', 'qwf9s90l0g'],
-                                mods: [{type: 'rotate', v: 'Math.PI * t', origin: 'center'}],
+                                shapes: [
+                                    'vtjgy8lpyg',
+                                    'xksjgxn36m',
+                                    'qwf9s90l0g',
+
+                                    'wm5izqaxqqg',
+                                    'upzdkbrt9ho',
+                                    'mkatztngfc',
+                                ],
+                                mods: [{type: 'rotate', v: 'oneRotate', origin: 'center'}],
+                            },
+                            b: {
+                                id: 'b',
+                                shapes: [
+                                    'qcjm4l0c54n',
+                                    'dec99c0166t',
+                                    '5a5jphhuob',
+
+                                    '76gsi4ej3zk',
+                                    'o128dtvjgfd',
+                                    'bmkjgocgwvi',
+                                ],
+                                mods: [{type: 'rotate', v: '-threeRotate', origin: 'center'}],
+                            },
+                            c: {
+                                id: 'c',
+                                shapes: [
+                                    'hex',
+                                    'iyzc87nc62c',
+                                    '8ffkisn4nq2',
+                                    'k3yw32pgz8l',
+                                    'yt4661cw8h8',
+                                    'vyg7d7zs5n8',
+                                    'ny0963kvheb',
+                                ],
+                                mods: [{type: 'rotate', v: 'twoRotate', origin: 'center'}],
                             },
                             // hex: [{type: 'rotate', v: 'Math.PI * t'}],
-                            // qcjm4l0c54n: [{type: 'rotate', v: 'Math.PI * t'}],
-                            // dec99c0166t: [{type: 'rotate', v: 'Math.PI * t'}],
-                            // '5a5jphhuob': [{type: 'rotate', v: 'Math.PI * t'}],
                         },
                         contents: {
                             type: 'shapes',
@@ -376,7 +527,7 @@ export const example: (id: string) => State = (id: string) => {
             },
         },
         crops: {},
-        view: {ppi: 1, box: {x: -0.5, y: -0.5, width: 1, height: 2}},
+        view: {ppi: 1, box: {x: -0.5, y: -0.5, width: 1, height: 1}},
         styleConfig: {
             seed: 0,
             palette: [
@@ -390,7 +541,7 @@ export const example: (id: string) => State = (id: string) => {
                     {
                         name: 'oneRotate',
                         ys: [0, (Math.PI / 3) * 2],
-                        easings: ['inout', 'start'],
+                        easings: ['inoutflat', 'start'],
                         values: [0, 1, 0, 0],
                     },
                     {
@@ -402,7 +553,7 @@ export const example: (id: string) => State = (id: string) => {
                     {
                         name: 'twoRotate',
                         ys: [0, (Math.PI / 3) * 2],
-                        easings: [null, null, 'inout', 'start'],
+                        easings: [null, null, 'inoutflat', 'start'],
                         values: [0, 0, 0, 1],
                     },
                     {
@@ -426,7 +577,7 @@ export const example: (id: string) => State = (id: string) => {
                     {
                         name: 'threeRotate',
                         ys: [0, Math.PI],
-                        easings: [null, 'inout', 'start'],
+                        easings: [null, 'inoutflat', 'start'],
                         values: [0, 0, 1, 0],
                     },
                     {
