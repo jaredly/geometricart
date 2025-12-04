@@ -5,11 +5,13 @@ export const BlurInput = ({
     onChange,
     placeholder,
     className,
+    onBlur,
 }: {
     className?: string;
     placeholder?: string;
     value: string;
     onChange: (v: string) => void;
+    onBlur?: () => void;
 }) => {
     const [text, setText] = useState<string | null>(null);
     return (
@@ -24,6 +26,7 @@ export const BlurInput = ({
                     if (text !== value) onChange(text);
                     setText(null);
                 }
+                onBlur?.();
             }}
             onKeyDown={(evt) => {
                 if (evt.key === 'Enter') {
