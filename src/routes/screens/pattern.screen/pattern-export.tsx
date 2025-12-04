@@ -4,7 +4,7 @@ import {ProvideEditState} from './editState';
 import {example} from './example';
 import {State} from './export-types';
 import {RenderExport} from './RenderExport';
-import {StateEditor} from './StateEditor';
+import {StateEditor} from './state-editor/StateEditor';
 
 export const PatternExport = ({tiling, id}: {tiling: Tiling; id: string}) => {
     const [state, setState] = useState<State>(example(id));

@@ -365,11 +365,13 @@ const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Pattern) => {
             ctx.anim,
             ctx.cropCache,
             baseShapes,
-            Object.values(pattern.adjustments).map(({shapes, mods, t}) => ({
-                t,
-                shapes: shapes.map((key) => ctx.state.shapes[key]),
-                mods,
-            })),
+            Object.values(pattern.adjustments)
+                .filter((a) => !a.disabled)
+                .map(({shapes, mods, t}) => ({
+                    t,
+                    shapes: shapes.map((key) => ctx.state.shapes[key]),
+                    mods,
+                })),
         );
     }
 

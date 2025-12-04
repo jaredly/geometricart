@@ -18,13 +18,15 @@ export function svgCoord(evt: React.MouseEvent<SVGSVGElement>) {
     return percentToWorld(worldToPercent({x: evt.clientX, y: evt.clientY}, box), vb);
 }
 
-export const useElementZoom = (initialSize: number) => {
-    const [box, setBox] = useState({
-        x: -initialSize / 2,
-        y: -initialSize / 2,
-        width: initialSize,
-        height: initialSize,
-    });
+export const sizeBox = (initialSize: number) => ({
+    x: -initialSize / 2,
+    y: -initialSize / 2,
+    width: initialSize,
+    height: initialSize,
+});
+
+export const useElementZoom = (initialBox: Box) => {
+    const [box, setBox] = useState(initialBox);
 
     const latest = useRef(box);
     latest.current = box;
@@ -72,21 +74,16 @@ export const useElementZoom = (initialSize: number) => {
                           x: -box.width / 2,
                           y: -box.height / 2,
                       })
-                    : {
-                          x: -initialSize / 2,
-                          y: -initialSize / 2,
-                          width: initialSize,
-                          height: initialSize,
-                      },
+                    : initialBox,
             ),
-        [initialSize],
+        [initialBox],
     );
 
     const canReset =
-        box.x !== -initialSize / 2 ||
-        box.y !== -initialSize / 2 ||
-        box.width !== initialSize ||
-        box.height !== initialSize;
+        box.x !== initialBox.x ||
+        box.y !== initialBox.y ||
+        box.width !== initialBox.width ||
+        box.height !== initialBox.height;
 
     return {
         zoomProps: {

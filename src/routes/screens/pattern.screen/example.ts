@@ -247,6 +247,7 @@ export const example: (id: string) => State = (id: string) => {
                         adjustments: {
                             a: {
                                 id: 'a',
+                                disabled: true,
                                 shapes: [
                                     'vtjgy8lpyg',
                                     'xksjgxn36m',
@@ -267,6 +268,7 @@ export const example: (id: string) => State = (id: string) => {
                             },
                             c: {
                                 id: 'c',
+                                disabled: true,
                                 shapes: [
                                     'hex',
                                     'iyzc87nc62c',
@@ -281,6 +283,7 @@ export const example: (id: string) => State = (id: string) => {
                             },
                             b: {
                                 id: 'b',
+                                disabled: true,
                                 shapes: [
                                     'qcjm4l0c54n',
                                     'dec99c0166t',
@@ -453,7 +456,7 @@ export const example: (id: string) => State = (id: string) => {
                                     },
                                     mods: [],
                                     lines: {},
-                                    order: 5,
+                                    order: 6,
                                     t: {chunk: 5, total: 6, ease: 'inout'},
                                     fills: {
                                         a: {
@@ -471,7 +474,7 @@ export const example: (id: string) => State = (id: string) => {
                                         b: {
                                             id: 'b',
                                             zIndex: 1,
-                                            shadow: `shadow(sCurve)`,
+                                            shadow: `shadow(tCurve(t))`,
                                             mods: [
                                                 {
                                                     type: 'rotate',
@@ -493,7 +496,7 @@ export const example: (id: string) => State = (id: string) => {
                                     t: {chunk: 3, total: 6, ease: 'inout'},
                                     mods: [],
                                     lines: {},
-                                    order: 5,
+                                    order: 7,
                                     fills: {
                                         a: {
                                             id: 'a',
@@ -519,7 +522,7 @@ export const example: (id: string) => State = (id: string) => {
                                     },
                                     mods: [],
                                     lines: {},
-                                    order: 5,
+                                    order: 8,
                                     t: {chunk: 3, total: 6, ease: 'inout'},
                                     fills: {
                                         a: {
@@ -536,49 +539,6 @@ export const example: (id: string) => State = (id: string) => {
                                         },
                                     },
                                 },
-                                // f: {
-                                //     id: 'f',
-                                //     kind: {
-                                //         type: 'distance',
-                                //         corner: 0,
-                                //         repeat: true,
-                                //         distances: [0, 0.1],
-                                //         // distances: [0, 1.0],
-                                //     },
-                                //     mods: [],
-                                //     lines: {
-                                //         // a: {
-                                //         //     id: 'a',
-                                //         //     // color: {r: 255, g: 0, b: 0},
-                                //         //     zIndex: 'twoZ',
-                                //         //     width: 'twoZ',
-                                //         //     mods: [
-                                //         //         {
-                                //         //             type: 'rotate',
-                                //         //             v: 'fourRotate',
-                                //         //             origin: 'styleCenter',
-                                //         //         },
-                                //         //     ],
-                                //         // },
-                                //     },
-                                //     order: 5,
-                                //     fills: {
-                                //         a: {
-                                //             id: 'a',
-                                //             // color: {r: 255, g: 0, b: 0},
-                                //             enabled: '!!twoZ',
-                                //             zIndex: 'twoZ',
-                                //             shadow: `shadow(sCurve)`,
-                                //             mods: [
-                                //                 {
-                                //                     type: 'rotate',
-                                //                     v: 'fourRotate',
-                                //                     origin: 'styleCenter',
-                                //                 },
-                                //             ],
-                                //         },
-                                //     },
-                                // },
                             },
                         },
                         mods: [],
@@ -594,7 +554,7 @@ export const example: (id: string) => State = (id: string) => {
         crops: {},
         view: {
             ppi: 1,
-            box: {x: -0.5, y: -0.5, width: 1, height: 1},
+            box: {x: -2.5, y: -2.5, width: 5, height: 5},
             // background: 'bgColor',
             background: 'chunk([0, 0, 1, 0, 0, 0], t)',
         },

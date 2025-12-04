@@ -249,8 +249,16 @@ export type Pattern = {
     psize: Coord | number;
     contents: PatternContents;
     // shape and the mods
-    adjustments: Record<string, {id: string; shapes: string[]; t?: TChunk; mods: PMods[]}>;
+    adjustments: Record<string, Adjustment>;
     mods: PMods[];
+};
+
+export type Adjustment = {
+    id: string;
+    shapes: string[];
+    t?: TChunk;
+    mods: PMods[];
+    disabled?: boolean;
 };
 
 export type PatternContents =

@@ -4,7 +4,7 @@ import {a, AnimCtx, Patterns, RenderItem} from './evaluate';
 import {Color, colorToRgb, State} from './export-types';
 import {svgItems} from './resolveMods';
 import {Canvas, SVGCanvas} from './SVGCanvas';
-import {useElementZoom} from './useSVGZoom';
+import {sizeBox, useElementZoom} from './useSVGZoom';
 import {VideoExport} from './VideoExport';
 import {useAnimate} from './useAnimate';
 import {useCropCache} from './useCropCache';
@@ -70,7 +70,7 @@ export const RenderExport = ({state, patterns}: {state: State; patterns: Pattern
 
     const both = useMemo(() => [...items, ...shapesItems], [items, shapesItems]);
 
-    const {zoomProps, box, reset: resetZoom} = useElementZoom(6);
+    const {zoomProps, box, reset: resetZoom} = useElementZoom(state.view.box);
     const [mouse, setMouse] = useState(null as null | Coord);
     const size = 500;
 

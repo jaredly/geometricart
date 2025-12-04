@@ -1,0 +1,40 @@
+import React, {useState} from 'react';
+
+export const BlurInput = ({
+    value,
+    onChange,
+    placeholder,
+    className,
+}: {
+    className?: string;
+    placeholder?: string;
+    value: string;
+    onChange: (v: string) => void;
+}) => {
+    const [text, setText] = useState<string | null>(null);
+    return (
+        <input
+            className={
+                `input input-sm ${className ?? ''} ` +
+                (text != null && text !== value ? 'outline-blue-400' : '')
+            }
+            value={text ?? value}
+            onBlur={() => {
+                if (text != null) {
+                    if (text !== value) onChange(text);
+                    setText(null);
+                }
+            }}
+            onKeyDown={(evt) => {
+                if (evt.key === 'Enter') {
+                    if (text != null) {
+                        if (text !== value) onChange(text);
+                        setText(null);
+                    }
+                }
+            }}
+            placeholder={placeholder}
+            onChange={(evt) => setText(evt.target.value)}
+        />
+    );
+};
