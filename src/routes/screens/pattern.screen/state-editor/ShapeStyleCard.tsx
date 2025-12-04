@@ -69,7 +69,7 @@ export const ShapeStyleCard = ({
 }: {
     palette: Color[];
     value: ShapeStyle;
-    onChange: (next: ShapeStyle, nextKey?: string) => void;
+    onChange: (next: ShapeStyle) => void;
     onRemove: () => void;
 }) => {
     const [show, setShow] = useState(false);

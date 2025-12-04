@@ -1,7 +1,8 @@
-import React, {useMemo} from 'react';
+import React, {useMemo, useState} from 'react';
 import {Color, ShapeStyle} from '../export-types';
 import {ShapeStyleCard} from './ShapeStyleCard';
 import {createShapeStyle} from './createLayerTemplate';
+import {DragToReorderList} from './DragToReorderList';
 
 export const ShapeStylesEditor = ({
     styles,
@@ -16,11 +17,27 @@ export const ShapeStylesEditor = ({
         () => Object.entries(styles).sort(([, a], [, b]) => a.order - b.order),
         [styles],
     );
+    const onMove = (prev: number, next: number) => {
+        if (prev === next) return;
 
-    const upsert = (key: string, style: ShapeStyle, nextKey?: string) => {
+        const items = entries.slice();
+        const [got] = items.splice(prev, 1);
+
+        // const orders: number[] = keys.map(key => styles[key].order)
+        // for (let i=1; i<orders.length; i++) {
+        //     const prev = orders
+        // }
+        // keys.forEach(key => {
+        //     const order = styles[key].order
+        //     if (orders.length && orders[orders.length - 1] > order) {
+        //         const biffer = orders.findIndex(o => o > order)
+        //     }
+        // })
+    };
+
+    const upsert = (key: string, style: ShapeStyle) => {
         const record = {...styles};
-        delete record[key];
-        record[nextKey ?? key] = style;
+        record[key] = style;
         onChange(record);
     };
 
@@ -40,19 +57,27 @@ export const ShapeStylesEditor = ({
             </div>
             {entries.length === 0 ? <div className="text-sm opacity-60">No styles yet.</div> : null}
             <div className="space-y-3">
-                {entries.map(([key, style], i) => (
-                    <ShapeStyleCard
-                        key={key + ':' + i}
-                        palette={palette}
-                        value={style}
-                        onChange={(next, nextKey) => upsert(key, next, nextKey)}
-                        onRemove={() => {
-                            const record = {...styles};
-                            delete record[key];
-                            onChange(record);
-                        }}
-                    />
-                ))}
+                <DragToReorderList
+                    items={entries.map(([key, style], i) => ({
+                        key,
+                        node: (
+                            <ShapeStyleCard
+                                key={key + ':' + i}
+                                palette={palette}
+                                value={style}
+                                onChange={(next) => upsert(key, next)}
+                                onRemove={() => {
+                                    const record = {...styles};
+                                    delete record[key];
+                                    onChange(record);
+                                }}
+                            />
+                        ),
+                    }))}
+                    onReorder={(prev, next) => {
+                        console.log('pn', prev, next);
+                    }}
+                />
             </div>
         </div>
     );
