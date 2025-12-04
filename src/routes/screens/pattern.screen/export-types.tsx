@@ -249,7 +249,7 @@ export type Pattern = {
     psize: Coord | number;
     contents: PatternContents;
     // shape and the mods
-    adjustments: Record<string, {id: string; shapes: string[]; mods: PMods[]}>;
+    adjustments: Record<string, {id: string; shapes: string[]; t?: TChunk; mods: PMods[]}>;
     mods: PMods[];
 };
 
@@ -281,6 +281,8 @@ export type BaseKind =
     | {type: 'explicit'; ids: Record<string, true>}
     | {type: 'distance'; corner: number; repeat: boolean; distances: number[]};
 
+export type ShapeKind = BaseKind | {type: 'shape'; key: string; rotInvariant: boolean};
+
 export type ShapeStyle = {
     id: string;
     disabled?: boolean;
@@ -288,11 +290,14 @@ export type ShapeStyle = {
     // TODO: maybe have a kind that's like "anything intersecting with this shape"?
     // Could also be interesting to have an `animatedKind` where we select
     // the items effected by some script
-    kind: BaseKind | {type: 'shape'; key: string; rotInvariant: boolean};
+    kind: ShapeKind | ShapeKind[];
     fills: Record<string, Fill>;
     lines: Record<string, Line>;
+    t?: TChunk;
     mods: PMods[];
 };
+
+export type TChunk = {chunk: number; total: number; ease: string};
 
 export type ConcreteShadow = {
     color?: Color;

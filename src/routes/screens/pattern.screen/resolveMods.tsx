@@ -35,8 +35,10 @@ import {
     ConcreteFill,
     ConcreteLine,
     Color,
+    ShapeKind,
+    TChunk,
 } from './export-types';
-import {evalTimeline} from './evalEase';
+import {easeFn, evalTimeline} from './evalEase';
 import {scalePos} from '../../../editor/scalePos';
 import {
     cutSegments,
@@ -72,7 +74,7 @@ export const resolvePMod = (ctx: AnimCtx, mod: PMods): CropsAndMatrices[0] => {
                 origin: mod.origin ? a.coord(ctx, mod.origin) : undefined,
             });
         case 'translate':
-            return modMatrix({...mod, v: a.coord(ctx, mod.v)});
+            return modMatrix({...mod, v: scalePos(a.coord(ctx, mod.v), 0.01)});
     }
 };
 
@@ -86,7 +88,7 @@ const matchesDistances = (dist: number, distances: number[]) => {
 };
 
 const matchKind = (
-    k: ShapeStyle['kind'],
+    k: ShapeKind,
     i: number,
     color: number,
     center: Coord,
@@ -274,15 +276,21 @@ const adjustShapes = (
     anim: Ctx['anim'],
     cropCache: Ctx['cropCache'],
     uniqueShapes: Coord[][],
-    adjustments: {shapes: BarePath[]; mods: PMods[]}[],
+    adjustments: {shapes: BarePath[]; mods: PMods[]; t?: TChunk}[],
 ): Coord[][] => {
     let modified = false;
-    for (let {shapes, mods} of adjustments) {
+    for (let {shapes, mods, t} of adjustments) {
+        const local: Record<string, any> = {};
+        if (t) {
+            const res = resolveT(t, anim.values.t);
+            if (res == null) continue;
+            local.t = res;
+        }
         for (let shape of shapes) {
             const shapeCoords = coordsFromBarePath(shape);
             const center = centroid(shapeCoords);
             const resolved = mods.map((mod) =>
-                resolvePMod({...anim, values: {...anim.values, center}}, mod),
+                resolvePMod({...anim, values: {...anim.values, ...local, center}}, mod),
             );
             const shapeLines = coordLines(shapeCoords);
             const moved = modsToShapes(cropCache, resolved, [{shape: shapeCoords, i: 0}]);
@@ -330,6 +338,19 @@ const adjustShapes = (
 const matchesBounds = (bounds: Bounds, coord: Coord) =>
     coord.x <= bounds.x1 && coord.x >= bounds.x0 && coord.y <= bounds.y1 && coord.y >= bounds.y0;
 
+export const resolveT = (
+    {chunk, total, ease}: {chunk: number; total: number; ease: string},
+    t: number,
+) => {
+    const fn = easeFn(ease);
+    const cur = t * (total - 0);
+    const cnum = Math.floor(cur);
+    if (cnum === chunk - 1) {
+        return fn(cur - cnum);
+    }
+    return null;
+};
+
 const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Pattern) => {
     // not doing yet
     if (pattern.contents.type !== 'shapes') return;
@@ -344,7 +365,8 @@ const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Pattern) => {
             ctx.anim,
             ctx.cropCache,
             baseShapes,
-            Object.values(pattern.adjustments).map(({shapes, mods}) => ({
+            Object.values(pattern.adjustments).map(({shapes, mods, t}) => ({
+                t,
                 shapes: shapes.map((key) => ctx.state.shapes[key]),
                 mods,
             })),
@@ -353,7 +375,11 @@ const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Pattern) => {
 
     const orderedStyles = Object.values(pattern.contents.styles).sort((a, b) => a.order - b.order);
 
-    const needColors = orderedStyles.some((s) => s.kind.type === 'alternating');
+    const needColors = orderedStyles.some((s) =>
+        Array.isArray(s.kind)
+            ? s.kind.some((k) => k.type === 'alternating')
+            : s.kind.type === 'alternating',
+    );
     const {colors} = needColors ? getShapeColors(baseShapes, simple.minSegLength) : {colors: []};
 
     const midShapes = modsToShapes(
@@ -383,18 +409,30 @@ const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Pattern) => {
             };
 
             orderedStyles.forEach((s) => {
-                const match = matchKind(s.kind, i, colors[i], center, simple.eigenCorners);
+                const match = Array.isArray(s.kind)
+                    ? s.kind.some((k) => matchKind(k, i, colors[i], center, simple.eigenCorners))
+                    : matchKind(s.kind, i, colors[i], center, simple.eigenCorners);
                 if (!match) {
                     return;
                 }
+                if (s.disabled) {
+                    return;
+                }
+                const local: Record<string, any> = {};
+                if (s.t) {
+                    const got = resolveT(s.t, anim.values.t);
+                    if (got == null) return; // out of range
+                    local.t = got;
+                }
                 stuff.push(`style id: ${s.id}`);
                 if (typeof match === 'object') {
-                    anim.values.styleCenter = match;
+                    local.styleCenter = match;
                 }
+                const localAnim = {...anim, values: {...anim.values, ...local}};
                 // hmmm need to align the ... style that it came from ... with animvalues
                 // like `styleCenter`
                 Object.values(s.fills).forEach((fill) => {
-                    const cfill = dropNully(resolveFill(anim, fill));
+                    const cfill = dropNully(resolveFill(localAnim, fill));
                     if (cfill.enabled === false) {
                         stuff.push(`disabled fill: ${fill.id}`);
                         return;
@@ -410,7 +448,7 @@ const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Pattern) => {
                     Object.assign(now, cfill);
                 });
                 Object.values(s.lines).forEach((line) => {
-                    const cline = dropNully(resolveLine(anim, line));
+                    const cline = dropNully(resolveLine(localAnim, line));
                     if (cline.enabled === false) return;
                     if (!lines[line.id]) {
                         lines[line.id] = cline;

@@ -1,6 +1,12 @@
 
 Animated ting, I want to export a png that has the state encoded in it.
 
+---
+
+- [ ] a style can have an `isolate` or maybe just a `t` parameter with `{current: 4, total: 6, ease: 'inout'}` which makes the `t` value used for these animated values be scoped to that chunk, and the whole style disabled outside of that chunk. (there could be like a 'preserve' attribute that makes it enabled outside, but with t clamped to the border values)
+- [ ] styles should have ... `selections`, not `kind`. So it can be selecting multiple things.
+  -> ok `kind` can be an array, yeah that's easier
+
 ----
 
 ok what's my angle.

@@ -23,4 +23,9 @@ export const globals: Record<string, any> = {
     angleTo,
     easeInOutCubic,
     tsplit,
+    chunk(values: number[], t: number) {
+        const v = t * values.length;
+        const t0 = Math.floor(v);
+        return values[Math.min(t0, values.length - 1)];
+    },
 };

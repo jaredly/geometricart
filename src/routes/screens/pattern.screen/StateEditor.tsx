@@ -21,6 +21,7 @@ import {
     PatternContents,
     PMods,
     Shadow,
+    ShapeKind,
     ShapeStyle,
     State,
 } from './export-types';
@@ -1764,6 +1765,14 @@ const ShapeStyleCard = ({
                         value={value.order}
                         onChange={(order) => onChange({...value, order})}
                     />
+                    {value.t ? JSON.stringify(value.t) : ''}
+                    <input
+                        checked={!!value.disabled}
+                        onChange={(evt) => onChange({...value, disabled: evt.target.checked})}
+                        className="checkbox"
+                        type="checkbox"
+                        onClick={(evt) => evt.stopPropagation()}
+                    />
                     <div className="flex-1" />
                     <button
                         className="btn btn-ghost btn-xs text-error"
@@ -1862,9 +1871,12 @@ const BaseKindEditor = ({
     onChange,
 }: {
     label: string;
-    value: BaseKind | {type: 'shape'; key: string; rotInvariant: boolean};
-    onChange: (next: BaseKind | {type: 'shape'; key: string; rotInvariant: boolean}) => void;
+    value: ShapeKind | ShapeKind[];
+    onChange: (next: ShapeKind | ShapeKind[]) => void;
 }) => {
+    if (Array.isArray(value)) {
+        return <div>itsan array</div>;
+    }
     const type = value.type;
     return (
         <div className="bg-base-200 rounded-lg p-3 border border-base-300 space-y-2">

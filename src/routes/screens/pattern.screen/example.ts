@@ -208,6 +208,11 @@ export const example: (id: string) => State = (id: string) => {
                     shadow: 'return (n) => ({offset: {x:n*4,y:n*4},blur:{x:n * 2.5,y:n * 2.5},color:[0,0,0]})',
                     shadow2:
                         'return (n) => ({offset: {x:n * 4,y:n * 4},blur:{x:n * 2.5,y:n * 2.5},color:[0,0,0]})',
+                    tCurve: `(t) => {
+                        if (t < .1) return t * 10
+                        if (t > .9) return 1 - (t - .9) * 10
+                        return 1
+                    }`,
                     sCurve: `
                         const t1 = t * 6 % 1;
                         if (t1 < .1) return t1 * 10
@@ -251,29 +256,11 @@ export const example: (id: string) => State = (id: string) => {
                                     'upzdkbrt9ho',
                                     'mkatztngfc',
                                 ],
+                                t: {chunk: 2, total: 6, ease: 'inout'},
                                 mods: [
                                     {
                                         type: 'rotate',
-                                        v: 'ease1 * Math.PI * 2 / 3',
-                                        origin: 'center',
-                                    },
-                                ],
-                            },
-                            b: {
-                                id: 'b',
-                                shapes: [
-                                    'qcjm4l0c54n',
-                                    'dec99c0166t',
-                                    '5a5jphhuob',
-
-                                    '76gsi4ej3zk',
-                                    'o128dtvjgfd',
-                                    'bmkjgocgwvi',
-                                ],
-                                mods: [
-                                    {
-                                        type: 'rotate',
-                                        v: 'ease3 * Math.PI / 3 * 2',
+                                        v: 't * Math.PI * 2 / 3',
                                         origin: 'center',
                                     },
                                 ],
@@ -289,8 +276,27 @@ export const example: (id: string) => State = (id: string) => {
                                     'vyg7d7zs5n8',
                                     'ny0963kvheb',
                                 ],
+                                t: {chunk: 4, total: 6, ease: 'inout'},
+                                mods: [{type: 'rotate', v: '-t * Math.PI * 2/3', origin: 'center'}],
+                            },
+                            b: {
+                                id: 'b',
+                                shapes: [
+                                    'qcjm4l0c54n',
+                                    'dec99c0166t',
+                                    '5a5jphhuob',
+
+                                    '76gsi4ej3zk',
+                                    'o128dtvjgfd',
+                                    'bmkjgocgwvi',
+                                ],
+                                t: {chunk: 6, total: 6, ease: 'inout'},
                                 mods: [
-                                    {type: 'rotate', v: '-ease2 * Math.PI * 2/3', origin: 'center'},
+                                    {
+                                        type: 'rotate',
+                                        v: 't * Math.PI / 3 * 2',
+                                        origin: 'center',
+                                    },
                                 ],
                             },
                             // hex: [{type: 'rotate', v: 'Math.PI * t'}],
@@ -357,53 +363,27 @@ export const example: (id: string) => State = (id: string) => {
                                     mods: [],
                                     order: 3,
                                     lines: {},
+                                    t: {chunk: 1, total: 6, ease: 'inout'},
                                     fills: {
                                         b: {
                                             id: 'b',
-                                            zIndex: 'enable4',
-                                            enabled: '!!enable4',
-                                            shadow: `shadow2(sCurve)`,
+                                            zIndex: 1,
+                                            // enabled: '!!enable1',
+                                            shadow: `shadow2(tCurve(t))`,
                                             mods: [
                                                 {
                                                     type: 'rotate',
-                                                    v: 'ease4 * Math.PI * 2 / 3',
+                                                    v: 't * Math.PI * 2 / 3',
                                                     origin: 'styleCenter',
+                                                },
+                                                {
+                                                    type: 'translate',
+                                                    v: '({x: -tCurve(t) * 4, y: -tCurve(t) * 4})',
                                                 },
                                             ],
                                         },
                                     },
                                 },
-                                // c1: {
-                                //     id: 'c1',
-                                //     kind: {
-                                //         type: 'distance',
-                                //         corner: 2,
-                                //         repeat: true,
-                                //         distances: [0, 0.4],
-                                //     },
-                                //     mods: [],
-                                //     lines: {},
-                                //     order: 7,
-                                //     fills: {
-                                //         b: {
-                                //             id: 'b',
-                                //             // color: {r: 255, g: 255, b: 0},
-                                //             // opacity: 1,
-                                //             zIndex: 'enable5',
-                                //             enabled: '!!enable5',
-                                //             shadow: `shadow(sCurve)`,
-                                //             mods: [
-                                //                 {
-                                //                     type: 'rotate',
-                                //                     // v: '-t1 * Math.PI / 3 * 2',
-                                //                     v: '-ease5 * Math.PI * 2 / 3',
-                                //                     origin: 'styleCenter',
-                                //                 },
-                                //                 // {type: 'inset', v: 5},
-                                //             ],
-                                //         },
-                                //     },
-                                // },
                                 d: {
                                     id: 'd',
                                     kind: {
@@ -413,22 +393,26 @@ export const example: (id: string) => State = (id: string) => {
                                         distances: [0, 0.5],
                                         // distances: [0, 1.0],
                                     },
+                                    t: {chunk: 1, total: 6, ease: 'inout'},
                                     mods: [],
                                     lines: {},
                                     order: 4,
                                     fills: {
                                         b: {
                                             id: 'b',
-                                            zIndex: 'enable4',
-                                            enabled: '!!enable4',
+                                            zIndex: 1,
                                             mods: [
                                                 {
                                                     type: 'rotate',
-                                                    v: '-ease4 * Math.PI * 2 / 3',
+                                                    v: '-t * Math.PI * 2 / 3',
                                                     origin: 'styleCenter',
                                                 },
+                                                {
+                                                    type: 'translate',
+                                                    v: '({x: -tCurve(t) * 4, y: -tCurve(t) * 4})',
+                                                },
                                             ],
-                                            shadow: `shadow2(sCurve)`,
+                                            shadow: `shadow2(tCurve(t))`,
                                         },
                                     },
                                 },
@@ -440,19 +424,19 @@ export const example: (id: string) => State = (id: string) => {
                                         repeat: true,
                                         distances: [0, 0.3],
                                     },
+                                    t: {chunk: 3, total: 6, ease: 'inout'},
                                     mods: [],
                                     lines: {},
                                     order: 5,
                                     fills: {
                                         a: {
                                             id: 'a',
-                                            zIndex: 'enable6',
-                                            enabled: '!!enable6',
-                                            shadow: `shadow(sCurve)`,
+                                            zIndex: 1,
+                                            shadow: `shadow(tCurve(t))`,
                                             mods: [
                                                 {
                                                     type: 'rotate',
-                                                    v: '-ease6 * Math.PI',
+                                                    v: '-t * Math.PI',
                                                     origin: 'styleCenter',
                                                 },
                                             ],
@@ -470,29 +454,28 @@ export const example: (id: string) => State = (id: string) => {
                                     mods: [],
                                     lines: {},
                                     order: 5,
+                                    t: {chunk: 5, total: 6, ease: 'inout'},
                                     fills: {
                                         a: {
                                             id: 'a',
-                                            zIndex: 'enable5',
-                                            enabled: '!!enable5',
-                                            shadow: `shadow(sCurve)`,
+                                            zIndex: 1,
+                                            shadow: `shadow(tCurve(t))`,
                                             mods: [
                                                 {
                                                     type: 'rotate',
-                                                    v: 'ease5 * Math.PI/3',
+                                                    v: 't * Math.PI/3',
                                                     origin: 'styleCenter',
                                                 },
                                             ],
                                         },
                                         b: {
                                             id: 'b',
-                                            zIndex: 'enable5',
-                                            enabled: '!!enable5',
+                                            zIndex: 1,
                                             shadow: `shadow(sCurve)`,
                                             mods: [
                                                 {
                                                     type: 'rotate',
-                                                    v: 'ease5 * Math.PI/3',
+                                                    v: 't * Math.PI/3',
                                                     origin: 'styleCenter',
                                                 },
                                             ],
@@ -507,19 +490,19 @@ export const example: (id: string) => State = (id: string) => {
                                         repeat: true,
                                         distances: [0, 0.6],
                                     },
+                                    t: {chunk: 3, total: 6, ease: 'inout'},
                                     mods: [],
                                     lines: {},
                                     order: 5,
                                     fills: {
                                         a: {
                                             id: 'a',
-                                            zIndex: 'enable6',
-                                            enabled: '!!enable6',
-                                            shadow: `shadow(sCurve)`,
+                                            zIndex: 1,
+                                            shadow: `shadow(tCurve(t))`,
                                             mods: [
                                                 {
                                                     type: 'rotate',
-                                                    v: 'ease6 * Math.PI',
+                                                    v: 't * Math.PI',
                                                     origin: 'styleCenter',
                                                 },
                                             ],
@@ -537,16 +520,16 @@ export const example: (id: string) => State = (id: string) => {
                                     mods: [],
                                     lines: {},
                                     order: 5,
+                                    t: {chunk: 3, total: 6, ease: 'inout'},
                                     fills: {
                                         a: {
                                             id: 'a',
-                                            zIndex: 'enable6',
-                                            enabled: '!!enable6',
-                                            shadow: `shadow(sCurve)`,
+                                            zIndex: 1,
+                                            shadow: `shadow(tCurve(t))`,
                                             mods: [
                                                 {
                                                     type: 'rotate',
-                                                    v: 'ease6 * Math.PI',
+                                                    v: 't * Math.PI',
                                                     origin: 'styleCenter',
                                                 },
                                             ],
@@ -612,7 +595,8 @@ export const example: (id: string) => State = (id: string) => {
         view: {
             ppi: 1,
             box: {x: -0.5, y: -0.5, width: 1, height: 1},
-            background: 'bgColor',
+            // background: 'bgColor',
+            background: 'chunk([0, 0, 1, 0, 0, 0], t)',
         },
         styleConfig: {
             seed: 0,
@@ -624,7 +608,8 @@ export const example: (id: string) => State = (id: string) => {
                 // {h: 190, s: 100, l: 20},
                 // {h: 180, s: 100, l: 40},
             ],
-            timeline: makeLanes(6),
+            // timeline: makeLanes(6),
+            timeline: {ts: [], lanes: []},
         },
     };
     return m;

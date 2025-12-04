@@ -60,7 +60,7 @@ function easeInOutQuad(x: number): number {
     return x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2;
 }
 
-const easeFn = (ease: string): ((n: number) => number) => {
+export const easeFn = (ease: string): ((n: number) => number) => {
     switch (ease) {
         case 'start':
             return (x) => (x === 0 ? 0 : 1);
