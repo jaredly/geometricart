@@ -1,12 +1,65 @@
 import React, {useState} from 'react';
 import {EyeInvisibleIcon, EyeIcon} from '../../../../icons/Eyes';
-import {Color, ShapeStyle} from '../export-types';
+import {Color, ShapeStyle, TChunk} from '../export-types';
 import {createFill, createLine} from './createLayerTemplate';
 import {NumberField} from './NumberField';
 import {LineEditor} from './LineEditor';
 import {FillEditor} from './FillEditor';
 import {SubStyleList} from './SubStyleList';
 import {BaseKindEditor} from './BaseKindEditor';
+import {BlurInput} from './BlurInput';
+import {easeFunctions} from '../evalEase';
+
+// const serializeChunk = (chunk?: TChunk) => chunk ? `${chunk.chunk}/${chunk.total} ${chunk.ease}` : ''
+// const parseChunk = (text: string) => {
+//     const match = text.trim().match(/(\d+)\s*\/\s*(\d+)[\s,:=]*(\w+)/)
+// }
+
+const ChunkEditor = ({chunk, onChange}: {chunk?: TChunk; onChange: (v?: TChunk) => void}) => {
+    return (
+        <div>
+            <BlurInput
+                className="input input-sm w-15 text-center"
+                placeholder="chunk"
+                value={chunk ? `${chunk.chunk}/${chunk.total}` : ''}
+                onChange={(value) => {
+                    const [left, right] = value
+                        .trim()
+                        .split('/')
+                        .map((n) => Number(n));
+                    if (
+                        Number.isFinite(left) &&
+                        Number.isInteger(left) &&
+                        Number.isFinite(right) &&
+                        Number.isInteger(right)
+                    ) {
+                        onChange(
+                            chunk
+                                ? {...chunk, chunk: left, total: right}
+                                : {chunk: left, total: right, ease: ''},
+                        );
+                    } else {
+                        onChange(undefined);
+                    }
+                }}
+            />
+            {chunk && (
+                <select
+                    className="select select-sm w-20"
+                    value={chunk.ease}
+                    onChange={(evt) => onChange({...chunk, ease: evt.target.value})}
+                >
+                    <option value="">straight</option>
+                    {Object.keys(easeFunctions).map((name) => (
+                        <option key={name} value={name}>
+                            {name}
+                        </option>
+                    ))}
+                </select>
+            )}
+        </div>
+    );
+};
 
 export const ShapeStyleCard = ({
     value,
@@ -25,18 +78,21 @@ export const ShapeStyleCard = ({
             <div className="p-3 space-y-3">
                 <div className="flex flex-col gap-2">
                     <div
-                        className="flex flex-row"
+                        className="flex flex-row items-center gap-4"
                         style={value.disabled ? {color: 'gray'} : undefined}
                     >
                         <button className="btn" onClick={() => setShow(!show)}>
                             {show ? '🔽' : '▶️'}
                         </button>
-                        <NumberField
-                            label="Order"
+                        <input
+                            className="input input-sm input-bordered w-10"
+                            type="number"
                             value={value.order}
-                            onChange={(order) => onChange({...value, order})}
+                            step={1}
+                            onChange={(evt) => onChange({...value, order: +evt.target.value})}
                         />
-                        {value.t ? JSON.stringify(value.t) : ''}
+
+                        <ChunkEditor chunk={value.t} onChange={(t) => onChange({...value, t})} />
                         <div className="flex-1" />
                         <button
                             className="btn btn-square btn-sm"

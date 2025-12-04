@@ -60,23 +60,17 @@ function easeInOutQuad(x: number): number {
     return x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2;
 }
 
-export const easeFn = (ease: string): ((n: number) => number) => {
-    switch (ease) {
-        case 'start':
-            return (x) => (x === 0 ? 0 : 1);
-        case 'end':
-            return (x) => (x === 1 ? 1 : 0);
-        case 'inout':
-            return easeInOutCubic;
-        case 'inoutflat':
-            return easeInOutQuad;
-        // return (x) => {
-        //     const cub = (easeInOutCubic(x) - x) / 4;
-        //     return x + cub;
-        // };
-    }
-    return (x) => x;
+export const easeFunctions: Record<string, (v: number) => number> = {
+    start: (x) => (x === 0 ? 0 : 1),
+    end: (x) => (x === 1 ? 1 : 0),
+    inout: easeInOutCubic,
+    inoutflat: easeInOutQuad,
 };
+
+export const easeFn = (ease: string): ((n: number) => number) => {
+    return easeFunctions[ease] ?? ((x) => x);
+};
+
 export const evalEase = (ease: string, p0: Coord, p1: Coord) => {
     const efn = easeFn(ease);
     const pts: Coord[] = [];
