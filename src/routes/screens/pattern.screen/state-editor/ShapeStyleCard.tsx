@@ -9,6 +9,8 @@ import {SubStyleList} from './SubStyleList';
 import {BaseKindEditor} from './BaseKindEditor';
 import {BlurInput} from './BlurInput';
 import {easeFunctions} from '../evalEase';
+import {ChevronUp12, DotsHorizontalOutline, SelectDragIcon} from '../../../../icons/Icon';
+import {HandleProps} from './DragToReorderList';
 
 // const serializeChunk = (chunk?: TChunk) => chunk ? `${chunk.chunk}/${chunk.total} ${chunk.ease}` : ''
 // const parseChunk = (text: string) => {
@@ -66,31 +68,36 @@ export const ShapeStyleCard = ({
     onChange,
     onRemove,
     palette,
+    handleProps,
 }: {
     palette: Color[];
+    handleProps: HandleProps;
     value: ShapeStyle;
     onChange: (next: ShapeStyle) => void;
     onRemove: () => void;
 }) => {
     const [show, setShow] = useState(false);
     return (
-        <div className="bg-base-100 rounded-xl border border-base-300">
+        <div
+            className={
+                'bg-base-100 rounded-xl border border-base-300 ' +
+                (handleProps.isActive ? 'bg-base-300 border-base-100 shadow-2xl' : '')
+            }
+        >
             <div className="p-3 space-y-3">
                 <div className="flex flex-col gap-2">
                     <div
                         className="flex flex-row items-center gap-4"
                         style={value.disabled ? {color: 'gray'} : undefined}
                     >
-                        <button className="btn" onClick={() => setShow(!show)}>
-                            {show ? '🔽' : '▶️'}
+                        <button
+                            className="btn"
+                            draggable
+                            {...handleProps.props}
+                            onClick={() => setShow(!show)}
+                        >
+                            <SelectDragIcon />
                         </button>
-                        <input
-                            className="input input-sm input-bordered w-10"
-                            type="number"
-                            value={value.order}
-                            step={1}
-                            onChange={(evt) => onChange({...value, order: +evt.target.value})}
-                        />
 
                         <ChunkEditor chunk={value.t} onChange={(t) => onChange({...value, t})} />
                         <div className="flex-1" />
@@ -119,6 +126,9 @@ export const ShapeStyleCard = ({
                         onChange={(kind) => onChange({...value, kind})}
                     />
                 </div>
+                <button className="btn w-full btn-xs" onClick={() => setShow(!show)}>
+                    {show ? <ChevronUp12 /> : <DotsHorizontalOutline />}
+                </button>
                 {show && (
                     <div className="flex flex-col gap-3">
                         <SubStyleList

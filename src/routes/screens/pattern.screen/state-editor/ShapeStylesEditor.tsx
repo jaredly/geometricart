@@ -60,8 +60,9 @@ export const ShapeStylesEditor = ({
                 <DragToReorderList
                     items={entries.map(([key, style], i) => ({
                         key,
-                        node: (
+                        render: (handleProps) => (
                             <ShapeStyleCard
+                                handleProps={handleProps}
                                 key={key + ':' + i}
                                 palette={palette}
                                 value={style}
@@ -75,10 +76,25 @@ export const ShapeStylesEditor = ({
                         ),
                     }))}
                     onReorder={(prev, next) => {
-                        console.log('pn', prev, next);
+                        const id = entries[prev][0];
+                        onChange({
+                            ...styles,
+                            [id]: {...styles[id], order: nextOrder(prev, next, entries)},
+                        });
                     }}
                 />
             </div>
         </div>
     );
+};
+
+const nextOrder = (prev: number, next: number, entries: [string, {order: number}][]) => {
+    if (next === 0) {
+        return entries[0][1].order - 10;
+    }
+    if (next >= entries.length - 1) {
+        return entries[entries.length - 1][1].order + 10;
+    }
+    const [left, right] = prev < next ? [next, next + 1] : [next - 1, next];
+    return (entries[left][1].order + entries[right][1].order) / 2;
 };

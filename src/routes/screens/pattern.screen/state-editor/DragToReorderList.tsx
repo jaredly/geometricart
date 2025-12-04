@@ -1,9 +1,17 @@
-import React, {useRef, useState, useMemo} from 'react';
+import React, {useRef, useState, useMemo, useEffect} from 'react';
 
 export interface Item {
     key: string;
-    node: React.ReactElement;
+    render: (handleProps: HandleProps) => React.ReactElement;
 }
+export type HandleProps = {
+    isActive: boolean;
+    props: {
+        onDragStart: React.DragEventHandler;
+        // onDragOver: React.DragEventHandler;
+        // onDragEnd: React.DragEventHandler;
+    };
+};
 
 export interface Props {
     items: Item[];
@@ -16,9 +24,41 @@ type DragState = {
     insertionIndex: number; // 0..items.length (slot between items)
 } | null;
 
+// Find the nearest scrollable ancestor (by overflow/overflowY),
+// otherwise fall back to window.
+function getScrollParent(node: HTMLElement | null): HTMLElement | Window {
+    if (!node || typeof window === 'undefined') return window;
+
+    const overflowRegex = /(auto|scroll)/;
+
+    let parent = node.parentElement;
+    while (parent) {
+        const style = getComputedStyle(parent);
+        const hasScrollableOverflow =
+            overflowRegex.test(style.overflowY) || overflowRegex.test(style.overflow);
+
+        if (hasScrollableOverflow && parent.scrollHeight > parent.clientHeight) {
+            return parent;
+        }
+
+        parent = parent.parentElement;
+    }
+
+    return window;
+}
+
 export const DragToReorderList: React.FC<Props> = ({items, onReorder}) => {
     const [dragState, setDragState] = useState<DragState>(null);
-    const containerRef = useRef<HTMLDivElement | null>(null);
+
+    const rootRef = useRef<HTMLDivElement | null>(null);
+    const scrollParentRef = useRef<HTMLElement | Window | null>(null);
+
+    // Determine scroll parent once the root is in the DOM
+    useEffect(() => {
+        if (rootRef.current) {
+            scrollParentRef.current = getScrollParent(rootRef.current);
+        }
+    }, []);
 
     const keyToIndex = useMemo(() => {
         const map = new Map<string, number>();
@@ -50,7 +90,6 @@ export const DragToReorderList: React.FC<Props> = ({items, onReorder}) => {
         const offsetY = e.clientY - rect.top;
         const insertionIndex = offsetY < rect.height / 2 ? index : index + 1; // above vs below
 
-        // Clamp to [0, items.length]
         const clamped = Math.max(0, Math.min(items.length, insertionIndex));
 
         if (clamped === dragState.insertionIndex) return;
@@ -79,7 +118,6 @@ export const DragToReorderList: React.FC<Props> = ({items, onReorder}) => {
                 targetIndex = insertionIndex - 1;
             }
 
-            // No-op if nothing effectively changed
             if (targetIndex !== fromIndex) {
                 onReorder(fromIndex, targetIndex);
             }
@@ -94,27 +132,40 @@ export const DragToReorderList: React.FC<Props> = ({items, onReorder}) => {
     };
 
     const handleDragEnd = () => {
-        // If drag ends without a drop in the container, just reset without reordering
+        // If drag ends without dropping in our root, just reset
         setDragState(null);
     };
 
-    // Auto-scroll while dragging near top/bottom of container
-    const handleContainerDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    // Auto-scroll while dragging near top/bottom of the scroll parent
+    const handleRootDragOver = (e: React.DragEvent<HTMLDivElement>) => {
         e.preventDefault();
 
-        const el = containerRef.current;
-        if (!el) return;
+        const scrollParent = scrollParentRef.current;
+        if (!scrollParent) return;
 
-        const rect = el.getBoundingClientRect();
         const y = e.clientY;
-
         const edgeSize = 40; // px from top/bottom to trigger scroll
         const scrollSpeed = 10; // px per event
 
-        if (y < rect.top + edgeSize) {
-            el.scrollTop -= scrollSpeed;
-        } else if (y > rect.bottom - edgeSize) {
-            el.scrollTop += scrollSpeed;
+        if (scrollParent instanceof Window) {
+            const viewportTop = 0;
+            const viewportBottom = window.innerHeight || document.documentElement.clientHeight;
+
+            if (y < viewportTop + edgeSize) {
+                window.scrollBy({top: -scrollSpeed});
+            } else if (y > viewportBottom - edgeSize) {
+                window.scrollBy({top: scrollSpeed});
+            }
+        } else {
+            const rect = scrollParent.getBoundingClientRect();
+            const top = rect.top;
+            const bottom = rect.bottom;
+
+            if (y < top + edgeSize) {
+                scrollParent.scrollTop -= scrollSpeed;
+            } else if (y > bottom - edgeSize) {
+                scrollParent.scrollTop += scrollSpeed;
+            }
         }
     };
 
@@ -137,15 +188,11 @@ export const DragToReorderList: React.FC<Props> = ({items, onReorder}) => {
 
     return (
         <div
-            ref={containerRef}
-            onDragOver={handleContainerDragOver}
+            ref={rootRef}
+            onDragOver={handleRootDragOver}
             onDrop={handleDrop}
             style={{
-                // maxHeight: 200,
-                // width: 250,
-                border: '1px solid #ccc',
-                borderRadius: 4,
-                overflowY: 'auto',
+                // No maxHeight/overflow required here; can stretch naturally
                 padding: 4,
                 fontFamily: 'sans-serif',
             }}
@@ -158,23 +205,13 @@ export const DragToReorderList: React.FC<Props> = ({items, onReorder}) => {
 
                 return (
                     <React.Fragment key={item.key}>
-                        <div
-                            draggable
-                            onDragStart={handleDragStart(index)}
-                            onDragOver={handleItemDragOver(index)}
-                            onDragEnd={handleDragEnd}
-                            style={{
-                                padding: '8px 12px',
-                                marginTop: 4,
-                                marginBottom: 4,
-                                background: isActive ? '#e0f0ff' : 'white',
-                                border: '1px solid #ddd',
-                                borderRadius: 4,
-                                cursor: 'grab',
-                                boxShadow: isActive ? '0 2px 6px rgba(0,0,0,0.15)' : 'none',
-                            }}
-                        >
-                            {item.node}
+                        <div onDragOver={handleItemDragOver(index)} onDragEnd={handleDragEnd}>
+                            {item.render({
+                                isActive,
+                                props: {
+                                    onDragStart: handleDragStart(index),
+                                },
+                            })}
                         </div>
 
                         {/* Slot after this item */}

@@ -321,7 +321,7 @@ export const example: (id: string) => State = (id: string) => {
                                     lines: {},
                                     mods: [],
                                     kind: {type: 'everything'},
-                                    order: 1,
+                                    order: 0,
                                 },
                                 a: {
                                     id: 'a',

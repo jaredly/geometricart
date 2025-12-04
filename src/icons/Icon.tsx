@@ -4,6 +4,45 @@ import {useTouchClick} from '../editor/RenderIntersections';
 
 /** Gotten from https://reactsvgicons.com/search?q=scissors */
 
+export function DotsHorizontalOutline(props: SVGProps<SVGSVGElement>) {
+    return (
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            width="1em"
+            height="1em"
+            {...props}
+        >
+            <path
+                fill="none"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeWidth="3"
+                d="M6 12h.01m6 0h.01m5.99 0h.01"
+            ></path>
+        </svg>
+    );
+}
+
+export function ChevronUp12(props: SVGProps<SVGSVGElement>) {
+    return (
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 12 12"
+            width="1em"
+            height="1em"
+            {...props}
+        >
+            <path
+                fill="currentColor"
+                fillRule="evenodd"
+                d="M2.15 7.85a.5.5 0 0 0 .707 0l3.15-3.15l3.15 3.15a.5.5 0 0 0 .707-.707l-3.5-3.5a.5.5 0 0 0-.707 0l-3.5 3.5a.5.5 0 0 0 0 .707z"
+                clipRule="evenodd"
+            ></path>
+        </svg>
+    );
+}
+
 export function BaselineFilterCenterFocus(props: SVGProps<SVGSVGElement>) {
     return (
         <svg
