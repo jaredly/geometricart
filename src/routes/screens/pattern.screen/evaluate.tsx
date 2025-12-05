@@ -43,6 +43,7 @@ export type Ctx = {
     layer: Layer;
     patterns: Patterns;
     items: RenderItem[];
+    keyPoints: Coord[];
     byKey: Record<string, string[]>;
 };
 

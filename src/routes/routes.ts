@@ -18,7 +18,7 @@ export default [
     route('animator', './screens/animators.tsx'),
     route('animator/:id', './screens/animator.tsx'),
     route('uploads/:fname', './screens/uploads-image.ts'),
-    route('assets/*', './screens/assets.ts'),
+    route('fs/*', './screens/assets.ts'),
     route('editor', './screens/editor.tsx'),
     route('debug/transforms', './screens/debug.transforms.tsx'),
 ] as RouteConfig;

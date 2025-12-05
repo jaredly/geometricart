@@ -2,6 +2,7 @@ import React from 'react';
 import {Color, PMods, AnimatableNumber, AnimatableCoord} from '../export-types';
 import {AnimInput} from './AnimInput';
 import {AnimCoordInput} from './AnimCoordInput';
+import {AnimCoordOrNumberInput} from './AnimCoordOrNumberInput';
 
 export const PModEditor = ({
     palette,
@@ -68,7 +69,29 @@ export const PModEditor = ({
                 </div>
             );
         case 'scale':
-            return null;
+            return (
+                <div className="flex flex-row gap-2 items-center">
+                    <button
+                        onClick={onRemove}
+                        className="cursor-pointer p-3 text-gray-600 hover:text-red-500"
+                    >
+                        &times;
+                    </button>
+                    {value.type}
+                    <AnimCoordOrNumberInput
+                        label="v"
+                        value={value.v}
+                        onChange={(v) => onChange({...value, v: v as AnimatableNumber})}
+                    />
+                    <AnimCoordInput
+                        label="origin"
+                        value={value.origin}
+                        onChange={(origin) =>
+                            onChange({...value, origin: origin as AnimatableCoord})
+                        }
+                    />
+                </div>
+            );
         case 'rotate':
             return (
                 <div className="flex flex-row gap-2 items-center">

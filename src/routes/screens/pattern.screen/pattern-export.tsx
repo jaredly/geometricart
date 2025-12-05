@@ -106,7 +106,7 @@ const CreateAndRedirect = ({id}: {id: string}) => {
             const sid = genid();
             await fetch(`/assets/exports/${sid}.json`, {
                 method: 'POST',
-                body: JSON.stringify(state),
+                body: JSON.stringify(state, null, 2),
                 headers: {'Content-type': 'application/json'},
                 signal: controller.signal,
             });
@@ -133,14 +133,14 @@ const NewPattern = () => {
 
 const LoadPattern = ({id}: {id: string}) => {
     const state = usePromise<State>((signal) =>
-        fetch(`/assets/exports/${id}.json`, {signal}).then((r) => r.json()),
+        fetch(`/fs/exports/${id}.json`, {signal}).then((r) => r.json()),
     );
 
     const onSave = useCallback(
         (state: State) => {
-            return fetch(`/assets/exports/${id}.json`, {
+            return fetch(`/fs/exports/${id}.json`, {
                 method: 'POST',
-                body: JSON.stringify(state),
+                body: JSON.stringify(state, null, 2),
                 headers: {'Content-type': 'application/json'},
             });
         },
@@ -259,6 +259,7 @@ const PatternExport = ({
 
     useEffect(() => {
         if (state !== initial) {
+            console.log('saving', state);
             onSave(state);
         }
     }, [state, initial, onSave]);

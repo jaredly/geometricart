@@ -16,7 +16,7 @@ import {
 } from '../../getPatternData';
 import {pk} from '../../pk';
 import {segmentsCmds} from '../animator.screen/cropPath';
-import {globals} from './eval-globals';
+import {globals, mulberry32} from './eval-globals';
 import {AnimCtx, a, Ctx, RenderItem, Patterns, isCoord, isColor} from './evaluate';
 import {
     CropMode,
@@ -362,6 +362,7 @@ const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Pattern) => {
 
     const simple = getSimplePatternData(tiling, pattern.psize);
     let baseShapes = simple.uniqueShapes;
+    ctx.keyPoints.push(...baseShapes.flat());
     if (Object.keys(pattern.adjustments).length) {
         // TODO: further check that any adjustments actually modify things
         baseShapes = adjustShapes(
@@ -774,9 +775,15 @@ export const svgItems = (
     const warnings: string[] = [];
     const warn = (v: string) => warnings.push(v);
     const items: RenderItem[] = [];
+    const keyPoints: Coord[] = [];
     const byKey: Record<string, string[]> = {};
     const fromtl = evalTimeline(state.styleConfig.timeline, t);
     const values: Record<string, any> = {...globals, t, ...fromtl};
+    const seed = a.number(
+        {cache: animCache, values, palette: state.styleConfig.palette, warn},
+        state.styleConfig.seed,
+    );
+    values.rand = mulberry32(seed);
 
     for (let layer of Object.values(state.layers)) {
         const group = layer.entities[layer.rootGroup];
@@ -793,7 +800,7 @@ export const svgItems = (
             values[name] = a.value(anim, value);
         });
 
-        renderGroup({state, anim, layer, patterns, items, cropCache, byKey}, [], group);
+        renderGroup({state, anim, layer, patterns, items, keyPoints, cropCache, byKey}, [], group);
     }
     const len = items.length;
     for (let i = 0; i < len; i++) {
@@ -821,7 +828,7 @@ export const svgItems = (
           )
         : ([0, 0, 0] as Color);
 
-    return {items, warnings, byKey, bg};
+    return {items, warnings, byKey, keyPoints, bg};
 };
 
 export type Hover = {type: 'shape'; id: string};

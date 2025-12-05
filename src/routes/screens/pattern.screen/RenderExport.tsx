@@ -58,7 +58,7 @@ export const RenderExport = ({state, patterns}: {state: State; patterns: Pattern
     const hover = editContext.use((v) => v.hover);
     const showShapes = editContext.use((v) => v.showShapes);
 
-    const {items, warnings, byKey, bg} = useMemo(
+    const {items, warnings, keyPoints, byKey, bg} = useMemo(
         () => svgItems(state, animCache, cropCache, patterns, t),
         [state, patterns, cropCache, animCache, t],
     );
@@ -76,19 +76,35 @@ export const RenderExport = ({state, patterns}: {state: State; patterns: Pattern
 
     const statusRef = useRef<HTMLDivElement>(null);
 
+    const pending = editContext.use((v) => v.pending);
+
     return (
         <div className="flex">
             <div className="relative overflow-hidden">
-                <Canvas
+                {/* {pending ? ( */}
+                <SVGCanvas
                     {...zoomProps}
                     state={state}
                     mouse={mouse}
+                    keyPoints={keyPoints}
                     setMouse={setMouse}
                     items={both}
                     size={size}
                     byKey={byKey}
                     bg={bg}
                 />
+                {/* ) : (
+                    <Canvas
+                        {...zoomProps}
+                        state={state}
+                        mouse={mouse}
+                        setMouse={setMouse}
+                        items={both}
+                        size={size}
+                        byKey={byKey}
+                        bg={bg}
+                    />
+                )} */}
                 <div ref={fpsref} className="absolute top-0 right-0 hidden px-2 py-1 bg-base-100" />
                 {resetZoom ? (
                     <div className="absolute top-0 left-0 flex">

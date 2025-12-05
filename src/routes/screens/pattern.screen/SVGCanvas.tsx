@@ -13,6 +13,7 @@ import {coordsEqual} from '../../../rendering/pathsAreIdentical';
 import {calcPathD} from '../../../editor/calcPathD';
 import {transformBarePath} from '../../../rendering/points';
 import {translationMatrix} from '../../../rendering/getMirrorTransforms';
+import {unique} from '../../shapesFromSegments';
 
 export const Canvas = ({
     items,
@@ -62,12 +63,14 @@ export const SVGCanvas = ({
     state,
     innerRef,
     setMouse,
+    keyPoints,
     byKey,
     mouse,
     bg,
 }: {
     state: State;
     mouse: Coord | null;
+    keyPoints: Coord[];
     bg: Color;
     items: RenderItem[];
     size: number;
@@ -87,6 +90,8 @@ export const SVGCanvas = ({
     });
     const [focus, setFocus] = useState(null as null | string);
 
+    const points = useMemo(() => unique(keyPoints, coordKey), [keyPoints]);
+
     // editContext = useEditContext()
     // pending = editContext.use()
     // editContext.latest().pending
@@ -94,21 +99,21 @@ export const SVGCanvas = ({
     const editContext = useEditState();
 
     const pending = editContext.use((s) => s.pending);
-    const points = useMemo(() => {
-        if (!pending) return [];
-        const pts: Record<string, Coord> = {};
-        items.forEach((item) => {
-            item.shapes.forEach((shape) => {
-                shape.segments.forEach((seg) => {
-                    const k = coordKey(seg.to);
-                    pts[k] = seg.to;
-                });
-                const k = coordKey(shape.origin);
-                pts[k] = shape.origin;
-            });
-        });
-        return Object.values(pts);
-    }, [items, pending]);
+    // const points = useMemo(() => {
+    //     if (!pending) return [];
+    //     const pts: Record<string, Coord> = {};
+    //     items.forEach((item) => {
+    //         item.shapes.forEach((shape) => {
+    //             shape.segments.forEach((seg) => {
+    //                 const k = coordKey(seg.to);
+    //                 pts[k] = seg.to;
+    //             });
+    //             const k = coordKey(shape.origin);
+    //             pts[k] = shape.origin;
+    //         });
+    //     });
+    //     return Object.values(pts);
+    // }, [items, pending]);
 
     // const update = editContext.useUpdate();
     // const get = editContext.useGet();
@@ -173,32 +178,33 @@ export const SVGCanvas = ({
                     />
                 )),
             )}
-            {points.map((pt, i) => (
-                <circle
-                    key={i}
-                    cx={pt.x}
-                    cy={pt.y}
-                    r={0.03}
-                    fill="white"
-                    onClick={() => {
-                        const pending = editContext.latest().pending;
-                        if (!pending) return;
-                        if (pending.type === 'dup-shape') {
-                            pending.onDone(pt);
-                            // editContext.update.pending.replace(null);
-                            return;
-                        }
-                        if (pending.points.length && coordsEqual(pending.points[0], pt)) {
-                            pending.onDone(pending.points, false);
-                            editContext.update.pending.replace(null);
-                        } else {
-                            editContext.update.pending.variant('shape').points.push(pt);
-                            // editContext.update.pending.points.push(pt);
-                        }
-                    }}
-                    cursor={'pointer'}
-                />
-            ))}
+            {pending &&
+                points.map((pt, i) => (
+                    <circle
+                        key={i}
+                        cx={pt.x}
+                        cy={pt.y}
+                        r={0.03}
+                        fill="white"
+                        onClick={() => {
+                            const pending = editContext.latest().pending;
+                            if (!pending) return;
+                            if (pending.type === 'dup-shape') {
+                                pending.onDone(pt);
+                                // editContext.update.pending.replace(null);
+                                return;
+                            }
+                            if (pending.points.length && coordsEqual(pending.points[0], pt)) {
+                                pending.onDone(pending.points, false);
+                                editContext.update.pending.replace(null);
+                            } else {
+                                editContext.update.pending.variant('shape').points.push(pt);
+                                // editContext.update.pending.points.push(pt);
+                            }
+                        }}
+                        cursor={'pointer'}
+                    />
+                ))}
             {pending?.type === 'shape' && pending.points.length > (mouse ? 0 : 1) && (
                 <>
                     <path

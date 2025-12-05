@@ -18,13 +18,13 @@ export const LineEditor = ({
 }) => {
     return (
         <div className="space-y-2">
-            <div className="flex flex-col md:flex-row gap-2 md:items-center">
-                <span>{value.id}</span>
-                <div className="flex-1" />
-                <button className="btn btn-ghost btn-xs text-error" onClick={onRemove}>
-                    Remove
+            <div className="flex flex-row md:flex-row gap-2 md:items-center">
+                Line <span className="font-mono bg-gray-600 px-2 rounded">{value.id}</span>
+                <button className="btn btn-ghost btn-xs text-error " onClick={onRemove}>
+                    &times;
                 </button>
             </div>
+
             <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
                 <AnimInput
                     label="zIndex"

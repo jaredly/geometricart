@@ -1,8 +1,8 @@
-import React from 'react';
 import {Color, Pattern} from '../export-types';
 import {CoordField} from './CoordField';
 import {NumberField} from './NumberField';
 import {PatternContentsEditor} from './PatternContentsEditor';
+import {ModsEditor} from './FillEditor';
 
 export const PatternEditor = ({
     value,
@@ -28,10 +28,11 @@ export const PatternEditor = ({
                     onChange={(psize) => onChange({...value, psize})}
                 />
             )}
-            {/* <ModsEditor
-                value={value.mods}
+            <ModsEditor
+                mods={value.mods}
+                palette={palette}
                 onChange={(mods) => (mods ? onChange({...value, mods}) : undefined)}
-            /> */}
+            />
             <PatternContentsEditor
                 palette={palette}
                 value={value.contents}
