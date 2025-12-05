@@ -127,7 +127,7 @@ const insetShape = (shape: Coord[], inset: number) => {
     if (!shape.length) return [];
     const path = pkPathFromCoords(shape, false)!;
     if (!path) return [];
-    if (inset < 0.01) return [shape];
+    if (Math.abs(inset) < 0.01) return [shape];
     insetPkPath(path, inset / 100);
     path.simplify();
     const items = pkPathToSegments(path);
@@ -238,25 +238,14 @@ const coordsIntersectCoords = (one: Coord[], twos: SlopeIntercept[]) => {
 };
 
 const lineHit = (one: SlopeIntercept, two: SlopeIntercept) => {
-    // if (overlapping(one, two)) {
-    //     // console.log('yes overlap', one, two);
-    //     return true;
-    // }
-    // const pt = lineLine(one, two);
-    // if (pt) {
-    //     // console.log('yes intersect', one, two, pt);
-    //     return true;
-    // }
-    // console.log('no');
     return overlapping(one, two) || !!lineLine(one, two);
-    // return false;
 };
 
-const coordPairKey = ([left, right]: [Coord, Coord]) => {
+const coordPairKey = ([left, right]: [Coord, Coord], prec = 3) => {
     if (closeEnough(left.x, right.x) ? right.y < left.y : right.x < left.x) {
         [left, right] = [right, left];
     }
-    return `${coordKey(left)}:${coordKey(right)}`;
+    return `${coordKey(left, prec)}:${coordKey(right, prec)}`;
 };
 
 const coordLines = (coords: Coord[]) =>
@@ -323,10 +312,10 @@ const adjustShapes = (
             // TODO: so I want to find eigenpoints, only ones that are ... along the moved path maybe?
             // or like the original or moved path idk.
             const one = unique(segs.flat(), coordKey);
-            const two = unique(
-                moved.flatMap((m) => m.shape),
-                coordKey,
-            );
+            // const two = unique(
+            //     moved.flatMap((m) => m.shape),
+            //     coordKey,
+            // );
             const cmoved = centroid(moved.flatMap((m) => m.shape));
             const reconstructed = shapesFromSegments(byEndPoint, one).filter(
                 (c) => !matchesBounds(boundsForCoords(...c), cmoved),
@@ -739,34 +728,7 @@ export const pathMod = (cropCache: Ctx['cropCache'], mod: CropsAndMatrices[0], p
     }
     return false;
 };
-// const renderFill = (ctx: Ctx, anim: Ctx['anim'], f: Fill, path: PKPath, key: string) => {
-//     if (!f.color) return;
-//     const color = a.color(anim, f.color);
-//     const rgb = colorToRgb(color);
-//     const zIndex = f.zIndex ? a.number(anim, f.zIndex) : null;
-//     const opacity = f.opacity ? a.number(anim, f.opacity) : undefined;
-//     if (f.mods.length) {
-//         const fmods = f.mods.map((m) => resolvePMod(ctx.anim, m));
-//         const midShapes = modsToShapes(ctx, fmods, [{shape, i: 0}]);
-//         return {
-//             // pk???
-//             type: 'path',
-//             key,
-//             fill: rgb,
-//             opacity,
-//             shapes: midShapes.map((s) => s.shape),
-//             zIndex,
-//         };
-//     }
-//     return {
-//         type: 'path',
-//         key,
-//         fill: rgb,
-//         opacity,
-//         shapes: [shape],
-//         zIndex,
-//     };
-// };
+
 const renderGroup = (ctx: Ctx, crops: CropsAndMatrices, group: Group) => {
     if (group.type !== 'Group') throw new Error('not a group');
     for (let [id] of Object.entries(group.entities).sort((a, b) => a[1] - b[1])) {

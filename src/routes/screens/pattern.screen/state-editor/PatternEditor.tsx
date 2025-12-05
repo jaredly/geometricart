@@ -109,6 +109,16 @@ export const SharedEditor = ({
                             onChange={(value) => onChange({...shared, [key]: value})}
                             placeholder="value"
                         />
+                        <button
+                            className="btn btn-sm btn-square"
+                            onClick={() => {
+                                const next = {...shared};
+                                delete next[key];
+                                onChange(next);
+                            }}
+                        >
+                            &times;
+                        </button>
                     </div>
                 ))}
         </div>
@@ -119,10 +129,12 @@ const AdjustmentEditor = ({
     adjustment: adj,
     palette,
     onChange,
+    onRemove,
 }: {
     palette: Color[];
     adjustment: Adjustment;
     onChange: (adj: Adjustment) => void;
+    onRemove(): void;
 }) => {
     const edit = useEditState();
     const pending = edit.use((v) => v.pending);
@@ -158,6 +170,9 @@ const AdjustmentEditor = ({
                     {isAdding ? 'Finish' : 'Select shapes'}
                 </button>
                 <ChunkEditor chunk={adj.t} onChange={(t) => onChange({...adj, t})} />
+                <button onClick={onRemove} className="btn btn-sm btn-square">
+                    &times;
+                </button>
             </div>
             <SharedEditor shared={adj.shared} onChange={(shared) => onChange({...adj, shared})} />
             <ModsEditor
@@ -170,6 +185,7 @@ const AdjustmentEditor = ({
         </div>
     );
 };
+
 const AdjustmentsEditor = ({
     adjustments,
     onChange,
@@ -180,8 +196,8 @@ const AdjustmentsEditor = ({
     onChange: (v: Pattern['adjustments']) => void;
 }) => {
     return (
-        <div className="space-y-4">
-            <div className="font-semibold text-sm flex flex-row gap-4 items-center">
+        <details className="space-y-4">
+            <summary className="font-semibold text-sm flex flex-row gap-4 items-center">
                 Adjustments
                 <button
                     className="btn btn-sm"
@@ -193,15 +209,20 @@ const AdjustmentsEditor = ({
                 >
                     Add
                 </button>
-            </div>
+            </summary>
             {Object.values(adjustments).map((adj) => (
                 <AdjustmentEditor
                     palette={palette}
                     key={adj.id}
                     adjustment={adj}
                     onChange={(adj) => onChange({...adjustments, [adj.id]: adj})}
+                    onRemove={() => {
+                        const res = {...adjustments};
+                        delete res[adj.id];
+                        onChange(res);
+                    }}
                 />
             ))}
-        </div>
+        </details>
     );
 };
