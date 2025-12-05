@@ -191,6 +191,7 @@ export const DragToReorderList: React.FC<Props> = ({items, onReorder}) => {
             ref={rootRef}
             onDragOver={handleRootDragOver}
             onDrop={handleDrop}
+            className="space-y-2"
             style={{
                 // No maxHeight/overflow required here; can stretch naturally
                 padding: 4,

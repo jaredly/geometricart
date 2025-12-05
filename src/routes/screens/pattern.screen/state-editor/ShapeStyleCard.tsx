@@ -85,7 +85,7 @@ const ChunkEditor = ({chunk, onChange}: {chunk?: TChunk; onChange: (v?: TChunk) 
                         : undefined}
                 </svg>
             </summary>
-            <div className="dropdown-content mt-1 bg-base-200 p-2 border border-base-300 rounded-sm shadow flex flex-row gap-2">
+            <div className="dropdown-content mt-1 bg-base-200 p-2 border border-white rounded-sm shadow flex flex-row gap-2">
                 <BlurInput
                     className="input input-sm w-15 text-center"
                     placeholder="chunk"
