@@ -1,4 +1,4 @@
-import React, {useMemo, useState} from 'react';
+import {useMemo} from 'react';
 import {Color, ShapeStyle} from '../export-types';
 import {ShapeStyleCard} from './ShapeStyleCard';
 import {createShapeStyle} from './createLayerTemplate';
@@ -17,29 +17,6 @@ export const ShapeStylesEditor = ({
         () => Object.entries(styles).sort(([, a], [, b]) => a.order - b.order),
         [styles],
     );
-    const onMove = (prev: number, next: number) => {
-        if (prev === next) return;
-
-        const items = entries.slice();
-        const [got] = items.splice(prev, 1);
-
-        // const orders: number[] = keys.map(key => styles[key].order)
-        // for (let i=1; i<orders.length; i++) {
-        //     const prev = orders
-        // }
-        // keys.forEach(key => {
-        //     const order = styles[key].order
-        //     if (orders.length && orders[orders.length - 1] > order) {
-        //         const biffer = orders.findIndex(o => o > order)
-        //     }
-        // })
-    };
-
-    const upsert = (key: string, style: ShapeStyle) => {
-        const record = {...styles};
-        record[key] = style;
-        onChange(record);
-    };
 
     return (
         <div className="bg-base-200 rounded-lg border border-base-300 space-y-3">
@@ -49,7 +26,16 @@ export const ShapeStylesEditor = ({
                     className="btn btn-xs btn-outline"
                     onClick={() => {
                         const id = `style-${entries.length + 1}`;
-                        upsert(id, createShapeStyle(id));
+                        const style = createShapeStyle(id);
+                        // Object.values(styles).forEach((s) => {
+                        //     Object.keys(s.fills).forEach((k) => {
+                        //         style.fills[k] = {id: k, mods: []};
+                        //     });
+                        //     Object.keys(s.lines).forEach((k) => {
+                        //         style.lines[k] = {id: k, mods: []};
+                        //     });
+                        // });
+                        onChange({...styles, [id]: style});
                     }}
                 >
                     Add style
@@ -66,7 +52,7 @@ export const ShapeStylesEditor = ({
                                 key={key + ':' + i}
                                 palette={palette}
                                 value={style}
-                                onChange={(next) => upsert(key, next)}
+                                onChange={(next) => onChange({...styles, [key]: next})}
                                 onRemove={() => {
                                     const record = {...styles};
                                     delete record[key];

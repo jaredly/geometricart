@@ -47,7 +47,8 @@ export const example: (id: string) => State = (id: string): State => ({
                 },
                 p: {
                     type: 'Pattern',
-                    id,
+                    id: 'p',
+                    tiling: id,
                     adjustments: {},
                     contents: {
                         type: 'shapes',

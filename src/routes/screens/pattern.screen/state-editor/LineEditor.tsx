@@ -3,6 +3,7 @@ import {Color, Line, AnimatableNumber, AnimatableColor, AnimatableBoolean} from 
 import {ShadowEditor} from './ShadowEditor';
 import {AnimColor} from './AnimColor';
 import {AnimInput} from './AnimInput';
+import {ModsEditor} from './FillEditor';
 
 export const LineEditor = ({
     palette,
@@ -52,7 +53,11 @@ export const LineEditor = ({
                     palette={palette}
                 />
             </div>
-            {/* <ModsEditor value={value.mods} onChange={(mods) => onChange({...value, mods})} /> */}
+            <ModsEditor
+                palette={palette}
+                mods={value.mods}
+                onChange={(mods) => onChange({...value, mods})}
+            />
         </div>
     );
 };

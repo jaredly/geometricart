@@ -245,6 +245,7 @@ export const modMatrix = (mod: ConcretePMod, origin?: Coord) => {
 export type Pattern = {
     type: 'Pattern';
     id: string;
+    tiling: string;
 
     psize: Coord | number;
     contents: PatternContents;

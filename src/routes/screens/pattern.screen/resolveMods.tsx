@@ -354,7 +354,10 @@ export const resolveT = (
 const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Pattern) => {
     // not doing yet
     if (pattern.contents.type !== 'shapes') return;
-    const tiling = ctx.patterns[pattern.id];
+    const tiling = ctx.patterns[pattern.tiling];
+    if (!tiling) {
+        throw new Error(`Pattern not found ${pattern.tiling}`);
+    }
     const patternmods = pattern.mods.map((m) => resolvePMod(ctx.anim, m));
 
     const simple = getSimplePatternData(tiling, pattern.psize);
@@ -524,7 +527,7 @@ const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Pattern) => {
     );
 };
 
-const notNull = <T,>(v: T): v is NonNullable<T> => v != null;
+export const notNull = <T,>(v: T): v is NonNullable<T> => v != null;
 
 const resolveShadow = (anim: Ctx['anim'], shadow?: Shadow): RenderItem['shadow'] => {
     if (typeof shadow === 'string') {

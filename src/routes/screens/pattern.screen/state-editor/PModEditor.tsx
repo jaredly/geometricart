@@ -18,7 +18,13 @@ export const PModEditor = ({
         case 'inset':
             return (
                 <div>
-                    {value.type}
+                    <button
+                        onClick={onRemove}
+                        className="cursor-pointer p-3 text-gray-600 hover:text-red-500"
+                    >
+                        &times;
+                    </button>
+                    <span className="mr-2">{value.type}</span>
                     <AnimInput
                         label="v"
                         value={value.v}
@@ -29,6 +35,12 @@ export const PModEditor = ({
         case 'translate':
             return (
                 <div>
+                    <button
+                        onClick={onRemove}
+                        className="cursor-pointer p-3 text-gray-600 hover:text-red-500"
+                    >
+                        &times;
+                    </button>
                     {value.type}
                     <AnimCoordInput
                         label="v"
@@ -40,6 +52,12 @@ export const PModEditor = ({
         case 'crop':
             return (
                 <div>
+                    <button
+                        onClick={onRemove}
+                        className="cursor-pointer p-3 text-gray-600 hover:text-red-500"
+                    >
+                        &times;
+                    </button>
                     {value.type}:{value.id}
                     <input
                         type="checkbox"

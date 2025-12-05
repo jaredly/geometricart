@@ -7,16 +7,18 @@ import {type RouteConfig, index, prefix, route} from '@react-router/dev/routes';
 
 export default [
     index('./screens/home.tsx'),
+    route('gallery.json', './screens/gallery-json.ts'),
     ...prefix('gallery', [
         index('./screens/gallery.tsx'),
         route('pattern/add', './screens/pattern-add.tsx'),
         route('pattern/:id', './screens/pattern.tsx'),
         route('pattern/:id/:img', './screens/pattern-svg.tsx'),
     ]),
+    route('export/:id?', './screens/pattern.screen/pattern-export.tsx'),
     route('animator', './screens/animators.tsx'),
     route('animator/:id', './screens/animator.tsx'),
     route('uploads/:fname', './screens/uploads-image.ts'),
-    route('assets/:fname', './screens/assets.ts'),
+    route('assets/*', './screens/assets.ts'),
     route('editor', './screens/editor.tsx'),
     route('debug/transforms', './screens/debug.transforms.tsx'),
 ] as RouteConfig;

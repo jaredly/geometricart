@@ -46,6 +46,7 @@ export const createGroup = (id: string): Group => ({
 export const createPattern = (id: string): Pattern => ({
     type: 'Pattern',
     id,
+    tiling: id,
     adjustments: {},
     psize: {x: 1, y: 1},
     contents: {type: 'shapes', styles: {}},

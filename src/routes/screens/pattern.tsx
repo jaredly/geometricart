@@ -5,7 +5,7 @@ import type {Route} from './+types/pattern';
 import {useState} from 'react';
 import {PatternView} from './pattern.screen/pattern-view';
 import {PatternInspect} from './pattern.screen/pattern-inspect';
-import {PatternExport} from './pattern.screen/pattern-export';
+// import {PatternExport} from './pattern.screen/pattern-export';
 
 export async function loader({params}: Route.LoaderArgs) {
     if (!params.id) {
@@ -25,11 +25,11 @@ export default function PatternScreen() {
     const tabs = [
         {name: 'View'},
         {name: 'Inspect'},
-        {name: 'Export'},
+        {name: 'Export', link: `/export/?pattern=${id}`},
         {name: 'Tutorial', enabled: hasConstruct},
     ];
 
-    const [currentTab, setCurrentTab] = useState('Export');
+    const [currentTab, setCurrentTab] = useState('View');
 
     if (!id || !loaderData) {
         return <div>No data... {id}</div>;
@@ -56,9 +56,14 @@ export default function PatternScreen() {
                                 role="tab"
                                 key={tap.name}
                                 className={'tab' + (currentTab === tap.name ? ` tab-active` : '')}
-                                onClick={() => {
-                                    setCurrentTab(tap.name);
-                                }}
+                                href={tap.link}
+                                onClick={
+                                    tap.link
+                                        ? undefined
+                                        : () => {
+                                              setCurrentTab(tap.name);
+                                          }
+                                }
                             >
                                 {tap.name}
                             </a>
@@ -68,8 +73,8 @@ export default function PatternScreen() {
             </div>
             {currentTab === 'Inspect' ? (
                 <PatternInspect tiling={loaderData.pattern.tiling} />
-            ) : currentTab === 'Export' ? (
-                <PatternExport id={loaderData.pattern.hash} tiling={loaderData.pattern.tiling} />
+                // ) : currentTab === 'Export' ? (
+                //     <PatternExport id={loaderData.pattern.hash} tiling={loaderData.pattern.tiling} />
             ) : (
                 <PatternView loaderData={loaderData} />
             )}

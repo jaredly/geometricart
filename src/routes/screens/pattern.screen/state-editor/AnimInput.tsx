@@ -13,7 +13,7 @@ export const AnimInput = ({
     onChange: (next?: AnimatableNumber | AnimatableBoolean | AnimatableColor) => void;
 }) => (
     <label className="form-control">
-        <div className="label">
+        <div className="label mr-2">
             <span className="label-text text-sm font-semibold">{label}</span>
         </div>
         <BlurInput

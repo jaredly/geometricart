@@ -1,5 +1,12 @@
 import React from 'react';
-import {Color, Fill, AnimatableBoolean, AnimatableNumber, AnimatableColor} from '../export-types';
+import {
+    Color,
+    Fill,
+    AnimatableBoolean,
+    AnimatableNumber,
+    AnimatableColor,
+    PMods,
+} from '../export-types';
 import {addMod} from './createLayerTemplate';
 import {AnimColor} from './AnimColor';
 import {AnimInput} from './AnimInput';
@@ -50,49 +57,62 @@ export const FillEditor = ({
                         onChange({...value, rounded: rounded as AnimatableNumber})
                     }
                 />
-                <div>
-                    <div className="font-semibold text-sm flex flex-row gap-4 items-center">
-                        Mods
-                        <select
-                            className="select select-sm w-50"
-                            value=""
-                            onChange={(evt) => {
-                                const mods = value.mods.slice();
-                                mods.push(addMod(evt.target.value));
-                                onChange({...value, mods});
-                            }}
-                        >
-                            <option disabled value="">
-                                Add
-                            </option>
-                            {['inset', 'translate', 'crop', 'scale', 'rotate'].map((type) => (
-                                <option value={type} key={type}>
-                                    {type}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    {value.mods.map((mod, i) => (
-                        <PModEditor
-                            key={i}
-                            value={mod}
-                            palette={palette}
-                            onRemove={() => {
-                                const mods = value.mods.slice();
-                                mods.splice(i, 1);
-                                onChange({...value, mods});
-                            }}
-                            onChange={(mod) => {
-                                const mods = value.mods.slice();
-                                mods[i] = mod;
-                                onChange({...value, mods});
-                            }}
-                        />
-                    ))}
-                </div>
             </div>
-            {/* <ModsEditor value={value.mods} onChange={(mods) => onChange({...value, mods})} /> */}
+            <ModsEditor
+                palette={palette}
+                mods={value.mods}
+                onChange={(mods) => onChange({...value, mods})}
+            />
         </div>
     );
 };
+
+export const ModsEditor = ({
+    mods,
+    onChange,
+    palette,
+}: {
+    palette: Color[];
+    mods: PMods[];
+    onChange: (mods: PMods[]) => void;
+}) => (
+    <div>
+        <div className="font-semibold text-sm flex flex-row gap-4 items-center">
+            Mods
+            <select
+                className="select select-sm w-50"
+                value=""
+                onChange={(evt) => {
+                    onChange([...mods, addMod(evt.target.value)]);
+                }}
+            >
+                <option disabled value="">
+                    Add
+                </option>
+                {['inset', 'translate', 'crop', 'scale', 'rotate'].map((type) => (
+                    <option value={type} key={type}>
+                        {type}
+                    </option>
+                ))}
+            </select>
+        </div>
+
+        {mods.map((mod, i) => (
+            <PModEditor
+                key={i}
+                value={mod}
+                palette={palette}
+                onRemove={() => {
+                    const nmods = mods.slice();
+                    nmods.splice(i, 1);
+                    onChange(nmods);
+                }}
+                onChange={(mod) => {
+                    const nmods = mods.slice();
+                    nmods[i] = mod;
+                    onChange(nmods);
+                }}
+            />
+        ))}
+    </div>
+);

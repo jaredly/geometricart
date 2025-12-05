@@ -15,12 +15,16 @@ export async function loader({params, request}: Route.LoaderArgs) {
     const url = new URL(request.url);
     const search = url.searchParams;
     const img = params.img;
-    const [size, format] = img.split('.');
     const pattern = getPattern(params.id);
     if (!pattern) {
         return null;
     }
 
+    if (img === 'json') {
+        return pattern.tiling;
+    }
+
+    const [size, format] = img.split('.');
     if (format === 'svg') {
         const tiling = renderToStaticMarkup(
             <TilingPattern
