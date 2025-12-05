@@ -252,6 +252,7 @@ export type Pattern = {
     // shape and the mods
     adjustments: Record<string, Adjustment>;
     mods: PMods[];
+    shared?: Record<string, AnimatableValue>;
 };
 
 export type Adjustment = {
@@ -260,6 +261,7 @@ export type Adjustment = {
     t?: TChunk;
     mods: PMods[];
     disabled?: boolean;
+    shared?: Record<string, AnimatableValue>;
 };
 
 export type PatternContents =

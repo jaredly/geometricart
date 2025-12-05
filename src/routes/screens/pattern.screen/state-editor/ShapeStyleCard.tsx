@@ -51,7 +51,13 @@ const boxes = (pos: Coord, w: number, total: number) => {
     return shapes;
 };
 
-const ChunkEditor = ({chunk, onChange}: {chunk?: TChunk; onChange: (v?: TChunk) => void}) => {
+export const ChunkEditor = ({
+    chunk,
+    onChange,
+}: {
+    chunk?: TChunk;
+    onChange: (v?: TChunk) => void;
+}) => {
     return (
         <details className={'dropdown'}>
             <summary className="btn">

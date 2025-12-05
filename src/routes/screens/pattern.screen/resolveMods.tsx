@@ -37,6 +37,7 @@ import {
     Color,
     ShapeKind,
     TChunk,
+    AnimatableValue,
 } from './export-types';
 import {easeFn, evalTimeline} from './evalEase';
 import {scalePos} from '../../../editor/scalePos';
@@ -276,21 +277,28 @@ const adjustShapes = (
     anim: Ctx['anim'],
     cropCache: Ctx['cropCache'],
     uniqueShapes: Coord[][],
-    adjustments: {shapes: BarePath[]; mods: PMods[]; t?: TChunk}[],
+    adjustments: {
+        shapes: BarePath[];
+        mods: PMods[];
+        t?: TChunk;
+        shared?: Record<string, AnimatableValue>;
+    }[],
 ): Coord[][] => {
     let modified = false;
-    for (let {shapes, mods, t} of adjustments) {
+    for (let {shapes, mods, t, shared} of adjustments) {
         const local: Record<string, any> = {};
         if (t) {
             const res = resolveT(t, anim.values.t);
             if (res == null) continue;
             local.t = res;
         }
+        const aanim = withShared(anim, shared);
+
         for (let shape of shapes) {
             const shapeCoords = coordsFromBarePath(shape);
             const center = centroid(shapeCoords);
             const resolved = mods.map((mod) =>
-                resolvePMod({...anim, values: {...anim.values, ...local, center}}, mod),
+                resolvePMod({...aanim, values: {...aanim.values, ...local, center}}, mod),
             );
             const shapeLines = coordLines(shapeCoords);
             const moved = modsToShapes(cropCache, resolved, [{shape: shapeCoords, i: 0}]);
@@ -351,6 +359,15 @@ export const resolveT = (
     return null;
 };
 
+export const withShared = (anim: Ctx['anim'], shared?: Record<string, AnimatableValue>) => {
+    if (!shared) return anim;
+    const values: Record<string, any> = {};
+    Object.entries(shared).forEach(([name, value]) => {
+        values[name] = a.value(anim, value);
+    });
+    return {...anim, values: {...anim.values, ...values}};
+};
+
 const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Pattern) => {
     // not doing yet
     if (pattern.contents.type !== 'shapes') return;
@@ -360,21 +377,24 @@ const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Pattern) => {
     }
     const patternmods = pattern.mods.map((m) => resolvePMod(ctx.anim, m));
 
+    const panim = withShared(ctx.anim, pattern.shared);
+
     const simple = getSimplePatternData(tiling, pattern.psize);
     let baseShapes = simple.uniqueShapes;
     ctx.keyPoints.push(...baseShapes.flat());
     if (Object.keys(pattern.adjustments).length) {
         // TODO: further check that any adjustments actually modify things
         baseShapes = adjustShapes(
-            ctx.anim,
+            panim,
             ctx.cropCache,
             baseShapes,
             Object.values(pattern.adjustments)
                 .filter((a) => !a.disabled)
-                .map(({shapes, mods, t}) => ({
+                .map(({shapes, shared, mods, t}) => ({
                     t,
                     shapes: shapes.map((key) => ctx.state.shapes[key]),
                     mods,
+                    shared,
                 })),
         );
     }
@@ -404,9 +424,9 @@ const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Pattern) => {
             const stuff: string[] = [];
 
             const anim: (typeof ctx)['anim'] = {
-                ...ctx.anim,
+                ...panim,
                 values: {
-                    ...ctx.anim.values,
+                    ...panim.values,
                     center,
                     radius,
                     shape,

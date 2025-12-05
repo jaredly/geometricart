@@ -10,13 +10,18 @@ import {useAnimate} from './useAnimate';
 import {useCropCache} from './useCropCache';
 import {BaselineFilterCenterFocus, BaselineZoomInMap} from '../../../icons/Icon';
 import {Hover} from './resolveMods';
-import {useEditState} from './editState';
+import {EditStateUpdate, useEditState} from './editState';
 import {make} from '../../../json-diff/make';
 import {coordsFromBarePath} from '../../getPatternData';
 import {parseColor} from './colors';
 import {closeEnough} from '../../../rendering/epsilonToZero';
 
-const renderShapes = (shapes: State['shapes'], hover: Hover | null): RenderItem[] => {
+const renderShapes = (
+    shapes: State['shapes'],
+    hover: Hover | null,
+    selectedShapes: string[],
+    update: EditStateUpdate,
+): RenderItem[] => {
     return Object.entries(shapes).flatMap(([key, shape]) => [
         {
             type: 'path',
@@ -33,8 +38,19 @@ const renderShapes = (shapes: State['shapes'], hover: Hover | null): RenderItem[
         },
         {
             type: 'path',
-            color: hover?.id === key ? colorToRgb(parseColor('gold')!) : {r: 255, g: 255, b: 255},
+            color:
+                hover?.id === key || selectedShapes.includes(key)
+                    ? colorToRgb(parseColor('gold')!)
+                    : {r: 255, g: 255, b: 255},
             key,
+            onClick() {
+                if (!selectedShapes.includes(key)) {
+                    update.pending.variant('select-shapes').shapes.push(key);
+                } else {
+                    const idx = selectedShapes.indexOf(key);
+                    update.pending.variant('select-shapes').shapes[idx].remove();
+                }
+            },
             shapes: [shape],
             strokeWidth: 0.03,
             zIndex: 100,
@@ -56,16 +72,19 @@ export const RenderExport = ({state, patterns}: {state: State; patterns: Pattern
 
     const editContext = useEditState();
     const hover = editContext.use((v) => v.hover);
-    const showShapes = editContext.use((v) => v.showShapes);
+    const showShapes = editContext.use((v) => v.showShapes || v.pending?.type === 'select-shapes');
 
     const {items, warnings, keyPoints, byKey, bg} = useMemo(
         () => svgItems(state, animCache, cropCache, patterns, t),
         [state, patterns, cropCache, animCache, t],
     );
 
+    const pending = editContext.use((v) => v.pending);
+    const selectedShapes = pending?.type === 'select-shapes' ? pending.shapes : [];
     const shapesItems = useMemo(
-        (): RenderItem[] => (showShapes ? renderShapes(state.shapes, hover) : []),
-        [showShapes, state.shapes, hover],
+        (): RenderItem[] =>
+            showShapes ? renderShapes(state.shapes, hover, selectedShapes, editContext.update) : [],
+        [showShapes, state.shapes, hover, selectedShapes, editContext.update],
     );
 
     const both = useMemo(() => [...items, ...shapesItems], [items, shapesItems]);
@@ -76,12 +95,9 @@ export const RenderExport = ({state, patterns}: {state: State; patterns: Pattern
 
     const statusRef = useRef<HTMLDivElement>(null);
 
-    const pending = editContext.use((v) => v.pending);
-
     return (
         <div className="flex">
             <div className="relative overflow-hidden">
-                {/* {pending ? ( */}
                 <SVGCanvas
                     {...zoomProps}
                     state={state}
@@ -93,18 +109,6 @@ export const RenderExport = ({state, patterns}: {state: State; patterns: Pattern
                     byKey={byKey}
                     bg={bg}
                 />
-                {/* ) : (
-                    <Canvas
-                        {...zoomProps}
-                        state={state}
-                        mouse={mouse}
-                        setMouse={setMouse}
-                        items={both}
-                        size={size}
-                        byKey={byKey}
-                        bg={bg}
-                    />
-                )} */}
                 <div ref={fpsref} className="absolute top-0 right-0 hidden px-2 py-1 bg-base-100" />
                 {resetZoom ? (
                     <div className="absolute top-0 left-0 flex">
@@ -140,6 +144,7 @@ export const RenderExport = ({state, patterns}: {state: State; patterns: Pattern
                     <button
                         className={'btn mx-2 ' + (animate ? 'btn-accent' : '')}
                         onClick={() => setAnimate(!animate)}
+                        title={t + ''}
                     >
                         Animate
                     </button>

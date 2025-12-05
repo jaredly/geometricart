@@ -1,4 +1,10 @@
 
+VISUAL BUG
+0.754 in export doc `5len8yytkvr`
+we're losing some shapes. Not getting colored.
+
+---
+
 Animated ting, I want to export a png that has the state encoded in it.
 
 ---

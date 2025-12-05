@@ -5,6 +5,7 @@ import {NumberField} from './NumberField';
 import {parseAnimatable, createGroup, createPattern} from './createLayerTemplate';
 import {EntityEditor} from './EntityEditor';
 import {TextField} from './TextField';
+import {SharedEditor} from './PatternEditor';
 
 export const LayerEditor = ({
     layer,
@@ -40,6 +41,11 @@ export const LayerEditor = ({
                         Remove
                     </button>
                 </div>
+
+                <SharedEditor
+                    shared={layer.shared}
+                    onChange={(shared) => onChange({...layer, shared})}
+                />
 
                 <div className="flex flex-col gap-4">
                     <JsonEditor

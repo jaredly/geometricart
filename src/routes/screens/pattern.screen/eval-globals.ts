@@ -1,5 +1,6 @@
 import {angleTo, dist} from '../../../rendering/getMirrorTransforms';
 import {ease, easeInOutCubic} from '../animator.screen/easeInOutCubic';
+import {easeFn} from './evalEase';
 
 const clamp = (a: number, b: number, c: number) => (a < b ? b : a > c ? c : a);
 const stretch = (m: number, by: number) => clamp(m * (1 + by * 2) - by, 0, 1);
@@ -14,6 +15,22 @@ const tsplit = (t: number, count: number, by: number, ease = easeInOutCubic) => 
         }
     }
     return ok((count - 1) * section);
+};
+
+export const chunk = (
+    config: (number | [number, number] | [number, number, string])[],
+    t: number,
+) => {
+    const v = t * config.length;
+    const t0 = Math.floor(v);
+    const current = config[Math.min(t0, config.length - 1)];
+    const amount = t0 === config.length ? 1 : v - t0;
+    if (typeof current === 'number') {
+        return current;
+    } else {
+        const [min, max, ease = 'straight'] = current;
+        return easeFn(ease)(amount) * (max - min) + min;
+    }
 };
 
 export function mulberry32(seed: number) {
@@ -35,9 +52,10 @@ export const globals: Record<string, any> = {
     angleTo,
     easeInOutCubic,
     tsplit,
-    chunk(values: number[], t: number) {
-        const v = t * values.length;
-        const t0 = Math.floor(v);
-        return values[Math.min(t0, values.length - 1)];
-    },
+    chunk,
+    // chunk(values: number[], t: number) {
+    //     const v = t * values.length;
+    //     const t0 = Math.floor(v);
+    //     return values[Math.min(t0, values.length - 1)];
+    // },
 };

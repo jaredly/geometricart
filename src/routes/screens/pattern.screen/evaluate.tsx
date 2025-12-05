@@ -26,6 +26,7 @@ export type AnimCtx = {
 export type RenderItem = {
     type: 'path';
     pk?: PKPath;
+    onClick?: (evt: React.MouseEvent<SVGElement>) => void;
     shadow?: {blur: Coord; offset: Coord; color: Rgb};
     color: {r: number; g: number; b: number};
     strokeWidth?: number;

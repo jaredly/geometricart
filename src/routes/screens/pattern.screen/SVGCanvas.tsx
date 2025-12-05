@@ -173,12 +173,14 @@ export const SVGCanvas = ({
                         filter={shadow ? `url(#${shadowKey(shadow)})` : undefined}
                         d={calcPathD(shape)}
                         key={`${key}-${m}`}
-                        onClick={() => setFocus(focus === key ? null : key)}
+                        cursor={item.onClick ? 'pointer' : undefined}
+                        onClick={item.onClick} // ?? (() => setFocus(focus === key ? null : key))}
                         data-z={zIndex}
                     />
                 )),
             )}
             {pending &&
+                pending.type !== 'select-shapes' &&
                 points.map((pt, i) => (
                     <circle
                         key={i}
@@ -194,6 +196,7 @@ export const SVGCanvas = ({
                                 // editContext.update.pending.replace(null);
                                 return;
                             }
+                            if (pending.type === 'select-shapes') return;
                             if (pending.points.length && coordsEqual(pending.points[0], pt)) {
                                 pending.onDone(pending.points, false);
                                 editContext.update.pending.replace(null);
