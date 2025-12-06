@@ -66,14 +66,15 @@ export const adjustShapes = (
             //     coordKey,
             // );
             const cmoved = centroid(moved.flatMap((m) => m.shape));
-            const reconstructed = shapesFromSegments(byEndPoint, one).filter(
+            const got = shapesFromSegments(byEndPoint, one);
+            const reconstructed = got.shapes.filter(
                 (c) => !matchesBounds(boundsForCoords(...c), cmoved),
             );
             // uniqueShapes = reconstructed;
             modified = true;
             uniqueShapes = [...left, ...reconstructed];
 
-            debug.push({left, segs, byEndPoint});
+            debug.push({left, segs, byEndPoint, got});
             // console.log('eft', left);
             // uniqueShapes = [...left, ...right];
             // uniqueShapes = left;
@@ -82,6 +83,7 @@ export const adjustShapes = (
 
     return {shapes: modified ? sortShapesByPolar(uniqueShapes) : uniqueShapes, debug};
 };
+
 export const coordPairKey = ([left, right]: [Coord, Coord], prec = 3) => {
     if (closeEnough(left.x, right.x) ? right.y < left.y : right.x < left.x) {
         [left, right] = [right, left];
@@ -105,6 +107,7 @@ export const allSameLines = (one: SlopeIntercept[], two: SlopeIntercept[]) => {
 
 export const matchesBounds = (bounds: Bounds, coord: Coord) =>
     coord.x <= bounds.x1 && coord.x >= bounds.x0 && coord.y <= bounds.y1 && coord.y >= bounds.y0;
+
 export const unzip = <T,>(v: T[], test: (t: T) => boolean) => {
     const left: T[] = [];
     const right: T[] = [];
@@ -137,6 +140,7 @@ export const overlapping = (one: SlopeIntercept, two: SlopeIntercept) =>
 export const coordsIntersectCoords = (one: Coord[], twos: SlopeIntercept[]) => {
     return coordLines(one).some((one) => twos.some((two) => lineHit(one, two)));
 };
+
 export const lineHit = (one: SlopeIntercept, two: SlopeIntercept) => {
     return overlapping(one, two) || !!lineLine(one, two);
 };

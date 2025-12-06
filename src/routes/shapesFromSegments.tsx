@@ -247,6 +247,7 @@ export const shapesFromSegments = (byEndPoint: EndPointMap, eigenPoints: Coord[]
     const used: Record<string, true> = {};
     const shapes: Coord[][] = [];
     const backwards: Coord[][] = [];
+    const extras: Coord[][] = [];
     eigenPoints.forEach((point) => {
         if (!byEndPoint[coordKey(point)]) return;
         const segs = byEndPoint[coordKey(point)].exits;
@@ -259,7 +260,9 @@ export const shapesFromSegments = (byEndPoint: EndPointMap, eigenPoints: Coord[]
             if (used[sk]) continue;
             const {points, ranout} = discoverShape(point, seg, used, byEndPoint);
             if (points.length === 100 || ranout) {
+                // console.log(points, ranout);
                 // console.warn('bad news, shape is bad');
+                extras.push(points);
                 continue;
             }
             if (!isClockwisePoints(points)) {
@@ -269,7 +272,7 @@ export const shapesFromSegments = (byEndPoint: EndPointMap, eigenPoints: Coord[]
             }
         }
     });
-    return shapes;
+    return {shapes, used, backwards, extras};
 };
 
 export const addToMap = <T,>(map: Record<string | number, T[]>, k: string | number, t: T) => {

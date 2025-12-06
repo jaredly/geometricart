@@ -267,7 +267,25 @@ const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Pattern) => {
                     zIndex: 10,
                 });
             });
-            item.byEndPoint;
+            item.got.extras.forEach((coords, i) => {
+                ctx.items.push({
+                    type: 'path',
+                    color: colorToRgb(parseColor('#0a0')!),
+                    key: 'debugx ' + i,
+                    strokeWidth: 0.01,
+                    onClick() {
+                        // console.log(seg);
+                    },
+                    shapes: [
+                        {
+                            origin: coords[coords.length - 1],
+                            segments: coords.map((c) => ({type: 'Line', to: c})),
+                            open: true,
+                        },
+                    ],
+                    zIndex: 20,
+                });
+            });
         });
     }
 
