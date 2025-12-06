@@ -167,9 +167,12 @@ export type Rgb = {r: number; g: number; b: number};
 
 export const parseHex = (hex: string) => {
     if (hex.length === 4) {
-        const r = parseInt(hex.slice(1, 2), 16);
-        const g = parseInt(hex.slice(3, 5), 16);
-        const b = parseInt(hex.slice(5), 16);
+        const r0 = hex.slice(1, 2);
+        const g0 = hex.slice(2, 3);
+        const b0 = hex.slice(3);
+        const r = parseInt(r0 + r0, 16);
+        const g = parseInt(g0 + g0, 16);
+        const b = parseInt(b0 + b0, 16);
         return {r: r, g: g, b: b};
     }
     const r = parseInt(hex.slice(1, 3), 16);
