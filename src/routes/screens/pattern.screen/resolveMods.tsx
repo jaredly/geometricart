@@ -247,46 +247,60 @@ const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Pattern) => {
                 })),
         );
         baseShapes = adjusted.shapes;
-        adjusted.debug.forEach((item) => {
-            item.segs.forEach((seg, i) => {
-                ctx.items.push({
-                    type: 'path',
-                    color: colorToRgb(parseColor('#fff')!),
-                    key: 'debug ' + i,
-                    strokeWidth: 0.01,
-                    onClick() {
-                        console.log(seg);
-                    },
-                    shapes: [
-                        {
-                            origin: seg[0],
-                            segments: [{type: 'Line', to: seg[1]}],
-                            open: true,
+        0 &&
+            adjusted.debug.forEach((item) => {
+                item.segs.forEach((seg, i) => {
+                    ctx.items.push({
+                        type: 'path',
+                        color: colorToRgb(parseColor('#fff')!),
+                        key: 'debug ' + i,
+                        strokeWidth: 0.01,
+                        onClick() {
+                            console.log(seg);
                         },
-                    ],
-                    zIndex: 10,
+                        shapes: [
+                            {
+                                origin: seg[0],
+                                segments: [{type: 'Line', to: seg[1]}],
+                                open: true,
+                            },
+                        ],
+                        zIndex: 10,
+                    });
+                });
+                item.fromSegments.extras.forEach((coords, i) => {
+                    ctx.items.push(
+                        {
+                            type: 'path',
+                            color: colorToRgb(parseColor('#0a0')!),
+                            key: 'debugx ' + i,
+                            // strokeWidth: 0.01,
+                            shapes: [
+                                {
+                                    origin: coords[0],
+                                    segments: coords.map((c) => ({type: 'Line', to: c})),
+                                    open: true,
+                                },
+                            ],
+                            zIndex: 20,
+                        },
+                        {
+                            type: 'path',
+                            color: colorToRgb(parseColor('#060')!),
+                            key: 'debugx ' + i,
+                            strokeWidth: 0.01,
+                            shapes: [
+                                {
+                                    origin: coords[0],
+                                    segments: coords.map((c) => ({type: 'Line', to: c})),
+                                    open: true,
+                                },
+                            ],
+                            zIndex: 30,
+                        },
+                    );
                 });
             });
-            item.got.extras.forEach((coords, i) => {
-                ctx.items.push({
-                    type: 'path',
-                    color: colorToRgb(parseColor('#0a0')!),
-                    key: 'debugx ' + i,
-                    strokeWidth: 0.01,
-                    onClick() {
-                        // console.log(seg);
-                    },
-                    shapes: [
-                        {
-                            origin: coords[coords.length - 1],
-                            segments: coords.map((c) => ({type: 'Line', to: c})),
-                            open: true,
-                        },
-                    ],
-                    zIndex: 20,
-                });
-            });
-        });
     }
 
     const orderedStyles = Object.values(pattern.contents.styles).sort((a, b) => a.order - b.order);

@@ -13,6 +13,7 @@ export const discoverShape = (
     clockwise = true,
     maxPoints = 100,
 ) => {
+    const log = [];
     let at = seg;
     const points = [point, seg.to];
     const pks: string[] = [coordKey(seg.to)];
@@ -26,6 +27,7 @@ export const discoverShape = (
                 cctheta: angleBetween(negPiToPi(at.theta + Math.PI), seg.theta, clockwise),
             }))
             .sort((a, b) => a.cctheta - b.cctheta);
+        log.push({at, nexts, points: [...points], considered: byEndPoint[coordKey(at.to)].exits});
 
         if (!nexts.length) {
             ranout = true;
@@ -51,5 +53,5 @@ export const discoverShape = (
         pks.push(coordKey(at.to));
     }
 
-    return {points, ranout};
+    return {points, ranout, log};
 };

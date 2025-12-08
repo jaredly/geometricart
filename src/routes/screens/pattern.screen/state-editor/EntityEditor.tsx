@@ -3,6 +3,7 @@ import {Color, Entity} from '../export-types';
 import {JsonEditor} from './JsonEditor';
 import {PatternEditor} from './PatternEditor';
 import {GroupEditor} from './GroupEditor';
+import {ExternalLinkIcon} from '../../../../icons/Icon';
 
 export const EntityEditor = ({
     palette,
@@ -24,9 +25,18 @@ export const EntityEditor = ({
     return (
         <details className="rounded border border-base-300 bg-base-100 p-3 space-y-3">
             <summary className="cursor-pointer hover:text-accent">
-                <div className="inline-flex">
+                <div className="inline-flex items-center">
                     {value.type}
                     <div className="flex-1" />
+                    {value.type === 'Pattern' && (
+                        <a
+                            className="link text-sm mx-4"
+                            target="_blank"
+                            href={`/gallery/pattern/${value.tiling}`}
+                        >
+                            <ExternalLinkIcon />
+                        </a>
+                    )}
 
                     <button className="btn btn-ghost btn-xs text-error" onClick={onRemove}>
                         Remove

@@ -53,7 +53,9 @@ export const renderItems = (surface: Surface, box: Box, items: RenderItem[], bg:
         const pkp =
             item.pk ??
             pk.Path.MakeFromCmds(
-                item.shapes.flatMap((shape) => segmentsCmds(shape.origin, shape.segments, false)),
+                item.shapes.flatMap((shape) =>
+                    segmentsCmds(shape.origin, shape.segments, shape.open),
+                ),
             )!;
         const paint = new pk.Paint();
         paint.setAntiAlias(true);

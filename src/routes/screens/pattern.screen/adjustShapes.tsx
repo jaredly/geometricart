@@ -66,15 +66,15 @@ export const adjustShapes = (
             //     coordKey,
             // );
             const cmoved = centroid(moved.flatMap((m) => m.shape));
-            const got = shapesFromSegments(byEndPoint, one);
-            const reconstructed = got.shapes.filter(
+            const fromSegments = shapesFromSegments(byEndPoint, one);
+            const reconstructed = fromSegments.shapes.filter(
                 (c) => !matchesBounds(boundsForCoords(...c), cmoved),
             );
             // uniqueShapes = reconstructed;
             modified = true;
             uniqueShapes = [...left, ...reconstructed];
 
-            debug.push({left, segs, byEndPoint, got});
+            debug.push({left, segs, byEndPoint, fromSegments});
             // console.log('eft', left);
             // uniqueShapes = [...left, ...right];
             // uniqueShapes = left;

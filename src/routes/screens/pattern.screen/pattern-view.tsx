@@ -8,10 +8,12 @@ import {normShape} from '../../normShape';
 import {CanvasPattern} from './CanvasPattern';
 import {canvasRender} from '../../../rendering/CanvasRender';
 import {exportPNG} from '../../../editor/ExportPng';
-import {BaselineDownload} from '../../../icons/Icon';
+import {BaselineDownload, BaselineFilterCenterFocus, BaselineZoomInMap} from '../../../icons/Icon';
 import {useOnOpen} from '../../useOnOpen';
 import {InspectShape} from '../../InspectShape';
 import {normalizeCanonShape, Shape} from '../../getUniqueShapes';
+import {useElementZoom} from './useSVGZoom';
+import {closeEnough} from '../../../rendering/epsilonToZero';
 
 type Display = {
     bounds: boolean;
@@ -56,6 +58,7 @@ export const PatternView = ({
         }
     });
 
+    const {zoomProps, box, reset: resetZoom} = useElementZoom({x: -2, y: -2, width: 4, height: 4});
     const [inspect, setInspect] = useState(null as null | string);
     const [showDialog, setShowDialog] = useState(false);
     const dialogRef = useOnOpen(setShowDialog);
@@ -72,17 +75,41 @@ export const PatternView = ({
             <div className="flex items-start gap-2">
                 <div className="flex flex-col gap-4">
                     {/* <TilingPattern tiling={tiling} size={400} data={data} showLines /> */}
-                    <CanvasPattern
-                        tiling={tiling}
-                        size={400}
-                        data={data}
-                        showBounds={display.bounds}
-                        showLines={display.draw === 'color-lines'}
-                        showShapes={display.draw === 'shapes'}
-                        showWoven={display.draw === 'woven'}
-                        lineWidth={display.lineWidth}
-                        margin={display.margin}
-                    />
+                    <div className="relative">
+                        {resetZoom ? (
+                            <div className="absolute top-0 left-0 flex">
+                                <button
+                                    className="btn btn-square px-2 py-1 bg-base-100"
+                                    onClick={() => resetZoom()}
+                                >
+                                    <BaselineZoomInMap />
+                                </button>
+                                {!(
+                                    closeEnough(box.y, -box.height / 2) &&
+                                    closeEnough(box.x, -box.width / 2)
+                                ) && (
+                                    <button
+                                        className="btn btn-square px-2 py-1 bg-base-100"
+                                        onClick={() => resetZoom(true)}
+                                    >
+                                        <BaselineFilterCenterFocus />
+                                    </button>
+                                )}
+                            </div>
+                        ) : null}
+                        <CanvasPattern
+                            zoomProps={zoomProps}
+                            tiling={tiling}
+                            size={400}
+                            data={data}
+                            showBounds={display.bounds}
+                            showLines={display.draw === 'color-lines'}
+                            showShapes={display.draw === 'shapes'}
+                            showWoven={display.draw === 'woven'}
+                            lineWidth={display.lineWidth}
+                            // margin={display.margin}
+                        />
+                    </div>
                     {/* <label>
                         <input
                             className="checkbox mr-4"
@@ -117,7 +144,7 @@ export const PatternView = ({
                         />
                         Line width {display.lineWidth}
                     </label>
-                    <label>
+                    {/* <label>
                         <input
                             className="input"
                             type="number"
@@ -128,7 +155,7 @@ export const PatternView = ({
                             onChange={(evt) => setDisplay({...display, margin: +evt.target.value})}
                         />
                         Margin {display.margin}
-                    </label>
+                    </label> */}
                 </div>
                 {/* {JSON.stringify(tiling.shape)} */}
                 <div className="flex-1 px-2 gap-2 flex flex-col">
