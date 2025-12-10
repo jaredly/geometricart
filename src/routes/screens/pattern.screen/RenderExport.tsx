@@ -15,6 +15,7 @@ import {make} from '../../../json-diff/make';
 import {coordsFromBarePath} from '../../getPatternData';
 import {parseColor} from './colors';
 import {closeEnough} from '../../../rendering/epsilonToZero';
+import {BlurInt} from '../../../editor/Forms';
 
 const renderShapes = (
     shapes: State['shapes'],
@@ -141,6 +142,7 @@ export const RenderExport = ({state, patterns}: {state: State; patterns: Pattern
                         max={1}
                         step={0.001}
                     />
+                    <BlurInt value={t} onChange={(v) => (v != null ? setT(v) : null)} />
                     <button
                         className={'btn mx-2 ' + (animate ? 'btn-accent' : '')}
                         onClick={() => setAnimate(!animate)}

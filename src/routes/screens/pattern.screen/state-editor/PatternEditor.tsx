@@ -198,7 +198,7 @@ const AdjustmentsEditor = ({
     return (
         <details className="space-y-4">
             <summary className="font-semibold text-sm flex flex-row gap-4 items-center">
-                Adjustments
+                Adjustments ({Object.keys(adjustments).length})
                 <button
                     className="btn btn-sm"
                     value=""

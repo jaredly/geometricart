@@ -29,7 +29,7 @@ export const adjustShapes = (
     }[],
 ) => {
     let modified = false;
-    const debug: RenderLog[] = [];
+    const outerDebug: RenderLog[] = [];
     for (let {shapes, mods, t, shared} of adjustments) {
         const local: Record<string, any> = {};
         if (t) {
@@ -38,8 +38,10 @@ export const adjustShapes = (
             local.t = res;
         }
         const aanim = withShared(anim, shared);
+        const midDebug: RenderLog[] = [];
 
         for (let shape of shapes) {
+            const debug: RenderLog[] = [];
             const shapeCoords = coordsFromBarePath(shape);
             const center = centroid(shapeCoords);
             const resolved = mods.map((mod) =>
@@ -137,22 +139,41 @@ export const adjustShapes = (
             // );
             const cmoved = centroid(moved.flatMap((m) => m.shape));
             const fromSegments = shapesFromSegments(byEndPoint, one);
-            const reconstructed = fromSegments.shapes.filter(
+            const [centerShapes, reconstructed] = unzip(
+                fromSegments.shapes,
                 (c) => !matchesBounds(boundsForCoords(...c), cmoved),
             );
             // uniqueShapes = reconstructed;
             modified = true;
             uniqueShapes = [...left, ...reconstructed];
 
+            debug.push({
+                title: 'Reconstructed',
+                type: 'items',
+                items: reconstructed.map((shape) => ({
+                    item: {type: 'shape', shape: barePathFromCoords(shape)},
+                })),
+            });
+
+            debug.push({
+                title: 'Reconstructed removed',
+                type: 'items',
+                items: centerShapes.map((shape) => ({
+                    item: {type: 'shape', shape: barePathFromCoords(shape)},
+                })),
+            });
+
             // debug.push({left, segs, byEndPoint, fromSegments});
 
             // console.log('eft', left);
             // uniqueShapes = [...left, ...right];
             // uniqueShapes = left;
+            midDebug.push({type: 'group', title: 'One Shape', children: debug});
         }
+        outerDebug.push({type: 'group', title: 'Adjust Shape', children: midDebug});
     }
 
-    return {shapes: modified ? sortShapesByPolar(uniqueShapes) : uniqueShapes, debug};
+    return {shapes: modified ? sortShapesByPolar(uniqueShapes) : uniqueShapes, debug: outerDebug};
 };
 
 export const coordPairKey = ([left, right]: [Coord, Coord], prec = 3) => {

@@ -306,7 +306,7 @@ export type LogItem =
 export type RenderLog =
     | {
           type: 'items';
-          items: {item: LogItem; text?: string}[];
+          items: {item: LogItem; text?: string; color?: Color}[];
           title: string;
       }
     | {type: 'group'; children: RenderLog[]; title: string};

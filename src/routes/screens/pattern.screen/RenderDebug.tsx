@@ -1,5 +1,5 @@
 import {useMemo, useRef, useState} from 'react';
-import {Coord} from '../../../types';
+import {BarePath, Coord} from '../../../types';
 import {a, AnimCtx, Patterns, RenderItem} from './evaluate';
 import {Color, colorToRgb, State} from './export-types';
 import {barePathFromCoords, LogItem, RenderLog, svgItems} from './resolveMods';
@@ -70,16 +70,32 @@ const allItems = (log: RenderLog): LogItem[] => {
 };
 
 const getLogSelection = (logSelection: number[], log: RenderLog): LogItem[] => {
+    const base = log;
     for (let i = 0; i < logSelection.length - 1; i++) {
         if (log.type !== 'group') return [];
-        log = log.children[i];
+        log = log.children[logSelection[i]];
+    }
+    if (!log) {
+        console.log(base, logSelection);
+        throw Error(`no item` + logSelection);
     }
     const last = logSelection[logSelection.length - 1];
     if (last === -1) return allItems(log);
     if (log.type === 'items') {
+        if (!log.items[last]) {
+            console.warn(`BAD NEWS`, log, last);
+        }
         return [log.items[last].item];
     }
     return [];
+};
+
+const circleSeg = (center: Coord, size: number): BarePath => {
+    const p = push(center, 0, size);
+    return {
+        origin: p,
+        segments: [{type: 'Arc', center, clockwise: true, to: p}],
+    };
 };
 
 // START HERE
@@ -92,25 +108,25 @@ const renderLogSelection = (logSelection: number[], log: RenderLog): RenderItem[
                     {
                         type: 'path',
                         color: {r: 255, g: 0, b: 0},
-                        strokeWidth: 2,
+                        strokeWidth: 0.02,
                         shapes: [{origin: item.prev, segments: [item.seg], open: true}],
+                        key: 'log-' + i,
+                    },
+                    {
+                        type: 'path',
+                        color: {r: 255, g: 255, b: 255},
+                        strokeWidth: 0.02,
+                        shapes: [circleSeg(item.prev, 0.01), circleSeg(item.seg.to, 0.01)],
                         key: 'log-' + i,
                     },
                 ];
             case 'point': {
-                const s = 0.01;
-                const p = push(item.p, 0, s);
                 return [
                     {
                         type: 'path',
                         color: {r: 255, g: 0, b: 0},
-                        strokeWidth: 2,
-                        shapes: [
-                            {
-                                origin: p,
-                                segments: [{type: 'Arc', center: item.p, clockwise: true, to: p}],
-                            },
-                        ],
+                        strokeWidth: 0.02,
+                        shapes: [circleSeg(item.p, 0.01)],
                         key: 'log-' + i,
                     },
                 ];
@@ -127,7 +143,7 @@ const renderLogSelection = (logSelection: number[], log: RenderLog): RenderItem[
                     {
                         type: 'path',
                         color: {r: 255, g: 255, b: 255},
-                        strokeWidth: 2,
+                        strokeWidth: 0.02,
                         shapes: [item.shape],
                         key: 'log-' + i,
                     },
@@ -173,6 +189,11 @@ const ShowRenderLog = ({
                         type="range"
                         className="range"
                         value={sel ?? 0}
+                        min={0}
+                        max={log.items.length - 1}
+                        onClick={() =>
+                            sel === -1 || sel == null ? onSelect(path.concat([0])) : null
+                        }
                         onChange={(evt) => onSelect(path.concat([+evt.target.value]))}
                     />
                 </div>
@@ -181,17 +202,16 @@ const ShowRenderLog = ({
     }
     const sel = matchPath(path, selection);
     return (
-        <div>
-            <div>
-                {log.title}
-
+        <details>
+            <summary>
+                {log.title} ({log.children.length})
                 <button
                     onClick={() => onSelect(sel === -1 ? [] : path.concat([-1]))}
                     className={'btn btn-square '}
                 >
                     {sel === -1 ? <CheckboxChecked /> : <CheckboxUnchecked />}
                 </button>
-            </div>
+            </summary>
             <div className="p-2 ml-10">
                 {log.children.map((child, i) => (
                     <ShowRenderLog
@@ -203,14 +223,14 @@ const ShowRenderLog = ({
                     />
                 ))}
             </div>
-        </div>
+        </details>
     );
 };
 
 export const RenderDebug = ({state, patterns}: {state: State; patterns: Patterns}) => {
     const animCache = useMemo<AnimCtx['cache']>(() => new Map(), []);
 
-    const t = 0;
+    const t = 0.763;
     const cropCache = useCropCache(state, t, animCache);
 
     const {items, warnings, keyPoints, byKey, bg, log} = useMemo(
