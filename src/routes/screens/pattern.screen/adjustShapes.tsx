@@ -8,7 +8,14 @@ import {coordsFromBarePath, sortShapesByPolar} from '../../getPatternData';
 import {unique, cutSegments, edgesByEndpoint, shapesFromSegments} from '../../shapesFromSegments';
 import {Ctx} from './evaluate';
 import {PMods, TChunk, AnimatableValue} from './export-types';
-import {resolveT, withShared, resolvePMod, modsToShapes} from './resolveMods';
+import {
+    resolveT,
+    withShared,
+    resolvePMod,
+    modsToShapes,
+    RenderLog,
+    barePathFromCoords,
+} from './resolveMods';
 
 export const adjustShapes = (
     anim: Ctx['anim'],
@@ -22,7 +29,7 @@ export const adjustShapes = (
     }[],
 ) => {
     let modified = false;
-    const debug = [];
+    const debug: RenderLog[] = [];
     for (let {shapes, mods, t, shared} of adjustments) {
         const local: Record<string, any> = {};
         if (t) {
@@ -44,6 +51,19 @@ export const adjustShapes = (
             if (allSameLines(shapeLines, movedLines.flat())) {
                 continue;
             }
+
+            debug.push({
+                title: 'Adjust Shape',
+                type: 'items',
+                items: [
+                    {item: {type: 'shape', shape}, text: 'pre-move'},
+                    ...moved.map((coords, i) => ({
+                        item: {type: 'shape' as const, shape: barePathFromCoords(coords.shape)},
+                        text: 'post-' + i,
+                    })),
+                ],
+            });
+
             // console.log('here we are', shapeLines, movedLines);
             const [left, right] = unzip(uniqueShapes, (coords) => {
                 const got =
@@ -52,11 +72,61 @@ export const adjustShapes = (
                 // console.log('did intersect', got);
                 return got;
             });
-            let segs = unique(right.flatMap(coordPairs), coordPairKey).filter(
+
+            debug.push({
+                title: 'Separate',
+                type: 'group',
+                children: [
+                    {
+                        title: 'Touching',
+                        type: 'items',
+                        items: right.map((coords) => ({
+                            item: {type: 'shape', shape: barePathFromCoords(coords)},
+                        })),
+                    },
+                    {
+                        title: 'Not Touching',
+                        type: 'items',
+                        items: left.map((coords) => ({
+                            item: {type: 'shape', shape: barePathFromCoords(coords)},
+                        })),
+                    },
+                ],
+            });
+
+            let [removedSegs, segs] = unzip(
+                unique(right.flatMap(coordPairs), coordPairKey),
                 (pair) => !coordPairOnShape(pair, shapeLines),
             );
+
+            debug.push({
+                title: 'Removed Segments',
+                type: 'items',
+                items: removedSegs.map((pair) => ({
+                    item: {type: 'seg', prev: pair[0], seg: {type: 'Line', to: pair[1]}},
+                })),
+            });
+
             segs.push(...moved.flatMap((m) => coordPairs(m.shape)));
+
+            debug.push({
+                title: 'Pre Cut',
+                type: 'items',
+                items: segs.map((pair) => ({
+                    item: {type: 'seg', prev: pair[0], seg: {type: 'Line', to: pair[1]}},
+                })),
+            });
+
             segs = cutSegments(segs);
+
+            debug.push({
+                title: 'Post Cut',
+                type: 'items',
+                items: segs.map((pair) => ({
+                    item: {type: 'seg', prev: pair[0], seg: {type: 'Line', to: pair[1]}},
+                })),
+            });
+
             const byEndPoint = edgesByEndpoint(segs);
             // TODO: so I want to find eigenpoints, only ones that are ... along the moved path maybe?
             // or like the original or moved path idk.
@@ -74,7 +144,8 @@ export const adjustShapes = (
             modified = true;
             uniqueShapes = [...left, ...reconstructed];
 
-            debug.push({left, segs, byEndPoint, fromSegments});
+            // debug.push({left, segs, byEndPoint, fromSegments});
+
             // console.log('eft', left);
             // uniqueShapes = [...left, ...right];
             // uniqueShapes = left;
@@ -108,6 +179,9 @@ export const allSameLines = (one: SlopeIntercept[], two: SlopeIntercept[]) => {
 export const matchesBounds = (bounds: Bounds, coord: Coord) =>
     coord.x <= bounds.x1 && coord.x >= bounds.x0 && coord.y <= bounds.y1 && coord.y >= bounds.y0;
 
+/**
+ * Separate a list into two groups. [left, right] for [false, true] result of `test`
+ */
 export const unzip = <T,>(v: T[], test: (t: T) => boolean) => {
     const left: T[] = [];
     const right: T[] = [];

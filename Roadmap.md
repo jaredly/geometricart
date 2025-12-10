@@ -3,6 +3,25 @@ VISUAL BUG
 0.754 in export doc `5len8yytkvr`
 we're losing some shapes. Not getting colored.
 
+
+Yeah ok so to debug the adjustment logic.
+
+- split "shapes" into "intersects the adjustment (pre or post)" vs "doesn't"
+- the ones that do get decomposed into segments
+  - show segments here (allow scrubbing through)
+- then remove the segments that lie along the pre-adjustment shape
+  - show segments removed (allow scrubbing through)
+- then add the post-move adjustment shape, and do "cut segments"
+- then we do 'shape reconstruction'
+  - go through each potential seed point
+    - go through exit segments
+      - discover a shape starting from the seed point going along that exit segment
+- and then we remove any shapes the overlap with the centroid of the moved shape, although really it should be "remove shapes that fully contain any internal shapes that didn't intersect the adjustment"
+- and that's it
+
+
+...
+
 ---
 
 Animated ting, I want to export a png that has the state encoded in it.

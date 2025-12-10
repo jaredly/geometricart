@@ -248,9 +248,13 @@ export const shapesFromSegments = (byEndPoint: EndPointMap, eigenPoints: Coord[]
     const shapes: Coord[][] = [];
     const backwards: Coord[][] = [];
     const extras: Coord[][] = [];
+
+    const slog = [];
+
     eigenPoints.forEach((point) => {
         if (!byEndPoint[coordKey(point)]) return;
         const segs = byEndPoint[coordKey(point)].exits;
+        slog.push({point, segs});
         if (!segs) {
             console.warn(`no segs from point`, point);
             return;
@@ -258,7 +262,8 @@ export const shapesFromSegments = (byEndPoint: EndPointMap, eigenPoints: Coord[]
         for (const seg of segs) {
             const sk = `${coordKey(point)}:${coordKey(seg.to)}`;
             if (used[sk]) continue;
-            const {points, ranout} = discoverShape(point, seg, used, byEndPoint);
+            const {points, ranout, log} = discoverShape(point, seg, used, byEndPoint);
+            slog.push(log);
             if (points.length === 100 || ranout) {
                 // console.log(points, ranout);
                 // console.warn('bad news, shape is bad');

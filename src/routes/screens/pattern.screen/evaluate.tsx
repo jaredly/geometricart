@@ -14,6 +14,7 @@ import {
     Color,
 } from './export-types';
 import {processScript} from './process-script';
+import {RenderLog} from './resolveMods';
 
 export type AnimCtx = {
     accessedValues?: Set<string>;
@@ -46,6 +47,7 @@ export type Ctx = {
     items: RenderItem[];
     keyPoints: Coord[];
     byKey: Record<string, string[]>;
+    log?: RenderLog[];
 };
 
 type AnimFn = (ctx: AnimCtx['values']) => any;

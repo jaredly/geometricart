@@ -14,6 +14,7 @@ import {genid} from './genid';
 import {Patterns} from './evaluate';
 import {unique} from '../../shapesFromSegments';
 import {notNull} from './resolveMods';
+import {RenderDebug} from './RenderDebug';
 // import {example3} from './example3';
 
 const usePromise = <T,>(f: (abort: AbortSignal) => Promise<T>, deps: any[] = []) => {
@@ -276,7 +277,8 @@ const PatternExport = ({
     return (
         <ProvideEditState>
             <div className="flex">
-                <RenderExport state={state} patterns={patternCache} />
+                {/* <RenderExport state={state} patterns={patternCache} /> */}
+                <RenderDebug state={state} patterns={patternCache} />
                 <div className="max-h-250 overflow-auto flex-1">
                     <StateEditor value={state} onChange={setState} />
                 </div>

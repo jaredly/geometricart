@@ -5,7 +5,7 @@ import {shapeD} from '../../shapeD';
 import {colorToString} from './colors';
 import {RenderItem} from './evaluate';
 import {Box, Color, ConcreteShadow, shadowKey, State} from './export-types';
-import {renderItems} from './recordVideo';
+import {renderItems} from './renderItems';
 import {percentToWorld, worldToPercent, svgCoord} from './useSVGZoom';
 import {coordKey} from '../../../rendering/coordKey';
 import {useEditState} from './editState';
