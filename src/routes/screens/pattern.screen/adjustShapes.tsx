@@ -27,6 +27,7 @@ export const adjustShapes = (
         t?: TChunk;
         shared?: Record<string, AnimatableValue>;
     }[],
+    log = false,
 ) => {
     let modified = false;
     const outerDebug: RenderLog[] = [];
@@ -54,17 +55,19 @@ export const adjustShapes = (
                 continue;
             }
 
-            debug.push({
-                title: 'Adjust Shape',
-                type: 'items',
-                items: [
-                    {item: {type: 'shape', shape}, text: 'pre-move'},
-                    ...moved.map((coords, i) => ({
-                        item: {type: 'shape' as const, shape: barePathFromCoords(coords.shape)},
-                        text: 'post-' + i,
-                    })),
-                ],
-            });
+            if (log) {
+                debug.push({
+                    title: 'Adjust Shape',
+                    type: 'items',
+                    items: [
+                        {item: {type: 'shape', shape}, text: 'pre-move'},
+                        ...moved.map((coords, i) => ({
+                            item: {type: 'shape' as const, shape: barePathFromCoords(coords.shape)},
+                            text: 'post-' + i,
+                        })),
+                    ],
+                });
+            }
 
             // console.log('here we are', shapeLines, movedLines);
             const [left, right] = unzip(uniqueShapes, (coords) => {
@@ -75,59 +78,69 @@ export const adjustShapes = (
                 return got;
             });
 
-            debug.push({
-                title: 'Separate',
-                type: 'group',
-                children: [
-                    {
-                        title: 'Touching',
-                        type: 'items',
-                        items: right.map((coords) => ({
-                            item: {type: 'shape', shape: barePathFromCoords(coords)},
-                        })),
-                    },
-                    {
-                        title: 'Not Touching',
-                        type: 'items',
-                        items: left.map((coords) => ({
-                            item: {type: 'shape', shape: barePathFromCoords(coords)},
-                        })),
-                    },
-                ],
-            });
+            if (log) {
+                debug.push({
+                    title: 'Separate',
+                    type: 'group',
+                    children: [
+                        {
+                            title: 'Touching',
+                            type: 'items',
+                            items: right.map((coords) => ({
+                                item: {type: 'shape', shape: barePathFromCoords(coords)},
+                            })),
+                        },
+                        {
+                            title: 'Not Touching',
+                            type: 'items',
+                            items: left.map((coords) => ({
+                                item: {type: 'shape', shape: barePathFromCoords(coords)},
+                            })),
+                        },
+                    ],
+                });
+            }
 
             let [removedSegs, segs] = unzip(
                 unique(right.flatMap(coordPairs), coordPairKey),
                 (pair) => !coordPairOnShape(pair, shapeLines),
             );
 
-            debug.push({
-                title: 'Removed Segments',
-                type: 'items',
-                items: removedSegs.map((pair) => ({
-                    item: {type: 'seg', prev: pair[0], seg: {type: 'Line', to: pair[1]}},
-                })),
-            });
+            if (log) {
+                debug.push({
+                    title: 'Removed Segments',
+                    type: 'items',
+                    items: removedSegs.map((pair) => ({
+                        item: {type: 'seg', prev: pair[0], seg: {type: 'Line', to: pair[1]}},
+                    })),
+                });
+            }
 
             segs.push(...moved.flatMap((m) => coordPairs(m.shape)));
 
-            debug.push({
-                title: 'Pre Cut',
-                type: 'items',
-                items: segs.map((pair) => ({
-                    item: {type: 'seg', prev: pair[0], seg: {type: 'Line', to: pair[1]}},
-                })),
-            });
+            if (log) {
+                debug.push({
+                    title: 'Pre Cut',
+                    type: 'items',
+                    items: segs.map((pair) => ({
+                        item: {type: 'seg', prev: pair[0], seg: {type: 'Line', to: pair[1]}},
+                    })),
+                });
+            }
 
             segs = cutSegments(segs);
 
-            debug.push({
-                title: 'Post Cut',
-                type: 'items',
-                items: segs.map((pair) => ({
-                    item: {type: 'seg', prev: pair[0], seg: {type: 'Line', to: pair[1]}},
-                })),
-            });
+            segs = unique(segs, coordPairKey);
+
+            if (log) {
+                debug.push({
+                    title: 'Post Cut',
+                    type: 'items',
+                    items: segs.map((pair) => ({
+                        item: {type: 'seg', prev: pair[0], seg: {type: 'Line', to: pair[1]}},
+                    })),
+                });
+            }
 
             const byEndPoint = edgesByEndpoint(segs);
             // TODO: so I want to find eigenpoints, only ones that are ... along the moved path maybe?
@@ -137,38 +150,41 @@ export const adjustShapes = (
             //     moved.flatMap((m) => m.shape),
             //     coordKey,
             // );
+            if (log) {
+                debug.push({
+                    title: 'All Points',
+                    type: 'items',
+                    items: one.map((p) => ({item: {type: 'point', p}})),
+                });
+            }
             const cmoved = centroid(moved.flatMap((m) => m.shape));
-            const fromSegments = shapesFromSegments(byEndPoint, one);
+            const fromSegments = shapesFromSegments(byEndPoint, one, debug);
             const [centerShapes, reconstructed] = unzip(
                 fromSegments.shapes,
-                (c) => !matchesBounds(boundsForCoords(...c), cmoved),
+                (c) => true, // !matchesBounds(boundsForCoords(...c), cmoved),
             );
             // uniqueShapes = reconstructed;
             modified = true;
             uniqueShapes = [...left, ...reconstructed];
 
-            debug.push({
-                title: 'Reconstructed',
-                type: 'items',
-                items: reconstructed.map((shape) => ({
-                    item: {type: 'shape', shape: barePathFromCoords(shape)},
-                })),
-            });
+            if (log) {
+                debug.push({
+                    title: 'Reconstructed',
+                    type: 'items',
+                    items: reconstructed.map((shape) => ({
+                        item: {type: 'shape', shape: barePathFromCoords(shape)},
+                    })),
+                });
 
-            debug.push({
-                title: 'Reconstructed removed',
-                type: 'items',
-                items: centerShapes.map((shape) => ({
-                    item: {type: 'shape', shape: barePathFromCoords(shape)},
-                })),
-            });
-
-            // debug.push({left, segs, byEndPoint, fromSegments});
-
-            // console.log('eft', left);
-            // uniqueShapes = [...left, ...right];
-            // uniqueShapes = left;
-            midDebug.push({type: 'group', title: 'One Shape', children: debug});
+                debug.push({
+                    title: 'Reconstructed removed',
+                    type: 'items',
+                    items: centerShapes.map((shape) => ({
+                        item: {type: 'shape', shape: barePathFromCoords(shape)},
+                    })),
+                });
+                midDebug.push({type: 'group', title: 'One Shape', children: debug});
+            }
         }
         outerDebug.push({type: 'group', title: 'Adjust Shape', children: midDebug});
     }
@@ -176,10 +192,15 @@ export const adjustShapes = (
     return {shapes: modified ? sortShapesByPolar(uniqueShapes) : uniqueShapes, debug: outerDebug};
 };
 
-export const coordPairKey = ([left, right]: [Coord, Coord], prec = 3) => {
-    if (closeEnough(left.x, right.x) ? right.y < left.y : right.x < left.x) {
-        [left, right] = [right, left];
+export const sortCoordPair = (pair: [Coord, Coord], eps?: number): [Coord, Coord] => {
+    if (closeEnough(pair[0].x, pair[1].x, eps) ? pair[1].y < pair[0].y : pair[1].x < pair[0].x) {
+        return [pair[1], pair[0]];
     }
+    return pair;
+};
+
+export const coordPairKey = (pair: [Coord, Coord], prec = 3) => {
+    const [left, right] = sortCoordPair(pair, Math.pow(10, -prec));
     return `${coordKey(left, prec)}:${coordKey(right, prec)}`;
 };
 

@@ -146,7 +146,7 @@ export const SVGCanvas = ({
             {hasShadows ? (
                 <defs>
                     {Object.entries(shadows).map(([key, shadow]) => (
-                        <filter key={key} id={key}>
+                        <filter key={key} id={key} x="-50%" width="200%" y="-50%" height="200%">
                             <feDropShadow
                                 dx={shadow.offset?.x ?? 0}
                                 dy={shadow.offset?.y ?? 0}
@@ -168,6 +168,8 @@ export const SVGCanvas = ({
                                   ? 'none'
                                   : colorToString(shadow?.color ?? color)
                         }
+                        strokeLinejoin="round"
+                        strokeLinecap="round"
                         stroke={strokeWidth ? colorToString(shadow?.color ?? color) : undefined}
                         strokeWidth={strokeWidth}
                         filter={shadow ? `url(#${shadowKey(shadow)})` : undefined}

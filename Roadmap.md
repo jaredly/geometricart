@@ -1,7 +1,17 @@
 
+Make a shape style that is "within [these shapes]"
+with a shared variable called `shapeCenter`
+
+
+
+
+
+
 VISUAL BUG
 0.754 in export doc `5len8yytkvr`
 we're losing some shapes. Not getting colored.
+
+FIxEDDDDD
 
 
 Yeah ok so to debug the adjustment logic.

@@ -31,7 +31,7 @@ const usePromise = <T,>(f: (abort: AbortSignal) => Promise<T>, deps: any[] = [])
 
 const PatternPicker = () => {
     const all = usePromise((signal) => fetch('/gallery.json', {signal}).then((r) => r.json()));
-    return <div>Pick a pattern you cowards {all.length}</div>;
+    return <div>Pick a pattern you cowards {all?.length}</div>;
 };
 
 const colorsRaw = '1f77b4ff7f0e2ca02cd627289467bd8c564be377c27f7f7fbcbd2217becf';
@@ -105,7 +105,7 @@ const CreateAndRedirect = ({id}: {id: string}) => {
             const v: Tiling = await fetch(`/gallery/pattern/${id}/json`).then((r) => r.json());
             const state = makeForPattern(v, id);
             const sid = genid();
-            await fetch(`/assets/exports/${sid}.json`, {
+            await fetch(`/fs/exports/${sid}.json`, {
                 method: 'POST',
                 body: JSON.stringify(state, null, 2),
                 headers: {'Content-type': 'application/json'},
@@ -277,8 +277,8 @@ const PatternExport = ({
     return (
         <ProvideEditState>
             <div className="flex">
-                {/* <RenderExport state={state} patterns={patternCache} /> */}
-                <RenderDebug state={state} patterns={patternCache} />
+                <RenderExport state={state} patterns={patternCache} />
+                {/* <RenderDebug state={state} patterns={patternCache} /> */}
                 <div className="max-h-250 overflow-auto flex-1">
                     <StateEditor value={state} onChange={setState} />
                 </div>

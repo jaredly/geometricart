@@ -1,6 +1,6 @@
 import React, {useMemo} from 'react';
 
-export const SubStyleList = <T,>({
+export const SubStyleList = <T extends {id: string}>({
     label,
     emptyLabel,
     items,
@@ -22,10 +22,10 @@ export const SubStyleList = <T,>({
 }) => {
     const entries = useMemo(() => Object.entries(items), [items]);
 
-    const upsert = (key: string, value: T, nextKey?: string) => {
+    const upsert = (key: string, value: T) => {
         const record = {...items};
         delete record[key];
-        record[nextKey ?? key] = value;
+        record[value.id] = value;
         onChange(record);
     };
 
@@ -50,7 +50,7 @@ export const SubStyleList = <T,>({
                         {render(
                             key,
                             value,
-                            (next, nextKey) => upsert(key, next, nextKey),
+                            (next) => upsert(key, next),
                             () => {
                                 const record = {...items};
                                 delete record[key];

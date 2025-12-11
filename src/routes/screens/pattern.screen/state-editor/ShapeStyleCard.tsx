@@ -1,6 +1,6 @@
 import React, {useState} from 'react';
 import {EyeInvisibleIcon, EyeIcon} from '../../../../icons/Eyes';
-import {Box, Color, ShapeStyle, TChunk} from '../export-types';
+import {Box, Color, ShapeKind, ShapeStyle, TChunk} from '../export-types';
 import {createFill, createLine} from './createLayerTemplate';
 import {NumberField} from './NumberField';
 import {LineEditor} from './LineEditor';
@@ -10,6 +10,7 @@ import {BaseKindEditor} from './BaseKindEditor';
 import {BlurInput} from './BlurInput';
 import {easeFn, easeFunctions} from '../evalEase';
 import {
+    AddIcon,
     ChevronUp12,
     DotsHorizontalOutline,
     DragMove2Fill,
@@ -193,8 +194,7 @@ export const ShapeStyleCard = ({
                             Remove
                         </button>
                     </div>
-                    <BaseKindEditor
-                        label="Kind"
+                    <KindOrKinds
                         value={value.kind}
                         onChange={(kind) => onChange({...value, kind})}
                     />
@@ -238,6 +238,71 @@ export const ShapeStyleCard = ({
                 )}
                 {/* <ModsEditor value={value.mods} onChange={(mods) => onChange({...value, mods})} /> */}
             </div>
+        </div>
+    );
+};
+
+const KindOrKinds = ({
+    value,
+    onChange,
+}: {
+    value: ShapeKind | ShapeKind[];
+    onChange: (next: ShapeKind | ShapeKind[]) => void;
+}) => {
+    const kinds = Array.isArray(value) ? value : [value];
+    return (
+        <div className="bg-base-200 rounded-lg p-3 border border-base-300 space-y-2">
+            <div className="flex items-center justify-between">
+                <div className="font-semibold text-sm">Kind</div>
+                <button
+                    onClick={() => {
+                        const res = kinds.slice();
+                        res.push({type: 'everything'});
+                        onChange(res);
+                    }}
+                    className="btn btn-square"
+                >
+                    <AddIcon />
+                </button>
+                {kinds.length >= 1 ? (
+                    <BaseKindEditor
+                        value={kinds[0]}
+                        onChange={(kind) => {
+                            if (kinds.length === 1) {
+                                onChange(kind);
+                            } else {
+                                const res = kinds.slice();
+                                res[0] = kind;
+                                onChange(res);
+                            }
+                        }}
+                    />
+                ) : null}
+            </div>
+            {kinds.slice(1).map((kind, i) => {
+                return (
+                    <div key={i}>
+                        <button
+                            onClick={() => {
+                                const res = kinds.slice();
+                                res.splice(i + 1, 1);
+                                onChange(res);
+                            }}
+                            className="btn btn-square text-red-400"
+                        >
+                            &times;
+                        </button>
+                        <BaseKindEditor
+                            value={kind}
+                            onChange={(kind) => {
+                                const res = kinds.slice();
+                                res[i + 1] = kind;
+                                onChange(res);
+                            }}
+                        />
+                    </div>
+                );
+            })}
         </div>
     );
 };

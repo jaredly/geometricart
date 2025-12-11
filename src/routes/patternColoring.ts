@@ -1,9 +1,10 @@
 import {coordKey} from '../rendering/coordKey';
 import {closeEnough} from '../rendering/epsilonToZero';
 import {Coord} from '../types';
+import {barePathFromCoords, RenderLog} from './screens/pattern.screen/resolveMods';
 import {addToMap, unique} from './shapesFromSegments';
 
-const colorGraph = (edges: [number, number][], debug = false) => {
+const colorGraph = (edges: [number, number][], debug = false, log?: RenderLog[]) => {
     const edgeMap: Record<number, number[]> = {};
     let max = 0;
     edges.forEach(([a, b]) => {
@@ -99,6 +100,7 @@ export const colorShapes = (
     shapes: Coord[][],
     minLength: number,
     debug = false,
+    log?: RenderLog[],
 ) => {
     const by = Math.log10(100 / minLength);
     // const by = Math.log10(100 / minLength);
@@ -108,7 +110,8 @@ export const colorShapes = (
         edges.forEach((edge) => {
             const p1 = pointNames[coordKey(edge[0])];
             const p2 = pointNames[coordKey(edge[1])];
-            const k = p1 < p2 ? p1 * 1000 + p2 : p2 * 1000 + p1;
+            // const k = p1 < p2 ? p1 * 100000 + p2 : p2 * 100000 + p1;
+            const k = p1 < p2 ? `${p1}:${p2}` : `${p2}:${p1}`;
 
             // console.log(`Shape ${i} - ${k}`);
 
@@ -120,10 +123,16 @@ export const colorShapes = (
             console.log(`edge ${key}`, byEdge[key]);
         });
     }
-    return colorGraph(
-        Object.values(byEdge).filter((e) => e.length === 2) as [number, number][],
-        debug,
-    );
+    const edgePairs = Object.values(byEdge).filter((e) => e.length === 2) as [number, number][];
+    log?.push({
+        type: 'items',
+        title: 'Color Edge Pairs',
+        items: Object.entries(byEdge).map(([k, idxs]) => ({
+            text: k + ' - coord',
+            item: idxs.map((i) => ({type: 'shape', shape: barePathFromCoords(shapes[i])})),
+        })),
+    });
+    return colorGraph(edgePairs, debug, log);
 };
 
 // V = 4

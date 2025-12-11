@@ -55,6 +55,7 @@ export const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Patter
                     mods,
                     shared,
                 })),
+            ctx.log != null,
         );
         baseShapes = adjusted.shapes;
         ctx.log?.push({type: 'group', title: 'Adjust Shapes', children: adjusted.debug});
@@ -68,7 +69,9 @@ export const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Patter
             ? s.kind.some((k) => k.type === 'alternating')
             : s.kind.type === 'alternating',
     );
-    const {colors} = needColors ? getShapeColors(baseShapes, simple.minSegLength) : {colors: []};
+    const {colors} = needColors
+        ? getShapeColors(baseShapes, simple.minSegLength, ctx.log)
+        : {colors: []};
 
     const midShapes = modsToShapes(
         ctx.cropCache,
@@ -96,9 +99,18 @@ export const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Patter
                 },
             };
 
+            const first = <T, N>(v: T[], f: (v: T) => N) => {
+                for (let item of v) {
+                    const res = f(item);
+                    if (res != null && res !== false) {
+                        return res;
+                    }
+                }
+            };
+
             orderedStyles.forEach((s) => {
                 const match = Array.isArray(s.kind)
-                    ? s.kind.some((k) => matchKind(k, i, colors[i], center, simple.eigenCorners))
+                    ? first(s.kind, (k) => matchKind(k, i, colors[i], center, simple.eigenCorners))
                     : matchKind(s.kind, i, colors[i], center, simple.eigenCorners);
                 if (!match) {
                     return;
@@ -286,9 +298,9 @@ export const matchKind = (
 ): boolean | Coord => {
     switch (k.type) {
         case 'everything':
-            return true;
+            return {x: 0, y: 0};
         case 'alternating':
-            return color === k.index;
+            return color === k.index ? {x: 0, y: 0} : null;
         case 'explicit':
             return k.ids[i];
         case 'shape':

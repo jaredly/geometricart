@@ -11,6 +11,8 @@ import {addMod} from './createLayerTemplate';
 import {AnimColor} from './AnimColor';
 import {AnimInput} from './AnimInput';
 import {PModEditor} from './PModEditor';
+import {BlurInput} from './BlurInput';
+import {ShadowEditor} from './ShadowEditor';
 
 export const FillEditor = ({
     value,
@@ -26,7 +28,12 @@ export const FillEditor = ({
     return (
         <div className="space-y-2 relative">
             <div className="flex flex-row md:flex-row gap-2 md:items-center">
-                Fill <span className="font-mono bg-gray-600 px-2 rounded">{value.id}</span>
+                Fill
+                <BlurInput
+                    className="w-20 font-mono"
+                    value={value.id}
+                    onChange={(id) => onChange({...value, id})}
+                />
                 <button className="btn btn-ghost btn-xs text-error " onClick={onRemove}>
                     &times;
                 </button>
@@ -56,6 +63,11 @@ export const FillEditor = ({
                     onChange={(rounded) =>
                         onChange({...value, rounded: rounded as AnimatableNumber})
                     }
+                />
+                <ShadowEditor
+                    value={value.shadow ?? null}
+                    onChange={(shadow) => onChange({...value, shadow: shadow ?? undefined})}
+                    palette={palette}
                 />
             </div>
             <ModsEditor

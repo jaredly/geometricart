@@ -47,6 +47,7 @@ import {pkPathToSegments} from '../sidebar/pkClipPaths';
 import {coordsEqual} from '../rendering/pathsAreIdentical';
 import {evalQuad} from './screens/animator.screen/splitSegment';
 import {centroid} from './findReflectionAxes';
+import {RenderLog} from './screens/pattern.screen/resolveMods';
 
 export const cmdsForCoords = (coords: Coord[], open = true) => {
     return [
@@ -292,10 +293,10 @@ const simpleSize = (tiling: Tiling, x: number) => {
     return {x, y};
 };
 
-export const getShapeColors = (allShapes: Coord[][], minSegLength: number) => {
+export const getShapeColors = (allShapes: Coord[][], minSegLength: number, log?: RenderLog[]) => {
     const uniquePoints = unique(allShapes.flat(), coordKey);
     const pointNames = Object.fromEntries(uniquePoints.map((p, i) => [coordKey(p), i]));
-    const colors = colorShapes(pointNames, allShapes, minSegLength, false);
+    const colors = colorShapes(pointNames, allShapes, minSegLength, false, log);
 
     return {colors, pointNames, uniquePoints};
 };

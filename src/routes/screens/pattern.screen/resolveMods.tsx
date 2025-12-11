@@ -50,7 +50,7 @@ export const resolvePMod = (ctx: AnimCtx, mod: PMods): CropsAndMatrices[0] => {
                 origin: mod.origin ? a.coord(ctx, mod.origin) : undefined,
             });
         case 'translate':
-            return modMatrix({...mod, v: scalePos(a.coord(ctx, mod.v), 0.01)});
+            return modMatrix({...mod, v: scalePos(numToCoord(a.coordOrNumber(ctx, mod.v)), 0.01)});
     }
 };
 
@@ -306,7 +306,7 @@ export type LogItem =
 export type RenderLog =
     | {
           type: 'items';
-          items: {item: LogItem; text?: string; color?: Color}[];
+          items: {item: LogItem | LogItem[]; text?: string; color?: Color}[];
           title: string;
       }
     | {type: 'group'; children: RenderLog[]; title: string};
@@ -317,6 +317,7 @@ export const svgItems = (
     cropCache: Ctx['cropCache'],
     patterns: Patterns,
     t: number,
+    debug = false,
 ) => {
     const warnings: string[] = [];
     const warn = (v: string) => warnings.push(v);
@@ -330,7 +331,7 @@ export const svgItems = (
         state.styleConfig.seed,
     );
     values.rand = mulberry32(seed);
-    const log: RenderLog[] = [];
+    const log: RenderLog[] | undefined = debug ? [] : undefined;
 
     for (let layer of Object.values(state.layers)) {
         const group = layer.entities[layer.rootGroup];

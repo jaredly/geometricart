@@ -22,51 +22,9 @@ import {parseColor} from './colors';
 import {closeEnough} from '../../../rendering/epsilonToZero';
 import {push} from '../../../rendering/getMirrorTransforms';
 
-const renderShapes = (
-    shapes: State['shapes'],
-    hover: Hover | null,
-    selectedShapes: string[],
-    update: EditStateUpdate,
-): RenderItem[] => {
-    return Object.entries(shapes).flatMap(([key, shape]) => [
-        {
-            type: 'path',
-            color: {r: 255, g: 255, b: 255},
-            shadow: {
-                offset: {x: 0, y: 0},
-                blur: {x: 0.03, y: 0.03},
-                color: {r: 0, g: 0, b: 0},
-            },
-            key,
-            shapes: [shape],
-            strokeWidth: 0.03,
-            zIndex: 100,
-        },
-        {
-            type: 'path',
-            color:
-                hover?.id === key || selectedShapes.includes(key)
-                    ? colorToRgb(parseColor('gold')!)
-                    : {r: 255, g: 255, b: 255},
-            key,
-            onClick() {
-                if (!selectedShapes.includes(key)) {
-                    update.pending.variant('select-shapes').shapes.push(key);
-                } else {
-                    const idx = selectedShapes.indexOf(key);
-                    update.pending.variant('select-shapes').shapes[idx].remove();
-                }
-            },
-            shapes: [shape],
-            strokeWidth: 0.03,
-            zIndex: 100,
-        },
-    ]);
-};
-
 const allItems = (log: RenderLog): LogItem[] => {
-    if (log.type === 'items') return log.items.map((l) => l.item);
-    return log.children.flatMap(allItems);
+    if (log.type === 'items') return log.items.flatMap((l) => l.item);
+    return log.children.length ? allItems(log.children[0]) : [];
 };
 
 const getLogSelection = (logSelection: number[], log: RenderLog): LogItem[] => {
@@ -85,7 +43,8 @@ const getLogSelection = (logSelection: number[], log: RenderLog): LogItem[] => {
         if (!log.items[last]) {
             console.warn(`BAD NEWS`, log, last);
         }
-        return [log.items[last].item];
+        const item = log.items[last].item;
+        return Array.isArray(item) ? item : [item];
     }
     return [];
 };
@@ -99,7 +58,11 @@ const circleSeg = (center: Coord, size: number): BarePath => {
 };
 
 // START HERE
-const renderLogSelection = (logSelection: number[], log: RenderLog): RenderItem[] => {
+const renderLogSelection = (
+    logSelection: number[],
+    log: RenderLog,
+    detectOverlaps: boolean,
+): RenderItem[] => {
     const selection = getLogSelection(logSelection, log);
     return selection.flatMap((item, i): RenderItem[] => {
         switch (item.type) {
@@ -110,15 +73,23 @@ const renderLogSelection = (logSelection: number[], log: RenderLog): RenderItem[
                         color: {r: 255, g: 0, b: 0},
                         strokeWidth: 0.02,
                         shapes: [{origin: item.prev, segments: [item.seg], open: true}],
+                        opacity: detectOverlaps ? 0.3 : undefined,
                         key: 'log-' + i,
                     },
-                    {
-                        type: 'path',
-                        color: {r: 255, g: 255, b: 255},
-                        strokeWidth: 0.02,
-                        shapes: [circleSeg(item.prev, 0.01), circleSeg(item.seg.to, 0.01)],
-                        key: 'log-' + i,
-                    },
+                    ...(detectOverlaps
+                        ? []
+                        : [
+                              {
+                                  type: 'path' as const,
+                                  color: {r: 255, g: 255, b: 255},
+                                  strokeWidth: 0.02,
+                                  shapes: [
+                                      circleSeg(item.prev, 0.01),
+                                      circleSeg(item.seg.to, 0.01),
+                                  ],
+                                  key: 'log-' + i,
+                              },
+                          ]),
                 ];
             case 'point': {
                 return [
@@ -126,6 +97,7 @@ const renderLogSelection = (logSelection: number[], log: RenderLog): RenderItem[
                         type: 'path',
                         color: {r: 255, g: 0, b: 0},
                         strokeWidth: 0.02,
+                        opacity: detectOverlaps ? 0.3 : undefined,
                         shapes: [circleSeg(item.p, 0.01)],
                         key: 'log-' + i,
                     },
@@ -136,17 +108,21 @@ const renderLogSelection = (logSelection: number[], log: RenderLog): RenderItem[
                     {
                         type: 'path',
                         color: {r: 255, g: 0, b: 0},
-                        // strokeWidth: 2,
+                        opacity: detectOverlaps ? 0.3 : undefined,
                         shapes: [item.shape],
                         key: 'log-' + i,
                     },
-                    {
-                        type: 'path',
-                        color: {r: 255, g: 255, b: 255},
-                        strokeWidth: 0.02,
-                        shapes: [item.shape],
-                        key: 'log-' + i,
-                    },
+                    ...(detectOverlaps
+                        ? []
+                        : [
+                              {
+                                  type: 'path' as const,
+                                  color: {r: 255, g: 255, b: 255},
+                                  strokeWidth: 0.02,
+                                  shapes: [item.shape],
+                                  key: 'log-' + i,
+                              },
+                          ]),
                 ];
         }
     });
@@ -173,6 +149,7 @@ const ShowRenderLog = ({
 }) => {
     if (log.type === 'items') {
         const sel = matchPath(path, selection);
+        const v = sel != null && sel !== -1 ? log.items[sel] : null;
         return (
             <div className={sel != null ? 'bg-base-100' : ''}>
                 <div>
@@ -183,6 +160,7 @@ const ShowRenderLog = ({
                     >
                         {sel === -1 ? <CheckboxChecked /> : <CheckboxUnchecked />}
                     </button>
+                    {sel?.toString()} {v?.text ?? 'No text'}
                 </div>
                 <div>
                     <input
@@ -203,10 +181,13 @@ const ShowRenderLog = ({
     const sel = matchPath(path, selection);
     return (
         <details>
-            <summary>
+            <summary className="cursor-pointer">
                 {log.title} ({log.children.length})
                 <button
-                    onClick={() => onSelect(sel === -1 ? [] : path.concat([-1]))}
+                    onClick={(evt) => {
+                        evt.preventDefault();
+                        onSelect(sel === -1 ? [] : path.concat([-1]));
+                    }}
                     className={'btn btn-square '}
                 >
                     {sel === -1 ? <CheckboxChecked /> : <CheckboxUnchecked />}
@@ -234,22 +215,33 @@ export const RenderDebug = ({state, patterns}: {state: State; patterns: Patterns
     const cropCache = useCropCache(state, t, animCache);
 
     const {items, warnings, keyPoints, byKey, bg, log} = useMemo(
-        () => svgItems(state, animCache, cropCache, patterns, t),
-        [state, patterns, cropCache, animCache, t],
+        () => svgItems(state, animCache, cropCache, patterns, t, true),
+        [state, patterns, cropCache, animCache],
     );
 
     const {zoomProps, box, reset: resetZoom} = useElementZoom(state.view.box);
     const [mouse, setMouse] = useState(null as null | Coord);
     const size = 500;
 
+    const [detectOverlaps, setDetectOverlaps] = useState(false);
+
     const statusRef = useRef<HTMLDivElement>(null);
 
+    const [showMain, setShowMain] = useState(true);
+
     const [logSelection, setLogSelection] = useState<number[]>([]);
-    const logItems = renderLogSelection(logSelection, {type: 'group', children: log, title: 'Log'});
-    const both = useMemo(() => [...items, ...logItems], [items, logItems]);
+    const logItems = renderLogSelection(
+        logSelection,
+        {type: 'group', children: log!, title: 'Log'},
+        detectOverlaps,
+    );
+    const both = useMemo(
+        () => (showMain ? [...items, ...logItems] : logItems),
+        [showMain, items, logItems],
+    );
 
     return (
-        <div>
+        <div className="p-4">
             <div className="relative">
                 <SVGCanvas
                     {...zoomProps}
@@ -284,10 +276,28 @@ export const RenderDebug = ({state, patterns}: {state: State; patterns: Patterns
                     </div>
                 ) : null}
             </div>
+            <label>
+                Show Main Pattern
+                <input
+                    type="checkbox"
+                    className="checkbox"
+                    checked={showMain}
+                    onChange={(evt) => setShowMain(evt.target.checked)}
+                />
+            </label>
+            <label>
+                Detect Overlaps
+                <input
+                    type="checkbox"
+                    className="checkbox"
+                    checked={detectOverlaps}
+                    onChange={(evt) => setDetectOverlaps(evt.target.checked)}
+                />
+            </label>
             <div>{JSON.stringify(logSelection)}</div>
             <div className="overflow-auto" style={{maxHeight: 600}}>
                 <ShowRenderLog
-                    log={{type: 'group', title: 'Debug Log', children: log}}
+                    log={{type: 'group', title: 'Debug Log', children: log!}}
                     onSelect={setLogSelection}
                     path={[]}
                     selection={logSelection}

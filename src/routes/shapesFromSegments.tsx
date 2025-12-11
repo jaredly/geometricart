@@ -15,6 +15,8 @@ import {Coord, Tiling} from '../types';
 import {discoverShape} from './discoverShape';
 import {centroid} from './findReflectionAxes';
 import {getNewPatternData, getPatternData} from './getPatternData';
+import {coordPairKey, sortCoordPair} from './screens/pattern.screen/adjustShapes';
+import {RenderLog} from './screens/pattern.screen/resolveMods';
 
 const gte = (a: number, b: number) => a >= b - epsilon;
 const lte = (a: number, b: number) => a <= b + epsilon;
@@ -196,6 +198,7 @@ export type EndPointMap = Record<
 
 export const edgesByEndpoint = (segs: [Coord, Coord][]) => {
     const byEndPoint: EndPointMap = {};
+    segs = unique(segs, coordPairKey);
 
     // const coordsByKey: Record<string, Coord> = {}
     segs.forEach((seg, i) => {
@@ -215,6 +218,29 @@ export const edgesByEndpoint = (segs: [Coord, Coord][]) => {
         // addToMap(byEndPoint, coordKey(seg[1]), {idx: i, theta: from, to: seg[0]});
         // coordsByKey[coordKey(seg[0])] = seg[0] coordsByKey[coordKey(seg[1])] = seg[1]
     });
+
+    let sup: string[] = [];
+    Object.entries(byEndPoint).forEach(([k, {exits}]) => {
+        const seen: Record<string, true> = {};
+        exits.forEach((e) => {
+            const key = coordKey(e.to);
+            if (seen[key]) {
+                console.warn(`Why is there a dup: ${k} -> ${coordKey(e.to)}`);
+                sup.push(k, key);
+            }
+            seen[key] = true;
+        });
+    });
+    if (sup.length)
+        console.log(
+            segs
+                .map(sortCoordPair)
+                .filter((s) => sup.includes(coordKey(s[0])) || sup.includes(coordKey(s[1])))
+                .sort((a, b) => (closeEnough(a[0].x, b[0].x) ? a[0].y - b[0].y : a[0].x - b[0].x)),
+            // .map((seg) => coordPairKey(seg))
+            // .sort(),
+        );
+
     return byEndPoint;
 };
 
@@ -243,27 +269,48 @@ export type SegLink = {left: number[]; right: number[]; pathId?: number};
 
 export const cmpCoords = (a: Coord, b: Coord) => (closeEnough(a.x, b.x) ? a.y - b.y : a.x - b.x);
 
-export const shapesFromSegments = (byEndPoint: EndPointMap, eigenPoints: Coord[]) => {
+export const shapesFromSegments = (
+    byEndPoint: EndPointMap,
+    eigenPoints: Coord[],
+    log?: RenderLog[],
+) => {
     const used: Record<string, true> = {};
     const shapes: Coord[][] = [];
     const backwards: Coord[][] = [];
     const extras: Coord[][] = [];
 
-    const slog = [];
+    const slog: RenderLog[] | undefined = log ? [] : undefined;
+    if (log) log.push({type: 'group', title: 'Shapes from segments', children: slog!});
 
     eigenPoints.forEach((point) => {
         if (!byEndPoint[coordKey(point)]) return;
         const segs = byEndPoint[coordKey(point)].exits;
-        slog.push({point, segs});
-        if (!segs) {
+        // slog.push({point, segs});
+        if (!segs?.length) {
             console.warn(`no segs from point`, point);
             return;
         }
+        slog?.push({
+            type: 'items',
+            title: `Exits from ${coordKey(point)}`,
+            items: segs.map((seg) => ({
+                item: {type: 'seg', prev: point, seg: {type: 'Line', to: seg.to}},
+                text: `${seg.idx} - ${seg.theta.toFixed(2)} - ${coordKey(seg.to)}`,
+            })),
+        });
         for (const seg of segs) {
             const sk = `${coordKey(point)}:${coordKey(seg.to)}`;
             if (used[sk]) continue;
-            const {points, ranout, log} = discoverShape(point, seg, used, byEndPoint);
-            slog.push(log);
+            const {points, ranout} = discoverShape(
+                point,
+                seg,
+                used,
+                byEndPoint,
+                undefined,
+                undefined,
+                slog,
+            );
+            // slog.push(log);
             if (points.length === 100 || ranout) {
                 // console.log(points, ranout);
                 // console.warn('bad news, shape is bad');

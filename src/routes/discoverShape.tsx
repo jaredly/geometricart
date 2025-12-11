@@ -3,6 +3,7 @@ import {negPiToPi} from '../rendering/epsilonToZero';
 import {angleBetween} from '../rendering/isAngleBetween';
 import {coordsEqual} from '../rendering/pathsAreIdentical';
 import {Coord} from '../types';
+import {barePathFromCoords, LogItem, RenderLog} from './screens/pattern.screen/resolveMods';
 import {EndPointMap} from './shapesFromSegments';
 
 export const discoverShape = (
@@ -11,13 +12,23 @@ export const discoverShape = (
     used: Record<string, true>,
     byEndPoint: EndPointMap,
     clockwise = true,
-    maxPoints = 100,
+    maxPoints = 1000,
+    log?: RenderLog[],
 ) => {
-    const log = [];
+    // const log = [];
     let at = seg;
     const points = [point, seg.to];
     const pks: string[] = [coordKey(seg.to)];
     let ranout = false;
+    const items: {item: LogItem; text?: string}[] | undefined = log
+        ? [
+              {item: {type: 'point', p: point}, text: coordKey(point)},
+              {item: {type: 'seg', prev: point, seg: {type: 'Line', to: seg.to}}},
+          ]
+        : undefined;
+    // const slog: RenderLog[] | undefined = log ? [{type: 'items', title: 'Point', items: [
+    // ]}] : undefined
+    if (log) log.push({type: 'items', items: items!, title: `Discover shape`});
     while (points.length < maxPoints) {
         const nexts = byEndPoint[coordKey(at.to)].exits
             .filter((seg) => !pks.includes(coordKey(seg.to)))
@@ -27,7 +38,8 @@ export const discoverShape = (
                 cctheta: angleBetween(negPiToPi(at.theta + Math.PI), seg.theta, clockwise),
             }))
             .sort((a, b) => a.cctheta - b.cctheta);
-        log.push({at, nexts, points: [...points], considered: byEndPoint[coordKey(at.to)].exits});
+        // log.push({at, nexts, points: [...points], considered: byEndPoint[coordKey(at.to)].exits});
+        items?.push({item: {type: 'shape', shape: barePathFromCoords(points)}});
 
         if (!nexts.length) {
             ranout = true;
@@ -53,5 +65,5 @@ export const discoverShape = (
         pks.push(coordKey(at.to));
     }
 
-    return {points, ranout, log};
+    return {points, ranout};
 };
