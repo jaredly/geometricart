@@ -44,6 +44,17 @@ export type History<T, An> = {
     undoTrail: string[];
 };
 
+export function blankHistory<T, An = never>(v: T): History<T, An> {
+    return {
+        current: v,
+        initial: v,
+        nodes: {root: {changes: [], children: [], id: 'root', pid: 'root'}},
+        root: 'root',
+        tip: 'root',
+        undoTrail: [],
+    };
+}
+
 type MaybeNested<T> = T | MaybeNested<T>[];
 
 const randId = () => Math.random().toString(36).slice(2);

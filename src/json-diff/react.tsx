@@ -3,15 +3,20 @@ import {createContext, useContext, useEffect, useMemo, useRef, useState} from 'r
 import {diffBuilderApply, PendingJsonPatchOp} from './helper2';
 import {dispatch, History} from './history';
 import {MaybeNested} from './make2';
+import {useLatest} from '../routes/screens/pattern.screen/editState';
 
 type C<T> = {
     state: T;
     save: (v: T) => void;
+    listeners: (() => void)[];
 };
 
 export const makeContext = <T, An, Tag extends string = 'type'>(tag: Tag) => {
-    const listeners: (() => void)[] = [];
-    const Ctx = createContext<C<History<T, An>>>({state: null as any, save() {}});
+    const Ctx = createContext<C<History<T, An>>>({
+        state: null as any,
+        listeners: [],
+        save() {},
+    });
 
     return [
         function Provide({
@@ -23,11 +28,19 @@ export const makeContext = <T, An, Tag extends string = 'type'>(tag: Tag) => {
             initial: History<T, An>;
             save(v: History<T, An>): void;
         }) {
-            const value = useMemo<C<History<T, An>>>(
-                () => ({state: initial, save}),
-                [initial, save],
-            );
-            return <Ctx.Provider value={value} children={children} />;
+            const l = useLatest(save);
+            const value = useRef<C<History<T, An>>>({
+                state: initial,
+                save: (v) => l.current(v),
+                listeners: [],
+            });
+            useEffect(() => {
+                if (initial !== value.current.state) {
+                    value.current.state = initial;
+                    value.current.listeners.forEach((f) => f());
+                }
+            }, [initial]);
+            return <Ctx.Provider value={value.current} children={children} />;
         },
 
         function useStateContext() {
@@ -38,7 +51,7 @@ export const makeContext = <T, An, Tag extends string = 'type'>(tag: Tag) => {
                     const next = dispatch(ctx.state, v);
                     ctx.state = next;
                     ctx.save(next);
-                    listeners.forEach((f) => f());
+                    ctx.listeners.forEach((f) => f());
                 };
                 return {
                     use<B>(sel: (t: T) => B, exact = true): B {
@@ -56,10 +69,10 @@ export const makeContext = <T, An, Tag extends string = 'type'>(tag: Tag) => {
                                     setValue(nv);
                                 }
                             };
-                            listeners.push(fn);
+                            ctx.listeners.push(fn);
                             return () => {
-                                const idx = listeners.indexOf(fn);
-                                listeners.splice(idx, 1);
+                                const idx = ctx.listeners.indexOf(fn);
+                                ctx.listeners.splice(idx, 1);
                             };
                         }, [exact]);
 

@@ -1,8 +1,9 @@
 import {useRef} from 'react';
 import {Coord} from '../../../types';
-import {makeContext} from './diffStateManager';
+// import {makeContext} from './diffStateManager';
 import {Hover} from './resolveMods';
 import {DiffBuilderA} from '../../../json-diff/helper2';
+import {makeContext} from '../../../json-diff/react';
 
 export const useLatest = <T,>(v: T) => {
     const l = useRef(v);
@@ -10,11 +11,7 @@ export const useLatest = <T,>(v: T) => {
     return l;
 };
 
-export const [ProvideEditState, useEditState] = makeContext<EditState>({
-    hover: null,
-    showShapes: false,
-    pending: null,
-});
+export const [ProvideEditState, useEditState] = makeContext<EditState, unknown>('type');
 
 export type EditStateUpdate = DiffBuilderA<EditState, 'type'>;
 

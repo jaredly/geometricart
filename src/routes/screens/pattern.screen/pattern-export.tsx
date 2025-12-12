@@ -1,6 +1,6 @@
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {Tiling} from '../../../types';
-import {ProvideEditState} from './editState';
+import {EditState, ProvideEditState} from './editState';
 // import {example} from './example';
 import {ShapeStyle, State} from './export-types';
 import {RenderExport} from './RenderExport';
@@ -15,6 +15,7 @@ import {Patterns} from './evaluate';
 import {unique} from '../../shapesFromSegments';
 import {notNull} from './resolveMods';
 import {RenderDebug} from './RenderDebug';
+import {blankHistory, History} from '../../../json-diff/history';
 // import {example3} from './example3';
 
 const usePromise = <T,>(f: (abort: AbortSignal) => Promise<T>, deps: any[] = []) => {
@@ -269,6 +270,13 @@ export default function PatternExportScreen({params}: Route.ComponentProps) {
     return <ListExports />;
 }
 
+const initialEditState: EditState = {
+    hover: null,
+    pending: null,
+    showShapes: false,
+};
+// const initialEditStateHistory: History<EditState, never> = ;
+
 const PatternExport = ({
     initial,
     onSave,
@@ -289,15 +297,19 @@ const PatternExport = ({
 
     const patternCache = useMemo<Patterns>(() => initialPatterns, [initialPatterns]);
 
-    // biome-ignore lint/correctness/useExhaustiveDependencies : this is for hot refresh
-    // useEffect(() => {
-    //     setState(example3);
-    // }, [example3, id]);
-
-    // const patterns = useMemo(() => ({[id]: tiling}), [id, tiling]);
+    const initialEditStateHistory = useMemo(
+        // no-op usage to appease biome
+        () => state && blankHistory(initialEditState),
+        [state],
+    );
 
     return (
-        <ProvideEditState>
+        <ProvideEditState
+            initial={initialEditStateHistory}
+            save={(v) => {
+                console.log('want to save', v);
+            }}
+        >
             <div className="flex">
                 <RenderExport state={state} patterns={patternCache} onChange={setState} />
                 {/* <RenderDebug state={state} patterns={patternCache} /> */}
