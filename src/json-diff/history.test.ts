@@ -27,6 +27,7 @@ const makeHistory = (current: Article): History<Article, string> => ({
     root: 'root',
     tip: 'root',
     current,
+    initial: current,
     undoTrail: [],
 });
 
@@ -54,6 +55,9 @@ function fill<T>(pending: PendingJsonPatchOp<T>, value: any): JsonPatchOp<T> {
                 value: pending.value,
             } as JsonPatchOp<T>;
         }
+        case 'nested': {
+            throw new Error('cant fill a nested sry');
+        }
     }
 }
 
@@ -65,6 +69,7 @@ describe('dispatch', () => {
         const updates: Array<PendingJsonPatchOp<Article> | PendingJsonPatchOp<Article>[]> = [
             builder.title.replace('Revised Title'),
             builder.meta.tags.push('published'),
+            builder.title((title, up) => up.replace(title + 'v2')),
         ];
 
         history = dispatch(history, updates, genId);
@@ -75,9 +80,10 @@ describe('dispatch', () => {
         expect(history.nodes['node-1'].changes).toEqual([
             fill(builder.title.replace('Revised Title'), 'First Draft'),
             fill(builder.meta.tags.push('published'), 1),
+            fill(builder.title.replace('Revised Titlev2'), 'Revised Title'),
         ]);
         expect(history.current).toEqual({
-            title: 'Revised Title',
+            title: 'Revised Titlev2',
             meta: {tags: ['draft', 'published'], flags: {archived: false, featured: false}},
             sections: [{heading: 'Intro', paragraphs: ['hello world']}],
         });

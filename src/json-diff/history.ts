@@ -24,7 +24,7 @@ And you could have an annotation that's like "where did we get this from" if you
 
 import {splitPathToDestination} from './findHistoryJump';
 import {JsonPatchOp, PendingJsonPatchOp} from './helper2';
-import {fromPending} from './make2';
+import {resolveAndApply} from './make2';
 import {ops} from './ops2';
 
 type HistoryNode<T, An> = {
@@ -36,6 +36,7 @@ type HistoryNode<T, An> = {
 };
 
 export type History<T, An> = {
+    initial: T;
     nodes: Record<string, HistoryNode<T, An>>;
     root: string;
     tip: string;
@@ -68,15 +69,6 @@ function redo<T, An>(state: History<T, An>) {
     };
 }
 
-function resolve<T>(current: T, pending: PendingJsonPatchOp<T>[]) {
-    const changes = pending.map((op) => {
-        const ready = fromPending(current, op);
-        current = ops.apply(current, ready);
-        return ready;
-    });
-    return {current, changes};
-}
-
 export const jump = <T, An>(state: History<T, An>, to: string): History<T, An> => {
     const split = splitPathToDestination(state, to);
     let current = split.up
@@ -102,9 +94,9 @@ export const dispatch = <T, An>(
     const id = genId();
     const node = state.nodes[state.tip];
 
-    const {current, changes} = resolve(
+    const {current, changes} = resolveAndApply(
         state.current,
-        (Array.isArray(nested) ? nested.flat() : [nested]) as PendingJsonPatchOp<T>[],
+        nested as MaybeNested<PendingJsonPatchOp<T>>,
     );
 
     return {
