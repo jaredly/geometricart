@@ -48,7 +48,7 @@ export function fromPending<T, V>(base: T, pending: PendingJsonPatchOp<V>): Json
 const asArray = <V>(v: V | V[]): V[] => (Array.isArray(v) ? v : [v]);
 export type MaybeNested<T> = T | MaybeNested<T>[];
 
-const asFlat = <T>(v: MaybeNested<T>): T[] => asArray(v).flat() as T[];
+export const asFlat = <T>(v: MaybeNested<T>): T[] => asArray(v).flat() as T[];
 
 export function resolveAndApply<T>(
     current: T,

@@ -2,7 +2,7 @@ import equal from 'fast-deep-equal';
 import {createContext, useContext, useEffect, useMemo, useRef, useState} from 'react';
 import {ApplyTiming, diffBuilderApply, PendingJsonPatchOp} from './helper2';
 import {blankHistory, dispatch, History} from './history';
-import {MaybeNested, resolveAndApply} from './make2';
+import {asFlat, MaybeNested, resolveAndApply} from './make2';
 import {useLatest} from '../routes/screens/pattern.screen/editState';
 
 type C<T> = {
@@ -11,23 +11,26 @@ type C<T> = {
     listeners: (() => void)[];
 };
 
-type CH<T> = {
-    state: T;
-    save: (v: T) => void;
+type CH<T, An> = {
+    state: History<T, An>;
+    save: (v: History<T, An>) => void;
     listeners: (() => void)[];
     historyListeners: (() => void)[];
     historyUp: (() => void)[];
-    previewState: null | T;
+    previewState: null | History<T, An>;
+    queuedChanges: PendingJsonPatchOp<T>[];
+    raf?: number;
 };
 
 export const makeHistoryContext = <T, An, Tag extends string = 'type'>(tag: Tag) => {
-    const Ctx = createContext<CH<History<T, An>>>({
+    const Ctx = createContext<CH<T, An>>({
         state: blankHistory(null as any),
         historyListeners: [],
         historyUp: [],
         previewState: null,
         save(v) {},
         listeners: [],
+        queuedChanges: [],
     });
 
     return [
@@ -41,13 +44,14 @@ export const makeHistoryContext = <T, An, Tag extends string = 'type'>(tag: Tag)
             save?(v: History<T, An>): void;
         }) {
             const l = useLatest(save);
-            const value = useRef<CH<History<T, An>>>({
+            const value = useRef<CH<T, An>>({
                 state: initial,
                 save: (v) => l.current?.(v),
                 historyListeners: [],
                 listeners: [],
                 historyUp: [],
                 previewState: null,
+                queuedChanges: [],
             });
             useEffect(() => {
                 if (initial !== value.current.state) {
@@ -68,26 +72,39 @@ export const makeHistoryContext = <T, An, Tag extends string = 'type'>(tag: Tag)
                 ) => {
                     let hChanged = false;
                     if (when === 'preview') {
-                        const next = dispatch(ctx.previewState ?? ctx.state, v);
-                        if (next === ctx.state) return;
-                        ctx.previewState = next;
-                    } else {
-                        ctx.previewState = null;
-
-                        const next = dispatch(ctx.state, v);
-                        if (next === ctx.state) return;
-                        hChanged = next.nodes !== ctx.state.nodes;
-                        ctx.state = next;
-                        ctx.save(ctx.state);
+                        if (!Array.isArray(v) && (v.op === 'undo' || v.op === 'redo')) {
+                            return; // not previewing those
+                        }
+                        // console.log('queue a change');
+                        ctx.queuedChanges.push(...(asFlat(v) as PendingJsonPatchOp<T>[]));
+                        if (ctx.raf == null) {
+                            ctx.raf = requestAnimationFrame(() => {
+                                // console.log('hit a thing');
+                                ctx.raf = undefined;
+                                const queue = ctx.queuedChanges;
+                                ctx.queuedChanges = [];
+                                const next = dispatch(ctx.previewState ?? ctx.state, queue);
+                                if (next === ctx.state) return;
+                                ctx.previewState = next;
+                                ctx.listeners.forEach((f) => f());
+                            });
+                        }
+                        return;
                     }
+                    // console.log('normal one');
+                    ctx.previewState = null;
+
+                    const next = dispatch(ctx.state, v);
+                    if (next === ctx.state) return;
+                    hChanged = next.nodes !== ctx.state.nodes;
+                    ctx.state = next;
+                    ctx.save(ctx.state);
 
                     ctx.listeners.forEach((f) => f());
-                    if (when !== 'preview') {
-                        if (hChanged) {
-                            ctx.historyListeners.forEach((f) => f());
-                        }
-                        ctx.historyUp.forEach((f) => f());
+                    if (hChanged) {
+                        ctx.historyListeners.forEach((f) => f());
                     }
+                    ctx.historyUp.forEach((f) => f());
                 };
                 return {
                     use<B>(sel: (t: T) => B, exact = true): B {
