@@ -13,6 +13,13 @@ export async function loader({params}: Route.LoaderArgs) {
         console.log('no path', full);
         return new Response('Does not exist', {status: 404});
     }
+    if (fs.statSync(full).isDirectory()) {
+        return new Response(JSON.stringify(fs.readdirSync(full)), {
+            headers: {
+                'Content-type': 'application/json',
+            },
+        });
+    }
     return new Response(Bun.file(full));
 }
 

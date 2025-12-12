@@ -31,7 +31,7 @@ const usePromise = <T,>(f: (abort: AbortSignal) => Promise<T>, deps: any[] = [])
 
 const PatternPicker = () => {
     const all = usePromise((signal) => fetch('/gallery.json', {signal}).then((r) => r.json()));
-    return <div>Pick a pattern you cowards {all?.length}</div>;
+    return <div>Pick a pattern you cowards {all?.length} options</div>;
 };
 
 const colorsRaw = '1f77b4ff7f0e2ca02cd627289467bd8c564be377c27f7f7fbcbd2217becf';
@@ -120,16 +120,6 @@ const CreateAndRedirect = ({id}: {id: string}) => {
         return <div>Unable to load pattern and create new document: {error.message}</div>;
     }
     return <div>Loading pattern...</div>;
-};
-
-const NewPattern = () => {
-    const loc = useLocation();
-    const params = new URLSearchParams(loc.search);
-    const pattern = params.get('pattern');
-    if (!pattern) {
-        return <PatternPicker />;
-    }
-    return <CreateAndRedirect id={pattern} />;
 };
 
 const LoadPattern = ({id}: {id: string}) => {
@@ -240,11 +230,43 @@ const Page = ({
     </div>
 );
 
+const ListExports = () => {
+    const all = usePromise<string[]>((signal) =>
+        fetch('/fs/exports', {signal}).then((r) => r.json()),
+    );
+    if (!all) return 'Loading...';
+    return (
+        <div>
+            <h1>Exports</h1>
+            <ul className="list">
+                {all
+                    .filter((n) => n.endsWith('.json'))
+                    .map((name) => (
+                        <li className="list-item">
+                            <a className="link" href={`/export/${name.slice(0, -'.json'.length)}`}>
+                                {name}
+                            </a>
+                        </li>
+                    ))}
+            </ul>
+        </div>
+    );
+};
+
 export default function PatternExportScreen({params}: Route.ComponentProps) {
+    const loc = useLocation();
+    const sparams = new URLSearchParams(loc.search);
+    const pattern = sparams.get('pattern');
+
     if (params.id) {
         return <LoadPattern id={params.id} />;
     }
-    return <NewPattern />;
+
+    if (pattern) {
+        return <CreateAndRedirect id={pattern} />;
+    }
+
+    return <ListExports />;
 }
 
 const PatternExport = ({
