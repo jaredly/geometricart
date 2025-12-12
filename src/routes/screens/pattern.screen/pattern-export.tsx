@@ -132,12 +132,19 @@ const CreateAndRedirect = ({id}: {id: string}) => {
 };
 
 const LoadPattern = ({id}: {id: string}) => {
-    const state = usePromise<State>((signal) =>
+    const preNormalized = usePromise<State | ExportHistory>((signal) =>
         fetch(`/fs/exports/${id}.json`, {signal}).then((r) => r.json()),
+    );
+    const state = useMemo(
+        () =>
+            preNormalized && !('version' in preNormalized)
+                ? blankHistory(preNormalized)
+                : preNormalized,
+        [preNormalized],
     );
 
     const onSave = useCallback(
-        (state: State) => {
+        (state: ExportHistory) => {
             return fetch(`/fs/exports/${id}.json`, {
                 method: 'POST',
                 body: JSON.stringify(state, null, 2),
@@ -156,7 +163,7 @@ const LoadPattern = ({id}: {id: string}) => {
             }
             console.log('have state');
             const ids = unique(
-                Object.values(state.layers)
+                Object.values(state.current.layers)
                     .flatMap((l) =>
                         Object.values(l.entities).map((e) =>
                             e.type === 'Pattern' ? e.tiling : null,
@@ -284,28 +291,28 @@ const initialEditState: EditState = {
 };
 const initialPendingStateHistory = blankHistory<PendingState>({pending: null});
 
-export const [ProvideExportState, useExportState] = makeHistoryContext<
-    State,
-    {type: 'img'; url: string} | {type: 'video'; url: string}
->('type');
+type ExportAnnotation = {type: 'img'; url: string} | {type: 'video'; url: string};
+type ExportHistory = History<State, ExportAnnotation>;
+
+export const [ProvideExportState, useExportState] = makeHistoryContext<State, ExportAnnotation>(
+    'type',
+);
 
 const PatternExport = ({
     initial,
     onSave,
     initialPatterns,
 }: {
-    initial: State;
-    onSave: (s: State) => void;
+    initial: ExportHistory;
+    onSave: (s: ExportHistory) => void;
     initialPatterns: Patterns;
 }) => {
-    const inhi = useMemo(() => blankHistory(initial), [initial]);
-
     return (
         <ProvideExportState
-            initial={inhi}
+            initial={initial}
             save={(v) => {
                 console.log('saving a history', v);
-                onSave(v.current);
+                onSave(v);
             }}
         >
             <ProvidePendingState initial={initialPendingStateHistory}>

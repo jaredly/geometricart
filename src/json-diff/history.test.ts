@@ -23,6 +23,7 @@ const initialArticle: Article = {
 };
 
 const makeHistory = (current: Article): History<Article, string> => ({
+    version: 1,
     nodes: {root: {id: 'root', pid: 'root', changes: [], children: []}},
     annotations: {},
     root: 'root',

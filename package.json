@@ -57,6 +57,7 @@
         "esbuild-plugin-babel": "^0.2.3",
         "estree-assign-parent": "^1.0.0",
         "fast-deep-equal": "^3.1.3",
+        "fast-equals": "^5.3.4",
         "fast-glob": "^3.2.11",
         "fflate": "^0.8.2",
         "greiner-hormann": "^1.4.2",

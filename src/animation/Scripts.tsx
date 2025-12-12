@@ -1,6 +1,4 @@
-// @ts-expect-error
 import prettier from 'prettier';
-// @ts-expect-error
 import babel from 'prettier/parser-babel';
 import React from 'react';
 import {Text} from '../editor/Forms';

@@ -51,7 +51,8 @@ function _getCloned(root: any, at: PathSegment[]) {
         if (!parentKey) {
             root = next;
         } else {
-            if (parentKey.type !== 'key') throw new Error(`invalid parent key type ${parentKey.type}`);
+            if (parentKey.type !== 'key')
+                throw new Error(`invalid parent key type ${parentKey.type}`);
             parent[parentKey.key] = next;
         }
         base = next;
@@ -177,6 +178,7 @@ export function _remove(
     const key = at[at.length - 1];
     if (key.type !== 'key') throw new Error(`weird final key type while removing ${key.type}`);
     if (!equal(value, base[key.key])) {
+        console.log(value, base[key.key]);
         throw new Error(`remove, value not equal what's there`);
     }
     if (Array.isArray(base)) {

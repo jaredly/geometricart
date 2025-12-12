@@ -35,6 +35,7 @@ type HistoryNode<T, An> = {
 };
 
 export type History<T, An> = {
+    version: 1;
     initial: T;
     nodes: Record<string, HistoryNode<T, An>>;
     annotations: Record<string, An[]>;
@@ -46,6 +47,7 @@ export type History<T, An> = {
 
 export function blankHistory<T, An = never>(v: T): History<T, An> {
     return {
+        version: 1,
         current: v,
         initial: v,
         nodes: {root: {changes: [], children: [], id: 'root', pid: 'root'}},

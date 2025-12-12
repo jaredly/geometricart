@@ -15,8 +15,10 @@ import {BoxField} from './BoxField';
 import {PaletteEditor} from './PaletteEditor';
 import {LayerEditor} from './LayerEditor';
 import {createLayerTemplate, parseAnimatable} from './createLayerTemplate';
-import {Updater} from '../../../../json-diff/helper2';
+import {JsonPatchOp, Path, Updater} from '../../../../json-diff/helper2';
 import {ModsEditor} from './FillEditor';
+import {useExportState} from '../pattern-export';
+import {History} from '../../../../json-diff/history';
 
 type StateEditorProps = {
     value: State;
@@ -234,6 +236,64 @@ export const StateEditor = ({value, update}: StateEditorProps) => {
                     onChange={update.styleConfig.timeline}
                 />
             </Section>
+            <Section title="History">
+                <HistoryView />
+            </Section>
+        </div>
+    );
+};
+
+const linearHistory = (v: History<State, unknown>) => {
+    let res: JsonPatchOp<State>[] = [];
+    let id = v.tip;
+    while (id !== v.root) {
+        res.unshift(...v.nodes[id].changes);
+        id = v.nodes[id].pid;
+    }
+    return res;
+};
+
+const showPath = (p: Path) => {
+    return p
+        .map((p) =>
+            p.type === 'single'
+                ? '[]'
+                : p.type === 'tag'
+                  ? `[${p.value}]`
+                  : typeof p.key === 'number'
+                    ? `[${p.key}]`
+                    : `.${p.key}`,
+        )
+        .join('');
+};
+
+const showOp = (op: JsonPatchOp<State>) => {
+    switch (op.op) {
+        case 'add':
+            return `add ${showPath(op.path)}`;
+        case 'replace':
+            return `repl ${showPath(op.path)}`;
+        case 'remove':
+            return `rem ${showPath(op.path)}`;
+        case 'move':
+            return `mv ${showPath(op.from)} ${showPath(op.path)}`;
+        case 'copy':
+            return `copy`;
+    }
+};
+
+const HistoryView = () => {
+    const ctx = useExportState();
+    const history = ctx.useHistory();
+    const res = useMemo(() => linearHistory(history), [history]);
+
+    return (
+        <div>
+            {res.map((item, i) => (
+                <div key={i}>
+                    <pre>{showOp(item)}</pre>
+                </div>
+            ))}
         </div>
     );
 };

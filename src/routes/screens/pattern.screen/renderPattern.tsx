@@ -124,11 +124,15 @@ export const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Patter
                     if (got == null) return; // out of range
                     local.t = got;
                 }
+
                 stuff.push(`style id: ${s.id}`);
                 if (typeof match === 'object') {
                     local.styleCenter = match;
                 }
                 const localAnim = {...anim, values: {...anim.values, ...local}};
+
+                const smod = s.mods.map((m) => resolvePMod(anim, m));
+
                 // hmmm need to align the ... style that it came from ... with animvalues
                 // like `styleCenter`
                 Object.values(s.fills).forEach((fill) => {
@@ -137,6 +141,7 @@ export const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Patter
                         stuff.push(`disabled fill: ${fill.id}`);
                         return;
                     }
+                    cfill.mods.push(...smod);
                     stuff.push(`fill: ${fill.id}`);
                     if (!fills[fill.id]) {
                         fills[fill.id] = cfill;
@@ -150,6 +155,7 @@ export const renderPattern = (ctx: Ctx, outer: CropsAndMatrices, pattern: Patter
                 Object.values(s.lines).forEach((line) => {
                     const cline = dropNully(resolveLine(localAnim, line));
                     if (cline.enabled === false) return;
+                    cline.mods.push(...smod);
                     if (!lines[line.id]) {
                         lines[line.id] = cline;
                         return;

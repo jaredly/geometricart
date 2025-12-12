@@ -4,16 +4,35 @@ import {ops, rebase} from './ops2';
 
 export function fromPending<T, V>(base: T, pending: PendingJsonPatchOp<V>): JsonPatchOp<V> {
     switch (pending.op) {
-        case 'add':
+        case 'add': {
+            const prev = _get(base, pending.path);
+            if (prev !== undefined) {
+                throw new Error(`cant add whats already there`);
+            }
+            return pending;
+        }
         case 'move':
         case 'copy':
             return pending;
-        case 'replace':
-            return {...pending, previous: _get(base, pending.path)};
-        case 'remove':
+        case 'replace': {
+            const prev = _get(base, pending.path);
+            if (prev === undefined) {
+                return {...pending, op: 'add'};
+            }
+            return {...pending, previous: prev};
+        }
+        case 'remove': {
+            const prev = _get(base, pending.path);
+            if (prev === undefined) {
+                throw new Error('nothing to remove');
+            }
             return {...pending, value: _get(base, pending.path)};
+        }
         case 'push': {
             const arr = _get(base, pending.path);
+            if (!Array.isArray(arr)) {
+                throw new Error('not an array');
+            }
             return {
                 op: 'add',
                 path: [...pending.path, {type: 'key', key: arr.length}],

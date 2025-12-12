@@ -1,4 +1,11 @@
 
+Nowww what if we make history actually persist
+so then we can play with it.
+
+Ok next up, we want `preview` type updates.
+
+
+#
 
 yo so working with these update builders is so fun.
 i dunno if it's too much magic, but I'm loving it.
@@ -7,7 +14,8 @@ SO the next barrier on the block:
 -> T | T[]
 my builder doesn't know how to distinguish.
 
-I've done the `variant` thing which is awesome
+I've done the `variant` thing which is awesome.
+Maybe we can do `single(true/false)`?
 
 ##
 

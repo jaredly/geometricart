@@ -16,6 +16,7 @@ type CH<T> = {
     save: (v: T) => void;
     listeners: (() => void)[];
     historyListeners: (() => void)[];
+    historyUp: (() => void)[];
 };
 
 export const makeHistoryContext = <T, An, Tag extends string = 'type'>(tag: Tag) => {
@@ -37,6 +38,7 @@ export const makeHistoryContext = <T, An, Tag extends string = 'type'>(tag: Tag)
                 save: (v) => l.current?.(v),
                 historyListeners: [],
                 listeners: [],
+                historyUp: [],
             });
             useEffect(() => {
                 if (initial !== value.current.state) {
@@ -61,6 +63,7 @@ export const makeHistoryContext = <T, An, Tag extends string = 'type'>(tag: Tag)
                     if (hChanged) {
                         ctx.historyListeners.forEach((f) => f());
                     }
+                    ctx.historyUp.forEach((f) => f());
                 };
                 return {
                     use<B>(sel: (t: T) => B, exact = true): B {
@@ -96,6 +99,18 @@ export const makeHistoryContext = <T, An, Tag extends string = 'type'>(tag: Tag)
                     },
                     latest() {
                         return ctx.state.current;
+                    },
+                    useHistory() {
+                        const [tick, setTick] = useState(0);
+                        useEffect(() => {
+                            const f = () => setTick((t) => t + 1);
+                            ctx.historyUp.push(f);
+                            return () => {
+                                const at = ctx.historyUp.indexOf(f);
+                                if (at !== -1) ctx.historyUp.splice(at, 1);
+                            };
+                        }, []);
+                        return ctx.state;
                     },
                     clearHistory() {
                         ctx.state = clearHistory(ctx.state);

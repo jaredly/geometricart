@@ -5,7 +5,7 @@ import {PatternContentsEditor} from './PatternContentsEditor';
 import {ModsEditor} from './FillEditor';
 import {genid} from '../genid';
 import {useEditState, useLatest, usePendingState} from '../editState';
-import {ChunkEditor} from './ShapeStyleCard';
+import {ChunkEditor} from './ChunkEditor';
 import {cmp} from './cmp';
 import {AnimInput} from './AnimInput';
 import {BlurInput} from './BlurInput';

@@ -1,4 +1,4 @@
-import equal from 'fast-deep-equal';
+import {deepEqual} from 'fast-equals';
 import {_add, _get, _remove, _replace} from './internal2';
 import {AddOp, JsonPatchOp, MoveOp, Path, PendingJsonPatchOp, RemoveOp, ReplaceOp} from './helper2';
 
@@ -6,14 +6,14 @@ function add<T, V>(base: T, op: AddOp<V>) {
     return _add(base, op.path, op.value);
 }
 function remove<T, V>(base: T, op: RemoveOp<V>) {
-    return _remove(base, op.path, op.value, equal);
+    return _remove(base, op.path, op.value, deepEqual);
 }
 function replace<T, V>(base: T, op: ReplaceOp<V>) {
-    return _replace(base, op.path, op.previous, op.value, equal);
+    return _replace(base, op.path, op.previous, op.value, deepEqual);
 }
 function move<T>(base: T, op: MoveOp<T>) {
     const value = _get(base, op.from);
-    const removed = _remove(base, op.from, value, equal);
+    const removed = _remove(base, op.from, value, deepEqual);
     return _add(removed, op.path, value);
 }
 
