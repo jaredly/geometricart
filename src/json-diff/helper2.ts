@@ -2,7 +2,8 @@
 
 export type PathSegment =
     | {type: 'key'; key: string | number}
-    | {type: 'tag'; key: string; value: string};
+    | {type: 'tag'; key: string; value: string}
+    | {type: 'single'; isSingle: boolean};
 
 type ReplaceAndTestMethodsA<Value, R> = {
     replace(value: Value): R;
@@ -35,6 +36,19 @@ export type DiffNodeA<Root, Current, Tag extends PropertyKey, R> = AddMethodsA<C
     RemoveMethodsA<R> &
     UpdateFunction<Current, Tag, R> &
     // navigation
+    // 🔹 "one or many" → refine T | T[] via single()
+    (IsSingleOrArray<Current> extends true
+        ? {
+              single<V extends boolean>(
+                  isSingle: V,
+              ): DiffNodeA<
+                  Root,
+                  V extends true ? SingleElement<Current> : SingleElement<Current>[],
+                  Tag,
+                  R
+              >;
+          }
+        : {}) &
     // 🔹 tagged union → must choose an arm via variant()
     (IsTaggedUnion<Current, Tag> extends true
         ? {
@@ -106,6 +120,18 @@ export function diffBuilderApply<T, Tag extends string = 'type', R = void>(
                     if (!cache[k])
                         cache[k] = (value) => apply({op: 'replace', path, value, ...ghost});
                     return cache[k];
+                }
+
+                if (prop === 'single') {
+                    return (isSingle: boolean) => {
+                        const k = pathString + '/single/' + (isSingle ? '1' : '0');
+                        if (!proxyCache[k])
+                            proxyCache[k] = makeProxy([
+                                ...path,
+                                {type: 'single', isSingle: !!isSingle},
+                            ]);
+                        return proxyCache[k];
+                    };
                 }
 
                 if (prop === 'add') {
@@ -198,6 +224,18 @@ export type PendingJsonPatchOp<T, Tag extends PropertyKey = 'type'> =
 
 // Strip null/undefined for navigation
 type NonNullish<T> = Exclude<T, null | undefined>;
+
+type ArrayElement<T> = T extends (infer Elem)[] ? Elem : never;
+
+type SingleElement<T> = ArrayElement<NonNullish<T>>;
+
+type IsSingleOrArray<Current> = [NonNullish<Current>] extends [never]
+    ? false
+    : NonNullish<Current> extends SingleElement<Current> | SingleElement<Current>[]
+      ? SingleElement<Current> | SingleElement<Current>[] extends NonNullish<Current>
+          ? true
+          : false
+      : false;
 
 // "Is this a union?" helper
 type IsUnion<T, U = T> = (T extends any ? (x: T) => void : never) extends (x: U) => void

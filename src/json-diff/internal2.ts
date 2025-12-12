@@ -19,6 +19,16 @@ export function _get(base: any, at: PathSegment[]) {
             }
             continue;
         }
+        if (key.type === 'single') {
+            const isArray = Array.isArray(base);
+            if (key.isSingle && isArray) {
+                throw new Error(`Expected a single value but found an array`);
+            }
+            if (!key.isSingle && !isArray) {
+                throw new Error(`Expected an array but found a single value`);
+            }
+            continue;
+        }
         if (Array.isArray(base)) {
             if (typeof key.key !== 'number') {
                 throw new Error(`invalid key for array: ${key.key}`);
@@ -47,6 +57,16 @@ function _getCloned(root: any, at: PathSegment[]) {
                 throw new Error(
                     `Tagged union has wrong tag "${key.key}"="${base[key.key]}", expected "${key.value}"`,
                 );
+            }
+            continue;
+        }
+        if (key.type === 'single') {
+            const isArray = Array.isArray(base);
+            if (key.isSingle && isArray) {
+                throw new Error(`Expected a single value but found an array`);
+            }
+            if (!key.isSingle && !isArray) {
+                throw new Error(`Expected an array but found a single value`);
             }
             continue;
         }
@@ -79,6 +99,7 @@ export function _replace(
     let root: any;
     ({root, base} = _getCloned(base, at.slice(0, -1)));
     const key = at[at.length - 1];
+    if (key.type !== 'key') throw new Error(`weird final key type while replacing ${key.type}`);
     if (Array.isArray(base)) {
         if (typeof key.key !== 'number') {
             throw new Error(`invalid key for array: ${key.key}`);
@@ -98,6 +119,7 @@ export function _add(base: any, at: PathSegment[], value: any) {
     let root: any;
     ({root, base} = _getCloned(base, at.slice(0, -1)));
     const key = at[at.length - 1];
+    if (key.type !== 'key') throw new Error(`weird final key type while adding ${key.type}`);
     if (Array.isArray(base)) {
         if (typeof key.key !== 'number') {
             throw new Error(`invalid key for array: ${key.key}`);
@@ -122,6 +144,7 @@ export function _remove(
     let root: any;
     ({root, base} = _getCloned(base, at.slice(0, -1)));
     const key = at[at.length - 1];
+    if (key.type !== 'key') throw new Error(`weird final key type while removing ${key.type}`);
     if (!equal(value, base[key.key])) {
         throw new Error(`remove, value not equal what's there`);
     }
