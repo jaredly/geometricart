@@ -1,7 +1,7 @@
 import equal from 'fast-deep-equal';
 import {createContext, useContext, useEffect, useMemo, useRef, useState} from 'react';
 import {ApplyTiming, diffBuilderApply, PendingJsonPatchOp} from './helper2';
-import {dispatch, History} from './history';
+import {blankHistory, dispatch, History} from './history';
 import {MaybeNested, resolveAndApply} from './make2';
 import {useLatest} from '../routes/screens/pattern.screen/editState';
 
@@ -21,7 +21,14 @@ type CH<T> = {
 };
 
 export const makeHistoryContext = <T, An, Tag extends string = 'type'>(tag: Tag) => {
-    const Ctx = createContext<CH<History<T, An>>>(null as any);
+    const Ctx = createContext<CH<History<T, An>>>({
+        state: blankHistory(null as any),
+        historyListeners: [],
+        historyUp: [],
+        previewState: null,
+        save(v) {},
+        listeners: [],
+    });
 
     return [
         function Provide({

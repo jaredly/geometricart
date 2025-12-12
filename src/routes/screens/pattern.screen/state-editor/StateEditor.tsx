@@ -285,7 +285,7 @@ const showOp = (op: JsonPatchOp<State>) => {
 const HistoryView = () => {
     const ctx = useExportState();
     const history = ctx.useHistory();
-    const res = useMemo(() => linearHistory(history), [history]);
+    const res = useMemo(() => (history ? linearHistory(history) : []), [history]);
 
     return (
         <div>
