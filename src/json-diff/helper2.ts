@@ -14,7 +14,7 @@ type AddMethodsA<Value, R> = {add(value: Value): R};
 // Only if P is a RemovablePath<Root, C>
 type RemoveMethodsA<R> = {remove(): R};
 
-export type Builder<Current, Tag extends PropertyKey = 'type'> = DiffNodeA<
+export type Updater<Current, Tag extends PropertyKey = 'type'> = DiffNodeA<
     unknown,
     Current,
     Tag,
@@ -26,13 +26,12 @@ type OpMaker<Value, Tag extends PropertyKey> = (
     update: DiffNodeA<Value, Value, Tag, PendingJsonPatchOp<Value>>,
 ) => PendingJsonPatchOp<Value> | PendingJsonPatchOp<Value>[];
 
-type UpdateFunction<Value, Tag extends PropertyKey, R> = (opMaker: OpMaker<Value, Tag>) => R;
+type UpdateFunction<Value, Tag extends PropertyKey, R> = (
+    opMaker: Value | OpMaker<Value, Tag>,
+) => R;
 
-export type DiffNodeA<Root, Current, Tag extends PropertyKey, R> = ReplaceAndTestMethodsA<
-    Current,
-    R
-> & // operations at this path (unchanged)
-    AddMethodsA<Current, R> &
+export type DiffNodeA<Root, Current, Tag extends PropertyKey, R> = AddMethodsA<Current, R> & // operations at this path (unchanged)
+    ReplaceAndTestMethodsA<Current, R> &
     RemoveMethodsA<R> &
     UpdateFunction<Current, Tag, R> &
     // navigation
@@ -91,7 +90,13 @@ export function diffBuilderApply<T, Tag extends string = 'type', R = void>(
                     return (tagValue: string) => {
                         if (!tag) throw new Error(`no tag identifier configured`);
 
-                        return makeProxy(path.concat([{type: 'tag', key: tag, value: tagValue}]));
+                        const k = pathString + '/' + tagValue;
+                        if (!proxyCache[k])
+                            proxyCache[k] = makeProxy([
+                                ...path,
+                                {type: 'tag', key: tag, value: tagValue},
+                            ]);
+                        return proxyCache[k];
                     };
                 }
 
@@ -136,8 +141,11 @@ export function diffBuilderApply<T, Tag extends string = 'type', R = void>(
             },
         };
 
-        return new Proxy((opMaker: OpMaker<T, Tag>) => {
-            return apply({op: 'nested', make: opMaker as any, path, ...ghost});
+        return new Proxy((value: T | OpMaker<T, Tag>) => {
+            if (typeof value !== 'function') {
+                return apply({op: 'replace', path, value, ...ghost});
+            }
+            return apply({op: 'nested', make: value as any, path, ...ghost});
         }, handler);
     }
     return makeProxy([]) as DiffBuilderA<T, Tag, R>;

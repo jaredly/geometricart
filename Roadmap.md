@@ -1,8 +1,22 @@
 
 
+yo so working with these update builders is so fun.
+i dunno if it's too much magic, but I'm loving it.
+
+SO the next barrier on the block:
+-> T | T[]
+my builder doesn't know how to distinguish.
+
+I've done the `variant` thing which is awesome
+
+##
+
 Ok yall
 I have gotten the 'two level undo/redo' working!!!! And it's very cool.
 
+NOWWWW let's make history happen.
+first, do I want ot make my onChange much more granular?
+sure why not.
 
 ##
 

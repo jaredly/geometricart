@@ -3,14 +3,9 @@ import {ShapeKind} from '../export-types';
 import {DistanceEditor} from './DistanceEditor';
 import {TextField} from './TextField';
 import {NumberField} from './NumberField';
+import {Updater} from '../../../../json-diff/helper2';
 
-export const BaseKindEditor = ({
-    value,
-    onChange,
-}: {
-    value: ShapeKind;
-    onChange: (next: ShapeKind) => void;
-}) => {
+export const BaseKindEditor = ({value, update}: {value: ShapeKind; update: Updater<ShapeKind>}) => {
     if (Array.isArray(value)) {
         return <div>itsan array</div>;
     }
@@ -18,7 +13,7 @@ export const BaseKindEditor = ({
     return (
         <div className="flex flex-wrap">
             {value.type === 'distance' ? (
-                <DistanceEditor value={value} onChange={(value) => onChange(value)} />
+                <DistanceEditor value={value} update={update.variant('distance')} />
             ) : null}
             <div className="flex flex-wrap gap-2">
                 <select
@@ -26,29 +21,29 @@ export const BaseKindEditor = ({
                     onChange={(evt) => {
                         switch (evt.target.value) {
                             case 'everything':
-                                onChange({type: 'everything'});
+                                update.replace({type: 'everything'});
                                 return;
                             case 'alternating':
-                                onChange(
+                                update.replace(
                                     value.type === 'alternating'
                                         ? value
                                         : {type: 'alternating', index: 0},
                                 );
                                 return;
                             case 'explicit':
-                                onChange(
+                                update.replace(
                                     value.type === 'explicit' ? value : {type: 'explicit', ids: {}},
                                 );
                                 return;
                             case 'shape':
-                                onChange(
+                                update.replace(
                                     value.type === 'shape'
                                         ? value
                                         : {type: 'shape', key: '', rotInvariant: false},
                                 );
                                 return;
                             case 'distance':
-                                onChange(
+                                update.replace(
                                     value.type === 'distance'
                                         ? value
                                         : {
@@ -74,7 +69,7 @@ export const BaseKindEditor = ({
                     <NumberField
                         label="Index"
                         value={value.index}
-                        onChange={(index) => onChange({...value, index})}
+                        onChange={update.variant('alternating').index}
                     />
                 ) : null}
                 {type === 'explicit' ? (
@@ -93,7 +88,7 @@ export const BaseKindEditor = ({
                                     },
                                     {} as Record<string, true>,
                                 );
-                            onChange({...value, ids});
+                            update.variant('explicit').ids(ids);
                         }}
                     />
                 ) : null}
@@ -102,7 +97,7 @@ export const BaseKindEditor = ({
                         <TextField
                             label="Shape key"
                             value={value.key}
-                            onChange={(key) => onChange({...value, key})}
+                            onChange={update.variant('shape').key}
                         />
                         <label className="label cursor-pointer gap-2">
                             <span className="label-text text-sm">Rotation invariant</span>
@@ -111,7 +106,7 @@ export const BaseKindEditor = ({
                                 type="checkbox"
                                 checked={value.rotInvariant}
                                 onChange={(evt) =>
-                                    onChange({...value, rotInvariant: evt.target.checked})
+                                    update.variant('shape').rotInvariant(evt.target.checked)
                                 }
                             />
                         </label>

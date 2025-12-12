@@ -2,13 +2,14 @@ import React from 'react';
 import {BlurInt} from '../../../../editor/Forms';
 import {BaseKind} from '../export-types';
 import {BlurInput} from './BlurInput';
+import {Updater} from '../../../../json-diff/helper2';
 
 export const DistanceEditor = ({
     value,
-    onChange,
+    update,
 }: {
     value: BaseKind & {type: 'distance'};
-    onChange: (v: BaseKind) => void;
+    update: Updater<BaseKind & {type: 'distance'}>;
 }) => {
     return (
         <div>
@@ -18,7 +19,7 @@ export const DistanceEditor = ({
                     className="input input-sm w-10 mx-2"
                     value={value.corner}
                     onChange={(corner) =>
-                        corner != null ? onChange({...value, corner}) : undefined
+                        corner != null ? update.corner.replace(corner) : undefined
                     }
                 />
                 Dist
@@ -29,7 +30,7 @@ export const DistanceEditor = ({
                         if (!dist) return;
                         const t = dist.split(',').map((n) => Number(n));
                         if (!t.length || !t.every((n) => Number.isFinite(n))) return;
-                        onChange({...value, distances: t});
+                        update.distances.replace(t);
                     }}
                 />
             </label>
