@@ -197,7 +197,7 @@ export function diffBuilderApply<T, Tag extends string = 'type', R = void>(
     return makeProxy([]) as DiffBuilderA<T, Tag, R>;
 }
 
-type Path = PathSegment[];
+export type Path = PathSegment[];
 
 export type AddOp<T> = {op: 'add'; path: Path; value: unknown; _t: T};
 

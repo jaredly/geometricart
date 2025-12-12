@@ -7,7 +7,6 @@ export const SubStyleList = <T extends {id: string}>({
     items,
     createItem,
     render,
-    // onChange,
     update,
 }: {
     label: string;
@@ -20,7 +19,6 @@ export const SubStyleList = <T extends {id: string}>({
         update: Updater<T>,
         reId: (v: string) => void,
     ) => React.ReactNode;
-    // onChange: (next: Record<string, T>) => void;
     update: Updater<Record<string, T>>;
 }) => {
     const entries = useMemo(() => Object.entries(items), [items]);
@@ -44,7 +42,7 @@ export const SubStyleList = <T extends {id: string}>({
                 {entries.map(([key, value]) => (
                     <div key={key} className="rounded border border-base-300 p-2">
                         {render(key, value, update[key], (newKey) => {
-                            update.move(key, newKey);
+                            update((_, up) => [(up[key] as any).id(newKey), up.move(key, newKey)]);
                         })}
                     </div>
                 ))}

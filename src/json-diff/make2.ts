@@ -1,6 +1,6 @@
 import {_get} from './internal2';
 import {diffBuilder, JsonPatchOp, PendingJsonPatchOp} from './helper2';
-import {ops} from './ops2';
+import {ops, rebase} from './ops2';
 
 export function fromPending<T, V>(base: T, pending: PendingJsonPatchOp<V>): JsonPatchOp<V> {
     switch (pending.op) {
@@ -42,9 +42,7 @@ export function resolveAndApply<T>(
             const inner = op.make(value, diffBuilder(tag));
             const next = resolveAndApply<T>(
                 current,
-                asArray(inner).map(
-                    (i) => ({...i, path: [...op.path, ...i.path]}) as PendingJsonPatchOp<T>,
-                ),
+                asArray(inner).map((i) => rebase(i, op.path) as PendingJsonPatchOp<T>),
                 tag,
             );
             current = next.current;

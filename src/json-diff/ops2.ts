@@ -1,6 +1,6 @@
 import equal from 'fast-deep-equal';
 import {_add, _get, _remove, _replace} from './internal2';
-import {AddOp, JsonPatchOp, MoveOp, RemoveOp, ReplaceOp} from './helper2';
+import {AddOp, JsonPatchOp, MoveOp, Path, PendingJsonPatchOp, RemoveOp, ReplaceOp} from './helper2';
 
 function add<T, V>(base: T, op: AddOp<V>) {
     return _add(base, op.path, op.value);
@@ -15,6 +15,25 @@ function move<T>(base: T, op: MoveOp<T>) {
     const value = _get(base, op.from);
     const removed = _remove(base, op.from, value, equal);
     return _add(removed, op.path, value);
+}
+
+export function rebase<T>(op: PendingJsonPatchOp<T>, path: Path): PendingJsonPatchOp<T> {
+    switch (op.op) {
+        case 'move':
+            return {
+                ...op,
+                path: [...path, ...op.path],
+                from: [...path, ...op.from],
+            };
+        case 'add':
+        case 'push':
+        case 'replace':
+        case 'remove':
+            return {...op, path: [...path, ...op.path]};
+        case 'nested':
+        case 'copy':
+            throw new Error('not supporting these');
+    }
 }
 
 function invert<T>(op: JsonPatchOp<T>): JsonPatchOp<T> {
