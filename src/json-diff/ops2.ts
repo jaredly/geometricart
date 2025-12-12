@@ -21,6 +21,7 @@ function invert<T>(op: JsonPatchOp<T>): JsonPatchOp<T> {
         case 'remove':
             return {op: 'add', path: op.path, value: op.value} as JsonPatchOp<T>;
         case 'move':
+            return {op: 'move', from: op.path, path: op.from} as JsonPatchOp<T>;
         case 'copy':
             throw new Error('not supporting these');
     }

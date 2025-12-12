@@ -1,4 +1,5 @@
 import React, {useMemo} from 'react';
+import {Updater} from '../../../../json-diff/helper2';
 
 export const SubStyleList = <T extends {id: string}>({
     label,
@@ -6,7 +7,8 @@ export const SubStyleList = <T extends {id: string}>({
     items,
     createItem,
     render,
-    onChange,
+    // onChange,
+    update,
 }: {
     label: string;
     emptyLabel: string;
@@ -15,19 +17,13 @@ export const SubStyleList = <T extends {id: string}>({
     render: (
         key: string,
         value: T,
-        update: (next: T, nextKey?: string) => void,
-        remove: () => void,
+        update: Updater<T>,
+        reId: (v: string) => void,
     ) => React.ReactNode;
-    onChange: (next: Record<string, T>) => void;
+    // onChange: (next: Record<string, T>) => void;
+    update: Updater<Record<string, T>>;
 }) => {
     const entries = useMemo(() => Object.entries(items), [items]);
-
-    const upsert = (key: string, value: T) => {
-        const record = {...items};
-        delete record[key];
-        record[value.id] = value;
-        onChange(record);
-    };
 
     return (
         <div className="bg-base-100 rounded-lg space-y-2">
@@ -37,7 +33,7 @@ export const SubStyleList = <T extends {id: string}>({
                     className="btn btn-xs btn-outline"
                     onClick={() => {
                         const id = `${label.toLowerCase()}-${entries.length + 1}`;
-                        upsert(id, createItem(id));
+                        update[id].add(createItem(id));
                     }}
                 >
                     Add
@@ -47,16 +43,10 @@ export const SubStyleList = <T extends {id: string}>({
             <div className="space-y-2">
                 {entries.map(([key, value]) => (
                     <div key={key} className="rounded border border-base-300 p-2">
-                        {render(
-                            key,
-                            value,
-                            (next) => upsert(key, next),
-                            () => {
-                                const record = {...items};
-                                delete record[key];
-                                onChange(record);
-                            },
-                        )}
+                        {render(key, value, update[key], (newKey) => {
+                            // update.move(key, newKey),
+                            throw new Error('nopes');
+                        })}
                     </div>
                 ))}
             </div>

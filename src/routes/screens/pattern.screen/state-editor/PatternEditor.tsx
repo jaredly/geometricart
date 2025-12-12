@@ -27,10 +27,10 @@ export const PatternEditor = ({
             ) : (
                 <CoordField label="Pattern size" value={value.psize} onChange={update.psize} />
             )}
-            <ModsEditor mods={value.mods} palette={palette} onChange={update.mods} />
+            <ModsEditor mods={value.mods} palette={palette} update={update.mods} />
             <AdjustmentsEditor
                 adjustments={value.adjustments}
-                onChange={update.adjustments}
+                update={update.adjustments}
                 palette={palette}
             />
             <PatternContentsEditor
@@ -114,18 +114,15 @@ export const SharedEditor = ({
 const AdjustmentEditor = ({
     adjustment: adj,
     palette,
-    onChange,
-    onRemove,
+    update,
 }: {
     palette: Color[];
     adjustment: Adjustment;
-    onChange: (adj: Adjustment) => void;
-    onRemove(): void;
+    update: Updater<Adjustment>;
 }) => {
     const edit = usePendingState();
     const pending = edit.use((v) => v.pending);
     const isAdding = pending?.type === 'select-shapes' && pending.key === `adj-${adj.id}`;
-    const latest = useLatest(adj);
     return (
         <div className="border border-base-300 rounded-md p-4 space-y-4">
             <div className="flex items-center">
@@ -140,14 +137,14 @@ const AdjustmentEditor = ({
                     onClick={() => {
                         if (isAdding) {
                             edit.update.pending.replace(null);
-                            onChange({...adj, shapes: pending.shapes});
+                            update.shapes(pending.shapes);
                         } else {
                             edit.update.pending.replace({
                                 type: 'select-shapes',
                                 key: `adj-${adj.id}`,
                                 shapes: adj.shapes,
                                 onDone(shapes) {
-                                    onChange({...latest.current, shapes});
+                                    update.shapes(shapes);
                                 },
                             });
                         }
@@ -155,31 +152,25 @@ const AdjustmentEditor = ({
                 >
                     {isAdding ? 'Finish' : 'Select shapes'}
                 </button>
-                <ChunkEditor chunk={adj.t} onChange={(t) => onChange({...adj, t})} />
-                <button onClick={onRemove} className="btn btn-sm btn-square">
+                <ChunkEditor chunk={adj.t} onChange={update.t} />
+                <button onClick={update.remove} className="btn btn-sm btn-square">
                     &times;
                 </button>
             </div>
-            <SharedEditor shared={adj.shared} onChange={(shared) => onChange({...adj, shared})} />
-            <ModsEditor
-                mods={adj.mods}
-                onChange={(mods) => {
-                    onChange({...adj, mods});
-                }}
-                palette={palette}
-            />
+            <SharedEditor shared={adj.shared} onChange={update.shared} />
+            <ModsEditor mods={adj.mods} update={update.mods} palette={palette} />
         </div>
     );
 };
 
 const AdjustmentsEditor = ({
     adjustments,
-    onChange,
+    update,
     palette,
 }: {
     palette: Color[];
     adjustments: Pattern['adjustments'];
-    onChange: (v: Pattern['adjustments']) => void;
+    update: Updater<Pattern['adjustments']>;
 }) => {
     return (
         <details className="space-y-4">
@@ -190,7 +181,7 @@ const AdjustmentsEditor = ({
                     value=""
                     onClick={() => {
                         const id = genid();
-                        onChange({...adjustments, [id]: {id, mods: [], shapes: []}});
+                        update[id].add({id, mods: [], shapes: []});
                     }}
                 >
                     Add
@@ -201,12 +192,7 @@ const AdjustmentsEditor = ({
                     palette={palette}
                     key={adj.id}
                     adjustment={adj}
-                    onChange={(adj) => onChange({...adjustments, [adj.id]: adj})}
-                    onRemove={() => {
-                        const res = {...adjustments};
-                        delete res[adj.id];
-                        onChange(res);
-                    }}
+                    update={update[adj.id]}
                 />
             ))}
         </details>

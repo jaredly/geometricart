@@ -1,26 +1,32 @@
 import React from 'react';
-import {Color, Line, AnimatableNumber, AnimatableColor, AnimatableBoolean} from '../export-types';
+import {
+    Color,
+    Line,
+    AnimatableNumber,
+    AnimatableColor,
+    AnimatableBoolean,
+    AnimatableValue,
+} from '../export-types';
 import {ShadowEditor} from './ShadowEditor';
 import {AnimColor} from './AnimColor';
 import {AnimInput} from './AnimInput';
 import {ModsEditor} from './FillEditor';
+import {Updater} from '../../../../json-diff/helper2';
 
 export const LineEditor = ({
     palette,
     value,
-    onChange,
-    onRemove,
+    update,
 }: {
     palette: Color[];
     value: Line;
-    onChange: (next: Line) => void;
-    onRemove: () => void;
+    update: Updater<Line>;
 }) => {
     return (
         <div className="space-y-2">
             <div className="flex flex-row md:flex-row gap-2 md:items-center">
                 Line <span className="font-mono bg-gray-600 px-2 rounded">{value.id}</span>
-                <button className="btn btn-ghost btn-xs text-error " onClick={onRemove}>
+                <button className="btn btn-ghost btn-xs text-error " onClick={update.remove}>
                     &times;
                 </button>
             </div>
@@ -29,35 +35,31 @@ export const LineEditor = ({
                 <AnimInput
                     label="zIndex"
                     value={value.zIndex}
-                    onChange={(zIndex) => onChange({...value, zIndex: zIndex as AnimatableNumber})}
+                    onChange={update.zIndex as Updater<any>}
                 />
                 <AnimColor
                     palette={palette}
                     label="Color"
                     value={value.color}
-                    onChange={(color) => onChange({...value, color: color as AnimatableColor})}
+                    onChange={update.color as Updater<any>}
                 />
                 <AnimInput
                     label="Width"
                     value={value.width}
-                    onChange={(width) => onChange({...value, width: width as AnimatableNumber})}
+                    onChange={update.width as Updater<any>}
                 />
                 <AnimInput
                     label="Sharp"
                     value={value.sharp}
-                    onChange={(sharp) => onChange({...value, sharp: sharp as AnimatableBoolean})}
+                    onChange={update.sharp as Updater<any>}
                 />
                 <ShadowEditor
                     value={value.shadow ?? null}
-                    onChange={(shadow) => onChange({...value, shadow: shadow ?? undefined})}
+                    onChange={(shadow) => update.shadow(shadow ?? undefined)}
                     palette={palette}
                 />
             </div>
-            <ModsEditor
-                palette={palette}
-                mods={value.mods}
-                onChange={(mods) => onChange({...value, mods})}
-            />
+            <ModsEditor palette={palette} mods={value.mods} update={update.mods} />
         </div>
     );
 };

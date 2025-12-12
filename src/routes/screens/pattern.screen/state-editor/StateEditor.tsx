@@ -218,11 +218,11 @@ export const StateEditor = ({value, update}: StateEditorProps) => {
                                     value={crop.shape}
                                     onChange={update.crops[key].shape}
                                 />
-                                <ModsEditor
+                                {/* <ModsEditor
                                     palette={value.styleConfig.palette}
                                     mods={crop.mods ?? []}
-                                    onChange={update.crops[key].mods}
-                                />
+                                    update={update.crops[key].mods}
+                                /> */}
                             </div>
                         </div>
                     ))}

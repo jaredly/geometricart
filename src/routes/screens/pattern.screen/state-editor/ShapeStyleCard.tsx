@@ -207,30 +207,25 @@ export const ShapeStyleCard = ({
                             emptyLabel="No fills"
                             items={value.fills}
                             createItem={createFill}
-                            render={(key, fill, update, remove) => (
+                            render={(key, fill, update, reId) => (
                                 <FillEditor
                                     value={fill}
-                                    onChange={update}
-                                    onRemove={remove}
+                                    update={update}
+                                    reId={reId}
                                     palette={palette}
                                 />
                             )}
-                            onChange={update.fills}
+                            update={update.fills}
                         />
                         <SubStyleList
                             label="Lines"
                             emptyLabel="No lines"
                             items={value.lines}
                             createItem={createLine}
-                            render={(key, line, update, remove) => (
-                                <LineEditor
-                                    palette={palette}
-                                    value={line}
-                                    onChange={update}
-                                    onRemove={remove}
-                                />
+                            render={(key, line, update, reId) => (
+                                <LineEditor palette={palette} value={line} update={update} />
                             )}
-                            onChange={update.lines}
+                            update={update.lines}
                         />
                     </div>
                 )}

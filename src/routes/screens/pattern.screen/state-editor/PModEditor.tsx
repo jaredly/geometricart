@@ -3,24 +3,23 @@ import {Color, PMods, AnimatableNumber, AnimatableCoord} from '../export-types';
 import {AnimInput} from './AnimInput';
 import {AnimCoordInput} from './AnimCoordInput';
 import {AnimCoordOrNumberInput} from './AnimCoordOrNumberInput';
+import {Updater} from '../../../../json-diff/helper2';
 
 export const PModEditor = ({
     palette,
     value,
-    onChange,
-    onRemove,
+    update,
 }: {
     palette: Color[];
     value: PMods;
-    onChange: (next: PMods, nextKey?: string) => void;
-    onRemove: () => void;
+    update: Updater<PMods>;
 }) => {
     switch (value.type) {
         case 'inset':
             return (
                 <div>
                     <button
-                        onClick={onRemove}
+                        onClick={update.remove}
                         className="cursor-pointer p-3 text-gray-600 hover:text-red-500"
                     >
                         &times;
@@ -29,7 +28,7 @@ export const PModEditor = ({
                     <AnimInput
                         label="v"
                         value={value.v}
-                        onChange={(v) => onChange({...value, v: v as AnimatableNumber})}
+                        onChange={update.variant('inset').v as Updater<any>}
                     />
                 </div>
             );
@@ -37,7 +36,7 @@ export const PModEditor = ({
             return (
                 <div>
                     <button
-                        onClick={onRemove}
+                        onClick={update.remove}
                         className="cursor-pointer p-3 text-gray-600 hover:text-red-500"
                     >
                         &times;
@@ -46,7 +45,7 @@ export const PModEditor = ({
                     <AnimCoordInput
                         label="v"
                         value={value.v}
-                        onChange={(v) => onChange({...value, v: v as AnimatableCoord})}
+                        onChange={update.variant('translate').v as Updater<any>}
                     />
                 </div>
             );
@@ -54,7 +53,7 @@ export const PModEditor = ({
             return (
                 <div>
                     <button
-                        onClick={onRemove}
+                        onClick={update.remove}
                         className="cursor-pointer p-3 text-gray-600 hover:text-red-500"
                     >
                         &times;
@@ -64,7 +63,7 @@ export const PModEditor = ({
                         type="checkbox"
                         className="checkbox"
                         checked={value.hole}
-                        onChange={(evt) => onChange({...value, hole: evt.target.checked})}
+                        onChange={(evt) => update.variant('crop').hole(evt.target.checked)}
                     />
                 </div>
             );
@@ -72,7 +71,7 @@ export const PModEditor = ({
             return (
                 <div className="flex flex-row gap-2 items-center">
                     <button
-                        onClick={onRemove}
+                        onClick={update.remove}
                         className="cursor-pointer p-3 text-gray-600 hover:text-red-500"
                     >
                         &times;
@@ -81,14 +80,12 @@ export const PModEditor = ({
                     <AnimCoordOrNumberInput
                         label="v"
                         value={value.v}
-                        onChange={(v) => onChange({...value, v: v as AnimatableNumber})}
+                        onChange={update.variant('scale').v as Updater<any>}
                     />
                     <AnimCoordInput
                         label="origin"
                         value={value.origin}
-                        onChange={(origin) =>
-                            onChange({...value, origin: origin as AnimatableCoord})
-                        }
+                        onChange={update.variant('scale').origin}
                     />
                 </div>
             );
@@ -96,7 +93,7 @@ export const PModEditor = ({
             return (
                 <div className="flex flex-row gap-2 items-center">
                     <button
-                        onClick={onRemove}
+                        onClick={update.remove}
                         className="cursor-pointer p-3 text-gray-600 hover:text-red-500"
                     >
                         &times;
@@ -105,14 +102,12 @@ export const PModEditor = ({
                     <AnimInput
                         label="v"
                         value={value.v}
-                        onChange={(v) => onChange({...value, v: v as AnimatableNumber})}
+                        onChange={update.variant('rotate').v as Updater<any>}
                     />
                     <AnimCoordInput
                         label="origin"
                         value={value.origin}
-                        onChange={(origin) =>
-                            onChange({...value, origin: origin as AnimatableCoord})
-                        }
+                        onChange={update.variant('rotate').origin}
                     />
                 </div>
             );
