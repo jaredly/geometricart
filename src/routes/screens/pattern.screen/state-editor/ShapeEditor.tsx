@@ -1,6 +1,6 @@
 import React from 'react';
 import {BarePath, Coord} from '../../../../types';
-import {useEditState} from '../editState';
+import {useEditState, usePendingState} from '../editState';
 import {JsonEditor} from './JsonEditor';
 
 export const ShapeEditor = ({
@@ -16,7 +16,7 @@ export const ShapeEditor = ({
     onChange: (v: BarePath | null) => void;
     onDup: (p: Coord) => void;
 }) => {
-    const es = useEditState();
+    const es = usePendingState();
     return (
         <div
             className="p-4 cursor-pointer hover:bg-base-300"

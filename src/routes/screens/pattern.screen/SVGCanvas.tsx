@@ -8,7 +8,7 @@ import {Box, Color, ConcreteShadow, shadowKey, State} from './export-types';
 import {renderItems} from './renderItems';
 import {percentToWorld, worldToPercent, svgCoord} from './useSVGZoom';
 import {coordKey} from '../../../rendering/coordKey';
-import {useEditState} from './editState';
+import {useEditState, usePendingState} from './editState';
 import {coordsEqual} from '../../../rendering/pathsAreIdentical';
 import {calcPathD} from '../../../editor/calcPathD';
 import {transformBarePath} from '../../../rendering/points';
@@ -96,7 +96,7 @@ export const SVGCanvas = ({
     // pending = editContext.use()
     // editContext.latest().pending
     // editContext.update()
-    const editContext = useEditState();
+    const editContext = usePendingState();
 
     const pending = editContext.use((s) => s.pending);
     // const points = useMemo(() => {
@@ -122,8 +122,8 @@ export const SVGCanvas = ({
         const fn = (evt: KeyboardEvent) => {
             if (evt.key === 'Enter') {
                 if (pending?.type !== 'shape') return;
-                pending.onDone(pending.points, true);
                 editContext.update.pending.replace(null);
+                pending.onDone(pending.points, true);
             }
             if (evt.key === 'Escape') {
                 editContext.update.pending.replace(null);
@@ -195,16 +195,14 @@ export const SVGCanvas = ({
                             if (!pending) return;
                             if (pending.type === 'dup-shape') {
                                 pending.onDone(pt);
-                                // editContext.update.pending.replace(null);
                                 return;
                             }
                             if (pending.type === 'select-shapes') return;
                             if (pending.points.length && coordsEqual(pending.points[0], pt)) {
-                                pending.onDone(pending.points, false);
                                 editContext.update.pending.replace(null);
+                                pending.onDone(pending.points, false);
                             } else {
                                 editContext.update.pending.variant('shape').points.push(pt);
-                                // editContext.update.pending.points.push(pt);
                             }
                         }}
                         cursor={'pointer'}

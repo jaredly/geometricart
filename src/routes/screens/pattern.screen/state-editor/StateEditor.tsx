@@ -1,7 +1,7 @@
 import React, {useEffect, useMemo, useRef} from 'react';
 import {State} from '../export-types';
 import {genid} from '../genid';
-import {useEditState} from '../editState';
+import {useEditState, usePendingState} from '../editState';
 import {transformBarePath} from '../../../../rendering/points';
 import {translationMatrix} from '../../../../rendering/getMirrorTransforms';
 import {ShapeEditor} from './ShapeEditor';
@@ -27,6 +27,7 @@ export const StateEditor = ({value, onChange}: StateEditorProps) => {
         [value.layers],
     );
     const crops = useMemo(() => Object.entries(value.crops), [value.crops]);
+    const pendingState = usePendingState();
     const editState = useEditState();
     const onHover = editState.update.hover.replace;
     const showShapes = editState.use((s) => s.showShapes);
@@ -92,7 +93,7 @@ export const StateEditor = ({value, onChange}: StateEditorProps) => {
                         className="btn btn-outline btn-sm"
                         onClick={(evt) => {
                             evt.stopPropagation();
-                            editState.update.pending.replace({
+                            pendingState.update.pending.replace({
                                 type: 'shape',
                                 onDone(points, open) {
                                     const nextId = genid();

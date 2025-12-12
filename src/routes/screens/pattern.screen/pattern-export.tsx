@@ -1,6 +1,13 @@
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {Tiling} from '../../../types';
-import {EditState, ProvideEditState} from './editState';
+import {
+    EditState,
+    PendingState,
+    ProvideEditState,
+    ProvidePendingState,
+    useEditState,
+    usePendingState,
+} from './editState';
 // import {example} from './example';
 import {ShapeStyle, State} from './export-types';
 import {RenderExport} from './RenderExport';
@@ -16,7 +23,7 @@ import {unique} from '../../shapesFromSegments';
 import {notNull} from './resolveMods';
 import {RenderDebug} from './RenderDebug';
 import {blankHistory, History} from '../../../json-diff/history';
-import {makeContext} from '../../../json-diff/react';
+import {makeContext, makeHistoryContext} from '../../../json-diff/react';
 // import {example3} from './example3';
 
 const usePromise = <T,>(f: (abort: AbortSignal) => Promise<T>, deps: any[] = []) => {
@@ -273,12 +280,11 @@ export default function PatternExportScreen({params}: Route.ComponentProps) {
 
 const initialEditState: EditState = {
     hover: null,
-    pending: null,
     showShapes: false,
 };
-const initialEditStateHistory = blankHistory(initialEditState);
+const initialPendingStateHistory = blankHistory<PendingState>({pending: null});
 
-export const [ProvideExportState, useExportState] = makeContext<
+export const [ProvideExportState, useExportState] = makeHistoryContext<
     State,
     {type: 'img'; url: string} | {type: 'video'; url: string}
 >('type');
@@ -302,14 +308,11 @@ const PatternExport = ({
                 onSave(v.current);
             }}
         >
-            <ProvideEditState
-                initial={initialEditStateHistory}
-                save={(v) => {
-                    console.log('want to save', v);
-                }}
-            >
-                <Inner initialPatterns={initialPatterns} />
-            </ProvideEditState>
+            <ProvidePendingState initial={initialPendingStateHistory}>
+                <ProvideEditState initial={initialEditState}>
+                    <Inner initialPatterns={initialPatterns} />
+                </ProvideEditState>
+            </ProvidePendingState>
         </ProvideExportState>
     );
 };
@@ -318,20 +321,35 @@ const Inner = ({initialPatterns}: {initialPatterns: Patterns}) => {
     const sctx = useExportState();
     const state = sctx.use((v) => v);
     const patternCache = useMemo<Patterns>(() => initialPatterns, [initialPatterns]);
+    const pctx = usePendingState();
+
+    useEffect(() => {
+        return sctx.onHistoryChange(() => {
+            pctx.clearHistory();
+        });
+    }, [sctx, pctx]);
 
     useEffect(() => {
         const fn = (evt: KeyboardEvent) => {
             if (evt.metaKey && evt.key === 'z') {
                 if (evt.shiftKey) {
-                    sctx.redo();
+                    if (sctx.canRedo()) {
+                        sctx.redo();
+                    } else {
+                        pctx.redo();
+                    }
                 } else {
-                    sctx.undo();
+                    if (pctx.canUndo()) {
+                        pctx.undo();
+                    } else {
+                        sctx.undo();
+                    }
                 }
             }
         };
         document.addEventListener('keydown', fn);
         return () => document.removeEventListener('keydown', fn);
-    }, [sctx]);
+    }, [sctx, pctx]);
 
     return (
         <div className="flex">

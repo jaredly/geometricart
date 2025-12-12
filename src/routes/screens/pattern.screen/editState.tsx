@@ -3,7 +3,7 @@ import {Coord} from '../../../types';
 // import {makeContext} from './diffStateManager';
 import {Hover} from './resolveMods';
 import {DiffBuilderA} from '../../../json-diff/helper2';
-import {makeContext} from '../../../json-diff/react';
+import {makeContext, makeHistoryContext} from '../../../json-diff/react';
 
 export const useLatest = <T,>(v: T) => {
     const l = useRef(v);
@@ -11,16 +11,23 @@ export const useLatest = <T,>(v: T) => {
     return l;
 };
 
-export const [ProvideEditState, useEditState] = makeContext<EditState, unknown>('type');
+export const [ProvideEditState, useEditState] = makeContext<EditState>('type');
+export const [ProvidePendingState, usePendingState] = makeHistoryContext<PendingState, unknown>(
+    'type',
+);
 
 export type EditStateUpdate = DiffBuilderA<EditState, 'type'>;
+export type PendingStateUpdate = DiffBuilderA<PendingState, 'type'>;
 
-export type EditState = {
-    showShapes: boolean;
-    hover: null | Hover;
+export type PendingState = {
     pending:
         | {type: 'shape'; points: Coord[]; onDone(points: Coord[], open: boolean): void}
         | {type: 'dup-shape'; id: string; onDone(point: Coord): void}
         | {type: 'select-shapes'; key: string; shapes: string[]; onDone(shapes: string[]): void}
         | null;
+};
+
+export type EditState = {
+    showShapes: boolean;
+    hover: null | Hover;
 };

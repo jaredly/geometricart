@@ -4,7 +4,7 @@ import {NumberField} from './NumberField';
 import {PatternContentsEditor} from './PatternContentsEditor';
 import {ModsEditor} from './FillEditor';
 import {genid} from '../genid';
-import {useEditState, useLatest} from '../editState';
+import {useEditState, useLatest, usePendingState} from '../editState';
 import {ChunkEditor} from './ShapeStyleCard';
 import {cmp} from './cmp';
 import {AnimInput} from './AnimInput';
@@ -136,7 +136,7 @@ const AdjustmentEditor = ({
     onChange: (adj: Adjustment) => void;
     onRemove(): void;
 }) => {
-    const edit = useEditState();
+    const edit = usePendingState();
     const pending = edit.use((v) => v.pending);
     const isAdding = pending?.type === 'select-shapes' && pending.key === `adj-${adj.id}`;
     const latest = useLatest(adj);
@@ -153,8 +153,8 @@ const AdjustmentEditor = ({
                     className="btn btn-sm mx-4"
                     onClick={() => {
                         if (isAdding) {
-                            onChange({...adj, shapes: pending.shapes});
                             edit.update.pending.replace(null);
+                            onChange({...adj, shapes: pending.shapes});
                         } else {
                             edit.update.pending.replace({
                                 type: 'select-shapes',

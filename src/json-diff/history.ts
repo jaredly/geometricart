@@ -32,12 +32,12 @@ type HistoryNode<T, An> = {
     changes: JsonPatchOp<T>[];
     pid: string;
     children: string[];
-    annotations?: An[];
 };
 
 export type History<T, An> = {
     initial: T;
     nodes: Record<string, HistoryNode<T, An>>;
+    annotations: Record<string, An[]>;
     root: string;
     tip: string;
     current: T;
@@ -49,6 +49,7 @@ export function blankHistory<T, An = never>(v: T): History<T, An> {
         current: v,
         initial: v,
         nodes: {root: {changes: [], children: [], id: 'root', pid: 'root'}},
+        annotations: {},
         root: 'root',
         tip: 'root',
         undoTrail: [],
@@ -73,6 +74,10 @@ function undo<T, An>(state: History<T, An>) {
 function redo<T, An>(state: History<T, An>) {
     if (!state.undoTrail.length) return state;
     const next = state.undoTrail[0];
+    if (!next || !state.nodes[next]) {
+        console.log(state);
+        throw new Error(`weird state ${next}`);
+    }
     return {
         ...state,
         undoTrail: state.undoTrail.slice(1),

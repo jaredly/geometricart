@@ -3,7 +3,7 @@ import {AddIcon, BaselineFilterCenterFocus, BaselineZoomInMap} from '../../../ic
 import {closeEnough} from '../../../rendering/epsilonToZero';
 import {Coord} from '../../../types';
 import {parseColor} from './colors';
-import {EditStateUpdate, useEditState} from './editState';
+import {EditStateUpdate, PendingStateUpdate, useEditState, usePendingState} from './editState';
 import {AnimCtx, Patterns, RenderItem} from './evaluate';
 import {colorToRgb, State} from './export-types';
 import {Hover, svgItems} from './resolveMods';
@@ -17,7 +17,7 @@ const renderShapes = (
     shapes: State['shapes'],
     hover: Hover | null,
     selectedShapes: string[],
-    update: EditStateUpdate,
+    update: PendingStateUpdate,
 ): RenderItem[] => {
     return Object.entries(shapes).flatMap(([key, shape]) => [
         {
@@ -77,19 +77,24 @@ export const RenderExport = ({
 
     const editContext = useEditState();
     const hover = editContext.use((v) => v.hover);
-    const showShapes = editContext.use((v) => v.showShapes || v.pending?.type === 'select-shapes');
+    const eShowShapes = editContext.use((v) => v.showShapes); // || v.pending?.type === 'select-shapes');
 
     const {items, warnings, keyPoints, byKey, bg} = useMemo(
         () => svgItems(state, animCache, cropCache, patterns, t),
         [state, patterns, cropCache, animCache, t],
     );
 
-    const pending = editContext.use((v) => v.pending);
+    const pendingState = usePendingState();
+    const pending = pendingState.use((v) => v.pending);
     const selectedShapes = pending?.type === 'select-shapes' ? pending.shapes : [];
+
+    const showShapes = eShowShapes || pending?.type === 'select-shapes';
     const shapesItems = useMemo(
         (): RenderItem[] =>
-            showShapes ? renderShapes(state.shapes, hover, selectedShapes, editContext.update) : [],
-        [showShapes, state.shapes, hover, selectedShapes, editContext.update],
+            showShapes
+                ? renderShapes(state.shapes, hover, selectedShapes, pendingState.update)
+                : [],
+        [showShapes, state.shapes, hover, selectedShapes, pendingState.update],
     );
 
     const both = useMemo(() => [...items, ...shapesItems], [items, shapesItems]);

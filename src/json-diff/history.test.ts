@@ -24,6 +24,7 @@ const initialArticle: Article = {
 
 const makeHistory = (current: Article): History<Article, string> => ({
     nodes: {root: {id: 'root', pid: 'root', changes: [], children: []}},
+    annotations: {},
     root: 'root',
     tip: 'root',
     current,
