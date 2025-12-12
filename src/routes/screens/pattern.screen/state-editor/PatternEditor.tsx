@@ -152,7 +152,7 @@ const AdjustmentEditor = ({
                 >
                     {isAdding ? 'Finish' : 'Select shapes'}
                 </button>
-                <ChunkEditor chunk={adj.t} onChange={update.t} />
+                <ChunkEditor chunk={adj.t} update={update.t} />
                 <button onClick={update.remove} className="btn btn-sm btn-square">
                     &times;
                 </button>

@@ -44,7 +44,7 @@ export const EntityEditor = ({
             </summary>
 
             {value.type === 'Group' ? (
-                <GroupEditor value={value} onChange={update.variant('Group')} />
+                <GroupEditor value={value} update={update.variant('Group')} />
             ) : null}
             {value.type === 'Pattern' ? (
                 <PatternEditor palette={palette} value={value} update={update.variant('Pattern')} />

@@ -161,7 +161,7 @@ export const adjustShapes = (
             const fromSegments = shapesFromSegments(byEndPoint, one, debug);
             const [centerShapes, reconstructed] = unzip(
                 fromSegments.shapes,
-                (c) => true, // !matchesBounds(boundsForCoords(...c), cmoved),
+                (c) => !matchesBounds(boundsForCoords(...c), cmoved),
             );
             // uniqueShapes = reconstructed;
             modified = true;

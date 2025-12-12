@@ -55,10 +55,10 @@ const boxes = (pos: Coord, w: number, total: number) => {
 
 export const ChunkEditor = ({
     chunk,
-    onChange,
+    update,
 }: {
     chunk?: TChunk;
-    onChange: (v?: TChunk) => void;
+    update: Updater<TChunk | undefined>;
 }) => {
     return (
         <details className={'dropdown'}>
@@ -109,13 +109,13 @@ export const ChunkEditor = ({
                             Number.isFinite(right) &&
                             Number.isInteger(right)
                         ) {
-                            onChange(
+                            update(
                                 chunk
                                     ? {...chunk, chunk: left, total: right}
                                     : {chunk: left, total: right, ease: ''},
                             );
                         } else {
-                            onChange(undefined);
+                            update.remove();
                         }
                     }}
                 />
@@ -123,7 +123,7 @@ export const ChunkEditor = ({
                     <select
                         className="select select-sm w-20"
                         value={chunk.ease}
-                        onChange={(evt) => onChange({...chunk, ease: evt.target.value})}
+                        onChange={(evt) => update.ease(evt.target.value)}
                     >
                         <option value="">straight</option>
                         {Object.keys(easeFunctions).map((name) => (
@@ -174,7 +174,7 @@ export const ShapeStyleCard = ({
                             <DragMove2Fill />
                         </button>
 
-                        <ChunkEditor chunk={value.t} onChange={update.t} />
+                        <ChunkEditor chunk={value.t} update={update.t} />
                         <div className="flex-1" />
                         <button
                             className="btn btn-square btn-sm"
@@ -209,6 +209,7 @@ export const ShapeStyleCard = ({
                             createItem={createFill}
                             render={(key, fill, update, reId) => (
                                 <FillEditor
+                                    key={key}
                                     value={fill}
                                     update={update}
                                     reId={reId}
@@ -223,7 +224,13 @@ export const ShapeStyleCard = ({
                             items={value.lines}
                             createItem={createLine}
                             render={(key, line, update, reId) => (
-                                <LineEditor palette={palette} value={line} update={update} />
+                                <LineEditor
+                                    key={key}
+                                    reId={reId}
+                                    palette={palette}
+                                    value={line}
+                                    update={update}
+                                />
                             )}
                             update={update.lines}
                         />

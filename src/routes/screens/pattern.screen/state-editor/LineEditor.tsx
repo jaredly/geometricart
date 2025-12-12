@@ -12,20 +12,24 @@ import {AnimColor} from './AnimColor';
 import {AnimInput} from './AnimInput';
 import {ModsEditor} from './FillEditor';
 import {Updater} from '../../../../json-diff/helper2';
+import {BlurInput} from './BlurInput';
 
 export const LineEditor = ({
     palette,
     value,
     update,
+    reId,
 }: {
     palette: Color[];
     value: Line;
     update: Updater<Line>;
+    reId(newKey: string): void;
 }) => {
     return (
         <div className="space-y-2">
             <div className="flex flex-row md:flex-row gap-2 md:items-center">
-                Line <span className="font-mono bg-gray-600 px-2 rounded">{value.id}</span>
+                Line
+                <BlurInput className="w-20 font-mono" value={value.id} onChange={reId} />
                 <button className="btn btn-ghost btn-xs text-error " onClick={update.remove}>
                     &times;
                 </button>

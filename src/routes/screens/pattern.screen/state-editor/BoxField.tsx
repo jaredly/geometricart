@@ -1,17 +1,17 @@
 import React from 'react';
 import {Box} from '../export-types';
 import {NumberField} from './NumberField';
+import {Updater} from '../../../../json-diff/helper2';
 
 export const BoxField = ({
     label,
     value,
-    onChange,
+    update,
 }: {
     label: string;
     value: Box;
-    onChange: (box: Box) => void;
+    update: Updater<Box>;
 }) => {
-    const update = (key: keyof Box, next: number) => onChange({...value, [key]: next});
     return (
         <div className="bg-base-200 rounded-lg p-3 border border-base-300 space-y-2">
             <div className="font-semibold text-sm">{label}</div>
@@ -22,7 +22,7 @@ export const BoxField = ({
                         label={key.toUpperCase()}
                         value={value[key]}
                         step={0.01}
-                        onChange={(val) => update(key, val)}
+                        onChange={update[key]}
                     />
                 ))}
             </div>

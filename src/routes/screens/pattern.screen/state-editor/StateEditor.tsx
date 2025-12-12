@@ -149,7 +149,7 @@ export const StateEditor = ({value, update}: StateEditorProps) => {
                             onChange={update.view.background}
                         />
                     </div>
-                    <BoxField label="View Box" value={value.view.box} onChange={update.view.box} />
+                    <BoxField label="View Box" value={value.view.box} update={update.view.box} />
                 </div>
             </Section>
 
@@ -163,7 +163,7 @@ export const StateEditor = ({value, update}: StateEditorProps) => {
                         />
                         <PaletteEditor
                             palette={value.styleConfig.palette}
-                            onChange={update.styleConfig.palette}
+                            update={update.styleConfig.palette}
                         />
                     </div>
                     {/* <ClocksEditor
